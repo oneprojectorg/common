@@ -27,13 +27,16 @@ export function VotingPage({
   const locale = useLocale();
   const translation = useDecisionTranslation();
 
-  const [[instance, voteStatus, { submitters }]] = trpc.useSuspenseQueries(
-    (t) => [
-      t.decision.getInstance({ instanceId }),
-      t.decision.getVotingStatus({ processInstanceId: instanceId }),
-      t.decision.getProposalSubmitters({ processInstanceId: instanceId }),
-    ],
-  );
+  const [[instance, voteStatus]] = trpc.useSuspenseQueries((t) => [
+    t.decision.getInstance({ instanceId }),
+    t.decision.getVotingStatus({ processInstanceId: instanceId }),
+  ]);
+
+  const { data: submittersData } =
+    trpc.decision.listProposalSubmitters.useQuery({
+      processInstanceId: instanceId,
+    });
+  const submitters = submittersData?.submitters ?? [];
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;

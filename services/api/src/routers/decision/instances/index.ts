@@ -5,10 +5,10 @@ import { duplicateInstanceRouter } from './duplicateInstance';
 import { getCategoriesRouter } from './getCategories';
 import { getDecisionBySlugRouter } from './getDecisionBySlug';
 import { getInstanceRouter, getLegacyInstanceRouter } from './getInstance';
-import { getProposalSubmittersRouter } from './getProposalSubmitters';
 import { listDecisionProfilesRouter } from './listDecisionProfiles';
 import { listInstancesRouter } from './listInstances';
 import { listLegacyInstancesRouter } from './listLegacyInstances';
+import { listProposalSubmittersRouter } from './listProposalSubmitters';
 import { transitionFromPhaseRouter } from './transitionFromPhase';
 import { updateDecisionInstanceRouter } from './updateDecisionInstance';
 
@@ -25,5 +25,5 @@ export const instancesRouter = mergeRouters(
   getCategoriesRouter,
   listDecisionProfilesRouter,
   getDecisionBySlugRouter,
-  getProposalSubmittersRouter,
+  listProposalSubmittersRouter,
 );

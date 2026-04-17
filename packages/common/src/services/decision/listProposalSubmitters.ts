@@ -1,6 +1,5 @@
-import { and, db, eq, inArray, isNull, ne } from '@op/db/client';
-import { ProposalStatus, Visibility, proposals } from '@op/db/schema';
-import { processInstances } from '@op/db/schema';
+import { db } from '@op/db/client';
+import { ProposalStatus, Visibility } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
@@ -8,7 +7,7 @@ import { UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 
-export interface GetProposalSubmittersInput {
+export interface ListProposalSubmittersInput {
   processInstanceId: string;
 }
 
@@ -17,45 +16,34 @@ export interface GetProposalSubmittersInput {
  * in the current phase of a decision instance. Designed to power the
  * participation face-pile without the overhead of a full listProposals call.
  */
-export const getProposalSubmitters = async ({
+export const listProposalSubmitters = async ({
   input,
   user,
 }: {
-  input: GetProposalSubmittersInput;
+  input: ListProposalSubmittersInput;
   user: User;
 }) => {
   const { processInstanceId } = input;
 
-  if (!user) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: processInstanceId },
+    columns: {
+      profileId: true,
+      ownerProfileId: true,
+      instanceData: true,
+      processId: true,
+    },
+  });
 
-  const instance = await db
-    .select({
-      profileId: processInstances.profileId,
-      ownerProfileId: processInstances.ownerProfileId,
-      instanceData: processInstances.instanceData,
-      processId: processInstances.processId,
-    })
-    .from(processInstances)
-    .where(eq(processInstances.id, processInstanceId))
-    .limit(1);
-
-  if (!instance[0]?.profileId) {
+  if (!instance?.profileId) {
     throw new UnauthorizedError('User does not have access to this process');
   }
 
   await assertInstanceProfileAccess({
     user,
-    instance: instance[0],
-    profilePermissions: [
-      { decisions: permission.ADMIN },
-      { decisions: permission.READ },
-    ],
-    orgFallbackPermissions: [
-      { decisions: permission.ADMIN },
-      { decisions: permission.READ },
-    ],
+    instance,
+    profilePermissions: { decisions: permission.READ },
+    orgFallbackPermissions: { decisions: permission.READ },
   });
 
   const phaseProposalIds = await getProposalIdsForPhase({
@@ -66,14 +54,14 @@ export const getProposalSubmitters = async ({
     return { submitters: [] };
   }
 
-  const rows = await db._query.proposals.findMany({
-    where: and(
-      eq(proposals.processInstanceId, processInstanceId),
-      ne(proposals.status, ProposalStatus.DRAFT),
-      eq(proposals.visibility, Visibility.VISIBLE),
-      isNull(proposals.deletedAt),
-      inArray(proposals.id, phaseProposalIds),
-    ),
+  const rows = await db.query.proposals.findMany({
+    where: {
+      processInstanceId,
+      status: { ne: ProposalStatus.DRAFT },
+      visibility: Visibility.VISIBLE,
+      deletedAt: { isNull: true },
+      id: { in: phaseProposalIds },
+    },
     columns: {
       submittedByProfileId: true,
     },
@@ -98,14 +86,12 @@ export const getProposalSubmitters = async ({
       continue;
     }
     seen.add(row.submittedByProfileId);
-    const profile = Array.isArray(row.submittedBy)
-      ? row.submittedBy[0]
-      : row.submittedBy;
+    const profile = row.submittedBy;
     if (profile) {
       submitters.push({
         slug: profile.slug,
         name: profile.name ?? null,
-        avatarImage: profile.avatarImage
+        avatarImage: profile.avatarImage?.name
           ? { name: profile.avatarImage.name }
           : null,
       });
