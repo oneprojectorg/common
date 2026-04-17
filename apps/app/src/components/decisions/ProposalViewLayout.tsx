@@ -1,8 +1,15 @@
 'use client';
 
 import { Button } from '@op/ui/Button';
+import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { ReactNode } from 'react';
-import { LuArrowLeft, LuBookmark, LuHeart, LuPencil } from 'react-icons/lu';
+import {
+  LuArrowLeft,
+  LuBookmark,
+  LuHeart,
+  LuPencil,
+  LuStickyNote,
+} from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { useRouter } from '@/lib/i18n/routing';
@@ -21,6 +28,7 @@ export function ProposalViewLayout({
   isLoading = false,
   editHref,
   canEdit = false,
+  revisionToggle,
 }: {
   children: ReactNode;
   backHref: string;
@@ -32,9 +40,18 @@ export function ProposalViewLayout({
   isLoading?: boolean;
   editHref?: string;
   canEdit?: boolean;
+  /**
+   * When provided, renders a sticky-note toggle button in the header with an
+   * orange indicator dot. `isActive` reflects the aria-pressed state.
+   */
+  revisionToggle?: {
+    onToggle: () => void;
+    isActive: boolean;
+  };
 }) {
   const t = useTranslations();
   const router = useRouter();
+  const revisionRequestLabel = t('Revision request');
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
@@ -85,6 +102,26 @@ export function ProposalViewLayout({
 
             {isFollowing ? t('Following') : t('Follow')}
           </Button>
+          {revisionToggle && (
+            <TooltipTrigger>
+              <Button
+                color="secondary"
+                variant="icon"
+                size="small"
+                onPress={revisionToggle.onToggle}
+                aria-label={revisionRequestLabel}
+                aria-pressed={revisionToggle.isActive}
+                className="relative size-8 min-w-8 rounded-sm p-0"
+              >
+                <LuStickyNote className="size-4" />
+                <span
+                  aria-hidden
+                  className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-primary-orange2"
+                />
+              </Button>
+              <Tooltip>{revisionRequestLabel}</Tooltip>
+            </TooltipTrigger>
+          )}
           <div className="hidden gap-4 sm:flex">
             <LocaleChooser />
             <UserAvatarMenu />

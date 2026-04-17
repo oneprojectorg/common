@@ -1,10 +1,11 @@
 'use client';
 
 import type { ProposalReviewRequest } from '@op/common/client';
-import { useRelativeTime } from '@op/hooks';
 import { Header3 } from '@op/ui/Header';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { RevisionFeedbackCard } from './RevisionFeedbackCard';
 
 interface RevisionFeedbackPanelProps {
   revisionRequest: ProposalReviewRequest;
@@ -34,9 +35,10 @@ export function RevisionFeedbackPanel({
           {t('Reviewer feedback')}
         </span>
 
-        <FeedbackCard
+        <RevisionFeedbackCard
           comment={revisionRequest.requestComment}
-          requestedAt={revisionRequest.requestedAt}
+          sentAt={revisionRequest.requestedAt}
+          italic
         />
 
         <p className="text-sm text-neutral-charcoal">
@@ -45,32 +47,6 @@ export function RevisionFeedbackPanel({
           )}
         </p>
       </div>
-    </div>
-  );
-}
-
-function FeedbackCard({
-  comment,
-  requestedAt,
-}: {
-  comment: string;
-  requestedAt: string | null;
-}) {
-  const t = useTranslations();
-  const timeAgo = useRelativeTime(requestedAt ?? new Date().toISOString(), {
-    style: 'long',
-  });
-
-  return (
-    <div className="flex flex-col gap-2 rounded-xl border border-neutral-gray1 p-6">
-      <p className="text-base whitespace-pre-wrap text-neutral-charcoal italic">
-        {comment}
-      </p>
-      {requestedAt && (
-        <p className="text-sm text-neutral-gray4">
-          {t('Sent {timeAgo}', { timeAgo })}
-        </p>
-      )}
     </div>
   );
 }
