@@ -34,8 +34,11 @@ export function ReviewPage({
     throw new Error(`Phase "${currentPhaseId}" not found in instance phases`);
   }
 
-  const canReview =
-    (instance.access?.review ?? false) || (instance.access?.admin ?? false);
+  // Profile admins already get review=true via ALL_TRUE_ACCESS in getInstance,
+  // so this gate covers them too. Decisions-zone admins ("Manage Process")
+  // without explicit review permission fall through to the proposals grid —
+  // they can't actually submit reviews, so the assignments list would be empty.
+  const canReview = instance.access?.review ?? false;
 
   return (
     <div className="min-h-full pt-8">
