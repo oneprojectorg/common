@@ -2,7 +2,6 @@ import type {
   DecisionSchemaDefinition,
   RubricTemplateSchema,
 } from '@op/common';
-import { OVERALL_RECOMMENDATION_KEY } from '@op/common/client';
 import { ProposalStatus, processInstances, proposals } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import {
@@ -13,6 +12,10 @@ import {
 } from '@op/test';
 
 import { expect, test } from '../fixtures/index.js';
+
+// Mirrors OVERALL_RECOMMENDATION_KEY from @op/common/client. Inlined to
+// sidestep CJS/ESM interop when loading @op/common from the e2e runner.
+const OVERALL_RECOMMENDATION_KEY = '__overall_recommendation';
 
 /**
  * Schema with a review phase that has `proposals.review: true` so the
