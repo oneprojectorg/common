@@ -16,9 +16,10 @@ function ProposalViewPageContent({
   orgSlug: string;
   instanceId: string;
 }) {
-  const [proposal] = trpc.decision.getProposal.useSuspenseQuery({
-    profileId,
-  });
+  const [[proposal, instance]] = trpc.useSuspenseQueries((t) => [
+    t.decision.getProposal({ profileId }),
+    t.decision.getInstance({ instanceId }),
+  ]);
 
   if (!proposal) {
     notFound();
@@ -26,7 +27,9 @@ function ProposalViewPageContent({
 
   const backHref = `/profile/${orgSlug}/decisions/${instanceId}/`;
 
-  return <ProposalView proposal={proposal} backHref={backHref} />;
+  return (
+    <ProposalView proposal={proposal} instance={instance} backHref={backHref} />
+  );
 }
 
 function ProposalViewPageSkeleton() {

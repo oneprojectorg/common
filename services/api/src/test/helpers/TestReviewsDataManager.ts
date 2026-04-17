@@ -1,4 +1,4 @@
-import type { RubricTemplateSchema } from '@op/common';
+import { type RubricTemplateSchema, createDecisionRole } from '@op/common';
 import { db } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
@@ -113,6 +113,46 @@ export class TestReviewsDataManager {
       reviewer.email,
       true,
     );
+
+    return {
+      authUserId: reviewer.authUserId,
+      email: reviewer.email,
+      profileId: reviewer.profileId,
+    };
+  }
+
+  /**
+   * Creates a member user granted a custom "Reviewer" role on the instance —
+   * READ + REVIEW on the decisions zone, no ADMIN. Mirrors a production
+   * reviewer who has the REVIEW capability but isn't a profile admin.
+   */
+  async createInstanceReviewerWithRole(context: ReviewAssignmentContext) {
+    const reviewerRole = await createDecisionRole({
+      name: `Reviewer-${this.testId}`,
+      profileId: context.instance.profileId,
+      permissions: {
+        decisions: {
+          type: 'decision',
+          value: {
+            create: false,
+            read: true,
+            update: false,
+            delete: false,
+            admin: false,
+            inviteMembers: false,
+            review: true,
+            submitProposals: false,
+            vote: false,
+          },
+        },
+      },
+    });
+
+    const reviewer = await this.decisions.createMemberUser({
+      organization: context.organization,
+      instanceProfileIds: [context.instance.profileId],
+      roleIds: { [context.instance.profileId]: reviewerRole.id },
+    });
 
     return {
       authUserId: reviewer.authUserId,

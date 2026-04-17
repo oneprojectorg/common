@@ -2,7 +2,7 @@ import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
 } from '@op/db/schema';
-import { createReviewAssignment, createRevisionRequest } from '@op/test';
+import { createRevisionRequest } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -80,7 +80,7 @@ describe.concurrent('listProposalRevisionRequests', () => {
     );
   });
 
-  it('returns the proposal revision requests for a non-admin reviewer', async ({
+  it('returns the proposal revision requests for a non-admin reviewer with the REVIEW role', async ({
     task,
     onTestFinished,
   }) => {
@@ -95,19 +95,15 @@ describe.concurrent('listProposalRevisionRequests', () => {
       requestComment: 'Non-admin reviewer should see this.',
     });
 
-    // Member on the instance profile (READ only) assigned as a reviewer
-    // on the proposal via a second assignment. Distinct from the default
-    // reviewer fixture, which is a profile admin.
-    const memberReviewer = await testData.createInstanceMember(created.context);
-    await createReviewAssignment({
-      processInstanceId: created.instance.instance.id,
-      proposalId: created.proposal.id,
-      reviewerProfileId: memberReviewer.profileId,
-    });
-
-    const reviewerCaller = await createAuthenticatedCaller(
-      memberReviewer.email,
+    // User with a custom Reviewer role (READ + REVIEW on decisions, no ADMIN)
+    // on the instance — no assignment on this proposal. Per the new contract,
+    // any user with REVIEW capability on the instance can see revision
+    // requests for any proposal there.
+    const reviewer = await testData.createInstanceReviewerWithRole(
+      created.context,
     );
+
+    const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
     const result = await reviewerCaller.decision.listProposalRevisionRequests({
       proposalId: created.proposal.id,
     });

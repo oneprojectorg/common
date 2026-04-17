@@ -6,6 +6,8 @@ import {
   EntityType,
   ProcessStatus,
   ProposalStatus,
+  accessRolePermissionsOnAccessZones,
+  accessRoles,
   decisionProcesses,
   processInstances,
   profileUserToAccessRoles,
@@ -386,6 +388,88 @@ export async function grantDecisionProfileAccess(
       accessRoleId: isAdmin ? ROLES.ADMIN.id : ROLES.MEMBER.id,
     });
   }
+}
+
+/**
+ * Grants the user a custom "Reviewer" role on the instance profile with
+ * READ + REVIEW on the decisions zone (plus the implicit profile READ).
+ * Creates the role on the fly and inserts/reuses a profileUser row.
+ *
+ * Mirrors the capabilities surfaced by `createDecisionRole` in @op/common
+ * without importing it (keeps this package free of server-only deps).
+ */
+export async function grantInstanceReviewerRole(opts: {
+  instanceProfileId: string;
+  authUserId: string;
+  email: string;
+  roleName?: string;
+}): Promise<void> {
+  const { instanceProfileId, authUserId, email, roleName = 'Reviewer' } = opts;
+
+  const [decisionsZone, profileZone] = await Promise.all([
+    db.query.accessZones.findFirst({ where: { name: 'decisions' } }),
+    db.query.accessZones.findFirst({ where: { name: 'profile' } }),
+  ]);
+
+  if (!decisionsZone || !profileZone) {
+    throw new Error(
+      'Access zones not seeded (expected "decisions" and "profile")',
+    );
+  }
+
+  const [role] = await db
+    .insert(accessRoles)
+    .values({ name: roleName, profileId: instanceProfileId })
+    .returning();
+
+  if (!role) {
+    throw new Error(`Failed to create Reviewer role on ${instanceProfileId}`);
+  }
+
+  // permission.READ = 4 (ACRUD bit 2), decisionPermission.REVIEW = 0b10_00000 = 64.
+  // Duplicated to avoid pulling in access-zones/@op/common at runtime.
+  const READ = 4;
+  const REVIEW = 64;
+
+  await db.insert(accessRolePermissionsOnAccessZones).values([
+    {
+      accessRoleId: role.id,
+      accessZoneId: decisionsZone.id,
+      permission: READ | REVIEW,
+    },
+    {
+      accessRoleId: role.id,
+      accessZoneId: profileZone.id,
+      permission: READ,
+    },
+  ]);
+
+  // Reuse an existing profileUsers row (e.g. created by createInstanceMember)
+  // or insert a fresh one. Either way, attach the Reviewer role to it.
+  const existing = await db.query.profileUsers.findFirst({
+    where: { profileId: instanceProfileId, authUserId },
+    columns: { id: true },
+  });
+
+  let profileUserId: string;
+  if (existing) {
+    profileUserId = existing.id;
+  } else {
+    const [profileUser] = await db
+      .insert(profileUsers)
+      .values({ profileId: instanceProfileId, authUserId, email })
+      .returning();
+    if (!profileUser) {
+      throw new Error(
+        `Failed to create profileUser for ${email} on ${instanceProfileId}`,
+      );
+    }
+    profileUserId = profileUser.id;
+  }
+
+  await db
+    .insert(profileUserToAccessRoles)
+    .values({ profileUserId, accessRoleId: role.id });
 }
 
 export interface CreateInstanceMemberOptions {
