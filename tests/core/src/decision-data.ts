@@ -12,10 +12,18 @@ import {
   profileUsers,
   profiles,
   proposals,
+  users,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { db, eq } from '@op/db/test';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'node:crypto';
+
+import {
+  addUserToOrganization,
+  createUser,
+  generateTestEmail,
+} from './test-data';
 
 /** Well-known slug for the seeded decision template profile */
 export const SEEDED_TEMPLATE_PROFILE_SLUG = 'decision-template-library';
@@ -377,6 +385,82 @@ export async function grantDecisionProfileAccess(
       accessRoleId: isAdmin ? ROLES.ADMIN.id : ROLES.MEMBER.id,
     });
   }
+}
+
+export interface CreateInstanceMemberOptions {
+  supabaseAdmin: SupabaseClient;
+  /** Unique identifier appended to the generated email */
+  testId: string;
+  /** Existing organization the new user will join */
+  organization: { id: string };
+  /** Decision instance profile to grant access on */
+  instanceProfileId: string;
+  /**
+   * Role granted on the instance profile. Defaults to Member (READ on the
+   * decisions zone) — the useful case for asserting that non-reviewer,
+   * non-admin participants cannot see reviewer-scoped data.
+   */
+  isInstanceAdmin?: boolean;
+  /** Role within the organization. Defaults to Member. */
+  organizationRole?: 'Admin' | 'Member';
+}
+
+export interface CreateInstanceMemberResult {
+  authUserId: string;
+  email: string;
+  profileId: string;
+  organizationUserId: string;
+}
+
+/**
+ * Creates a user, adds them to an existing organization, and grants them
+ * access on a decision instance profile. Defaults to Member on both — the
+ * caller ends up with READ on the decisions zone but no REVIEW / ADMIN.
+ */
+export async function createInstanceMember(
+  opts: CreateInstanceMemberOptions,
+): Promise<CreateInstanceMemberResult> {
+  const {
+    supabaseAdmin,
+    testId,
+    organization,
+    instanceProfileId,
+    isInstanceAdmin = false,
+    organizationRole = 'Member',
+  } = opts;
+
+  const email = generateTestEmail(testId, organizationRole);
+  const authUser = await createUser({ supabaseAdmin, email });
+
+  const [userRecord] = await db
+    .select()
+    .from(users)
+    .where(eq(users.authUserId, authUser.id));
+
+  if (!userRecord?.profileId) {
+    throw new Error(`Failed to find user record for ${email}`);
+  }
+
+  const orgUser = await addUserToOrganization({
+    authUserId: authUser.id,
+    organizationId: organization.id,
+    email,
+    role: organizationRole,
+  });
+
+  await grantDecisionProfileAccess({
+    profileId: instanceProfileId,
+    authUserId: authUser.id,
+    email,
+    isAdmin: isInstanceAdmin,
+  });
+
+  return {
+    authUserId: authUser.id,
+    email,
+    profileId: userRecord.profileId,
+    organizationUserId: orgUser.id,
+  };
 }
 
 /**

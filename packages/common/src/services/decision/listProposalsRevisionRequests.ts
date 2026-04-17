@@ -4,6 +4,7 @@ import type { User } from '@op/supabase/lib';
 
 import { UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
+import { proposalWithRevisionRequestsConfig } from './reviewHelpers';
 
 /**
  * Author's inbox: revision requests across every proposal the caller
@@ -28,36 +29,7 @@ export async function listProposalsRevisionRequests({
 
   const proposals = await db.query.proposals.findMany({
     where: { submittedByProfileId: commonUser.profileId },
-    with: {
-      submittedBy: {
-        with: {
-          avatarImage: true,
-        },
-      },
-      profile: true,
-      processInstance: {
-        columns: {},
-        with: {
-          profile: {
-            columns: { slug: true },
-          },
-        },
-      },
-      reviewAssignments: {
-        columns: { id: true },
-        with: {
-          requests: {
-            where:
-              states && states.length > 0
-                ? { state: { in: states } }
-                : undefined,
-            orderBy: {
-              createdAt: 'desc',
-            },
-          },
-        },
-      },
-    },
+    with: proposalWithRevisionRequestsConfig(states),
   });
 
   const revisionRequests = proposals.flatMap((proposal) => {

@@ -5,11 +5,13 @@ import type { User } from '@op/supabase/lib';
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
+import { proposalWithRevisionRequestsConfig } from './reviewHelpers';
 
 /**
- * Proposal-scoped: revision requests on a single proposal, gated by a
- * single getInstance access check — reviewers and decision admins see
- * it, not only the author.
+ * Proposal-scoped: revision requests on a single proposal. Visible to the
+ * proposal author, any reviewer assigned to this proposal, and decision
+ * admins. Other instance participants (voters, plain members with READ)
+ * are rejected — revision feedback is reviewer-scoped.
  *
  * For the author's cross-proposal inbox, use listProposalsRevisionRequests.
  */
@@ -30,43 +32,38 @@ export async function listProposalRevisionRequests({
 
   const proposal = await db.query.proposals.findFirst({
     where: { id: proposalId },
-    with: {
-      submittedBy: {
-        with: {
-          avatarImage: true,
-        },
-      },
-      profile: true,
-      processInstance: {
-        columns: {},
-        with: {
-          profile: {
-            columns: { slug: true },
-          },
-        },
-      },
-      reviewAssignments: {
-        columns: { id: true },
-        with: {
-          requests: {
-            where:
-              states && states.length > 0
-                ? { state: { in: states } }
-                : undefined,
-            orderBy: {
-              createdAt: 'desc',
-            },
-          },
-        },
-      },
-    },
+    with: proposalWithRevisionRequestsConfig(states),
   });
 
   if (!proposal) {
     throw new NotFoundError('Proposal not found');
   }
 
-  await getInstance({ instanceId: proposal.processInstanceId, user });
+  const instance = await getInstance({
+    instanceId: proposal.processInstanceId,
+    user,
+  });
+
+  const isAuthor = proposal.submittedByProfileId === commonUser.profileId;
+  const isAdmin = instance.access.admin;
+
+  let isReviewer = false;
+  if (!isAuthor && !isAdmin) {
+    const assignment = await db.query.proposalReviewAssignments.findFirst({
+      columns: { id: true },
+      where: {
+        proposalId: proposal.id,
+        reviewerProfileId: commonUser.profileId,
+      },
+    });
+    isReviewer = !!assignment;
+  }
+
+  if (!isAuthor && !isAdmin && !isReviewer) {
+    throw new UnauthorizedError(
+      "You don't have access to this proposal's revision requests",
+    );
+  }
 
   const decisionProfileSlug = proposal.processInstance.profile?.slug ?? '';
 

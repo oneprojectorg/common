@@ -465,6 +465,16 @@ export class TestDecisionsDataManager {
   }
 
   /**
+   * Tracks an auth user ID for cleanup. Use this when creating auth users
+   * outside of the standard TestDecisionsDataManager methods (e.g. via a
+   * core `@op/test` helper).
+   */
+  trackAuthUserForCleanup(authUserId: string): void {
+    this.ensureCleanupRegistered();
+    this.createdAuthUserIds.push(authUserId);
+  }
+
+  /**
    * Creates a member user (non-admin) for an organization with proper setup.
    * This creates:
    * - An auth user via Supabase

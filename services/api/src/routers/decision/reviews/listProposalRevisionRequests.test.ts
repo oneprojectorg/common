@@ -2,7 +2,7 @@ import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
 } from '@op/db/schema';
-import { createRevisionRequest } from '@op/test';
+import { createReviewAssignment, createRevisionRequest } from '@op/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -48,13 +48,16 @@ describe.concurrent('listProposalRevisionRequests', () => {
     expect(result.revisionRequests[0]?.proposal.id).toBe(created.proposal.id);
   });
 
-  it('returns the proposal revision requests for a reviewer', async ({
+  it('returns the proposal revision requests for a decision admin', async ({
     task,
     onTestFinished,
   }) => {
+    // The `createReviewer` fixture grants profile admin on the instance.
+    // This covers the admin path through the authz gate (distinct from the
+    // non-admin reviewer case below).
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const created = await testData.createReviewAssignment({
-      title: 'Reviewer View',
+      title: 'Admin View',
       status: ProposalReviewAssignmentStatus.IN_PROGRESS,
     });
 
@@ -64,10 +67,8 @@ describe.concurrent('listProposalRevisionRequests', () => {
       requestComment: 'Revised copy available.',
     });
 
-    const reviewerCaller = await createAuthenticatedCaller(
-      created.reviewer.email,
-    );
-    const result = await reviewerCaller.decision.listProposalRevisionRequests({
+    const adminCaller = await createAuthenticatedCaller(created.reviewer.email);
+    const result = await adminCaller.decision.listProposalRevisionRequests({
       proposalId: created.proposal.id,
       states: [ProposalReviewRequestState.RESUBMITTED],
     });
@@ -77,6 +78,42 @@ describe.concurrent('listProposalRevisionRequests', () => {
     expect(result.revisionRequests[0]?.revisionRequest.state).toBe(
       ProposalReviewRequestState.RESUBMITTED,
     );
+  });
+
+  it('returns the proposal revision requests for a non-admin reviewer', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Non-admin Reviewer',
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    });
+
+    await createRevisionRequest({
+      assignmentId: created.assignment.id,
+      requestComment: 'Non-admin reviewer should see this.',
+    });
+
+    // Member on the instance profile (READ only) assigned as a reviewer
+    // on the proposal via a second assignment. Distinct from the default
+    // reviewer fixture, which is a profile admin.
+    const memberReviewer = await testData.createInstanceMember(created.context);
+    await createReviewAssignment({
+      processInstanceId: created.instance.instance.id,
+      proposalId: created.proposal.id,
+      reviewerProfileId: memberReviewer.profileId,
+    });
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      memberReviewer.email,
+    );
+    const result = await reviewerCaller.decision.listProposalRevisionRequests({
+      proposalId: created.proposal.id,
+    });
+
+    expect(result.revisionRequests).toHaveLength(1);
+    expect(result.revisionRequests[0]?.proposal.id).toBe(created.proposal.id);
   });
 
   it('filters by state', async ({ task, onTestFinished }) => {
@@ -107,6 +144,34 @@ describe.concurrent('listProposalRevisionRequests', () => {
     expect(result.revisionRequests[0]?.revisionRequest.state).toBe(
       ProposalReviewRequestState.RESUBMITTED,
     );
+  });
+
+  it('rejects callers with only member (non-reviewer, non-admin) access to the instance', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Members Should Not See',
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    });
+
+    await createRevisionRequest({
+      assignmentId: created.assignment.id,
+      requestComment: 'Private review feedback.',
+    });
+
+    // Member has READ on the decisions zone via instance profile access,
+    // but is neither the author, a reviewer, nor a decision admin. Per the
+    // docblock contract, revision requests should not leak to them.
+    const member = await testData.createInstanceMember(created.context);
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    await expect(
+      memberCaller.decision.listProposalRevisionRequests({
+        proposalId: created.proposal.id,
+      }),
+    ).rejects.toThrow();
   });
 
   it('rejects callers without access to the proposal instance', async ({

@@ -40,6 +40,46 @@ export const reviewAssignmentWithConfig = {
   },
 } as const;
 
+/**
+ * Shared `with` config for proposal queries that need to surface the
+ * proposal's revision requests (author inbox + proposal-scoped views).
+ * Optionally filters nested `requests` by state.
+ */
+export function proposalWithRevisionRequestsConfig(
+  states?: ProposalReviewRequestState[],
+) {
+  const requestsWhere =
+    states && states.length > 0 ? { state: { in: states } } : undefined;
+
+  return {
+    submittedBy: {
+      with: {
+        avatarImage: true,
+      },
+    },
+    profile: true,
+    processInstance: {
+      columns: {},
+      with: {
+        profile: {
+          columns: { slug: true as const },
+        },
+      },
+    },
+    reviewAssignments: {
+      columns: { id: true as const },
+      with: {
+        requests: {
+          where: requestsWhere,
+          orderBy: {
+            createdAt: 'desc' as const,
+          },
+        },
+      },
+    },
+  } as const;
+}
+
 /** Returns the active (REQUESTED) revision request, falling back to the most recent one. */
 export function getActiveRevisionRequest(
   requests: ProposalReviewRequest[],
