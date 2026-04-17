@@ -550,7 +550,7 @@ export const ProposalsList = ({
   phase?: 'results';
   /** When true, the current phase has voting enabled — always show voting UI */
   isVotingPhase?: boolean;
-  /** When true, the current phase is the review phase — swap owner actions for Revise */
+  /** When true, the current phase is the review phase — show Revise action for owners */
   isReviewPhase?: boolean;
 }) => {
   const t = useTranslations();
@@ -644,18 +644,38 @@ export const ProposalsList = ({
 
   // When in the review phase, fetch the current user's pending revision requests
   // so we can surface a badge + deep-link the Revise button for affected proposals.
-  const { data: revisionRequestsData } =
+  // Failure here only drops the enrichment — the plain Revise button still works.
+  const { data: revisionRequestsData, error: revisionRequestsError } =
     trpc.decision.listProposalsRevisionRequests.useQuery(
       {},
       { enabled: !!isReviewPhase },
     );
 
-  const revisionRequestIdByProposalId = useMemo(() => {
-    const map: Record<string, string> = {};
-    for (const item of revisionRequestsData?.revisionRequests ?? []) {
-      map[item.proposal.id] = item.revisionRequest.id;
+  useEffect(() => {
+    if (revisionRequestsError) {
+      console.error(
+        'Failed to load proposal revision requests',
+        revisionRequestsError,
+      );
     }
-    return map;
+  }, [revisionRequestsError]);
+
+  const revisionRequestIdByProposalId = useMemo(() => {
+    const map: Record<string, { id: string; requestedAt: string | null }> = {};
+    for (const item of revisionRequestsData?.revisionRequests ?? []) {
+      const existing = map[item.proposal.id];
+      // Keep only the most recent request when a proposal has multiple pending
+      if (
+        !existing ||
+        (item.revisionRequest.requestedAt ?? '') > (existing.requestedAt ?? '')
+      ) {
+        map[item.proposal.id] = {
+          id: item.revisionRequest.id,
+          requestedAt: item.revisionRequest.requestedAt,
+        };
+      }
+    }
+    return Object.fromEntries(Object.entries(map).map(([k, v]) => [k, v.id]));
   }, [revisionRequestsData]);
 
   const { proposals: allProposals } = proposalsData ?? {};
