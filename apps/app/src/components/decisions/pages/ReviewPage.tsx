@@ -1,9 +1,15 @@
 'use client';
 
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { type InstancePhaseData } from '@op/api/encoders';
 import { ButtonLink } from '@op/ui/Button';
+import { EmptyState } from '@op/ui/EmptyState';
+import { Header3 } from '@op/ui/Header';
 import { Suspense } from 'react';
+import { LuLeaf } from 'react-icons/lu';
+
+import { useTranslations } from '@/lib/i18n';
 
 import { TranslatedText } from '@/components/TranslatedText';
 
@@ -22,6 +28,7 @@ export function ReviewPage({
   slug: string;
   decisionProfileId?: string | null;
 }) {
+  const t = useTranslations();
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
 
   const phases = instance.instanceData?.phases ?? [];
@@ -70,16 +77,31 @@ export function ReviewPage({
               decisionSlug={decisionSlug}
             />
           ) : (
-            <Suspense fallback={<ProposalListSkeleton />}>
-              <ProposalsList
-                slug={slug}
-                instanceId={instanceId}
-                decisionSlug={decisionSlug}
-                decisionProfileId={decisionProfileId}
-                permissions={instance.access}
-                isReviewPhase
-              />
-            </Suspense>
+            <APIErrorBoundary
+              fallbacks={{
+                default: () => (
+                  <EmptyState icon={<LuLeaf className="size-6" />}>
+                    <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+                      {t("We couldn't load proposals")}
+                    </Header3>
+                    <p className="text-base text-neutral-charcoal">
+                      {t('Please refresh the page to try again.')}
+                    </p>
+                  </EmptyState>
+                ),
+              }}
+            >
+              <Suspense fallback={<ProposalListSkeleton />}>
+                <ProposalsList
+                  slug={slug}
+                  instanceId={instanceId}
+                  decisionSlug={decisionSlug}
+                  decisionProfileId={decisionProfileId}
+                  permissions={instance.access}
+                  isReviewPhase
+                />
+              </Suspense>
+            </APIErrorBoundary>
           )}
         </div>
       </div>
