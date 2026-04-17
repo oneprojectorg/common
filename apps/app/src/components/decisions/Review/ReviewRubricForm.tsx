@@ -262,7 +262,7 @@ function RubricRationaleField({
       <Button
         variant="link"
         size="inline"
-        className="flex items-center px-2 py-1.5"
+        className="flex items-center px-2 py-1.5 leading-normal text-primary-tealBlack"
         onPress={() => setIsOpen(true)}
       >
         <LuPlus className="size-4" />
