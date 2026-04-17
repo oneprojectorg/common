@@ -9,11 +9,13 @@ import {
 } from '@op/db/schema';
 import {
   configureProcessReviews,
+  createInstanceMember as coreCreateInstanceMember,
   createReviewScenario,
   defaultReviewSettings,
 } from '@op/test';
 import { eq } from 'drizzle-orm';
 
+import { supabaseTestAdminClient } from '../supabase-utils';
 import { TestDecisionsDataManager } from './TestDecisionsDataManager';
 
 interface ReviewParticipant {
@@ -45,12 +47,14 @@ interface CreateReviewAssignmentOptions {
 
 /** Creates review-focused test fixtures on top of the decision test setup. */
 export class TestReviewsDataManager {
+  private testId: string;
   private decisions: TestDecisionsDataManager;
 
   constructor(
     testId: string,
     onTestFinished: (fn: () => void | Promise<void>) => void,
   ) {
+    this.testId = testId;
     this.decisions = new TestDecisionsDataManager(testId, onTestFinished);
   }
 
@@ -114,6 +118,33 @@ export class TestReviewsDataManager {
       authUserId: reviewer.authUserId,
       email: reviewer.email,
       profileId: reviewer.profileId,
+    };
+  }
+
+  /**
+   * Creates a participant with Member-only access on the instance profile —
+   * i.e. READ on decisions, but no REVIEW and no ADMIN. Useful to assert
+   * that non-reviewer, non-admin callers cannot see reviewer-scoped data.
+   */
+  async createInstanceMember(context: ReviewAssignmentContext) {
+    if (!supabaseTestAdminClient) {
+      throw new Error('Supabase admin test client not initialized');
+    }
+
+    const { user } = await coreCreateInstanceMember({
+      supabaseAdmin: supabaseTestAdminClient,
+      testId: this.testId,
+      organization: { id: context.organization.id },
+      instanceProfileId: context.instance.profileId,
+    });
+
+    this.decisions.trackAuthUserForCleanup(user.authUserId);
+    this.decisions.trackProfileForCleanup(user.profileId);
+
+    return {
+      authUserId: user.authUserId,
+      email: user.email,
+      profileId: user.profileId,
     };
   }
 

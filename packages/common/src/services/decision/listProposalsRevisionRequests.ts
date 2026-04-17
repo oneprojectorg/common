@@ -1,21 +1,24 @@
 import { db } from '@op/db/client';
-import { ProposalReviewRequestState } from '@op/db/schema';
+import type { ProposalReviewRequestState } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
+import { proposalWithRevisionRequestsConfig } from './reviewHelpers';
 
 /**
- * Lists all pending revision requests across proposals authored by the current user.
- * Optionally filters to a single proposal when `proposalId` is provided.
+ * Author's inbox: revision requests across every proposal the caller
+ * submitted. Scoped by identity (submittedByProfileId), not by instance
+ * access — a user sees their own revisions regardless of decision.
  *
- * Returns raw data — encoding is handled by the API router.
+ * For the proposal-scoped view (one proposal, anyone with instance
+ * access), use listProposalRevisionRequests.
  */
 export async function listProposalsRevisionRequests({
-  proposalId,
+  states,
   user,
 }: {
-  proposalId?: string;
+  states?: ProposalReviewRequestState[];
   user: User;
 }) {
   const commonUser = await assertUserByAuthId(user.id);
@@ -25,36 +28,8 @@ export async function listProposalsRevisionRequests({
   }
 
   const proposals = await db.query.proposals.findMany({
-    where: {
-      submittedByProfileId: commonUser.profileId,
-      ...(proposalId && { id: proposalId }),
-    },
-    with: {
-      submittedBy: {
-        with: {
-          avatarImage: true,
-        },
-      },
-      profile: true,
-      processInstance: {
-        columns: {},
-        with: {
-          profile: {
-            columns: { slug: true },
-          },
-        },
-      },
-      reviewAssignments: {
-        columns: { id: true },
-        with: {
-          requests: {
-            where: {
-              state: ProposalReviewRequestState.REQUESTED,
-            },
-          },
-        },
-      },
-    },
+    where: { submittedByProfileId: commonUser.profileId },
+    with: proposalWithRevisionRequestsConfig(states),
   });
 
   const revisionRequests = proposals.flatMap((proposal) => {
