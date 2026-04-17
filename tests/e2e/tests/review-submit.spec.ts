@@ -372,11 +372,15 @@ test.describe('Review Submit', () => {
     // Still disabled — Compliance is still missing
     await expect(submitButton).toBeDisabled();
 
-    // Fill third required criterion: Compliance (yes/no toggle)
+    // Fill third required criterion: Compliance (yes/no toggle). Anchor by
+    // the heading and pick the aria-pressed ToggleButton within that section,
+    // since every criterion also renders an "Add Note" button.
     await page
       .locator('section')
-      .filter({ hasText: 'Compliance' })
-      .getByRole('button')
+      .filter({
+        has: page.getByRole('heading', { name: 'Compliance', level: 4 }),
+      })
+      .locator('button[aria-pressed]')
       .click();
 
     // Still disabled — Overall Recommendation is still missing
