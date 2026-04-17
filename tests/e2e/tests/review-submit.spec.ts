@@ -2,12 +2,11 @@ import type {
   DecisionSchemaDefinition,
   RubricTemplateSchema,
 } from '@op/common';
-import { ProposalStatus, processInstances, proposals } from '@op/db/schema';
+import { processInstances } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import {
   createDecisionInstance,
-  createProposal,
-  createReviewAssignment,
+  createReviewScenario,
   getSeededTemplate,
 } from '@op/test';
 
@@ -213,27 +212,18 @@ test.describe('Review Submit', () => {
       })
       .where(eq(processInstances.id, instance.instance.id));
 
-    const proposal = await createProposal({
-      processInstanceId: instance.instance.id,
-      submittedByProfileId: org.organizationProfile.id,
-      authUserId: org.adminUser.authUserId,
-      email: org.adminUser.email,
+    await createReviewScenario({
+      instance: { id: instance.instance.id },
+      author: {
+        profileId: org.organizationProfile.id,
+        authUserId: org.adminUser.authUserId,
+        email: org.adminUser.email,
+      },
+      reviewer: { profileId: org.adminUser.profileId },
       proposalData: {
         title: PROPOSAL_TITLE,
         collaborationDocId: 'test-proposal-view-doc',
       },
-    });
-
-    // UPDATE to SUBMITTED so the AFTER UPDATE trigger creates a history snapshot.
-    await db
-      .update(proposals)
-      .set({ status: ProposalStatus.SUBMITTED })
-      .where(eq(proposals.id, proposal.id));
-
-    await createReviewAssignment({
-      processInstanceId: instance.instance.id,
-      proposalId: proposal.id,
-      reviewerProfileId: org.adminUser.profileId,
     });
 
     await new Promise((resolve) => setTimeout(resolve, 600));

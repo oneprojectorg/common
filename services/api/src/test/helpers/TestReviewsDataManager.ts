@@ -2,19 +2,15 @@ import type { RubricTemplateSchema } from '@op/common';
 import { db } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
-  ProposalStatus,
   attachments,
   objectsInStorage,
   processInstances,
   proposalAttachments,
-  proposals,
 } from '@op/db/schema';
 import {
   configureProcessReviews,
-  createProposal,
-  createReviewAssignment as createReviewAssignmentRecord,
+  createReviewScenario,
   defaultReviewSettings,
-  getLatestProposalHistoryId,
 } from '@op/test';
 import { eq } from 'drizzle-orm';
 
@@ -167,37 +163,18 @@ export class TestReviewsDataManager {
         instanceProfileIds: [context.instance.profileId],
       }));
 
-    const proposal = await createProposal({
-      processInstanceId: context.instance.instance.id,
-      submittedByProfileId: resolvedAuthor.profileId,
-      authUserId: resolvedAuthor.authUserId,
-      email: resolvedAuthor.email,
+    const { proposal, assignment } = await createReviewScenario({
+      instance: { id: context.instance.instance.id },
+      author: resolvedAuthor,
+      reviewer: { profileId: reviewer.profileId },
       proposalData: {
         title: opts.title ?? 'Community Garden Expansion',
         ...(opts.description ? { description: opts.description } : {}),
       },
+      assignmentStatus: opts.status,
     });
-
-    // UPDATE to SUBMITTED so the AFTER UPDATE trigger creates a history snapshot.
-    await db
-      .update(proposals)
-      .set({ status: ProposalStatus.SUBMITTED })
-      .where(eq(proposals.id, proposal.id));
-    proposal.status = ProposalStatus.SUBMITTED;
 
     this.decisions.trackProfileForCleanup(proposal.profileId);
-
-    const assignedProposalHistoryId = await getLatestProposalHistoryId({
-      proposalId: proposal.id,
-    });
-
-    const assignment = await createReviewAssignmentRecord({
-      processInstanceId: context.instance.instance.id,
-      proposalId: proposal.id,
-      reviewerProfileId: reviewer.profileId,
-      assignedProposalHistoryId,
-      status: opts.status ?? ProposalReviewAssignmentStatus.PENDING,
-    });
 
     return {
       context,
