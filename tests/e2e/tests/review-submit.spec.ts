@@ -380,12 +380,13 @@ test.describe('Review Submit', () => {
     await expect(submitButton).toBeDisabled();
 
     // Fill fourth required criterion: Overall Recommendation (horizontal
-    // radio group with Yes/Maybe/No).
+    // radio group with Yes/Maybe/No). React Aria renders the underlying
+    // <input type="radio"> as sr-only, so click the visible label text.
     const overallRecGroup = page.getByRole('radiogroup', {
       name: 'Overall Recommendation',
     });
     await expect(overallRecGroup).toBeVisible();
-    await overallRecGroup.getByRole('radio', { name: 'Yes' }).click();
+    await overallRecGroup.getByText('Yes', { exact: true }).click();
 
     // All required criteria are filled — submit should be enabled even though
     // the optional criteria (Methodology, Qualitative Feedback) are empty.
