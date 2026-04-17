@@ -28,15 +28,10 @@ export function StandardDecisionPage({
   const t = useTranslations();
   const translation = useDecisionTranslation();
 
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
-    instanceId,
-  });
-
-  const { data: submittersData } =
-    trpc.decision.listProposalSubmitters.useQuery({
-      processInstanceId: instanceId,
-    });
-  const submitters = submittersData?.submitters ?? [];
+  const [[instance, { submitters }]] = trpc.useSuspenseQueries((t) => [
+    t.decision.getInstance({ instanceId }),
+    t.decision.listProposalSubmitters({ processInstanceId: instanceId }),
+  ]);
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;

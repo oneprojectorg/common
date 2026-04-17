@@ -1,4 +1,5 @@
 import {
+  Channels,
   listProposalSubmitters,
   proposalSubmittersListSchema,
 } from '@op/common';
@@ -14,7 +15,11 @@ export const listProposalSubmittersRouter = router({
   listProposalSubmitters: commonAuthedProcedure()
     .input(listProposalSubmittersInputSchema)
     .output(proposalSubmittersListSchema)
-    .query(({ ctx, input }) =>
-      listProposalSubmitters({ input, user: ctx.user }),
-    ),
+    .query(({ ctx, input }) => {
+      ctx.registerQueryChannels([
+        Channels.decisionProposals(input.processInstanceId),
+      ]);
+
+      return listProposalSubmitters({ input, user: ctx.user });
+    }),
 });
