@@ -10,7 +10,6 @@ import { getProposalIdsForPhase } from './getProposalsForPhase';
 
 export interface GetProposalSubmittersInput {
   processInstanceId: string;
-  authUserId: string;
 }
 
 /**
@@ -87,7 +86,6 @@ export const getProposalSubmitters = async ({
     },
   });
 
-  // Deduplicate by submittedByProfileId
   const seen = new Set<string>();
   const submitters: Array<{
     slug: string;

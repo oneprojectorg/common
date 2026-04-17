@@ -31,7 +31,7 @@ export const getProposalSubmittersRouter = router({
 
       try {
         return await getProposalSubmitters({
-          input: { ...input, authUserId: user.id },
+          input,
           user,
         });
       } catch (error: unknown) {
