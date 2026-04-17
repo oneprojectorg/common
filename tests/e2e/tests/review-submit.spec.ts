@@ -212,7 +212,7 @@ test.describe('Review Submit', () => {
       })
       .where(eq(processInstances.id, instance.instance.id));
 
-    await createReviewScenario({
+    const { assignment } = await createReviewScenario({
       instance: { id: instance.instance.id },
       author: {
         profileId: org.organizationProfile.id,
@@ -349,6 +349,16 @@ test.describe('Review Submit', () => {
     await page.getByRole('button', { name: 'Innovation' }).click();
     await page.getByRole('option', { name: '4 — Very Good' }).click();
 
+    // Fill Innovation's always-optional rationale. Scope by section because
+    // every criterion renders an identical "Reason(s) and Insight(s)" textarea.
+    const innovationRationale =
+      'Highly novel approach — reuses open patterns well.';
+    await page
+      .locator('section')
+      .filter({ hasText: 'Innovation' })
+      .getByRole('textbox', { name: 'Reason(s) and Insight(s)' })
+      .fill(innovationRationale);
+
     // Still disabled — two more required criteria (Feasibility, Compliance)
     await expect(submitButton).toBeDisabled();
 
@@ -414,5 +424,13 @@ test.describe('Review Submit', () => {
     });
     await expect(page.getByText(PROPOSAL_TITLE)).toBeVisible();
     await expect(statusBadge).toHaveText('Completed');
+
+    // Verify the rationale round-tripped to storage under the split shape.
+    const storedReview = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: assignment.id },
+    });
+    expect(storedReview?.reviewData).toMatchObject({
+      rationales: { innovation: innovationRationale },
+    });
   });
 });

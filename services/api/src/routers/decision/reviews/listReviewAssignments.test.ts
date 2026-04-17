@@ -20,7 +20,7 @@ const createCaller = createCallerFactory(appRouter);
 
 const rubricTemplate: RubricTemplateSchema = {
   type: 'object',
-  'x-field-order': ['impact', 'impact__rationale'],
+  'x-field-order': ['impact'],
   properties: {
     impact: {
       type: 'integer',
@@ -33,13 +33,8 @@ const rubricTemplate: RubricTemplateSchema = {
         { const: 5, title: 'High' },
       ],
     },
-    impact__rationale: {
-      type: 'string',
-      title: 'Why',
-      'x-format': 'long-text',
-    },
   },
-  required: ['impact', 'impact__rationale'],
+  required: ['impact'],
 };
 
 async function createAuthenticatedCaller(email: string) {
@@ -149,8 +144,8 @@ describe.concurrent('listReviewAssignments', () => {
         assignmentId: created.assignment.id,
         state: ProposalReviewState.DRAFT,
         reviewData: {
-          impact: 5,
-          impact__rationale: 'Strong fit',
+          answers: { impact: 5 },
+          rationales: { impact: 'Strong fit' },
         },
         overallComment: 'Promising proposal',
       }),
@@ -177,8 +172,8 @@ describe.concurrent('listReviewAssignments', () => {
         assignmentId: created.assignment.id,
         state: ProposalReviewState.DRAFT,
         reviewData: {
-          impact: 5,
-          impact__rationale: 'Strong fit',
+          answers: { impact: 5 },
+          rationales: { impact: 'Strong fit' },
         },
         overallComment: 'Promising proposal',
       },
