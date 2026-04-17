@@ -1,4 +1,4 @@
-import { db, eq } from '@op/db/client';
+import { db, eq } from '@op/db/test';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
