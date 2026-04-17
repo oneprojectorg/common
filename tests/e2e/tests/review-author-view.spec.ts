@@ -62,8 +62,9 @@ const REVIEW_SCHEMA = {
   ],
 } satisfies DecisionSchemaDefinition;
 
-const MEMBER_PROPOSAL_TITLE = 'Community Solar Initiative';
-const OTHER_PROPOSAL_TITLE = 'Urban Garden Expansion';
+// The card title is resolved from the collab doc fragment mock, which returns
+// 'Community Solar Initiative' for any proposal using `test-proposal-view-doc`.
+const PROPOSAL_TITLE = 'Community Solar Initiative';
 
 test.describe('Non-reviewer review-phase view', () => {
   test('member author sees Revise proposal + badge on own proposal and Like/Follow on others', async ({
@@ -110,7 +111,7 @@ test.describe('Non-reviewer review-phase view', () => {
       authUserId: memberUser.authUserId,
       email: memberUser.email,
       proposalData: {
-        title: MEMBER_PROPOSAL_TITLE,
+        title: PROPOSAL_TITLE,
         collaborationDocId: 'test-proposal-view-doc',
       },
     });
@@ -136,7 +137,7 @@ test.describe('Non-reviewer review-phase view', () => {
       authUserId: org.adminUser.authUserId,
       email: org.adminUser.email,
       proposalData: {
-        title: OTHER_PROPOSAL_TITLE,
+        title: PROPOSAL_TITLE,
         collaborationDocId: 'test-proposal-view-doc',
       },
     });
@@ -160,10 +161,12 @@ test.describe('Non-reviewer review-phase view', () => {
 
     // -- Assert: non-reviewer lands on the proposals grid, not assignments --
 
-    await expect(memberPage.getByText(MEMBER_PROPOSAL_TITLE)).toBeVisible({
-      timeout: 36_000,
-    });
-    await expect(memberPage.getByText(OTHER_PROPOSAL_TITLE)).toBeVisible();
+    await expect(
+      memberPage.getByRole('link', { name: PROPOSAL_TITLE }).first(),
+    ).toBeVisible({ timeout: 36_000 });
+    await expect(
+      memberPage.getByRole('link', { name: PROPOSAL_TITLE }),
+    ).toHaveCount(2);
     await expect(memberPage.getByText('Proposals to review')).toHaveCount(0);
 
     // Member owns exactly one proposal in the list → one Revise button + one badge
