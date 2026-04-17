@@ -237,5 +237,8 @@ test.describe('Proposal View — revision submitted panel', () => {
       page.getByRole('heading', { name: 'Revision submitted' }),
     ).not.toBeVisible();
     await expect(page.getByText(REQUEST_COMMENT)).not.toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Revision request' }),
+    ).not.toBeVisible();
   });
 });

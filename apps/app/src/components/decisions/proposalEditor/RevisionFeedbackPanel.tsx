@@ -38,7 +38,7 @@ export function RevisionFeedbackPanel({
         <RevisionFeedbackCard
           comment={revisionRequest.requestComment}
           sentAt={revisionRequest.requestedAt}
-          italic
+          variant="reviewer"
         />
 
         <p className="text-sm text-neutral-charcoal">

@@ -66,20 +66,26 @@ export function ProposalView({
     ? `${backHref}/proposal/${currentProposal.profileId}/edit`
     : undefined;
 
-  // Revision request toggle. The backend filters the list down to the roles
-  // allowed to see it (author / admin / reviewer) — users without permission
-  // receive an empty array and never see the toggle.
+  // Revision request toggle. Visibility is enforced server-side
+  // (listProposalRevisionRequests throws UnauthorizedError for users who
+  // aren't the author, an assigned reviewer, or a decision admin), so `data`
+  // is undefined for those users and the toggle never renders.
   const [{ reviewRevision }, setQueryState] = useQueryStates({
     reviewRevision: proposalEditorReviewRevisionParser,
   });
 
   // The view panel is "Revision submitted" — only surface entries the author
   // has already responded to. Pending requests are handled by the editor.
+  // `retry: false` keeps the expected 401 for users outside the author /
+  // admin / reviewer set from triggering repeat requests.
   const { data: revisionData } =
-    trpc.decision.listProposalRevisionRequests.useQuery({
-      proposalId: currentProposal.id,
-      states: [ProposalReviewRequestState.RESUBMITTED],
-    });
+    trpc.decision.listProposalRevisionRequests.useQuery(
+      {
+        proposalId: currentProposal.id,
+        states: [ProposalReviewRequestState.RESUBMITTED],
+      },
+      { retry: false },
+    );
 
   const submittedRevisions = revisionData?.revisionRequests ?? [];
 

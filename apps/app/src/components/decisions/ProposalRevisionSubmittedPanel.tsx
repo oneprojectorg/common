@@ -40,7 +40,7 @@ export function ProposalRevisionSubmittedPanel({
         <RevisionFeedbackCard
           comment={requestComment}
           sentAt={requestedAt}
-          italic
+          variant="reviewer"
         />
       </div>
 
@@ -53,7 +53,7 @@ export function ProposalRevisionSubmittedPanel({
           <RevisionFeedbackCard
             comment={responseComment}
             sentAt={respondedAt}
-            tinted
+            variant="author"
           />
         </div>
       )}
