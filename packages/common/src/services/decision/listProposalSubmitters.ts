@@ -1,5 +1,11 @@
-import { db } from '@op/db/client';
-import { ProposalStatus, Visibility } from '@op/db/schema';
+import { and, db, eq, inArray, isNull, ne } from '@op/db/client';
+import {
+  ProposalStatus,
+  Visibility,
+  objectsInStorage,
+  profiles,
+  proposals,
+} from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
@@ -54,49 +60,30 @@ export const listProposalSubmitters = async ({
     return { submitters: [] };
   }
 
-  const rows = await db.query.proposals.findMany({
-    where: {
-      processInstanceId,
-      status: { ne: ProposalStatus.DRAFT },
-      visibility: Visibility.VISIBLE,
-      deletedAt: { isNull: true },
-      id: { in: phaseProposalIds },
-    },
-    columns: {
-      submittedByProfileId: true,
-    },
-    with: {
-      submittedBy: {
-        with: {
-          avatarImage: true,
-        },
-      },
-    },
-  });
+  const rows = await db
+    .selectDistinct({
+      slug: profiles.slug,
+      name: profiles.name,
+      avatarName: objectsInStorage.name,
+    })
+    .from(profiles)
+    .innerJoin(proposals, eq(proposals.submittedByProfileId, profiles.id))
+    .leftJoin(objectsInStorage, eq(profiles.avatarImageId, objectsInStorage.id))
+    .where(
+      and(
+        eq(proposals.processInstanceId, processInstanceId),
+        ne(proposals.status, ProposalStatus.DRAFT),
+        eq(proposals.visibility, Visibility.VISIBLE),
+        isNull(proposals.deletedAt),
+        inArray(proposals.id, phaseProposalIds),
+      ),
+    );
 
-  const seen = new Set<string>();
-  const submitters: Array<{
-    slug: string;
-    name: string | null;
-    avatarImage: { name: string } | null;
-  }> = [];
-
-  for (const row of rows) {
-    if (!row.submittedByProfileId || seen.has(row.submittedByProfileId)) {
-      continue;
-    }
-    seen.add(row.submittedByProfileId);
-    const profile = row.submittedBy;
-    if (profile) {
-      submitters.push({
-        slug: profile.slug,
-        name: profile.name ?? null,
-        avatarImage: profile.avatarImage?.name
-          ? { name: profile.avatarImage.name }
-          : null,
-      });
-    }
-  }
-
-  return { submitters };
+  return {
+    submitters: rows.map((row) => ({
+      slug: row.slug,
+      name: row.name ?? null,
+      avatarImage: row.avatarName ? { name: row.avatarName } : null,
+    })),
+  };
 };
