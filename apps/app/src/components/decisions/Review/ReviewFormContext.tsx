@@ -21,13 +21,17 @@ import {
 import { useTranslations } from '@/lib/i18n';
 
 interface ReviewFormState {
+  /** Rubric answers keyed by criterion id; validated against the template. */
   values: Record<string, unknown>;
+  /** Optional free-text rationale per criterion id (always optional). */
+  rationales: Record<string, string>;
   canSubmit: boolean;
   isSubmitting: boolean;
   isSubmitted: boolean;
   isPausedForRevision: boolean;
   revisionRequest: ProposalReviewRequest | null;
   handleValueChange: (key: string, value: unknown) => void;
+  handleRationaleChange: (key: string, value: string) => void;
   handleSubmit: () => void;
   requestRevision: (comment: string) => void;
   cancelRevisionRequest: () => void;
@@ -63,7 +67,10 @@ export function ReviewFormProvider({
   const t = useTranslations();
   const router = useRouter();
   const [values, setValues] = useState<Record<string, unknown>>(
-    review?.reviewData ?? {},
+    review?.reviewData.answers ?? {},
+  );
+  const [rationales, setRationales] = useState<Record<string, string>>(
+    review?.reviewData.rationales ?? {},
   );
   const isSubmitted = review?.state === 'submitted';
   const isPausedForRevision = revisionRequest?.state === 'requested';
@@ -116,13 +123,17 @@ export function ReviewFormProvider({
     setValues((current) => ({ ...current, [key]: value }));
   }, []);
 
+  const handleRationaleChange = useCallback((key: string, value: string) => {
+    setRationales((current) => ({ ...current, [key]: value }));
+  }, []);
+
   const handleSubmit = useCallback(() => {
     // TODO: include overallComment (feedback to author) in submission
     submitReview.mutate({
       assignmentId,
-      reviewData: values,
+      reviewData: { answers: values, rationales },
     });
-  }, [assignmentId, values, submitReview]);
+  }, [assignmentId, values, rationales, submitReview]);
 
   const handleRequestRevision = useCallback(
     (comment: string) => {
@@ -147,12 +158,14 @@ export function ReviewFormProvider({
   const state = useMemo<ReviewFormState>(
     () => ({
       values,
+      rationales,
       canSubmit: canSubmit && !isSubmitted && !isPausedForRevision,
       isSubmitting: submitReview.isPending,
       isSubmitted,
       isPausedForRevision: !!isPausedForRevision,
       revisionRequest,
       handleValueChange,
+      handleRationaleChange,
       handleSubmit,
       requestRevision: handleRequestRevision,
       cancelRevisionRequest: handleCancelRevision,
@@ -161,6 +174,7 @@ export function ReviewFormProvider({
     }),
     [
       values,
+      rationales,
       canSubmit,
       isSubmitted,
       isPausedForRevision,
@@ -169,6 +183,7 @@ export function ReviewFormProvider({
       requestRevisionMutation.isPending,
       cancelRevisionMutation.isPending,
       handleValueChange,
+      handleRationaleChange,
       handleSubmit,
       handleRequestRevision,
       handleCancelRevision,

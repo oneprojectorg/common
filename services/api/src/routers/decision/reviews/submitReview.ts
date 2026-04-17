@@ -1,12 +1,15 @@
 import { Channels, submitReview } from '@op/common';
-import { proposalReviewSchema } from '@op/common/client';
+import {
+  proposalReviewSchema,
+  rubricReviewDataSchema,
+} from '@op/common/client';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 const reviewInputSchema = z.object({
   assignmentId: z.uuid(),
-  reviewData: z.record(z.string(), z.unknown()),
+  reviewData: rubricReviewDataSchema,
   overallComment: z.string().nullable().optional(),
 });
 

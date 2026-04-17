@@ -18,7 +18,7 @@ const createCaller = createCallerFactory(appRouter);
 
 const rubricTemplate: RubricTemplateSchema = {
   type: 'object',
-  'x-field-order': ['impact', 'impact__rationale'],
+  'x-field-order': ['impact'],
   properties: {
     impact: {
       type: 'integer',
@@ -32,13 +32,8 @@ const rubricTemplate: RubricTemplateSchema = {
         { const: 3, title: 'High' },
       ],
     },
-    impact__rationale: {
-      type: 'string',
-      title: 'Why',
-      'x-format': 'long-text',
-    },
   },
-  required: ['impact', 'impact__rationale'],
+  required: ['impact'],
 };
 
 async function createAuthenticatedCaller(email: string) {
@@ -61,14 +56,18 @@ describe.concurrent('submitReview', () => {
     const result = await reviewerCaller.decision.submitReview({
       assignmentId: created.assignment.id,
       reviewData: {
-        impact: 3,
-        impact__rationale: 'Solid execution plan',
+        answers: { impact: 3 },
+        rationales: { impact: 'Solid execution plan' },
       },
       overallComment: 'Ready to move forward',
     });
 
     expect(result.state).toBe(ProposalReviewState.SUBMITTED);
     expect(result.submittedAt).toBeTruthy();
+    expect(result.reviewData.answers).toEqual({ impact: 3 });
+    expect(result.reviewData.rationales).toEqual({
+      impact: 'Solid execution plan',
+    });
 
     const assignment = await db.query.proposalReviewAssignments.findFirst({
       where: {
@@ -80,6 +79,34 @@ describe.concurrent('submitReview', () => {
     expect(assignment?.status).toBe(ProposalReviewAssignmentStatus.COMPLETED);
     expect(assignment?.completedAt).toBeTruthy();
     expect(assignment?.reviews[0]?.state).toBe(ProposalReviewState.SUBMITTED);
+    expect(assignment?.reviews[0]?.reviewData).toMatchObject({
+      answers: { impact: 3 },
+      rationales: { impact: 'Solid execution plan' },
+    });
+  });
+
+  it('accepts submissions with empty rationales', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment();
+    await testData.setRubricTemplate(created.context, rubricTemplate);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    const result = await reviewerCaller.decision.submitReview({
+      assignmentId: created.assignment.id,
+      reviewData: {
+        answers: { impact: 2 },
+        rationales: {},
+      },
+    });
+
+    expect(result.state).toBe(ProposalReviewState.SUBMITTED);
+    expect(result.reviewData.rationales).toEqual({});
   });
 
   it('rejects invalid rubric submissions', async ({ task, onTestFinished }) => {
@@ -95,7 +122,8 @@ describe.concurrent('submitReview', () => {
       reviewerCaller.decision.submitReview({
         assignmentId: created.assignment.id,
         reviewData: {
-          impact: 3,
+          answers: {},
+          rationales: {},
         },
       }),
     ).rejects.toThrow('Rubric validation failed');

@@ -8,9 +8,7 @@ export const DUMMY_RUBRIC_TEMPLATE: RubricTemplateSchema = {
   type: 'object',
   'x-field-order': [
     'innovation',
-    'innovation__rationale',
     'feasibility',
-    'feasibility__rationale',
     'meetsEligibility',
     'focusArea',
     'strengthsSummary',
@@ -32,11 +30,6 @@ export const DUMMY_RUBRIC_TEMPLATE: RubricTemplateSchema = {
         { const: 5, title: 'Excellent' },
       ],
     },
-    innovation__rationale: {
-      type: 'string',
-      title: 'Reason(s) and Insight(s)',
-      'x-format': 'long-text',
-    },
     feasibility: {
       type: 'integer',
       title: 'Feasibility',
@@ -51,11 +44,6 @@ export const DUMMY_RUBRIC_TEMPLATE: RubricTemplateSchema = {
         { const: 4, title: 'Good' },
         { const: 5, title: 'Excellent' },
       ],
-    },
-    feasibility__rationale: {
-      type: 'string',
-      title: 'Reason(s) and Insight(s)',
-      'x-format': 'long-text',
     },
     meetsEligibility: {
       type: 'string',
@@ -92,11 +80,5 @@ export const DUMMY_RUBRIC_TEMPLATE: RubricTemplateSchema = {
       'x-format': 'long-text',
     },
   },
-  required: [
-    'innovation',
-    'innovation__rationale',
-    'feasibility',
-    'feasibility__rationale',
-    'meetsEligibility',
-  ],
+  required: ['innovation', 'feasibility', 'meetsEligibility'],
 };

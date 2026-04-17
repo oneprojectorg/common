@@ -11,7 +11,11 @@ import { eq } from 'drizzle-orm';
 import { CommonError, ValidationError } from '../../utils';
 import { assertReviewAssignmentContext } from './reviewHelpers';
 import { schemaValidator } from './schemaValidator';
-import { type ProposalReview, proposalReviewSchema } from './schemas/reviews';
+import {
+  type ProposalReview,
+  type RubricReviewData,
+  proposalReviewSchema,
+} from './schemas/reviews';
 
 /** Validates and submits a review for the current reviewer. */
 export async function submitReview({
@@ -21,7 +25,7 @@ export async function submitReview({
   user,
 }: {
   assignmentId: string;
-  reviewData: Record<string, unknown>;
+  reviewData: RubricReviewData;
   overallComment?: string | null;
   user: User;
 }): Promise<ProposalReview & { processInstanceId: string }> {
@@ -41,7 +45,7 @@ export async function submitReview({
     throw new ValidationError('Rubric template not found for this assignment');
   }
 
-  schemaValidator.assertRubricData(context.rubricTemplate, reviewData);
+  schemaValidator.assertRubricData(context.rubricTemplate, reviewData.answers);
 
   const submittedAt = new Date().toISOString();
 

@@ -212,7 +212,7 @@ test.describe('Review Submit', () => {
       })
       .where(eq(processInstances.id, instance.instance.id));
 
-    await createReviewScenario({
+    const { assignment } = await createReviewScenario({
       instance: { id: instance.instance.id },
       author: {
         profileId: org.organizationProfile.id,
@@ -349,6 +349,19 @@ test.describe('Review Submit', () => {
     await page.getByRole('button', { name: 'Innovation' }).click();
     await page.getByRole('option', { name: '4 — Very Good' }).click();
 
+    // Fill Innovation's optional rationale. The textarea is collapsed behind
+    // an "Add Note" button per criterion, so open it first, then scope by
+    // section because every criterion renders an identical "Notes" textarea.
+    const innovationRationale =
+      'Highly novel approach — reuses open patterns well.';
+    const innovationSection = page
+      .locator('section')
+      .filter({ hasText: 'Innovation' });
+    await innovationSection.getByRole('button', { name: 'Add Note' }).click();
+    await innovationSection
+      .getByRole('textbox', { name: 'Notes' })
+      .fill(innovationRationale);
+
     // Still disabled — two more required criteria (Feasibility, Compliance)
     await expect(submitButton).toBeDisabled();
 
@@ -359,11 +372,15 @@ test.describe('Review Submit', () => {
     // Still disabled — Compliance is still missing
     await expect(submitButton).toBeDisabled();
 
-    // Fill third required criterion: Compliance (yes/no toggle)
+    // Fill third required criterion: Compliance (yes/no toggle). Anchor by
+    // the heading and pick the aria-pressed ToggleButton within that section,
+    // since every criterion also renders an "Add Note" button.
     await page
       .locator('section')
-      .filter({ hasText: 'Compliance' })
-      .getByRole('button')
+      .filter({
+        has: page.getByRole('heading', { name: 'Compliance', level: 4 }),
+      })
+      .locator('button[aria-pressed]')
       .click();
 
     // Still disabled — Overall Recommendation is still missing
@@ -414,5 +431,13 @@ test.describe('Review Submit', () => {
     });
     await expect(page.getByText(PROPOSAL_TITLE)).toBeVisible();
     await expect(statusBadge).toHaveText('Completed');
+
+    // Verify the rationale round-tripped to storage under the split shape.
+    const storedReview = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: assignment.id },
+    });
+    expect(storedReview?.reviewData).toMatchObject({
+      rationales: { innovation: innovationRationale },
+    });
   });
 });

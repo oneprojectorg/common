@@ -16,6 +16,24 @@ const rubricTemplateSchema = jsonObjectSchema.transform(
   (data): RubricTemplateSchema => data as RubricTemplateSchema,
 );
 
+/**
+ * Review data is split into two parallel maps keyed by criterion id:
+ *   - `answers`: validated against the rubric template
+ *   - `rationales`: always-optional free-text notes per criterion
+ *
+ * Keeping them separate keeps the template clean (no `__rationale` companion
+ * keys) and makes the storage shape describe what each half is.
+ *
+ * Inner defaults tolerate legacy/draft rows stored as `{}` — they parse to
+ * `{ answers: {}, rationales: {} }` rather than failing at the boundary.
+ */
+export const rubricReviewDataSchema = z.object({
+  answers: jsonObjectSchema.default({}),
+  rationales: z.record(z.string(), z.string()).default({}),
+});
+
+export type RubricReviewData = z.infer<typeof rubricReviewDataSchema>;
+
 // ── Review assignment schemas ───────────────────────────────────────────
 
 export const proposalReviewAssignmentSchema = z.object({
@@ -47,7 +65,7 @@ export const proposalReviewSchema = z.object({
   id: z.uuid(),
   assignmentId: z.uuid(),
   state: z.enum(ProposalReviewState),
-  reviewData: jsonObjectSchema,
+  reviewData: rubricReviewDataSchema,
   overallComment: z.string().nullable(),
   submittedAt: z.string().nullable(),
   createdAt: z.string().nullable(),

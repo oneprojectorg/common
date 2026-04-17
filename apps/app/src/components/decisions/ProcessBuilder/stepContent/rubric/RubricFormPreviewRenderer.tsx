@@ -3,12 +3,12 @@
 import type { XFormatPropertySchema } from '@op/common/client';
 import {
   isOverallRecommendationField,
-  isRationaleField,
   parseSchemaOptions,
 } from '@op/common/client';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select } from '@op/ui/Select';
 import { ToggleButton } from '@op/ui/ToggleButton';
+import { LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -38,25 +38,14 @@ function isScoredField(schema: XFormatPropertySchema): boolean {
   return schema.type === 'integer' && typeof schema.maximum === 'number';
 }
 
-/** Compact rationale textarea rendered inline under a parent criterion. */
-function RationaleField({ field }: { field: FieldDescriptor }) {
+/** Collapsed "Add Note" affordance mirroring the review form default state. */
+function RationalePlaceholder() {
   const t = useTranslations();
-  const { schema } = field;
-  const isRequired = true; // rationale fields are required when present in schema
 
   return (
-    <div className="-mt-3 flex flex-col gap-1.5">
-      <span className="text-sm font-medium text-neutral-charcoal">
-        {schema.title ?? t('Reason(s) and Insight(s)')}
-        {isRequired && (
-          <span className="text-feedback-error ml-0.5" aria-hidden="true">
-            *
-          </span>
-        )}
-      </span>
-      <div className="min-h-20 rounded-lg border border-neutral-gray2 bg-white px-3 py-2 text-sm text-neutral-gray3">
-        {t('Placeholder')}
-      </div>
+    <div className="flex items-center gap-1 px-2 py-1.5 text-base text-primary-teal">
+      <LuPlus className="size-4" />
+      {t('Add Note')}
     </div>
   );
 }
@@ -65,10 +54,6 @@ function RationaleField({ field }: { field: FieldDescriptor }) {
 function RubricField({ field }: { field: FieldDescriptor }) {
   const t = useTranslations();
   const { format, schema } = field;
-
-  if (isRationaleField(field.key)) {
-    return <RationaleField field={field} />;
-  }
 
   // Horizontal radio group for the overall recommendation field.
   if (isOverallRecommendationField(field.key)) {
@@ -164,6 +149,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
 /**
  * Static read-only preview of rubric fields.
  * Shows field labels and placeholder inputs — no interactivity.
+ * Rationale placeholder is rendered under every criterion.
  */
 export function RubricFormPreviewRenderer({
   fields,
@@ -173,7 +159,10 @@ export function RubricFormPreviewRenderer({
   return (
     <div className="pointer-events-none flex flex-col gap-6">
       {fields.map((field) => (
-        <RubricField key={field.key} field={field} />
+        <div key={field.key} className="flex flex-col gap-4">
+          <RubricField field={field} />
+          <RationalePlaceholder />
+        </div>
       ))}
     </div>
   );

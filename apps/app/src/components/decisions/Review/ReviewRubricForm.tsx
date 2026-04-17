@@ -42,7 +42,14 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
   const t = useTranslations();
   const fields = compileRubricSchema(template);
   const criteria = getCriteria(template);
-  const { values, handleValueChange, isPausedForRevision } = useReviewForm();
+  const {
+    values,
+    rationales,
+    handleValueChange,
+    handleRationaleChange,
+    isPausedForRevision,
+  } = useReviewForm();
+
   const [feedbackToAuthor, setFeedbackToAuthor] = useState('');
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -111,6 +118,15 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
               maxPoints={getCriterionMaxPoints(template, field.key) ?? 0}
               value={values[field.key]}
               onChange={(value) => handleValueChange(field.key, value)}
+              rationaleValue={rationales[field.key] ?? ''}
+              onRationaleChange={(value) =>
+                handleRationaleChange(field.key, value)
+              }
+              rationalePlaceholder={
+                isOverallRecommendationField(field.key)
+                  ? t('Add overall notes...')
+                  : t('Add reasons or insights...')
+              }
             />
           ))}
 
@@ -162,18 +178,24 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
 }
 
 /**
- * Render one rubric criterion using plain `@op/ui` inputs.
+ * Render one rubric criterion with an always-on rationale textarea below.
  */
 function RubricCriterionSection({
   field,
   maxPoints,
   value,
   onChange,
+  rationaleValue,
+  onRationaleChange,
+  rationalePlaceholder,
 }: {
   field: FieldDescriptor;
   maxPoints: number;
   value: unknown;
   onChange: (value: unknown) => void;
+  rationaleValue: string;
+  onRationaleChange: (value: string) => void;
+  rationalePlaceholder: string;
 }) {
   const t = useTranslations();
   const criterionType = inferCriterionType(field.schema);
@@ -209,7 +231,59 @@ function RubricCriterionSection({
           <RubricFieldInput field={field} value={value} onChange={onChange} />
         </>
       )}
+
+      <RubricRationaleField
+        value={rationaleValue}
+        onChange={onRationaleChange}
+        placeholder={rationalePlaceholder}
+      />
     </section>
+  );
+}
+
+/**
+ * Optional long-text note under each criterion: collapsed behind an
+ * "Add Note" button until the reviewer opens it (or a value already exists).
+ */
+function RubricRationaleField({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
+  const t = useTranslations();
+  const [isOpen, setIsOpen] = useState(value.length > 0);
+
+  if (!isOpen) {
+    return (
+      <Button
+        variant="link"
+        size="inline"
+        className="flex items-center px-2 py-1.5 leading-normal text-primary-tealBlack"
+        onPress={() => setIsOpen(true)}
+      >
+        <LuPlus className="size-4" />
+        {t('Add Note')}
+      </Button>
+    );
+  }
+
+  const label = t('Notes');
+
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-sm text-neutral-black">{label}</span>
+      <TextField
+        aria-label={label}
+        value={value}
+        onChange={onChange}
+        useTextArea
+        textareaProps={{ placeholder, rows: 3, className: 'min-h-20' }}
+      />
+    </div>
   );
 }
 
