@@ -12,7 +12,8 @@ import {
 } from '@op/db/schema';
 import { type UserWithRoles, getGlobalPermissions } from 'access-zones';
 
-import { getNormalizedRoles } from '../access';
+import { UnauthorizedError } from '../../utils/error';
+import { getNormalizedRoles, getOrgAccessUser } from '../access';
 import { assertGlobalRole } from '../assert/assertGlobalRole';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { AllowListUser, allowListMetadataSchema } from './validators';
@@ -493,6 +494,15 @@ export const switchUserOrganization = async (
 
   if (!organization) {
     throw new Error('Organization not found');
+  }
+
+  const orgUser = await getOrgAccessUser({
+    user: { id: authUserId },
+    organizationId,
+  });
+
+  if (!orgUser) {
+    throw new UnauthorizedError('Not a member of this organization');
   }
 
   const result = await db

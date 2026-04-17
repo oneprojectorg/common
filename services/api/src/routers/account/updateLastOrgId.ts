@@ -28,6 +28,12 @@ export const switchOrganization = router({
         });
 
         if (error instanceof Error) {
+          if (error.name === 'UnauthorizedError') {
+            throw new TRPCError({
+              code: 'UNAUTHORIZED',
+              message: error.message,
+            });
+          }
           if (error.message === 'Organization not found') {
             throw new TRPCError({
               code: 'NOT_FOUND',
