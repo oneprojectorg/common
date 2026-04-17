@@ -2,6 +2,7 @@
 
 import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
 import { useUser } from '@/utils/UserProvider';
+import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import {
   type Proposal,
@@ -26,11 +27,15 @@ import { RevisedOnBadge } from './Review/AuthorRevisionNote';
 import { TranslateBanner } from './TranslateBanner';
 import { proposalEditorReviewRevisionParser } from './proposalEditor/proposalEditorAsideParams';
 
+type Instance = RouterOutput['decision']['getInstance'];
+
 export function ProposalView({
   proposal: initialProposal,
+  instance,
   backHref,
 }: {
   proposal: Proposal;
+  instance: Instance;
   backHref: string;
 }) {
   const t = useTranslations();
@@ -66,25 +71,36 @@ export function ProposalView({
     ? `${backHref}/proposal/${currentProposal.profileId}/edit`
     : undefined;
 
-  // Revision request toggle. Visibility is enforced server-side
-  // (listProposalRevisionRequests throws UnauthorizedError for users who
-  // aren't the author, an assigned reviewer, or a decision admin), so `data`
-  // is undefined for those users and the toggle never renders.
   const [{ reviewRevision }, setQueryState] = useQueryStates({
     reviewRevision: proposalEditorReviewRevisionParser,
   });
 
+  // Mirror the server-side authorization in listProposalRevisionRequests:
+  // fetch only when the current phase has review capability and the user is
+  // the author, a decision admin, or has the REVIEW capability on the
+  // instance. Everyone else skips the request entirely.
+  const currentPhase = instance.instanceData?.phases?.find(
+    (phase) => phase.phaseId === instance.currentStateId,
+  );
+  const isInReviewPhase = currentPhase?.rules?.proposals?.review === true;
+  const isAuthor =
+    currentProposal.submittedBy?.id === user.currentProfile?.id &&
+    !!user.currentProfile?.id;
+  const canSeeRevisions =
+    isInReviewPhase &&
+    (isAuthor ||
+      instance.access?.admin === true ||
+      instance.access?.review === true);
+
   // The view panel is "Revision submitted" — only surface entries the author
   // has already responded to. Pending requests are handled by the editor.
-  // `retry: false` keeps the expected 401 for users outside the author /
-  // admin / reviewer set from triggering repeat requests.
   const { data: revisionData } =
     trpc.decision.listProposalRevisionRequests.useQuery(
       {
         proposalId: currentProposal.id,
         states: [ProposalReviewRequestState.RESUBMITTED],
       },
-      { retry: false },
+      { enabled: canSeeRevisions },
     );
 
   const submittedRevisions = revisionData?.revisionRequests ?? [];

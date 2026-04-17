@@ -25,6 +25,10 @@ function ProposalViewPageContent({
     notFound();
   }
 
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
+    instanceId: proposal.processInstanceId,
+  });
+
   const ownerSlug = decisionProfile?.processInstance?.owner?.slug;
   const instanceId = decisionProfile?.processInstance?.id;
 
@@ -33,7 +37,9 @@ function ProposalViewPageContent({
       ? `/profile/${ownerSlug}/decisions/${instanceId}/`
       : `/decisions/${slug}`;
 
-  return <ProposalView proposal={proposal} backHref={backHref} />;
+  return (
+    <ProposalView proposal={proposal} instance={instance} backHref={backHref} />
+  );
 }
 
 function ProposalViewPageSkeleton() {

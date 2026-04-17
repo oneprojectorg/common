@@ -1,14 +1,18 @@
+import { db, eq } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
+  processInstances,
 } from '@op/db/schema';
 import {
   type CreateOrganizationResult,
+  type DecisionSchemaDefinition,
   createDecisionInstance,
   createInstanceMember,
   createOrganization,
   createReviewScenario,
   getSeededTemplate,
+  grantInstanceReviewerRole,
 } from '@op/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -22,10 +26,52 @@ import {
 const REQUEST_COMMENT = 'Please add a detailed budget breakdown.';
 
 /**
- * Builds a decision instance with a proposal that has a RESUBMITTED revision
- * request, plus three fresh users outside the worker org: an author, a
- * reviewer assigned to the proposal, and an outsider with no instance access.
- * The worker's org admin is the decision admin (via createDecisionInstance).
+ * Schema with a submission → review → results layout where the review phase
+ * has the `proposals.review: true` rule. Required for the proposal view's
+ * `isInReviewPhase` gate to unlock the revision-submitted panel.
+ */
+const REVIEW_PHASE_SCHEMA = {
+  id: 'proposal-view-revision-schema',
+  version: '1.0.0',
+  name: 'Proposal View Revision Schema',
+  description: 'Test schema with a review-capable middle phase',
+  phases: [
+    {
+      id: 'submission',
+      name: 'Submission',
+      description: 'Submit proposals',
+      rules: {
+        proposals: { submit: true },
+        advancement: { method: 'manual' as const },
+      },
+    },
+    {
+      id: 'review',
+      name: 'Review',
+      description: 'Review proposals',
+      rules: {
+        proposals: { review: true },
+        advancement: { method: 'manual' as const },
+      },
+    },
+    {
+      id: 'results',
+      name: 'Results',
+      description: 'Final results',
+      rules: {
+        proposals: { submit: false },
+        advancement: { method: 'manual' as const },
+      },
+    },
+  ],
+} satisfies DecisionSchemaDefinition;
+
+/**
+ * Builds a decision instance (advanced to the review phase) with a proposal
+ * that has a RESUBMITTED revision request, plus three fresh users outside
+ * the worker org: an author, a reviewer with the REVIEW role on the
+ * instance, and an outsider with no instance access. The worker's org admin
+ * is the decision admin (via createDecisionInstance).
  */
 async function setupRevisionScenario({
   org,
@@ -43,8 +89,15 @@ async function setupRevisionScenario({
     ownerProfileId: org.organizationProfile.id,
     authUserId: org.adminUser.authUserId,
     email: org.adminUser.email,
-    schema: template.processSchema,
+    schema: REVIEW_PHASE_SCHEMA,
   });
+
+  // Advance to the review phase so the proposal view's review-phase gate
+  // unlocks. `createDecisionInstance` starts in the first phase by default.
+  await db
+    .update(processInstances)
+    .set({ currentStateId: 'review' })
+    .where(eq(processInstances.id, instance.instance.id));
 
   const { user: author } = await createInstanceMember({
     supabaseAdmin,
@@ -55,6 +108,15 @@ async function setupRevisionScenario({
     supabaseAdmin,
     testId: `${testId}-reviewer`,
     instanceProfileId: instance.profileId,
+  });
+  // Grant the reviewer the REVIEW capability on the instance. Mirrors
+  // production — the server now authorizes reviewers by the instance-level
+  // REVIEW bit, not by proposal assignment membership.
+  await grantInstanceReviewerRole({
+    instanceProfileId: instance.profileId,
+    authUserId: reviewer.authUserId,
+    email: reviewer.email,
+    roleName: `Reviewer-${testId}`,
   });
   const outsiderOrg = await createOrganization({
     testId: `${testId}-outsider`,
@@ -146,7 +208,7 @@ test.describe('Proposal View — revision submitted panel', () => {
     await expect(page.getByText(REQUEST_COMMENT)).toBeVisible();
   });
 
-  test('an assigned reviewer sees the revision submitted panel', async ({
+  test('a reviewer with the REVIEW role sees the revision submitted panel', async ({
     browser,
     org,
     supabaseAdmin,

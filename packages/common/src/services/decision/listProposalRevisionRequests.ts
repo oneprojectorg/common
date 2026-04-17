@@ -9,9 +9,9 @@ import { proposalWithRevisionRequestsConfig } from './reviewHelpers';
 
 /**
  * Proposal-scoped: revision requests on a single proposal. Visible to the
- * proposal author, any reviewer assigned to this proposal, and decision
- * admins. Other instance participants (voters, plain members with READ)
- * are rejected — revision feedback is reviewer-scoped.
+ * proposal author, decision admins, and any user with the REVIEW capability
+ * on the instance. Other instance participants (voters, plain members with
+ * READ) are rejected — revision feedback is reviewer-scoped.
  *
  * For the author's cross-proposal inbox, use listProposalsRevisionRequests.
  */
@@ -45,21 +45,8 @@ export async function listProposalRevisionRequests({
   });
 
   const isAuthor = proposal.submittedByProfileId === commonUser.profileId;
-  const isAdmin = instance.access.admin;
 
-  let isReviewer = false;
-  if (!isAuthor && !isAdmin) {
-    const assignment = await db.query.proposalReviewAssignments.findFirst({
-      columns: { id: true },
-      where: {
-        proposalId: proposal.id,
-        reviewerProfileId: commonUser.profileId,
-      },
-    });
-    isReviewer = !!assignment;
-  }
-
-  if (!isAuthor && !isAdmin && !isReviewer) {
+  if (!isAuthor && !instance.access.admin && !instance.access.review) {
     throw new UnauthorizedError(
       "You don't have access to this proposal's revision requests",
     );
