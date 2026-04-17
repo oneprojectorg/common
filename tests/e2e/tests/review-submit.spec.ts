@@ -2,20 +2,15 @@ import type {
   DecisionSchemaDefinition,
   RubricTemplateSchema,
 } from '@op/common';
-import { ProposalStatus, processInstances, proposals } from '@op/db/schema';
+import { processInstances } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import {
   createDecisionInstance,
-  createProposal,
-  createReviewAssignment,
+  createReviewScenario,
   getSeededTemplate,
 } from '@op/test';
 
 import { expect, test } from '../fixtures/index.js';
-
-// Mirrors OVERALL_RECOMMENDATION_KEY from @op/common/client. Inlined to
-// sidestep CJS/ESM interop when loading @op/common from the e2e runner.
-const OVERALL_RECOMMENDATION_KEY = '__overall_recommendation';
 
 /**
  * Schema with a review phase that has `proposals.review: true` so the
@@ -73,13 +68,12 @@ const REVIEW_SCHEMA = {
 } satisfies DecisionSchemaDefinition;
 
 /**
- * Rubric template with six criteria — four required and two optional.
+ * Rubric template with five criteria — three required and two optional.
  *
  * Required:
- *  - innovation:               scored integer dropdown (1–5)
- *  - compliance:               yes/no toggle
- *  - feasibility:              scored integer dropdown (1–3)
- *  - __overall_recommendation: horizontal radio group (Yes/Maybe/No)
+ *  - innovation:  scored integer dropdown (1–5)
+ *  - compliance:  yes/no toggle
+ *  - feasibility: scored integer dropdown (1–3)
  *
  * Optional:
  *  - feedback:    long-text textarea
@@ -89,24 +83,16 @@ const REVIEW_SCHEMA = {
  *  - Submit is disabled until all *required* criteria are filled
  *  - Submit is enabled even when optional criteria are left empty
  *  - Total score sums only scored criteria that have values
- *  - Overall Recommendation renders as a radio group and is excluded
- *    from the total score
  */
 const RUBRIC_TEMPLATE = {
   type: 'object',
-  required: [
-    'innovation',
-    'compliance',
-    'feasibility',
-    OVERALL_RECOMMENDATION_KEY,
-  ],
+  required: ['innovation', 'compliance', 'feasibility'],
   'x-field-order': [
     'innovation',
     'feasibility',
     'compliance',
     'methodology',
     'feedback',
-    OVERALL_RECOMMENDATION_KEY,
   ],
   properties: {
     innovation: {
@@ -164,16 +150,6 @@ const RUBRIC_TEMPLATE = {
       description: 'Provide written feedback on the proposal.',
       'x-format': 'long-text',
     },
-    [OVERALL_RECOMMENDATION_KEY]: {
-      type: 'string',
-      title: 'Overall Recommendation',
-      'x-format': 'dropdown',
-      oneOf: [
-        { const: 'yes', title: 'Yes' },
-        { const: 'maybe', title: 'Maybe' },
-        { const: 'no', title: 'No' },
-      ],
-    },
   },
 } as const satisfies RubricTemplateSchema;
 
@@ -213,27 +189,18 @@ test.describe('Review Submit', () => {
       })
       .where(eq(processInstances.id, instance.instance.id));
 
-    const proposal = await createProposal({
-      processInstanceId: instance.instance.id,
-      submittedByProfileId: org.organizationProfile.id,
-      authUserId: org.adminUser.authUserId,
-      email: org.adminUser.email,
+    await createReviewScenario({
+      instance: { id: instance.instance.id },
+      author: {
+        profileId: org.organizationProfile.id,
+        authUserId: org.adminUser.authUserId,
+        email: org.adminUser.email,
+      },
+      reviewer: { profileId: org.adminUser.profileId },
       proposalData: {
         title: PROPOSAL_TITLE,
         collaborationDocId: 'test-proposal-view-doc',
       },
-    });
-
-    // UPDATE to SUBMITTED so the AFTER UPDATE trigger creates a history snapshot.
-    await db
-      .update(proposals)
-      .set({ status: ProposalStatus.SUBMITTED })
-      .where(eq(proposals.id, proposal.id));
-
-    await createReviewAssignment({
-      processInstanceId: instance.instance.id,
-      proposalId: proposal.id,
-      reviewerProfileId: org.adminUser.profileId,
     });
 
     await new Promise((resolve) => setTimeout(resolve, 600));
@@ -376,24 +343,11 @@ test.describe('Review Submit', () => {
       .getByRole('button')
       .click();
 
-    // Still disabled — Overall Recommendation is still missing
-    await expect(submitButton).toBeDisabled();
-
-    // Fill fourth required criterion: Overall Recommendation (horizontal
-    // radio group with Yes/Maybe/No). React Aria renders the underlying
-    // <input type="radio"> as sr-only, so click the visible label text.
-    const overallRecGroup = page.getByRole('radiogroup', {
-      name: 'Overall Recommendation',
-    });
-    await expect(overallRecGroup).toBeVisible();
-    await overallRecGroup.getByText('Yes', { exact: true }).click();
-
     // All required criteria are filled — submit should be enabled even though
     // the optional criteria (Methodology, Qualitative Feedback) are empty.
     await expect(submitButton).toBeEnabled();
 
-    // Total score = Innovation (4) + Feasibility (2) = 6. Overall
-    // Recommendation is excluded from scoring.
+    // Total score = Innovation (4) + Feasibility (2) = 6
     const totalScoreContainer = page
       .getByText('Total Score')
       .first()

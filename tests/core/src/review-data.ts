@@ -2,12 +2,16 @@ import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
   ProposalReviewState,
+  ProposalStatus,
   decisionProcesses,
   proposalReviewAssignments,
   proposalReviewRequests,
   proposalReviews,
+  proposals,
 } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
+
+import { type CreateProposalResult, createProposal } from './decision-data';
 
 export interface ReviewSettings {
   reviewsPolicy: 'full_coverage';
@@ -167,6 +171,94 @@ export async function createProposalReview(
   }
 
   return review;
+}
+
+export interface CreateReviewScenarioOptions {
+  /** Decision instance the proposal lives in */
+  instance: { id: string };
+  /** Proposal author */
+  author: {
+    profileId: string;
+    authUserId: string;
+    email: string;
+  };
+  /** Reviewer assigned to the proposal */
+  reviewer: { profileId: string };
+  /** Proposal content — defaults to a minimal title-only payload */
+  proposalData?: Parameters<typeof createProposal>[0]['proposalData'];
+  /** Assignment status (defaults to PENDING) */
+  assignmentStatus?: ProposalReviewAssignmentStatus;
+  /** Phase ID the assignment belongs to (defaults to 'review') */
+  phaseId?: string;
+  /**
+   * If provided, also create a revision request on the assignment.
+   * Mirrors `CreateRevisionRequestOptions` minus assignmentId.
+   */
+  revisionRequest?: {
+    state?: ProposalReviewRequestState;
+    requestComment?: string;
+    requestedProposalHistoryId?: string | null;
+    respondedProposalHistoryId?: string | null;
+  };
+}
+
+export interface CreateReviewScenarioResult {
+  proposal: CreateProposalResult;
+  assignedProposalHistoryId: string;
+  assignment: typeof proposalReviewAssignments.$inferSelect;
+  revisionRequest?: typeof proposalReviewRequests.$inferSelect;
+}
+
+/**
+ * Composite helper that creates the full proposal → SUBMITTED → history →
+ * review assignment chain (and optionally a revision request on top). The
+ * AFTER UPDATE trigger on proposals writes a history row when the status
+ * moves to SUBMITTED; we read the history ID back so the assignment is
+ * anchored to a real snapshot.
+ */
+export async function createReviewScenario(
+  opts: CreateReviewScenarioOptions,
+): Promise<CreateReviewScenarioResult> {
+  const proposal = await createProposal({
+    processInstanceId: opts.instance.id,
+    submittedByProfileId: opts.author.profileId,
+    authUserId: opts.author.authUserId,
+    email: opts.author.email,
+    proposalData: opts.proposalData ?? { title: 'Community Garden Expansion' },
+  });
+
+  await db
+    .update(proposals)
+    .set({ status: ProposalStatus.SUBMITTED })
+    .where(eq(proposals.id, proposal.id));
+  proposal.status = ProposalStatus.SUBMITTED;
+
+  const assignedProposalHistoryId = await getLatestProposalHistoryId({
+    proposalId: proposal.id,
+  });
+
+  const assignment = await createReviewAssignment({
+    processInstanceId: opts.instance.id,
+    proposalId: proposal.id,
+    reviewerProfileId: opts.reviewer.profileId,
+    phaseId: opts.phaseId,
+    assignedProposalHistoryId,
+    status: opts.assignmentStatus ?? ProposalReviewAssignmentStatus.PENDING,
+  });
+
+  const revisionRequest = opts.revisionRequest
+    ? await createRevisionRequest({
+        assignmentId: assignment.id,
+        state: opts.revisionRequest.state,
+        requestComment: opts.revisionRequest.requestComment,
+        requestedProposalHistoryId:
+          opts.revisionRequest.requestedProposalHistoryId ?? null,
+        respondedProposalHistoryId:
+          opts.revisionRequest.respondedProposalHistoryId ?? null,
+      })
+    : undefined;
+
+  return { proposal, assignedProposalHistoryId, assignment, revisionRequest };
 }
 
 /** Creates a revision request row for a review assignment. */

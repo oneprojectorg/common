@@ -15,7 +15,14 @@ import {
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { db, eq } from '@op/db/test';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'node:crypto';
+
+import {
+  type CreateOrganizationResult,
+  type GeneratedUser,
+  createOrganization,
+} from './test-data';
 
 /** Well-known slug for the seeded decision template profile */
 export const SEEDED_TEMPLATE_PROFILE_SLUG = 'decision-template-library';
@@ -377,6 +384,46 @@ export async function grantDecisionProfileAccess(
       accessRoleId: isAdmin ? ROLES.ADMIN.id : ROLES.MEMBER.id,
     });
   }
+}
+
+export interface CreateInstanceMemberOptions {
+  supabaseAdmin: SupabaseClient;
+  /** Unique identifier appended to the generated org name/emails */
+  testId: string;
+  /** Instance profile ID to grant access to */
+  instanceProfileId: string;
+  /** Grant admin role on the instance profile (default: false = member) */
+  isAdmin?: boolean;
+}
+
+export interface CreateInstanceMemberResult {
+  user: GeneratedUser;
+  organization: CreateOrganizationResult;
+}
+
+/**
+ * Creates a fresh throwaway organization with a single admin user, then
+ * grants them access to an existing decision instance profile. Useful for
+ * tests that need multiple distinct users (author / reviewer / member) on
+ * the same instance without polluting the worker's default org.
+ */
+export async function createInstanceMember(
+  opts: CreateInstanceMemberOptions,
+): Promise<CreateInstanceMemberResult> {
+  const organization = await createOrganization({
+    testId: opts.testId,
+    supabaseAdmin: opts.supabaseAdmin,
+    users: { admin: 1, member: 0 },
+  });
+
+  await grantDecisionProfileAccess({
+    profileId: opts.instanceProfileId,
+    authUserId: organization.adminUser.authUserId,
+    email: organization.adminUser.email,
+    isAdmin: opts.isAdmin ?? false,
+  });
+
+  return { user: organization.adminUser, organization };
 }
 
 /**
