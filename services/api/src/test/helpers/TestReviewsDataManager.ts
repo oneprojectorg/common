@@ -131,20 +131,20 @@ export class TestReviewsDataManager {
       throw new Error('Supabase admin test client not initialized');
     }
 
-    const member = await coreCreateInstanceMember({
+    const { user } = await coreCreateInstanceMember({
       supabaseAdmin: supabaseTestAdminClient,
       testId: this.testId,
       organization: { id: context.organization.id },
       instanceProfileId: context.instance.profileId,
     });
 
-    this.decisions.trackAuthUserForCleanup(member.authUserId);
-    this.decisions.trackProfileForCleanup(member.profileId);
+    this.decisions.trackAuthUserForCleanup(user.authUserId);
+    this.decisions.trackProfileForCleanup(user.profileId);
 
     return {
-      authUserId: member.authUserId,
-      email: member.email,
-      profileId: member.profileId,
+      authUserId: user.authUserId,
+      email: user.email,
+      profileId: user.profileId,
     };
   }
 

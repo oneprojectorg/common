@@ -21,6 +21,7 @@ import { randomUUID } from 'node:crypto';
 
 import {
   addUserToOrganization,
+  createOrganization,
   createUser,
   generateTestEmail,
 } from './test-data';
@@ -391,8 +392,12 @@ export interface CreateInstanceMemberOptions {
   supabaseAdmin: SupabaseClient;
   /** Unique identifier appended to the generated email */
   testId: string;
-  /** Existing organization the new user will join */
-  organization: { id: string };
+  /**
+   * Existing organization the new user will join. Omit to create a fresh
+   * throwaway organization (useful for e2e tests that want a user entirely
+   * outside the worker org).
+   */
+  organization?: { id: string };
   /** Decision instance profile to grant access on */
   instanceProfileId: string;
   /**
@@ -401,21 +406,32 @@ export interface CreateInstanceMemberOptions {
    * non-admin participants cannot see reviewer-scoped data.
    */
   isInstanceAdmin?: boolean;
-  /** Role within the organization. Defaults to Member. */
+  /**
+   * Role within the *existing* organization. Ignored when `organization` is
+   * omitted — the throwaway path creates the user as that org's admin.
+   * Defaults to Member.
+   */
   organizationRole?: 'Admin' | 'Member';
 }
 
 export interface CreateInstanceMemberResult {
-  authUserId: string;
-  email: string;
-  profileId: string;
-  organizationUserId: string;
+  user: {
+    authUserId: string;
+    email: string;
+    profileId: string;
+    organizationUserId: string;
+  };
+  /** The organization the user belongs to (existing or freshly created). */
+  organization: { id: string };
 }
 
 /**
- * Creates a user, adds them to an existing organization, and grants them
- * access on a decision instance profile. Defaults to Member on both — the
- * caller ends up with READ on the decisions zone but no REVIEW / ADMIN.
+ * Creates a user and grants them access on a decision instance profile.
+ * If `organization` is supplied, the user is added there; otherwise a
+ * fresh throwaway org is created with the user as its admin.
+ *
+ * Defaults to Member on the instance profile — the caller ends up with
+ * READ on the decisions zone but no REVIEW / ADMIN.
  */
 export async function createInstanceMember(
   opts: CreateInstanceMemberOptions,
@@ -429,37 +445,65 @@ export async function createInstanceMember(
     organizationRole = 'Member',
   } = opts;
 
-  const email = generateTestEmail(testId, organizationRole);
-  const authUser = await createUser({ supabaseAdmin, email });
+  if (organization) {
+    const email = generateTestEmail(testId, organizationRole);
+    const authUser = await createUser({ supabaseAdmin, email });
 
-  const [userRecord] = await db
-    .select()
-    .from(users)
-    .where(eq(users.authUserId, authUser.id));
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.authUserId, authUser.id));
 
-  if (!userRecord?.profileId) {
-    throw new Error(`Failed to find user record for ${email}`);
+    if (!userRecord?.profileId) {
+      throw new Error(`Failed to find user record for ${email}`);
+    }
+
+    const orgUser = await addUserToOrganization({
+      authUserId: authUser.id,
+      organizationId: organization.id,
+      email,
+      role: organizationRole,
+    });
+
+    await grantDecisionProfileAccess({
+      profileId: instanceProfileId,
+      authUserId: authUser.id,
+      email,
+      isAdmin: isInstanceAdmin,
+    });
+
+    return {
+      user: {
+        authUserId: authUser.id,
+        email,
+        profileId: userRecord.profileId,
+        organizationUserId: orgUser.id,
+      },
+      organization: { id: organization.id },
+    };
   }
 
-  const orgUser = await addUserToOrganization({
-    authUserId: authUser.id,
-    organizationId: organization.id,
-    email,
-    role: organizationRole,
+  const createdOrg = await createOrganization({
+    testId,
+    supabaseAdmin,
+    users: { admin: 1, member: 0 },
   });
 
   await grantDecisionProfileAccess({
     profileId: instanceProfileId,
-    authUserId: authUser.id,
-    email,
+    authUserId: createdOrg.adminUser.authUserId,
+    email: createdOrg.adminUser.email,
     isAdmin: isInstanceAdmin,
   });
 
   return {
-    authUserId: authUser.id,
-    email,
-    profileId: userRecord.profileId,
-    organizationUserId: orgUser.id,
+    user: {
+      authUserId: createdOrg.adminUser.authUserId,
+      email: createdOrg.adminUser.email,
+      profileId: createdOrg.adminUser.profileId,
+      organizationUserId: createdOrg.adminUser.organizationUserId,
+    },
+    organization: { id: createdOrg.organization.id },
   };
 }
 
