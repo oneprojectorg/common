@@ -167,7 +167,9 @@ test.describe('Non-reviewer review-phase view', () => {
     await expect(memberPage.getByText('Proposals to review')).toHaveCount(0);
 
     // Member owns exactly one proposal in the list → one Revise button + one badge
-    const reviseLink = memberPage.getByRole('link', { name: 'Revise proposal' });
+    const reviseLink = memberPage.getByRole('link', {
+      name: 'Revise proposal',
+    });
     await expect(reviseLink).toHaveCount(1);
     await expect(reviseLink).toHaveAttribute(
       'href',
@@ -176,9 +178,9 @@ test.describe('Non-reviewer review-phase view', () => {
     await expect(memberPage.getByText('Revision requested')).toHaveCount(1);
 
     // Non-owned proposal gets Like + Follow
-    await expect(
-      memberPage.getByRole('button', { name: 'Like' }),
-    ).toHaveCount(1);
+    await expect(memberPage.getByRole('button', { name: 'Like' })).toHaveCount(
+      1,
+    );
     await expect(
       memberPage.getByRole('button', { name: 'Follow' }),
     ).toHaveCount(1);
@@ -209,9 +211,9 @@ test.describe('Non-reviewer review-phase view', () => {
     });
 
     // Admin path renders ReviewAssignmentsList (not the non-reviewer grid)
-    await expect(authenticatedPage.getByText('Proposals to review')).toBeVisible(
-      { timeout: 36_000 },
-    );
+    await expect(
+      authenticatedPage.getByText('Proposals to review'),
+    ).toBeVisible({ timeout: 36_000 });
     await expect(
       authenticatedPage.getByRole('link', { name: 'Revise proposal' }),
     ).toHaveCount(0);
