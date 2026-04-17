@@ -2,13 +2,16 @@ import { db } from '@op/db/client';
 import type { ProposalReviewRequestState } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
-import { UnauthorizedError } from '../../utils';
+import { NotFoundError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
+import { getInstance } from './getInstance';
 
-export async function listProposalsRevisionRequests({
+export async function listProposalRevisionRequests({
+  proposalId,
   states,
   user,
 }: {
+  proposalId: string;
   states?: ProposalReviewRequestState[];
   user: User;
 }) {
@@ -18,8 +21,8 @@ export async function listProposalsRevisionRequests({
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  const proposals = await db.query.proposals.findMany({
-    where: { submittedByProfileId: commonUser.profileId },
+  const proposal = await db.query.proposals.findFirst({
+    where: { id: proposalId },
     with: {
       submittedBy: {
         with: {
@@ -52,21 +55,24 @@ export async function listProposalsRevisionRequests({
     },
   });
 
-  const revisionRequests = proposals.flatMap((proposal) => {
-    const decisionProfileSlug = proposal.processInstance.profile?.slug ?? '';
+  if (!proposal) {
+    throw new NotFoundError('Proposal not found');
+  }
 
-    return proposal.reviewAssignments.flatMap((assignment) =>
-      assignment.requests.map((request) => ({
-        revisionRequest: request,
-        proposal,
-        decisionProfileSlug,
-      })),
-    );
-  });
+  await getInstance({ instanceId: proposal.processInstanceId, user });
 
-  const processInstanceIds = Array.from(
-    new Set(proposals.map((proposal) => proposal.processInstanceId)),
+  const decisionProfileSlug = proposal.processInstance.profile?.slug ?? '';
+
+  const revisionRequests = proposal.reviewAssignments.flatMap((assignment) =>
+    assignment.requests.map((request) => ({
+      revisionRequest: request,
+      proposal,
+      decisionProfileSlug,
+    })),
   );
 
-  return { revisionRequests, processInstanceIds };
+  return {
+    revisionRequests,
+    processInstanceId: proposal.processInstanceId,
+  };
 }

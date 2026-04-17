@@ -2,7 +2,10 @@
 
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
-import type { ProposalRevisionRequestItem } from '@op/common/client';
+import {
+  ProposalReviewRequestState,
+  type ProposalRevisionRequestItem,
+} from '@op/common/client';
 import { getTextPreview } from '@op/core';
 import { Button, ButtonLink } from '@op/ui/Button';
 import {
@@ -31,7 +34,9 @@ const ActiveDecisionsNotificationsSuspense = () => {
         status: [ProcessStatus.PUBLISHED],
         limit: 10,
       }),
-      t.decision.listProposalsRevisionRequests({}),
+      t.decision.listProposalsRevisionRequests({
+        states: [ProposalReviewRequestState.REQUESTED],
+      }),
     ],
   );
 

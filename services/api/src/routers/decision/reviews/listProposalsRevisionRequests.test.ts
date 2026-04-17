@@ -61,46 +61,6 @@ describe.concurrent('listProposalsRevisionRequests', () => {
     expect(result.revisionRequests[0]?.decisionProfileSlug).toBeTruthy();
   });
 
-  it('filters by proposalId when provided', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const first = await testData.createReviewAssignment({
-      title: 'First Proposal',
-      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
-    });
-
-    const second = await testData.createReviewAssignment({
-      context: first.context,
-      author: first.author,
-      title: 'Second Proposal',
-      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
-    });
-
-    await Promise.all([
-      createRevisionRequest({
-        assignmentId: first.assignment.id,
-        requestComment: 'Fix first proposal',
-      }),
-      createRevisionRequest({
-        assignmentId: second.assignment.id,
-        requestComment: 'Fix second proposal',
-      }),
-    ]);
-
-    const authorCaller = await createAuthenticatedCaller(first.author.email);
-    const result = await authorCaller.decision.listProposalsRevisionRequests({
-      proposalId: first.proposal.id,
-    });
-
-    expect(result.revisionRequests).toHaveLength(1);
-    expect(result.revisionRequests[0]?.proposal.id).toBe(first.proposal.id);
-    expect(result.revisionRequests[0]?.proposal.proposalData.title).toBe(
-      'First Proposal',
-    );
-  });
-
   it('returns empty list when no revision requests exist', async ({
     task,
     onTestFinished,
@@ -144,9 +104,9 @@ describe.concurrent('listProposalsRevisionRequests', () => {
     });
 
     const authorCaller = await createAuthenticatedCaller(created.author.email);
-    const result = await authorCaller.decision.listProposalsRevisionRequests(
-      {},
-    );
+    const result = await authorCaller.decision.listProposalsRevisionRequests({
+      states: [ProposalReviewRequestState.REQUESTED],
+    });
 
     expect(result.revisionRequests).toHaveLength(0);
   });

@@ -6,6 +6,7 @@ import type { ProcessInstance } from '@op/api/encoders';
 import {
   type Proposal,
   type ProposalReviewRequest,
+  ProposalReviewRequestState,
   getProposalFragmentNames,
   parseProposalData,
 } from '@op/common/client';
@@ -80,8 +81,9 @@ export default function ProposalEditorLayout({
   const { user } = useUser();
 
   const [{ revisionRequests }] =
-    trpc.decision.listProposalsRevisionRequests.useSuspenseQuery({
+    trpc.decision.listProposalRevisionRequests.useSuspenseQuery({
       proposalId: proposal.id,
+      states: [ProposalReviewRequestState.REQUESTED],
     });
 
   const revisionRequest: ProposalReviewRequest | null = reviewRevision
