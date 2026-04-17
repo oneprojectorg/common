@@ -1,9 +1,9 @@
-import { db, eq } from '@op/db/test';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
   processInstances,
 } from '@op/db/schema';
+import { db, eq } from '@op/db/test';
 import {
   type CreateOrganizationResult,
   type DecisionSchemaDefinition,
