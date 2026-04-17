@@ -44,6 +44,8 @@ import {
   ProposalCardMetrics,
   ProposalCardOwnerActions,
   ProposalCardPreview,
+  ProposalCardReviseAction,
+  RevisionRequestedBadge,
 } from './ProposalCard';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import { ResponsiveSelect } from './ResponsiveSelect';
@@ -153,6 +155,10 @@ interface ProposalsProps {
   hasFilter: boolean;
   /** When true, the current phase has voting enabled — always show voting UI */
   isVotingPhase?: boolean;
+  /** When true, the current phase is the review phase — show Revise action for owners */
+  isReviewPhase?: boolean;
+  /** Map of proposalId → pending revision request id for the current user's proposals */
+  revisionRequestIdByProposalId?: Record<string, string>;
 }
 
 const VotingProposalsList = ({
@@ -407,6 +413,8 @@ const ViewProposalsList = ({
   decisionSlug,
   permissions,
   hasFilter,
+  isReviewPhase,
+  revisionRequestIdByProposalId,
 }: ProposalsProps) => {
   const canManageProposals = permissions?.admin ?? false;
   if (!proposals || proposals.length === 0) {
@@ -426,6 +434,9 @@ const ViewProposalsList = ({
         const viewHref = decisionSlug
           ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
           : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
+        const revisionRequestId = revisionRequestIdByProposalId?.[proposal.id];
+        const showRevisionBadge =
+          isReviewPhase && isEditable && !!revisionRequestId;
 
         return (
           <ProposalCard key={proposal.id} proposal={proposal}>
@@ -444,6 +455,7 @@ const ViewProposalsList = ({
                   }
                 />
                 <ProposalCardMeta proposal={proposal} />
+                {showRevisionBadge && <RevisionRequestedBadge />}
                 <ProposalCardPreview proposal={proposal} />
               </ProposalCardContent>
             </div>
@@ -454,6 +466,18 @@ const ViewProposalsList = ({
                     proposal={proposal}
                     editHref={editHref}
                   />
+                ) : isReviewPhase ? (
+                  <>
+                    <ProposalCardMetrics proposal={proposal} />
+                    {isEditable ? (
+                      <ProposalCardReviseAction
+                        proposalEditHref={editHref}
+                        revisionRequestId={revisionRequestId}
+                      />
+                    ) : (
+                      <ProposalCardActions proposal={proposal} />
+                    )}
+                  </>
                 ) : isEditable ? (
                   <>
                     <ProposalCardMetrics proposal={proposal} />
@@ -510,6 +534,7 @@ export const ProposalsList = ({
   initialFilter,
   phase,
   isVotingPhase,
+  isReviewPhase,
 }: {
   slug: string;
   instanceId: string;
@@ -525,6 +550,8 @@ export const ProposalsList = ({
   phase?: 'results';
   /** When true, the current phase has voting enabled — always show voting UI */
   isVotingPhase?: boolean;
+  /** When true, the current phase is the review phase — swap owner actions for Revise */
+  isReviewPhase?: boolean;
 }) => {
   const t = useTranslations();
   const { user } = useUser();
@@ -614,6 +641,22 @@ export const ProposalsList = ({
 
   const { data: proposalsData, isLoading } =
     trpc.decision.listProposals.useQuery(queryParams);
+
+  // When in the review phase, fetch the current user's pending revision requests
+  // so we can surface a badge + deep-link the Revise button for affected proposals.
+  const { data: revisionRequestsData } =
+    trpc.decision.listProposalsRevisionRequests.useQuery(
+      {},
+      { enabled: !!isReviewPhase },
+    );
+
+  const revisionRequestIdByProposalId = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const item of revisionRequestsData?.revisionRequests ?? []) {
+      map[item.proposal.id] = item.revisionRequest.id;
+    }
+    return map;
+  }, [revisionRequestsData]);
 
   const { proposals: allProposals } = proposalsData ?? {};
   const canManageProposals = permissions?.admin ?? false;
@@ -887,6 +930,8 @@ export const ProposalsList = ({
           votedProposalIds={selectedProposalIds}
           hasFilter={selectedCategory !== 'all-categories'}
           isVotingPhase={isVotingPhase}
+          isReviewPhase={isReviewPhase}
+          revisionRequestIdByProposalId={revisionRequestIdByProposalId}
         />
       </ProposalTranslationProvider>
 
