@@ -1,9 +1,4 @@
-import {
-  addReaction,
-  getCurrentProfileId,
-  removeReaction,
-  toggleReaction,
-} from '@op/common';
+import { getCurrentProfileId, toggleReaction } from '@op/common';
 import { VALID_REACTION_TYPES } from '@op/types';
 import { z } from 'zod';
 
@@ -16,35 +11,6 @@ const reactionProcedure = commonAuthedProcedure({
 });
 
 export const reactionsRouter = router({
-  addReaction: reactionProcedure
-    .input(
-      z.object({
-        postId: z.string(),
-        reactionType: reactionTypeEnum,
-      }),
-    )
-    .mutation(async ({ input, ctx }) => {
-      const { postId, reactionType } = input;
-      const { user } = ctx;
-
-      const profileId = await getCurrentProfileId(user.id);
-      await addReaction({ postId, profileId, reactionType });
-    }),
-
-  removeReaction: reactionProcedure
-    .input(
-      z.object({
-        postId: z.string(),
-      }),
-    )
-    .mutation(async ({ input, ctx }) => {
-      const { postId } = input;
-      const { user } = ctx;
-
-      const profileId = await getCurrentProfileId(user.id);
-      await removeReaction({ postId, profileId });
-    }),
-
   toggleReaction: reactionProcedure
     .input(
       z.object({
