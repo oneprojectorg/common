@@ -6,6 +6,13 @@ import { NotFoundError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { getInstance } from './getInstance';
 
+/**
+ * Proposal-scoped: revision requests on a single proposal, gated by a
+ * single getInstance access check — reviewers and decision admins see
+ * it, not only the author.
+ *
+ * For the author's cross-proposal inbox, use listProposalsRevisionRequests.
+ */
 export async function listProposalRevisionRequests({
   proposalId,
   states,

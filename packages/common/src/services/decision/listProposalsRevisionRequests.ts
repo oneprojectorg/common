@@ -5,6 +5,14 @@ import type { User } from '@op/supabase/lib';
 import { UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 
+/**
+ * Author's inbox: revision requests across every proposal the caller
+ * submitted. Scoped by identity (submittedByProfileId), not by instance
+ * access — a user sees their own revisions regardless of decision.
+ *
+ * For the proposal-scoped view (one proposal, anyone with instance
+ * access), use listProposalRevisionRequests.
+ */
 export async function listProposalsRevisionRequests({
   states,
   user,
