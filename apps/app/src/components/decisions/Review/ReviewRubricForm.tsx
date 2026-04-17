@@ -122,6 +122,11 @@ export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
               onRationaleChange={(value) =>
                 handleRationaleChange(field.key, value)
               }
+              rationalePlaceholder={
+                isOverallRecommendationField(field.key)
+                  ? t('Add overall notes...')
+                  : t('Add reasons or insights...')
+              }
             />
           ))}
 
@@ -182,6 +187,7 @@ function RubricCriterionSection({
   onChange,
   rationaleValue,
   onRationaleChange,
+  rationalePlaceholder,
 }: {
   field: FieldDescriptor;
   maxPoints: number;
@@ -189,6 +195,7 @@ function RubricCriterionSection({
   onChange: (value: unknown) => void;
   rationaleValue: string;
   onRationaleChange: (value: string) => void;
+  rationalePlaceholder: string;
 }) {
   const t = useTranslations();
   const criterionType = inferCriterionType(field.schema);
@@ -228,33 +235,53 @@ function RubricCriterionSection({
       <RubricRationaleField
         value={rationaleValue}
         onChange={onRationaleChange}
+        placeholder={rationalePlaceholder}
       />
     </section>
   );
 }
 
 /**
- * Compact, always-optional long-text note rendered under each criterion.
+ * Optional long-text note under each criterion: collapsed behind an
+ * "Add Note" button until the reviewer opens it (or a value already exists).
  */
 function RubricRationaleField({
   value,
   onChange,
+  placeholder,
 }: {
   value: string;
   onChange: (value: string) => void;
+  placeholder: string;
 }) {
   const t = useTranslations();
-  const label = t('Reason(s) and Insight(s)');
+  const [isOpen, setIsOpen] = useState(value.length > 0);
+
+  if (!isOpen) {
+    return (
+      <Button
+        variant="link"
+        size="inline"
+        className="flex items-center px-2 py-1.5"
+        onPress={() => setIsOpen(true)}
+      >
+        <LuPlus className="size-4" />
+        {t('Add Note')}
+      </Button>
+    );
+  }
+
+  const label = t('Notes');
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <span className="text-sm font-medium text-neutral-charcoal">{label}</span>
+    <div className="flex flex-col gap-1">
+      <span className="text-sm text-neutral-black">{label}</span>
       <TextField
         aria-label={label}
         value={value}
         onChange={onChange}
         useTextArea
-        textareaProps={{ placeholder: t('Start typing...'), rows: 3 }}
+        textareaProps={{ placeholder, rows: 3, className: 'min-h-20' }}
       />
     </div>
   );

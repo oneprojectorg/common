@@ -349,14 +349,17 @@ test.describe('Review Submit', () => {
     await page.getByRole('button', { name: 'Innovation' }).click();
     await page.getByRole('option', { name: '4 — Very Good' }).click();
 
-    // Fill Innovation's always-optional rationale. Scope by section because
-    // every criterion renders an identical "Reason(s) and Insight(s)" textarea.
+    // Fill Innovation's optional rationale. The textarea is collapsed behind
+    // an "Add Note" button per criterion, so open it first, then scope by
+    // section because every criterion renders an identical "Notes" textarea.
     const innovationRationale =
       'Highly novel approach — reuses open patterns well.';
-    await page
+    const innovationSection = page
       .locator('section')
-      .filter({ hasText: 'Innovation' })
-      .getByRole('textbox', { name: 'Reason(s) and Insight(s)' })
+      .filter({ hasText: 'Innovation' });
+    await innovationSection.getByRole('button', { name: 'Add Note' }).click();
+    await innovationSection
+      .getByRole('textbox', { name: 'Notes' })
       .fill(innovationRationale);
 
     // Still disabled — two more required criteria (Feasibility, Compliance)

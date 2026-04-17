@@ -8,6 +8,7 @@ import {
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select } from '@op/ui/Select';
 import { ToggleButton } from '@op/ui/ToggleButton';
+import { LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -37,18 +38,14 @@ function isScoredField(schema: XFormatPropertySchema): boolean {
   return schema.type === 'integer' && typeof schema.maximum === 'number';
 }
 
-/** Compact placeholder rationale textarea, always rendered under each criterion. */
+/** Collapsed "Add Note" affordance mirroring the review form default state. */
 function RationalePlaceholder() {
   const t = useTranslations();
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <span className="text-sm font-medium text-neutral-charcoal">
-        {t('Reason(s) and Insight(s)')}
-      </span>
-      <div className="min-h-20 rounded-lg border border-neutral-gray2 bg-white px-3 py-2 text-sm text-neutral-gray3">
-        {t('Placeholder')}
-      </div>
+    <div className="flex items-center gap-1 px-2 py-1.5 text-base text-primary-teal">
+      <LuPlus className="size-4" />
+      {t('Add Note')}
     </div>
   );
 }
