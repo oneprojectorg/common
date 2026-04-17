@@ -13,7 +13,6 @@ export {
 export {
   createDecisionInstance,
   createDecisionProcess,
-  createInstanceMember,
   createProposal,
   getDecisionInstance,
   getSeededTemplate,
@@ -26,8 +25,6 @@ export {
   type CreateDecisionInstanceResult,
   type CreateDecisionProcessOptions,
   type CreateDecisionProcessResult,
-  type CreateInstanceMemberOptions,
-  type CreateInstanceMemberResult,
   type CreateProposalOptions,
   type CreateProposalResult,
   type GrantDecisionProfileAccessOptions,
