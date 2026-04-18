@@ -1,6 +1,7 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { trpc } from '@op/api/client';
 import {
   ProposalReviewRequestState,
   type ReviewAssignmentExtended,
@@ -8,7 +9,9 @@ import {
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalPreview } from '../ProposalPreview';
@@ -16,22 +19,37 @@ import { AuthorRevisionNote, RevisedOnBadge } from './AuthorRevisionNote';
 import { ReviewFormProvider } from './ReviewFormContext';
 import { ReviewNavbar } from './ReviewNavbar';
 import { ReviewRubricForm } from './ReviewRubricForm';
+import { ReviewSkeleton } from './ReviewSkeleton';
 
 interface ReviewLayoutClientProps {
   decisionSlug: string;
   assignmentId: string;
-  reviewAssignment: ReviewAssignmentExtended & {
-    rubricTemplate: NonNullable<ReviewAssignmentExtended['rubricTemplate']>;
-  };
+  initialData: ReviewAssignmentExtended;
 }
 
-export function ReviewLayoutClient({
+export function ReviewLayoutClient(props: ReviewLayoutClientProps) {
+  return (
+    <ErrorBoundary fallback={<ReviewSkeleton />}>
+      <Suspense fallback={<ReviewSkeleton />}>
+        <ReviewLayoutClientSuspense {...props} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
+
+function ReviewLayoutClientSuspense({
   decisionSlug,
   assignmentId,
-  reviewAssignment,
+  initialData,
 }: ReviewLayoutClientProps) {
   const t = useTranslations();
   const reviewFlowEnabled = useFeatureFlag('review_flow');
+
+  const [reviewAssignment] =
+    trpc.decision.getReviewAssignment.useSuspenseQuery(
+      { assignmentId },
+      { initialData, staleTime: 30 * 1000 },
+    );
 
   if (reviewFlowEnabled === false) {
     notFound();
@@ -39,6 +57,10 @@ export function ReviewLayoutClient({
 
   const { assignment, rubricTemplate, review, revisionRequest } =
     reviewAssignment;
+
+  if (!rubricTemplate) {
+    notFound();
+  }
 
   return (
     <ReviewFormProvider

@@ -1,10 +1,8 @@
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
 import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
 
 import { ReviewLayoutClient } from '@/components/decisions/Review/ReviewLayoutClient';
-import { ReviewSkeleton } from '@/components/decisions/Review/ReviewSkeleton';
 
 export default async function ReviewProposalPage({
   params,
@@ -12,26 +10,11 @@ export default async function ReviewProposalPage({
   params: Promise<{ slug: string; reviewId: string }>;
 }) {
   const { slug, reviewId: assignmentId } = await params;
-
-  return (
-    <Suspense fallback={<ReviewSkeleton />}>
-      <ReviewPageContent decisionSlug={slug} assignmentId={assignmentId} />
-    </Suspense>
-  );
-}
-
-async function ReviewPageContent({
-  decisionSlug,
-  assignmentId,
-}: {
-  decisionSlug: string;
-  assignmentId: string;
-}) {
   const client = await createClient();
 
-  let data;
+  let initialData;
   try {
-    data = await client.decision.getReviewAssignment({ assignmentId });
+    initialData = await client.decision.getReviewAssignment({ assignmentId });
   } catch (error) {
     const cause = error instanceof Error ? error.cause : null;
     if (cause instanceof CommonError && cause.statusCode === 404) {
@@ -40,17 +23,15 @@ async function ReviewPageContent({
     throw error;
   }
 
-  const { rubricTemplate } = data;
-
-  if (!rubricTemplate) {
+  if (!initialData.rubricTemplate) {
     notFound();
   }
 
   return (
     <ReviewLayoutClient
-      decisionSlug={decisionSlug}
+      decisionSlug={slug}
       assignmentId={assignmentId}
-      reviewAssignment={{ ...data, rubricTemplate }}
+      initialData={initialData}
     />
   );
 }
