@@ -3,8 +3,10 @@ import {
   ProposalStatus,
   Visibility,
   objectsInStorage,
+  profileUsers,
   profiles,
   proposals,
+  users,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
@@ -19,8 +21,9 @@ export interface ListProposalSubmittersInput {
 
 /**
  * Returns unique submitter profiles for non-draft, visible proposals
- * in the current phase of a decision instance. Designed to power the
- * participation face-pile without the overhead of a full listProposals call.
+ * in the current phase of a decision instance. Includes every collaborator
+ * attached to a proposal's profile (creator + invitees) so collaborative
+ * proposals contribute multiple faces to the participation face-pile.
  */
 export const listProposalSubmitters = async ({
   input,
@@ -66,8 +69,10 @@ export const listProposalSubmitters = async ({
       name: profiles.name,
       avatarName: objectsInStorage.name,
     })
-    .from(profiles)
-    .innerJoin(proposals, eq(proposals.submittedByProfileId, profiles.id))
+    .from(proposals)
+    .innerJoin(profileUsers, eq(profileUsers.profileId, proposals.profileId))
+    .innerJoin(users, eq(users.authUserId, profileUsers.authUserId))
+    .innerJoin(profiles, eq(profiles.id, users.profileId))
     .leftJoin(objectsInStorage, eq(profiles.avatarImageId, objectsInStorage.id))
     .where(
       and(
