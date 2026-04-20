@@ -119,3 +119,4 @@ export * from './emails/ProposalSubmittedEmail';
 export * from './emails/PhaseTransitionEmail';
 export * from './emails/VoteSubmittedEmail';
 export * from './emails/RevisionResubmittedEmail';
+export * from './emails/RevisionRequestedEmail';
