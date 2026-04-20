@@ -44,8 +44,6 @@ import {
   ProposalCardMetrics,
   ProposalCardOwnerActions,
   ProposalCardPreview,
-  ProposalCardReviseAction,
-  RevisionRequestedBadge,
 } from './ProposalCard';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import { ResponsiveSelect } from './ResponsiveSelect';
@@ -155,10 +153,6 @@ interface ProposalsProps {
   hasFilter: boolean;
   /** When true, the current phase has voting enabled — always show voting UI */
   isVotingPhase?: boolean;
-  /** When true, the current phase is the review phase — show Revise action for owners */
-  isReviewPhase?: boolean;
-  /** Map of proposalId → pending revision request id for the current user's proposals */
-  revisionRequestIdByProposalId?: Record<string, string>;
 }
 
 const VotingProposalsList = ({
@@ -413,8 +407,6 @@ const ViewProposalsList = ({
   decisionSlug,
   permissions,
   hasFilter,
-  isReviewPhase,
-  revisionRequestIdByProposalId,
 }: ProposalsProps) => {
   const canManageProposals = permissions?.admin ?? false;
   if (!proposals || proposals.length === 0) {
@@ -434,9 +426,6 @@ const ViewProposalsList = ({
         const viewHref = decisionSlug
           ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
           : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
-        const revisionRequestId = revisionRequestIdByProposalId?.[proposal.id];
-        const showRevisionBadge =
-          isReviewPhase && isEditable && !!revisionRequestId;
 
         return (
           <ProposalCard key={proposal.id} proposal={proposal}>
@@ -455,7 +444,6 @@ const ViewProposalsList = ({
                   }
                 />
                 <ProposalCardMeta proposal={proposal} />
-                {showRevisionBadge && <RevisionRequestedBadge />}
                 <ProposalCardPreview proposal={proposal} />
               </ProposalCardContent>
             </div>
@@ -466,18 +454,6 @@ const ViewProposalsList = ({
                     proposal={proposal}
                     editHref={editHref}
                   />
-                ) : isReviewPhase ? (
-                  <>
-                    <ProposalCardMetrics proposal={proposal} />
-                    {isEditable ? (
-                      <ProposalCardReviseAction
-                        proposalEditHref={editHref}
-                        revisionRequestId={revisionRequestId}
-                      />
-                    ) : (
-                      <ProposalCardActions proposal={proposal} />
-                    )}
-                  </>
                 ) : isEditable ? (
                   <>
                     <ProposalCardMetrics proposal={proposal} />
@@ -534,7 +510,6 @@ export const ProposalsList = ({
   initialFilter,
   phase,
   isVotingPhase,
-  isReviewPhase,
 }: {
   slug: string;
   instanceId: string;
@@ -550,8 +525,6 @@ export const ProposalsList = ({
   phase?: 'results';
   /** When true, the current phase has voting enabled — always show voting UI */
   isVotingPhase?: boolean;
-  /** When true, the current phase is the review phase — show Revise action for owners */
-  isReviewPhase?: boolean;
 }) => {
   const t = useTranslations();
   const { user } = useUser();
@@ -641,42 +614,6 @@ export const ProposalsList = ({
 
   const { data: proposalsData, isLoading } =
     trpc.decision.listProposals.useQuery(queryParams);
-
-  // When in the review phase, fetch the current user's pending revision requests
-  // so we can surface a badge + deep-link the Revise button for affected proposals.
-  // Failure here only drops the enrichment — the plain Revise button still works.
-  const { data: revisionRequestsData, error: revisionRequestsError } =
-    trpc.decision.listProposalsRevisionRequests.useQuery(
-      {},
-      { enabled: !!isReviewPhase },
-    );
-
-  useEffect(() => {
-    if (revisionRequestsError) {
-      console.error(
-        'Failed to load proposal revision requests',
-        revisionRequestsError,
-      );
-    }
-  }, [revisionRequestsError]);
-
-  const revisionRequestIdByProposalId = useMemo(() => {
-    const map: Record<string, { id: string; requestedAt: string | null }> = {};
-    for (const item of revisionRequestsData?.revisionRequests ?? []) {
-      const existing = map[item.proposal.id];
-      // Keep only the most recent request when a proposal has multiple pending
-      if (
-        !existing ||
-        (item.revisionRequest.requestedAt ?? '') > (existing.requestedAt ?? '')
-      ) {
-        map[item.proposal.id] = {
-          id: item.revisionRequest.id,
-          requestedAt: item.revisionRequest.requestedAt,
-        };
-      }
-    }
-    return Object.fromEntries(Object.entries(map).map(([k, v]) => [k, v.id]));
-  }, [revisionRequestsData]);
 
   const { proposals: allProposals } = proposalsData ?? {};
   const canManageProposals = permissions?.admin ?? false;
@@ -950,8 +887,6 @@ export const ProposalsList = ({
           votedProposalIds={selectedProposalIds}
           hasFilter={selectedCategory !== 'all-categories'}
           isVotingPhase={isVotingPhase}
-          isReviewPhase={isReviewPhase}
-          revisionRequestIdByProposalId={revisionRequestIdByProposalId}
         />
       </ProposalTranslationProvider>
 

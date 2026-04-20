@@ -8,13 +8,7 @@ import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
-import {
-  LuBookmark,
-  LuCircleAlert,
-  LuHeart,
-  LuPencil,
-  LuTrash2,
-} from 'react-icons/lu';
+import { LuBookmark, LuHeart, LuPencil, LuTrash2 } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -76,47 +70,6 @@ export function ProposalCardActions({
         <LuBookmark className="size-4" />
         {isFollowedByUser ? t('Following') : t('Follow')}
       </Button>
-    </div>
-  );
-}
-
-/**
- * Revise proposal action shown to the proposal author during the review phase.
- * Includes the `reviewRevision` query param when a pending revision request
- * exists so the editor opens with the reviewer's feedback in context.
- */
-export function ProposalCardReviseAction({
-  proposalEditHref,
-  revisionRequestId,
-}: {
-  proposalEditHref: string;
-  revisionRequestId?: string;
-}) {
-  const t = useTranslations();
-  const href = revisionRequestId
-    ? appendQueryParam(proposalEditHref, 'reviewRevision', revisionRequestId)
-    : proposalEditHref;
-
-  return (
-    <ButtonLink href={href} size="small" className="w-full">
-      {t('Revise proposal')}
-    </ButtonLink>
-  );
-}
-
-function appendQueryParam(href: string, key: string, value: string) {
-  const separator = href.includes('?') ? '&' : '?';
-  return `${href}${separator}${key}=${encodeURIComponent(value)}`;
-}
-
-export function RevisionRequestedBadge() {
-  const t = useTranslations();
-  return (
-    <div className="flex items-center gap-1 rounded-lg bg-functional-yellowWhite px-2 py-1">
-      <LuCircleAlert className="size-4 text-primary-orange2" />
-      <span className="text-sm text-neutral-charcoal">
-        {t('Revision requested')}
-      </span>
     </div>
   );
 }
