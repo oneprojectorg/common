@@ -49,6 +49,7 @@
     "./ReactionsButton": "./src/components/ReactionsButton.tsx",
     "./RichTextEditor": "./src/components/RichTextEditor/index.ts",
     "./Sortable": "./src/components/Sortable/index.ts",
+    "./SplitPane": "./src/components/SplitPane.tsx",
     "./Surface": "./src/components/Surface.tsx",
     "./RAC": "./src/RAC.ts",
     "./RAH": "./src/RAH.ts",

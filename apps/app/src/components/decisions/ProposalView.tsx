@@ -11,6 +11,7 @@ import {
   type SupportedLocale,
 } from '@op/common/client';
 import { Header3 } from '@op/ui/Header';
+import { SplitPane } from '@op/ui/SplitPane';
 import { Surface } from '@op/ui/Surface';
 import { useLocale } from 'next-intl';
 import { useQueryStates } from 'nuqs';
@@ -312,16 +313,20 @@ export function ProposalView({
       }
     >
       {activeRevisionRequest ? (
-        <div className="mx-auto flex w-full max-w-[68rem] flex-1 items-start">
-          <div className="flex min-w-0 basis-1/2 flex-col gap-8 border-r border-neutral-gray1 py-12 pr-12 pl-6 sm:pl-12">
+        <SplitPane className="mx-auto w-full max-w-[68rem]">
+          <SplitPane.Pane id="proposal" label={t('Proposal')} className="gap-8">
             {proposalBody}
-          </div>
-          <div className="min-w-0 basis-1/2 bg-white">
+          </SplitPane.Pane>
+          <SplitPane.Pane
+            id="feedback"
+            label={t('Revision feedback')}
+            className="bg-white p-0 sm:p-0"
+          >
             <ProposalRevisionSubmittedPanel
               revisionRequest={activeRevisionRequest}
             />
-          </div>
-        </div>
+          </SplitPane.Pane>
+        </SplitPane>
       ) : (
         <div className="flex-1 px-6 py-8">
           <div className="mx-auto flex max-w-xl flex-col gap-8">
