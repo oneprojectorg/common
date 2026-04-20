@@ -64,4 +64,11 @@ export const Events = {
       processInstanceId: z.string().uuid(),
     }),
   },
+  reviewRevisionResubmitted: {
+    name: 'review/revision-resubmitted' as const,
+    schema: z.object({
+      assignmentId: z.string().uuid(),
+      revisionRequestId: z.string().uuid(),
+    }),
+  },
 } as const;

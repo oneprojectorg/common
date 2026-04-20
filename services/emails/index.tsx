@@ -118,3 +118,4 @@ export * from './emails/ReactionNotificationEmail';
 export * from './emails/ProposalSubmittedEmail';
 export * from './emails/PhaseTransitionEmail';
 export * from './emails/VoteSubmittedEmail';
+export * from './emails/RevisionResubmittedEmail';
