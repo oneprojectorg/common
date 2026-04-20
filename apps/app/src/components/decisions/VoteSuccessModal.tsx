@@ -39,7 +39,7 @@ const VoteSuccessModalSuspense = ({
 
   return (
     <DialogTrigger isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <Modal isDismissable>
+      <Modal isDismissable confetti>
         <div className="z-10 p-12 text-center">
           <div className="flex flex-col gap-6">
             <div className="flex flex-col items-center gap-4">
