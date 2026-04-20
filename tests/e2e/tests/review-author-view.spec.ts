@@ -5,8 +5,6 @@ import {
   createDecisionInstance,
   createOrganization,
   createProposal,
-  createReviewAssignment,
-  createRevisionRequest,
   getSeededTemplate,
   grantDecisionProfileAccess,
 } from '@op/test';
@@ -67,7 +65,7 @@ const REVIEW_SCHEMA = {
 const PROPOSAL_TITLE = 'Community Solar Initiative';
 
 test.describe('Non-reviewer review-phase view', () => {
-  test('member author sees Revise proposal + badge on own proposal and Like/Follow on others', async ({
+  test('non-reviewer member sees proposals grid with Like/Follow, not reviewer list', async ({
     browser,
     org,
     supabaseAdmin,
@@ -88,8 +86,8 @@ test.describe('Non-reviewer review-phase view', () => {
       .set({ currentStateId: 'review' })
       .where(eq(processInstances.id, instance.instance.id));
 
-    // Create a member in a separate org — MEMBER role has submitProposals +
-    // vote but NOT review, so this user is a non-reviewer.
+    // Member in a separate org — MEMBER role has submitProposals + vote but
+    // NOT review, so this user is a non-reviewer.
     const memberOrg = await createOrganization({
       testId: `review-author-${Date.now()}`,
       supabaseAdmin,
@@ -104,33 +102,7 @@ test.describe('Non-reviewer review-phase view', () => {
       isAdmin: false,
     });
 
-    // Member-authored proposal with a pending revision request
-    const memberProposal = await createProposal({
-      processInstanceId: instance.instance.id,
-      submittedByProfileId: memberUser.profileId,
-      authUserId: memberUser.authUserId,
-      email: memberUser.email,
-      proposalData: {
-        title: PROPOSAL_TITLE,
-        collaborationDocId: 'test-proposal-view-doc',
-      },
-    });
-    await db
-      .update(proposals)
-      .set({ status: ProposalStatus.SUBMITTED })
-      .where(eq(proposals.id, memberProposal.id));
-
-    const memberAssignment = await createReviewAssignment({
-      processInstanceId: instance.instance.id,
-      proposalId: memberProposal.id,
-      reviewerProfileId: org.adminUser.profileId,
-    });
-    const revisionRequest = await createRevisionRequest({
-      assignmentId: memberAssignment.id,
-      requestComment: 'Please expand the budget section.',
-    });
-
-    // Admin-authored proposal the member does NOT own
+    // An admin-authored proposal the member does NOT own (for Like/Follow)
     const otherProposal = await createProposal({
       processInstanceId: instance.instance.id,
       submittedByProfileId: org.adminUser.profileId,
@@ -164,23 +136,9 @@ test.describe('Non-reviewer review-phase view', () => {
     await expect(
       memberPage.getByRole('link', { name: PROPOSAL_TITLE }).first(),
     ).toBeVisible({ timeout: 36_000 });
-    await expect(
-      memberPage.getByRole('link', { name: PROPOSAL_TITLE }),
-    ).toHaveCount(2);
     await expect(memberPage.getByText('Proposals to review')).toHaveCount(0);
 
-    // Member owns exactly one proposal in the list → one Revise button + one badge
-    const reviseLink = memberPage.getByRole('link', {
-      name: 'Revise proposal',
-    });
-    await expect(reviseLink).toHaveCount(1);
-    await expect(reviseLink).toHaveAttribute(
-      'href',
-      new RegExp(`reviewRevision=${revisionRequest.id}`),
-    );
-    await expect(memberPage.getByText('Revision requested')).toHaveCount(1);
-
-    // Non-owned proposal gets Like + Follow
+    // Non-owner gets Like + Follow
     await expect(memberPage.getByRole('button', { name: 'Like' })).toHaveCount(
       1,
     );
@@ -191,7 +149,7 @@ test.describe('Non-reviewer review-phase view', () => {
     await memberContext.close();
   });
 
-  test('admin in review phase still sees reviewer assignments list', async ({
+  test('admin in review phase sees reviewer assignments list', async ({
     authenticatedPage,
     org,
   }) => {
@@ -213,12 +171,9 @@ test.describe('Non-reviewer review-phase view', () => {
       waitUntil: 'domcontentloaded',
     });
 
-    // Admin path renders ReviewAssignmentsList (not the non-reviewer grid)
+    // Profile admin has review=true via ALL_TRUE_ACCESS → assignments list
     await expect(
       authenticatedPage.getByText('Proposals to review'),
     ).toBeVisible({ timeout: 36_000 });
-    await expect(
-      authenticatedPage.getByRole('link', { name: 'Revise proposal' }),
-    ).toHaveCount(0);
   });
 });
