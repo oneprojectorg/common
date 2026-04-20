@@ -1136,6 +1136,8 @@
   "Revision Request": "Revision Request",
   "A reviewer has requested changes to {proposalName}": "A reviewer has requested changes to {proposalName}",
   "Revise proposal": "Revise proposal",
+  "We couldn't load proposals": "We couldn't load proposals",
+  "Please refresh the page to try again.": "Please refresh the page to try again.",
   "Ignore": "Ignore",
   "Resubmit": "Resubmit",
   "Resubmit proposal": "Resubmit proposal",

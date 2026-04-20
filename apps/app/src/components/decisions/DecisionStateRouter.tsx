@@ -45,7 +45,14 @@ function DecisionStateRouterNew({
     if (!decisionSlug) {
       notFound();
     }
-    return <ReviewPage instance={instance} decisionSlug={decisionSlug} />;
+    return (
+      <ReviewPage
+        instance={instance}
+        decisionSlug={decisionSlug}
+        slug={slug}
+        decisionProfileId={decisionProfileId}
+      />
+    );
   }
 
   if (isVotingEnabled) {

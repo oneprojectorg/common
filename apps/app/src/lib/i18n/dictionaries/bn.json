@@ -1107,6 +1107,8 @@
   "Revision Request": "সংশোধনের অনুরোধ",
   "A reviewer has requested changes to {proposalName}": "একজন পর্যালোচক {proposalName}-এ পরিবর্তনের অনুরোধ করেছেন",
   "Revise proposal": "প্রস্তাব সংশোধন করুন",
+  "We couldn't load proposals": "প্রস্তাবগুলি লোড করা যায়নি",
+  "Please refresh the page to try again.": "আবার চেষ্টা করতে পৃষ্ঠাটি রিফ্রেশ করুন।",
   "Ignore": "উপেক্ষা করুন",
   "Resubmit": "পুনরায় জমা দিন",
   "Resubmit proposal": "প্রস্তাব পুনরায় জমা দিন",

@@ -1106,6 +1106,8 @@
   "Revision Request": "Demande de révision",
   "A reviewer has requested changes to {proposalName}": "Un examinateur a demandé des modifications à {proposalName}",
   "Revise proposal": "Réviser la proposition",
+  "We couldn't load proposals": "Impossible de charger les propositions",
+  "Please refresh the page to try again.": "Veuillez actualiser la page pour réessayer.",
   "Ignore": "Ignorer",
   "Resubmit": "Soumettre à nouveau",
   "Resubmit proposal": "Soumettre la proposition à nouveau",
