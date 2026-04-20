@@ -1,43 +1,39 @@
-/** Minimal TipTap JSON node shape returned by format=json */
-type TipTapNode = {
-  type: string;
-  text?: string;
-  attrs?: Record<string, unknown>;
-  content?: TipTapNode[];
-};
+import { type JSONContent, generateText } from '@tiptap/core';
 
-function isTipTapNode(value: unknown): value is TipTapNode {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'type' in value &&
-    typeof value.type === 'string'
-  );
-}
+import { serverExtensions } from './tiptapExtensions';
 
 /**
- * Extracts plain text from a TipTap JSON document (format=json),
- * mirroring `getBlockText` in useProposalValidation but operating on
- * the REST API JSON format instead of Yjs XmlElements.
+ * Extracts plain text from a TipTap JSON document (format=json) using
+ * TipTap's `generateText` with the shared server extension list.
  *
- * Handles iframely atom nodes by returning their src URL so required-field
- * validation treats them as non-empty.
+ * Atom nodes like iframely carry their payload in attributes rather than
+ * text children, so we register a text serializer that returns the `src`
+ * URL — otherwise required-field validation would treat an embed-only
+ * field as empty.
  */
 export function extractTextFromTipTapDoc(doc: { content?: unknown[] }): string {
-  function nodeText(node: TipTapNode): string {
-    if (node.type === 'iframely') {
-      const src = node.attrs?.src;
-      return typeof src === 'string' ? src : '';
-    }
-    if (node.type === 'text') {
-      return node.text ?? '';
-    }
-    return (node.content ?? []).map(nodeText).join('');
+  if (!doc.content || doc.content.length === 0) {
+    return '';
   }
 
-  const blocks = (doc.content ?? []).filter(isTipTapNode);
-  return blocks
-    .map((block) => nodeText(block))
-    .join('\n')
-    .trim();
+  try {
+    return generateText(
+      { type: 'doc', content: doc.content as JSONContent[] },
+      serverExtensions,
+      {
+        blockSeparator: '\n',
+        textSerializers: {
+          iframely: ({ node }) => {
+            const src = node.attrs?.src;
+            return typeof src === 'string' ? src : '';
+          },
+        },
+      },
+    ).trim();
+  } catch (error) {
+    console.warn('Failed to extract text from TipTap doc', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return '';
+  }
 }

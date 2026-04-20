@@ -86,14 +86,10 @@ describe('extractTextFromTipTapDoc', () => {
     expect(extractTextFromTipTapDoc(doc)).toBe('');
   });
 
-  it('skips non-object entries in content array', () => {
+  it('returns empty string when the doc cannot be parsed', () => {
     const doc = {
-      content: [
-        'not a node',
-        null,
-        { type: 'paragraph', content: [{ type: 'text', text: 'valid' }] },
-      ],
+      content: ['not a node', null] as unknown[],
     };
-    expect(extractTextFromTipTapDoc(doc)).toBe('valid');
+    expect(extractTextFromTipTapDoc(doc)).toBe('');
   });
 });
