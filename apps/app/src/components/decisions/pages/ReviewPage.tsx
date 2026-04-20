@@ -1,7 +1,7 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { trpc } from '@op/api/client';
+import type { RouterOutput } from '@op/api';
 import { type InstancePhaseData } from '@op/api/encoders';
 import { ButtonLink } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
@@ -17,19 +17,20 @@ import { DecisionHero } from '../DecisionHero';
 import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
 
+type Instance = RouterOutput['decision']['getInstance'];
+
 export function ReviewPage({
-  instanceId,
+  instance,
   decisionSlug,
   slug,
   decisionProfileId,
 }: {
-  instanceId: string;
+  instance: Instance;
   decisionSlug: string;
   slug: string;
   decisionProfileId?: string | null;
 }) {
   const t = useTranslations();
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;
@@ -41,11 +42,11 @@ export function ReviewPage({
     throw new Error(`Phase "${currentPhaseId}" not found in instance phases`);
   }
 
-  // Profile admins already get review=true via ALL_TRUE_ACCESS in getInstance,
-  // so this gate covers them too. Decisions-zone admins ("Manage Process")
-  // without explicit review permission fall through to the proposals grid —
-  // they can't actually submit reviews, so the assignments list would be empty.
-  const canReview = instance.access?.review ?? false;
+  // Profile admins already get review=true via ALL_TRUE_ACCESS in getInstance.
+  // Decisions-zone admins ("Manage Process") without explicit review
+  // permission fall through to the proposals grid — they can't actually submit
+  // reviews, so the assignments list would be empty.
+  const canReview = Boolean(instance.access?.review);
 
   return (
     <div className="min-h-full pt-8">
@@ -71,38 +72,37 @@ export function ReviewPage({
 
       <div className="flex w-full justify-center border-t bg-white">
         <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
-          {canReview ? (
-            <ReviewAssignmentsList
-              processInstanceId={instanceId}
-              decisionSlug={decisionSlug}
-            />
-          ) : (
-            <APIErrorBoundary
-              fallbacks={{
-                default: () => (
-                  <EmptyState icon={<LuLeaf className="size-6" />}>
-                    <Header3 className="font-serif !text-title-base font-light text-neutral-black">
-                      {t("We couldn't load proposals")}
-                    </Header3>
-                    <p className="text-base text-neutral-charcoal">
-                      {t('Please refresh the page to try again.')}
-                    </p>
-                  </EmptyState>
-                ),
-              }}
-            >
-              <Suspense fallback={<ProposalListSkeleton />}>
+          <APIErrorBoundary
+            fallbacks={{
+              default: () => (
+                <EmptyState icon={<LuLeaf className="size-6" />}>
+                  <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+                    {t("We couldn't load proposals")}
+                  </Header3>
+                  <p className="text-base text-neutral-charcoal">
+                    {t('Please refresh the page to try again.')}
+                  </p>
+                </EmptyState>
+              ),
+            }}
+          >
+            <Suspense fallback={<ProposalListSkeleton />}>
+              {canReview ? (
+                <ReviewAssignmentsList
+                  processInstanceId={instance.id}
+                  decisionSlug={decisionSlug}
+                />
+              ) : (
                 <ProposalsList
                   slug={slug}
-                  instanceId={instanceId}
+                  instanceId={instance.id}
                   decisionSlug={decisionSlug}
                   decisionProfileId={decisionProfileId}
                   permissions={instance.access}
-                  isReviewPhase
                 />
-              </Suspense>
-            </APIErrorBoundary>
-          )}
+              )}
+            </Suspense>
+          </APIErrorBoundary>
         </div>
       </div>
     </div>
