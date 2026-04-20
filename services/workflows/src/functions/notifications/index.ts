@@ -4,3 +4,4 @@ export * from './sendProposalSubmittedNotification';
 export * from './sendPhaseTransitionNotification';
 export * from './sendVoteSubmittedNotification';
 export * from './sendRevisionResubmittedNotification';
+export * from './sendRevisionRequestedNotification';

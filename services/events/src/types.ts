@@ -71,4 +71,11 @@ export const Events = {
       revisionRequestId: z.string().uuid(),
     }),
   },
+  reviewRevisionRequested: {
+    name: 'review/revision-requested' as const,
+    schema: z.object({
+      assignmentId: z.string().uuid(),
+      revisionRequestId: z.string().uuid(),
+    }),
+  },
 } as const;
