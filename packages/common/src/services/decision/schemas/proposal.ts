@@ -137,3 +137,24 @@ export const proposalListSchema = z.object({
 });
 
 export type ProposalList = z.infer<typeof proposalListSchema>;
+
+/** Minimal submitter profile shape used by the face-pile endpoint. */
+export const proposalSubmitterSchema = z.object({
+  slug: z.string(),
+  name: z.string().nullable(),
+  avatarImage: z
+    .object({
+      name: z.string(),
+    })
+    .nullable(),
+});
+
+export type ProposalSubmitter = z.infer<typeof proposalSubmitterSchema>;
+
+export const proposalSubmittersListSchema = z.object({
+  submitters: z.array(proposalSubmitterSchema),
+});
+
+export type ProposalSubmittersList = z.infer<
+  typeof proposalSubmittersListSchema
+>;
