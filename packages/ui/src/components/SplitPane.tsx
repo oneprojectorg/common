@@ -7,51 +7,71 @@ import {
   isValidElement,
   useState,
 } from 'react';
+import type { Key } from 'react-aria-components';
 
-import { cn } from '../lib/utils';
+import { cn, tv } from '../lib/utils';
+import { Tab, TabList, Tabs } from './Tabs';
 
 export interface SplitPaneProps {
   children: ReactNode;
   /** Id of the pane shown by default on mobile. Defaults to the first pane. */
-  defaultMobileTab?: string;
+  defaultMobileTabId?: string;
   className?: string;
-  mobileTabListClassName?: string;
 }
 
 export interface SplitPanePaneProps {
   id: string;
   label: string;
   className?: string;
+  /** Strip the pane's default padding (e.g. when the child handles its own). */
+  unpadded?: boolean;
   children: ReactNode;
 }
 
-// Marker subcomponent — SplitPane reads its props. Never renders on its own.
 function Pane(_props: SplitPanePaneProps): null {
   return null;
 }
 
 // Each pane mounts once — visibility on mobile is toggled via CSS so stateful
 // children (collaborative editors, forms) don't get double-mounted.
-const paneBase =
-  'flex min-w-0 flex-1 flex-col overflow-y-auto px-6 pt-8 pb-4 [scrollbar-gutter:stable] sm:basis-1/2 sm:p-12';
+const paneStyles = tv({
+  base: 'flex min-w-0 flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable] sm:basis-1/2',
+  variants: {
+    padding: {
+      default: 'px-6 pt-8 pb-4 sm:p-12',
+      none: '',
+    },
+    position: {
+      left: 'sm:border-r sm:border-neutral-gray1',
+      right: '',
+    },
+    active: {
+      true: 'flex',
+      false: 'hidden sm:flex',
+    },
+  },
+});
 
 function SplitPaneImpl({
   children,
-  defaultMobileTab,
+  defaultMobileTabId,
   className,
-  mobileTabListClassName,
 }: SplitPaneProps) {
   const panes = Children.toArray(children).filter(
     (child): child is ReactElement<SplitPanePaneProps> =>
       isValidElement(child) && child.type === Pane,
   );
 
-  const firstPaneId = panes[0]?.props.id ?? '';
   const [activeId, setActiveId] = useState<string>(
-    defaultMobileTab ?? firstPaneId,
+    defaultMobileTabId ?? panes[0]?.props.id ?? '',
   );
 
   if (panes.length !== 2) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(
+        `SplitPane expects exactly 2 SplitPane.Pane children, received ${panes.length}.`,
+      );
+    }
     return null;
   }
 
@@ -60,46 +80,41 @@ function SplitPaneImpl({
     ReactElement<SplitPanePaneProps>,
   ];
 
+  const handleSelectionChange = (key: Key) => setActiveId(String(key));
+
   return (
     <div className={cn('flex min-h-0 w-full flex-1 flex-col', className)}>
-      <div
-        role="tablist"
-        aria-orientation="horizontal"
-        className={cn(
-          'mx-6 flex gap-4 border-b border-neutral-offWhite sm:hidden',
-          mobileTabListClassName,
-        )}
+      <Tabs
+        className="gap-0 sm:hidden"
+        selectedKey={activeId}
+        onSelectionChange={handleSelectionChange}
       >
-        {panes.map((pane) => (
-          <SplitPaneTabButton
-            key={pane.props.id}
-            isSelected={activeId === pane.props.id}
-            onPress={() => setActiveId(pane.props.id)}
-          >
-            {pane.props.label}
-          </SplitPaneTabButton>
-        ))}
-      </div>
+        <TabList className="mx-6" variant="default">
+          <Tab id={left.props.id}>{left.props.label}</Tab>
+          <Tab id={right.props.id}>{right.props.label}</Tab>
+        </TabList>
+      </Tabs>
 
       <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
         <div
           role="tabpanel"
-          className={cn(
-            paneBase,
-            'sm:border-r sm:border-neutral-gray1',
-            activeId === left.props.id ? 'flex' : 'hidden sm:flex',
-            left.props.className,
-          )}
+          className={paneStyles({
+            position: 'left',
+            padding: left.props.unpadded ? 'none' : 'default',
+            active: activeId === left.props.id,
+            className: left.props.className,
+          })}
         >
           {left.props.children}
         </div>
         <div
           role="tabpanel"
-          className={cn(
-            paneBase,
-            activeId === right.props.id ? 'flex' : 'hidden sm:flex',
-            right.props.className,
-          )}
+          className={paneStyles({
+            position: 'right',
+            padding: right.props.unpadded ? 'none' : 'default',
+            active: activeId === right.props.id,
+            className: right.props.className,
+          })}
         >
           {right.props.children}
         </div>
@@ -109,30 +124,3 @@ function SplitPaneImpl({
 }
 
 export const SplitPane = Object.assign(SplitPaneImpl, { Pane });
-
-function SplitPaneTabButton({
-  isSelected,
-  onPress,
-  children,
-}: {
-  isSelected: boolean;
-  onPress: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={isSelected}
-      onClick={onPress}
-      className={cn(
-        'flex h-8 cursor-pointer items-center px-2 py-3 text-base font-normal outline-hidden transition focus-visible:bg-neutral-offWhite',
-        isSelected
-          ? 'border-b border-charcoal text-charcoal'
-          : 'border-b border-transparent text-neutral-gray4',
-      )}
-    >
-      {children}
-    </button>
-  );
-}

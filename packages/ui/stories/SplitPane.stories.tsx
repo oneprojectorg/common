@@ -57,7 +57,7 @@ export const Default: Story = {
 
 export const DefaultsToSecondOnMobile: Story = {
   render: () => (
-    <SplitPane defaultMobileTab="review">
+    <SplitPane defaultMobileTabId="review">
       <SplitPane.Pane id="proposal" label="Proposal">
         <SamplePane title="Proposal" tone="plain" />
       </SplitPane.Pane>

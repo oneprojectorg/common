@@ -320,7 +320,8 @@ export function ProposalView({
           <SplitPane.Pane
             id="feedback"
             label={t('Revision feedback')}
-            className="bg-white p-0 sm:p-0"
+            className="bg-white"
+            unpadded
           >
             <ProposalRevisionSubmittedPanel
               revisionRequest={activeRevisionRequest}
