@@ -27,10 +27,14 @@ export const submitRevisionResponseRouter = router({
         Channels.reviewAssignments(result.processInstanceId),
       ]);
 
+      // Send revision resubmitted event for notification workflow
       waitUntil(
         inngest.send({
           name: Events.reviewRevisionResubmitted.name,
-          data: { revisionRequestId: result.id },
+          data: {
+            assignmentId: result.assignmentId,
+            revisionRequestId: result.id,
+          },
         }),
       );
 

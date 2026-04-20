@@ -1,17 +1,11 @@
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
-  processInstances,
-  profileUsers,
-  profiles,
-  proposalReviewAssignments,
-  proposalReviewRequests,
-  proposals,
+  ProposalReviewAssignmentStatus,
+  ProposalReviewRequestState,
 } from '@op/db/schema';
 import { OPBatchSend, RevisionResubmittedEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
-import { eq } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
 
 const { reviewRevisionResubmitted } = Events;
 
@@ -26,86 +20,102 @@ export const sendRevisionResubmittedNotification = inngest.createFunction(
   },
   { event: reviewRevisionResubmitted.name },
   async ({ event, step }) => {
-    const { revisionRequestId } = reviewRevisionResubmitted.schema.parse(
-      event.data,
+    const { assignmentId, revisionRequestId } =
+      reviewRevisionResubmitted.schema.parse(event.data);
+
+    const assignment = await step.run('get-assignment-data', async () => {
+      return db.query.proposalReviewAssignments.findFirst({
+        where: { id: assignmentId },
+        with: {
+          proposal: {
+            with: {
+              profile: {
+                with: {
+                  profileUsers: true,
+                },
+              },
+            },
+          },
+          processInstance: {
+            with: {
+              profile: true,
+            },
+          },
+          requests: true,
+        },
+      });
+    });
+
+    if (!assignment) {
+      console.error('No assignment data found for assignment:', assignmentId);
+      return;
+    }
+
+    // Verify the revision request has been resubmitted before sending
+    const revisionRequest = assignment.requests.find(
+      (r) => r.id === revisionRequestId,
     );
 
-    const proposalProfile = alias(profiles, 'proposal_profile');
-    const processProfile = alias(profiles, 'process_profile');
+    if (!revisionRequest) {
+      console.warn('Revision request not found:', revisionRequestId);
+      return;
+    }
 
-    // Step 1: Get revision request context: proposal + process profile info
-    const context = await step.run('get-revision-context', async () => {
-      const result = await db
-        .select({
-          proposalProfileId: proposals.profileId,
-          proposalProfileName: proposalProfile.name,
-          processProfileName: processProfile.name,
-          processProfileSlug: processProfile.slug,
-        })
-        .from(proposalReviewRequests)
-        .innerJoin(
-          proposalReviewAssignments,
-          eq(proposalReviewRequests.assignmentId, proposalReviewAssignments.id),
-        )
-        .innerJoin(
-          proposals,
-          eq(proposalReviewAssignments.proposalId, proposals.id),
-        )
-        .innerJoin(proposalProfile, eq(proposals.profileId, proposalProfile.id))
-        .innerJoin(
-          processInstances,
-          eq(proposalReviewAssignments.processInstanceId, processInstances.id),
-        )
-        .innerJoin(
-          processProfile,
-          eq(processInstances.profileId, processProfile.id),
-        )
-        .where(eq(proposalReviewRequests.id, revisionRequestId))
-        .limit(1);
-
-      return result[0];
-    });
-
-    if (!context) {
+    if (revisionRequest.state !== ProposalReviewRequestState.RESUBMITTED) {
       console.log(
-        'No revision request context found for request:',
+        'Revision request is not in resubmitted state:',
         revisionRequestId,
+        'state:',
+        revisionRequest.state,
       );
       return;
     }
 
-    // Step 2: Get all author (proposal profile) emails
-    const collaborators = await step.run('get-collaborators', async () => {
-      return db
-        .select({
-          email: profileUsers.email,
-        })
-        .from(profileUsers)
-        .where(eq(profileUsers.profileId, context.proposalProfileId));
-    });
-
-    if (collaborators.length === 0) {
+    if (
+      assignment.status !== ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW
+    ) {
       console.log(
-        'No collaborators found for revision request:',
-        revisionRequestId,
+        'Assignment is not ready for re-review:',
+        assignmentId,
+        'status:',
+        assignment.status,
       );
       return;
     }
 
-    const proposalUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${context.processProfileSlug}/proposal/${context.proposalProfileId}`;
+    const { proposal, processInstance } = assignment;
+    const authorEmails = proposal.profile.profileUsers;
 
-    // Step 3: Send notification emails to all collaborators
+    if (authorEmails.length === 0) {
+      console.warn(
+        'No author emails found for proposal profile:',
+        proposal.profileId,
+      );
+      return;
+    }
+
+    const processProfile = processInstance.profile;
+    if (!processProfile) {
+      console.error(
+        'No profile found for process instance:',
+        processInstance.id,
+      );
+      return;
+    }
+
+    const proposalName = proposal.profile.name;
+    const processTitle = processProfile.name;
+    const proposalUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${processProfile.slug}/proposal/${proposal.profileId}`;
+
     const result = await step.run('send-emails', async () => {
       try {
-        const emails = collaborators.map(({ email }) => ({
+        const emails = authorEmails.map(({ email }) => ({
           to: email,
-          subject: RevisionResubmittedEmail.subject(
-            context.proposalProfileName,
-          ),
+          subject: RevisionResubmittedEmail.subject(proposalName),
           component: () =>
             RevisionResubmittedEmail({
-              proposalName: context.proposalProfileName,
-              processTitle: context.processProfileName,
+              proposalName,
+              processTitle,
               proposalUrl,
             }),
         }));
@@ -122,7 +132,7 @@ export const sendRevisionResubmittedNotification = inngest.createFunction(
       } catch (error) {
         console.error('Failed to send revision resubmitted notifications:', {
           error,
-          revisionRequestId,
+          assignmentId,
         });
         throw error;
       }
