@@ -7,6 +7,7 @@ import {
   type RubricTemplateSchema,
   schemaValidator,
 } from '@op/common/client';
+import { useDebouncedCallback } from '@op/hooks';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
 import {
@@ -14,11 +15,15 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
+
+const AUTOSAVE_DEBOUNCE_MS = 1000;
 
 interface ReviewFormState {
   /** Rubric answers keyed by criterion id; validated against the template. */
@@ -87,6 +92,34 @@ export function ReviewFormProvider({
     },
   });
 
+  const saveReviewDraft = trpc.decision.saveReviewDraft.useMutation();
+
+  // Ref keeps the debounced callback stable while always reading the freshest
+  // form state — avoids rebuilding the debounce on every keystroke.
+  const autosavePayloadRef = useRef({
+    values,
+    rationales,
+  });
+  autosavePayloadRef.current = { values, rationales };
+
+  const debouncedSaveDraft = useDebouncedCallback(() => {
+    if (isSubmitted || isPausedForRevision) {
+      return;
+    }
+    const { values: latestValues, rationales: latestRationales } =
+      autosavePayloadRef.current;
+    saveReviewDraft.mutate({
+      assignmentId,
+      reviewData: { answers: latestValues, rationales: latestRationales },
+    });
+  }, AUTOSAVE_DEBOUNCE_MS);
+
+  useEffect(() => {
+    return () => {
+      debouncedSaveDraft.cancel();
+    };
+  }, [debouncedSaveDraft]);
+
   const requestRevisionMutation = trpc.decision.requestRevision.useMutation({
     onSuccess: () => {
       toast.success({ message: t('Revision requested') });
@@ -119,21 +152,32 @@ export function ReviewFormProvider({
     [template, values],
   );
 
-  const handleValueChange = useCallback((key: string, value: unknown) => {
-    setValues((current) => ({ ...current, [key]: value }));
-  }, []);
+  const handleValueChange = useCallback(
+    (key: string, value: unknown) => {
+      setValues((current) => ({ ...current, [key]: value }));
+      debouncedSaveDraft();
+    },
+    [debouncedSaveDraft],
+  );
 
-  const handleRationaleChange = useCallback((key: string, value: string) => {
-    setRationales((current) => ({ ...current, [key]: value }));
-  }, []);
+  const handleRationaleChange = useCallback(
+    (key: string, value: string) => {
+      setRationales((current) => ({ ...current, [key]: value }));
+      debouncedSaveDraft();
+    },
+    [debouncedSaveDraft],
+  );
 
   const handleSubmit = useCallback(() => {
+    // Drop any pending draft save — submitReview will persist the final
+    // payload and upgrade the existing draft row to SUBMITTED.
+    debouncedSaveDraft.cancel();
     // TODO: include overallComment (feedback to author) in submission
     submitReview.mutate({
       assignmentId,
       reviewData: { answers: values, rationales },
     });
-  }, [assignmentId, values, rationales, submitReview]);
+  }, [assignmentId, values, rationales, submitReview, debouncedSaveDraft]);
 
   const handleRequestRevision = useCallback(
     (comment: string) => {
