@@ -1,5 +1,3 @@
-'use client';
-
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import type { RouterOutput } from '@op/api';
 import { type InstancePhaseData } from '@op/api/encoders';
@@ -8,8 +6,6 @@ import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { Suspense } from 'react';
 import { LuLeaf } from 'react-icons/lu';
-
-import { useTranslations } from '@/lib/i18n';
 
 import { TranslatedText } from '@/components/TranslatedText';
 
@@ -30,8 +26,6 @@ export function ReviewPage({
   slug: string;
   decisionProfileId?: string | null;
 }) {
-  const t = useTranslations();
-
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;
   const currentPhase = phases.find(
@@ -77,10 +71,10 @@ export function ReviewPage({
               default: () => (
                 <EmptyState icon={<LuLeaf className="size-6" />}>
                   <Header3 className="font-serif !text-title-base font-light text-neutral-black">
-                    {t("We couldn't load proposals")}
+                    <TranslatedText text="We couldn't load proposals" />
                   </Header3>
                   <p className="text-base text-neutral-charcoal">
-                    {t('Please refresh the page to try again.')}
+                    <TranslatedText text="Please refresh the page to try again." />
                   </p>
                 </EmptyState>
               ),
