@@ -39,7 +39,7 @@ function DecisionStateRouterNew({
   const phases = instance.instanceData?.phases ?? [];
   const currentPhase = phases.find((p) => p.phaseId === currentStateId);
   const isVotingEnabled = currentPhase?.rules?.voting?.submit === true;
-  const isReviewEnabled = currentPhase?.rules?.proposals?.review === true;
+  const isReviewEnabled = currentPhase?.rules?.proposals?.review === true && instance.access?.review;
 
   if (isReviewEnabled && reviewFlowEnabled) {
     if (!decisionSlug) {
