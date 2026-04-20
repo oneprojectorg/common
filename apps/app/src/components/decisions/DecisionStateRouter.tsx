@@ -47,7 +47,7 @@ function DecisionStateRouterNew({
     }
     return (
       <ReviewPage
-        instanceId={instanceId}
+        instance={instance}
         decisionSlug={decisionSlug}
         slug={slug}
         decisionProfileId={decisionProfileId}
