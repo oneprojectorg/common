@@ -13,15 +13,15 @@ export const RevisionResubmittedEmail = ({
 }) => {
   return (
     <EmailTemplate
-      previewText={`Your revision for "${proposalName}" has been resubmitted for review`}
+      previewText={`A revision to "${proposalName}" is ready for your review`}
     >
       <Heading className="mx-0 !my-0 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
         Revision Resubmitted
       </Heading>
       <Text className="my-8 text-lg">
-        Your revision for <strong>{proposalName}</strong> in{' '}
-        <strong>{processTitle}</strong> has been resubmitted. Reviewers will
-        take another look and follow up with their decision.
+        The author of <strong>{proposalName}</strong> in{' '}
+        <strong>{processTitle}</strong> has resubmitted their revision
+        addressing your feedback. Take another look at the proposal.
       </Text>
 
       <Section className="pb-0">
@@ -34,18 +34,18 @@ export const RevisionResubmittedEmail = ({
             textDecoration: 'none',
           }}
         >
-          View proposal
+          View revised proposal
         </Button>
       </Section>
 
       <Text className="mt-8 mb-0 text-xs text-neutral-gray4">
-        You're receiving this because you're the author of this proposal.
+        You're receiving this because you requested changes to this proposal.
       </Text>
     </EmailTemplate>
   );
 };
 
 RevisionResubmittedEmail.subject = (proposalName: string) =>
-  `Your revision for "${proposalName}" has been resubmitted`;
+  `A revision to "${proposalName}" is ready for your review`;
 
 export default RevisionResubmittedEmail;

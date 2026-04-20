@@ -29,16 +29,17 @@ export const sendRevisionResubmittedNotification = inngest.createFunction(
         with: {
           proposal: {
             with: {
-              profile: {
-                with: {
-                  profileUsers: true,
-                },
-              },
+              profile: true,
             },
           },
           processInstance: {
             with: {
               profile: true,
+            },
+          },
+          reviewer: {
+            with: {
+              profileUsers: true,
             },
           },
           requests: true,
@@ -83,13 +84,13 @@ export const sendRevisionResubmittedNotification = inngest.createFunction(
       return;
     }
 
-    const { proposal, processInstance } = assignment;
-    const authorEmails = proposal.profile.profileUsers;
+    const { proposal, processInstance, reviewer } = assignment;
+    const reviewerEmails = reviewer.profileUsers;
 
-    if (authorEmails.length === 0) {
+    if (reviewerEmails.length === 0) {
       console.warn(
-        'No author emails found for proposal profile:',
-        proposal.profileId,
+        'No reviewer emails found for reviewer profile:',
+        assignment.reviewerProfileId,
       );
       return;
     }
@@ -109,7 +110,7 @@ export const sendRevisionResubmittedNotification = inngest.createFunction(
 
     const result = await step.run('send-emails', async () => {
       try {
-        const emails = authorEmails.map(({ email }) => ({
+        const emails = reviewerEmails.map(({ email }) => ({
           to: email,
           subject: RevisionResubmittedEmail.subject(proposalName),
           component: () =>
