@@ -130,7 +130,7 @@ describe.concurrent('updateProposal visibility', () => {
         data: { visibility: Visibility.HIDDEN },
       }),
     ).rejects.toMatchObject({
-      code: 'INTERNAL_SERVER_ERROR',
+      cause: { statusCode: 403 },
     });
   });
 
@@ -393,7 +393,7 @@ describe.concurrent('updateProposal status', () => {
         data: { status: ProposalStatus.SHORTLISTED },
       }),
     ).rejects.toMatchObject({
-      code: 'INTERNAL_SERVER_ERROR',
+      cause: { statusCode: 403 },
     });
   });
 
@@ -590,7 +590,7 @@ describe.concurrent('updateProposal validation', () => {
         data: { proposalData: { title: 'Updated Draft' } },
       }),
     ).rejects.toMatchObject({
-      code: 'INTERNAL_SERVER_ERROR',
+      cause: { statusCode: 400 },
     });
   });
 });

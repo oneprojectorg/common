@@ -89,10 +89,10 @@ describe.concurrent('getInstance', () => {
       caller.decision.getInstance({
         instanceId: '00000000-0000-4000-8000-000000000000',
       }),
-    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    ).rejects.toMatchObject({ cause: { statusCode: 404 } });
   });
 
-  it('should return UNAUTHORIZED for a user with no access to the instance', async ({
+  it('should return FORBIDDEN for a user with no access to the instance', async ({
     task,
     onTestFinished,
   }) => {
@@ -124,7 +124,7 @@ describe.concurrent('getInstance', () => {
       outsiderCaller.decision.getInstance({
         instanceId: instance.instance.id,
       }),
-    ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+    ).rejects.toMatchObject({ cause: { statusCode: 403 } });
   });
 
   it('should exclude draft proposals from stats', async ({

@@ -94,9 +94,7 @@ export const profileRelationshipRouter = router({
                 proposalInfo.processInstanceId,
                 proposalInfo.proposalId,
               );
-            } else if (
-              relationshipType === ProfileRelationshipType.FOLLOWING
-            ) {
+            } else if (relationshipType === ProfileRelationshipType.FOLLOWING) {
               await trackProposalFollowed(
                 ctx,
                 proposalInfo.processInstanceId,

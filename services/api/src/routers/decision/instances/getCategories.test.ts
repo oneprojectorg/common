@@ -234,7 +234,7 @@ describe.concurrent('getCategories permissions', () => {
       unauthorizedCaller.decision.getCategories({
         processInstanceId: instance.instance.id,
       }),
-    ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+    ).rejects.toMatchObject({ cause: { statusCode: 403 } });
   });
 
   it('should allow access via org member role fallback when user has no profile access', async ({

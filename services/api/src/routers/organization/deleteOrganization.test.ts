@@ -59,7 +59,7 @@ describe.concurrent('organization.deleteOrganization', () => {
     });
   });
 
-  it('should throw UNAUTHORIZED when non-member tries to delete organization', async ({
+  it('should reject non-members with 403 (UnauthorizedError) when trying to delete organization', async ({
     task,
     onTestFinished,
   }) => {
@@ -86,7 +86,7 @@ describe.concurrent('organization.deleteOrganization', () => {
         organizationProfileId: organizationProfile.id,
       }),
     ).rejects.toMatchObject({
-      code: 'UNAUTHORIZED',
+      cause: { statusCode: 403 },
     });
 
     // Verify the organization was NOT deleted
@@ -151,7 +151,7 @@ describe.concurrent('organization.deleteOrganization', () => {
         organizationProfileId: '00000000-0000-0000-0000-000000000000',
       }),
     ).rejects.toMatchObject({
-      code: 'NOT_FOUND',
+      cause: { statusCode: 404 },
     });
   });
 

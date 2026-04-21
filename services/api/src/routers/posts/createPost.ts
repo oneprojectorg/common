@@ -20,7 +20,11 @@ export const createPost = router({
 
       if (input.proposalId && input.processInstanceId) {
         waitUntil(
-          trackProposalCommented(ctx, input.processInstanceId, input.proposalId),
+          trackProposalCommented(
+            ctx,
+            input.processInstanceId,
+            input.proposalId,
+          ),
         );
       }
 

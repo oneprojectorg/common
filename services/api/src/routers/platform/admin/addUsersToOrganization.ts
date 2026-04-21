@@ -67,9 +67,7 @@ export const addUsersToOrganizationRouter = router({
       }
 
       // Check all users exist
-      const existingAuthUserIds = new Set(
-        users.map((user) => user.authUserId),
-      );
+      const existingAuthUserIds = new Set(users.map((user) => user.authUserId));
       const invalidAuthUserIds = allAuthUserIds.filter(
         (authUserId) => !existingAuthUserIds.has(authUserId),
       );

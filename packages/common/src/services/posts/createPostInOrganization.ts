@@ -1,10 +1,9 @@
 import { db } from '@op/db/client';
 import { attachments, posts, postsToOrganizations } from '@op/db/schema';
 import type { User } from '@supabase/supabase-js';
-import { TRPCError } from '@trpc/server';
 
 import { getOrgAccessUser } from '../';
-import { UnauthorizedError } from '../../utils/error';
+import { CommonError, UnauthorizedError } from '../../utils/error';
 
 export interface CreatePostInOrganizationOptions {
   id: string;
@@ -44,10 +43,7 @@ export const createPostInOrganization = async (
       .returning();
 
     if (!post) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to add post to organization',
-      });
+      throw new CommonError('Failed to add post to organization');
     }
 
     // Create the join record associating the post with the organization
@@ -90,10 +86,12 @@ export const createPostInOrganization = async (
       allStorageObjects,
     };
   } catch (error) {
+    if (error instanceof CommonError) {
+      throw error;
+    }
     console.log('ERROR', error);
-    throw new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Something went wrong when adding post to organization',
-    });
+    throw new CommonError(
+      'Something went wrong when adding post to organization',
+    );
   }
 };

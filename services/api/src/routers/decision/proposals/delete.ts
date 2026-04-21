@@ -1,7 +1,4 @@
-import {
-  Channels,
-  deleteProposal as deleteProposalService,
-} from '@op/common';
+import { Channels, deleteProposal as deleteProposalService } from '@op/common';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
