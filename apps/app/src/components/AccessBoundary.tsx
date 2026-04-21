@@ -25,8 +25,11 @@ export function AccessBoundary({
   const userPermissions: ZonePermissions = getPermissionsForProfile(profileId);
   const conditions = Array.isArray(required) ? required : [required];
 
-  const hasAccess = conditions.some((condition) =>
-    Object.entries(condition).every(([zone, needs]) => {
+  const hasAccess = conditions.some((condition) => {
+    if (Object.keys(condition).length === 0) {
+      return false;
+    }
+    return Object.entries(condition).every(([zone, needs]) => {
       if (!needs) {
         return true;
       }
@@ -43,8 +46,8 @@ export function AccessBoundary({
         }
         return zonePermission[action];
       });
-    }),
-  );
+    });
+  });
 
   return <>{hasAccess ? children : fallback}</>;
 }
