@@ -23,7 +23,7 @@
     "@op/supabase": "workspace:*",
     "@op/types": "workspace:*",
     "drizzle-orm": "catalog:",
-    "inngest": "3.52.5",
+    "inngest": "3.54.0",
     "inngest-cli": "^1.12.1",
     "zod": "catalog:"
   },
