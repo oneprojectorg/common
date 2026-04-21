@@ -1,5 +1,6 @@
 import { db } from '@op/db/client';
 import {
+  type ProposalReview,
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
   proposalReviewAssignments,
@@ -26,10 +27,7 @@ export async function saveReviewDraft({
   assignmentId: string;
   reviewData: RubricReviewData;
   user: User;
-}): Promise<{
-  review: typeof proposalReviews.$inferSelect;
-  processInstanceId: string;
-}> {
+}): Promise<{ review: ProposalReview; processInstanceId: string }> {
   const context = await assertReviewAssignmentContext({
     assignmentId,
     user,
