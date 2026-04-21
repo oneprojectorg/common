@@ -1,5 +1,4 @@
-import { UnauthorizedError, approveRelationship } from '@op/common';
-import { TRPCError } from '@trpc/server';
+import { approveRelationship } from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -23,29 +22,15 @@ export const approveRelationshipRouter = router({
       const { user } = ctx;
       const { targetOrganizationId, sourceOrganizationId } = input;
 
-      try {
-        await approveRelationship({
-          user,
-          targetOrganizationId,
-          sourceOrganizationId,
-        });
+      await approveRelationship({
+        user,
+        targetOrganizationId,
+        sourceOrganizationId,
+      });
 
-        // Track analytics (non-blocking)
-        waitUntil(trackRelationshipAccepted(ctx));
+      // Track analytics (non-blocking)
+      waitUntil(trackRelationshipAccepted(ctx));
 
-        return true;
-      } catch (error: unknown) {
-        console.log('ERROR', error);
-        if (error instanceof UnauthorizedError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'UNAUTHORIZED',
-          });
-        }
-        throw new TRPCError({
-          message: 'Could not approve relationship',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-      }
+      return true;
     }),
 });

@@ -1,6 +1,5 @@
 import { invalidate } from '@op/cache';
-import { UnauthorizedError, updateOrganization } from '@op/common';
-import { TRPCError } from '@trpc/server';
+import { updateOrganization } from '@op/common';
 import { waitUntil } from '@vercel/functions';
 
 import { organizationsEncoder } from '../../encoders/organizations';
@@ -17,52 +16,36 @@ export const updateOrganizationRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
 
-      try {
-        const org = await updateOrganization({
-          id: input.id,
-          data: input,
-          user,
-        });
+      const org = await updateOrganization({
+        id: input.id,
+        data: input,
+        user,
+      });
 
-        // Track funding toggle analytics if funding status changed (non-blocking)
-        if (
-          input.isOfferingFunds !== undefined ||
-          input.isReceivingFunds !== undefined
-        ) {
-          if (user) {
-            waitUntil(
-              trackFundingToggle(
-                { organizationId: input.id },
-                {
-                  isOfferingFunds: input.isOfferingFunds,
-                  isReceivingFunds: input.isReceivingFunds,
-                },
-              ),
-            );
-          }
+      // Track funding toggle analytics if funding status changed (non-blocking)
+      if (
+        input.isOfferingFunds !== undefined ||
+        input.isReceivingFunds !== undefined
+      ) {
+        if (user) {
+          waitUntil(
+            trackFundingToggle(
+              { organizationId: input.id },
+              {
+                isOfferingFunds: input.isOfferingFunds,
+                isReceivingFunds: input.isReceivingFunds,
+              },
+            ),
+          );
         }
-
-        // invalidate cache and wait for a return so FE can then refetch
-        await Promise.all([
-          invalidate({ type: 'organization', params: [org.profile.slug] }),
-          invalidate({ type: 'organization', params: [org.id] }),
-        ]);
-
-        return organizationsEncoder.parse(org);
-      } catch (error: unknown) {
-        console.log('ERROR', error);
-
-        if (error instanceof UnauthorizedError) {
-          throw new TRPCError({
-            message: 'You do not have permission to update this organization',
-            code: 'UNAUTHORIZED',
-          });
-        }
-
-        throw new TRPCError({
-          message: 'Failed to update organization',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
       }
+
+      // invalidate cache and wait for a return so FE can then refetch
+      await Promise.all([
+        invalidate({ type: 'organization', params: [org.profile.slug] }),
+        invalidate({ type: 'organization', params: [org.id] }),
+      ]);
+
+      return organizationsEncoder.parse(org);
     }),
 });

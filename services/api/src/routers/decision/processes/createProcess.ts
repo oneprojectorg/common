@@ -1,5 +1,4 @@
-import { UnauthorizedError, createProcess } from '@op/common';
-import { TRPCError } from '@trpc/server';
+import { createProcess } from '@op/common';
 
 import {
   legacyCreateProcessInputSchema,
@@ -17,34 +16,14 @@ export const createProcessRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { user, logger } = ctx;
 
-      try {
-        const process = await createProcess({ data: input, user });
+      const process = await createProcess({ data: input, user });
 
-        logger.info('Decision process created', {
-          userId: user.id,
-          processId: process.id,
-          processName: process.name,
-        });
+      logger.info('Decision process created', {
+        userId: user.id,
+        processId: process.id,
+        processName: process.name,
+      });
 
-        return legacyDecisionProcessEncoder.parse(process);
-      } catch (error: unknown) {
-        logger.error('Failed to create decision process', {
-          userId: user.id,
-          processName: input.name,
-          error,
-        });
-
-        if (error instanceof UnauthorizedError) {
-          throw new TRPCError({
-            message: 'You do not have permission to create decision processes',
-            code: 'UNAUTHORIZED',
-          });
-        }
-
-        throw new TRPCError({
-          message: 'Failed to create decision process',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-      }
+      return legacyDecisionProcessEncoder.parse(process);
     }),
 });

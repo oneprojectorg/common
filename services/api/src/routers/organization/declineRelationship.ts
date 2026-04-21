@@ -1,5 +1,4 @@
-import { UnauthorizedError, declineRelationship } from '@op/common';
-import { TRPCError } from '@trpc/server';
+import { declineRelationship } from '@op/common';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -19,26 +18,12 @@ export const declineRelationshipRouter = router({
       const { user } = ctx;
       const { ids, targetOrganizationId } = input;
 
-      try {
-        await declineRelationship({
-          user,
-          targetOrganizationId,
-          ids,
-        });
+      await declineRelationship({
+        user,
+        targetOrganizationId,
+        ids,
+      });
 
-        return true;
-      } catch (error: unknown) {
-        console.log('ERROR', error);
-        if (error instanceof UnauthorizedError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'UNAUTHORIZED',
-          });
-        }
-        throw new TRPCError({
-          message: 'Could not decline relationship',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-      }
+      return true;
     }),
 });

@@ -1,7 +1,6 @@
-import { UnauthorizedError, exportProposals } from '@op/common';
+import { exportProposals } from '@op/common';
 import { ProposalFilter } from '@op/core';
 import { ProposalStatus } from '@op/db/schema';
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
@@ -27,52 +26,27 @@ export const exportProposalsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { user, logger } = ctx;
 
-      try {
-        const { exportId, organizationId } = await exportProposals({
-          input: {
-            processInstanceId: input.processInstanceId,
-            format: input.format,
-            categoryId: input.categoryId,
-            submittedByProfileId: input.submittedByProfileId,
-            status: input.status,
-            dir: input.dir,
-            proposalFilter: input.proposalFilter,
-          },
-          user,
-        });
-
-        logger.info('Export job created', {
-          exportId,
-          userId: user.id,
+      const { exportId, organizationId } = await exportProposals({
+        input: {
           processInstanceId: input.processInstanceId,
           format: input.format,
-          organizationId,
-        });
+          categoryId: input.categoryId,
+          submittedByProfileId: input.submittedByProfileId,
+          status: input.status,
+          dir: input.dir,
+          proposalFilter: input.proposalFilter,
+        },
+        user,
+      });
 
-        return { exportId };
-      } catch (error: unknown) {
-        if (error instanceof UnauthorizedError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'FORBIDDEN',
-          });
-        }
+      logger.info('Export job created', {
+        exportId,
+        userId: user.id,
+        processInstanceId: input.processInstanceId,
+        format: input.format,
+        organizationId,
+      });
 
-        if (error instanceof TRPCError) {
-          throw error;
-        }
-
-        logger.error('Failed to create export job', {
-          userId: user.id,
-          input,
-          error,
-        });
-
-        throw new TRPCError({
-          message: 'Failed to create export job',
-          code: 'INTERNAL_SERVER_ERROR',
-          cause: error,
-        });
-      }
+      return { exportId };
     }),
 });

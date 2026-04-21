@@ -1,11 +1,7 @@
 import {
   Channels,
-  NotFoundError,
-  UnauthorizedError,
-  ValidationError,
   deleteProposal as deleteProposalService,
 } from '@op/common';
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
@@ -27,55 +23,21 @@ export const deleteProposalRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { user, logger } = ctx;
 
-      try {
-        const result = await deleteProposalService({
-          proposalId: input.proposalId,
-          user,
-        });
+      const result = await deleteProposalService({
+        proposalId: input.proposalId,
+        user,
+      });
 
-        ctx.registerMutationChannels([
-          Channels.decisionProposals(result.processInstanceId),
-          Channels.decisionProposal(result.processInstanceId, input.proposalId),
-        ]);
+      ctx.registerMutationChannels([
+        Channels.decisionProposals(result.processInstanceId),
+        Channels.decisionProposal(result.processInstanceId, input.proposalId),
+      ]);
 
-        logger.info('Proposal deleted', {
-          userId: user.id,
-          proposalId: input.proposalId,
-        });
+      logger.info('Proposal deleted', {
+        userId: user.id,
+        proposalId: input.proposalId,
+      });
 
-        return { deletedId: result.deletedId };
-      } catch (error: unknown) {
-        logger.error('Failed to delete proposal', {
-          userId: user.id,
-          proposalId: input.proposalId,
-          error,
-        });
-
-        if (error instanceof UnauthorizedError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'UNAUTHORIZED',
-          });
-        }
-
-        if (error instanceof NotFoundError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'NOT_FOUND',
-          });
-        }
-
-        if (error instanceof ValidationError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'BAD_REQUEST',
-          });
-        }
-
-        throw new TRPCError({
-          message: 'Failed to delete proposal',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-      }
+      return { deletedId: result.deletedId };
     }),
 });

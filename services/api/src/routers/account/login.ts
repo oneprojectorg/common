@@ -1,12 +1,16 @@
 import { cache } from '@op/cache';
-import { getAllowListUser } from '@op/common';
+import {
+  CommonError,
+  UnauthorizedError,
+  ValidationError,
+  getAllowListUser,
+} from '@op/common';
 import {
   APP_NAME,
   adminEmails,
   allowedEmailDomains,
   genericEmail,
 } from '@op/core';
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import withRateLimited from '../../middlewares/withRateLimited';
@@ -37,10 +41,7 @@ const login = router({
 
       if (!emailDomain) {
         logger.warn('Login failed - invalid email', { email: input.email });
-        throw new TRPCError({
-          message: 'Invalid email',
-          code: 'BAD_REQUEST',
-        });
+        throw new ValidationError('Invalid email');
       }
 
       const allowedUserEmail = await cache<ReturnType<typeof getAllowListUser>>(
@@ -57,10 +58,9 @@ const login = router({
         !allowedEmailDomains.includes(emailDomain) &&
         !adminEmails.includes(input.email)
       ) {
-        throw new TRPCError({
-          message: `${APP_NAME} is invite-only! You’re now on the waitlist. Keep an eye on your inbox for updates.`,
-          code: 'FORBIDDEN',
-        });
+        throw new UnauthorizedError(
+          `${APP_NAME} is invite-only! You’re now on the waitlist. Keep an eye on your inbox for updates.`,
+        );
       }
 
       // If the user is not using OAuth and doesn't have a token, send them an OTP
@@ -79,10 +79,9 @@ const login = router({
             error: authResponse.error,
             email: input.email,
           });
-          throw new TRPCError({
-            message: `There was an error signing you in. We are currently investigating the issue. Please try again in a few minutes. If you need further assistance, don't hesitate to contact us at ${genericEmail}`,
-            code: 'INTERNAL_SERVER_ERROR',
-          });
+          throw new CommonError(
+            `There was an error signing you in. We are currently investigating the issue. Please try again in a few minutes. If you need further assistance, don't hesitate to contact us at ${genericEmail}`,
+          );
         }
       }
 

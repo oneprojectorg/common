@@ -1,6 +1,4 @@
 import { getOrganizationsByProfile } from '@op/common';
-import { logger } from '@op/logging';
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { organizationsWithProfileEncoder } from '../../encoders/organizations';
@@ -13,21 +11,10 @@ export const getOrganizationsByProfileRouter = router({
     .query(async ({ input }) => {
       const { profileId } = input;
 
-      try {
-        const organizations = await getOrganizationsByProfile(profileId);
+      const organizations = await getOrganizationsByProfile(profileId);
 
-        return organizations.map((org) =>
-          organizationsWithProfileEncoder.parse(org),
-        );
-      } catch (error) {
-        logger.error('Error getting organizations by profile', {
-          error,
-          profileId,
-        });
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to get organizations by profile',
-        });
-      }
+      return organizations.map((org) =>
+        organizationsWithProfileEncoder.parse(org),
+      );
     }),
 });

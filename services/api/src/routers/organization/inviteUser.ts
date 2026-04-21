@@ -5,7 +5,6 @@ import {
   inviteUsersToOrganization,
 } from '@op/common';
 import { db } from '@op/db/client';
-import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -112,11 +111,6 @@ export const inviteUserRouter = router({
           });
         }
       } catch (error) {
-        if (error instanceof TRPCError) {
-          throw error;
-        }
-
-        // Handle specific errors
         if (
           error instanceof Error &&
           error.message.includes('User must be associated')
@@ -124,14 +118,7 @@ export const inviteUserRouter = router({
           throw new UnauthorizedError(error.message);
         }
 
-        // Handle other errors
-        const message =
-          error instanceof Error ? error.message : 'Failed to send invitation';
-
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message,
-        });
+        throw error;
       }
     }),
 });

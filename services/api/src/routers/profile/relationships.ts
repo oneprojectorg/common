@@ -1,13 +1,10 @@
 import {
-  ValidationError,
   addProfileRelationship,
   getProfileRelationships,
   removeProfileRelationship,
 } from '@op/common';
 import { db, eq } from '@op/db/client';
 import { ProfileRelationshipType, proposals } from '@op/db/schema';
-import { logger } from '@op/logging';
-import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -79,55 +76,36 @@ export const profileRelationshipRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { targetProfileId, relationshipType, pending } = input;
 
-      try {
-        await addProfileRelationship({
-          targetProfileId,
-          relationshipType,
-          authUserId: ctx.user.id,
-          pending,
-        });
+      await addProfileRelationship({
+        targetProfileId,
+        relationshipType,
+        authUserId: ctx.user.id,
+        pending,
+      });
 
-        // Track analytics if this is a proposal relationship (async in background)
-        waitUntil(
-          (async () => {
-            const proposalInfo = await getProposalInfo(targetProfileId);
-            if (proposalInfo) {
-              if (relationshipType === ProfileRelationshipType.LIKES) {
-                await trackProposalLiked(
-                  ctx,
-                  proposalInfo.processInstanceId,
-                  proposalInfo.proposalId,
-                );
-              } else if (
-                relationshipType === ProfileRelationshipType.FOLLOWING
-              ) {
-                await trackProposalFollowed(
-                  ctx,
-                  proposalInfo.processInstanceId,
-                  proposalInfo.proposalId,
-                );
-              }
+      // Track analytics if this is a proposal relationship (async in background)
+      waitUntil(
+        (async () => {
+          const proposalInfo = await getProposalInfo(targetProfileId);
+          if (proposalInfo) {
+            if (relationshipType === ProfileRelationshipType.LIKES) {
+              await trackProposalLiked(
+                ctx,
+                proposalInfo.processInstanceId,
+                proposalInfo.proposalId,
+              );
+            } else if (
+              relationshipType === ProfileRelationshipType.FOLLOWING
+            ) {
+              await trackProposalFollowed(
+                ctx,
+                proposalInfo.processInstanceId,
+                proposalInfo.proposalId,
+              );
             }
-          })(),
-        );
-      } catch (error) {
-        if (error instanceof ValidationError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'BAD_REQUEST',
-          });
-        }
-
-        if (error instanceof TRPCError) {
-          throw error;
-        }
-
-        logger.error('Error adding relationship', { error, targetProfileId });
-        throw new TRPCError({
-          message: 'Failed to add relationship',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-      }
+          }
+        })(),
+      );
     }),
 
   removeRelationship: relationshipProcedure
@@ -135,19 +113,11 @@ export const profileRelationshipRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { targetProfileId, relationshipType } = input;
 
-      try {
-        await removeProfileRelationship({
-          targetProfileId,
-          relationshipType,
-          authUserId: ctx.user.id,
-        });
-      } catch (error) {
-        logger.error('Error removing relationship', { error, targetProfileId });
-        throw new TRPCError({
-          message: 'Failed to remove relationship',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-      }
+      await removeProfileRelationship({
+        targetProfileId,
+        relationshipType,
+        authUserId: ctx.user.id,
+      });
     }),
 
   getRelationships: commonAuthedProcedure({
@@ -203,41 +173,26 @@ export const profileRelationshipRouter = router({
     .query(async ({ input, ctx }) => {
       const { targetProfileId, sourceProfileId, types, profileType } = input;
 
-      try {
-        // Initialize empty arrays for all requested types
-        const groupedResults: Record<string, any[]> = {};
-        for (const type of types) {
-          groupedResults[type] = [];
-        }
-
-        // Fetch all relationships in a single database query
-        const allRelationships = await getProfileRelationships({
-          targetProfileId,
-          sourceProfileId,
-          relationshipTypes: types,
-          profileType,
-          authUserId: ctx.user.id,
-        });
-
-        // Group results by relationship type
-        for (const relationship of allRelationships) {
-          const type = relationship.relationshipType;
-          if (groupedResults[type]) {
-            groupedResults[type].push(relationship);
-          }
-        }
-
-        return groupedResults;
-      } catch (error) {
-        logger.error('Error getting profile relationships', {
-          error,
-          targetProfileId,
-          sourceProfileId,
-        });
-        throw new TRPCError({
-          message: 'Failed to get profile relationships',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
+      const groupedResults: Record<string, any[]> = {};
+      for (const type of types) {
+        groupedResults[type] = [];
       }
+
+      const allRelationships = await getProfileRelationships({
+        targetProfileId,
+        sourceProfileId,
+        relationshipTypes: types,
+        profileType,
+        authUserId: ctx.user.id,
+      });
+
+      for (const relationship of allRelationships) {
+        const type = relationship.relationshipType;
+        if (groupedResults[type]) {
+          groupedResults[type].push(relationship);
+        }
+      }
+
+      return groupedResults;
     }),
 });

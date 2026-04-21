@@ -1,11 +1,11 @@
 import {
+  NotFoundError,
   UnauthorizedError,
   deletePostById,
   getOrgAccessUser,
 } from '@op/common';
 import { db, eq } from '@op/db/client';
 import { organizations } from '@op/db/schema';
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -33,10 +33,11 @@ export const deletePost = router({
         .limit(1);
 
       if (!organization.length) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Organization not found for the specified profileId',
-        });
+        throw new NotFoundError(
+          'Organization',
+          profileId,
+          'Organization not found for the specified profileId',
+        );
       }
 
       const organizationId = organization[0]!.id;
@@ -50,19 +51,6 @@ export const deletePost = router({
         throw new UnauthorizedError();
       }
 
-      try {
-        await deletePostById({ postId: id, organizationId });
-      } catch (error) {
-        if (
-          error instanceof Error &&
-          error.message.includes('Post not found')
-        ) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: error.message,
-          });
-        }
-        throw error;
-      }
+      await deletePostById({ postId: id, organizationId });
     }),
 });

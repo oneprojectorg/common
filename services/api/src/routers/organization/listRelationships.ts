@@ -1,15 +1,12 @@
 import {
   ChannelName,
   Channels,
-  UnauthorizedError,
   getDirectedRelationships,
   getPendingRelationships,
   getRelatedOrganizations,
 } from '@op/common';
 import { getCurrentOrgId } from '@op/common/src/services/access';
 import { Organization } from '@op/db/schema';
-import { logger } from '@op/logging';
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -40,28 +37,13 @@ export const listRelationshipsRouter = router({
     .query(async ({ ctx }) => {
       const { user } = ctx;
 
-      try {
-        const orgId = await getCurrentOrgId({ authUserId: user.id });
-        const { records: organizations, count } = await getPendingRelationships(
-          {
-            user,
-            orgId,
-          },
-        );
+      const orgId = await getCurrentOrgId({ authUserId: user.id });
+      const { records: organizations, count } = await getPendingRelationships({
+        user,
+        orgId,
+      });
 
-        return { organizations, count };
-      } catch (error: unknown) {
-        if (error instanceof UnauthorizedError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'UNAUTHORIZED',
-          });
-        }
-        throw new TRPCError({
-          message: 'Could not retrieve relationships',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-      }
+      return { organizations, count };
     }),
   listDirectedRelationships: commonAuthedProcedure()
     .input(directedInputSchema)
@@ -69,48 +51,33 @@ export const listRelationshipsRouter = router({
       const { user } = ctx;
       const { to, from, pending } = input;
 
-      try {
-        const defaultOrgId = await getCurrentOrgId({ authUserId: user.id });
-        const { records: relationships, count } =
-          await getDirectedRelationships({
-            user,
-            from,
-            to: to ?? defaultOrgId,
-            pending,
-          });
+      const defaultOrgId = await getCurrentOrgId({ authUserId: user.id });
+      const { records: relationships, count } = await getDirectedRelationships({
+        user,
+        from,
+        to: to ?? defaultOrgId,
+        pending,
+      });
 
-        const targetOrgChannel: ChannelName = Channels.orgRelationshipRequest({
-          type: 'target',
-          orgId: from,
+      const targetOrgChannel: ChannelName = Channels.orgRelationshipRequest({
+        type: 'target',
+        orgId: from,
+      });
+
+      const sourceOrgIds = relationships.map(
+        (relationship) => (relationship.targetOrganization as Organization).id,
+      );
+
+      const sourceOrgChannels: ChannelName[] = sourceOrgIds.map((orgId) => {
+        return Channels.orgRelationshipRequest({
+          type: 'source',
+          orgId,
         });
+      });
 
-        const sourceOrgIds = relationships.map(
-          (relationship) =>
-            (relationship.targetOrganization as Organization).id,
-        );
+      ctx.registerQueryChannels([...sourceOrgChannels, targetOrgChannel]);
 
-        const sourceOrgChannels: ChannelName[] = sourceOrgIds.map((orgId) => {
-          return Channels.orgRelationshipRequest({
-            type: 'source',
-            orgId,
-          });
-        });
-
-        ctx.registerQueryChannels([...sourceOrgChannels, targetOrgChannel]);
-
-        return { relationships, count };
-      } catch (error: unknown) {
-        if (error instanceof UnauthorizedError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'UNAUTHORIZED',
-          });
-        }
-        throw new TRPCError({
-          message: 'Could not retrieve relationships',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-      }
+      return { relationships, count };
     }),
   listRelationships: commonAuthedProcedure()
     .input(nonDirectedInputSchema)
@@ -118,28 +85,12 @@ export const listRelationshipsRouter = router({
       const { user } = ctx;
       const { organizationId, pending } = input;
 
-      try {
-        const { records: organizations, count } = await getRelatedOrganizations(
-          {
-            user,
-            orgId: organizationId,
-            pending,
-          },
-        );
+      const { records: organizations, count } = await getRelatedOrganizations({
+        user,
+        orgId: organizationId,
+        pending,
+      });
 
-        return { organizations, count };
-      } catch (error: unknown) {
-        logger.error('Error listing relationships', { error, organizationId });
-        if (error instanceof UnauthorizedError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'UNAUTHORIZED',
-          });
-        }
-        throw new TRPCError({
-          message: 'Could not retrieve relationships',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-      }
+      return { organizations, count };
     }),
 });

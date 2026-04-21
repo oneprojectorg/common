@@ -1,6 +1,4 @@
 import { updateOrganizationUser } from '@op/common';
-import { logger } from '@op/logging';
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -44,44 +42,13 @@ export const updateOrganizationUserRouter = router({
       const { organizationId, organizationUserId, data } = input;
       const { user } = ctx;
 
-      try {
-        const updatedUser = await updateOrganizationUser({
-          organizationUserId,
-          organizationId,
-          data,
-          user,
-        });
+      const updatedUser = await updateOrganizationUser({
+        organizationUserId,
+        organizationId,
+        data,
+        user,
+      });
 
-        return outputSchema.parse(updatedUser);
-      } catch (error: unknown) {
-        logger.error('Error updating organization user', { error });
-
-        if (error instanceof Error) {
-          if (error.name === 'UnauthorizedError') {
-            throw new TRPCError({
-              message: error.message,
-              code: 'UNAUTHORIZED',
-            });
-          }
-          if (error.name === 'NotFoundError') {
-            throw new TRPCError({
-              message: error.message,
-              code: 'NOT_FOUND',
-            });
-          }
-          if (error.name === 'AccessError') {
-            throw new TRPCError({
-              message:
-                'You do not have permission to update organization users',
-              code: 'UNAUTHORIZED',
-            });
-          }
-        }
-
-        throw new TRPCError({
-          message: 'Failed to update organization user',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-      }
+      return outputSchema.parse(updatedUser);
     }),
 });

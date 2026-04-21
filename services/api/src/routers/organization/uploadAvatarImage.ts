@@ -1,5 +1,5 @@
+import { CommonError, ValidationError } from '@op/common';
 import { createServerClient } from '@op/supabase/lib';
-import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import { Buffer } from 'buffer';
 import { z } from 'zod';
@@ -38,10 +38,7 @@ export const uploadAvatarImage = router({
 
       const sanitizedFileName = sanitizeS3Filename(fileName);
       if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Unsupported file type',
-        });
+        throw new ValidationError('Unsupported file type');
       }
 
       let buffer: Buffer;
@@ -62,19 +59,14 @@ export const uploadAvatarImage = router({
 
         buffer = Buffer.from(base64, 'base64');
       } catch (_err) {
-        console.log('Error decoding base64', _err);
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Invalid base64 encoding',
-        });
+        throw new ValidationError('Invalid base64 encoding');
       }
 
       // Check file size
       if (buffer.length > MAX_FILE_SIZE) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
-        });
+        throw new ValidationError(
+          `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+        );
       }
 
       const supabase = createServerClient(
@@ -101,11 +93,7 @@ export const uploadAvatarImage = router({
         });
 
       if (uploadError) {
-        console.log('UPLOAD ERROR', uploadError);
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: uploadError.message,
-        });
+        throw new CommonError(uploadError.message);
       }
 
       // Get signed URL
@@ -115,12 +103,9 @@ export const uploadAvatarImage = router({
       logger.info('GOT SIGNED URL' + signedUrlData);
 
       if (signedUrlError || !signedUrlData) {
-        logger.info('SIGNED URL ERROR' + signedUrlError);
-
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: signedUrlError?.message || 'Could not get signed url',
-        });
+        throw new CommonError(
+          signedUrlError?.message || 'Could not get signed url',
+        );
       }
 
       logger.info(

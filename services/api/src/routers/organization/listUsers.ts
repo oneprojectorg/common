@@ -1,5 +1,4 @@
 import { getOrganizationUsers } from '@op/common';
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -50,36 +49,11 @@ export const listUsersRouter = router({
       const { profileId } = input;
       const { user } = ctx;
 
-      try {
-        const users = await getOrganizationUsers({
-          profileId,
-          user,
-        });
+      const users = await getOrganizationUsers({
+        profileId,
+        user,
+      });
 
-        return users.map((user) => organizationUserEncoder.parse(user));
-      } catch (error: unknown) {
-        if (error instanceof Error) {
-          if (
-            error.message.includes('not a member') ||
-            error.message.includes('Unauthorized')
-          ) {
-            throw new TRPCError({
-              message: 'You do not have permission to view organization users',
-              code: 'UNAUTHORIZED',
-            });
-          }
-          if (error.message.includes('not found')) {
-            throw new TRPCError({
-              message: 'Organization not found',
-              code: 'NOT_FOUND',
-            });
-          }
-        }
-
-        throw new TRPCError({
-          message: 'Failed to retrieve organization users',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-      }
+      return users.map((user) => organizationUserEncoder.parse(user));
     }),
 });
