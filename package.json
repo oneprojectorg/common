@@ -136,6 +136,7 @@
       "@types/d3-scale": "$@types/d3-scale",
       "@types/d3-selection": "$@types/d3-selection",
       "@types/lodash": "$@types/lodash",
+      "@types/pg": "8.11.11",
       "@types/react": "$@types/react",
       "@types/react-dom": "$@types/react-dom",
       "@types/three": "$@types/three",

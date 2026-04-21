@@ -113,6 +113,7 @@ overrides:
   '@types/d3-scale': ^4.0.9
   '@types/d3-selection': ^3.0.11
   '@types/lodash': ^4.17.15
+  '@types/pg': 8.11.11
   '@types/react': 19.0.10
   '@types/react-dom': 19.0.4
   '@types/three': ^0.174.0
@@ -806,7 +807,7 @@ importers:
         version: 1.24.0
       drizzle-orm:
         specifier: 'catalog:'
-        version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.15.6)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
+        version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
       mitt:
         specifier: ^3.0.1
         version: 3.0.1
@@ -1202,10 +1203,10 @@ importers:
         version: 1.24.0
       drizzle-orm:
         specifier: 'catalog:'
-        version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.15.6)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
+        version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
       drizzle-zod:
         specifier: 1.0.0-beta.11-05230d9
-        version: 1.0.0-beta.11-05230d9(drizzle-orm@1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.15.6)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5))(zod@4.1.12)
+        version: 1.0.0-beta.11-05230d9(drizzle-orm@1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5))(zod@4.1.12)
       fast-xml-parser:
         specifier: ^5.2.1
         version: 5.3.2
@@ -1306,7 +1307,7 @@ importers:
         specifier: workspace:^
         version: link:../supabase
       '@types/pg':
-        specifier: ^8.11.11
+        specifier: 8.11.11
         version: 8.11.11
       access-zones:
         specifier: 'catalog:'
@@ -1468,7 +1469,7 @@ importers:
         version: 1.24.0
       drizzle-orm:
         specifier: 'catalog:'
-        version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.15.6)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
+        version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
       he:
         specifier: ^1.2.0
         version: 1.2.0
@@ -1514,7 +1515,7 @@ importers:
         version: link:../../packages/types
       drizzle-orm:
         specifier: 'catalog:'
-        version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.15.6)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
+        version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
       inngest:
         specifier: 3.54.0
         version: 3.54.0(@opentelemetry/core@2.7.0(@opentelemetry/api@1.9.0))(h3@1.15.1)(next@16.2.0(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(typescript@5.7.3)(zod@4.1.12)
@@ -1545,7 +1546,7 @@ importers:
         version: 2.49.3
       drizzle-orm:
         specifier: 'catalog:'
-        version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.15.6)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
+        version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
     devDependencies:
       '@op/typescript-config':
         specifier: workspace:*
@@ -1582,7 +1583,7 @@ importers:
         version: 16.4.7
       drizzle-orm:
         specifier: 'catalog:'
-        version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.15.6)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
+        version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
 
 packages:
 
@@ -5506,9 +5507,6 @@ packages:
   '@types/pg@8.11.11':
     resolution: {integrity: sha512-kGT1qKM8wJQ5qlawUrEkXgvMSXoV213KfMGXcwfDwUIfUHXqXYXOfS1nE1LINRJVVVx5wCm70XnFlMHaIcQAfw==}
 
-  '@types/pg@8.15.6':
-    resolution: {integrity: sha512-NoaMtzhxOrubeL/7UZuNTrejB4MPAJ0RpxZqXQf2qXuVlTPuG6Y8p4u9dKRaue4yjmC7ZhzVO2/Yyyn25znrPQ==}
-
   '@types/phoenix@1.6.6':
     resolution: {integrity: sha512-PIzZZlEppgrpoT2QgbnDU+MMzuR6BbCjllj0bM70lWoejMeNJAxCchxnv7J3XFkI8MpygtRpzXrIlmWUBclP5A==}
 
@@ -6503,7 +6501,7 @@ packages:
       '@tursodatabase/database-wasm': '>=0.2.1'
       '@types/better-sqlite3': '*'
       '@types/mssql': ^9.1.4
-      '@types/pg': '*'
+      '@types/pg': 8.11.11
       '@types/sql.js': '*'
       '@upstash/redis': '>=1.34.7'
       '@vercel/postgres': '>=0.8.0'
@@ -11322,7 +11320,7 @@ snapshots:
       '@opentelemetry/instrumentation': 0.215.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/semantic-conventions': 1.39.0
       '@opentelemetry/sql-common': 0.41.2(@opentelemetry/api@1.9.0)
-      '@types/pg': 8.15.6
+      '@types/pg': 8.11.11
       '@types/pg-pool': 2.0.7
     transitivePeerDependencies:
       - supports-color
@@ -14230,19 +14228,13 @@ snapshots:
 
   '@types/pg-pool@2.0.7':
     dependencies:
-      '@types/pg': 8.15.6
+      '@types/pg': 8.11.11
 
   '@types/pg@8.11.11':
     dependencies:
       '@types/node': 22.13.14
       pg-protocol: 1.10.0
       pg-types: 4.0.2
-
-  '@types/pg@8.15.6':
-    dependencies:
-      '@types/node': 22.13.14
-      pg-protocol: 1.10.0
-      pg-types: 2.2.0
 
   '@types/phoenix@1.6.6': {}
 
@@ -15212,25 +15204,14 @@ snapshots:
       pg: 8.16.0
       postgres: 3.4.5
 
-  drizzle-orm@1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.15.6)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5):
-    dependencies:
-      '@types/mssql': 9.1.9
-      mssql: 11.0.1
-    optionalDependencies:
-      '@opentelemetry/api': 1.9.0
-      '@types/pg': 8.15.6
-      gel: 2.0.0
-      pg: 8.16.0
-      postgres: 3.4.5
-
   drizzle-seed@1.0.0-beta.11-05230d9(drizzle-orm@1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)):
     dependencies:
       drizzle-orm: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
       pure-rand: 6.1.0
 
-  drizzle-zod@1.0.0-beta.11-05230d9(drizzle-orm@1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.15.6)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5))(zod@4.1.12):
+  drizzle-zod@1.0.0-beta.11-05230d9(drizzle-orm@1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5))(zod@4.1.12):
     dependencies:
-      drizzle-orm: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.15.6)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
+      drizzle-orm: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
       zod: 4.1.12
 
   dunder-proto@1.0.1:
