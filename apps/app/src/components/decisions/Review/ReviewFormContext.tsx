@@ -102,21 +102,62 @@ export function ReviewFormProvider({
   });
   autosavePayloadRef.current = { values, rationales };
 
-  const debouncedSaveDraft = useDebouncedCallback(() => {
-    if (isSubmitted || isPausedForRevision) {
-      return;
-    }
-    const { values: latestValues, rationales: latestRationales } =
-      autosavePayloadRef.current;
-    saveReviewDraft.mutate({
-      assignmentId,
-      reviewData: { answers: latestValues, rationales: latestRationales },
-    });
-  }, AUTOSAVE_DEBOUNCE_MS);
+  const inflightAutosaveRef = useRef<Promise<unknown> | null>(null);
+  const hasPendingAutosaveRef = useRef(false);
 
+  const triggerAutosave = useCallback(() => {
+    const run = () => {
+      if (isSubmitted || isPausedForRevision) {
+        return;
+      }
+      // If a save is in flight, defer — the current save's .finally re-fires
+      // run() so edits made mid-save are persisted with the latest payload.
+      if (inflightAutosaveRef.current) {
+        hasPendingAutosaveRef.current = true;
+        return;
+      }
+      const { values: latestValues, rationales: latestRationales } =
+        autosavePayloadRef.current;
+      hasPendingAutosaveRef.current = false;
+      const promise = saveReviewDraft.mutateAsync({
+        assignmentId,
+        reviewData: { answers: latestValues, rationales: latestRationales },
+      });
+      inflightAutosaveRef.current = promise;
+      promise
+        .catch(() => {})
+        .finally(() => {
+          inflightAutosaveRef.current = null;
+          if (hasPendingAutosaveRef.current) {
+            run();
+          }
+        });
+    };
+    run();
+  }, [assignmentId, isPausedForRevision, isSubmitted, saveReviewDraft]);
+
+  const debouncedSaveDraft = useDebouncedCallback(
+    triggerAutosave,
+    AUTOSAVE_DEBOUNCE_MS,
+  );
+
+  const flushPendingChanges = useCallback(async (): Promise<boolean> => {
+    debouncedSaveDraft.flush();
+    while (inflightAutosaveRef.current) {
+      try {
+        await inflightAutosaveRef.current;
+      } catch {
+        return false;
+      }
+    }
+    return true;
+  }, [debouncedSaveDraft]);
+
+  // Flush (not cancel) on unmount so edits made in the final debounce window
+  // are persisted when the reviewer navigates away.
   useEffect(() => {
     return () => {
-      debouncedSaveDraft.cancel();
+      debouncedSaveDraft.flush();
     };
   }, [debouncedSaveDraft]);
 
@@ -168,16 +209,16 @@ export function ReviewFormProvider({
     [debouncedSaveDraft],
   );
 
-  const handleSubmit = useCallback(() => {
-    // Drop any pending draft save — submitReview will persist the final
-    // payload and upgrade the existing draft row to SUBMITTED.
-    debouncedSaveDraft.cancel();
+  const handleSubmit = useCallback(async () => {
+    // Await pending/in-flight drafts so a trailing autosave can't overwrite
+    // the submitted payload on the same client.
+    await flushPendingChanges();
     // TODO: include overallComment (feedback to author) in submission
     submitReview.mutate({
       assignmentId,
       reviewData: { answers: values, rationales },
     });
-  }, [assignmentId, values, rationales, submitReview, debouncedSaveDraft]);
+  }, [assignmentId, values, rationales, submitReview, flushPendingChanges]);
 
   const handleRequestRevision = useCallback(
     (comment: string) => {
