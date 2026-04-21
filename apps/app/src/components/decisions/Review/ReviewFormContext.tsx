@@ -92,74 +92,12 @@ export function ReviewFormProvider({
     },
   });
 
-  const saveReviewDraft = trpc.decision.saveReviewDraft.useMutation();
-
-  // Ref keeps the debounced callback stable while always reading the freshest
-  // form state — avoids rebuilding the debounce on every keystroke.
-  const autosavePayloadRef = useRef({
-    values,
+  const autosave = useAutosaveDraft({
+    assignmentId,
+    answers: values,
     rationales,
+    enabled: !isSubmitted && !isPausedForRevision,
   });
-  autosavePayloadRef.current = { values, rationales };
-
-  const inflightAutosaveRef = useRef<Promise<unknown> | null>(null);
-  const hasPendingAutosaveRef = useRef(false);
-
-  const triggerAutosave = useCallback(() => {
-    const run = () => {
-      if (isSubmitted || isPausedForRevision) {
-        return;
-      }
-      // If a save is in flight, defer — the current save's .finally re-fires
-      // run() so edits made mid-save are persisted with the latest payload.
-      if (inflightAutosaveRef.current) {
-        hasPendingAutosaveRef.current = true;
-        return;
-      }
-      const { values: latestValues, rationales: latestRationales } =
-        autosavePayloadRef.current;
-      hasPendingAutosaveRef.current = false;
-      const promise = saveReviewDraft.mutateAsync({
-        assignmentId,
-        reviewData: { answers: latestValues, rationales: latestRationales },
-      });
-      inflightAutosaveRef.current = promise;
-      promise
-        .catch(() => {})
-        .finally(() => {
-          inflightAutosaveRef.current = null;
-          if (hasPendingAutosaveRef.current) {
-            run();
-          }
-        });
-    };
-    run();
-  }, [assignmentId, isPausedForRevision, isSubmitted, saveReviewDraft]);
-
-  const debouncedSaveDraft = useDebouncedCallback(
-    triggerAutosave,
-    AUTOSAVE_DEBOUNCE_MS,
-  );
-
-  const flushPendingChanges = useCallback(async (): Promise<boolean> => {
-    debouncedSaveDraft.flush();
-    while (inflightAutosaveRef.current) {
-      try {
-        await inflightAutosaveRef.current;
-      } catch {
-        return false;
-      }
-    }
-    return true;
-  }, [debouncedSaveDraft]);
-
-  // Flush (not cancel) on unmount so edits made in the final debounce window
-  // are persisted when the reviewer navigates away.
-  useEffect(() => {
-    return () => {
-      debouncedSaveDraft.flush();
-    };
-  }, [debouncedSaveDraft]);
 
   const requestRevisionMutation = trpc.decision.requestRevision.useMutation({
     onSuccess: () => {
@@ -196,28 +134,28 @@ export function ReviewFormProvider({
   const handleValueChange = useCallback(
     (key: string, value: unknown) => {
       setValues((current) => ({ ...current, [key]: value }));
-      debouncedSaveDraft();
+      autosave.schedule();
     },
-    [debouncedSaveDraft],
+    [autosave],
   );
 
   const handleRationaleChange = useCallback(
     (key: string, value: string) => {
       setRationales((current) => ({ ...current, [key]: value }));
-      debouncedSaveDraft();
+      autosave.schedule();
     },
-    [debouncedSaveDraft],
+    [autosave],
   );
 
   const handleSubmit = useCallback(async () => {
     // Await pending/in-flight drafts so a trailing autosave can't overwrite
     // the submitted payload on the same client.
-    await flushPendingChanges();
+    await autosave.flush();
     submitReview.mutate({
       assignmentId,
       reviewData: { answers: values, rationales },
     });
-  }, [assignmentId, values, rationales, submitReview, flushPendingChanges]);
+  }, [assignmentId, values, rationales, submitReview, autosave]);
 
   const handleRequestRevision = useCallback(
     (comment: string) => {
@@ -278,5 +216,73 @@ export function ReviewFormProvider({
     <ReviewFormContext.Provider value={state}>
       {children}
     </ReviewFormContext.Provider>
+  );
+}
+
+function useAutosaveDraft({
+  assignmentId,
+  answers,
+  rationales,
+  enabled,
+}: {
+  assignmentId: string;
+  answers: Record<string, unknown>;
+  rationales: Record<string, string>;
+  enabled: boolean;
+}) {
+  const saveReviewDraft = trpc.decision.saveReviewDraft.useMutation();
+
+  const inflightRef = useRef<Promise<void> | null>(null);
+  // Set when an edit lands during an in-flight save; the save's .then
+  // re-arms the debounce so the latest payload reaches the server.
+  const rerunRef = useRef(false);
+
+  // Closure captures the latest answers/rationales on each render.
+  // useDebouncedCallback stores the callback in its own ref, so the
+  // debounce instance stays stable while always calling the latest `save`.
+  const save = () => {
+    if (!enabled) {
+      return;
+    }
+    if (inflightRef.current) {
+      rerunRef.current = true;
+      return;
+    }
+    rerunRef.current = false;
+    inflightRef.current = saveReviewDraft
+      .mutateAsync({
+        assignmentId,
+        reviewData: { answers, rationales },
+      })
+      .catch(() => {})
+      .then(() => {
+        inflightRef.current = null;
+        if (rerunRef.current) {
+          debouncedSave();
+        }
+      });
+  };
+
+  const debouncedSave = useDebouncedCallback(save, AUTOSAVE_DEBOUNCE_MS);
+
+  const flush = useCallback(async () => {
+    debouncedSave.flush();
+    while (inflightRef.current) {
+      await inflightRef.current;
+    }
+  }, [debouncedSave]);
+
+  // Flush (not cancel) on unmount so edits in the final debounce window
+  // are persisted when the reviewer navigates away.
+  useEffect(
+    () => () => {
+      debouncedSave.flush();
+    },
+    [debouncedSave],
+  );
+
+  return useMemo(
+    () => ({ schedule: debouncedSave, flush }),
+    [debouncedSave, flush],
   );
 }
