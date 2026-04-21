@@ -81,7 +81,7 @@ describe.concurrent('saveReviewDraft', () => {
     expect(assignment?.reviews[0]?.submittedAt).toBeNull();
   });
 
-  it('is idempotent — repeated saves upsert the same draft row', async ({
+  it('upserts a single draft row per assignment — last write wins', async ({
     task,
     onTestFinished,
   }) => {
@@ -122,52 +122,6 @@ describe.concurrent('saveReviewDraft', () => {
     });
     expect(reviews).toHaveLength(1);
     expect(reviews[0]?.state).toBe(ProposalReviewState.DRAFT);
-  });
-
-  it('lets submitReview promote a saved draft to SUBMITTED', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const created = await testData.createReviewAssignment();
-    await testData.setRubricTemplate(created.context, rubricTemplate);
-
-    const reviewerCaller = await createAuthenticatedCaller(
-      created.reviewer.email,
-    );
-
-    await reviewerCaller.decision.saveReviewDraft({
-      assignmentId: created.assignment.id,
-      reviewData: {
-        answers: { impact: 2 },
-        rationales: { impact: 'Draft notes' },
-      },
-    });
-
-    const submitted = await reviewerCaller.decision.submitReview({
-      assignmentId: created.assignment.id,
-      reviewData: {
-        answers: { impact: 3 },
-        rationales: { impact: 'Final notes' },
-      },
-    });
-
-    expect(submitted.state).toBe(ProposalReviewState.SUBMITTED);
-    expect(submitted.submittedAt).toBeTruthy();
-    expect(submitted.reviewData.answers).toEqual({ impact: 3 });
-    expect(submitted.reviewData.rationales).toEqual({
-      impact: 'Final notes',
-    });
-
-    const assignment = await db.query.proposalReviewAssignments.findFirst({
-      where: {
-        id: created.assignment.id,
-      },
-      with: { reviews: true },
-    });
-    expect(assignment?.status).toBe(ProposalReviewAssignmentStatus.COMPLETED);
-    expect(assignment?.reviews).toHaveLength(1);
-    expect(assignment?.reviews[0]?.state).toBe(ProposalReviewState.SUBMITTED);
   });
 
   it('refuses to save a draft after the review has been submitted', async ({

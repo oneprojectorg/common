@@ -10,16 +10,13 @@ import { eq } from 'drizzle-orm';
 
 import { CommonError, ValidationError } from '../../utils';
 import { assertReviewAssignmentContext } from './reviewHelpers';
-import {
-  type ProposalReview,
-  type RubricReviewData,
-  proposalReviewSchema,
-} from './schemas/reviews';
+import type { RubricReviewData } from './schemas/reviews';
 
 /**
- * Persists a draft review for the current reviewer. Idempotent — repeated
- * calls upsert the draft payload without touching submission state. Refuses
- * once the review has been submitted so drafts can't overwrite a final review.
+ * Persists a draft review for the current reviewer. Upserts the draft row
+ * for the assignment — last write wins — without touching submission state.
+ * Refuses once the review has been submitted so drafts can't overwrite a
+ * final review.
  */
 export async function saveReviewDraft({
   assignmentId,
@@ -29,7 +26,10 @@ export async function saveReviewDraft({
   assignmentId: string;
   reviewData: RubricReviewData;
   user: User;
-}): Promise<ProposalReview & { processInstanceId: string }> {
+}): Promise<{
+  review: typeof proposalReviews.$inferSelect;
+  processInstanceId: string;
+}> {
   const context = await assertReviewAssignmentContext({
     assignmentId,
     user,
@@ -80,16 +80,7 @@ export async function saveReviewDraft({
   });
 
   return {
-    ...proposalReviewSchema.parse({
-      id: review.id,
-      assignmentId: review.assignmentId,
-      state: review.state,
-      reviewData: review.reviewData,
-      overallComment: review.overallComment ?? null,
-      submittedAt: review.submittedAt ?? null,
-      createdAt: review.createdAt ?? null,
-      updatedAt: review.updatedAt ?? null,
-    }),
+    review,
     processInstanceId: context.assignment.processInstanceId,
   };
 }

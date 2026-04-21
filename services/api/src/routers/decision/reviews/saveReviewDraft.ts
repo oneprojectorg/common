@@ -17,7 +17,7 @@ export const saveReviewDraftRouter = router({
     .input(saveReviewDraftInputSchema)
     .output(proposalReviewSchema)
     .mutation(async ({ ctx, input }) => {
-      const result = await saveReviewDraft({
+      const { review, processInstanceId } = await saveReviewDraft({
         assignmentId: input.assignmentId,
         reviewData: input.reviewData,
         user: ctx.user,
@@ -25,9 +25,9 @@ export const saveReviewDraftRouter = router({
 
       ctx.registerMutationChannels([
         Channels.reviewAssignment(input.assignmentId),
-        Channels.reviewAssignments(result.processInstanceId),
+        Channels.reviewAssignments(processInstanceId),
       ]);
 
-      return proposalReviewSchema.parse(result);
+      return proposalReviewSchema.parse(review);
     }),
 });

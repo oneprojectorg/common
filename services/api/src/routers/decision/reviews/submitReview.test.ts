@@ -59,6 +59,7 @@ describe.concurrent('submitReview', () => {
         answers: { impact: 3 },
         rationales: { impact: 'Solid execution plan' },
       },
+      overallComment: 'Ready to move forward',
     });
 
     expect(result.state).toBe(ProposalReviewState.SUBMITTED);

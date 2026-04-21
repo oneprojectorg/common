@@ -10,6 +10,7 @@ import { commonAuthedProcedure, router } from '../../../trpcFactory';
 const reviewInputSchema = z.object({
   assignmentId: z.uuid(),
   reviewData: rubricReviewDataSchema,
+  overallComment: z.string().nullable().optional(),
 });
 
 export const submitReviewRouter = router({
@@ -17,17 +18,18 @@ export const submitReviewRouter = router({
     .input(reviewInputSchema)
     .output(proposalReviewSchema)
     .mutation(async ({ ctx, input }) => {
-      const result = await submitReview({
+      const { review, processInstanceId } = await submitReview({
         assignmentId: input.assignmentId,
         reviewData: input.reviewData,
+        overallComment: input.overallComment,
         user: ctx.user,
       });
 
       ctx.registerMutationChannels([
         Channels.reviewAssignment(input.assignmentId),
-        Channels.reviewAssignments(result.processInstanceId),
+        Channels.reviewAssignments(processInstanceId),
       ]);
 
-      return proposalReviewSchema.parse(result);
+      return proposalReviewSchema.parse(review);
     }),
 });

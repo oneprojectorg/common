@@ -11,22 +11,23 @@ import { eq } from 'drizzle-orm';
 import { CommonError, ValidationError } from '../../utils';
 import { assertReviewAssignmentContext } from './reviewHelpers';
 import { schemaValidator } from './schemaValidator';
-import {
-  type ProposalReview,
-  type RubricReviewData,
-  proposalReviewSchema,
-} from './schemas/reviews';
+import type { RubricReviewData } from './schemas/reviews';
 
 /** Validates and submits a review for the current reviewer. */
 export async function submitReview({
   assignmentId,
   reviewData,
+  overallComment,
   user,
 }: {
   assignmentId: string;
   reviewData: RubricReviewData;
+  overallComment?: string | null;
   user: User;
-}): Promise<ProposalReview & { processInstanceId: string }> {
+}): Promise<{
+  review: typeof proposalReviews.$inferSelect;
+  processInstanceId: string;
+}> {
   const context = await assertReviewAssignmentContext({
     assignmentId,
     user,
@@ -54,6 +55,7 @@ export async function submitReview({
         assignmentId,
         state: ProposalReviewState.SUBMITTED,
         reviewData,
+        overallComment: overallComment ?? null,
         submittedAt,
       })
       .onConflictDoUpdate({
@@ -61,6 +63,7 @@ export async function submitReview({
         set: {
           state: ProposalReviewState.SUBMITTED,
           reviewData,
+          overallComment: overallComment ?? null,
           submittedAt,
         },
       })
@@ -82,16 +85,7 @@ export async function submitReview({
   });
 
   return {
-    ...proposalReviewSchema.parse({
-      id: review.id,
-      assignmentId: review.assignmentId,
-      state: review.state,
-      reviewData: review.reviewData,
-      overallComment: review.overallComment ?? null,
-      submittedAt: review.submittedAt ?? null,
-      createdAt: review.createdAt ?? null,
-      updatedAt: review.updatedAt ?? null,
-    }),
+    review,
     processInstanceId: context.assignment.processInstanceId,
   };
 }
