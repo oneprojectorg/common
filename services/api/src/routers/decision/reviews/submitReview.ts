@@ -10,7 +10,6 @@ import { commonAuthedProcedure, router } from '../../../trpcFactory';
 const reviewInputSchema = z.object({
   assignmentId: z.uuid(),
   reviewData: rubricReviewDataSchema,
-  overallComment: z.string().nullable().optional(),
 });
 
 export const submitReviewRouter = router({
@@ -21,7 +20,6 @@ export const submitReviewRouter = router({
       const result = await submitReview({
         assignmentId: input.assignmentId,
         reviewData: input.reviewData,
-        overallComment: input.overallComment,
         user: ctx.user,
       });
 

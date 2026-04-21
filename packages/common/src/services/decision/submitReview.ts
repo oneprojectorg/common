@@ -21,12 +21,10 @@ import {
 export async function submitReview({
   assignmentId,
   reviewData,
-  overallComment,
   user,
 }: {
   assignmentId: string;
   reviewData: RubricReviewData;
-  overallComment?: string | null;
   user: User;
 }): Promise<ProposalReview & { processInstanceId: string }> {
   const context = await assertReviewAssignmentContext({
@@ -56,7 +54,6 @@ export async function submitReview({
         assignmentId,
         state: ProposalReviewState.SUBMITTED,
         reviewData,
-        overallComment: overallComment ?? null,
         submittedAt,
       })
       .onConflictDoUpdate({
@@ -64,7 +61,6 @@ export async function submitReview({
         set: {
           state: ProposalReviewState.SUBMITTED,
           reviewData,
-          overallComment: overallComment ?? null,
           submittedAt,
         },
       })

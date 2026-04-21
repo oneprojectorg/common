@@ -59,7 +59,6 @@ describe.concurrent('saveReviewDraft', () => {
         answers: { impact: 2 },
         rationales: { impact: 'Still weighing tradeoffs' },
       },
-      overallComment: 'Leaning positive',
     });
 
     expect(result.state).toBe(ProposalReviewState.DRAFT);
@@ -68,7 +67,6 @@ describe.concurrent('saveReviewDraft', () => {
     expect(result.reviewData.rationales).toEqual({
       impact: 'Still weighing tradeoffs',
     });
-    expect(result.overallComment).toBe('Leaning positive');
 
     const assignment = await db.query.proposalReviewAssignments.findFirst({
       where: {
@@ -109,7 +107,6 @@ describe.concurrent('saveReviewDraft', () => {
         answers: { impact: 3 },
         rationales: { impact: 'Updated rationale' },
       },
-      overallComment: 'Changed my mind',
     });
 
     expect(second.state).toBe(ProposalReviewState.DRAFT);
@@ -117,7 +114,6 @@ describe.concurrent('saveReviewDraft', () => {
     expect(second.reviewData.rationales).toEqual({
       impact: 'Updated rationale',
     });
-    expect(second.overallComment).toBe('Changed my mind');
 
     const reviews = await db.query.proposalReviews.findMany({
       where: {
@@ -154,7 +150,6 @@ describe.concurrent('saveReviewDraft', () => {
         answers: { impact: 3 },
         rationales: { impact: 'Final notes' },
       },
-      overallComment: 'Ship it',
     });
 
     expect(submitted.state).toBe(ProposalReviewState.SUBMITTED);
@@ -193,7 +188,6 @@ describe.concurrent('saveReviewDraft', () => {
         answers: { impact: 3 },
         rationales: { impact: 'Final' },
       },
-      overallComment: 'Submitted',
     });
 
     await expect(
@@ -203,7 +197,6 @@ describe.concurrent('saveReviewDraft', () => {
           answers: { impact: 1 },
           rationales: { impact: 'Trying to overwrite' },
         },
-        overallComment: 'New draft',
       }),
     ).rejects.toThrow('Review has already been submitted');
 
@@ -217,7 +210,6 @@ describe.concurrent('saveReviewDraft', () => {
       answers: { impact: 3 },
       rationales: { impact: 'Final' },
     });
-    expect(review?.overallComment).toBe('Submitted');
   });
 
   it('rejects callers who are not the assigned reviewer', async ({

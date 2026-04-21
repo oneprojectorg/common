@@ -213,7 +213,6 @@ export function ReviewFormProvider({
     // Await pending/in-flight drafts so a trailing autosave can't overwrite
     // the submitted payload on the same client.
     await flushPendingChanges();
-    // TODO: include overallComment (feedback to author) in submission
     submitReview.mutate({
       assignmentId,
       reviewData: { answers: values, rationales },

@@ -24,12 +24,10 @@ import {
 export async function saveReviewDraft({
   assignmentId,
   reviewData,
-  overallComment,
   user,
 }: {
   assignmentId: string;
   reviewData: RubricReviewData;
-  overallComment?: string | null;
   user: User;
 }): Promise<ProposalReview & { processInstanceId: string }> {
   const context = await assertReviewAssignmentContext({
@@ -55,14 +53,12 @@ export async function saveReviewDraft({
         assignmentId,
         state: ProposalReviewState.DRAFT,
         reviewData,
-        overallComment: overallComment ?? null,
         submittedAt: null,
       })
       .onConflictDoUpdate({
         target: proposalReviews.assignmentId,
         set: {
           reviewData,
-          overallComment: overallComment ?? null,
         },
       })
       .returning();
