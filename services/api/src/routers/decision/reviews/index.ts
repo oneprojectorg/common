@@ -5,6 +5,7 @@ import { listProposalRevisionRequestsRouter } from './listProposalRevisionReques
 import { listProposalsRevisionRequestsRouter } from './listProposalsRevisionRequests';
 import { listReviewAssignmentsRouter } from './listReviewAssignments';
 import { requestRevisionRouter } from './requestRevision';
+import { saveReviewDraftRouter } from './saveReviewDraft';
 import { submitReviewRouter } from './submitReview';
 import { submitRevisionResponseRouter } from './submitRevisionResponse';
 
@@ -15,6 +16,7 @@ export const reviewsRouter = mergeRouters(
   listProposalsRevisionRequestsRouter,
   listReviewAssignmentsRouter,
   requestRevisionRouter,
+  saveReviewDraftRouter,
   submitRevisionResponseRouter,
   submitReviewRouter,
 );

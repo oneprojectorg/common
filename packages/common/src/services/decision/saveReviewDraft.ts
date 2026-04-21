@@ -7,23 +7,25 @@ import {
   proposalReviews,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { eq } from 'drizzle-orm';
+import { eq, ne } from 'drizzle-orm';
 
-import { CommonError, ValidationError } from '../../utils';
+import { ValidationError } from '../../utils';
 import { assertReviewAssignmentContext } from './reviewHelpers';
-import { schemaValidator } from './schemaValidator';
 import type { RubricReviewData } from './schemas/reviews';
 
-/** Validates and submits a review for the current reviewer. */
-export async function submitReview({
+/**
+ * Persists a draft review for the current reviewer. Upserts the draft row
+ * for the assignment — last write wins — without touching submission state.
+ * Refuses once the review has been submitted so drafts can't overwrite a
+ * final review.
+ */
+export async function saveReviewDraft({
   assignmentId,
   reviewData,
-  overallComment,
   user,
 }: {
   assignmentId: string;
   reviewData: RubricReviewData;
-  overallComment?: string | null;
   user: User;
 }): Promise<{ review: ProposalReview; processInstanceId: string }> {
   const context = await assertReviewAssignmentContext({
@@ -42,44 +44,43 @@ export async function submitReview({
     throw new ValidationError('Rubric template not found for this assignment');
   }
 
-  schemaValidator.assertRubricData(context.rubricTemplate, reviewData.answers);
-
-  const submittedAt = new Date().toISOString();
-
   const review = await db.transaction(async (tx) => {
-    const [submittedReview] = await tx
+    const [draft] = await tx
       .insert(proposalReviews)
       .values({
         assignmentId,
-        state: ProposalReviewState.SUBMITTED,
+        state: ProposalReviewState.DRAFT,
         reviewData,
-        overallComment: overallComment ?? null,
-        submittedAt,
+        submittedAt: null,
       })
       .onConflictDoUpdate({
         target: proposalReviews.assignmentId,
         set: {
-          state: ProposalReviewState.SUBMITTED,
           reviewData,
-          overallComment: overallComment ?? null,
-          submittedAt,
         },
+        // Atomic guard against a late-arriving draft overwriting a row that
+        // was submitted after this request's early state check passed. When
+        // the row is SUBMITTED the UPDATE is skipped and `.returning()` is
+        // empty, which we surface as the same ValidationError the sequential
+        // path throws.
+        setWhere: ne(proposalReviews.state, ProposalReviewState.SUBMITTED),
       })
       .returning();
 
-    if (!submittedReview) {
-      throw new CommonError('Failed to submit review');
+    if (!draft) {
+      throw new ValidationError('Review has already been submitted');
     }
 
-    await tx
-      .update(proposalReviewAssignments)
-      .set({
-        status: ProposalReviewAssignmentStatus.COMPLETED,
-        completedAt: submittedAt,
-      })
-      .where(eq(proposalReviewAssignments.id, assignmentId));
+    if (context.assignment.status === ProposalReviewAssignmentStatus.PENDING) {
+      await tx
+        .update(proposalReviewAssignments)
+        .set({
+          status: ProposalReviewAssignmentStatus.IN_PROGRESS,
+        })
+        .where(eq(proposalReviewAssignments.id, assignmentId));
+    }
 
-    return submittedReview;
+    return draft;
   });
 
   return {

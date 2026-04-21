@@ -7,6 +7,7 @@ import {
   type RubricTemplateSchema,
   schemaValidator,
 } from '@op/common/client';
+import { useDebouncedCallback } from '@op/hooks';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
 import {
@@ -14,11 +15,15 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
+
+const AUTOSAVE_DEBOUNCE_MS = 1000;
 
 interface ReviewFormState {
   /** Rubric answers keyed by criterion id; validated against the template. */
@@ -87,6 +92,13 @@ export function ReviewFormProvider({
     },
   });
 
+  const scheduleAutosave = useAutosaveDraft({
+    assignmentId,
+    answers: values,
+    rationales,
+    enabled: !isSubmitted && !isPausedForRevision,
+  });
+
   const requestRevisionMutation = trpc.decision.requestRevision.useMutation({
     onSuccess: () => {
       toast.success({ message: t('Revision requested') });
@@ -119,16 +131,23 @@ export function ReviewFormProvider({
     [template, values],
   );
 
-  const handleValueChange = useCallback((key: string, value: unknown) => {
-    setValues((current) => ({ ...current, [key]: value }));
-  }, []);
+  const handleValueChange = useCallback(
+    (key: string, value: unknown) => {
+      setValues((current) => ({ ...current, [key]: value }));
+      scheduleAutosave();
+    },
+    [scheduleAutosave],
+  );
 
-  const handleRationaleChange = useCallback((key: string, value: string) => {
-    setRationales((current) => ({ ...current, [key]: value }));
-  }, []);
+  const handleRationaleChange = useCallback(
+    (key: string, value: string) => {
+      setRationales((current) => ({ ...current, [key]: value }));
+      scheduleAutosave();
+    },
+    [scheduleAutosave],
+  );
 
   const handleSubmit = useCallback(() => {
-    // TODO: include overallComment (feedback to author) in submission
     submitReview.mutate({
       assignmentId,
       reviewData: { answers: values, rationales },
@@ -195,4 +214,62 @@ export function ReviewFormProvider({
       {children}
     </ReviewFormContext.Provider>
   );
+}
+
+function useAutosaveDraft({
+  assignmentId,
+  answers,
+  rationales,
+  enabled,
+}: {
+  assignmentId: string;
+  answers: Record<string, unknown>;
+  rationales: Record<string, string>;
+  enabled: boolean;
+}) {
+  const saveReviewDraft = trpc.decision.saveReviewDraft.useMutation();
+
+  const inflightRef = useRef<Promise<void> | null>(null);
+  // Set when an edit lands during an in-flight save; the save's .then
+  // re-arms the debounce so the latest payload reaches the server.
+  const rerunRef = useRef(false);
+
+  // Closure captures the latest answers/rationales on each render.
+  // useDebouncedCallback stores the callback in its own ref, so the
+  // debounce instance stays stable while always calling the latest `save`.
+  const save = () => {
+    if (!enabled) {
+      return;
+    }
+    if (inflightRef.current) {
+      rerunRef.current = true;
+      return;
+    }
+    rerunRef.current = false;
+    inflightRef.current = saveReviewDraft
+      .mutateAsync({
+        assignmentId,
+        reviewData: { answers, rationales },
+      })
+      .catch(() => {})
+      .then(() => {
+        inflightRef.current = null;
+        if (rerunRef.current) {
+          debouncedSave();
+        }
+      });
+  };
+
+  const debouncedSave = useDebouncedCallback(save, AUTOSAVE_DEBOUNCE_MS);
+
+  // Flush (not cancel) on unmount so edits in the final debounce window
+  // are persisted when the reviewer navigates away.
+  useEffect(
+    () => () => {
+      debouncedSave.flush();
+    },
+    [debouncedSave],
+  );
+
+  return debouncedSave;
 }

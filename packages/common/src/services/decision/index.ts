@@ -60,6 +60,7 @@ export * from './listProposalsRevisionRequests';
 export * from './listProposalRevisionRequests';
 export * from './submitRevisionResponse';
 export * from './submitReview';
+export * from './saveReviewDraft';
 export * from './requestRevision';
 export * from './cancelRevisionRequest';
 export * from './deleteProposal';

@@ -1,4 +1,4 @@
-import { Channels, submitReview } from '@op/common';
+import { Channels, saveReviewDraft } from '@op/common';
 import {
   proposalReviewSchema,
   rubricReviewDataSchema,
@@ -7,21 +7,19 @@ import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
-const reviewInputSchema = z.object({
+const saveReviewDraftInputSchema = z.object({
   assignmentId: z.uuid(),
   reviewData: rubricReviewDataSchema,
-  overallComment: z.string().nullable().optional(),
 });
 
-export const submitReviewRouter = router({
-  submitReview: commonAuthedProcedure()
-    .input(reviewInputSchema)
+export const saveReviewDraftRouter = router({
+  saveReviewDraft: commonAuthedProcedure()
+    .input(saveReviewDraftInputSchema)
     .output(proposalReviewSchema)
     .mutation(async ({ ctx, input }) => {
-      const { review, processInstanceId } = await submitReview({
+      const { review, processInstanceId } = await saveReviewDraft({
         assignmentId: input.assignmentId,
         reviewData: input.reviewData,
-        overallComment: input.overallComment,
         user: ctx.user,
       });
 
