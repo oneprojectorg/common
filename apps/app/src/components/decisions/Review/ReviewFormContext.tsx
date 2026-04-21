@@ -148,8 +148,6 @@ export function ReviewFormProvider({
   );
 
   const handleSubmit = useCallback(() => {
-    // A trailing autosave landing after submit is filtered out at the DB
-    // level by saveReviewDraft's setWhere guard, so no client-side flush.
     submitReview.mutate({
       assignmentId,
       reviewData: { answers: values, rationales },
