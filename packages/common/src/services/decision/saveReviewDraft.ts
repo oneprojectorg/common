@@ -6,9 +6,9 @@ import {
   proposalReviews,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { eq } from 'drizzle-orm';
+import { eq, ne } from 'drizzle-orm';
 
-import { CommonError, ValidationError } from '../../utils';
+import { ValidationError } from '../../utils';
 import { assertReviewAssignmentContext } from './reviewHelpers';
 import type { RubricReviewData } from './schemas/reviews';
 
@@ -60,11 +60,17 @@ export async function saveReviewDraft({
         set: {
           reviewData,
         },
+        // Atomic guard against a late-arriving draft overwriting a row that
+        // was submitted after this request's early state check passed. When
+        // the row is SUBMITTED the UPDATE is skipped and `.returning()` is
+        // empty, which we surface as the same ValidationError the sequential
+        // path throws.
+        setWhere: ne(proposalReviews.state, ProposalReviewState.SUBMITTED),
       })
       .returning();
 
     if (!draft) {
-      throw new CommonError('Failed to save review draft');
+      throw new ValidationError('Review has already been submitted');
     }
 
     if (context.assignment.status === ProposalReviewAssignmentStatus.PENDING) {

@@ -92,7 +92,7 @@ export function ReviewFormProvider({
     },
   });
 
-  const autosave = useAutosaveDraft({
+  const scheduleAutosave = useAutosaveDraft({
     assignmentId,
     answers: values,
     rationales,
@@ -134,28 +134,27 @@ export function ReviewFormProvider({
   const handleValueChange = useCallback(
     (key: string, value: unknown) => {
       setValues((current) => ({ ...current, [key]: value }));
-      autosave.schedule();
+      scheduleAutosave();
     },
-    [autosave],
+    [scheduleAutosave],
   );
 
   const handleRationaleChange = useCallback(
     (key: string, value: string) => {
       setRationales((current) => ({ ...current, [key]: value }));
-      autosave.schedule();
+      scheduleAutosave();
     },
-    [autosave],
+    [scheduleAutosave],
   );
 
-  const handleSubmit = useCallback(async () => {
-    // Await pending/in-flight drafts so a trailing autosave can't overwrite
-    // the submitted payload on the same client.
-    await autosave.flush();
+  const handleSubmit = useCallback(() => {
+    // A trailing autosave landing after submit is filtered out at the DB
+    // level by saveReviewDraft's setWhere guard, so no client-side flush.
     submitReview.mutate({
       assignmentId,
       reviewData: { answers: values, rationales },
     });
-  }, [assignmentId, values, rationales, submitReview, autosave]);
+  }, [assignmentId, values, rationales, submitReview]);
 
   const handleRequestRevision = useCallback(
     (comment: string) => {
@@ -265,13 +264,6 @@ function useAutosaveDraft({
 
   const debouncedSave = useDebouncedCallback(save, AUTOSAVE_DEBOUNCE_MS);
 
-  const flush = useCallback(async () => {
-    debouncedSave.flush();
-    while (inflightRef.current) {
-      await inflightRef.current;
-    }
-  }, [debouncedSave]);
-
   // Flush (not cancel) on unmount so edits in the final debounce window
   // are persisted when the reviewer navigates away.
   useEffect(
@@ -281,8 +273,5 @@ function useAutosaveDraft({
     [debouncedSave],
   );
 
-  return useMemo(
-    () => ({ schedule: debouncedSave, flush }),
-    [debouncedSave, flush],
-  );
+  return debouncedSave;
 }
