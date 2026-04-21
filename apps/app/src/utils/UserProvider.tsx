@@ -8,17 +8,24 @@ import React, { Suspense, createContext, useContext } from 'react';
 
 const AccessZones = ['decisions', 'profile', 'admin'] as const;
 
+export type PermissionAction = keyof Permission;
+
+const EMPTY_PERMISSION: Permission = {
+  admin: false,
+  create: false,
+  read: false,
+  update: false,
+  delete: false,
+};
+
+export const isPermissionAction = (key: string): key is PermissionAction =>
+  Object.prototype.hasOwnProperty.call(EMPTY_PERMISSION, key);
+
 type CommonZonePermissions = Record<(typeof AccessZones)[number], Permission>;
 const defaultPermissions = AccessZones.reduce<CommonZonePermissions>(
   (accum, key) => ({
     ...accum,
-    [key]: {
-      admin: false,
-      create: false,
-      read: false,
-      update: false,
-      delete: false,
-    },
+    [key]: { ...EMPTY_PERMISSION },
   }),
   {} as CommonZonePermissions,
 );

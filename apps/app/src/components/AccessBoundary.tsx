@@ -1,7 +1,7 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
-import type { Permission, ZonePermissions } from 'access-zones';
+import { isPermissionAction, useUser } from '@/utils/UserProvider';
+import type { ZonePermissions } from 'access-zones';
 import { ReactNode } from 'react';
 
 export type AccessBoundaryCondition = {
@@ -34,10 +34,15 @@ export function AccessBoundary({
       if (!zonePermission) {
         return false;
       }
-      return Object.entries(needs).every(
-        ([action, needed]) =>
-          !needed || zonePermission[action as keyof Permission],
-      );
+      return Object.entries(needs).every(([action, needed]) => {
+        if (!needed) {
+          return true;
+        }
+        if (!isPermissionAction(action)) {
+          return false;
+        }
+        return zonePermission[action];
+      });
     }),
   );
 
