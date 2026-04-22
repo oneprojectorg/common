@@ -1,19 +1,17 @@
-import { createServerUtils } from '@op/api/server';
-import { CommonError } from '@op/common';
 import {
-  ProposalReviewRequestState,
-  type ReviewAssignmentExtended,
-} from '@op/common/client';
+  HydrationBoundary,
+  createServerUtils,
+  dehydrate,
+} from '@op/api/server';
+import { CommonError } from '@op/common';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
-import { cn } from '@op/ui/utils';
 import { notFound } from 'next/navigation';
 
 import { TranslatedText } from '@/components/TranslatedText';
 
-import { ProposalPreview } from '../ProposalPreview';
-import { AuthorRevisionNote, RevisedOnBadge } from './AuthorRevisionNote';
 import { ReviewFormProvider } from './ReviewFormContext';
 import { ReviewNavbar } from './ReviewNavbar';
+import { ReviewProposalPane } from './ReviewProposalPane';
 import { ReviewRubricForm } from './ReviewRubricForm';
 
 interface ReviewLayoutProps {
@@ -25,7 +23,7 @@ export async function ReviewLayout({
   decisionSlug,
   assignmentId,
 }: ReviewLayoutProps) {
-  const { utils } = await createServerUtils();
+  const { utils, queryClient } = await createServerUtils();
 
   let reviewAssignment;
   try {
@@ -40,98 +38,55 @@ export async function ReviewLayout({
     throw error;
   }
 
-  const { assignment, rubricTemplate, review, revisionRequest } =
-    reviewAssignment;
-
-  if (!rubricTemplate) {
+  if (!reviewAssignment.rubricTemplate) {
     notFound();
   }
 
   return (
-    <ReviewFormProvider
-      template={rubricTemplate}
-      review={review}
-      revisionRequest={revisionRequest}
-      assignmentId={assignmentId}
-      decisionSlug={decisionSlug}
-    >
-      <div className="flex h-dvh flex-col bg-white">
-        <ReviewNavbar decisionSlug={decisionSlug} />
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <ReviewFormProvider
+        assignmentId={assignmentId}
+        decisionSlug={decisionSlug}
+      >
+        <div className="flex h-dvh flex-col bg-white">
+          <ReviewNavbar decisionSlug={decisionSlug} />
 
-        <div className="mx-auto hidden min-h-0 max-w-5xl flex-1 sm:flex">
-          <ReviewProposalPane
-            proposal={assignment.proposal}
-            revisionRequest={revisionRequest}
-            className="border-r p-12"
-          />
-          <div className="min-w-0 flex-1 overflow-y-auto px-12 pt-12 pb-4">
-            <ReviewRubricForm template={rubricTemplate} />
+          <div className="mx-auto hidden min-h-0 max-w-5xl flex-1 sm:flex">
+            <ReviewProposalPane className="border-r p-12" />
+            <div className="min-w-0 flex-1 overflow-y-auto px-12 pt-12 pb-4">
+              <ReviewRubricForm />
+            </div>
           </div>
+
+          <Tabs
+            className="min-h-0 flex-1 gap-0 sm:hidden"
+            defaultSelectedKey="review"
+          >
+            <TabList className="mx-6" variant="default">
+              <Tab id="proposal">
+                <TranslatedText text="Proposal" />
+              </Tab>
+              <Tab id="review">
+                <TranslatedText text="Review" />
+              </Tab>
+            </TabList>
+
+            <TabPanel
+              id="proposal"
+              className="min-h-0 overflow-y-auto px-6 pt-8 pb-4"
+            >
+              <ReviewProposalPane />
+            </TabPanel>
+
+            <TabPanel
+              id="review"
+              className="min-h-0 overflow-y-auto px-6 pt-8 pb-4"
+            >
+              <ReviewRubricForm />
+            </TabPanel>
+          </Tabs>
         </div>
-
-        <Tabs
-          className="min-h-0 flex-1 gap-0 sm:hidden"
-          defaultSelectedKey="review"
-        >
-          <TabList className="mx-6" variant="default">
-            <Tab id="proposal">
-              <TranslatedText text="Proposal" />
-            </Tab>
-            <Tab id="review">
-              <TranslatedText text="Review" />
-            </Tab>
-          </TabList>
-
-          <TabPanel
-            id="proposal"
-            className="min-h-0 overflow-y-auto px-6 pt-8 pb-4"
-          >
-            <ReviewProposalPane
-              proposal={assignment.proposal}
-              revisionRequest={revisionRequest}
-            />
-          </TabPanel>
-
-          <TabPanel
-            id="review"
-            className="min-h-0 overflow-y-auto px-6 pt-8 pb-4"
-          >
-            <ReviewRubricForm template={rubricTemplate} />
-          </TabPanel>
-        </Tabs>
-      </div>
-    </ReviewFormProvider>
-  );
-}
-
-function ReviewProposalPane({
-  proposal,
-  revisionRequest,
-  className,
-}: {
-  proposal: Parameters<typeof ProposalPreview>[0]['proposal'];
-  revisionRequest: ReviewAssignmentExtended['revisionRequest'];
-  className?: string;
-}) {
-  const respondedAt =
-    revisionRequest?.state === ProposalReviewRequestState.RESUBMITTED
-      ? revisionRequest.respondedAt
-      : null;
-  const responseComment = respondedAt ? revisionRequest?.responseComment : null;
-
-  return (
-    <div className={cn('min-w-0 flex-1 overflow-y-auto', className)}>
-      <ProposalPreview
-        proposal={proposal}
-        submissionMetaSuffix={
-          respondedAt ? <RevisedOnBadge respondedAt={respondedAt} /> : undefined
-        }
-        headerBanner={
-          responseComment ? (
-            <AuthorRevisionNote comment={responseComment} />
-          ) : undefined
-        }
-      />
-    </div>
+      </ReviewFormProvider>
+    </HydrationBoundary>
   );
 }

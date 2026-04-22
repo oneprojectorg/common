@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import {
   type ProposalReview,
   type ProposalReviewRequest,
+  type ReviewAssignmentExtended,
   type RubricTemplateSchema,
   schemaValidator,
 } from '@op/common/client';
@@ -25,6 +26,8 @@ import { useTranslations } from '@/lib/i18n';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 
+type Proposal = ReviewAssignmentExtended['assignment']['proposal'];
+
 interface ReviewFormState {
   /** Rubric answers keyed by criterion id; validated against the template. */
   values: Record<string, unknown>;
@@ -35,6 +38,9 @@ interface ReviewFormState {
   isSubmitted: boolean;
   isPausedForRevision: boolean;
   revisionRequest: ProposalReviewRequest | null;
+  rubricTemplate: RubricTemplateSchema;
+  review: ProposalReview | null;
+  proposal: Proposal;
   handleValueChange: (key: string, value: unknown) => void;
   handleRationaleChange: (key: string, value: string) => void;
   handleSubmit: () => void;
@@ -55,22 +61,33 @@ export function useReviewForm(): ReviewFormState {
 }
 
 export function ReviewFormProvider({
-  template,
-  review,
-  revisionRequest,
   assignmentId,
   decisionSlug,
   children,
 }: {
-  template: RubricTemplateSchema;
-  review: ProposalReview | null;
-  revisionRequest: ProposalReviewRequest | null;
   assignmentId: string;
   decisionSlug: string;
   children: ReactNode;
 }) {
   const t = useTranslations();
   const router = useRouter();
+
+  const [reviewAssignment] = trpc.decision.getReviewAssignment.useSuspenseQuery(
+    { assignmentId },
+    { refetchOnMount: true },
+  );
+
+  const { rubricTemplate, review, revisionRequest, assignment } =
+    reviewAssignment;
+
+  // Server-side render/guard ensures rubricTemplate is present for this page.
+  if (!rubricTemplate) {
+    throw new Error('Rubric template is required for the review flow.');
+  }
+
+  const template = rubricTemplate;
+  const proposal = assignment.proposal;
+
   const [values, setValues] = useState<Record<string, unknown>>(
     review?.reviewData.answers ?? {},
   );
@@ -102,8 +119,6 @@ export function ReviewFormProvider({
   const requestRevisionMutation = trpc.decision.requestRevision.useMutation({
     onSuccess: () => {
       toast.success({ message: t('Revision requested') });
-      // TODO: To be replaced with query invalidation for server-side fetched data
-      router.refresh();
     },
     onError: (error) => {
       toast.error({
@@ -116,8 +131,6 @@ export function ReviewFormProvider({
     trpc.decision.cancelRevisionRequest.useMutation({
       onSuccess: () => {
         toast.success({ message: t('Revision request cancelled') });
-        // TODO: To be replaced with query invalidation for server-side fetched data
-        router.refresh();
       },
       onError: (error) => {
         toast.error({
@@ -183,6 +196,9 @@ export function ReviewFormProvider({
       isSubmitted,
       isPausedForRevision: !!isPausedForRevision,
       revisionRequest,
+      rubricTemplate: template,
+      review,
+      proposal,
       handleValueChange,
       handleRationaleChange,
       handleSubmit,
@@ -198,6 +214,9 @@ export function ReviewFormProvider({
       isSubmitted,
       isPausedForRevision,
       revisionRequest,
+      template,
+      review,
+      proposal,
       submitReview.isPending,
       requestRevisionMutation.isPending,
       cancelRevisionMutation.isPending,
