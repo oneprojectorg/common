@@ -9,6 +9,7 @@ import { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { AccessBoundary } from '@/components/AccessBoundary';
 import { ProfileOrganizations } from '@/components/screens/ProfileOrganizations';
 
 import { MembersList } from './MembersList';
@@ -68,10 +69,11 @@ export const DecisionsTabPanel = ({
 
 export const MembersTab = ({ profileId }: { profileId: string }) => {
   const t = useTranslations();
-  const access = useUser();
-  const permission = access.getPermissionsForProfile(profileId).admin;
-
-  return permission.read ? <Tab id="members">{t('Members')}</Tab> : null;
+  return (
+    <AccessBoundary required={{ admin: { read: true } }} profileId={profileId}>
+      <Tab id="members">{t('Members')}</Tab>
+    </AccessBoundary>
+  );
 };
 
 export const MembersTabPanel = ({ profileId }: { profileId: string }) => {
