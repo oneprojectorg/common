@@ -19,6 +19,7 @@ import { VotingSubmitFooter } from './VotingSubmitFooter';
 import { useProposalFilters } from './useProposalFilters';
 
 const EMPTY_VOTED_IDS: string[] = [];
+const EMPTY_PROPOSALS: Proposal[] = [];
 
 interface ManualSelectionListProps {
   instanceId: string;
@@ -38,14 +39,23 @@ export const ManualSelectionList = ({
   const categoryId =
     selectedCategory === 'all-categories' ? undefined : selectedCategory;
 
-  const [[state, categoriesData, instance]] = trpc.useSuspenseQueries((q) => [
-    q.decision.getManualSelectionState({
-      processInstanceId: instanceId,
-      categoryId,
-    }),
+  const [[categoriesData, instance]] = trpc.useSuspenseQueries((q) => [
     q.decision.getCategories({ processInstanceId: instanceId }),
     q.decision.getInstance({ instanceId }),
   ]);
+
+  // Intentionally NOT a suspense query: the input includes `categoryId`,
+  // so a suspense query would re-suspend every time the admin changes the
+  // category filter and blank out the data table while the server
+  // re-fetches. `placeholderData: (prev) => prev` keeps the previous
+  // result visible during the refetch so only the table contents swap in
+  // place. `isFetching` could be surfaced as a subtle loading indicator
+  // if needed; `data` is only undefined on the very first render.
+  const stateQuery = trpc.decision.getManualSelectionState.useQuery(
+    { processInstanceId: instanceId, categoryId },
+    { placeholderData: (prev) => prev },
+  );
+  const state = stateQuery.data;
 
   // Track the full Proposal objects so selections persist across category
   // filter changes — when filtered out of the visible table, a selected
@@ -58,7 +68,7 @@ export const ManualSelectionList = ({
 
   const { filteredProposals, proposalFilter, setProposalFilter } =
     useProposalFilters({
-      proposals: state.proposals,
+      proposals: state?.proposals ?? EMPTY_PROPOSALS,
       currentProfileId: user.currentProfile?.id,
       votedProposalIds: EMPTY_VOTED_IDS,
       hasVoted: false,
@@ -98,6 +108,14 @@ export const ManualSelectionList = ({
       processInstanceId: instanceId,
     });
   };
+
+  // First render: state is undefined because getManualSelectionState is a
+  // non-suspense query. Subsequent renders always have data (either real or
+  // kept from the previous fetch via placeholderData). Returning null lets
+  // the parent Suspense fallback show, if any.
+  if (!state) {
+    return null;
+  }
 
   if (state.selectionsConfirmed) {
     return null;
