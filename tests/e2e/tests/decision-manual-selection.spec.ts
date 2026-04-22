@@ -138,28 +138,33 @@ test.describe('Decision Manual Selection — full flow', () => {
       waitUntil: 'networkidle',
     });
 
-    await expect(
-      authenticatedPage.getByText('CONFIRM THE WINNING PROPOSALS'),
-    ).toBeVisible({ timeout: 15_000 });
-
-    const advanceButton = authenticatedPage.getByRole('button', {
-      name: /^Advance \(\d+\)$/,
+    // Toolbar header is the admin UI's stable landmark (no dependency on
+    // phase-specific headline copy).
+    await expect(authenticatedPage.getByText(/All proposals/)).toBeVisible({
+      timeout: 15_000,
     });
-    await expect(advanceButton).toBeDisabled();
 
+    const confirmButton = authenticatedPage.getByRole('button', {
+      name: 'Confirm decisions',
+    });
+    await expect(confirmButton).toBeDisabled();
+
+    // Each row's toggle button carries an aria-label of
+    // `Advance <title>` while unselected and `Stop advancing <title>`
+    // while selected.
     await authenticatedPage
-      .getByRole('checkbox', { name: /Proposal Alpha/ })
+      .getByRole('button', { name: 'Advance Proposal Alpha' })
       .click();
     await authenticatedPage
-      .getByRole('checkbox', { name: /Proposal Beta/ })
+      .getByRole('button', { name: 'Advance Proposal Beta' })
       .click();
+
     await expect(
-      authenticatedPage.getByRole('button', { name: 'Advance (2)' }),
-    ).toBeEnabled();
+      authenticatedPage.getByText('2 proposals advancing'),
+    ).toBeVisible();
+    await expect(confirmButton).toBeEnabled();
 
-    await authenticatedPage
-      .getByRole('button', { name: 'Advance (2)' })
-      .click();
+    await confirmButton.click();
     const dialog = authenticatedPage.getByRole('dialog');
     await expect(
       dialog.getByRole('heading', { name: 'Confirm advancing proposals' }),
@@ -194,12 +199,15 @@ test.describe('Decision Manual Selection — full flow', () => {
     expect(manualSelection?.at).toBeTruthy();
 
     await authenticatedPage.reload({ waitUntil: 'networkidle' });
+    // After confirming, selectionsConfirmed flips true and the admin UI
+    // should no longer render — the Confirm decisions trigger is the
+    // cleanest signal of that branch being mounted.
     await expect(
-      authenticatedPage.getByRole('button', { name: /^Advance \(\d+\)$/ }),
+      authenticatedPage.getByRole('button', { name: 'Confirm decisions' }),
     ).not.toBeVisible();
   });
 
-  test('non-admin sees the pending empty state and cannot interact', async ({
+  test('non-admin does not see the admin manual-selection UI', async ({
     browser,
     org,
     supabaseAdmin,
@@ -228,11 +236,14 @@ test.describe('Decision Manual Selection — full flow', () => {
       waitUntil: 'networkidle',
     });
 
-    await expect(memberPage.getByText('WAITING ON YOUR ADMIN')).toBeVisible({
-      timeout: 15_000,
-    });
+    // Non-admin falls through to ProposalsList (no special "awaiting
+    // admin" state). The only assertion we need is that none of the
+    // admin-only controls leak into this view.
     await expect(
-      memberPage.getByRole('button', { name: /^Advance \(\d+\)$/ }),
+      memberPage.getByRole('button', { name: 'Confirm decisions' }),
+    ).not.toBeVisible();
+    await expect(
+      memberPage.getByRole('button', { name: /^Advance .+/ }),
     ).not.toBeVisible();
   });
 });
