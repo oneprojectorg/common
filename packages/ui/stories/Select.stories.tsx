@@ -108,6 +108,16 @@ export const PillVariant = (args: any) => (
   </div>
 );
 
+export const NarrowTrigger = () => (
+  <div className="w-36">
+    <Select label="Role" defaultSelectedKey="owner">
+      <SelectItem id="participant">Participant</SelectItem>
+      <SelectItem id="admin">Admin</SelectItem>
+      <SelectItem id="owner">Owner of Everything</SelectItem>
+    </Select>
+  </div>
+);
+
 export const SmallVariant = (args: any) => (
   <div className="flex flex-col gap-4">
     <Select {...args} size="small" placeholder="Select category">
