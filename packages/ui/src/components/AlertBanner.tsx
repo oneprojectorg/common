@@ -89,8 +89,7 @@ const iconMap: Record<
   default: null,
 };
 
-export interface AlertBannerProps
-  extends React.HtmlHTMLAttributes<HTMLDivElement> {
+export interface AlertBannerProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
   intent?: 'default' | 'info' | 'warning' | 'danger' | 'success';
   variant?: 'default' | 'banner';
   indicator?: boolean;

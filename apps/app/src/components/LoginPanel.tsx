@@ -397,7 +397,7 @@ export const LoginPanel = () => {
                     {t('Back to home')}
                   </ButtonLink>
 
-                  <SocialLinks iconClassName="size-5 text-neutral-gray3 stroke-none" />
+                  <SocialLinks iconClassName="size-5 stroke-none text-neutral-gray3" />
                 </div>
               )}
 

@@ -1,0 +1,58 @@
+{
+  "printWidth": 80,
+  "singleQuote": true,
+  "sortImports": {
+    "newlinesBetween": true,
+    "ignoreCase": false,
+    "internalPattern": ["@/"],
+    "customGroups": [
+      {
+        "groupName": "lib",
+        "selector": "internal",
+        "elementNamePattern": ["@/lib", "@/lib/**"]
+      },
+      {
+        "groupName": "components",
+        "selector": "internal",
+        "elementNamePattern": ["@/components", "@/components/**"]
+      }
+    ],
+    "groups": [
+      ["unknown", "external", "builtin", "internal", "subpath"],
+      "lib",
+      "components",
+      ["parent", "sibling", "index"],
+      "style"
+    ]
+  },
+  "sortTailwindcss": {
+    "attributes": [
+      "badgeClassName",
+      "bodyClassName",
+      "buttonClassName",
+      "chipClassName",
+      "descriptionClassName",
+      "editorClassName",
+      "fieldClassName",
+      "iconClassName",
+      "itemClassName",
+      "labelClassName",
+      "overlayClassName",
+      "selectValueClassName"
+    ],
+    "functions": ["twMerge", "clsx", "cn", "tv"],
+    "stylesheet": "./packages/styles/shared-styles.css"
+  },
+  "ignorePatterns": [
+    "pnpm-lock.yaml",
+    "draco*.js",
+    "*.md",
+    "*.sql",
+    "*.yaml",
+    "*.yml",
+    "*.toml",
+    "*.css",
+    "*.json",
+    "migrations/"
+  ]
+}

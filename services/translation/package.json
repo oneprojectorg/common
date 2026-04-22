@@ -8,7 +8,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\"",
+    "format:check": "oxfmt --check",
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {

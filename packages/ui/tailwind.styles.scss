@@ -279,11 +279,11 @@ textarea::placeholder {
   }
 
   .better-scrollbar {
-    @apply overflow-y-scroll scrollbar scrollbar-track-transparent scrollbar-thumb-neutral-600 scrollbar-corner-transparent scrollbar-thumb-rounded-full scrollbar-w-2;
+    @apply scrollbar scrollbar-track-transparent scrollbar-thumb-neutral-600 scrollbar-corner-transparent scrollbar-thumb-rounded-full scrollbar-w-2 overflow-y-scroll;
   }
 
   .scrollable-hidden-scrollbar {
-    @apply overflow-y-auto scrollbar scrollbar-track-transparent scrollbar-thumb-neutral-600 scrollbar-corner-transparent scrollbar-thumb-rounded-full scrollbar-w-0;
+    @apply scrollbar scrollbar-track-transparent scrollbar-thumb-neutral-600 scrollbar-corner-transparent scrollbar-thumb-rounded-full scrollbar-w-0 overflow-y-auto;
   }
 
   .inset-shadow {

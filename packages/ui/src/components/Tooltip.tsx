@@ -18,8 +18,10 @@ export interface TooltipProps extends Omit<AriaTooltipProps, 'children'> {
   children: React.ReactNode;
 }
 
-export interface TooltipTriggerProps
-  extends Omit<TooltipTriggerComponentProps, 'children'> {
+export interface TooltipTriggerProps extends Omit<
+  TooltipTriggerComponentProps,
+  'children'
+> {
   children: React.ReactNode;
 }
 

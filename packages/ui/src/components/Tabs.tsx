@@ -113,12 +113,10 @@ export const Tab = (
   return (
     <RACTab
       {...props}
-      className={composeRenderProps(
-        props.className,
-        (className, renderProps) =>
-          props.unstyled
-            ? className || ''
-            : tabProps({ ...renderProps, variant: props.variant, className }),
+      className={composeRenderProps(props.className, (className, renderProps) =>
+        props.unstyled
+          ? className || ''
+          : tabProps({ ...renderProps, variant: props.variant, className }),
       )}
     />
   );
