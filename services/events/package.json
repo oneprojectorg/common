@@ -14,7 +14,7 @@
   "dependencies": {
     "@op/core": "workspace:^",
     "@op/db": "workspace:*",
-    "inngest": "^3.44.0",
+    "inngest": "3.54.0",
     "zod": "catalog:"
   },
   "devDependencies": {
