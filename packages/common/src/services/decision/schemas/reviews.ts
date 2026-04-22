@@ -6,7 +6,7 @@ import {
 import { z } from 'zod';
 
 import type { RubricTemplateSchema } from '../types';
-import { proposalSchema } from './proposal';
+import { proposalProfileSchema, proposalSchema } from './proposal';
 
 export { ProposalReviewAssignmentStatus, ProposalReviewRequestState };
 
@@ -83,6 +83,39 @@ export const reviewAssignmentListSchema = z.object({
   assignments: z.array(reviewAssignmentExtendedSchema),
 });
 
+// ── Lean review assignment schemas (admin overview) ─────────────────────
+//
+// These schemas power admin-facing screens that aggregate over every
+// assignment in a process instance and refresh on realtime updates. They
+// intentionally omit the heavy TipTap payload so the wire shape stays small.
+
+export const proposalSummarySchema = proposalSchema.omit({
+  documentContent: true,
+  htmlContent: true,
+  proposalTemplate: true,
+  attachments: true,
+});
+
+export const reviewAssignmentLeanSchema = z.object({
+  id: z.uuid(),
+  processInstanceId: z.uuid(),
+  phaseId: z.string(),
+  status: z.enum(ProposalReviewAssignmentStatus),
+  reviewer: proposalProfileSchema,
+  proposal: proposalSummarySchema,
+});
+
+export const reviewItemSchema = z.object({
+  assignment: reviewAssignmentLeanSchema,
+  review: proposalReviewSchema.nullable(),
+  revisionRequest: proposalReviewRequestSchema.nullable(),
+});
+
+export const reviewItemListSchema = z.object({
+  items: z.array(reviewItemSchema),
+  rubricTemplate: rubricTemplateSchema.nullable(),
+});
+
 // ── Proposal-scoped revision request schemas ──────────────────────────
 
 export const proposalRevisionRequestItemSchema = z.object({
@@ -112,3 +145,7 @@ export type ProposalRevisionRequestItem = z.infer<
 export type ProposalRevisionRequestList = z.infer<
   typeof proposalRevisionRequestListSchema
 >;
+export type ProposalSummary = z.infer<typeof proposalSummarySchema>;
+export type ReviewAssignmentLean = z.infer<typeof reviewAssignmentLeanSchema>;
+export type ReviewItem = z.infer<typeof reviewItemSchema>;
+export type ReviewItemList = z.infer<typeof reviewItemListSchema>;
