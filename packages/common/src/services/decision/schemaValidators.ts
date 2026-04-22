@@ -5,6 +5,7 @@ import {
   SchemaValidationResult,
   VotingConfig,
 } from './schemaTypes';
+import type { VoteCap } from './schemas/types';
 
 export function isValidDecisionProcessSchema(
   data: unknown,
@@ -15,22 +16,21 @@ export function isValidDecisionProcessSchema(
 
   const obj = data as Record<string, unknown>;
 
-  return (
-    'allowProposals' in obj &&
-    typeof obj.allowProposals === 'boolean' &&
-    'allowDecisions' in obj &&
-    typeof obj.allowDecisions === 'boolean' &&
-    'instanceData' in obj &&
-    typeof obj.instanceData === 'object' &&
-    obj.instanceData !== null &&
-    typeof (obj.instanceData as Record<string, unknown>).maxVotesPerMember ===
-      'number' &&
-    Number.isInteger(
-      (obj.instanceData as Record<string, unknown>).maxVotesPerMember,
-    ) &&
-    ((obj.instanceData as Record<string, unknown>)
-      .maxVotesPerMember as number) >= 0
-  );
+  if (typeof obj.allowProposals !== 'boolean') {
+    return false;
+  }
+  if (typeof obj.allowDecisions !== 'boolean') {
+    return false;
+  }
+  if (typeof obj.instanceData !== 'object' || obj.instanceData === null) {
+    return false;
+  }
+
+  const max = (obj.instanceData as Record<string, unknown>).maxVotesPerMember;
+  if (max === undefined) {
+    return true;
+  }
+  return typeof max === 'number' && Number.isInteger(max) && max > 0;
 }
 
 export function validateSchemaWithZod(data: unknown): SchemaValidationResult {
@@ -154,7 +154,7 @@ export function extractSupportedProperties(
 
 export function validateVoteSelection(
   selectedProposalIds: string[],
-  maxVotesPerMember: number,
+  maxVotesPerMember: VoteCap,
   availableProposalIds: string[],
 ): {
   isValid: boolean;
@@ -166,7 +166,10 @@ export function validateVoteSelection(
     errors.push('At least one proposal must be selected');
   }
 
-  if (selectedProposalIds.length > maxVotesPerMember) {
+  if (
+    maxVotesPerMember !== undefined &&
+    selectedProposalIds.length > maxVotesPerMember
+  ) {
     errors.push(`Cannot select more than ${maxVotesPerMember} proposals`);
   }
 

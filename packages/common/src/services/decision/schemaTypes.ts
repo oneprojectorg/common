@@ -1,11 +1,13 @@
 import type { ProposalStatus } from '@op/db/schema';
 import { z } from 'zod';
 
+import type { VoteCap } from './schemas/types';
+
 export interface DecisionProcessSchema {
   allowProposals: boolean;
   allowDecisions: boolean;
   instanceData: {
-    maxVotesPerMember: number;
+    maxVotesPerMember?: VoteCap;
     [key: string]: unknown;
   };
   [key: string]: unknown;
@@ -17,7 +19,7 @@ export const DecisionProcessSchemaBase = z
     allowDecisions: z.boolean(),
     instanceData: z
       .object({
-        maxVotesPerMember: z.int().min(0),
+        maxVotesPerMember: z.int().positive().optional(),
       })
       .and(z.record(z.string(), z.unknown())),
   })
@@ -26,7 +28,7 @@ export const DecisionProcessSchemaBase = z
 export interface VotingConfig {
   allowProposals: boolean;
   allowDecisions: boolean;
-  maxVotesPerMember: number;
+  maxVotesPerMember?: VoteCap;
   schemaType: string;
   additionalConfig?: Record<string, unknown>;
 }

@@ -4,6 +4,7 @@ import {
   proposalSchema,
   rubricTemplateSchema,
 } from '@op/common/client';
+import type { PhaseRules as CommonPhaseRules } from '@op/common/src/services/decision';
 import {
   ProcessStatus,
   ProposalStatus,
@@ -63,6 +64,7 @@ const phaseRulesEncoder = z.object({
     .object({
       submit: z.boolean().optional(),
       edit: z.boolean().optional(),
+      maxVotes: z.number().int().positive().optional(),
     })
     .optional(),
   advancement: z
@@ -71,7 +73,7 @@ const phaseRulesEncoder = z.object({
       endDate: z.string().optional(),
     })
     .optional(),
-});
+}) satisfies z.ZodType<CommonPhaseRules>;
 
 /** Selection pipeline block encoder */
 const selectionPipelineBlockEncoder = z.object({
