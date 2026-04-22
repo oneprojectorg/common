@@ -1,5 +1,6 @@
 'use client';
 
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import {
   type ProposalReview,
@@ -10,7 +11,7 @@ import {
 } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
 import { toast } from '@op/ui/Toast';
-import { useRouter } from 'next/navigation';
+import { notFound, useRouter } from 'next/navigation';
 import {
   type ReactNode,
   createContext,
@@ -58,7 +59,19 @@ export function useReviewForm(): ReviewFormState {
   return ctx;
 }
 
-export function ReviewFormProvider({
+export function ReviewFormProvider(props: {
+  assignmentId: string;
+  decisionSlug: string;
+  children: ReactNode;
+}) {
+  return (
+    <APIErrorBoundary fallbacks={{ 404: () => notFound() }}>
+      <ReviewFormProviderInner {...props} />
+    </APIErrorBoundary>
+  );
+}
+
+function ReviewFormProviderInner({
   assignmentId,
   decisionSlug,
   children,
@@ -81,9 +94,7 @@ export function ReviewFormProvider({
     reviewAssignment;
 
   if (!rubricTemplate) {
-    throw new Error(
-      `Review assignment ${assignmentId} has no rubric template`,
-    );
+    throw new Error(`Review assignment ${assignmentId} has no rubric template`);
   }
 
   const [values, setValues] = useState<Record<string, unknown>>(

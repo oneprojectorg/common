@@ -1,11 +1,9 @@
-import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import {
   HydrationBoundary,
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
-import { notFound } from 'next/navigation';
 
 import { TranslatedText } from '@/components/TranslatedText';
 
@@ -29,51 +27,49 @@ export async function ReviewLayout({
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <APIErrorBoundary fallbacks={{ 404: () => notFound() }}>
-        <ReviewFormProvider
-          assignmentId={assignmentId}
-          decisionSlug={decisionSlug}
-        >
-          <div className="flex h-dvh flex-col bg-white">
-            <ReviewNavbar decisionSlug={decisionSlug} />
+      <ReviewFormProvider
+        assignmentId={assignmentId}
+        decisionSlug={decisionSlug}
+      >
+        <div className="flex h-dvh flex-col bg-white">
+          <ReviewNavbar decisionSlug={decisionSlug} />
 
-            <div className="mx-auto hidden min-h-0 max-w-5xl flex-1 sm:flex">
-              <ReviewProposalPane className="border-r p-12" />
-              <div className="min-w-0 flex-1 overflow-y-auto px-12 pt-12 pb-4">
-                <ReviewRubricForm />
-              </div>
+          <div className="mx-auto hidden min-h-0 max-w-5xl flex-1 sm:flex">
+            <ReviewProposalPane className="border-r p-12" />
+            <div className="min-w-0 flex-1 overflow-y-auto px-12 pt-12 pb-4">
+              <ReviewRubricForm />
             </div>
-
-            <Tabs
-              className="min-h-0 flex-1 gap-0 sm:hidden"
-              defaultSelectedKey="review"
-            >
-              <TabList className="mx-6" variant="default">
-                <Tab id="proposal">
-                  <TranslatedText text="Proposal" />
-                </Tab>
-                <Tab id="review">
-                  <TranslatedText text="Review" />
-                </Tab>
-              </TabList>
-
-              <TabPanel
-                id="proposal"
-                className="min-h-0 overflow-y-auto px-6 pt-8 pb-4"
-              >
-                <ReviewProposalPane />
-              </TabPanel>
-
-              <TabPanel
-                id="review"
-                className="min-h-0 overflow-y-auto px-6 pt-8 pb-4"
-              >
-                <ReviewRubricForm />
-              </TabPanel>
-            </Tabs>
           </div>
-        </ReviewFormProvider>
-      </APIErrorBoundary>
+
+          <Tabs
+            className="min-h-0 flex-1 gap-0 sm:hidden"
+            defaultSelectedKey="review"
+          >
+            <TabList className="mx-6" variant="default">
+              <Tab id="proposal">
+                <TranslatedText text="Proposal" />
+              </Tab>
+              <Tab id="review">
+                <TranslatedText text="Review" />
+              </Tab>
+            </TabList>
+
+            <TabPanel
+              id="proposal"
+              className="min-h-0 overflow-y-auto px-6 pt-8 pb-4"
+            >
+              <ReviewProposalPane />
+            </TabPanel>
+
+            <TabPanel
+              id="review"
+              className="min-h-0 overflow-y-auto px-6 pt-8 pb-4"
+            >
+              <ReviewRubricForm />
+            </TabPanel>
+          </Tabs>
+        </div>
+      </ReviewFormProvider>
     </HydrationBoundary>
   );
 }
