@@ -1,14 +1,6 @@
 {
   "extends": "@op/typescript-config/nextjs.json",
   "compilerOptions": {
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "paths": {
-      "@/*": ["./*"]
-    },
     "types": ["node"]
   },
   "include": [

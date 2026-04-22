@@ -17,6 +17,7 @@
     "ky": "^1.8.1"
   },
   "devDependencies": {
-    "@op/typescript-config": "workspace:*"
+    "@op/typescript-config": "workspace:*",
+    "@types/node": "^22.13.5"
   }
 }

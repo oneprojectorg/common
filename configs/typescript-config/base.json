@@ -10,13 +10,13 @@
     "moduleDetection": "force",
     "moduleResolution": "NodeNext",
     "noUncheckedIndexedAccess": true,
+    "noUncheckedSideEffectImports": false,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
     "target": "ES2022",
     "allowJs": true,
     "noUnusedLocals": true,
-    "forceConsistentCasingInFileNames": true,
     "noUnusedParameters": true
   }
 }
