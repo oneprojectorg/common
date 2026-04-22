@@ -14,6 +14,12 @@ import type { Doc } from 'yjs';
  * concatenating all nested XmlText children (ignoring markup).
  */
 function getBlockText(element: Y.XmlElement): string {
+  // Atom nodes (e.g. iframely) carry content in attributes, not text children.
+  // Return the src URL so the field is treated as non-empty by the validator.
+  if (element.nodeName === 'iframely') {
+    return element.getAttribute('src') ?? '';
+  }
+
   const parts: string[] = [];
   element.forEach((child) => {
     if (child instanceof Y.XmlText) {
@@ -26,8 +32,11 @@ function getBlockText(element: Y.XmlElement): string {
 }
 
 /**
- * Extracts plain text from a Yjs XmlFragment, matching the output of
- * TipTap Cloud REST API with `format=text`.
+ * Extracts plain text from a Yjs XmlFragment.
+ *
+ * This is the client-side counterpart to `extractTextFromTipTapDoc`
+ * (which operates on the REST API JSON format). Both produce equivalent
+ * plain-text output, including handling of atom nodes like iframely.
  *
  * All fragment content (both TipTap editor fields and scalar values from
  * `useCollaborativeFragment`) is stored as paragraph-wrapped `XmlElement`

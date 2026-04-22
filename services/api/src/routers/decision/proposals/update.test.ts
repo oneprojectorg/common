@@ -1,4 +1,4 @@
-import { mockCollab } from '@op/collab/testing';
+import { mockCollab, textFragment } from '@op/collab/testing';
 import { ProposalStatus, Visibility } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -578,8 +578,8 @@ describe.concurrent('updateProposal validation', () => {
     const collaborationDocId = `proposal-${proposal.id}`;
 
     // Seed title but omit the required summary field
-    mockCollab.setDocFragments(collaborationDocId, {
-      title: 'Draft',
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment('Draft'),
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -621,8 +621,8 @@ describe.concurrent('updateProposal checkpointVersion', () => {
 
     const collaborationDocId = `proposal-${proposal.id}`;
 
-    mockCollab.setDocFragments(collaborationDocId, {
-      title: 'Test Proposal',
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment('Test Proposal'),
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -666,8 +666,8 @@ describe.concurrent('updateProposal checkpointVersion', () => {
 
     const collaborationDocId = `proposal-${proposal.id}`;
 
-    mockCollab.setDocFragments(collaborationDocId, {
-      title: 'Test Proposal',
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment('Test Proposal'),
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);

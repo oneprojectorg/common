@@ -1,4 +1,4 @@
-import { mockCollab } from '@op/collab/testing';
+import { mockCollab, textFragment } from '@op/collab/testing';
 import { ProposalStatus, processInstances, proposals } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import { describe, expect, it } from 'vitest';
@@ -235,11 +235,12 @@ describe.concurrent('submitProposal', () => {
       .where(eq(proposals.id, proposal.id));
 
     // Seed the collaboration doc fragments so validation reads from TipTap
-    mockCollab.setDocFragments(collaborationDocId, {
-      title: 'Proposal with vendor extensions',
-      budget: JSON.stringify({ amount: 5000, currency: 'USD' }),
-      summary:
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment('Proposal with vendor extensions'),
+      budget: textFragment(JSON.stringify({ amount: 5000, currency: 'USD' })),
+      summary: textFragment(
         'Testing that x-field-order and x-format do not break validation',
+      ),
     });
 
     // Seed version history so submit can stamp the latest version
@@ -291,6 +292,11 @@ describe.concurrent('submitProposal', () => {
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: '' },
+    });
+
+    // Seed the collaboration doc with an empty title fragment
+    mockCollab.setDocFragmentResponses(`proposal-${proposal.id}`, {
+      title: textFragment(''),
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -353,8 +359,8 @@ describe.concurrent('submitProposal', () => {
       })
       .where(eq(proposals.id, proposal.id));
 
-    mockCollab.setDocFragments(collaborationDocId, {
-      title: 'A title that is too long',
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment('A title that is too long'),
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -419,6 +425,11 @@ describe.concurrent('submitProposal', () => {
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Incomplete Proposal' },
+    });
+
+    // Seed only the title fragment — a1b2c3d4 and e5f6a7b8 are deliberately omitted
+    mockCollab.setDocFragmentResponses(`proposal-${proposal.id}`, {
+      title: textFragment('Incomplete Proposal'),
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -494,9 +505,9 @@ describe.concurrent('submitProposal', () => {
       .where(eq(proposals.id, proposal.id));
 
     // Seed the collaboration doc fragments with the over-budget value
-    mockCollab.setDocFragments(collaborationDocId, {
-      title: 'Over Budget Proposal',
-      budget: JSON.stringify({ amount: 99999, currency: 'USD' }),
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment('Over Budget Proposal'),
+      budget: textFragment(JSON.stringify({ amount: 99999, currency: 'USD' })),
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -563,8 +574,8 @@ describe.concurrent('submitProposal', () => {
       .where(eq(proposals.id, proposal.id));
 
     // Seed title but leave summary empty — simulates user never filling it in
-    mockCollab.setDocFragments(collaborationDocId, {
-      title: 'Has Title',
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment('Has Title'),
       // summary deliberately omitted
     });
 
@@ -630,8 +641,8 @@ describe.concurrent('submitProposal', () => {
       .where(eq(proposals.id, proposal.id));
 
     // Seed title but no budget fragment
-    mockCollab.setDocFragments(collaborationDocId, {
-      title: 'No Budget',
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment('No Budget'),
       // budget deliberately omitted
     });
 
@@ -704,9 +715,9 @@ describe.concurrent('submitProposal', () => {
       })
       .where(eq(proposals.id, proposal.id));
 
-    mockCollab.setDocFragments(collaborationDocId, {
-      title: 'OneOf Category Test',
-      category: JSON.stringify(['Infrastructure']),
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment('OneOf Category Test'),
+      category: textFragment(JSON.stringify(['Infrastructure'])),
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -777,8 +788,82 @@ describe.concurrent('submitProposal', () => {
       })
       .where(eq(proposals.id, proposal.id));
 
-    mockCollab.setDocFragments(collaborationDocId, {
-      title: 'Legacy Template Array Data',
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment('Legacy Template Array Data'),
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitProposal({
+      proposalId: proposal.id,
+    });
+
+    expect(result.status).toBe(ProposalStatus.SUBMITTED);
+  });
+
+  it('should submit successfully when a required long-text field contains only an iframely embed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        required: ['title', 'summary'],
+        'x-field-order': ['title', 'summary'],
+        properties: {
+          title: {
+            type: 'string',
+            title: 'Title',
+            'x-format': 'short-text',
+          },
+          summary: {
+            type: 'string',
+            title: 'Summary',
+            minLength: 1,
+            'x-format': 'long-text',
+          },
+        },
+      },
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Embed Only Proposal' },
+    });
+
+    const collaborationDocId = `proposal-${proposal.id}`;
+
+    await db
+      .update(proposals)
+      .set({
+        proposalData: { title: 'Embed Only Proposal', collaborationDocId },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    // Summary contains only an iframely embed — no text content.
+    // Before the fix, this would fail validation because format=text
+    // returned empty string for iframely atom nodes.
+    mockCollab.setDocFragmentResponses(collaborationDocId, {
+      title: textFragment('Embed Only Proposal'),
+      summary: {
+        type: 'doc',
+        content: [
+          {
+            type: 'iframely',
+            attrs: { src: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
+          },
+        ],
+      },
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
