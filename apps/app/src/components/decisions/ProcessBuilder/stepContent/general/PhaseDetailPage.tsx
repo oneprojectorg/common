@@ -7,12 +7,14 @@ import { Button } from '@op/ui/Button';
 import { DatePicker } from '@op/ui/DatePicker';
 import { Header2 } from '@op/ui/Header';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { useQueryState } from 'nuqs';
 import { useRef, useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
 
+import type { TranslateFn } from '@/lib/i18n';
 import { useTranslations } from '@/lib/i18n';
 
 import { RichTextEditorWithToolbar } from '@/components/RichTextEditor/RichTextEditorWithToolbar';
@@ -391,6 +393,21 @@ function PhaseDetailForm({
             size="small"
           />
         </ToggleRow>
+        {phase.rules?.voting?.submit ? (
+          <ToggleRow
+            label={t('Voting limit')}
+            description={t('Number of proposals each participant can vote on')}
+          >
+            <VoteLimitSelect
+              maxVotes={phase.rules?.voting?.maxVotes}
+              onChange={(maxVotes) =>
+                updateRules({
+                  voting: { ...phase.rules?.voting, maxVotes },
+                })
+              }
+            />
+          </ToggleRow>
+        ) : null}
       </div>
 
       {/* Delete */}
@@ -440,5 +457,50 @@ function PhaseDetailForm({
         </ModalFooter>
       </Modal>
     </div>
+  );
+}
+
+const VOTE_LIMIT_OPTIONS: Array<{
+  id: string;
+  maxVotes: number | undefined;
+  label: (t: TranslateFn) => string;
+}> = [
+  { id: 'none', maxVotes: undefined, label: (t) => t('No limit') },
+  { id: '1', maxVotes: 1, label: (t) => t('1 vote') },
+  { id: '2', maxVotes: 2, label: (t) => t('2 votes') },
+  { id: '3', maxVotes: 3, label: (t) => t('3 votes') },
+  { id: '4', maxVotes: 4, label: (t) => t('4 votes') },
+  { id: '5', maxVotes: 5, label: (t) => t('5 votes') },
+  { id: '10', maxVotes: 10, label: (t) => t('10 votes') },
+];
+
+function VoteLimitSelect({
+  maxVotes,
+  onChange,
+}: {
+  maxVotes: number | undefined;
+  onChange: (maxVotes: number | undefined) => void;
+}) {
+  const t = useTranslations();
+  const selectedKey = maxVotes === undefined ? 'none' : String(maxVotes);
+
+  return (
+    <Select
+      selectedKey={selectedKey}
+      size="small"
+      aria-label={t('Voting limit')}
+      onSelectionChange={(key) => {
+        const option = VOTE_LIMIT_OPTIONS.find((o) => o.id === key);
+        if (option) {
+          onChange(option.maxVotes);
+        }
+      }}
+    >
+      {VOTE_LIMIT_OPTIONS.map((option) => (
+        <SelectItem key={option.id} id={option.id}>
+          {option.label(t)}
+        </SelectItem>
+      ))}
+    </Select>
   );
 }
