@@ -5,7 +5,6 @@
   "keywords": [],
   "license": "SEE LICENSE in /LICENSE",
   "author": "",
-  "main": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
     "./validation": "./src/utils/validation.ts",
@@ -16,6 +15,7 @@
     "./locales": "./src/services/translation/locales.ts",
     "./src/*": "./src/*"
   },
+  "main": "src/index.ts",
   "scripts": {
     "format:check": "oxfmt --check",
     "test": "vitest run",

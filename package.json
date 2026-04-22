@@ -44,6 +44,7 @@
   },
   "dependencies": {},
   "devDependencies": {
+    "oxfmt": "^0.46.0",
     "@op/core": "workspace:*",
     "@op/typescript-config": "workspace:*",
     "@react-three/drei": "^10.0.4",
@@ -85,7 +86,6 @@
     "nanoid": "5.1.2",
     "next": "catalog:",
     "open": "^10.1.0",
-    "oxfmt": "^0.46.0",
     "postcss": "^8.5.3",
     "postgres": "^3.4.5",
     "react": "^19.0.1",
@@ -110,10 +110,10 @@
     "zod": "catalog:",
     "zustand": "^5.0.3"
   },
+  "packageManager": "pnpm@9.15.4",
   "engines": {
     "node": ">=22"
   },
-  "packageManager": "pnpm@9.15.4",
   "pnpm": {
     "overrides": {
       "@opentelemetry/sdk-metrics": "^2.2.0",

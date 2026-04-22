@@ -8,6 +8,9 @@
     "*.sql",
     "*.yaml",
     "*.yml",
+    "*.toml",
+    "*.css",
+    "*.json",
     "migrations/"
   ]
 }
