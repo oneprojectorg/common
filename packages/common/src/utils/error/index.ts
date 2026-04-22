@@ -61,3 +61,12 @@ export class ConflictError extends CommonError {
     super(message ?? defaultMessage);
   }
 }
+
+export class RateLimitError extends CommonError {
+  public readonly statusCode: number = 429;
+
+  constructor(message?: string) {
+    const defaultMessage = 'Too many requests. Please try again later.';
+    super(message ?? defaultMessage);
+  }
+}

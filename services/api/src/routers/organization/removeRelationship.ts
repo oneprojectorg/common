@@ -1,5 +1,4 @@
-import { Channels, UnauthorizedError, removeRelationship } from '@op/common';
-import { TRPCError } from '@trpc/server';
+import { Channels, removeRelationship } from '@op/common';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -16,36 +15,22 @@ export const removeRelationshipRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { id } = input;
 
-      try {
-        const relationshipRemoved = await removeRelationship({
-          id,
-        });
+      const relationshipRemoved = await removeRelationship({
+        id,
+      });
 
-        const sourceOrgId = relationshipRemoved.sourceOrganizationId;
-        const targetOrgId = relationshipRemoved.targetOrganizationId;
+      const sourceOrgId = relationshipRemoved.sourceOrganizationId;
+      const targetOrgId = relationshipRemoved.targetOrganizationId;
 
-        ctx.registerMutationChannels([
-          Channels.orgRelationshipRequest({
-            type: 'source',
-            orgId: sourceOrgId,
-          }),
-          Channels.orgRelationshipRequest({
-            type: 'target',
-            orgId: targetOrgId,
-          }),
-        ]);
-      } catch (error: unknown) {
-        console.log('ERROR', error);
-        if (error instanceof UnauthorizedError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'UNAUTHORIZED',
-          });
-        }
-        throw new TRPCError({
-          message: 'Failed to remove relationship',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-      }
+      ctx.registerMutationChannels([
+        Channels.orgRelationshipRequest({
+          type: 'source',
+          orgId: sourceOrgId,
+        }),
+        Channels.orgRelationshipRequest({
+          type: 'target',
+          orgId: targetOrgId,
+        }),
+      ]);
     }),
 });

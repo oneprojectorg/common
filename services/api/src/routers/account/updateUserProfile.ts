@@ -2,10 +2,7 @@ import { updateUserProfile as updateUserProfileService } from '@op/common';
 
 import { userEncoder } from '../../encoders';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
-import {
-  handleUpdateUserProfileError,
-  updateUserProfileDataSchema,
-} from '../shared/profile';
+import { updateUserProfileDataSchema } from '../shared/profile';
 
 const updateUserProfile = router({
   updateUserProfile: commonAuthedProcedure({
@@ -16,16 +13,12 @@ const updateUserProfile = router({
     .mutation(async ({ input, ctx }) => {
       const { user } = ctx;
 
-      try {
-        const result = await updateUserProfileService({
-          input,
-          user,
-        });
+      const result = await updateUserProfileService({
+        input,
+        user,
+      });
 
-        return userEncoder.parse(result);
-      } catch (error) {
-        handleUpdateUserProfileError(error);
-      }
+      return userEncoder.parse(result);
     }),
 });
 

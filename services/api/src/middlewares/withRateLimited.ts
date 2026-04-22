@@ -1,4 +1,4 @@
-import { TRPCError } from '@trpc/server';
+import { RateLimitError, UnauthorizedError, ValidationError } from '@op/common';
 
 import rateLimited from '../lib/rateLimited';
 import type { MiddlewareBuilderBase } from '../types';
@@ -11,17 +11,13 @@ const withRateLimited = (opts = { windowSize: 10, maxRequests: 10 }) => {
     }
 
     if (!ctx.ip) {
-      throw new TRPCError({
-        message: `Unable to detect IP address. If you're using a VPN, disable it and try again.`,
-        code: 'UNAUTHORIZED',
-      });
+      throw new UnauthorizedError(
+        `Unable to detect IP address. If you're using a VPN, disable it and try again.`,
+      );
     }
 
     if (!ctx.reqUrl) {
-      throw new TRPCError({
-        message: `Bad request. Please try again.`,
-        code: 'BAD_REQUEST',
-      });
+      throw new ValidationError('Bad request. Please try again.');
     }
 
     const isRateLimited = rateLimited(
@@ -32,10 +28,7 @@ const withRateLimited = (opts = { windowSize: 10, maxRequests: 10 }) => {
     );
 
     if (isRateLimited.status) {
-      throw new TRPCError({
-        message: `Too many requests. Please try again in ${Math.round(isRateLimited.timeToRefresh / 1000)} seconds.`,
-        code: 'TOO_MANY_REQUESTS',
-      });
+      throw new RateLimitError();
     }
 
     return next({

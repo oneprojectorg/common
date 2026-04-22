@@ -1,6 +1,5 @@
 import { cache } from '@op/cache';
-import { getAllowListUser } from '@op/common';
-import { TRPCError } from '@trpc/server';
+import { UnauthorizedError, getAllowListUser } from '@op/common';
 
 import { getCachedAuthUser } from '../supabase/server';
 import type { MiddlewareBuilderBase, TContextWithUser } from '../types';
@@ -27,9 +26,7 @@ const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
     });
 
     if (!allowedUserEmail) {
-      throw new TRPCError({
-        code: 'UNAUTHORIZED',
-      });
+      throw new UnauthorizedError();
     }
   }
 

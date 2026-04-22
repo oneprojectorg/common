@@ -1,12 +1,12 @@
 import { invalidate } from '@op/cache';
 import {
+  NotFoundError,
+  UnauthorizedError,
   getNormalizedRoles,
   getUserForProfileSwitch,
   updateUserCurrentProfile,
 } from '@op/common';
 import type { Profile } from '@op/db/schema';
-import { logger } from '@op/logging';
-import { TRPCError } from '@trpc/server';
 import { assertAccess, permission } from 'access-zones';
 import { z } from 'zod';
 
@@ -24,10 +24,7 @@ export const switchProfile = router({
       const user = await getUserForProfileSwitch({ authUserId: id });
 
       if (!user) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'User not found',
-        });
+        throw new NotFoundError('User');
       }
 
       // Check if switching to user's own individual profile
@@ -41,22 +38,11 @@ export const switchProfile = router({
         });
 
         if (!orgUser) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: 'Access denied to this profile',
-          });
+          throw new UnauthorizedError('Access denied to this profile');
         }
 
-        // Use assertAccess to check admin permission
-        try {
-          const normalizedRoles = getNormalizedRoles(orgUser.roles);
-          assertAccess({ profile: permission.ADMIN }, normalizedRoles ?? []);
-        } catch (error) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: 'Admin role required for organization profiles',
-          });
-        }
+        const normalizedRoles = getNormalizedRoles(orgUser.roles);
+        assertAccess({ profile: permission.ADMIN }, normalizedRoles ?? []);
       }
 
       const org = user.organizationUsers.find((orgUser) => {
@@ -64,29 +50,14 @@ export const switchProfile = router({
         return profile && profile.id === input.profileId;
       });
 
-      let result;
-      try {
-        result = await updateUserCurrentProfile({
-          authUserId: id,
-          profileId: input.profileId,
-          orgId: org?.organization?.id,
-        });
-      } catch (error) {
-        logger.error('Error switching profile', {
-          error,
-          profileId: input.profileId,
-        });
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to update current profile',
-        });
-      }
+      const result = await updateUserCurrentProfile({
+        authUserId: id,
+        profileId: input.profileId,
+        orgId: org?.organization?.id,
+      });
 
       if (!result.length || !result[0]) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'User not found',
-        });
+        throw new NotFoundError('User');
       }
 
       // Invalidate user cache since current profile/organization context has changed

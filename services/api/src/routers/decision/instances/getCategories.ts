@@ -1,5 +1,4 @@
-import { UnauthorizedError, getProcessCategories } from '@op/common';
-import { TRPCError } from '@trpc/server';
+import { getProcessCategories } from '@op/common';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
@@ -23,33 +22,13 @@ export const getCategoriesRouter = router({
     .input(getCategoriesInputSchema)
     .output(getCategoriesOutputSchema)
     .query(async ({ ctx, input }) => {
-      const { user, logger } = ctx;
+      const { user } = ctx;
 
-      try {
-        const categories = await getProcessCategories({
-          processInstanceId: input.processInstanceId,
-          user,
-        });
+      const categories = await getProcessCategories({
+        processInstanceId: input.processInstanceId,
+        user,
+      });
 
-        return { categories };
-      } catch (error: unknown) {
-        logger.error('Failed to get process categories', {
-          userId: user.id,
-          processInstanceId: input.processInstanceId,
-          error,
-        });
-
-        if (error instanceof UnauthorizedError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'UNAUTHORIZED',
-          });
-        }
-
-        throw new TRPCError({
-          message: 'Failed to get process categories',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-      }
+      return { categories };
     }),
 });

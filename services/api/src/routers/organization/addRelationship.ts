@@ -1,11 +1,9 @@
 import {
   Channels,
-  UnauthorizedError,
   addRelationship,
   sendRelationshipNotification,
 } from '@op/common';
 import { getCurrentOrgId } from '@op/common/src/services/access';
-import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -27,51 +25,37 @@ export const addRelationshipRouter = router({
       const { user } = ctx;
       const { to, relationships } = input;
 
-      try {
-        // TODO: We pull the org ID to add ORG relationships. We are transitioning to profile relationships. This should go away eventually
-        const from = await getCurrentOrgId({ authUserId: user.id });
+      // TODO: We pull the org ID to add ORG relationships. We are transitioning to profile relationships. This should go away eventually
+      const from = await getCurrentOrgId({ authUserId: user.id });
 
-        await addRelationship({
-          user,
-          from,
-          to,
-          relationships,
-        });
+      await addRelationship({
+        user,
+        from,
+        to,
+        relationships,
+      });
 
-        ctx.registerMutationChannels([
-          Channels.orgRelationshipRequest({
-            type: 'source',
-            orgId: from,
+      ctx.registerMutationChannels([
+        Channels.orgRelationshipRequest({
+          type: 'source',
+          orgId: from,
+        }),
+        Channels.orgRelationshipRequest({
+          type: 'target',
+          orgId: to,
+        }),
+      ]);
+
+      // Track analytics and trigger async processes
+      waitUntil(
+        Promise.all([
+          trackRelationshipAdded(ctx, relationships),
+          sendRelationshipNotification({
+            from,
+            to,
+            relationships,
           }),
-          Channels.orgRelationshipRequest({
-            type: 'target',
-            orgId: to,
-          }),
-        ]);
-
-        // Track analytics and trigger async processes
-        waitUntil(
-          Promise.all([
-            trackRelationshipAdded(ctx, relationships),
-            sendRelationshipNotification({
-              from,
-              to,
-              relationships,
-            }),
-          ]),
-        );
-      } catch (error: unknown) {
-        console.log('ERROR', error);
-        if (error instanceof UnauthorizedError) {
-          throw new TRPCError({
-            message: error.message,
-            code: 'UNAUTHORIZED',
-          });
-        }
-        throw new TRPCError({
-          message: 'Failed to create relationship',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-      }
+        ]),
+      );
     }),
 });

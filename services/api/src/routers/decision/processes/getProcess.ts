@@ -1,5 +1,4 @@
-import { NotFoundError, getProcess } from '@op/common';
-import { TRPCError } from '@trpc/server';
+import { getProcess } from '@op/common';
 import { z } from 'zod';
 
 import { legacyDecisionProcessEncoder } from '../../../encoders/legacyDecision';
@@ -11,21 +10,7 @@ export const getProcessRouter = router({
     .input(z.object({ id: z.uuid() }))
     .output(legacyDecisionProcessEncoder)
     .query(async ({ input }) => {
-      try {
-        const process = await getProcess(input.id);
-        return legacyDecisionProcessEncoder.parse(process);
-      } catch (error: unknown) {
-        if (error instanceof NotFoundError) {
-          throw new TRPCError({
-            message: 'Decision process not found',
-            code: 'NOT_FOUND',
-          });
-        }
-
-        throw new TRPCError({
-          message: 'Failed to fetch decision process',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-      }
+      const process = await getProcess(input.id);
+      return legacyDecisionProcessEncoder.parse(process);
     }),
 });

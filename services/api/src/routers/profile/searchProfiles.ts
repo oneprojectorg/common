@@ -1,7 +1,6 @@
 import { cache } from '@op/cache';
-import { searchProfiles } from '@op/common';
+import { NotFoundError, searchProfiles } from '@op/common';
 import { EntityType } from '@op/db/schema';
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { searchProfilesResultEncoder } from '../../encoders/searchResults';
@@ -35,10 +34,7 @@ export const searchProfilesRouter = router({
       });
 
       if (!result) {
-        throw new TRPCError({
-          message: 'Profiles not found',
-          code: 'NOT_FOUND',
-        });
+        throw new NotFoundError('Profiles');
       }
 
       return result;

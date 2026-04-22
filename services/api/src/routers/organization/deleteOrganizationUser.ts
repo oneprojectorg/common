@@ -1,6 +1,4 @@
 import { deleteOrganizationUser } from '@op/common';
-import { logger } from '@op/logging';
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -31,46 +29,12 @@ export const deleteOrganizationUserRouter = router({
       const { organizationId, organizationUserId } = input;
       const { user } = ctx;
 
-      try {
-        const deletedUser = await deleteOrganizationUser({
-          organizationUserId,
-          organizationId,
-          user,
-        });
+      const deletedUser = await deleteOrganizationUser({
+        organizationUserId,
+        organizationId,
+        user,
+      });
 
-        return outputSchema.parse(deletedUser);
-      } catch (error: unknown) {
-        logger.error('Error deleting organization user', {
-          error,
-          organizationUserId,
-        });
-
-        if (error instanceof Error) {
-          if (error.name === 'UnauthorizedError') {
-            throw new TRPCError({
-              message: error.message,
-              code: 'UNAUTHORIZED',
-            });
-          }
-          if (error.name === 'NotFoundError') {
-            throw new TRPCError({
-              message: error.message,
-              code: 'NOT_FOUND',
-            });
-          }
-          if (error.name === 'AccessError') {
-            throw new TRPCError({
-              message:
-                'You do not have permission to delete organization users',
-              code: 'UNAUTHORIZED',
-            });
-          }
-        }
-
-        throw new TRPCError({
-          message: 'Failed to delete organization user',
-          code: 'INTERNAL_SERVER_ERROR',
-        });
-      }
+      return outputSchema.parse(deletedUser);
     }),
 });

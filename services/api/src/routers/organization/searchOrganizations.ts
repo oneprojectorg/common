@@ -1,6 +1,5 @@
 import { cache } from '@op/cache';
-import { searchOrganizations } from '@op/common';
-import { TRPCError } from '@trpc/server';
+import { NotFoundError, searchOrganizations } from '@op/common';
 import { z } from 'zod';
 
 import { organizationsEncoder } from '../../encoders/organizations';
@@ -32,10 +31,7 @@ export const searchOrganizationsRouter = router({
       });
 
       if (!result) {
-        throw new TRPCError({
-          message: 'Organizations not found',
-          code: 'NOT_FOUND',
-        });
+        throw new NotFoundError('Organizations');
       }
 
       return result.map((org) => {

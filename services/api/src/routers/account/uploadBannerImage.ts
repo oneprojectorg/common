@@ -1,8 +1,7 @@
-import { CommonError } from '@op/common';
+import { CommonError, NotFoundError, ValidationError } from '@op/common';
 import { eq } from '@op/db/client';
 import { profiles, users } from '@op/db/schema';
 import { createServerClient } from '@op/supabase/lib';
-import { TRPCError } from '@trpc/server';
 import { waitUntil } from '@vercel/functions';
 import { Buffer } from 'buffer';
 import { z } from 'zod';
@@ -65,10 +64,7 @@ export const uploadBannerImage = router({
 
         buffer = Buffer.from(base64, 'base64');
       } catch (_err) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Invalid base64 encoding',
-        });
+        throw new ValidationError('Invalid base64 encoding');
       }
 
       // Check file size
@@ -100,10 +96,7 @@ export const uploadBannerImage = router({
         });
 
       if (uploadError) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: uploadError.message,
-        });
+        throw new CommonError(uploadError.message);
       }
 
       // Update user's personal profile banner image
@@ -136,10 +129,11 @@ export const uploadBannerImage = router({
           // Track analytics (non-blocking)
           waitUntil(trackImageUpload(ctx, 'banner', !!hadPreviousImage));
         } else {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'User profile not found. Please create a profile first.',
-          });
+          throw new NotFoundError(
+            'User profile',
+            undefined,
+            'User profile not found. Please create a profile first.',
+          );
         }
       }
 
@@ -148,10 +142,9 @@ export const uploadBannerImage = router({
         await supabase.storage.from(bucket).createSignedUrl(filePath, 60 * 60); // 1 hour
 
       if (signedUrlError || !signedUrlData) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: signedUrlError?.message || 'Could not get signed url',
-        });
+        throw new CommonError(
+          signedUrlError?.message || 'Could not get signed url',
+        );
       }
 
       return {
