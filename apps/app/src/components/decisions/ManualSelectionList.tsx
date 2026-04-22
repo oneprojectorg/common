@@ -18,8 +18,8 @@ import { SelectionSuccessDialog } from './SelectionSuccessDialog';
 import { VotingSubmitFooter } from './VotingSubmitFooter';
 import { useProposalFilters } from './useProposalFilters';
 
+// Stable reference: useProposalFilters memoizes on `votedProposalIds`.
 const EMPTY_VOTED_IDS: string[] = [];
-const EMPTY_PROPOSALS: Proposal[] = [];
 
 interface ManualSelectionListProps {
   instanceId: string;
@@ -44,22 +44,15 @@ export const ManualSelectionList = ({
     q.decision.getInstance({ instanceId }),
   ]);
 
-  // Intentionally NOT a suspense query: the input includes `categoryId`
-  // and `sortOrder`, so a suspense query would re-suspend every time the
-  // admin changes either filter and blank out the data table while the
-  // server re-fetches. `placeholderData: (prev) => prev` keeps the
-  // previous result visible during the refetch so only the table
-  // contents swap in place. `data` is only undefined on the very first
-  // render.
+  // Non-suspense + placeholderData so category/sort changes don't blank
+  // the table while the server re-fetches.
   const stateQuery = trpc.decision.getManualSelectionState.useQuery(
     { processInstanceId: instanceId, categoryId, sortOrder },
     { placeholderData: (prev) => prev },
   );
   const state = stateQuery.data;
 
-  // Track the full Proposal objects so selections persist across category
-  // filter changes — when filtered out of the visible table, a selected
-  // proposal still surfaces in the footer count and confirm-dialog list.
+  // Store full Proposals (not just ids) so selections survive filter changes.
   const [selectedProposals, setSelectedProposals] = useState<Proposal[]>([]);
   const selectedIds = selectedProposals.map((p) => p.id);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -68,7 +61,7 @@ export const ManualSelectionList = ({
 
   const { filteredProposals, proposalFilter, setProposalFilter } =
     useProposalFilters({
-      proposals: state?.proposals ?? EMPTY_PROPOSALS,
+      proposals: state?.proposals ?? [],
       currentProfileId: user.currentProfile?.id,
       votedProposalIds: EMPTY_VOTED_IDS,
       hasVoted: false,
@@ -76,10 +69,6 @@ export const ManualSelectionList = ({
     });
 
   const categories = categoriesData.categories;
-
-  // Server applies ORDER BY createdAt (via getManualSelectionState's
-  // sortOrder input), so no client-side sort is needed. filteredProposals
-  // preserves the server order.
   const proposals = filteredProposals;
 
   const submitMutation = trpc.decision.submitManualSelection.useMutation({
@@ -94,27 +83,17 @@ export const ManualSelectionList = ({
     },
   });
 
-  // Cache invalidation is handled automatically: submitManualSelection's
-  // router registers `decisionInstance(id)` as a mutation channel, and
-  // both getInstance and getManualSelectionState register it as a query
-  // channel. QueryInvalidationSubscriber invalidates matching queries the
-  // moment the mutation response comes back — no manual utils.invalidate
-  // needed here.
+  // Invalidation is automatic via the shared realtime channel.
   const dismissSuccess = () => {
     setSuccessCount(null);
   };
 
-  // First render: state is undefined because getManualSelectionState is a
-  // non-suspense query. Subsequent renders always have data (either real or
-  // kept from the previous fetch via placeholderData).
   if (!state) {
     return null;
   }
 
-  // Keep the success modal mounted until the admin dismisses it, even
-  // though the realtime invalidation has already flipped
-  // state.selectionsConfirmed to true. Rendering only the success dialog
-  // also avoids a flash of the now-stale toolbar/table during dismissal.
+  // Keep the success modal mounted past the realtime invalidation that
+  // flips selectionsConfirmed.
   if (successCount !== null) {
     return (
       <SelectionSuccessDialog count={successCount} onClose={dismissSuccess} />
@@ -125,9 +104,8 @@ export const ManualSelectionList = ({
     return null;
   }
 
-  // Only the unfiltered-empty case means "the previous phase produced
-  // nothing". A filtered-empty case (a category with no matches) should
-  // still render the toolbar so the admin can clear the filter.
+  // Unfiltered-empty → "nothing to select". Filtered-empty keeps the
+  // toolbar so the admin can clear the filter.
   if (!categoryId && state.proposals.length === 0) {
     return (
       <EmptyState icon={<LuLeaf className="size-6" />}>
