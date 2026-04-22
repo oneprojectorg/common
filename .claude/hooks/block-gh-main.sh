@@ -1,12 +1,18 @@
 #!/bin/bash
-# Block any gh CLI commands that target the main branch
+# Block any git or gh command that references the main branch.
 INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
 
-# Check that gh is actually a command being invoked (not part of a filename/path)
-# and that main appears as a standalone word (not inside a path or string)
-if echo "$COMMAND" | grep -qE '(^|[;|&(]\s*|^\s*)gh\s' && echo "$COMMAND" | grep -qE '(^|\s)main(\s|$)'; then
-  echo "BLOCKED: gh commands targeting 'main' branch are not allowed. Use 'dev' instead." >&2
+# git or gh invoked at start of line, or after a shell separator (; | & ()
+INVOKES_GIT_GH='(^|[;|&(]\s*)(git|gh)\s'
+
+# "main" as a standalone ref token. Boundary chars cover whitespace, start/end,
+# and =, :, / so we catch: main, origin/main, --base main, --base=main,
+# refs/heads/main, main:refs/heads/x. Not matched: domain, maintain, main-repo.
+REFERENCES_MAIN='(^|[[:space:]=:/])main([[:space:]=:/]|$)'
+
+if echo "$COMMAND" | grep -qE "$INVOKES_GIT_GH" && echo "$COMMAND" | grep -qE "$REFERENCES_MAIN"; then
+  echo "BLOCKED: git/gh commands targeting 'main' branch are not allowed. Use 'dev' instead." >&2
   exit 2
 fi
 
