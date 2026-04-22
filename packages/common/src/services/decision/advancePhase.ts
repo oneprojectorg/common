@@ -90,7 +90,8 @@ export async function advancePhase(
     );
   }
 
-  // Serialize against submitManualSelection.
+  // Lock the instance row so a concurrent submitManualSelection can't
+  // attach proposals to the inbound transition while we're advancing out.
   const [lockedInstance] = await tx
     .select({
       currentStateId: processInstances.currentStateId,

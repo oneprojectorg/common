@@ -106,7 +106,8 @@ export async function submitManualSelection({
   const byProfileId = dbUser.profileId;
 
   return db.transaction(async (tx) => {
-    // Serialize against advancePhase and re-verify under the lock.
+    // Lock the instance row so a concurrent advancePhase can't move the
+    // phase out from under us, then re-verify state inside the lock.
     const [lockedInstance] = await tx
       .select({
         currentStateId: processInstances.currentStateId,
