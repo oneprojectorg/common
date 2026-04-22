@@ -5,13 +5,7 @@
       {
         "name": "next"
       }
-    ],
-    "strict": true,
-    "strictNullChecks": true,
-    "alwaysStrict": true,
-    "noImplicitAny": true,
-    "noImplicitThis": true,
-    "esModuleInterop": true
+    ]
   },
   "include": [
     "next-env.d.ts",
