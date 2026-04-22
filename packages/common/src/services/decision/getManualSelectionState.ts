@@ -1,6 +1,5 @@
 import { and, db, desc, eq, inArray, isNull, ne } from '@op/db/client';
 import type { DbClient } from '@op/db/client';
-import type { Proposal } from '@op/db/schema';
 import {
   ProposalStatus,
   decisionTransitionProposals,
@@ -14,13 +13,15 @@ import { assertAccess, permission } from 'access-zones';
 import { CommonError, NotFoundError } from '../../utils';
 import { getProfileAccessUser } from '../access';
 import { isLegacyInstanceData } from './isLegacyInstance';
+import { listProposals } from './listProposals';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import type { Proposal } from './schemas/proposal';
 import type { TransitionData } from './schemas/transitionData';
 
 export interface ManualSelectionState {
   /** False only when the inbound transition has zero proposals and no `manualSelection` stamp. */
   selectionsConfirmed: boolean;
-  candidates: Proposal[];
+  proposals: Proposal[];
 }
 
 interface GetManualSelectionStateInput {
@@ -28,6 +29,7 @@ interface GetManualSelectionStateInput {
   user: User;
   /** Filter via the canonical `proposalCategories` join, not `proposalData.category`. */
   categoryId?: string;
+  sortOrder?: 'newest' | 'oldest';
   dbClient?: DbClient;
 }
 
@@ -36,6 +38,7 @@ export async function getManualSelectionState({
   processInstanceId,
   user,
   categoryId,
+  sortOrder = 'newest',
   dbClient = db,
 }: GetManualSelectionStateInput): Promise<ManualSelectionState> {
   const instance = await dbClient.query.processInstances.findFirst({
@@ -69,7 +72,7 @@ export async function getManualSelectionState({
   });
 
   if (resolved.selectionsConfirmed) {
-    return { selectionsConfirmed: true, candidates: [] };
+    return { selectionsConfirmed: true, proposals: [] };
   }
 
   const { previousPhaseId } = resolved;
@@ -95,35 +98,33 @@ export async function getManualSelectionState({
       .where(eq(proposalCategories.taxonomyTermId, categoryId));
     categoryProposalIds = rows.map((r) => r.proposalId);
     if (categoryProposalIds.length === 0) {
-      return { selectionsConfirmed: false, candidates: [] };
+      return { selectionsConfirmed: false, proposals: [] };
     }
   }
 
-  const candidates: Proposal[] = previousTransition
-    ? (
-        await dbClient
-          .select({ proposal: proposals })
-          .from(decisionTransitionProposals)
-          .innerJoin(
-            proposals,
-            eq(decisionTransitionProposals.proposalId, proposals.id),
-          )
-          .where(
-            and(
-              eq(
-                decisionTransitionProposals.transitionHistoryId,
-                previousTransition.id,
-              ),
-              ne(proposals.status, ProposalStatus.DRAFT),
-              isNull(proposals.deletedAt),
-              ...(categoryProposalIds
-                ? [inArray(proposals.id, categoryProposalIds)]
-                : []),
+  const candidateRows = previousTransition
+    ? await dbClient
+        .select({ id: proposals.id })
+        .from(decisionTransitionProposals)
+        .innerJoin(
+          proposals,
+          eq(decisionTransitionProposals.proposalId, proposals.id),
+        )
+        .where(
+          and(
+            eq(
+              decisionTransitionProposals.transitionHistoryId,
+              previousTransition.id,
             ),
-          )
-      ).map((r) => r.proposal)
+            ne(proposals.status, ProposalStatus.DRAFT),
+            isNull(proposals.deletedAt),
+            ...(categoryProposalIds
+              ? [inArray(proposals.id, categoryProposalIds)]
+              : []),
+          ),
+        )
     : await dbClient
-        .select()
+        .select({ id: proposals.id })
         .from(proposals)
         .where(
           and(
@@ -136,7 +137,23 @@ export async function getManualSelectionState({
           ),
         );
 
-  return { selectionsConfirmed: false, candidates };
+  if (candidateRows.length === 0) {
+    return { selectionsConfirmed: false, proposals: [] };
+  }
+
+  const { proposals: enriched } = await listProposals({
+    input: {
+      processInstanceId,
+      proposalIds: candidateRows.map((r) => r.id),
+      authUserId: user.id,
+      limit: candidateRows.length,
+      orderBy: 'createdAt',
+      dir: sortOrder === 'oldest' ? 'asc' : 'desc',
+    },
+    user,
+  });
+
+  return { selectionsConfirmed: false, proposals: enriched };
 }
 
 type ResolvedStatus =

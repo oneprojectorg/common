@@ -1,4 +1,4 @@
-import { Channels, getManualSelectionState, listProposals } from '@op/common';
+import { Channels, getManualSelectionState } from '@op/common';
 import { proposalSchema } from '@op/common/client';
 import { z } from 'zod';
 
@@ -20,37 +20,15 @@ export const getManualSelectionStateRouter = router({
     .input(getManualSelectionStateInputSchema)
     .output(getManualSelectionStateOutputSchema)
     .query(async ({ ctx, input }) => {
-      const state = await getManualSelectionState({
-        processInstanceId: input.processInstanceId,
-        categoryId: input.categoryId,
-        user: ctx.user,
-      });
-
       ctx.registerQueryChannels([
         Channels.decisionInstance(input.processInstanceId),
       ]);
 
-      // TODO: have the service return enriched proposals to drop this re-fetch.
-      const enrichedProposals =
-        state.candidates.length === 0
-          ? []
-          : (
-              await listProposals({
-                input: {
-                  processInstanceId: input.processInstanceId,
-                  proposalIds: state.candidates.map((c) => c.id),
-                  authUserId: ctx.user.id,
-                  limit: state.candidates.length,
-                  orderBy: 'createdAt',
-                  dir: input.sortOrder === 'oldest' ? 'asc' : 'desc',
-                },
-                user: ctx.user,
-              })
-            ).proposals;
-
-      return {
-        selectionsConfirmed: state.selectionsConfirmed,
-        proposals: enrichedProposals,
-      };
+      return getManualSelectionState({
+        processInstanceId: input.processInstanceId,
+        categoryId: input.categoryId,
+        sortOrder: input.sortOrder,
+        user: ctx.user,
+      });
     }),
 });
