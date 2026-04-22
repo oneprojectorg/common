@@ -39,6 +39,7 @@ interface ReviewFormState {
   isPausedForRevision: boolean;
   revisionRequest: ProposalReviewRequest | null;
   canCancelRevisionRequest: boolean;
+  canRequestRevision: boolean;
   rubricTemplate: RubricTemplateSchema;
   review: ProposalReview | null;
   assignment: ProposalReviewAssignment;
@@ -108,17 +109,24 @@ function ReviewFormProviderInner({
       { refetchOnMount: 'always' },
     );
 
+  const hasAnyOpenRevisionRequest =
+    proposalRevisionRequestList.revisionRequests.length > 0;
+
+  // Only trust the per-assignment request when it is still REQUESTED — a
+  // locally cached CANCELLED/RESUBMITTED entry must not gate the UI.
+  const ownRequestedRevisionRequest =
+    revisionRequest?.state === ProposalReviewRequestState.REQUESTED
+      ? revisionRequest
+      : null;
+
   // Prefer the reviewer's own request; otherwise surface the earliest
   // outstanding request from any other reviewer on the same proposal so
   // every reviewer sees the same paused state + feedback.
   const effectiveRevisionRequest =
-    revisionRequest ??
+    ownRequestedRevisionRequest ??
     proposalRevisionRequestList.revisionRequests[0]?.revisionRequest ??
     null;
-  const canCancelRevisionRequest =
-    !!effectiveRevisionRequest &&
-    effectiveRevisionRequest.assignmentId === assignmentId &&
-    effectiveRevisionRequest.state === ProposalReviewRequestState.REQUESTED;
+  const canCancelRevisionRequest = !!ownRequestedRevisionRequest;
 
   const [values, setValues] = useState<Record<string, unknown>>(
     review?.reviewData.answers ?? {},
@@ -127,8 +135,8 @@ function ReviewFormProviderInner({
     review?.reviewData.rationales ?? {},
   );
   const isSubmitted = review?.state === 'submitted';
-  const isPausedForRevision =
-    effectiveRevisionRequest?.state === ProposalReviewRequestState.REQUESTED;
+  const isPausedForRevision = hasAnyOpenRevisionRequest;
+  const canRequestRevision = !isSubmitted && !hasAnyOpenRevisionRequest;
 
   const submitReview = trpc.decision.submitReview.useMutation({
     onSuccess: () => {
@@ -211,19 +219,14 @@ function ReviewFormProviderInner({
   );
 
   const handleCancelRevision = useCallback(() => {
-    if (!canCancelRevisionRequest || !effectiveRevisionRequest) {
+    if (!ownRequestedRevisionRequest) {
       return;
     }
     cancelRevisionMutation.mutate({
       assignmentId,
-      revisionRequestId: effectiveRevisionRequest.id,
+      revisionRequestId: ownRequestedRevisionRequest.id,
     });
-  }, [
-    assignmentId,
-    canCancelRevisionRequest,
-    effectiveRevisionRequest,
-    cancelRevisionMutation,
-  ]);
+  }, [assignmentId, ownRequestedRevisionRequest, cancelRevisionMutation]);
 
   const state = useMemo<ReviewFormState>(
     () => ({
@@ -232,9 +235,10 @@ function ReviewFormProviderInner({
       canSubmit: canSubmit && !isSubmitted && !isPausedForRevision,
       isSubmitting: submitReview.isPending,
       isSubmitted,
-      isPausedForRevision: !!isPausedForRevision,
+      isPausedForRevision,
       revisionRequest: effectiveRevisionRequest,
       canCancelRevisionRequest,
+      canRequestRevision,
       rubricTemplate,
       review,
       assignment,
@@ -254,6 +258,7 @@ function ReviewFormProviderInner({
       isPausedForRevision,
       effectiveRevisionRequest,
       canCancelRevisionRequest,
+      canRequestRevision,
       rubricTemplate,
       review,
       assignment,

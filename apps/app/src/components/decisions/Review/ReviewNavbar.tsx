@@ -1,6 +1,5 @@
 'use client';
 
-import { ProposalReviewRequestState } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { useState } from 'react';
@@ -21,18 +20,11 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
     canSubmit,
     isSubmitting,
     isSubmitted,
-    revisionRequest,
+    canRequestRevision,
     handleSubmit,
   } = useReviewForm();
 
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
-
-  // Only show when pressing the button would start a new request: no request
-  // yet, or the last one was cancelled. While REQUESTED, the rubric pane
-  // already surfaces the pending request via its alert banner.
-  const canRequestRevision =
-    !revisionRequest ||
-    revisionRequest.state === ProposalReviewRequestState.CANCELLED;
 
   return (
     <>
