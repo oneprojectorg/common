@@ -125,20 +125,7 @@ const NewOrganizationsList = () => {
   );
 };
 
-const PostFeedSection = async ({
-  showPostUpdate,
-}: {
-  showPostUpdate: boolean;
-}) => {
-  // Prefetch posts data on server to prevent hydration mismatch
-  // If this fails, the client will fetch instead
-  const { utils, queryClient } = await createServerUtils();
-  try {
-    await utils.organization.listAllPosts.prefetchInfinite({ limit: 10 });
-  } catch (e) {
-    console.error('Homepage post prefetch failed:', e);
-  }
-
+const PostFeedSection = ({ showPostUpdate }: { showPostUpdate: boolean }) => {
   return (
     <>
       {showPostUpdate ? (
@@ -161,22 +148,30 @@ const PostFeedSection = async ({
             </div>
           }
         >
-          <HydrationBoundary state={dehydrate(queryClient)}>
-            <Feed />
-          </HydrationBoundary>
+          <Feed />
         </ErrorBoundary>
       </div>
     </>
   );
 };
 
-const LandingScreenFeeds = ({
+const LandingScreenFeeds = async ({
   showPostUpdate,
 }: {
   showPostUpdate: boolean;
 }) => {
+  // PostFeedSection renders in both the desktop grid and the mobile tab panel;
+  // Tailwind's hidden/sm:hidden is CSS-only so both subtrees run on the server.
+  // Prefetch once here and share the dehydrated cache across both copies.
+  const { utils, queryClient } = await createServerUtils();
+  try {
+    await utils.organization.listAllPosts.prefetchInfinite({ limit: 10 });
+  } catch (e) {
+    console.error('Homepage post prefetch failed:', e);
+  }
+
   return (
-    <>
+    <HydrationBoundary state={dehydrate(queryClient)}>
       <div className="hidden grid-cols-15 sm:grid">
         <div className="col-span-9 flex flex-col gap-4">
           <PostFeedSection showPostUpdate={showPostUpdate} />
@@ -202,7 +197,7 @@ const LandingScreenFeeds = ({
           <PostFeedSection showPostUpdate={showPostUpdate} />
         </TabPanel>
       </Tabs>
-    </>
+    </HydrationBoundary>
   );
 };
 
