@@ -33,7 +33,10 @@ services:
       - op-dev
 
   # ── Next.js frontend ────────────────────────────────────────────────────────
+  # Owns the build: app, api, and supabase share a single image (op-dev-base)
+  # to avoid 3× identical image layers on disk.
   app:
+    image: op-dev-base:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -51,8 +54,9 @@ services:
     volumes:
       # Bind-mount the repo root for hot-reload
       - .:/app
-      # Isolated node_modules — not overwritten by the bind mount above
-      - app_node_modules:/app/node_modules
+      # Shared node_modules — identical pnpm install across app/api, so one
+      # volume instead of two saves ~2GB.
+      - shared_node_modules:/app/node_modules
       # Next.js build cache
       - app_next:/app/apps/app/.next
     networks:
@@ -63,11 +67,7 @@ services:
 
   # ── tRPC API server ──────────────────────────────────────────────────────────
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      secrets:
-        - tiptap_token
+    image: op-dev-base:latest
     command: sh -c "pnpm install --frozen-lockfile && pnpm w:db migrate && /app/node_modules/.bin/tsx services/db/seed-access-control.ts && pnpm -C ./apps/api dev"
     env_file: .env.docker
     environment:
@@ -76,11 +76,8 @@ services:
     ports:
       - "${PORT_PREFIX:-31}01:3300"
     volumes:
-      # Bind-mount the repo root for hot-reload
       - .:/app
-      # Isolated node_modules
-      - api_node_modules:/app/node_modules
-      # Next.js build cache
+      - shared_node_modules:/app/node_modules
       - api_next:/app/apps/api/.next
     networks:
       - op-dev
@@ -94,15 +91,13 @@ services:
   # Runs `supabase start` against the private DinD daemon so all Supabase
   # sub-containers are isolated inside this stack. No host ports are exposed.
   supabase:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      secrets:
-        - tiptap_token
+    image: op-dev-base:latest
     command: sh -c "supabase stop --workdir /app/supabase --no-backup 2>/dev/null || true; supabase start --workdir /app/supabase"
     env_file: .env.docker
     environment:
       DOCKER_HOST: tcp://dind:2375
+    volumes:
+      - .:/app
     networks:
       - op-dev
     depends_on:
@@ -120,8 +115,7 @@ networks:
     driver: bridge
 
 volumes:
-  app_node_modules:
-  api_node_modules:
+  shared_node_modules:
   app_next:
   api_next:
   dind_storage:

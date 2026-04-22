@@ -70,11 +70,9 @@ RUN --mount=type=secret,id=tiptap_token \
     export TIPTAP_PRO_TOKEN=$(cat /run/secrets/tiptap_token) && \
     pnpm install --frozen-lockfile
 
-# ── Source layer ──
-# Copy the rest of the source code.
-# In development, the repo root is bind-mounted over /app so changes are
-# reflected immediately without rebuilding the image.
-COPY . .
+# Source is bind-mounted at runtime via docker-compose (.:/app), so we
+# intentionally do NOT COPY . . here — baking the repo into the image would
+# add tens of GB and get immediately shadowed by the bind mount.
 
 # Default command — overridden per-service in docker-compose.yml
 CMD ["pnpm", "dev"]
