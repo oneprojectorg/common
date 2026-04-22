@@ -1,6 +1,8 @@
 'use client';
 
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
+import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
 import {
@@ -16,7 +18,7 @@ import { Button } from '@op/ui/Button';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { notFound, useParams } from 'next/navigation';
 import { useQueryStates } from 'nuqs';
-import { useMemo } from 'react';
+import { type ReactNode, createContext, useContext, useMemo } from 'react';
 import { LuHistory, LuStickyNote } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -41,6 +43,11 @@ import {
 } from '@/components/decisions/proposalEditor/proposalEditorAsideParams';
 import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor/useRestoreProposalVersion';
 
+type RevisionRequestEntries =
+  RouterOutput['decision']['listProposalRevisionRequests']['revisionRequests'];
+
+const RevisionRequestsContext = createContext<RevisionRequestEntries>([]);
+
 /**
  * Shared layout for the proposal editor route.
  *
@@ -57,15 +64,6 @@ export default function ProposalEditorLayout({
     profileId: string;
     slug: string;
   }>();
-  const [{ aside, versionId, reviewRevision }, setQueryState] = useQueryStates({
-    aside: proposalEditorAsideParser,
-    versionId: proposalEditorVersionIdParser,
-    reviewRevision: proposalEditorReviewRevisionParser,
-  });
-  const t = useTranslations();
-  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
-
-  // -- Data fetching ---------------------------------------------------------
 
   const [[decisionProfile, proposal]] = trpc.useSuspenseQueries((t) => [
     t.decision.getDecisionBySlug({ slug }),
@@ -78,13 +76,78 @@ export default function ProposalEditorLayout({
 
   const instance = decisionProfile.processInstance;
 
-  const { user } = useUser();
+  return (
+    <RevisionRequestsBoundary proposalId={proposal.id}>
+      <ProposalEditorLayoutInner
+        instance={instance}
+        proposal={proposal}
+        slug={slug}
+      />
+    </RevisionRequestsBoundary>
+  );
+}
 
+/**
+ * Isolates listProposalRevisionRequests from the rest of the editor. The
+ * server throws UnauthorizedError (403) when the viewer lacks review access;
+ * we treat that as "no revision requests" so the editor still loads instead
+ * of bubbling up to the [locale] error boundary.
+ */
+function RevisionRequestsBoundary({
+  proposalId,
+  children,
+}: {
+  proposalId: string;
+  children: ReactNode;
+}) {
+  return (
+    <APIErrorBoundary fallbacks={{ 403: () => <>{children}</> }}>
+      <RevisionRequestsProvider proposalId={proposalId}>
+        {children}
+      </RevisionRequestsProvider>
+    </APIErrorBoundary>
+  );
+}
+
+function RevisionRequestsProvider({
+  proposalId,
+  children,
+}: {
+  proposalId: string;
+  children: ReactNode;
+}) {
   const [{ revisionRequests }] =
     trpc.decision.listProposalRevisionRequests.useSuspenseQuery({
-      proposalId: proposal.id,
+      proposalId,
       states: [ProposalReviewRequestState.REQUESTED],
     });
+
+  return (
+    <RevisionRequestsContext.Provider value={revisionRequests}>
+      {children}
+    </RevisionRequestsContext.Provider>
+  );
+}
+
+function ProposalEditorLayoutInner({
+  instance,
+  proposal,
+  slug,
+}: {
+  instance: ProcessInstance;
+  proposal: Proposal;
+  slug: string;
+}) {
+  const [{ aside, versionId, reviewRevision }, setQueryState] = useQueryStates({
+    aside: proposalEditorAsideParser,
+    versionId: proposalEditorVersionIdParser,
+    reviewRevision: proposalEditorReviewRevisionParser,
+  });
+  const t = useTranslations();
+  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
+  const { user } = useUser();
+
+  const revisionRequests = useContext(RevisionRequestsContext);
 
   const revisionRequest: ProposalReviewRequest | null = reviewRevision
     ? (revisionRequests.find((r) => r.revisionRequest.id === reviewRevision)
