@@ -6,6 +6,7 @@ import {
   type ProposalReview,
   type ProposalReviewAssignment,
   type ProposalReviewRequest,
+  ProposalReviewRequestState,
   type RubricTemplateSchema,
   schemaValidator,
 } from '@op/common/client';
@@ -37,6 +38,8 @@ interface ReviewFormState {
   isSubmitted: boolean;
   isPausedForRevision: boolean;
   revisionRequest: ProposalReviewRequest | null;
+  isOwnRevisionRequest: boolean;
+  canRequestRevision: boolean;
   rubricTemplate: RubricTemplateSchema;
   review: ProposalReview | null;
   assignment: ProposalReviewAssignment;
@@ -97,6 +100,34 @@ function ReviewFormProviderInner({
     throw new Error(`Review assignment ${assignmentId} has no rubric template`);
   }
 
+  const [proposalRevisionRequestList] =
+    trpc.decision.listProposalRevisionRequests.useSuspenseQuery(
+      {
+        proposalId: assignment.proposal.id,
+        states: [ProposalReviewRequestState.REQUESTED],
+      },
+      { refetchOnMount: 'always' },
+    );
+
+  const hasAnyOpenRevisionRequest =
+    proposalRevisionRequestList.revisionRequests.length > 0;
+
+  // Only trust the per-assignment request when it is still REQUESTED — a
+  // locally cached CANCELLED/RESUBMITTED entry must not gate the UI.
+  const ownRevisionRequest =
+    revisionRequest?.state === ProposalReviewRequestState.REQUESTED
+      ? revisionRequest
+      : null;
+
+  // Prefer the reviewer's own request; otherwise surface the earliest
+  // outstanding request from any other reviewer on the same proposal so
+  // every reviewer sees the same paused state + feedback.
+  const effectiveRevisionRequest =
+    ownRevisionRequest ??
+    proposalRevisionRequestList.revisionRequests[0]?.revisionRequest ??
+    null;
+  const isOwnRevisionRequest = !!ownRevisionRequest;
+
   const [values, setValues] = useState<Record<string, unknown>>(
     review?.reviewData.answers ?? {},
   );
@@ -104,7 +135,8 @@ function ReviewFormProviderInner({
     review?.reviewData.rationales ?? {},
   );
   const isSubmitted = review?.state === 'submitted';
-  const isPausedForRevision = revisionRequest?.state === 'requested';
+  const isPausedForRevision = hasAnyOpenRevisionRequest;
+  const canRequestRevision = !isSubmitted && !hasAnyOpenRevisionRequest;
 
   const submitReview = trpc.decision.submitReview.useMutation({
     onSuccess: () => {
@@ -187,14 +219,14 @@ function ReviewFormProviderInner({
   );
 
   const handleCancelRevision = useCallback(() => {
-    if (!revisionRequest) {
+    if (!ownRevisionRequest) {
       return;
     }
     cancelRevisionMutation.mutate({
       assignmentId,
-      revisionRequestId: revisionRequest.id,
+      revisionRequestId: ownRevisionRequest.id,
     });
-  }, [assignmentId, revisionRequest, cancelRevisionMutation]);
+  }, [assignmentId, ownRevisionRequest, cancelRevisionMutation]);
 
   const state = useMemo<ReviewFormState>(
     () => ({
@@ -203,8 +235,10 @@ function ReviewFormProviderInner({
       canSubmit: canSubmit && !isSubmitted && !isPausedForRevision,
       isSubmitting: submitReview.isPending,
       isSubmitted,
-      isPausedForRevision: !!isPausedForRevision,
-      revisionRequest,
+      isPausedForRevision,
+      revisionRequest: effectiveRevisionRequest,
+      isOwnRevisionRequest,
+      canRequestRevision,
       rubricTemplate,
       review,
       assignment,
@@ -222,7 +256,9 @@ function ReviewFormProviderInner({
       canSubmit,
       isSubmitted,
       isPausedForRevision,
-      revisionRequest,
+      effectiveRevisionRequest,
+      isOwnRevisionRequest,
+      canRequestRevision,
       rubricTemplate,
       review,
       assignment,

@@ -1,6 +1,5 @@
 'use client';
 
-import { ProposalReviewRequestState } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
@@ -19,8 +18,12 @@ export function ViewRevisionRequestModal({
   onOpenChange,
 }: ViewRevisionRequestModalProps) {
   const t = useTranslations();
-  const { revisionRequest, cancelRevisionRequest, isCancellingRevision } =
-    useReviewForm();
+  const {
+    revisionRequest,
+    isOwnRevisionRequest,
+    cancelRevisionRequest,
+    isCancellingRevision,
+  } = useReviewForm();
 
   const handleCancelRequest = () => {
     cancelRevisionRequest();
@@ -34,8 +37,6 @@ export function ViewRevisionRequestModal({
   const sentDate = revisionRequest.requestedAt
     ? new Date(revisionRequest.requestedAt)
     : null;
-  const canCancel =
-    revisionRequest.state === ProposalReviewRequestState.REQUESTED;
 
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
@@ -65,7 +66,7 @@ export function ViewRevisionRequestModal({
         </div>
       </ModalBody>
       <ModalFooter>
-        {canCancel && (
+        {isOwnRevisionRequest && (
           <Button
             color="secondary"
             onPress={handleCancelRequest}
