@@ -94,16 +94,20 @@ export function ProposalView({
 
   // The view panel is "Revision submitted" — only surface entries the author
   // has already responded to. Pending requests are handled by the editor.
-  const { data: revisionData } =
+  // The server throws UnauthorizedError when the user lacks access; treat
+  // any error as "no revisions" so the proposal still renders.
+  const { data: revisionData, error: revisionError } =
     trpc.decision.listProposalRevisionRequests.useQuery(
       {
         proposalId: currentProposal.id,
         states: [ProposalReviewRequestState.RESUBMITTED],
       },
-      { enabled: canSeeRevisions },
+      { enabled: canSeeRevisions, throwOnError: false, retry: false },
     );
 
-  const submittedRevisions = revisionData?.revisionRequests ?? [];
+  const submittedRevisions = revisionError
+    ? []
+    : (revisionData?.revisionRequests ?? []);
 
   const firstRevisionRequestId =
     submittedRevisions[0]?.revisionRequest.id ?? null;
