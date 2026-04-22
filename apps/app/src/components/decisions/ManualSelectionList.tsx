@@ -84,7 +84,6 @@ export const ManualSelectionList = ({
     );
   }, [filteredProposals, sortOrder]);
 
-  const utils = trpc.useUtils();
   const submitMutation = trpc.decision.submitManualSelection.useMutation({
     onSuccess: () => {
       setSuccessCount(selectedIds.length);
@@ -97,24 +96,31 @@ export const ManualSelectionList = ({
     },
   });
 
-  // Invalidation is deferred to the success-modal dismiss handler so the
-  // modal stays mounted — invalidating in onSuccess flips
-  // `selectionsConfirmed` to true, causing this component to early-return
-  // null and unmounting the modal mid-render.
+  // Cache invalidation is handled automatically: submitManualSelection's
+  // router registers `decisionInstance(id)` as a mutation channel, and
+  // both getInstance and getManualSelectionState register it as a query
+  // channel. QueryInvalidationSubscriber invalidates matching queries the
+  // moment the mutation response comes back — no manual utils.invalidate
+  // needed here.
   const dismissSuccess = () => {
     setSuccessCount(null);
-    utils.decision.getInstance.invalidate({ instanceId });
-    utils.decision.getManualSelectionState.invalidate({
-      processInstanceId: instanceId,
-    });
   };
 
   // First render: state is undefined because getManualSelectionState is a
   // non-suspense query. Subsequent renders always have data (either real or
-  // kept from the previous fetch via placeholderData). Returning null lets
-  // the parent Suspense fallback show, if any.
+  // kept from the previous fetch via placeholderData).
   if (!state) {
     return null;
+  }
+
+  // Keep the success modal mounted until the admin dismisses it, even
+  // though the realtime invalidation has already flipped
+  // state.selectionsConfirmed to true. Rendering only the success dialog
+  // also avoids a flash of the now-stale toolbar/table during dismissal.
+  if (successCount !== null) {
+    return (
+      <SelectionSuccessDialog count={successCount} onClose={dismissSuccess} />
+    );
   }
 
   if (state.selectionsConfirmed) {
@@ -127,7 +133,7 @@ export const ManualSelectionList = ({
   if (!categoryId && state.proposals.length === 0) {
     return (
       <EmptyState icon={<LuLeaf className="size-6" />}>
-        <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+        <Header3 className="font-serif font-light">
           {t('No proposals available to select')}
         </Header3>
         <p className="text-base text-neutral-charcoal">
@@ -209,8 +215,6 @@ export const ManualSelectionList = ({
           />
         </div>
       </VotingSubmitFooter>
-
-      <SelectionSuccessDialog count={successCount} onClose={dismissSuccess} />
     </div>
   );
 };

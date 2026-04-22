@@ -85,7 +85,7 @@ export function StandardDecisionPage({
                 fallbacks={{
                   default: () => (
                     <EmptyState icon={<LuTriangleAlert className="size-6" />}>
-                      <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+                      <Header3 className="font-serif font-light">
                         {t("Couldn't load manual selection")}
                       </Header3>
                       <p className="text-base text-neutral-charcoal">
@@ -104,7 +104,7 @@ export function StandardDecisionPage({
                 fallbacks={{
                   default: () => (
                     <EmptyState icon={<LuTriangleAlert className="size-6" />}>
-                      <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+                      <Header3 className="font-serif font-light">
                         {t("Couldn't load proposals")}
                       </Header3>
                       <p className="text-base text-neutral-charcoal">
