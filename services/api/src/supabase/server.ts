@@ -6,7 +6,6 @@ import { createServerClient } from '@op/supabase/lib';
 import type { CookieOptions, UserResponse } from '@op/supabase/lib';
 import type { Database } from '@op/supabase/types';
 import 'server-only';
-
 import type { TContext } from '../types';
 
 const useUrl = OPURLConfig('APP');

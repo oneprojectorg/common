@@ -1,6 +1,35 @@
 {
   "printWidth": 80,
   "singleQuote": true,
+  "sortImports": {
+    "newlinesBetween": true,
+    "ignoreCase": false,
+    "internalPattern": ["@/"],
+    "customGroups": [
+      {
+        "groupName": "lib",
+        "selector": "internal",
+        "elementNamePattern": ["@/lib", "@/lib/**"]
+      },
+      {
+        "groupName": "components",
+        "selector": "internal",
+        "elementNamePattern": ["@/components", "@/components/**"]
+      }
+    ],
+    "groups": [
+      ["unknown", "external", "builtin", "internal", "subpath"],
+      "lib",
+      "components",
+      ["parent", "sibling", "index"],
+      "style"
+    ]
+  },
+  "sortTailwindcss": {
+    "attributes": ["className", "useClasses", "tw"],
+    "functions": ["twMerge", "clsx", "tw", "cva", "cn", "tv"],
+    "stylesheet": "./packages/styles/shared-styles.css"
+  },
   "ignorePatterns": [
     "pnpm-lock.yaml",
     "draco*.js",
