@@ -80,11 +80,20 @@ export default function ProposalEditorLayout({
 
   const { user } = useUser();
 
-  const [{ revisionRequests }] =
-    trpc.decision.listProposalRevisionRequests.useSuspenseQuery({
-      proposalId: proposal.id,
-      states: [ProposalReviewRequestState.REQUESTED],
-    });
+  // The server throws UnauthorizedError when the viewer lacks review access;
+  // treat any error as "no revision requests" so the editor still loads.
+  const { data: revisionData, error: revisionError } =
+    trpc.decision.listProposalRevisionRequests.useQuery(
+      {
+        proposalId: proposal.id,
+        states: [ProposalReviewRequestState.REQUESTED],
+      },
+      { throwOnError: false, retry: false },
+    );
+
+  const revisionRequests = revisionError
+    ? []
+    : (revisionData?.revisionRequests ?? []);
 
   const revisionRequest: ProposalReviewRequest | null = reviewRevision
     ? (revisionRequests.find((r) => r.revisionRequest.id === reviewRevision)
