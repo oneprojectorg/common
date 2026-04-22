@@ -11,6 +11,7 @@ import {
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
+import { UnauthorizedError } from '../../utils/error';
 import { getOrgAccessUser } from '../access';
 import { sendBatchInvitationEmails } from '../email';
 import { AllowListMetadata } from '../user/validators';
@@ -61,7 +62,7 @@ export const inviteUsersToOrganization = async (
   const orgUser = await getOrgAccessUser({ user, organizationId });
 
   if (!orgUser) {
-    throw new Error(
+    throw new UnauthorizedError(
       'User must be associated with an organization to send organization invites',
     );
   }
@@ -274,7 +275,7 @@ export const inviteNewUsers = async (input: InviteNewUsersInput) => {
     (!authUser?.currentProfileId && !authUser?.lastOrgId) ||
     (!authUser.currentOrganization && !authUser.currentProfile)
   ) {
-    throw new Error(
+    throw new UnauthorizedError(
       'User must be associated with an organization to send invites',
     );
   }

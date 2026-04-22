@@ -64,11 +64,9 @@ export class ConflictError extends CommonError {
 
 export class RateLimitError extends CommonError {
   public readonly statusCode: number = 429;
-  public readonly retryAfterSeconds?: number;
 
-  constructor(message?: string, retryAfterSeconds?: number) {
+  constructor(message?: string) {
     const defaultMessage = 'Too many requests. Please try again later.';
     super(message ?? defaultMessage);
-    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
