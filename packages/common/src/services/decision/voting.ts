@@ -23,18 +23,20 @@ import { decisionPermission } from './permissions';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteSelection } from './schemaValidators';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import type { VoteCap } from './schemas/types';
 import { isVotingEligible } from './votingEligibility';
 
-/** Extract proposal/voting permissions from the current phase. */
+interface PhaseConfig {
+  allowProposals: boolean;
+  allowDecisions: boolean;
+  maxVotes: VoteCap;
+}
+
+/** Extract voting/proposal rules for the current phase. */
 function getCurrentPhaseConfig(processInstance: {
   instanceData: unknown;
   currentStateId: string | null;
-}):
-  | {
-      allowProposals: boolean;
-      allowDecisions: boolean;
-    }
-  | undefined {
+}): PhaseConfig | undefined {
   const instanceData = processInstance.instanceData as DecisionInstanceData;
   const currentPhaseId = processInstance.currentStateId;
 
@@ -56,7 +58,23 @@ function getCurrentPhaseConfig(processInstance: {
   return {
     allowProposals: currentPhase.rules?.proposals?.submit ?? false,
     allowDecisions: currentPhase.rules?.voting?.submit ?? false,
+    maxVotes: currentPhase.rules?.voting?.maxVotes,
   };
+}
+
+function buildVotingSchemaResult(phaseConfig: PhaseConfig) {
+  const result = processDecisionProcessSchema({
+    allowProposals: phaseConfig.allowProposals,
+    allowDecisions: phaseConfig.allowDecisions,
+    instanceData: { maxVotesPerMember: phaseConfig.maxVotes },
+    schemaType: 'simple',
+  });
+
+  if (!result.isValid || !result.votingConfig) {
+    throw new ValidationError('Invalid process schema');
+  }
+
+  return { ...result, votingConfig: result.votingConfig };
 }
 
 export type CustomData = Record<string, unknown>;
@@ -102,7 +120,7 @@ export interface VotingStatusResult {
   }> | null;
   votingConfiguration: {
     allowDecisions: boolean;
-    maxVotesPerMember: number;
+    maxVotesPerMember: VoteCap;
     schemaType: string;
     isReadOnly: boolean;
   };
@@ -168,8 +186,6 @@ export const submitVote = async ({
       throw new NotFoundError('Decision profile not found');
     }
 
-    const instanceData = processInstance.instanceData as DecisionInstanceData;
-
     // Check user permissions
     const profileUser = await getProfileAccessUser({
       user: { id: authUserId },
@@ -181,34 +197,15 @@ export const submitVote = async ({
       profileUser?.roles ?? [],
     );
 
-    // Extract voting configuration from current phase/state
     const phaseConfig = getCurrentPhaseConfig(processInstance);
 
     if (!phaseConfig) {
       throw new ValidationError('Current state not found');
     }
 
-    // Build schema data for validation
-    const schemaData = {
-      allowProposals: phaseConfig.allowProposals,
-      allowDecisions: phaseConfig.allowDecisions,
-      instanceData: {
-        maxVotesPerMember:
-          Number(instanceData.fieldValues?.maxVotesPerMember) || 5,
-      },
-      schemaType: 'simple',
-    };
-
-    // Process the schema to validate voting is allowed
-    const schemaResult = processDecisionProcessSchema(schemaData);
-
-    if (!schemaResult.isValid || !schemaResult.votingConfig) {
-      throw new ValidationError('Invalid process schema');
-    }
-
+    const schemaResult = buildVotingSchemaResult(phaseConfig);
     const { votingConfig } = schemaResult;
 
-    // Check if voting is currently allowed
     if (!votingConfig.allowDecisions) {
       throw new ValidationError(
         'Voting is not currently allowed for this process',
@@ -361,8 +358,6 @@ export const getVotingStatus = async ({
       throw new NotFoundError('Process instance not found');
     }
 
-    const instanceData = processInstance.instanceData as DecisionInstanceData;
-
     await assertInstanceProfileAccess({
       user: { id: authUserId },
       instance: processInstance,
@@ -370,31 +365,13 @@ export const getVotingStatus = async ({
       orgFallbackPermissions: [{ decisions: permission.READ }],
     });
 
-    // Extract voting configuration from current phase/state
     const phaseConfig = getCurrentPhaseConfig(processInstance);
 
     if (!phaseConfig) {
       throw new ValidationError('Current state not found');
     }
 
-    // Build schema data for validation
-    const schemaData = {
-      allowProposals: phaseConfig.allowProposals,
-      allowDecisions: phaseConfig.allowDecisions,
-      instanceData: {
-        maxVotesPerMember:
-          Number(instanceData.fieldValues?.maxVotesPerMember) || 3,
-      },
-      schemaType: 'simple',
-    };
-
-    // Process the schema
-    const schemaResult = processDecisionProcessSchema(schemaData);
-
-    if (!schemaResult.isValid || !schemaResult.votingConfig) {
-      throw new ValidationError('Invalid process schema');
-    }
-
+    const schemaResult = buildVotingSchemaResult(phaseConfig);
     const { votingConfig } = schemaResult;
 
     // Check if user has voted
