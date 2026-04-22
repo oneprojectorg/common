@@ -23,7 +23,7 @@ import { Popover } from './Popover';
 import type { PopoverProps } from './Popover';
 
 const selectStyles = tv({
-  base: 'flex min-w-0 flex-row justify-between rounded-lg border text-base leading-3 text-neutral-black outline outline-0 group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red placeholder:text-neutral-gray4 hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue active:border-neutral-gray4 active:outline disabled:border-neutral-gray2',
+  base: 'flex min-w-0 flex-row justify-between rounded-lg border text-base leading-none text-neutral-black outline outline-0 group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red placeholder:text-neutral-gray4 hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue active:border-neutral-gray4 active:outline disabled:border-neutral-gray2',
   variants: {
     isDisabled: {
       true: 'bg-neutral-gray1 text-neutral-gray4',
@@ -119,14 +119,16 @@ export const Select = <T extends object>({
           <span className="flex h-full w-full flex-1 items-center justify-between gap-1">
             <SelectValue
               className={cn(
-                'flex h-full min-w-0 flex-1 items-center text-ellipsis data-[placeholder]:text-neutral-gray4',
+                'min-w-0 flex-1 truncate text-left data-[placeholder]:text-neutral-gray4',
                 props.selectValueClassName,
               )}
             >
-              {variant === 'pill'
-                ? ({ selectedText, isPlaceholder }) =>
-                    isPlaceholder ? null : selectedText
-                : undefined}
+              {({ defaultChildren, selectedText, isPlaceholder }) => {
+                if (isPlaceholder) {
+                  return variant === 'pill' ? null : defaultChildren;
+                }
+                return selectedText;
+              }}
             </SelectValue>
             {icon ?? (
               <LuChevronDown
@@ -141,7 +143,7 @@ export const Select = <T extends object>({
       <FieldError>{errorMessage}</FieldError>
       <Popover
         className={cn(
-          'absolute z-10 !max-h-60 max-w-56 min-w-(--trigger-width) overflow-hidden rounded border bg-white p-2 shadow',
+          'absolute z-10 !max-h-60 min-w-(--trigger-width) overflow-hidden rounded border bg-white p-2 shadow',
           popoverClassName,
         )}
         {...popoverProps}

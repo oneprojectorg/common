@@ -134,7 +134,7 @@ export const DropdownItem = (
     >
       {composeRenderProps(props.children, (children, { isSelected }) => (
         <>
-          <span className="group-hover:bgt-neutral-gray1 flex h-full flex-1 items-center gap-2 truncate font-normal text-inherit">
+          <span className="flex h-full flex-1 items-center gap-2 font-normal text-inherit group-hover:bg-neutral-gray1">
             {children}
           </span>
           <span className="flex w-5 items-center">
@@ -156,7 +156,7 @@ export const DropdownSection = <T extends object>(
 ) => {
   return (
     <ListBoxSection className="after:block after:h-[5px] after:content-[''] first:mt-[-5px]">
-      <Header className="sticky top-[-5px] z-10 -mx-1 -mt-px truncate border-y border-neutral-300 bg-neutral-300/60 px-4 py-1 text-sm font-semibold text-neutral-gray4 backdrop-blur-md [&+*]:mt-1">
+      <Header className="sticky top-[-5px] z-10 -mx-1 -mt-px truncate border-y border-neutral-300 bg-neutral-gray1 px-4 py-1 text-sm font-semibold text-neutral-gray4 [&+*]:mt-1">
         {props.title}
       </Header>
       <Collection items={props.items}>{props.children}</Collection>
