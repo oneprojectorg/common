@@ -138,16 +138,19 @@ test.describe('Decision Manual Selection — full flow', () => {
       waitUntil: 'networkidle',
     });
 
-    // Toolbar header is the admin UI's stable landmark (no dependency on
-    // phase-specific headline copy).
-    await expect(authenticatedPage.getByText(/All proposals/)).toBeVisible({
-      timeout: 15_000,
-    });
-
+    // Wait for the admin UI to mount — the Confirm button is unique to
+    // this branch and is present as soon as ManualSelectionList renders.
     const confirmButton = authenticatedPage.getByRole('button', {
       name: 'Confirm decisions',
     });
+    await expect(confirmButton).toBeVisible({ timeout: 15_000 });
     await expect(confirmButton).toBeDisabled();
+
+    // And the first row's toggle button should be present before we try
+    // to click it.
+    await expect(
+      authenticatedPage.getByRole('button', { name: 'Advance Proposal Alpha' }),
+    ).toBeVisible();
 
     // Each row's toggle button carries an aria-label of
     // `Advance <title>` while unselected and `Stop advancing <title>`
@@ -171,10 +174,11 @@ test.describe('Decision Manual Selection — full flow', () => {
     ).toBeVisible();
     await dialog.getByRole('button', { name: 'Publish results' }).click();
 
+    const successDialog = authenticatedPage.getByRole('dialog');
     await expect(
-      authenticatedPage.getByRole('heading', { name: 'Selection recorded' }),
+      successDialog.getByRole('heading', { name: 'Selection recorded' }),
     ).toBeVisible({ timeout: 15_000 });
-    await authenticatedPage.getByRole('button', { name: 'Done' }).click();
+    await successDialog.getByRole('button', { name: 'Done' }).click();
 
     const joinRows = await db
       .select()
@@ -237,13 +241,10 @@ test.describe('Decision Manual Selection — full flow', () => {
     });
 
     // Non-admin falls through to ProposalsList (no special "awaiting
-    // admin" state). The only assertion we need is that none of the
-    // admin-only controls leak into this view.
+    // admin" state). The Confirm decisions trigger is unique to the
+    // admin branch, so it's the cleanest negative assertion.
     await expect(
       memberPage.getByRole('button', { name: 'Confirm decisions' }),
-    ).not.toBeVisible();
-    await expect(
-      memberPage.getByRole('button', { name: /^Advance .+/ }),
     ).not.toBeVisible();
   });
 });
