@@ -1,15 +1,17 @@
 'use client';
 
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import {
   type ProposalReview,
+  type ProposalReviewAssignment,
   type ProposalReviewRequest,
   type RubricTemplateSchema,
   schemaValidator,
 } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
 import { toast } from '@op/ui/Toast';
-import { useRouter } from 'next/navigation';
+import { notFound, useRouter } from 'next/navigation';
 import {
   type ReactNode,
   createContext,
@@ -26,7 +28,7 @@ import { useTranslations } from '@/lib/i18n';
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 
 interface ReviewFormState {
-  /** Rubric answers keyed by criterion id; validated against the template. */
+  /** Rubric answers keyed by criterion id; validated against the rubricTemplate. */
   values: Record<string, unknown>;
   /** Optional free-text rationale per criterion id (always optional). */
   rationales: Record<string, string>;
@@ -35,6 +37,9 @@ interface ReviewFormState {
   isSubmitted: boolean;
   isPausedForRevision: boolean;
   revisionRequest: ProposalReviewRequest | null;
+  rubricTemplate: RubricTemplateSchema;
+  review: ProposalReview | null;
+  assignment: ProposalReviewAssignment;
   handleValueChange: (key: string, value: unknown) => void;
   handleRationaleChange: (key: string, value: string) => void;
   handleSubmit: () => void;
@@ -54,23 +59,44 @@ export function useReviewForm(): ReviewFormState {
   return ctx;
 }
 
-export function ReviewFormProvider({
-  template,
-  review,
-  revisionRequest,
+export function ReviewFormProvider(props: {
+  assignmentId: string;
+  decisionSlug: string;
+  children: ReactNode;
+}) {
+  return (
+    <APIErrorBoundary fallbacks={{ 404: () => notFound() }}>
+      <ReviewFormProviderInner {...props} />
+    </APIErrorBoundary>
+  );
+}
+
+function ReviewFormProviderInner({
   assignmentId,
   decisionSlug,
   children,
 }: {
-  template: RubricTemplateSchema;
-  review: ProposalReview | null;
-  revisionRequest: ProposalReviewRequest | null;
   assignmentId: string;
   decisionSlug: string;
   children: ReactNode;
 }) {
   const t = useTranslations();
   const router = useRouter();
+
+  const [reviewAssignment] = trpc.decision.getReviewAssignment.useSuspenseQuery(
+    { assignmentId },
+    // 'always' forces one fetch per mount, which is what registers the
+    // realtime channel via the tRPC client link.
+    { refetchOnMount: 'always' },
+  );
+
+  const { rubricTemplate, review, revisionRequest, assignment } =
+    reviewAssignment;
+
+  if (!rubricTemplate) {
+    throw new Error(`Review assignment ${assignmentId} has no rubric template`);
+  }
+
   const [values, setValues] = useState<Record<string, unknown>>(
     review?.reviewData.answers ?? {},
   );
@@ -102,8 +128,6 @@ export function ReviewFormProvider({
   const requestRevisionMutation = trpc.decision.requestRevision.useMutation({
     onSuccess: () => {
       toast.success({ message: t('Revision requested') });
-      // TODO: To be replaced with query invalidation for server-side fetched data
-      router.refresh();
     },
     onError: (error) => {
       toast.error({
@@ -116,8 +140,6 @@ export function ReviewFormProvider({
     trpc.decision.cancelRevisionRequest.useMutation({
       onSuccess: () => {
         toast.success({ message: t('Revision request cancelled') });
-        // TODO: To be replaced with query invalidation for server-side fetched data
-        router.refresh();
       },
       onError: (error) => {
         toast.error({
@@ -127,8 +149,8 @@ export function ReviewFormProvider({
     });
 
   const canSubmit = useMemo(
-    () => schemaValidator.validate(template, values).valid,
-    [template, values],
+    () => schemaValidator.validate(rubricTemplate, values).valid,
+    [rubricTemplate, values],
   );
 
   const handleValueChange = useCallback(
@@ -183,6 +205,9 @@ export function ReviewFormProvider({
       isSubmitted,
       isPausedForRevision: !!isPausedForRevision,
       revisionRequest,
+      rubricTemplate,
+      review,
+      assignment,
       handleValueChange,
       handleRationaleChange,
       handleSubmit,
@@ -198,6 +223,9 @@ export function ReviewFormProvider({
       isSubmitted,
       isPausedForRevision,
       revisionRequest,
+      rubricTemplate,
+      review,
+      assignment,
       submitReview.isPending,
       requestRevisionMutation.isPending,
       cancelRevisionMutation.isPending,

@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  type RubricTemplateSchema,
   type XFormatPropertySchema,
   isOverallRecommendationField,
   parseSchemaOptions,
@@ -31,24 +30,21 @@ import {
 import { useReviewForm } from './ReviewFormContext';
 import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 
-interface ReviewRubricFormProps {
-  template: RubricTemplateSchema;
-}
-
 /**
  * Schema-driven review rubric form renderer.
  */
-export function ReviewRubricForm({ template }: ReviewRubricFormProps) {
+export function ReviewRubricForm() {
   const t = useTranslations();
-  const fields = compileRubricSchema(template);
-  const criteria = getCriteria(template);
   const {
+    rubricTemplate: template,
     values,
     rationales,
     handleValueChange,
     handleRationaleChange,
     isPausedForRevision,
   } = useReviewForm();
+  const fields = compileRubricSchema(template);
+  const criteria = getCriteria(template);
 
   const [feedbackToAuthor, setFeedbackToAuthor] = useState('');
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
