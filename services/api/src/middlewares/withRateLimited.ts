@@ -28,10 +28,7 @@ const withRateLimited = (opts = { windowSize: 10, maxRequests: 10 }) => {
     );
 
     if (isRateLimited.status) {
-      const retryAfterSeconds = Math.round(isRateLimited.timeToRefresh / 1000);
-      throw new RateLimitError(
-        `Too many requests. Please try again in ${retryAfterSeconds} seconds.`,
-      );
+      throw new RateLimitError();
     }
 
     return next({
