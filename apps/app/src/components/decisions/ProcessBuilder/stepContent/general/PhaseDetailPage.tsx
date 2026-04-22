@@ -14,7 +14,6 @@ import { useQueryState } from 'nuqs';
 import { useRef, useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
 
-import type { TranslateFn } from '@/lib/i18n';
 import { useTranslations } from '@/lib/i18n';
 
 import { RichTextEditorWithToolbar } from '@/components/RichTextEditor/RichTextEditorWithToolbar';
@@ -460,19 +459,18 @@ function PhaseDetailForm({
   );
 }
 
-const VOTE_LIMIT_OPTIONS: Array<{
-  id: string;
-  maxVotes: number | undefined;
-  label: (t: TranslateFn) => string;
-}> = [
-  { id: 'none', maxVotes: undefined, label: (t) => t('No limit') },
-  { id: '1', maxVotes: 1, label: (t) => t('1 vote') },
-  { id: '2', maxVotes: 2, label: (t) => t('2 votes') },
-  { id: '3', maxVotes: 3, label: (t) => t('3 votes') },
-  { id: '4', maxVotes: 4, label: (t) => t('4 votes') },
-  { id: '5', maxVotes: 5, label: (t) => t('5 votes') },
-  { id: '10', maxVotes: 10, label: (t) => t('10 votes') },
+const VOTE_LIMIT_OPTIONS: Array<number | undefined> = [
+  undefined,
+  1,
+  2,
+  3,
+  4,
+  5,
+  10,
 ];
+
+const optionId = (maxVotes: number | undefined) =>
+  maxVotes === undefined ? 'none' : String(maxVotes);
 
 function VoteLimitSelect({
   maxVotes,
@@ -482,23 +480,24 @@ function VoteLimitSelect({
   onChange: (maxVotes: number | undefined) => void;
 }) {
   const t = useTranslations();
-  const selectedKey = maxVotes === undefined ? 'none' : String(maxVotes);
 
   return (
     <Select
-      selectedKey={selectedKey}
+      selectedKey={optionId(maxVotes)}
       size="small"
       aria-label={t('Voting limit')}
       onSelectionChange={(key) => {
-        const option = VOTE_LIMIT_OPTIONS.find((o) => o.id === key);
-        if (option) {
-          onChange(option.maxVotes);
-        }
+        const option = VOTE_LIMIT_OPTIONS.find((o) => optionId(o) === key);
+        onChange(option);
       }}
     >
       {VOTE_LIMIT_OPTIONS.map((option) => (
-        <SelectItem key={option.id} id={option.id}>
-          {option.label(t)}
+        <SelectItem key={optionId(option)} id={optionId(option)}>
+          {option === undefined
+            ? t('No limit')
+            : t('{count, plural, one {# vote} other {# votes}}', {
+                count: option,
+              })}
         </SelectItem>
       ))}
     </Select>
