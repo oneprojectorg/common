@@ -6,6 +6,7 @@ import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 const getManualSelectionStateInputSchema = z.object({
   processInstanceId: z.uuid(),
+  categoryId: z.uuid().optional(),
 });
 
 const getManualSelectionStateOutputSchema = z.object({
@@ -20,6 +21,7 @@ export const getManualSelectionStateRouter = router({
     .query(async ({ ctx, input }) => {
       const state = await getManualSelectionState({
         processInstanceId: input.processInstanceId,
+        categoryId: input.categoryId,
         user: ctx.user,
       });
 

@@ -1,9 +1,10 @@
-import { and, db, desc, eq, isNull, ne } from '@op/db/client';
+import { and, db, desc, eq, inArray, isNull, ne } from '@op/db/client';
 import type { DbClient } from '@op/db/client';
 import type { Proposal } from '@op/db/schema';
 import {
   ProposalStatus,
   decisionTransitionProposals,
+  proposalCategories,
   proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
@@ -31,6 +32,14 @@ export interface ManualSelectionState {
 interface GetManualSelectionStateInput {
   processInstanceId: string;
   user: User;
+  /**
+   * Filter candidates to proposals that have the given category
+   * (taxonomyTerm) id attached via `proposalCategories`. Applied via the
+   * canonical join table — not via the free-form `proposalData.category`
+   * string array — so the filter is insensitive to how labels happen to
+   * be written on individual proposals.
+   */
+  categoryId?: string;
   dbClient?: DbClient;
 }
 
@@ -43,6 +52,7 @@ interface GetManualSelectionStateInput {
 export async function getManualSelectionState({
   processInstanceId,
   user,
+  categoryId,
   dbClient = db,
 }: GetManualSelectionStateInput): Promise<ManualSelectionState> {
   const instance = await dbClient.query.processInstances.findFirst({
@@ -93,6 +103,21 @@ export async function getManualSelectionState({
     .orderBy(desc(stateTransitionHistory.transitionedAt))
     .limit(1);
 
+  // When filtering by category, resolve which proposals carry that
+  // taxonomy term via the canonical join table. An empty result means
+  // no candidate matches — short-circuit before the larger fetch.
+  let categoryProposalIds: string[] | undefined;
+  if (categoryId) {
+    const rows = await dbClient
+      .select({ proposalId: proposalCategories.proposalId })
+      .from(proposalCategories)
+      .where(eq(proposalCategories.taxonomyTermId, categoryId));
+    categoryProposalIds = rows.map((r) => r.proposalId);
+    if (categoryProposalIds.length === 0) {
+      return { selectionsConfirmed: false, candidates: [] };
+    }
+  }
+
   const candidates: Proposal[] = previousTransition
     ? (
         await dbClient
@@ -110,6 +135,9 @@ export async function getManualSelectionState({
               ),
               ne(proposals.status, ProposalStatus.DRAFT),
               isNull(proposals.deletedAt),
+              ...(categoryProposalIds
+                ? [inArray(proposals.id, categoryProposalIds)]
+                : []),
             ),
           )
       ).map((r) => r.proposal)
@@ -121,6 +149,9 @@ export async function getManualSelectionState({
             eq(proposals.processInstanceId, processInstanceId),
             ne(proposals.status, ProposalStatus.DRAFT),
             isNull(proposals.deletedAt),
+            ...(categoryProposalIds
+              ? [inArray(proposals.id, categoryProposalIds)]
+              : []),
           ),
         );
 
