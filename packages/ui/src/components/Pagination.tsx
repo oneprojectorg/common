@@ -19,8 +19,7 @@ export interface PaginationNavigationCallbacks {
   previous: (() => void | Promise<void>) | undefined;
 }
 
-export interface PaginationNavigationProps
-  extends PaginationNavigationCallbacks {
+export interface PaginationNavigationProps extends PaginationNavigationCallbacks {
   className?: string;
 }
 

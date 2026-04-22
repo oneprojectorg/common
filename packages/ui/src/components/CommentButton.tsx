@@ -33,8 +33,10 @@ const MessageCircleIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export interface CommentButtonProps
-  extends Omit<React.ComponentProps<typeof RACButton>, 'children'> {
+export interface CommentButtonProps extends Omit<
+  React.ComponentProps<typeof RACButton>,
+  'children'
+> {
   count?: number;
   className?: string;
 }

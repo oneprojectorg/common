@@ -69,8 +69,7 @@ export const itemStyles = tv({
 type ListBoxItemVariants = VariantProps<typeof itemStyles>;
 
 export interface ListBoxItemProps
-  extends React.ComponentProps<typeof AriaListBoxItem>,
-    ListBoxItemVariants {
+  extends React.ComponentProps<typeof AriaListBoxItem>, ListBoxItemVariants {
   className?: string;
 }
 

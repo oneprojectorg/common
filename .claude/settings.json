@@ -63,11 +63,7 @@
         "app.asana.com"
       ]
     },
-    "excludedCommands": [
-      "docker *",
-      "docker-compose *",
-      "supabase *"
-    ],
+    "excludedCommands": ["docker *", "docker-compose *", "supabase *"],
     "allowUnsandboxedCommands": true,
     "failIfUnavailable": false
   }

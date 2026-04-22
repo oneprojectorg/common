@@ -44,8 +44,10 @@ import { createJSONStorage, persist } from 'zustand/middleware';
  * `InstanceData` and adds instance-column fields (`name`, `description`,
  * `stewardProfileId`) that live outside the JSON blob.
  */
-export interface ProcessBuilderInstanceData
-  extends Omit<Partial<InstanceData>, 'proposalTemplate' | 'rubricTemplate'> {
+export interface ProcessBuilderInstanceData extends Omit<
+  Partial<InstanceData>,
+  'proposalTemplate' | 'rubricTemplate'
+> {
   // Instance columns (not in instanceData JSON)
   name?: string;
   description?: string;

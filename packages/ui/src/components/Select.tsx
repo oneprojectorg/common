@@ -60,8 +60,7 @@ const chevronStyles = tv({
 export type SelectVariantsProps = VariantProps<typeof selectStyles>;
 
 export interface SelectProps<T extends object>
-  extends Omit<AriaSelectProps<T>, 'children'>,
-    SelectVariantsProps {
+  extends Omit<AriaSelectProps<T>, 'children'>, SelectVariantsProps {
   label?: string;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);

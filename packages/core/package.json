@@ -4,13 +4,13 @@
   "private": true,
   "license": "SEE LICENSE in /LICENSE",
   "type": "module",
+  "types": "./src/config.ts",
   "exports": {
     ".": "./src/index.ts",
     "./fulog": "./src/fulog.ts",
     "./previews": "./previews.mjs",
     "./utils": "./src/utils.ts"
   },
-  "types": "./src/config.ts",
   "scripts": {
     "disable-build": "tsc",
     "format:check": "oxfmt --check",

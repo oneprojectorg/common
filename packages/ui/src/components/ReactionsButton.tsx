@@ -47,7 +47,8 @@ interface ReactionOption {
 }
 
 interface ReactionButtonProps
-  extends Omit<React.ComponentProps<typeof RACButton>, 'children'>,
+  extends
+    Omit<React.ComponentProps<typeof RACButton>, 'children'>,
     ReactionButtonVariants {
   emoji?: string;
   count?: number;

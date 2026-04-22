@@ -152,9 +152,9 @@ export function createTipTapClient(config: TipTapClientConfig) {
      */
     listVersions: async (docName: string): Promise<TipTapVersion[]> => {
       return api
-        .get<
-          TipTapVersion[]
-        >(`documents/${encodeURIComponent(docName)}/versions`)
+        .get<TipTapVersion[]>(
+          `documents/${encodeURIComponent(docName)}/versions`,
+        )
         .json();
     },
 
@@ -164,9 +164,9 @@ export function createTipTapClient(config: TipTapClientConfig) {
      */
     getLatestVersionId: async (docName: string): Promise<number | null> => {
       const versions = await api
-        .get<
-          TipTapVersion[]
-        >(`documents/${encodeURIComponent(docName)}/versions`)
+        .get<TipTapVersion[]>(
+          `documents/${encodeURIComponent(docName)}/versions`,
+        )
         .json();
 
       if (versions.length === 0) {
@@ -193,9 +193,9 @@ export function createTipTapClient(config: TipTapClientConfig) {
       });
 
       const versions = await api
-        .get<
-          TipTapVersion[]
-        >(`documents/${encodeURIComponent(docName)}/versions`)
+        .get<TipTapVersion[]>(
+          `documents/${encodeURIComponent(docName)}/versions`,
+        )
         .json();
 
       if (versions.length === 0) {

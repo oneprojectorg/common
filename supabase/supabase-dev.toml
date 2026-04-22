@@ -14,7 +14,7 @@ major_version = 15
 
 [db.seed]
 enabled = true
-sql_paths = [ './seed.sql' ]
+sql_paths = ['./seed.sql']
 
 [realtime]
 enabled = true
@@ -47,7 +47,7 @@ enabled = true
 # Pin JWT secret so the well-known local dev keys in .env.docker remain valid across restarts.
 jwt_secret = "super-secret-jwt-token-with-at-least-32-characters-long"
 site_url = "http://localhost:3100/"
-additional_redirect_urls = [ "https://127.0.0.1:3000" ]
+additional_redirect_urls = ["https://127.0.0.1:3000"]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10

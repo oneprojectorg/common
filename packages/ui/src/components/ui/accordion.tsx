@@ -167,8 +167,10 @@ const AccordionHeader = ({ className, children }: AccordionHeaderProps) => {
 // AccordionTrigger
 // ============================================================================
 
-interface AccordionTriggerProps
-  extends Omit<ButtonProps, 'slot' | 'className' | 'children'> {
+interface AccordionTriggerProps extends Omit<
+  ButtonProps,
+  'slot' | 'className' | 'children'
+> {
   /** Auto-include indicator. Default: false */
   showIndicator?: boolean;
   /** Indicator position if showIndicator is true. Default: 'start' */
@@ -224,8 +226,10 @@ const AccordionIndicator = ({
 // AccordionContent
 // ============================================================================
 
-interface AccordionContentProps
-  extends Omit<DisclosurePanelProps, 'className'> {
+interface AccordionContentProps extends Omit<
+  DisclosurePanelProps,
+  'className'
+> {
   /** Custom className */
   className?: string;
   children: React.ReactNode;
