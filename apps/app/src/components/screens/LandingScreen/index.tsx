@@ -133,8 +133,10 @@ const PostFeedSection = async ({
   // Prefetch posts data on server to prevent hydration mismatch
   // If this fails, the client will fetch instead
   const { utils, queryClient } = await createServerUtils();
+  let prefetchOk = false;
   try {
     await utils.organization.listAllPosts.prefetchInfinite({ limit: 10 });
+    prefetchOk = true;
   } catch (e) {
     console.error('Homepage post prefetch failed:', e);
   }
@@ -161,7 +163,9 @@ const PostFeedSection = async ({
             </div>
           }
         >
-          <HydrationBoundary state={dehydrate(queryClient)}>
+          <HydrationBoundary
+            state={prefetchOk ? dehydrate(queryClient) : undefined}
+          >
             <Feed />
           </HydrationBoundary>
         </ErrorBoundary>
