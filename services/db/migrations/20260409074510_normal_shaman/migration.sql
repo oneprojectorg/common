@@ -1,0 +1,1 @@
+ALTER TABLE "decision_process_instances" ADD COLUMN "draft_instance_data" jsonb;
