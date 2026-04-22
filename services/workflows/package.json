@@ -8,7 +8,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "dev": "inngest-cli dev",
+    "dev": "if [ \"$SKIP_INNGEST\" = \"true\" ]; then echo 'Skipping inngest-cli dev (SKIP_INNGEST=true)'; else inngest-cli dev; fi",
     "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\"",
     "typecheck": "tsgo --noEmit"
   },
