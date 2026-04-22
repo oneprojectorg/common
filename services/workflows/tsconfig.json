@@ -1,10 +1,5 @@
 {
   "extends": "@op/typescript-config/nextjs.json",
-  "compilerOptions": {
-    "paths": {
-      "@/*": ["./*"]
-    }
-  },
   "include": [
     "next-env.d.ts",
     "next.config.mjs",

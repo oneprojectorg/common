@@ -1,10 +1,7 @@
 {
   "extends": "@op/typescript-config/nextjs.json",
   "compilerOptions": {
-    "types": ["node"],
-    "paths": {
-      "@/*": ["./*"]
-    }
+    "types": ["node"]
   },
   "include": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
   "exclude": ["node_modules"]
