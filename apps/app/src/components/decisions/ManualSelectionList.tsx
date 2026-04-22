@@ -3,6 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
+import type { Proposal } from '@op/common/client';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { useMemo, useState } from 'react';
@@ -31,18 +32,29 @@ export const ManualSelectionList = ({
   const t = useTranslations();
   const { user } = useUser();
 
+  const [selectedCategory, setSelectedCategory] = useState('all-categories');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+
+  const categoryId =
+    selectedCategory === 'all-categories' ? undefined : selectedCategory;
+
   const [[state, categoriesData, instance]] = trpc.useSuspenseQueries((q) => [
-    q.decision.getManualSelectionState({ processInstanceId: instanceId }),
+    q.decision.getManualSelectionState({
+      processInstanceId: instanceId,
+      categoryId,
+    }),
     q.decision.getCategories({ processInstanceId: instanceId }),
     q.decision.getInstance({ instanceId }),
   ]);
 
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  // Track the full Proposal objects so selections persist across category
+  // filter changes — when filtered out of the visible table, a selected
+  // proposal still surfaces in the footer count and confirm-dialog list.
+  const [selectedProposals, setSelectedProposals] = useState<Proposal[]>([]);
+  const selectedIds = selectedProposals.map((p) => p.id);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [successCount, setSuccessCount] = useState<number | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState('all-categories');
-  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
   const { filteredProposals, proposalFilter, setProposalFilter } =
     useProposalFilters({
@@ -56,25 +68,11 @@ export const ManualSelectionList = ({
   const categories = categoriesData.categories;
 
   const proposals = useMemo(() => {
-    let filtered = filteredProposals;
-    if (selectedCategory !== 'all-categories') {
-      const selected = categories.find((c) => c.id === selectedCategory);
-      if (selected) {
-        filtered = filtered.filter((p) =>
-          (p.proposalData?.category ?? []).some(
-            (token) =>
-              token === selected.name ||
-              token === selected.id ||
-              token === selected.termUri,
-          ),
-        );
-      }
-    }
     const dir = sortOrder === 'newest' ? -1 : 1;
-    return [...filtered].sort(
+    return [...filteredProposals].sort(
       (a, b) => dir * (a.createdAt ?? '').localeCompare(b.createdAt ?? ''),
     );
-  }, [filteredProposals, categories, selectedCategory, sortOrder]);
+  }, [filteredProposals, sortOrder]);
 
   const utils = trpc.useUtils();
   const submitMutation = trpc.decision.submitManualSelection.useMutation({
@@ -105,7 +103,10 @@ export const ManualSelectionList = ({
     return null;
   }
 
-  if (state.proposals.length === 0) {
+  // Only the unfiltered-empty case means "the previous phase produced
+  // nothing". A filtered-empty case (a category with no matches) should
+  // still render the toolbar so the admin can clear the filter.
+  if (!categoryId && state.proposals.length === 0) {
     return (
       <EmptyState icon={<LuLeaf className="size-6" />}>
         <Header3 className="font-serif !text-title-base font-light text-neutral-black">
@@ -119,15 +120,17 @@ export const ManualSelectionList = ({
   }
 
   const toggleProposal = (proposalId: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(proposalId)
-        ? prev.filter((id) => id !== proposalId)
-        : [...prev, proposalId],
-    );
+    setSelectedProposals((prev) => {
+      if (prev.some((p) => p.id === proposalId)) {
+        return prev.filter((p) => p.id !== proposalId);
+      }
+      const match = proposals.find((p) => p.id === proposalId);
+      if (!match) return prev;
+      return [...prev, match];
+    });
   };
 
-  const selectedProposals = proposals.filter((p) => selectedIds.includes(p.id));
-  const numSelected = selectedIds.length;
+  const numSelected = selectedProposals.length;
   const currentPhaseName =
     instance.instanceData?.phases?.find(
       (p) => p.phaseId === instance.currentStateId,
