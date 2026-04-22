@@ -90,9 +90,7 @@ export async function advancePhase(
     );
   }
 
-  // Serialize against submitManualSelection: lock the instance row first so
-  // the pipeline's proposal read and the optimistic UPDATE can't race a
-  // concurrent submit that's attaching proposals to the inbound transition.
+  // Serialize against submitManualSelection.
   const [lockedInstance] = await tx
     .select({
       currentStateId: processInstances.currentStateId,
@@ -181,7 +179,6 @@ export async function advancePhase(
   }
 
   if (selectedProposalIds.length > 0) {
-    // Get the latest history snapshot for each selected proposal.
     const latestHistoryRows = await tx
       .selectDistinctOn([proposalHistory.id], {
         proposalId: proposalHistory.id,

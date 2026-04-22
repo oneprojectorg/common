@@ -39,17 +39,12 @@ export interface SubmitManualSelectionResult {
 }
 
 /**
- * Admin-driven manual selection of proposals to populate the current phase when
- * the automatic selection pipeline produced zero advanced proposals.
+ * Admin-driven manual selection for the current phase's inbound transition.
  *
- * UPDATEs the existing `stateTransitionHistory` row that brought the instance
- * into its current phase, stamping `transitionData.manualSelection` and
- * attaching the chosen `decisionTransitionProposals`. One-shot only —
- * rejects if the transition already has a manual selection stamp.
- *
- * The target row is located via `SELECT ... FOR UPDATE`, which serializes
- * concurrent submissions. Rejects with `ConflictError` if the latest
- * transition is no longer into `currentStateId` (phase advanced under us).
+ * One-shot: UPDATEs the existing `stateTransitionHistory` row (stamping
+ * `transitionData.manualSelection`) and attaches the chosen proposals.
+ * `SELECT ... FOR UPDATE` serializes concurrent submits; throws `ConflictError`
+ * if the latest transition is no longer into `currentStateId`.
  */
 export async function submitManualSelection({
   processInstanceId,
@@ -111,10 +106,7 @@ export async function submitManualSelection({
   const byProfileId = dbUser.profileId;
 
   return db.transaction(async (tx) => {
-    // Serialize against advancePhase: lock the instance row first and
-    // re-verify currentStateId + status + instanceData inside the tx so
-    // a concurrent advance / status change / phases edit cannot slip
-    // between our outer-tx read and our writes.
+    // Serialize against advancePhase and re-verify under the lock.
     const [lockedInstance] = await tx
       .select({
         currentStateId: processInstances.currentStateId,
@@ -194,9 +186,7 @@ export async function submitManualSelection({
       .from(decisionTransitionProposals)
       .where(eq(decisionTransitionProposals.transitionHistoryId, latestRow.id));
 
-    // Manual selection is applicable only when the inbound transition is
-    // empty — a pipeline-driven transition with attached proposals is
-    // not editable here.
+    // Can't overwrite a pipeline-driven transition that already attached proposals.
     if (attachedRows.length > 0) {
       throw new ValidationError(
         'Manual selection is not available for this instance',
@@ -263,10 +253,7 @@ export async function submitManualSelection({
       manualSelection: manualSelectionAudit,
     };
 
-    // Only fill triggeredByProfileId if the transition was system-triggered
-    // (e.g. a cron advance set it to null). Don't overwrite an existing
-    // attribution — `manualSelection.byProfileId` stamps the confirmer
-    // independently.
+    // Preserve existing attribution; manualSelection.byProfileId already stamps the confirmer.
     await tx
       .update(stateTransitionHistory)
       .set({

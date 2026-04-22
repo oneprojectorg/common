@@ -30,10 +30,7 @@ export const getManualSelectionStateRouter = router({
         Channels.decisionInstance(input.processInstanceId),
       ]);
 
-      // TODO: the service already fetched full candidate rows; we throw them
-      // away here and re-fetch via listProposals only to enrich them with
-      // submitter/profile data. Consolidate so the service returns enriched
-      // proposals directly and drop this second round-trip.
+      // TODO: have the service return enriched proposals to drop this re-fetch.
       const enrichedProposals =
         state.candidates.length === 0
           ? []

@@ -18,13 +18,7 @@ import type { DecisionInstanceData } from './schemas/instanceData';
 import type { TransitionData } from './schemas/transitionData';
 
 export interface ManualSelectionState {
-  /**
-   * `true` when the current phase's proposal set is settled — either the
-   * pipeline produced one, an admin confirmed a manual selection, or manual
-   * selection is not applicable for this instance/phase. `false` only when
-   * the current phase's inbound transition has zero attached proposals and
-   * no `manualSelection` stamp, i.e. an admin must pick.
-   */
+  /** False only when the inbound transition has zero proposals and no `manualSelection` stamp. */
   selectionsConfirmed: boolean;
   candidates: Proposal[];
 }
@@ -32,23 +26,12 @@ export interface ManualSelectionState {
 interface GetManualSelectionStateInput {
   processInstanceId: string;
   user: User;
-  /**
-   * Filter candidates to proposals that have the given category
-   * (taxonomyTerm) id attached via `proposalCategories`. Applied via the
-   * canonical join table — not via the free-form `proposalData.category`
-   * string array — so the filter is insensitive to how labels happen to
-   * be written on individual proposals.
-   */
+  /** Filter via the canonical `proposalCategories` join, not `proposalData.category`. */
   categoryId?: string;
   dbClient?: DbClient;
 }
 
-/**
- * Admin-facing resolver — returns whether the current phase still needs a
- * manual selection and, when it does, the eligible candidate proposals.
- *
- * Gates access: caller must hold `decisions: ADMIN` on the instance's profile.
- */
+/** Admin-gated. Returns whether the current phase still needs a manual selection + eligible candidates. */
 export async function getManualSelectionState({
   processInstanceId,
   user,
@@ -103,9 +86,7 @@ export async function getManualSelectionState({
     .orderBy(desc(stateTransitionHistory.transitionedAt))
     .limit(1);
 
-  // When filtering by category, resolve which proposals carry that
-  // taxonomy term via the canonical join table. An empty result means
-  // no candidate matches — short-circuit before the larger fetch.
+  // Short-circuit empty category matches before the larger fetch.
   let categoryProposalIds: string[] | undefined;
   if (categoryId) {
     const rows = await dbClient
@@ -162,15 +143,7 @@ type ResolvedStatus =
   | { selectionsConfirmed: true }
   | { selectionsConfirmed: false; previousPhaseId: string };
 
-/**
- * Lightweight resolver — returns the boolean and (when selections are still
- * pending) the previous phase id, skipping candidate loading. Used by
- * `getInstance` to derive `selectionsConfirmed` without the extra queries
- * needed for the admin UI.
- *
- * Callers that already have the instance row loaded may pass it via
- * `instance` to skip the redundant `findFirst`.
- */
+/** Boolean-only resolver for `getInstance`; pass `instance` to skip the findFirst. */
 export async function resolveManualSelectionStatus({
   processInstanceId,
   instance: preloadedInstance,
