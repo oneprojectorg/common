@@ -10,7 +10,7 @@
     "check:i18n": "tsx scripts/check-missing-intl-keys.ts",
     "dev": "next dev -p 3100",
     "dev:e2e": "NEXT_PUBLIC_APP_PORT=4100 NEXT_PUBLIC_API_PORT=4300 next dev -p 4100",
-    "format:check": "prettier --log-level=warn --check \"**/*.{ts,tsx}\" \"!.next\"",
+    "format:check": "oxfmt --check",
     "start": "next start -p 3100",
     "start:e2e": "NEXT_PUBLIC_APP_PORT=4100 NEXT_PUBLIC_API_PORT=4300 next start -p 4100",
     "typecheck": "tsgo --noEmit"
