@@ -1,6 +1,5 @@
-'use client';
-
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { createServerUtils } from '@op/api/server';
+import { CommonError } from '@op/common';
 import {
   ProposalReviewRequestState,
   type ReviewAssignmentExtended,
@@ -9,7 +8,7 @@ import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
 import { notFound } from 'next/navigation';
 
-import { useTranslations } from '@/lib/i18n';
+import { TranslatedText } from '@/components/TranslatedText';
 
 import { ProposalPreview } from '../ProposalPreview';
 import { AuthorRevisionNote, RevisedOnBadge } from './AuthorRevisionNote';
@@ -17,28 +16,36 @@ import { ReviewFormProvider } from './ReviewFormContext';
 import { ReviewNavbar } from './ReviewNavbar';
 import { ReviewRubricForm } from './ReviewRubricForm';
 
-interface ReviewLayoutClientProps {
+interface ReviewLayoutProps {
   decisionSlug: string;
   assignmentId: string;
-  reviewAssignment: ReviewAssignmentExtended & {
-    rubricTemplate: NonNullable<ReviewAssignmentExtended['rubricTemplate']>;
-  };
 }
 
-export function ReviewLayoutClient({
+export async function ReviewLayout({
   decisionSlug,
   assignmentId,
-  reviewAssignment,
-}: ReviewLayoutClientProps) {
-  const t = useTranslations();
-  const reviewFlowEnabled = useFeatureFlag('review_flow');
+}: ReviewLayoutProps) {
+  const { utils } = await createServerUtils();
 
-  if (reviewFlowEnabled === false) {
-    notFound();
+  let reviewAssignment;
+  try {
+    reviewAssignment = await utils.decision.getReviewAssignment.fetch({
+      assignmentId,
+    });
+  } catch (error) {
+    const cause = error instanceof Error ? error.cause : null;
+    if (cause instanceof CommonError && cause.statusCode === 404) {
+      notFound();
+    }
+    throw error;
   }
 
   const { assignment, rubricTemplate, review, revisionRequest } =
     reviewAssignment;
+
+  if (!rubricTemplate) {
+    notFound();
+  }
 
   return (
     <ReviewFormProvider
@@ -67,8 +74,12 @@ export function ReviewLayoutClient({
           defaultSelectedKey="review"
         >
           <TabList className="mx-6" variant="default">
-            <Tab id="proposal">{t('Proposal')}</Tab>
-            <Tab id="review">{t('Review')}</Tab>
+            <Tab id="proposal">
+              <TranslatedText text="Proposal" />
+            </Tab>
+            <Tab id="review">
+              <TranslatedText text="Review" />
+            </Tab>
           </TabList>
 
           <TabPanel

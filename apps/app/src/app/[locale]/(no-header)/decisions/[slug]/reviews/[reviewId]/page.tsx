@@ -1,56 +1,43 @@
-import { createClient } from '@op/api/serverClient';
-import { CommonError } from '@op/common';
+import PostHogClient from '@/posthog';
+import { getUser } from '@/utils/getUser';
 import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
 
-import { ReviewLayoutClient } from '@/components/decisions/Review/ReviewLayoutClient';
-import { ReviewSkeleton } from '@/components/decisions/Review/ReviewSkeleton';
+import { ReviewLayout } from '@/components/decisions/Review/ReviewLayout';
 
 export default async function ReviewProposalPage({
   params,
 }: {
   params: Promise<{ slug: string; reviewId: string }>;
 }) {
-  const { slug, reviewId: assignmentId } = await params;
+  const { slug: decisionSlug, reviewId: assignmentId } = await params;
 
-  return (
-    <Suspense fallback={<ReviewSkeleton />}>
-      <ReviewPageContent decisionSlug={slug} assignmentId={assignmentId} />
-    </Suspense>
-  );
-}
-
-async function ReviewPageContent({
-  decisionSlug,
-  assignmentId,
-}: {
-  decisionSlug: string;
-  assignmentId: string;
-}) {
-  const client = await createClient();
-
-  let data;
-  try {
-    data = await client.decision.getReviewAssignment({ assignmentId });
-  } catch (error) {
-    const cause = error instanceof Error ? error.cause : null;
-    if (cause instanceof CommonError && cause.statusCode === 404) {
-      notFound();
-    }
-    throw error;
-  }
-
-  const { rubricTemplate } = data;
-
-  if (!rubricTemplate) {
+  if (!(await isReviewFlowEnabled())) {
     notFound();
   }
 
   return (
-    <ReviewLayoutClient
-      decisionSlug={decisionSlug}
-      assignmentId={assignmentId}
-      reviewAssignment={{ ...data, rubricTemplate }}
-    />
+    <ReviewLayout decisionSlug={decisionSlug} assignmentId={assignmentId} />
   );
+}
+
+async function isReviewFlowEnabled() {
+  if (
+    process.env.NODE_ENV === 'development' ||
+    process.env.NEXT_PUBLIC_E2E === 'true'
+  ) {
+    return true;
+  }
+
+  const user = await getUser();
+  const posthog = PostHogClient();
+  try {
+    const enabled = await posthog.isFeatureEnabled(
+      'review_flow',
+      user.authUserId,
+    );
+    // Match client semantics: only reject on explicit false.
+    return enabled !== false;
+  } finally {
+    await posthog.shutdown();
+  }
 }
