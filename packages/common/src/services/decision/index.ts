@@ -44,6 +44,8 @@ export * from './acceptProposalInvite';
 // Proposal management
 export * from './proposalDataSchema';
 export * from './isLegacyInstance';
+export * from './getManualSelectionState';
+export * from './submitManualSelection';
 export * from './getProposalsForPhase';
 export * from './createProposal';
 export * from './submitProposal';

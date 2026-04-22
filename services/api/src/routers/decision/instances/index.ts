@@ -5,10 +5,12 @@ import { duplicateInstanceRouter } from './duplicateInstance';
 import { getCategoriesRouter } from './getCategories';
 import { getDecisionBySlugRouter } from './getDecisionBySlug';
 import { getInstanceRouter, getLegacyInstanceRouter } from './getInstance';
+import { getManualSelectionStateRouter } from './getManualSelectionState';
 import { listDecisionProfilesRouter } from './listDecisionProfiles';
 import { listInstancesRouter } from './listInstances';
 import { listLegacyInstancesRouter } from './listLegacyInstances';
 import { listProposalSubmittersRouter } from './listProposalSubmitters';
+import { submitManualSelectionRouter } from './submitManualSelection';
 import { transitionFromPhaseRouter } from './transitionFromPhase';
 import { updateDecisionInstanceRouter } from './updateDecisionInstance';
 
@@ -23,6 +25,8 @@ export const instancesRouter = mergeRouters(
   getInstanceRouter,
   getLegacyInstanceRouter,
   getCategoriesRouter,
+  getManualSelectionStateRouter,
+  submitManualSelectionRouter,
   listDecisionProfilesRouter,
   getDecisionBySlugRouter,
   listProposalSubmittersRouter,

@@ -14,6 +14,7 @@ import type {
   DecisionInstanceData,
   PhaseInstanceData,
 } from './schemas/instanceData';
+import type { TransitionData } from './schemas/transitionData';
 import {
   aggregateProposalMetrics,
   executeSelectionPipeline,
@@ -31,7 +32,7 @@ export interface AdvancePhaseInput {
   toPhaseId: string;
   /** Null for cron / system-triggered transitions. */
   triggeredByProfileId: string | null;
-  transitionData?: Record<string, unknown>;
+  transitionData?: TransitionData;
   /** Shared timestamp for all writes. Defaults to now. */
   now?: string;
 }
@@ -87,6 +88,27 @@ export async function advancePhase(
     throw new Error(
       `Phase ${fromPhaseId} not found in instanceData for instance ${instanceId}`,
     );
+  }
+
+  // Serialize against submitManualSelection: lock the instance row first so
+  // the pipeline's proposal read and the optimistic UPDATE can't race a
+  // concurrent submit that's attaching proposals to the inbound transition.
+  const [lockedInstance] = await tx
+    .select({
+      currentStateId: processInstances.currentStateId,
+      status: processInstances.status,
+    })
+    .from(processInstances)
+    .where(eq(processInstances.id, instanceId))
+    .limit(1)
+    .for('update');
+
+  if (
+    !lockedInstance ||
+    lockedInstance.currentStateId !== fromPhaseId ||
+    lockedInstance.status !== ProcessStatus.PUBLISHED
+  ) {
+    return { conflict: true };
   }
 
   const selectionPipeline = departingPhase.selectionPipeline;

@@ -14,7 +14,9 @@ import { isLegacyInstanceData } from './isLegacyInstance';
 /**
  * Resolves the transition to use for phase-scoped proposal queries.
  *
- * - If phaseId is provided: finds the most recent transition that entered that phase (toStateId = phaseId).
+ * - If phaseId is provided: finds the most recent transition that entered that
+ *   phase. The UPDATE-in-place invariant means there's usually one row per
+ *   phase, but ORDER BY is kept as a deterministic tiebreaker.
  * - If phaseId is omitted: uses the most recent transition (current phase).
  * - Returns undefined if no matching transition exists (e.g. still in the initial phase).
  */
