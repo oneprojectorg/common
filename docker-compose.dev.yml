@@ -10,9 +10,9 @@ services:
     image: docker:27-dind
     privileged: true
     environment:
-      DOCKER_TLS_CERTDIR: ''
+      DOCKER_TLS_CERTDIR: ""
     healthcheck:
-      test: ['CMD', 'docker', 'info']
+      test: ["CMD", "docker", "info"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -20,11 +20,11 @@ services:
     ports:
       # Expose Supabase API to the host for browser access (supabase-js client).
       # Port prefix matches PORT_PREFIX so multiple instances don't conflict.
-      - '${PORT_PREFIX:-31}21:54321'
+      - "${PORT_PREFIX:-31}21:54321"
       # Expose Supabase inbucket (email) for local dev inspection.
-      - '${PORT_PREFIX:-31}24:54324'
+      - "${PORT_PREFIX:-31}24:54324"
       # Expose Postgres directly for local dev tools (e.g. TablePlus, psql).
-      - '${PORT_PREFIX:-31}22:54322'
+      - "${PORT_PREFIX:-31}22:54322"
     volumes:
       # Persist the DinD image cache across restarts so Supabase images
       # (postgres, kong, gotrue, studio, etc.) are not re-pulled every time.
@@ -43,11 +43,11 @@ services:
     env_file: .env.docker
     environment:
       TIPTAP_PRO_TOKEN: ${TIPTAP_PRO_TOKEN}
-      NEXT_PUBLIC_API_PORT: '${PORT_PREFIX:-31}01'
-      NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:${PORT_PREFIX:-31}21'
-      WATCHPACK_POLLING: 'true'
+      NEXT_PUBLIC_API_PORT: "${PORT_PREFIX:-31}01"
+      NEXT_PUBLIC_SUPABASE_URL: "http://localhost:${PORT_PREFIX:-31}21"
+      WATCHPACK_POLLING: "true"
     ports:
-      - '${PORT_PREFIX:-31}00:3100'
+      - "${PORT_PREFIX:-31}00:3100"
     volumes:
       # Bind-mount the repo root for hot-reload
       - .:/app
@@ -72,9 +72,9 @@ services:
     env_file: .env.docker
     environment:
       TIPTAP_PRO_TOKEN: ${TIPTAP_PRO_TOKEN}
-      WATCHPACK_POLLING: 'true'
+      WATCHPACK_POLLING: "true"
     ports:
-      - '${PORT_PREFIX:-31}01:3300'
+      - "${PORT_PREFIX:-31}01:3300"
     volumes:
       # Bind-mount the repo root for hot-reload
       - .:/app

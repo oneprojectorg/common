@@ -6,6 +6,8 @@
     "draco*.js",
     "*.md",
     "*.sql",
+    "*.yaml",
+    "*.yml",
     "migrations/"
   ]
 }
