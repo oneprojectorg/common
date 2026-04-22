@@ -1,5 +1,6 @@
 import { and, db, desc, eq, inArray, isNull, ne } from '@op/db/client';
 import {
+  ProcessStatus,
   ProposalStatus,
   decisionTransitionProposals,
   processInstances,
@@ -89,6 +90,12 @@ export async function submitManualSelection({
 
   assertAccess({ decisions: permission.ADMIN }, profileUser?.roles ?? []);
 
+  if (instance.status !== ProcessStatus.PUBLISHED) {
+    throw new ValidationError(
+      'Manual selection is only available for published instances',
+    );
+  }
+
   const currentStateId = instance.currentStateId;
   if (!currentStateId) {
     throw new ValidationError('Instance has no current phase set');
@@ -100,28 +107,20 @@ export async function submitManualSelection({
     );
   }
 
-  const instanceData = instance.instanceData as DecisionInstanceData | null;
-  const phases = instanceData?.phases;
-  const currentPhaseIndex =
-    phases?.findIndex((p) => p.phaseId === currentStateId) ?? -1;
-  const previousPhase =
-    phases && currentPhaseIndex > 0 ? phases[currentPhaseIndex - 1] : undefined;
-  if (!previousPhase) {
-    throw new ValidationError(
-      'Manual selection is not available for this instance',
-    );
-  }
-
-  const previousPhaseId = previousPhase.phaseId;
   const now = new Date().toISOString();
   const byProfileId = dbUser.profileId;
 
   return db.transaction(async (tx) => {
     // Serialize against advancePhase: lock the instance row first and
-    // re-verify currentStateId inside the tx so a concurrent advance cannot
-    // slip between our outer-tx read and our writes.
+    // re-verify currentStateId + status + instanceData inside the tx so
+    // a concurrent advance / status change / phases edit cannot slip
+    // between our outer-tx read and our writes.
     const [lockedInstance] = await tx
-      .select({ currentStateId: processInstances.currentStateId })
+      .select({
+        currentStateId: processInstances.currentStateId,
+        status: processInstances.status,
+        instanceData: processInstances.instanceData,
+      })
       .from(processInstances)
       .where(eq(processInstances.id, processInstanceId))
       .limit(1)
@@ -131,17 +130,40 @@ export async function submitManualSelection({
       throw new NotFoundError('Process instance not found');
     }
 
+    if (lockedInstance.status !== ProcessStatus.PUBLISHED) {
+      throw new ConflictError(
+        'Instance is no longer published; refresh and retry',
+      );
+    }
+
     if (lockedInstance.currentStateId !== currentStateId) {
       throw new ConflictError(
         'Instance has advanced since selection started; refresh and retry',
       );
     }
 
+    const lockedData =
+      lockedInstance.instanceData as DecisionInstanceData | null;
+    const lockedPhases = lockedData?.phases;
+    const lockedPhaseIndex =
+      lockedPhases?.findIndex((p) => p.phaseId === currentStateId) ?? -1;
+    const lockedPreviousPhase =
+      lockedPhases && lockedPhaseIndex > 0
+        ? lockedPhases[lockedPhaseIndex - 1]
+        : undefined;
+    if (!lockedPreviousPhase) {
+      throw new ValidationError(
+        'Manual selection is not available for this instance',
+      );
+    }
+    const previousPhaseId = lockedPreviousPhase.phaseId;
+
     const [latestRow] = await tx
       .select({
         id: stateTransitionHistory.id,
         toStateId: stateTransitionHistory.toStateId,
         transitionData: stateTransitionHistory.transitionData,
+        triggeredByProfileId: stateTransitionHistory.triggeredByProfileId,
       })
       .from(stateTransitionHistory)
       .where(eq(stateTransitionHistory.processInstanceId, processInstanceId))
@@ -241,11 +263,17 @@ export async function submitManualSelection({
       manualSelection: manualSelectionAudit,
     };
 
+    // Only fill triggeredByProfileId if the transition was system-triggered
+    // (e.g. a cron advance set it to null). Don't overwrite an existing
+    // attribution — `manualSelection.byProfileId` stamps the confirmer
+    // independently.
     await tx
       .update(stateTransitionHistory)
       .set({
         transitionData: nextTransitionData,
-        triggeredByProfileId: byProfileId,
+        ...(latestRow.triggeredByProfileId == null
+          ? { triggeredByProfileId: byProfileId }
+          : {}),
       })
       .where(eq(stateTransitionHistory.id, latestRow.id));
 
