@@ -74,7 +74,10 @@ export function ReviewFormProvider({
 
   const [reviewAssignment] = trpc.decision.getReviewAssignment.useSuspenseQuery(
     { assignmentId },
-    { refetchOnMount: true },
+    // 'always' (not `true`) guarantees one network round-trip on every mount,
+    // regardless of cache freshness. The round-trip is what registers this
+    // query against the realtime channel via the client-side tRPC link.
+    { refetchOnMount: 'always' },
   );
 
   const { rubricTemplate, review, revisionRequest, assignment } =
