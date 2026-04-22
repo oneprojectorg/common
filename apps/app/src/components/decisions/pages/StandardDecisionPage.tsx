@@ -100,15 +100,30 @@ export function StandardDecisionPage({
                 </Suspense>
               </APIErrorBoundary>
             ) : (
-              <Suspense fallback={<ProposalListSkeleton />}>
-                <ProposalsList
-                  slug={slug}
-                  instanceId={instanceId}
-                  decisionSlug={decisionSlug}
-                  decisionProfileId={decisionProfileId}
-                  permissions={instance.access}
-                />
-              </Suspense>
+              <APIErrorBoundary
+                fallbacks={{
+                  default: () => (
+                    <EmptyState icon={<LuTriangleAlert className="size-6" />}>
+                      <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+                        {t("Couldn't load proposals")}
+                      </Header3>
+                      <p className="text-base text-neutral-charcoal">
+                        {t('Refresh the page to try again.')}
+                      </p>
+                    </EmptyState>
+                  ),
+                }}
+              >
+                <Suspense fallback={<ProposalListSkeleton />}>
+                  <ProposalsList
+                    slug={slug}
+                    instanceId={instanceId}
+                    decisionSlug={decisionSlug}
+                    decisionProfileId={decisionProfileId}
+                    permissions={instance.access}
+                  />
+                </Suspense>
+              </APIErrorBoundary>
             )}
           </div>
         </div>
