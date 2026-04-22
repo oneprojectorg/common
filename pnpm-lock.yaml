@@ -848,6 +848,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@op/styles':
+        specifier: workspace:*
+        version: link:../styles
       he:
         specifier: ^1.2.0
         version: 1.2.0
@@ -1355,6 +1358,9 @@ importers:
       '@op/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@op/styles':
+        specifier: workspace:*
+        version: link:../../packages/styles
       '@op/types':
         specifier: workspace:*
         version: link:../../packages/types

@@ -17,7 +17,7 @@ const OPSignupEmail = () => {
 
       <Section className="mt-10 mb-6 text-center">
         <code
-          className="rounded-xl border-neutral-800 bg-neutral-600 p-4 px-12 font-mono text-2xl font-medium text-neutral-50 md:text-3xl"
+          className="rounded-xl border-neutral-charcoal bg-neutral-gray4 p-4 px-12 font-mono text-2xl font-medium text-white md:text-3xl"
           style={{
             borderWidth: '1px',
             borderStyle: 'solid',
@@ -36,7 +36,7 @@ const OPSignupEmail = () => {
         </code>
       </Section>
 
-      <Text className="mt-8 text-center text-sm text-neutral-500">
+      <Text className="mt-8 text-center text-sm text-neutral-gray3">
         This code will only be valid for the next 10 minutes. <br /> If you’re
         having problems, send us an{' '}
         <Link href={`mailto:${OP_EMAIL_HELP}`} className="text-primary-teal/60">
