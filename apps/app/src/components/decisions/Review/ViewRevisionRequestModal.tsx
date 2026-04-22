@@ -20,7 +20,7 @@ export function ViewRevisionRequestModal({
   const t = useTranslations();
   const {
     revisionRequest,
-    canCancelRevisionRequest,
+    isOwnRevisionRequest,
     cancelRevisionRequest,
     isCancellingRevision,
   } = useReviewForm();
@@ -66,7 +66,7 @@ export function ViewRevisionRequestModal({
         </div>
       </ModalBody>
       <ModalFooter>
-        {canCancelRevisionRequest && (
+        {isOwnRevisionRequest && (
           <Button
             color="secondary"
             onPress={handleCancelRequest}

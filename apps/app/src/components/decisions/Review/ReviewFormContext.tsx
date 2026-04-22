@@ -38,7 +38,7 @@ interface ReviewFormState {
   isSubmitted: boolean;
   isPausedForRevision: boolean;
   revisionRequest: ProposalReviewRequest | null;
-  canCancelRevisionRequest: boolean;
+  isOwnRevisionRequest: boolean;
   canRequestRevision: boolean;
   rubricTemplate: RubricTemplateSchema;
   review: ProposalReview | null;
@@ -114,7 +114,7 @@ function ReviewFormProviderInner({
 
   // Only trust the per-assignment request when it is still REQUESTED — a
   // locally cached CANCELLED/RESUBMITTED entry must not gate the UI.
-  const ownRequestedRevisionRequest =
+  const ownRevisionRequest =
     revisionRequest?.state === ProposalReviewRequestState.REQUESTED
       ? revisionRequest
       : null;
@@ -123,10 +123,10 @@ function ReviewFormProviderInner({
   // outstanding request from any other reviewer on the same proposal so
   // every reviewer sees the same paused state + feedback.
   const effectiveRevisionRequest =
-    ownRequestedRevisionRequest ??
+    ownRevisionRequest ??
     proposalRevisionRequestList.revisionRequests[0]?.revisionRequest ??
     null;
-  const canCancelRevisionRequest = !!ownRequestedRevisionRequest;
+  const isOwnRevisionRequest = !!ownRevisionRequest;
 
   const [values, setValues] = useState<Record<string, unknown>>(
     review?.reviewData.answers ?? {},
@@ -219,14 +219,14 @@ function ReviewFormProviderInner({
   );
 
   const handleCancelRevision = useCallback(() => {
-    if (!ownRequestedRevisionRequest) {
+    if (!ownRevisionRequest) {
       return;
     }
     cancelRevisionMutation.mutate({
       assignmentId,
-      revisionRequestId: ownRequestedRevisionRequest.id,
+      revisionRequestId: ownRevisionRequest.id,
     });
-  }, [assignmentId, ownRequestedRevisionRequest, cancelRevisionMutation]);
+  }, [assignmentId, ownRevisionRequest, cancelRevisionMutation]);
 
   const state = useMemo<ReviewFormState>(
     () => ({
@@ -237,7 +237,7 @@ function ReviewFormProviderInner({
       isSubmitted,
       isPausedForRevision,
       revisionRequest: effectiveRevisionRequest,
-      canCancelRevisionRequest,
+      isOwnRevisionRequest,
       canRequestRevision,
       rubricTemplate,
       review,
@@ -257,7 +257,7 @@ function ReviewFormProviderInner({
       isSubmitted,
       isPausedForRevision,
       effectiveRevisionRequest,
-      canCancelRevisionRequest,
+      isOwnRevisionRequest,
       canRequestRevision,
       rubricTemplate,
       review,
