@@ -95,6 +95,9 @@ export type { VoteData } from '@op/db/schema';
 // Schema validation
 export { schemaValidator } from './schemaValidator';
 
+// Taxonomy utilities
+export { toTermUri } from './utils/taxonomy';
+
 // Types
 export * from './types';
 export type {

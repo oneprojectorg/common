@@ -1,8 +1,8 @@
 import { db, eq } from '@op/db/client';
 import { taxonomies, taxonomyTerms } from '@op/db/schema';
-import slugify from 'slugify';
 
 import { CommonError } from '../../utils';
+import { toTermUri } from './utils/taxonomy';
 
 /**
  * Ensures the proposal taxonomy exists and that each category label has a
@@ -44,11 +44,7 @@ export async function ensureProposalTaxonomyTerms(
     }
 
     const categoryLabel = categoryName.trim();
-    const termUri = slugify(categoryLabel, {
-      lower: true,
-      strict: true,
-      trim: true,
-    });
+    const termUri = toTermUri(categoryLabel);
 
     // taxonomyTerms V2 types are broken due to self-referential parentId
     let existingTerm = await db._query.taxonomyTerms.findFirst({

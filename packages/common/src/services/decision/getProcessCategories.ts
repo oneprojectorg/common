@@ -5,6 +5,7 @@ import { permission } from 'access-zones';
 import { UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import type { DecisionInstanceData } from './schemas';
+import { toTermUri } from './utils/taxonomy';
 
 export interface ProcessCategory {
   id: string;
@@ -66,15 +67,18 @@ export const getProcessCategories = async ({
     // Find matching taxonomy terms for the categories
     const categories: ProcessCategory[] = [];
 
-    for (const category of instanceCategories) {
-      const expectedTermUri = category.label
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, '');
+    type TaxonomyTerm = { id: string; label: string; termUri: string };
+    const termsByUri = new Map<string, TaxonomyTerm>(
+      proposalTaxonomy.taxonomyTerms.map((term: TaxonomyTerm) => [
+        term.termUri,
+        term,
+      ]),
+    );
 
-      const taxonomyTerm = proposalTaxonomy.taxonomyTerms.find(
-        (term: { termUri: string }) => term.termUri === expectedTermUri,
-      );
+    for (const category of instanceCategories) {
+      const expectedTermUri = toTermUri(category.label);
+
+      const taxonomyTerm = termsByUri.get(expectedTermUri);
 
       if (taxonomyTerm) {
         categories.push({
