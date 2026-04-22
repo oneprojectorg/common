@@ -19,7 +19,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { getCurrentProfileId, getProfileAccessUser } from '../access';
+import { getIndividualProfileId, getProfileAccessUser } from '../access';
 import { assertGlobalRole } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { decisionPermission } from './permissions';
@@ -147,7 +147,7 @@ export const createProposal = async ({
     }
 
     const [profileId, adminRole] = await Promise.all([
-      getCurrentProfileId(authUserId),
+      getIndividualProfileId(authUserId),
       assertGlobalRole('Admin'),
     ]);
     const createdProposal = await db.transaction(async (tx) => {
