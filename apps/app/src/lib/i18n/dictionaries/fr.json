@@ -437,6 +437,8 @@
   "How easy was it to review proposals and cast your vote? (1 to 5 scale)": "Dans quelle mesure était-il facile d'examiner les propositions et de voter ? (échelle de 1 à 5)",
   "Submitting...": "Envoi en cours...",
   "Submit my votes": "Soumettre mes votes",
+  "<highlight>{numSelected}</highlight> of {max, plural, one {# proposal} other {# proposals}} selected": "<highlight>{numSelected}</highlight> sur {max, plural, one {# proposition sélectionnée} other {# propositions sélectionnées}}",
+  "<highlight>{numSelected, plural, one {# proposal} other {# proposals}}</highlight> selected": "<highlight>{numSelected, plural, one {# proposition sélectionnée} other {# propositions sélectionnées}}</highlight>",
   "Please select at least one role": "Veuillez sélectionner au moins un rôle",
   "Please select up to two options": "Veuillez sélectionner jusqu'à deux options",
   "Please select your region": "Veuillez sélectionner votre région",

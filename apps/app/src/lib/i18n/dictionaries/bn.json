@@ -436,6 +436,8 @@
   "How easy was it to review proposals and cast your vote? (1 to 5 scale)": "প্রস্তাব পর্যালোচনা এবং আপনার ভোট দেওয়া কতটা সহজ ছিল? (১ থেকে ৫ স্কেল)",
   "Submitting...": "জমা দেওয়া হচ্ছে...",
   "Submit my votes": "আমার ভোট জমা দিন",
+  "<highlight>{numSelected}</highlight> of {max, plural, one {# proposal} other {# proposals}} selected": "<highlight>{numSelected}</highlight> / {max} প্রস্তাব নির্বাচিত",
+  "<highlight>{numSelected, plural, one {# proposal} other {# proposals}}</highlight> selected": "<highlight>{numSelected}</highlight> প্রস্তাব নির্বাচিত",
   "Please select at least one role": "অনুগ্রহ করে কমপক্ষে একটি ভূমিকা নির্বাচন করুন",
   "Please select up to two options": "অনুগ্রহ করে দুটি পর্যন্ত অপশন নির্বাচন করুন",
   "Please select your region": "অনুগ্রহ করে আপনার অঞ্চল নির্বাচন করুন",
