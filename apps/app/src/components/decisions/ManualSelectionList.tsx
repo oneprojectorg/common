@@ -6,7 +6,7 @@ import { ProposalFilter } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { LuLeaf, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -44,15 +44,15 @@ export const ManualSelectionList = ({
     q.decision.getInstance({ instanceId }),
   ]);
 
-  // Intentionally NOT a suspense query: the input includes `categoryId`,
-  // so a suspense query would re-suspend every time the admin changes the
-  // category filter and blank out the data table while the server
-  // re-fetches. `placeholderData: (prev) => prev` keeps the previous
-  // result visible during the refetch so only the table contents swap in
-  // place. `isFetching` could be surfaced as a subtle loading indicator
-  // if needed; `data` is only undefined on the very first render.
+  // Intentionally NOT a suspense query: the input includes `categoryId`
+  // and `sortOrder`, so a suspense query would re-suspend every time the
+  // admin changes either filter and blank out the data table while the
+  // server re-fetches. `placeholderData: (prev) => prev` keeps the
+  // previous result visible during the refetch so only the table
+  // contents swap in place. `data` is only undefined on the very first
+  // render.
   const stateQuery = trpc.decision.getManualSelectionState.useQuery(
-    { processInstanceId: instanceId, categoryId },
+    { processInstanceId: instanceId, categoryId, sortOrder },
     { placeholderData: (prev) => prev },
   );
   const state = stateQuery.data;
@@ -77,12 +77,10 @@ export const ManualSelectionList = ({
 
   const categories = categoriesData.categories;
 
-  const proposals = useMemo(() => {
-    const dir = sortOrder === 'newest' ? -1 : 1;
-    return [...filteredProposals].sort(
-      (a, b) => dir * (a.createdAt ?? '').localeCompare(b.createdAt ?? ''),
-    );
-  }, [filteredProposals, sortOrder]);
+  // Server applies ORDER BY createdAt (via getManualSelectionState's
+  // sortOrder input), so no client-side sort is needed. filteredProposals
+  // preserves the server order.
+  const proposals = filteredProposals;
 
   const submitMutation = trpc.decision.submitManualSelection.useMutation({
     onSuccess: () => {
