@@ -3,8 +3,8 @@
 import { trpc } from '@op/api/client';
 import {
   type ProposalReview,
+  type ProposalReviewAssignment,
   type ProposalReviewRequest,
-  type ReviewAssignmentExtended,
   type RubricTemplateSchema,
   schemaValidator,
 } from '@op/common/client';
@@ -26,10 +26,8 @@ import { useTranslations } from '@/lib/i18n';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 
-type Proposal = ReviewAssignmentExtended['assignment']['proposal'];
-
 interface ReviewFormState {
-  /** Rubric answers keyed by criterion id; validated against the template. */
+  /** Rubric answers keyed by criterion id; validated against the rubricTemplate. */
   values: Record<string, unknown>;
   /** Optional free-text rationale per criterion id (always optional). */
   rationales: Record<string, string>;
@@ -40,7 +38,7 @@ interface ReviewFormState {
   revisionRequest: ProposalReviewRequest | null;
   rubricTemplate: RubricTemplateSchema;
   review: ProposalReview | null;
-  proposal: Proposal;
+  assignment: ProposalReviewAssignment;
   handleValueChange: (key: string, value: unknown) => void;
   handleRationaleChange: (key: string, value: string) => void;
   handleSubmit: () => void;
@@ -74,22 +72,19 @@ export function ReviewFormProvider({
 
   const [reviewAssignment] = trpc.decision.getReviewAssignment.useSuspenseQuery(
     { assignmentId },
-    // 'always' (not `true`) guarantees one network round-trip on every mount,
-    // regardless of cache freshness. The round-trip is what registers this
-    // query against the realtime channel via the client-side tRPC link.
+    // 'always' forces one fetch per mount, which is what registers the
+    // realtime channel via the tRPC client link.
     { refetchOnMount: 'always' },
   );
 
   const { rubricTemplate, review, revisionRequest, assignment } =
     reviewAssignment;
 
-  // Server-side render/guard ensures rubricTemplate is present for this page.
   if (!rubricTemplate) {
-    throw new Error('Rubric template is required for the review flow.');
+    throw new Error(
+      `Review assignment ${assignmentId} has no rubric template`,
+    );
   }
-
-  const template = rubricTemplate;
-  const proposal = assignment.proposal;
 
   const [values, setValues] = useState<Record<string, unknown>>(
     review?.reviewData.answers ?? {},
@@ -143,8 +138,8 @@ export function ReviewFormProvider({
     });
 
   const canSubmit = useMemo(
-    () => schemaValidator.validate(template, values).valid,
-    [template, values],
+    () => schemaValidator.validate(rubricTemplate, values).valid,
+    [rubricTemplate, values],
   );
 
   const handleValueChange = useCallback(
@@ -199,9 +194,9 @@ export function ReviewFormProvider({
       isSubmitted,
       isPausedForRevision: !!isPausedForRevision,
       revisionRequest,
-      rubricTemplate: template,
+      rubricTemplate,
       review,
-      proposal,
+      assignment,
       handleValueChange,
       handleRationaleChange,
       handleSubmit,
@@ -217,9 +212,9 @@ export function ReviewFormProvider({
       isSubmitted,
       isPausedForRevision,
       revisionRequest,
-      template,
+      rubricTemplate,
       review,
-      proposal,
+      assignment,
       submitReview.isPending,
       requestRevisionMutation.isPending,
       cancelRevisionMutation.isPending,
