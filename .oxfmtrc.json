@@ -26,7 +26,23 @@
     ]
   },
   "sortTailwindcss": {
-    "attributes": ["className", "useClasses", "tw"],
+    "attributes": [
+      "className",
+      "useClasses",
+      "tw",
+      "badgeClassName",
+      "bodyClassName",
+      "buttonClassName",
+      "chipClassName",
+      "descriptionClassName",
+      "editorClassName",
+      "fieldClassName",
+      "iconClassName",
+      "itemClassName",
+      "labelClassName",
+      "overlayClassName",
+      "selectValueClassName"
+    ],
     "functions": ["twMerge", "clsx", "tw", "cva", "cn", "tv"],
     "stylesheet": "./packages/styles/shared-styles.css"
   },
