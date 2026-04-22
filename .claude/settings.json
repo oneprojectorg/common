@@ -16,5 +16,58 @@
       "Pnpm format"
     ],
     "ask": []
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/block-gh-main.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "filesystem": {
+      "allowWrite": ["."],
+      "denyRead": ["~/.ssh", "~/.aws", "~/.gnupg"]
+    },
+    "network": {
+      "allowedDomains": [
+        "github.com",
+        "*.github.com",
+        "api.github.com",
+        "registry.npmjs.org",
+        "*.npmjs.org",
+        "registry.tiptap.dev",
+        "*.anthropic.com",
+        "docs.claude.com",
+        "*.claude.com",
+        "*.supabase.co",
+        "*.supabase.com",
+        "*.posthog.com",
+        "api.posthog.com",
+        "*.axiom.co",
+        "mcp.axiom.co",
+        "*.figma.com",
+        "api.figma.com",
+        "resend.com",
+        "trpc.io",
+        "zod.dev",
+        "*.asana.com",
+        "app.asana.com"
+      ]
+    },
+    "excludedCommands": [
+      "docker *",
+      "docker-compose *",
+      "supabase *"
+    ],
+    "allowUnsandboxedCommands": true,
+    "failIfUnavailable": false
   }
 }
