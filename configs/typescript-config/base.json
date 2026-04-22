@@ -2,6 +2,7 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "display": "Default",
   "compilerOptions": {
+    "esModuleInterop": true,
     "incremental": true,
     "isolatedModules": true,
     "lib": ["es2022", "DOM", "DOM.Iterable"],
@@ -12,6 +13,7 @@
     "noUncheckedSideEffectImports": false,
     "resolveJsonModule": true,
     "skipLibCheck": true,
+    "strict": true,
     "target": "ES2022",
     "allowJs": true,
     "noUnusedLocals": true,
