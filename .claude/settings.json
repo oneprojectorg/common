@@ -32,6 +32,7 @@
   },
   "sandbox": {
     "enabled": true,
+    "autoAllowBashIfSandboxed": true,
     "filesystem": {
       "allowWrite": ["."],
       "denyRead": ["~/.ssh", "~/.aws", "~/.gnupg"]
