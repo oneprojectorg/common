@@ -1,5 +1,6 @@
 import type { Meta } from '@storybook/react-vite';
 import { Form } from 'react-aria-components';
+import { LuSearch } from 'react-icons/lu';
 
 import { Button } from '../src/components/Button';
 import {
@@ -74,3 +75,12 @@ export const Validation = (args: any) => (
 Validation.args = {
   isRequired: true,
 };
+
+export const WithSearchIcon = (args: any) => (
+  <ComboBox {...args} icon={<LuSearch aria-hidden className="size-4" />}>
+    <ComboBoxItem>Chocolate</ComboBoxItem>
+    <ComboBoxItem>Mint</ComboBoxItem>
+    <ComboBoxItem>Strawberry</ComboBoxItem>
+    <ComboBoxItem>Vanilla</ComboBoxItem>
+  </ComboBox>
+);
