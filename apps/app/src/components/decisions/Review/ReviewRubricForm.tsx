@@ -65,6 +65,55 @@ export function ReviewRubricForm() {
     return (total ?? 0) + value;
   }, null);
 
+  const renderFeedbackToAuthor = () => {
+    if (isSubmitted) {
+      if (!review?.overallComment) {
+        return null;
+      }
+
+      return (
+        <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
+          <FieldHeader title={t('Feedback to Author')} />
+          <ResultCard description={review.overallComment} />
+        </section>
+      );
+    }
+
+    if (isFeedbackOpen) {
+      return (
+        <section className="flex flex-col gap-3 border-b border-neutral-gray1 pb-6">
+          <FieldHeader
+            title={t('Feedback to Author')}
+            description={t(
+              'Shared anonymously with the author after the review phase ends',
+            )}
+            className="gap-1"
+          />
+
+          <TextField
+            aria-label={t('Feedback to Author')}
+            value={overallComment}
+            onChange={handleOverallCommentChange}
+            useTextArea
+            textareaProps={{ rows: 3 }}
+          />
+        </section>
+      );
+    }
+
+    return (
+      <Button
+        color="secondary"
+        size="medium"
+        className="w-full"
+        onPress={() => setIsFeedbackOpen(true)}
+      >
+        <LuPlus className="size-4" />
+        {t('Feedback to Author')}
+      </Button>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <div className="border-b border-neutral-gray1 pb-4">
@@ -126,42 +175,7 @@ export function ReviewRubricForm() {
             />
           ))}
 
-          {isSubmitted ? (
-            review?.overallComment ? (
-              <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
-                <FieldHeader title={t('Feedback to Author')} />
-                <ResultCard description={review.overallComment} />
-              </section>
-            ) : null
-          ) : isFeedbackOpen ? (
-            <section className="flex flex-col gap-3 border-b border-neutral-gray1 pb-6">
-              <FieldHeader
-                title={t('Feedback to Author')}
-                description={t(
-                  'Shared anonymously with the author after the review phase ends',
-                )}
-                className="gap-1"
-              />
-
-              <TextField
-                aria-label={t('Feedback to Author')}
-                value={overallComment}
-                onChange={handleOverallCommentChange}
-                useTextArea
-                textareaProps={{ rows: 3 }}
-              />
-            </section>
-          ) : (
-            <Button
-              color="secondary"
-              size="medium"
-              className="w-full"
-              onPress={() => setIsFeedbackOpen(true)}
-            >
-              <LuPlus className="size-4" />
-              {t('Feedback to Author')}
-            </Button>
-          )}
+          {renderFeedbackToAuthor()}
 
           <Surface
             variant="filled"
@@ -297,10 +311,6 @@ function RubricRationaleField({
   );
 }
 
-/**
- * Render the input control for a rubric field, or a read-only result card
- * once the review has been submitted.
- */
 function RubricFieldInput({
   field,
   value,
@@ -404,9 +414,6 @@ function RubricFieldInput({
   }
 }
 
-/**
- * Read-only card shown in place of the input once the review is submitted.
- */
 function ResultCard({
   value,
   description,
@@ -430,9 +437,6 @@ function ResultCard({
   );
 }
 
-/**
- * Map a submitted value to a read-only result card per field format.
- */
 function RubricFieldResult({
   field,
   value,
@@ -456,23 +460,19 @@ function RubricFieldResult({
       (option) => String(option.value) === String(value),
     );
 
-    // For scored criteria the value carries meaning (e.g. "4") and the
-    // title describes what that score means. For non-numeric dropdowns
-    // (overall recommendation) the raw value is just a lowercase key,
-    // so the title is the only useful label.
-    if (typeof selected?.value === 'number') {
+    if (isOverallRecommendationField(field.key)) {
       return (
         <ResultCard
-          value={selected.value}
-          description={selected.title || rationale}
+          value={selected?.title ?? selected?.value}
+          description={rationale}
         />
       );
     }
 
     return (
       <ResultCard
-        value={selected?.title ?? selected?.value}
-        description={rationale}
+        value={selected?.value}
+        description={selected?.title || rationale}
       />
     );
   }
