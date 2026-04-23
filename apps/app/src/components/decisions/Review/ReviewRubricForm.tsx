@@ -479,7 +479,7 @@ function RubricFieldResult({
 
   if (field.format === 'long-text' || field.format === 'short-text') {
     const text = typeof value === 'string' ? value.trim() : '';
-    return text ? <ResultCard description={text} /> : null;
+    return <ResultCard description={text || '—'} />;
   }
 
   return null;
