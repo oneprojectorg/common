@@ -734,4 +734,6 @@ export const adminDecisionInstanceEncoder = createSelectSchema(processInstances)
     instanceData: z.unknown(),
   });
 
-export type AdminDecisionInstance = z.infer<typeof adminDecisionInstanceEncoder>;
+export type AdminDecisionInstance = z.infer<
+  typeof adminDecisionInstanceEncoder
+>;

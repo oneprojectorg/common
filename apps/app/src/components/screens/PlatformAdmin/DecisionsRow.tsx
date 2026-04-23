@@ -42,7 +42,9 @@ export const DecisionsRowCells = ({
       <TableCell className="text-sm font-normal text-neutral-charcoal">
         {decision.currentPhase ? (
           <div className="flex flex-col">
-            <span>{decision.currentPhase.name ?? decision.currentPhase.id}</span>
+            <span>
+              {decision.currentPhase.name ?? decision.currentPhase.id}
+            </span>
             {phaseEndDate ? (
               <span className="text-xs text-neutral-gray4">
                 {t('Ends {date}', {
