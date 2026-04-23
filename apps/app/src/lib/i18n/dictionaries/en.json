@@ -1199,6 +1199,6 @@
   "Confirm advancing proposals": "Confirm advancing proposals",
   "These {numProposals} proposals will move on to the {phaseName} phase": "These {numProposals} proposals will move on to the {phaseName} phase",
   "PROPOSALS TO ADVANCE": "PROPOSALS TO ADVANCE",
-  "Selection recorded": "Selection recorded",
+  "Proposals advanced": "Proposals advanced",
   "{count} proposals are now attached to this phase. Participants can view them on the decision page.": "{count} proposals are now attached to this phase. Participants can view them on the decision page."
 }

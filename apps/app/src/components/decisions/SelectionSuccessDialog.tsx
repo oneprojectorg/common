@@ -35,7 +35,7 @@ export const SelectionSuccessDialog = ({
               </div>
               <div className="flex flex-col gap-2">
                 <Header1 className="font-serif text-2xl font-light">
-                  {t('Selection recorded')}
+                  {t('Proposals advanced')}
                 </Header1>
                 <p className="text-base text-neutral-charcoal">
                   {t(
