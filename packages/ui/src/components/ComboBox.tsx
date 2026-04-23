@@ -34,6 +34,7 @@ export interface ComboBoxProps<T extends object> extends Omit<
   buttonProps?: Omit<ButtonProps, 'children'>;
   popoverProps?: Omit<PopoverProps, 'children'>;
   icon?: ReactNode;
+  emptyStateMessage?: ReactNode;
 }
 
 export const ComboBox = <T extends object>({
@@ -43,10 +44,15 @@ export const ComboBox = <T extends object>({
   children,
   items,
   icon,
+  emptyStateMessage = 'No results',
+  allowsCustomValue = true,
+  allowsEmptyCollection = true,
   ...props
 }: ComboBoxProps<T>) => {
   return (
     <AriaComboBox
+      allowsCustomValue={allowsCustomValue}
+      allowsEmptyCollection={allowsEmptyCollection}
       {...props}
       className={composeTailwindRenderProps(
         props.className,
@@ -82,6 +88,11 @@ export const ComboBox = <T extends object>({
           className={cn(
             'max-h-60 overflow-auto py-1 outline-hidden',
             props.listBoxClassName,
+          )}
+          renderEmptyState={() => (
+            <div className="px-3 py-2 text-neutral-gray4">
+              {emptyStateMessage}
+            </div>
           )}
         >
           {children}

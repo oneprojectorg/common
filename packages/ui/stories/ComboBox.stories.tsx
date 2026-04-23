@@ -84,3 +84,16 @@ export const WithSearchIcon = (args: any) => (
     <ComboBoxItem>Vanilla</ComboBoxItem>
   </ComboBox>
 );
+
+export const NoMatches = (args: any) => (
+  <ComboBox {...args} defaultInputValue="zzz">
+    <ComboBoxItem>Chocolate</ComboBoxItem>
+    <ComboBoxItem>Mint</ComboBoxItem>
+    <ComboBoxItem>Strawberry</ComboBoxItem>
+    <ComboBoxItem>Vanilla</ComboBoxItem>
+  </ComboBox>
+);
+
+NoMatches.args = {
+  menuTrigger: 'focus',
+};
