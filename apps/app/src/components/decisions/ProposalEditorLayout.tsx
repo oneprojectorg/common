@@ -4,11 +4,10 @@ import type { ProposalReviewRequest } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { Header4 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
 import { LuArrowLeft, LuCheck, LuShare2 } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';

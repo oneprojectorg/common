@@ -5,11 +5,10 @@ import { ProcessStatus } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { SidebarTrigger } from '@op/ui/Sidebar';
 import { toast } from '@op/ui/Toast';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { LuLogOut } from 'react-icons/lu';
 
-import { Link, useTranslations } from '@/lib/i18n';
+import { Link, useRouter, useTranslations } from '@/lib/i18n';
 
 import { LaunchProcessModal } from './LaunchProcessModal';
 import { useProcessBuilderAutosave } from './ProcessBuilderAutosaveContext';
