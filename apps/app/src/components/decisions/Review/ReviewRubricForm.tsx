@@ -44,6 +44,8 @@ export function ReviewRubricForm() {
     handleRationaleChange,
     handleOverallCommentChange,
     isPausedForRevision,
+    isSubmitted,
+    review,
   } = useReviewForm();
   const fields = compileRubricSchema(template);
   const criteria = getCriteria(template);
@@ -124,7 +126,14 @@ export function ReviewRubricForm() {
             />
           ))}
 
-          {isFeedbackOpen ? (
+          {isSubmitted ? (
+            review?.overallComment ? (
+              <section className="flex flex-col gap-3 border-b border-neutral-gray1 pb-6">
+                <FieldHeader title={t('Feedback to Author')} />
+                <ResultCard description={review.overallComment} />
+              </section>
+            ) : null
+          ) : isFeedbackOpen ? (
             <section className="flex flex-col gap-3 border-b border-neutral-gray1 pb-6">
               <FieldHeader
                 title={t('Feedback to Author')}
