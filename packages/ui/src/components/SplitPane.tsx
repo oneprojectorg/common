@@ -13,6 +13,7 @@ import { cn, tv } from '../lib/utils';
 import { Tab, TabList, Tabs } from './Tabs';
 
 export interface SplitPaneProps {
+  /** One or more `SplitPane.Pane` children. */
   children: ReactNode;
   /** Id of the pane shown by default on mobile. Defaults to the first pane. */
   defaultMobileTabId?: string;
@@ -35,15 +36,15 @@ function Pane(_props: SplitPanePaneProps): null {
 // Each pane mounts once — visibility on mobile is toggled via CSS so stateful
 // children (collaborative editors, forms) don't get double-mounted.
 const paneStyles = tv({
-  base: 'flex min-w-0 flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable] sm:basis-1/2',
+  base: 'flex min-w-0 flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]',
   variants: {
     padding: {
       default: 'px-6 pt-8 pb-4 sm:p-12',
       none: '',
     },
-    position: {
-      left: 'sm:border-r sm:border-neutral-gray1',
-      right: '',
+    divider: {
+      true: 'sm:border-r sm:border-neutral-gray1',
+      false: '',
     },
     active: {
       true: 'flex',
@@ -66,10 +67,8 @@ function SplitPaneImpl({
   );
 
   if (process.env.NODE_ENV !== 'production') {
-    if (panes.length !== 2) {
-      throw new Error(
-        `SplitPane expects exactly 2 children, received ${panes.length}.`,
-      );
+    if (panes.length < 1) {
+      throw new Error('SplitPane expects at least 1 child.');
     }
     for (const pane of panes) {
       if (!pane.props.id || !pane.props.label) {
@@ -80,53 +79,46 @@ function SplitPaneImpl({
     }
   }
 
-  if (panes.length !== 2) {
+  if (panes.length < 1) {
     return null;
   }
 
-  const [left, right] = panes as [
-    ReactElement<SplitPanePaneProps>,
-    ReactElement<SplitPanePaneProps>,
-  ];
-
   const handleSelectionChange = (key: Key) => setActiveId(String(key));
+  const showTabs = panes.length > 1;
 
   return (
     <div className={cn('flex min-h-0 w-full flex-1 flex-col', className)}>
-      <Tabs
-        className="gap-0 sm:hidden"
-        selectedKey={activeId}
-        onSelectionChange={handleSelectionChange}
-      >
-        <TabList className="mx-6" variant="default">
-          <Tab id={left.props.id}>{left.props.label}</Tab>
-          <Tab id={right.props.id}>{right.props.label}</Tab>
-        </TabList>
-      </Tabs>
+      {showTabs ? (
+        <Tabs
+          className="gap-0 sm:hidden"
+          selectedKey={activeId}
+          onSelectionChange={handleSelectionChange}
+        >
+          <TabList className="mx-6" variant="default">
+            {panes.map((pane) => (
+              <Tab key={pane.props.id} id={pane.props.id}>
+                {pane.props.label}
+              </Tab>
+            ))}
+          </TabList>
+        </Tabs>
+      ) : null}
 
       <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
-        <div
-          role="tabpanel"
-          className={paneStyles({
-            position: 'left',
-            padding: left.props.unpadded ? 'none' : 'default',
-            active: activeId === left.props.id,
-            className: left.props.className,
-          })}
-        >
-          {left.props.children}
-        </div>
-        <div
-          role="tabpanel"
-          className={paneStyles({
-            position: 'right',
-            padding: right.props.unpadded ? 'none' : 'default',
-            active: activeId === right.props.id,
-            className: right.props.className,
-          })}
-        >
-          {right.props.children}
-        </div>
+        {panes.map((pane, index) => (
+          <div
+            key={pane.props.id}
+            role="tabpanel"
+            className={paneStyles({
+              divider: index < panes.length - 1,
+              padding: pane.props.unpadded ? 'none' : 'default',
+              active: !showTabs || activeId === pane.props.id,
+              className: pane.props.className,
+            })}
+          >
+            {pane.props.children}
+          </div>
+        ))}
       </div>
     </div>
   );

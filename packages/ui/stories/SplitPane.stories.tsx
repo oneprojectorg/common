@@ -67,3 +67,29 @@ export const DefaultsToSecondOnMobile: Story = {
     </SplitPane>
   ),
 };
+
+export const SinglePane: Story = {
+  render: () => (
+    <SplitPane>
+      <SplitPane.Pane id="proposal" label="Proposal">
+        <SamplePane title="Proposal" tone="plain" />
+      </SplitPane.Pane>
+    </SplitPane>
+  ),
+};
+
+export const ThreePanes: Story = {
+  render: () => (
+    <SplitPane>
+      <SplitPane.Pane id="proposal" label="Proposal">
+        <SamplePane title="Proposal" tone="plain" />
+      </SplitPane.Pane>
+      <SplitPane.Pane id="review" label="Review">
+        <SamplePane title="Review" tone="muted" />
+      </SplitPane.Pane>
+      <SplitPane.Pane id="history" label="History">
+        <SamplePane title="History" tone="muted" />
+      </SplitPane.Pane>
+    </SplitPane>
+  ),
+};
