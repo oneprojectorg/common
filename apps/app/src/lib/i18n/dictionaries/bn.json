@@ -511,6 +511,7 @@
   "View instance data": "ইনস্ট্যান্স ডেটা দেখুন",
   "Instance data for {name}": "{name}-এর ইনস্ট্যান্স ডেটা",
   "decisions": "সিদ্ধান্ত",
+  "Ends {date}": "{date} তারিখে শেষ হবে",
   "Join requests": "অনুরোধ",
   "{name} wants to join your organization": "{name} আপনার সংস্থায় যোগ দিতে চায়",
   "Request accepted": "অনুরোধ গৃহীত",

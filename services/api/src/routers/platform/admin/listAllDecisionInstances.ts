@@ -4,32 +4,90 @@ import {
   encodeCursor,
   getGenericCursorCondition,
 } from '@op/common';
-import { and, count, db, ilike, inArray, sql } from '@op/db/client';
+import { and, count, db, ilike, inArray } from '@op/db/client';
 import {
   decisionsVoteSubmissions,
   processInstances,
   proposals,
 } from '@op/db/schema';
-import crypto from 'crypto';
 import { z } from 'zod';
 
+import { adminDecisionInstanceEncoder } from '../../../encoders/decision';
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { commonProcedure, router } from '../../../trpcFactory';
-import { dbFilter } from '../../../utils';
+import { dbFilter, hashSearch } from '../../../utils';
 
-const adminDecisionInstanceEncoder = z.object({
-  id: z.string(),
-  name: z.string(),
-  currentStateId: z.string().nullable(),
-  stewardName: z.string().nullable(),
-  status: z.string().nullable(),
-  proposalCount: z.number(),
-  voterCount: z.number(),
-  participantCount: z.number(),
-  createdAt: z.string().nullable(),
-  instanceData: z.unknown(),
-});
+// Drizzle's _query typing widens single `one` relations to `T | T[]` when nested
+// in findMany. See services/api/src/routers/decision/proposals/get.ts:54 for the
+// same workaround.
+const unwrapOne = <T>(value: T | T[] | null | undefined): T | undefined => {
+  if (value == null) {
+    return undefined;
+  }
+  return Array.isArray(value) ? value[0] : value;
+};
+
+const phaseLookupInstanceData = z
+  .object({
+    phases: z
+      .array(
+        z.object({
+          phaseId: z.string().optional(),
+          // Legacy name for phaseId; see instanceDataEncoder preprocessor in decision.ts
+          stateId: z.string().optional(),
+          name: z.string().optional(),
+          endDate: z.string().optional(),
+        }),
+      )
+      .optional(),
+  })
+  .partial();
+
+const phaseLookupProcessSchema = z
+  .object({
+    phases: z
+      .array(
+        z.object({
+          id: z.string(),
+          name: z.string().optional(),
+        }),
+      )
+      .optional(),
+  })
+  .partial();
+
+const resolveCurrentPhase = ({
+  currentStateId,
+  instanceData,
+  processSchema,
+}: {
+  currentStateId: string | null;
+  instanceData: unknown;
+  processSchema: unknown;
+}) => {
+  if (!currentStateId) {
+    return null;
+  }
+
+  const instance = phaseLookupInstanceData.safeParse(instanceData);
+  const schema = phaseLookupProcessSchema.safeParse(processSchema);
+
+  const instancePhase = instance.success
+    ? instance.data.phases?.find(
+        (p) => (p.phaseId ?? p.stateId) === currentStateId,
+      )
+    : undefined;
+  const schemaPhase = schema.success
+    ? schema.data.phases?.find((p) => p.id === currentStateId)
+    : undefined;
+
+  return {
+    id: currentStateId,
+    name: instancePhase?.name ?? schemaPhase?.name ?? null,
+    endDate: instancePhase?.endDate ?? null,
+  };
+};
 
 export const listAllDecisionInstancesRouter = router({
   listAllDecisionInstances: commonProcedure
@@ -81,6 +139,9 @@ export const listAllDecisionInstancesRouter = router({
             steward: {
               columns: { name: true },
             },
+            process: {
+              columns: { processSchema: true },
+            },
           },
           orderBy: (_, { asc, desc }) =>
             dir === 'asc'
@@ -116,48 +177,22 @@ export const listAllDecisionInstancesRouter = router({
             })
           : null;
 
-      const totalCount = totalCountResult.value ?? 0;
-
-      // Batch count proposals and voters for the current page of instances
       const instanceIds = items.map((i) => i.id);
 
-      const [proposalCounts, voterCounts, submitterProfiles, voterProfiles] =
+      // Fetch (instanceId, profileId) pairs from both tables so we can compute
+      // per-instance proposal count, voter count, and distinct-participant count
+      // (union of proposal submitters and voters) in memory — single pass, no
+      // raw SQL needed. voters are unique-per-instance by DB constraint.
+      const [proposalPairs, voterPairs] =
         instanceIds.length > 0
           ? await Promise.all([
-              db
-                .select({
-                  processInstanceId: proposals.processInstanceId,
-                  count: sql<number>`count(*)::int`,
-                })
-                .from(proposals)
-                .where(inArray(proposals.processInstanceId, instanceIds))
-                .groupBy(proposals.processInstanceId),
-              db
-                .select({
-                  processInstanceId: decisionsVoteSubmissions.processInstanceId,
-                  count: sql<number>`count(*)::int`,
-                })
-                .from(decisionsVoteSubmissions)
-                .where(
-                  inArray(
-                    decisionsVoteSubmissions.processInstanceId,
-                    instanceIds,
-                  ),
-                )
-                .groupBy(decisionsVoteSubmissions.processInstanceId),
-              // Fetch distinct proposal submitter profile IDs per instance
               db
                 .select({
                   processInstanceId: proposals.processInstanceId,
                   profileId: proposals.submittedByProfileId,
                 })
                 .from(proposals)
-                .where(inArray(proposals.processInstanceId, instanceIds))
-                .groupBy(
-                  proposals.processInstanceId,
-                  proposals.submittedByProfileId,
-                ),
-              // Fetch distinct voter profile IDs per instance
+                .where(inArray(proposals.processInstanceId, instanceIds)),
               db
                 .select({
                   processInstanceId: decisionsVoteSubmissions.processInstanceId,
@@ -169,61 +204,59 @@ export const listAllDecisionInstancesRouter = router({
                     decisionsVoteSubmissions.processInstanceId,
                     instanceIds,
                   ),
-                )
-                .groupBy(
-                  decisionsVoteSubmissions.processInstanceId,
-                  decisionsVoteSubmissions.submittedByProfileId,
                 ),
             ])
-          : [[], [], [], []];
+          : [[], []];
 
-      const proposalCountMap = new Map(
-        proposalCounts.map((r) => [r.processInstanceId, r.count]),
-      );
-      const voterCountMap = new Map(
-        voterCounts.map((r) => [r.processInstanceId, r.count]),
-      );
-
-      // Merge unique participant profiles per instance
+      const proposalCounts = new Map<string, number>();
+      const voterCounts = new Map<string, number>();
       const participantSets = new Map<string, Set<string>>();
-      for (const r of submitterProfiles) {
-        const set = participantSets.get(r.processInstanceId) ?? new Set();
-        set.add(r.profileId);
-        participantSets.set(r.processInstanceId, set);
+
+      const trackParticipant = (instanceId: string, profileId: string) => {
+        const set = participantSets.get(instanceId) ?? new Set<string>();
+        set.add(profileId);
+        participantSets.set(instanceId, set);
+      };
+
+      for (const row of proposalPairs) {
+        proposalCounts.set(
+          row.processInstanceId,
+          (proposalCounts.get(row.processInstanceId) ?? 0) + 1,
+        );
+        trackParticipant(row.processInstanceId, row.profileId);
       }
-      for (const r of voterProfiles) {
-        const set = participantSets.get(r.processInstanceId) ?? new Set();
-        set.add(r.profileId);
-        participantSets.set(r.processInstanceId, set);
+      for (const row of voterPairs) {
+        voterCounts.set(
+          row.processInstanceId,
+          (voterCounts.get(row.processInstanceId) ?? 0) + 1,
+        );
+        trackParticipant(row.processInstanceId, row.profileId);
       }
-      const participantCountMap = new Map(
-        [...participantSets.entries()].map(([id, set]) => [id, set.size]),
-      );
 
       return {
-        items: items.map((instance) =>
-          adminDecisionInstanceEncoder.parse({
+        items: items.map((instance) => {
+          const steward = unwrapOne(instance.steward);
+          const process = unwrapOne(instance.process);
+          return adminDecisionInstanceEncoder.parse({
             id: instance.id,
             name: instance.name,
-            currentStateId: instance.currentStateId,
-            stewardName: Array.isArray(instance.steward)
-              ? (instance.steward[0]?.name ?? null)
-              : (instance.steward?.name ?? null),
+            currentPhase: resolveCurrentPhase({
+              currentStateId: instance.currentStateId,
+              instanceData: instance.instanceData,
+              processSchema: process?.processSchema,
+            }),
+            stewardName: steward?.name ?? null,
             status: instance.status,
-            proposalCount: proposalCountMap.get(instance.id) ?? 0,
-            voterCount: voterCountMap.get(instance.id) ?? 0,
-            participantCount: participantCountMap.get(instance.id) ?? 0,
+            proposalCount: proposalCounts.get(instance.id) ?? 0,
+            voterCount: voterCounts.get(instance.id) ?? 0,
+            participantCount: participantSets.get(instance.id)?.size ?? 0,
             createdAt: instance.createdAt,
             instanceData: instance.instanceData,
-          }),
-        ),
+          });
+        }),
         next: nextCursor,
         hasMore,
-        total: totalCount,
+        total: totalCountResult.value,
       };
     }),
 });
-
-function hashSearch(search: string) {
-  return crypto.createHash('md5').update(search).digest('hex').substring(0, 16);
-}

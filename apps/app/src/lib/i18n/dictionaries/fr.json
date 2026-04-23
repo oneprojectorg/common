@@ -509,6 +509,7 @@
   "View instance data": "Voir les données de l'instance",
   "Instance data for {name}": "Données de l'instance pour {name}",
   "decisions": "décisions",
+  "Ends {date}": "Se termine le {date}",
   "No more updates.": "Plus de mises à jour.",
   "Join requests": "Demandes",
   "{name} wants to join your organization": "{name} souhaite rejoindre votre organisation",

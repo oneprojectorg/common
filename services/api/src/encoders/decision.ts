@@ -707,3 +707,31 @@ export type LegacyDecisionProfile = z.infer<typeof decisionProfileEncoder>;
 export type LegacyDecisionProfileList = z.infer<
   typeof decisionProfileListEncoder
 >;
+
+// =============================================================================
+// Platform admin encoders
+// =============================================================================
+
+const adminDecisionCurrentPhaseEncoder = z.object({
+  id: z.string(),
+  name: z.string().nullable(),
+  endDate: z.string().nullable(),
+});
+
+export const adminDecisionInstanceEncoder = createSelectSchema(processInstances)
+  .pick({
+    id: true,
+    name: true,
+    status: true,
+    createdAt: true,
+  })
+  .extend({
+    currentPhase: adminDecisionCurrentPhaseEncoder.nullable(),
+    stewardName: z.string().nullable(),
+    proposalCount: z.number(),
+    voterCount: z.number(),
+    participantCount: z.number(),
+    instanceData: z.unknown(),
+  });
+
+export type AdminDecisionInstance = z.infer<typeof adminDecisionInstanceEncoder>;

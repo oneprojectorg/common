@@ -1,4 +1,5 @@
 import type { SortDir } from '@op/common';
+import crypto from 'crypto';
 import sanitizeForS3 from 'sanitize-s3-objectkey';
 import { z } from 'zod';
 
@@ -87,3 +88,8 @@ export function sanitizeS3Filename(filename: string) {
 }
 
 export const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
+
+/** Short, deterministic digest of a search string for cache keys. */
+export function hashSearch(search: string) {
+  return crypto.createHash('md5').update(search).digest('hex').substring(0, 16);
+}

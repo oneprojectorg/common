@@ -1,7 +1,7 @@
 'use client';
 
 import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
-import type { RouterOutput } from '@op/api/client';
+import type { AdminDecisionInstance } from '@op/api/encoders';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';
@@ -12,10 +12,6 @@ import { useState } from 'react';
 import { Button } from 'react-aria-components';
 
 import { useTranslations } from '@/lib/i18n';
-
-type ListAllDecisionInstancesOutput =
-  RouterOutput['platform']['admin']['listAllDecisionInstances'];
-type DecisionInstance = ListAllDecisionInstancesOutput['items'][number];
 
 const STATUS_DISPLAY: Record<string, string> = {
   draft: 'Draft',
@@ -28,11 +24,14 @@ const STATUS_DISPLAY: Record<string, string> = {
 export const DecisionsRowCells = ({
   decision,
 }: {
-  decision: DecisionInstance;
+  decision: AdminDecisionInstance;
 }) => {
   const format = useFormatter();
   const t = useTranslations();
   const createdAt = decision.createdAt ? new Date(decision.createdAt) : null;
+  const phaseEndDate = decision.currentPhase?.endDate
+    ? new Date(decision.currentPhase.endDate)
+    : null;
   const [isDataModalOpen, setIsDataModalOpen] = useState(false);
 
   return (
@@ -41,7 +40,20 @@ export const DecisionsRowCells = ({
         {decision.name}
       </TableCell>
       <TableCell className="text-sm font-normal text-neutral-charcoal">
-        {decision.currentStateId ?? '—'}
+        {decision.currentPhase ? (
+          <div className="flex flex-col">
+            <span>{decision.currentPhase.name ?? decision.currentPhase.id}</span>
+            {phaseEndDate ? (
+              <span className="text-xs text-neutral-gray4">
+                {t('Ends {date}', {
+                  date: format.dateTime(phaseEndDate, { dateStyle: 'medium' }),
+                })}
+              </span>
+            ) : null}
+          </div>
+        ) : (
+          '—'
+        )}
       </TableCell>
       <TableCell className="text-sm font-normal text-neutral-charcoal">
         {decision.stewardName ?? '—'}

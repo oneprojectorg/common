@@ -508,6 +508,7 @@
   "View instance data": "Ver datos de la instancia",
   "Instance data for {name}": "Datos de la instancia para {name}",
   "decisions": "decisiones",
+  "Ends {date}": "Finaliza el {date}",
   "No more updates.": "No hay más actualizaciones.",
   "Join requests": "Solicitudes",
   "{name} wants to join your organization": "{name} quiere unirse a tu organización",

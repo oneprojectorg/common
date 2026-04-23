@@ -1179,5 +1179,6 @@
   "Cancelled": "Cancelled",
   "View instance data": "View instance data",
   "Instance data for {name}": "Instance data for {name}",
-  "decisions": "decisions"
+  "decisions": "decisions",
+  "Ends {date}": "Ends {date}"
 }

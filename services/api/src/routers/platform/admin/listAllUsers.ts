@@ -6,14 +6,13 @@ import {
 } from '@op/common';
 import { and, count, db, ilike } from '@op/db/client';
 import { users } from '@op/db/schema';
-import crypto from 'crypto';
 import { z } from 'zod';
 
 import { userEncoder } from '../../../encoders/';
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { commonProcedure, router } from '../../../trpcFactory';
-import { dbFilter } from '../../../utils';
+import { dbFilter, hashSearch } from '../../../utils';
 
 export const listAllUsersRouter = router({
   listAllUsers: commonProcedure
@@ -149,8 +148,3 @@ export const listAllUsersRouter = router({
       };
     }),
 });
-
-/** Utility to hash search strings for cache keys */
-function hashSearch(search: string) {
-  return crypto.createHash('md5').update(search).digest('hex').substring(0, 16);
-}
