@@ -29,31 +29,27 @@ export function SubmittedReviewView({
   const fields = compileRubricSchema(rubricTemplate);
 
   return (
-    <FormShell>
-      <div className="flex flex-col gap-6">
-        {fields.map((field) => (
-          <ResultSection
-            key={field.key}
-            title={field.schema.title}
-            description={field.schema.description}
-          >
-            <RubricFieldResult
-              field={field}
-              value={values[field.key]}
-              rationale={rationales[field.key]?.trim() || undefined}
-            />
-          </ResultSection>
-        ))}
+    <div className="flex flex-col gap-6">
+      {fields.map((field) => (
+        <ResultSection
+          key={field.key}
+          title={field.schema.title}
+          description={field.schema.description}
+        >
+          <RubricFieldResult
+            field={field}
+            value={values[field.key]}
+            rationale={rationales[field.key]?.trim() || undefined}
+          />
+        </ResultSection>
+      ))}
 
-        {overallComment && (
-          <ResultSection title={t('Feedback to Author')}>
-            <ResultCard description={overallComment} />
-          </ResultSection>
-        )}
-
-        <TotalScoreCard rubricTemplate={rubricTemplate} values={values} />
-      </div>
-    </FormShell>
+      {overallComment && (
+        <ResultSection title={t('Feedback to Author')}>
+          <ResultCard description={overallComment} />
+        </ResultSection>
+      )}
+    </div>
   );
 }
 

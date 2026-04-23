@@ -35,12 +35,15 @@ export function ReviewRubricForm() {
 
   if (isSubmitted) {
     return (
-      <SubmittedReviewView
-        rubricTemplate={rubricTemplate}
-        values={values}
-        rationales={rationales}
-        overallComment={review?.overallComment}
-      />
+      <FormShell>
+        <SubmittedReviewView
+          rubricTemplate={rubricTemplate}
+          values={values}
+          rationales={rationales}
+          overallComment={review?.overallComment}
+        />
+        <TotalScoreCard rubricTemplate={rubricTemplate} values={values} />
+      </FormShell>
     );
   }
 
