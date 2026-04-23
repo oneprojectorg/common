@@ -23,7 +23,8 @@ import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
 import { getCriterionMaxPoints, inferCriterionType } from '../rubricTemplate';
 import { useReviewForm } from './ReviewFormContext';
-import { SubmittedReviewView, TotalScoreCard } from './SubmittedReviewView';
+import { SubmittedReviewView } from './SubmittedReviewView';
+import { TotalScoreCard } from './TotalScoreCard';
 import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 
 /**
