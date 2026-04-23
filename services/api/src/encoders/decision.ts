@@ -707,4 +707,3 @@ export type LegacyDecisionProfile = z.infer<typeof decisionProfileEncoder>;
 export type LegacyDecisionProfileList = z.infer<
   typeof decisionProfileListEncoder
 >;
-
