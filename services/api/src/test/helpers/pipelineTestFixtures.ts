@@ -27,25 +27,6 @@ export async function createAuthenticatedCaller(email: string) {
 }
 
 /**
- * Creates a proposal and immediately submits it.
- * Submitted proposals have a history record (created by the DB trigger on status change),
- * which is required for the transition join table.
- */
-export async function createAndSubmitProposal(
-  testData: TestDecisionsDataManager,
-  caller: Awaited<ReturnType<typeof createAuthenticatedCaller>>,
-  options: {
-    userEmail: string;
-    processInstanceId: string;
-    proposalData: { title: string };
-  },
-) {
-  const proposal = await testData.createProposal(options);
-  await caller.decision.submitProposal({ proposalId: proposal.id });
-  return proposal;
-}
-
-/**
  * Process schema with a limit(2) selectionPipeline on the departing 'submission' phase.
  * Used to test that transitions persist only selected proposals.
  */

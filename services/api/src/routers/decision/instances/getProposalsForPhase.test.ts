@@ -1,6 +1,7 @@
 import { getProposalsForPhase } from '@op/common';
 import { db, eq, sql } from '@op/db/client';
 import {
+  ProposalStatus,
   processInstances,
   proposals,
   stateTransitionHistory,
@@ -9,7 +10,6 @@ import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
-  createAndSubmitProposal,
   createInstanceWithSchema,
   executeTestTransition,
   schemaWithPipeline,
@@ -25,22 +25,24 @@ describe.concurrent('getProposalsForPhase', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
+    const { instanceId, userEmail } = await createInstanceWithSchema(
       testData,
       task.id,
       schemaWithoutPipeline,
     );
 
     const [p1, p2] = await Promise.all([
-      createAndSubmitProposal(testData, caller, {
+      testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal 1 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       }),
-      createAndSubmitProposal(testData, caller, {
+      testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal 2 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       }),
     ]);
 
@@ -57,7 +59,7 @@ describe.concurrent('getProposalsForPhase', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
+    const { instanceId, userEmail } = await createInstanceWithSchema(
       testData,
       task.id,
       schemaWithPipeline,
@@ -65,10 +67,11 @@ describe.concurrent('getProposalsForPhase', () => {
 
     // Create and submit 3 proposals; pipeline limits to 2
     for (let i = 1; i <= 3; i++) {
-      await createAndSubmitProposal(testData, caller, {
+      await testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal ${i} ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       });
     }
 
@@ -88,22 +91,24 @@ describe.concurrent('getProposalsForPhase', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
+    const { instanceId, userEmail } = await createInstanceWithSchema(
       testData,
       task.id,
       schemaWithoutPipeline,
     );
 
     const [p1, p2] = await Promise.all([
-      createAndSubmitProposal(testData, caller, {
+      testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Active ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       }),
-      createAndSubmitProposal(testData, caller, {
+      testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Soft-deleted ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       }),
     ]);
 
@@ -124,7 +129,7 @@ describe.concurrent('getProposalsForPhase', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
+    const { instanceId, userEmail } = await createInstanceWithSchema(
       testData,
       task.id,
       schemaWithPipeline,
@@ -132,10 +137,11 @@ describe.concurrent('getProposalsForPhase', () => {
 
     // Create and submit 3 proposals; pipeline limits to 2
     for (let i = 1; i <= 3; i++) {
-      await createAndSubmitProposal(testData, caller, {
+      await testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal ${i} ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       });
     }
 
@@ -178,22 +184,24 @@ describe.concurrent('getProposalsForPhase', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
+    const { instanceId, userEmail } = await createInstanceWithSchema(
       testData,
       task.id,
       schemaWithoutPipeline,
     );
 
     const [p1, p2] = await Promise.all([
-      createAndSubmitProposal(testData, caller, {
+      testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Active after transition ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       }),
-      createAndSubmitProposal(testData, caller, {
+      testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Soft-deleted after transition ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       }),
     ]);
 
@@ -221,17 +229,18 @@ describe.concurrent('getProposalsForPhase', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
+    const { instanceId, userEmail } = await createInstanceWithSchema(
       testData,
       task.id,
       schemaWithoutPipeline,
     );
 
     // Create one submitted proposal and one draft (not submitted)
-    const submitted = await createAndSubmitProposal(testData, caller, {
+    const submitted = await testData.createProposal({
       userEmail,
       processInstanceId: instanceId,
       proposalData: { title: `Submitted ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
     });
     await testData.createProposal({
       userEmail,
@@ -251,22 +260,24 @@ describe.concurrent('getProposalsForPhase', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
+    const { instanceId, userEmail } = await createInstanceWithSchema(
       testData,
       task.id,
       schemaWithoutPipeline,
     );
 
     const [p1, p2] = await Promise.all([
-      createAndSubmitProposal(testData, caller, {
+      testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Legacy proposal 1 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       }),
-      createAndSubmitProposal(testData, caller, {
+      testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Legacy proposal 2 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       }),
     ]);
 

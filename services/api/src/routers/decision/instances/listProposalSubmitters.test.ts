@@ -1,11 +1,10 @@
 import { db, eq } from '@op/db/client';
-import { profileUsers, users } from '@op/db/schema';
+import { ProposalStatus, profileUsers, users } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
-  createAndSubmitProposal,
   createInstanceWithSchema,
   executeTestTransition,
   schemaWithoutPipeline,
@@ -26,10 +25,11 @@ describe.concurrent('listProposalSubmitters', () => {
 
     // Same user submits two proposals → should appear once in the face pile.
     for (let i = 1; i <= 2; i++) {
-      await createAndSubmitProposal(testData, caller, {
+      await testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal ${i} ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       });
     }
 

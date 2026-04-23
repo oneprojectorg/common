@@ -1,11 +1,10 @@
 import { aggregateProposalMetrics } from '@op/common';
 import { db, eq } from '@op/db/client';
-import { proposals } from '@op/db/schema';
+import { ProposalStatus, proposals } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
-  createAndSubmitProposal,
   createInstanceWithSchema,
   schemaWithoutPipeline,
 } from '../../../test/helpers/pipelineTestFixtures';
@@ -21,16 +20,17 @@ describe.concurrent('aggregateProposalMetrics', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
+    const { instanceId, userEmail } = await createInstanceWithSchema(
       testData,
       task.id,
       schemaWithoutPipeline,
     );
 
-    const proposal = await createAndSubmitProposal(testData, caller, {
+    const proposal = await testData.createProposal({
       userEmail,
       processInstanceId: instanceId,
       proposalData: { title: `No votes ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
     });
 
     // Fetch the full proposal row from DB

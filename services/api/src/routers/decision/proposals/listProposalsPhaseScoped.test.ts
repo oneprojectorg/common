@@ -1,10 +1,9 @@
 import { db, eq } from '@op/db/client';
-import { proposals } from '@op/db/schema';
+import { ProposalStatus, proposals } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
-  createAndSubmitProposal,
   createInstanceWithSchema,
   executeTestTransition,
   schemaWithPipeline,
@@ -25,10 +24,11 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
 
     // Create and submit 3 proposals; the pipeline limits to 2
     for (let i = 1; i <= 3; i++) {
-      await createAndSubmitProposal(testData, caller, {
+      await testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal ${i} ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       });
     }
 
@@ -58,10 +58,11 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     );
 
     for (let i = 1; i <= 3; i++) {
-      await createAndSubmitProposal(testData, caller, {
+      await testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal ${i} ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       });
     }
 
@@ -91,15 +92,17 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     );
 
     const [p1, p2] = await Promise.all([
-      createAndSubmitProposal(testData, caller, {
+      testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Active proposal ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       }),
-      createAndSubmitProposal(testData, caller, {
+      testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `To-be-deleted proposal ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       }),
     ]);
 
@@ -136,15 +139,17 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     );
 
     const [p1, p2] = await Promise.all([
-      createAndSubmitProposal(testData, caller, {
+      testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Active proposal ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       }),
-      createAndSubmitProposal(testData, caller, {
+      testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `To-be-deleted after transition ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       }),
     ]);
 
