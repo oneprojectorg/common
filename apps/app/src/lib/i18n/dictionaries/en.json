@@ -1194,7 +1194,7 @@
   "Category": "Category",
   "Untitled proposal": "Untitled proposal",
   "Advance {title}": "Advance {title}",
-  "Stop advancing {title}": "Stop advancing {title}",
+  "Don't advance {title}": "Don't advance {title}",
   "+{count} More": "+{count} More",
   "Confirm advancing proposals": "Confirm advancing proposals",
   "These {numProposals} proposals will move on to the {phaseName} phase": "These {numProposals} proposals will move on to the {phaseName} phase",

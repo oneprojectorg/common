@@ -245,7 +245,7 @@ const ToggleAdvanceButton = ({
       onPress={onPress}
       aria-label={
         isSelected
-          ? t('Stop advancing {title}', { title })
+          ? t("Don't advance {title}", { title })
           : t('Advance {title}', { title })
       }
       className={cn('relative', className)}

@@ -1158,6 +1158,6 @@
   "Category": "Catégorie",
   "Untitled proposal": "Proposition sans titre",
   "Advance {title}": "Avancer {title}",
-  "Stop advancing {title}": "Arrêter d'avancer {title}",
+  "Don't advance {title}": "Ne pas avancer {title}",
   "+{count} More": "+{count} autres"
 }

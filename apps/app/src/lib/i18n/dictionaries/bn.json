@@ -1159,6 +1159,6 @@
   "Category": "বিভাগ",
   "Untitled proposal": "নামহীন প্রস্তাব",
   "Advance {title}": "{title} অগ্রসর করুন",
-  "Stop advancing {title}": "{title} অগ্রসর করা বন্ধ করুন",
+  "Don't advance {title}": "{title} অগ্রসর করবেন না",
   "+{count} More": "+{count} আরও"
 }
