@@ -1,5 +1,7 @@
 import { db, eq, sql } from '@op/db/client';
 import {
+  ProcessStatus,
+  ProposalStatus,
   decisionTransitionProposals,
   processInstances,
   stateTransitionHistory,
@@ -8,12 +10,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import {
-  createAndSubmitProposal,
-  createInstanceWithSchema,
-  executeTestTransition,
-  schemaWithoutPipeline,
-} from '../../../test/helpers/pipelineTestFixtures';
+import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -27,24 +24,41 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
+async function seedInstance(
+  testData: TestDecisionsDataManager,
+): Promise<{ instanceId: string; userEmail: string; caller: Awaited<ReturnType<typeof createAuthenticatedCaller>> }> {
+  const setup = await testData.createDecisionSetup({
+    processSchema: schemaWithoutPipeline,
+    instanceCount: 1,
+    status: ProcessStatus.PUBLISHED,
+  });
+  const instance = setup.instances[0];
+  if (!instance) {
+    throw new Error('No instance created');
+  }
+  const caller = await createAuthenticatedCaller(setup.userEmail);
+  return {
+    instanceId: instance.instance.id,
+    userEmail: setup.userEmail,
+    caller,
+  };
+}
+
 describe.concurrent('getManualSelectionState', () => {
   it('returns selectionsConfirmed=false with candidates when a phase transition attached zero proposals', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
-    const submitted = await createAndSubmitProposal(testData, caller, {
+    const { instanceId, userEmail, caller } = await seedInstance(testData);
+    const submitted = await testData.createProposal({
       userEmail,
       processInstanceId: instanceId,
       proposalData: { title: `Candidate ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
     });
 
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
@@ -66,18 +80,15 @@ describe.concurrent('getManualSelectionState', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
-    await createAndSubmitProposal(testData, caller, {
+    const { instanceId, userEmail, caller } = await seedInstance(testData);
+    await testData.createProposal({
       userEmail,
       processInstanceId: instanceId,
       proposalData: { title: `Candidate ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
     });
 
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
@@ -116,11 +127,7 @@ describe.concurrent('getManualSelectionState', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
+    const { instanceId, caller } = await seedInstance(testData);
 
     const state = await caller.decision.getManualSelectionState({
       processInstanceId: instanceId,
@@ -135,11 +142,7 @@ describe.concurrent('getManualSelectionState', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
+    const { instanceId, caller } = await seedInstance(testData);
 
     await db
       .update(processInstances)
@@ -166,18 +169,15 @@ describe.concurrent('getManualSelectionState', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
-    await createAndSubmitProposal(testData, caller, {
+    const { instanceId, userEmail, caller } = await seedInstance(testData);
+    await testData.createProposal({
       userEmail,
       processInstanceId: instanceId,
       proposalData: { title: `Proposal ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
     });
 
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
@@ -195,11 +195,7 @@ describe.concurrent('getManualSelectionState', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
+    const { instanceId } = await seedInstance(testData);
 
     const outsiderSetup = await testData.createDecisionSetup({
       instanceCount: 0,

@@ -1,6 +1,8 @@
 import { getProposalsForPhase } from '@op/common';
 import { db, eq } from '@op/db/client';
 import {
+  ProcessStatus,
+  ProposalStatus,
   decisionTransitionProposals,
   stateTransitionHistory,
 } from '@op/db/schema';
@@ -8,12 +10,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import {
-  createAndSubmitProposal,
-  createInstanceWithSchema,
-  executeTestTransition,
-  schemaWithoutPipeline,
-} from '../../../test/helpers/pipelineTestFixtures';
+import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -27,34 +24,53 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
+async function seedInstance(
+  testData: TestDecisionsDataManager,
+  processSchema: typeof schemaWithoutPipeline = schemaWithoutPipeline,
+) {
+  const setup = await testData.createDecisionSetup({
+    processSchema,
+    instanceCount: 1,
+    status: ProcessStatus.PUBLISHED,
+  });
+  const instance = setup.instances[0];
+  if (!instance) {
+    throw new Error('No instance created');
+  }
+  const caller = await createAuthenticatedCaller(setup.userEmail);
+  return {
+    instanceId: instance.instance.id,
+    userEmail: setup.userEmail,
+    caller,
+  };
+}
+
 describe.concurrent('submitManualSelection', () => {
   it('stamps the existing phase transition with manual-selection audit and attaches the selected proposals', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
+    const { instanceId, userEmail, caller } = await seedInstance(testData);
 
     const [p1, p2] = await Promise.all([
-      createAndSubmitProposal(testData, caller, {
+      testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal 1 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       }),
-      createAndSubmitProposal(testData, caller, {
+      testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal 2 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       }),
     ]);
 
     // Empty auto-transition into 'review' — simulate by clearing the join rows
     // the happy-path transition writes when there is no selection pipeline.
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
@@ -116,13 +132,9 @@ describe.concurrent('submitManualSelection', () => {
 
   it('rejects an empty proposalIds array', async ({ task, onTestFinished }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
+    const { instanceId, caller } = await seedInstance(testData);
 
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
@@ -141,20 +153,17 @@ describe.concurrent('submitManualSelection', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
+    const { instanceId, userEmail, caller } = await seedInstance(testData);
 
     // Submit a real proposal so a candidate exists.
-    await createAndSubmitProposal(testData, caller, {
+    await testData.createProposal({
       userEmail,
       processInstanceId: instanceId,
       proposalData: { title: `Real ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
     });
 
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
@@ -187,19 +196,16 @@ describe.concurrent('submitManualSelection', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
+    const { instanceId, userEmail } = await seedInstance(testData);
 
-    const proposal = await createAndSubmitProposal(testData, caller, {
+    const proposal = await testData.createProposal({
       userEmail,
       processInstanceId: instanceId,
       proposalData: { title: `Proposal ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
     });
 
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
@@ -225,26 +231,24 @@ describe.concurrent('submitManualSelection', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
+    const { instanceId, userEmail, caller } = await seedInstance(testData);
 
     const [p1, p2] = await Promise.all([
-      createAndSubmitProposal(testData, caller, {
+      testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal 1 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       }),
-      createAndSubmitProposal(testData, caller, {
+      testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal 2 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       }),
     ]);
 
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
@@ -278,19 +282,16 @@ describe.concurrent('submitManualSelection', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
+    const { instanceId, userEmail, caller } = await seedInstance(testData);
 
-    const proposal = await createAndSubmitProposal(testData, caller, {
+    const proposal = await testData.createProposal({
       userEmail,
       processInstanceId: instanceId,
       proposalData: { title: `Proposal ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
     });
 
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
@@ -330,26 +331,24 @@ describe.concurrent('submitManualSelection', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
+    const { instanceId, userEmail, caller } = await seedInstance(testData);
 
     const [p1, p2] = await Promise.all([
-      createAndSubmitProposal(testData, caller, {
+      testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal 1 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       }),
-      createAndSubmitProposal(testData, caller, {
+      testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal 2 ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       }),
     ]);
 
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
@@ -417,21 +416,21 @@ describe.concurrent('submitManualSelection', () => {
         { id: 'final', name: 'Final', rules: {} },
       ],
     };
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
+    const { instanceId, userEmail, caller } = await seedInstance(
       testData,
-      task.id,
       schemaWithFinal,
     );
 
-    const proposal = await createAndSubmitProposal(testData, caller, {
+    const proposal = await testData.createProposal({
       userEmail,
       processInstanceId: instanceId,
       proposalData: { title: `Proposal ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
     });
 
     // Put the instance in the "awaiting manual selection" state: the
     // inbound transition to 'review' exists but has zero attached proposals.
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
@@ -452,7 +451,7 @@ describe.concurrent('submitManualSelection', () => {
         processInstanceId: instanceId,
         proposalIds: [proposal.id],
       }),
-      executeTestTransition({
+      testData.advancePhase({
         instanceId,
         fromPhaseId: 'review',
         toPhaseId: 'final',
