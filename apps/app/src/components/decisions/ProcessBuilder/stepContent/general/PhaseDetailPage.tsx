@@ -399,10 +399,10 @@ function PhaseDetailForm({
             description={t('Number of proposals each participant can vote on')}
           >
             <VoteLimitSelect
-              maxVotes={phase.rules?.voting?.maxVotes}
-              onChange={(maxVotes) =>
+              maxVotes={phase.rules?.voting?.maxVotesPerMember}
+              onChange={(maxVotesPerMember) =>
                 updateRules({
-                  voting: { ...phase.rules?.voting, maxVotes },
+                  voting: { ...phase.rules?.voting, maxVotesPerMember },
                 })
               }
             />
