@@ -3,10 +3,12 @@
 import { parseAbsoluteToLocal, toCalendarDate } from '@internationalized/date';
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
+import type { VoteCap } from '@op/common';
 import { Button } from '@op/ui/Button';
 import { DatePicker } from '@op/ui/DatePicker';
 import { Header2 } from '@op/ui/Header';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { useQueryState } from 'nuqs';
@@ -391,6 +393,21 @@ function PhaseDetailForm({
             size="small"
           />
         </ToggleRow>
+        {phase.rules?.voting?.submit && (
+          <ToggleRow
+            label={t('Voting limit')}
+            description={t('Number of proposals each participant can vote on')}
+          >
+            <VoteLimitSelect
+              maxVotes={phase.rules?.voting?.maxVotesPerMember}
+              onChange={(maxVotesPerMember) =>
+                updateRules({
+                  voting: { ...phase.rules?.voting, maxVotesPerMember },
+                })
+              }
+            />
+          </ToggleRow>
+        )}
       </div>
 
       {/* Delete */}
@@ -440,5 +457,47 @@ function PhaseDetailForm({
         </ModalFooter>
       </Modal>
     </div>
+  );
+}
+
+// 'none' is a reserved option id representing "no limit"; must not collide with String(n).
+const VOTE_LIMIT_OPTIONS = ['none', '1', '2', '3', '4', '5', '10'] as const;
+
+function VoteLimitSelect({
+  maxVotes,
+  onChange,
+}: {
+  maxVotes: VoteCap;
+  onChange: (maxVotes: VoteCap) => void;
+}) {
+  const t = useTranslations();
+  const selectedKey = maxVotes === undefined ? 'none' : String(maxVotes);
+
+  // Preserve out-of-preset values (e.g. seeded via DB) by rendering them as an extra option.
+  const options: readonly string[] = VOTE_LIMIT_OPTIONS.includes(
+    selectedKey as (typeof VOTE_LIMIT_OPTIONS)[number],
+  )
+    ? VOTE_LIMIT_OPTIONS
+    : [selectedKey, ...VOTE_LIMIT_OPTIONS];
+
+  return (
+    <Select
+      selectedKey={selectedKey}
+      size="small"
+      aria-label={t('Voting limit')}
+      onSelectionChange={(key) => {
+        onChange(key === 'none' ? undefined : Number(key));
+      }}
+    >
+      {options.map((key) => (
+        <SelectItem key={key} id={key}>
+          {key === 'none'
+            ? t('No limit')
+            : t('{count, plural, one {# vote} other {# votes}}', {
+                count: Number(key),
+              })}
+        </SelectItem>
+      ))}
+    </Select>
   );
 }
