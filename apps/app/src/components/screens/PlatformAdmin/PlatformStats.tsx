@@ -3,9 +3,10 @@
 import { trpc } from '@op/api/client';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
+import { cn } from '@op/ui/utils';
 import { Suspense } from 'react';
 
-import { Link, useTranslations } from '@/lib/i18n';
+import { Link, usePathname, useTranslations } from '@/lib/i18n';
 
 /** Main platform stats component with suspense boundary */
 export const PlatformStats = () => {
@@ -26,10 +27,15 @@ const PlatformStatsWithData = () => {
     value: number;
     href?: string;
   }> = [
-    { label: t('Total users'), value: stats.totalUsers },
+    {
+      label: t('Total users'),
+      value: stats.totalUsers,
+      href: '/admin/users',
+    },
     {
       label: t('Total organizations'),
       value: stats.totalOrganizations,
+      href: '/admin/orgs',
     },
     {
       label: t('Total decisions'),
@@ -66,8 +72,16 @@ const StatCard = ({
   value: number;
   href?: string;
 }) => {
+  const pathname = usePathname();
+  const isActive = href ? pathname.startsWith(href) : false;
+
   const content = (
-    <Surface className="p-8">
+    <Surface
+      className={cn(
+        'p-8',
+        isActive && 'border-primary-teal ring-1 ring-primary-teal',
+      )}
+    >
       <div className="flex flex-col gap-2">
         <div className="text-neutral-charcoal">{label}</div>
         <div className="font-serif text-title-xxl text-neutral-black">
