@@ -1,7 +1,7 @@
 import { db, eq } from '@op/db/client';
 import { ProcessInstance, proposals } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { checkPermission, permission } from 'access-zones';
+import { assertAccess, permission } from 'access-zones';
 
 import {
   CommonError,
@@ -9,7 +9,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { getProfileAccessUser, getUserSession } from '../access';
+import { getProfileAccessUser } from '../access';
 
 export const deleteProposal = async ({
   proposalId,
@@ -19,22 +19,13 @@ export const deleteProposal = async ({
   user: User;
 }) => {
   try {
-    const [sessionUser, existingProposal] = await Promise.all([
-      getUserSession({ authUserId: user.id }),
-      db._query.proposals.findFirst({
-        where: eq(proposals.id, proposalId),
-        with: {
-          processInstance: true,
-          decisions: true,
-        },
-      }),
-    ]);
-
-    const { user: dbUser } = sessionUser ?? {};
-
-    if (!dbUser || !dbUser.currentProfileId) {
-      throw new UnauthorizedError('User must have an active profile');
-    }
+    const existingProposal = await db._query.proposals.findFirst({
+      where: eq(proposals.id, proposalId),
+      with: {
+        processInstance: true,
+        decisions: true,
+      },
+    });
 
     if (!existingProposal) {
       throw new NotFoundError('Proposal');
@@ -45,37 +36,28 @@ export const deleteProposal = async ({
       throw new NotFoundError('Process instance not found');
     }
 
-    // Check permissions on proposal's profile and instance's profile in parallel
-    const [proposalProfileUser, instanceProfileUser] = await Promise.all([
+    // Authorization: owner (individual or org), co-author, or instance admin.
+    const [rolesOnOwner, rolesOnProposal, rolesOnInstance] = await Promise.all([
+      getProfileAccessUser({
+        user: { id: user.id },
+        profileId: existingProposal.submittedByProfileId,
+      }).then((pu) => pu?.roles ?? []),
       getProfileAccessUser({
         user: { id: user.id },
         profileId: existingProposal.profileId,
-      }),
+      }).then((pu) => pu?.roles ?? []),
       processInstance.profileId
         ? getProfileAccessUser({
             user: { id: user.id },
             profileId: processInstance.profileId,
-          })
-        : undefined,
+          }).then((pu) => pu?.roles ?? [])
+        : Promise.resolve([]),
     ]);
 
-    const hasProposalAdmin = checkPermission(
-      { profile: permission.ADMIN },
-      proposalProfileUser?.roles ?? [],
+    assertAccess(
+      [{ profile: permission.ADMIN }],
+      [...rolesOnOwner, ...rolesOnProposal, ...rolesOnInstance],
     );
-
-    const hasInstanceAdmin = checkPermission(
-      { decisions: permission.ADMIN },
-      instanceProfileUser?.roles ?? [],
-    );
-
-    // Only the submitter, proposal admin, or instance admin can delete
-    const isSubmitter =
-      existingProposal.submittedByProfileId === dbUser.currentProfileId;
-
-    if (!isSubmitter && !hasProposalAdmin && !hasInstanceAdmin) {
-      throw new UnauthorizedError('Not authorized to delete this proposal');
-    }
 
     // Check if there are any decisions on this proposal
     if (existingProposal.decisions && existingProposal.decisions.length > 0) {

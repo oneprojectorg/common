@@ -106,13 +106,16 @@ export const getProposal = async ({
     throw new NotFoundError('Proposal');
   }
 
-  // Draft proposals are only visible to users with proposal-level access
-  // (the creator and invited collaborators who have a profileUsers record).
+  // Draft proposals are only visible to users who can act as either the
+  // proposal's profile (the creator + invited collaborators) or the owner
+  // profile (the individual/org the proposal was submitted under).
   if (proposal.status === ProposalStatus.DRAFT) {
     const hasProposalAccess = await db.query.profileUsers.findFirst({
       where: {
-        profileId: proposal.profileId,
         authUserId: user.id,
+        profileId: {
+          in: [proposal.profileId, proposal.submittedByProfileId],
+        },
       },
       columns: { id: true },
     });
