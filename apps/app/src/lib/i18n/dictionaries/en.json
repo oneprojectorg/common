@@ -1182,6 +1182,7 @@
   "decisions": "decisions",
   "Ends {date}": "Ends {date}",
   "No proposals available to select": "No proposals available to select",
+  "No proposals match the current filter": "No proposals match the current filter",
   "The previous phase did not leave any eligible proposals.": "The previous phase did not leave any eligible proposals.",
   "Publish results": "Publish results",
   "Advance": "Advance",

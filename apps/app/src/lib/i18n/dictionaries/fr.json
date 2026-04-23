@@ -1141,6 +1141,7 @@
   "Author's revision note": "Note de révision de l'auteur",
   "View revision request": "Voir la demande de révision",
   "No proposals available to select": "Aucune proposition disponible à sélectionner",
+  "No proposals match the current filter": "Aucune proposition ne correspond au filtre actuel",
   "The previous phase did not leave any eligible proposals.": "La phase précédente n'a laissé aucune proposition éligible.",
   "Publish results": "Publier les résultats",
   "Confirm advancing proposals": "Confirmer l'avancement des propositions",

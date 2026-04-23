@@ -91,9 +91,11 @@ export const ManualSelectionList = ({
     return null;
   }
 
-  // Unfiltered-empty → "nothing to select". Filtered-empty keeps the
-  // toolbar so the admin can clear the filter.
-  if (!categoryId && state.proposals.length === 0) {
+  // Full pool empty → dead end, no toolbar. Any narrowing filter keeps
+  // the toolbar (below) so the admin can loosen it.
+  const isUnfiltered =
+    !categoryId && proposalFilter === ProposalFilter.ALL;
+  if (isUnfiltered && state.proposals.length === 0) {
     return (
       <EmptyState icon={<LuLeaf className="size-6" />}>
         <Header3 className="font-serif font-light">
@@ -139,14 +141,22 @@ export const ManualSelectionList = ({
         setSortOrder={setSortOrder}
       />
 
-      <SelectableProposalsTable
-        proposals={proposals}
-        selectedIds={selectedIds}
-        onToggle={toggleProposal}
-        getProposalHref={(p) =>
-          `/profile/${slug}/decisions/${instanceId}/proposal/${p.profileId}`
-        }
-      />
+      {proposals.length === 0 ? (
+        <EmptyState icon={<LuLeaf className="size-6" />}>
+          <Header3 className="font-serif font-light">
+            {t('No proposals match the current filter')}
+          </Header3>
+        </EmptyState>
+      ) : (
+        <SelectableProposalsTable
+          proposals={proposals}
+          selectedIds={selectedIds}
+          onToggle={toggleProposal}
+          getProposalHref={(p) =>
+            `/profile/${slug}/decisions/${instanceId}/proposal/${p.profileId}`
+          }
+        />
+      )}
 
       {submitError ? (
         <div
