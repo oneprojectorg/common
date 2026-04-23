@@ -1,8 +1,7 @@
 'use client';
 
-import type { Proposal } from '@op/common/client';
-
 import { useLocalStorage } from '@/utils/useLocalStorage';
+import type { Proposal } from '@op/common/client';
 
 /**
  * Keeps the admin's pending manual-selection picks in localStorage so

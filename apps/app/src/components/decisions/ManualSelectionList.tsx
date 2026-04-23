@@ -93,8 +93,7 @@ export const ManualSelectionList = ({
 
   // Full pool empty → dead end, no toolbar. Any narrowing filter keeps
   // the toolbar (below) so the admin can loosen it.
-  const isUnfiltered =
-    !categoryId && proposalFilter === ProposalFilter.ALL;
+  const isUnfiltered = !categoryId && proposalFilter === ProposalFilter.ALL;
   if (isUnfiltered && state.proposals.length === 0) {
     return (
       <EmptyState icon={<LuLeaf className="size-6" />}>
