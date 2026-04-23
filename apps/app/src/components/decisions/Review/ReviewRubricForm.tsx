@@ -30,10 +30,12 @@ import {
 import { useReviewForm } from './ReviewFormContext';
 import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 
-/**
- * Schema-driven review rubric form renderer.
- */
 export function ReviewRubricForm() {
+  const { isSubmitted } = useReviewForm();
+  return isSubmitted ? <SubmittedReviewView /> : <EditableReviewForm />;
+}
+
+function EditableReviewForm() {
   const t = useTranslations();
   const {
     rubricTemplate: template,
@@ -44,111 +46,16 @@ export function ReviewRubricForm() {
     handleRationaleChange,
     handleOverallCommentChange,
     isPausedForRevision,
-    isSubmitted,
-    review,
   } = useReviewForm();
   const fields = compileRubricSchema(template);
-  const criteria = getCriteria(template);
 
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(
     overallComment.length > 0,
   );
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-
-  const totalScore = criteria.reduce<number | null>((total, criterion) => {
-    const value = values[criterion.id];
-
-    if (typeof value !== 'number') {
-      return total;
-    }
-
-    return (total ?? 0) + value;
-  }, null);
-
-  const renderFeedbackToAuthor = () => {
-    if (isSubmitted) {
-      if (!review?.overallComment) {
-        return null;
-      }
-
-      return (
-        <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
-          <FieldHeader title={t('Feedback to Author')} />
-          <ResultCard description={review.overallComment} />
-        </section>
-      );
-    }
-
-    if (isFeedbackOpen) {
-      return (
-        <section className="flex flex-col gap-3 border-b border-neutral-gray1 pb-6">
-          <FieldHeader
-            title={t('Feedback to Author')}
-            description={t(
-              'Shared anonymously with the author after the review phase ends',
-            )}
-            className="gap-1"
-          />
-
-          <TextField
-            aria-label={t('Feedback to Author')}
-            value={overallComment}
-            onChange={handleOverallCommentChange}
-            useTextArea
-            textareaProps={{ rows: 3 }}
-          />
-        </section>
-      );
-    }
-
-    return (
-      <Button
-        color="secondary"
-        size="medium"
-        className="w-full"
-        onPress={() => setIsFeedbackOpen(true)}
-      >
-        <LuPlus className="size-4" />
-        {t('Feedback to Author')}
-      </Button>
-    );
-  };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="border-b border-neutral-gray1 pb-4">
-        <Header3 className="font-serif !text-title-base font-light">
-          {t('Review Proposal')}
-        </Header3>
-      </div>
-
-      {isPausedForRevision && (
-        <>
-          <AlertBanner
-            intent="warning"
-            variant="banner"
-            icon={<LuCircleAlert className="size-4" />}
-          >
-            <span>
-              <strong>{t('Proposal Revision Requested')}</strong>
-              <br />
-              {t('Reviewing is paused until author submits a revision.')}{' '}
-              <button
-                type="button"
-                className="underline"
-                onClick={() => setIsViewModalOpen(true)}
-              >
-                {t('View feedback')}
-              </button>
-            </span>
-          </AlertBanner>
-
-          <ViewRevisionRequestModal
-            isOpen={isViewModalOpen}
-            onOpenChange={setIsViewModalOpen}
-          />
-        </>
-      )}
+    <FormShell>
+      {isPausedForRevision && <PausedForRevisionBanner />}
 
       <div
         className={
@@ -175,28 +82,170 @@ export function ReviewRubricForm() {
             />
           ))}
 
-          {renderFeedbackToAuthor()}
+          {isFeedbackOpen ? (
+            <section className="flex flex-col gap-3 border-b border-neutral-gray1 pb-6">
+              <FieldHeader
+                title={t('Feedback to Author')}
+                description={t(
+                  'Shared anonymously with the author after the review phase ends',
+                )}
+                className="gap-1"
+              />
 
-          <Surface
-            variant="filled"
-            className="flex items-start justify-between rounded-lg border-neutral-gray1 p-4"
-          >
-            <span className="text-base text-neutral-charcoal">
-              {t('Total Score')}
-            </span>
-            <span className="text-base text-neutral-black">
-              {totalScore === null ? '–' : totalScore}
-            </span>
-          </Surface>
+              <TextField
+                aria-label={t('Feedback to Author')}
+                value={overallComment}
+                onChange={handleOverallCommentChange}
+                useTextArea
+                textareaProps={{ rows: 3 }}
+              />
+            </section>
+          ) : (
+            <Button
+              color="secondary"
+              size="medium"
+              className="w-full"
+              onPress={() => setIsFeedbackOpen(true)}
+            >
+              <LuPlus className="size-4" />
+              {t('Feedback to Author')}
+            </Button>
+          )}
+
+          <TotalScoreCard />
         </div>
       </div>
+    </FormShell>
+  );
+}
+
+function SubmittedReviewView() {
+  const t = useTranslations();
+  const {
+    rubricTemplate: template,
+    values,
+    rationales,
+    review,
+  } = useReviewForm();
+  const fields = compileRubricSchema(template);
+
+  return (
+    <FormShell>
+      <div className="flex flex-col gap-6">
+        {fields.map((field) => (
+          <ResultSection key={field.key} title={field.schema.title}>
+            <RubricFieldResult
+              field={field}
+              value={values[field.key]}
+              rationale={rationales[field.key]?.trim() || undefined}
+            />
+          </ResultSection>
+        ))}
+
+        {review?.overallComment && (
+          <ResultSection title={t('Feedback to Author')}>
+            <ResultCard description={review.overallComment} />
+          </ResultSection>
+        )}
+
+        <TotalScoreCard />
+      </div>
+    </FormShell>
+  );
+}
+
+function FormShell({ children }: { children: ReactNode }) {
+  const t = useTranslations();
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="border-b border-neutral-gray1 pb-4">
+        <Header3 className="font-serif !text-title-base font-light">
+          {t('Review Proposal')}
+        </Header3>
+      </div>
+      {children}
     </div>
   );
 }
 
-/**
- * Render one rubric criterion with an always-on rationale textarea below.
- */
+function PausedForRevisionBanner() {
+  const t = useTranslations();
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+
+  return (
+    <>
+      <AlertBanner
+        intent="warning"
+        variant="banner"
+        icon={<LuCircleAlert className="size-4" />}
+      >
+        <span>
+          <strong>{t('Proposal Revision Requested')}</strong>
+          <br />
+          {t('Reviewing is paused until author submits a revision.')}{' '}
+          <button
+            type="button"
+            className="underline"
+            onClick={() => setIsViewModalOpen(true)}
+          >
+            {t('View feedback')}
+          </button>
+        </span>
+      </AlertBanner>
+
+      <ViewRevisionRequestModal
+        isOpen={isViewModalOpen}
+        onOpenChange={setIsViewModalOpen}
+      />
+    </>
+  );
+}
+
+function TotalScoreCard() {
+  const t = useTranslations();
+  const { rubricTemplate: template, values } = useReviewForm();
+  const criteria = getCriteria(template);
+
+  const totalScore = criteria.reduce<number | null>((total, criterion) => {
+    const value = values[criterion.id];
+
+    if (typeof value !== 'number') {
+      return total;
+    }
+
+    return (total ?? 0) + value;
+  }, null);
+
+  return (
+    <Surface
+      variant="filled"
+      className="flex items-start justify-between rounded-lg border-neutral-gray1 p-4"
+    >
+      <span className="text-base text-neutral-charcoal">
+        {t('Total Score')}
+      </span>
+      <span className="text-base text-neutral-black">
+        {totalScore === null ? '–' : totalScore}
+      </span>
+    </Surface>
+  );
+}
+
+function ResultSection({
+  title,
+  children,
+}: {
+  title?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
+      <FieldHeader title={title} />
+      {children}
+    </section>
+  );
+}
+
 function RubricCriterionSection({
   field,
   maxPoints,
@@ -216,17 +265,12 @@ function RubricCriterionSection({
 }) {
   const t = useTranslations();
   const criterionType = inferCriterionType(field.schema);
-  const { isSubmitted } = useReviewForm();
   const scoreLabel = maxPoints > 0 ? `${maxPoints} ${t('pts')}` : null;
-  const badgeLabel = isSubmitted
-    ? null
-    : criterionType === 'yes_no'
-      ? t('No/Yes')
-      : scoreLabel;
+  const badgeLabel = criterionType === 'yes_no' ? t('No/Yes') : scoreLabel;
 
   return (
     <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
-      {criterionType === 'yes_no' && !isSubmitted ? (
+      {criterionType === 'yes_no' ? (
         <>
           <FieldHeader title={field.schema.title} badge={badgeLabel} />
 
@@ -254,13 +298,11 @@ function RubricCriterionSection({
         </>
       )}
 
-      {!isSubmitted && (
-        <RubricRationaleField
-          value={rationaleValue}
-          onChange={onRationaleChange}
-          placeholder={rationalePlaceholder}
-        />
-      )}
+      <RubricRationaleField
+        value={rationaleValue}
+        onChange={onRationaleChange}
+        placeholder={rationalePlaceholder}
+      />
     </section>
   );
 }
@@ -321,11 +363,6 @@ function RubricFieldInput({
   onChange: (value: unknown) => void;
 }) {
   const t = useTranslations();
-  const { isSubmitted } = useReviewForm();
-
-  if (isSubmitted) {
-    return <RubricFieldResult field={field} value={value} />;
-  }
 
   switch (field.format) {
     case 'dropdown': {
@@ -440,13 +477,13 @@ function ResultCard({
 function RubricFieldResult({
   field,
   value,
+  rationale,
 }: {
   field: FieldDescriptor;
   value: unknown;
+  rationale?: string;
 }) {
   const t = useTranslations();
-  const { rationales } = useReviewForm();
-  const rationale = rationales[field.key]?.trim() || undefined;
 
   if (field.format === 'dropdown') {
     if (inferCriterionType(field.schema) === 'yes_no') {
