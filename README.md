@@ -153,6 +153,23 @@ _(Commands below assume usage of the `w:<workspace>` shorthand)_
 - **Running Specific Workspaces**: Use `pnpm w:<workspace> <script>` (e.g., `pnpm w:app dev`). Workspace names (`app`, `api`, `ui`, `core`, `hooks`, `db`, `emails`, `supabase`, `trpc`) correspond to the directories.
 - **Adding Dependencies**: Use `pnpm add <package-name> --filter <workspace-name>` (e.g., `pnpm add zod --filter @op/core`). For dev dependencies, use `-D`. (Note: Using `--filter` is recommended when adding dependencies from the root to ensure the `package.json` is updated correctly).
 
+### Running PR checks locally
+
+The `Checks` GitHub Actions workflow (`.github/workflows/pr-checks.yml`) gates every PR with the same commands you can run locally:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm format:check
+pnpm check-migrations
+pnpm typecheck
+```
+
+- `pnpm format:check` — verifies Prettier formatting.
+- `pnpm check-migrations` — fails if a PR modifies or deletes an existing `services/db/migrations/*.sql` file. In CI it diffs against the PR base ref (`GITHUB_BASE_REF`); locally it inspects your staged changes (`git diff --cached`), so stage the migration changes first to reproduce CI behavior.
+- `pnpm typecheck` — runs TypeScript across all workspaces via Turbo.
+
+Run these before pushing to avoid red PRs on `dev`.
+
 ## Tailwind Integration Details
 
 This monorepo utilizes a shared Tailwind configuration strategy managed primarily by the `@op/ui` package.
