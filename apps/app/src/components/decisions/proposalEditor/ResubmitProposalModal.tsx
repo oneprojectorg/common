@@ -6,10 +6,9 @@ import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { TextField } from '@op/ui/TextField';
 import { toast } from '@op/ui/Toast';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
+import { useRouter, useTranslations } from '@/lib/i18n';
 
 interface ResubmitProposalModalProps {
   isOpen: boolean;

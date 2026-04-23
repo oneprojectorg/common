@@ -8,10 +8,10 @@ import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { RichTextViewer } from '@op/ui/RichTextEditor';
 import { toast } from '@op/ui/Toast';
 import he from 'he';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useState } from 'react';
 
-import { useTranslations } from '@/lib/i18n/routing';
+import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { getViewerExtensions } from '../RichTextEditor/editorConfig';
 

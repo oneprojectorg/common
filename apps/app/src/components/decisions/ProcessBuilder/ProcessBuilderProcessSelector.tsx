@@ -5,10 +5,9 @@ import { DecisionProcess } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { Header1, Header2 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
-import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
+import { useRouter, useTranslations } from '@/lib/i18n';
 
 export const ProcessBuilderProcessSelector = () => {
   const t = useTranslations();

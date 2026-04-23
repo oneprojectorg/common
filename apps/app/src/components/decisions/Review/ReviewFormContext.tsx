@@ -12,7 +12,7 @@ import {
 } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
 import { toast } from '@op/ui/Toast';
-import { notFound, useRouter } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import {
   type ReactNode,
   createContext,
@@ -24,7 +24,7 @@ import {
   useState,
 } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
+import { useRouter, useTranslations } from '@/lib/i18n';
 
 const AUTOSAVE_DEBOUNCE_MS = 1000;
 
