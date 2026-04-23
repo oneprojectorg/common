@@ -14,7 +14,6 @@ export const getPlatformStats = async ({ user }: { user: User }) => {
     totalUsers: number;
     totalRelationships: number;
     newOrganizations: number;
-    totalDecisionInstances: number;
   }>({
     type: 'platform',
     params: ['stats', newOrgThreshold.toISOString()],
@@ -24,14 +23,12 @@ export const getPlatformStats = async ({ user }: { user: User }) => {
         total_users: number;
         total_relationships: number;
         new_organizations: number;
-        total_decision_instances: number;
       }>(sql`
         SELECT
-          (SELECT count(*)::int FROM organizations) AS total_organizations,
-          (SELECT count(*)::int FROM users) AS total_users,
+          (SELECT GREATEST(reltuples, 0)::int FROM pg_class WHERE relname = 'organizations' AND relnamespace = 'public'::regnamespace) AS total_organizations,
+          (SELECT GREATEST(reltuples, 0)::int FROM pg_class WHERE relname = 'users' AND relnamespace = 'public'::regnamespace) AS total_users,
           (SELECT count(*)::int FROM organization_relationships WHERE NOT pending) AS total_relationships,
-          (SELECT count(*)::int FROM organizations WHERE created_at >= ${newOrgThreshold.toISOString()}) AS new_organizations,
-          (SELECT count(*)::int FROM decision_process_instances) AS total_decision_instances
+          (SELECT count(*)::int FROM organizations WHERE created_at >= ${newOrgThreshold.toISOString()}) AS new_organizations
       `);
 
       return {
@@ -39,7 +36,6 @@ export const getPlatformStats = async ({ user }: { user: User }) => {
         totalUsers: result?.total_users ?? 0,
         totalRelationships: result?.total_relationships ?? 0,
         newOrganizations: result?.new_organizations ?? 0,
-        totalDecisionInstances: result?.total_decision_instances ?? 0,
       };
     },
     options: {

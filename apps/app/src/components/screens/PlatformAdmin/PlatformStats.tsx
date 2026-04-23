@@ -20,12 +20,12 @@ export const PlatformStats = () => {
 /** Renders platform statistics grid with live data */
 const PlatformStatsWithData = () => {
   const t = useTranslations();
-  const [stats] = trpc.platform.getStats.useSuspenseQuery();
+  const [stats] = trpc.platform.admin.getStats.useSuspenseQuery();
 
   const statItems: Array<{
     label: string;
     value: number;
-    href?: string;
+    href: string;
   }> = [
     {
       label: t('Total users'),
@@ -42,14 +42,10 @@ const PlatformStatsWithData = () => {
       value: stats.totalDecisionInstances,
       href: '/admin/decisions',
     },
-    {
-      label: t('New organizations'),
-      value: stats.newOrganizations,
-    },
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-3">
       {statItems.map((stat) => (
         <StatCard
           key={stat.label}
@@ -105,8 +101,8 @@ const StatCard = ({
 /** Loading skeleton for platform stats */
 const PlatformStatsSkeleton = () => {
   return (
-    <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4">
-      {[...Array(4)].map((_, i) => (
+    <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-3">
+      {[...Array(3)].map((_, i) => (
         <Surface key={i} className="p-8">
           <Skeleton className="h-24 w-40" />
         </Surface>

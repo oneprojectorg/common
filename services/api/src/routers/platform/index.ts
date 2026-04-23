@@ -16,7 +16,6 @@ export const platformRouter = router({
         totalRelationships: z.number(),
         newOrganizations: z.number(),
         totalUsers: z.number(),
-        totalDecisionInstances: z.number(),
       }),
     )
     .query(async ({ ctx }) => {
