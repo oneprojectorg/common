@@ -24,7 +24,7 @@ export interface PhaseRules {
     submit?: boolean;
     edit?: boolean;
     /** Undefined = no limit (distinct from 0, which would block all voting). */
-    maxVotes?: VoteCap;
+    maxVotesPerMember?: VoteCap;
   };
   advancement?: {
     method: 'date' | 'manual';

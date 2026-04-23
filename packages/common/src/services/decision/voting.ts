@@ -29,7 +29,7 @@ import { isVotingEligible } from './votingEligibility';
 interface PhaseConfig {
   allowProposals: boolean;
   allowDecisions: boolean;
-  maxVotes: VoteCap;
+  maxVotesPerMember: VoteCap;
 }
 
 /** Extract voting/proposal rules for the current phase. */
@@ -58,7 +58,7 @@ function getCurrentPhaseConfig(processInstance: {
   return {
     allowProposals: currentPhase.rules?.proposals?.submit ?? false,
     allowDecisions: currentPhase.rules?.voting?.submit ?? false,
-    maxVotes: currentPhase.rules?.voting?.maxVotes,
+    maxVotesPerMember: currentPhase.rules?.voting?.maxVotesPerMember,
   };
 }
 
@@ -66,7 +66,7 @@ function buildVotingSchemaResult(phaseConfig: PhaseConfig) {
   const result = processDecisionProcessSchema({
     allowProposals: phaseConfig.allowProposals,
     allowDecisions: phaseConfig.allowDecisions,
-    instanceData: { maxVotesPerMember: phaseConfig.maxVotes },
+    instanceData: { maxVotesPerMember: phaseConfig.maxVotesPerMember },
     schemaType: 'simple',
   });
 
