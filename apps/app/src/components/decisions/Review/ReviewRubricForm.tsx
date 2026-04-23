@@ -33,21 +33,23 @@ export function ReviewRubricForm() {
   const { isSubmitted, rubricTemplate, values, rationales, review } =
     useReviewForm();
 
-  if (isSubmitted) {
-    return (
-      <FormShell>
-        <SubmittedReviewView
-          rubricTemplate={rubricTemplate}
-          values={values}
-          rationales={rationales}
-          overallComment={review?.overallComment}
-        />
-        <TotalScoreCard rubricTemplate={rubricTemplate} values={values} />
-      </FormShell>
-    );
-  }
-
-  return <EditableReviewForm />;
+  return (
+    <FormShell>
+      {isSubmitted ? (
+        <>
+          <SubmittedReviewView
+            rubricTemplate={rubricTemplate}
+            values={values}
+            rationales={rationales}
+            overallComment={review?.overallComment}
+          />
+          <TotalScoreCard rubricTemplate={rubricTemplate} values={values} />
+        </>
+      ) : (
+        <EditableReviewForm />
+      )}
+    </FormShell>
+  );
 }
 
 function EditableReviewForm() {
@@ -69,7 +71,7 @@ function EditableReviewForm() {
   );
 
   return (
-    <FormShell>
+    <>
       {isPausedForRevision && <PausedForRevisionBanner />}
 
       <div
@@ -130,7 +132,7 @@ function EditableReviewForm() {
           <TotalScoreCard rubricTemplate={template} values={values} />
         </div>
       </div>
-    </FormShell>
+    </>
   );
 }
 
