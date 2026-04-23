@@ -1,13 +1,10 @@
 import { aggregateProposalMetrics } from '@op/common';
 import { db, eq } from '@op/db/client';
-import { ProposalStatus, proposals } from '@op/db/schema';
+import { ProcessStatus, ProposalStatus, proposals } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import {
-  createInstanceWithSchema,
-  schemaWithoutPipeline,
-} from '../../../test/helpers/pipelineTestFixtures';
+import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 
 describe.concurrent('aggregateProposalMetrics', () => {
   it('returns empty object for an empty proposals array', async () => {
@@ -20,11 +17,13 @@ describe.concurrent('aggregateProposalMetrics', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
 
     const proposal = await testData.createProposal({
       userEmail,

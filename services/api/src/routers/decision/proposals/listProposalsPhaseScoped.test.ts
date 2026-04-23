@@ -1,14 +1,13 @@
 import { db, eq } from '@op/db/client';
-import { ProposalStatus, proposals } from '@op/db/schema';
+import { ProcessStatus, ProposalStatus, proposals } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
-  createInstanceWithSchema,
-  executeTestTransition,
   schemaWithPipeline,
   schemaWithoutPipeline,
-} from '../../../test/helpers/pipelineTestFixtures';
+} from '../../../test/helpers/pipelineSchemas';
+import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
   it('returns only selected proposals after a transition with a limiting pipeline', async ({
@@ -16,11 +15,14 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithPipeline,
-    );
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
+    const caller = await createAuthenticatedCaller(userEmail);
 
     // Create and submit 3 proposals; the pipeline limits to 2
     for (let i = 1; i <= 3; i++) {
@@ -32,7 +34,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       });
     }
 
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
@@ -51,11 +53,14 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
+    const caller = await createAuthenticatedCaller(userEmail);
 
     for (let i = 1; i <= 3; i++) {
       await testData.createProposal({
@@ -66,7 +71,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       });
     }
 
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
@@ -85,11 +90,14 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
+    const caller = await createAuthenticatedCaller(userEmail);
 
     const [p1, p2] = await Promise.all([
       testData.createProposal({
@@ -112,7 +120,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       .set({ deletedAt: new Date().toISOString() })
       .where(eq(proposals.id, p2.id));
 
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
@@ -132,11 +140,14 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
+    const caller = await createAuthenticatedCaller(userEmail);
 
     const [p1, p2] = await Promise.all([
       testData.createProposal({
@@ -154,7 +165,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     ]);
 
     // Transition first (both proposals make it into the join table)
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',

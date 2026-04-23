@@ -1,15 +1,19 @@
 import { db, eq } from '@op/db/client';
-import { ProposalStatus, profileUsers, users } from '@op/db/schema';
+import {
+  ProcessStatus,
+  ProposalStatus,
+  profileUsers,
+  users,
+} from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 import {
-  createInstanceWithSchema,
-  executeTestTransition,
-  schemaWithoutPipeline,
-} from '../../../test/helpers/pipelineTestFixtures';
-import { createTestUser } from '../../../test/supabase-utils';
+  createAuthenticatedCaller,
+  createTestUser,
+} from '../../../test/supabase-utils';
 
 describe.concurrent('listProposalSubmitters', () => {
   it('deduplicates submitters across multiple proposals by the same author', async ({
@@ -17,11 +21,14 @@ describe.concurrent('listProposalSubmitters', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
+    const caller = await createAuthenticatedCaller(userEmail);
 
     // Same user submits two proposals → should appear once in the face pile.
     for (let i = 1; i <= 2; i++) {
@@ -33,7 +40,7 @@ describe.concurrent('listProposalSubmitters', () => {
       });
     }
 
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
@@ -51,11 +58,14 @@ describe.concurrent('listProposalSubmitters', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
+    const caller = await createAuthenticatedCaller(userEmail);
 
     // Draft is never submitted — submitter must not appear.
     await testData.createProposal({
@@ -64,7 +74,7 @@ describe.concurrent('listProposalSubmitters', () => {
       proposalData: { title: `Draft ${task.id}` },
     });
 
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
@@ -82,11 +92,14 @@ describe.concurrent('listProposalSubmitters', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
+    const caller = await createAuthenticatedCaller(userEmail);
 
     // Owner creates a proposal — they appear in the face pile by default.
     const proposal = await testData.createProposal({
@@ -122,7 +135,7 @@ describe.concurrent('listProposalSubmitters', () => {
 
     await caller.decision.submitProposal({ proposalId: proposal.id });
 
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
