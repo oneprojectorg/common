@@ -72,10 +72,10 @@ const DecisionsTableContent = ({ searchQuery }: { searchQuery: string }) => {
   const [data] =
     trpc.platform.admin.listAllDecisionInstances.useSuspenseQuery(queryInput);
 
-  const { items: decisions, next, hasMore, total } = data;
+  const { items: decisions, next, total } = data;
 
   const onNext = () => {
-    if (hasMore && next) {
+    if (next) {
       handleNext(next);
     }
   };
@@ -112,7 +112,7 @@ const DecisionsTableContent = ({ searchQuery }: { searchQuery: string }) => {
             page: currentPage,
             label: t('decisions'),
           }}
-          next={hasMore ? onNext : undefined}
+          next={next ? onNext : undefined}
           previous={canGoPrevious ? handlePrevious : undefined}
         />
       </div>

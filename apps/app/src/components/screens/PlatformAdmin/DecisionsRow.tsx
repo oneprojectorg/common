@@ -1,7 +1,7 @@
 'use client';
 
 import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
-import type { AdminDecisionInstance } from '@op/api/encoders';
+import type { AdminDecisionInstance } from '@op/common/client';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';

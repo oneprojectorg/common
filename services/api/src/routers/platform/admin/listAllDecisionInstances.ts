@@ -1,4 +1,4 @@
-import { cache } from '@op/cache';
+import { adminDecisionInstanceSchema } from '@op/common/client';
 import {
   decodeCursor,
   encodeCursor,
@@ -7,12 +7,10 @@ import {
 import { and, count, db, ilike, inArray } from '@op/db/client';
 import { processInstances, proposals } from '@op/db/schema';
 import { z } from 'zod';
-
-import { adminDecisionInstanceEncoder } from '../../../encoders/decision';
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { commonProcedure, router } from '../../../trpcFactory';
-import { dbFilter, hashSearch } from '../../../utils';
+import { dbFilter } from '../../../utils';
 
 // Drizzle's _query typing widens single `one` relations to `T | T[]` when nested
 // in findMany. See services/api/src/routers/decision/proposals/get.ts:54 for the
@@ -99,9 +97,8 @@ export const listAllDecisionInstancesRouter = router({
     )
     .output(
       z.object({
-        items: z.array(adminDecisionInstanceEncoder),
+        items: z.array(adminDecisionInstanceSchema),
         next: z.string().nullish(),
-        hasMore: z.boolean(),
         total: z.number(),
       }),
     )
@@ -128,7 +125,7 @@ export const listAllDecisionInstancesRouter = router({
           ? and(cursorCondition, searchCondition)
           : searchCondition || cursorCondition;
 
-      const [instances, totalCountResult] = await Promise.all([
+      const [instances, [totalCountResult]] = await Promise.all([
         db._query.processInstances.findMany({
           where: whereCondition,
           with: {
@@ -145,21 +142,10 @@ export const listAllDecisionInstancesRouter = router({
               : desc(processInstances.createdAt),
           ...(limit !== undefined && { limit: limit + 1 }),
         }),
-        cache<{ value: number }>({
-          type: 'decision',
-          params: ['admin-search-total-' + (query ? hashSearch(query) : 'all')],
-          fetch: async () => {
-            const [result] = await db
-              .select({ value: count() })
-              .from(processInstances)
-              .where(searchCondition);
-            return result ?? { value: 0 };
-          },
-          options: {
-            ttl: 1 * 60 * 1000,
-            skipMemCache: true,
-          },
-        }),
+        db
+          .select({ value: count() })
+          .from(processInstances)
+          .where(searchCondition),
       ]);
 
       const hasMore = limit !== undefined && instances.length > limit;
@@ -206,7 +192,7 @@ export const listAllDecisionInstancesRouter = router({
         items: items.map((instance) => {
           const steward = unwrapOne(instance.steward);
           const process = unwrapOne(instance.process);
-          return adminDecisionInstanceEncoder.parse({
+          return adminDecisionInstanceSchema.parse({
             id: instance.id,
             name: instance.name,
             currentPhase: resolveCurrentPhase({
@@ -223,8 +209,7 @@ export const listAllDecisionInstancesRouter = router({
           });
         }),
         next: nextCursor,
-        hasMore,
-        total: totalCountResult.value,
+        total: totalCountResult?.value ?? 0,
       };
     }),
 });

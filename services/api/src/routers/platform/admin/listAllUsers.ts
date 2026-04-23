@@ -1,4 +1,3 @@
-import { cache } from '@op/cache';
 import {
   decodeCursor,
   encodeCursor,
@@ -12,7 +11,7 @@ import { userEncoder } from '../../../encoders/';
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { commonProcedure, router } from '../../../trpcFactory';
-import { dbFilter, hashSearch } from '../../../utils';
+import { dbFilter } from '../../../utils';
 
 export const listAllUsersRouter = router({
   listAllUsers: commonProcedure
@@ -30,7 +29,6 @@ export const listAllUsersRouter = router({
       z.object({
         items: z.array(userEncoder),
         next: z.string().nullish(),
-        hasMore: z.boolean(),
         total: z.number(),
       }),
     )
@@ -62,7 +60,7 @@ export const listAllUsersRouter = router({
           : searchCondition || cursorCondition;
 
       // Parallel database queries for optimal performance
-      const [allUsers, totalCountResult] = await Promise.all([
+      const [allUsers, [totalCountResult]] = await Promise.all([
         // Fetch users with complete profile, organization, and role data
         db._query.users.findMany({
           where: whereCondition,
@@ -99,24 +97,10 @@ export const listAllUsersRouter = router({
           // Fetch one extra item to determine if more pages exist (when limit is provided)
           ...(limit !== undefined && { limit: limit + 1 }),
         }),
-        cache<{ value: number }>({
-          type: 'user',
-          params: ['search-total-' + (query ? hashSearch(query) : 'all')],
-          fetch: async () => {
-            const [result] = await db
-              .select({ value: count() })
-              .from(users)
-              .where(searchCondition);
-            return result ?? { value: 0 };
-          },
-          options: {
-            ttl: 1 * 60 * 1000, // 1 min
-            skipMemCache: true,
-          },
-        }),
+        db.select({ value: count() }).from(users).where(searchCondition),
       ]);
 
-      const totalCount = totalCountResult.value ?? 0;
+      const totalCount = totalCountResult?.value ?? 0;
       const hasMore = limit !== undefined && allUsers.length > limit;
       const items = hasMore ? allUsers.slice(0, limit) : allUsers;
       const lastItem = items[items.length - 1];
@@ -143,7 +127,6 @@ export const listAllUsersRouter = router({
       return {
         items: items.map((user) => userEncoder.parse(user)),
         next: nextCursor,
-        hasMore,
         total: totalCount,
       };
     }),
