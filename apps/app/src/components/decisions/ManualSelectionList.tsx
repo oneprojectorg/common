@@ -123,14 +123,16 @@ export const ManualSelectionList = ({
   }
 
   const toggleProposal = (proposalId: string) => {
-    setSelectedProposals((prev) => {
-      if (prev.some((p) => p.id === proposalId)) {
-        return prev.filter((p) => p.id !== proposalId);
-      }
-      const match = proposals.find((p) => p.id === proposalId);
-      if (!match) return prev;
-      return [...prev, match];
-    });
+    if (selectedProposals.some((p) => p.id === proposalId)) {
+      setSelectedProposals(
+        selectedProposals.filter((p) => p.id !== proposalId),
+      );
+      return;
+    }
+    const match = proposals.find((p) => p.id === proposalId);
+    if (match) {
+      setSelectedProposals([...selectedProposals, match]);
+    }
   };
 
   const numSelected = selectedProposals.length;
