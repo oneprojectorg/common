@@ -128,7 +128,7 @@ export function ReviewRubricForm() {
 
           {isSubmitted ? (
             review?.overallComment ? (
-              <section className="flex flex-col gap-3 border-b border-neutral-gray1 pb-6">
+              <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
                 <FieldHeader title={t('Feedback to Author')} />
                 <ResultCard description={review.overallComment} />
               </section>
