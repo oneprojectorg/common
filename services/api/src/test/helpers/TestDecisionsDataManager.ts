@@ -1,4 +1,6 @@
 import {
+  type DecisionInstanceData,
+  advancePhase,
   createDecisionInstance,
   createInstanceDataFromTemplate,
   createOrganization as createOrganizationService,
@@ -628,6 +630,35 @@ export class TestDecisionsDataManager {
     }
 
     return proposal;
+  }
+
+  /**
+   * Advances a process instance from one phase to the next, running any
+   * selectionPipeline configured on the departing phase.
+   */
+  async advancePhase(opts: {
+    instanceId: string;
+    fromPhaseId: string;
+    toPhaseId: string;
+  }) {
+    const processInstance = await db.query.processInstances.findFirst({
+      where: { id: opts.instanceId },
+    });
+    if (!processInstance) {
+      throw new Error(`Instance ${opts.instanceId} not found`);
+    }
+    return db.transaction(async (tx) =>
+      advancePhase({
+        tx,
+        instance: {
+          ...processInstance,
+          instanceData: processInstance.instanceData as DecisionInstanceData,
+        },
+        fromPhaseId: opts.fromPhaseId,
+        toPhaseId: opts.toPhaseId,
+        triggeredByProfileId: null,
+      }),
+    );
   }
 
   /**
