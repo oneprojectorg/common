@@ -7,13 +7,11 @@ import {
 } from '@op/common/client';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Button } from '@op/ui/Button';
-import { Header3 } from '@op/ui/Header';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select, SelectItem } from '@op/ui/Select';
-import { Surface } from '@op/ui/Surface';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
-import type { Key, ReactNode } from 'react';
+import type { Key } from 'react';
 import { useState } from 'react';
 import { LuCircleAlert, LuPlus } from 'react-icons/lu';
 
@@ -22,17 +20,31 @@ import { useTranslations } from '@/lib/i18n';
 import { FieldHeader } from '../forms/FieldHeader';
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
-import {
-  getCriteria,
-  getCriterionMaxPoints,
-  inferCriterionType,
-} from '../rubricTemplate';
+import { getCriterionMaxPoints, inferCriterionType } from '../rubricTemplate';
 import { useReviewForm } from './ReviewFormContext';
+import {
+  FormShell,
+  SubmittedReviewView,
+  TotalScoreCard,
+} from './SubmittedReviewView';
 import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 
 export function ReviewRubricForm() {
-  const { isSubmitted } = useReviewForm();
-  return isSubmitted ? <SubmittedReviewView /> : <EditableReviewForm />;
+  const { isSubmitted, rubricTemplate, values, rationales, review } =
+    useReviewForm();
+
+  if (isSubmitted) {
+    return (
+      <SubmittedReviewView
+        rubricTemplate={rubricTemplate}
+        values={values}
+        rationales={rationales}
+        overallComment={review?.overallComment}
+      />
+    );
+  }
+
+  return <EditableReviewForm />;
 }
 
 function EditableReviewForm() {
@@ -112,63 +124,10 @@ function EditableReviewForm() {
             </Button>
           )}
 
-          <TotalScoreCard />
+          <TotalScoreCard rubricTemplate={template} values={values} />
         </div>
       </div>
     </FormShell>
-  );
-}
-
-function SubmittedReviewView() {
-  const t = useTranslations();
-  const {
-    rubricTemplate: template,
-    values,
-    rationales,
-    review,
-  } = useReviewForm();
-  const fields = compileRubricSchema(template);
-
-  return (
-    <FormShell>
-      <div className="flex flex-col gap-6">
-        {fields.map((field) => (
-          <ResultSection
-            key={field.key}
-            title={field.schema.title}
-            description={field.schema.description}
-          >
-            <RubricFieldResult
-              field={field}
-              value={values[field.key]}
-              rationale={rationales[field.key]?.trim() || undefined}
-            />
-          </ResultSection>
-        ))}
-
-        {review?.overallComment && (
-          <ResultSection title={t('Feedback to Author')}>
-            <ResultCard description={review.overallComment} />
-          </ResultSection>
-        )}
-
-        <TotalScoreCard />
-      </div>
-    </FormShell>
-  );
-}
-
-function FormShell({ children }: { children: ReactNode }) {
-  const t = useTranslations();
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="border-b border-neutral-gray1 pb-4">
-        <Header3 className="font-serif !text-title-base font-light">
-          {t('Review Proposal')}
-        </Header3>
-      </div>
-      {children}
-    </div>
   );
 }
 
@@ -202,53 +161,6 @@ function PausedForRevisionBanner() {
         onOpenChange={setIsViewModalOpen}
       />
     </>
-  );
-}
-
-function TotalScoreCard() {
-  const t = useTranslations();
-  const { rubricTemplate: template, values } = useReviewForm();
-  const criteria = getCriteria(template);
-
-  const totalScore = criteria.reduce<number | null>((total, criterion) => {
-    const value = values[criterion.id];
-
-    if (typeof value !== 'number') {
-      return total;
-    }
-
-    return (total ?? 0) + value;
-  }, null);
-
-  return (
-    <Surface
-      variant="filled"
-      className="flex items-start justify-between rounded-lg border-neutral-gray1 p-4"
-    >
-      <span className="text-base text-neutral-charcoal">
-        {t('Total Score')}
-      </span>
-      <span className="text-base text-neutral-black">
-        {totalScore === null ? '–' : totalScore}
-      </span>
-    </Surface>
-  );
-}
-
-function ResultSection({
-  title,
-  description,
-  children,
-}: {
-  title?: string;
-  description?: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
-      <FieldHeader title={title} description={description} />
-      {children}
-    </section>
   );
 }
 
@@ -453,77 +365,6 @@ function RubricFieldInput({
     default:
       return null;
   }
-}
-
-function ResultCard({
-  value,
-  description,
-}: {
-  value?: ReactNode;
-  description?: ReactNode;
-}) {
-  return (
-    <div className="flex items-center gap-4 rounded-xl border border-neutral-gray1 p-6">
-      {value !== undefined && value !== null && value !== '' && (
-        <div className="font-serif text-title-base font-light text-neutral-black">
-          {value}
-        </div>
-      )}
-      {description && (
-        <div className="min-w-0 flex-1 text-sm text-neutral-gray4">
-          {description}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function RubricFieldResult({
-  field,
-  value,
-  rationale,
-}: {
-  field: FieldDescriptor;
-  value: unknown;
-  rationale?: string;
-}) {
-  const t = useTranslations();
-
-  if (field.format === 'dropdown') {
-    if (inferCriterionType(field.schema) === 'yes_no') {
-      const label =
-        value === 'yes' ? t('Yes') : value === 'no' ? t('No') : undefined;
-      return <ResultCard value={label} description={rationale} />;
-    }
-
-    const options = parseSchemaOptions(field.schema);
-    const selected = options.find(
-      (option) => String(option.value) === String(value),
-    );
-
-    if (isOverallRecommendationField(field.key)) {
-      return (
-        <ResultCard
-          value={selected?.title ?? selected?.value}
-          description={rationale}
-        />
-      );
-    }
-
-    return (
-      <ResultCard
-        value={selected?.value}
-        description={selected?.title || rationale}
-      />
-    );
-  }
-
-  if (field.format === 'long-text' || field.format === 'short-text') {
-    const text = typeof value === 'string' ? value.trim() : '';
-    return <ResultCard description={text || '—'} />;
-  }
-
-  return null;
 }
 
 /**
