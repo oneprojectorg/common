@@ -11,6 +11,7 @@ import {
   type ProposalTemplateSchema,
   parseProposalData,
 } from '@op/common/client';
+import { SplitPane } from '@op/ui/SplitPane';
 import { toast } from '@op/ui/Toast';
 import type { Editor } from '@tiptap/react';
 import { useLocale } from 'next-intl';
@@ -432,14 +433,23 @@ function ProposalEditorInner({
           <RichTextEditorToolbar editor={focusedEditor} />
         </div>
         {revisionRequest ? (
-          <div className="mx-auto flex w-full max-w-[68rem] flex-1 overflow-hidden">
-            <div className="flex min-w-0 basis-1/2 flex-col gap-4 overflow-y-auto border-r border-neutral-gray1 py-12 pr-12">
+          <SplitPane className="mx-auto w-full max-w-[68rem]">
+            <SplitPane.Pane
+              id="proposal"
+              label={t('Proposal')}
+              className="gap-4"
+            >
               {editorBody}
-            </div>
-            <div className="min-w-0 basis-1/2 overflow-y-auto bg-white">
+            </SplitPane.Pane>
+            <SplitPane.Pane
+              id="feedback"
+              label={t('Revision feedback')}
+              className="bg-white"
+              unpadded
+            >
               <RevisionFeedbackPanel revisionRequest={revisionRequest} />
-            </div>
-          </div>
+            </SplitPane.Pane>
+          </SplitPane>
         ) : (
           <div className="flex flex-1 flex-col gap-12 py-12">
             <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6">

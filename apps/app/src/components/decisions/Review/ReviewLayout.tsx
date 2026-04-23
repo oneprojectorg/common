@@ -3,7 +3,7 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { SplitPane } from '@op/ui/SplitPane';
 
 import { TranslatedText } from '@/components/TranslatedText';
 
@@ -34,40 +34,20 @@ export async function ReviewLayout({
         <div className="flex h-dvh flex-col bg-white">
           <ReviewNavbar decisionSlug={decisionSlug} />
 
-          <div className="mx-auto hidden min-h-0 max-w-5xl flex-1 sm:flex">
-            <ReviewProposalPane className="border-r p-12" />
-            <div className="min-w-0 flex-1 overflow-y-auto px-12 pt-12 pb-4">
-              <ReviewRubricForm />
-            </div>
-          </div>
-
-          <Tabs
-            className="min-h-0 flex-1 gap-0 sm:hidden"
-            defaultSelectedKey="review"
-          >
-            <TabList className="mx-6" variant="default">
-              <Tab id="proposal">
-                <TranslatedText text="Proposal" />
-              </Tab>
-              <Tab id="review">
-                <TranslatedText text="Review" />
-              </Tab>
-            </TabList>
-
-            <TabPanel
+          <SplitPane className="mx-auto max-w-5xl" defaultMobileTabId="review">
+            <SplitPane.Pane
               id="proposal"
-              className="min-h-0 overflow-y-auto px-6 pt-8 pb-4"
+              label={<TranslatedText text="Proposal" />}
             >
               <ReviewProposalPane />
-            </TabPanel>
-
-            <TabPanel
+            </SplitPane.Pane>
+            <SplitPane.Pane
               id="review"
-              className="min-h-0 overflow-y-auto px-6 pt-8 pb-4"
+              label={<TranslatedText text="Review" />}
             >
               <ReviewRubricForm />
-            </TabPanel>
-          </Tabs>
+            </SplitPane.Pane>
+          </SplitPane>
         </div>
       </ReviewFormProvider>
     </HydrationBoundary>
