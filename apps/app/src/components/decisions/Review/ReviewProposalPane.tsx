@@ -1,13 +1,12 @@
 'use client';
 
 import { ProposalReviewRequestState } from '@op/common/client';
-import { cn } from '@op/ui/utils';
 
 import { ProposalPreview } from '../ProposalPreview';
 import { AuthorRevisionNote, RevisedOnBadge } from './AuthorRevisionNote';
 import { useReviewForm } from './ReviewFormContext';
 
-export function ReviewProposalPane({ className }: { className?: string }) {
+export function ReviewProposalPane() {
   const { assignment, revisionRequest } = useReviewForm();
 
   const respondedAt =
@@ -17,18 +16,16 @@ export function ReviewProposalPane({ className }: { className?: string }) {
   const responseComment = respondedAt ? revisionRequest?.responseComment : null;
 
   return (
-    <div className={cn('min-w-0 flex-1 overflow-y-auto', className)}>
-      <ProposalPreview
-        proposal={assignment.proposal}
-        submissionMetaSuffix={
-          respondedAt ? <RevisedOnBadge respondedAt={respondedAt} /> : undefined
-        }
-        headerBanner={
-          responseComment ? (
-            <AuthorRevisionNote comment={responseComment} />
-          ) : undefined
-        }
-      />
-    </div>
+    <ProposalPreview
+      proposal={assignment.proposal}
+      submissionMetaSuffix={
+        respondedAt ? <RevisedOnBadge respondedAt={respondedAt} /> : undefined
+      }
+      headerBanner={
+        responseComment ? (
+          <AuthorRevisionNote comment={responseComment} />
+        ) : undefined
+      }
+    />
   );
 }

@@ -2,8 +2,12 @@ import { TEST_USER_DEFAULT_PASSWORD } from '@op/test';
 import { createServerClient } from '@supabase/ssr';
 import { type Session, createClient } from '@supabase/supabase-js';
 
+import { appRouter } from '../routers';
+import { createCallerFactory } from '../trpcFactory';
 import type { TContext } from '../types';
 import { supabaseTestAdminClient, supabaseTestClient } from './setup';
+
+const createCaller = createCallerFactory(appRouter);
 
 export { supabaseTestClient, supabaseTestAdminClient } from './setup';
 export { TEST_USER_DEFAULT_PASSWORD };
@@ -198,6 +202,14 @@ export async function createIsolatedSession(
     client,
     session: data.session,
   };
+}
+
+/**
+ * Creates a tRPC caller authenticated as the given user.
+ */
+export async function createAuthenticatedCaller(email: string) {
+  const { session } = await createIsolatedSession(email);
+  return createCaller(await createTestContextWithSession(session));
 }
 
 /**

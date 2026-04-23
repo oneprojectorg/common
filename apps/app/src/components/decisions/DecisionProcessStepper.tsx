@@ -11,10 +11,9 @@ import { type Phase, PhaseStepper } from '@op/ui/PhaseStepper';
 import { Sheet, SheetBody } from '@op/ui/Sheet';
 import { toast } from '@op/ui/Toast';
 import { useLocale } from 'next-intl';
-import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
+import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { useDecisionTranslation } from './DecisionTranslationContext';
 

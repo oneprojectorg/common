@@ -1,8 +1,8 @@
 'use client';
 
-import { useTranslations } from '@/lib/i18n';
+import { useUser } from '@/utils/UserProvider';
 
-import { AccessBoundary } from '@/components/AccessBoundary';
+import { useTranslations } from '@/lib/i18n';
 
 import { type SectionProps, getContentComponentFlat } from './contentRegistry';
 import { type SectionId } from './navigationConfig';
@@ -22,29 +22,26 @@ export function ProcessBuilderContent({
 
   const { currentSection } = useProcessNavigation(navigationConfig, phases);
 
+  const access = useUser();
+  const isAdmin = access.getPermissionsForProfile(decisionProfileId).admin;
+
+  if (!isAdmin) {
+    throw new Error('UNAUTHORIZED');
+  }
+
   const ContentComponent = getContentComponentFlat(
     currentSection?.id as SectionId | undefined,
   );
 
-  return (
-    <AccessBoundary
-      required={{ profile: { admin: true } }}
-      profileId={decisionProfileId}
-      fallback={<ThrowUnauthorized />}
-    >
-      {ContentComponent ? (
-        <ContentComponent
-          decisionProfileId={decisionProfileId}
-          instanceId={instanceId}
-          decisionName={decisionName}
-        />
-      ) : (
-        <div>{t('Section not found')}</div>
-      )}
-    </AccessBoundary>
-  );
-}
+  if (!ContentComponent) {
+    return <div>{t('Section not found')}</div>;
+  }
 
-function ThrowUnauthorized(): never {
-  throw new Error('UNAUTHORIZED');
+  return (
+    <ContentComponent
+      decisionProfileId={decisionProfileId}
+      instanceId={instanceId}
+      decisionName={decisionName}
+    />
+  );
 }

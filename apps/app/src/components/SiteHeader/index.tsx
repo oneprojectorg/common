@@ -19,7 +19,6 @@ import { SidebarTrigger } from '@op/ui/Sidebar';
 import { Skeleton } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import {
   LuChevronDown,
@@ -28,7 +27,7 @@ import {
   LuSearch,
 } from 'react-icons/lu';
 
-import { Link, useTranslations } from '@/lib/i18n';
+import { Link, useRouter, useTranslations } from '@/lib/i18n';
 
 import { CoCModal } from '../CoCModal';
 import { CommonLogo } from '../CommonLogo';

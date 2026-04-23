@@ -1,6 +1,8 @@
 import { getProposalsForPhase } from '@op/common';
 import { db, eq } from '@op/db/client';
 import {
+  ProcessStatus,
+  ProposalStatus,
   decisionTransitionProposals,
   stateTransitionHistory,
 } from '@op/db/schema';
@@ -8,13 +10,10 @@ import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
-  createAndSubmitProposal,
-  createInstanceWithSchema,
-  executeTestTransition,
   schemaWithPipeline,
   schemaWithThreePhasesAndPipelines,
   schemaWithoutPipeline,
-} from '../../../test/helpers/pipelineTestFixtures';
+} from '../../../test/helpers/pipelineSchemas';
 
 describe.concurrent('Transition pipeline: join table population', () => {
   it('creates exactly 2 join rows when selectionPipeline limits to 2 from 3 proposals', async ({
@@ -23,22 +22,25 @@ describe.concurrent('Transition pipeline: join table population', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithPipeline,
-    );
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
 
     // Create and submit 3 proposals (submitted proposals are eligible for transition)
     for (let i = 1; i <= 3; i++) {
-      await createAndSubmitProposal(testData, caller, {
+      await testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal ${i} ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       });
     }
 
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
@@ -69,30 +71,33 @@ describe.concurrent('Transition pipeline: join table population', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithThreePhasesAndPipelines,
-    );
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithThreePhasesAndPipelines,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
 
     // Submit 4 proposals; first pipeline limits to 3, second limits to 2
     for (let i = 1; i <= 4; i++) {
-      await createAndSubmitProposal(testData, caller, {
+      await testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal ${i} ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       });
     }
 
     // First transition: submission → review (limit 3)
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
     });
 
     // Second transition: review → final (limit 2, from the 3 that survived)
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'review',
       toPhaseId: 'final',
@@ -129,22 +134,25 @@ describe.concurrent('Transition pipeline: join table population', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithoutPipeline,
-    );
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
 
     // Create and submit 3 proposals (submitted proposals are eligible for transition)
     for (let i = 1; i <= 3; i++) {
-      await createAndSubmitProposal(testData, caller, {
+      await testData.createProposal({
         userEmail,
         processInstanceId: instanceId,
         proposalData: { title: `Proposal ${i} ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
       });
     }
 
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',
@@ -191,22 +199,25 @@ describe.concurrent('Transition pipeline: join table population', () => {
       ],
     };
 
-    const { instanceId, userEmail, caller } = await createInstanceWithSchema(
-      testData,
-      task.id,
-      schemaWithZeroLimit,
-    );
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithZeroLimit,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
 
-    await createAndSubmitProposal(testData, caller, {
+    await testData.createProposal({
       userEmail,
       processInstanceId: instanceId,
       proposalData: { title: `Doomed ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
     });
 
     // Transition succeeds but pipeline eliminates all proposals.
     // The transition row exists, so this is unambiguously "new system, zero survivors"
     // (not legacy data) — getProposalsForPhase must return [].
-    await executeTestTransition({
+    await testData.advancePhase({
       instanceId,
       fromPhaseId: 'submission',
       toPhaseId: 'review',

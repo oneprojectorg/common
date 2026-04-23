@@ -7,7 +7,7 @@ import { TRPCError } from '@trpc/server';
 import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import { createAuthenticatedCaller } from '../../../test/helpers/pipelineTestFixtures';
+import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 /**
  * Directly inserts a vote submission + vote proposals join rows for a given
