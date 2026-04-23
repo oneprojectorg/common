@@ -1,3 +1,4 @@
+import { invalidate } from '@op/cache';
 import { createInstanceFromTemplate } from '@op/common';
 
 import {
@@ -16,6 +17,14 @@ export const createInstanceFromTemplateRouter = router({
       const profile = await createInstanceFromTemplate({
         ...input,
         user,
+      });
+
+      // Creator was added as a profileUser with Admin role — invalidate the
+      // user cache so the next getMyAccount reflects the new membership
+      // before the client redirects to the edit page and re-checks access.
+      await invalidate({
+        type: 'user',
+        params: [ctx.user.id],
       });
 
       return decisionProfileWithSchemaEncoder.parse(profile);
