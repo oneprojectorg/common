@@ -133,7 +133,11 @@ function SubmittedReviewView() {
     <FormShell>
       <div className="flex flex-col gap-6">
         {fields.map((field) => (
-          <ResultSection key={field.key} title={field.schema.title}>
+          <ResultSection
+            key={field.key}
+            title={field.schema.title}
+            description={field.schema.description}
+          >
             <RubricFieldResult
               field={field}
               value={values[field.key]}
@@ -233,14 +237,16 @@ function TotalScoreCard() {
 
 function ResultSection({
   title,
+  description,
   children,
 }: {
   title?: string;
+  description?: string;
   children: ReactNode;
 }) {
   return (
     <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
-      <FieldHeader title={title} />
+      <FieldHeader title={title} description={description} />
       {children}
     </section>
   );
@@ -276,7 +282,7 @@ function RubricCriterionSection({
 
           <div className="flex items-start gap-3">
             {field.schema.description && (
-              <p className="flex-1 text-base text-neutral-charcoal">
+              <p className="flex-1 text-sm text-neutral-charcoal">
                 {field.schema.description}
               </p>
             )}
@@ -286,13 +292,11 @@ function RubricCriterionSection({
         </>
       ) : (
         <>
-          <FieldHeader title={field.schema.title} badge={badgeLabel} />
-
-          {field.schema.description && (
-            <p className="text-base text-neutral-charcoal">
-              {field.schema.description}
-            </p>
-          )}
+          <FieldHeader
+            title={field.schema.title}
+            description={field.schema.description}
+            badge={badgeLabel}
+          />
 
           <RubricFieldInput field={field} value={value} onChange={onChange} />
         </>
