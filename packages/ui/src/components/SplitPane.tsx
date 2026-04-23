@@ -58,20 +58,29 @@ function SplitPaneImpl({
   className,
 }: SplitPaneProps) {
   const panes = Children.toArray(children).filter(
-    (child): child is ReactElement<SplitPanePaneProps> =>
-      isValidElement(child) && child.type === Pane,
+    (child): child is ReactElement<SplitPanePaneProps> => isValidElement(child),
   );
 
   const [activeId, setActiveId] = useState<string>(
     defaultMobileTabId ?? panes[0]?.props.id ?? '',
   );
 
-  if (panes.length !== 2) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn(
-        `SplitPane expects exactly 2 SplitPane.Pane children, received ${panes.length}.`,
+  if (process.env.NODE_ENV !== 'production') {
+    if (panes.length !== 2) {
+      throw new Error(
+        `SplitPane expects exactly 2 children, received ${panes.length}.`,
       );
     }
+    for (const pane of panes) {
+      if (!pane.props.id || !pane.props.label) {
+        throw new Error(
+          'SplitPane children must have `id` and `label` props (use SplitPane.Pane).',
+        );
+      }
+    }
+  }
+
+  if (panes.length !== 2) {
     return null;
   }
 
