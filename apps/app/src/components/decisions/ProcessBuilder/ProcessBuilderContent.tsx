@@ -1,6 +1,6 @@
 'use client';
 
-import { trpc } from '@op/api/client';
+import { useUser } from '@/utils/UserProvider';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -10,16 +10,11 @@ import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
 import { useProcessPhases } from './useProcessPhases';
 
-interface ProcessBuilderContentProps extends SectionProps {
-  slug: string;
-}
-
 export function ProcessBuilderContent({
   decisionProfileId,
   instanceId,
   decisionName,
-  slug,
-}: ProcessBuilderContentProps) {
+}: SectionProps) {
   const t = useTranslations();
   const navigationConfig = useNavigationConfig(instanceId, decisionProfileId);
 
@@ -27,11 +22,10 @@ export function ProcessBuilderContent({
 
   const { currentSection } = useProcessNavigation(navigationConfig, phases);
 
-  const { data: decisionProfile } = trpc.decision.getDecisionBySlug.useQuery({
-    slug,
-  });
+  const access = useUser();
+  const isAdmin = access.getPermissionsForProfile(decisionProfileId).admin;
 
-  if (decisionProfile && !decisionProfile.processInstance.access?.admin) {
+  if (!isAdmin) {
     throw new Error('UNAUTHORIZED');
   }
 
@@ -39,13 +33,15 @@ export function ProcessBuilderContent({
     currentSection?.id as SectionId | undefined,
   );
 
-  return ContentComponent ? (
+  if (!ContentComponent) {
+    return <div>{t('Section not found')}</div>;
+  }
+
+  return (
     <ContentComponent
       decisionProfileId={decisionProfileId}
       instanceId={instanceId}
       decisionName={decisionName}
     />
-  ) : (
-    <div>{t('Section not found')}</div>
   );
 }

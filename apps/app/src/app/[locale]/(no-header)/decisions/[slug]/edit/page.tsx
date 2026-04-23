@@ -74,7 +74,6 @@ const EditDecisionPage = async ({
                 decisionProfileId={decisionProfile.id}
                 instanceId={instanceId}
                 decisionName={decisionProfile.name}
-                slug={slug}
               />
             </main>
           </div>
