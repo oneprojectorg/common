@@ -422,7 +422,7 @@ function ResultCard({
         </div>
       )}
       {description && (
-        <div className="min-w-0 flex-1 text-xs text-neutral-gray4">
+        <div className="min-w-0 flex-1 text-sm text-neutral-gray4">
           {description}
         </div>
       )}
