@@ -28,7 +28,8 @@ export function ProcessBuilderContent({
 
   return (
     <AccessBoundary
-      required={{ profile: { admin: true } }}
+      required={{ decisions: { admin: true } }}
+      // required={{ profile: { admin: true } }}
       profileId={decisionProfileId}
       fallback={<ThrowUnauthorized />}
     >
