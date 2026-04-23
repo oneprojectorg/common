@@ -5,11 +5,7 @@ import {
   getGenericCursorCondition,
 } from '@op/common';
 import { and, count, db, ilike, inArray } from '@op/db/client';
-import {
-  decisionsVoteSubmissions,
-  processInstances,
-  proposals,
-} from '@op/db/schema';
+import { processInstances, proposals } from '@op/db/schema';
 import { z } from 'zod';
 
 import { adminDecisionInstanceEncoder } from '../../../encoders/decision';
@@ -179,58 +175,31 @@ export const listAllDecisionInstancesRouter = router({
 
       const instanceIds = items.map((i) => i.id);
 
-      // Fetch (instanceId, profileId) pairs from both tables so we can compute
-      // per-instance proposal count, voter count, and distinct-participant count
-      // (union of proposal submitters and voters) in memory — single pass, no
-      // raw SQL needed. voters are unique-per-instance by DB constraint.
-      const [proposalPairs, voterPairs] =
+      // Fetch (instanceId, profileId) proposal pairs so we can compute
+      // per-instance proposal count and distinct-participant count in memory.
+      const proposalPairs =
         instanceIds.length > 0
-          ? await Promise.all([
-              db
-                .select({
-                  processInstanceId: proposals.processInstanceId,
-                  profileId: proposals.submittedByProfileId,
-                })
-                .from(proposals)
-                .where(inArray(proposals.processInstanceId, instanceIds)),
-              db
-                .select({
-                  processInstanceId: decisionsVoteSubmissions.processInstanceId,
-                  profileId: decisionsVoteSubmissions.submittedByProfileId,
-                })
-                .from(decisionsVoteSubmissions)
-                .where(
-                  inArray(
-                    decisionsVoteSubmissions.processInstanceId,
-                    instanceIds,
-                  ),
-                ),
-            ])
-          : [[], []];
+          ? await db
+              .select({
+                processInstanceId: proposals.processInstanceId,
+                profileId: proposals.submittedByProfileId,
+              })
+              .from(proposals)
+              .where(inArray(proposals.processInstanceId, instanceIds))
+          : [];
 
       const proposalCounts = new Map<string, number>();
-      const voterCounts = new Map<string, number>();
       const participantSets = new Map<string, Set<string>>();
-
-      const trackParticipant = (instanceId: string, profileId: string) => {
-        const set = participantSets.get(instanceId) ?? new Set<string>();
-        set.add(profileId);
-        participantSets.set(instanceId, set);
-      };
 
       for (const row of proposalPairs) {
         proposalCounts.set(
           row.processInstanceId,
           (proposalCounts.get(row.processInstanceId) ?? 0) + 1,
         );
-        trackParticipant(row.processInstanceId, row.profileId);
-      }
-      for (const row of voterPairs) {
-        voterCounts.set(
-          row.processInstanceId,
-          (voterCounts.get(row.processInstanceId) ?? 0) + 1,
-        );
-        trackParticipant(row.processInstanceId, row.profileId);
+        const set =
+          participantSets.get(row.processInstanceId) ?? new Set<string>();
+        set.add(row.profileId);
+        participantSets.set(row.processInstanceId, set);
       }
 
       return {
@@ -248,7 +217,6 @@ export const listAllDecisionInstancesRouter = router({
             stewardName: steward?.name ?? null,
             status: instance.status,
             proposalCount: proposalCounts.get(instance.id) ?? 0,
-            voterCount: voterCounts.get(instance.id) ?? 0,
             participantCount: participantSets.get(instance.id)?.size ?? 0,
             createdAt: instance.createdAt,
             instanceData: instance.instanceData,

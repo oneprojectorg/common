@@ -64,9 +64,6 @@ export const DecisionsRowCells = ({
         {decision.proposalCount}
       </TableCell>
       <TableCell className="text-sm font-normal text-neutral-charcoal">
-        {decision.voterCount}
-      </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-charcoal">
         {decision.participantCount}
       </TableCell>
       <TableCell className="text-sm font-normal text-neutral-charcoal">

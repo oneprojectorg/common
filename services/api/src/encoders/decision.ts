@@ -729,7 +729,6 @@ export const adminDecisionInstanceEncoder = createSelectSchema(processInstances)
     currentPhase: adminDecisionCurrentPhaseEncoder.nullable(),
     stewardName: z.string().nullable(),
     proposalCount: z.number(),
-    voterCount: z.number(),
     participantCount: z.number(),
     instanceData: z.unknown(),
   });

@@ -91,7 +91,6 @@ const DecisionsTableContent = ({ searchQuery }: { searchQuery: string }) => {
           <TableColumn>{t('Current Phase')}</TableColumn>
           <TableColumn>{t('Steward')}</TableColumn>
           <TableColumn>{t('Proposals')}</TableColumn>
-          <TableColumn>{t('Voters')}</TableColumn>
           <TableColumn>{t('Participants')}</TableColumn>
           <TableColumn>{t('Status')}</TableColumn>
           <TableColumn>{t('Created')}</TableColumn>
@@ -132,7 +131,6 @@ const DecisionsTableSkeleton = () => {
         <TableColumn>{t('Current Phase')}</TableColumn>
         <TableColumn>{t('Steward')}</TableColumn>
         <TableColumn>{t('Proposals')}</TableColumn>
-        <TableColumn>{t('Voters')}</TableColumn>
         <TableColumn>{t('Participants')}</TableColumn>
         <TableColumn>{t('Status')}</TableColumn>
         <TableColumn>{t('Created')}</TableColumn>
@@ -141,7 +139,7 @@ const DecisionsTableSkeleton = () => {
       <TableBody>
         {[...Array(5)].map((_, i) => (
           <TableRow key={i} id={`skeleton-${i}`}>
-            {[...Array(9)].map((_, j) => (
+            {[...Array(8)].map((_, j) => (
               <TableCell key={j}>
                 <Skeleton className="h-4 w-full" />
               </TableCell>
