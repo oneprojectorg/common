@@ -174,6 +174,7 @@ const processConfigEncoder = z.object({
   isPrivate: z.boolean().optional(),
   reviewsPolicy: reviewsPolicyEncoder.optional(),
   reviewsAllowRevisions: z.boolean().optional(),
+  reviewsAnonymousFeedback: z.boolean().optional(),
 });
 
 /** DecisionSchemaDefinition encoder */

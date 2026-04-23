@@ -16,11 +16,13 @@ import { type CreateProposalResult, createProposal } from './decision-data';
 export interface ReviewSettings {
   reviewsPolicy: 'full_coverage';
   reviewsAllowRevisions: boolean;
+  reviewsAnonymousFeedback: boolean;
 }
 
 export const defaultReviewSettings: ReviewSettings = {
   reviewsPolicy: 'full_coverage',
   reviewsAllowRevisions: true,
+  reviewsAnonymousFeedback: true,
 };
 
 /** Enables review configuration on a decision process template. */

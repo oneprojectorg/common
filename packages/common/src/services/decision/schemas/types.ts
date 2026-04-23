@@ -75,6 +75,7 @@ export interface ProcessConfig {
   isPrivate?: boolean;
   reviewsPolicy?: ReviewsPolicy;
   reviewsAllowRevisions?: boolean;
+  reviewsAnonymousFeedback?: boolean;
 }
 
 /**
