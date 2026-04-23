@@ -39,7 +39,7 @@ export const SelectionSuccessDialog = ({
                 </Header1>
                 <p className="text-base text-neutral-charcoal">
                   {t(
-                    '{count} proposals are now attached to this phase. Participants can view them on the decision page.',
+                    '{count} proposals are now attached to this phase. Participants can view them.',
                     { count: count ?? 0 },
                   )}
                 </p>

@@ -1148,7 +1148,7 @@
   "These {numProposals} proposals will move on to the {phaseName} phase": "এই {numProposals}টি প্রস্তাব {phaseName} পর্যায়ে অগ্রসর হবে",
   "PROPOSALS TO ADVANCE": "অগ্রসর করার প্রস্তাব",
   "Proposals advanced": "প্রস্তাব অগ্রসর করা হয়েছে",
-  "{count} proposals are now attached to this phase. Participants can view them on the decision page.": "{count}টি প্রস্তাব এখন এই পর্যায়ে সংযুক্ত। অংশগ্রহণকারীরা সিদ্ধান্ত পৃষ্ঠায় সেগুলি দেখতে পারবেন।",
+  "{count} proposals are now attached to this phase. Participants can view them.": "{count}টি প্রস্তাব এখন এই পর্যায়ে সংযুক্ত। অংশগ্রহণকারীরা সেগুলি দেখতে পারবেন।",
   "Advance": "অগ্রসর",
   "Advancing": "অগ্রসর হচ্ছে",
   "Confirm decisions": "সিদ্ধান্ত নিশ্চিত করুন",
