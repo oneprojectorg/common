@@ -1151,7 +1151,7 @@
   "Advance": "Avanzar",
   "Advancing": "Avanzando",
   "Confirm decisions": "Confirmar decisiones",
-  "{count} proposals advancing": "{count, plural, =0 {Ninguna propuesta avanzando} one {# propuesta avanzando} other {# propuestas avanzando}}",
+  "{count} proposals advancing": "{count, plural, one {# propuesta avanzando} other {# propuestas avanzando}}",
   "Eligible proposals": "Propuestas elegibles",
   "Proposal": "Propuesta",
   "Budget": "Presupuesto",
