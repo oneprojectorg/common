@@ -1198,7 +1198,5 @@
   "+{count} More": "+{count} More",
   "Confirm advancing proposals": "Confirm advancing proposals",
   "These {numProposals} proposals will move on to the {phaseName} phase": "These {numProposals} proposals will move on to the {phaseName} phase",
-  "PROPOSALS TO ADVANCE": "PROPOSALS TO ADVANCE",
-  "Proposals advanced": "Proposals advanced",
-  "{count} proposals are now attached to this phase. Participants can view them.": "{count} proposals are now attached to this phase. Participants can view them."
+  "PROPOSALS TO ADVANCE": "PROPOSALS TO ADVANCE"
 }

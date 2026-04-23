@@ -13,7 +13,6 @@ import { useTranslations } from '@/lib/i18n';
 import { ManualSelectionToolbar } from './ManualSelectionToolbar';
 import { SelectableProposalsTable } from './SelectableProposalsTable';
 import { SelectionConfirmDialog } from './SelectionConfirmDialog';
-import { SelectionSuccessDialog } from './SelectionSuccessDialog';
 import { VotingSubmitFooter } from './VotingSubmitFooter';
 import { useManualSelectionDraft } from './useManualSelectionDraft';
 import { useProposalFilters } from './useProposalFilters';
@@ -57,7 +56,6 @@ export const ManualSelectionList = ({
   const selectedIds = selectedProposals.map((p) => p.id);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [successCount, setSuccessCount] = useState<number | null>(null);
 
   const { filteredProposals, proposalFilter, setProposalFilter } =
     useProposalFilters({
@@ -71,9 +69,10 @@ export const ManualSelectionList = ({
   const categories = categoriesData.categories;
   const proposals = filteredProposals;
 
+  // Invalidation (and therefore the selectionsConfirmed flip that unmounts
+  // this component) is automatic via the shared realtime channel.
   const submitMutation = trpc.decision.submitManualSelection.useMutation({
     onSuccess: () => {
-      setSuccessCount(selectedIds.length);
       setSelectedProposals([]);
       setIsConfirmOpen(false);
       setSubmitError(null);
@@ -84,21 +83,8 @@ export const ManualSelectionList = ({
     },
   });
 
-  // Invalidation is automatic via the shared realtime channel.
-  const dismissSuccess = () => {
-    setSuccessCount(null);
-  };
-
   if (!state) {
     return null;
-  }
-
-  // Keep the success modal mounted past the realtime invalidation that
-  // flips selectionsConfirmed.
-  if (successCount !== null) {
-    return (
-      <SelectionSuccessDialog count={successCount} onClose={dismissSuccess} />
-    );
   }
 
   if (state.selectionsConfirmed) {

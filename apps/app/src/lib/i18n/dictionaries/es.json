@@ -1146,8 +1146,6 @@
   "Confirm advancing proposals": "Confirmar avance de propuestas",
   "These {numProposals} proposals will move on to the {phaseName} phase": "Estas {numProposals} propuestas avanzarán a la fase {phaseName}",
   "PROPOSALS TO ADVANCE": "PROPUESTAS A AVANZAR",
-  "Proposals advanced": "Propuestas avanzadas",
-  "{count} proposals are now attached to this phase. Participants can view them.": "{count} propuestas están ahora adjuntas a esta fase. Los participantes pueden verlas.",
   "Advance": "Avanzar",
   "Advancing": "Avanzando",
   "Confirm decisions": "Confirmar decisiones",
