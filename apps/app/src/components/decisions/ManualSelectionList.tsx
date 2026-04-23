@@ -3,7 +3,6 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
-import type { Proposal } from '@op/common/client';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { useState } from 'react';
@@ -16,6 +15,7 @@ import { SelectableProposalsTable } from './SelectableProposalsTable';
 import { SelectionConfirmDialog } from './SelectionConfirmDialog';
 import { SelectionSuccessDialog } from './SelectionSuccessDialog';
 import { VotingSubmitFooter } from './VotingSubmitFooter';
+import { useManualSelectionDraft } from './useManualSelectionDraft';
 import { useProposalFilters } from './useProposalFilters';
 
 // Stable reference: useProposalFilters memoizes on `votedProposalIds`.
@@ -53,7 +53,9 @@ export const ManualSelectionList = ({
   const state = stateQuery.data;
 
   // Store full Proposals (not just ids) so selections survive filter changes.
-  const [selectedProposals, setSelectedProposals] = useState<Proposal[]>([]);
+  // Backed by sessionStorage so they also survive back-navigation.
+  const [selectedProposals, setSelectedProposals] =
+    useManualSelectionDraft(instanceId);
   const selectedIds = selectedProposals.map((p) => p.id);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -74,6 +76,7 @@ export const ManualSelectionList = ({
   const submitMutation = trpc.decision.submitManualSelection.useMutation({
     onSuccess: () => {
       setSuccessCount(selectedIds.length);
+      setSelectedProposals([]);
       setIsConfirmOpen(false);
       setSubmitError(null);
     },
