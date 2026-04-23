@@ -1,4 +1,5 @@
 import {
+  type ProposalReview,
   type RubricTemplateSchema,
   isOverallRecommendationField,
   parseSchemaOptions,
@@ -16,17 +17,14 @@ import { getCriteria, inferCriterionType } from '../rubricTemplate';
 
 export function SubmittedReviewView({
   rubricTemplate,
-  values,
-  rationales,
-  overallComment,
+  review,
 }: {
   rubricTemplate: RubricTemplateSchema;
-  values: Record<string, unknown>;
-  rationales: Record<string, string>;
-  overallComment?: string | null;
+  review: ProposalReview;
 }) {
   const t = useTranslations();
   const fields = compileRubricSchema(rubricTemplate);
+  const { answers, rationales } = review.reviewData;
 
   return (
     <div className="flex flex-col gap-6">
@@ -38,15 +36,15 @@ export function SubmittedReviewView({
         >
           <RubricFieldResult
             field={field}
-            value={values[field.key]}
+            value={answers[field.key]}
             rationale={rationales[field.key]?.trim() || undefined}
           />
         </ResultSection>
       ))}
 
-      {overallComment && (
+      {review.overallComment && (
         <ResultSection title={t('Feedback to Author')}>
-          <ResultCard description={overallComment} />
+          <ResultCard description={review.overallComment} />
         </ResultSection>
       )}
     </div>

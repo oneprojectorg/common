@@ -30,20 +30,20 @@ import {
 import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 
 export function ReviewRubricForm() {
-  const { isSubmitted, rubricTemplate, values, rationales, review } =
-    useReviewForm();
+  const { rubricTemplate, review } = useReviewForm();
 
   return (
     <FormShell>
-      {isSubmitted ? (
+      {review?.state === 'submitted' ? (
         <>
           <SubmittedReviewView
             rubricTemplate={rubricTemplate}
-            values={values}
-            rationales={rationales}
-            overallComment={review?.overallComment}
+            review={review}
           />
-          <TotalScoreCard rubricTemplate={rubricTemplate} values={values} />
+          <TotalScoreCard
+            rubricTemplate={rubricTemplate}
+            values={review.reviewData.answers}
+          />
         </>
       ) : (
         <EditableReviewForm />
