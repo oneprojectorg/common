@@ -4,7 +4,6 @@ import {
   isOverallRecommendationField,
   parseSchemaOptions,
 } from '@op/common/client';
-import { Header3 } from '@op/ui/Header';
 import { Surface } from '@op/ui/Surface';
 import type { ReactNode } from 'react';
 
@@ -47,20 +46,6 @@ export function SubmittedReviewView({
           <ResultCard description={review.overallComment} />
         </ResultSection>
       )}
-    </div>
-  );
-}
-
-export function FormShell({ children }: { children: ReactNode }) {
-  const t = useTranslations();
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="border-b border-neutral-gray1 pb-4">
-        <Header3 className="font-serif !text-title-base font-light">
-          {t('Review Proposal')}
-        </Header3>
-      </div>
-      {children}
     </div>
   );
 }

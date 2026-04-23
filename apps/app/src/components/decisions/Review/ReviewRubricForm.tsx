@@ -7,6 +7,7 @@ import {
 } from '@op/common/client';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Button } from '@op/ui/Button';
+import { Header3 } from '@op/ui/Header';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
@@ -22,37 +23,13 @@ import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
 import { getCriterionMaxPoints, inferCriterionType } from '../rubricTemplate';
 import { useReviewForm } from './ReviewFormContext';
-import {
-  FormShell,
-  SubmittedReviewView,
-  TotalScoreCard,
-} from './SubmittedReviewView';
+import { SubmittedReviewView, TotalScoreCard } from './SubmittedReviewView';
 import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 
+/**
+ * Schema-driven review rubric form renderer.
+ */
 export function ReviewRubricForm() {
-  const { rubricTemplate, review } = useReviewForm();
-
-  return (
-    <FormShell>
-      {review?.state === 'submitted' ? (
-        <>
-          <SubmittedReviewView
-            rubricTemplate={rubricTemplate}
-            review={review}
-          />
-          <TotalScoreCard
-            rubricTemplate={rubricTemplate}
-            values={review.reviewData.answers}
-          />
-        </>
-      ) : (
-        <EditableReviewForm />
-      )}
-    </FormShell>
-  );
-}
-
-function EditableReviewForm() {
   const t = useTranslations();
   const {
     rubricTemplate: template,
@@ -63,16 +40,64 @@ function EditableReviewForm() {
     handleRationaleChange,
     handleOverallCommentChange,
     isPausedForRevision,
+    review,
   } = useReviewForm();
   const fields = compileRubricSchema(template);
 
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(
     overallComment.length > 0,
   );
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+
+  if (review?.state === 'submitted') {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="border-b border-neutral-gray1 pb-4">
+          <Header3 className="font-serif !text-title-base font-light">
+            {t('Review Proposal')}
+          </Header3>
+        </div>
+        <SubmittedReviewView rubricTemplate={template} review={review} />
+        <TotalScoreCard rubricTemplate={template} values={values} />
+      </div>
+    );
+  }
 
   return (
-    <>
-      {isPausedForRevision && <PausedForRevisionBanner />}
+    <div className="flex flex-col gap-6">
+      <div className="border-b border-neutral-gray1 pb-4">
+        <Header3 className="font-serif !text-title-base font-light">
+          {t('Review Proposal')}
+        </Header3>
+      </div>
+
+      {isPausedForRevision && (
+        <>
+          <AlertBanner
+            intent="warning"
+            variant="banner"
+            icon={<LuCircleAlert className="size-4" />}
+          >
+            <span>
+              <strong>{t('Proposal Revision Requested')}</strong>
+              <br />
+              {t('Reviewing is paused until author submits a revision.')}{' '}
+              <button
+                type="button"
+                className="underline"
+                onClick={() => setIsViewModalOpen(true)}
+              >
+                {t('View feedback')}
+              </button>
+            </span>
+          </AlertBanner>
+
+          <ViewRevisionRequestModal
+            isOpen={isViewModalOpen}
+            onOpenChange={setIsViewModalOpen}
+          />
+        </>
+      )}
 
       <div
         className={
@@ -132,43 +157,13 @@ function EditableReviewForm() {
           <TotalScoreCard rubricTemplate={template} values={values} />
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
-function PausedForRevisionBanner() {
-  const t = useTranslations();
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-
-  return (
-    <>
-      <AlertBanner
-        intent="warning"
-        variant="banner"
-        icon={<LuCircleAlert className="size-4" />}
-      >
-        <span>
-          <strong>{t('Proposal Revision Requested')}</strong>
-          <br />
-          {t('Reviewing is paused until author submits a revision.')}{' '}
-          <button
-            type="button"
-            className="underline"
-            onClick={() => setIsViewModalOpen(true)}
-          >
-            {t('View feedback')}
-          </button>
-        </span>
-      </AlertBanner>
-
-      <ViewRevisionRequestModal
-        isOpen={isViewModalOpen}
-        onOpenChange={setIsViewModalOpen}
-      />
-    </>
-  );
-}
-
+/**
+ * Render one rubric criterion with an always-on rationale textarea below.
+ */
 function RubricCriterionSection({
   field,
   maxPoints,
@@ -274,6 +269,9 @@ function RubricRationaleField({
   );
 }
 
+/**
+ * Render the input control for a rubric field.
+ */
 function RubricFieldInput({
   field,
   value,
