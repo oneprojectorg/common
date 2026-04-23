@@ -13,7 +13,7 @@ import { Select, SelectItem } from '@op/ui/Select';
 import { Surface } from '@op/ui/Surface';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
-import type { Key } from 'react';
+import type { Key, ReactNode } from 'react';
 import { useState } from 'react';
 import { LuCircleAlert, LuPlus } from 'react-icons/lu';
 
@@ -193,12 +193,17 @@ function RubricCriterionSection({
 }) {
   const t = useTranslations();
   const criterionType = inferCriterionType(field.schema);
+  const { isSubmitted } = useReviewForm();
   const scoreLabel = maxPoints > 0 ? `${maxPoints} ${t('pts')}` : null;
-  const badgeLabel = criterionType === 'yes_no' ? t('No/Yes') : scoreLabel;
+  const badgeLabel = isSubmitted
+    ? null
+    : criterionType === 'yes_no'
+      ? t('No/Yes')
+      : scoreLabel;
 
   return (
     <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
-      {criterionType === 'yes_no' ? (
+      {criterionType === 'yes_no' && !isSubmitted ? (
         <>
           <FieldHeader title={field.schema.title} badge={badgeLabel} />
 
@@ -226,11 +231,13 @@ function RubricCriterionSection({
         </>
       )}
 
-      <RubricRationaleField
-        value={rationaleValue}
-        onChange={onRationaleChange}
-        placeholder={rationalePlaceholder}
-      />
+      {!isSubmitted && (
+        <RubricRationaleField
+          value={rationaleValue}
+          onChange={onRationaleChange}
+          placeholder={rationalePlaceholder}
+        />
+      )}
     </section>
   );
 }
@@ -282,7 +289,8 @@ function RubricRationaleField({
 }
 
 /**
- * Render the input control for a rubric field.
+ * Render the input control for a rubric field, or a read-only result card
+ * once the review has been submitted.
  */
 function RubricFieldInput({
   field,
@@ -294,6 +302,11 @@ function RubricFieldInput({
   onChange: (value: unknown) => void;
 }) {
   const t = useTranslations();
+  const { isSubmitted } = useReviewForm();
+
+  if (isSubmitted) {
+    return <RubricFieldResult field={field} value={value} />;
+  }
 
   switch (field.format) {
     case 'dropdown': {
@@ -380,6 +393,87 @@ function RubricFieldInput({
     default:
       return null;
   }
+}
+
+/**
+ * Read-only card shown in place of the input once the review is submitted.
+ */
+function ResultCard({
+  value,
+  description,
+}: {
+  value?: ReactNode;
+  description?: ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-4 rounded-xl border border-neutral-gray1 p-6">
+      {value !== undefined && value !== null && value !== '' && (
+        <div className="font-serif text-title-base font-light text-neutral-black">
+          {value}
+        </div>
+      )}
+      {description && (
+        <div className="min-w-0 flex-1 text-xs text-neutral-gray4">
+          {description}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Map a submitted value to a read-only result card per field format.
+ */
+function RubricFieldResult({
+  field,
+  value,
+}: {
+  field: FieldDescriptor;
+  value: unknown;
+}) {
+  const t = useTranslations();
+  const { rationales } = useReviewForm();
+  const rationale = rationales[field.key]?.trim() || undefined;
+
+  if (field.format === 'dropdown') {
+    if (inferCriterionType(field.schema) === 'yes_no') {
+      const label =
+        value === 'yes' ? t('Yes') : value === 'no' ? t('No') : undefined;
+      return <ResultCard value={label} description={rationale} />;
+    }
+
+    const options = parseSchemaOptions(field.schema);
+    const selected = options.find(
+      (option) => String(option.value) === String(value),
+    );
+
+    // For scored criteria the value carries meaning (e.g. "4") and the
+    // title describes what that score means. For non-numeric dropdowns
+    // (overall recommendation) the raw value is just a lowercase key,
+    // so the title is the only useful label.
+    if (typeof selected?.value === 'number') {
+      return (
+        <ResultCard
+          value={selected.value}
+          description={selected.title || rationale}
+        />
+      );
+    }
+
+    return (
+      <ResultCard
+        value={selected?.title ?? selected?.value}
+        description={rationale}
+      />
+    );
+  }
+
+  if (field.format === 'long-text' || field.format === 'short-text') {
+    const text = typeof value === 'string' ? value.trim() : '';
+    return text ? <ResultCard description={text} /> : null;
+  }
+
+  return null;
 }
 
 /**
