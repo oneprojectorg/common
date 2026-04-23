@@ -19,9 +19,9 @@ async function createAuthenticatedCaller(email: string) {
 
 /**
  * Voting schema with three phases: submission, voting, results.
- * `maxVotes` can be overridden per test by caller-side edits to the returned object.
+ * `maxVotesPerMember` can be overridden per test by caller-side edits to the returned object.
  */
-function buildVotingSchema(maxVotes?: number) {
+function buildVotingSchema(maxVotesPerMember?: number) {
   return {
     id: 'voting-test',
     version: '1.0.0',
@@ -42,7 +42,10 @@ function buildVotingSchema(maxVotes?: number) {
         name: 'Voting',
         rules: {
           proposals: { submit: false },
-          voting: { submit: true, ...(maxVotes !== undefined && { maxVotes }) },
+          voting: {
+            submit: true,
+            ...(maxVotesPerMember !== undefined && { maxVotesPerMember }),
+          },
           advancement: { method: 'manual' as const },
         },
       },
@@ -61,12 +64,16 @@ function buildVotingSchema(maxVotes?: number) {
 
 async function setupVotingInstance(
   testData: TestDecisionsDataManager,
-  opts: { maxVotes?: number; proposalCount: number; votingEnabled?: boolean },
+  opts: {
+    maxVotesPerMember?: number;
+    proposalCount: number;
+    votingEnabled?: boolean;
+  },
 ) {
   const setup = await testData.createDecisionSetup({
     instanceCount: 1,
     grantAccess: true,
-    processSchema: buildVotingSchema(opts.maxVotes),
+    processSchema: buildVotingSchema(opts.maxVotesPerMember),
   });
 
   const instance = setup.instances[0];
@@ -95,13 +102,13 @@ async function setupVotingInstance(
 }
 
 describe.concurrent('submitVote', () => {
-  it('rejects selection exceeding phase maxVotes', async ({
+  it('rejects selection exceeding phase maxVotesPerMember', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { setup, instance, proposals } = await setupVotingInstance(testData, {
-      maxVotes: 2,
+      maxVotesPerMember: 2,
       proposalCount: 3,
     });
 
@@ -115,13 +122,13 @@ describe.concurrent('submitVote', () => {
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
   });
 
-  it('accepts selection at the phase maxVotes cap', async ({
+  it('accepts selection at the phase maxVotesPerMember cap', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { setup, instance, proposals } = await setupVotingInstance(testData, {
-      maxVotes: 2,
+      maxVotesPerMember: 2,
       proposalCount: 3,
     });
 
@@ -135,13 +142,13 @@ describe.concurrent('submitVote', () => {
     expect(result.selectedProposalIds).toHaveLength(2);
   });
 
-  it('treats undefined maxVotes as unlimited', async ({
+  it('treats undefined maxVotesPerMember as unlimited', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { setup, instance, proposals } = await setupVotingInstance(testData, {
-      maxVotes: undefined,
+      maxVotesPerMember: undefined,
       proposalCount: 5,
     });
 
@@ -183,7 +190,7 @@ describe.concurrent('getVotingStatus', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { setup, instance } = await setupVotingInstance(testData, {
-      maxVotes: undefined,
+      maxVotesPerMember: undefined,
       proposalCount: 0,
     });
 
@@ -199,7 +206,7 @@ describe.concurrent('getVotingStatus', () => {
   it('returns the phase cap when set', async ({ task, onTestFinished }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { setup, instance } = await setupVotingInstance(testData, {
-      maxVotes: 3,
+      maxVotesPerMember: 3,
       proposalCount: 0,
     });
 

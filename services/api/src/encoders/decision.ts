@@ -106,7 +106,7 @@ const phaseRulesEncoder = z.object({
     .object({
       submit: z.boolean().optional(),
       edit: z.boolean().optional(),
-      maxVotes: z.number().int().positive().optional(),
+      maxVotesPerMember: z.number().int().positive().optional(),
     })
     .optional(),
   advancement: z
