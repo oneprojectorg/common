@@ -1,6 +1,6 @@
 'use client';
 
-import { trpc } from '@op/api/client';
+import { useUser } from '@/utils/UserProvider';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -10,16 +10,11 @@ import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
 import { useProcessPhases } from './useProcessPhases';
 
-interface ProcessBuilderContentProps extends SectionProps {
-  slug: string;
-}
-
 export function ProcessBuilderContent({
   decisionProfileId,
   instanceId,
   decisionName,
-  slug,
-}: ProcessBuilderContentProps) {
+}: SectionProps) {
   const t = useTranslations();
   const navigationConfig = useNavigationConfig(instanceId, decisionProfileId);
 
@@ -27,11 +22,10 @@ export function ProcessBuilderContent({
 
   const { currentSection } = useProcessNavigation(navigationConfig, phases);
 
-  const { data: decisionProfile } = trpc.decision.getDecisionBySlug.useQuery({
-    slug,
-  });
+  const { getPermissionsForProfile } = useUser();
+  const isAdmin = getPermissionsForProfile(decisionProfileId).decisions.admin;
 
-  if (decisionProfile && !decisionProfile.processInstance.access?.admin) {
+  if (!isAdmin) {
     throw new Error('UNAUTHORIZED');
   }
 
