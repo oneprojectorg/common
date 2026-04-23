@@ -21,7 +21,7 @@ export interface SplitPaneProps {
 
 export interface SplitPanePaneProps {
   id: string;
-  label: string;
+  label: ReactNode;
   className?: string;
   /** Strip the pane's default padding (e.g. when the child handles its own). */
   unpadded?: boolean;
