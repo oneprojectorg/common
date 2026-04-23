@@ -89,7 +89,10 @@ const StatCard = ({
 
   if (href) {
     return (
-      <Link href={href} className="no-underline hover:opacity-80">
+      <Link
+        href={href}
+        className="no-underline hover:no-underline hover:opacity-80"
+      >
         {content}
       </Link>
     );
