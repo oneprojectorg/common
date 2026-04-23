@@ -7,7 +7,6 @@ import {
 } from '@op/common/client';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Button } from '@op/ui/Button';
-import { Header3 } from '@op/ui/Header';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
@@ -23,8 +22,8 @@ import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
 import { getCriterionMaxPoints, inferCriterionType } from '../rubricTemplate';
 import { useReviewForm } from './ReviewFormContext';
+import { FormShell, TotalScoreCard } from './ReviewFormShell';
 import { SubmittedReviewView } from './SubmittedReviewView';
-import { TotalScoreCard } from './TotalScoreCard';
 import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 
 /**
@@ -52,26 +51,15 @@ export function ReviewRubricForm() {
 
   if (review?.state === 'submitted') {
     return (
-      <div className="flex flex-col gap-6">
-        <div className="border-b border-neutral-gray1 pb-4">
-          <Header3 className="font-serif !text-title-base font-light">
-            {t('Review Proposal')}
-          </Header3>
-        </div>
+      <FormShell>
         <SubmittedReviewView rubricTemplate={template} review={review} />
         <TotalScoreCard rubricTemplate={template} values={values} />
-      </div>
+      </FormShell>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="border-b border-neutral-gray1 pb-4">
-        <Header3 className="font-serif !text-title-base font-light">
-          {t('Review Proposal')}
-        </Header3>
-      </div>
-
+    <FormShell>
       {isPausedForRevision && (
         <>
           <AlertBanner
@@ -158,7 +146,7 @@ export function ReviewRubricForm() {
           <TotalScoreCard rubricTemplate={template} values={values} />
         </div>
       </div>
-    </div>
+    </FormShell>
   );
 }
 
