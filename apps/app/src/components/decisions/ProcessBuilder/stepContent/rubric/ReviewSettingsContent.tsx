@@ -19,7 +19,6 @@ import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 interface ReviewSettings {
   reviewsPolicy: ReviewsPolicy;
   reviewsAllowRevisions: boolean;
-  reviewsAnonymousFeedback: boolean;
 }
 
 export function ReviewSettingsContent({
@@ -45,10 +44,6 @@ export function ReviewSettingsContent({
       instanceData?.config?.reviewsAllowRevisions ??
       config?.reviewsAllowRevisions ??
       true,
-    reviewsAnonymousFeedback:
-      instanceData?.config?.reviewsAnonymousFeedback ??
-      config?.reviewsAnonymousFeedback ??
-      false,
   });
 
   const updateSettings = (updates: Partial<ReviewSettings>) => {
@@ -132,18 +127,6 @@ export function ReviewSettingsContent({
             <ToggleButton
               isSelected={settings.reviewsAllowRevisions}
               onChange={(val) => updateSettings({ reviewsAllowRevisions: val })}
-              size="small"
-            />
-          </ToggleRow>
-          <ToggleRow
-            label={t('Anonymous feedback')}
-            description={t('Revision feedback appears without reviewer names')}
-          >
-            <ToggleButton
-              isSelected={settings.reviewsAnonymousFeedback}
-              onChange={(val) =>
-                updateSettings({ reviewsAnonymousFeedback: val })
-              }
               size="small"
             />
           </ToggleRow>
