@@ -27,11 +27,11 @@ export const getPlatformStats = async ({ user }: { user: User }) => {
         total_decision_instances: number;
       }>(sql`
         SELECT
-          (SELECT GREATEST(reltuples, 0)::int FROM pg_class WHERE relname = 'organizations' AND relnamespace = 'public'::regnamespace) AS total_organizations,
-          (SELECT GREATEST(reltuples, 0)::int FROM pg_class WHERE relname = 'users' AND relnamespace = 'public'::regnamespace) AS total_users,
+          (SELECT count(*)::int FROM organizations) AS total_organizations,
+          (SELECT count(*)::int FROM users) AS total_users,
           (SELECT count(*)::int FROM organization_relationships WHERE NOT pending) AS total_relationships,
           (SELECT count(*)::int FROM organizations WHERE created_at >= ${newOrgThreshold.toISOString()}) AS new_organizations,
-          (SELECT GREATEST(reltuples, 0)::int FROM pg_class WHERE relname = 'decision_process_instances' AND relnamespace = 'public'::regnamespace) AS total_decision_instances
+          (SELECT count(*)::int FROM decision_process_instances) AS total_decision_instances
       `);
 
       return {

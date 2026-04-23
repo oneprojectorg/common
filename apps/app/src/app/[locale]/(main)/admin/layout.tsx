@@ -8,8 +8,6 @@ import {
   PlatformStats,
 } from '@/components/screens/PlatformAdmin';
 
-export const dynamic = 'force-dynamic';
-
 export default async function AdminLayout({
   children,
 }: {
