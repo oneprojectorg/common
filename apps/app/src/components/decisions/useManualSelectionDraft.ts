@@ -14,14 +14,5 @@ import { useLocalStorage } from '@/utils/useLocalStorage';
  * proposal — the confirm dialog and footer count would otherwise drop it.
  */
 export function useManualSelectionDraft(instanceId: string) {
-  const [stored, setStored] = useLocalStorage<Proposal[]>(
-    `manual-selection:${instanceId}`,
-    [],
-  );
-
-  const selected = stored.filter(
-    (p): p is Proposal => typeof p?.id === 'string',
-  );
-
-  return [selected, setStored] as const;
+  return useLocalStorage<Proposal[]>(`manual-selection:${instanceId}`, []);
 }

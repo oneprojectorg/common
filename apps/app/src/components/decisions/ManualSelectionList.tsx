@@ -52,8 +52,6 @@ export const ManualSelectionList = ({
   );
   const state = stateQuery.data;
 
-  // Store full Proposals (not just ids) so selections survive filter changes.
-  // Backed by sessionStorage so they also survive back-navigation.
   const [selectedProposals, setSelectedProposals] =
     useManualSelectionDraft(instanceId);
   const selectedIds = selectedProposals.map((p) => p.id);
