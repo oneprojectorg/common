@@ -45,11 +45,11 @@ export const ManualSelectionList = ({
 
   // Non-suspense + placeholderData so category/sort changes don't blank
   // the table while the server re-fetches.
-  const stateQuery = trpc.decision.getManualSelectionState.useQuery(
+  const candidatesQuery = trpc.decision.listSelectionCandidates.useQuery(
     { processInstanceId: instanceId, categoryId, sortOrder },
     { placeholderData: (prev) => prev },
   );
-  const state = stateQuery.data;
+  const candidates = candidatesQuery.data;
 
   const [selectedProposals, setSelectedProposals] =
     useManualSelectionDraft(instanceId);
@@ -59,7 +59,7 @@ export const ManualSelectionList = ({
 
   const { filteredProposals, proposalFilter, setProposalFilter } =
     useProposalFilters({
-      proposals: state?.proposals ?? [],
+      proposals: candidates?.proposals ?? [],
       currentProfileId: user.currentProfile?.id,
       votedProposalIds: EMPTY_VOTED_IDS,
       hasVoted: false,
@@ -69,8 +69,9 @@ export const ManualSelectionList = ({
   const categories = categoriesData.categories;
   const proposals = filteredProposals;
 
-  // Invalidation (and therefore the selectionsConfirmed flip that unmounts
-  // this component) is automatic via the shared realtime channel.
+  // Invalidation (and therefore the instance.selectionsConfirmed flip that
+  // unmounts this component from the parent) is automatic via the shared
+  // realtime channel.
   const submitMutation = trpc.decision.submitManualSelection.useMutation({
     onSuccess: () => {
       setSelectedProposals([]);
@@ -83,18 +84,14 @@ export const ManualSelectionList = ({
     },
   });
 
-  if (!state) {
-    return null;
-  }
-
-  if (state.selectionsConfirmed) {
+  if (!candidates) {
     return null;
   }
 
   // Full pool empty → dead end, no toolbar. Any narrowing filter keeps
   // the toolbar (below) so the admin can loosen it.
   const isUnfiltered = !categoryId && proposalFilter === ProposalFilter.ALL;
-  if (isUnfiltered && state.proposals.length === 0) {
+  if (isUnfiltered && candidates.proposals.length === 0) {
     return (
       <EmptyState icon={<LuLeaf className="size-6" />}>
         <Header3 className="font-serif font-light">
