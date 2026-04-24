@@ -11,10 +11,15 @@ if (!process.env.DATABASE_URL) {
 export const db = drizzle({
   connection: {
     url: process.env.DATABASE_URL,
+    // IMPORTANT: postgres-js treats an explicit `max: undefined` as
+    // Array(undefined) → length 1, i.e. a single-socket pool. Parallel queries
+    // then pipeline onto that one socket, which hangs forever against
+    // Supavisor transaction-mode pooling. Keep this as a concrete number so
+    // the pool actually has the intended size.
     max:
       process.env.DB_MIGRATING || process.env.DB_SEEDING || process.env.E2E
         ? 1
-        : undefined,
+        : 10,
     onnotice: () => {},
     prepare: false,
   },
