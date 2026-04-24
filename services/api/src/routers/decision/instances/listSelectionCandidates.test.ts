@@ -26,7 +26,11 @@ async function createAuthenticatedCaller(email: string) {
 
 async function seedInstance(
   testData: TestDecisionsDataManager,
-): Promise<{ instanceId: string; userEmail: string; caller: Awaited<ReturnType<typeof createAuthenticatedCaller>> }> {
+): Promise<{
+  instanceId: string;
+  userEmail: string;
+  caller: Awaited<ReturnType<typeof createAuthenticatedCaller>>;
+}> {
   const setup = await testData.createDecisionSetup({
     processSchema: schemaWithoutPipeline,
     instanceCount: 1,
@@ -44,8 +48,8 @@ async function seedInstance(
   };
 }
 
-describe.concurrent('getManualSelectionState', () => {
-  it('returns selectionsConfirmed=false with candidates when a phase transition attached zero proposals', async ({
+describe.concurrent('listSelectionCandidates', () => {
+  it('returns candidates from the previous phase when awaiting manual selection', async ({
     task,
     onTestFinished,
   }) => {
@@ -67,15 +71,14 @@ describe.concurrent('getManualSelectionState', () => {
       .delete(decisionTransitionProposals)
       .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
 
-    const state = await caller.decision.getManualSelectionState({
+    const result = await caller.decision.listSelectionCandidates({
       processInstanceId: instanceId,
     });
 
-    expect(state.selectionsConfirmed).toBe(false);
-    expect(state.proposals.map((p) => p.id)).toContain(submitted.id);
+    expect(result.proposals.map((p) => p.id)).toContain(submitted.id);
   });
 
-  it('returns selectionsConfirmed=true when the latest transition already has a manual selection stamp', async ({
+  it('still returns candidates after a manual-selection stamp exists (state gating lives on getInstance)', async ({
     task,
     onTestFinished,
   }) => {
@@ -115,29 +118,28 @@ describe.concurrent('getManualSelectionState', () => {
       })
       .where(eq(stateTransitionHistory.id, transition.id));
 
-    const state = await caller.decision.getManualSelectionState({
+    const result = await caller.decision.listSelectionCandidates({
       processInstanceId: instanceId,
     });
 
-    expect(state.selectionsConfirmed).toBe(true);
+    expect(result.proposals.length).toBeGreaterThan(0);
   });
 
-  it('returns selectionsConfirmed=true when the instance is still in the first phase', async ({
+  it('returns empty when the instance is still in the first phase', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { instanceId, caller } = await seedInstance(testData);
 
-    const state = await caller.decision.getManualSelectionState({
+    const result = await caller.decision.listSelectionCandidates({
       processInstanceId: instanceId,
     });
 
-    expect(state.selectionsConfirmed).toBe(true);
-    expect(state.proposals).toEqual([]);
+    expect(result.proposals).toEqual([]);
   });
 
-  it('returns selectionsConfirmed=true for a legacy instance', async ({
+  it('returns empty for a legacy instance (no phase model)', async ({
     task,
     onTestFinished,
   }) => {
@@ -157,37 +159,11 @@ describe.concurrent('getManualSelectionState', () => {
       toStateId: 'review',
     });
 
-    const state = await caller.decision.getManualSelectionState({
+    const result = await caller.decision.listSelectionCandidates({
       processInstanceId: instanceId,
     });
 
-    expect(state.selectionsConfirmed).toBe(true);
-  });
-
-  it('returns selectionsConfirmed=true when the pipeline transition already attached proposals', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instanceId, userEmail, caller } = await seedInstance(testData);
-    await testData.createProposal({
-      userEmail,
-      processInstanceId: instanceId,
-      proposalData: { title: `Proposal ${task.id}` },
-      status: ProposalStatus.SUBMITTED,
-    });
-
-    await testData.advancePhase({
-      instanceId,
-      fromPhaseId: 'submission',
-      toPhaseId: 'review',
-    });
-
-    const state = await caller.decision.getManualSelectionState({
-      processInstanceId: instanceId,
-    });
-
-    expect(state.selectionsConfirmed).toBe(true);
+    expect(result.proposals).toEqual([]);
   });
 
   it('rejects callers without admin access on the instance', async ({
@@ -205,7 +181,7 @@ describe.concurrent('getManualSelectionState', () => {
     );
 
     await expect(
-      outsiderCaller.decision.getManualSelectionState({
+      outsiderCaller.decision.listSelectionCandidates({
         processInstanceId: instanceId,
       }),
     ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });

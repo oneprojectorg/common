@@ -50,10 +50,6 @@ export async function submitManualSelection({
   proposalIds,
   user,
 }: SubmitManualSelectionInput): Promise<SubmitManualSelectionResult> {
-  if (proposalIds.length === 0) {
-    throw new ValidationError('At least one proposal must be selected');
-  }
-
   const uniqueProposalIds = [...new Set(proposalIds)];
 
   const [dbUser, instance] = await Promise.all([

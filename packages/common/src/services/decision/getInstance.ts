@@ -10,7 +10,7 @@ import {
   getOrgAccessUser,
   getProfileAccessUser,
 } from '../access';
-import { resolveManualSelectionStatus } from './getManualSelectionState';
+import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
 import type { DecisionRolePermissions } from './permissions';
 import { fromDecisionBitField } from './permissions';
 import type { DecisionInstanceData } from './schemas/instanceData';
@@ -144,8 +144,8 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       : instanceData;
 
     const manualSelectionStatus = await resolveManualSelectionStatus({
-      processInstanceId: instance.id,
       instance: {
+        id: instance.id,
         instanceData: instance.instanceData,
         currentStateId: instance.currentStateId,
       },

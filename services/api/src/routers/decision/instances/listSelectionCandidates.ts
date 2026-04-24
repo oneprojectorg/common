@@ -1,30 +1,29 @@
-import { Channels, getManualSelectionState } from '@op/common';
+import { Channels, listSelectionCandidates } from '@op/common';
 import { proposalSchema } from '@op/common/client';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
-const getManualSelectionStateInputSchema = z.object({
+const listSelectionCandidatesInputSchema = z.object({
   processInstanceId: z.uuid(),
   categoryId: z.uuid().optional(),
   sortOrder: z.enum(['newest', 'oldest']).default('newest'),
 });
 
-const getManualSelectionStateOutputSchema = z.object({
-  selectionsConfirmed: z.boolean(),
+const listSelectionCandidatesOutputSchema = z.object({
   proposals: z.array(proposalSchema),
 });
 
-export const getManualSelectionStateRouter = router({
-  getManualSelectionState: commonAuthedProcedure()
-    .input(getManualSelectionStateInputSchema)
-    .output(getManualSelectionStateOutputSchema)
+export const listSelectionCandidatesRouter = router({
+  listSelectionCandidates: commonAuthedProcedure()
+    .input(listSelectionCandidatesInputSchema)
+    .output(listSelectionCandidatesOutputSchema)
     .query(async ({ ctx, input }) => {
       ctx.registerQueryChannels([
         Channels.decisionInstance(input.processInstanceId),
       ]);
 
-      return getManualSelectionState({
+      return listSelectionCandidates({
         processInstanceId: input.processInstanceId,
         categoryId: input.categoryId,
         sortOrder: input.sortOrder,
