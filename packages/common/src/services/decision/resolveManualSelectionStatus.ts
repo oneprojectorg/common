@@ -1,9 +1,5 @@
-import { db, desc, eq } from '@op/db/client';
+import { db } from '@op/db/client';
 import type { DbClient } from '@op/db/client';
-import {
-  decisionTransitionProposals,
-  stateTransitionHistory,
-} from '@op/db/schema';
 
 import { isLegacyInstanceData } from './isLegacyInstance';
 import type { DecisionInstanceData } from './schemas/instanceData';
@@ -16,13 +12,13 @@ export type InstanceForStatusResolution = {
 };
 
 export type ManualSelectionStatus =
-  | { selectionsConfirmed: true }
-  | { selectionsConfirmed: false; previousPhaseId: string };
+  | { selectionsAreConfirmed: true }
+  | { selectionsAreConfirmed: false; previousPhaseId: string };
 
 /**
  * Is the current phase's inbound transition still awaiting a manual selection?
  *
- * `selectionsConfirmed: false` means the UI should prompt an admin to pick
+ * `selectionsAreConfirmed: false` means the UI should prompt an admin to pick
  * proposals — the transition exists but has zero attachments and no
  * `manualSelection` stamp. Any other shape (legacy instance, initial phase,
  * already-stamped, already-attached) resolves to `true`.
@@ -35,45 +31,40 @@ export async function resolveManualSelectionStatus({
   dbClient?: DbClient;
 }): Promise<ManualSelectionStatus> {
   if (isLegacyInstanceData(instance.instanceData)) {
-    return { selectionsConfirmed: true };
+    return { selectionsAreConfirmed: true };
   }
 
   const currentStateId = instance.currentStateId;
   if (!currentStateId) {
-    return { selectionsConfirmed: true };
+    return { selectionsAreConfirmed: true };
   }
 
   const instanceData = instance.instanceData as DecisionInstanceData | null;
   const phases = instanceData?.phases;
   if (!phases || phases.length === 0) {
-    return { selectionsConfirmed: true };
+    return { selectionsAreConfirmed: true };
   }
 
   const currentPhaseIndex = phases.findIndex(
     (p) => p.phaseId === currentStateId,
   );
   if (currentPhaseIndex <= 0) {
-    return { selectionsConfirmed: true };
+    return { selectionsAreConfirmed: true };
   }
 
   const previousPhase = phases[currentPhaseIndex - 1];
   if (!previousPhase) {
-    return { selectionsConfirmed: true };
+    return { selectionsAreConfirmed: true };
   }
 
-  const [latestRow] = await dbClient
-    .select({
-      id: stateTransitionHistory.id,
-      toStateId: stateTransitionHistory.toStateId,
-      transitionData: stateTransitionHistory.transitionData,
-    })
-    .from(stateTransitionHistory)
-    .where(eq(stateTransitionHistory.processInstanceId, instance.id))
-    .orderBy(desc(stateTransitionHistory.transitionedAt))
-    .limit(1);
+  const latestRow = await dbClient.query.stateTransitionHistory.findFirst({
+    where: { processInstanceId: instance.id },
+    orderBy: { transitionedAt: 'desc' },
+    columns: { id: true, toStateId: true, transitionData: true },
+  });
 
   if (!latestRow || latestRow.toStateId !== currentStateId) {
-    return { selectionsConfirmed: true };
+    return { selectionsAreConfirmed: true };
   }
 
   const hasManualSelectionStamp = Boolean(
@@ -82,18 +73,17 @@ export async function resolveManualSelectionStatus({
   );
 
   if (hasManualSelectionStamp) {
-    return { selectionsConfirmed: true };
+    return { selectionsAreConfirmed: true };
   }
 
-  const [attached] = await dbClient
-    .select({ id: decisionTransitionProposals.transitionHistoryId })
-    .from(decisionTransitionProposals)
-    .where(eq(decisionTransitionProposals.transitionHistoryId, latestRow.id))
-    .limit(1);
+  const attached = await dbClient.query.decisionTransitionProposals.findFirst({
+    where: { transitionHistoryId: latestRow.id },
+    columns: { transitionHistoryId: true },
+  });
 
   if (attached) {
-    return { selectionsConfirmed: true };
+    return { selectionsAreConfirmed: true };
   }
 
-  return { selectionsConfirmed: false, previousPhaseId: previousPhase.phaseId };
+  return { selectionsAreConfirmed: false, previousPhaseId: previousPhase.phaseId };
 }

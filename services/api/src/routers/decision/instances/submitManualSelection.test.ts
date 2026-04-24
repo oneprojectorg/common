@@ -88,15 +88,12 @@ describe.concurrent('submitManualSelection', () => {
       throw new Error('Expected stateTransitionHistory row to exist');
     }
 
-    const result = await caller.decision.submitManualSelection({
+    await caller.decision.submitManualSelection({
       processInstanceId: instanceId,
       proposalIds: [p1.id, p2.id],
     });
 
     // UPDATE-in-place: the transition row must be the same one already present.
-    expect(result.transitionHistoryId).toBe(existingTransition.id);
-    expect(new Set(result.proposalIds)).toEqual(new Set([p1.id, p2.id]));
-
     const [historyRow, ...extraHistoryRows] = await db
       .select()
       .from(stateTransitionHistory)
@@ -105,6 +102,7 @@ describe.concurrent('submitManualSelection', () => {
     if (!historyRow) {
       throw new Error('Expected exactly one history row');
     }
+    expect(historyRow.id).toBe(existingTransition.id);
     expect(historyRow.fromStateId).toBe('submission');
     expect(historyRow.toStateId).toBe('review');
     expect(historyRow.transitionData).toMatchObject({
@@ -121,7 +119,7 @@ describe.concurrent('submitManualSelection', () => {
       .where(
         eq(
           decisionTransitionProposals.transitionHistoryId,
-          result.transitionHistoryId,
+          existingTransition.id,
         ),
       );
     expect(attached).toHaveLength(2);

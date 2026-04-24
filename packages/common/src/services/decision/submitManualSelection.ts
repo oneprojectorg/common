@@ -32,11 +32,6 @@ export interface SubmitManualSelectionInput {
   user: User;
 }
 
-export interface SubmitManualSelectionResult {
-  transitionHistoryId: string;
-  proposalIds: string[];
-}
-
 /**
  * Admin-driven manual selection for the current phase's inbound transition.
  *
@@ -49,7 +44,7 @@ export async function submitManualSelection({
   processInstanceId,
   proposalIds,
   user,
-}: SubmitManualSelectionInput): Promise<SubmitManualSelectionResult> {
+}: SubmitManualSelectionInput): Promise<void> {
   const uniqueProposalIds = [...new Set(proposalIds)];
 
   const [dbUser, instance] = await Promise.all([
@@ -253,10 +248,5 @@ export async function submitManualSelection({
         proposalHistoryId: historyId,
       })),
     );
-
-    return {
-      transitionHistoryId: latestRow.id,
-      proposalIds: uniqueProposalIds,
-    };
   });
 }

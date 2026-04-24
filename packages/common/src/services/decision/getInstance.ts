@@ -157,7 +157,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       proposalCount,
       participantCount,
       access,
-      selectionsConfirmed: manualSelectionStatus.selectionsConfirmed,
+      selectionsAreConfirmed: manualSelectionStatus.selectionsAreConfirmed,
     };
   } catch (error) {
     if (error instanceof NotFoundError || error instanceof UnauthorizedError) {

@@ -8,17 +8,11 @@ const submitManualSelectionInputSchema = z.object({
   proposalIds: z.array(z.uuid()).min(1),
 });
 
-const submitManualSelectionOutputSchema = z.object({
-  transitionHistoryId: z.uuid(),
-  proposalIds: z.array(z.uuid()),
-});
-
 export const submitManualSelectionRouter = router({
   submitManualSelection: commonAuthedProcedure()
     .input(submitManualSelectionInputSchema)
-    .output(submitManualSelectionOutputSchema)
     .mutation(async ({ ctx, input }) => {
-      const result = await submitManualSelection({
+      await submitManualSelection({
         processInstanceId: input.processInstanceId,
         proposalIds: input.proposalIds,
         user: ctx.user,
@@ -27,7 +21,5 @@ export const submitManualSelectionRouter = router({
       ctx.registerMutationChannels([
         Channels.decisionInstance(input.processInstanceId),
       ]);
-
-      return result;
     }),
 });
