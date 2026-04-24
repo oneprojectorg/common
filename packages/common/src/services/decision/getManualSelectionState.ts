@@ -1,10 +1,8 @@
-import { and, db, desc, eq, inArray, isNull, ne } from '@op/db/client';
+import { db, desc, eq } from '@op/db/client';
 import type { DbClient } from '@op/db/client';
 import {
-  ProposalStatus,
   decisionTransitionProposals,
   proposalCategories,
-  proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
@@ -12,6 +10,7 @@ import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError } from '../../utils';
 import { getProfileAccessUser } from '../access';
+import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import { listProposals } from './listProposals';
 import type { DecisionInstanceData } from './schemas/instanceData';
@@ -77,76 +76,39 @@ export async function getManualSelectionState({
 
   const { previousPhaseId } = resolved;
 
-  const [previousTransition] = await dbClient
-    .select({ id: stateTransitionHistory.id })
-    .from(stateTransitionHistory)
-    .where(
-      and(
-        eq(stateTransitionHistory.processInstanceId, processInstanceId),
-        eq(stateTransitionHistory.toStateId, previousPhaseId),
-      ),
-    )
-    .orderBy(desc(stateTransitionHistory.transitionedAt))
-    .limit(1);
-
   // Short-circuit empty category matches before the larger fetch.
-  let categoryProposalIds: string[] | undefined;
+  let categoryProposalIds: Set<string> | undefined;
   if (categoryId) {
     const rows = await dbClient
       .select({ proposalId: proposalCategories.proposalId })
       .from(proposalCategories)
       .where(eq(proposalCategories.taxonomyTermId, categoryId));
-    categoryProposalIds = rows.map((r) => r.proposalId);
-    if (categoryProposalIds.length === 0) {
+    if (rows.length === 0) {
       return { selectionsConfirmed: false, proposals: [] };
     }
+    categoryProposalIds = new Set(rows.map((r) => r.proposalId));
   }
 
-  const candidateRows = previousTransition
-    ? await dbClient
-        .select({ id: proposals.id })
-        .from(decisionTransitionProposals)
-        .innerJoin(
-          proposals,
-          eq(decisionTransitionProposals.proposalId, proposals.id),
-        )
-        .where(
-          and(
-            eq(
-              decisionTransitionProposals.transitionHistoryId,
-              previousTransition.id,
-            ),
-            ne(proposals.status, ProposalStatus.DRAFT),
-            isNull(proposals.deletedAt),
-            ...(categoryProposalIds
-              ? [inArray(proposals.id, categoryProposalIds)]
-              : []),
-          ),
-        )
-    : await dbClient
-        .select({ id: proposals.id })
-        .from(proposals)
-        .where(
-          and(
-            eq(proposals.processInstanceId, processInstanceId),
-            ne(proposals.status, ProposalStatus.DRAFT),
-            isNull(proposals.deletedAt),
-            ...(categoryProposalIds
-              ? [inArray(proposals.id, categoryProposalIds)]
-              : []),
-          ),
-        );
+  const phaseCandidateIds = await getProposalIdsForPhase({
+    instanceId: processInstanceId,
+    phaseId: previousPhaseId,
+    dbClient,
+  });
 
-  if (candidateRows.length === 0) {
+  const candidateIds = categoryProposalIds
+    ? phaseCandidateIds.filter((id) => categoryProposalIds.has(id))
+    : phaseCandidateIds;
+
+  if (candidateIds.length === 0) {
     return { selectionsConfirmed: false, proposals: [] };
   }
 
   const { proposals: enriched } = await listProposals({
     input: {
       processInstanceId,
-      proposalIds: candidateRows.map((r) => r.id),
+      proposalIds: candidateIds,
       authUserId: user.id,
-      limit: candidateRows.length,
+      limit: candidateIds.length,
       orderBy: 'createdAt',
       dir: sortOrder === 'oldest' ? 'asc' : 'desc',
     },

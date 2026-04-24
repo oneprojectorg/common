@@ -1,11 +1,9 @@
-import { and, db, desc, eq, inArray, isNull, ne } from '@op/db/client';
+import { and, db, desc, eq, inArray } from '@op/db/client';
 import {
   ProcessStatus,
-  ProposalStatus,
   decisionTransitionProposals,
   processInstances,
   proposalHistory,
-  proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
@@ -20,6 +18,7 @@ import {
 } from '../../utils';
 import { getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
+import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import type {
@@ -194,48 +193,13 @@ export async function submitManualSelection({
       );
     }
 
-    const [previousTransition] = await tx
-      .select({ id: stateTransitionHistory.id })
-      .from(stateTransitionHistory)
-      .where(
-        and(
-          eq(stateTransitionHistory.processInstanceId, processInstanceId),
-          eq(stateTransitionHistory.toStateId, previousPhaseId),
-        ),
-      )
-      .orderBy(desc(stateTransitionHistory.transitionedAt))
-      .limit(1);
-
-    const candidateRows = previousTransition
-      ? await tx
-          .select({ id: proposals.id })
-          .from(decisionTransitionProposals)
-          .innerJoin(
-            proposals,
-            eq(decisionTransitionProposals.proposalId, proposals.id),
-          )
-          .where(
-            and(
-              eq(
-                decisionTransitionProposals.transitionHistoryId,
-                previousTransition.id,
-              ),
-              ne(proposals.status, ProposalStatus.DRAFT),
-              isNull(proposals.deletedAt),
-            ),
-          )
-      : await tx
-          .select({ id: proposals.id })
-          .from(proposals)
-          .where(
-            and(
-              eq(proposals.processInstanceId, processInstanceId),
-              ne(proposals.status, ProposalStatus.DRAFT),
-              isNull(proposals.deletedAt),
-            ),
-          );
-
-    const candidateIds = new Set(candidateRows.map((r) => r.id));
+    const candidateIds = new Set(
+      await getProposalIdsForPhase({
+        instanceId: processInstanceId,
+        phaseId: previousPhaseId,
+        dbClient: tx,
+      }),
+    );
     for (const id of uniqueProposalIds) {
       if (!candidateIds.has(id)) {
         throw new ValidationError(
