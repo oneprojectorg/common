@@ -216,6 +216,49 @@ describe.concurrent('saveReviewDraft', () => {
     expect(result.overallComment).toBeNull();
   });
 
+  it('persists overallComment on the draft and round-trips updates', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment();
+    await testData.setRubricTemplate(created.context, rubricTemplate);
+
+    const reviewerCaller = await createAuthenticatedCaller(
+      created.reviewer.email,
+    );
+
+    const first = await reviewerCaller.decision.saveReviewDraft({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 2 }, rationales: {} },
+      overallComment: 'Initial feedback draft',
+    });
+
+    expect(first.overallComment).toBe('Initial feedback draft');
+
+    // Upsert path: an edit to overallComment should overwrite, and clearing
+    // it should persist as null.
+    const second = await reviewerCaller.decision.saveReviewDraft({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 2 }, rationales: {} },
+      overallComment: 'Revised feedback draft',
+    });
+    expect(second.overallComment).toBe('Revised feedback draft');
+
+    const cleared = await reviewerCaller.decision.saveReviewDraft({
+      assignmentId: created.assignment.id,
+      reviewData: { answers: { impact: 2 }, rationales: {} },
+      overallComment: null,
+    });
+    expect(cleared.overallComment).toBeNull();
+
+    const review = await db.query.proposalReviews.findFirst({
+      where: { assignmentId: created.assignment.id },
+    });
+    expect(review?.state).toBe(ProposalReviewState.DRAFT);
+    expect(review?.overallComment).toBeNull();
+  });
+
   it('does not downgrade non-PENDING assignment statuses', async ({
     task,
     onTestFinished,

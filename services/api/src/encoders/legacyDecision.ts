@@ -1,14 +1,10 @@
 import { documentContentSchema, proposalDataSchema } from '@op/common/client';
 import {
   ProcessStatus,
-  ProposalStatus,
-  Visibility,
   decisionProcesses,
-  decisions,
   processInstances,
   proposalAttachments,
   proposals,
-  stateTransitionHistory,
 } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
@@ -20,7 +16,7 @@ import { baseProfileEncoder } from './profiles';
 const jsonSchemaEncoder = z.record(z.string(), z.unknown());
 
 // Shared process phase schema (legacy state-based format)
-export const legacyProcessPhaseSchema = z.object({
+const legacyProcessPhaseSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().optional(),
@@ -182,10 +178,8 @@ export const legacyProcessInstanceEncoder = createSelectSchema(processInstances)
     participantCount: z.number().optional(),
   });
 
-// Proposal Attachment Join Table Encoder
-export const legacyProposalAttachmentEncoder = createSelectSchema(
-  proposalAttachments,
-)
+// Proposal Attachment Join Table Encoder (internal — used by legacyProposalEncoder)
+const legacyProposalAttachmentEncoder = createSelectSchema(proposalAttachments)
   .pick({
     id: true,
     proposalId: true,
@@ -198,8 +192,8 @@ export const legacyProposalAttachmentEncoder = createSelectSchema(
     uploader: baseProfileEncoder.optional(),
   });
 
-// Proposal Encoder
-export const legacyProposalEncoder = createSelectSchema(proposals)
+// Proposal Encoder (internal — used by legacyInstanceResultsEncoder)
+const legacyProposalEncoder = createSelectSchema(proposals)
   .pick({
     id: true,
     processInstanceId: true,
@@ -236,63 +230,16 @@ export const legacyProposalEncoder = createSelectSchema(proposals)
     documentContent: documentContentSchema.optional(),
   });
 
-// Decision Encoder
-export const legacyDecisionEncoder = createSelectSchema(decisions)
-  .pick({
-    id: true,
-    decisionData: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    proposal: legacyProposalEncoder.optional(),
-    decidedBy: baseProfileEncoder.optional(),
-  });
-
-// State Transition History Encoder
-export const legacyStateTransitionHistoryEncoder = createSelectSchema(
-  stateTransitionHistory,
-)
-  .pick({
-    id: true,
-    fromStateId: true,
-    toStateId: true,
-    transitionData: true,
-    transitionedAt: true,
-  })
-  .extend({
-    triggeredBy: baseProfileEncoder.optional(),
-  });
-
 // List Encoders (for paginated responses)
-export const legacyDecisionProcessListEncoder = z.object({
-  processes: z.array(legacyDecisionProcessEncoder),
-  total: z.number(),
-  hasMore: z.boolean(),
-});
-
 export const legacyProcessInstanceListEncoder = z.object({
   instances: z.array(legacyProcessInstanceEncoder),
   total: z.number(),
   hasMore: z.boolean(),
 });
 
-export const legacyProposalListEncoder = z.object({
-  proposals: z.array(legacyProposalEncoder),
-  total: z.number(),
-  hasMore: z.boolean(),
-  canManageProposals: z.boolean().prefault(false),
-});
-
 export const legacyInstanceResultsEncoder = z.object({
   items: z.array(legacyProposalEncoder),
   next: z.string().nullish(),
-});
-
-export const legacyDecisionListEncoder = z.object({
-  decisions: z.array(legacyDecisionEncoder),
-  total: z.number(),
-  hasMore: z.boolean(),
 });
 
 // Input Schemas
@@ -302,90 +249,17 @@ export const legacyCreateProcessInputSchema = z.object({
   processSchema: legacyProcessSchemaEncoder,
 });
 
-export const legacyUpdateProcessInputSchema =
-  legacyCreateProcessInputSchema.partial();
-
-export const legacyCreateInstanceInputSchema = z.object({
-  processId: z.uuid(),
-  name: z.string().min(3).max(256),
-  description: z.string().optional(),
-  instanceData: legacyInstanceDataEncoder,
-});
-
-export const legacyUpdateInstanceInputSchema = legacyCreateInstanceInputSchema
-  .omit({ processId: true })
-  .partial()
-  .extend({
-    instanceId: z.uuid(),
-    status: z.enum(ProcessStatus).optional(),
-  });
-
 export const legacyGetInstanceInputSchema = z.object({
   instanceId: z.uuid(),
 });
 
-export const legacyCreateProposalInputSchema = z.object({
-  processInstanceId: z.uuid(),
-  proposalData: z.record(z.string(), z.unknown()),
-  attachmentIds: z.array(z.string()).optional(), // Array of attachment IDs to link to this proposal
-});
-
-export const legacyUpdateProposalInputSchema = legacyCreateProposalInputSchema
-  .omit({ processInstanceId: true })
-  .partial()
-  .extend({
-    visibility: z.enum(Visibility).optional(),
-    status: z.enum(ProposalStatus).optional(),
-  });
-
-export const legacySubmitDecisionInputSchema = z.object({
-  proposalId: z.uuid(),
-  decisionData: z.record(z.string(), z.unknown()), // Decision data matching voting definition
-});
-
-// Transition Schemas
-export const legacyExecuteTransitionInputSchema = z.object({
-  instanceId: z.uuid(),
-  toStateId: z.string(),
-  transitionData: z.record(z.string(), z.unknown()).optional(),
-});
-
-export const legacyCheckTransitionInputSchema = z.object({
-  instanceId: z.uuid(),
-  toStateId: z.string().optional(), // If not provided, check all possible transitions
-});
-
-export const legacyTransitionCheckResultEncoder = z.object({
-  canTransition: z.boolean(),
-  availableTransitions: z.array(
-    z.object({
-      toStateId: z.string(),
-      transitionName: z.string(),
-      canExecute: z.boolean(),
-      failedRules: z.array(
-        z.object({
-          ruleId: z.string(),
-          errorMessage: z.string(),
-        }),
-      ),
-    }),
-  ),
-});
-
-// Pagination Schema
-export const legacyPaginationInputSchema = z.object({
+// Pagination Schema (internal — used by legacyInstanceFilterSchema)
+const legacyPaginationInputSchema = z.object({
   limit: z.number().min(1).max(100).prefault(20),
   offset: z.number().min(0).prefault(0),
 });
 
 // Filter Schemas
-export const legacyProcessFilterSchema = z
-  .object({
-    createdByProfileId: z.uuid().optional(),
-    search: z.string().optional(),
-  })
-  .extend(legacyPaginationInputSchema.shape);
-
 export const legacyInstanceFilterSchema = z
   .object({
     processId: z.uuid().optional(),
@@ -402,47 +276,7 @@ export const legacyOnlyInstanceFilterSchema = z.object({
 
 export const legacyInstanceListEncoder = z.array(legacyProcessInstanceEncoder);
 
-export const legacyProposalFilterSchema = z
-  .object({
-    processInstanceId: z.uuid(),
-    submittedByProfileId: z.uuid().optional(),
-    status: z.enum(ProposalStatus).optional(),
-    categoryId: z.string().optional(),
-    dir: z.enum(['asc', 'desc']).optional(),
-    proposalIds: z.array(z.uuid()).optional(),
-  })
-  .extend(legacyPaginationInputSchema.shape);
-
-// Decision Profile Encoder (profile with processInstance)
-export const legacyDecisionProfileEncoder = baseProfileEncoder.extend({
-  processInstance: legacyProcessInstanceEncoder,
-});
-
-// Decision Profile List Encoder
-export const legacyDecisionProfileListEncoder = z.object({
-  items: z.array(legacyDecisionProfileEncoder),
-  next: z.string().nullish(),
-});
-
-// Decision Profile Filter Schema
-export const legacyDecisionProfileFilterSchema = z.object({
-  cursor: z.string().nullish(),
-  limit: z.number().min(1).max(100).prefault(10),
-  orderBy: z.enum(['createdAt', 'updatedAt', 'name']).prefault('updatedAt'),
-  dir: z.enum(['asc', 'desc']).prefault('desc'),
-  search: z.string().optional(),
-  status: z.enum(ProcessStatus).optional(),
-  ownerProfileId: z.uuid().optional(),
-  stewardProfileId: z.uuid().optional(),
-});
-
 // Type exports
 export type LegacyProcessInstance = z.infer<
   typeof legacyProcessInstanceEncoder
->;
-export type LegacyDecisionProfile = z.infer<
-  typeof legacyDecisionProfileEncoder
->;
-export type LegacyDecisionProfileList = z.infer<
-  typeof legacyDecisionProfileListEncoder
 >;

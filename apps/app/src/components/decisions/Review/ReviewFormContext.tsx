@@ -33,6 +33,8 @@ interface ReviewFormState {
   values: Record<string, unknown>;
   /** Optional free-text rationale per criterion id (always optional). */
   rationales: Record<string, string>;
+  /** Optional free-text feedback shown to the author after the review phase. */
+  overallComment: string;
   canSubmit: boolean;
   isSubmitting: boolean;
   isSubmitted: boolean;
@@ -45,6 +47,7 @@ interface ReviewFormState {
   assignment: ProposalReviewAssignment;
   handleValueChange: (key: string, value: unknown) => void;
   handleRationaleChange: (key: string, value: string) => void;
+  handleOverallCommentChange: (value: string) => void;
   handleSubmit: () => void;
   requestRevision: (comment: string) => void;
   cancelRevisionRequest: () => void;
@@ -134,6 +137,9 @@ function ReviewFormProviderInner({
   const [rationales, setRationales] = useState<Record<string, string>>(
     review?.reviewData.rationales ?? {},
   );
+  const [overallComment, setOverallComment] = useState<string>(
+    review?.overallComment ?? '',
+  );
   const isSubmitted = review?.state === 'submitted';
   const isPausedForRevision = hasAnyOpenRevisionRequest;
   const canRequestRevision = !isSubmitted && !hasAnyOpenRevisionRequest;
@@ -154,6 +160,7 @@ function ReviewFormProviderInner({
     assignmentId,
     answers: values,
     rationales,
+    overallComment,
     enabled: !isSubmitted && !isPausedForRevision,
   });
 
@@ -201,12 +208,21 @@ function ReviewFormProviderInner({
     [scheduleAutosave],
   );
 
+  const handleOverallCommentChange = useCallback(
+    (value: string) => {
+      setOverallComment(value);
+      scheduleAutosave();
+    },
+    [scheduleAutosave],
+  );
+
   const handleSubmit = useCallback(() => {
     submitReview.mutate({
       assignmentId,
       reviewData: { answers: values, rationales },
+      overallComment: overallComment.trim() ? overallComment : null,
     });
-  }, [assignmentId, values, rationales, submitReview]);
+  }, [assignmentId, values, rationales, overallComment, submitReview]);
 
   const handleRequestRevision = useCallback(
     (comment: string) => {
@@ -232,6 +248,7 @@ function ReviewFormProviderInner({
     () => ({
       values,
       rationales,
+      overallComment,
       canSubmit: canSubmit && !isSubmitted && !isPausedForRevision,
       isSubmitting: submitReview.isPending,
       isSubmitted,
@@ -244,6 +261,7 @@ function ReviewFormProviderInner({
       assignment,
       handleValueChange,
       handleRationaleChange,
+      handleOverallCommentChange,
       handleSubmit,
       requestRevision: handleRequestRevision,
       cancelRevisionRequest: handleCancelRevision,
@@ -253,6 +271,7 @@ function ReviewFormProviderInner({
     [
       values,
       rationales,
+      overallComment,
       canSubmit,
       isSubmitted,
       isPausedForRevision,
@@ -267,6 +286,7 @@ function ReviewFormProviderInner({
       cancelRevisionMutation.isPending,
       handleValueChange,
       handleRationaleChange,
+      handleOverallCommentChange,
       handleSubmit,
       handleRequestRevision,
       handleCancelRevision,
@@ -284,11 +304,13 @@ function useAutosaveDraft({
   assignmentId,
   answers,
   rationales,
+  overallComment,
   enabled,
 }: {
   assignmentId: string;
   answers: Record<string, unknown>;
   rationales: Record<string, string>;
+  overallComment: string;
   enabled: boolean;
 }) {
   const saveReviewDraft = trpc.decision.saveReviewDraft.useMutation();
@@ -314,6 +336,7 @@ function useAutosaveDraft({
       .mutateAsync({
         assignmentId,
         reviewData: { answers, rationales },
+        overallComment: overallComment.trim() ? overallComment : null,
       })
       .catch(() => {})
       .then(() => {

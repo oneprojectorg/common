@@ -39,21 +39,19 @@ export function ReviewRubricForm() {
     rubricTemplate: template,
     values,
     rationales,
+    overallComment,
     handleValueChange,
     handleRationaleChange,
+    handleOverallCommentChange,
     isPausedForRevision,
   } = useReviewForm();
   const fields = compileRubricSchema(template);
   const criteria = getCriteria(template);
 
-  const [feedbackToAuthor, setFeedbackToAuthor] = useState('');
-  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(
+    overallComment.length > 0,
+  );
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-
-  const handleFeedbackChange = (value: string) => {
-    // TODO: wire feedback to author into review submission
-    setFeedbackToAuthor(value);
-  };
 
   const totalScore = criteria.reduce<number | null>((total, criterion) => {
     const value = values[criterion.id];
@@ -131,15 +129,15 @@ export function ReviewRubricForm() {
               <FieldHeader
                 title={t('Feedback to Author')}
                 description={t(
-                  'Feedback will be shared with the author after the review phase ends',
+                  'Shared anonymously with the author after the review phase ends',
                 )}
                 className="gap-1"
               />
 
               <TextField
                 aria-label={t('Feedback to Author')}
-                value={feedbackToAuthor}
-                onChange={handleFeedbackChange}
+                value={overallComment}
+                onChange={handleOverallCommentChange}
                 useTextArea
                 textareaProps={{ rows: 3 }}
               />

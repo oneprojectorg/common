@@ -1,12 +1,8 @@
 import { and, db, eq, sql } from '@op/db/client';
 import {
-  EntityType,
   allowList,
   organizationUsers,
   organizations,
-  profileUserToAccessRoles,
-  profileUsers,
-  profiles,
   users,
   usersUsedStorage,
 } from '@op/db/schema';
@@ -14,118 +10,12 @@ import { type UserWithRoles, getGlobalPermissions } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils/error';
 import { getNormalizedRoles, getOrgAccessUser } from '../access';
-import { assertGlobalRole } from '../assert/assertGlobalRole';
-import { generateUniqueProfileSlug } from '../profile/utils';
 import { AllowListUser, allowListMetadataSchema } from './validators';
 
 export interface User {
   id: number;
   email: string;
 }
-
-export const createUserByEmail = async ({
-  email,
-  authUserId,
-}: {
-  authUserId: string;
-  email: string;
-}): Promise<void> => {
-  try {
-    // Use INSERT ... ON CONFLICT ... DO UPDATE ... RETURNING to atomically
-    // get or create the user in a single query
-    const [user] = await db
-      .insert(users)
-      .values({ authUserId, email })
-      .onConflictDoUpdate({
-        target: users.email,
-        set: {
-          authUserId, // Update authUserId in case it changed in Supabase Auth
-          updatedAt: sql`now()`,
-        },
-      })
-      .returning();
-
-    if (!user) {
-      throw new Error('Failed to create or retrieve user');
-    }
-
-    // If user already has a profile, we're done
-    if (user.profileId) {
-      return;
-    }
-
-    // Look up the global Admin role before the transaction — it's a static
-    // system role, no need to hold a transaction open while reading it
-    const adminRole = await assertGlobalRole('Admin');
-
-    // Create profile and link it to user atomically
-    // Use a transaction to ensure profile creation and user update succeed together
-    await db.transaction(async (tx) => {
-      // Double-check profileId inside transaction to prevent race condition
-      const [existingUser] = await tx
-        .select({ profileId: users.profileId })
-        .from(users)
-        .where(eq(users.authUserId, authUserId))
-        .for('update'); // Lock the row to prevent concurrent modifications
-
-      if (existingUser?.profileId) {
-        // Another request already created the profile
-        return;
-      }
-
-      // Create the profile
-      const [newProfile] = await tx
-        .insert(profiles)
-        .values({
-          type: EntityType.INDIVIDUAL,
-          name: user.name || email.split('@')[0] || 'User',
-          slug: await generateUniqueProfileSlug({
-            name: user.name || email.split('@')[0] || 'User',
-            db: tx,
-          }),
-        })
-        .returning();
-
-      if (!newProfile) {
-        throw new Error('Failed to create user profile');
-      }
-
-      // Link the profile to the user and create the profileUser in parallel —
-      // both depend only on newProfile.id
-      const [, [newProfileUser]] = await Promise.all([
-        tx
-          .update(users)
-          .set({
-            profileId: newProfile.id,
-            currentProfileId: newProfile.id,
-          })
-          .where(eq(users.authUserId, authUserId)),
-        tx
-          .insert(profileUsers)
-          .values({
-            authUserId,
-            email,
-            isOwner: true,
-            profileId: newProfile.id,
-          })
-          .returning(),
-      ]);
-
-      if (!newProfileUser) {
-        throw new Error('Failed to create profile user');
-      }
-
-      // Assign Admin role to the profileUser
-      await tx.insert(profileUserToAccessRoles).values({
-        profileUserId: newProfileUser.id,
-        accessRoleId: adminRole.id,
-      });
-    });
-  } catch (e) {
-    console.error(e);
-    throw new Error('Something went wrong. Please try again.');
-  }
-};
 
 /**
  * Fetch an allow list entry by email.

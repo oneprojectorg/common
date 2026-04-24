@@ -29,7 +29,6 @@ describe.concurrent('platform.admin.listAllUsers', () => {
     // Just verify that we got results and the API works
     expect(result.items.length).toBeGreaterThan(0);
     expect(result.items.length).toBeLessThanOrEqual(10);
-    expect(typeof result.hasMore).toBe('boolean');
   });
 
   it('should throw error when non-platform admin tries to list all users', async ({
@@ -78,7 +77,10 @@ describe.concurrent('platform.admin.listAllUsers', () => {
     }
   });
 
-  it('should return correct hasMore flag', async ({ task, onTestFinished }) => {
+  it('should return a next cursor when more pages exist', async ({
+    task,
+    onTestFinished,
+  }) => {
     const testData = new TestOrganizationDataManager(task.id, onTestFinished);
     const { adminUser } = await testData.createOrganization({
       users: { admin: 1, member: 5 },
@@ -92,7 +94,6 @@ describe.concurrent('platform.admin.listAllUsers', () => {
     const smallLimit = await caller.listAllUsers({ limit: 2 });
 
     // With only 2 users per page and 6 users created, should have more
-    expect(smallLimit.hasMore).toBe(true);
     expect(smallLimit.next).not.toBeNull();
     expect(smallLimit.items.length).toBeLessThanOrEqual(2);
   });
@@ -202,7 +203,7 @@ describe.concurrent('platform.admin.listAllUsers', () => {
     });
 
     expect(result.items.length).toBe(0);
-    expect(result.hasMore).toBe(false);
+    expect(result.next).toBeNull();
   });
 
   it('should support prefix matching in email search', async ({
@@ -270,7 +271,6 @@ describe.concurrent('platform.admin.listAllUsers', () => {
     // Should find users with @custom-domain.com emails only, first page
     expect(result).toMatchObject({
       next: expect.any(String),
-      hasMore: true,
       total: 10,
     });
     expect(result.items).toSatisfy((items: typeof result.items) => {
@@ -295,7 +295,6 @@ describe.concurrent('platform.admin.listAllUsers', () => {
     // Should find users with @custom-domain.com emails only
     expect(result2).toMatchObject({
       next: null,
-      hasMore: false,
       total: 10,
     });
     expect(result2.items).toSatisfy((items: typeof result2.items) =>
