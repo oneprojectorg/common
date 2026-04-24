@@ -131,7 +131,7 @@ export function ReviewRubricForm() {
               <FieldHeader
                 title={t('Feedback to Author')}
                 description={t(
-                  'Feedback will be shared with the author after the review phase ends',
+                  'Shared anonymously with the author after the review phase ends',
                 )}
                 className="gap-1"
               />

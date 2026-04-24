@@ -58,9 +58,7 @@ export function RequestRevisionModal({
               {t('Feedback for proposal author')}
             </span>
             <span className="text-sm text-neutral-black">
-              {t(
-                'This feedback will be shared with the proposal author and admins.',
-              )}
+              {t('Shared anonymously with the proposal author and admins.')}
             </span>
           </div>
 
