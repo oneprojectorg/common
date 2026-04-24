@@ -36,10 +36,8 @@ export const DecisionsRowCells = ({
 
   return (
     <>
-      <TableCell className="text-sm font-normal text-neutral-black">
-        {decision.name}
-      </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-charcoal">
+      <TableCell>{decision.name}</TableCell>
+      <TableCell className="text-neutral-charcoal">
         {decision.currentPhase ? (
           <div className="flex flex-col">
             <span>
@@ -57,24 +55,24 @@ export const DecisionsRowCells = ({
           '—'
         )}
       </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-charcoal">
+      <TableCell className="text-neutral-charcoal">
         {decision.stewardName ?? '—'}
       </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-charcoal">
+      <TableCell className="text-neutral-charcoal">
         {decision.proposalCount}
       </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-charcoal">
+      <TableCell className="text-neutral-charcoal">
         {decision.participantCount}
       </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-charcoal">
+      <TableCell className="text-neutral-charcoal">
         {decision.status
           ? (STATUS_DISPLAY[decision.status] ?? decision.status)
           : '—'}
       </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-charcoal">
+      <TableCell className="text-neutral-charcoal">
         {createdAt ? (
           <TooltipTrigger>
-            <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-hidden">
+            <Button className="underline decoration-dotted underline-offset-2 outline-hidden">
               {format.dateTime(createdAt, { dateStyle: 'medium' })}
             </Button>
             <Tooltip>
@@ -85,7 +83,7 @@ export const DecisionsRowCells = ({
           '—'
         )}
       </TableCell>
-      <TableCell className="text-sm text-neutral-charcoal">
+      <TableCell>
         <div className="flex justify-end">
           <OptionMenu variant="outline" size="medium">
             <Menu className="min-w-48 p-2">
