@@ -13,6 +13,22 @@ import type { Database } from './types';
 
 const useUrl = OPURLConfig('APP');
 
+// Pin the Supabase SSR cookie name to the browser-facing hostname, but ONLY
+// when the server reaches Supabase at a different URL than the browser (i.e.
+// SUPABASE_URL is set and differs from NEXT_PUBLIC_SUPABASE_URL — this is the
+// docker-dev cross-container case). In prod/staging both vars resolve to the
+// same host so this returns undefined and Supabase's default naming kicks in.
+const supabaseAuthCookieStorageKey = () => {
+  const browserUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serverUrl = process.env.SUPABASE_URL;
+  if (!browserUrl || !serverUrl || browserUrl === serverUrl) return undefined;
+  try {
+    return `sb-${new URL(browserUrl).hostname}-auth-token`;
+  } catch {
+    return undefined;
+  }
+};
+
 // Skip cookie domain on preview URLs (use host-only cookies)
 const shouldSetCookieDomain =
   (useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW) &&
@@ -22,9 +38,15 @@ export const createSBServerClient = async () => {
   const cookieStore = await cookies();
 
   return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      // See supabaseAuthCookieStorageKey() above — only populated when server
+      // and browser reach Supabase at different hosts (docker-dev). Undefined
+      // in prod, so default Supabase cookie naming applies.
+      ...(supabaseAuthCookieStorageKey()
+        ? { auth: { storageKey: supabaseAuthCookieStorageKey() } }
+        : {}),
       cookieOptions: shouldSetCookieDomain
         ? {
             domain: cookieOptionsDomain,
@@ -78,7 +100,7 @@ export const createSBServiceClient = () => {
   }
 
   return createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE,
     {
       auth: {
