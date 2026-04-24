@@ -29,8 +29,6 @@ const phaseLookupInstanceData = z
       .array(
         z.object({
           phaseId: z.string().optional(),
-          // Legacy name for phaseId; see instanceDataEncoder preprocessor in decision.ts
-          stateId: z.string().optional(),
           name: z.string().optional(),
           endDate: z.string().optional(),
         }),
@@ -69,9 +67,7 @@ const resolveCurrentPhase = ({
   const schema = phaseLookupProcessSchema.safeParse(processSchema);
 
   const instancePhase = instance.success
-    ? instance.data.phases?.find(
-        (p) => (p.phaseId ?? p.stateId) === currentStateId,
-      )
+    ? instance.data.phases?.find((p) => p.phaseId === currentStateId)
     : undefined;
   const schemaPhase = schema.success
     ? schema.data.phases?.find((p) => p.id === currentStateId)
