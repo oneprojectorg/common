@@ -69,7 +69,7 @@ export const ManualSelectionList = ({
   const categories = categoriesData.categories;
   const proposals = filteredProposals;
 
-  // Invalidation (and therefore the instance.selectionsConfirmed flip that
+  // Invalidation (and therefore the instance.selectionsAreConfirmed flip that
   // unmounts this component from the parent) is automatic via the shared
   // realtime channel.
   const submitMutation = trpc.decision.submitManualSelection.useMutation({

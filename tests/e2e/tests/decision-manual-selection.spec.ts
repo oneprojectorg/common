@@ -203,7 +203,7 @@ test.describe('Decision Manual Selection — full flow', () => {
     expect(manualSelection?.at).toBeTruthy();
 
     await authenticatedPage.reload({ waitUntil: 'networkidle' });
-    // After confirming, selectionsConfirmed flips true and the admin UI
+    // After confirming, selectionsAreConfirmed flips true and the admin UI
     // should no longer render — the Confirm decisions trigger is the
     // cleanest signal of that branch being mounted.
     await expect(

@@ -41,7 +41,7 @@ function DecisionStateRouterNew({
   const isVotingEnabled = currentPhase?.rules?.voting?.submit === true;
   const isReviewEnabled = currentPhase?.rules?.proposals?.review === true;
 
-  if (!instance.selectionsConfirmed) {
+  if (!instance.selectionsAreConfirmed) {
     return (
       <StandardDecisionPage
         instanceId={instanceId}

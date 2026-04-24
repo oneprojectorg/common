@@ -80,7 +80,7 @@ export function StandardDecisionPage({
       <div className="mt-8 flex w-full justify-center border-t bg-white">
         <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
           <div className="flex flex-col gap-6 lg:col-span-3">
-            {!instance.selectionsConfirmed && instance.access?.admin ? (
+            {!instance.selectionsAreConfirmed && instance.access?.admin ? (
               <APIErrorBoundary
                 fallbacks={{
                   default: () => (
