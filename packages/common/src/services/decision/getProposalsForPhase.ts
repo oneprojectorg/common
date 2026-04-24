@@ -259,5 +259,6 @@ export async function getProposalsForPhase({
   return dbClient
     .select()
     .from(proposals)
-    .where(inArray(proposals.id, ids));
+    .where(inArray(proposals.id, ids))
+    .orderBy(desc(proposals.createdAt));
 }
