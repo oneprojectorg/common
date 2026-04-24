@@ -22,10 +22,12 @@ import type { RubricReviewData } from './schemas/reviews';
 export async function saveReviewDraft({
   assignmentId,
   reviewData,
+  overallComment,
   user,
 }: {
   assignmentId: string;
   reviewData: RubricReviewData;
+  overallComment?: string | null;
   user: User;
 }): Promise<{ review: ProposalReview; processInstanceId: string }> {
   const context = await assertReviewAssignmentContext({
@@ -51,12 +53,14 @@ export async function saveReviewDraft({
         assignmentId,
         state: ProposalReviewState.DRAFT,
         reviewData,
+        overallComment: overallComment ?? null,
         submittedAt: null,
       })
       .onConflictDoUpdate({
         target: proposalReviews.assignmentId,
         set: {
           reviewData,
+          overallComment: overallComment ?? null,
         },
         // Atomic guard against a late-arriving draft overwriting a row that
         // was submitted after this request's early state check passed. When
