@@ -10,9 +10,9 @@ import {
   getOrgAccessUser,
   getProfileAccessUser,
 } from '../access';
-import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
 import type { DecisionRolePermissions } from './permissions';
 import { fromDecisionBitField } from './permissions';
+import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
 export interface GetInstanceInput {

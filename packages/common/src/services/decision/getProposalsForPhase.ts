@@ -1,4 +1,15 @@
-import { and, asc, db, desc, eq, gt, inArray, isNull, lt, ne } from '@op/db/client';
+import {
+  and,
+  asc,
+  db,
+  desc,
+  eq,
+  gt,
+  inArray,
+  isNull,
+  lt,
+  ne,
+} from '@op/db/client';
 import type { DbClient } from '@op/db/client';
 import type { Proposal } from '@op/db/schema';
 import {

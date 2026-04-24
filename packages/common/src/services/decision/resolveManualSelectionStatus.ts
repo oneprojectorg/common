@@ -85,5 +85,8 @@ export async function resolveManualSelectionStatus({
     return { selectionsAreConfirmed: true };
   }
 
-  return { selectionsAreConfirmed: false, previousPhaseId: previousPhase.phaseId };
+  return {
+    selectionsAreConfirmed: false,
+    previousPhaseId: previousPhase.phaseId,
+  };
 }

@@ -24,9 +24,7 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-async function seedInstance(
-  testData: TestDecisionsDataManager,
-): Promise<{
+async function seedInstance(testData: TestDecisionsDataManager): Promise<{
   instanceId: string;
   userEmail: string;
   caller: Awaited<ReturnType<typeof createAuthenticatedCaller>>;

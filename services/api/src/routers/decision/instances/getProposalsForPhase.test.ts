@@ -348,7 +348,9 @@ describe.concurrent('getProposalsForPhase', () => {
     });
     // Window for submission is (-∞, transition-into-review). Only the proposal
     // created before the advance qualifies.
-    expect(submissionResult.map((p) => p.id)).toEqual([submissionPhaseProposal.id]);
+    expect(submissionResult.map((p) => p.id)).toEqual([
+      submissionPhaseProposal.id,
+    ]);
 
     const reviewResult = await getProposalsForPhase({
       instanceId,
