@@ -4,7 +4,7 @@ import {
   getGenericCursorCondition,
 } from '@op/common';
 import { adminDecisionInstanceSchema } from '@op/common/client';
-import { and, count, db, ilike, inArray } from '@op/db/client';
+import { and, count, countDistinct, db, ilike, inArray } from '@op/db/client';
 import { processInstances, proposals } from '@op/db/schema';
 import { z } from 'zod';
 
@@ -158,37 +158,28 @@ export const listAllDecisionInstancesRouter = router({
 
       const instanceIds = items.map((i) => i.id);
 
-      // Fetch (instanceId, profileId) proposal pairs so we can compute
-      // per-instance proposal count and distinct-participant count in memory.
-      const proposalPairs =
+      const proposalStats =
         instanceIds.length > 0
           ? await db
               .select({
                 processInstanceId: proposals.processInstanceId,
-                profileId: proposals.submittedByProfileId,
+                proposalCount: count(proposals.id),
+                participantCount: countDistinct(proposals.submittedByProfileId),
               })
               .from(proposals)
               .where(inArray(proposals.processInstanceId, instanceIds))
+              .groupBy(proposals.processInstanceId)
           : [];
 
-      const proposalCounts = new Map<string, number>();
-      const participantSets = new Map<string, Set<string>>();
-
-      for (const row of proposalPairs) {
-        proposalCounts.set(
-          row.processInstanceId,
-          (proposalCounts.get(row.processInstanceId) ?? 0) + 1,
-        );
-        const set =
-          participantSets.get(row.processInstanceId) ?? new Set<string>();
-        set.add(row.profileId);
-        participantSets.set(row.processInstanceId, set);
-      }
+      const statsByInstance = new Map(
+        proposalStats.map((row) => [row.processInstanceId, row]),
+      );
 
       return {
         items: items.map((instance) => {
           const steward = unwrapOne(instance.steward);
           const process = unwrapOne(instance.process);
+          const stats = statsByInstance.get(instance.id);
           return adminDecisionInstanceSchema.parse({
             id: instance.id,
             name: instance.name,
@@ -199,8 +190,8 @@ export const listAllDecisionInstancesRouter = router({
             }),
             stewardName: steward?.name ?? null,
             status: instance.status,
-            proposalCount: proposalCounts.get(instance.id) ?? 0,
-            participantCount: participantSets.get(instance.id)?.size ?? 0,
+            proposalCount: stats?.proposalCount ?? 0,
+            participantCount: stats?.participantCount ?? 0,
             createdAt: instance.createdAt,
             instanceData: instance.instanceData,
           });
