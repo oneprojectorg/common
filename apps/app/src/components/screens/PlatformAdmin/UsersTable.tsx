@@ -150,10 +150,10 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
 
   const [data] = trpc.platform.admin.listAllUsers.useSuspenseQuery(queryInput);
 
-  const { items: users, next, hasMore, total } = data;
+  const { items: users, next, total } = data;
 
   const onNext = () => {
-    if (hasMore && next) {
+    if (next) {
       handleNext(next);
     }
   };
@@ -189,7 +189,7 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
             page: currentPage,
             label: t('users'),
           }}
-          next={hasMore ? onNext : undefined}
+          next={next ? onNext : undefined}
           previous={canGoPrevious ? handlePrevious : undefined}
         />
       </div>
