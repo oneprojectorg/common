@@ -35,6 +35,7 @@ export interface ComboBoxProps<T extends object> extends Omit<
   popoverProps?: Omit<PopoverProps, 'children'>;
   icon?: ReactNode;
   emptyStateMessage?: ReactNode;
+  placeholder?: string;
 }
 
 export const ComboBox = <T extends object>({
@@ -47,6 +48,7 @@ export const ComboBox = <T extends object>({
   emptyStateMessage = 'No results',
   allowsCustomValue = true,
   allowsEmptyCollection = true,
+  placeholder,
   ...props
 }: ComboBoxProps<T>) => {
   return (
@@ -61,7 +63,7 @@ export const ComboBox = <T extends object>({
     >
       <Label className={props.labelClassName}>{label}</Label>
       <FieldGroup className={cn('relative', props.fieldGroupClassName)}>
-        <Input className={props.inputClassName} />
+        <Input placeholder={placeholder} className={props.inputClassName} />
         <Button
           variant="icon"
           color="ghost"

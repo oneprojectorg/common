@@ -17,6 +17,7 @@ const meta: Meta<typeof ComboBox> = {
   tags: ['autodocs'],
   args: {
     label: 'Ice cream flavor',
+    placeholder: 'Pick a flavor',
   },
 };
 
@@ -63,6 +64,7 @@ export const Sections = (args: any) => (
 
 Sections.args = {
   label: 'Preferred fruit or vegetable',
+  placeholder: 'Pick a fruit or vegetable',
 };
 
 export const Validation = (args: any) => (
