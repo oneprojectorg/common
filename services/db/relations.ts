@@ -494,6 +494,19 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.users.profileId,
       to: r.profiles.id,
     }),
+    avatarImage: r.one.objectsInStorage({
+      from: r.users.avatarImageId,
+      to: r.objectsInStorage.id,
+    }),
+    organizationUsers: r.many.organizationUsers({
+      from: r.users.authUserId,
+      to: r.organizationUsers.authUserId,
+    }),
+    authUser: r.one.authUsers({
+      from: r.users.authUserId,
+      to: r.authUsers.id,
+      optional: false,
+    }),
   },
 
   /**

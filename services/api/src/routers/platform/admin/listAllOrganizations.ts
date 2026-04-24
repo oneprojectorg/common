@@ -1,6 +1,7 @@
 import { decodeCursor, encodeCursor } from '@op/common';
 import { and, count, db, eq, ilike, inArray, lt, or } from '@op/db/client';
 import { organizations, profiles } from '@op/db/schema';
+import type { SQL } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { adminOrgEncoder } from '../../../encoders';
@@ -61,29 +62,36 @@ export const listAllOrganizationsRouter = router({
             ).map((p) => p.id)
           : null;
 
-      // Build cursor condition for keyset pagination
-      const cursorCondition = cursorValue
-        ? or(
-            lt(organizations.createdAt, cursorValue.date),
-            and(
-              eq(organizations.createdAt, cursorValue.date),
-              lt(organizations.id, cursorValue.id),
-            ),
-          )
-        : undefined;
-
-      const searchCondition = matchingProfileIds
-        ? inArray(organizations.profileId, matchingProfileIds)
-        : undefined;
-
-      const whereCondition =
-        cursorCondition && searchCondition
-          ? and(cursorCondition, searchCondition)
-          : cursorCondition || searchCondition;
+      const hasWhere = !!cursorValue || !!matchingProfileIds;
 
       const [allOrgs, totalCount] = await Promise.all([
-        db._query.organizations.findMany({
-          where: whereCondition,
+        db.query.organizations.findMany({
+          // V2 RAW callback passes the aliased table used inside the generated
+          // SQL. Conditions must be built against that alias, not the schema
+          // ref, otherwise Postgres throws "invalid reference to FROM-clause
+          // entry".
+          where: hasWhere
+            ? {
+                RAW: (table) => {
+                  const conds: SQL[] = [];
+                  if (cursorValue) {
+                    conds.push(
+                      or(
+                        lt(table.createdAt, cursorValue.date),
+                        and(
+                          eq(table.createdAt, cursorValue.date),
+                          lt(table.id, cursorValue.id),
+                        ),
+                      )!,
+                    );
+                  }
+                  if (matchingProfileIds) {
+                    conds.push(inArray(table.profileId, matchingProfileIds));
+                  }
+                  return conds.length > 1 ? and(...conds)! : conds[0]!;
+                },
+              }
+            : undefined,
           with: {
             profile: {
               columns: {
@@ -125,10 +133,7 @@ export const listAllOrganizationsRouter = router({
               },
             },
           },
-          orderBy: (_, { asc, desc }) =>
-            dir === 'asc'
-              ? asc(organizations.createdAt)
-              : desc(organizations.createdAt),
+          orderBy: { createdAt: dir },
           ...(limit !== undefined && { limit: limit + 1 }),
         }),
         db
