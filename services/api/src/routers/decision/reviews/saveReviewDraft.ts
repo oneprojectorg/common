@@ -10,6 +10,7 @@ import { commonAuthedProcedure, router } from '../../../trpcFactory';
 const saveReviewDraftInputSchema = z.object({
   assignmentId: z.uuid(),
   reviewData: rubricReviewDataSchema,
+  overallComment: z.string().nullable().optional(),
 });
 
 export const saveReviewDraftRouter = router({
@@ -20,6 +21,7 @@ export const saveReviewDraftRouter = router({
       const { review, processInstanceId } = await saveReviewDraft({
         assignmentId: input.assignmentId,
         reviewData: input.reviewData,
+        overallComment: input.overallComment,
         user: ctx.user,
       });
 
