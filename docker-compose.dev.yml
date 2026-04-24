@@ -25,6 +25,8 @@ services:
       - "${PORT_PREFIX:-31}24:54324"
       # Expose Postgres directly for local dev tools (e.g. TablePlus, psql).
       - "${PORT_PREFIX:-31}22:54322"
+      # Expose Supabase Studio (web dashboard for the dev DB).
+      - "${PORT_PREFIX:-31}23:54323"
     volumes:
       # Persist the DinD image cache across restarts so Supabase images
       # (postgres, kong, gotrue, studio, etc.) are not re-pulled every time.
@@ -54,9 +56,21 @@ services:
     volumes:
       # Bind-mount the repo root for hot-reload
       - .:/app
-      # Shared node_modules — identical pnpm install across app/api, so one
-      # volume instead of two saves ~2GB.
-      - shared_node_modules:/app/node_modules
+      # Shared + workspace-level node_modules must be container-owned, not
+      # pre-populated from the host via the .:/app bind mount. Otherwise pnpm's
+      # per-platform optional deps produce different peer-dep hashes on macOS
+      # vs Linux and .modules.yaml from host makes pnpm skip its install. All
+      # three volumes use nocopy so Docker leaves them empty for pnpm to fill.
+      - type: volume
+        source: shared_node_modules
+        target: /app/node_modules
+        volume:
+          nocopy: true
+      - type: volume
+        source: app_app_node_modules
+        target: /app/apps/app/node_modules
+        volume:
+          nocopy: true
       # Next.js build cache
       - app_next:/app/apps/app/.next
     networks:
@@ -77,7 +91,17 @@ services:
       - "${PORT_PREFIX:-31}01:3300"
     volumes:
       - .:/app
-      - shared_node_modules:/app/node_modules
+      # See app service note — same nocopy requirement.
+      - type: volume
+        source: shared_node_modules
+        target: /app/node_modules
+        volume:
+          nocopy: true
+      - type: volume
+        source: app_api_node_modules
+        target: /app/apps/api/node_modules
+        volume:
+          nocopy: true
       - api_next:/app/apps/api/.next
     networks:
       - op-dev
@@ -116,6 +140,8 @@ networks:
 
 volumes:
   shared_node_modules:
+  app_app_node_modules:
+  app_api_node_modules:
   app_next:
   api_next:
   dind_storage:

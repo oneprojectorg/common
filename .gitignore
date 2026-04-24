@@ -72,3 +72,6 @@ tests/e2e/playwright/.auth/
 .playwright-mcp
 ralph.sh
 .fallow/
+
+# pnpm local store (created inside bind-mounted /app when container runs pnpm)
+.pnpm-store/

@@ -19,6 +19,8 @@
     "docker:dev": "docker compose -f docker-compose.dev.yml up",
     "docker:dev:build": "docker compose -f docker-compose.dev.yml up --build",
     "docker:down": "docker compose -f docker-compose.dev.yml down",
+    "docker:seed": "docker compose -f docker-compose.dev.yml exec api sh -c 'cd /app && /app/node_modules/.bin/tsx services/db/seed-access-control.ts'",
+    "docker:migrate": "docker compose -f docker-compose.dev.yml exec api sh -c 'cd /app && pnpm w:db migrate'",
     "dev:e2e": "cross-env E2E=true NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:56321 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:56322/postgres S3_ASSET_ROOT=http://127.0.0.1:56321/storage/v1/object/public/assets TIPTAP_SECRET=e2e NEXT_PUBLIC_TIPTAP_APP_ID=e2e turbo dev:e2e",
     "dev:test": "dotenv -e .env.test -o -- turbo dev",
     "e2e": "pnpm -C ./tests/e2e e2e",
