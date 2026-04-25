@@ -9,7 +9,6 @@ import { AlertBanner } from '@op/ui/AlertBanner';
 import { Button } from '@op/ui/Button';
 import { Header3 } from '@op/ui/Header';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
-import { Select, SelectItem } from '@op/ui/Select';
 import { Surface } from '@op/ui/Surface';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
@@ -20,6 +19,8 @@ import { LuCircleAlert, LuPlus } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { FieldHeader } from '../forms/FieldHeader';
+import { FormDropdown } from '../forms/FormDropdown';
+import type { FormDropdownOption } from '../forms/FormDropdown';
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
 import {
@@ -328,31 +329,34 @@ function RubricFieldInput({
         );
       }
 
-      const options = parseSchemaOptions(field.schema).map((option) => ({
-        value: option.value,
-        label: option.title || String(option.value),
-      }));
+      // Scored rubric criterion: highest score first (to match the process
+      // builder), with each option shown as `{n} - {description}` so the
+      // number stays visible on long scales.
+      const options: FormDropdownOption[] = [
+        ...parseSchemaOptions(field.schema),
+      ]
+        .sort((a, b) => Number(b.value) - Number(a.value))
+        .map((option) => ({
+          value: option.value,
+          label: option.title
+            ? `${option.value} - ${option.title}`
+            : String(option.value),
+          description: option.title || undefined,
+        }));
       const selectedKey =
         typeof value === 'string' || typeof value === 'number'
           ? String(value)
           : null;
 
       return (
-        <Select
-          aria-label={field.schema.title}
-          placeholder={t('Select an option')}
+        <FormDropdown
+          ariaLabel={field.schema.title}
           selectedKey={selectedKey}
           onSelectionChange={(key) => {
             onChange(parseSelectedValue(key, field.schema));
           }}
-          className="w-full"
-        >
-          {options.map((option) => (
-            <SelectItem key={String(option.value)} id={String(option.value)}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </Select>
+          options={options}
+        />
       );
     }
 
