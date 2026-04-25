@@ -24,30 +24,32 @@ export const searchOrganizationsRouter = router({
     .query(async ({ ctx, input }) => {
       const { q, limit = 10 } = input;
 
-      const result = await cache<ReturnType<typeof searchOrganizations>>({
-        type: 'search',
-        params: [q, ctx.user.id],
-        options: {
-          ttl: 30 * 1000,
-        },
-        fetch: () =>
-          searchOrganizations({
-            query: q,
-            limit,
-          }),
-      });
+      // Each result carries an isCurrentMember flag (kept outside the search
+      // cache so it stays fresh when membership changes), letting the UI
+      // disable orgs the user already belongs to before they try to join.
+      const [result, membershipRows] = await Promise.all([
+        cache<ReturnType<typeof searchOrganizations>>({
+          type: 'search',
+          params: [q, ctx.user.id],
+          options: {
+            ttl: 30 * 1000,
+          },
+          fetch: () =>
+            searchOrganizations({
+              query: q,
+              limit,
+            }),
+        }),
+        db
+          .select({ organizationId: organizationUsers.organizationId })
+          .from(organizationUsers)
+          .where(eq(organizationUsers.authUserId, ctx.user.id)),
+      ]);
 
       if (!result) {
         throw new NotFoundError('Organizations');
       }
 
-      // Tag each search result with whether the user is already a member.
-      // The onboarding UI uses this to disable the result so it can't be
-      // queued into a join request the backend would reject.
-      const membershipRows = await db
-        .select({ organizationId: organizationUsers.organizationId })
-        .from(organizationUsers)
-        .where(eq(organizationUsers.authUserId, ctx.user.id));
       const memberOrgIds = new Set<unknown>(
         membershipRows.map((row) => row.organizationId),
       );
