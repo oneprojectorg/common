@@ -211,36 +211,36 @@ export const createPost = async (input: CreatePostServiceInput) => {
 
   const profileId = await getCurrentProfileId(authUserId);
 
-  const candidateProfileIds: string[] = [];
-  if (targetProfileId) {
-    candidateProfileIds.push(targetProfileId);
-  } else if (parentPostId) {
-    const parentProfiles = await db
-      .select({ profileId: postsToProfiles.profileId })
-      .from(postsToProfiles)
-      .where(eq(postsToProfiles.postId, parentPostId));
-    for (const { profileId: parentProfileId } of parentProfiles) {
-      candidateProfileIds.push(parentProfileId);
-    }
-  }
+  const parentProfiles =
+    !targetProfileId && parentPostId
+      ? await db
+          .select({ profileId: postsToProfiles.profileId })
+          .from(postsToProfiles)
+          .where(eq(postsToProfiles.postId, parentPostId))
+      : [];
 
-  const isTopLevelUpdate = Boolean(targetProfileId) && !parentPostId;
-  const requiredDecisionPermission = isTopLevelUpdate
+  const profileIdsToAuthorize = targetProfileId
+    ? [targetProfileId]
+    : parentProfiles.map((p) => p.profileId);
+
+  const requiredDecisionPermission = targetProfileId
     ? { decisions: permission.ADMIN }
     : { decisions: decisionPermission.SUBMIT_PROPOSALS };
 
-  for (const candidateProfileId of candidateProfileIds) {
-    const decisionInstance = await db._query.processInstances.findFirst({
-      where: (table, { eq }) => eq(table.profileId, candidateProfileId),
-      columns: { profileId: true },
-    });
+  for (const candidateProfileId of profileIdsToAuthorize) {
+    const [decisionInstance, profileUser] = await Promise.all([
+      db._query.processInstances.findFirst({
+        where: (table, { eq }) => eq(table.profileId, candidateProfileId),
+        columns: { profileId: true },
+      }),
+      getProfileAccessUser({
+        user: { id: authUserId },
+        profileId: candidateProfileId,
+      }),
+    ]);
     if (!decisionInstance) {
       continue;
     }
-    const profileUser = await getProfileAccessUser({
-      user: { id: authUserId },
-      profileId: candidateProfileId,
-    });
     assertAccess(
       [{ profile: permission.ADMIN }, requiredDecisionPermission],
       profileUser?.roles ?? [],
@@ -290,12 +290,8 @@ export const createPost = async (input: CreatePostServiceInput) => {
           profileId: targetProfileId,
         });
       } else if (parentPostId) {
-        // For comments (posts with parentPostId), inherit profile associations from parent post
-        const parentProfiles = await tx
-          .select({ profileId: postsToProfiles.profileId })
-          .from(postsToProfiles)
-          .where(eq(postsToProfiles.postId, parentPostId));
-
+        // For comments (posts with parentPostId), inherit profile associations from parent post.
+        // Reuses parentProfiles fetched above for the auth gate to avoid a second query.
         if (parentProfiles.length > 0) {
           await tx.insert(postsToProfiles).values(
             parentProfiles.map((profile) => ({

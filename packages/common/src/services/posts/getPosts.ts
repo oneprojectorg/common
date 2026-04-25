@@ -38,31 +38,31 @@ export const getPosts = async (input: GetPostsInput) => {
       return []; // Return empty array if neither profileId nor parentPostId provided
     }
 
-    const candidateProfileIds: string[] = [];
-    if (profileId) {
-      candidateProfileIds.push(profileId);
-    } else if (parentPostId) {
-      const parentProfiles = await db
-        .select({ profileId: postsToProfiles.profileId })
-        .from(postsToProfiles)
-        .where(eq(postsToProfiles.postId, parentPostId));
-      for (const { profileId: parentProfileId } of parentProfiles) {
-        candidateProfileIds.push(parentProfileId);
-      }
-    }
+    const profileIdsToAuthorize = profileId
+      ? [profileId]
+      : parentPostId
+        ? (
+            await db
+              .select({ profileId: postsToProfiles.profileId })
+              .from(postsToProfiles)
+              .where(eq(postsToProfiles.postId, parentPostId))
+          ).map((p) => p.profileId)
+        : [];
 
-    for (const candidateProfileId of candidateProfileIds) {
-      const decisionInstance = await db._query.processInstances.findFirst({
-        where: (table, { eq }) => eq(table.profileId, candidateProfileId),
-        columns: { profileId: true },
-      });
+    for (const candidateProfileId of profileIdsToAuthorize) {
+      const [decisionInstance, profileUser] = await Promise.all([
+        db._query.processInstances.findFirst({
+          where: (table, { eq }) => eq(table.profileId, candidateProfileId),
+          columns: { profileId: true },
+        }),
+        getProfileAccessUser({
+          user: { id: authUserId },
+          profileId: candidateProfileId,
+        }),
+      ]);
       if (!decisionInstance) {
         continue;
       }
-      const profileUser = await getProfileAccessUser({
-        user: { id: authUserId },
-        profileId: candidateProfileId,
-      });
       assertAccess(
         [{ profile: permission.ADMIN }, { decisions: permission.READ }],
         profileUser?.roles ?? [],
