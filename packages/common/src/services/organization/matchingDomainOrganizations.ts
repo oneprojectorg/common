@@ -52,21 +52,22 @@ export const matchingDomainOrganizations = async ({ user }: { user: User }) => {
     whereWeWork: org.whereWeWork.map((item) => item.location),
   });
 
-  const results = rawResults
-    .filter((org) => org.organizationUsers.length === 0)
-    .map(transformOrg);
-  const seenIds = new Set(results.map((r) => r.id));
+  const orgsById = new Map<
+    (typeof rawResults)[number]['id'],
+    ReturnType<typeof transformOrg>
+  >();
 
-  for (const { organization } of preMappedOrgs) {
-    if (
-      organization &&
-      organization.organizationUsers.length === 0 &&
-      !seenIds.has(organization.id)
-    ) {
-      results.push(transformOrg(organization));
-      seenIds.add(organization.id);
+  for (const org of rawResults) {
+    if (org.organizationUsers.length === 0) {
+      orgsById.set(org.id, transformOrg(org));
     }
   }
 
-  return results;
+  for (const { organization } of preMappedOrgs) {
+    if (organization && organization.organizationUsers.length === 0) {
+      orgsById.set(organization.id, transformOrg(organization));
+    }
+  }
+
+  return [...orgsById.values()];
 };
