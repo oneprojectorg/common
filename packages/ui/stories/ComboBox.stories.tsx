@@ -1,5 +1,6 @@
 import type { Meta } from '@storybook/react-vite';
 import { Form } from 'react-aria-components';
+import { LuSearch } from 'react-icons/lu';
 
 import { Button } from '../src/components/Button';
 import {
@@ -16,6 +17,7 @@ const meta: Meta<typeof ComboBox> = {
   tags: ['autodocs'],
   args: {
     label: 'Ice cream flavor',
+    placeholder: 'Pick a flavor',
   },
 };
 
@@ -62,6 +64,7 @@ export const Sections = (args: any) => (
 
 Sections.args = {
   label: 'Preferred fruit or vegetable',
+  placeholder: 'Pick a fruit or vegetable',
 };
 
 export const Validation = (args: any) => (
@@ -73,4 +76,26 @@ export const Validation = (args: any) => (
 
 Validation.args = {
   isRequired: true,
+};
+
+export const WithSearchIcon = (args: any) => (
+  <ComboBox {...args} icon={<LuSearch aria-hidden className="size-4" />}>
+    <ComboBoxItem>Chocolate</ComboBoxItem>
+    <ComboBoxItem>Mint</ComboBoxItem>
+    <ComboBoxItem>Strawberry</ComboBoxItem>
+    <ComboBoxItem>Vanilla</ComboBoxItem>
+  </ComboBox>
+);
+
+export const NoMatches = (args: any) => (
+  <ComboBox {...args} defaultInputValue="zzz">
+    <ComboBoxItem>Chocolate</ComboBoxItem>
+    <ComboBoxItem>Mint</ComboBoxItem>
+    <ComboBoxItem>Strawberry</ComboBoxItem>
+    <ComboBoxItem>Vanilla</ComboBoxItem>
+  </ComboBox>
+);
+
+NoMatches.args = {
+  menuTrigger: 'focus',
 };
