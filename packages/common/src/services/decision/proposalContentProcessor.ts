@@ -1,5 +1,5 @@
-import { type DbClient, db as defaultDb, eq } from '@op/db/client';
-import { attachments, proposalAttachments, proposals } from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import { attachments, proposals } from '@op/db/schema';
 
 /**
  * Generate public URL for asset using Next.js rewrite
@@ -15,16 +15,16 @@ const getPublicUrl = (key?: string | null) => {
  * Process proposal content to replace temporary image URLs with permanent attachment references
  */
 export async function processProposalContent({
-  db,
+  conn,
   proposalId,
 }: {
-  db: DbClient;
+  conn: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
   proposalId: string;
 }): Promise<void> {
   try {
     // Get the proposal content
-    const proposal = await db._query.proposals.findFirst({
-      where: eq(proposals.id, proposalId),
+    const proposal = await conn.query.proposals.findFirst({
+      where: { id: proposalId },
     });
 
     if (!proposal) {
@@ -42,8 +42,8 @@ export async function processProposalContent({
 
     // Get all attachments for this proposal through the join table
     const proposalAttachmentJoins =
-      await db._query.proposalAttachments.findMany({
-        where: eq(proposalAttachments.proposalId, proposalId),
+      await conn.query.proposalAttachments.findMany({
+        where: { proposalId },
         with: {
           attachment: true,
         },
@@ -119,7 +119,7 @@ export async function processProposalContent({
         content: processedContent,
       };
 
-      await db
+      await conn
         .update(proposals)
         .set({
           proposalData: updatedProposalData,
@@ -132,7 +132,7 @@ export async function processProposalContent({
     // Update attachment metadata
     if (updatedAttachments.length > 0) {
       for (const attachmentUpdate of updatedAttachments) {
-        await db
+        await conn
           .update(attachments)
           .set({
             fileName: attachmentUpdate.fileName,
@@ -177,13 +177,12 @@ function extractImageUrlsFromContent(htmlContent: string): string[] {
 export async function getProposalAttachmentUrls(
   proposalId: string,
 ): Promise<Record<string, string>> {
-  const proposalAttachmentJoins =
-    await defaultDb._query.proposalAttachments.findMany({
-      where: eq(proposalAttachments.proposalId, proposalId),
-      with: {
-        attachment: true,
-      },
-    });
+  const proposalAttachmentJoins = await db.query.proposalAttachments.findMany({
+    where: { proposalId },
+    with: {
+      attachment: true,
+    },
+  });
 
   if (proposalAttachmentJoins.length === 0) {
     return {};

@@ -1,15 +1,4 @@
-import {
-  and,
-  asc,
-  db,
-  desc,
-  eq,
-  ilike,
-  inArray,
-  ne,
-  or,
-  sql,
-} from '@op/db/client';
+import { and, db, eq, ilike, inArray, ne, or, sql } from '@op/db/client';
 import {
   ProfileRelationshipType,
   ProposalStatus,
@@ -126,25 +115,30 @@ const resolveExplicitScope = async ({
   return votedRows.map((r) => r.proposalId);
 };
 
-// Shared function to build WHERE conditions for both count and data queries
-const buildWhereConditions = (input: ListProposalsInput) => {
+// Shared function to build WHERE conditions for both count and data queries.
+// Accepts a table reference so the relational query API can pass an aliased
+// version while the v1 select can pass the schema table directly.
+const buildWhereConditions = (
+  input: ListProposalsInput,
+  t: typeof proposals = proposals,
+) => {
   const { processInstanceId, submittedByProfileId, status, search } = input;
 
   const conditions = [];
 
-  conditions.push(eq(proposals.processInstanceId, processInstanceId));
+  conditions.push(eq(t.processInstanceId, processInstanceId));
 
   if (submittedByProfileId) {
-    conditions.push(eq(proposals.submittedByProfileId, submittedByProfileId));
+    conditions.push(eq(t.submittedByProfileId, submittedByProfileId));
   }
 
   if (status) {
-    conditions.push(eq(proposals.status, status));
+    conditions.push(eq(t.status, status));
   }
 
   if (search) {
     // Search in proposal data (JSONB) - convert to text for searching
-    conditions.push(ilike(sql`${proposals.proposalData}::text`, `%${search}%`));
+    conditions.push(ilike(sql`${t.proposalData}::text`, `%${search}%`));
   }
 
   return conditions.length > 0 ? and(...conditions) : undefined;
@@ -243,23 +237,6 @@ export const listProposals = async ({
 
   const { limit = 20, offset = 0, orderBy = 'createdAt', dir = 'desc' } = input;
 
-  // Build shared WHERE clause using the extracted function
-  const baseWhereClause = buildWhereConditions(input);
-
-  // When the caller provided an explicit scope (proposalIds or votedByProfileId),
-  // constrain the entire query to that ID set. This prevents the draft branch
-  // (below) from independently surfacing drafts the user owns but didn't ask for.
-  let whereClause = baseWhereClause;
-  if (explicitScopeIds !== undefined) {
-    const explicitScopeFilter =
-      explicitScopeIds.length > 0
-        ? inArray(proposals.id, explicitScopeIds)
-        : sql`false`;
-    whereClause = whereClause
-      ? and(whereClause, explicitScopeFilter)
-      : explicitScopeFilter;
-  }
-
   // Handle category filtering separately to avoid table reference issues
   const { categoryId } = input;
   let categoryProposalIds: string[] = [];
@@ -282,73 +259,81 @@ export const listProposals = async ({
         canManageProposals,
       };
     }
-
-    // Add category filter to WHERE clause (composed with any earlier filters)
-    const categoryFilter = inArray(proposals.id, categoryProposalIds);
-    whereClause = whereClause
-      ? and(whereClause, categoryFilter)
-      : categoryFilter;
   }
 
-  // Phase scoping applies to non-draft proposals only. Drafts are user-private
-  // and not part of any phase transition snapshot, so they bypass phaseProposalIds.
-  // When phaseProposalIds is empty (e.g. instance has no submitted proposals yet),
-  // the non-draft branch must short-circuit to false rather than emit an empty IN ().
-  const phaseScopedNonDraftIdFilter =
-    phaseProposalIds.length > 0
-      ? and(
-          ne(proposals.status, ProposalStatus.DRAFT),
-          inArray(proposals.id, phaseProposalIds),
-        )
-      : sql`false`;
+  // Build the full WHERE clause against the supplied table reference. Used by
+  // the v1 select count below (passing the schema table) and the v2 relational
+  // findMany (passing the aliased table from the RAW callback).
+  const buildFullWhere = (t: typeof proposals = proposals) => {
+    let whereClause = buildWhereConditions(input, t);
 
-  if (skipAccessCheck) {
-    // Trusted contexts get all phase-scoped non-draft proposals.
-    whereClause = whereClause
-      ? and(whereClause, phaseScopedNonDraftIdFilter)
-      : phaseScopedNonDraftIdFilter;
-  } else {
-    // Draft proposals: only visible to users with proposal-level access
-    // (the creator and invited collaborators with a profileUsers record on the proposal's profile).
-    // Drafts are not phase-scoped and remain visible regardless of phaseId so that
-    // creators continue to see their own in-progress work alongside the current phase.
-    const draftFilter = and(
-      eq(proposals.status, ProposalStatus.DRAFT),
-      inArray(
-        proposals.profileId,
-        db
-          .select({ profileId: profileUsers.profileId })
-          .from(profileUsers)
-          .where(eq(profileUsers.authUserId, input.authUserId)),
-      ),
-    );
+    if (explicitScopeIds !== undefined) {
+      const explicitScopeFilter =
+        explicitScopeIds.length > 0
+          ? inArray(t.id, explicitScopeIds)
+          : sql`false`;
+      whereClause = whereClause
+        ? and(whereClause, explicitScopeFilter)
+        : explicitScopeFilter;
+    }
 
-    // Non-draft proposals: phase-scoped, plus the HIDDEN visibility filter for
-    // non-admins (admins and the owning profile still see hidden proposals).
-    const nonDraftVisibilityFilter = canManageProposals
-      ? phaseScopedNonDraftIdFilter
-      : and(
-          phaseScopedNonDraftIdFilter,
-          or(
-            eq(proposals.visibility, Visibility.VISIBLE),
-            eq(proposals.submittedByProfileId, currentProfileId),
-          ),
-        );
+    if (categoryId && categoryProposalIds.length > 0) {
+      const categoryFilter = inArray(t.id, categoryProposalIds);
+      whereClause = whereClause
+        ? and(whereClause, categoryFilter)
+        : categoryFilter;
+    }
 
-    const permissionFilter = or(draftFilter, nonDraftVisibilityFilter);
-    whereClause = whereClause
-      ? and(whereClause, permissionFilter)
-      : permissionFilter;
-  }
+    // Phase scoping applies to non-draft proposals only. Drafts are user-private
+    // and not part of any phase transition snapshot, so they bypass phaseProposalIds.
+    // When phaseProposalIds is empty (e.g. instance has no submitted proposals yet),
+    // the non-draft branch must short-circuit to false rather than emit an empty IN ().
+    const phaseScopedNonDraftIdFilter =
+      phaseProposalIds.length > 0
+        ? and(
+            ne(t.status, ProposalStatus.DRAFT),
+            inArray(t.id, phaseProposalIds),
+          )
+        : sql`false`;
 
-  // Get proposals with optimized ordering
-  const orderColumn = proposals[orderBy] ?? proposals.createdAt;
+    if (skipAccessCheck) {
+      whereClause = whereClause
+        ? and(whereClause, phaseScopedNonDraftIdFilter)
+        : phaseScopedNonDraftIdFilter;
+    } else {
+      const draftFilter = and(
+        eq(t.status, ProposalStatus.DRAFT),
+        inArray(
+          t.profileId,
+          db
+            .select({ profileId: profileUsers.profileId })
+            .from(profileUsers)
+            .where(eq(profileUsers.authUserId, input.authUserId)),
+        ),
+      );
 
-  const orderFn = dir === 'asc' ? asc : desc;
+      const nonDraftVisibilityFilter = canManageProposals
+        ? phaseScopedNonDraftIdFilter
+        : and(
+            phaseScopedNonDraftIdFilter,
+            or(
+              eq(t.visibility, Visibility.VISIBLE),
+              eq(t.submittedByProfileId, currentProfileId),
+            ),
+          );
+
+      const permissionFilter = or(draftFilter, nonDraftVisibilityFilter);
+      whereClause = whereClause
+        ? and(whereClause, permissionFilter)
+        : permissionFilter;
+    }
+
+    return whereClause;
+  };
 
   const [proposalList, countResult] = await Promise.all([
-    db._query.proposals.findMany({
-      where: whereClause,
+    db.query.proposals.findMany({
+      where: { RAW: (t) => buildFullWhere(t)! },
       with: {
         submittedBy: {
           with: {
@@ -359,10 +344,13 @@ export const listProposals = async ({
       },
       limit,
       offset,
-      orderBy: orderFn(orderColumn),
+      orderBy: (t, { asc, desc }) => {
+        const col = t[orderBy] ?? t.createdAt;
+        return dir === 'asc' ? asc(col) : desc(col);
+      },
     }),
     // Get count using Drizzle's count function instead of raw SQL
-    db.select({ count: countFn() }).from(proposals).where(whereClause),
+    db.select({ count: countFn() }).from(proposals).where(buildFullWhere()),
   ]);
 
   const count = countResult[0]?.count || 0;

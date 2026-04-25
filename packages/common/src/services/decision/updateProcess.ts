@@ -31,8 +31,8 @@ export const updateProcess = async ({
     }
 
     // Check if process exists and user has permission to update it
-    const existingProcess = await db._query.decisionProcesses.findFirst({
-      where: eq(decisionProcesses.id, processId),
+    const existingProcess = await db.query.decisionProcesses.findFirst({
+      where: { id: processId },
     });
 
     if (!existingProcess) {

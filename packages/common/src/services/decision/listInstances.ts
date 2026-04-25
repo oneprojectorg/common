@@ -1,4 +1,4 @@
-import { and, asc, db, desc, eq, sql } from '@op/db/client';
+import { and, db, eq, sql } from '@op/db/client';
 import { ProcessStatus, processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
@@ -88,14 +88,17 @@ export const listInstances = async ({
     const count = countResult[0]?.count || 0;
 
     // Get process instances with relations
-    const orderColumn = orderBy
-      ? processInstances[orderBy]
-      : processInstances.createdAt;
-
-    const orderFn = orderDirection === 'asc' ? asc : desc;
-
-    const instanceList = await db._query.processInstances.findMany({
-      where: whereClause,
+    const instanceList = await db.query.processInstances.findMany({
+      where: {
+        ...(ownerProfileId && { ownerProfileId }),
+        ...(stewardProfileId && { stewardProfileId }),
+        ...(processId && { processId }),
+        ...(status && { status }),
+        ...(search && {
+          RAW: (table, { sql }) =>
+            sql`${table.search} @@ plainto_tsquery('english', ${search})`,
+        }),
+      },
       with: {
         process: true,
         owner: true,
@@ -108,7 +111,10 @@ export const listInstances = async ({
       },
       limit,
       offset,
-      orderBy: orderFn(orderColumn),
+      orderBy: (table, { asc, desc }) => {
+        const col = table[orderBy];
+        return orderDirection === 'asc' ? asc(col) : desc(col);
+      },
     });
 
     // Transform instances to include proposal and participant counts

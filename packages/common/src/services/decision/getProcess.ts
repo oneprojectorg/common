@@ -1,12 +1,11 @@
-import { db, eq } from '@op/db/client';
-import { decisionProcesses } from '@op/db/schema';
+import { db } from '@op/db/client';
 
 import { NotFoundError } from '../../utils';
 
 export const getProcess = async (processId: string) => {
   try {
-    const process = await db._query.decisionProcesses.findFirst({
-      where: eq(decisionProcesses.id, processId),
+    const process = await db.query.decisionProcesses.findFirst({
+      where: { id: processId },
       with: {
         createdBy: true,
       },

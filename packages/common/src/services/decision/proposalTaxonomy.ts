@@ -50,7 +50,7 @@ export async function ensureProposalTaxonomyTerms(
       trim: true,
     });
 
-    // taxonomyTerms V2 types are broken due to self-referential parentId
+    // taxonomyTerms self-referential parentId breaks v2 where typing.
     let existingTerm = await db._query.taxonomyTerms.findFirst({
       where: eq(taxonomyTerms.termUri, termUri),
     });

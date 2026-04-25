@@ -1,12 +1,11 @@
 import { getTipTapClient } from '@op/collab';
-import { type DbClient, and, db, eq } from '@op/db/client';
+import { type TransactionType, and, db, eq } from '@op/db/client';
 import {
   ProposalStatus,
   type Visibility,
   profiles,
   proposalCategories,
   proposals,
-  taxonomies,
   taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
@@ -30,11 +29,11 @@ import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
 async function updateProposalCategoryLink(
-  db: DbClient,
+  tx: TransactionType,
   proposalId: string,
   newCategoryLabels: string[],
 ): Promise<void> {
-  await db
+  await tx
     .delete(proposalCategories)
     .where(eq(proposalCategories.proposalId, proposalId));
 
@@ -42,8 +41,8 @@ async function updateProposalCategoryLink(
     return;
   }
 
-  const proposalTaxonomy = await db._query.taxonomies.findFirst({
-    where: eq(taxonomies.name, 'proposal'),
+  const proposalTaxonomy = await tx.query.taxonomies.findFirst({
+    where: { name: 'proposal' },
   });
 
   if (!proposalTaxonomy) {
@@ -58,7 +57,8 @@ async function updateProposalCategoryLink(
       continue;
     }
 
-    const taxonomyTerm = await db._query.taxonomyTerms.findFirst({
+    // taxonomyTerms self-referential parentId breaks v2 where typing.
+    const taxonomyTerm = await tx._query.taxonomyTerms.findFirst({
       where: and(
         eq(taxonomyTerms.label, categoryLabel.trim()),
         eq(taxonomyTerms.taxonomyId, proposalTaxonomy.id),
@@ -74,7 +74,7 @@ async function updateProposalCategoryLink(
   }
 
   if (taxonomyTermIds.length > 0) {
-    await db.insert(proposalCategories).values(
+    await tx.insert(proposalCategories).values(
       taxonomyTermIds.map((taxonomyTermId) => ({
         proposalId,
         taxonomyTermId,

@@ -1,8 +1,7 @@
-import { db, eq } from '@op/db/client';
+import { db } from '@op/db/client';
 import {
   EntityType,
   ProposalStatus,
-  processInstances,
   profileUserToAccessRoles,
   profileUsers,
   profiles,
@@ -48,8 +47,8 @@ export const createProposal = async ({
 
   try {
     // Verify the process instance exists
-    const instance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, data.processInstanceId),
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: data.processInstanceId },
     });
 
     if (!instance) {
@@ -240,7 +239,7 @@ export const createProposal = async ({
         // Process proposal content to replace temporary URLs with permanent ones
         try {
           await processProposalContent({
-            db: tx,
+            conn: tx,
             proposalId: insertedProposal.id,
           });
         } catch (error) {
