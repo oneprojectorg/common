@@ -128,6 +128,40 @@ services:
       dind:
         condition: service_healthy
 
+  # ── Supabase loopback proxies ───────────────────────────────────────────────
+  # supabase-js derives its auth cookie storage key from the URL hostname
+  # (`sb-${hostname.split('.')[0]}-auth-token`). For SSR auth to work, the
+  # server must reach Supabase at the same URL the browser uses
+  # (http://localhost:<PORT_PREFIX>21). These sidecars share the app/api
+  # network namespace and forward that loopback port to dind:54321 so server
+  # code sees the same `localhost` URL the browser does — no production code
+  # has to know about the docker-dev split.
+  app-supabase-proxy:
+    image: alpine/socat:latest
+    command: >-
+      TCP-LISTEN:${PORT_PREFIX:-31}21,fork,reuseaddr
+      TCP:dind:54321
+    network_mode: "service:app"
+    depends_on:
+      dind:
+        condition: service_healthy
+      app:
+        condition: service_started
+    restart: unless-stopped
+
+  api-supabase-proxy:
+    image: alpine/socat:latest
+    command: >-
+      TCP-LISTEN:${PORT_PREFIX:-31}21,fork,reuseaddr
+      TCP:dind:54321
+    network_mode: "service:api"
+    depends_on:
+      dind:
+        condition: service_healthy
+      api:
+        condition: service_started
+    restart: unless-stopped
+
   # ── Redis ────────────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
