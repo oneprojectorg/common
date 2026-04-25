@@ -18,6 +18,7 @@ import {
   PostItem,
   usePostFeedActions,
 } from '@/components/PostFeed';
+import { PostUpdate } from '@/components/PostUpdate';
 
 const PANEL_TAB_QUERY_KEY = 'panelTab';
 const VALID_PANEL_TABS = ['updates', 'meetings', 'resources'] as const;
@@ -30,8 +31,10 @@ const isPanelTab = (value: string | null): value is PanelTab =>
 
 export const DecisionSidePanel = ({
   decisionProfileId,
+  isAdmin = false,
 }: {
   decisionProfileId: string;
+  isAdmin?: boolean;
 }) => {
   const t = useTranslations();
   const pathname = usePathname();
@@ -103,6 +106,14 @@ export const DecisionSidePanel = ({
           <Header2 className="font-serif text-title-sm leading-normal">
             {t('Updates')}
           </Header2>
+          {isAdmin ? (
+            <PostUpdate
+              profileId={decisionProfileId}
+              placeholder={t('Share an update with participants…')}
+              label={t('Post')}
+              className="pt-4"
+            />
+          ) : null}
           <ErrorBoundary>
             <Suspense fallback={<PostFeedSkeleton numPosts={2} />}>
               <UpdatesFeed decisionProfileId={decisionProfileId} />
@@ -127,7 +138,7 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
   const [posts] = trpc.posts.getPosts.useSuspenseQuery({
     profileId: decisionProfileId,
     parentPostId: null,
-    limit: 20,
+    limit: 50,
     offset: 0,
     includeChildren: false,
   });
