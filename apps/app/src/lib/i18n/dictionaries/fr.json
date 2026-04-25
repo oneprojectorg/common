@@ -1145,7 +1145,7 @@
   "The previous phase did not leave any eligible proposals.": "La phase précédente n'a laissé aucune proposition éligible.",
   "Publish": "Publier",
   "Confirm advancing proposals": "Confirmer l'avancement des propositions",
-  "These {numProposals} proposals will move on to the {phaseName} phase": "Ces {numProposals} propositions passeront à la phase {phaseName}",
+  "These {numProposals} proposals will move on to the {phaseName} phase": "{numProposals, plural, one {Cette # proposition passera à la phase {phaseName}} other {Ces # propositions passeront à la phase {phaseName}}}",
   "PROPOSALS TO ADVANCE": "PROPOSITIONS À FAIRE AVANCER",
   "Advance": "Avancer",
   "Advancing": "En cours",

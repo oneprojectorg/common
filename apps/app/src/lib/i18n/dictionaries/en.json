@@ -1198,6 +1198,6 @@
   "Don't advance {title}": "Don't advance {title}",
   "+{count} More": "+{count} More",
   "Confirm advancing proposals": "Confirm advancing proposals",
-  "These {numProposals} proposals will move on to the {phaseName} phase": "These {numProposals} proposals will move on to the {phaseName} phase",
+  "These {numProposals} proposals will move on to the {phaseName} phase": "{numProposals, plural, one {This # proposal will move on to the {phaseName} phase} other {These # proposals will move on to the {phaseName} phase}}",
   "PROPOSALS TO ADVANCE": "PROPOSALS TO ADVANCE"
 }
