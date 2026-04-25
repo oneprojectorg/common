@@ -160,9 +160,6 @@ export type {
   ProposalReviewRequest,
 } from './tables/proposalReviews.sql';
 
-export { decisions, decisionsRelations } from './tables/decisions.sql';
-export type { Decision } from './tables/decisions.sql';
-
 export {
   decisionsVoteSubmissions,
   decisionsVoteSubmissionsRelations,
