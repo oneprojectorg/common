@@ -42,6 +42,7 @@ export const ManualSelectionList = ({
     q.decision.getCategories({ processInstanceId: instanceId }),
     q.decision.getInstance({ instanceId }),
   ]);
+  const utils = trpc.useUtils();
 
   // Non-suspense + placeholderData so category/sort changes don't blank
   // the table while the server re-fetches.
@@ -69,11 +70,13 @@ export const ManualSelectionList = ({
   const categories = categoriesData.categories;
   const proposals = filteredProposals;
 
-  // Invalidation (and therefore the instance.selectionsAreConfirmed flip that
-  // unmounts this component from the parent) is automatic via the shared
-  // realtime channel.
+  // Await invalidation before closing the modal to enforce synchronous
+  // behavior. Realtime channels still invalidate too, but waiting here
+  // guarantees selectionsAreConfirmed has flipped before the modal closes —
+  // without this we briefly render the empty-state during the channel race.
   const submitMutation = trpc.decision.submitManualSelection.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
+      await utils.decision.getInstance.invalidate({ instanceId });
       setSelectedProposals([]);
       setIsConfirmOpen(false);
       setSubmitError(null);
