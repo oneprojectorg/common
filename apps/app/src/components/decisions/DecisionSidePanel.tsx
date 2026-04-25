@@ -1,12 +1,23 @@
 'use client';
 
+import { useUser } from '@/utils/UserProvider';
+import { trpc } from '@op/api/client';
 import { Header2 } from '@op/ui/Header';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import type { Key } from 'react-aria-components';
 
 import { usePathname, useTranslations } from '@/lib/i18n';
+
+import ErrorBoundary from '@/components/ErrorBoundary';
+import {
+  DiscussionModalContainer,
+  PostFeed,
+  PostFeedSkeleton,
+  PostItem,
+  usePostFeedActions,
+} from '@/components/PostFeed';
 
 const PANEL_TAB_QUERY_KEY = 'panelTab';
 const VALID_PANEL_TABS = ['updates', 'meetings', 'resources'] as const;
@@ -17,7 +28,11 @@ type PanelTab = (typeof VALID_PANEL_TABS)[number];
 const isPanelTab = (value: string | null): value is PanelTab =>
   value !== null && (VALID_PANEL_TABS as readonly string[]).includes(value);
 
-export const DecisionSidePanel = () => {
+export const DecisionSidePanel = ({
+  decisionProfileId,
+}: {
+  decisionProfileId: string;
+}) => {
   const t = useTranslations();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -88,6 +103,11 @@ export const DecisionSidePanel = () => {
           <Header2 className="font-serif text-title-sm leading-normal">
             {t('Updates')}
           </Header2>
+          <ErrorBoundary>
+            <Suspense fallback={<PostFeedSkeleton numPosts={2} />}>
+              <UpdatesFeed decisionProfileId={decisionProfileId} />
+            </Suspense>
+          </ErrorBoundary>
         </TabPanel>
         <TabPanel id="meetings" className="px-4 py-4 text-neutral-gray4">
           {t('Coming soon')}
@@ -97,5 +117,56 @@ export const DecisionSidePanel = () => {
         </TabPanel>
       </Tabs>
     </aside>
+  );
+};
+
+const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
+  const t = useTranslations();
+  const { user } = useUser();
+
+  const [posts] = trpc.posts.getPosts.useSuspenseQuery({
+    profileId: decisionProfileId,
+    parentPostId: null,
+    limit: 20,
+    offset: 0,
+    includeChildren: false,
+  });
+
+  const {
+    discussionModal,
+    handleReactionClick,
+    handleCommentClick,
+    handleModalClose,
+  } = usePostFeedActions();
+
+  if (posts.length === 0) {
+    return (
+      <div className="py-6 text-center text-neutral-gray4">
+        {t('No updates yet')}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <PostFeed className="pt-4">
+        {posts.map((post) => (
+          <PostItem
+            key={post.id}
+            post={post}
+            organization={null}
+            user={user}
+            withLinks={false}
+            onReactionClick={handleReactionClick}
+            onCommentClick={handleCommentClick}
+            className="sm:px-0"
+          />
+        ))}
+      </PostFeed>
+      <DiscussionModalContainer
+        discussionModal={discussionModal}
+        onClose={handleModalClose}
+      />
+    </>
   );
 };
