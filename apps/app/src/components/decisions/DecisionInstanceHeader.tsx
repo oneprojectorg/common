@@ -1,10 +1,12 @@
 'use client';
 
-import { ButtonLink } from '@op/ui/Button';
+import { Button, ButtonLink } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
-import { LuArrowLeft, LuSettings } from 'react-icons/lu';
+import { useSearchParams } from 'next/navigation';
+import { useCallback } from 'react';
+import { LuArrowLeft, LuBell, LuSettings } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+import { usePathname, useRouter, useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { LocaleChooser } from '../LocaleChooser';
@@ -47,6 +49,7 @@ export const DecisionInstanceHeader = ({
       </div>
 
       <div className="flex items-center justify-end gap-2 md:gap-4">
+        <PanelToggleButton ariaLabel={t('Open updates panel')} />
         {isAdmin && decisionSlug && (
           <ButtonLink
             href={`/decisions/${decisionSlug}/edit`}
@@ -61,5 +64,34 @@ export const DecisionInstanceHeader = ({
         <UserAvatarMenu />
       </div>
     </header>
+  );
+};
+
+const PANEL_TAB_QUERY_KEY = 'panelTab';
+const DEFAULT_PANEL_TAB = 'updates';
+
+const PanelToggleButton = ({ ariaLabel }: { ariaLabel: string }) => {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const handleOpen = useCallback(() => {
+    const next = new URLSearchParams(searchParams.toString());
+    next.set(PANEL_TAB_QUERY_KEY, DEFAULT_PANEL_TAB);
+    const newUrl = next.toString()
+      ? `${pathname}?${next.toString()}`
+      : pathname;
+    router.replace(newUrl, { scroll: false });
+  }, [pathname, router, searchParams]);
+
+  return (
+    <Button
+      color="secondary"
+      size="small"
+      onPress={handleOpen}
+      aria-label={ariaLabel}
+    >
+      <LuBell className="size-4 text-neutral-black md:text-teal" />
+    </Button>
   );
 };
