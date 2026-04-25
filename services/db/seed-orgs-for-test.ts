@@ -1,7 +1,6 @@
-// Minimal seeder for the docker dev stack: creates One Project (with
+// Minimal seeder: creates One Project (with
 // domain=oneproject.org so onboarding domain-match pre-selects it) and
-// Common (no domain match) so the join-already-joined regression can be
-// reproduced end-to-end. Idempotent.
+// Common (no domain match)
 import { eq } from 'drizzle-orm';
 
 import { db } from '.';
