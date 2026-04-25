@@ -14,6 +14,7 @@ import type {
   DecisionInstanceData,
   PhaseInstanceData,
 } from './schemas/instanceData';
+import type { TransitionData } from './schemas/transitionData';
 import {
   aggregateProposalMetrics,
   executeSelectionPipeline,
@@ -31,7 +32,7 @@ export interface AdvancePhaseInput {
   toPhaseId: string;
   /** Null for cron / system-triggered transitions. */
   triggeredByProfileId: string | null;
-  transitionData?: Record<string, unknown>;
+  transitionData?: TransitionData;
   /** Shared timestamp for all writes. Defaults to now. */
   now?: string;
 }
@@ -87,6 +88,26 @@ export async function advancePhase(
     throw new Error(
       `Phase ${fromPhaseId} not found in instanceData for instance ${instanceId}`,
     );
+  }
+
+  // Lock the instance row so a concurrent submitManualSelection can't
+  // attach proposals to the inbound transition while we're advancing out.
+  const [lockedInstance] = await tx
+    .select({
+      currentStateId: processInstances.currentStateId,
+      status: processInstances.status,
+    })
+    .from(processInstances)
+    .where(eq(processInstances.id, instanceId))
+    .limit(1)
+    .for('update');
+
+  if (
+    !lockedInstance ||
+    lockedInstance.currentStateId !== fromPhaseId ||
+    lockedInstance.status !== ProcessStatus.PUBLISHED
+  ) {
+    return { conflict: true };
   }
 
   const selectionPipeline = departingPhase.selectionPipeline;
@@ -159,7 +180,6 @@ export async function advancePhase(
   }
 
   if (selectedProposalIds.length > 0) {
-    // Get the latest history snapshot for each selected proposal.
     const latestHistoryRows = await tx
       .selectDistinctOn([proposalHistory.id], {
         proposalId: proposalHistory.id,

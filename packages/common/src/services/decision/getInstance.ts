@@ -12,6 +12,7 @@ import {
 } from '../access';
 import type { DecisionRolePermissions } from './permissions';
 import { fromDecisionBitField } from './permissions';
+import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
 export interface GetInstanceInput {
@@ -142,12 +143,21 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
         }
       : instanceData;
 
+    const manualSelectionStatus = await resolveManualSelectionStatus({
+      instance: {
+        id: instance.id,
+        instanceData: instance.instanceData,
+        currentStateId: instance.currentStateId,
+      },
+    });
+
     return {
       ...instance,
       instanceData: filteredInstanceData,
       proposalCount,
       participantCount,
       access,
+      selectionsAreConfirmed: manualSelectionStatus.selectionsAreConfirmed,
     };
   } catch (error) {
     if (error instanceof NotFoundError || error instanceof UnauthorizedError) {

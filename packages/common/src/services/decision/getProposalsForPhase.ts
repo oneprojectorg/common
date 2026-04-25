@@ -1,4 +1,15 @@
-import { and, db, desc, eq, isNull, ne } from '@op/db/client';
+import {
+  and,
+  asc,
+  db,
+  desc,
+  eq,
+  gt,
+  inArray,
+  isNull,
+  lt,
+  ne,
+} from '@op/db/client';
 import type { DbClient } from '@op/db/client';
 import type { Proposal } from '@op/db/schema';
 import {
@@ -10,59 +21,6 @@ import {
 } from '@op/db/schema';
 
 import { isLegacyInstanceData } from './isLegacyInstance';
-
-/**
- * Resolves the transition to use for phase-scoped proposal queries.
- *
- * - If phaseId is provided: finds the most recent transition that entered that phase (toStateId = phaseId).
- * - If phaseId is omitted: uses the most recent transition (current phase).
- * - Returns undefined if no matching transition exists (e.g. still in the initial phase).
- */
-async function resolveTransition(
-  instanceId: string,
-  phaseId: string | undefined,
-  dbClient: DbClient,
-) {
-  if (phaseId) {
-    const [transition] = await dbClient
-      .select({ id: stateTransitionHistory.id })
-      .from(stateTransitionHistory)
-      .where(
-        and(
-          eq(stateTransitionHistory.processInstanceId, instanceId),
-          eq(stateTransitionHistory.toStateId, phaseId),
-        ),
-      )
-      .orderBy(desc(stateTransitionHistory.transitionedAt))
-      .limit(1);
-    return transition;
-  }
-
-  const [latestTransition] = await dbClient
-    .select({ id: stateTransitionHistory.id })
-    .from(stateTransitionHistory)
-    .where(eq(stateTransitionHistory.processInstanceId, instanceId))
-    .orderBy(desc(stateTransitionHistory.transitionedAt))
-    .limit(1);
-  return latestTransition;
-}
-
-/**
- * All non-draft, non-deleted proposals for an instance.
- * Used for legacy instances and for new instances still in their initial phase.
- */
-function allActiveProposals(instanceId: string, dbClient: DbClient) {
-  return dbClient
-    .select()
-    .from(proposals)
-    .where(
-      and(
-        eq(proposals.processInstanceId, instanceId),
-        ne(proposals.status, ProposalStatus.DRAFT),
-        isNull(proposals.deletedAt),
-      ),
-    );
-}
 
 /**
  * Loads the instance's legacy/current-phase context in a single query.
@@ -91,17 +49,156 @@ async function getInstanceContext(
   };
 }
 
+type PhaseWindow =
+  | { kind: 'unreached' }
+  | {
+      kind: 'visited';
+      inbound?: { id: string; transitionedAt: Date };
+      outboundTransitionedAt?: Date;
+    };
+
 /**
- * Returns IDs of proposals visible in the given phase. Lean variant for
- * callers that only need IDs (e.g. to pass as a filter to listProposals).
+ * Resolves the temporal window for a phase within an instance.
  *
- * - Legacy instances (no phases array in instanceData): always returns
- *   all non-draft, non-deleted proposals — phase scoping does not apply.
- * - If a transition into the requested phase exists: returns the proposals that survived
- *   that transition (empty means empty — no fallback).
- * - If no transition exists and the requested phase is the instance's current phase
- *   (i.e. the initial phase, never transitioned into): returns all active proposals.
- * - If a phaseId was passed for a phase the instance hasn't visited: returns [].
+ * - `unreached`: instance has not visited this phase yet.
+ * - `visited`: phase is current or past.
+ *   - `inbound` is the most recent transition INTO the phase (undefined for the
+ *     initial phase, which never has an inbound row).
+ *   - `outboundTransitionedAt` is when the instance left the phase (undefined
+ *     for the current phase).
+ */
+async function resolvePhaseWindow(
+  instanceId: string,
+  phaseId: string,
+  currentPhaseId: string | null | undefined,
+  dbClient: DbClient,
+): Promise<PhaseWindow> {
+  const [inbound] = await dbClient
+    .select({
+      id: stateTransitionHistory.id,
+      transitionedAt: stateTransitionHistory.transitionedAt,
+    })
+    .from(stateTransitionHistory)
+    .where(
+      and(
+        eq(stateTransitionHistory.processInstanceId, instanceId),
+        eq(stateTransitionHistory.toStateId, phaseId),
+      ),
+    )
+    .orderBy(desc(stateTransitionHistory.transitionedAt))
+    .limit(1);
+
+  const [outbound] = await dbClient
+    .select({ transitionedAt: stateTransitionHistory.transitionedAt })
+    .from(stateTransitionHistory)
+    .where(
+      and(
+        eq(stateTransitionHistory.processInstanceId, instanceId),
+        eq(stateTransitionHistory.fromStateId, phaseId),
+        ...(inbound
+          ? [gt(stateTransitionHistory.transitionedAt, inbound.transitionedAt)]
+          : []),
+      ),
+    )
+    .orderBy(asc(stateTransitionHistory.transitionedAt))
+    .limit(1);
+
+  if (!inbound && !outbound) {
+    // No transitions reference this phase. It's either the current initial
+    // phase (never transitioned) or a phase the instance hasn't reached yet.
+    if (phaseId === currentPhaseId) {
+      return { kind: 'visited' };
+    }
+    return { kind: 'unreached' };
+  }
+
+  return {
+    kind: 'visited',
+    inbound: inbound ?? undefined,
+    outboundTransitionedAt: outbound?.transitionedAt,
+  };
+}
+
+/** Proposal ids attached to a specific inbound transition, filtered to still-active rows. */
+async function attachmentIdsFor(
+  transitionHistoryId: string,
+  dbClient: DbClient,
+): Promise<string[]> {
+  const rows = await dbClient
+    .select({ id: decisionTransitionProposals.proposalId })
+    .from(decisionTransitionProposals)
+    .innerJoin(
+      proposals,
+      eq(decisionTransitionProposals.proposalId, proposals.id),
+    )
+    .where(
+      and(
+        eq(
+          decisionTransitionProposals.transitionHistoryId,
+          transitionHistoryId,
+        ),
+        ne(proposals.status, ProposalStatus.DRAFT),
+        isNull(proposals.deletedAt),
+      ),
+    );
+  return rows.map((r) => r.id);
+}
+
+/** Proposal ids with `createdAt` strictly between the phase's transition-in and transition-out timestamps. */
+async function submittedDuringIds(
+  instanceId: string,
+  inboundAt: Date | undefined,
+  outboundAt: Date | undefined,
+  dbClient: DbClient,
+): Promise<string[]> {
+  const conditions = [
+    eq(proposals.processInstanceId, instanceId),
+    ne(proposals.status, ProposalStatus.DRAFT),
+    isNull(proposals.deletedAt),
+  ];
+  if (inboundAt) {
+    conditions.push(gt(proposals.createdAt, inboundAt.toISOString()));
+  }
+  if (outboundAt) {
+    conditions.push(lt(proposals.createdAt, outboundAt.toISOString()));
+  }
+
+  const rows = await dbClient
+    .select({ id: proposals.id })
+    .from(proposals)
+    .where(and(...conditions));
+  return rows.map((r) => r.id);
+}
+
+async function allActiveIds(
+  instanceId: string,
+  dbClient: DbClient,
+): Promise<string[]> {
+  const rows = await dbClient
+    .select({ id: proposals.id })
+    .from(proposals)
+    .where(
+      and(
+        eq(proposals.processInstanceId, instanceId),
+        ne(proposals.status, ProposalStatus.DRAFT),
+        isNull(proposals.deletedAt),
+      ),
+    );
+  return rows.map((r) => r.id);
+}
+
+/**
+ * Returns IDs of proposals visible in the given phase.
+ *
+ * A proposal is in phase P iff it was attached to P's inbound transition
+ * (survived the advance-in snapshot) OR it was submitted during P's window
+ * (between advance-in and advance-out, or between advance-in and now for the
+ * current phase).
+ *
+ * - Legacy instances (no phases array in instanceData): returns all active
+ *   non-draft proposals; phase scoping does not apply.
+ * - Unreached phase (phaseId refers to a phase the instance hasn't entered):
+ *   returns [].
  */
 export async function getProposalIdsForPhase({
   instanceId,
@@ -119,52 +216,42 @@ export async function getProposalIdsForPhase({
   }
 
   if (ctx.isLegacy) {
-    const fallback = await allActiveProposals(instanceId, dbClient);
-    return fallback.map((r) => r.id);
+    return allActiveIds(instanceId, dbClient);
   }
 
-  const transition = await resolveTransition(instanceId, phaseId, dbClient);
-
-  if (transition) {
-    const rows = await dbClient
-      .select({ id: decisionTransitionProposals.proposalId })
-      .from(decisionTransitionProposals)
-      .innerJoin(
-        proposals,
-        eq(decisionTransitionProposals.proposalId, proposals.id),
-      )
-      .where(
-        and(
-          eq(decisionTransitionProposals.transitionHistoryId, transition.id),
-          isNull(proposals.deletedAt),
-        ),
-      );
-
-    return rows.map((r) => r.id);
+  const resolvedPhaseId = phaseId ?? ctx.currentPhaseId;
+  if (!resolvedPhaseId) {
+    return allActiveIds(instanceId, dbClient);
   }
 
-  // No transition into the requested phase.
-  // If we're sitting on that phase (or no phaseId given → current phase), it's the
-  // initial phase that's never been transitioned into → return all active proposals.
-  const isCurrentPhase = phaseId == null || phaseId === ctx.currentPhaseId;
-  if (isCurrentPhase) {
-    const fallback = await allActiveProposals(instanceId, dbClient);
-    return fallback.map((r) => r.id);
+  const window = await resolvePhaseWindow(
+    instanceId,
+    resolvedPhaseId,
+    ctx.currentPhaseId,
+    dbClient,
+  );
+
+  if (window.kind === 'unreached') {
+    return [];
   }
 
-  return [];
+  const attachmentIds = window.inbound
+    ? await attachmentIdsFor(window.inbound.id, dbClient)
+    : [];
+
+  const duringIds = await submittedDuringIds(
+    instanceId,
+    window.inbound?.transitionedAt,
+    window.outboundTransitionedAt,
+    dbClient,
+  );
+
+  return [...new Set([...attachmentIds, ...duringIds])];
 }
 
 /**
- * Returns the proposals visible in the given phase.
- *
- * - Legacy instances (no phases array in instanceData): always returns
- *   all non-draft, non-deleted proposals — phase scoping does not apply.
- * - If a transition into the requested phase exists: returns the proposals that survived
- *   that transition (empty means empty — no fallback).
- * - If no transition exists and the requested phase is the instance's current phase
- *   (i.e. the initial phase, never transitioned into): returns all active proposals.
- * - If a phaseId was passed for a phase the instance hasn't visited: returns [].
+ * Returns the proposals visible in the given phase. See `getProposalIdsForPhase`
+ * for membership semantics.
  */
 export async function getProposalsForPhase({
   instanceId,
@@ -175,43 +262,14 @@ export async function getProposalsForPhase({
   phaseId?: string;
   dbClient?: DbClient;
 }): Promise<Proposal[]> {
-  const ctx = await getInstanceContext(instanceId, dbClient);
-
-  if (!ctx) {
+  const ids = await getProposalIdsForPhase({ instanceId, phaseId, dbClient });
+  if (ids.length === 0) {
     return [];
   }
 
-  if (ctx.isLegacy) {
-    return allActiveProposals(instanceId, dbClient);
-  }
-
-  const transition = await resolveTransition(instanceId, phaseId, dbClient);
-
-  if (transition) {
-    const rows = await dbClient
-      .select({ proposal: proposals })
-      .from(decisionTransitionProposals)
-      .innerJoin(
-        proposals,
-        eq(decisionTransitionProposals.proposalId, proposals.id),
-      )
-      .where(
-        and(
-          eq(decisionTransitionProposals.transitionHistoryId, transition.id),
-          isNull(proposals.deletedAt),
-        ),
-      );
-
-    return rows.map((r) => r.proposal);
-  }
-
-  // No transition into the requested phase.
-  // If we're sitting on that phase (or no phaseId given → current phase), it's the
-  // initial phase that's never been transitioned into → return all active proposals.
-  const isCurrentPhase = phaseId == null || phaseId === ctx.currentPhaseId;
-  if (isCurrentPhase) {
-    return allActiveProposals(instanceId, dbClient);
-  }
-
-  return [];
+  return dbClient
+    .select()
+    .from(proposals)
+    .where(inArray(proposals.id, ids))
+    .orderBy(desc(proposals.createdAt));
 }

@@ -267,6 +267,159 @@ describe.concurrent('getProposalsForPhase', () => {
     expect(result[0]?.id).toBe(submitted.id);
   });
 
+  it('includes proposals submitted during the current phase (post advance-in)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
+
+    const p1 = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Submission-phase proposal ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+
+    // Submitted AFTER advancing into review — not part of the inbound snapshot.
+    const p2 = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Review-phase proposal ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    const result = await getProposalsForPhase({ instanceId });
+
+    const ids = result.map((p) => p.id);
+    expect(ids).toContain(p1.id);
+    expect(ids).toContain(p2.id);
+    expect(result).toHaveLength(2);
+  });
+
+  it('attributes proposals to the phase they were created in (createdAt-based)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
+
+    const submissionPhaseProposal = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Submission-phase ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+
+    const reviewPhaseProposal = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Review-phase ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    const submissionResult = await getProposalsForPhase({
+      instanceId,
+      phaseId: 'submission',
+    });
+    // Window for submission is (-∞, transition-into-review). Only the proposal
+    // created before the advance qualifies.
+    expect(submissionResult.map((p) => p.id)).toEqual([
+      submissionPhaseProposal.id,
+    ]);
+
+    const reviewResult = await getProposalsForPhase({
+      instanceId,
+      phaseId: 'review',
+    });
+    // Review = attachments (both proposals attached by no-pipeline advance) ∪
+    // during-window (reviewPhaseProposal). Dedup → both proposals.
+    const reviewIds = reviewResult.map((p) => p.id).sort();
+    expect(reviewIds).toEqual(
+      [submissionPhaseProposal.id, reviewPhaseProposal.id].sort(),
+    );
+  });
+
+  it('does not resurface a rejected proposal that was edited in the next phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    // Pipeline drops all but 1 proposal at submission → review.
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
+
+    // Create 3 proposals in submission; pipeline will shortlist 2.
+    const proposalsCreated = [] as Array<{ id: string }>;
+    for (let i = 1; i <= 3; i++) {
+      const p = await testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal ${i} ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      });
+      proposalsCreated.push(p);
+    }
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+
+    // Identify the 2 that survived and the 1 that did not.
+    const survivors = await getProposalsForPhase({
+      instanceId,
+      phaseId: 'review',
+    });
+    const survivorIds = new Set(survivors.map((p) => p.id));
+    const rejected = proposalsCreated.find((p) => !survivorIds.has(p.id))!;
+
+    // Simulate an edit of the rejected proposal during review (touches updatedAt,
+    // triggers a new proposalHistory row — but createdAt is stable).
+    await db
+      .update(proposals)
+      .set({ proposalData: { title: `Edited during review ${task.id}` } })
+      .where(eq(proposals.id, rejected.id));
+
+    const result = await getProposalsForPhase({
+      instanceId,
+      phaseId: 'review',
+    });
+    const ids = result.map((p) => p.id);
+    expect(ids).not.toContain(rejected.id);
+    expect(ids.sort()).toEqual([...survivorIds].sort());
+  });
+
   it('returns all active proposals for a legacy instance regardless of join table state', async ({
     task,
     onTestFinished,
