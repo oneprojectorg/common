@@ -3,15 +3,15 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
-import { useSearchParams } from 'next/navigation';
-import { useCallback } from 'react';
+import { useQueryState } from 'nuqs';
 import { LuArrowLeft, LuBell, LuSettings } from 'react-icons/lu';
 
-import { usePathname, useRouter, useTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
+import { panelStateParser } from './DecisionSidePanel';
 
 export const DecisionInstanceHeader = ({
   backTo,
@@ -68,23 +68,9 @@ export const DecisionInstanceHeader = ({
   );
 };
 
-const PANEL_QUERY_KEY = 'panel';
-const PANEL_OPEN_VALUE = 'updates';
-
 const DecisionUpdatesToggle = ({ ariaLabel }: { ariaLabel: string }) => {
-  const pathname = usePathname();
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const [, setPanel] = useQueryState('panel', panelStateParser);
   const decisionUpdatesEnabled = useFeatureFlag('decision_updates');
-
-  const handleOpen = useCallback(() => {
-    const next = new URLSearchParams(searchParams.toString());
-    next.set(PANEL_QUERY_KEY, PANEL_OPEN_VALUE);
-    const newUrl = next.toString()
-      ? `${pathname}?${next.toString()}`
-      : pathname;
-    router.replace(newUrl, { scroll: false });
-  }, [pathname, router, searchParams]);
 
   if (!decisionUpdatesEnabled) {
     return null;
@@ -94,7 +80,7 @@ const DecisionUpdatesToggle = ({ ariaLabel }: { ariaLabel: string }) => {
     <Button
       color="secondary"
       size="small"
-      onPress={handleOpen}
+      onPress={() => setPanel('updates')}
       aria-label={ariaLabel}
     >
       <LuBell className="size-4 text-neutral-black md:text-teal" />

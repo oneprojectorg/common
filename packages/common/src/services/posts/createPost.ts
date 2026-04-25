@@ -227,25 +227,27 @@ export const createPost = async (input: CreatePostServiceInput) => {
     ? { decisions: permission.ADMIN }
     : { decisions: decisionPermission.SUBMIT_PROPOSALS };
 
-  for (const candidateProfileId of profileIdsToAuthorize) {
-    const [decisionInstance, profileUser] = await Promise.all([
-      db.query.processInstances.findFirst({
-        where: { profileId: candidateProfileId },
-        columns: { profileId: true },
-      }),
-      getProfileAccessUser({
-        user: { id: authUserId },
-        profileId: candidateProfileId,
-      }),
-    ]);
-    if (!decisionInstance) {
-      continue;
-    }
-    assertAccess(
-      [{ profile: permission.ADMIN }, requiredDecisionPermission],
-      profileUser?.roles ?? [],
-    );
-  }
+  await Promise.all(
+    profileIdsToAuthorize.map(async (candidateProfileId) => {
+      const [decisionInstance, profileUser] = await Promise.all([
+        db.query.processInstances.findFirst({
+          where: { profileId: candidateProfileId },
+          columns: { profileId: true },
+        }),
+        getProfileAccessUser({
+          user: { id: authUserId },
+          profileId: candidateProfileId,
+        }),
+      ]);
+      if (!decisionInstance) {
+        return;
+      }
+      assertAccess(
+        [{ profile: permission.ADMIN }, requiredDecisionPermission],
+        profileUser?.roles ?? [],
+      );
+    }),
+  );
 
   try {
     const newPost = await db.transaction(async (tx) => {
