@@ -1,5 +1,11 @@
 import { db } from '@op/db/client';
-import { locations, profiles } from '@op/db/schema';
+import {
+  locations,
+  organizationsStrategies,
+  organizationsTerms,
+  profiles,
+  taxonomyTerms,
+} from '@op/db/schema';
 import { eq, inArray } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -169,6 +175,107 @@ describe.concurrent('Organization Integration Tests', () => {
       };
 
       await expect(() => caller.create(invalidData)).rejects.toThrow();
+    });
+
+    it('should persist strategies and focus areas', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+      const { adminUser } = await testData.createOrganization({
+        users: { admin: 1 },
+      });
+
+      const seededTerms = await db
+        .select({ id: taxonomyTerms.id })
+        .from(taxonomyTerms)
+        .limit(2);
+      const [strategyTerm, focusTerm] = seededTerms;
+      if (!strategyTerm || !focusTerm) {
+        throw new Error(
+          'Expected at least 2 seeded taxonomy terms; check test DB seed',
+        );
+      }
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const result = await caller.create({
+        name: `Strategies Test Org ${task.id}`,
+        website: 'https://strategies-test.example.com',
+        email: 'contact@strategies-test.example.com',
+        orgType: 'nonprofit' as const,
+        bio: 'Strategies test',
+        mission: 'Strategies test',
+        networkOrganization: false,
+        isReceivingFunds: false,
+        isOfferingFunds: false,
+        acceptingApplications: false,
+        strategies: [{ id: strategyTerm.id, label: 'Test Strategy' }],
+        focusAreas: [{ id: focusTerm.id, label: 'Test Focus' }],
+      });
+
+      const strategyRows = await db
+        .select()
+        .from(organizationsStrategies)
+        .where(eq(organizationsStrategies.organizationId, result.id));
+      expect(strategyRows).toHaveLength(1);
+      expect(strategyRows[0]?.taxonomyTermId).toBe(strategyTerm.id);
+
+      const termRows = await db
+        .select()
+        .from(organizationsTerms)
+        .where(eq(organizationsTerms.organizationId, result.id));
+      expect(termRows).toHaveLength(1);
+      expect(termRows[0]?.taxonomyTermId).toBe(focusTerm.id);
+
+      onTestFinished(async () => {
+        if (result.profile?.id) {
+          await db.delete(profiles).where(eq(profiles.id, result.profile.id));
+        }
+      });
+    });
+
+    it('should roll back all inserts when a downstream insert fails', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+      const { adminUser } = await testData.createOrganization({
+        users: { admin: 1 },
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const orgName = `Rollback Test Org ${task.id}`;
+      const fakeTaxonomyTermId = '00000000-0000-0000-0000-000000000000';
+
+      await expect(() =>
+        caller.create({
+          name: orgName,
+          website: 'https://rollback-test.example.com',
+          email: 'contact@rollback-test.example.com',
+          orgType: 'nonprofit' as const,
+          bio: 'Rollback test',
+          mission: 'Rollback test',
+          networkOrganization: false,
+          isReceivingFunds: false,
+          isOfferingFunds: false,
+          acceptingApplications: false,
+          strategies: [{ id: fakeTaxonomyTermId, label: 'fake' }],
+        }),
+      ).rejects.toThrow();
+
+      // The transaction should have rolled back the profile, organization,
+      // organizationUser, and role-grant rows that were inserted before the
+      // failing strategies insert. Verify by name (uniqueness comes from the
+      // task-id suffix above).
+      const orphanProfiles = await db
+        .select({ id: profiles.id })
+        .from(profiles)
+        .where(eq(profiles.name, orgName));
+      expect(orphanProfiles).toHaveLength(0);
     });
   });
 
