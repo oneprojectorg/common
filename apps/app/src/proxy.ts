@@ -65,29 +65,10 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   const shouldSetCookieDomain =
     (useUrl.IS_PRODUCTION || useUrl.IS_STAGING || useUrl.IS_PREVIEW) &&
     !isOnPreviewAppDomain;
-  // Server-side: prefer SUPABASE_URL for HTTP reachability when it's set (e.g.
-  // docker-dev uses dind:54321 internally, browser uses localhost:3121). Pin
-  // storageKey to the browser-facing hostname ONLY when the two URLs differ —
-  // in prod/staging both vars point at the same host, so authStorageKey stays
-  // undefined and Supabase's default cookie naming applies.
-  const browserSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const serverSupabaseUrl = process.env.SUPABASE_URL ?? browserSupabaseUrl;
-  let authStorageKey: string | undefined;
-  if (
-    process.env.SUPABASE_URL &&
-    process.env.SUPABASE_URL !== browserSupabaseUrl
-  ) {
-    try {
-      authStorageKey = `sb-${new URL(browserSupabaseUrl).hostname}-auth-token`;
-    } catch {
-      authStorageKey = undefined;
-    }
-  }
   const supabase = createServerClient(
-    serverSupabaseUrl,
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      ...(authStorageKey ? { auth: { storageKey: authStorageKey } } : {}),
       cookieOptions: shouldSetCookieDomain
         ? {
             domain: cookieOptionsDomain,

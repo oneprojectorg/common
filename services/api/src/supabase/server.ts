@@ -10,23 +10,6 @@ import type { TContext } from '../types';
 
 const useUrl = OPURLConfig('APP');
 
-// Pin the Supabase SSR cookie name to the browser-facing hostname, but ONLY
-// when the server reaches Supabase at a different URL than the browser (i.e.
-// SUPABASE_URL is set and differs from NEXT_PUBLIC_SUPABASE_URL — this is the
-// docker-dev cross-container case, where the browser uses localhost:3121 and
-// the server uses dind:54321). In prod/staging both vars resolve to the same
-// host so this returns undefined and Supabase's default naming kicks in.
-const supabaseAuthCookieStorageKey = () => {
-  const browserUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serverUrl = process.env.SUPABASE_URL;
-  if (!browserUrl || !serverUrl || browserUrl === serverUrl) return undefined;
-  try {
-    return `sb-${new URL(browserUrl).hostname}-auth-token`;
-  } catch {
-    return undefined;
-  }
-};
-
 const authUserCache = new WeakMap<TContext, Promise<UserResponse>>();
 
 export function getCachedAuthUser(ctx: TContext): Promise<UserResponse> {
@@ -41,15 +24,9 @@ export function getCachedAuthUser(ctx: TContext): Promise<UserResponse> {
 
 export const createSBAdminClient = (ctx: TContext) => {
   return createServerClient<Database>(
-    process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE!,
     {
-      // See supabaseAuthCookieStorageKey(): only populated when the server
-      // reaches Supabase at a different host than the browser (docker-dev).
-      // Undefined in prod, so Supabase keeps its default cookie naming.
-      ...(supabaseAuthCookieStorageKey()
-        ? { auth: { storageKey: supabaseAuthCookieStorageKey() } }
-        : {}),
       cookieOptions: useUrl.IS_PRODUCTION
         ? {
             domain: cookieOptionsDomain,
