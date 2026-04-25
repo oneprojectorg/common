@@ -16,6 +16,7 @@ import { eq } from 'drizzle-orm';
 
 import { CommonError } from '../../utils';
 import { getCurrentProfileId } from '../access';
+import { assertDecisionProfileAdmin } from '../decision/assertDecisionProfileAdmin';
 import { sendCommentNotificationEmail } from '../email';
 
 interface CreatePostServiceInput extends CreatePostInput {
@@ -208,6 +209,13 @@ export const createPost = async (input: CreatePostServiceInput) => {
   } = input;
 
   const profileId = await getCurrentProfileId(authUserId);
+
+  if (targetProfileId) {
+    await assertDecisionProfileAdmin({
+      user: { id: authUserId },
+      profileId: targetProfileId,
+    });
+  }
 
   try {
     const newPost = await db.transaction(async (tx) => {
