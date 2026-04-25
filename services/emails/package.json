@@ -10,7 +10,6 @@
   },
   "main": "index.tsx",
   "scripts": {
-    "disable-build": "email build",
     "export": "email export",
     "format:check": "oxfmt --check",
     "start": "email start",

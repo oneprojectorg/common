@@ -12,7 +12,6 @@
   },
   "types": "./src/config.ts",
   "scripts": {
-    "disable-build": "tsc",
     "format:check": "oxfmt --check",
     "typecheck": "tsgo --noEmit"
   },
