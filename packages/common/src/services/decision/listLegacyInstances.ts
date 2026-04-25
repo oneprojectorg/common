@@ -1,5 +1,5 @@
-import { db, desc, eq } from '@op/db/client';
-import { ProposalStatus, organizations, processInstances } from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import { ProposalStatus, organizations } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -29,8 +29,8 @@ export const listLegacyInstances = async ({
 
   assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
 
-  const instanceList = await db._query.processInstances.findMany({
-    where: eq(processInstances.ownerProfileId, ownerProfileId),
+  const instanceList = await db.query.processInstances.findMany({
+    where: { ownerProfileId },
     with: {
       process: true,
       owner: {
@@ -46,7 +46,7 @@ export const listLegacyInstances = async ({
         },
       },
     },
-    orderBy: desc(processInstances.createdAt),
+    orderBy: (table, { desc }) => desc(table.createdAt),
   });
 
   return instanceList.map((instance) => {

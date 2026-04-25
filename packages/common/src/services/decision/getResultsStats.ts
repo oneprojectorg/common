@@ -1,7 +1,6 @@
-import { db, desc, eq } from '@op/db/client';
+import { db, eq } from '@op/db/client';
 import {
   decisionProcessResultSelections,
-  decisionProcessResults,
   processInstances,
   proposals,
 } from '@op/db/schema';
@@ -48,9 +47,9 @@ export const getResultsStats = async ({
     orgFallbackPermissions: [{ decisions: permission.READ }],
   });
 
-  const result = await db._query.decisionProcessResults.findFirst({
-    where: eq(decisionProcessResults.processInstanceId, instanceId),
-    orderBy: [desc(decisionProcessResults.executedAt)],
+  const result = await db.query.decisionProcessResults.findFirst({
+    where: { processInstanceId: instanceId },
+    orderBy: (table, { desc }) => [desc(table.executedAt)],
   });
 
   if (!result) {
