@@ -186,16 +186,30 @@ describe.concurrent('Organization Integration Tests', () => {
         users: { admin: 1 },
       });
 
-      const seededTerms = await db
-        .select({ id: taxonomyTerms.id })
-        .from(taxonomyTerms)
-        .limit(2);
-      const [strategyTerm, focusTerm] = seededTerms;
+      // Insert taxonomy term fixtures so the test doesn't depend on seed state.
+      const [strategyTerm, focusTerm] = await db
+        .insert(taxonomyTerms)
+        .values([
+          {
+            termUri: `test:strategy:${task.id}`,
+            label: `Test Strategy ${task.id}`,
+            facet: 'strategy',
+          },
+          {
+            termUri: `test:focus:${task.id}`,
+            label: `Test Focus ${task.id}`,
+            facet: 'focusArea',
+          },
+        ])
+        .returning({ id: taxonomyTerms.id });
       if (!strategyTerm || !focusTerm) {
-        throw new Error(
-          'Expected at least 2 seeded taxonomy terms; check test DB seed',
-        );
+        throw new Error('Failed to insert taxonomy term fixtures');
       }
+      onTestFinished(async () => {
+        await db
+          .delete(taxonomyTerms)
+          .where(inArray(taxonomyTerms.id, [strategyTerm.id, focusTerm.id]));
+      });
 
       const { session } = await createIsolatedSession(adminUser.email);
       const caller = createCaller(await createTestContextWithSession(session));
@@ -215,6 +229,12 @@ describe.concurrent('Organization Integration Tests', () => {
         focusAreas: [{ id: focusTerm.id, label: 'Test Focus' }],
       });
 
+      onTestFinished(async () => {
+        if (result.profile?.id) {
+          await db.delete(profiles).where(eq(profiles.id, result.profile.id));
+        }
+      });
+
       const strategyRows = await db
         .select()
         .from(organizationsStrategies)
@@ -228,12 +248,6 @@ describe.concurrent('Organization Integration Tests', () => {
         .where(eq(organizationsTerms.organizationId, result.id));
       expect(termRows).toHaveLength(1);
       expect(termRows[0]?.taxonomyTermId).toBe(focusTerm.id);
-
-      onTestFinished(async () => {
-        if (result.profile?.id) {
-          await db.delete(profiles).where(eq(profiles.id, result.profile.id));
-        }
-      });
     });
 
     it('should roll back all inserts when a downstream insert fails', async ({
