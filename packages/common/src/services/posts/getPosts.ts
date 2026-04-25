@@ -51,8 +51,8 @@ export const getPosts = async (input: GetPostsInput) => {
 
     for (const candidateProfileId of profileIdsToAuthorize) {
       const [decisionInstance, profileUser] = await Promise.all([
-        db._query.processInstances.findFirst({
-          where: (table, { eq }) => eq(table.profileId, candidateProfileId),
+        db.query.processInstances.findFirst({
+          where: { profileId: candidateProfileId },
           columns: { profileId: true },
         }),
         getProfileAccessUser({
