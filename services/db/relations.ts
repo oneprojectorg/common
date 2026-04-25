@@ -401,6 +401,31 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.organizations.id,
       to: r.organizationsWhereWeWork.organizationId,
     }),
+    projects: r.many.projects({
+      from: r.organizations.id,
+      to: r.projects.organizationId,
+    }),
+    links: r.many.links({
+      from: r.organizations.id,
+      to: r.links.organizationId,
+    }),
+    strategies: r.many.organizationsStrategies({
+      from: r.organizations.id,
+      to: r.organizationsStrategies.organizationId,
+    }),
+  },
+
+  /**
+   * Organizations strategies (join to taxonomy terms).
+   */
+  organizationsStrategies: {
+    // @ts-expect-error - taxonomyTerms self-referential parentId breaks inference
+    term: r.one.taxonomyTerms({
+      from: r.organizationsStrategies.taxonomyTermId,
+      // @ts-expect-error - see above
+      to: r.taxonomyTerms.id,
+      optional: false,
+    }),
   },
 
   /**
@@ -457,6 +482,26 @@ export const relations = defineRelations(schema, (r) => ({
   },
 
   /**
+   * Organization relationship relations
+   *
+   * Self-referential edges between two organizations (source/target).
+   */
+  organizationRelationships: {
+    sourceOrganization: r.one.organizations({
+      from: r.organizationRelationships.sourceOrganizationId,
+      to: r.organizations.id,
+      alias: 'organizationRelationship_source',
+      optional: false,
+    }),
+    targetOrganization: r.one.organizations({
+      from: r.organizationRelationships.targetOrganizationId,
+      to: r.organizations.id,
+      alias: 'organizationRelationship_target',
+      optional: false,
+    }),
+  },
+
+  /**
    * Allow list relations
    */
   allowList: {
@@ -487,20 +532,30 @@ export const relations = defineRelations(schema, (r) => ({
   /**
    * User relations
    *
-   * profileId is nullable.
+   * profileId, currentProfileId, and lastOrgId are nullable.
    */
   users: {
     profile: r.one.profiles({
       from: r.users.profileId,
       to: r.profiles.id,
+      alias: 'user_profile',
     }),
-    avatarImage: r.one.objectsInStorage({
-      from: r.users.avatarImageId,
-      to: r.objectsInStorage.id,
+    currentProfile: r.one.profiles({
+      from: r.users.currentProfileId,
+      to: r.profiles.id,
+      alias: 'user_currentProfile',
+    }),
+    currentOrganization: r.one.organizations({
+      from: r.users.lastOrgId,
+      to: r.organizations.id,
     }),
     organizationUsers: r.many.organizationUsers({
       from: r.users.authUserId,
       to: r.organizationUsers.authUserId,
+    }),
+    avatarImage: r.one.objectsInStorage({
+      from: r.users.avatarImageId,
+      to: r.objectsInStorage.id,
     }),
     authUser: r.one.authUsers({
       from: r.users.authUserId,

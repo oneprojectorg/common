@@ -1,12 +1,12 @@
-import { db, sql } from '@op/db/client';
-import { locations } from '@op/db/schema';
+import { db } from '@op/db/client';
 
 export const getOrganizationsByProfile = async (profileId: string) => {
   // Find all users who have access to this profile
   // Either as their personal profile or as their current profile
-  const usersWithProfile = await db._query.users.findMany({
-    where: (table, { eq, or }) =>
-      or(eq(table.profileId, profileId), eq(table.currentProfileId, profileId)),
+  const usersWithProfile = await db.query.users.findMany({
+    where: {
+      OR: [{ profileId }, { currentProfileId: profileId }],
+    },
     with: {
       organizationUsers: {
         with: {
@@ -24,8 +24,10 @@ export const getOrganizationsByProfile = async (profileId: string) => {
                 with: {
                   location: {
                     extras: {
-                      x: sql<number>`ST_X(${locations.location})`.as('x'),
-                      y: sql<number>`ST_Y(${locations.location})`.as('y'),
+                      x: (table, { sql }) =>
+                        sql<number>`ST_X(${table.location})`.as('x'),
+                      y: (table, { sql }) =>
+                        sql<number>`ST_Y(${table.location})`.as('y'),
                     },
                     columns: {
                       id: true,
@@ -34,7 +36,6 @@ export const getOrganizationsByProfile = async (profileId: string) => {
                       countryCode: true,
                       countryName: true,
                       metadata: true,
-                      latLng: false,
                     },
                   },
                 },

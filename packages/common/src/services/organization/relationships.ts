@@ -1,13 +1,11 @@
 import { OPURLConfig } from '@op/core';
-import { and, db, eq, inArray, or } from '@op/db/client';
+import { and, db, eq, inArray } from '@op/db/client';
 import {
   Organization,
   Profile,
   accessRoles,
   organizationRelationships,
   organizationUserToAccessRoles,
-  organizationUsers,
-  organizations,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { relationshipMap } from '@op/types';
@@ -88,12 +86,12 @@ export const sendRelationshipNotification = async ({
   relationships: Array<string>;
 }) => {
   const [sourceOrg, targetOrg] = await Promise.all([
-    db._query.organizations.findFirst({
-      where: eq(organizations.id, from),
+    db.query.organizations.findFirst({
+      where: { id: from },
       with: { profile: true },
     }),
-    db._query.organizations.findFirst({
-      where: eq(organizations.id, to),
+    db.query.organizations.findFirst({
+      where: { id: to },
       with: { profile: true },
     }),
   ]);
@@ -104,23 +102,24 @@ export const sendRelationshipNotification = async ({
 
   // Send email notifications to target organization admin users only
   try {
-    const adminUsers = await db._query.organizationUsers.findMany({
-      where: and(
-        eq(organizationUsers.organizationId, to),
-        inArray(
-          organizationUsers.id,
-          db
-            .select({
-              userId: organizationUserToAccessRoles.organizationUserId,
-            })
-            .from(organizationUserToAccessRoles)
-            .leftJoin(
-              accessRoles,
-              eq(organizationUserToAccessRoles.accessRoleId, accessRoles.id),
-            )
-            .where(eq(accessRoles.name, 'Admin')),
-        ),
-      ),
+    const adminUsers = await db.query.organizationUsers.findMany({
+      where: {
+        organizationId: to,
+        RAW: (table) =>
+          inArray(
+            table.id,
+            db
+              .select({
+                userId: organizationUserToAccessRoles.organizationUserId,
+              })
+              .from(organizationUserToAccessRoles)
+              .leftJoin(
+                accessRoles,
+                eq(organizationUserToAccessRoles.accessRoleId, accessRoles.id),
+              )
+              .where(eq(accessRoles.name, 'Admin')),
+          ),
+      },
     });
 
     const appUrlConfig = OPURLConfig('APP');
@@ -174,19 +173,11 @@ export const getRelatedOrganizations = async ({
   // }
   //
 
-  const where = () =>
-    and(
-      or(
-        eq(organizationRelationships.sourceOrganizationId, orgId),
-        eq(organizationRelationships.targetOrganizationId, orgId),
-      ),
-      ...(pending !== null
-        ? [eq(organizationRelationships.pending, pending)]
-        : []),
-    );
-
-  const relationships = await db._query.organizationRelationships.findMany({
-    where,
+  const relationships = await db.query.organizationRelationships.findMany({
+    where: {
+      OR: [{ sourceOrganizationId: orgId }, { targetOrganizationId: orgId }],
+      ...(pending !== null && { pending }),
+    },
     with: {
       targetOrganization: {
         with: {
@@ -285,25 +276,18 @@ export const getDirectedRelationships = async ({
   // }
   //
   const allRelationshipsFromDb =
-    await db._query.organizationRelationships.findMany({
-      where: () =>
-        and(
-          or(
-            eq(organizationRelationships.sourceOrganizationId, from),
-            eq(organizationRelationships.targetOrganizationId, from),
-          ),
-          ...(to
-            ? [
-                or(
-                  eq(organizationRelationships.targetOrganizationId, to),
-                  eq(organizationRelationships.sourceOrganizationId, to),
-                ),
-              ]
-            : []),
-          ...(pending !== null
-            ? [eq(organizationRelationships.pending, pending)]
-            : []),
-        ),
+    await db.query.organizationRelationships.findMany({
+      where: {
+        OR: [{ sourceOrganizationId: from }, { targetOrganizationId: from }],
+        ...(to && {
+          AND: [
+            {
+              OR: [{ targetOrganizationId: to }, { sourceOrganizationId: to }],
+            },
+          ],
+        }),
+        ...(pending !== null && { pending }),
+      },
       with: {
         targetOrganization: {
           with: {
@@ -365,15 +349,12 @@ export const getPendingRelationships = async ({
     throw new UnauthorizedError('You are not a member of this organization');
   }
 
-  const where = () =>
-    and(
-      eq(organizationRelationships.targetOrganizationId, orgId),
-      eq(organizationRelationships.pending, true),
-    );
-
   const [relationships] = await Promise.all([
-    db._query.organizationRelationships.findMany({
-      where,
+    db.query.organizationRelationships.findMany({
+      where: {
+        targetOrganizationId: orgId,
+        pending: true,
+      },
       with: {
         targetOrganization: {
           with: {

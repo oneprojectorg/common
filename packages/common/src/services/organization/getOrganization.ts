@@ -1,5 +1,5 @@
-import { db, eq, sql } from '@op/db/client';
-import { locations, profiles } from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import { profiles } from '@op/db/schema';
 
 import { NotFoundError } from '../../utils';
 
@@ -20,8 +20,8 @@ export const getOrganization = async ({ slug }: { slug: string }) => {
     throw new NotFoundError('Could not find organization');
   }
 
-  const org = await db._query.organizations.findFirst({
-    where: (table, { eq }) => eq(table.profileId, profileId),
+  const org = await db.query.organizations.findFirst({
+    where: { profileId },
     with: {
       projects: true,
       links: true,
@@ -35,8 +35,10 @@ export const getOrganization = async ({ slug }: { slug: string }) => {
         with: {
           location: {
             extras: {
-              x: sql<number>`ST_X(${locations.location})`.as('x'),
-              y: sql<number>`ST_Y(${locations.location})`.as('y'),
+              x: (table, { sql }) =>
+                sql<number>`ST_X(${table.location})`.as('x'),
+              y: (table, { sql }) =>
+                sql<number>`ST_Y(${table.location})`.as('y'),
             },
             columns: {
               id: true,
@@ -45,7 +47,6 @@ export const getOrganization = async ({ slug }: { slug: string }) => {
               countryCode: true,
               countryName: true,
               metadata: true,
-              latLng: false,
             },
           },
         },
@@ -63,8 +64,9 @@ export const getOrganization = async ({ slug }: { slug: string }) => {
     throw new NotFoundError('Could not find organization');
   }
 
-  org.whereWeWork = org.whereWeWork.map((record) => record.location);
-  org.strategies = org.strategies.map((record) => record.term);
-
-  return org;
+  return {
+    ...org,
+    whereWeWork: org.whereWeWork.map((record) => record.location),
+    strategies: org.strategies.map((record) => record.term),
+  };
 };

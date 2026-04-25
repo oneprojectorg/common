@@ -1,12 +1,6 @@
-import { db, sql } from '@op/db/client';
-import { locations, organizations } from '@op/db/schema';
+import { db } from '@op/db/client';
 
-import {
-  NotFoundError,
-  decodeCursor,
-  encodeCursor,
-  getCursorCondition,
-} from '../../utils';
+import { NotFoundError, decodeCursor, encodeCursor } from '../../utils';
 
 export const listOrganizations = async ({
   cursor,
@@ -20,22 +14,18 @@ export const listOrganizations = async ({
   dir?: 'asc' | 'desc';
 }) => {
   try {
-    const orderByColumn =
-      orderBy === 'createdAt'
-        ? organizations.createdAt
-        : organizations.updatedAt;
-
-    // Build cursor condition for unfiltered query
-    const cursorCondition = cursor
-      ? getCursorCondition({
-          column: orderByColumn,
-          cursor: decodeCursor<{ value: string | Date }>(cursor),
-          direction: dir,
-        })
+    const decodedCursor = cursor
+      ? decodeCursor<{ value: string | Date }>(cursor)
       : undefined;
 
-    const result = await db._query.organizations.findMany({
-      where: cursorCondition,
+    const cursorOp = decodedCursor
+      ? dir === 'asc'
+        ? { gt: decodedCursor.value }
+        : { lt: decodedCursor.value }
+      : undefined;
+
+    const result = await db.query.organizations.findMany({
+      where: cursorOp ? { [orderBy]: cursorOp } : undefined,
       with: {
         projects: true,
         links: true,
@@ -49,8 +39,10 @@ export const listOrganizations = async ({
           with: {
             location: {
               extras: {
-                x: sql<number>`ST_X(${locations.location})`.as('x'),
-                y: sql<number>`ST_Y(${locations.location})`.as('y'),
+                x: (table, { sql }) =>
+                  sql<number>`ST_X(${table.location})`.as('x'),
+                y: (table, { sql }) =>
+                  sql<number>`ST_Y(${table.location})`.as('y'),
               },
               columns: {
                 id: true,
@@ -59,14 +51,15 @@ export const listOrganizations = async ({
                 countryCode: true,
                 countryName: true,
                 metadata: true,
-                latLng: false,
               },
             },
           },
         },
       },
-      orderBy: (_, { asc, desc }) =>
-        dir === 'asc' ? asc(orderByColumn) : desc(orderByColumn),
+      orderBy: (table, { asc, desc }) => {
+        const col = orderBy === 'createdAt' ? table.createdAt : table.updatedAt;
+        return dir === 'asc' ? asc(col) : desc(col);
+      },
       limit: limit + 1, // Fetch one extra to check hasMore
     });
 
@@ -74,12 +67,13 @@ export const listOrganizations = async ({
       throw new NotFoundError('Organizations not found');
     }
 
-    result.forEach((org) => {
-      org.whereWeWork = org.whereWeWork.map((item) => item.location);
-    });
+    const flattened = result.map((org) => ({
+      ...org,
+      whereWeWork: org.whereWeWork.map((item) => item.location),
+    }));
 
-    const hasMore = result.length > limit;
-    const items = result.slice(0, limit);
+    const hasMore = flattened.length > limit;
+    const items = flattened.slice(0, limit);
     const lastItem = items[items.length - 1];
 
     const orderByValue =
