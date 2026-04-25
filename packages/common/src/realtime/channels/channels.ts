@@ -40,6 +40,19 @@ export const Channels = {
 
   reviewAssignments: (instanceId: string) =>
     `reviewAssignments:${instanceId}` as const,
+
+  /**
+   * Channel for top-level posts on a profile (user, org, or decision).
+   * Subscribed to by post-feed queries, broadcast to by post creation and
+   * reactions on those posts.
+   */
+  profilePosts: (profileId: string) => `profilePosts:${profileId}` as const,
+
+  /**
+   * Channel for comments under a specific post. Subscribed to by comment-list
+   * queries, broadcast to by comment creation and reactions on comments.
+   */
+  postComments: (postId: string) => `postComments:${postId}` as const,
 } as const;
 
 export type GlobalChannel = ReturnType<typeof Channels.global>;
@@ -66,6 +79,8 @@ export type ReviewAssignmentChannel = ReturnType<
 export type ReviewAssignmentsChannel = ReturnType<
   typeof Channels.reviewAssignments
 >;
+export type ProfilePostsChannel = ReturnType<typeof Channels.profilePosts>;
+export type PostCommentsChannel = ReturnType<typeof Channels.postComments>;
 
 /**
  * Union of all valid channel types
@@ -80,4 +95,6 @@ export type ChannelName =
   | DecisionProposalsChannel
   | DecisionProposalChannel
   | ReviewAssignmentChannel
-  | ReviewAssignmentsChannel;
+  | ReviewAssignmentsChannel
+  | ProfilePostsChannel
+  | PostCommentsChannel;

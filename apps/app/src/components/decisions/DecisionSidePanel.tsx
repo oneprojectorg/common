@@ -32,8 +32,6 @@ const DEFAULT_PANEL_TAB: PanelTab = 'updates';
 
 type PanelTab = (typeof VALID_PANEL_TABS)[number];
 
-const noopReaction: (postId: string, emoji: string) => void = () => {};
-
 const isPanelTab = (value: string | null): value is PanelTab =>
   value !== null && (VALID_PANEL_TABS as readonly string[]).includes(value);
 
@@ -50,8 +48,6 @@ export const DecisionSidePanel = ({
 
   const canPostUpdate = access?.admin === true;
   const canReadUpdates = access?.admin === true || access?.read === true;
-  const canInteract =
-    access?.admin === true || access?.submitProposals === true;
 
   const isOpenFromUrl = useCallback(
     () => searchParams.get(PANEL_OPEN_QUERY_KEY) !== PANEL_CLOSED_VALUE,
@@ -177,10 +173,7 @@ export const DecisionSidePanel = ({
           {canReadUpdates ? (
             <ErrorBoundary>
               <Suspense fallback={<PostFeedSkeleton numPosts={2} />}>
-                <UpdatesFeed
-                  decisionProfileId={decisionProfileId}
-                  canInteract={canInteract}
-                />
+                <UpdatesFeed decisionProfileId={decisionProfileId} />
               </Suspense>
             </ErrorBoundary>
           ) : (
@@ -202,10 +195,8 @@ export const DecisionSidePanel = ({
 
 const UpdatesFeed = ({
   decisionProfileId,
-  canInteract,
 }: {
   decisionProfileId: string;
-  canInteract: boolean;
 }) => {
   const t = useTranslations();
   const { user } = useUser();
@@ -243,8 +234,8 @@ const UpdatesFeed = ({
             organization={null}
             user={user}
             withLinks={false}
-            onReactionClick={canInteract ? handleReactionClick : noopReaction}
-            onCommentClick={canInteract ? handleCommentClick : undefined}
+            onReactionClick={handleReactionClick}
+            onCommentClick={handleCommentClick}
             className="sm:px-0"
           />
         ))}
