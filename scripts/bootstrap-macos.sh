@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Bootstrap prerequisites for `pnpm docker:dev` on a fresh macOS system.
-# Installs Homebrew (if missing), Docker Desktop, Node.js 22, and pnpm via corepack.
+# Installs Homebrew (if missing), OrbStack, Node.js 22, and pnpm via corepack.
+# OrbStack is the preferred macOS Docker runtime — lighter and faster than
+# Docker Desktop, with a drop-in `docker` / `docker compose` CLI. If Docker
+# Desktop or another daemon is already running, the install is skipped so we
+# don't stack two runtimes.
 # Tested on macOS 14+ (Sonoma / Sequoia), Apple Silicon and Intel.
 # Idempotent: safe to re-run.
 
@@ -28,31 +32,44 @@ else
   command -v brew >/dev/null || die "Homebrew installed but 'brew' still not on PATH. Open a new shell and re-run."
 fi
 
-# --- Docker Desktop (cask) ---------------------------------------------------
-if [[ -d "/Applications/Docker.app" ]]; then
-  log "Docker Desktop already installed."
+# --- Container runtime (OrbStack preferred) ---------------------------------
+# Detect any already-working docker daemon first — OrbStack, Docker Desktop,
+# colima all expose the same `docker` CLI surface. If one is up, skip install.
+if docker info >/dev/null 2>&1; then
+  RUNTIME="existing"
+  log "Docker daemon already reachable — skipping runtime install."
+elif [[ -d "/Applications/OrbStack.app" ]]; then
+  RUNTIME="orbstack"
+  log "OrbStack already installed."
+elif [[ -d "/Applications/Docker.app" ]]; then
+  RUNTIME="docker-desktop"
+  log "Docker Desktop already installed (consider switching to OrbStack: https://orbstack.dev)."
 else
-  log "Installing Docker Desktop via Homebrew cask…"
-  # The cask was renamed from 'docker' to 'docker-desktop' a few years back;
-  # try the new name first, fall back to the legacy alias.
-  if brew info --cask docker-desktop >/dev/null 2>&1; then
-    brew install --cask docker-desktop
-  else
-    brew install --cask docker
-  fi
+  RUNTIME="orbstack"
+  log "Installing OrbStack via Homebrew cask…"
+  brew install --cask orbstack
 fi
 
-# Ensure Docker Desktop is running — the CLI talks to it via /var/run/docker.sock.
-if docker info >/dev/null 2>&1; then
-  log "Docker Desktop is running."
-else
-  log "Launching Docker Desktop… (may take 30–60s to fully start)"
-  open -a Docker || die "Could not launch Docker.app. Open it manually, then re-run this script."
-  for i in {1..20}; do
-    if docker info >/dev/null 2>&1; then log "Docker is up."; break; fi
+# Launch the runtime if it isn't already serving requests.
+if ! docker info >/dev/null 2>&1; then
+  case "$RUNTIME" in
+    orbstack)
+      log "Launching OrbStack… (cold start is ~2–5s)"
+      open -a OrbStack || die "Could not launch OrbStack.app. Open it manually, then re-run this script."
+      ;;
+    docker-desktop)
+      log "Launching Docker Desktop… (may take 30–60s to fully start)"
+      open -a Docker || die "Could not launch Docker.app. Open it manually, then re-run this script."
+      ;;
+    *)
+      die "No container runtime found and none was installed. Install OrbStack (https://orbstack.dev) and re-run."
+      ;;
+  esac
+  for i in {1..30}; do
+    if docker info >/dev/null 2>&1; then log "Docker daemon is up."; break; fi
     sleep 5
   done
-  docker info >/dev/null 2>&1 || die "Docker Desktop didn't start within 100s. Launch it manually and re-run."
+  docker info >/dev/null 2>&1 || die "Docker daemon didn't start within 150s. Launch it manually and re-run."
 fi
 
 # --- Node.js 22 ---------------------------------------------------------------
@@ -91,8 +108,11 @@ cat <<EOF
 
 ${BOLD}Next steps:${RESET}
 
-1. In Docker Desktop → Settings → Resources, bump Memory to at least 8 GB
-   (the stack idles at ~6–8 GB RAM with all 12 Supabase sub-containers).
+1. Confirm your container runtime has enough headroom — the stack idles at
+   ~6–8 GB RAM with all 12 Supabase sub-containers.
+   - OrbStack: auto-scales by default, no action needed. To cap or adjust,
+     OrbStack → Settings → System → Memory limit.
+   - Docker Desktop: Settings → Resources → Memory ≥ 8 GB.
 
 2. Create .env.local if you don't already have one:
      cp ${REPO_ROOT}/.env.local.example ${REPO_ROOT}/.env.local
