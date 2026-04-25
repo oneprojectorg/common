@@ -144,19 +144,23 @@ describe.concurrent('Onboarding Organization Search', () => {
     }) => {
       const testData = new TestOrganizationDataManager(task.id, onTestFinished);
 
-      // Create a searchable organization
-      const { organization, adminUser } = await testData.createOrganization({
+      // Create a searchable organization that the searcher is NOT a member of
+      const { organization } = await testData.createOrganization({
         users: { admin: 1 },
         organizationName: 'SearchTestOrg',
       });
 
-      // Search as the admin user (any authenticated user can search)
-      const { session } = await createIsolatedSession(adminUser.email);
+      // The searcher belongs to a different org so search returns the target
+      const { adminUser: searcher } = await testData.createOrganization({
+        users: { admin: 1 },
+        organizationName: 'SearcherOrg',
+      });
+
+      const { session } = await createIsolatedSession(searcher.email);
       const caller = createOrgCaller(
         await createTestContextWithSession(session),
       );
 
-      // The org name includes the testId suffix from createOrganization
       const result = await caller.search({
         q: 'SearchTestOrg',
         limit: 10,
@@ -167,6 +171,40 @@ describe.concurrent('Onboarding Organization Search', () => {
       // Verify our org appears in results
       const found = result.find((org) => org.id === organization.id);
       expect(found).toBeDefined();
+    });
+
+    it('flags orgs the searcher already belongs to with isCurrentMember', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+      // Two orgs sharing a search prefix. The searcher belongs to the first;
+      // both should come back so the UI can display them, but only the
+      // already-member one is flagged so the UI can disable it.
+      const { organization: alreadyMemberOrg, adminUser: searcher } =
+        await testData.createOrganization({
+          users: { admin: 1 },
+          organizationName: 'SharedPrefixAlreadyMember',
+        });
+      const { organization: otherOrg } = await testData.createOrganization({
+        users: { admin: 1 },
+        organizationName: 'SharedPrefixOther',
+      });
+
+      const { session } = await createIsolatedSession(searcher.email);
+      const caller = createOrgCaller(
+        await createTestContextWithSession(session),
+      );
+
+      const result = await caller.search({
+        q: 'SharedPrefix',
+        limit: 10,
+      });
+
+      const found = new Map(result.map((org) => [org.id, org]));
+      expect(found.get(alreadyMemberOrg.id)?.isCurrentMember).toBe(true);
+      expect(found.get(otherOrg.id)?.isCurrentMember).toBe(false);
     });
 
     it('creates join requests for selected organizations', async ({

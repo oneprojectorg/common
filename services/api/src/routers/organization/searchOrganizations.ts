@@ -1,10 +1,17 @@
 import { cache } from '@op/cache';
 import { NotFoundError, searchOrganizations } from '@op/common';
+import { db } from '@op/db/client';
+import { organizationUsers } from '@op/db/schema';
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { organizationsEncoder } from '../../encoders/organizations';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
+
+const searchResultEncoder = organizationsEncoder.extend({
+  isCurrentMember: z.boolean(),
+});
 
 export const searchOrganizationsRouter = router({
   search: commonAuthedProcedure()
@@ -13,7 +20,7 @@ export const searchOrganizationsRouter = router({
         q: z.string(),
       }),
     )
-    .output(z.array(organizationsEncoder))
+    .output(z.array(searchResultEncoder))
     .query(async ({ ctx, input }) => {
       const { q, limit = 10 } = input;
 
@@ -34,6 +41,17 @@ export const searchOrganizationsRouter = router({
         throw new NotFoundError('Organizations');
       }
 
+      // Tag each search result with whether the user is already a member.
+      // The onboarding UI uses this to disable the result so it can't be
+      // queued into a join request the backend would reject.
+      const membershipRows = await db
+        .select({ organizationId: organizationUsers.organizationId })
+        .from(organizationUsers)
+        .where(eq(organizationUsers.authUserId, ctx.user.id));
+      const memberOrgIds = new Set<unknown>(
+        membershipRows.map((row) => row.organizationId),
+      );
+
       return result.map((org) => {
         // TODO: Doing this to account for the difference in shape between on avatarImage
         // which here is rendered even if it is null (with all null values)
@@ -42,7 +60,10 @@ export const searchOrganizationsRouter = router({
           // @ts-expect-error
           org.profile.avatarImage = null;
         }
-        return organizationsEncoder.parse(org);
+        return searchResultEncoder.parse({
+          ...org,
+          isCurrentMember: memberOrgIds.has(org.id),
+        });
       });
     }),
 });

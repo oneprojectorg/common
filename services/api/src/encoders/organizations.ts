@@ -96,7 +96,9 @@ export type OrganizationCreateInput = z.infer<
   typeof organizationsCreateInputEncoder
 >;
 
-export type OrganizationSearchResult = z.infer<typeof organizationsEncoder>;
+export type OrganizationSearchResult = z.infer<typeof organizationsEncoder> & {
+  isCurrentMember?: boolean;
+};
 export type Organization = z.infer<typeof organizationsWithProfileEncoder>;
 export type AdminOrg = z.infer<typeof adminOrgEncoder>;
 

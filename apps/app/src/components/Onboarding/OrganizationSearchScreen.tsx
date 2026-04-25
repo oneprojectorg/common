@@ -90,7 +90,9 @@ export const OrganizationSearchScreen = ({
     onContinue(
       selectedOrgs.flatMap((org) => {
         const profileId = org.profile?.id;
-        if (!profileId) {
+        // Skip orgs the user is already a member of — the join request
+        // backend rejects those, so don't bother dispatching one.
+        if (!profileId || org.isCurrentMember) {
           return [];
         }
         return [{ id: org.id, profileId }];
@@ -211,11 +213,13 @@ function SearchDropdown({
       {searchResults && searchResults.length > 0 ? (
         searchResults.map((org) => {
           const location = getOrgLocation(org);
+          const isMember = org.isCurrentMember;
           return (
             <button
               key={org.id}
               type="button"
-              className="flex w-full items-center px-4 py-3 text-left hover:bg-neutral-offWhite"
+              disabled={isMember}
+              className="flex w-full items-center px-4 py-3 text-left hover:bg-neutral-offWhite disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
               onClick={() => onSelect(org)}
             >
               <ProfileItem
@@ -229,8 +233,14 @@ function SearchDropdown({
                 }
                 title={org.profile?.name ?? ''}
               >
-                {location && (
-                  <div className="text-xs text-neutral-gray4">{location}</div>
+                {isMember ? (
+                  <div className="text-xs text-neutral-gray4">
+                    {t('Already a member')}
+                  </div>
+                ) : (
+                  location && (
+                    <div className="text-xs text-neutral-gray4">{location}</div>
+                  )
                 )}
               </ProfileItem>
             </button>
