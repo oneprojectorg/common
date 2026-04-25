@@ -1,8 +1,9 @@
 import { db } from '@op/db/client';
 import { posts, postsToProfiles } from '@op/db/schema';
+import { assertAccess, permission } from 'access-zones';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
-import { getCurrentProfileId } from '../access';
+import { getCurrentProfileId, getProfileAccessUser } from '../access';
 import { getItemsWithReactionsAndComments } from './listPosts';
 
 export interface GetPostsInput {
@@ -35,6 +36,37 @@ export const getPosts = async (input: GetPostsInput) => {
     // This endpoint is for profile-based posts, but allow querying comments without profileId
     if (!profileId && !parentPostId) {
       return []; // Return empty array if neither profileId nor parentPostId provided
+    }
+
+    const candidateProfileIds: string[] = [];
+    if (profileId) {
+      candidateProfileIds.push(profileId);
+    } else if (parentPostId) {
+      const parentProfiles = await db
+        .select({ profileId: postsToProfiles.profileId })
+        .from(postsToProfiles)
+        .where(eq(postsToProfiles.postId, parentPostId));
+      for (const { profileId: parentProfileId } of parentProfiles) {
+        candidateProfileIds.push(parentProfileId);
+      }
+    }
+
+    for (const candidateProfileId of candidateProfileIds) {
+      const decisionInstance = await db._query.processInstances.findFirst({
+        where: (table, { eq }) => eq(table.profileId, candidateProfileId),
+        columns: { profileId: true },
+      });
+      if (!decisionInstance) {
+        continue;
+      }
+      const profileUser = await getProfileAccessUser({
+        user: { id: authUserId },
+        profileId: candidateProfileId,
+      });
+      assertAccess(
+        [{ profile: permission.ADMIN }, { decisions: permission.READ }],
+        profileUser?.roles ?? [],
+      );
     }
 
     // Build where conditions for posts within the profile
