@@ -27,8 +27,20 @@ A fully containerised dev environment is available via `docker-compose.dev.yml`.
 
 ### Prerequisites
 
-- Docker Desktop (or equivalent) running
-- A `TIPTAP_PRO_TOKEN` environment variable set in your shell (or in `.env.docker`)
+On a fresh machine, you can install everything below with one of the bootstrap scripts:
+
+```bash
+scripts/bootstrap-macos.sh    # Homebrew + OrbStack + Node 22 + pnpm
+scripts/bootstrap-linux.sh    # Docker engine + Node 22 + pnpm (Debian/Ubuntu)
+```
+
+Otherwise, install these manually:
+
+- **OrbStack** (preferred on macOS) or **Docker Desktop** / **colima** running — give it enough headroom: the stack steady-states at **~6–8 GB RAM** (DinD + ~12 Supabase sub-containers + the Next.js app + API + Redis).
+- **Disk space** — budget **~15–20 GB** for the base image, the DinD volume (Supabase images cached inside it), `node_modules` volumes, and Next.js build caches.
+- **Node.js 22+** and **pnpm** (via `corepack enable`) — the `pnpm docker:dev` script invokes compose; if you only want the raw `docker compose up` path, Node/pnpm aren't strictly required.
+- **`TIPTAP_PRO_TOKEN`** — set it in your shell before running, or put it in `.env.local` at the repo root (`.env.local` is sourced by your workflow; `.env.docker` is tracked and must not contain the real token).
+- **Platform** — tested on arm64 macOS. amd64 Linux should work but isn't verified in CI.
 
 ### Starting the dev server
 
@@ -36,7 +48,9 @@ A fully containerised dev environment is available via `docker-compose.dev.yml`.
 pnpm docker:dev
 ```
 
-On first run this will build the images, install dependencies, start Supabase, run migrations, seed access-control data, and start the app and API with hot-reload. Subsequent starts are faster because Docker caches the image layers and named volumes.
+**First boot: 5–15 min.** The `supabase` service pulls ~12 images into the DinD daemon on first run. The `app` / `api` services additionally run `pnpm install --frozen-lockfile` into their named volumes. Subsequent starts are much faster because the image layers, `dind_storage`, and `node_modules` volumes all persist.
+
+If the first `supabase start` flakes (occasionally the Deno edge-runtime init trips on a transient `deno.land` fetch), `Ctrl-C` and re-run — the second attempt uses cached images and almost always succeeds.
 
 **Custom port prefix** — if the default ports conflict with another running stack, override `PORT_PREFIX`:
 
@@ -46,15 +60,19 @@ PORT_PREFIX=40 pnpm docker:dev   # app → 4000, api → 4001, supabase → 4021
 
 ### Default ports
 
-| Service         | Port  |
-|-----------------|-------|
-| Next.js app     | 3100  |
-| tRPC API        | 3101  |
-| Supabase API    | 3121  |
-| Supabase DB     | 3122  |
-| Mailpit (email) | 3124  |
+| Service           | Port  | URL                         |
+|-------------------|-------|-----------------------------|
+| Next.js app       | 3100  | http://localhost:3100       |
+| tRPC API          | 3101  | http://localhost:3101       |
+| Supabase API      | 3121  | http://localhost:3121       |
+| Supabase DB       | 3122  | `postgres://postgres:postgres@localhost:3122/postgres` |
+| Supabase Studio   | 3123  | http://localhost:3123       |
+| Mailpit (email)   | 3124  | http://localhost:3124       |
 
 Ports are derived from `PORT_PREFIX` (default `31`): `{PREFIX}00`, `{PREFIX}01`, etc.
+
+- **Supabase Studio** — the Supabase web dashboard (table editor, SQL editor, auth inspector, storage browser). Auto-connects to the local dev DB, no login.
+- **Mailpit** — captures all outbound email from the local Supabase auth service. Magic-link and OTP emails land here in dev.
 
 ### Running multiple instances
 
@@ -106,6 +124,57 @@ Key variables:
 | `TIPTAP_PRO_TOKEN` | Required to install the Tiptap Pro packages |
 | `NEXT_PUBLIC_SUPABASE_URL` | Browser-facing Supabase URL (set automatically by compose) |
 | `SUPABASE_URL` | Internal Docker network URL for server-side Supabase access |
+
+### Dev database + seeding
+
+The dev Postgres runs inside the DinD daemon (the Supabase CLI spawns it). The Next.js app and tRPC API connect to it over the internal docker network at `dind:54322`; from your host, it's exposed on `localhost:3122` (see port table above).
+
+**Migrations and seeds run automatically** on every `api` container start — the compose `command` chain is:
+
+```sh
+pnpm install --frozen-lockfile \
+ && pnpm w:db migrate \
+ && tsx services/db/seed-access-control.ts \
+ && pnpm -C ./apps/api dev
+```
+
+`seed-access-control.ts` is the Docker-dev seed (the full `seed.ts` has a DB-URL allowlist that excludes dind). It's idempotent and handles:
+
+- Access-control zones, roles, and permissions.
+- A default **"One Project"** organization + profile.
+- `onboardedAt` backfill for admin users (prevents the `/start` redirect loop).
+- Linking admin users to the default organization with the `Admin` role.
+
+**Manual control** if you need to re-run:
+
+```bash
+pnpm docker:migrate   # run drizzle migrations against the dev DB
+pnpm docker:seed      # re-run the Docker-dev seed
+```
+
+The seed is safe to re-run at any time; every step uses `onConflictDoNothing` or existence checks.
+
+### Reducing disk footprint
+
+**If you use docker-dev exclusively (not `pnpm dev` on host),** you can reclaim **~1.5–2 GB** by deleting host-side workspace `node_modules`. The container hides these behind a `nocopy` named volume, so they are unused dead weight on the host. Root-level `node_modules` is still needed on the host for IDE type-checking.
+
+```bash
+rm -rf apps/app/node_modules apps/api/node_modules
+```
+
+If you later want to run workspaces on the host, `pnpm install` from the repo root restores them.
+
+**Clean up stale `PORT_PREFIX` stacks.** Each prefix has its own ~5 GB `dind_storage` volume (Supabase images cached inside its DinD daemon — they can't be shared). If you experimented with `PORT_PREFIX=40` once and moved on, that volume is still sitting there:
+
+```bash
+docker compose -f docker-compose.dev.yml -p op-40 down -v
+```
+
+**Prune Turbopack caches when they get fat.** The `app_next` and `api_next` volumes grow unbounded. Remove them when disk gets tight; the next boot rebuilds them:
+
+```bash
+docker volume rm op-31_app_next op-31_api_next
+```
 
 ## Monorepo Structure
 

@@ -25,6 +25,8 @@ services:
       - "${PORT_PREFIX:-31}24:54324"
       # Expose Postgres directly for local dev tools (e.g. TablePlus, psql).
       - "${PORT_PREFIX:-31}22:54322"
+      # Expose Supabase Studio (web dashboard for the dev DB).
+      - "${PORT_PREFIX:-31}23:54323"
     volumes:
       # Persist the DinD image cache across restarts so Supabase images
       # (postgres, kong, gotrue, studio, etc.) are not re-pulled every time.
@@ -33,7 +35,10 @@ services:
       - op-dev
 
   # ── Next.js frontend ────────────────────────────────────────────────────────
+  # Owns the build: app, api, and supabase share a single image (op-dev-base)
+  # to avoid 3× identical image layers on disk.
   app:
+    image: op-dev-base:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -51,8 +56,21 @@ services:
     volumes:
       # Bind-mount the repo root for hot-reload
       - .:/app
-      # Isolated node_modules — not overwritten by the bind mount above
-      - app_node_modules:/app/node_modules
+      # Shared + workspace-level node_modules must be container-owned, not
+      # pre-populated from the host via the .:/app bind mount. Otherwise pnpm's
+      # per-platform optional deps produce different peer-dep hashes on macOS
+      # vs Linux and .modules.yaml from host makes pnpm skip its install. All
+      # three volumes use nocopy so Docker leaves them empty for pnpm to fill.
+      - type: volume
+        source: shared_node_modules
+        target: /app/node_modules
+        volume:
+          nocopy: true
+      - type: volume
+        source: app_app_node_modules
+        target: /app/apps/app/node_modules
+        volume:
+          nocopy: true
       # Next.js build cache
       - app_next:/app/apps/app/.next
     networks:
@@ -63,11 +81,7 @@ services:
 
   # ── tRPC API server ──────────────────────────────────────────────────────────
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      secrets:
-        - tiptap_token
+    image: op-dev-base:latest
     command: sh -c "pnpm install --frozen-lockfile && pnpm w:db migrate && /app/node_modules/.bin/tsx services/db/seed-access-control.ts && pnpm -C ./apps/api dev"
     env_file: .env.docker
     environment:
@@ -76,11 +90,18 @@ services:
     ports:
       - "${PORT_PREFIX:-31}01:3300"
     volumes:
-      # Bind-mount the repo root for hot-reload
       - .:/app
-      # Isolated node_modules
-      - api_node_modules:/app/node_modules
-      # Next.js build cache
+      # See app service note — same nocopy requirement.
+      - type: volume
+        source: shared_node_modules
+        target: /app/node_modules
+        volume:
+          nocopy: true
+      - type: volume
+        source: app_api_node_modules
+        target: /app/apps/api/node_modules
+        volume:
+          nocopy: true
       - api_next:/app/apps/api/.next
     networks:
       - op-dev
@@ -94,20 +115,52 @@ services:
   # Runs `supabase start` against the private DinD daemon so all Supabase
   # sub-containers are isolated inside this stack. No host ports are exposed.
   supabase:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      secrets:
-        - tiptap_token
+    image: op-dev-base:latest
     command: sh -c "supabase stop --workdir /app/supabase --no-backup 2>/dev/null || true; supabase start --workdir /app/supabase"
     env_file: .env.docker
     environment:
       DOCKER_HOST: tcp://dind:2375
+    volumes:
+      - .:/app
     networks:
       - op-dev
     depends_on:
       dind:
         condition: service_healthy
+
+  # ── Supabase loopback proxies ───────────────────────────────────────────────
+  # supabase-js derives its auth cookie storage key from the URL hostname
+  # (`sb-${hostname.split('.')[0]}-auth-token`). For SSR auth to work, the
+  # server must reach Supabase at the same URL the browser uses
+  # (http://localhost:<PORT_PREFIX>21). These sidecars share the app/api
+  # network namespace and forward that loopback port to dind:54321 so server
+  # code sees the same `localhost` URL the browser does — no production code
+  # has to know about the docker-dev split.
+  app-supabase-proxy:
+    image: alpine/socat:latest
+    command: >-
+      TCP-LISTEN:${PORT_PREFIX:-31}21,fork,reuseaddr
+      TCP:dind:54321
+    network_mode: "service:app"
+    depends_on:
+      dind:
+        condition: service_healthy
+      app:
+        condition: service_started
+    restart: unless-stopped
+
+  api-supabase-proxy:
+    image: alpine/socat:latest
+    command: >-
+      TCP-LISTEN:${PORT_PREFIX:-31}21,fork,reuseaddr
+      TCP:dind:54321
+    network_mode: "service:api"
+    depends_on:
+      dind:
+        condition: service_healthy
+      api:
+        condition: service_started
+    restart: unless-stopped
 
   # ── Redis ────────────────────────────────────────────────────────────────────
   redis:
@@ -120,8 +173,9 @@ networks:
     driver: bridge
 
 volumes:
-  app_node_modules:
-  api_node_modules:
+  shared_node_modules:
+  app_app_node_modules:
+  app_api_node_modules:
   app_next:
   api_next:
   dind_storage:

@@ -1,5 +1,9 @@
 # syntax=docker/dockerfile:1
-# Base image: Node.js 22 LTS (slim variant for smaller image size)
+# Base image: Node.js 22 LTS (slim variant for smaller image size).
+# NOTE: An earlier attempt to use node:22-alpine failed on arm64 because
+# @posthog/cli does not publish an aarch64-unknown-linux-musl binary. If that
+# changes (or if the team standardises on amd64 only), revisit alpine for a
+# ~300 MB image size win.
 FROM node:22-slim
 
 # Install system dependencies needed by pnpm, Supabase CLI, and the app
@@ -70,11 +74,9 @@ RUN --mount=type=secret,id=tiptap_token \
     export TIPTAP_PRO_TOKEN=$(cat /run/secrets/tiptap_token) && \
     pnpm install --frozen-lockfile
 
-# ── Source layer ──
-# Copy the rest of the source code.
-# In development, the repo root is bind-mounted over /app so changes are
-# reflected immediately without rebuilding the image.
-COPY . .
+# Source is bind-mounted at runtime via docker-compose (.:/app), so we
+# intentionally do NOT COPY . . here — baking the repo into the image would
+# add tens of GB and get immediately shadowed by the bind mount.
 
 # Default command — overridden per-service in docker-compose.yml
 CMD ["pnpm", "dev"]
