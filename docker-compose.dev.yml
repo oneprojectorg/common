@@ -48,6 +48,8 @@ services:
     env_file: .env.docker
     environment:
       TIPTAP_PRO_TOKEN: ${TIPTAP_PRO_TOKEN}
+      TIPTAP_SECRET: ${TIPTAP_SECRET}
+      NEXT_PUBLIC_TIPTAP_APP_ID: ${NEXT_PUBLIC_TIPTAP_APP_ID}
       NEXT_PUBLIC_API_PORT: "${PORT_PREFIX:-31}01"
       NEXT_PUBLIC_SUPABASE_URL: "http://localhost:${PORT_PREFIX:-31}21"
       WATCHPACK_POLLING: "true"
@@ -86,6 +88,9 @@ services:
     env_file: .env.docker
     environment:
       TIPTAP_PRO_TOKEN: ${TIPTAP_PRO_TOKEN}
+      TIPTAP_SECRET: ${TIPTAP_SECRET}
+      NEXT_PUBLIC_TIPTAP_APP_ID: ${NEXT_PUBLIC_TIPTAP_APP_ID}
+      NEXT_PUBLIC_SUPABASE_URL: "http://localhost:${PORT_PREFIX:-31}21"
       WATCHPACK_POLLING: "true"
     ports:
       - "${PORT_PREFIX:-31}01:3300"
