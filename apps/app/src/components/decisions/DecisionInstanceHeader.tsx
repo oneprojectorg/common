@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
 import { useSearchParams } from 'next/navigation';
@@ -49,7 +50,7 @@ export const DecisionInstanceHeader = ({
       </div>
 
       <div className="flex items-center justify-end gap-2 md:gap-4">
-        <PanelToggleButton ariaLabel={t('Open updates panel')} />
+        <DecisionUpdatesToggle ariaLabel={t('Open updates panel')} />
         {isAdmin && decisionSlug && (
           <ButtonLink
             href={`/decisions/${decisionSlug}/edit`}
@@ -67,22 +68,27 @@ export const DecisionInstanceHeader = ({
   );
 };
 
-const PANEL_TAB_QUERY_KEY = 'panelTab';
-const DEFAULT_PANEL_TAB = 'updates';
+const PANEL_QUERY_KEY = 'panel';
+const PANEL_OPEN_VALUE = 'updates';
 
-const PanelToggleButton = ({ ariaLabel }: { ariaLabel: string }) => {
+const DecisionUpdatesToggle = ({ ariaLabel }: { ariaLabel: string }) => {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const decisionUpdatesEnabled = useFeatureFlag('decision_updates');
 
   const handleOpen = useCallback(() => {
     const next = new URLSearchParams(searchParams.toString());
-    next.set(PANEL_TAB_QUERY_KEY, DEFAULT_PANEL_TAB);
+    next.set(PANEL_QUERY_KEY, PANEL_OPEN_VALUE);
     const newUrl = next.toString()
       ? `${pathname}?${next.toString()}`
       : pathname;
     router.replace(newUrl, { scroll: false });
   }, [pathname, router, searchParams]);
+
+  if (!decisionUpdatesEnabled) {
+    return null;
+  }
 
   return (
     <Button
