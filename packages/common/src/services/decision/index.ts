@@ -88,7 +88,6 @@ export * from './deleteProposalAttachment';
 // Decision-specific permissions
 export * from './permissions';
 export * from './decisionRoles';
-export * from './assertDecisionProfileAdmin';
 
 // Voting management
 export * from './voting';

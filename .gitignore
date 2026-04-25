@@ -75,3 +75,6 @@ ralph.sh
 
 # pnpm local store (created inside bind-mounted /app when container runs pnpm)
 .pnpm-store/
+
+# Local-only screenshots from manual verification flows
+tasks/screenshots/
