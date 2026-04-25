@@ -157,8 +157,8 @@ async function createPublishedInstanceWithDueTransitions(
     // Make all transitions due by setting scheduledDate to past times.
     // Stagger them to preserve correct ordering (monitor orders by scheduledDate).
     const fetchedTransitions =
-      await db._query.decisionProcessTransitions.findMany({
-        where: eq(decisionProcessTransitions.processInstanceId, instanceId),
+      await db.query.decisionProcessTransitions.findMany({
+        where: { processInstanceId: instanceId },
       });
 
     // Sort by the original scheduled date to maintain creation order
@@ -180,8 +180,8 @@ async function createPublishedInstanceWithDueTransitions(
   }
 
   // Get the transitions
-  const transitions = await db._query.decisionProcessTransitions.findMany({
-    where: eq(decisionProcessTransitions.processInstanceId, instanceId),
+  const transitions = await db.query.decisionProcessTransitions.findMany({
+    where: { processInstanceId: instanceId },
   });
 
   return {
@@ -208,8 +208,8 @@ describe('processDecisionsTransitions', () => {
     );
 
     // Capture updatedAt before processing
-    const beforeInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instanceId),
+    const beforeInstance = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
     });
     const updatedAtBefore = beforeInstance!.updatedAt;
 
@@ -222,8 +222,8 @@ describe('processDecisionsTransitions', () => {
     expect(result.failed).toBe(0);
 
     // Verify instance state was updated
-    const instance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instanceId),
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
     });
 
     expect(instance).toBeDefined();
@@ -240,8 +240,8 @@ describe('processDecisionsTransitions', () => {
 
     // Verify transitions are marked completed
     const completedTransitions =
-      await db._query.decisionProcessTransitions.findMany({
-        where: eq(decisionProcessTransitions.processInstanceId, instanceId),
+      await db.query.decisionProcessTransitions.findMany({
+        where: { processInstanceId: instanceId },
       });
 
     for (const transition of completedTransitions) {
@@ -307,11 +307,8 @@ describe('processDecisionsTransitions', () => {
     await processDecisionsTransitions();
 
     // The transition should NOT have been processed because the instance is DRAFT
-    const transitions = await db._query.decisionProcessTransitions.findMany({
-      where: eq(
-        decisionProcessTransitions.processInstanceId,
-        result.processInstance.id,
-      ),
+    const transitions = await db.query.decisionProcessTransitions.findMany({
+      where: { processInstanceId: result.processInstance.id },
     });
 
     for (const transition of transitions) {
@@ -341,8 +338,8 @@ describe('processDecisionsTransitions', () => {
 
     // Future transitions should not be processed
     const refreshedTransitions =
-      await db._query.decisionProcessTransitions.findMany({
-        where: eq(decisionProcessTransitions.processInstanceId, instanceId),
+      await db.query.decisionProcessTransitions.findMany({
+        where: { processInstanceId: instanceId },
       });
 
     for (const transition of refreshedTransitions) {
@@ -350,8 +347,8 @@ describe('processDecisionsTransitions', () => {
     }
 
     // Instance should still be in the initial state
-    const instance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instanceId),
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
     });
 
     expect(instance!.currentStateId).toBe('submission');
@@ -376,16 +373,16 @@ describe('processDecisionsTransitions', () => {
     expect(result.failed).toBe(0);
 
     // Instance should be at the final state (results)
-    const instance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instanceId),
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
     });
 
     expect(instance!.currentStateId).toBe('results');
 
     // All transitions should be completed
     const completedTransitions =
-      await db._query.decisionProcessTransitions.findMany({
-        where: eq(decisionProcessTransitions.processInstanceId, instanceId),
+      await db.query.decisionProcessTransitions.findMany({
+        where: { processInstanceId: instanceId },
       });
 
     expect(completedTransitions.every((t) => t.completedAt !== null)).toBe(
@@ -423,11 +420,9 @@ describe('processDecisionsTransitions', () => {
     const result = await processDecisionsTransitions();
 
     // The first transition should not be re-processed
-    const refreshedFirst = await db._query.decisionProcessTransitions.findFirst(
-      {
-        where: eq(decisionProcessTransitions.id, firstTransition!.id),
-      },
-    );
+    const refreshedFirst = await db.query.decisionProcessTransitions.findFirst({
+      where: { id: firstTransition!.id },
+    });
 
     // The first transition should still have a completedAt set (it was pre-completed)
     expect(refreshedFirst!.completedAt).not.toBeNull();
@@ -466,8 +461,8 @@ describe('processDecisionsTransitions', () => {
       .where(eq(proposals.id, proposal.id));
 
     // Make only the first transition (submission → review) due
-    const transitions = await db._query.decisionProcessTransitions.findMany({
-      where: eq(decisionProcessTransitions.processInstanceId, instanceId),
+    const transitions = await db.query.decisionProcessTransitions.findMany({
+      where: { processInstanceId: instanceId },
     });
     transitions.sort(
       (a, b) =>
@@ -579,8 +574,8 @@ describe('processDecisionsTransitions', () => {
     });
 
     // Make its transitions due with staggered past dates
-    const badTransitions = await db._query.decisionProcessTransitions.findMany({
-      where: eq(decisionProcessTransitions.processInstanceId, badInstanceId),
+    const badTransitions = await db.query.decisionProcessTransitions.findMany({
+      where: { processInstanceId: badInstanceId },
     });
 
     badTransitions.sort(
@@ -615,8 +610,8 @@ describe('processDecisionsTransitions', () => {
     expect(monitorResult.errors.length).toBeGreaterThanOrEqual(1);
 
     // Verify the good instance was processed
-    const goodInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, goodInstanceId),
+    const goodInstance = await db.query.processInstances.findFirst({
+      where: { id: goodInstanceId },
     });
     expect(goodInstance!.currentStateId).toBe('results');
   });
@@ -647,15 +642,15 @@ describe('processDecisionsTransitions', () => {
     expect(result2.failed).toBe(0);
 
     // Instance should be at the final state
-    const instance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instanceId),
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
     });
     expect(instance!.currentStateId).toBe('results');
 
     // Each transition should have completedAt set exactly once
     const completedTransitions =
-      await db._query.decisionProcessTransitions.findMany({
-        where: eq(decisionProcessTransitions.processInstanceId, instanceId),
+      await db.query.decisionProcessTransitions.findMany({
+        where: { processInstanceId: instanceId },
       });
 
     expect(completedTransitions).toHaveLength(3);

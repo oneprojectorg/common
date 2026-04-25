@@ -47,8 +47,8 @@ describe.concurrent('profile.users.removeUser', () => {
     });
 
     // Verify user was removed
-    const removedUser = await db._query.profileUsers.findFirst({
-      where: eq(profileUsers.id, memberUser.profileUserId),
+    const removedUser = await db.query.profileUsers.findFirst({
+      where: { id: memberUser.profileUserId },
     });
 
     expect(removedUser).toBeUndefined();

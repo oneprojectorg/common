@@ -1,6 +1,4 @@
 import { db } from '@op/db/client';
-import { profiles } from '@op/db/schema';
-import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { organizationRouter } from '.';
@@ -39,8 +37,8 @@ describe.concurrent('organization.deleteOrganization', () => {
     expect(result.deletedId).toBe(organizationProfile.id);
 
     // Verify the organization was actually deleted from the database
-    const deletedProfile = await db._query.profiles.findFirst({
-      where: eq(profiles.id, organizationProfile.id),
+    const deletedProfile = await db.query.profiles.findFirst({
+      where: { id: organizationProfile.id },
     });
     expect(deletedProfile).toBeUndefined();
   });
@@ -90,8 +88,8 @@ describe.concurrent('organization.deleteOrganization', () => {
     });
 
     // Verify the organization was NOT deleted
-    const existingProfile = await db._query.profiles.findFirst({
-      where: eq(profiles.id, organizationProfile.id),
+    const existingProfile = await db.query.profiles.findFirst({
+      where: { id: organizationProfile.id },
     });
     expect(existingProfile).toBeDefined();
     expect(existingProfile?.id).toBe(organizationProfile.id);
@@ -127,8 +125,8 @@ describe.concurrent('organization.deleteOrganization', () => {
     ).rejects.toThrow();
 
     // Verify the organization was NOT deleted
-    const existingProfile = await db._query.profiles.findFirst({
-      where: eq(profiles.id, organizationProfile.id),
+    const existingProfile = await db.query.profiles.findFirst({
+      where: { id: organizationProfile.id },
     });
     expect(existingProfile).toBeDefined();
     expect(existingProfile?.id).toBe(organizationProfile.id);

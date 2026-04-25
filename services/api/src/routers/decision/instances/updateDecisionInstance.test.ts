@@ -1,6 +1,6 @@
 import { type DecisionInstanceData } from '@op/common';
-import { db, eq } from '@op/db/client';
-import { ProcessStatus, processInstances } from '@op/db/schema';
+import { db } from '@op/db/client';
+import { ProcessStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -226,8 +226,8 @@ describe.concurrent('updateDecisionInstance', () => {
     });
 
     // Verify the config was updated in the database
-    const dbInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
 
     const instanceData = dbInstance!.instanceData as DecisionInstanceData;
@@ -251,8 +251,8 @@ describe.concurrent('updateDecisionInstance', () => {
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     // Get current phases to know which phase IDs exist
-    const dbInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
     const currentData = dbInstance!.instanceData as DecisionInstanceData;
     const firstPhaseId = currentData.phases[0]?.phaseId;
@@ -272,8 +272,8 @@ describe.concurrent('updateDecisionInstance', () => {
     });
 
     // Verify the settings were updated
-    const updatedInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const updatedInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
 
     const instanceData = updatedInstance!.instanceData as DecisionInstanceData;
@@ -318,8 +318,8 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(result.processInstance.status).toBe(ProcessStatus.PUBLISHED);
 
     // Verify config in database
-    const dbInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
 
     const instanceData = dbInstance!.instanceData as DecisionInstanceData;
@@ -450,8 +450,8 @@ describe.concurrent('updateDecisionInstance', () => {
     });
 
     // Get current phases
-    const dbInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
     const currentData = dbInstance!.instanceData as DecisionInstanceData;
 
@@ -470,8 +470,8 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(result.processInstance.id).toBe(instance.instance.id);
 
     // Verify phases were updated in the database
-    const updatedInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const updatedInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
     const updatedData = updatedInstance!.instanceData as DecisionInstanceData;
     for (const phase of updatedData.phases) {
@@ -758,8 +758,8 @@ describe.concurrent('updateDecisionInstance', () => {
     });
 
     // Get current phases
-    const dbInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
     const currentData = dbInstance!.instanceData as DecisionInstanceData;
     const phaseIds = currentData.phases.map((p) => p.phaseId);
@@ -776,8 +776,8 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(result.processInstance.id).toBe(instance.instance.id);
 
     // Verify names were updated
-    const updatedInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const updatedInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
     const updatedData = updatedInstance!.instanceData as DecisionInstanceData;
     for (const phase of updatedData.phases) {
@@ -814,8 +814,8 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(result.processInstance.id).toBe(instance.instance.id);
 
     // Verify the steward was updated in the database
-    const dbInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
 
     expect(dbInstance!.stewardProfileId).toBe(newStewardId);

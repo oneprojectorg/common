@@ -60,17 +60,16 @@ describe.concurrent('profile.updateRolePermission', () => {
     expect(result.name).toBe(customRole!.name);
 
     // Verify permissions were updated in database
-    const decisionsZone = await db._query.accessZones.findFirst({
-      where: (table, { eq }) => eq(table.name, 'decisions'),
+    const decisionsZone = await db.query.accessZones.findFirst({
+      where: { name: 'decisions' },
     });
 
     const permission =
-      await db._query.accessRolePermissionsOnAccessZones.findFirst({
-        where: (table, { eq, and }) =>
-          and(
-            eq(table.accessRoleId, customRole!.id),
-            eq(table.accessZoneId, decisionsZone!.id),
-          ),
+      await db.query.accessRolePermissionsOnAccessZones.findFirst({
+        where: {
+          accessRoleId: customRole!.id,
+          accessZoneId: decisionsZone!.id,
+        },
       });
 
     expect(permission).toBeDefined();
@@ -136,8 +135,8 @@ describe.concurrent('profile.updateRolePermission', () => {
     });
 
     // Verify only one permission entry exists
-    const decisionsZone = await db._query.accessZones.findFirst({
-      where: (table, { eq }) => eq(table.name, 'decisions'),
+    const decisionsZone = await db.query.accessZones.findFirst({
+      where: { name: 'decisions' },
     });
 
     const permissions = await db
@@ -209,8 +208,8 @@ describe.concurrent('profile.updateRolePermission', () => {
     );
 
     // Verify no permissions were created (role should have no permissions)
-    const decisionsZone = await db._query.accessZones.findFirst({
-      where: (table, { eq }) => eq(table.name, 'decisions'),
+    const decisionsZone = await db.query.accessZones.findFirst({
+      where: { name: 'decisions' },
     });
 
     const permissions = await db
@@ -321,17 +320,16 @@ describe.concurrent('profile.updateRolePermission', () => {
       },
     });
 
-    const decisionsZone = await db._query.accessZones.findFirst({
-      where: (table, { eq }) => eq(table.name, 'decisions'),
+    const decisionsZone = await db.query.accessZones.findFirst({
+      where: { name: 'decisions' },
     });
 
     const finalPerm =
-      await db._query.accessRolePermissionsOnAccessZones.findFirst({
-        where: (table, { eq, and }) =>
-          and(
-            eq(table.accessRoleId, customRole!.id),
-            eq(table.accessZoneId, decisionsZone!.id),
-          ),
+      await db.query.accessRolePermissionsOnAccessZones.findFirst({
+        where: {
+          accessRoleId: customRole!.id,
+          accessZoneId: decisionsZone!.id,
+        },
       });
 
     expect(finalPerm).toBeDefined();
@@ -396,8 +394,8 @@ describe.concurrent('profile.updateRolePermission', () => {
     );
 
     // Verify no permissions were created for the role
-    const decisionsZone = await db._query.accessZones.findFirst({
-      where: (table, { eq }) => eq(table.name, 'decisions'),
+    const decisionsZone = await db.query.accessZones.findFirst({
+      where: { name: 'decisions' },
     });
 
     const permissions = await db

@@ -1,12 +1,7 @@
 import { type DecisionInstanceData, simpleVoting } from '@op/common';
 import type { DecisionSchemaDefinition } from '@op/common';
 import { db, eq } from '@op/db/client';
-import {
-  accessRoles,
-  decisionProcesses,
-  processInstances,
-  users,
-} from '@op/db/schema';
+import { decisionProcesses, users } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -123,8 +118,8 @@ describe.concurrent('duplicateInstance', () => {
     expect(duplicate.processInstance.id).not.toBe(source.processInstance.id);
 
     // Verify instanceData was copied
-    const instance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, duplicate.processInstance.id),
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: duplicate.processInstance.id },
     });
     const instanceData = instance!.instanceData as DecisionInstanceData;
 
@@ -173,12 +168,12 @@ describe.concurrent('duplicateInstance', () => {
     testData.trackProfileForCleanup(duplicate.id);
 
     // Verify new roles were created (not shared with source)
-    const duplicateRoles = await db._query.accessRoles.findMany({
-      where: eq(accessRoles.profileId, duplicate.id),
+    const duplicateRoles = await db.query.accessRoles.findMany({
+      where: { profileId: duplicate.id },
     });
 
-    const sourceRoles = await db._query.accessRoles.findMany({
-      where: eq(accessRoles.profileId, source.id),
+    const sourceRoles = await db.query.accessRoles.findMany({
+      where: { profileId: source.id },
     });
 
     const duplicateRoleNames = duplicateRoles.map((r) => r.name).sort();
@@ -223,8 +218,8 @@ describe.concurrent('duplicateInstance', () => {
 
     testData.trackProfileForCleanup(duplicate.id);
 
-    const instance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, duplicate.processInstance.id),
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: duplicate.processInstance.id },
     });
     const instanceData = instance!.instanceData as DecisionInstanceData;
 
@@ -254,8 +249,8 @@ describe.concurrent('duplicateInstance', () => {
 
     testData.trackProfileForCleanup(duplicate.id);
 
-    const instance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, duplicate.processInstance.id),
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: duplicate.processInstance.id },
     });
     const instanceData = instance!.instanceData as DecisionInstanceData;
 
@@ -304,8 +299,8 @@ describe.concurrent('duplicateInstance', () => {
 
     testData.trackProfileForCleanup(duplicate.id);
 
-    const instance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, duplicate.processInstance.id),
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: duplicate.processInstance.id },
     });
     const instanceData = instance!.instanceData as DecisionInstanceData;
 
@@ -336,8 +331,8 @@ describe.concurrent('duplicateInstance', () => {
 
     testData.trackProfileForCleanup(duplicate.id);
 
-    const instance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, duplicate.processInstance.id),
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: duplicate.processInstance.id },
     });
 
     expect(instance!.description).toBe('Test description to copy');
@@ -366,8 +361,8 @@ describe.concurrent('duplicateInstance', () => {
     expect(duplicate.name).toBe(duplicateName);
 
     // processInstance.name should also match
-    const instance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, duplicate.processInstance.id),
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: duplicate.processInstance.id },
     });
     expect(instance!.name).toBe(duplicateName);
   });
@@ -398,8 +393,8 @@ describe.concurrent('duplicateInstance', () => {
 
     testData.trackProfileForCleanup(duplicate.id);
 
-    const instance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, duplicate.processInstance.id),
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: duplicate.processInstance.id },
     });
 
     expect(instance!.stewardProfileId).toBe(userRecord!.profileId);
@@ -424,11 +419,11 @@ describe.concurrent('duplicateInstance', () => {
     testData.trackProfileForCleanup(duplicate.id);
 
     const [sourceInstance, duplicateInstance] = await Promise.all([
-      db._query.processInstances.findFirst({
-        where: eq(processInstances.id, source.processInstance.id),
+      db.query.processInstances.findFirst({
+        where: { id: source.processInstance.id },
       }),
-      db._query.processInstances.findFirst({
-        where: eq(processInstances.id, duplicate.processInstance.id),
+      db.query.processInstances.findFirst({
+        where: { id: duplicate.processInstance.id },
       }),
     ]);
 
@@ -492,8 +487,8 @@ describe.concurrent('duplicateInstance', () => {
 
     testData.trackProfileForCleanup(duplicate.id);
 
-    const instance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, duplicate.processInstance.id),
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: duplicate.processInstance.id },
     });
     const instanceData = instance!.instanceData as DecisionInstanceData;
 

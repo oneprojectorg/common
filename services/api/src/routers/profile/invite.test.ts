@@ -62,25 +62,23 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     expect(result.details.failed).toHaveLength(0);
 
     // Verify profile_invites record was created
-    const invite = await db._query.profileInvites.findFirst({
-      where: (table, { eq, and, isNull }) =>
-        and(
-          eq(table.profileId, profile.id),
-          eq(table.email, standaloneUser.email.toLowerCase()),
-          isNull(table.acceptedOn),
-        ),
+    const invite = await db.query.profileInvites.findFirst({
+      where: {
+        profileId: profile.id,
+        email: standaloneUser.email.toLowerCase(),
+        acceptedOn: { isNull: true },
+      },
     });
 
     expect(invite).toBeDefined();
     expect(invite?.accessRoleId).toBe(ROLES.MEMBER.id);
 
     // Verify user was NOT added to profileUsers directly
-    const profileUser = await db._query.profileUsers.findFirst({
-      where: (table, { eq, and }) =>
-        and(
-          eq(table.profileId, profile.id),
-          eq(table.email, standaloneUser.email.toLowerCase()),
-        ),
+    const profileUser = await db.query.profileUsers.findFirst({
+      where: {
+        profileId: profile.id,
+        email: standaloneUser.email.toLowerCase(),
+      },
     });
 
     expect(profileUser).toBeUndefined();
@@ -141,20 +139,19 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     expect(result.details.successful).toContain(newEmail.toLowerCase());
 
     // Verify the allowList entry was created (for new users who need to sign up)
-    const allowListEntry = await db._query.allowList.findFirst({
-      where: (table, { eq }) => eq(table.email, newEmail.toLowerCase()),
+    const allowListEntry = await db.query.allowList.findFirst({
+      where: { email: newEmail.toLowerCase() },
     });
 
     expect(allowListEntry).toBeDefined();
 
     // Verify profile_invites record was created
-    const invite = await db._query.profileInvites.findFirst({
-      where: (table, { eq, and, isNull }) =>
-        and(
-          eq(table.profileId, profile.id),
-          eq(table.email, newEmail.toLowerCase()),
-          isNull(table.acceptedOn),
-        ),
+    const invite = await db.query.profileInvites.findFirst({
+      where: {
+        profileId: profile.id,
+        email: newEmail.toLowerCase(),
+        acceptedOn: { isNull: true },
+      },
     });
 
     expect(invite).toBeDefined();
@@ -220,9 +217,8 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     });
 
     // Verify existing user was NOT added to allowList (they already have an account)
-    const allowListEntry = await db._query.allowList.findFirst({
-      where: (table, { eq }) =>
-        eq(table.email, standaloneUser.email.toLowerCase()),
+    const allowListEntry = await db.query.allowList.findFirst({
+      where: { email: standaloneUser.email.toLowerCase() },
     });
 
     expect(allowListEntry).toBeUndefined();
@@ -310,22 +306,20 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     expect(result.details.successful).toContain(user2.email.toLowerCase());
 
     // Verify each invite was created with the correct role
-    const invite1 = await db._query.profileInvites.findFirst({
-      where: (table, { eq, and, isNull }) =>
-        and(
-          eq(table.profileId, profile.id),
-          eq(table.email, user1.email.toLowerCase()),
-          isNull(table.acceptedOn),
-        ),
+    const invite1 = await db.query.profileInvites.findFirst({
+      where: {
+        profileId: profile.id,
+        email: user1.email.toLowerCase(),
+        acceptedOn: { isNull: true },
+      },
     });
 
-    const invite2 = await db._query.profileInvites.findFirst({
-      where: (table, { eq, and, isNull }) =>
-        and(
-          eq(table.profileId, profile.id),
-          eq(table.email, user2.email.toLowerCase()),
-          isNull(table.acceptedOn),
-        ),
+    const invite2 = await db.query.profileInvites.findFirst({
+      where: {
+        profileId: profile.id,
+        email: user2.email.toLowerCase(),
+        acceptedOn: { isNull: true },
+      },
     });
 
     expect(invite1).toBeDefined();
@@ -468,8 +462,8 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     });
 
     // Set INVITE_MEMBERS decision bit on the decisions zone for this role
-    const decisionsZone = await db._query.accessZones.findFirst({
-      where: (table, { eq }) => eq(table.name, 'decisions'),
+    const decisionsZone = await db.query.accessZones.findFirst({
+      where: { name: 'decisions' },
     });
 
     if (!decisionsZone) {
@@ -608,8 +602,8 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     expect(result.details.successful).toContain(newEmail.toLowerCase());
 
     // Verify only one allowList entry exists (no duplicate)
-    const allowListEntries = await db._query.allowList.findMany({
-      where: (table, { eq }) => eq(table.email, newEmail.toLowerCase()),
+    const allowListEntries = await db.query.allowList.findMany({
+      where: { email: newEmail.toLowerCase() },
     });
 
     expect(allowListEntries).toHaveLength(1);
@@ -689,19 +683,18 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     vi.mocked(event.send).mockResolvedValue({ ids: ['mock-event-id'] });
 
     // Verify NO profileInvites record was created (transaction rolled back)
-    const invite = await db._query.profileInvites.findFirst({
-      where: (table, { eq, and }) =>
-        and(
-          eq(table.profileId, profile.id),
-          eq(table.email, newEmail.toLowerCase()),
-        ),
+    const invite = await db.query.profileInvites.findFirst({
+      where: {
+        profileId: profile.id,
+        email: newEmail.toLowerCase(),
+      },
     });
 
     expect(invite).toBeUndefined();
 
     // Verify NO allowList entry was created (transaction rolled back)
-    const allowListEntry = await db._query.allowList.findFirst({
-      where: (table, { eq }) => eq(table.email, newEmail.toLowerCase()),
+    const allowListEntry = await db.query.allowList.findFirst({
+      where: { email: newEmail.toLowerCase() },
     });
 
     expect(allowListEntry).toBeUndefined();
@@ -736,13 +729,12 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     ).rejects.toThrow();
 
     // Verify no invite was created (transaction rolled back)
-    const invites = await db._query.profileInvites.findMany({
-      where: (table, { eq, and, isNull }) =>
-        and(
-          eq(table.profileId, profile.id),
-          eq(table.email, standaloneUser.email.toLowerCase()),
-          isNull(table.acceptedOn),
-        ),
+    const invites = await db.query.profileInvites.findMany({
+      where: {
+        profileId: profile.id,
+        email: standaloneUser.email.toLowerCase(),
+        acceptedOn: { isNull: true },
+      },
     });
 
     expect(invites).toHaveLength(0);
@@ -777,21 +769,20 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     expect(result.details.successful).not.toContain(mixedCaseEmail);
 
     // Verify the database record uses lowercase
-    const invite = await db._query.profileInvites.findFirst({
-      where: (table, { eq, and, isNull }) =>
-        and(
-          eq(table.profileId, profile.id),
-          eq(table.email, normalizedEmail),
-          isNull(table.acceptedOn),
-        ),
+    const invite = await db.query.profileInvites.findFirst({
+      where: {
+        profileId: profile.id,
+        email: normalizedEmail,
+        acceptedOn: { isNull: true },
+      },
     });
 
     expect(invite).toBeDefined();
     expect(invite?.email).toBe(normalizedEmail);
 
     // Verify allowList also uses lowercase
-    const allowListEntry = await db._query.allowList.findFirst({
-      where: (table, { eq }) => eq(table.email, normalizedEmail),
+    const allowListEntry = await db.query.allowList.findFirst({
+      where: { email: normalizedEmail },
     });
 
     expect(allowListEntry).toBeDefined();
