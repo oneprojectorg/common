@@ -288,6 +288,61 @@ describe.concurrent('Onboarding Organization Search', () => {
       expect(matchedOrg).toBeDefined();
     });
 
+    it('excludes domain-matched orgs the user is already a member of', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+      // Two orgs both share the user's email domain. The user is already a
+      // member of the first; onboarding should only surface the second.
+      const { organization: existingMembershipOrg } =
+        await testData.createOrganization({
+          users: { admin: 1 },
+          organizationName: 'AlreadyMemberDomainOrg',
+        });
+      const { organization: notYetJoinedOrg } =
+        await testData.createOrganization({
+          users: { admin: 1 },
+          organizationName: 'NotYetJoinedDomainOrg',
+        });
+
+      await db
+        .update(organizations)
+        .set({ domain: 'oneproject.org' })
+        .where(eq(organizations.id, existingMembershipOrg.id));
+      await db
+        .update(organizations)
+        .set({ domain: 'oneproject.org' })
+        .where(eq(organizations.id, notYetJoinedOrg.id));
+
+      const joinerEmail = `${task.id.slice(0, 8)}-already-domain@oneproject.org`;
+      const { user: authUser } = await createTestUser(joinerEmail);
+
+      if (!authUser) {
+        throw new Error('Failed to create auth user');
+      }
+
+      onTestFinished(() => cleanupUser(authUser.id));
+
+      await testData.addUserToOrganization({
+        authUserId: authUser.id,
+        organizationId: existingMembershipOrg.id,
+        email: joinerEmail,
+      });
+
+      const { session } = await createIsolatedSession(joinerEmail);
+      const caller = createAccountCaller(
+        await createTestContextWithSession(session),
+      );
+
+      const result = await caller.listMatchingDomainOrganizations(undefined);
+
+      const ids = result.map((org) => org.id);
+      expect(ids).not.toContain(existingMembershipOrg.id);
+      expect(ids).toContain(notYetJoinedOrg.id);
+    });
+
     it('allows domain-matched user to auto-join via organization.join', async ({
       task,
       onTestFinished,

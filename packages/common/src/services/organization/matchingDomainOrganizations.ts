@@ -1,5 +1,7 @@
 import { db } from '@op/db/client';
+import { organizationUsers } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
+import { eq } from 'drizzle-orm';
 
 export const matchingDomainOrganizations = async ({ user }: { user: User }) => {
   if (!user?.email) {
@@ -12,7 +14,7 @@ export const matchingDomainOrganizations = async ({ user }: { user: User }) => {
     return [];
   }
 
-  const [rawResults, preMappedOrgs] = await Promise.all([
+  const [rawResults, preMappedOrgs, membershipRows] = await Promise.all([
     db.query.organizations.findMany({
       where: { domain: emailDomain.toLowerCase() },
       with: {
@@ -47,18 +49,34 @@ export const matchingDomainOrganizations = async ({ user }: { user: User }) => {
         },
       },
     }),
+    // Skip orgs the user is already a member of so onboarding doesn't
+    // pre-select an org and then dispatch a join request that would fail.
+    db
+      .select({ organizationId: organizationUsers.organizationId })
+      .from(organizationUsers)
+      .where(eq(organizationUsers.authUserId, user.id)),
   ]);
+
+  const excludedOrgIds = new Set(
+    membershipRows.map((row) => row.organizationId),
+  );
 
   const transformOrg = (org: (typeof rawResults)[number]) => ({
     ...org,
     whereWeWork: org.whereWeWork.map((item) => item.location),
   });
 
-  const results = rawResults.map(transformOrg);
+  const results = rawResults
+    .filter((org) => !excludedOrgIds.has(org.id))
+    .map(transformOrg);
 
   for (const preMappedOrg of preMappedOrgs) {
     const { organization } = preMappedOrg;
-    if (organization && !results.find((r) => r.id === organization.id)) {
+    if (
+      organization &&
+      !excludedOrgIds.has(organization.id) &&
+      !results.find((r) => r.id === organization.id)
+    ) {
       results.push(transformOrg(organization));
     }
   }
