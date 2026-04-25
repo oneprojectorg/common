@@ -1,9 +1,4 @@
-import {
-  type DbClient,
-  db as defaultDb,
-  eq,
-  sql,
-} from '@op/db/client';
+import { type DbClient, db as defaultDb, eq, sql } from '@op/db/client';
 import {
   links,
   locations,

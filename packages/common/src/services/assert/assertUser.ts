@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { type DbClient, db as defaultDb } from '@op/db/client';
 import type { CommonUser } from '@op/db/schema';
 
 import { NotFoundError } from '../../utils';
@@ -8,11 +8,13 @@ import { NotFoundError } from '../../utils';
  *
  * @param id - The user ID to look up
  * @param error - Custom error to throw if not found (defaults to NotFoundError)
+ * @param db - Optional database client or transaction to use
  * @throws The provided error or NotFoundError if user is not found
  */
 export async function assertUser(
   id: string,
   error: Error = new NotFoundError('User', id),
+  db: DbClient = defaultDb,
 ): Promise<CommonUser> {
   const user = await db.query.users.findFirst({
     where: { id },
@@ -30,11 +32,13 @@ export async function assertUser(
  *
  * @param authUserId - The auth user ID to look up
  * @param error - Custom error to throw if not found (defaults to NotFoundError)
+ * @param db - Optional database client or transaction to use
  * @throws The provided error or NotFoundError if user is not found
  */
 export async function assertUserByAuthId(
   authUserId: string,
   error: Error = new NotFoundError('User', authUserId),
+  db: DbClient = defaultDb,
 ): Promise<CommonUser> {
   const user = await db.query.users.findFirst({
     where: { authUserId },

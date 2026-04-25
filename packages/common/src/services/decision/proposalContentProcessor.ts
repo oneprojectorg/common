@@ -179,11 +179,11 @@ export async function getProposalAttachmentUrls(
 ): Promise<Record<string, string>> {
   const proposalAttachmentJoins =
     await defaultDb._query.proposalAttachments.findMany({
-    where: eq(proposalAttachments.proposalId, proposalId),
-    with: {
-      attachment: true,
-    },
-  });
+      where: eq(proposalAttachments.proposalId, proposalId),
+      with: {
+        attachment: true,
+      },
+    });
 
   if (proposalAttachmentJoins.length === 0) {
     return {};

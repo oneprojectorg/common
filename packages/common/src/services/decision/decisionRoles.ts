@@ -56,7 +56,6 @@ export async function createDecisionRole({
   description?: string;
   db?: DbClient;
 }) {
-
   // Scoped roles on a decision process always get profile READ
   if (permissions['profile']) {
     const existing = permissions['profile'];

@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { type DbClient, db as defaultDb } from '@op/db/client';
 import type { ProfileUser } from '@op/db/schema';
 
 import { NotFoundError } from '../../utils';
@@ -9,6 +9,7 @@ import { NotFoundError } from '../../utils';
 export async function assertProfileUser(
   id: string,
   error: Error = new NotFoundError('User not found', id),
+  db: DbClient = defaultDb,
 ): Promise<ProfileUser> {
   const profileUser = await db._query.profileUsers.findFirst({
     where: (table, { eq }) => eq(table.id, id),

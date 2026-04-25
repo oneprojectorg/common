@@ -29,7 +29,6 @@ export async function updateTransitionsForProcess({
   processInstance,
   db = defaultDb,
 }: UpdateTransitionsInput): Promise<UpdateTransitionsResult> {
-
   try {
     const expectedTransitions = buildExpectedTransitions(processInstance);
 
