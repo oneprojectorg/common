@@ -79,7 +79,7 @@ describe.concurrent('decision-profile post authorization', () => {
         content: 'Member trying to post — should fail.',
         profileId: instance.profileId,
       }),
-    ).rejects.toMatchObject({ cause: { statusCode: 403 } });
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
 
     const writtenPosts = await db
       .select({ id: posts.id })
@@ -121,7 +121,7 @@ describe.concurrent('decision-profile post authorization', () => {
         content: 'Outsider trying to post — should fail.',
         profileId: instance.profileId,
       }),
-    ).rejects.toMatchObject({ cause: { statusCode: 403 } });
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
   });
 
   it('does not gate posts on non-decision (organization) profiles', async ({
@@ -226,7 +226,7 @@ describe.concurrent('decision-profile post authorization', () => {
         content: 'Outsider comment — should fail.',
         parentPostId: adminPost.id,
       }),
-    ).rejects.toMatchObject({ cause: { statusCode: 403 } });
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
   });
 
   it('rejects an outsider from reading the updates feed', async ({
@@ -263,7 +263,7 @@ describe.concurrent('decision-profile post authorization', () => {
         offset: 0,
         includeChildren: false,
       }),
-    ).rejects.toMatchObject({ cause: { statusCode: 403 } });
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
   });
 
   it('allows a member to read the updates feed', async ({
@@ -343,7 +343,7 @@ describe.concurrent('decision-profile post authorization', () => {
         postId: adminPost.id,
         reactionType: 'like',
       }),
-    ).rejects.toMatchObject({ cause: { statusCode: 403 } });
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
 
     const reactions = await db
       .select({ postId: postReactions.postId })
