@@ -47,22 +47,18 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
         isAdmin={decisionProfile.processInstance.access?.admin}
         profileName={decisionProfile.name}
       >
-        <div className="flex flex-col lg:flex-row">
-          <div className="min-w-0 flex-1">
-            <Suspense fallback={<Skeleton className="h-96" />}>
-              <DecisionStateRouter
-                instanceId={instanceId}
-                slug={ownerSlug}
-                decisionSlug={slug}
-                decisionProfileId={decisionProfile.id}
-              />
-            </Suspense>
-          </div>
-          <DecisionSidePanel
+        <Suspense fallback={<Skeleton className="h-96" />}>
+          <DecisionStateRouter
+            instanceId={instanceId}
+            slug={ownerSlug}
+            decisionSlug={slug}
             decisionProfileId={decisionProfile.id}
-            access={decisionProfile.processInstance.access}
           />
-        </div>
+        </Suspense>
+        <DecisionSidePanel
+          decisionProfileId={decisionProfile.id}
+          access={decisionProfile.processInstance.access}
+        />
       </DecisionHeader>
     </Suspense>
   );
