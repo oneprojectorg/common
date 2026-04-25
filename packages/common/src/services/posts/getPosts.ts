@@ -49,25 +49,27 @@ export const getPosts = async (input: GetPostsInput) => {
           ).map((p) => p.profileId)
         : [];
 
-    for (const candidateProfileId of profileIdsToAuthorize) {
-      const [decisionInstance, profileUser] = await Promise.all([
-        db.query.processInstances.findFirst({
-          where: { profileId: candidateProfileId },
-          columns: { profileId: true },
-        }),
-        getProfileAccessUser({
-          user: { id: authUserId },
-          profileId: candidateProfileId,
-        }),
-      ]);
-      if (!decisionInstance) {
-        continue;
-      }
-      assertAccess(
-        [{ profile: permission.ADMIN }, { decisions: permission.READ }],
-        profileUser?.roles ?? [],
-      );
-    }
+    await Promise.all(
+      profileIdsToAuthorize.map(async (candidateProfileId) => {
+        const [decisionInstance, profileUser] = await Promise.all([
+          db.query.processInstances.findFirst({
+            where: { profileId: candidateProfileId },
+            columns: { profileId: true },
+          }),
+          getProfileAccessUser({
+            user: { id: authUserId },
+            profileId: candidateProfileId,
+          }),
+        ]);
+        if (!decisionInstance) {
+          return;
+        }
+        assertAccess(
+          [{ profile: permission.ADMIN }, { decisions: permission.READ }],
+          profileUser?.roles ?? [],
+        );
+      }),
+    );
 
     // Build where conditions for posts within the profile
     const conditions = [];

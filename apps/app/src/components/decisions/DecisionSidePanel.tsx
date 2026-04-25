@@ -5,10 +5,10 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { DecisionAccess } from '@op/api/encoders';
 import { Sheet, SheetBody, SheetHeader } from '@op/ui/Sheet';
-import { useSearchParams } from 'next/navigation';
-import { Suspense, useCallback } from 'react';
+import { parseAsStringLiteral, useQueryState } from 'nuqs';
+import { Suspense } from 'react';
 
-import { usePathname, useRouter, useTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 import {
@@ -20,8 +20,7 @@ import {
 } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
 
-const PANEL_QUERY_KEY = 'panel';
-const PANEL_OPEN_VALUE = 'updates';
+export const panelStateParser = parseAsStringLiteral(['updates'] as const);
 
 export const DecisionSidePanel = ({
   decisionProfileId,
@@ -31,43 +30,28 @@ export const DecisionSidePanel = ({
   access?: DecisionAccess | null;
 }) => {
   const t = useTranslations();
-  const pathname = usePathname();
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const [panel, setPanel] = useQueryState('panel', panelStateParser);
   const decisionUpdatesEnabled = useFeatureFlag('decision_updates');
-
-  const canPostUpdate = access?.admin === true;
-  const canReadUpdates = access?.admin === true || access?.read === true;
-
-  const isOpen =
-    decisionUpdatesEnabled &&
-    searchParams.get(PANEL_QUERY_KEY) === PANEL_OPEN_VALUE;
-
-  const handleClose = useCallback(() => {
-    const next = new URLSearchParams(searchParams.toString());
-    next.delete(PANEL_QUERY_KEY);
-    const newUrl = next.toString()
-      ? `${pathname}?${next.toString()}`
-      : pathname;
-    router.replace(newUrl, { scroll: false });
-  }, [pathname, router, searchParams]);
 
   if (!decisionUpdatesEnabled) {
     return null;
   }
 
+  const canPostUpdate = access?.admin === true;
+  const canReadUpdates = access?.admin === true || access?.read === true;
+
   return (
     <Sheet
       side="right"
-      isOpen={isOpen}
+      isOpen={panel === 'updates'}
       onOpenChange={(open) => {
         if (!open) {
-          handleClose();
+          setPanel(null);
         }
       }}
       className="max-w-sm"
     >
-      <SheetHeader onClose={handleClose}>{t('Updates')}</SheetHeader>
+      <SheetHeader onClose={() => setPanel(null)}>{t('Updates')}</SheetHeader>
       <SheetBody className="flex flex-col px-4 py-4">
         {canPostUpdate ? (
           <PostUpdate
