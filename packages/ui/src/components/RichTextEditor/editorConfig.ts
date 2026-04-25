@@ -1,11 +1,7 @@
-import Blockquote from '@tiptap/extension-blockquote';
 import Heading from '@tiptap/extension-heading';
-import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
-import Strike from '@tiptap/extension-strike';
 import TextAlign from '@tiptap/extension-text-align';
-import Underline from '@tiptap/extension-underline';
 import StarterKit from '@tiptap/starter-kit';
 
 /**
@@ -31,10 +27,17 @@ export const viewerProseStyles = [
 export const baseEditorStyles = `${viewerProseStyles} outline-hidden placeholder:text-neutral-gray2`;
 
 /**
- * Base extensions shared by both editor and viewer
+ * Base extensions shared by both editor and viewer.
+ *
+ * StarterKit v3 bundles link, underline, strike, blockquote, heading,
+ * and horizontalRule. We disable heading and link here because they
+ * need different configuration per context (editor vs viewer).
  */
 const baseExtensions = [
-  StarterKit,
+  StarterKit.configure({
+    heading: false,
+    link: false,
+  }),
   TextAlign.configure({
     types: ['heading', 'paragraph'],
   }),
@@ -45,10 +48,6 @@ const baseExtensions = [
   Heading.configure({
     levels: [1, 2, 3],
   }),
-  Underline,
-  Strike,
-  Blockquote,
-  HorizontalRule,
 ];
 
 /**
