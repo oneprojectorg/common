@@ -46,7 +46,7 @@ export function CollaborativeDropdownField({
   const setSelectedValue = (value: string | null) => setSyncedText(value ?? '');
 
   const onChangeRef = useRef(onChange);
-  const lastEmittedValueRef = useRef<string | null | undefined>(undefined);
+  const lastEmittedValueRef = useRef<string | null>(selectedValue);
 
   useEffect(() => {
     onChangeRef.current = onChange;

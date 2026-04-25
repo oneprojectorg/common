@@ -62,11 +62,12 @@ export function CollaborativeBudgetField({
   );
 
   const budget = budgetText ? (JSON.parse(budgetText) as BudgetData) : null;
+  const budgetKey = budget ? `${budget.amount}:${budget.currency}` : null;
   const setBudget = (newBudget: BudgetData | null) =>
     setBudgetText(newBudget ? JSON.stringify(newBudget) : '');
 
   const onChangeRef = useRef(onChange);
-  const lastEmittedRef = useRef<string | undefined>(undefined);
+  const lastEmittedRef = useRef<string | null>(budgetKey);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -126,16 +127,13 @@ export function CollaborativeBudgetField({
   };
 
   useEffect(() => {
-    const emitted = budgetText ? (JSON.parse(budgetText) as BudgetData) : null;
-    const key = emitted ? `${emitted.amount}:${emitted.currency}` : null;
-
-    if (lastEmittedRef.current === key) {
+    if (lastEmittedRef.current === budgetKey) {
       return;
     }
 
-    lastEmittedRef.current = key ?? undefined;
-    onChangeRef.current?.(emitted);
-  }, [budgetText]);
+    lastEmittedRef.current = budgetKey;
+    onChangeRef.current?.(budget);
+  }, [budget, budgetKey]);
 
   const handleStartEditing = () => {
     setIsEditing(true);
