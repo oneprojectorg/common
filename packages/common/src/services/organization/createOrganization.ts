@@ -129,15 +129,15 @@ export const createOrganization = async ({
     }
   }
 
-  return db.transaction(async (db) => {
+  return db.transaction(async (tx) => {
     // Create an org profile
-    const [profile] = await db
+    const [profile] = await tx
       .insert(profiles)
       .values({
         name: data.name! ?? 'New Organization',
         slug: await generateUniqueProfileSlug({
           name: data.name ?? 'org',
-          db,
+          db: tx,
         }),
         email: data.email,
         bio: data.bio,
@@ -152,7 +152,7 @@ export const createOrganization = async ({
       throw new CommonError('Failed to create profile');
     }
 
-    const [newOrg] = await db
+    const [newOrg] = await tx
       .insert(organizations)
       .values({
         ...orgInputs,
@@ -167,7 +167,7 @@ export const createOrganization = async ({
 
     // Insert organizationUser linking the user to organization, with a default role of owner
     const [[newOrgUser], adminRole] = await Promise.all([
-      db
+      tx
         .insert(organizationUsers)
         .values({
           organizationId: newOrg.id,
@@ -175,8 +175,8 @@ export const createOrganization = async ({
           email: user.email!,
         })
         .returning(),
-      assertGlobalRole('Admin', db),
-      db
+      assertGlobalRole('Admin', tx),
+      tx
         .update(users)
         .set({ lastOrgId: newOrg.id, currentProfileId: profile.id })
         .where(eq(users.authUserId, user.id)),
@@ -186,7 +186,7 @@ export const createOrganization = async ({
       throw new CommonError('Failed to create organization');
     }
 
-    await db.insert(organizationUserToAccessRoles).values({
+    await tx.insert(organizationUserToAccessRoles).values({
       organizationUserId: newOrgUser.id,
       accessRoleId: adminRole.id,
     });
@@ -195,7 +195,7 @@ export const createOrganization = async ({
     await Promise.all([
       ...(data.receivingFundsLink
         ? [
-            db.insert(links).values({
+            tx.insert(links).values({
               organizationId: newOrg.id,
               href: data.receivingFundsLink,
               description: data.receivingFundsDescription,
@@ -205,7 +205,7 @@ export const createOrganization = async ({
         : []),
       ...(data.offeringFundsLink
         ? [
-            db.insert(links).values({
+            tx.insert(links).values({
               organizationId: newOrg.id,
               href: data.offeringFundsLink,
               description: data.offeringFundsDescription,
@@ -224,7 +224,7 @@ export const createOrganization = async ({
             : null;
 
           // Create location record
-          const [location] = await db
+          const [location] = await tx
             .insert(locations)
             .values({
               name: whereWeWork.label,
@@ -253,7 +253,7 @@ export const createOrganization = async ({
 
           if (location) {
             // Link location to organization
-            await db
+            await tx
               .insert(organizationsWhereWeWork)
               .values({
                 organizationId: newOrg.id,
@@ -276,7 +276,7 @@ export const createOrganization = async ({
     if (strategies) {
       await Promise.all(
         strategies.map((strategy) =>
-          db
+          tx
             .insert(organizationsStrategies)
             .values({
               organizationId: newOrg.id,
@@ -302,7 +302,7 @@ export const createOrganization = async ({
 
       await Promise.all(
         terms.map((term) =>
-          db
+          tx
             .insert(organizationsTerms)
             .values({
               organizationId: newOrg.id,

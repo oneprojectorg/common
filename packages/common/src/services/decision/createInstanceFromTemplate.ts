@@ -81,7 +81,7 @@ export const createDecisionInstance = async ({
 
     const { admin: adminRole } = await createDefaultDecisionRoles({
       profileId: instanceProfile.id,
-      tx,
+      db: tx,
     });
 
     // Add the creator as a profile user with Admin role

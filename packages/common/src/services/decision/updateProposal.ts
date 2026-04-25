@@ -1,5 +1,5 @@
 import { getTipTapClient } from '@op/collab';
-import { type TransactionType, and, db, eq } from '@op/db/client';
+import { type DbClient, and, db, eq } from '@op/db/client';
 import {
   ProposalStatus,
   type Visibility,
@@ -30,11 +30,11 @@ import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
 async function updateProposalCategoryLink(
-  tx: TransactionType,
+  db: DbClient,
   proposalId: string,
   newCategoryLabels: string[],
 ): Promise<void> {
-  await tx
+  await db
     .delete(proposalCategories)
     .where(eq(proposalCategories.proposalId, proposalId));
 
@@ -42,7 +42,7 @@ async function updateProposalCategoryLink(
     return;
   }
 
-  const proposalTaxonomy = await tx._query.taxonomies.findFirst({
+  const proposalTaxonomy = await db._query.taxonomies.findFirst({
     where: eq(taxonomies.name, 'proposal'),
   });
 
@@ -58,7 +58,7 @@ async function updateProposalCategoryLink(
       continue;
     }
 
-    const taxonomyTerm = await tx._query.taxonomyTerms.findFirst({
+    const taxonomyTerm = await db._query.taxonomyTerms.findFirst({
       where: and(
         eq(taxonomyTerms.label, categoryLabel.trim()),
         eq(taxonomyTerms.taxonomyId, proposalTaxonomy.id),
@@ -74,7 +74,7 @@ async function updateProposalCategoryLink(
   }
 
   if (taxonomyTermIds.length > 0) {
-    await tx.insert(proposalCategories).values(
+    await db.insert(proposalCategories).values(
       taxonomyTermIds.map((taxonomyTermId) => ({
         proposalId,
         taxonomyTermId,

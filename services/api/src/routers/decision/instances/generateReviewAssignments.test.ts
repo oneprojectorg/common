@@ -130,7 +130,7 @@ async function advanceToReviewPhase(instanceId: string) {
 
   const result = await db.transaction(async (tx) =>
     advancePhase({
-      tx,
+      db: tx,
       instance: {
         id: dbInstance.id,
         instanceData: dbInstance.instanceData as DecisionInstanceData,

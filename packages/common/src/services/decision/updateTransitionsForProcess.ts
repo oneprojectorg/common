@@ -1,4 +1,4 @@
-import { type TransactionType, db, eq, inArray } from '@op/db/client';
+import { type DbClient, db as defaultDb, eq, inArray } from '@op/db/client';
 import { decisionProcessTransitions } from '@op/db/schema';
 import type { ProcessInstance } from '@op/db/schema';
 
@@ -7,7 +7,7 @@ import { buildExpectedTransitions } from './buildExpectedTransitions';
 
 export interface UpdateTransitionsInput {
   processInstance: ProcessInstance;
-  tx?: TransactionType;
+  db?: DbClient;
 }
 
 export interface UpdateTransitionsResult {
@@ -27,16 +27,15 @@ export interface UpdateTransitionsResult {
  */
 export async function updateTransitionsForProcess({
   processInstance,
-  tx,
+  db = defaultDb,
 }: UpdateTransitionsInput): Promise<UpdateTransitionsResult> {
-  const dbClient = tx ?? db;
 
   try {
     const expectedTransitions = buildExpectedTransitions(processInstance);
 
     // Get existing transitions
     const existingTransitions =
-      await dbClient._query.decisionProcessTransitions.findMany({
+      await db._query.decisionProcessTransitions.findMany({
         where: eq(
           decisionProcessTransitions.processInstanceId,
           processInstance.id,
@@ -100,7 +99,7 @@ export async function updateTransitionsForProcess({
     if (transitionsToDelete.length > 0) {
       const idsToDelete = transitionsToDelete.map((t) => t.id);
       ops.push(
-        dbClient
+        db
           .delete(decisionProcessTransitions)
           .where(inArray(decisionProcessTransitions.id, idsToDelete))
           .then(() => {}),
@@ -110,7 +109,7 @@ export async function updateTransitionsForProcess({
     // Batch insert
     if (toCreate.length > 0) {
       ops.push(
-        dbClient
+        db
           .insert(decisionProcessTransitions)
           .values(toCreate)
           .then(() => {}),
@@ -120,7 +119,7 @@ export async function updateTransitionsForProcess({
     // Updates must remain individual (different values per row)
     for (const update of toUpdate) {
       ops.push(
-        dbClient
+        db
           .update(decisionProcessTransitions)
           .set({ scheduledDate: update.scheduledDate })
           .where(eq(decisionProcessTransitions.id, update.id))

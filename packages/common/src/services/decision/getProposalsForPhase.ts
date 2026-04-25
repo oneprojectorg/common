@@ -1,7 +1,8 @@
 import {
+  type DbClient,
   and,
   asc,
-  db,
+  db as defaultDb,
   desc,
   eq,
   gt,
@@ -10,7 +11,6 @@ import {
   lt,
   ne,
 } from '@op/db/client';
-import type { DbClient } from '@op/db/client';
 import type { Proposal } from '@op/db/schema';
 import {
   ProposalStatus,
@@ -28,9 +28,9 @@ import { isLegacyInstanceData } from './isLegacyInstance';
  */
 async function getInstanceContext(
   instanceId: string,
-  dbClient: DbClient,
+  db: DbClient,
 ): Promise<{ isLegacy: boolean; currentPhaseId?: string | null } | null> {
-  const [row] = await dbClient
+  const [row] = await db
     .select({
       instanceData: processInstances.instanceData,
       currentStateId: processInstances.currentStateId,
@@ -71,9 +71,9 @@ async function resolvePhaseWindow(
   instanceId: string,
   phaseId: string,
   currentPhaseId: string | null | undefined,
-  dbClient: DbClient,
+  db: DbClient,
 ): Promise<PhaseWindow> {
-  const [inbound] = await dbClient
+  const [inbound] = await db
     .select({
       id: stateTransitionHistory.id,
       transitionedAt: stateTransitionHistory.transitionedAt,
@@ -88,7 +88,7 @@ async function resolvePhaseWindow(
     .orderBy(desc(stateTransitionHistory.transitionedAt))
     .limit(1);
 
-  const [outbound] = await dbClient
+  const [outbound] = await db
     .select({ transitionedAt: stateTransitionHistory.transitionedAt })
     .from(stateTransitionHistory)
     .where(
@@ -122,9 +122,9 @@ async function resolvePhaseWindow(
 /** Proposal ids attached to a specific inbound transition, filtered to still-active rows. */
 async function attachmentIdsFor(
   transitionHistoryId: string,
-  dbClient: DbClient,
+  db: DbClient,
 ): Promise<string[]> {
-  const rows = await dbClient
+  const rows = await db
     .select({ id: decisionTransitionProposals.proposalId })
     .from(decisionTransitionProposals)
     .innerJoin(
@@ -149,7 +149,7 @@ async function submittedDuringIds(
   instanceId: string,
   inboundAt: Date | undefined,
   outboundAt: Date | undefined,
-  dbClient: DbClient,
+  db: DbClient,
 ): Promise<string[]> {
   const conditions = [
     eq(proposals.processInstanceId, instanceId),
@@ -163,7 +163,7 @@ async function submittedDuringIds(
     conditions.push(lt(proposals.createdAt, outboundAt.toISOString()));
   }
 
-  const rows = await dbClient
+  const rows = await db
     .select({ id: proposals.id })
     .from(proposals)
     .where(and(...conditions));
@@ -172,9 +172,9 @@ async function submittedDuringIds(
 
 async function allActiveIds(
   instanceId: string,
-  dbClient: DbClient,
+  db: DbClient,
 ): Promise<string[]> {
-  const rows = await dbClient
+  const rows = await db
     .select({ id: proposals.id })
     .from(proposals)
     .where(
@@ -203,32 +203,32 @@ async function allActiveIds(
 export async function getProposalIdsForPhase({
   instanceId,
   phaseId,
-  dbClient = db,
+  db = defaultDb,
 }: {
   instanceId: string;
   phaseId?: string;
-  dbClient?: DbClient;
+  db?: DbClient;
 }): Promise<string[]> {
-  const ctx = await getInstanceContext(instanceId, dbClient);
+  const ctx = await getInstanceContext(instanceId, db);
 
   if (!ctx) {
     return [];
   }
 
   if (ctx.isLegacy) {
-    return allActiveIds(instanceId, dbClient);
+    return allActiveIds(instanceId, db);
   }
 
   const resolvedPhaseId = phaseId ?? ctx.currentPhaseId;
   if (!resolvedPhaseId) {
-    return allActiveIds(instanceId, dbClient);
+    return allActiveIds(instanceId, db);
   }
 
   const window = await resolvePhaseWindow(
     instanceId,
     resolvedPhaseId,
     ctx.currentPhaseId,
-    dbClient,
+    db,
   );
 
   if (window.kind === 'unreached') {
@@ -236,14 +236,14 @@ export async function getProposalIdsForPhase({
   }
 
   const attachmentIds = window.inbound
-    ? await attachmentIdsFor(window.inbound.id, dbClient)
+    ? await attachmentIdsFor(window.inbound.id, db)
     : [];
 
   const duringIds = await submittedDuringIds(
     instanceId,
     window.inbound?.transitionedAt,
     window.outboundTransitionedAt,
-    dbClient,
+    db,
   );
 
   return [...new Set([...attachmentIds, ...duringIds])];
@@ -256,18 +256,18 @@ export async function getProposalIdsForPhase({
 export async function getProposalsForPhase({
   instanceId,
   phaseId,
-  dbClient = db,
+  db = defaultDb,
 }: {
   instanceId: string;
   phaseId?: string;
-  dbClient?: DbClient;
+  db?: DbClient;
 }): Promise<Proposal[]> {
-  const ids = await getProposalIdsForPhase({ instanceId, phaseId, dbClient });
+  const ids = await getProposalIdsForPhase({ instanceId, phaseId, db });
   if (ids.length === 0) {
     return [];
   }
 
-  return dbClient
+  return db
     .select()
     .from(proposals)
     .where(inArray(proposals.id, ids))

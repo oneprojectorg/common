@@ -240,7 +240,7 @@ export const createProposal = async ({
         // Process proposal content to replace temporary URLs with permanent ones
         try {
           await processProposalContent({
-            conn: tx,
+            db: tx,
             proposalId: insertedProposal.id,
           });
         } catch (error) {

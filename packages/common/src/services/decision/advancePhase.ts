@@ -1,5 +1,4 @@
-import { and, desc, eq, inArray, isNull } from '@op/db/client';
-import type { DbClient } from '@op/db/client';
+import { type DbClient, and, desc, eq, inArray, isNull } from '@op/db/client';
 import {
   ProcessStatus,
   decisionProcessTransitions,
@@ -22,7 +21,7 @@ import {
 import type { ExecutionContext } from './selectionPipeline/types';
 
 export interface AdvancePhaseInput {
-  tx: DbClient;
+  db: DbClient;
   /** Pre-loaded instance row. Stale snapshots are safe — writes use optimistic locks. */
   instance: {
     id: string;
@@ -68,7 +67,7 @@ export async function advancePhase(
   input: AdvancePhaseInput,
 ): Promise<AdvancePhaseResult> {
   const {
-    tx,
+    db,
     instance,
     fromPhaseId,
     toPhaseId,
@@ -92,7 +91,7 @@ export async function advancePhase(
 
   // Lock the instance row so a concurrent submitManualSelection can't
   // attach proposals to the inbound transition while we're advancing out.
-  const [lockedInstance] = await tx
+  const [lockedInstance] = await db
     .select({
       currentStateId: processInstances.currentStateId,
       status: processInstances.status,
@@ -114,13 +113,13 @@ export async function advancePhase(
 
   const allProposals = await getProposalsForPhase({
     instanceId,
-    dbClient: tx,
+    db,
   });
 
   let selectedProposalIds: string[] = allProposals.map((p) => p.id);
 
   if (selectionPipeline) {
-    const proposalMetrics = await aggregateProposalMetrics(allProposals, tx);
+    const proposalMetrics = await aggregateProposalMetrics(allProposals, db);
     const context: ExecutionContext = {
       proposals: allProposals,
       voteData: proposalMetrics,
@@ -132,7 +131,7 @@ export async function advancePhase(
   }
 
   // Optimistic lock: only succeeds if currentStateId still matches fromPhaseId.
-  const updated = await tx
+  const updated = await db
     .update(processInstances)
     .set({
       currentStateId: toPhaseId,
@@ -151,7 +150,7 @@ export async function advancePhase(
     return { conflict: true };
   }
 
-  await tx
+  await db
     .update(decisionProcessTransitions)
     .set({ completedAt: now })
     .where(
@@ -162,7 +161,7 @@ export async function advancePhase(
       ),
     );
 
-  const [insertedTransition] = await tx
+  const [insertedTransition] = await db
     .insert(stateTransitionHistory)
     .values({
       processInstanceId: instanceId,
@@ -180,7 +179,7 @@ export async function advancePhase(
   }
 
   if (selectedProposalIds.length > 0) {
-    const latestHistoryRows = await tx
+    const latestHistoryRows = await db
       .selectDistinctOn([proposalHistory.id], {
         proposalId: proposalHistory.id,
         historyId: proposalHistory.historyId,
@@ -200,7 +199,7 @@ export async function advancePhase(
       );
     }
 
-    await tx.insert(decisionTransitionProposals).values(
+    await db.insert(decisionTransitionProposals).values(
       latestHistoryRows.map(({ proposalId, historyId }) => ({
         processInstanceId: instanceId,
         transitionHistoryId: insertedTransition.id,

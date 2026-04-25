@@ -108,7 +108,7 @@ export async function triggerPhaseAdvancement({
 
   const advanceResult = await db.transaction(async (tx) => {
     const result = await advancePhase({
-      tx,
+      db: tx,
       instance: {
         id: instance.id,
         instanceData,

@@ -1,4 +1,4 @@
-import { type TransactionType, db } from '@op/db/client';
+import { type DbClient, db as defaultDb } from '@op/db/client';
 import { accessRolePermissionsOnAccessZones, accessRoles } from '@op/db/schema';
 import { permission, toBitField } from 'access-zones';
 import { eq } from 'drizzle-orm';
@@ -48,15 +48,14 @@ export async function createDecisionRole({
   profileId,
   permissions,
   description,
-  tx,
+  db = defaultDb,
 }: {
   name: string;
   profileId: string;
   permissions: Record<string, ZonePermission>;
   description?: string;
-  tx?: TransactionType;
+  db?: DbClient;
 }) {
-  const client = tx ?? db;
 
   // Scoped roles on a decision process always get profile READ
   if (permissions['profile']) {
@@ -86,7 +85,7 @@ export async function createDecisionRole({
   const zoneNames = Object.keys(permissions);
   const zones = await Promise.all(
     zoneNames.map((zoneName) =>
-      client.query.accessZones.findFirst({ where: { name: zoneName } }),
+      db.query.accessZones.findFirst({ where: { name: zoneName } }),
     ),
   );
 
@@ -100,7 +99,7 @@ export async function createDecisionRole({
     }),
   );
 
-  const [role] = await client
+  const [role] = await db
     .insert(accessRoles)
     .values({ name, description, profileId })
     .returning();
@@ -109,7 +108,7 @@ export async function createDecisionRole({
     throw new CommonError('Failed to create decision role');
   }
 
-  await client.insert(accessRolePermissionsOnAccessZones).values(
+  await db.insert(accessRolePermissionsOnAccessZones).values(
     zoneNames.map((zoneName) => ({
       accessRoleId: role.id,
       accessZoneId: zoneMap.get(zoneName)!.id,
@@ -126,10 +125,10 @@ export async function createDecisionRole({
  */
 export async function createDefaultDecisionRoles({
   profileId,
-  tx,
+  db = defaultDb,
 }: {
   profileId: string;
-  tx?: TransactionType;
+  db?: DbClient;
 }) {
   const [admin, participant] = await Promise.all([
     createDecisionRole({
@@ -161,7 +160,7 @@ export async function createDefaultDecisionRoles({
           },
         },
       },
-      tx,
+      db,
     }),
     createDecisionRole({
       name: 'Participant',
@@ -192,7 +191,7 @@ export async function createDefaultDecisionRoles({
           },
         },
       },
-      tx,
+      db,
     }),
   ]);
 
@@ -207,7 +206,7 @@ export async function getDecisionRole({
 }: {
   roleId: string;
 }): Promise<DecisionRolePermissions> {
-  const zone = await db.query.accessZones.findFirst({
+  const zone = await defaultDb.query.accessZones.findFirst({
     where: { name: 'decisions' },
   });
 
@@ -215,9 +214,10 @@ export async function getDecisionRole({
     throw new NotFoundError('Zone', 'decisions');
   }
 
-  const existing = await db.query.accessRolePermissionsOnAccessZones.findFirst({
-    where: { accessRoleId: roleId, accessZoneId: zone.id },
-  });
+  const existing =
+    await defaultDb.query.accessRolePermissionsOnAccessZones.findFirst({
+      where: { accessRoleId: roleId, accessZoneId: zone.id },
+    });
 
   return fromDecisionBitField(existing?.permission ?? 0);
 }
@@ -236,10 +236,10 @@ export async function updateDecisionRoles({
   user: { id: string };
 }) {
   const [zone, role] = await Promise.all([
-    db.query.accessZones.findFirst({
+    defaultDb.query.accessZones.findFirst({
       where: { name: 'decisions' },
     }),
-    db.query.accessRoles.findFirst({
+    defaultDb.query.accessRoles.findFirst({
       where: { id: roleId },
     }),
   ]);
@@ -258,19 +258,20 @@ export async function updateDecisionRoles({
 
   await assertProfileAdmin(user, role.profileId);
 
-  const existing = await db.query.accessRolePermissionsOnAccessZones.findFirst({
-    where: { accessRoleId: roleId, accessZoneId: zone.id },
-  });
+  const existing =
+    await defaultDb.query.accessRolePermissionsOnAccessZones.findFirst({
+      where: { accessRoleId: roleId, accessZoneId: zone.id },
+    });
 
   const bitfield = toDecisionBitField(decisionPermissions) | permission.READ;
 
   if (existing) {
-    await db
+    await defaultDb
       .update(accessRolePermissionsOnAccessZones)
       .set({ permission: bitfield })
       .where(eq(accessRolePermissionsOnAccessZones.id, existing.id));
   } else {
-    await db.insert(accessRolePermissionsOnAccessZones).values({
+    await defaultDb.insert(accessRolePermissionsOnAccessZones).values({
       accessRoleId: roleId,
       accessZoneId: zone.id,
       permission: bitfield,

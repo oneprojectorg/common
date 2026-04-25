@@ -276,13 +276,13 @@ export const updateDecisionInstance = async ({
       // When publishing a draft, create transitions for all date-based phases
       await createTransitionsForProcess({
         processInstance: updatedInstance,
-        tx,
+        db: tx,
       });
     } else if (phases && phases.length > 0) {
       // If phases were updated and already published, update the corresponding transitions
       await updateTransitionsForProcess({
         processInstance: updatedInstance,
-        tx,
+        db: tx,
       });
     }
   });
