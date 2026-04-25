@@ -12,19 +12,14 @@ import type { FieldConfigProps } from './fieldRegistry';
  * Stores the character limit directly on the field schema as `maxLength`.
  */
 export function FieldConfigText({
-  field,
   fieldSchema,
   onUpdateJsonSchema,
 }: FieldConfigProps) {
   const t = useTranslations();
-  const defaultMaxLength =
-    field.fieldType === 'long_text'
-      ? DEFAULT_TEXT_FIELD_MAX_LENGTH.long_text
-      : DEFAULT_TEXT_FIELD_MAX_LENGTH.short_text;
   const value =
     typeof fieldSchema.maxLength === 'number'
       ? fieldSchema.maxLength
-      : defaultMaxLength;
+      : DEFAULT_TEXT_FIELD_MAX_LENGTH;
 
   return (
     <NumberField
