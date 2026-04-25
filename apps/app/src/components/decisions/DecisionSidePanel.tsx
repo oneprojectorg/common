@@ -193,11 +193,7 @@ export const DecisionSidePanel = ({
   );
 };
 
-const UpdatesFeed = ({
-  decisionProfileId,
-}: {
-  decisionProfileId: string;
-}) => {
+const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
   const t = useTranslations();
   const { user } = useUser();
 
