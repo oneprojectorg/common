@@ -5,6 +5,7 @@ import { forbidden, notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
+import { DecisionSidePanel } from '@/components/decisions/DecisionSidePanel';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
 import { DecisionHeaderSkeleton } from '@/components/skeletons/DecisionSkeleton';
 
@@ -46,14 +47,19 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
         isAdmin={decisionProfile.processInstance.access?.admin}
         profileName={decisionProfile.name}
       >
-        <Suspense fallback={<Skeleton className="h-96" />}>
-          <DecisionStateRouter
-            instanceId={instanceId}
-            slug={ownerSlug}
-            decisionSlug={slug}
-            decisionProfileId={decisionProfile.id}
-          />
-        </Suspense>
+        <div className="flex flex-col lg:flex-row">
+          <div className="min-w-0 flex-1">
+            <Suspense fallback={<Skeleton className="h-96" />}>
+              <DecisionStateRouter
+                instanceId={instanceId}
+                slug={ownerSlug}
+                decisionSlug={slug}
+                decisionProfileId={decisionProfile.id}
+              />
+            </Suspense>
+          </div>
+          <DecisionSidePanel />
+        </div>
       </DecisionHeader>
     </Suspense>
   );
