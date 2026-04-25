@@ -1,10 +1,5 @@
 import { and, count, db, eq, inArray, isNotNull } from '@op/db/client';
-import {
-  organizations,
-  posts,
-  postsToOrganizations,
-  profiles,
-} from '@op/db/schema';
+import { posts, profiles } from '@op/db/schema';
 
 import {
   NotFoundError,
@@ -26,16 +21,7 @@ export const listPosts = async ({
   cursor?: string | null;
 }) => {
   try {
-    // Build cursor condition for pagination
-    const cursorCondition = cursor
-      ? getGenericCursorCondition({
-          columns: {
-            id: postsToOrganizations.postId,
-            date: postsToOrganizations.createdAt,
-          },
-          cursor: decodeCursor(cursor),
-        })
-      : undefined;
+    const decodedCursor = cursor ? decodeCursor(cursor) : undefined;
 
     const profile = slug
       ? await db
@@ -51,8 +37,8 @@ export const listPosts = async ({
       throw new NotFoundError('Could not find organization');
     }
 
-    const org = await db._query.organizations.findFirst({
-      where: (_, { eq }) => eq(organizations.profileId, profileId),
+    const org = await db.query.organizations.findFirst({
+      where: { profileId },
     });
 
     if (!org) {
@@ -63,13 +49,20 @@ export const listPosts = async ({
       throw new NotFoundError('Organization not found');
     }
 
-    const result = await db._query.postsToOrganizations.findMany({
-      where: cursorCondition
-        ? and(eq(postsToOrganizations.organizationId, org.id), cursorCondition)
-        : (table, { eq }) => eq(table.organizationId, org.id),
+    const result = await db.query.postsToOrganizations.findMany({
+      where: {
+        organizationId: org.id,
+        ...(decodedCursor && {
+          RAW: (table) =>
+            getGenericCursorCondition({
+              columns: { id: table.postId, date: table.createdAt },
+              cursor: decodedCursor,
+            })!,
+        }),
+      },
       with: {
         post: {
-          where: (table, { isNull }) => isNull(table.parentPostId), // Only show top-level posts
+          where: { parentPostId: { isNull: true } }, // Only show top-level posts
           with: {
             attachments: {
               with: {

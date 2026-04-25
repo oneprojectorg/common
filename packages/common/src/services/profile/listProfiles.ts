@@ -1,6 +1,6 @@
 import { match } from '@op/core';
-import { and, db, inArray, sql } from '@op/db/client';
-import { type EntityType, locations, profiles } from '@op/db/schema';
+import { db } from '@op/db/client';
+import { type EntityType } from '@op/db/schema';
 
 import {
   NotFoundError,
@@ -23,36 +23,30 @@ export const listProfiles = async ({
   types?: EntityType[];
 }) => {
   try {
-    const orderByColumn = match(orderBy, {
-      name: profiles.name,
-      createdAt: profiles.createdAt,
-      _: profiles.updatedAt,
-    });
-
-    // Build cursor condition for pagination
-    const cursorCondition = cursor
-      ? getCursorCondition({
-          column: orderByColumn,
-          tieBreakerColumn: orderBy === 'name' ? profiles.id : undefined,
-          cursor: decodeCursor<{ value: string | Date; id?: string }>(cursor),
-          direction: dir,
-        })
+    const decodedCursor = cursor
+      ? decodeCursor<{ value: string | Date; id?: string }>(cursor)
       : undefined;
 
-    // Build type filter condition
-    const typeCondition =
-      types && types.length > 0 ? inArray(profiles.type, types) : undefined;
-
-    const whereConditions = [cursorCondition, typeCondition].filter(Boolean);
-    const whereClause =
-      whereConditions.length > 0
-        ? whereConditions.length === 1
-          ? whereConditions[0]
-          : and(...whereConditions)
-        : undefined;
-
-    const result = await db._query.profiles.findMany({
-      where: whereClause,
+    const result = await db.query.profiles.findMany({
+      where: {
+        ...(types && types.length > 0 && { type: { in: types } }),
+        ...(decodedCursor && {
+          RAW: (table) => {
+            const col = match(orderBy, {
+              name: table.name,
+              createdAt: table.createdAt,
+              _: table.updatedAt,
+            });
+            const tieBreaker = orderBy === 'name' ? table.id : undefined;
+            return getCursorCondition({
+              column: col,
+              tieBreakerColumn: tieBreaker,
+              cursor: decodedCursor,
+              direction: dir,
+            })!;
+          },
+        }),
+      },
       with: {
         headerImage: true,
         avatarImage: true,
@@ -64,8 +58,10 @@ export const listProfiles = async ({
               with: {
                 location: {
                   extras: {
-                    x: sql<number>`ST_X(${locations.location})`.as('x'),
-                    y: sql<number>`ST_Y(${locations.location})`.as('y'),
+                    x: (table, { sql }) =>
+                      sql<number>`ST_X(${table.location})`.as('x'),
+                    y: (table, { sql }) =>
+                      sql<number>`ST_Y(${table.location})`.as('y'),
                   },
                   columns: {
                     id: true,
@@ -74,7 +70,6 @@ export const listProfiles = async ({
                     countryCode: true,
                     countryName: true,
                     metadata: true,
-                    latLng: false,
                   },
                 },
               },
@@ -82,25 +77,35 @@ export const listProfiles = async ({
           },
         },
       },
-      orderBy: (_, { asc, desc }) =>
-        dir === 'asc' ? asc(orderByColumn) : desc(orderByColumn),
+      orderBy: (table, { asc, desc }) => {
+        const col = match(orderBy, {
+          name: table.name,
+          createdAt: table.createdAt,
+          _: table.updatedAt,
+        });
+        return dir === 'asc' ? asc(col) : desc(col);
+      },
       limit: limit + 1, // Fetch one extra to check hasMore
-    });
-
-    result.forEach((profile) => {
-      if (profile.organization) {
-        // @ts-expect-error - transitionary issue from org to profiles
-        profile.organization.whereWeWork = // @ts-ignore - transitionary issue from org to profiles
-          profile.organization?.whereWeWork.map((item: any) => item.location);
-      }
     });
 
     if (!result) {
       throw new NotFoundError('Profiles not found');
     }
 
-    const hasMore = result.length > limit;
-    const items = result.slice(0, limit);
+    const flattened = result.map((profile) => ({
+      ...profile,
+      organization: profile.organization
+        ? {
+            ...profile.organization,
+            whereWeWork: profile.organization.whereWeWork.map(
+              (item) => item.location,
+            ),
+          }
+        : null,
+    }));
+
+    const hasMore = flattened.length > limit;
+    const items = flattened.slice(0, limit);
     const lastItem = items[items.length - 1];
 
     const cursorValue = match(orderBy, {

@@ -2,7 +2,6 @@ import { and, db, eq, sql } from '@op/db/client';
 import {
   allowList,
   organizationUsers,
-  organizations,
   users,
   usersUsedStorage,
 } from '@op/db/schema';
@@ -10,6 +9,7 @@ import { type UserWithRoles, getGlobalPermissions } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils/error';
 import { getNormalizedRoles, getOrgAccessUser } from '../access';
+import type { RoleJunction } from '../access/utils';
 import { AllowListUser, allowListMetadataSchema } from './validators';
 
 export interface User {
@@ -61,8 +61,8 @@ export const getUserByAuthId = async ({
   authUserId: string;
   includePermissions?: boolean;
 }) => {
-  const user = await db._query.users.findFirst({
-    where: (table, { eq }) => eq(table.authUserId, authUserId),
+  const user = await db.query.users.findFirst({
+    where: { authUserId },
     with: {
       avatarImage: true,
       organizationUsers: {
@@ -157,8 +157,11 @@ export const getUserByAuthId = async ({
           return orgUser;
         }
 
-        // Transform the relational data into normalized format for access-zones library
-        const normalizedRoles = getNormalizedRoles(orgUser.roles);
+        // Transform the relational data into normalized format for access-zones library.
+        // The role-with-accessRole shape is only present when includePermissions=true.
+        const normalizedRoles = getNormalizedRoles(
+          orgUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
+        );
 
         // Transform the user to the format expected by access-zones
         const userForTransformation: UserWithRoles = {
@@ -184,7 +187,9 @@ export const getUserByAuthId = async ({
           return profileUser;
         }
 
-        const normalizedRoles = getNormalizedRoles(profileUser.roles);
+        const normalizedRoles = getNormalizedRoles(
+          profileUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
+        );
 
         const userForTransformation: UserWithRoles = {
           id: profileUser.id,
@@ -233,8 +238,8 @@ export const getUserWithProfiles = async ({
   authUserId: string;
   includeRoles?: boolean;
 }) => {
-  return await db._query.users.findFirst({
-    where: (table, { eq }) => eq(table.authUserId, authUserId),
+  return await db.query.users.findFirst({
+    where: { authUserId },
     with: {
       profile: {
         with: {
@@ -270,8 +275,8 @@ export const getUserForProfileSwitch = async ({
 }: {
   authUserId: string;
 }) => {
-  return await db._query.users.findFirst({
-    where: (table, { eq }) => eq(table.authUserId, authUserId),
+  return await db.query.users.findFirst({
+    where: { authUserId },
     with: {
       profile: true,
       organizationUsers: {
@@ -303,7 +308,7 @@ export const getUserForProfileSwitch = async ({
 export interface UpdateUserCurrentProfileOptions {
   authUserId: string;
   profileId: string;
-  orgId?: number;
+  orgId?: string;
 }
 
 export const updateUserCurrentProfile = async (
@@ -314,11 +319,7 @@ export const updateUserCurrentProfile = async (
     .update(users)
     .set({
       currentProfileId: profileId,
-      ...(orgId
-        ? { lastOrgId: orgId.toString() }
-        : {
-            lastOrgId: null,
-          }),
+      lastOrgId: orgId ?? null,
     })
     .where(eq(users.authUserId, authUserId))
     .returning();
@@ -378,8 +379,8 @@ export const switchUserOrganization = async (
 ) => {
   const { authUserId, organizationId } = options;
   // First, get the organization to find its profile ID
-  const organization = await db._query.organizations.findFirst({
-    where: eq(organizations.id, organizationId),
+  const organization = await db.query.organizations.findFirst({
+    where: { id: organizationId },
   });
 
   if (!organization) {

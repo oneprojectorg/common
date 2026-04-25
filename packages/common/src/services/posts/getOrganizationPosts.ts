@@ -1,7 +1,5 @@
 import { db } from '@op/db/client';
-import { posts, postsToOrganizations } from '@op/db/schema';
 import type { GetOrganizationPostsInput } from '@op/types';
-import { and, desc, eq, isNull } from 'drizzle-orm';
 
 import { getCurrentProfileId } from '../access';
 import { getItemsWithReactionsAndComments } from './listPosts';
@@ -29,25 +27,21 @@ export const getOrganizationPosts = async (
   }
 
   try {
-    // Build where conditions
-    const conditions = [];
-
-    // Filter by parent post
-    if (parentPostId === null) {
-      // Top-level posts only (no parent) - these are "posts"
-      conditions.push(isNull(posts.parentPostId));
-    } else if (parentPostId) {
-      // Children of specific parent - these are "comments"
-      conditions.push(eq(posts.parentPostId, parentPostId));
-    }
-    // If parentPostId is undefined, we get all posts regardless of parent
+    // Filter by parent post: null = top-level only, set = comments under that
+    // parent, undefined = all regardless of parent.
+    const postWhere =
+      parentPostId === null
+        ? { parentPostId: { isNull: true as const } }
+        : parentPostId
+          ? { parentPostId }
+          : undefined;
 
     // Organization posts are filtered through postsToOrganizations
-    const orgPosts = await db._query.postsToOrganizations.findMany({
-      where: eq(postsToOrganizations.organizationId, organizationId),
+    const orgPosts = await db.query.postsToOrganizations.findMany({
+      where: { organizationId },
       with: {
         post: {
-          where: conditions.length > 0 ? and(...conditions) : undefined,
+          ...(postWhere && { where: postWhere }),
           with: {
             profile: {
               with: {
@@ -68,7 +62,7 @@ export const getOrganizationPosts = async (
               ? {
                   childPosts: {
                     limit: 50,
-                    orderBy: [desc(posts.createdAt)],
+                    orderBy: (table, { desc }) => [desc(table.createdAt)],
                     with: {
                       profile: {
                         with: {
@@ -103,7 +97,7 @@ export const getOrganizationPosts = async (
       },
       limit,
       offset,
-      orderBy: [desc(postsToOrganizations.createdAt)],
+      orderBy: (table, { desc }) => [desc(table.createdAt)],
     });
 
     // Transform to match expected format and add reaction data

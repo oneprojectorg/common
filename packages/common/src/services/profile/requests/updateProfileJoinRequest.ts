@@ -29,8 +29,8 @@ export const updateProfileJoinRequest = async ({
   status: JoinProfileRequestStatus.APPROVED | JoinProfileRequestStatus.REJECTED;
 }): Promise<JoinProfileRequestWithProfiles> => {
   // Find the existing request by ID
-  const existingRequest = await db._query.joinProfileRequests.findFirst({
-    where: (table, { eq }) => eq(table.id, requestId),
+  const existingRequest = await db.query.joinProfileRequests.findFirst({
+    where: { id: requestId },
   });
 
   if (!existingRequest) {
@@ -85,9 +85,8 @@ export const updateProfileJoinRequest = async ({
     }
 
     // Get the owner of the requesting profile (their authUserId)
-    const requestingUser = await db._query.users.findFirst({
-      where: (table, { eq }) =>
-        eq(table.profileId, existingRequest.requestProfileId),
+    const requestingUser = await db.query.users.findFirst({
+      where: { profileId: existingRequest.requestProfileId },
     });
 
     if (requestingUser) {
@@ -95,12 +94,11 @@ export const updateProfileJoinRequest = async ({
       // NOTE: We're using organizationUsers instead of profileUsers because we're in between
       // memberships - the profile user membership (new) and the organization user membership (old).
       // After we migrate to profile users, this code should be changed to use profileUsers.
-      const existingMembership = await db._query.organizationUsers.findFirst({
-        where: (table, { and, eq }) =>
-          and(
-            eq(table.authUserId, requestingUser.authUserId),
-            eq(table.organizationId, organization.id),
-          ),
+      const existingMembership = await db.query.organizationUsers.findFirst({
+        where: {
+          authUserId: requestingUser.authUserId,
+          organizationId: organization.id,
+        },
       });
 
       // Only create membership if it doesn't already exist
