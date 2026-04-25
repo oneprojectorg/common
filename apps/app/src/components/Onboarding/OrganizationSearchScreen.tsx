@@ -213,12 +213,11 @@ function SearchDropdown({
       {searchResults && searchResults.length > 0 ? (
         searchResults.map((org) => {
           const location = getOrgLocation(org);
-          const isMember = org.isCurrentMember;
           return (
             <button
               key={org.id}
               type="button"
-              disabled={isMember}
+              disabled={org.isCurrentMember}
               className="flex w-full items-center px-4 py-3 text-left hover:bg-neutral-offWhite disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
               onClick={() => onSelect(org)}
             >
@@ -233,14 +232,8 @@ function SearchDropdown({
                 }
                 title={org.profile?.name ?? ''}
               >
-                {isMember ? (
-                  <div className="text-xs text-neutral-gray4">
-                    {t('Already a member')}
-                  </div>
-                ) : (
-                  location && (
-                    <div className="text-xs text-neutral-gray4">{location}</div>
-                  )
+                {location && (
+                  <div className="text-xs text-neutral-gray4">{location}</div>
                 )}
               </ProfileItem>
             </button>
