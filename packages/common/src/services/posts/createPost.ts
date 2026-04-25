@@ -12,11 +12,12 @@ import {
 } from '@op/db/schema';
 import { CreatePostInput } from '@op/types';
 import { waitUntil } from '@vercel/functions';
+import { assertAccess, permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
 import { CommonError } from '../../utils';
-import { getCurrentProfileId } from '../access';
-import { assertDecisionProfileAdmin } from '../decision/assertDecisionProfileAdmin';
+import { getCurrentProfileId, getProfileAccessUser } from '../access';
+import { decisionPermission } from '../decision/permissions';
 import { sendCommentNotificationEmail } from '../email';
 
 interface CreatePostServiceInput extends CreatePostInput {
@@ -210,11 +211,40 @@ export const createPost = async (input: CreatePostServiceInput) => {
 
   const profileId = await getCurrentProfileId(authUserId);
 
+  const candidateProfileIds: string[] = [];
   if (targetProfileId) {
-    await assertDecisionProfileAdmin({
-      user: { id: authUserId },
-      profileId: targetProfileId,
+    candidateProfileIds.push(targetProfileId);
+  } else if (parentPostId) {
+    const parentProfiles = await db
+      .select({ profileId: postsToProfiles.profileId })
+      .from(postsToProfiles)
+      .where(eq(postsToProfiles.postId, parentPostId));
+    for (const { profileId: parentProfileId } of parentProfiles) {
+      candidateProfileIds.push(parentProfileId);
+    }
+  }
+
+  const isTopLevelUpdate = Boolean(targetProfileId) && !parentPostId;
+  const requiredDecisionPermission = isTopLevelUpdate
+    ? { decisions: permission.ADMIN }
+    : { decisions: decisionPermission.SUBMIT_PROPOSALS };
+
+  for (const candidateProfileId of candidateProfileIds) {
+    const decisionInstance = await db._query.processInstances.findFirst({
+      where: (table, { eq }) => eq(table.profileId, candidateProfileId),
+      columns: { profileId: true },
     });
+    if (!decisionInstance) {
+      continue;
+    }
+    const profileUser = await getProfileAccessUser({
+      user: { id: authUserId },
+      profileId: candidateProfileId,
+    });
+    assertAccess(
+      [{ profile: permission.ADMIN }, requiredDecisionPermission],
+      profileUser?.roles ?? [],
+    );
   }
 
   try {

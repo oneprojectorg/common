@@ -91,7 +91,6 @@ export * from './deleteProposalAttachment';
 // Decision-specific permissions
 export * from './permissions';
 export * from './decisionRoles';
-export * from './assertDecisionProfileAdmin';
 
 // Instance utilities
 export * from './utils/instance';

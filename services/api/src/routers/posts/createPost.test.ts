@@ -1,5 +1,5 @@
 import { db, eq } from '@op/db/client';
-import { posts, postsToProfiles } from '@op/db/schema';
+import { postReactions, posts, postsToProfiles } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
@@ -17,7 +17,7 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-describe.concurrent('posts.createPost (decision admin authorization)', () => {
+describe.concurrent('decision-profile post authorization', () => {
   it('allows a decision admin to create an update on the decision profile', async ({
     task,
     onTestFinished,
@@ -51,7 +51,7 @@ describe.concurrent('posts.createPost (decision admin authorization)', () => {
     expect(associations[0]?.profileId).toBe(instance.profileId);
   });
 
-  it('rejects a non-admin member trying to create an update on the decision profile', async ({
+  it('rejects a non-admin member trying to create a top-level update', async ({
     task,
     onTestFinished,
   }) => {
@@ -90,7 +90,7 @@ describe.concurrent('posts.createPost (decision admin authorization)', () => {
     expect(writtenPosts).toHaveLength(0);
   });
 
-  it('rejects an outsider with no access to the decision', async ({
+  it('rejects an outsider (different org, no profile role) from posting', async ({
     task,
     onTestFinished,
   }) => {
@@ -124,7 +124,7 @@ describe.concurrent('posts.createPost (decision admin authorization)', () => {
     ).rejects.toMatchObject({ cause: { statusCode: 403 } });
   });
 
-  it('allows posting on a non-decision profile (existing profile-update flow)', async ({
+  it('does not gate posts on non-decision (organization) profiles', async ({
     task,
     onTestFinished,
   }) => {
@@ -152,7 +152,7 @@ describe.concurrent('posts.createPost (decision admin authorization)', () => {
     expect(associations[0]?.profileId).toBe(setup.organization.profileId);
   });
 
-  it('allows a non-admin member to comment on an admin update (read-path)', async ({
+  it('allows a non-admin member to comment on an admin update', async ({
     task,
     onTestFinished,
   }) => {
@@ -187,5 +187,210 @@ describe.concurrent('posts.createPost (decision admin authorization)', () => {
 
     expect(comment.parentPostId).toBe(adminPost.id);
     expect(comment.content).toBe('Comment from a non-admin member.');
+  });
+
+  it('rejects an outsider from commenting on an update', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const adminPost = await adminCaller.posts.createPost({
+      content: 'Admin update.',
+      profileId: instance.profileId,
+    });
+
+    const separateOrgSetup = await testData.createDecisionSetup({
+      instanceCount: 0,
+    });
+    const outsider = await testData.createMemberUser({
+      organization: separateOrgSetup.organization,
+      instanceProfileIds: [],
+    });
+
+    const outsiderCaller = await createAuthenticatedCaller(outsider.email);
+
+    await expect(
+      outsiderCaller.posts.createPost({
+        content: 'Outsider comment — should fail.',
+        parentPostId: adminPost.id,
+      }),
+    ).rejects.toMatchObject({ cause: { statusCode: 403 } });
+  });
+
+  it('rejects an outsider from reading the updates feed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const separateOrgSetup = await testData.createDecisionSetup({
+      instanceCount: 0,
+    });
+    const outsider = await testData.createMemberUser({
+      organization: separateOrgSetup.organization,
+      instanceProfileIds: [],
+    });
+
+    const outsiderCaller = await createAuthenticatedCaller(outsider.email);
+
+    await expect(
+      outsiderCaller.posts.getPosts({
+        profileId: instance.profileId,
+        parentPostId: null,
+        limit: 50,
+        offset: 0,
+        includeChildren: false,
+      }),
+    ).rejects.toMatchObject({ cause: { statusCode: 403 } });
+  });
+
+  it('allows a member to read the updates feed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    await adminCaller.posts.createPost({
+      content: 'Admin update for member to read.',
+      profileId: instance.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const result = await memberCaller.posts.getPosts({
+      profileId: instance.profileId,
+      parentPostId: null,
+      limit: 50,
+      offset: 0,
+      includeChildren: false,
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.content).toBe('Admin update for member to read.');
+  });
+
+  it('rejects an outsider from reacting to an update', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const adminPost = await adminCaller.posts.createPost({
+      content: 'Admin update.',
+      profileId: instance.profileId,
+    });
+
+    const separateOrgSetup = await testData.createDecisionSetup({
+      instanceCount: 0,
+    });
+    const outsider = await testData.createMemberUser({
+      organization: separateOrgSetup.organization,
+      instanceProfileIds: [],
+    });
+
+    const outsiderCaller = await createAuthenticatedCaller(outsider.email);
+
+    await expect(
+      outsiderCaller.organization.addReaction({
+        postId: adminPost.id,
+        reactionType: 'like',
+      }),
+    ).rejects.toMatchObject({ cause: { statusCode: 403 } });
+
+    const reactions = await db
+      .select({ postId: postReactions.postId })
+      .from(postReactions)
+      .where(eq(postReactions.postId, adminPost.id));
+
+    expect(reactions).toHaveLength(0);
+  });
+
+  it('allows a member to react to an update', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const adminPost = await adminCaller.posts.createPost({
+      content: 'Admin update.',
+      profileId: instance.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    await memberCaller.organization.addReaction({
+      postId: adminPost.id,
+      reactionType: 'like',
+    });
+
+    const reactions = await db
+      .select({ postId: postReactions.postId })
+      .from(postReactions)
+      .where(eq(postReactions.postId, adminPost.id));
+
+    expect(reactions).toHaveLength(1);
   });
 });

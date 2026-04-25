@@ -60,7 +60,7 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
           </div>
           <DecisionSidePanel
             decisionProfileId={decisionProfile.id}
-            isAdmin={decisionProfile.processInstance.access?.admin === true}
+            access={decisionProfile.processInstance.access}
           />
         </div>
       </DecisionHeader>
