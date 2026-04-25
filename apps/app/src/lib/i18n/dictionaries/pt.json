@@ -1143,7 +1143,7 @@
   "No proposals available to select": "Nenhuma proposta disponível para selecionar",
   "No proposals match the current filter": "Nenhuma proposta corresponde ao filtro atual",
   "The previous phase did not leave any eligible proposals.": "A fase anterior não deixou propostas elegíveis.",
-  "Publish results": "Publicar resultados",
+  "Publish": "Publicar",
   "Confirm advancing proposals": "Confirmar avanço das propostas",
   "These {numProposals} proposals will move on to the {phaseName} phase": "Estas {numProposals} propostas avançarão para a fase {phaseName}",
   "PROPOSALS TO ADVANCE": "PROPOSTAS A AVANÇAR",

@@ -60,7 +60,7 @@ export const SelectionConfirmDialog = ({
               onPress={onConfirm}
               isDisabled={isSubmitting}
             >
-              {isSubmitting ? t('Submitting...') : t('Publish results')}
+              {isSubmitting ? t('Submitting...') : t('Publish')}
             </Button>
           </ModalFooter>
         </Dialog>
