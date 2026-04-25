@@ -58,7 +58,7 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
               />
             </Suspense>
           </div>
-          <DecisionSidePanel />
+          <DecisionSidePanel decisionProfileId={decisionProfile.id} />
         </div>
       </DecisionHeader>
     </Suspense>
