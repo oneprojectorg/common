@@ -1,4 +1,15 @@
-import { and, asc, db, desc, eq, inArray, ne, or, sql } from '@op/db/client';
+import {
+  and,
+  asc,
+  db,
+  desc,
+  eq,
+  exists,
+  inArray,
+  ne,
+  or,
+  sql,
+} from '@op/db/client';
 import {
   type ProposalReviewAssignmentStatus,
   ProposalReviewState,
@@ -17,10 +28,8 @@ import { getInstance } from './getInstance';
 import { getRubricScoringInfo } from './getRubricScoringInfo';
 import { parseProposalData } from './proposalDataSchema';
 import {
-  type ProposalsWithReviewAggregatesHydration,
-  type ProposalsWithReviewAggregatesPaginated,
-  proposalsWithReviewAggregatesHydrationSchema,
-  proposalsWithReviewAggregatesPaginatedSchema,
+  type ProposalsWithReviewAggregatesList,
+  proposalsWithReviewAggregatesListSchema,
 } from './schemas/reviews';
 import type { RubricTemplateSchema } from './types';
 
@@ -53,10 +62,6 @@ export type ListProposalsWithReviewAggregatesInput =
   | HydrationInput
   | PaginatedInput;
 
-const isHydrationInput = (
-  input: ListProposalsWithReviewAggregatesInput,
-): input is HydrationInput => 'proposalIds' in input;
-
 /**
  * Admin-only proposal list with per-proposal review aggregates computed
  * server-side. Operates in two mutually-exclusive modes:
@@ -71,16 +76,13 @@ const isHydrationInput = (
  *
  * The rubric template is intentionally NOT returned: it's static per
  * instance and the client already has it loaded. `criterionId` and
- * `optionKey` in `optionCounts` are the rubric property keys, which the
- * client resolves to human labels.
+ * `optionKey` in `optionCounts` are the rubric property keys.
  */
 export async function listProposalsWithReviewAggregates(
   input: ListProposalsWithReviewAggregatesInput & { user: User },
-): Promise<
-  | ProposalsWithReviewAggregatesHydration
-  | ProposalsWithReviewAggregatesPaginated
-> {
+): Promise<ProposalsWithReviewAggregatesList> {
   const { user, processInstanceId } = input;
+  const isHydration = 'proposalIds' in input;
 
   const instance = await getInstance({ instanceId: processInstanceId, user });
 
@@ -144,265 +146,163 @@ export async function listProposalsWithReviewAggregates(
     .groupBy(proposalReviewAssignments.proposalId)
     .as('agg');
 
-  const proposalSelect = {
-    id: proposals.id,
-    processInstanceId: proposals.processInstanceId,
-    proposalData: proposals.proposalData,
-    status: proposals.status,
-    visibility: proposals.visibility,
-    profileId: proposals.profileId,
-    submittedByProfileId: proposals.submittedByProfileId,
-    createdAt: proposals.createdAt,
-    updatedAt: proposals.updatedAt,
-    assignmentsTotal: sql<number>`COALESCE(${aggSubquery.assignmentsTotal}, 0)::int`,
-    reviewsSubmitted: sql<number>`COALESCE(${aggSubquery.reviewsSubmitted}, 0)::int`,
-    totalScore: sql<number>`COALESCE(${aggSubquery.totalScore}, 0)::numeric`,
-    averageScore: sql<number>`COALESCE(${aggSubquery.averageScore}, 0)::numeric`,
-  };
-
-  if (isHydrationInput(input)) {
-    // proposalIds outside the instance are silently dropped by the
-    // processInstanceId filter — defense-in-depth on top of the admin gate.
-    const proposalRows = await db
-      .select(proposalSelect)
-      .from(proposals)
-      .leftJoin(aggSubquery, eq(aggSubquery.proposalId, proposals.id))
-      .where(
-        and(
-          eq(proposals.processInstanceId, processInstanceId),
-          ne(proposals.status, ProposalStatus.DRAFT),
-          inArray(proposals.id, input.proposalIds),
-        ),
-      );
-
-    const items = await assembleItems({
-      processInstanceId,
-      proposalRows,
-    });
-
-    return proposalsWithReviewAggregatesHydrationSchema.parse({ items });
-  }
-
-  // Paginated mode
-  const {
-    categoryId,
-    status,
-    sortBy = 'createdAt',
-    dir = 'desc',
-    limit = 50,
-    cursor,
-  } = input;
-
-  // Pre-resolve the proposal IDs for `categoryId` filtering. Doing it as a
-  // separate query (rather than a nested join) keeps the aggregation query
-  // simple and avoids accidentally multiplying rows when a proposal has
-  // multiple categories.
-  let categoryProposalIds: string[] | null = null;
-  if (categoryId) {
-    const categoryRows = await db
-      .select({ proposalId: proposalCategories.proposalId })
-      .from(proposalCategories)
-      .where(eq(proposalCategories.taxonomyTermId, categoryId));
-    categoryProposalIds = categoryRows.map((r) => r.proposalId);
-    if (categoryProposalIds.length === 0) {
-      return { items: [], total: 0, nextCursor: null };
-    }
-  }
-
-  // Pre-resolve the proposal IDs that have at least one assignment matching
-  // the optional `status` filter. This filters which proposals appear; the
-  // computed aggregates still reflect the full assignment roster.
-  let statusFilteredProposalIds: string[] | null = null;
-  if (status) {
-    const statusRows = await db
-      .selectDistinct({ proposalId: proposalReviewAssignments.proposalId })
-      .from(proposalReviewAssignments)
-      .where(
-        and(
-          eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-          eq(proposalReviewAssignments.status, status),
-        ),
-      );
-    statusFilteredProposalIds = statusRows.map((r) => r.proposalId);
-    if (statusFilteredProposalIds.length === 0) {
-      return { items: [], total: 0, nextCursor: null };
-    }
-  }
-
-  const sortColumnExpr =
-    sortBy === 'totalScore'
-      ? sql<number>`COALESCE(${aggSubquery.totalScore}, 0)`
-      : sortBy === 'averageScore'
-        ? sql<number>`COALESCE(${aggSubquery.averageScore}, 0)`
-        : sortBy === 'reviewsSubmitted'
-          ? sql<number>`COALESCE(${aggSubquery.reviewsSubmitted}, 0)`
-          : proposals.createdAt;
-
-  const decodedCursor = cursor
-    ? decodeCursor<AggregatesCursor>(cursor)
-    : undefined;
-
-  const cursorCondition = (() => {
-    if (!decodedCursor) {
-      return undefined;
-    }
-    const cmp = dir === 'asc' ? sql`>` : sql`<`;
-    return or(
-      sql`${sortColumnExpr} ${cmp} ${decodedCursor.value}`,
-      and(
-        sql`${sortColumnExpr} = ${decodedCursor.value}`,
-        sql`${proposals.id} ${cmp} ${decodedCursor.id}`,
-      ),
-    );
-  })();
-
-  const orderFn = dir === 'asc' ? asc : desc;
-
-  // `baseConditions` defines the candidate set (used by both the page query
-  // and the total-count query). The cursor is page-only — it must NOT
-  // participate in `total`, since `total` describes the full filtered set.
+  // Compose mode-specific WHERE conditions on top of the common filter set
+  // (instance + non-draft). Filters that touch sibling tables go in as
+  // EXISTS subqueries so the page query stays a single round-trip.
   const baseConditions = [
     eq(proposals.processInstanceId, processInstanceId),
     ne(proposals.status, ProposalStatus.DRAFT),
   ];
-  if (categoryProposalIds) {
-    baseConditions.push(inArray(proposals.id, categoryProposalIds));
-  }
-  if (statusFilteredProposalIds) {
-    baseConditions.push(inArray(proposals.id, statusFilteredProposalIds));
-  }
 
-  const pageConditions = [...baseConditions];
-  if (cursorCondition) {
-    pageConditions.push(cursorCondition);
-  }
+  let sortColumnExpr = proposals.createdAt as unknown as ReturnType<
+    typeof sql<string>
+  >;
+  let sortDir: SortDir = 'desc';
+  let limit = Number.POSITIVE_INFINITY;
+  let cursorCondition: ReturnType<typeof and> | undefined;
 
-  const [proposalRows, totalRows] = await Promise.all([
-    db
-      .select(proposalSelect)
-      .from(proposals)
-      .leftJoin(aggSubquery, eq(aggSubquery.proposalId, proposals.id))
-      .where(and(...pageConditions))
-      .orderBy(orderFn(sortColumnExpr), orderFn(proposals.id))
-      .limit(limit + 1),
-    db
-      .select({ count: countFn() })
-      .from(proposals)
-      .where(and(...baseConditions)),
-  ]);
-  const total = Number(totalRows[0]?.count ?? 0);
+  if (isHydration) {
+    baseConditions.push(inArray(proposals.id, input.proposalIds));
+  } else {
+    const sortBy = input.sortBy ?? 'createdAt';
+    sortDir = input.dir ?? 'desc';
+    limit = input.limit ?? 50;
 
-  const hasMore = proposalRows.length > limit;
-  const pageRows = hasMore ? proposalRows.slice(0, limit) : proposalRows;
+    if (input.categoryId) {
+      baseConditions.push(
+        exists(
+          db
+            .select({ one: sql`1` })
+            .from(proposalCategories)
+            .where(
+              and(
+                eq(proposalCategories.proposalId, proposals.id),
+                eq(proposalCategories.taxonomyTermId, input.categoryId),
+              ),
+            ),
+        ),
+      );
+    }
 
-  const items = await assembleItems({
-    processInstanceId,
-    proposalRows: pageRows,
-  });
+    if (input.status) {
+      baseConditions.push(
+        exists(
+          db
+            .select({ one: sql`1` })
+            .from(proposalReviewAssignments)
+            .where(
+              and(
+                eq(proposalReviewAssignments.proposalId, proposals.id),
+                eq(
+                  proposalReviewAssignments.processInstanceId,
+                  processInstanceId,
+                ),
+                eq(proposalReviewAssignments.status, input.status),
+              ),
+            ),
+        ),
+      );
+    }
 
-  let nextCursor: string | null = null;
-  if (hasMore) {
-    const lastRow = pageRows[pageRows.length - 1];
-    if (lastRow) {
-      const cursorValue =
-        sortBy === 'totalScore'
-          ? Number(lastRow.totalScore)
-          : sortBy === 'averageScore'
-            ? Number(lastRow.averageScore)
-            : sortBy === 'reviewsSubmitted'
-              ? Number(lastRow.reviewsSubmitted)
-              : (lastRow.createdAt ?? '');
-      nextCursor = encodeCursor<AggregatesCursor>({
-        value: cursorValue,
-        id: lastRow.id,
-      });
+    sortColumnExpr =
+      sortBy === 'totalScore'
+        ? (sql<number>`COALESCE(${aggSubquery.totalScore}, 0)` as unknown as ReturnType<
+            typeof sql<string>
+          >)
+        : sortBy === 'averageScore'
+          ? (sql<number>`COALESCE(${aggSubquery.averageScore}, 0)` as unknown as ReturnType<
+              typeof sql<string>
+            >)
+          : sortBy === 'reviewsSubmitted'
+            ? (sql<number>`COALESCE(${aggSubquery.reviewsSubmitted}, 0)` as unknown as ReturnType<
+                typeof sql<string>
+              >)
+            : (proposals.createdAt as unknown as ReturnType<
+                typeof sql<string>
+              >);
+
+    if (input.cursor) {
+      const decoded = decodeCursor<AggregatesCursor>(input.cursor);
+      const cmp = sortDir === 'asc' ? sql`>` : sql`<`;
+      cursorCondition = or(
+        sql`${sortColumnExpr} ${cmp} ${decoded.value}`,
+        and(
+          sql`${sortColumnExpr} = ${decoded.value}`,
+          sql`${proposals.id} ${cmp} ${decoded.id}`,
+        ),
+      );
     }
   }
 
-  return proposalsWithReviewAggregatesPaginatedSchema.parse({
-    items,
-    total,
-    nextCursor,
-  });
-}
+  const pageConditions = cursorCondition
+    ? [...baseConditions, cursorCondition]
+    : baseConditions;
 
-/**
- * Loads the per-page side data (profiles, reviewer roster, submitted reviews
- * for option-count tallies, attached categories) and assembles the response
- * items. Shared between hydration and paginated modes — the candidate set
- * differs but the assembly logic is identical.
- */
-async function assembleItems({
-  processInstanceId,
-  proposalRows,
-}: {
-  processInstanceId: string;
-  proposalRows: Array<{
-    id: string;
-    processInstanceId: string;
-    proposalData: unknown;
-    status: string | null;
-    visibility: string;
-    profileId: string;
-    submittedByProfileId: string;
-    createdAt: string | null;
-    updatedAt: string | null;
-    assignmentsTotal: number;
-    reviewsSubmitted: number;
-    totalScore: number;
-    averageScore: number;
-  }>;
-}) {
-  if (proposalRows.length === 0) {
-    return [];
+  const orderFn = sortDir === 'asc' ? asc : desc;
+
+  // Page query: just IDs + agg numbers + sort key. Full proposal data is
+  // loaded by the relational query below; this query exists primarily to
+  // resolve the candidate set + sort by computed aggregates.
+  const pageQuery = db
+    .select({
+      id: proposals.id,
+      createdAt: proposals.createdAt,
+      assignmentsTotal: sql<number>`COALESCE(${aggSubquery.assignmentsTotal}, 0)::int`,
+      reviewsSubmitted: sql<number>`COALESCE(${aggSubquery.reviewsSubmitted}, 0)::int`,
+      totalScore: sql<number>`COALESCE(${aggSubquery.totalScore}, 0)::numeric`,
+      averageScore: sql<number>`COALESCE(${aggSubquery.averageScore}, 0)::numeric`,
+    })
+    .from(proposals)
+    .leftJoin(aggSubquery, eq(aggSubquery.proposalId, proposals.id))
+    .where(and(...pageConditions))
+    .orderBy(orderFn(sortColumnExpr), orderFn(proposals.id))
+    .$dynamic();
+
+  // Run the page query and (in paginated mode) the total-count query in
+  // parallel. Hydration mode has no notion of "total beyond items".
+  const [pageRowsRaw, totalRows] = await Promise.all([
+    Number.isFinite(limit) ? pageQuery.limit(limit + 1) : pageQuery,
+    isHydration
+      ? Promise.resolve(null)
+      : db
+          .select({ count: countFn() })
+          .from(proposals)
+          .where(and(...baseConditions)),
+  ]);
+
+  const hasMore = Number.isFinite(limit) && pageRowsRaw.length > limit;
+  const pageRows = hasMore ? pageRowsRaw.slice(0, limit) : pageRowsRaw;
+
+  if (pageRows.length === 0) {
+    return {
+      items: [],
+      total: totalRows ? Number(totalRows[0]?.count ?? 0) : 0,
+      nextCursor: null,
+    };
   }
 
-  const proposalIds = proposalRows.map((p) => p.id);
-  const profileIdsToLoad = Array.from(
-    new Set([
-      ...proposalRows.map((p) => p.profileId),
-      ...proposalRows.map((p) => p.submittedByProfileId),
-    ]),
-  );
+  const pageIds = pageRows.map((r) => r.id);
+  const aggByProposalId = new Map(pageRows.map((r) => [r.id, r]));
 
-  const [
-    profileRows,
-    reviewerAssignmentRows,
-    submittedReviewRows,
-    categoryRows,
-  ] = await Promise.all([
-    db.query.profiles.findMany({
-      where: { id: { in: profileIdsToLoad } },
-      with: { avatarImage: true },
-    }),
-    db.query.proposalReviewAssignments.findMany({
-      where: {
-        processInstanceId,
-        proposalId: { in: proposalIds },
-      },
+  // Full data via relational query: profile, submittedBy, reviewer roster
+  // (with reviewer profile + avatar), and submitted reviews per assignment
+  // for option-count tallies. Plus categories — loaded as a parallel join
+  // since proposals → categories isn't in the v2 relations.
+  const [proposalsFull, categoryRows] = await Promise.all([
+    db.query.proposals.findMany({
+      where: { id: { in: pageIds } },
       with: {
-        reviewer: {
-          with: { avatarImage: true },
+        profile: { with: { avatarImage: true } },
+        submittedBy: { with: { avatarImage: true } },
+        reviewAssignments: {
+          where: { processInstanceId },
+          with: {
+            reviewer: { with: { avatarImage: true } },
+            reviews: true,
+          },
         },
       },
     }),
-    db
-      .select({
-        proposalId: proposalReviewAssignments.proposalId,
-        reviewData: proposalReviews.reviewData,
-      })
-      .from(proposalReviews)
-      .innerJoin(
-        proposalReviewAssignments,
-        eq(proposalReviewAssignments.id, proposalReviews.assignmentId),
-      )
-      .where(
-        and(
-          eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-          inArray(proposalReviewAssignments.proposalId, proposalIds),
-          eq(proposalReviews.state, ProposalReviewState.SUBMITTED),
-        ),
-      ),
     db
       .select({
         proposalId: proposalCategories.proposalId,
@@ -415,56 +315,10 @@ async function assembleItems({
         taxonomyTerms,
         eq(taxonomyTerms.id, proposalCategories.taxonomyTermId),
       )
-      .where(inArray(proposalCategories.proposalId, proposalIds)),
+      .where(inArray(proposalCategories.proposalId, pageIds)),
   ]);
 
-  const profilesById = new Map(profileRows.map((p) => [p.id, p]));
-
-  type ReviewerEntry = {
-    profile: (typeof reviewerAssignmentRows)[number]['reviewer'];
-    status: (typeof reviewerAssignmentRows)[number]['status'];
-  };
-  const reviewersByProposalId = new Map<string, ReviewerEntry[]>();
-  for (const row of reviewerAssignmentRows) {
-    const list = reviewersByProposalId.get(row.proposalId) ?? [];
-    list.push({ profile: row.reviewer, status: row.status });
-    reviewersByProposalId.set(row.proposalId, list);
-  }
-
-  // Tally option counts per (proposalId, criterionKey, optionValue) by
-  // walking each submitted review's `answers` map. Numeric / string answers
-  // are bucketed by their string representation, which matches the rubric's
-  // `oneOf[].const` identifier.
-  type OptionCount = {
-    criterionId: string;
-    optionKey: string;
-    count: number;
-  };
-  const optionCountsByProposalId = new Map<string, OptionCount[]>();
-
-  for (const row of submittedReviewRows) {
-    const data = row.reviewData as { answers?: Record<string, unknown> } | null;
-    const answers = data?.answers ?? {};
-    let bucket = optionCountsByProposalId.get(row.proposalId);
-    if (!bucket) {
-      bucket = [];
-      optionCountsByProposalId.set(row.proposalId, bucket);
-    }
-    for (const [criterionId, value] of Object.entries(answers)) {
-      if (value === null || value === undefined) {
-        continue;
-      }
-      const optionKey = String(value);
-      const existing = bucket.find(
-        (b) => b.criterionId === criterionId && b.optionKey === optionKey,
-      );
-      if (existing) {
-        existing.count += 1;
-      } else {
-        bucket.push({ criterionId, optionKey, count: 1 });
-      }
-    }
-  }
+  const proposalsById = new Map(proposalsFull.map((p) => [p.id, p]));
 
   type CategoryEntry = { id: string; label: string; termUri: string };
   const categoriesByProposalId = new Map<string, CategoryEntry[]>();
@@ -474,33 +328,117 @@ async function assembleItems({
     categoriesByProposalId.set(row.proposalId, list);
   }
 
-  return proposalRows.map((row) => {
-    const profile = profilesById.get(row.profileId);
-    const submittedBy = profilesById.get(row.submittedByProfileId);
-    const reviewers = reviewersByProposalId.get(row.id) ?? [];
-    const optionCounts = optionCountsByProposalId.get(row.id) ?? [];
-    const categories = categoriesByProposalId.get(row.id) ?? [];
+  // Preserve the page order from the SQL sort — `findMany({ where: in })`
+  // doesn't guarantee any particular order.
+  const items = pageIds.map((id) => {
+    const proposal = proposalsById.get(id);
+    const aggRow = aggByProposalId.get(id);
+    if (!proposal || !aggRow) {
+      throw new Error(`Page row missing full data: ${id}`);
+    }
+
+    const reviewers = proposal.reviewAssignments.map((a) => ({
+      profile: a.reviewer,
+      status: a.status,
+    }));
+
+    const optionCounts = computeOptionCounts(proposal.reviewAssignments);
 
     return {
-      id: row.id,
-      processInstanceId: row.processInstanceId,
-      proposalData: parseProposalData(row.proposalData),
-      status: row.status,
-      visibility: row.visibility,
-      profileId: row.profileId,
-      profile,
-      submittedBy,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
+      id: proposal.id,
+      processInstanceId: proposal.processInstanceId,
+      proposalData: parseProposalData(proposal.proposalData),
+      status: proposal.status,
+      visibility: proposal.visibility,
+      profileId: proposal.profileId,
+      profile: proposal.profile,
+      submittedBy: proposal.submittedBy,
+      createdAt: proposal.createdAt,
+      updatedAt: proposal.updatedAt,
       aggregates: {
-        assignmentsTotal: Number(row.assignmentsTotal),
-        reviewsSubmitted: Number(row.reviewsSubmitted),
-        totalScore: Number(row.totalScore),
-        averageScore: Number(row.averageScore),
+        assignmentsTotal: Number(aggRow.assignmentsTotal),
+        reviewsSubmitted: Number(aggRow.reviewsSubmitted),
+        totalScore: Number(aggRow.totalScore),
+        averageScore: Number(aggRow.averageScore),
         optionCounts,
         reviewers,
       },
-      categories,
+      categories: categoriesByProposalId.get(id) ?? [],
     };
   });
+
+  let nextCursor: string | null = null;
+  if (hasMore && !isHydration) {
+    const lastRow = pageRows[pageRows.length - 1]!;
+    const sortBy = (input as PaginatedInput).sortBy ?? 'createdAt';
+    const cursorValue =
+      sortBy === 'totalScore'
+        ? Number(lastRow.totalScore)
+        : sortBy === 'averageScore'
+          ? Number(lastRow.averageScore)
+          : sortBy === 'reviewsSubmitted'
+            ? Number(lastRow.reviewsSubmitted)
+            : (lastRow.createdAt ?? '');
+    nextCursor = encodeCursor<AggregatesCursor>({
+      value: cursorValue,
+      id: lastRow.id,
+    });
+  }
+
+  const total = isHydration ? items.length : Number(totalRows?.[0]?.count ?? 0);
+
+  return proposalsWithReviewAggregatesListSchema.parse({
+    items,
+    total,
+    nextCursor,
+  });
+}
+
+/**
+ * Walk submitted reviews for a single proposal and tally how many times
+ * each (criterionId, optionKey) pair appears. Numeric/string answers are
+ * bucketed by their string representation, which matches the rubric's
+ * `oneOf[].const` identifier.
+ */
+function computeOptionCounts(
+  reviewAssignments: Array<{
+    reviews: Array<{
+      state: string;
+      reviewData: unknown;
+    }>;
+  }>,
+): Array<{ criterionId: string; optionKey: string; count: number }> {
+  const counts: Array<{
+    criterionId: string;
+    optionKey: string;
+    count: number;
+  }> = [];
+
+  for (const assignment of reviewAssignments) {
+    for (const review of assignment.reviews) {
+      if (review.state !== ProposalReviewState.SUBMITTED) {
+        continue;
+      }
+      const data = review.reviewData as {
+        answers?: Record<string, unknown>;
+      } | null;
+      const answers = data?.answers ?? {};
+      for (const [criterionId, value] of Object.entries(answers)) {
+        if (value === null || value === undefined) {
+          continue;
+        }
+        const optionKey = String(value);
+        const existing = counts.find(
+          (c) => c.criterionId === criterionId && c.optionKey === optionKey,
+        );
+        if (existing) {
+          existing.count += 1;
+        } else {
+          counts.push({ criterionId, optionKey, count: 1 });
+        }
+      }
+    }
+  }
+
+  return counts;
 }

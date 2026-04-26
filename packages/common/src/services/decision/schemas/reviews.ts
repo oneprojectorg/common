@@ -141,32 +141,15 @@ export const proposalWithAggregatesSchema = proposalSchema.extend({
 });
 
 /**
- * Hydration mode response — the caller already owns the proposal list
- * (e.g. from `listReviewAssignments`) and is asking for aggregates for a
- * specific set of IDs. No pagination metadata.
+ * Single response shape for both hydration and pagination modes. In
+ * hydration mode `total` is just `items.length` and `nextCursor` is null —
+ * one shape is simpler than a union and clients can ignore the extras.
  */
-export const proposalsWithReviewAggregatesHydrationSchema = z.object({
-  items: z.array(proposalWithAggregatesSchema),
-});
-
-/**
- * Pagination mode response — this endpoint owns the proposal list and
- * server-side sort by computed score is the load-bearing reason for it.
- */
-export const proposalsWithReviewAggregatesPaginatedSchema = z.object({
+export const proposalsWithReviewAggregatesListSchema = z.object({
   items: z.array(proposalWithAggregatesSchema),
   total: z.number().int(),
   nextCursor: z.string().nullable(),
 });
-
-// Order matters: the paginated variant must be tried first. If hydration
-// (just `{ items }`) ran first, z.union would silently strip `total` and
-// `nextCursor` from a paginated response, since both fields are absent
-// from the hydration shape.
-export const proposalsWithReviewAggregatesResponseSchema = z.union([
-  proposalsWithReviewAggregatesPaginatedSchema,
-  proposalsWithReviewAggregatesHydrationSchema,
-]);
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -192,12 +175,6 @@ export type ProposalCategoryItem = z.infer<typeof proposalCategorySchema>;
 export type ProposalWithAggregates = z.infer<
   typeof proposalWithAggregatesSchema
 >;
-export type ProposalsWithReviewAggregatesHydration = z.infer<
-  typeof proposalsWithReviewAggregatesHydrationSchema
->;
-export type ProposalsWithReviewAggregatesPaginated = z.infer<
-  typeof proposalsWithReviewAggregatesPaginatedSchema
->;
-export type ProposalsWithReviewAggregatesResponse = z.infer<
-  typeof proposalsWithReviewAggregatesResponseSchema
+export type ProposalsWithReviewAggregatesList = z.infer<
+  typeof proposalsWithReviewAggregatesListSchema
 >;
