@@ -16,6 +16,13 @@ major_version = 15
 enabled = true
 sql_paths = [ './seed.sql' ]
 
+[db.pooler]
+enabled = true
+port = 6543
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
 [realtime]
 enabled = true
 
