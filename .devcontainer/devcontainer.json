@@ -8,12 +8,7 @@
       "moby": true,
       "dockerDashComposeVersion": "v2"
     },
-    "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/devcontainers/features/common-utils:2": {
-      "installZsh": true,
-      "configureZshAsDefaultShell": false,
-      "username": "node"
-    }
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
 
   "remoteEnv": {
