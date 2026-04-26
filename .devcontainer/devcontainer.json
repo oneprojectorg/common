@@ -17,11 +17,6 @@
     "PLAYWRIGHT_BROWSERS_PATH": "/home/node/.cache/ms-playwright"
   },
 
-  "containerEnv": {
-    "PNPM_HOME": "/home/node/.local/share/pnpm",
-    "PATH": "/home/node/.local/share/pnpm:${PATH}"
-  },
-
   "forwardPorts": [3100, 3300, 3600, 3883, 54321, 54322, 54323, 54324],
   "portsAttributes": {
     "3100": { "label": "Next.js app", "onAutoForward": "notify" },
