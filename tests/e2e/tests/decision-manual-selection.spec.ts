@@ -172,7 +172,7 @@ test.describe('Decision Manual Selection — full flow', () => {
     await expect(
       dialog.getByRole('heading', { name: 'Confirm advancing proposals' }),
     ).toBeVisible();
-    await dialog.getByRole('button', { name: 'Publish results' }).click();
+    await dialog.getByRole('button', { name: 'Publish' }).click();
 
     const successDialog = authenticatedPage.getByRole('dialog');
     await expect(
