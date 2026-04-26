@@ -10,7 +10,7 @@ import { useTranslations } from '@/lib/i18n';
 import { ProposalAttachmentList } from './ProposalAttachmentList';
 
 const MAX_FILES = 5;
-const MAX_SIZE_MB = 10;
+const MAX_SIZE_MB = 25;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
 const ACCEPTED_TYPES = [

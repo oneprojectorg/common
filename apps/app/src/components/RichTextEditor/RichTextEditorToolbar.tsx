@@ -45,7 +45,7 @@ export function RichTextEditorToolbar({
   const { uploadFile } = useFileUpload({
     acceptedTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/gif'],
     maxFiles: 10,
-    maxSizePerFile: 4 * 1024 * 1024, // 4MB
+    maxSizePerFile: 25 * 1024 * 1024, // 25MB
   });
 
   const addLink = useCallback(() => {

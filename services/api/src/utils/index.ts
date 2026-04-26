@@ -87,7 +87,7 @@ export function sanitizeS3Filename(filename: string) {
   return sanitizeForS3(sanitized, '-');
 }
 
-export const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
+export const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
 
 /** Short, deterministic digest of a search string for cache keys. */
 export function hashSearch(search: string) {
