@@ -20,6 +20,8 @@ const ACCEPTED_TYPES = [
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'video/mp4',
+  'video/webm',
 ];
 
 interface Attachment {
@@ -185,7 +187,7 @@ export function ProposalAttachments({
           ),
         })}
         description={t('Accepts {types} and more up to {size}MB', {
-          types: 'PDF, DOCX, XLSX',
+          types: 'MP4, WebM, PDF, DOCX, XLSX',
           size: MAX_SIZE_MB,
         })}
         allowsMultiple
