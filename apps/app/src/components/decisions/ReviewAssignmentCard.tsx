@@ -1,8 +1,12 @@
-import type {
-  ProposalReviewAssignment,
-  ReviewAssignmentExtended,
+import {
+  ProposalReviewAssignmentStatus,
+  type ProposalReviewAggregates,
+  type ProposalReviewAssignment,
+  type ReviewAssignmentExtended,
 } from '@op/common/client';
+import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { cn } from '@op/ui/utils';
+import { Button } from 'react-aria-components';
 import {
   LuCircleAlert,
   LuCircleCheck,
@@ -12,6 +16,7 @@ import {
 } from 'react-icons/lu';
 
 import type { TranslationKey } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
 import { TranslatedText } from '@/components/TranslatedText';
 
@@ -30,11 +35,13 @@ type AssignmentStatus = ProposalReviewAssignment['status'];
 interface ReviewAssignmentCardProps {
   assignment: ReviewAssignmentExtended;
   viewHref?: string;
+  aggregates?: ProposalReviewAggregates;
 }
 
 export function ReviewAssignmentCard({
   assignment: { assignment },
   viewHref,
+  aggregates,
 }: ReviewAssignmentCardProps) {
   const { proposal, status } = assignment;
   const isRevised = status === 'ready_for_re_review';
@@ -60,8 +67,46 @@ export function ReviewAssignmentCard({
         </div>
         <ProposalCardPreview proposal={proposal} className="line-clamp-2" />
       </ProposalCardContent>
-      <ReviewStatusBadge status={status} />
+      <div className="flex items-center justify-between gap-2">
+        <ReviewStatusBadge status={status} />
+        {aggregates ? <ReviewersTooltip aggregates={aggregates} /> : null}
+      </div>
     </ProposalCard>
+  );
+}
+
+const COMPLETED_REVIEWER_STATUSES: AssignmentStatus[] = [
+  ProposalReviewAssignmentStatus.COMPLETED,
+  ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
+];
+
+function ReviewersTooltip({
+  aggregates,
+}: {
+  aggregates: ProposalReviewAggregates;
+}) {
+  const t = useTranslations();
+
+  const completedReviewers = aggregates.reviewers.filter((r) =>
+    COMPLETED_REVIEWER_STATUSES.includes(r.status),
+  );
+
+  if (completedReviewers.length === 0) {
+    return null;
+  }
+
+  const names = completedReviewers.map((r) => r.profile.name).join(', ');
+
+  return (
+    <TooltipTrigger>
+      <Button
+        type="button"
+        className="cursor-help text-base text-neutral-gray4 underline decoration-dotted decoration-1 underline-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-primary-teal"
+      >
+        {t('{count} Reviewed', { count: completedReviewers.length })}
+      </Button>
+      <Tooltip>{names}</Tooltip>
+    </TooltipTrigger>
   );
 }
 

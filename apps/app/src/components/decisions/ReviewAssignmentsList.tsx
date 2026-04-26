@@ -1,12 +1,16 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { ProposalReviewAssignmentStatus } from '@op/common/client';
+import {
+  ProposalReviewAssignmentStatus,
+  type ProposalReviewAggregates,
+} from '@op/common/client';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
+import { useMemo } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -25,9 +29,11 @@ const SORT_DIRS = ['asc', 'desc'] as const;
 export function ReviewAssignmentsList({
   processInstanceId,
   decisionSlug,
+  canViewReviewers = false,
 }: {
   processInstanceId: string;
   decisionSlug: string;
+  canViewReviewers?: boolean;
 }) {
   const t = useTranslations();
 
@@ -49,6 +55,35 @@ export function ReviewAssignmentsList({
   });
 
   const assignments = data?.assignments ?? [];
+
+  // Hydration-mode aggregates query: keyed off the proposal IDs we just
+  // loaded. Admin-only — the endpoint returns 401 for non-admins, so the
+  // call is gated behind `canViewReviewers`. Non-suspense on purpose so the
+  // assignments list paints immediately and the reviewer tooltips fill in
+  // when this resolves.
+  const proposalIds = useMemo(
+    () => assignments.map((a) => a.assignment.proposal.id),
+    [assignments],
+  );
+
+  const { data: aggregatesData } =
+    trpc.decision.listWithReviewAggregates.useQuery(
+      {
+        processInstanceId,
+        proposalIds,
+      },
+      {
+        enabled: canViewReviewers && proposalIds.length > 0,
+      },
+    );
+
+  const aggregatesByProposalId = useMemo(() => {
+    const map = new Map<string, ProposalReviewAggregates>();
+    for (const item of aggregatesData?.items ?? []) {
+      map.set(item.id, item.aggregates);
+    }
+    return map;
+  }, [aggregatesData]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -119,6 +154,9 @@ export function ReviewAssignmentsList({
               key={item.assignment.id}
               assignment={item}
               viewHref={`/decisions/${decisionSlug}/reviews/${item.assignment.id}`}
+              aggregates={aggregatesByProposalId.get(
+                item.assignment.proposal.id,
+              )}
             />
           ))}
         </div>
