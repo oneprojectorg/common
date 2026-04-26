@@ -1,9 +1,9 @@
 import { db } from '@op/db/client';
 import { posts, postsToProfiles } from '@op/db/schema';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
-import { getCurrentProfileId, getProfileAccessUser } from '../access';
+import { assertDecisionProfilesAccess, getCurrentProfileId } from '../access';
 import { getItemsWithReactionsAndComments } from './listPosts';
 
 export interface GetPostsInput {
@@ -38,6 +38,10 @@ export const getPosts = async (input: GetPostsInput) => {
       return []; // Return empty array if neither profileId nor parentPostId provided
     }
 
+    // Authorize against the target profile (or each profile the parent post is
+    // attached to, when reading a comment thread without a profileId). Only
+    // decision-bound profiles enforce a permission check; non-decision profiles
+    // (regular org/proposal feeds) fall through unchanged.
     const profileIdsToAuthorize = profileId
       ? [profileId]
       : parentPostId
@@ -49,27 +53,11 @@ export const getPosts = async (input: GetPostsInput) => {
           ).map((p) => p.profileId)
         : [];
 
-    await Promise.all(
-      profileIdsToAuthorize.map(async (candidateProfileId) => {
-        const [decisionInstance, profileUser] = await Promise.all([
-          db.query.processInstances.findFirst({
-            where: { profileId: candidateProfileId },
-            columns: { profileId: true },
-          }),
-          getProfileAccessUser({
-            user: { id: authUserId },
-            profileId: candidateProfileId,
-          }),
-        ]);
-        if (!decisionInstance) {
-          return;
-        }
-        assertAccess(
-          [{ profile: permission.ADMIN }, { decisions: permission.READ }],
-          profileUser?.roles ?? [],
-        );
-      }),
-    );
+    await assertDecisionProfilesAccess({
+      user: { id: authUserId },
+      profileIds: profileIdsToAuthorize,
+      requiredPermission: { decisions: permission.READ },
+    });
 
     // Build where conditions for posts within the profile
     const conditions = [];

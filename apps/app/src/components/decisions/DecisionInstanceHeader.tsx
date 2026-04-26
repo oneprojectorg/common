@@ -1,10 +1,11 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import { Button, ButtonLink } from '@op/ui/Button';
+import { ButtonLink } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
+import { IconButton } from '@op/ui/IconButton';
 import { useQueryState } from 'nuqs';
-import { LuArrowLeft, LuBell, LuSettings } from 'react-icons/lu';
+import { LuArrowLeft, LuMegaphone, LuSettings } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
@@ -77,13 +78,13 @@ const DecisionUpdatesToggle = ({ ariaLabel }: { ariaLabel: string }) => {
   }
 
   return (
-    <Button
-      color="secondary"
+    <IconButton
+      variant="outline"
       size="small"
       onPress={() => setPanel('updates')}
       aria-label={ariaLabel}
     >
-      <LuBell className="size-4 text-neutral-black md:text-teal" />
-    </Button>
+      <LuMegaphone className="size-4 text-neutral-black md:text-teal" />
+    </IconButton>
   );
 };
