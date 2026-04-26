@@ -162,10 +162,6 @@ describe.concurrent('listWithReviewAggregates', () => {
       proposalIds: [withReview.proposal.id, withoutReview.proposal.id],
     });
 
-    if ('total' in result) {
-      throw new Error('expected hydration response shape');
-    }
-
     expect(result.items).toHaveLength(2);
 
     const reviewedItem = result.items.find(
@@ -218,10 +214,6 @@ describe.concurrent('listWithReviewAggregates', () => {
       proposalIds: [primary.proposal.id, foreign.proposal.id],
     });
 
-    if ('total' in result) {
-      throw new Error('expected hydration response shape');
-    }
-
     expect(result.items.map((i) => i.id)).toEqual([primary.proposal.id]);
   });
 
@@ -272,10 +264,6 @@ describe.concurrent('listWithReviewAggregates', () => {
       limit: 2,
     });
 
-    if (!('total' in page1)) {
-      throw new Error('expected paginated response shape');
-    }
-
     expect(page1.total).toBe(3);
     expect(page1.items.map((i) => i.id)).toEqual([
       high.proposal.id,
@@ -290,10 +278,6 @@ describe.concurrent('listWithReviewAggregates', () => {
       limit: 2,
       cursor: page1.nextCursor!,
     });
-
-    if (!('total' in page2)) {
-      throw new Error('expected paginated response shape');
-    }
 
     expect(page2.items.map((i) => i.id)).toEqual([low.proposal.id]);
     expect(page2.nextCursor).toBeNull();
@@ -329,10 +313,6 @@ describe.concurrent('listWithReviewAggregates', () => {
       processInstanceId: context.instance.instance.id,
       categoryId: term.id,
     });
-
-    if (!('total' in result)) {
-      throw new Error('expected paginated response shape');
-    }
 
     expect(result.items.map((i) => i.id)).toEqual([tagged.proposal.id]);
     expect(result.items[0]?.categories).toEqual([
@@ -372,10 +352,6 @@ describe.concurrent('listWithReviewAggregates', () => {
       status: ProposalReviewAssignmentStatus.COMPLETED,
     });
 
-    if (!('total' in result)) {
-      throw new Error('expected paginated response shape');
-    }
-
     expect(result.items.map((i) => i.id)).toEqual([completed.proposal.id]);
     expect(
       result.items.find((i) => i.id === pending.proposal.id),
@@ -403,10 +379,6 @@ describe.concurrent('listWithReviewAggregates', () => {
       processInstanceId: context.instance.instance.id,
       proposalIds: [created.proposal.id],
     });
-
-    if ('total' in result) {
-      throw new Error('expected hydration response shape');
-    }
 
     expect(result.items).toHaveLength(1);
     expect(result.items[0]?.aggregates).toMatchObject({

@@ -1,7 +1,7 @@
 import {
   Channels,
   listProposalsWithReviewAggregates,
-  proposalsWithReviewAggregatesResponseSchema,
+  proposalsWithReviewAggregatesListSchema,
 } from '@op/common';
 import { ProposalReviewAssignmentStatus } from '@op/db/schema';
 import { z } from 'zod';
@@ -28,7 +28,7 @@ const paginatedInput = z.object({
 export const listWithReviewAggregatesRouter = router({
   listWithReviewAggregates: commonAuthedProcedure()
     .input(z.union([hydrationInput, paginatedInput]))
-    .output(proposalsWithReviewAggregatesResponseSchema)
+    .output(proposalsWithReviewAggregatesListSchema)
     .query(async ({ ctx, input }) => {
       ctx.registerQueryChannels([
         Channels.reviewAssignments(input.processInstanceId),
