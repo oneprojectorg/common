@@ -3,7 +3,6 @@ import {
   listProposalsWithReviewAggregates,
   proposalsWithReviewAggregatesListSchema,
 } from '@op/common';
-import { ProposalReviewAssignmentStatus } from '@op/db/schema';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
@@ -16,7 +15,6 @@ const hydrationInput = z.object({
 const paginatedInput = z.object({
   processInstanceId: z.uuid(),
   categoryId: z.uuid().optional(),
-  status: z.enum(ProposalReviewAssignmentStatus).optional(),
   sortBy: z
     .enum(['createdAt', 'totalScore', 'averageScore', 'reviewsSubmitted'])
     .default('createdAt'),

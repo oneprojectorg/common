@@ -11,7 +11,6 @@ import {
   sql,
 } from '@op/db/client';
 import {
-  type ProposalReviewAssignmentStatus,
   ProposalReviewState,
   ProposalStatus,
   proposalCategories,
@@ -51,7 +50,6 @@ interface HydrationInput {
 interface PaginatedInput {
   processInstanceId: string;
   categoryId?: string;
-  status?: ProposalReviewAssignmentStatus;
   sortBy?: SortBy;
   dir?: SortDir;
   limit?: number;
@@ -178,26 +176,6 @@ export async function listProposalsWithReviewAggregates(
               and(
                 eq(proposalCategories.proposalId, proposals.id),
                 eq(proposalCategories.taxonomyTermId, input.categoryId),
-              ),
-            ),
-        ),
-      );
-    }
-
-    if (input.status) {
-      baseConditions.push(
-        exists(
-          db
-            .select({ one: sql`1` })
-            .from(proposalReviewAssignments)
-            .where(
-              and(
-                eq(proposalReviewAssignments.proposalId, proposals.id),
-                eq(
-                  proposalReviewAssignments.processInstanceId,
-                  processInstanceId,
-                ),
-                eq(proposalReviewAssignments.status, input.status),
               ),
             ),
         ),
