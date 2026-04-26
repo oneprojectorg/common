@@ -19,7 +19,6 @@ const ALLOWED_MIME_TYPES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'video/mp4',
-  'video/webm',
 ];
 
 export const uploadProposalAttachment = router({
@@ -51,7 +50,7 @@ export const uploadProposalAttachment = router({
 
       if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
         throw new CommonError(
-          'Unsupported file type. Allowed: PNG, JPEG, GIF, WebP, MP4, WebM, PDF, DOCX, XLSX.',
+          'Unsupported file type. Allowed: PNG, JPEG, GIF, WebP, MP4, PDF, DOCX, XLSX.',
         );
       }
 
