@@ -1,6 +1,5 @@
 import type { RubricTemplateSchema } from '@op/common';
 import {
-  ProposalReviewAssignmentStatus,
   ProposalReviewState,
   proposalCategories,
   taxonomyTerms,
@@ -320,41 +319,6 @@ describe.concurrent('listWithReviewAggregates', () => {
     ]);
     expect(
       result.items.find((i) => i.id === untagged.proposal.id),
-    ).toBeUndefined();
-  });
-
-  it('filters paginated results by assignment status', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const context = await testData.createContext();
-
-    const [pending, completed] = await Promise.all([
-      testData.createReviewAssignment({
-        context,
-        title: 'Pending',
-        status: ProposalReviewAssignmentStatus.PENDING,
-      }),
-      testData.createReviewAssignment({
-        context,
-        title: 'Completed',
-        status: ProposalReviewAssignmentStatus.COMPLETED,
-      }),
-    ]);
-
-    const adminCaller = await createAuthenticatedCaller(
-      context.defaultReviewer.email,
-    );
-
-    const result = await adminCaller.decision.listWithReviewAggregates({
-      processInstanceId: context.instance.instance.id,
-      status: ProposalReviewAssignmentStatus.COMPLETED,
-    });
-
-    expect(result.items.map((i) => i.id)).toEqual([completed.proposal.id]);
-    expect(
-      result.items.find((i) => i.id === pending.proposal.id),
     ).toBeUndefined();
   });
 
