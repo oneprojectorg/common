@@ -371,6 +371,7 @@ export const getUserSession = async ({
   }
 };
 
+export * from './assertDecisionProfilesAccess';
 export * from './getRoles';
 export * from './permissions';
 export * from './utils';

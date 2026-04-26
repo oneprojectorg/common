@@ -4,15 +4,17 @@ import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { DecisionAccess } from '@op/api/encoders';
+import { useInfiniteScroll } from '@op/hooks';
 import { Sheet, SheetBody, SheetHeader } from '@op/ui/Sheet';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import { Suspense } from 'react';
+import { Suspense, useCallback } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 import {
   DiscussionModalContainer,
+  EmptyPostsState,
   PostFeed,
   PostFeedSkeleton,
   PostItem,
@@ -21,6 +23,8 @@ import {
 import { PostUpdate } from '@/components/PostUpdate';
 
 export const panelStateParser = parseAsStringLiteral(['updates'] as const);
+
+const UPDATES_PAGE_SIZE = 20;
 
 export const DecisionSidePanel = ({
   decisionProfileId,
@@ -67,9 +71,7 @@ export const DecisionSidePanel = ({
             </Suspense>
           </ErrorBoundary>
         ) : (
-          <div className="py-6 text-center text-neutral-gray4">
-            {t("You don't have access to updates for this decision.")}
-          </div>
+          <EmptyPostsState />
         )}
       </SheetBody>
     </Sheet>
@@ -77,15 +79,31 @@ export const DecisionSidePanel = ({
 };
 
 const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
-  const t = useTranslations();
   const { user } = useUser();
 
-  const [posts] = trpc.posts.getPosts.useSuspenseQuery({
-    profileId: decisionProfileId,
-    parentPostId: null,
-    limit: 50,
-    offset: 0,
-    includeChildren: false,
+  const [paginatedData, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
+    trpc.posts.listProfilePosts.useSuspenseInfiniteQuery(
+      { profileId: decisionProfileId, limit: UPDATES_PAGE_SIZE },
+      {
+        getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+        staleTime: 30 * 1000,
+        refetchOnMount: true,
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
+      },
+    );
+
+  const posts = paginatedData.pages.flatMap((page) => page.items);
+
+  const stableFetchNextPage = useCallback(() => {
+    fetchNextPage();
+  }, [fetchNextPage]);
+
+  const { ref, shouldShowTrigger } = useInfiniteScroll(stableFetchNextPage, {
+    hasNextPage,
+    isFetchingNextPage,
+    threshold: 0.1,
+    rootMargin: '50px',
   });
 
   const {
@@ -96,11 +114,7 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
   } = usePostFeedActions();
 
   if (posts.length === 0) {
-    return (
-      <div className="py-6 text-center text-neutral-gray4">
-        {t('No updates yet')}
-      </div>
-    );
+    return <EmptyPostsState />;
   }
 
   return (
@@ -119,6 +133,14 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
           />
         ))}
       </PostFeed>
+      {shouldShowTrigger && (
+        <div
+          ref={ref as React.RefObject<HTMLDivElement>}
+          className="flex justify-center py-4"
+        >
+          {isFetchingNextPage && <PostFeedSkeleton numPosts={1} />}
+        </div>
+      )}
       <DiscussionModalContainer
         discussionModal={discussionModal}
         onClose={handleModalClose}

@@ -12,11 +12,11 @@ import {
 } from '@op/db/schema';
 import { CreatePostInput } from '@op/types';
 import { waitUntil } from '@vercel/functions';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
 import { CommonError } from '../../utils';
-import { getCurrentProfileId, getProfileAccessUser } from '../access';
+import { assertDecisionProfilesAccess, getCurrentProfileId } from '../access';
 import { decisionPermission } from '../decision/permissions';
 import { sendCommentNotificationEmail } from '../email';
 
@@ -211,6 +211,10 @@ export const createPost = async (input: CreatePostServiceInput) => {
 
   const profileId = await getCurrentProfileId(authUserId);
 
+  // Resolve which profiles to authorize against:
+  //   - top-level post on a profile     → [targetProfileId]
+  //   - reply (parentPostId, no target) → inherit parent's postsToProfiles rows
+  // The parent lookup is reused below to inherit associations onto the new post.
   const parentProfiles =
     !targetProfileId && parentPostId
       ? await db
@@ -223,31 +227,13 @@ export const createPost = async (input: CreatePostServiceInput) => {
     ? [targetProfileId]
     : parentProfiles.map((p) => p.profileId);
 
-  const requiredDecisionPermission = targetProfileId
-    ? { decisions: permission.ADMIN }
-    : { decisions: decisionPermission.SUBMIT_PROPOSALS };
-
-  await Promise.all(
-    profileIdsToAuthorize.map(async (candidateProfileId) => {
-      const [decisionInstance, profileUser] = await Promise.all([
-        db.query.processInstances.findFirst({
-          where: { profileId: candidateProfileId },
-          columns: { profileId: true },
-        }),
-        getProfileAccessUser({
-          user: { id: authUserId },
-          profileId: candidateProfileId,
-        }),
-      ]);
-      if (!decisionInstance) {
-        return;
-      }
-      assertAccess(
-        [{ profile: permission.ADMIN }, requiredDecisionPermission],
-        profileUser?.roles ?? [],
-      );
-    }),
-  );
+  await assertDecisionProfilesAccess({
+    user: { id: authUserId },
+    profileIds: profileIdsToAuthorize,
+    requiredPermission: targetProfileId
+      ? { decisions: permission.ADMIN }
+      : { decisions: decisionPermission.SUBMIT_PROPOSALS },
+  });
 
   try {
     const newPost = await db.transaction(async (tx) => {
@@ -293,7 +279,6 @@ export const createPost = async (input: CreatePostServiceInput) => {
         });
       } else if (parentPostId) {
         // For comments (posts with parentPostId), inherit profile associations from parent post.
-        // Reuses parentProfiles fetched above for the auth gate to avoid a second query.
         if (parentProfiles.length > 0) {
           await tx.insert(postsToProfiles).values(
             parentProfiles.map((profile) => ({
