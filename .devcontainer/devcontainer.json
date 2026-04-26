@@ -1,0 +1,75 @@
+{
+  "name": "OP Common",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": true,
+      "dockerDashComposeVersion": "v2"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": false,
+      "username": "node"
+    }
+  },
+
+  "remoteEnv": {
+    "TIPTAP_PRO_TOKEN": "${localEnv:TIPTAP_PRO_TOKEN}",
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
+    "PLAYWRIGHT_BROWSERS_PATH": "/home/node/.cache/ms-playwright"
+  },
+
+  "containerEnv": {
+    "PNPM_HOME": "/home/node/.local/share/pnpm",
+    "PATH": "/home/node/.local/share/pnpm:${PATH}"
+  },
+
+  "forwardPorts": [3100, 3300, 3600, 3883, 54321, 54322, 54323, 54324],
+  "portsAttributes": {
+    "3100": { "label": "Next.js app", "onAutoForward": "notify" },
+    "3300": { "label": "tRPC API" },
+    "3600": { "label": "Storybook" },
+    "3883": { "label": "Email previews" },
+    "54321": { "label": "Supabase API" },
+    "54322": { "label": "Supabase DB" },
+    "54323": { "label": "Supabase Studio" },
+    "54324": { "label": "Mailpit (inbucket)" }
+  },
+
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postStartCommand": "bash .devcontainer/post-start.sh",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "ms-playwright.playwright",
+        "biomejs.biome",
+        "supabase.vscode-supabase-extension",
+        "drizzle-team.drizzle-vscode"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "editor.formatOnSave": false
+      }
+    }
+  },
+
+  "remoteUser": "node",
+
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "16gb",
+    "storage": "32gb"
+  },
+
+  "mounts": [
+    "source=op-common-pnpm-store,target=/home/node/.local/share/pnpm/store,type=volume",
+    "source=op-common-claude-config,target=/home/node/.claude,type=volume"
+  ]
+}
