@@ -6,7 +6,7 @@ import {
 import { z } from 'zod';
 
 import type { RubricTemplateSchema } from '../types';
-import { proposalSchema } from './proposal';
+import { proposalProfileSchema, proposalSchema } from './proposal';
 
 export {
   ProposalReviewAssignmentStatus,
@@ -99,6 +99,79 @@ export const proposalRevisionRequestListSchema = z.object({
   revisionRequests: z.array(proposalRevisionRequestItemSchema),
 });
 
+// ── Per-proposal review aggregates ─────────────────────────────────────
+
+/**
+ * Per-proposal aggregates derived in SQL across review assignments and the
+ * submitted reviews attached to them. `criterionId` and `optionKey` are the
+ * raw rubric identifiers — the client resolves human labels against the
+ * rubric template loaded with the process instance.
+ *
+ * `totalScore` is the sum of integer rubric criteria across submitted reviews;
+ * `averageScore` is `totalScore / reviewsSubmitted` (0 when no submissions).
+ * Both are returned so the client can render either one without a schema
+ * change while the design is finalized.
+ */
+export const proposalReviewAggregatesSchema = z.object({
+  assignmentsTotal: z.number().int(),
+  reviewsSubmitted: z.number().int(),
+  totalScore: z.number(),
+  averageScore: z.number(),
+  optionCounts: z.array(
+    z.object({
+      criterionId: z.string(),
+      optionKey: z.string(),
+      count: z.number().int(),
+    }),
+  ),
+  reviewers: z.array(
+    z.object({
+      profile: proposalProfileSchema,
+      status: z.enum(ProposalReviewAssignmentStatus),
+    }),
+  ),
+});
+
+/** Taxonomy-backed category attached to a proposal. */
+export const proposalCategorySchema = z.object({
+  id: z.uuid(),
+  label: z.string(),
+  termUri: z.string(),
+});
+
+export const proposalWithAggregatesSchema = proposalSchema.extend({
+  aggregates: proposalReviewAggregatesSchema,
+  categories: z.array(proposalCategorySchema),
+});
+
+/**
+ * Hydration mode response — the caller already owns the proposal list
+ * (e.g. from `listReviewAssignments`) and is asking for aggregates for a
+ * specific set of IDs. No pagination metadata.
+ */
+export const proposalsWithReviewAggregatesHydrationSchema = z.object({
+  items: z.array(proposalWithAggregatesSchema),
+});
+
+/**
+ * Pagination mode response — this endpoint owns the proposal list and
+ * server-side sort by computed score is the load-bearing reason for it.
+ */
+export const proposalsWithReviewAggregatesPaginatedSchema = z.object({
+  items: z.array(proposalWithAggregatesSchema),
+  total: z.number().int(),
+  nextCursor: z.string().nullable(),
+});
+
+// Order matters: the paginated variant must be tried first. If hydration
+// (just `{ items }`) ran first, z.union would silently strip `total` and
+// `nextCursor` from a paginated response, since both fields are absent
+// from the hydration shape.
+export const proposalsWithReviewAggregatesResponseSchema = z.union([
+  proposalsWithReviewAggregatesPaginatedSchema,
+  proposalsWithReviewAggregatesHydrationSchema,
+]);
+
 // ── Types ───────────────────────────────────────────────────────────────
 
 export type ProposalReviewAssignment = z.infer<
@@ -115,4 +188,20 @@ export type ProposalRevisionRequestItem = z.infer<
 >;
 export type ProposalRevisionRequestList = z.infer<
   typeof proposalRevisionRequestListSchema
+>;
+export type ProposalReviewAggregates = z.infer<
+  typeof proposalReviewAggregatesSchema
+>;
+export type ProposalCategoryItem = z.infer<typeof proposalCategorySchema>;
+export type ProposalWithAggregates = z.infer<
+  typeof proposalWithAggregatesSchema
+>;
+export type ProposalsWithReviewAggregatesHydration = z.infer<
+  typeof proposalsWithReviewAggregatesHydrationSchema
+>;
+export type ProposalsWithReviewAggregatesPaginated = z.infer<
+  typeof proposalsWithReviewAggregatesPaginatedSchema
+>;
+export type ProposalsWithReviewAggregatesResponse = z.infer<
+  typeof proposalsWithReviewAggregatesResponseSchema
 >;
