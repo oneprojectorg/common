@@ -136,13 +136,13 @@ export const proposalWithAggregatesSchema = proposalSchema.extend({
 
 /**
  * Single response shape for both hydration and pagination modes. In
- * hydration mode `total` is just `items.length` and `nextCursor` is null —
+ * hydration mode `total` is just `items.length` and `next` is null —
  * one shape is simpler than a union and clients can ignore the extras.
  */
 export const proposalsWithReviewAggregatesListSchema = z.object({
   items: z.array(proposalWithAggregatesSchema),
   total: z.number().int(),
-  nextCursor: z.string().nullable(),
+  next: z.string().nullable(),
 });
 
 // ── Types ───────────────────────────────────────────────────────────────
