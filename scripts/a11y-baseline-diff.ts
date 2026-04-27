@@ -31,10 +31,10 @@ interface BaselineSummary {
 
 const SEVERITIES: Severity[] = ['critical', 'serious', 'moderate', 'minor'];
 
-const [, , basePath, currentPath, artifactUrl] = process.argv;
+const [, , basePath, currentPath, artifactUrl, runUrl] = process.argv;
 if (!basePath || !currentPath) {
   console.error(
-    'Usage: a11y-baseline-diff.ts <base-summary> <current-summary> [artifact-url]',
+    'Usage: a11y-baseline-diff.ts <base-summary> <current-summary> [artifact-url] [run-url]',
   );
   process.exit(2);
 }
@@ -42,7 +42,7 @@ if (!basePath || !currentPath) {
 const base = readSummary(basePath);
 const current = readSummary(currentPath);
 
-console.log(render(base, current, artifactUrl));
+console.log(render(base, current, artifactUrl, runUrl));
 
 function readSummary(p: string): BaselineSummary {
   try {
@@ -60,6 +60,7 @@ function render(
   base: BaselineSummary,
   current: BaselineSummary,
   artifactUrl: string | undefined,
+  runUrl: string | undefined,
 ): string {
   const lines: string[] = [];
   lines.push('<!-- a11y-baseline-diff -->');
@@ -212,9 +213,17 @@ function render(
     lines.push('');
   }
 
+  if (runUrl) {
+    lines.push(
+      `[Browse full report](${runUrl}#summary) (workflow run summary, no zip)`,
+    );
+  }
   if (artifactUrl) {
-    lines.push(`[Full report (artifact)](${artifactUrl})`);
-  } else {
+    lines.push(
+      `[Download artifact](${artifactUrl}) (zip with report.md, report.csv, screenshots/)`,
+    );
+  }
+  if (!runUrl && !artifactUrl) {
     lines.push(
       'Full report (`report.md`, `report.csv`, `screenshots/`) attached as the `a11y-baseline-report` workflow artifact.',
     );
