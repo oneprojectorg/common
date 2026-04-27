@@ -1,0 +1,766 @@
+{
+  "generatedAt": "2026-04-27T18:57:31.741Z",
+  "axeVersion": "4.11.3",
+  "wcagTags": [
+    "wcag2a",
+    "wcag2aa",
+    "wcag21a",
+    "wcag21aa"
+  ],
+  "totals": {
+    "critical": 7,
+    "serious": 18,
+    "moderate": 9,
+    "minor": 0
+  },
+  "totalViolations": 34,
+  "routesScanned": 9,
+  "ruleTotals": [
+    {
+      "id": "button-name",
+      "impact": "critical",
+      "occurrences": 7,
+      "routes": 7,
+      "help": "Buttons must have discernible text",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/button-name?application=playwright"
+    },
+    {
+      "id": "link-name",
+      "impact": "serious",
+      "occurrences": 9,
+      "routes": 9,
+      "help": "Links must have discernible text",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/link-name?application=playwright"
+    },
+    {
+      "id": "color-contrast",
+      "impact": "serious",
+      "occurrences": 8,
+      "routes": 7,
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright"
+    },
+    {
+      "id": "scrollable-region-focusable",
+      "impact": "serious",
+      "occurrences": 1,
+      "routes": 1,
+      "help": "Scrollable region must have keyboard access",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/scrollable-region-focusable?application=playwright"
+    },
+    {
+      "id": "meta-viewport",
+      "impact": "moderate",
+      "occurrences": 9,
+      "routes": 9,
+      "help": "Zooming and scaling must not be disabled",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/meta-viewport?application=playwright"
+    }
+  ],
+  "routes": [
+    {
+      "url": "/login",
+      "label": "Login",
+      "auth": false,
+      "status": "ok",
+      "finalUrl": "http://localhost:4100/",
+      "counts": {
+        "critical": 1,
+        "serious": 2,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "help": "Buttons must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/button-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "#react-aria1222111682-_r_0_"
+              ],
+              "html": "<button type=\"button\" class=\"flex cursor-pointer ...\" data-rac=\"\" id=\"react-aria1222111682...\">",
+              "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "screenshotPath": "screenshots/login/button-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "#react-aria1222111682-_r_f_ > .sm\\:block.hidden"
+              ],
+              "html": "<span class=\"hidden sm:block\">Create</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/login/color-contrast-1.png"
+            }
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "help": "Links must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/link-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                ".gridCentered > .gap-3.items-center.flex:nth-child(1) > .gap-1.hover\\:underline[href=\"/en\"]"
+              ],
+              "html": "<a class=\"hover:underline flex gap-1\" href=\"/en\">",
+              "failureSummary": "Fix all of the following:\n  Element is in tab order and does not have accessible text\n\nFix any of the following:\n  Element does not have text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute",
+              "screenshotPath": "screenshots/login/link-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/meta-viewport?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "meta[name=\"viewport\"]"
+              ],
+              "html": "<meta name=\"viewport\" content=\"width=device-width, height=device-height, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no\">",
+              "failureSummary": "Fix any of the following:\n  user-scalable=no on <meta> tag disables zooming on mobile devices"
+            }
+          ]
+        }
+      ],
+      "axeVersion": "4.11.3"
+    },
+    {
+      "url": "/info/privacy",
+      "label": "Privacy policy",
+      "auth": false,
+      "status": "ok",
+      "finalUrl": "http://localhost:4100/info/privacy",
+      "counts": {
+        "critical": 0,
+        "serious": 2,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "help": "Links must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/link-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                ".hover\\:no-underline"
+              ],
+              "html": "<a class=\"flex items-center gap-2 hover:no-underline\" href=\"/en\">",
+              "failureSummary": "Fix all of the following:\n  Element is in tab order and does not have accessible text\n\nFix any of the following:\n  Element does not have text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute",
+              "screenshotPath": "screenshots/info-privacy/link-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "help": "Scrollable region must have keyboard access",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/scrollable-region-focusable?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                ".overflow-x-auto"
+              ],
+              "html": "<div class=\"mb-6 overflow-x-auto\">",
+              "failureSummary": "Fix any of the following:\n  Element should have focusable content\n  Element should be focusable",
+              "screenshotPath": "screenshots/info-privacy/scrollable-region-focusable-1.png"
+            }
+          ]
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/meta-viewport?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "meta[name=\"viewport\"]"
+              ],
+              "html": "<meta name=\"viewport\" content=\"width=device-width, height=device-height, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no\">",
+              "failureSummary": "Fix any of the following:\n  user-scalable=no on <meta> tag disables zooming on mobile devices"
+            }
+          ]
+        }
+      ],
+      "axeVersion": "4.11.3"
+    },
+    {
+      "url": "/info/tos",
+      "label": "Terms of service",
+      "auth": false,
+      "status": "ok",
+      "finalUrl": "http://localhost:4100/info/tos",
+      "counts": {
+        "critical": 0,
+        "serious": 1,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "help": "Links must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/link-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                ".hover\\:no-underline"
+              ],
+              "html": "<a class=\"flex items-center gap-2 hover:no-underline\" href=\"/en\">",
+              "failureSummary": "Fix all of the following:\n  Element is in tab order and does not have accessible text\n\nFix any of the following:\n  Element does not have text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute",
+              "screenshotPath": "screenshots/info-tos/link-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/meta-viewport?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "meta[name=\"viewport\"]"
+              ],
+              "html": "<meta name=\"viewport\" content=\"width=device-width, height=device-height, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no\">",
+              "failureSummary": "Fix any of the following:\n  user-scalable=no on <meta> tag disables zooming on mobile devices"
+            }
+          ]
+        }
+      ],
+      "axeVersion": "4.11.3"
+    },
+    {
+      "url": "/en/",
+      "label": "Home",
+      "auth": true,
+      "status": "ok",
+      "finalUrl": "http://localhost:4100/en/",
+      "counts": {
+        "critical": 1,
+        "serious": 2,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "help": "Buttons must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/button-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "#react-aria-_R_5apfiv9lb_"
+              ],
+              "html": "<button type=\"button\" class=\"flex cursor-pointer ...\" data-rac=\"\" id=\"react-aria-_R_5apfiv...\">",
+              "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "screenshotPath": "screenshots/en/button-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "#react-aria3301140909-_r_3o_ > .sm\\:block.hidden"
+              ],
+              "html": "<span class=\"hidden sm:block\">Create</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en/color-contrast-1.png"
+            }
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "help": "Links must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/link-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                ".gridCentered > .gap-3.items-center.flex:nth-child(1) > .gap-1.hover\\:underline[href=\"/en\"]"
+              ],
+              "html": "<a class=\"hover:underline flex gap-1\" href=\"/en\">",
+              "failureSummary": "Fix all of the following:\n  Element is in tab order and does not have accessible text\n\nFix any of the following:\n  Element does not have text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute",
+              "screenshotPath": "screenshots/en/link-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/meta-viewport?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "meta[name=\"viewport\"]"
+              ],
+              "html": "<meta name=\"viewport\" content=\"width=device-width, height=device-height, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no\">",
+              "failureSummary": "Fix any of the following:\n  user-scalable=no on <meta> tag disables zooming on mobile devices"
+            }
+          ]
+        }
+      ],
+      "axeVersion": "4.11.3"
+    },
+    {
+      "url": "/en/decisions",
+      "label": "Decisions index",
+      "auth": true,
+      "status": "ok",
+      "finalUrl": "http://localhost:4100/en/decisions",
+      "counts": {
+        "critical": 1,
+        "serious": 2,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "help": "Buttons must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/button-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "#react-aria-_R_5apfiv9lb_"
+              ],
+              "html": "<button type=\"button\" class=\"flex cursor-pointer ...\" data-rac=\"\" id=\"react-aria-_R_5apfiv...\">",
+              "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "screenshotPath": "screenshots/en-decisions/button-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "#react-aria1911037527-_r_2h_ > .sm\\:block"
+              ],
+              "html": "<span class=\"hidden sm:block\">Create</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-decisions/color-contrast-1.png"
+            }
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "help": "Links must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/link-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                ".gridCentered > .gap-3.items-center:nth-child(1) > .hover\\:underline[href=\"/en\"]"
+              ],
+              "html": "<a class=\"hover:underline flex gap-1\" href=\"/en\">",
+              "failureSummary": "Fix all of the following:\n  Element is in tab order and does not have accessible text\n\nFix any of the following:\n  Element does not have text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute",
+              "screenshotPath": "screenshots/en-decisions/link-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/meta-viewport?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "meta[name=\"viewport\"]"
+              ],
+              "html": "<meta name=\"viewport\" content=\"width=device-width, height=device-height, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no\">",
+              "failureSummary": "Fix any of the following:\n  user-scalable=no on <meta> tag disables zooming on mobile devices"
+            }
+          ]
+        }
+      ],
+      "axeVersion": "4.11.3"
+    },
+    {
+      "url": "/en/profile",
+      "label": "Profile index",
+      "auth": true,
+      "status": "ok",
+      "finalUrl": "http://localhost:4100/en/profile",
+      "counts": {
+        "critical": 1,
+        "serious": 2,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "help": "Buttons must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/button-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "#react-aria-_R_5apfiv9lb_"
+              ],
+              "html": "<button type=\"button\" class=\"flex cursor-pointer ...\" data-rac=\"\" id=\"react-aria-_R_5apfiv...\">",
+              "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "screenshotPath": "screenshots/en-profile/button-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "#react-aria4213722581-_r_2g_ > .sm\\:block.hidden"
+              ],
+              "html": "<span class=\"hidden sm:block\">Create</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-profile/color-contrast-1.png"
+            }
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "help": "Links must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/link-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                ".gridCentered > .gap-3.items-center.flex:nth-child(1) > .gap-1.hover\\:underline[href=\"/en\"]"
+              ],
+              "html": "<a class=\"hover:underline flex gap-1\" href=\"/en\">",
+              "failureSummary": "Fix all of the following:\n  Element is in tab order and does not have accessible text\n\nFix any of the following:\n  Element does not have text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute",
+              "screenshotPath": "screenshots/en-profile/link-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/meta-viewport?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "meta[name=\"viewport\"]"
+              ],
+              "html": "<meta name=\"viewport\" content=\"width=device-width, height=device-height, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no\">",
+              "failureSummary": "Fix any of the following:\n  user-scalable=no on <meta> tag disables zooming on mobile devices"
+            }
+          ]
+        }
+      ],
+      "axeVersion": "4.11.3"
+    },
+    {
+      "url": "/en/search",
+      "label": "Search",
+      "auth": true,
+      "status": "ok",
+      "finalUrl": "http://localhost:4100/en/search",
+      "counts": {
+        "critical": 1,
+        "serious": 2,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "help": "Buttons must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/button-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "#react-aria-_R_5apfiv9lb_"
+              ],
+              "html": "<button type=\"button\" class=\"flex cursor-pointer ...\" data-rac=\"\" id=\"react-aria-_R_5apfiv...\">",
+              "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "screenshotPath": "screenshots/en-search/button-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "#react-aria9199527159-_r_2g_ > .sm\\:block"
+              ],
+              "html": "<span class=\"hidden sm:block\">Create</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-search/color-contrast-1.png"
+            }
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "help": "Links must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/link-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                ".gridCentered > .gap-3.items-center:nth-child(1) > .hover\\:underline[href=\"/en\"]"
+              ],
+              "html": "<a class=\"hover:underline flex gap-1\" href=\"/en\">",
+              "failureSummary": "Fix all of the following:\n  Element is in tab order and does not have accessible text\n\nFix any of the following:\n  Element does not have text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute",
+              "screenshotPath": "screenshots/en-search/link-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/meta-viewport?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "meta[name=\"viewport\"]"
+              ],
+              "html": "<meta name=\"viewport\" content=\"width=device-width, height=device-height, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no\">",
+              "failureSummary": "Fix any of the following:\n  user-scalable=no on <meta> tag disables zooming on mobile devices"
+            }
+          ]
+        }
+      ],
+      "axeVersion": "4.11.3"
+    },
+    {
+      "url": "/en/org",
+      "label": "Org index",
+      "auth": true,
+      "status": "ok",
+      "finalUrl": "http://localhost:4100/en/org",
+      "counts": {
+        "critical": 1,
+        "serious": 2,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "help": "Buttons must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/button-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "#react-aria-_R_5apfiv9lb_"
+              ],
+              "html": "<button type=\"button\" class=\"flex cursor-pointer ...\" data-rac=\"\" id=\"react-aria-_R_5apfiv...\">",
+              "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "screenshotPath": "screenshots/en-org/button-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "#react-aria5960200337-_r_2g_ > .sm\\:block.hidden"
+              ],
+              "html": "<span class=\"hidden sm:block\">Create</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-org/color-contrast-1.png"
+            }
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "help": "Links must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/link-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                ".gridCentered > .gap-3.items-center.flex:nth-child(1) > .gap-1.hover\\:underline[href=\"/en\"]"
+              ],
+              "html": "<a class=\"hover:underline flex gap-1\" href=\"/en\">",
+              "failureSummary": "Fix all of the following:\n  Element is in tab order and does not have accessible text\n\nFix any of the following:\n  Element does not have text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute",
+              "screenshotPath": "screenshots/en-org/link-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/meta-viewport?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "meta[name=\"viewport\"]"
+              ],
+              "html": "<meta name=\"viewport\" content=\"width=device-width, height=device-height, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no\">",
+              "failureSummary": "Fix any of the following:\n  user-scalable=no on <meta> tag disables zooming on mobile devices"
+            }
+          ]
+        }
+      ],
+      "axeVersion": "4.11.3"
+    },
+    {
+      "url": "/en/org/test-org-w0-95a0f9de-6346-4e2f-acc5-c7617231b2ee",
+      "label": "Organization page",
+      "auth": true,
+      "status": "ok",
+      "finalUrl": "http://localhost:4100/en/org/test-org-w0-95a0f9de-6346-4e2f-acc5-c7617231b2ee",
+      "counts": {
+        "critical": 1,
+        "serious": 3,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "help": "Buttons must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/button-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "#react-aria9528869142-_r_0_"
+              ],
+              "html": "<button type=\"button\" class=\"flex cursor-pointer ...\" data-rac=\"\" id=\"react-aria9528869142...\">",
+              "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "screenshotPath": "screenshots/en-org-test-org-w0-95a0f9de-6346-4e2f-acc5-c7617231b2ee/button-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodeCount": 2,
+          "nodes": [
+            {
+              "target": [
+                "#react-aria9528869142-_r_q_ > .sm\\:block"
+              ],
+              "html": "<span class=\"hidden sm:block\">Create</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-org-test-org-w0-95a0f9de-6346-4e2f-acc5-c7617231b2ee/color-contrast-1.png"
+            },
+            {
+              "target": [
+                "#react-aria9528869142-_r_2f_"
+              ],
+              "html": "<button type=\"button\" class=\"flex w-fit cursor-po...\" data-rac=\"\" id=\"react-aria9528869142...\">",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-org-test-org-w0-95a0f9de-6346-4e2f-acc5-c7617231b2ee/color-contrast-2.png"
+            }
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "help": "Links must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/link-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                ".gridCentered > .gap-3.items-center.flex:nth-child(1) > .hover\\:underline[href=\"/en\"]"
+              ],
+              "html": "<a class=\"hover:underline flex gap-1\" href=\"/en\">",
+              "failureSummary": "Fix all of the following:\n  Element is in tab order and does not have accessible text\n\nFix any of the following:\n  Element does not have text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute",
+              "screenshotPath": "screenshots/en-org-test-org-w0-95a0f9de-6346-4e2f-acc5-c7617231b2ee/link-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/meta-viewport?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "meta[name=\"viewport\"]"
+              ],
+              "html": "<meta name=\"viewport\" content=\"width=device-width, height=device-height, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no\">",
+              "failureSummary": "Fix any of the following:\n  user-scalable=no on <meta> tag disables zooming on mobile devices"
+            }
+          ]
+        }
+      ],
+      "axeVersion": "4.11.3"
+    }
+  ]
+}
