@@ -258,16 +258,16 @@ describe.concurrent('listWithReviewAggregates', () => {
 
     expect(page1.total).toBe(3);
     expect(page1.items).toHaveLength(2);
-    expect(page1.nextCursor).not.toBeNull();
+    expect(page1.next).not.toBeNull();
 
     const page2 = await adminCaller.decision.listWithReviewAggregates({
       processInstanceId: context.instance.instance.id,
       limit: 2,
-      cursor: page1.nextCursor!,
+      cursor: page1.next!,
     });
 
     expect(page2.items).toHaveLength(1);
-    expect(page2.nextCursor).toBeNull();
+    expect(page2.next).toBeNull();
 
     // All three proposals appear exactly once across the two pages.
     const allIds = [...page1.items, ...page2.items].map((i) => i.id).sort();

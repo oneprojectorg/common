@@ -1,5 +1,4 @@
 import {
-  Channels,
   listProposalsWithReviewAggregates,
   listProposalsWithReviewAggregatesInputSchema,
   proposalsWithReviewAggregatesListSchema,
@@ -12,10 +11,6 @@ export const listWithReviewAggregatesRouter = router({
     .input(listProposalsWithReviewAggregatesInputSchema)
     .output(proposalsWithReviewAggregatesListSchema)
     .query(async ({ ctx, input }) => {
-      ctx.registerQueryChannels([
-        Channels.reviewAssignments(input.processInstanceId),
-      ]);
-
       return await listProposalsWithReviewAggregates({
         ...input,
         user: ctx.user,
