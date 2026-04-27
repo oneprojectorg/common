@@ -3,9 +3,10 @@ import {
   ProposalStatus,
   decisionTransitionProposals,
   processInstances,
+  proposals as proposalsTable,
   stateTransitionHistory,
 } from '@op/db/schema';
-import { db, eq } from '@op/db/test';
+import { db, eq, inArray } from '@op/db/test';
 import {
   createDecisionInstance,
   createOrganization,
@@ -89,6 +90,9 @@ async function seedAwaitingInstance(org: SeedOrg, titles: string[]) {
     schema: zeroSelectingSchema,
   });
 
+  // Insert as DRAFT then update to SUBMITTED so the proposal_history trigger
+  // (AFTER UPDATE only) fires and writes the snapshot rows that
+  // submitManualSelection joins against.
   const proposals = await Promise.all(
     titles.map((title) =>
       createProposal({
@@ -97,10 +101,20 @@ async function seedAwaitingInstance(org: SeedOrg, titles: string[]) {
         authUserId: org.adminUser.authUserId,
         email: org.adminUser.email,
         proposalData: { title },
-        status: ProposalStatus.SUBMITTED,
+        status: ProposalStatus.DRAFT,
       }),
     ),
   );
+
+  await db
+    .update(proposalsTable)
+    .set({ status: ProposalStatus.SUBMITTED })
+    .where(
+      inArray(
+        proposalsTable.id,
+        proposals.map((p) => p.id),
+      ),
+    );
 
   await db
     .update(processInstances)
