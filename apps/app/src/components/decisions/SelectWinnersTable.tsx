@@ -2,35 +2,23 @@
 
 import { formatCurrency } from '@/utils/formatting';
 import type { ProposalWithAggregates } from '@op/common/client';
-import { OVERALL_RECOMMENDATION_KEY } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { Chip } from '@op/ui/Chip';
 import { Skeleton } from '@op/ui/Skeleton';
-import type { ReactNode } from 'react';
-import { LuArrowDown, LuArrowUp } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
-
-type SortColumn = 'createdAt' | 'averageScore';
-type SortDir = 'asc' | 'desc';
 
 type Item = ProposalWithAggregates;
 
 export function SelectWinnersTable({
   items,
   totalPoints,
-  sortBy,
-  dir,
-  onSortChange,
   onAdvance,
   advancingIds,
 }: {
   items: Item[];
   /** Maximum possible score from the rubric, e.g. 50 → header reads "Score (50pts)". */
   totalPoints: number;
-  sortBy: SortColumn;
-  dir: SortDir;
-  onSortChange: (sortBy: SortColumn, dir: SortDir) => void;
   onAdvance: (proposalId: string) => void;
   advancingIds: ReadonlySet<string>;
 }) {
@@ -38,12 +26,7 @@ export function SelectWinnersTable({
 
   return (
     <div className="flex w-full flex-col">
-      <HeaderRow
-        totalPoints={totalPoints}
-        sortBy={sortBy}
-        dir={dir}
-        onSortChange={onSortChange}
-      />
+      <HeaderRow totalPoints={totalPoints} />
       {items.map((item) => (
         <BodyRow
           key={item.id}
@@ -92,43 +75,20 @@ export function SelectWinnersTableSkeleton() {
   );
 }
 
-function HeaderRow({
-  totalPoints,
-  sortBy,
-  dir,
-  onSortChange,
-}: {
-  totalPoints: number;
-  sortBy: SortColumn;
-  dir: SortDir;
-  onSortChange: (sortBy: SortColumn, dir: SortDir) => void;
-}) {
+function HeaderRow({ totalPoints }: { totalPoints: number }) {
   const t = useTranslations();
 
   return (
     <div className="flex w-full items-start justify-between gap-4 border-b border-neutral-gray1 py-2 text-xs text-neutral-gray4">
-      <SortableHeader
-        label={t('Proposal')}
-        column="createdAt"
-        active={sortBy === 'createdAt'}
-        dir={dir}
-        onSortChange={onSortChange}
-        className="w-[220px]"
-      />
+      <div className="w-[220px] shrink-0">{t('Proposal')}</div>
       <div className="hidden w-[60px] shrink-0 md:block">{t('Budget')}</div>
       <div className="hidden w-[220px] shrink-0 md:block">{t('Category')}</div>
       <div className="hidden w-[220px] shrink-0 md:block">
         {t('Overall recommendation')}
       </div>
-      <SortableHeader
-        label={t('Score ({pts}pts)', { pts: totalPoints })}
-        column="averageScore"
-        active={sortBy === 'averageScore'}
-        dir={dir}
-        onSortChange={onSortChange}
-        className="hidden w-[80px] shrink-0 md:flex"
-        underline
-      />
+      <div className="hidden w-[80px] shrink-0 md:block">
+        {t('Score ({pts}pts)', { pts: totalPoints })}
+      </div>
       <div className="h-4 w-[110px] shrink-0" aria-hidden />
     </div>
   );
@@ -277,63 +237,15 @@ function ScoreCell({ value }: { value: number }) {
   return <>{t('{pts} pts', { pts: display })}</>;
 }
 
-function SortableHeader({
-  label,
-  column,
-  active,
-  dir,
-  onSortChange,
-  className,
-  underline = false,
-}: {
-  label: ReactNode;
-  column: SortColumn;
-  active: boolean;
-  dir: SortDir;
-  onSortChange: (sortBy: SortColumn, dir: SortDir) => void;
-  className?: string;
-  underline?: boolean;
-}) {
-  const Icon = active && dir === 'asc' ? LuArrowUp : LuArrowDown;
-
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        const nextDir: SortDir = active && dir === 'desc' ? 'asc' : 'desc';
-        onSortChange(column, nextDir);
-      }}
-      className={`flex shrink-0 items-center gap-0.5 text-xs text-neutral-gray4 ${className ?? ''}`}
-    >
-      <span
-        className={
-          underline ? 'underline decoration-dotted underline-offset-2' : ''
-        }
-      >
-        {label}
-      </span>
-      <Icon className="size-3" />
-    </button>
-  );
-}
-
 function countOverallRecommendation(item: Item): {
   yes: number;
   maybe: number;
   no: number;
 } {
-  const counts = { yes: 0, maybe: 0, no: 0 };
-  for (const entry of item.aggregates.optionCounts) {
-    if (entry.criterionId !== OVERALL_RECOMMENDATION_KEY) {
-      continue;
-    }
-    if (entry.optionKey === 'yes') {
-      counts.yes = entry.count;
-    } else if (entry.optionKey === 'maybe') {
-      counts.maybe = entry.count;
-    } else if (entry.optionKey === 'no') {
-      counts.no = entry.count;
-    }
-  }
-  return counts;
+  const tally = item.aggregates.overallRecommendationCount;
+  return {
+    yes: tally.yes ?? 0,
+    maybe: tally.maybe ?? 0,
+    no: tally.no ?? 0,
+  };
 }
