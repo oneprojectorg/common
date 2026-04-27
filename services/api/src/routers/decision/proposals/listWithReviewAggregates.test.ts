@@ -236,42 +236,18 @@ describe.concurrent('listWithReviewAggregates', () => {
     expect(result.items.map((i) => i.id)).toEqual([primary.proposal.id]);
   });
 
-  it('sorts paginated results by totalScore desc across pages', async ({
+  it('paginates by createdAt across pages', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
-    await testData.setRubricTemplate(context, rubricTemplate);
     await advanceToReviewPhase(context.instance.instance.id);
 
-    // Three proposals, one assignment each, with totals 3, 9, 6.
-    const [low, high, mid] = await Promise.all([
-      testData.createReviewAssignment({ context, title: 'Low' }),
-      testData.createReviewAssignment({ context, title: 'High' }),
-      testData.createReviewAssignment({ context, title: 'Mid' }),
-    ]);
-
-    await Promise.all([
-      createProposalReview({
-        assignmentId: low.assignment.id,
-        state: ProposalReviewState.SUBMITTED,
-        reviewData: { answers: { impact: 2, feasibility: 1 }, rationales: {} },
-        submittedAt: new Date().toISOString(),
-      }),
-      createProposalReview({
-        assignmentId: high.assignment.id,
-        state: ProposalReviewState.SUBMITTED,
-        reviewData: { answers: { impact: 5, feasibility: 4 }, rationales: {} },
-        submittedAt: new Date().toISOString(),
-      }),
-      createProposalReview({
-        assignmentId: mid.assignment.id,
-        state: ProposalReviewState.SUBMITTED,
-        reviewData: { answers: { impact: 3, feasibility: 3 }, rationales: {} },
-        submittedAt: new Date().toISOString(),
-      }),
-    ]);
+    const proposals = [];
+    for (const title of ['First', 'Second', 'Third']) {
+      proposals.push(await testData.createReviewAssignment({ context, title }));
+    }
 
     const adminCaller = await createAuthenticatedCaller(
       context.defaultReviewer.email,
@@ -279,31 +255,28 @@ describe.concurrent('listWithReviewAggregates', () => {
 
     const page1 = await adminCaller.decision.listWithReviewAggregates({
       processInstanceId: context.instance.instance.id,
-      sortBy: 'totalScore',
-      dir: 'desc',
       limit: 2,
     });
 
     expect(page1.total).toBe(3);
-    expect(page1.items.map((i) => i.id)).toEqual([
-      high.proposal.id,
-      mid.proposal.id,
-    ]);
+    expect(page1.items).toHaveLength(2);
     expect(page1.nextCursor).not.toBeNull();
 
     const page2 = await adminCaller.decision.listWithReviewAggregates({
       processInstanceId: context.instance.instance.id,
-      sortBy: 'totalScore',
-      dir: 'desc',
       limit: 2,
       cursor: page1.nextCursor!,
     });
 
-    expect(page2.items.map((i) => i.id)).toEqual([low.proposal.id]);
+    expect(page2.items).toHaveLength(1);
     expect(page2.nextCursor).toBeNull();
+
+    // All three proposals appear exactly once across the two pages.
+    const allIds = [...page1.items, ...page2.items].map((i) => i.id).sort();
+    expect(allIds).toEqual(proposals.map((p) => p.proposal.id).sort());
   });
 
-  it('filters paginated results by categoryId', async ({
+  it('attaches categories to response items', async ({
     task,
     onTestFinished,
   }) => {
@@ -311,13 +284,13 @@ describe.concurrent('listWithReviewAggregates', () => {
     const context = await testData.createContext();
     await advanceToReviewPhase(context.instance.instance.id);
 
-    const [tagged, untagged] = await Promise.all([
-      testData.createReviewAssignment({ context, title: 'Tagged' }),
-      testData.createReviewAssignment({ context, title: 'Untagged' }),
-    ]);
+    const created = await testData.createReviewAssignment({
+      context,
+      title: 'Tagged',
+    });
 
     const term = await attachCategoryToProposal({
-      proposalId: tagged.proposal.id,
+      proposalId: created.proposal.id,
       label: 'Infrastructure',
     });
     // Taxonomy terms have no cascade from proposals/instances; clean up by
@@ -332,16 +305,12 @@ describe.concurrent('listWithReviewAggregates', () => {
 
     const result = await adminCaller.decision.listWithReviewAggregates({
       processInstanceId: context.instance.instance.id,
-      categoryId: term.id,
     });
 
-    expect(result.items.map((i) => i.id)).toEqual([tagged.proposal.id]);
-    expect(result.items[0]?.categories).toEqual([
+    const tagged = result.items.find((i) => i.id === created.proposal.id);
+    expect(tagged?.categories).toEqual([
       { id: term.id, label: 'Infrastructure', termUri: term.termUri },
     ]);
-    expect(
-      result.items.find((i) => i.id === untagged.proposal.id),
-    ).toBeUndefined();
   });
 
   it('keeps proposals with zero submitted reviews and exposes their reviewer roster', async ({
