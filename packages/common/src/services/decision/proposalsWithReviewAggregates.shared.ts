@@ -28,92 +28,96 @@ export function getScoredCriterionKeys(
     .map((c) => c.key);
 }
 
-interface LoadProposalDataInput {
-  proposalIds: string[];
-  processInstanceId: string;
-  /** When set, review assignments (and their reviews) are filtered to this phase. */
-  phaseId?: string;
-}
-
 /**
- * Load the relational tree + categories for a set of proposal IDs. Two
- * parallel queries: the v2 relational query for everything that's wired up
- * (profile, submittedBy, reviewAssignments → reviewer + reviews), and a
- * sidecar join for categories (proposals → proposalCategories → taxonomyTerms
- * isn't in the relational graph yet).
+ * The `with` block shared by hydrate and list. Both routes load the same
+ * relational tree (profile, submittedBy, reviewAssignments → reviewer +
+ * reviews); only the proposal-level `where` / `orderBy` / `limit` differ.
+ *
+ * `phaseId` filters review assignments so cross-phase reviews don't leak
+ * into the loaded tree.
  */
-export async function loadProposalDataForAggregation({
-  proposalIds,
+export function proposalsWithReviewsRelations({
   processInstanceId,
   phaseId,
-}: LoadProposalDataInput) {
+}: {
+  processInstanceId: string;
+  phaseId?: string;
+}) {
   const assignmentWhere: Record<string, string> = { processInstanceId };
   if (phaseId) {
     assignmentWhere.phaseId = phaseId;
   }
 
-  const [proposalsFull, categoryRows] = await Promise.all([
-    db.query.proposals.findMany({
-      where: { id: { in: proposalIds } },
+  return {
+    profile: { with: { avatarImage: true } },
+    submittedBy: { with: { avatarImage: true } },
+    reviewAssignments: {
+      where: assignmentWhere,
       with: {
-        profile: { with: { avatarImage: true } },
-        submittedBy: { with: { avatarImage: true } },
-        reviewAssignments: {
-          where: assignmentWhere,
-          with: {
-            reviewer: { with: { avatarImage: true } },
-            reviews: true,
-          },
-        },
+        reviewer: { with: { avatarImage: true } },
+        reviews: true,
       },
-    }),
-    db
-      .select({
-        proposalId: proposalCategories.proposalId,
-        id: taxonomyTerms.id,
-        label: taxonomyTerms.label,
-        termUri: taxonomyTerms.termUri,
-      })
-      .from(proposalCategories)
-      .innerJoin(
-        taxonomyTerms,
-        eq(taxonomyTerms.id, proposalCategories.taxonomyTermId),
-      )
-      .where(inArray(proposalCategories.proposalId, proposalIds)),
-  ]);
-
-  const proposalsById = new Map(proposalsFull.map((p) => [p.id, p]));
-
-  const categoriesByProposalId = new Map<string, ProposalCategoryItem[]>();
-  for (const row of categoryRows) {
-    const list = categoriesByProposalId.get(row.proposalId) ?? [];
-    list.push({ id: row.id, label: row.label, termUri: row.termUri });
-    categoriesByProposalId.set(row.proposalId, list);
-  }
-
-  return { proposalsById, categoriesByProposalId };
+    },
+  } as const;
 }
 
-export type LoadedProposal = NonNullable<
-  Awaited<
-    ReturnType<typeof loadProposalDataForAggregation>
-  >['proposalsById'] extends Map<string, infer V>
-    ? V
-    : never
->;
+// Type-only probe: never called at runtime. Drizzle's relational return type
+// depends on the `with` block shape, so we re-issue the same shape we use at
+// runtime to derive the loaded row type.
+async function _loadedProposalProbe() {
+  return db.query.proposals.findMany({
+    with: proposalsWithReviewsRelations({ processInstanceId: '' }),
+  });
+}
+
+export type LoadedProposal = Awaited<
+  ReturnType<typeof _loadedProposalProbe>
+>[number];
 
 type LoadedReviewAssignment = LoadedProposal['reviewAssignments'][number];
 
 /**
+ * Sidecar load of categories for a set of proposal IDs. Lives outside the
+ * relational tree because proposals → proposalCategories → taxonomyTerms
+ * isn't wired into the v2 relations yet. Returns an empty map for empty input
+ * so callers can unconditionally Promise.all this.
+ */
+export async function loadCategoriesByProposalIds(
+  proposalIds: string[],
+): Promise<Map<string, ProposalCategoryItem[]>> {
+  const map = new Map<string, ProposalCategoryItem[]>();
+  if (proposalIds.length === 0) {
+    return map;
+  }
+
+  const rows = await db
+    .select({
+      proposalId: proposalCategories.proposalId,
+      id: taxonomyTerms.id,
+      label: taxonomyTerms.label,
+      termUri: taxonomyTerms.termUri,
+    })
+    .from(proposalCategories)
+    .innerJoin(
+      taxonomyTerms,
+      eq(taxonomyTerms.id, proposalCategories.taxonomyTermId),
+    )
+    .where(inArray(proposalCategories.proposalId, proposalIds));
+
+  for (const row of rows) {
+    const list = map.get(row.proposalId) ?? [];
+    list.push({ id: row.id, label: row.label, termUri: row.termUri });
+    map.set(row.proposalId, list);
+  }
+
+  return map;
+}
+
+/**
  * Compute per-proposal aggregates in JS from a loaded relational tree.
  *
- * Used by hydration mode and as the response source-of-truth for list
- * mode — the SQL agg subquery, when present, exists only to drive sort
- * and cursor pagination, not to populate the response.
- *
  * Score handling: scored criterion answers stored as numbers are summed
- * directly; numeric strings are coerced. Anything else is ignored, matching
- * the SQL `COALESCE(...->>key)::numeric` behavior.
+ * directly; numeric strings are coerced. Anything else is ignored.
  */
 export function computeAggregatesInJs(
   reviewAssignments: LoadedReviewAssignment[],

@@ -1,3 +1,4 @@
+import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 import { z } from 'zod';
 
@@ -7,7 +8,8 @@ import {
   assembleProposalWithAggregates,
   computeAggregatesInJs,
   getScoredCriterionKeys,
-  loadProposalDataForAggregation,
+  loadCategoriesByProposalIds,
+  proposalsWithReviewsRelations,
 } from './proposalsWithReviewAggregates.shared';
 import {
   type ProposalsWithReviewAggregatesList,
@@ -34,11 +36,9 @@ export type HydrateProposalsWithReviewAggregatesInput = z.infer<
  * Admin-only hydration: enrich a caller-provided list of proposal IDs with
  * per-proposal review aggregates. No sorting, no pagination, no total
  * count — the caller owns the list. Aggregates are computed in JS over
- * the loaded reviews because the candidate set is bounded and small.
+ * the loaded reviews.
  *
- * Out-of-instance and draft proposals are silently dropped: the
- * relational query filters by id IN (...) and the schema's status check is
- * not applied here because hydration is a trust-the-caller path.
+ * Out-of-instance proposals are silently dropped.
  */
 export async function hydrateProposalsWithReviewAggregates(
   input: HydrateProposalsWithReviewAggregatesInput & { user: User },
@@ -63,15 +63,18 @@ export async function hydrateProposalsWithReviewAggregates(
 
   const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
 
-  const { proposalsById, categoriesByProposalId } =
-    await loadProposalDataForAggregation({
-      proposalIds,
-      processInstanceId,
-      phaseId,
-    });
+  const [proposalsFull, categoriesByProposalId] = await Promise.all([
+    db.query.proposals.findMany({
+      where: { id: { in: proposalIds } },
+      with: proposalsWithReviewsRelations({ processInstanceId, phaseId }),
+    }),
+    loadCategoriesByProposalIds(proposalIds),
+  ]);
 
-  // Drop IDs that didn't match (wrong instance, deleted, etc). The caller
-  // owns the order, but we filter to the proposals we actually loaded.
+  const proposalsById = new Map(proposalsFull.map((p) => [p.id, p]));
+
+  // Drop IDs that didn't match (wrong instance, deleted, etc). Preserve the
+  // caller's order.
   const items = proposalIds
     .map((id) => proposalsById.get(id))
     .filter((p): p is NonNullable<typeof p> => p !== undefined)

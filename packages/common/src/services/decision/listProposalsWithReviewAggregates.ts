@@ -1,7 +1,7 @@
-import { and, db, desc, inArray, or, sql } from '@op/db/client';
+import { db } from '@op/db/client';
 import { proposals } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { count as countFn } from 'drizzle-orm';
+import { count as countFn, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { UnauthorizedError, decodeCursor, encodeCursor } from '../../utils';
@@ -11,7 +11,8 @@ import {
   assembleProposalWithAggregates,
   computeAggregatesInJs,
   getScoredCriterionKeys,
-  loadProposalDataForAggregation,
+  loadCategoriesByProposalIds,
+  proposalsWithReviewsRelations,
 } from './proposalsWithReviewAggregates.shared';
 import {
   type ProposalsWithReviewAggregatesList,
@@ -43,14 +44,12 @@ type AggregatesCursor = {
 
 /**
  * Admin-only paginated list of proposals belonging to a phase, enriched with
- * per-proposal review aggregates. Order is fixed to `createdAt DESC`;
- * aggregates are computed in JS over the loaded reviews.
+ * per-proposal review aggregates. Order is fixed to `createdAt DESC`.
  *
  * Pipeline:
  *   1. Auth + resolve scoped proposal IDs via `getProposalIdsForPhase`.
- *   2. Page query (id + createdAt, with optional cursor) + total count,
- *      run in parallel.
- *   3. Load full data + categories for the page IDs, then assemble items.
+ *   2. Single relational query (page + full data) and total count, parallel.
+ *   3. Categories sidecar for the page IDs, then assemble items.
  */
 export async function listProposalsWithReviewAggregates(
   input: ListProposalsWithReviewAggregatesInput & { user: User },
@@ -80,35 +79,37 @@ export async function listProposalsWithReviewAggregates(
     return { items: [], total: 0, nextCursor: null };
   }
 
-  const baseConditions = [inArray(proposals.id, phaseProposalIds)];
-
-  let cursorCondition: ReturnType<typeof and> | undefined;
-  if (input.cursor) {
-    const decoded = decodeCursor<AggregatesCursor>(input.cursor);
-    cursorCondition = or(
-      sql`${proposals.createdAt} < ${decoded.createdAt}`,
-      and(
-        sql`${proposals.createdAt} = ${decoded.createdAt}`,
-        sql`${proposals.id} < ${decoded.id}`,
-      ),
-    );
-  }
-
-  const pageConditions = cursorCondition
-    ? [...baseConditions, cursorCondition]
-    : baseConditions;
+  // Cursor compares (createdAt, id) lexicographically: prefer rows strictly
+  // older than the cursor's createdAt, fall through to the id tiebreak when
+  // createdAt is identical.
+  const decodedCursor = input.cursor
+    ? decodeCursor<AggregatesCursor>(input.cursor)
+    : undefined;
 
   const [pageRowsRaw, totalRows] = await Promise.all([
-    db
-      .select({ id: proposals.id, createdAt: proposals.createdAt })
-      .from(proposals)
-      .where(and(...pageConditions))
-      .orderBy(desc(proposals.createdAt), desc(proposals.id))
-      .limit(limit + 1),
+    db.query.proposals.findMany({
+      where: {
+        id: { in: phaseProposalIds },
+        ...(decodedCursor && {
+          OR: [
+            { createdAt: { lt: decodedCursor.createdAt } },
+            {
+              AND: [
+                { createdAt: decodedCursor.createdAt },
+                { id: { lt: decodedCursor.id } },
+              ],
+            },
+          ],
+        }),
+      },
+      with: proposalsWithReviewsRelations({ processInstanceId, phaseId }),
+      orderBy: { createdAt: 'desc', id: 'desc' },
+      limit: limit + 1,
+    }),
     db
       .select({ count: countFn() })
       .from(proposals)
-      .where(and(...baseConditions)),
+      .where(inArray(proposals.id, phaseProposalIds)),
   ]);
 
   const hasMore = pageRowsRaw.length > limit;
@@ -119,21 +120,10 @@ export async function listProposalsWithReviewAggregates(
     return { items: [], total, nextCursor: null };
   }
 
-  const pageIds = pageRows.map((r) => r.id);
+  const pageIds = pageRows.map((p) => p.id);
+  const categoriesByProposalId = await loadCategoriesByProposalIds(pageIds);
 
-  const { proposalsById, categoriesByProposalId } =
-    await loadProposalDataForAggregation({
-      proposalIds: pageIds,
-      processInstanceId,
-      phaseId,
-    });
-
-  // Preserve the SQL sort order — `findMany({ where: in })` doesn't guarantee any.
-  const items = pageIds.map((id) => {
-    const proposal = proposalsById.get(id);
-    if (!proposal) {
-      throw new Error(`Page row missing full data: ${id}`);
-    }
+  const items = pageRows.map((proposal) => {
     const aggregates = computeAggregatesInJs(
       proposal.reviewAssignments,
       scoredCriterionKeys,
@@ -141,7 +131,7 @@ export async function listProposalsWithReviewAggregates(
     return assembleProposalWithAggregates({
       proposal,
       aggregates,
-      categories: categoriesByProposalId.get(id) ?? [],
+      categories: categoriesByProposalId.get(proposal.id) ?? [],
     });
   });
 
