@@ -1,7 +1,8 @@
-import { db } from '@op/db/client';
+import { db, sql } from '@op/db/client';
 import {
   EntityType,
   ProcessStatus,
+  decisionProcesses,
   processInstances,
   profileUserToAccessRoles,
   profileUsers,
@@ -10,12 +11,12 @@ import {
 import type { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
 
-import { CommonError, UnauthorizedError } from '../../utils';
+import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { createDefaultDecisionRoles } from './decisionRoles';
-import { getTemplate } from './getTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { createInstanceDataFromTemplate } from './schemas/instanceData';
+import type { DecisionSchemaDefinition } from './schemas/types';
 
 export type CreateDecisionInstanceOptions = {
   processId: string;
@@ -128,9 +129,34 @@ export const createDecisionInstance = async ({
 
 /** Options for the public instance creation function (requires User) */
 export type CreateInstanceFromTemplateOptions = {
-  templateId: string;
-  name: string;
+  /** Defaults to the most recently created template when omitted */
+  templateId?: string;
+  /** Defaults to "New {template.name}" when omitted */
+  name?: string;
   user: User;
+};
+
+const resolveTemplate = async (templateId?: string) => {
+  if (templateId) {
+    const record = await db._query.decisionProcesses.findFirst({
+      where: (t, { eq }) => eq(t.id, templateId),
+    });
+    if (!record) {
+      throw new NotFoundError(`Template '${templateId}' not found`);
+    }
+    return record;
+  }
+
+  const record = await db._query.decisionProcesses.findFirst({
+    where: sql`${decisionProcesses.processSchema}->>'id' IS NOT NULL
+      AND ${decisionProcesses.processSchema}->>'version' IS NOT NULL
+      AND ${decisionProcesses.processSchema}->'phases' IS NOT NULL`,
+    orderBy: (t, { desc }) => [desc(t.createdAt)],
+  });
+  if (!record) {
+    throw new NotFoundError('No decision process templates available');
+  }
+  return record;
 };
 
 /**
@@ -160,13 +186,14 @@ export const createInstanceFromTemplate = async ({
     );
   }
 
-  const template = await getTemplate(templateId);
+  const templateRecord = await resolveTemplate(templateId);
+  const template = templateRecord.processSchema as DecisionSchemaDefinition;
   const instanceData = createInstanceDataFromTemplate({ template });
 
   return createDecisionInstance({
-    processId: templateId,
+    processId: templateRecord.id,
     instanceData,
-    name,
+    name: name ?? `New ${templateRecord.name}`,
     ownerProfileId,
     stewardProfileId: ownerProfileId,
     creatorAuthUserId: user.id,

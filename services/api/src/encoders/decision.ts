@@ -507,8 +507,8 @@ export const createInstanceInputSchema = z.object({
 });
 
 export const createInstanceFromTemplateInputSchema = z.object({
-  templateId: z.uuid(),
-  name: z.string().min(3).max(256),
+  templateId: z.uuid().optional(),
+  name: z.string().min(3).max(256).optional(),
 });
 
 /** Input schema for phase overrides with datetime validation */

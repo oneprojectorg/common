@@ -31,8 +31,6 @@ export const CreateMenu = () => {
   const isOrg = user.currentProfile?.type === EntityType.ORG;
   const isMobile = useMediaQuery(`(max-width: ${SM_BREAKPOINT})`);
   const createDecisionEnabled = useFeatureFlag('create_decision_process');
-  const utils = trpc.useUtils();
-  const [isCreatingDecision, setIsCreatingDecision] = useState(false);
 
   const createInstanceMutation =
     trpc.decision.createInstanceFromTemplate.useMutation({
@@ -40,7 +38,6 @@ export const CreateMenu = () => {
         router.push(`/decisions/${decisionProfile.slug}/edit`);
       },
       onError: (error) => {
-        setIsCreatingDecision(false);
         toast.error({
           title: t('Failed to create decision'),
           message: error.message,
@@ -48,28 +45,8 @@ export const CreateMenu = () => {
       },
     });
 
-  const handleCreateDecision = async () => {
-    setIsCreatingDecision(true);
-    try {
-      const { processes: templates } =
-        await utils.decision.listProcesses.fetch({});
-      const firstTemplate = templates[0];
-      if (!firstTemplate) {
-        setIsCreatingDecision(false);
-        router.push('/decisions');
-        return;
-      }
-      createInstanceMutation.mutate({
-        templateId: firstTemplate.id,
-        name: `New ${firstTemplate.name}`,
-      });
-    } catch (error) {
-      setIsCreatingDecision(false);
-      toast.error({
-        title: t('Failed to create decision'),
-        message: error instanceof Error ? error.message : '',
-      });
-    }
+  const handleCreateDecision = () => {
+    createInstanceMutation.mutate({});
   };
 
   return (
@@ -93,7 +70,7 @@ export const CreateMenu = () => {
             {createDecisionEnabled && (
               <MenuItem
                 id="create-decision"
-                isDisabled={isCreatingDecision}
+                isDisabled={createInstanceMutation.isPending}
                 onAction={handleCreateDecision}
               >
                 <LuMessageCircle className="size-4" />{' '}
