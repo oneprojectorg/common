@@ -1,10 +1,5 @@
 import { db, eq, inArray } from '@op/db/client';
 import {
-  type ObjectsInStorage,
-  type Profile,
-  type Proposal,
-  type ProposalReview,
-  type ProposalReviewAssignment,
   ProposalReviewState,
   proposalCategories,
   proposals,
@@ -68,36 +63,6 @@ type AggregatesCursor = {
   value: string;
   /** Tie-breaker for items with identical `createdAt`. */
   id: string;
-};
-
-/**
- * Profile rows with the avatar relation we attach. Used both for the
- * proposal's author/submitter and the reviewer behind each assignment.
- */
-type ProfileWithAvatar = Profile & {
-  avatarImage: ObjectsInStorage | null;
-};
-
-/**
- * Review assignment row with the reviewer profile and reviews we load
- * alongside it. The `reviews` array is 0-or-1 in practice (enforced by
- * `proposal_reviews_assignment_unique`), but Drizzle returns a list because
- * the relation is declared as many.
- */
-type AssignmentWithReviewer = ProposalReviewAssignment & {
-  reviewer: ProfileWithAvatar;
-  reviews: ProposalReview[];
-};
-
-/**
- * The proposal row plus the relations we attach in the aggregation query.
- * Built off the schema's row types so changes to any of them propagate
- * automatically.
- */
-type ProposalWithReviewRelations = Proposal & {
-  profile: ProfileWithAvatar;
-  submittedBy: ProfileWithAvatar;
-  reviewAssignments: AssignmentWithReviewer[];
 };
 
 // ── Public entry ───────────────────────────────────────────────────────
@@ -177,13 +142,23 @@ async function listProposalsFiltered({
     .map((id) => proposalsById.get(id))
     .filter((p): p is NonNullable<typeof p> => p !== undefined)
     .filter((p) => p.processInstanceId === processInstanceId)
-    .map((proposal) =>
-      toProposalWithAggregates({
-        proposal,
+    .map((proposal) => ({
+      id: proposal.id,
+      processInstanceId: proposal.processInstanceId,
+      proposalData: parseProposalData(proposal.proposalData),
+      status: proposal.status,
+      visibility: proposal.visibility,
+      profileId: proposal.profileId,
+      profile: proposal.profile,
+      submittedBy: proposal.submittedBy,
+      createdAt: proposal.createdAt,
+      updatedAt: proposal.updatedAt,
+      aggregates: computeReviewAggregates(
+        proposal.reviewAssignments,
         scoredCriterionKeys,
-        categories: categoriesByProposalId.get(proposal.id) ?? [],
-      }),
-    );
+      ),
+      categories: categoriesByProposalId.get(proposal.id) ?? [],
+    }));
 
   return proposalsWithReviewAggregatesListSchema.parse({
     items,
@@ -255,13 +230,23 @@ async function listProposalsPaginated({
   const pageIds = pageRows.map((p) => p.id);
   const categoriesByProposalId = await loadCategoriesByProposalIds(pageIds);
 
-  const items = pageRows.map((proposal) =>
-    toProposalWithAggregates({
-      proposal,
+  const items = pageRows.map((proposal) => ({
+    id: proposal.id,
+    processInstanceId: proposal.processInstanceId,
+    proposalData: parseProposalData(proposal.proposalData),
+    status: proposal.status,
+    visibility: proposal.visibility,
+    profileId: proposal.profileId,
+    profile: proposal.profile,
+    submittedBy: proposal.submittedBy,
+    createdAt: proposal.createdAt,
+    updatedAt: proposal.updatedAt,
+    aggregates: computeReviewAggregates(
+      proposal.reviewAssignments,
       scoredCriterionKeys,
-      categories: categoriesByProposalId.get(proposal.id) ?? [],
-    }),
-  );
+    ),
+    categories: categoriesByProposalId.get(proposal.id) ?? [],
+  }));
 
   let nextCursor: string | null = null;
   if (hasMore) {
@@ -353,20 +338,22 @@ async function loadCategoriesByProposalIds(
 }
 
 /**
- * Build a single response item from a loaded proposal row: pulls the proposal
- * shape onto the response, computes per-proposal review aggregates from the
- * loaded reviews, and attaches the categories sidecar.
+ * Per-proposal review aggregates computed from the loaded review assignments.
+ * Duck-typed input — only the fields the function actually reads — so callers
+ * can pass the relational query result directly without a named type.
+ *
+ * `proposal_reviews_assignment_unique` makes `reviews` 0-or-1; we read just
+ * the first row even though the relation is declared as many.
  */
-function toProposalWithAggregates({
-  proposal,
-  scoredCriterionKeys,
-  categories,
-}: {
-  proposal: ProposalWithReviewRelations;
-  scoredCriterionKeys: string[];
-  categories: ProposalCategoryItem[];
-}) {
-  const reviewers = proposal.reviewAssignments.map((a) => ({
+function computeReviewAggregates(
+  reviewAssignments: Array<{
+    status: string;
+    reviewer: unknown;
+    reviews: Array<{ state: string; reviewData: unknown }>;
+  }>,
+  scoredCriterionKeys: string[],
+) {
+  const reviewers = reviewAssignments.map((a) => ({
     profile: a.reviewer,
     status: a.status,
   }));
@@ -375,9 +362,7 @@ function toProposalWithAggregates({
   let totalScore = 0;
   const overallRecommendationCount: Record<string, number> = {};
 
-  // `proposal_reviews_assignment_unique` makes this 0-or-1, so we just take
-  // the first row even though the relation is declared as many.
-  for (const assignment of proposal.reviewAssignments) {
+  for (const assignment of reviewAssignments) {
     const review = assignment.reviews[0];
     if (!review || review.state !== ProposalReviewState.SUBMITTED) {
       continue;
@@ -408,23 +393,10 @@ function toProposalWithAggregates({
     reviewsSubmitted === 0 ? 0 : totalScore / reviewsSubmitted;
 
   return {
-    id: proposal.id,
-    processInstanceId: proposal.processInstanceId,
-    proposalData: parseProposalData(proposal.proposalData),
-    status: proposal.status,
-    visibility: proposal.visibility,
-    profileId: proposal.profileId,
-    profile: proposal.profile,
-    submittedBy: proposal.submittedBy,
-    createdAt: proposal.createdAt,
-    updatedAt: proposal.updatedAt,
-    aggregates: {
-      assignmentsTotal: proposal.reviewAssignments.length,
-      reviewsSubmitted,
-      averageScore,
-      overallRecommendationCount,
-      reviewers,
-    },
-    categories,
+    assignmentsTotal: reviewAssignments.length,
+    reviewsSubmitted,
+    averageScore,
+    overallRecommendationCount,
+    reviewers,
   };
 }
