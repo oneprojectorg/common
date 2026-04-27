@@ -17,6 +17,20 @@ export const posts = pgTable(
       onDelete: 'cascade',
     }),
     profileId: uuid().references(() => profiles.id, { onDelete: 'cascade' }),
+    // Profile that gates read access for this post. Resolved once at write
+    // time: top-level on a decision/org/individual profile = that profile;
+    // top-level on a proposal = the proposal's parent decision profile;
+    // comment/reply = inherits the parent post's rootProfileId. NULL = no
+    // gate (public). Auth checks dispatch on the gate profile's `type`.
+    rootProfileId: uuid().references(() => profiles.id, {
+      onDelete: 'cascade',
+    }),
+    // Top-level post in this thread. NULL for top-level posts; for
+    // comments/replies at any depth, points at the original top-level post.
+    // Lets thread queries skip recursive parent walks.
+    rootPostId: uuid().references((): any => posts.id, {
+      onDelete: 'cascade',
+    }),
     ...timestamps,
   },
   (table) => [
@@ -24,6 +38,8 @@ export const posts = pgTable(
     index().on(table.id).concurrently(),
     index().on(table.profileId).concurrently(),
     index().on(table.parentPostId).concurrently(),
+    index().on(table.rootProfileId).concurrently(),
+    index().on(table.rootPostId).concurrently(),
   ],
 );
 
@@ -89,6 +105,19 @@ export const postsRelations = relations(posts, ({ one, many }) => ({
   }),
   childPosts: many(posts, {
     relationName: 'PostToParent',
+  }),
+  rootProfile: one(profiles, {
+    fields: [posts.rootProfileId],
+    references: [profiles.id],
+    relationName: 'PostToRootProfile',
+  }),
+  rootPost: one(posts, {
+    fields: [posts.rootPostId],
+    references: [posts.id],
+    relationName: 'PostToRoot',
+  }),
+  threadPosts: many(posts, {
+    relationName: 'PostToRoot',
   }),
   postsToProfiles: many(postsToProfiles),
 }));
