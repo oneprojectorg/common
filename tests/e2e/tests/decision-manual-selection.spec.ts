@@ -174,11 +174,9 @@ test.describe('Decision Manual Selection — full flow', () => {
     ).toBeVisible();
     await dialog.getByRole('button', { name: 'Publish' }).click();
 
-    const successDialog = authenticatedPage.getByRole('dialog');
-    await expect(
-      successDialog.getByRole('heading', { name: 'Selection recorded' }),
-    ).toBeVisible({ timeout: 15_000 });
-    await successDialog.getByRole('button', { name: 'Done' }).click();
+    // After publish, the mutation awaits invalidation and then closes the
+    // modal — no separate success dialog is shown.
+    await expect(dialog).not.toBeVisible({ timeout: 15_000 });
 
     const joinRows = await db
       .select()
