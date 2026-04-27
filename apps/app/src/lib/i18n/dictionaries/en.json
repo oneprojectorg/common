@@ -311,6 +311,7 @@
   "This will end the {currentPhase} phase and move to {nextPhase}.": "This will end the {currentPhase} phase and move to {nextPhase}.",
   "Advance Phase": "Advance Phase",
   "Failed to advance phase": "Failed to advance phase",
+  "Failed to create decision": "Failed to create decision",
   "Failed to create proposal": "Failed to create proposal",
   "Failed to update proposal": "Failed to update proposal",
   "Failed to submit proposal": "Failed to submit proposal",
