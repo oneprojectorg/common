@@ -2,6 +2,7 @@ import type { RubricTemplateSchema } from '@op/common';
 import { OVERALL_RECOMMENDATION_KEY } from '@op/common/client';
 import {
   ProposalReviewState,
+  processInstances,
   proposalCategories,
   taxonomyTerms,
 } from '@op/db/schema';
@@ -57,6 +58,18 @@ const rubricTemplate: RubricTemplateSchema = {
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+/**
+ * Phase scoping in the API defaults to `instance.currentStateId`. Test review
+ * assignments are tagged `phaseId='review'` (the production default), so we
+ * advance the instance into the review phase before exercising the API.
+ */
+async function advanceToReviewPhase(instanceId: string) {
+  await db
+    .update(processInstances)
+    .set({ currentStateId: 'review' })
+    .where(eq(processInstances.id, instanceId));
 }
 
 async function attachCategoryToProposal({
@@ -130,6 +143,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
     await testData.setRubricTemplate(context, rubricTemplate);
+    await advanceToReviewPhase(context.instance.instance.id);
 
     // Two proposals, each with a single reviewer assigned. The first has a
     // submitted review; the second has none.
@@ -205,6 +219,11 @@ describe.concurrent('listWithReviewAggregates', () => {
       testData.createReviewAssignment({ title: 'Foreign' }),
     ]);
 
+    await Promise.all([
+      advanceToReviewPhase(primary.context.instance.instance.id),
+      advanceToReviewPhase(foreign.context.instance.instance.id),
+    ]);
+
     const adminCaller = await createAuthenticatedCaller(
       primary.context.defaultReviewer.email,
     );
@@ -224,6 +243,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
     await testData.setRubricTemplate(context, rubricTemplate);
+    await advanceToReviewPhase(context.instance.instance.id);
 
     // Three proposals, one assignment each, with totals 3, 9, 6.
     const [low, high, mid] = await Promise.all([
@@ -289,6 +309,7 @@ describe.concurrent('listWithReviewAggregates', () => {
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
+    await advanceToReviewPhase(context.instance.instance.id);
 
     const [tagged, untagged] = await Promise.all([
       testData.createReviewAssignment({ context, title: 'Tagged' }),
@@ -330,6 +351,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
     await testData.setRubricTemplate(context, rubricTemplate);
+    await advanceToReviewPhase(context.instance.instance.id);
 
     const created = await testData.createReviewAssignment({
       context,
