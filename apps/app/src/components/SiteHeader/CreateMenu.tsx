@@ -2,12 +2,14 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
+import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { Menu, MenuItem, MenuSeparator, MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
+import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuMessageCircle, LuPlus, LuUserPlus, LuUsers } from 'react-icons/lu';
 
@@ -29,6 +31,46 @@ export const CreateMenu = () => {
   const isOrg = user.currentProfile?.type === EntityType.ORG;
   const isMobile = useMediaQuery(`(max-width: ${SM_BREAKPOINT})`);
   const createDecisionEnabled = useFeatureFlag('create_decision_process');
+  const utils = trpc.useUtils();
+  const [isCreatingDecision, setIsCreatingDecision] = useState(false);
+
+  const createInstanceMutation =
+    trpc.decision.createInstanceFromTemplate.useMutation({
+      onSuccess: (decisionProfile) => {
+        router.push(`/decisions/${decisionProfile.slug}/edit`);
+      },
+      onError: (error) => {
+        setIsCreatingDecision(false);
+        toast.error({
+          title: t('Failed to create decision'),
+          message: error.message,
+        });
+      },
+    });
+
+  const handleCreateDecision = async () => {
+    setIsCreatingDecision(true);
+    try {
+      const { processes: templates } =
+        await utils.decision.listProcesses.fetch({});
+      const firstTemplate = templates[0];
+      if (!firstTemplate) {
+        setIsCreatingDecision(false);
+        router.push('/decisions');
+        return;
+      }
+      createInstanceMutation.mutate({
+        templateId: firstTemplate.id,
+        name: `New ${firstTemplate.name}`,
+      });
+    } catch (error) {
+      setIsCreatingDecision(false);
+      toast.error({
+        title: t('Failed to create decision'),
+        message: error instanceof Error ? error.message : '',
+      });
+    }
+  };
 
   return (
     <>
@@ -51,7 +93,8 @@ export const CreateMenu = () => {
             {createDecisionEnabled && (
               <MenuItem
                 id="create-decision"
-                onAction={() => router.push('/decisions/create')}
+                isDisabled={isCreatingDecision}
+                onAction={handleCreateDecision}
               >
                 <LuMessageCircle className="size-4" />{' '}
                 {t('Decision-making process')}

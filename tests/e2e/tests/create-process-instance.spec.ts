@@ -33,9 +33,19 @@ test.describe('Create Process Instance', () => {
   }) => {
     test.setTimeout(144_000);
 
-    // 1. Navigate to the decisions create page (server-side creates a draft
-    //    instance from the seeded template and redirects to the editor)
-    await authenticatedPage.goto('/en/decisions/create');
+    // 1. Navigate to the home page and trigger creation via the Create menu.
+    //    The menu fires a client-side mutation that creates a draft instance
+    //    from the seeded template and navigates to the editor.
+    await authenticatedPage.goto('/en/');
+
+    await authenticatedPage.getByRole('button', { name: 'Create' }).click();
+    await authenticatedPage
+      .getByRole('menuitem', { name: 'Decision-making process' })
+      .click();
+
+    await authenticatedPage.waitForURL(/\/decisions\/[^/]+\/edit/, {
+      timeout: 12_000,
+    });
 
     // 2. Wait for the process builder editor to load
     await expect(authenticatedPage.getByText('Process Overview')).toBeVisible({

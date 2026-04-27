@@ -110,8 +110,9 @@ if (!defaultOrg) {
 }
 
 // ---------------------------------------------------------------------------
-// Decision process templates — without at least one, the /decisions/create
-// route redirects back to the decision list and the ProcessBuilder never opens.
+// Decision process templates — without at least one, the Create menu's
+// decision action redirects back to the decision list and the ProcessBuilder
+// never opens.
 // ---------------------------------------------------------------------------
 for (const template of Object.values(decisionTemplates)) {
   const existing = await db._query.decisionProcesses.findFirst({
