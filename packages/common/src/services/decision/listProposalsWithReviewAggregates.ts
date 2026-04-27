@@ -24,7 +24,10 @@ import { count as countFn } from 'drizzle-orm';
 
 import { UnauthorizedError, decodeCursor, encodeCursor } from '../../utils';
 import { getInstance } from './getInstance';
-import { getRubricScoringInfo } from './getRubricScoringInfo';
+import {
+  OVERALL_RECOMMENDATION_KEY,
+  getRubricScoringInfo,
+} from './getRubricScoringInfo';
 import { parseProposalData } from './proposalDataSchema';
 import {
   type ProposalsWithReviewAggregatesList,
@@ -73,8 +76,7 @@ export type ListProposalsWithReviewAggregatesInput =
  *   pagination boundaries (Screen 2).
  *
  * The rubric template is intentionally NOT returned: it's static per
- * instance and the client already has it loaded. `criterionId` and
- * `optionKey` in `optionCounts` are the rubric property keys.
+ * instance and the client already has it loaded.
  */
 export async function listProposalsWithReviewAggregates(
   input: ListProposalsWithReviewAggregatesInput & { user: User },
@@ -320,7 +322,9 @@ export async function listProposalsWithReviewAggregates(
       status: a.status,
     }));
 
-    const optionCounts = computeOptionCounts(proposal.reviewAssignments);
+    const overallRecommendationCount = computeOverallRecommendationCount(
+      proposal.reviewAssignments,
+    );
 
     return {
       id: proposal.id,
@@ -338,7 +342,7 @@ export async function listProposalsWithReviewAggregates(
         reviewsSubmitted: Number(aggRow.reviewsSubmitted),
         totalScore: Number(aggRow.totalScore),
         averageScore: Number(aggRow.averageScore),
-        optionCounts,
+        overallRecommendationCount,
         reviewers,
       },
       categories: categoriesByProposalId.get(id) ?? [],
@@ -374,23 +378,19 @@ export async function listProposalsWithReviewAggregates(
 
 /**
  * Walk submitted reviews for a single proposal and tally how many times
- * each (criterionId, optionKey) pair appears. Numeric/string answers are
- * bucketed by their string representation, which matches the rubric's
- * `oneOf[].const` identifier.
+ * each answer to the well-known overall-recommendation criterion appears
+ * (e.g. `{ yes: 2, no: 1 }`). Returns `{}` when the rubric doesn't include
+ * the field or no submitted reviews answered it.
  */
-function computeOptionCounts(
+function computeOverallRecommendationCount(
   reviewAssignments: Array<{
     reviews: Array<{
       state: string;
       reviewData: unknown;
     }>;
   }>,
-): Array<{ criterionId: string; optionKey: string; count: number }> {
-  const counts: Array<{
-    criterionId: string;
-    optionKey: string;
-    count: number;
-  }> = [];
+): Record<string, number> {
+  const counts: Record<string, number> = {};
 
   for (const assignment of reviewAssignments) {
     for (const review of assignment.reviews) {
@@ -400,21 +400,12 @@ function computeOptionCounts(
       const data = review.reviewData as {
         answers?: Record<string, unknown>;
       } | null;
-      const answers = data?.answers ?? {};
-      for (const [criterionId, value] of Object.entries(answers)) {
-        if (value === null || value === undefined) {
-          continue;
-        }
-        const optionKey = String(value);
-        const existing = counts.find(
-          (c) => c.criterionId === criterionId && c.optionKey === optionKey,
-        );
-        if (existing) {
-          existing.count += 1;
-        } else {
-          counts.push({ criterionId, optionKey, count: 1 });
-        }
+      const value = data?.answers?.[OVERALL_RECOMMENDATION_KEY];
+      if (value === null || value === undefined) {
+        continue;
       }
+      const answerKey = String(value);
+      counts[answerKey] = (counts[answerKey] ?? 0) + 1;
     }
   }
 

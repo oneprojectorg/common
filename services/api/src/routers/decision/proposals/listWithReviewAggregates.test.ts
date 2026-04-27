@@ -1,4 +1,5 @@
 import type { RubricTemplateSchema } from '@op/common';
+import { OVERALL_RECOMMENDATION_KEY } from '@op/common/client';
 import {
   ProposalReviewState,
   proposalCategories,
@@ -20,13 +21,13 @@ import { createCallerFactory } from '../../../trpcFactory';
 const createCaller = createCallerFactory(appRouter);
 
 /**
- * Two-criterion rubric: `impact` (0–10, scored) and `feasibility` (1–5, scored).
- * `recommendation` is a non-numeric dropdown — counts toward optionCounts but
- * not toward totalScore.
+ * Two-criterion rubric: `impact` (0–10, scored) and `feasibility` (1–5, scored),
+ * plus the well-known overall-recommendation field (yes/no) — its answers feed
+ * `overallRecommendationCount` but not `totalScore`.
  */
 const rubricTemplate: RubricTemplateSchema = {
   type: 'object',
-  'x-field-order': ['impact', 'feasibility', 'recommendation'],
+  'x-field-order': ['impact', 'feasibility', OVERALL_RECOMMENDATION_KEY],
   properties: {
     impact: {
       type: 'integer',
@@ -40,7 +41,7 @@ const rubricTemplate: RubricTemplateSchema = {
       minimum: 1,
       maximum: 5,
     },
-    recommendation: {
+    [OVERALL_RECOMMENDATION_KEY]: {
       type: 'string',
       title: 'Recommendation',
       'x-format': 'dropdown',
@@ -147,7 +148,11 @@ describe.concurrent('listWithReviewAggregates', () => {
       assignmentId: withReview.assignment.id,
       state: ProposalReviewState.SUBMITTED,
       reviewData: {
-        answers: { impact: 7, feasibility: 4, recommendation: 'yes' },
+        answers: {
+          impact: 7,
+          feasibility: 4,
+          [OVERALL_RECOMMENDATION_KEY]: 'yes',
+        },
         rationales: {},
       },
       submittedAt: new Date().toISOString(),
@@ -172,13 +177,9 @@ describe.concurrent('listWithReviewAggregates', () => {
       totalScore: 11,
       averageScore: 11,
     });
-    expect(reviewedItem?.aggregates.optionCounts).toEqual(
-      expect.arrayContaining([
-        { criterionId: 'impact', optionKey: '7', count: 1 },
-        { criterionId: 'feasibility', optionKey: '4', count: 1 },
-        { criterionId: 'recommendation', optionKey: 'yes', count: 1 },
-      ]),
-    );
+    expect(reviewedItem?.aggregates.overallRecommendationCount).toEqual({
+      yes: 1,
+    });
 
     const unreviewedItem = result.items.find(
       (i) => i.id === withoutReview.proposal.id,
@@ -188,7 +189,7 @@ describe.concurrent('listWithReviewAggregates', () => {
       reviewsSubmitted: 0,
       totalScore: 0,
       averageScore: 0,
-      optionCounts: [],
+      overallRecommendationCount: {},
     });
     expect(unreviewedItem?.aggregates.reviewers).toHaveLength(1);
   });
@@ -349,7 +350,7 @@ describe.concurrent('listWithReviewAggregates', () => {
       reviewsSubmitted: 0,
       totalScore: 0,
       averageScore: 0,
-      optionCounts: [],
+      overallRecommendationCount: {},
     });
     expect(result.items[0]?.aggregates.reviewers.length).toBeGreaterThan(0);
   });
