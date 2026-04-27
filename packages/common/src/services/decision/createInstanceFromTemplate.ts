@@ -1,8 +1,7 @@
-import { db, sql } from '@op/db/client';
+import { db } from '@op/db/client';
 import {
   EntityType,
   ProcessStatus,
-  decisionProcesses,
   processInstances,
   profileUserToAccessRoles,
   profileUsers,
@@ -14,6 +13,7 @@ import { randomUUID } from 'crypto';
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
 import { createDefaultDecisionRoles } from './decisionRoles';
+import { listProcesses } from './listProcesses';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { createInstanceDataFromTemplate } from './schemas/instanceData';
 import type { DecisionSchemaDefinition } from './schemas/types';
@@ -147,12 +147,8 @@ const resolveTemplate = async (templateId?: string) => {
     return record;
   }
 
-  const record = await db._query.decisionProcesses.findFirst({
-    where: sql`${decisionProcesses.processSchema}->>'id' IS NOT NULL
-      AND ${decisionProcesses.processSchema}->>'version' IS NOT NULL
-      AND ${decisionProcesses.processSchema}->'phases' IS NOT NULL`,
-    orderBy: (t, { desc }) => [desc(t.createdAt)],
-  });
+  const { processes } = await listProcesses({ limit: 1 });
+  const record = processes[0];
   if (!record) {
     throw new NotFoundError('No decision process templates available');
   }
