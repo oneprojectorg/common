@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation';
 
 import { ResultsPage } from './pages/ResultsPage';
 import { ReviewPage } from './pages/ReviewPage';
+import { SelectWinnersPage } from './pages/SelectWinnersPage';
 import { StandardDecisionPage } from './pages/StandardDecisionPage';
 import { VotingPage } from './pages/VotingPage';
 
@@ -40,10 +41,14 @@ function DecisionStateRouterNew({
   const currentPhase = phases.find((p) => p.phaseId === currentStateId);
   const isVotingEnabled = currentPhase?.rules?.voting?.submit === true;
   const isReviewEnabled = currentPhase?.rules?.proposals?.review === true;
+  const isAdmin = Boolean(instance.access?.admin);
 
   if (isReviewEnabled && reviewFlowEnabled) {
     if (!decisionSlug) {
       notFound();
+    }
+    if (isAdmin) {
+      return <SelectWinnersPage instance={instance} />;
     }
     return (
       <ReviewPage
