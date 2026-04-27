@@ -10,7 +10,7 @@ import {
   taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { checkPermission, permission } from 'access-zones';
+import { assertAccess, permission } from 'access-zones';
 
 import {
   CommonError,
@@ -18,7 +18,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { assertInstanceProfileAccess, getProfileAccessUser } from '../access';
+import { getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
 import type {
   CheckpointVersion,
@@ -130,34 +130,39 @@ export const updateProposal = async ({
     );
   }
 
-  // Status and visibility changes only require instance-level decisions: ADMIN
-  if (data.status || data.visibility) {
-    await assertInstanceProfileAccess({
+  // Authorization: gather roles from owner (individual/org), proposal, and
+  // instance profiles and let any of them satisfy the spec. Data edits
+  // require UPDATE/ADMIN; status/visibility require ADMIN.
+  const [rolesOnOwner, rolesOnProposal, rolesOnInstance] = await Promise.all([
+    getProfileAccessUser({
       user: { id: user.id },
-      instance: processInstance,
-      profilePermissions: { decisions: permission.ADMIN },
-      orgFallbackPermissions: [{ decisions: permission.ADMIN }],
-    });
-  } else {
-    // Data updates require profile-level update permission on the proposal's profile
-    const proposalProfileUser = await getProfileAccessUser({
+      profileId: existingProposal.submittedByProfileId,
+    }).then((pu) => pu?.roles ?? []),
+    getProfileAccessUser({
       user: { id: user.id },
       profileId: existingProposal.profileId,
-    });
+    }).then((pu) => pu?.roles ?? []),
+    processInstance.profileId
+      ? getProfileAccessUser({
+          user: { id: user.id },
+          profileId: processInstance.profileId,
+        }).then((pu) => pu?.roles ?? [])
+      : Promise.resolve([]),
+  ]);
 
-    const hasProposalUpdate = checkPermission(
-      { profile: permission.UPDATE },
-      proposalProfileUser?.roles ?? [],
+  const combinedRoles = [
+    ...rolesOnOwner,
+    ...rolesOnProposal,
+    ...rolesOnInstance,
+  ];
+
+  if (data.status || data.visibility) {
+    assertAccess([{ profile: permission.ADMIN }], combinedRoles);
+  } else {
+    assertAccess(
+      [{ profile: permission.UPDATE }, { profile: permission.ADMIN }],
+      combinedRoles,
     );
-
-    if (!hasProposalUpdate) {
-      await assertInstanceProfileAccess({
-        user: { id: user.id },
-        instance: processInstance,
-        profilePermissions: { decisions: permission.UPDATE },
-        orgFallbackPermissions: [{ decisions: permission.ADMIN }],
-      });
-    }
   }
 
   // Validate proposal data against template schema when updating non-draft proposals.

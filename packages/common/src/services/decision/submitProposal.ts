@@ -52,18 +52,30 @@ export const submitProposal = async ({
     throw new NotFoundError('Decision profile not found');
   }
 
-  // Authorization check - verify user has access to the decision profile
-  const profileUser = await getProfileAccessUser({
-    user: { id: authUserId },
-    profileId: instance.profileId,
-  });
+  // Authorization: user passes if they have submit/admin rights on any of
+  // the owner profile, proposal profile, or instance profile. Covers owners
+  // (individual or org), co-authors, and instance admins in one shot.
+  const [rolesOnOwner, rolesOnProposal, rolesOnInstance] = await Promise.all([
+    getProfileAccessUser({
+      user: { id: authUserId },
+      profileId: existingProposal.submittedByProfileId,
+    }).then((pu) => pu?.roles ?? []),
+    getProfileAccessUser({
+      user: { id: authUserId },
+      profileId: existingProposal.profileId,
+    }).then((pu) => pu?.roles ?? []),
+    getProfileAccessUser({
+      user: { id: authUserId },
+      profileId: instance.profileId,
+    }).then((pu) => pu?.roles ?? []),
+  ]);
 
   assertAccess(
     [
       { profile: permission.ADMIN },
       { decisions: decisionPermission.SUBMIT_PROPOSALS },
     ],
-    profileUser?.roles ?? [],
+    [...rolesOnOwner, ...rolesOnProposal, ...rolesOnInstance],
   );
 
   const instanceData = instance.instanceData as DecisionInstanceData;

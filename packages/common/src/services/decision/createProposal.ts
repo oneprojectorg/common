@@ -60,22 +60,37 @@ export const createProposal = async ({
       throw new ValidationError('Process instance has no profile');
     }
 
-    const profileAccessUser = await getProfileAccessUser({
-      user: { id: authUserId },
-      profileId: instance.profileId,
-    });
+    // The proposal will be owned by the user's current profile. Fetch it now
+    // so we can both stamp submittedByProfileId and verify the user has the
+    // authority to act on behalf of that profile.
+    const ownerProfileId = await getCurrentProfileId(authUserId);
 
-    if (!profileAccessUser) {
+    const [instanceProfileUser, ownerProfileUser] = await Promise.all([
+      getProfileAccessUser({
+        user: { id: authUserId },
+        profileId: instance.profileId,
+      }),
+      getProfileAccessUser({
+        user: { id: authUserId },
+        profileId: ownerProfileId,
+      }),
+    ]);
+
+    if (!instanceProfileUser) {
       throw new UnauthorizedError('Not authorized');
     }
 
-    assertAccess(
-      [
-        { profile: permission.ADMIN },
-        { decisions: decisionPermission.SUBMIT_PROPOSALS },
-      ],
-      profileAccessUser.roles,
-    );
+    const submitSpec = [
+      { profile: permission.ADMIN },
+      { decisions: decisionPermission.SUBMIT_PROPOSALS },
+    ];
+
+    // Must have submit/admin rights on the instance.
+    assertAccess(submitSpec, instanceProfileUser.roles);
+
+    // ...AND on the profile that will own the proposal. Prevents users from
+    // stamping a proposal under an org they can't act for.
+    assertAccess(submitSpec, ownerProfileUser?.roles ?? []);
 
     const instanceData = instance.instanceData as DecisionInstanceData;
     const currentPhaseId = instance.currentStateId;
@@ -146,10 +161,8 @@ export const createProposal = async ({
       }
     }
 
-    const [profileId, adminRole] = await Promise.all([
-      getCurrentProfileId(authUserId),
-      assertGlobalRole('Admin'),
-    ]);
+    const adminRole = await assertGlobalRole('Admin');
+    const profileId = ownerProfileId;
     const createdProposal = await db.transaction(async (tx) => {
       const slug = await generateUniqueProfileSlug({
         name: proposalTitle,

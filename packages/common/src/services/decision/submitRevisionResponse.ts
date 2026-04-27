@@ -10,15 +10,12 @@ import {
   proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { assertAccess, permission } from 'access-zones';
 import { and, eq, sql } from 'drizzle-orm';
 
-import {
-  CommonError,
-  NotFoundError,
-  UnauthorizedError,
-  ValidationError,
-} from '../../utils';
-import { assertUserByAuthId } from '../assert';
+import { CommonError, NotFoundError, ValidationError } from '../../utils';
+import { getProfileAccessUser } from '../access';
+import { decisionPermission } from './permissions';
 import { parseProposalData } from './proposalDataSchema';
 
 /** Resubmits a proposal after the author addresses reviewer feedback. */
@@ -31,36 +28,53 @@ export async function submitRevisionResponse({
   resubmitComment?: string;
   user: User;
 }): Promise<ProposalReviewRequest & { processInstanceId: string }> {
-  const [request, dbUser] = await Promise.all([
-    db.query.proposalReviewRequests.findFirst({
-      where: { id: revisionRequestId },
-      with: {
-        assignment: {
-          with: {
-            proposal: true,
+  const request = await db.query.proposalReviewRequests.findFirst({
+    where: { id: revisionRequestId },
+    with: {
+      assignment: {
+        with: {
+          proposal: {
+            with: {
+              processInstance: true,
+            },
           },
         },
       },
-    }),
-    assertUserByAuthId(user.id),
-  ]);
+    },
+  });
 
   if (!request) {
     throw new NotFoundError('Revision request');
   }
 
-  if (!dbUser.profileId) {
-    throw new UnauthorizedError('User must have an active profile');
-  }
-
   const proposal = request.assignment.proposal;
+  const instance = proposal.processInstance;
 
-  // Verify caller is the proposal owner
-  if (proposal.submittedByProfileId !== dbUser.profileId) {
-    throw new UnauthorizedError(
-      "You don't have access to resubmit this proposal",
-    );
-  }
+  // Authorization: owner (individual or org), co-author, or instance admin.
+  const [rolesOnOwner, rolesOnProposal, rolesOnInstance] = await Promise.all([
+    getProfileAccessUser({
+      user: { id: user.id },
+      profileId: proposal.submittedByProfileId,
+    }).then((pu) => pu?.roles ?? []),
+    getProfileAccessUser({
+      user: { id: user.id },
+      profileId: proposal.profileId,
+    }).then((pu) => pu?.roles ?? []),
+    instance?.profileId
+      ? getProfileAccessUser({
+          user: { id: user.id },
+          profileId: instance.profileId,
+        }).then((pu) => pu?.roles ?? [])
+      : Promise.resolve([]),
+  ]);
+
+  assertAccess(
+    [
+      { profile: permission.ADMIN },
+      { decisions: decisionPermission.SUBMIT_PROPOSALS },
+    ],
+    [...rolesOnOwner, ...rolesOnProposal, ...rolesOnInstance],
+  );
 
   // Verify the revision request is in REQUESTED state
   if (request.state !== ProposalReviewRequestState.REQUESTED) {

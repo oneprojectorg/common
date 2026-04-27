@@ -308,18 +308,21 @@ export const listProposals = async ({
       ? and(whereClause, phaseScopedNonDraftIdFilter)
       : phaseScopedNonDraftIdFilter;
   } else {
-    // Draft proposals: only visible to users with proposal-level access
-    // (the creator and invited collaborators with a profileUsers record on the proposal's profile).
+    // Draft proposals: only visible to users who can act as either the
+    // proposal's profile (creator + invited collaborators) or the owner
+    // profile (individual/org the proposal was submitted under).
     // Drafts are not phase-scoped and remain visible regardless of phaseId so that
     // creators continue to see their own in-progress work alongside the current phase.
+    const userMemberProfileIds = db
+      .select({ profileId: profileUsers.profileId })
+      .from(profileUsers)
+      .where(eq(profileUsers.authUserId, input.authUserId));
+
     const draftFilter = and(
       eq(proposals.status, ProposalStatus.DRAFT),
-      inArray(
-        proposals.profileId,
-        db
-          .select({ profileId: profileUsers.profileId })
-          .from(profileUsers)
-          .where(eq(profileUsers.authUserId, input.authUserId)),
+      or(
+        inArray(proposals.profileId, userMemberProfileIds),
+        inArray(proposals.submittedByProfileId, userMemberProfileIds),
       ),
     );
 
