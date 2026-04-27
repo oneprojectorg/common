@@ -1,12 +1,20 @@
 import AxeBuilder from '@axe-core/playwright';
+import { profiles } from '@op/db/schema';
+import { db } from '@op/db/test';
+import {
+  createDecisionInstance,
+  createProposal,
+  getSeededTemplate,
+} from '@op/test';
 import type { AxeResults, ImpactValue, Result } from 'axe-core';
+import { eq } from 'drizzle-orm';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { test } from '../fixtures/index.js';
 
-type Severity = 'critical' | 'serious' | 'moderate' | 'minor';
+type Severity = NonNullable<ImpactValue>;
 
 interface RouteScan {
   url: string;
@@ -80,6 +88,7 @@ const STATIC_AUTH_ROUTES: RouteScan[] = [
   { url: '/en/profile', label: 'Profile index', auth: true },
   { url: '/en/search', label: 'Search', auth: true },
   { url: '/en/org', label: 'Org index', auth: true },
+  { url: '/en/does-not-exist', label: 'Not found (404)', auth: true },
 ];
 
 test.describe('axe-core baseline scan', () => {
@@ -92,13 +101,7 @@ test.describe('axe-core baseline scan', () => {
   }) => {
     test.setTimeout(5 * 60_000);
 
-    const dynamicAuthRoutes: RouteScan[] = [
-      {
-        url: `/en/org/${org.organizationProfile.slug}`,
-        label: 'Organization page',
-        auth: true,
-      },
-    ];
+    const dynamicAuthRoutes = await seedDynamicRoutes(org);
 
     const allRoutes: RouteScan[] = [
       ...PUBLIC_ROUTES,
@@ -184,6 +187,71 @@ async function scanRoute(
       violations: [],
     };
   }
+}
+
+async function seedDynamicRoutes(
+  org: import('@op/test').CreateOrganizationResult,
+): Promise<RouteScan[]> {
+  const template = await getSeededTemplate();
+  const instance = await createDecisionInstance({
+    processId: template.id,
+    ownerProfileId: org.organizationProfile.id,
+    authUserId: org.adminUser.authUserId,
+    email: org.adminUser.email,
+    schema: template.processSchema,
+  });
+  const proposal = await createProposal({
+    processInstanceId: instance.instance.id,
+    submittedByProfileId: org.adminUser.profileId,
+    proposalData: { title: 'A11y baseline proposal' },
+    authUserId: org.adminUser.authUserId,
+    email: org.adminUser.email,
+  });
+  const [adminProfile] = await db
+    .select({ slug: profiles.slug })
+    .from(profiles)
+    .where(eq(profiles.id, org.adminUser.profileId));
+  if (!adminProfile?.slug) {
+    throw new Error('admin profile slug not found');
+  }
+
+  return [
+    {
+      url: `/en/org/${org.organizationProfile.slug}`,
+      label: 'Organization page',
+      auth: true,
+    },
+    {
+      url: `/en/org/${org.organizationProfile.slug}/relationships`,
+      label: 'Org relationships',
+      auth: true,
+    },
+    {
+      url: `/en/profile/${adminProfile.slug}`,
+      label: 'User profile',
+      auth: true,
+    },
+    {
+      url: `/en/decisions/${instance.slug}`,
+      label: 'Decision detail',
+      auth: true,
+    },
+    {
+      url: `/en/decisions/${instance.slug}/edit`,
+      label: 'Decision editor',
+      auth: true,
+    },
+    {
+      url: `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`,
+      label: 'Proposal view',
+      auth: true,
+    },
+    {
+      url: `/en/decisions/${instance.slug}/proposal/${proposal.profileId}/edit`,
+      label: 'Proposal editor',
+      auth: true,
+    },
+  ];
 }
 
 async function captureScreenshots(
@@ -291,9 +359,7 @@ function summarize(axe: AxeResults): ViolationSummary[] {
     .sort((a, b) => severityRank(b.impact) - severityRank(a.impact));
 }
 
-function normalizeImpact(
-  impact: ImpactValue | null | undefined,
-): Severity | null {
+function normalizeImpact(impact: ImpactValue | undefined): Severity | null {
   if (
     impact === 'critical' ||
     impact === 'serious' ||

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-27T18:57:31.741Z",
+  "generatedAt": "2026-04-27T19:09:32.671Z",
   "axeVersion": "4.11.3",
   "wcagTags": [
     "wcag2a",
@@ -8,37 +8,37 @@
     "wcag21aa"
   ],
   "totals": {
-    "critical": 7,
-    "serious": 18,
-    "moderate": 9,
+    "critical": 14,
+    "serious": 41,
+    "moderate": 16,
     "minor": 0
   },
-  "totalViolations": 34,
-  "routesScanned": 9,
+  "totalViolations": 71,
+  "routesScanned": 16,
   "ruleTotals": [
     {
       "id": "button-name",
       "impact": "critical",
-      "occurrences": 7,
-      "routes": 7,
+      "occurrences": 14,
+      "routes": 11,
       "help": "Buttons must have discernible text",
       "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/button-name?application=playwright"
     },
     {
-      "id": "link-name",
-      "impact": "serious",
-      "occurrences": 9,
-      "routes": 9,
-      "help": "Links must have discernible text",
-      "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/link-name?application=playwright"
-    },
-    {
       "id": "color-contrast",
       "impact": "serious",
-      "occurrences": 8,
-      "routes": 7,
+      "occurrences": 28,
+      "routes": 14,
       "help": "Elements must meet minimum color contrast ratio thresholds",
       "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright"
+    },
+    {
+      "id": "link-name",
+      "impact": "serious",
+      "occurrences": 12,
+      "routes": 12,
+      "help": "Links must have discernible text",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/link-name?application=playwright"
     },
     {
       "id": "scrollable-region-focusable",
@@ -51,8 +51,8 @@
     {
       "id": "meta-viewport",
       "impact": "moderate",
-      "occurrences": 9,
-      "routes": 9,
+      "occurrences": 16,
+      "routes": 16,
       "help": "Zooming and scaling must not be disabled",
       "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/meta-viewport?application=playwright"
     }
@@ -66,7 +66,7 @@
       "finalUrl": "http://localhost:4100/",
       "counts": {
         "critical": 1,
-        "serious": 2,
+        "serious": 3,
         "moderate": 1,
         "minor": 0
       },
@@ -80,9 +80,9 @@
           "nodes": [
             {
               "target": [
-                "#react-aria1222111682-_r_0_"
+                "#react-aria4474648594-_r_0_"
               ],
-              "html": "<button type=\"button\" class=\"flex cursor-pointer ...\" data-rac=\"\" id=\"react-aria1222111682...\">",
+              "html": "<button type=\"button\" class=\"flex cursor-pointer ...\" data-rac=\"\" id=\"react-aria4474648594...\">",
               "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
               "screenshotPath": "screenshots/login/button-name-1.png"
             }
@@ -93,15 +93,23 @@
           "impact": "serious",
           "help": "Elements must meet minimum color contrast ratio thresholds",
           "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
-          "nodeCount": 1,
+          "nodeCount": 2,
           "nodes": [
             {
               "target": [
-                "#react-aria1222111682-_r_f_ > .sm\\:block.hidden"
+                "#react-aria4474648594-_r_f_ > .sm\\:block.hidden"
               ],
               "html": "<span class=\"hidden sm:block\">Create</span>",
               "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
               "screenshotPath": "screenshots/login/color-contrast-1.png"
+            },
+            {
+              "target": [
+                ".sm\\:w-auto"
+              ],
+              "html": "<a class=\"flex cursor-pointer ...\" data-rac=\"\" href=\"/decisions/test-inst...\">",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/login/color-contrast-2.png"
             }
           ]
         },
@@ -264,7 +272,7 @@
       "finalUrl": "http://localhost:4100/en/",
       "counts": {
         "critical": 1,
-        "serious": 2,
+        "serious": 3,
         "moderate": 1,
         "minor": 0
       },
@@ -291,15 +299,23 @@
           "impact": "serious",
           "help": "Elements must meet minimum color contrast ratio thresholds",
           "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
-          "nodeCount": 1,
+          "nodeCount": 2,
           "nodes": [
             {
               "target": [
-                "#react-aria3301140909-_r_3o_ > .sm\\:block.hidden"
+                "#react-aria533586026-_r_3o_ > .sm\\:block.hidden"
               ],
               "html": "<span class=\"hidden sm:block\">Create</span>",
               "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
               "screenshotPath": "screenshots/en/color-contrast-1.png"
+            },
+            {
+              "target": [
+                ".sm\\:w-auto"
+              ],
+              "html": "<a class=\"flex cursor-pointer ...\" data-rac=\"\" href=\"/decisions/test-inst...\">",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en/color-contrast-2.png"
             }
           ]
         },
@@ -346,8 +362,8 @@
       "status": "ok",
       "finalUrl": "http://localhost:4100/en/decisions",
       "counts": {
-        "critical": 1,
-        "serious": 2,
+        "critical": 2,
+        "serious": 3,
         "moderate": 1,
         "minor": 0
       },
@@ -357,7 +373,7 @@
           "impact": "critical",
           "help": "Buttons must have discernible text",
           "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/button-name?application=playwright",
-          "nodeCount": 1,
+          "nodeCount": 2,
           "nodes": [
             {
               "target": [
@@ -366,6 +382,14 @@
               "html": "<button type=\"button\" class=\"flex cursor-pointer ...\" data-rac=\"\" id=\"react-aria-_R_5apfiv...\">",
               "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
               "screenshotPath": "screenshots/en-decisions/button-name-1.png"
+            },
+            {
+              "target": [
+                "#react-aria6105895752-_r_42_"
+              ],
+              "html": "<button type=\"button\" aria-haspopup=\"true\" aria-expanded=\"false\" id=\"react-aria6105895752...\" class=\"flex cursor-pointer ...\" data-rac=\"\">",
+              "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "screenshotPath": "screenshots/en-decisions/button-name-2.png"
             }
           ]
         },
@@ -374,15 +398,23 @@
           "impact": "serious",
           "help": "Elements must meet minimum color contrast ratio thresholds",
           "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
-          "nodeCount": 1,
+          "nodeCount": 2,
           "nodes": [
             {
               "target": [
-                "#react-aria1911037527-_r_2h_ > .sm\\:block"
+                "#react-aria6105895752-_r_2h_ > .sm\\:block.hidden"
               ],
               "html": "<span class=\"hidden sm:block\">Create</span>",
               "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
               "screenshotPath": "screenshots/en-decisions/color-contrast-1.png"
+            },
+            {
+              "target": [
+                ".text-functional-red.text-sm"
+              ],
+              "html": "<span class=\"text-functional-red text-sm\">Closes May 4, 2026</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.79 (foreground color: #f04405, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-decisions/color-contrast-2.png"
             }
           ]
         },
@@ -461,7 +493,7 @@
           "nodes": [
             {
               "target": [
-                "#react-aria4213722581-_r_2g_ > .sm\\:block.hidden"
+                "#react-aria1238383863-_r_2g_ > .sm\\:block.hidden"
               ],
               "html": "<span class=\"hidden sm:block\">Create</span>",
               "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
@@ -544,7 +576,7 @@
           "nodes": [
             {
               "target": [
-                "#react-aria9199527159-_r_2g_ > .sm\\:block"
+                "#react-aria1625790318-_r_2g_ > .sm\\:block"
               ],
               "html": "<span class=\"hidden sm:block\">Create</span>",
               "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
@@ -627,7 +659,7 @@
           "nodes": [
             {
               "target": [
-                "#react-aria5960200337-_r_2g_ > .sm\\:block.hidden"
+                "#react-aria9721670138-_r_2g_ > .sm\\:block.hidden"
               ],
               "html": "<span class=\"hidden sm:block\">Create</span>",
               "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
@@ -672,11 +704,11 @@
       "axeVersion": "4.11.3"
     },
     {
-      "url": "/en/org/test-org-w0-95a0f9de-6346-4e2f-acc5-c7617231b2ee",
-      "label": "Organization page",
+      "url": "/en/does-not-exist",
+      "label": "Not found (404)",
       "auth": true,
       "status": "ok",
-      "finalUrl": "http://localhost:4100/en/org/test-org-w0-95a0f9de-6346-4e2f-acc5-c7617231b2ee",
+      "finalUrl": "http://localhost:4100/en/does-not-exist",
       "counts": {
         "critical": 1,
         "serious": 3,
@@ -693,11 +725,11 @@
           "nodes": [
             {
               "target": [
-                "#react-aria9528869142-_r_0_"
+                "#react-aria3497440159-_r_b_"
               ],
-              "html": "<button type=\"button\" class=\"flex cursor-pointer ...\" data-rac=\"\" id=\"react-aria9528869142...\">",
+              "html": "<button type=\"button\" class=\"flex cursor-pointer ...\" data-rac=\"\" id=\"react-aria3497440159...\">",
               "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
-              "screenshotPath": "screenshots/en-org-test-org-w0-95a0f9de-6346-4e2f-acc5-c7617231b2ee/button-name-1.png"
+              "screenshotPath": "screenshots/en-does-not-exist/button-name-1.png"
             }
           ]
         },
@@ -710,19 +742,118 @@
           "nodes": [
             {
               "target": [
-                "#react-aria9528869142-_r_q_ > .sm\\:block"
+                "#react-aria3497440159-_r_m_ > .sm\\:block"
               ],
               "html": "<span class=\"hidden sm:block\">Create</span>",
               "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
-              "screenshotPath": "screenshots/en-org-test-org-w0-95a0f9de-6346-4e2f-acc5-c7617231b2ee/color-contrast-1.png"
+              "screenshotPath": "screenshots/en-does-not-exist/color-contrast-1.png"
             },
             {
               "target": [
-                "#react-aria9528869142-_r_2f_"
+                ".h-10"
               ],
-              "html": "<button type=\"button\" class=\"flex w-fit cursor-po...\" data-rac=\"\" id=\"react-aria9528869142...\">",
+              "html": "<a class=\"flex w-fit cursor-po...\" data-rac=\"\" href=\"/\">",
               "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
-              "screenshotPath": "screenshots/en-org-test-org-w0-95a0f9de-6346-4e2f-acc5-c7617231b2ee/color-contrast-2.png"
+              "screenshotPath": "screenshots/en-does-not-exist/color-contrast-2.png"
+            }
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "help": "Links must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/link-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                ".gridCentered > .gap-3.items-center:nth-child(1) > .hover\\:underline[href=\"/en\"]"
+              ],
+              "html": "<a class=\"hover:underline flex gap-1\" href=\"/en\">",
+              "failureSummary": "Fix all of the following:\n  Element is in tab order and does not have accessible text\n\nFix any of the following:\n  Element does not have text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute",
+              "screenshotPath": "screenshots/en-does-not-exist/link-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/meta-viewport?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "meta[name=\"viewport\"]"
+              ],
+              "html": "<meta name=\"viewport\" content=\"width=device-width, height=device-height, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no\">",
+              "failureSummary": "Fix any of the following:\n  user-scalable=no on <meta> tag disables zooming on mobile devices"
+            }
+          ]
+        }
+      ],
+      "axeVersion": "4.11.3"
+    },
+    {
+      "url": "/en/org/test-org-w0-ddf0b444-27a2-4f91-92ca-a62cf3a9f7eb",
+      "label": "Organization page",
+      "auth": true,
+      "status": "ok",
+      "finalUrl": "http://localhost:4100/en/org/test-org-w0-ddf0b444-27a2-4f91-92ca-a62cf3a9f7eb",
+      "counts": {
+        "critical": 1,
+        "serious": 4,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "help": "Buttons must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/button-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "#react-aria5941287077-_r_0_"
+              ],
+              "html": "<button type=\"button\" class=\"flex cursor-pointer ...\" data-rac=\"\" id=\"react-aria5941287077...\">",
+              "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "screenshotPath": "screenshots/en-org-test-org-w0-ddf0b444-27a2-4f91-92ca-a62cf3a9f7eb/button-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodeCount": 3,
+          "nodes": [
+            {
+              "target": [
+                "#react-aria5941287077-_r_q_ > .sm\\:block.hidden"
+              ],
+              "html": "<span class=\"hidden sm:block\">Create</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-org-test-org-w0-ddf0b444-27a2-4f91-92ca-a62cf3a9f7eb/color-contrast-1.png"
+            },
+            {
+              "target": [
+                "#react-aria5941287077-_r_2g_"
+              ],
+              "html": "<button type=\"button\" class=\"flex w-fit cursor-po...\" data-rac=\"\" id=\"react-aria5941287077...\">",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-org-test-org-w0-ddf0b444-27a2-4f91-92ca-a62cf3a9f7eb/color-contrast-2.png"
+            },
+            {
+              "target": [
+                ".text-functional-red.text-sm"
+              ],
+              "html": "<span class=\"text-functional-red text-sm\">Closes May 4, 2026</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.79 (foreground color: #f04405, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-org-test-org-w0-ddf0b444-27a2-4f91-92ca-a62cf3a9f7eb/color-contrast-3.png"
             }
           ]
         },
@@ -739,7 +870,466 @@
               ],
               "html": "<a class=\"hover:underline flex gap-1\" href=\"/en\">",
               "failureSummary": "Fix all of the following:\n  Element is in tab order and does not have accessible text\n\nFix any of the following:\n  Element does not have text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute",
-              "screenshotPath": "screenshots/en-org-test-org-w0-95a0f9de-6346-4e2f-acc5-c7617231b2ee/link-name-1.png"
+              "screenshotPath": "screenshots/en-org-test-org-w0-ddf0b444-27a2-4f91-92ca-a62cf3a9f7eb/link-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/meta-viewport?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "meta[name=\"viewport\"]"
+              ],
+              "html": "<meta name=\"viewport\" content=\"width=device-width, height=device-height, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no\">",
+              "failureSummary": "Fix any of the following:\n  user-scalable=no on <meta> tag disables zooming on mobile devices"
+            }
+          ]
+        }
+      ],
+      "axeVersion": "4.11.3"
+    },
+    {
+      "url": "/en/org/test-org-w0-ddf0b444-27a2-4f91-92ca-a62cf3a9f7eb/relationships",
+      "label": "Org relationships",
+      "auth": true,
+      "status": "ok",
+      "finalUrl": "http://localhost:4100/en/org/test-org-w0-ddf0b444-27a2-4f91-92ca-a62cf3a9f7eb/relationships",
+      "counts": {
+        "critical": 1,
+        "serious": 3,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "help": "Buttons must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/button-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "#react-aria-_R_5apfiv9lb_"
+              ],
+              "html": "<button type=\"button\" class=\"flex cursor-pointer ...\" data-rac=\"\" id=\"react-aria-_R_5apfiv...\">",
+              "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "screenshotPath": "screenshots/en-org-test-org-w0-ddf0b444-27a2-4f91-92ca-a62cf3a9f7eb-relationships/button-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodeCount": 2,
+          "nodes": [
+            {
+              "target": [
+                "#react-aria9744873709-_r_3o_ > .sm\\:block"
+              ],
+              "html": "<span class=\"hidden sm:block\">Create</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-org-test-org-w0-ddf0b444-27a2-4f91-92ca-a62cf3a9f7eb-relationships/color-contrast-1.png"
+            },
+            {
+              "target": [
+                ".text-teal"
+              ],
+              "html": "<a class=\"-outline-offset-8 outline-transparent focus-within:outline-offWhite focus-visible:outline-offWhite rounded transition disabled:cursor-default disabled:no-underline text-teal no-underline hover:underline\" data-rac=\"\" href=\"/org/test-org-w0-ddf0b444-27a2-4f91-92ca-a62cf3a9f7eb\">",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.59 (foreground color: #0395a5, background color: #ffffff, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-org-test-org-w0-ddf0b444-27a2-4f91-92ca-a62cf3a9f7eb-relationships/color-contrast-2.png"
+            }
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "help": "Links must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/link-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                ".gridCentered > .gap-3.items-center:nth-child(1) > .hover\\:underline[href=\"/en\"]"
+              ],
+              "html": "<a class=\"hover:underline flex gap-1\" href=\"/en\">",
+              "failureSummary": "Fix all of the following:\n  Element is in tab order and does not have accessible text\n\nFix any of the following:\n  Element does not have text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute",
+              "screenshotPath": "screenshots/en-org-test-org-w0-ddf0b444-27a2-4f91-92ca-a62cf3a9f7eb-relationships/link-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/meta-viewport?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "meta[name=\"viewport\"]"
+              ],
+              "html": "<meta name=\"viewport\" content=\"width=device-width, height=device-height, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no\">",
+              "failureSummary": "Fix any of the following:\n  user-scalable=no on <meta> tag disables zooming on mobile devices"
+            }
+          ]
+        }
+      ],
+      "axeVersion": "4.11.3"
+    },
+    {
+      "url": "/en/profile/w0-admin-e8c5ce",
+      "label": "User profile",
+      "auth": true,
+      "status": "ok",
+      "finalUrl": "http://localhost:4100/en/profile/w0-admin-e8c5ce",
+      "counts": {
+        "critical": 1,
+        "serious": 3,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "help": "Buttons must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/button-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "#react-aria2967322326-_r_0_"
+              ],
+              "html": "<button type=\"button\" class=\"flex cursor-pointer ...\" data-rac=\"\" id=\"react-aria2967322326...\">",
+              "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "screenshotPath": "screenshots/en-profile-w0-admin-e8c5ce/button-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodeCount": 2,
+          "nodes": [
+            {
+              "target": [
+                "#react-aria2967322326-_r_k_ > .sm\\:block"
+              ],
+              "html": "<span class=\"hidden sm:block\">Create</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-profile-w0-admin-e8c5ce/color-contrast-1.png"
+            },
+            {
+              "target": [
+                "#react-aria2967322326-_r_c_"
+              ],
+              "html": "<button type=\"button\" aria-expanded=\"false\" id=\"react-aria2967322326...\" class=\"flex w-fit cursor-po...\" data-rac=\"\">",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-profile-w0-admin-e8c5ce/color-contrast-2.png"
+            }
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "help": "Links must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/link-name?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                ".gridCentered > .gap-3.items-center.flex:nth-child(1) > .hover\\:underline[href=\"/en\"]"
+              ],
+              "html": "<a class=\"hover:underline flex gap-1\" href=\"/en\">",
+              "failureSummary": "Fix all of the following:\n  Element is in tab order and does not have accessible text\n\nFix any of the following:\n  Element does not have text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute",
+              "screenshotPath": "screenshots/en-profile-w0-admin-e8c5ce/link-name-1.png"
+            }
+          ]
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/meta-viewport?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "meta[name=\"viewport\"]"
+              ],
+              "html": "<meta name=\"viewport\" content=\"width=device-width, height=device-height, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no\">",
+              "failureSummary": "Fix any of the following:\n  user-scalable=no on <meta> tag disables zooming on mobile devices"
+            }
+          ]
+        }
+      ],
+      "axeVersion": "4.11.3"
+    },
+    {
+      "url": "/en/decisions/test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c",
+      "label": "Decision detail",
+      "auth": true,
+      "status": "ok",
+      "finalUrl": "http://localhost:4100/en/decisions/test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c",
+      "counts": {
+        "critical": 0,
+        "serious": 2,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodeCount": 2,
+          "nodes": [
+            {
+              "target": [
+                ".md\\:flex"
+              ],
+              "html": "<span class=\"hidden md:flex\">Back </span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.59 (foreground color: #0395a5, background color: #ffffff, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-decisions-test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c/color-contrast-1.png"
+            },
+            {
+              "target": [
+                "#react-aria5073228966-_r_t_"
+              ],
+              "html": "<button type=\"button\" class=\"flex cursor-pointer ...\" data-rac=\"\" id=\"react-aria5073228966...\">",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-decisions-test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c/color-contrast-2.png"
+            }
+          ]
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/meta-viewport?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "meta[name=\"viewport\"]"
+              ],
+              "html": "<meta name=\"viewport\" content=\"width=device-width, height=device-height, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no\">",
+              "failureSummary": "Fix any of the following:\n  user-scalable=no on <meta> tag disables zooming on mobile devices"
+            }
+          ]
+        }
+      ],
+      "axeVersion": "4.11.3"
+    },
+    {
+      "url": "/en/decisions/test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c/edit",
+      "label": "Decision editor",
+      "auth": true,
+      "status": "ok",
+      "finalUrl": "http://localhost:4100/en/decisions/test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c/edit",
+      "counts": {
+        "critical": 3,
+        "serious": 3,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "help": "Buttons must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/button-name?application=playwright",
+          "nodeCount": 3,
+          "nodes": [
+            {
+              "target": [
+                ".rounded-xl.py-2.gap-4:nth-child(1) > .bg-green.p-1[data-selected=\"true\"]"
+              ],
+              "html": "<button type=\"button\" aria-pressed=\"true\" class=\"focus-within:outline...\" data-rac=\"\" data-selected=\"true\">",
+              "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "screenshotPath": "screenshots/en-decisions-test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c-edit/button-name-1.png"
+            },
+            {
+              "target": [
+                ".bg-lightGray"
+              ],
+              "html": "<button type=\"button\" aria-pressed=\"false\" class=\"focus-within:outline-offWhite focus-visible:outline-offWhite flex cursor-pointer items-center rounded-full p-1 outline-offset-0 outline-transparent transition-colors duration-300 focus-visible:ring-transparent h-5 min-w-8 bg-lightGray\" ...>",
+              "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "screenshotPath": "screenshots/en-decisions-test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c-edit/button-name-2.png"
+            },
+            {
+              "target": [
+                ".space-y-6:nth-child(2) > .rounded-xl.py-2.gap-4 > .bg-green.p-1[data-selected=\"true\"]"
+              ],
+              "html": "<button type=\"button\" aria-pressed=\"true\" class=\"focus-within:outline...\" data-rac=\"\" data-selected=\"true\">",
+              "failureSummary": "Fix any of the following:\n  Element does not have inner text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\"",
+              "screenshotPath": "screenshots/en-decisions-test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c-edit/button-name-3.png"
+            }
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodeCount": 3,
+          "nodes": [
+            {
+              "target": [
+                ".bg-primary-tealWhite"
+              ],
+              "html": "<button type=\"button\" class=\"flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-left text-base transition-colors bg-primary-tealWhite text-primary\">Overview<span class=\"size-1.5 shrink-0 rounded-full bg-primary-teal\"></span></button>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.42 (foreground color: #0395a5, background color: #f4fbfb, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-decisions-test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c-edit/color-contrast-1.png"
+            },
+            {
+              "target": [
+                ".group-data-\\[disabled\\=true\\]\\:opacity-50.text-functional-red.text-sm"
+              ],
+              "html": "<span class=\"text-sm group-data-[disabled=true]:opacity-50 text-functional-red\">50/50</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.79 (foreground color: #f04405, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-decisions-test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c-edit/color-contrast-2.png"
+            },
+            {
+              "target": [
+                "#react-aria2183051785-_r_q_"
+              ],
+              "html": "<button type=\"button\" class=\"flex w-fit cursor-po...\" data-rac=\"\" id=\"react-aria2183051785...\">",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-decisions-test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c-edit/color-contrast-3.png"
+            }
+          ]
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/meta-viewport?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "meta[name=\"viewport\"]"
+              ],
+              "html": "<meta name=\"viewport\" content=\"width=device-width, height=device-height, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no\">",
+              "failureSummary": "Fix any of the following:\n  user-scalable=no on <meta> tag disables zooming on mobile devices"
+            }
+          ]
+        }
+      ],
+      "axeVersion": "4.11.3"
+    },
+    {
+      "url": "/en/decisions/test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c/proposal/d59d672b-086a-4212-8c77-5329c4fa3c1d",
+      "label": "Proposal view",
+      "auth": true,
+      "status": "ok",
+      "finalUrl": "http://localhost:4100/en/decisions/test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c/proposal/d59d672b-086a-4212-8c77-5329c4fa3c1d",
+      "counts": {
+        "critical": 0,
+        "serious": 1,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                ".sm\\:block"
+              ],
+              "html": "<span class=\"hidden sm:block\">Back to Proposals</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.59 (foreground color: #0395a5, background color: #ffffff, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-decisions-test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c-proposal-d59d672b-086a-4212-8c77-5329c4fa3c1d/color-contrast-1.png"
+            }
+          ]
+        },
+        {
+          "id": "meta-viewport",
+          "impact": "moderate",
+          "help": "Zooming and scaling must not be disabled",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/meta-viewport?application=playwright",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "target": [
+                "meta[name=\"viewport\"]"
+              ],
+              "html": "<meta name=\"viewport\" content=\"width=device-width, height=device-height, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no\">",
+              "failureSummary": "Fix any of the following:\n  user-scalable=no on <meta> tag disables zooming on mobile devices"
+            }
+          ]
+        }
+      ],
+      "axeVersion": "4.11.3"
+    },
+    {
+      "url": "/en/decisions/test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c/proposal/d59d672b-086a-4212-8c77-5329c4fa3c1d/edit",
+      "label": "Proposal editor",
+      "auth": true,
+      "status": "ok",
+      "finalUrl": "http://localhost:4100/en/decisions/test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c/proposal/d59d672b-086a-4212-8c77-5329c4fa3c1d/edit",
+      "counts": {
+        "critical": 0,
+        "serious": 4,
+        "moderate": 1,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodeCount": 4,
+          "nodes": [
+            {
+              "target": [
+                ".hover\\:text-primary-tealBlack.text-primary-teal.cursor-pointer > .sm\\:block.hidden"
+              ],
+              "html": "<span class=\"hidden sm:block\">Back</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.59 (foreground color: #0395a5, background color: #ffffff, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-decisions-test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c-proposal-d59d672b-086a-4212-8c77-5329c4fa3c1d-edit/color-contrast-1.png"
+            },
+            {
+              "target": [
+                "#react-aria6135097727-_r_6_ > .sm\\:block.hidden"
+              ],
+              "html": "<span class=\"hidden sm:block\">Submit Proposal</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #f9fafa, background color: #0395a5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-decisions-test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c-proposal-d59d672b-086a-4212-8c77-5329c4fa3c1d-edit/color-contrast-2.png"
+            },
+            {
+              "target": [
+                "#react-aria6135097727-_r_t_"
+              ],
+              "html": "<button type=\"button\" class=\"flex w-fit cursor-po...\" data-rac=\"\" id=\"react-aria6135097727...\">",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.42 (foreground color: #0395a5, background color: #f4fbfb, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-decisions-test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c-proposal-d59d672b-086a-4212-8c77-5329c4fa3c1d-edit/color-contrast-3.png"
+            },
+            {
+              "target": [
+                ".hover\\:underline"
+              ],
+              "html": "<span class=\"text-primary-teal hover:text-primary-tealBlack hover:underline\">browse</span>",
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.43 (foreground color: #0395a5, background color: #f9fafa, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1",
+              "screenshotPath": "screenshots/en-decisions-test-instance-f8c414ae-e4ea-42a0-abb8-112df72dc68c-proposal-d59d672b-086a-4212-8c77-5329c4fa3c1d-edit/color-contrast-4.png"
             }
           ]
         },
