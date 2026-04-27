@@ -7,6 +7,7 @@ import { EntityType } from '@op/api/encoders';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Menu, MenuItem, MenuSeparator, MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
 import { toast } from '@op/ui/Toast';
@@ -83,7 +84,11 @@ export const CreateMenu = () => {
                 isDisabled={createDecisionMutation.isPending}
                 onAction={() => createDecisionMutation.mutate()}
               >
-                <LuMessageCircle className="size-4" />{' '}
+                {createDecisionMutation.isPending ? (
+                  <LoadingSpinner className="size-4" />
+                ) : (
+                  <LuMessageCircle className="size-4" />
+                )}{' '}
                 {t('Decision-making process')}
               </MenuItem>
             )}
