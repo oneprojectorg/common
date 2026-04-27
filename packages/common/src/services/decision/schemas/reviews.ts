@@ -103,27 +103,23 @@ export const proposalRevisionRequestListSchema = z.object({
 
 /**
  * Per-proposal aggregates derived in SQL across review assignments and the
- * submitted reviews attached to them. `criterionId` and `optionKey` are the
- * raw rubric identifiers — the client resolves human labels against the
- * rubric template loaded with the process instance.
+ * submitted reviews attached to them.
  *
  * `totalScore` is the sum of integer rubric criteria across submitted reviews;
  * `averageScore` is `totalScore / reviewsSubmitted` (0 when no submissions).
  * Both are returned so the client can render either one without a schema
  * change while the design is finalized.
+ *
+ * `overallRecommendationCount` is a tally of submitted answers to the
+ * well-known overall-recommendation criterion (e.g. `{ yes: 2, no: 1 }`).
+ * Empty when the rubric doesn't include the field or no reviews are in.
  */
 export const proposalReviewAggregatesSchema = z.object({
   assignmentsTotal: z.number().int(),
   reviewsSubmitted: z.number().int(),
   totalScore: z.number(),
   averageScore: z.number(),
-  optionCounts: z.array(
-    z.object({
-      criterionId: z.string(),
-      optionKey: z.string(),
-      count: z.number().int(),
-    }),
-  ),
+  overallRecommendationCount: z.record(z.string(), z.number().int()),
   reviewers: z.array(
     z.object({
       profile: proposalProfileSchema,
