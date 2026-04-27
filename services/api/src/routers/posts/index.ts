@@ -3,6 +3,7 @@ import { createPost } from './createPost';
 import { getOrganizationPosts } from './getOrganizationPosts';
 import { getPost } from './getPost';
 import { getPosts } from './getPosts';
+import { listProfilePosts } from './listProfilePosts';
 import { uploadPostAttachment } from './uploadPostAttachment';
 
 export const postsRouter = mergeRouters(
@@ -10,5 +11,6 @@ export const postsRouter = mergeRouters(
   getPost,
   getPosts,
   getOrganizationPosts,
+  listProfilePosts,
   uploadPostAttachment,
 );

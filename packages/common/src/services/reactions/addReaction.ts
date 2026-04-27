@@ -2,15 +2,20 @@ import { and, db, eq } from '@op/db/client';
 import { postReactions } from '@op/db/schema';
 import { Events, event } from '@op/events';
 
-export interface AddReactionOptions {
+import type { PostContext } from './reactionAuth';
+import { authorizeReactionForPost } from './reactionAuth';
+
+interface InsertReactionOptions {
   postId: string;
   profileId: string;
   reactionType: string;
 }
 
-export const addReaction = async (options: AddReactionOptions) => {
-  const { postId, profileId, reactionType } = options;
-
+export const insertReaction = async ({
+  postId,
+  profileId,
+  reactionType,
+}: InsertReactionOptions) => {
   await db.transaction(async (tx) => {
     // First, remove any existing reaction from this user on this post
     await tx
@@ -39,4 +44,23 @@ export const addReaction = async (options: AddReactionOptions) => {
       reactionType,
     },
   });
+};
+
+export interface AddReactionOptions {
+  user: { id: string };
+  postId: string;
+  reactionType: string;
+}
+
+export const addReaction = async ({
+  user,
+  postId,
+  reactionType,
+}: AddReactionOptions): Promise<{ context: PostContext }> => {
+  const { context, profileId } = await authorizeReactionForPost({
+    user,
+    postId,
+  });
+  await insertReaction({ postId, profileId, reactionType });
+  return { context };
 };
