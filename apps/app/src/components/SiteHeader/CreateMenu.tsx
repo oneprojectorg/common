@@ -51,8 +51,9 @@ export const CreateMenu = () => {
   const handleCreateDecision = async () => {
     setIsCreatingDecision(true);
     try {
-      const { processes: templates } =
-        await utils.decision.listProcesses.fetch({});
+      const { processes: templates } = await utils.decision.listProcesses.fetch(
+        {},
+      );
       const firstTemplate = templates[0];
       if (!firstTemplate) {
         setIsCreatingDecision(false);

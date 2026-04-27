@@ -310,6 +310,7 @@
   "This will end the {currentPhase} phase and move to {nextPhase}.": "Cela mettra fin à la phase {currentPhase} et passera à {nextPhase}.",
   "Advance Phase": "Avancer la phase",
   "Failed to advance phase": "Échec de l'avancement de la phase",
+  "Failed to create decision": "Échec de la création de la décision",
   "Failed to create proposal": "Échec de la création de la proposition",
   "Failed to update proposal": "Échec de la mise à jour de la proposition",
   "Failed to submit proposal": "Échec de la soumission de la proposition",
