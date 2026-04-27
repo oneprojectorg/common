@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { type DbClient, db as defaultDb } from '@op/db/client';
 import type { Organization } from '@op/db/schema';
 
 import { NotFoundError } from '../../utils';
@@ -8,11 +8,13 @@ import { NotFoundError } from '../../utils';
  *
  * @param id - The organization ID to look up
  * @param error - Custom error to throw if not found (defaults to NotFoundError)
+ * @param db - Optional database client or transaction to use
  * @throws The provided error or NotFoundError if organization is not found
  */
 export async function assertOrganization(
   id: string,
   error: Error = new NotFoundError('Organization', id),
+  db: DbClient = defaultDb,
 ): Promise<Organization> {
   const organization = await db._query.organizations.findFirst({
     where: (table, { eq }) => eq(table.id, id),
@@ -30,11 +32,13 @@ export async function assertOrganization(
  *
  * @param profileId - The profile ID to look up the organization by
  * @param error - Custom error to throw if not found (defaults to NotFoundError)
+ * @param db - Optional database client or transaction to use
  * @throws The provided error or NotFoundError if organization is not found
  */
 export async function assertOrganizationByProfileId(
   profileId: string,
   error: Error = new NotFoundError('Organization', profileId),
+  db: DbClient = defaultDb,
 ): Promise<Organization> {
   const organization = await db._query.organizations.findFirst({
     where: (table, { eq }) => eq(table.profileId, profileId),

@@ -1,11 +1,4 @@
-import {
-  type DatabaseType,
-  type TransactionType,
-  and,
-  db,
-  eq,
-  sql,
-} from '@op/db/client';
+import { type DbClient, and, db, eq, sql } from '@op/db/client';
 import {
   JoinProfileRequestStatus,
   joinProfileRequests,
@@ -179,9 +172,9 @@ async function performAutoJoin(
   user: User,
   organization: Organization,
   roleId: string,
-  tx: DatabaseType | TransactionType,
+  db: DbClient,
 ): Promise<void> {
-  const commonUser = await tx.query.users.findFirst({
+  const commonUser = await db.query.users.findFirst({
     where: { authUserId: user.id },
   });
 
@@ -193,6 +186,6 @@ async function performAutoJoin(
     user: commonUser,
     organization,
     roleId,
-    db: tx,
+    db,
   });
 }

@@ -1,5 +1,4 @@
-import { db, eq, inArray } from '@op/db/client';
-import type { DbClient } from '@op/db/client';
+import { type DbClient, db as defaultDb, eq, inArray } from '@op/db/client';
 import type { Proposal } from '@op/db/schema';
 import {
   ProfileRelationshipType,
@@ -12,12 +11,12 @@ import type { VoteAggregation } from './types';
 
 /**
  * Aggregate voting data for the given proposals.
- * Accepts an optional dbClient so this can be called within a transaction
+ * Accepts an optional db so this can be called within a transaction
  * for a consistent snapshot.
  */
 export async function aggregateProposalMetrics(
   phaseProposals: Proposal[],
-  dbClient: DbClient = db,
+  db: DbClient = defaultDb,
 ): Promise<Record<string, VoteAggregation>> {
   if (phaseProposals.length === 0) {
     return {};
@@ -28,7 +27,7 @@ export async function aggregateProposalMetrics(
 
   // Fetch votes and profile relationships in parallel
   const [voteRows, relationships] = await Promise.all([
-    dbClient
+    db
       .select({
         submissionId: decisionsVoteSubmissions.id,
         voteData: decisionsVoteSubmissions.voteData,
@@ -44,7 +43,7 @@ export async function aggregateProposalMetrics(
       )
       .where(inArray(decisionsVoteProposals.proposalId, proposalIds)),
 
-    dbClient
+    db
       .select()
       .from(profileRelationships)
       .where(inArray(profileRelationships.targetProfileId, profileIds)),

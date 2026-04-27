@@ -1,4 +1,4 @@
-import { type TransactionType, db, eq } from '@op/db/client';
+import { type DbClient, db as defaultDb, eq } from '@op/db/client';
 import { accessRolePermissionsOnAccessZones, accessRoles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
@@ -60,7 +60,7 @@ export const duplicateInstance = async ({
   }
 
   // Fetch source instance
-  const sourceInstance = await db.query.processInstances.findFirst({
+  const sourceInstance = await defaultDb.query.processInstances.findFirst({
     where: { id: instanceId },
   });
 
@@ -218,16 +218,14 @@ function buildInstanceData(
 async function copyCustomRoles({
   sourceProfileId,
   targetProfileId,
-  tx,
+  db = defaultDb,
 }: {
   sourceProfileId: string;
   targetProfileId: string;
-  tx?: TransactionType;
+  db?: DbClient;
 }) {
-  const client = tx ?? db;
-
   // Fetch all roles for the source profile with their zone permissions
-  const sourceRoles = await client._query.accessRoles.findMany({
+  const sourceRoles = await db._query.accessRoles.findMany({
     where: eq(accessRoles.profileId, sourceProfileId),
     with: {
       zonePermissions: true,
@@ -241,7 +239,7 @@ async function copyCustomRoles({
 
   for (const role of customRoles) {
     // Create the role on the new profile
-    const [newRole] = await client
+    const [newRole] = await db
       .insert(accessRoles)
       .values({
         name: role.name,
@@ -256,7 +254,7 @@ async function copyCustomRoles({
 
     // Copy zone permissions
     if (role.zonePermissions.length > 0) {
-      await client.insert(accessRolePermissionsOnAccessZones).values(
+      await db.insert(accessRolePermissionsOnAccessZones).values(
         role.zonePermissions.map((zp) => ({
           accessRoleId: newRole.id,
           accessZoneId: zp.accessZoneId,

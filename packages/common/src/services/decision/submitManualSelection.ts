@@ -188,7 +188,7 @@ export async function submitManualSelection({
       await getProposalIdsForPhase({
         instanceId: processInstanceId,
         phaseId: previousPhaseId,
-        dbClient: tx,
+        db: tx,
       }),
     );
     for (const id of uniqueProposalIds) {

@@ -649,7 +649,7 @@ export class TestDecisionsDataManager {
     }
     return db.transaction(async (tx) =>
       advancePhase({
-        tx,
+        db: tx,
         instance: {
           ...processInstance,
           instanceData: processInstance.instanceData as DecisionInstanceData,

@@ -1,4 +1,4 @@
-import { type TransactionType, db } from '@op/db/client';
+import { type DbClient, db as defaultDb } from '@op/db/client';
 import { decisionProcessTransitions } from '@op/db/schema';
 import type { ProcessInstance } from '@op/db/schema';
 
@@ -14,10 +14,10 @@ import { buildExpectedTransitions } from './buildExpectedTransitions';
  */
 export async function createTransitionsForProcess({
   processInstance,
-  tx,
+  db = defaultDb,
 }: {
   processInstance: ProcessInstance;
-  tx?: TransactionType;
+  db?: DbClient;
 }): Promise<{
   transitions: Array<{
     id: string;
@@ -26,8 +26,6 @@ export async function createTransitionsForProcess({
     scheduledDate: Date;
   }>;
 }> {
-  const dbClient = tx ?? db;
-
   try {
     const transitionsToCreate = buildExpectedTransitions(processInstance);
 
@@ -35,7 +33,7 @@ export async function createTransitionsForProcess({
       return { transitions: [] };
     }
 
-    const createdTransitions = await dbClient
+    const createdTransitions = await db
       .insert(decisionProcessTransitions)
       .values(transitionsToCreate)
       .returning();

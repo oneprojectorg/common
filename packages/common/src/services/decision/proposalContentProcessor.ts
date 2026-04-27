@@ -1,4 +1,4 @@
-import { db, eq } from '@op/db/client';
+import { type DbClient, db as defaultDb, eq } from '@op/db/client';
 import { attachments, proposalAttachments, proposals } from '@op/db/schema';
 
 /**
@@ -15,15 +15,15 @@ const getPublicUrl = (key?: string | null) => {
  * Process proposal content to replace temporary image URLs with permanent attachment references
  */
 export async function processProposalContent({
-  conn,
+  db,
   proposalId,
 }: {
-  conn: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+  db: DbClient;
   proposalId: string;
 }): Promise<void> {
   try {
     // Get the proposal content
-    const proposal = await conn._query.proposals.findFirst({
+    const proposal = await db._query.proposals.findFirst({
       where: eq(proposals.id, proposalId),
     });
 
@@ -42,7 +42,7 @@ export async function processProposalContent({
 
     // Get all attachments for this proposal through the join table
     const proposalAttachmentJoins =
-      await conn._query.proposalAttachments.findMany({
+      await db._query.proposalAttachments.findMany({
         where: eq(proposalAttachments.proposalId, proposalId),
         with: {
           attachment: true,
@@ -119,7 +119,7 @@ export async function processProposalContent({
         content: processedContent,
       };
 
-      await conn
+      await db
         .update(proposals)
         .set({
           proposalData: updatedProposalData,
@@ -132,7 +132,7 @@ export async function processProposalContent({
     // Update attachment metadata
     if (updatedAttachments.length > 0) {
       for (const attachmentUpdate of updatedAttachments) {
-        await conn
+        await db
           .update(attachments)
           .set({
             fileName: attachmentUpdate.fileName,
@@ -177,12 +177,13 @@ function extractImageUrlsFromContent(htmlContent: string): string[] {
 export async function getProposalAttachmentUrls(
   proposalId: string,
 ): Promise<Record<string, string>> {
-  const proposalAttachmentJoins = await db._query.proposalAttachments.findMany({
-    where: eq(proposalAttachments.proposalId, proposalId),
-    with: {
-      attachment: true,
-    },
-  });
+  const proposalAttachmentJoins =
+    await defaultDb._query.proposalAttachments.findMany({
+      where: eq(proposalAttachments.proposalId, proposalId),
+      with: {
+        attachment: true,
+      },
+    });
 
   if (proposalAttachmentJoins.length === 0) {
     return {};

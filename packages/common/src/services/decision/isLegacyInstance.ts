@@ -1,5 +1,4 @@
-import { db, eq } from '@op/db/client';
-import type { DbClient } from '@op/db/client';
+import { type DbClient, db as defaultDb, eq } from '@op/db/client';
 import { processInstances } from '@op/db/schema';
 
 /**
@@ -27,9 +26,9 @@ export function isLegacyInstanceData(instanceData: unknown): boolean {
  */
 export async function isLegacyInstance(
   instanceId: string,
-  dbClient: DbClient = db,
+  db: DbClient = defaultDb,
 ): Promise<boolean> {
-  const [row] = await dbClient
+  const [row] = await db
     .select({ instanceData: processInstances.instanceData })
     .from(processInstances)
     .where(eq(processInstances.id, instanceId))

@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { type DbClient, db as defaultDb } from '@op/db/client';
 import type { Profile } from '@op/db/schema';
 
 import { NotFoundError } from '../../utils';
@@ -8,11 +8,13 @@ import { NotFoundError } from '../../utils';
  *
  * @param id - The profile ID to look up
  * @param error - Custom error to throw if not found (defaults to NotFoundError)
+ * @param db - Optional database client or transaction to use
  * @throws The provided error or NotFoundError if profile is not found
  */
 export async function assertProfile(
   id: string,
   error: Error = new NotFoundError('Profile', id),
+  db: DbClient = defaultDb,
 ): Promise<Profile> {
   const profile = await db._query.profiles.findFirst({
     where: (table, { eq }) => eq(table.id, id),
@@ -30,11 +32,13 @@ export async function assertProfile(
  *
  * @param slug - The profile slug to look up
  * @param error - Custom error to throw if not found (defaults to NotFoundError)
+ * @param db - Optional database client or transaction to use
  * @throws The provided error or NotFoundError if profile is not found
  */
 export async function assertProfileBySlug(
   slug: string,
   error: Error = new NotFoundError('Profile', slug),
+  db: DbClient = defaultDb,
 ): Promise<Profile> {
   const profile = await db._query.profiles.findFirst({
     where: (table, { eq }) => eq(table.slug, slug),

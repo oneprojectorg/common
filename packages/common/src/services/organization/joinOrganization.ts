@@ -1,11 +1,5 @@
 import { cache } from '@op/cache';
-import {
-  type DatabaseType,
-  type TransactionType,
-  and,
-  db as defaultDb,
-  eq,
-} from '@op/db/client';
+import { type DbClient, and, db as defaultDb, eq } from '@op/db/client';
 import {
   type AccessRole,
   type CommonUser,
@@ -28,13 +22,13 @@ export const joinOrganization = async ({
   user,
   organization,
   roleId,
-  db,
+  db = defaultDb,
 }: {
   user: CommonUser;
   organization: Organization;
   /** If provided the allowlist checks are skipped and this role is assigned */
   roleId?: AccessRole['id'];
-  db?: DatabaseType | TransactionType;
+  db?: DbClient;
 }): Promise<OrganizationUser> => {
   const userEmailDomainPart = user.email.split('@')[1];
   if (!userEmailDomainPart) {
@@ -43,11 +37,9 @@ export const joinOrganization = async ({
 
   const userEmailDomain = userEmailDomainPart.toLowerCase();
 
-  const client = db ?? defaultDb;
-
   // Check if user is already a member of this organization and if they are on the allow list
   const [existingMembership, allowListUser] = await Promise.all([
-    client
+    db
       .select()
       .from(organizationUsers)
       .where(
@@ -89,11 +81,11 @@ export const joinOrganization = async ({
 
   const targetRole = await determineTargetRole(
     roleId ?? allowListUser?.metadata?.roleId,
-    client,
+    db,
   );
 
-  return await client.transaction<OrganizationUser>(async (innerTx) => {
-    const [newOrgUser] = await innerTx
+  return await db.transaction<OrganizationUser>(async (tx) => {
+    const [newOrgUser] = await tx
       .insert(organizationUsers)
       .values({
         organizationId: organization.id,
@@ -107,7 +99,7 @@ export const joinOrganization = async ({
       throw new CommonError('Failed to add user to organization');
     }
 
-    await innerTx.insert(organizationUserToAccessRoles).values({
+    await tx.insert(organizationUserToAccessRoles).values({
       organizationUserId: newOrgUser.id,
       accessRoleId: targetRole.id,
     });
@@ -123,10 +115,10 @@ export const joinOrganization = async ({
  */
 const determineTargetRole = async (
   roleId: AccessRole['id'] | undefined,
-  client: DatabaseType | TransactionType,
+  db: DbClient,
 ): Promise<AccessRole> => {
   if (roleId) {
-    const role = await client.query.accessRoles.findFirst({
+    const role = await db.query.accessRoles.findFirst({
       where: { id: roleId },
     });
 
@@ -135,5 +127,5 @@ const determineTargetRole = async (
     }
   }
 
-  return assertGlobalRole('Member', client);
+  return assertGlobalRole('Member', db);
 };

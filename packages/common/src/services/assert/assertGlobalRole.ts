@@ -1,8 +1,4 @@
-import {
-  type DatabaseType,
-  type TransactionType,
-  db as defaultDb,
-} from '@op/db/client';
+import { type DbClient, db as defaultDb } from '@op/db/client';
 import type { AccessRole } from '@op/db/schema';
 
 import { NotFoundError } from '../../utils';
@@ -20,7 +16,7 @@ import { NotFoundError } from '../../utils';
  */
 export async function assertGlobalRole(
   name: string,
-  db?: DatabaseType | TransactionType,
+  db?: DbClient,
 ): Promise<AccessRole> {
   const client = db ?? defaultDb;
 

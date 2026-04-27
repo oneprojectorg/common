@@ -1,4 +1,4 @@
-import { db, eq, sql } from '@op/db/client';
+import { type DbClient, db as defaultDb, eq, sql } from '@op/db/client';
 import {
   links,
   locations,
@@ -89,6 +89,7 @@ const broadDomains = [
 export const createOrganization = async ({
   data,
   user,
+  db = defaultDb,
 }: {
   data: OrganizationInput &
     FundingLinksInput & {
@@ -96,6 +97,7 @@ export const createOrganization = async ({
       orgBannerImageId?: string;
     };
   user: User;
+  db?: DbClient;
 }) => {
   const orgInputs = OrganizationInputParser.parse({
     ...data,
@@ -122,73 +124,73 @@ export const createOrganization = async ({
     }
   }
 
-  // Create an org profile
-  const [profile] = await db
-    .insert(profiles)
-    .values({
-      name: data.name! ?? 'New Organization',
-      slug: await generateUniqueProfileSlug({
-        name: data.name ?? 'org',
-      }),
-      email: data.email,
-      bio: data.bio,
-      website: data.website,
-      mission: data.mission,
-      headerImageId: data.orgBannerImageId,
-      avatarImageId: data.orgAvatarImageId,
-    })
-    .returning();
-
-  if (!profile) {
-    throw new CommonError('Failed to create profile');
-  }
-
-  const [newOrg] = await db
-    .insert(organizations)
-    .values({
-      ...orgInputs,
-      profileId: profile.id,
-      domain,
-    })
-    .returning();
-
-  if (!newOrg) {
-    throw new NotFoundError('Failed to create organization');
-  }
-
-  // Insert organizationUser linking the user to organization, with a default role of owner
-  const [[newOrgUser], adminRole] = await Promise.all([
-    db
-      .insert(organizationUsers)
+  return db.transaction(async (tx) => {
+    // Create an org profile
+    const [profile] = await tx
+      .insert(profiles)
       .values({
-        organizationId: newOrg.id,
-        authUserId: user.id,
-        email: user.email!,
+        name: data.name! ?? 'New Organization',
+        slug: await generateUniqueProfileSlug({
+          name: data.name ?? 'org',
+          db: tx,
+        }),
+        email: data.email,
+        bio: data.bio,
+        website: data.website,
+        mission: data.mission,
+        headerImageId: data.orgBannerImageId,
+        avatarImageId: data.orgAvatarImageId,
       })
-      .returning(),
-    assertGlobalRole('Admin'),
-    db
-      .update(users)
-      .set({ lastOrgId: newOrg.id, currentProfileId: profile.id })
-      .where(eq(users.authUserId, user.id)),
-  ]);
+      .returning();
 
-  // Add admin role to the user creating the organization
-  if (!newOrgUser) {
-    throw new CommonError('Failed to create organization');
-  }
+    if (!profile) {
+      throw new CommonError('Failed to create profile');
+    }
 
-  await db.insert(organizationUserToAccessRoles).values({
-    organizationUserId: newOrgUser.id,
-    accessRoleId: adminRole.id,
-  });
+    const [newOrg] = await tx
+      .insert(organizations)
+      .values({
+        ...orgInputs,
+        profileId: profile.id,
+        domain,
+      })
+      .returning();
 
-  try {
+    if (!newOrg) {
+      throw new NotFoundError('Failed to create organization');
+    }
+
+    // Insert organizationUser linking the user to organization, with a default role of owner
+    const [[newOrgUser], adminRole] = await Promise.all([
+      tx
+        .insert(organizationUsers)
+        .values({
+          organizationId: newOrg.id,
+          authUserId: user.id,
+          email: user.email!,
+        })
+        .returning(),
+      assertGlobalRole('Admin', tx),
+      tx
+        .update(users)
+        .set({ lastOrgId: newOrg.id, currentProfileId: profile.id })
+        .where(eq(users.authUserId, user.id)),
+    ]);
+
+    if (!newOrgUser) {
+      throw new CommonError('Failed to create organization');
+    }
+
+    await tx.insert(organizationUserToAccessRoles).values({
+      organizationUserId: newOrgUser.id,
+      accessRoleId: adminRole.id,
+    });
+
     // Add funding links
     await Promise.all([
       ...(data.receivingFundsLink
         ? [
-            db.insert(links).values({
+            tx.insert(links).values({
               organizationId: newOrg.id,
               href: data.receivingFundsLink,
               description: data.receivingFundsDescription,
@@ -198,7 +200,7 @@ export const createOrganization = async ({
         : []),
       ...(data.offeringFundsLink
         ? [
-            db.insert(links).values({
+            tx.insert(links).values({
               organizationId: newOrg.id,
               href: data.offeringFundsLink,
               description: data.offeringFundsDescription,
@@ -217,7 +219,7 @@ export const createOrganization = async ({
             : null;
 
           // Create location record
-          const [location] = await db
+          const [location] = await tx
             .insert(locations)
             .values({
               name: whereWeWork.label,
@@ -246,7 +248,7 @@ export const createOrganization = async ({
 
           if (location) {
             // Link location to organization
-            await db
+            await tx
               .insert(organizationsWhereWeWork)
               .values({
                 organizationId: newOrg.id,
@@ -266,13 +268,10 @@ export const createOrganization = async ({
       offeringFundsTerms,
     } = data;
 
-    // add all stategy terms to the org (strategy terms already exist in the DB)
-    // TODO: parallelize this
-
     if (strategies) {
       await Promise.all(
         strategies.map((strategy) =>
-          db
+          tx
             .insert(organizationsStrategies)
             .values({
               organizationId: newOrg.id,
@@ -283,7 +282,6 @@ export const createOrganization = async ({
       );
     }
 
-    // TODO: this was changed quickly in the process. We are transitioning to this way of doing terms.
     if (
       focusAreas ||
       communitiesServed ||
@@ -299,7 +297,7 @@ export const createOrganization = async ({
 
       await Promise.all(
         terms.map((term) =>
-          db
+          tx
             .insert(organizationsTerms)
             .values({
               organizationId: newOrg.id,
@@ -310,14 +308,6 @@ export const createOrganization = async ({
       );
     }
 
-    if (!newOrgUser) {
-      throw new CommonError('Failed to associate organization with user');
-    }
-
-    // @ts-ignore
     return { ...newOrg, profile };
-  } catch (e) {
-    console.error(e);
-    throw new CommonError('Failed to create organization');
-  }
+  });
 };

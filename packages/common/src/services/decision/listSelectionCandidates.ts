@@ -1,5 +1,4 @@
-import { db, eq } from '@op/db/client';
-import type { DbClient } from '@op/db/client';
+import { type DbClient, db as defaultDb, eq } from '@op/db/client';
 import { proposalCategories } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
@@ -22,7 +21,7 @@ interface ListSelectionCandidatesInput {
   /** Filter via the canonical `proposalCategories` join, not `proposalData.category`. */
   categoryId?: string;
   sortOrder?: 'newest' | 'oldest';
-  dbClient?: DbClient;
+  db?: DbClient;
 }
 
 /**
@@ -35,9 +34,9 @@ export async function listSelectionCandidates({
   user,
   categoryId,
   sortOrder = 'newest',
-  dbClient = db,
+  db = defaultDb,
 }: ListSelectionCandidatesInput): Promise<SelectionCandidates> {
-  const instance = await dbClient.query.processInstances.findFirst({
+  const instance = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
   });
 
@@ -65,7 +64,7 @@ export async function listSelectionCandidates({
 
   let categoryProposalIds: Set<string> | undefined;
   if (categoryId) {
-    const rows = await dbClient
+    const rows = await db
       .select({ proposalId: proposalCategories.proposalId })
       .from(proposalCategories)
       .where(eq(proposalCategories.taxonomyTermId, categoryId));
@@ -78,7 +77,7 @@ export async function listSelectionCandidates({
   const phaseCandidateIds = await getProposalIdsForPhase({
     instanceId: processInstanceId,
     phaseId: previousPhaseId,
-    dbClient,
+    db,
   });
 
   const candidateIds = categoryProposalIds

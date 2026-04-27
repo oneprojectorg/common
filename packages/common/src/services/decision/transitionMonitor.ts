@@ -176,7 +176,7 @@ async function advanceInstanceTransitions({
 
       const advanceResult = await db.transaction(async (tx) =>
         advancePhase({
-          tx,
+          db: tx,
           instance: {
             id: processInstanceId,
             instanceData: currentInstanceData,

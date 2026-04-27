@@ -67,7 +67,7 @@ async function callAdvancePhase(
   const { dbInstance } = loaded;
   return db.transaction(async (tx) =>
     advancePhase({
-      tx,
+      db: tx,
       instance: {
         id: dbInstance.id,
         instanceData: dbInstance.instanceData as DecisionInstanceData,
