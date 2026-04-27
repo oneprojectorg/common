@@ -143,16 +143,8 @@ async function listProposalsFiltered({
     .filter((p): p is NonNullable<typeof p> => p !== undefined)
     .filter((p) => p.processInstanceId === processInstanceId)
     .map((proposal) => ({
-      id: proposal.id,
-      processInstanceId: proposal.processInstanceId,
+      ...proposal,
       proposalData: parseProposalData(proposal.proposalData),
-      status: proposal.status,
-      visibility: proposal.visibility,
-      profileId: proposal.profileId,
-      profile: proposal.profile,
-      submittedBy: proposal.submittedBy,
-      createdAt: proposal.createdAt,
-      updatedAt: proposal.updatedAt,
       aggregates: computeReviewAggregates(
         proposal.reviewAssignments,
         scoredCriterionKeys,
@@ -231,16 +223,8 @@ async function listProposalsPaginated({
   const categoriesByProposalId = await loadCategoriesByProposalIds(pageIds);
 
   const items = pageRows.map((proposal) => ({
-    id: proposal.id,
-    processInstanceId: proposal.processInstanceId,
+    ...proposal,
     proposalData: parseProposalData(proposal.proposalData),
-    status: proposal.status,
-    visibility: proposal.visibility,
-    profileId: proposal.profileId,
-    profile: proposal.profile,
-    submittedBy: proposal.submittedBy,
-    createdAt: proposal.createdAt,
-    updatedAt: proposal.updatedAt,
     aggregates: computeReviewAggregates(
       proposal.reviewAssignments,
       scoredCriterionKeys,
