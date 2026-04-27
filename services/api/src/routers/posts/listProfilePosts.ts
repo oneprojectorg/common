@@ -1,4 +1,7 @@
-import { Channels, listProfilePosts as listProfilePostsService } from '@op/common';
+import {
+  Channels,
+  listProfilePosts as listProfilePostsService,
+} from '@op/common';
 import { z } from 'zod';
 
 import { postsEncoder } from '../../encoders';

@@ -8,10 +8,7 @@ import {
   encodeCursor,
   getGenericCursorCondition,
 } from '../../utils';
-import {
-  assertDecisionProfilesAccess,
-  getCurrentProfileId,
-} from '../access';
+import { assertDecisionProfilesAccess, getCurrentProfileId } from '../access';
 import { getItemsWithReactionsAndComments } from './listPosts';
 
 export const listProfilePosts = async ({
@@ -31,13 +28,28 @@ export const listProfilePosts = async ({
     requiredPermission: { decisions: permission.READ },
   });
 
-  const cursorCondition = cursor
+  // Stale or hand-edited cursors fall back to the first page rather than
+  // surfacing a 500 — the cursor is internal pagination state, not a
+  // permission gate, so a malformed value is a UX glitch, not a security
+  // event.
+  const decodedCursor = (() => {
+    if (!cursor) {
+      return null;
+    }
+    try {
+      return decodeCursor(cursor);
+    } catch {
+      return null;
+    }
+  })();
+
+  const cursorCondition = decodedCursor
     ? getGenericCursorCondition({
         columns: {
           id: postsToProfiles.postId,
           date: postsToProfiles.createdAt,
         },
-        cursor: decodeCursor(cursor),
+        cursor: decodedCursor,
       })
     : undefined;
 

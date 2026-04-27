@@ -5,16 +5,17 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { DecisionAccess } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
+import { EmptyState } from '@op/ui/EmptyState';
 import { Sheet, SheetBody, SheetHeader } from '@op/ui/Sheet';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { Suspense, useCallback } from 'react';
+import { LuMegaphone } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 import {
   DiscussionModalContainer,
-  EmptyPostsState,
   PostFeed,
   PostFeedSkeleton,
   PostItem,
@@ -71,7 +72,9 @@ export const DecisionSidePanel = ({
             </Suspense>
           </ErrorBoundary>
         ) : (
-          <EmptyPostsState />
+          <EmptyState icon={<LuMegaphone />}>
+            {t("You don't have access to updates for this decision.")}
+          </EmptyState>
         )}
       </SheetBody>
     </Sheet>
@@ -79,6 +82,7 @@ export const DecisionSidePanel = ({
 };
 
 const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
+  const t = useTranslations();
   const { user } = useUser();
 
   const [paginatedData, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
@@ -114,7 +118,9 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
   } = usePostFeedActions();
 
   if (posts.length === 0) {
-    return <EmptyPostsState />;
+    return (
+      <EmptyState icon={<LuMegaphone />}>{t('No updates yet')}</EmptyState>
+    );
   }
 
   return (

@@ -2,12 +2,9 @@ import { db } from '@op/db/client';
 import { posts as postsTable, postsToProfiles } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 
-import {
-  assertDecisionProfilesAccess,
-  getCurrentProfileId,
-} from '../access';
 import type { ChannelName } from '../../realtime/channels/channels';
 import { Channels } from '../../realtime/channels/channels';
+import { assertDecisionProfilesAccess, getCurrentProfileId } from '../access';
 import { decisionPermission } from '../decision/permissions';
 
 export type PostContext = {
