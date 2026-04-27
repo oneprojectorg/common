@@ -10,7 +10,6 @@
   },
   "types": "./src/index.ts",
   "scripts": {
-    "disable-build": "tsc",
     "format:check": "oxfmt --check",
     "typecheck": "tsgo --noEmit"
   },

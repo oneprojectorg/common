@@ -9,7 +9,7 @@
     "./decision-data": "./src/decision-data.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
     "@op/common": "workspace:*",

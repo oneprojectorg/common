@@ -14,7 +14,7 @@
     "supabase:start": "tsx supabase-e2e.ts start",
     "supabase:status": "tsx supabase-e2e.ts status",
     "supabase:stop": "tsx supabase-e2e.ts stop",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsgo --noEmit"
   },
   "devDependencies": {
     "@op/common": "workspace:^",
