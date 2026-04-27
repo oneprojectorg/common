@@ -13,6 +13,7 @@ import {
 import { CreatePostInput } from '@op/types';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
+import { alias } from 'drizzle-orm/pg-core';
 import { eq } from 'drizzle-orm';
 
 import { CommonError } from '../../utils';
@@ -31,27 +32,35 @@ const sendPostCommentNotification = async (
   commenterProfileId: string,
 ) => {
   try {
-    // The parent post may be attached to an organization profile (org feed,
-    // proposal comments) OR a non-org profile (decision-instance updates,
-    // user profile posts). The post author is always on `posts.profileId`,
-    // so we resolve the recipient there and look up the "posted in" context
-    // separately (org name when org-attached, profile name otherwise).
+    // Resolve the email recipient (parent post's author) and the thread's
+    // root profile in a single query. The root profile is the pinned access
+    // gate (org / individual / decision profile) that owns the thread, so
+    // notifications link into the URL where the conversation actually lives
+    // — `/profile/<rootProfileSlug>/posts/<rootPostId>` — instead of pointing
+    // at the recipient's personal profile.
+    const authorProfiles = alias(profiles, 'author_profiles');
+    const rootProfiles = alias(profiles, 'root_profiles');
     const [parentRow] = await db
       .select({
         post: {
           id: posts.id,
           content: posts.content,
-          profileId: posts.profileId,
+          rootPostId: posts.rootPostId,
         },
         author: {
-          id: profiles.id,
-          name: profiles.name,
-          email: profiles.email,
-          slug: profiles.slug,
+          id: authorProfiles.id,
+          name: authorProfiles.name,
+          email: authorProfiles.email,
+          slug: authorProfiles.slug,
+        },
+        rootProfile: {
+          name: rootProfiles.name,
+          slug: rootProfiles.slug,
         },
       })
       .from(posts)
-      .innerJoin(profiles, eq(profiles.id, posts.profileId))
+      .innerJoin(authorProfiles, eq(authorProfiles.id, posts.profileId))
+      .leftJoin(rootProfiles, eq(rootProfiles.id, posts.rootProfileId))
       .where(eq(posts.id, parentPostId))
       .limit(1);
 
@@ -59,13 +68,22 @@ const sendPostCommentNotification = async (
       return;
     }
 
-    const { post: parentPost, author: recipientProfile } = parentRow;
+    const {
+      post: parentPost,
+      author: recipientProfile,
+      rootProfile,
+    } = parentRow;
 
     // Don't notify the user about comments on their own post
     if (recipientProfile.id === commenterProfileId || !recipientProfile.email) {
       return;
     }
 
+    // Commenter name + parent-org fallback in parallel. The org lookup is a
+    // safety net for posts written before rootProfileId was pinned (or any
+    // future case where the gate is null) — preserves the prior URL/postedIn
+    // behavior so the email always carries a profile slug + a "posted in"
+    // label.
     const [commenterRow, parentOrgLinkRow] = await Promise.all([
       db
         .select({ name: profiles.name })
@@ -97,15 +115,18 @@ const sendPostCommentNotification = async (
         ? `${parentPost.content.slice(0, 50).trim()}...`
         : parentPost.content.trim();
 
-    // Prefer org context for the URL/postedIn field when the parent post is
-    // org-attached; otherwise fall back to the recipient (author) profile.
+    // Link to the thread root: the access-gate profile owns the URL space,
+    // and the root post id keeps deep replies on a stable thread page.
+    // Fall through to the parent-org or recipient slug when no gate is
+    // pinned, so the email never lands at a slugless URL.
     const parentOrgLink = parentOrgLinkRow[0];
     const linkedProfileSlug =
-      parentOrgLink?.orgProfileSlug ?? recipientProfile.slug;
-    const postedIn = parentOrgLink?.orgProfileName ?? recipientProfile.name;
-
+      rootProfile?.slug ??
+      parentOrgLink?.orgProfileSlug ??
+      recipientProfile.slug;
+    const threadRootPostId = parentPost.rootPostId ?? parentPost.id;
     const baseUrl = OPURLConfig('APP').ENV_URL;
-    const contentUrl = `${baseUrl}/profile/${linkedProfileSlug}/posts/${parentPost.id}`;
+    const contentUrl = `${baseUrl}/profile/${linkedProfileSlug}/posts/${threadRootPostId}`;
 
     await sendCommentNotificationEmail({
       to: recipientProfile.email,
@@ -116,7 +137,7 @@ const sendPostCommentNotification = async (
       recipientName: recipientProfile.name,
       contentType: 'post',
       contextName,
-      postedIn,
+      postedIn: rootProfile?.name ?? parentOrgLink?.orgProfileName,
     });
   } catch (emailError) {
     console.error(

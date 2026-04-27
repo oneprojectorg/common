@@ -197,6 +197,90 @@ export const relations = defineRelations(schema, (r) => ({
   },
 
   /**
+   * Post relations
+   *
+   * profileId, parentPostId, rootProfileId, and rootPostId are all nullable.
+   * parentPost / childPosts and rootPost / threadPosts are self-referential
+   * — aliases match each forward/reverse pair.
+   */
+  posts: {
+    profile: r.one.profiles({
+      from: r.posts.profileId,
+      to: r.profiles.id,
+      alias: 'post_profile',
+    }),
+    parentPost: r.one.posts({
+      from: r.posts.parentPostId,
+      to: r.posts.id,
+      alias: 'post_parent',
+    }),
+    childPosts: r.many.posts({
+      from: r.posts.id,
+      to: r.posts.parentPostId,
+      alias: 'post_parent',
+    }),
+    rootProfile: r.one.profiles({
+      from: r.posts.rootProfileId,
+      to: r.profiles.id,
+      alias: 'post_rootProfile',
+    }),
+    rootPost: r.one.posts({
+      from: r.posts.rootPostId,
+      to: r.posts.id,
+      alias: 'post_root',
+    }),
+    threadPosts: r.many.posts({
+      from: r.posts.id,
+      to: r.posts.rootPostId,
+      alias: 'post_root',
+    }),
+    attachments: r.many.attachments({
+      from: r.posts.id,
+      to: r.attachments.postId,
+    }),
+    reactions: r.many.postReactions({
+      from: r.posts.id,
+      to: r.postReactions.postId,
+    }),
+    postsToProfiles: r.many.postsToProfiles({
+      from: r.posts.id,
+      to: r.postsToProfiles.postId,
+    }),
+  },
+
+  /**
+   * Posts ↔ profiles join table relations.
+   */
+  postsToProfiles: {
+    post: r.one.posts({
+      from: r.postsToProfiles.postId,
+      to: r.posts.id,
+      optional: false,
+    }),
+    profile: r.one.profiles({
+      from: r.postsToProfiles.profileId,
+      to: r.profiles.id,
+      optional: false,
+    }),
+  },
+
+  /**
+   * Post reaction relations.
+   */
+  postReactions: {
+    post: r.one.posts({
+      from: r.postReactions.postId,
+      to: r.posts.id,
+      optional: false,
+    }),
+    profile: r.one.profiles({
+      from: r.postReactions.profileId,
+      to: r.profiles.id,
+      optional: false,
+    }),
+  },
+
+  /**
    * Process instance relations
    *
    * stewardProfileId is nullable.

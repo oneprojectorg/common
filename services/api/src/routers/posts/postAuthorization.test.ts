@@ -309,6 +309,121 @@ describe.concurrent('decision-profile post authorization', () => {
 
     expect(reactions).toHaveLength(1);
   });
+
+  it('rejects an outsider from removing a reaction on a decision-profile post', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const adminPost = await adminCaller.posts.createPost({
+      content: 'Admin update.',
+      profileId: instance.profileId,
+    });
+    await adminCaller.organization.addReaction({
+      postId: adminPost.id,
+      reactionType: 'like',
+    });
+
+    const outsiderCaller = await createOutsiderCaller(testData);
+    await expect(
+      outsiderCaller.organization.removeReaction({ postId: adminPost.id }),
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+
+    // The original reaction is still present — outsider's removeReaction
+    // never reached the delete query.
+    const reactions = await db
+      .select({ postId: postReactions.postId })
+      .from(postReactions)
+      .where(eq(postReactions.postId, adminPost.id));
+    expect(reactions).toHaveLength(1);
+  });
+
+  it('rejects an outsider from toggling a reaction on a decision-profile post', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const adminPost = await adminCaller.posts.createPost({
+      content: 'Admin update.',
+      profileId: instance.profileId,
+    });
+
+    const outsiderCaller = await createOutsiderCaller(testData);
+    await expect(
+      outsiderCaller.organization.toggleReaction({
+        postId: adminPost.id,
+        reactionType: 'like',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+
+    const reactions = await db
+      .select({ postId: postReactions.postId })
+      .from(postReactions)
+      .where(eq(postReactions.postId, adminPost.id));
+    expect(reactions).toHaveLength(0);
+  });
+
+  it('toggleReaction returns added / replaced / removed for a member', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const adminPost = await adminCaller.posts.createPost({
+      content: 'Admin update.',
+      profileId: instance.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    const first = await memberCaller.organization.toggleReaction({
+      postId: adminPost.id,
+      reactionType: 'like',
+    });
+    expect(first.action).toBe('added');
+
+    const second = await memberCaller.organization.toggleReaction({
+      postId: adminPost.id,
+      reactionType: 'celebrate',
+    });
+    expect(second.action).toBe('replaced');
+
+    const third = await memberCaller.organization.toggleReaction({
+      postId: adminPost.id,
+      reactionType: 'celebrate',
+    });
+    expect(third.action).toBe('removed');
+
+    const reactions = await db
+      .select({ postId: postReactions.postId })
+      .from(postReactions)
+      .where(eq(postReactions.postId, adminPost.id));
+    expect(reactions).toHaveLength(0);
+  });
 });
 
 // Non-decision profiles intentionally short-circuit the decision-permission
@@ -515,6 +630,43 @@ describe.concurrent('listProfilePosts authorization and pagination', () => {
 
     expect(page.items.length).toBeGreaterThanOrEqual(1);
     expect(page.items.map((p) => p.content)).toContain('Org-level update.');
+  });
+
+  it('hydrates nested relations (profile, reactions) on listProfilePosts results', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // Pins the V2-relations migration on this code path: the query loads
+    // `post.profile`, `post.attachments`, and `post.reactions` (with nested
+    // `profile`), and the post-processing step adds reactionCounts +
+    // userReaction. A regression in the relation graph would surface here.
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const post = await adminCaller.posts.createPost({
+      content: 'Update with reaction.',
+      profileId: instance.profileId,
+    });
+    await adminCaller.organization.addReaction({
+      postId: post.id,
+      reactionType: 'like',
+    });
+
+    const page = await adminCaller.posts.listProfilePosts({
+      profileId: instance.profileId,
+      limit: 10,
+    });
+
+    expect(page.items).toHaveLength(1);
+    const item = page.items[0];
+    expect(item?.profile).toBeTruthy();
+    expect(item?.reactionCounts?.like).toBe(1);
+    expect(item?.userReaction).toBe('like');
   });
 
   it('paginates with cursor across multiple pages', async ({

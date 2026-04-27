@@ -1,7 +1,6 @@
-import { and, db } from '@op/db/client';
-import { EntityType, postsToProfiles } from '@op/db/schema';
+import { and, db, eq } from '@op/db/client';
+import { EntityType } from '@op/db/schema';
 import { permission } from 'access-zones';
-import { eq } from 'drizzle-orm';
 
 import {
   decodeCursor,
@@ -45,23 +44,22 @@ export const listProfilePosts = async ({
     }
   })();
 
-  const cursorCondition = decodedCursor
-    ? getGenericCursorCondition({
-        columns: {
-          id: postsToProfiles.postId,
-          date: postsToProfiles.createdAt,
-        },
-        cursor: decodedCursor,
-      })
-    : undefined;
-
-  const result = await db._query.postsToProfiles.findMany({
-    where: cursorCondition
-      ? and(eq(postsToProfiles.profileId, profileId), cursorCondition)
-      : (table, { eq: eqOp }) => eqOp(table.profileId, profileId),
+  const result = await db.query.postsToProfiles.findMany({
+    where: {
+      RAW: (table) =>
+        and(
+          eq(table.profileId, profileId),
+          decodedCursor
+            ? getGenericCursorCondition({
+                columns: { id: table.postId, date: table.createdAt },
+                cursor: decodedCursor,
+              })
+            : undefined,
+        )!,
+    },
     with: {
       post: {
-        where: (table, { isNull: isNullOp }) => isNullOp(table.parentPostId),
+        where: { parentPostId: { isNull: true } },
         with: {
           profile: {
             with: { avatarImage: true },
@@ -75,7 +73,7 @@ export const listProfilePosts = async ({
         },
       },
     },
-    orderBy: (table, { desc: descOp }) => descOp(table.createdAt),
+    orderBy: { createdAt: 'desc' },
     limit: limit + 1,
   });
 

@@ -67,7 +67,7 @@ export const resolvePostRoots = async ({
     }
 
     // Proposals don't carry their own permissions — gate resolves up to the
-    // parent decision's profile.
+    // parent decision profile.
     if (profile.type === EntityType.PROPOSAL) {
       const [parent] = await db
         .select({ decisionProfileId: processInstances.profileId })

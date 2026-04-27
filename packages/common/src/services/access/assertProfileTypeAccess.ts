@@ -1,8 +1,7 @@
 import { db } from '@op/db/client';
-import { EntityType, profiles } from '@op/db/schema';
+import type { EntityType } from '@op/db/schema';
 import type { AccessZonePermission } from 'access-zones';
 import { assertAccess, permission } from 'access-zones';
-import { inArray } from 'drizzle-orm';
 
 import { getProfileAccessUser } from './index';
 
@@ -32,14 +31,20 @@ export const assertProfileTypeAccess = async ({
     return;
   }
 
-  const profileRows = await db
-    .select({ id: profiles.id, type: profiles.type })
-    .from(profiles)
-    .where(inArray(profiles.id, profileIds));
+  const profileRows = await db.query.profiles.findMany({
+    where: { id: { in: profileIds } },
+    columns: { id: true, type: true },
+  });
+
+  // `enumToPgEnum` widens entity-type columns to plain `string`, so we
+  // narrow at the lookup site rather than threading the cast through the
+  // policy map type.
+  const lookupPolicy = (type: string) =>
+    (policies as Record<string, AccessZonePermission | undefined>)[type];
 
   await Promise.all(
     profileRows.map(async (row) => {
-      const requiredPermission = policies[row.type as EntityType];
+      const requiredPermission = lookupPolicy(row.type);
       if (!requiredPermission) {
         return;
       }

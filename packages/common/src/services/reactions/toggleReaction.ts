@@ -1,31 +1,43 @@
-import { addReaction } from './addReaction';
+import { insertReaction } from './addReaction';
 import { getExistingReaction } from './getExistingReaction';
-import { removeReaction } from './removeReaction';
+import type { PostContext } from './reactionAuth';
+import { authorizeReactionForPost } from './reactionAuth';
+import { deleteReaction } from './removeReaction';
 
 export interface ToggleReactionOptions {
+  user: { id: string };
   postId: string;
-  profileId: string;
   reactionType: string;
 }
 
-export const toggleReaction = async (options: ToggleReactionOptions) => {
-  const { postId, profileId, reactionType } = options;
+export type ToggleReactionAction = 'added' | 'removed' | 'replaced';
+
+export const toggleReaction = async ({
+  user,
+  postId,
+  reactionType,
+}: ToggleReactionOptions): Promise<{
+  action: ToggleReactionAction;
+  context: PostContext;
+}> => {
+  // One auth pass — internal add/remove dispatch use the lower-level helpers
+  // so we don't re-authorize for the same request.
+  const { context, profileId } = await authorizeReactionForPost({
+    user,
+    postId,
+  });
 
   const existingReaction = await getExistingReaction({ postId, profileId });
 
   if (existingReaction) {
-    // If user has the same reaction type, remove it
     if (existingReaction.reactionType === reactionType) {
-      await removeReaction({ postId, profileId });
-      return { action: 'removed' as const };
-    } else {
-      // If user has a different reaction type, replace it
-      await addReaction({ postId, profileId, reactionType });
-      return { action: 'replaced' as const };
+      await deleteReaction({ postId, profileId });
+      return { action: 'removed', context };
     }
-  } else {
-    // No existing reaction, add new one
-    await addReaction({ postId, profileId, reactionType });
-    return { action: 'added' as const };
+    await insertReaction({ postId, profileId, reactionType });
+    return { action: 'replaced', context };
   }
+
+  await insertReaction({ postId, profileId, reactionType });
+  return { action: 'added', context };
 };

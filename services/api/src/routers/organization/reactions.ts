@@ -1,6 +1,5 @@
 import {
   addReaction,
-  authorizeReactionForPost,
   channelsForPost,
   removeReaction,
   toggleReaction,
@@ -25,13 +24,11 @@ export const reactionsRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const { postId, reactionType } = input;
-      const { context, profileId } = await authorizeReactionForPost({
+      const { context } = await addReaction({
         user: ctx.user,
-        postId,
+        postId: input.postId,
+        reactionType: input.reactionType,
       });
-
-      await addReaction({ postId, profileId, reactionType });
       ctx.registerMutationChannels(channelsForPost(context));
     }),
 
@@ -42,13 +39,10 @@ export const reactionsRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const { postId } = input;
-      const { context, profileId } = await authorizeReactionForPost({
+      const { context } = await removeReaction({
         user: ctx.user,
-        postId,
+        postId: input.postId,
       });
-
-      await removeReaction({ postId, profileId });
       ctx.registerMutationChannels(channelsForPost(context));
     }),
 
@@ -60,15 +54,12 @@ export const reactionsRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const { postId, reactionType } = input;
-      const { context, profileId } = await authorizeReactionForPost({
+      const { context, action } = await toggleReaction({
         user: ctx.user,
-        postId,
+        postId: input.postId,
+        reactionType: input.reactionType,
       });
-
-      const result = await toggleReaction({ postId, profileId, reactionType });
       ctx.registerMutationChannels(channelsForPost(context));
-
-      return result;
+      return { action };
     }),
 });
