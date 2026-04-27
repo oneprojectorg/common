@@ -10,7 +10,7 @@ import { useTranslations } from '@/lib/i18n';
 import { ProposalAttachmentList } from './ProposalAttachmentList';
 
 const MAX_FILES = 5;
-const MAX_SIZE_MB = 10;
+const MAX_SIZE_MB = 25;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
 const ACCEPTED_TYPES = [
@@ -20,6 +20,7 @@ const ACCEPTED_TYPES = [
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'video/mp4',
 ];
 
 interface Attachment {
@@ -185,7 +186,7 @@ export function ProposalAttachments({
           ),
         })}
         description={t('Accepts {types} and more up to {size}MB', {
-          types: 'PDF, DOCX, XLSX',
+          types: 'MP4, PDF, DOCX, XLSX',
           size: MAX_SIZE_MB,
         })}
         allowsMultiple
