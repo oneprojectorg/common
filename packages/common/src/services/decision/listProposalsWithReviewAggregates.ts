@@ -358,36 +358,32 @@ function buildItem<
   let totalScore = 0;
   const overallRecommendationCount: Record<string, number> = {};
 
+  // `proposal_reviews_assignment_unique` makes this 0-or-1, so we just take
+  // the first row even though the relation is declared as many.
   for (const assignment of proposal.reviewAssignments) {
-    for (const review of assignment.reviews) {
-      if (review.state !== ProposalReviewState.SUBMITTED) {
-        continue;
-      }
-      reviewsSubmitted += 1;
+    const review = assignment.reviews[0];
+    if (!review || review.state !== ProposalReviewState.SUBMITTED) {
+      continue;
+    }
+    reviewsSubmitted += 1;
 
-      const data = review.reviewData as {
-        answers?: Record<string, unknown>;
-      } | null;
-      const answers = data?.answers ?? {};
+    const data = review.reviewData as {
+      answers?: Record<string, unknown>;
+    } | null;
+    const answers = data?.answers ?? {};
 
-      for (const key of scoredCriterionKeys) {
-        const value = answers[key];
-        if (typeof value === 'number') {
-          totalScore += value;
-        } else if (typeof value === 'string') {
-          const n = Number(value);
-          if (!Number.isNaN(n)) {
-            totalScore += n;
-          }
-        }
+    for (const key of scoredCriterionKeys) {
+      const value = Number(answers[key]);
+      if (Number.isFinite(value)) {
+        totalScore += value;
       }
+    }
 
-      const reco = answers[OVERALL_RECOMMENDATION_KEY];
-      if (reco !== null && reco !== undefined) {
-        const answerKey = String(reco);
-        overallRecommendationCount[answerKey] =
-          (overallRecommendationCount[answerKey] ?? 0) + 1;
-      }
+    const reco = answers[OVERALL_RECOMMENDATION_KEY];
+    if (reco !== null && reco !== undefined) {
+      const answerKey = String(reco);
+      overallRecommendationCount[answerKey] =
+        (overallRecommendationCount[answerKey] ?? 0) + 1;
     }
   }
 
