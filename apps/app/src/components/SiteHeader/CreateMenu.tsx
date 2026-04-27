@@ -34,6 +34,7 @@ export const CreateMenu = () => {
   const isMobile = useMediaQuery(`(max-width: ${SM_BREAKPOINT})`);
   const createDecisionEnabled = useFeatureFlag('create_decision_process');
   const utils = trpc.useUtils();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const createDecisionMutation = useMutation({
     mutationFn: async () => {
@@ -59,10 +60,15 @@ export const CreateMenu = () => {
       });
     },
   });
+  const isCreatingDecision =
+    createDecisionMutation.isPending || createDecisionMutation.isSuccess;
 
   return (
     <>
-      <MenuTrigger>
+      <MenuTrigger
+        isOpen={isMenuOpen || isCreatingDecision}
+        onOpenChange={setIsMenuOpen}
+      >
         <Button
           className="h-8 rounded-md px-2 sm:px-3"
           color={isMobile ? 'secondary' : 'primary'}
@@ -81,10 +87,10 @@ export const CreateMenu = () => {
             {createDecisionEnabled && (
               <MenuItem
                 id="create-decision"
-                isDisabled={createDecisionMutation.isPending}
+                isDisabled={isCreatingDecision}
                 onAction={() => createDecisionMutation.mutate()}
               >
-                {createDecisionMutation.isPending ? (
+                {isCreatingDecision ? (
                   <LoadingSpinner className="size-4" />
                 ) : (
                   <LuMessageCircle className="size-4" />
