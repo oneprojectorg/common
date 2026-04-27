@@ -24,7 +24,7 @@ const createCaller = createCallerFactory(appRouter);
 /**
  * Two-criterion rubric: `impact` (0–10, scored) and `feasibility` (1–5, scored),
  * plus the well-known overall-recommendation field (yes/no) — its answers feed
- * `overallRecommendationCount` but not `totalScore`.
+ * `overallRecommendationCount` but not `averageScore`.
  */
 const rubricTemplate: RubricTemplateSchema = {
   type: 'object',
@@ -188,7 +188,6 @@ describe.concurrent('listWithReviewAggregates', () => {
     expect(reviewedItem?.aggregates).toMatchObject({
       assignmentsTotal: 1,
       reviewsSubmitted: 1,
-      totalScore: 11,
       averageScore: 11,
     });
     expect(reviewedItem?.aggregates.overallRecommendationCount).toEqual({
@@ -201,7 +200,6 @@ describe.concurrent('listWithReviewAggregates', () => {
     expect(unreviewedItem?.aggregates).toMatchObject({
       assignmentsTotal: 1,
       reviewsSubmitted: 0,
-      totalScore: 0,
       averageScore: 0,
       overallRecommendationCount: {},
     });
@@ -339,7 +337,6 @@ describe.concurrent('listWithReviewAggregates', () => {
     expect(result.items).toHaveLength(1);
     expect(result.items[0]?.aggregates).toMatchObject({
       reviewsSubmitted: 0,
-      totalScore: 0,
       averageScore: 0,
       overallRecommendationCount: {},
     });
