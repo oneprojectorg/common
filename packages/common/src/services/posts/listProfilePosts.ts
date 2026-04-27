@@ -1,5 +1,5 @@
 import { and, db } from '@op/db/client';
-import { postsToProfiles } from '@op/db/schema';
+import { EntityType, postsToProfiles } from '@op/db/schema';
 import { permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
@@ -8,7 +8,7 @@ import {
   encodeCursor,
   getGenericCursorCondition,
 } from '../../utils';
-import { assertDecisionProfilesAccess, getCurrentProfileId } from '../access';
+import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
 import { getItemsWithReactionsAndComments } from './listPosts';
 
 export const listProfilePosts = async ({
@@ -22,10 +22,12 @@ export const listProfilePosts = async ({
   limit?: number;
   cursor?: string | null;
 }) => {
-  await assertDecisionProfilesAccess({
+  await assertProfileTypeAccess({
     user: { id: authUserId },
     profileIds: [profileId],
-    requiredPermission: { decisions: permission.READ },
+    policies: {
+      [EntityType.DECISION]: { decisions: permission.READ },
+    },
   });
 
   // Stale or hand-edited cursors fall back to the first page rather than

@@ -43,7 +43,7 @@ export const DecisionSidePanel = ({
   }
 
   const canPostUpdate = access?.admin === true;
-  const canReadUpdates = access?.admin === true || access?.read === true;
+  const canReadUpdates = canPostUpdate || access?.read === true;
 
   return (
     <Sheet
@@ -103,12 +103,15 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
     fetchNextPage();
   }, [fetchNextPage]);
 
-  const { ref, shouldShowTrigger } = useInfiniteScroll(stableFetchNextPage, {
-    hasNextPage,
-    isFetchingNextPage,
-    threshold: 0.1,
-    rootMargin: '50px',
-  });
+  const { ref, shouldShowTrigger } = useInfiniteScroll<HTMLDivElement>(
+    stableFetchNextPage,
+    {
+      hasNextPage,
+      isFetchingNextPage,
+      threshold: 0.1,
+      rootMargin: '50px',
+    },
+  );
 
   const {
     discussionModal,
@@ -140,10 +143,7 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
         ))}
       </PostFeed>
       {shouldShowTrigger && (
-        <div
-          ref={ref as React.RefObject<HTMLDivElement>}
-          className="flex justify-center py-4"
-        >
+        <div ref={ref} className="flex justify-center py-4">
           {isFetchingNextPage && <PostFeedSkeleton numPosts={1} />}
         </div>
       )}

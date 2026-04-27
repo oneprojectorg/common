@@ -1,9 +1,9 @@
 import { db } from '@op/db/client';
-import { posts, postsToProfiles } from '@op/db/schema';
+import { EntityType, posts, postsToProfiles } from '@op/db/schema';
 import { permission } from 'access-zones';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
-import { assertDecisionProfilesAccess, getCurrentProfileId } from '../access';
+import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
 import { getItemsWithReactionsAndComments } from './listPosts';
 
 export interface GetPostsInput {
@@ -39,9 +39,9 @@ export const getPosts = async (input: GetPostsInput) => {
     }
 
     // Authorize against the target profile (or each profile the parent post is
-    // attached to, when reading a comment thread without a profileId). Only
-    // decision-bound profiles enforce a permission check; non-decision profiles
-    // (regular org/proposal feeds) fall through unchanged.
+    // attached to, when reading a comment thread without a profileId). The
+    // helper dispatches by profile type — decision/proposal profiles get a
+    // decision READ gate; other profile types are not gated here.
     const profileIdsToAuthorize = profileId
       ? [profileId]
       : parentPostId
@@ -53,10 +53,12 @@ export const getPosts = async (input: GetPostsInput) => {
           ).map((p) => p.profileId)
         : [];
 
-    await assertDecisionProfilesAccess({
+    await assertProfileTypeAccess({
       user: { id: authUserId },
       profileIds: profileIdsToAuthorize,
-      requiredPermission: { decisions: permission.READ },
+      policies: {
+        [EntityType.DECISION]: { decisions: permission.READ },
+      },
     });
 
     // Build where conditions for posts within the profile
