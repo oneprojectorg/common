@@ -64,12 +64,15 @@ export const authorizeReactionForPost = async ({
   user: { id: string };
   postId: string;
 }): Promise<{ context: PostContext; profileId: string }> => {
-  const context = await loadPostContext(postId);
   // Auth on the pinned gate (post.rootProfileId), not on the feed list.
   // For decision-attached posts (including comments on proposal-attached
   // posts that resolved up to the parent decision at write time), the gate
   // is the decision profile. For org/individual posts, the gate falls
   // through unchanged.
+  const [context, profileId] = await Promise.all([
+    loadPostContext(postId),
+    getCurrentProfileId(user.id),
+  ]);
   await assertProfileTypeAccess({
     user,
     profileIds: context.rootProfileId ? [context.rootProfileId] : [],
@@ -79,6 +82,5 @@ export const authorizeReactionForPost = async ({
       },
     },
   });
-  const profileId = await getCurrentProfileId(user.id);
   return { context, profileId };
 };

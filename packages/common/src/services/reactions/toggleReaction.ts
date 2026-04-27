@@ -20,8 +20,6 @@ export const toggleReaction = async ({
   action: ToggleReactionAction;
   context: PostContext;
 }> => {
-  // One auth pass — internal add/remove dispatch use the lower-level helpers
-  // so we don't re-authorize for the same request.
   const { context, profileId } = await authorizeReactionForPost({
     user,
     postId,

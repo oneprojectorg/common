@@ -32,39 +32,40 @@ const sendPostCommentNotification = async (
   commenterProfileId: string,
 ) => {
   try {
-    // Resolve the email recipient (parent post's author) and the thread's
-    // root profile in a single query. The root profile is the pinned access
-    // gate (org / individual / decision profile) that owns the thread, so
-    // notifications link into the URL where the conversation actually lives
-    // — `/profile/<rootProfileSlug>/posts/<rootPostId>` — instead of pointing
-    // at the recipient's personal profile.
     const authorProfiles = alias(profiles, 'author_profiles');
     const rootProfiles = alias(profiles, 'root_profiles');
-    const [parentRow] = await db
-      .select({
-        post: {
-          id: posts.id,
-          content: posts.content,
-          rootPostId: posts.rootPostId,
-        },
-        author: {
-          id: authorProfiles.id,
-          name: authorProfiles.name,
-          email: authorProfiles.email,
-          slug: authorProfiles.slug,
-        },
-        rootProfile: {
-          name: rootProfiles.name,
-          slug: rootProfiles.slug,
-        },
-      })
-      .from(posts)
-      .innerJoin(authorProfiles, eq(authorProfiles.id, posts.profileId))
-      .leftJoin(rootProfiles, eq(rootProfiles.id, posts.rootProfileId))
-      .where(eq(posts.id, parentPostId))
-      .limit(1);
+    const [[parentRow], [commenterRow]] = await Promise.all([
+      db
+        .select({
+          post: {
+            id: posts.id,
+            content: posts.content,
+            rootPostId: posts.rootPostId,
+          },
+          author: {
+            id: authorProfiles.id,
+            name: authorProfiles.name,
+            email: authorProfiles.email,
+            slug: authorProfiles.slug,
+          },
+          rootProfile: {
+            name: rootProfiles.name,
+            slug: rootProfiles.slug,
+          },
+        })
+        .from(posts)
+        .innerJoin(authorProfiles, eq(authorProfiles.id, posts.profileId))
+        .leftJoin(rootProfiles, eq(rootProfiles.id, posts.rootProfileId))
+        .where(eq(posts.id, parentPostId))
+        .limit(1),
+      db
+        .select({ name: profiles.name })
+        .from(profiles)
+        .where(eq(profiles.id, commenterProfileId))
+        .limit(1),
+    ]);
 
-    if (!parentRow) {
+    if (!parentRow || !commenterRow) {
       return;
     }
 
@@ -74,63 +75,45 @@ const sendPostCommentNotification = async (
       rootProfile,
     } = parentRow;
 
-    // Don't notify the user about comments on their own post
     if (recipientProfile.id === commenterProfileId || !recipientProfile.email) {
       return;
     }
 
-    // Commenter name + parent-org fallback in parallel. The org lookup is a
-    // safety net for posts written before rootProfileId was pinned (or any
-    // future case where the gate is null) — preserves the prior URL/postedIn
-    // behavior so the email always carries a profile slug + a "posted in"
-    // label.
-    const [commenterRow, parentOrgLinkRow] = await Promise.all([
-      db
-        .select({ name: profiles.name })
-        .from(profiles)
-        .where(eq(profiles.id, commenterProfileId))
-        .limit(1),
-      db
-        .select({
-          orgProfileName: profiles.name,
-          orgProfileSlug: profiles.slug,
-        })
-        .from(postsToOrganizations)
-        .innerJoin(
-          organizations,
-          eq(organizations.id, postsToOrganizations.organizationId),
-        )
-        .innerJoin(profiles, eq(profiles.id, organizations.profileId))
-        .where(eq(postsToOrganizations.postId, parentPostId))
-        .limit(1),
-    ]);
-
-    const commenterProfile = commenterRow[0];
-    if (!commenterProfile) {
-      return;
-    }
+    // Pre-rootProfileId posts have no pinned gate; fall back to the
+    // post-to-org link so the email keeps a profile slug + "posted in" label.
+    const parentOrgLink = !rootProfile
+      ? (
+          await db
+            .select({
+              orgProfileName: profiles.name,
+              orgProfileSlug: profiles.slug,
+            })
+            .from(postsToOrganizations)
+            .innerJoin(
+              organizations,
+              eq(organizations.id, postsToOrganizations.organizationId),
+            )
+            .innerJoin(profiles, eq(profiles.id, organizations.profileId))
+            .where(eq(postsToOrganizations.postId, parentPostId))
+            .limit(1)
+        )[0]
+      : undefined;
 
     const contextName =
       parentPost.content.length > 50
         ? `${parentPost.content.slice(0, 50).trim()}...`
         : parentPost.content.trim();
 
-    // Link to the thread root: the access-gate profile owns the URL space,
-    // and the root post id keeps deep replies on a stable thread page.
-    // Fall through to the parent-org or recipient slug when no gate is
-    // pinned, so the email never lands at a slugless URL.
-    const parentOrgLink = parentOrgLinkRow[0];
     const linkedProfileSlug =
       rootProfile?.slug ??
       parentOrgLink?.orgProfileSlug ??
       recipientProfile.slug;
-    const threadRootPostId = parentPost.rootPostId ?? parentPost.id;
     const baseUrl = OPURLConfig('APP').ENV_URL;
-    const contentUrl = `${baseUrl}/profile/${linkedProfileSlug}/posts/${threadRootPostId}`;
+    const contentUrl = `${baseUrl}/profile/${linkedProfileSlug}/posts/${parentPost.rootPostId ?? parentPost.id}`;
 
     await sendCommentNotificationEmail({
       to: recipientProfile.email,
-      commenterName: commenterProfile.name,
+      commenterName: commenterRow.name,
       postContent: parentPost.content,
       commentContent,
       postUrl: contentUrl,

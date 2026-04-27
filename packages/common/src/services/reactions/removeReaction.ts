@@ -9,8 +9,6 @@ interface DeleteReactionOptions {
   profileId: string;
 }
 
-// Lower-level: deletes the reaction with no auth check. Used by
-// `removeReaction` (auth-aware public API) and by `toggleReaction`.
 export const deleteReaction = async ({
   postId,
   profileId,

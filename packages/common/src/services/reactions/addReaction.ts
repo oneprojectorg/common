@@ -11,9 +11,6 @@ interface InsertReactionOptions {
   reactionType: string;
 }
 
-// Lower-level: writes the reaction and fires the event with no auth check.
-// Used by `addReaction` (auth-aware public API) and by `toggleReaction`,
-// which authorizes once and dispatches.
 export const insertReaction = async ({
   postId,
   profileId,

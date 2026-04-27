@@ -200,8 +200,6 @@ export const relations = defineRelations(schema, (r) => ({
    * Post relations
    *
    * profileId, parentPostId, rootProfileId, and rootPostId are all nullable.
-   * parentPost / childPosts and rootPost / threadPosts are self-referential
-   * — aliases match each forward/reverse pair.
    */
   posts: {
     profile: r.one.profiles({
@@ -248,9 +246,6 @@ export const relations = defineRelations(schema, (r) => ({
     }),
   },
 
-  /**
-   * Posts ↔ profiles join table relations.
-   */
   postsToProfiles: {
     post: r.one.posts({
       from: r.postsToProfiles.postId,
@@ -264,9 +259,6 @@ export const relations = defineRelations(schema, (r) => ({
     }),
   },
 
-  /**
-   * Post reaction relations.
-   */
   postReactions: {
     post: r.one.posts({
       from: r.postReactions.postId,
