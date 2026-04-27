@@ -145,12 +145,9 @@ function BodyRow({
   onAdvance: () => void;
   advanceLabel: string;
 }) {
-  const title =
-    item.proposalData.title ??
-    item.proposalData.description ??
-    item.proposalData.content ??
-    '';
-  const submitterName = item.submittedBy?.name ?? item.profile.name;
+  const t = useTranslations();
+  const title = item.profile.name || t('Untitled Proposal');
+  const submitterName = item.submittedBy?.name ?? null;
   const budget = item.proposalData.budget;
   const counts = countOverallRecommendation(item);
 
@@ -159,9 +156,11 @@ function BodyRow({
       {/* Proposal — title + submitter */}
       <div className="flex w-[220px] shrink-0 flex-col">
         <span className="line-clamp-1 text-sm text-neutral-black">{title}</span>
-        <span className="line-clamp-1 text-xs text-neutral-gray4">
-          {submitterName}
-        </span>
+        {submitterName && (
+          <span className="line-clamp-1 text-xs text-neutral-gray4">
+            {submitterName}
+          </span>
+        )}
       </div>
 
       {/* Budget */}
