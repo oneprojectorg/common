@@ -10,6 +10,7 @@ import { Button } from '@op/ui/Button';
 import { Menu, MenuItem, MenuSeparator, MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
 import { toast } from '@op/ui/Toast';
+import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { LuMessageCircle, LuPlus, LuUserPlus, LuUsers } from 'react-icons/lu';
 
@@ -32,46 +33,31 @@ export const CreateMenu = () => {
   const isMobile = useMediaQuery(`(max-width: ${SM_BREAKPOINT})`);
   const createDecisionEnabled = useFeatureFlag('create_decision_process');
   const utils = trpc.useUtils();
-  const [isCreatingDecision, setIsCreatingDecision] = useState(false);
 
-  const createInstanceMutation =
-    trpc.decision.createInstanceFromTemplate.useMutation({
-      onSuccess: (decisionProfile) => {
-        router.push(`/decisions/${decisionProfile.slug}/edit`);
-      },
-      onError: (error) => {
-        setIsCreatingDecision(false);
-        toast.error({
-          title: t('Failed to create decision'),
-          message: error.message,
-        });
-      },
-    });
-
-  const handleCreateDecision = async () => {
-    setIsCreatingDecision(true);
-    try {
+  const createDecisionMutation = useMutation({
+    mutationFn: async () => {
       const { processes: templates } = await utils.decision.listProcesses.fetch(
         {},
       );
       const firstTemplate = templates[0];
       if (!firstTemplate) {
-        setIsCreatingDecision(false);
-        router.push('/decisions');
-        return;
+        throw new Error('No decision process templates available');
       }
-      createInstanceMutation.mutate({
+      return utils.client.decision.createInstanceFromTemplate.mutate({
         templateId: firstTemplate.id,
         name: `New ${firstTemplate.name}`,
       });
-    } catch (error) {
-      setIsCreatingDecision(false);
+    },
+    onSuccess: (decisionProfile) => {
+      router.push(`/decisions/${decisionProfile.slug}/edit`);
+    },
+    onError: (error) => {
       toast.error({
         title: t('Failed to create decision'),
         message: error instanceof Error ? error.message : '',
       });
-    }
-  };
+    },
+  });
 
   return (
     <>
@@ -94,8 +80,8 @@ export const CreateMenu = () => {
             {createDecisionEnabled && (
               <MenuItem
                 id="create-decision"
-                isDisabled={isCreatingDecision}
-                onAction={handleCreateDecision}
+                isDisabled={createDecisionMutation.isPending}
+                onAction={() => createDecisionMutation.mutate()}
               >
                 <LuMessageCircle className="size-4" />{' '}
                 {t('Decision-making process')}
