@@ -2,6 +2,7 @@ import { invalidate } from '@op/cache';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
+  EntityType,
   attachments,
   organizations,
   posts,
@@ -15,7 +16,7 @@ import { permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
 import { CommonError } from '../../utils';
-import { assertDecisionProfilesAccess, getCurrentProfileId } from '../access';
+import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
 import { decisionPermission } from '../decision/permissions';
 import { sendCommentNotificationEmail } from '../email';
 
@@ -253,12 +254,22 @@ export const createPost = async (input: CreatePostServiceInput) => {
     ? [targetProfileId]
     : parentProfiles.map((p) => p.profileId);
 
-  await assertDecisionProfilesAccess({
+  // Decision profiles get a decision-permission gate. Top-level posts
+  // (targetProfileId set) require ADMIN; comments (parentPostId only)
+  // only require SUBMIT_PROPOSALS. Proposal/org/individual profile
+  // types fall through unchanged here — proposals don't carry their
+  // own permissions (they inherit from the parent decision), and the
+  // org/individual paths layer their own membership checks at the
+  // caller. The follow-up `root_profile_id` column will resolve the
+  // proposal-gate question correctly at write time.
+  await assertProfileTypeAccess({
     user: { id: authUserId },
     profileIds: profileIdsToAuthorize,
-    requiredPermission: targetProfileId
-      ? { decisions: permission.ADMIN }
-      : { decisions: decisionPermission.SUBMIT_PROPOSALS },
+    policies: {
+      [EntityType.DECISION]: targetProfileId
+        ? { decisions: permission.ADMIN }
+        : { decisions: decisionPermission.SUBMIT_PROPOSALS },
+    },
   });
 
   try {

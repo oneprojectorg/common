@@ -1,10 +1,14 @@
 import { db } from '@op/db/client';
-import { posts as postsTable, postsToProfiles } from '@op/db/schema';
+import {
+  EntityType,
+  posts as postsTable,
+  postsToProfiles,
+} from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 
 import type { ChannelName } from '../../realtime/channels/channels';
 import { Channels } from '../../realtime/channels/channels';
-import { assertDecisionProfilesAccess, getCurrentProfileId } from '../access';
+import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
 import { decisionPermission } from '../decision/permissions';
 
 export type PostContext = {
@@ -53,10 +57,14 @@ export const authorizeReactionForPost = async ({
   postId: string;
 }): Promise<{ context: PostContext; profileId: string }> => {
   const context = await loadPostContext(postId);
-  await assertDecisionProfilesAccess({
+  await assertProfileTypeAccess({
     user,
     profileIds: context.associatedProfileIds,
-    requiredPermission: { decisions: decisionPermission.SUBMIT_PROPOSALS },
+    policies: {
+      [EntityType.DECISION]: {
+        decisions: decisionPermission.SUBMIT_PROPOSALS,
+      },
+    },
   });
   const profileId = await getCurrentProfileId(user.id);
   return { context, profileId };
