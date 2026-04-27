@@ -168,10 +168,10 @@ test.describe('Decision Manual Selection — full flow', () => {
     await expect(confirmButton).toBeEnabled();
 
     await confirmButton.click();
-    const dialog = authenticatedPage.getByRole('dialog');
-    await expect(
-      dialog.getByRole('heading', { name: 'Confirm advancing proposals' }),
-    ).toBeVisible();
+    const dialog = authenticatedPage.getByRole('dialog', {
+      name: 'Confirm advancing proposals',
+    });
+    await expect(dialog).toBeVisible();
     await dialog.getByRole('button', { name: 'Publish' }).click();
 
     // After publish, the mutation awaits invalidation and then closes the
