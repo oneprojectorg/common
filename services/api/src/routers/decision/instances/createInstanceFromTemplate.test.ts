@@ -4,12 +4,7 @@ import {
   simpleVoting,
 } from '@op/common';
 import { db, eq } from '@op/db/client';
-import {
-  decisionProcessTransitions,
-  decisionProcesses,
-  processInstances,
-  users,
-} from '@op/db/schema';
+import { decisionProcesses, users } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -100,8 +95,8 @@ describe.concurrent('createInstanceFromTemplate', () => {
     expect(result.processInstance.status).toBe('draft');
 
     // Verify instance data has phases
-    const instance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, result.processInstance.id),
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: result.processInstance.id },
     });
 
     expect(instance).toBeDefined();
@@ -137,11 +132,8 @@ describe.concurrent('createInstanceFromTemplate', () => {
 
     // Verify NO transitions were created for DRAFT instance
     // Transitions are only created when the instance is published
-    const transitions = await db._query.decisionProcessTransitions.findMany({
-      where: eq(
-        decisionProcessTransitions.processInstanceId,
-        result.processInstance.id,
-      ),
+    const transitions = await db.query.decisionProcessTransitions.findMany({
+      where: { processInstanceId: result.processInstance.id },
     });
 
     expect(transitions.length).toBe(0);
@@ -260,8 +252,8 @@ describe.concurrent('createInstanceFromTemplate', () => {
 
     testData.trackProfileForCleanup(result.id);
 
-    const instance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, result.processInstance.id),
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: result.processInstance.id },
     });
 
     const instanceData = instance!.instanceData as DecisionInstanceData;

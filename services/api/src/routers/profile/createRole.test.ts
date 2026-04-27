@@ -58,17 +58,16 @@ describe.concurrent('profile.createRole', () => {
     });
 
     // Verify permissions were actually persisted in database
-    const decisionsZone = await db._query.accessZones.findFirst({
-      where: (table, { eq }) => eq(table.name, 'decisions'),
+    const decisionsZone = await db.query.accessZones.findFirst({
+      where: { name: 'decisions' },
     });
 
     const permission =
-      await db._query.accessRolePermissionsOnAccessZones.findFirst({
-        where: (table, { eq, and }) =>
-          and(
-            eq(table.accessRoleId, result.id),
-            eq(table.accessZoneId, decisionsZone!.id),
-          ),
+      await db.query.accessRolePermissionsOnAccessZones.findFirst({
+        where: {
+          accessRoleId: result.id,
+          accessZoneId: decisionsZone!.id,
+        },
       });
 
     expect(permission).toBeDefined();

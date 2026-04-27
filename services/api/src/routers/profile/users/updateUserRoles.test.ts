@@ -1,7 +1,5 @@
 import { db } from '@op/db/client';
-import { profileUsers } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
-import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { TestProfileUserDataManager } from '../../../test/helpers/TestProfileUserDataManager';
@@ -38,8 +36,8 @@ describe.concurrent('profile.users.updateUserRoles', () => {
     expect(result).toBeDefined();
 
     // Verify role was updated
-    const updatedUser = await db._query.profileUsers.findFirst({
-      where: eq(profileUsers.id, memberUser.profileUserId),
+    const updatedUser = await db.query.profileUsers.findFirst({
+      where: { id: memberUser.profileUserId },
       with: {
         roles: {
           with: {
@@ -71,8 +69,8 @@ describe.concurrent('profile.users.updateUserRoles', () => {
     const caller = createCaller(await createTestContextWithSession(session));
 
     // Verify member starts with one role (MEMBER)
-    const initialUser = await db._query.profileUsers.findFirst({
-      where: eq(profileUsers.id, memberUser.profileUserId),
+    const initialUser = await db.query.profileUsers.findFirst({
+      where: { id: memberUser.profileUserId },
       with: {
         roles: {
           with: {
@@ -92,8 +90,8 @@ describe.concurrent('profile.users.updateUserRoles', () => {
     });
 
     // Verify user now has both roles
-    const userWithBothRoles = await db._query.profileUsers.findFirst({
-      where: eq(profileUsers.id, memberUser.profileUserId),
+    const userWithBothRoles = await db.query.profileUsers.findFirst({
+      where: { id: memberUser.profileUserId },
       with: {
         roles: {
           with: {
@@ -115,8 +113,8 @@ describe.concurrent('profile.users.updateUserRoles', () => {
     });
 
     // Verify user now has only ADMIN role
-    const userWithAdminOnly = await db._query.profileUsers.findFirst({
-      where: eq(profileUsers.id, memberUser.profileUserId),
+    const userWithAdminOnly = await db.query.profileUsers.findFirst({
+      where: { id: memberUser.profileUserId },
       with: {
         roles: {
           with: {

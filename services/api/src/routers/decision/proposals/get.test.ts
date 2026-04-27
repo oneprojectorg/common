@@ -789,8 +789,8 @@ describe.concurrent('getProposal', () => {
 
     // 2. Remove proposalTemplate from instanceData so resolveProposalTemplate
     //    falls back to process_schema (matching how legacy instances work).
-    const instanceRecord = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
 
     if (!instanceRecord) {
@@ -885,8 +885,8 @@ describe.concurrent('getProposal', () => {
       .set({ processSchema: horizonProcessSchema })
       .where(eq(decisionProcesses.id, setup.process.id));
 
-    const instanceRecord = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
 
     if (!instanceRecord) {
@@ -973,8 +973,8 @@ describe.concurrent('getProposal', () => {
       .set({ processSchema: simpleProcessSchema })
       .where(eq(decisionProcesses.id, setup.process.id));
 
-    const instanceRecord = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
 
     if (!instanceRecord) {

@@ -898,8 +898,8 @@ describe.concurrent('listProposals', () => {
       .where(eq(decisionProcesses.id, setup.process.id));
 
     // 2. Strip proposalTemplate from instanceData so resolver falls back to process_schema
-    const instanceRecord = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
 
     if (!instanceRecord) {

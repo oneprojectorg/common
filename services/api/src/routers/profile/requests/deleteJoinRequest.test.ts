@@ -1,6 +1,5 @@
 import { db } from '@op/db/client';
-import { JoinProfileRequestStatus, joinProfileRequests } from '@op/db/schema';
-import { eq } from 'drizzle-orm';
+import { JoinProfileRequestStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { TestJoinProfileRequestDataManager } from '../../../test/helpers/TestJoinProfileRequestDataManager';
@@ -50,8 +49,8 @@ describe.concurrent('profile.deleteJoinRequest', () => {
     expect(result.status).toBe(JoinProfileRequestStatus.PENDING);
 
     // Verify the request was deleted from database
-    const deletedRequest = await db._query.joinProfileRequests.findFirst({
-      where: eq(joinProfileRequests.id, joinRequest.id),
+    const deletedRequest = await db.query.joinProfileRequests.findFirst({
+      where: { id: joinRequest.id },
     });
 
     expect(deletedRequest).toBeUndefined();

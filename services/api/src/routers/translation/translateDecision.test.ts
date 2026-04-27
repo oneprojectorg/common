@@ -60,8 +60,8 @@ describe('translation.translateDecision', () => {
     }
 
     // Patch instanceData to add translatable phase content
-    const instanceRecord = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
     if (!instanceRecord) {
       throw new Error('Instance record not found');
@@ -129,8 +129,8 @@ describe('translation.translateDecision', () => {
       throw new Error('No instance created');
     }
 
-    const instanceRecord = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
     if (!instanceRecord) {
       throw new Error('Instance record not found');
@@ -200,8 +200,8 @@ describe('translation.translateDecision', () => {
     }
 
     // Remove phase names from instanceData to produce an instance with no translatable content
-    const instanceRecord = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
     if (!instanceRecord) {
       throw new Error('Instance record not found');
@@ -256,8 +256,8 @@ describe('translation.translateDecision', () => {
       throw new Error('No instance created');
     }
 
-    const instanceRecord = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
     if (!instanceRecord) {
       throw new Error('Instance record not found');
@@ -389,8 +389,8 @@ describe('translation.translateDecision', () => {
     }
 
     // Patch instance with some content so we get a non-empty result
-    const instanceRecord = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
     });
     if (!instanceRecord) {
       throw new Error('Instance record not found');

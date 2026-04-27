@@ -1,6 +1,5 @@
 import { db } from '@op/db/client';
-import { JoinProfileRequestStatus, organizations } from '@op/db/schema';
-import { eq } from 'drizzle-orm';
+import { JoinProfileRequestStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { TestJoinProfileRequestDataManager } from '../../../test/helpers/TestJoinProfileRequestDataManager';
@@ -191,8 +190,8 @@ describe.concurrent('profile.updateJoinRequest', () => {
     });
 
     // Get the organization for the target profile
-    const targetOrg = await db._query.organizations.findFirst({
-      where: eq(organizations.profileId, targetProfile.id),
+    const targetOrg = await db.query.organizations.findFirst({
+      where: { profileId: targetProfile.id },
     });
 
     const { session } = await createIsolatedSession(targetAdmin.email);
@@ -206,12 +205,11 @@ describe.concurrent('profile.updateJoinRequest', () => {
     expect(result.status).toBe(JoinProfileRequestStatus.APPROVED);
 
     // Verify that the organization membership was created
-    const membership = await db._query.organizationUsers.findFirst({
-      where: (table, { and, eq }) =>
-        and(
-          eq(table.authUserId, requester.authUserId),
-          eq(table.organizationId, targetOrg!.id),
-        ),
+    const membership = await db.query.organizationUsers.findFirst({
+      where: {
+        authUserId: requester.authUserId,
+        organizationId: targetOrg!.id,
+      },
     });
 
     expect(membership).toBeDefined();
@@ -234,8 +232,8 @@ describe.concurrent('profile.updateJoinRequest', () => {
       await testData.createOrganization();
 
     // Get the organization for the target profile
-    const targetOrg = await db._query.organizations.findFirst({
-      where: eq(organizations.profileId, targetProfile.id),
+    const targetOrg = await db.query.organizations.findFirst({
+      where: { profileId: targetProfile.id },
     });
 
     // Insert a pending join request using the manager
@@ -254,12 +252,11 @@ describe.concurrent('profile.updateJoinRequest', () => {
     });
 
     // Verify the membership was created with the Member role
-    const membership = await db._query.organizationUsers.findFirst({
-      where: (table, { and, eq }) =>
-        and(
-          eq(table.authUserId, requester.authUserId),
-          eq(table.organizationId, targetOrg!.id),
-        ),
+    const membership = await db.query.organizationUsers.findFirst({
+      where: {
+        authUserId: requester.authUserId,
+        organizationId: targetOrg!.id,
+      },
       with: {
         roles: {
           with: {
@@ -292,8 +289,8 @@ describe.concurrent('profile.updateJoinRequest', () => {
       await testData.createOrganization();
 
     // Get the organization for the target profile
-    const targetOrg = await db._query.organizations.findFirst({
-      where: eq(organizations.profileId, targetProfile.id),
+    const targetOrg = await db.query.organizations.findFirst({
+      where: { profileId: targetProfile.id },
     });
 
     // Insert a pending join request using the manager
@@ -314,12 +311,11 @@ describe.concurrent('profile.updateJoinRequest', () => {
     expect(result.status).toBe(JoinProfileRequestStatus.REJECTED);
 
     // Verify that no organization membership was created
-    const membership = await db._query.organizationUsers.findFirst({
-      where: (table, { and, eq }) =>
-        and(
-          eq(table.authUserId, requester.authUserId),
-          eq(table.organizationId, targetOrg!.id),
-        ),
+    const membership = await db.query.organizationUsers.findFirst({
+      where: {
+        authUserId: requester.authUserId,
+        organizationId: targetOrg!.id,
+      },
     });
 
     expect(membership).toBeUndefined();
@@ -340,8 +336,8 @@ describe.concurrent('profile.updateJoinRequest', () => {
       await testData.createOrganization();
 
     // Get the organization for the target profile
-    const targetOrg = await db._query.organizations.findFirst({
-      where: eq(organizations.profileId, targetProfile.id),
+    const targetOrg = await db.query.organizations.findFirst({
+      where: { profileId: targetProfile.id },
     });
 
     // First, create an existing membership for the requester in the target organization
@@ -369,12 +365,11 @@ describe.concurrent('profile.updateJoinRequest', () => {
     expect(result.status).toBe(JoinProfileRequestStatus.APPROVED);
 
     // Verify there's still only one membership (the existing one)
-    const memberships = await db._query.organizationUsers.findMany({
-      where: (table, { and, eq }) =>
-        and(
-          eq(table.authUserId, requester.authUserId),
-          eq(table.organizationId, targetOrg!.id),
-        ),
+    const memberships = await db.query.organizationUsers.findMany({
+      where: {
+        authUserId: requester.authUserId,
+        organizationId: targetOrg!.id,
+      },
     });
 
     expect(memberships).toHaveLength(1);

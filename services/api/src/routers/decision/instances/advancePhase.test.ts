@@ -4,7 +4,6 @@ import {
   ProcessStatus,
   decisionTransitionProposals,
   processInstances,
-  stateTransitionHistory,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -102,8 +101,8 @@ describe.concurrent('advancePhase', () => {
 
     expect(reloaded!.currentStateId).toBe('final');
 
-    const history = await db._query.stateTransitionHistory.findFirst({
-      where: eq(stateTransitionHistory.processInstanceId, loaded.dbInstance.id),
+    const history = await db.query.stateTransitionHistory.findFirst({
+      where: { processInstanceId: loaded.dbInstance.id },
     });
     expect(history).toBeDefined();
     expect(history!.fromStateId).toBe('initial');
@@ -170,8 +169,8 @@ describe.concurrent('advancePhase', () => {
       transitionData: { source: 'cron', batch: 42 },
     });
 
-    const history = await db._query.stateTransitionHistory.findFirst({
-      where: eq(stateTransitionHistory.processInstanceId, loaded.dbInstance.id),
+    const history = await db.query.stateTransitionHistory.findFirst({
+      where: { processInstanceId: loaded.dbInstance.id },
     });
     expect(history!.transitionData).toEqual({ source: 'cron', batch: 42 });
   });
