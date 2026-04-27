@@ -35,16 +35,12 @@ import type { RubricTemplateSchema } from './types';
  * Single union schema for both dispatch modes:
  *   - filtered: caller passes `proposalIds`, no pagination.
  *   - paginated: phase-scoped, cursor-paginated.
- *
- * Shared fields (`processInstanceId`, `phaseId`) are repeated so each
- * variant of the union is a complete shape Zod can discriminate by
- * presence of `proposalIds`.
  */
 export const listProposalsWithReviewAggregatesInputSchema = z.union([
   z.object({
     processInstanceId: z.uuid(),
     phaseId: z.string().optional(),
-    proposalIds: z.array(z.uuid()).min(1).max(200),
+    proposalIds: z.array(z.uuid()).min(1),
   }),
   z.object({
     processInstanceId: z.uuid(),
@@ -57,13 +53,6 @@ export const listProposalsWithReviewAggregatesInputSchema = z.union([
 export type ListProposalsWithReviewAggregatesInput = z.infer<
   typeof listProposalsWithReviewAggregatesInputSchema
 >;
-
-type AggregatesCursor = {
-  /** `createdAt` of the last item on the previous page. */
-  value: string;
-  /** Tie-breaker for items with identical `createdAt`. */
-  id: string;
-};
 
 // ── Public entry ───────────────────────────────────────────────────────
 
@@ -92,7 +81,11 @@ export async function listProposalsWithReviewAggregates(
 
   const rubricTemplate = (instance.instanceData.rubricTemplate ??
     null) as RubricTemplateSchema | null;
-  const scoredCriterionKeys = getScoredCriterionKeys(rubricTemplate);
+  const scoredCriterionKeys = rubricTemplate
+    ? getRubricScoringInfo(rubricTemplate)
+        .criteria.filter((c) => c.scored)
+        .map((c) => c.key)
+    : [];
 
   const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
 
@@ -155,7 +148,7 @@ async function listProposalsFiltered({
   return proposalsWithReviewAggregatesListSchema.parse({
     items,
     total: items.length,
-    nextCursor: null,
+    next: null,
   });
 }
 
@@ -180,11 +173,11 @@ async function listProposalsPaginated({
   });
 
   if (phaseProposalIds.length === 0) {
-    return { items: [], total: 0, nextCursor: null };
+    return { items: [], total: 0, next: null };
   }
 
   const decodedCursor = cursor
-    ? decodeCursor<AggregatesCursor>(cursor)
+    ? decodeCursor<{ value: string; id: string }>(cursor)
     : undefined;
 
   const [pageRowsRaw, totalRows] = await Promise.all([
@@ -216,7 +209,7 @@ async function listProposalsPaginated({
   const total = Number(totalRows[0]?.count ?? 0);
 
   if (pageRows.length === 0) {
-    return { items: [], total, nextCursor: null };
+    return { items: [], total, next: null };
   }
 
   const pageIds = pageRows.map((p) => p.id);
@@ -232,10 +225,10 @@ async function listProposalsPaginated({
     categories: categoriesByProposalId.get(proposal.id) ?? [],
   }));
 
-  let nextCursor: string | null = null;
+  let next: string | null = null;
   if (hasMore) {
     const lastRow = pageRows[pageRows.length - 1]!;
-    nextCursor = encodeCursor<AggregatesCursor>({
+    next = encodeCursor<{ value: string; id: string }>({
       value: lastRow.createdAt ?? '',
       id: lastRow.id,
     });
@@ -244,7 +237,7 @@ async function listProposalsPaginated({
   return proposalsWithReviewAggregatesListSchema.parse({
     items,
     total,
-    nextCursor,
+    next,
   });
 }
 
@@ -252,9 +245,7 @@ async function listProposalsPaginated({
 
 /**
  * `with` block for the proposal relational query — shared by filtered and
- * paginated. The nested `where` on `reviewAssignments` is what scopes
- * assignments (and their reviews) to the right phase, so cross-phase
- * reviews don't leak into aggregates.
+ * paginated.
  */
 function proposalRelations({
   processInstanceId,
@@ -278,17 +269,6 @@ function proposalRelations({
       },
     },
   } as const;
-}
-
-function getScoredCriterionKeys(
-  rubricTemplate: RubricTemplateSchema | null,
-): string[] {
-  if (!rubricTemplate) {
-    return [];
-  }
-  return getRubricScoringInfo(rubricTemplate)
-    .criteria.filter((c) => c.scored)
-    .map((c) => c.key);
 }
 
 async function loadCategoriesByProposalIds(
@@ -365,11 +345,11 @@ function computeReviewAggregates(
       }
     }
 
-    const reco = answers[OVERALL_RECOMMENDATION_KEY];
-    if (reco !== null && reco !== undefined) {
-      const answerKey = String(reco);
-      overallRecommendationCount[answerKey] =
-        (overallRecommendationCount[answerKey] ?? 0) + 1;
+    const recommendation = answers[OVERALL_RECOMMENDATION_KEY];
+    if (recommendation != null) {
+      const recommendationKey = String(recommendation);
+      overallRecommendationCount[recommendationKey] =
+        (overallRecommendationCount[recommendationKey] ?? 0) + 1;
     }
   }
 
