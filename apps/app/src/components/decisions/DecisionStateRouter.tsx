@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation';
 
 import { ResultsPage } from './pages/ResultsPage';
 import { ReviewPage } from './pages/ReviewPage';
+import { SelectWinnersPage } from './pages/SelectWinnersPage';
 import { StandardDecisionPage } from './pages/StandardDecisionPage';
 import { VotingPage } from './pages/VotingPage';
 
@@ -34,16 +35,21 @@ function DecisionStateRouterNew({
 }) {
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const reviewFlowEnabled = useFeatureFlag('review_flow');
+  const adminSelectionEnabled = useFeatureFlag('admin_review_selection');
 
   const { currentStateId } = instance;
   const phases = instance.instanceData?.phases ?? [];
   const currentPhase = phases.find((p) => p.phaseId === currentStateId);
   const isVotingEnabled = currentPhase?.rules?.voting?.submit === true;
   const isReviewEnabled = currentPhase?.rules?.proposals?.review === true;
+  const isAdmin = Boolean(instance.access?.admin);
 
   if (isReviewEnabled && reviewFlowEnabled) {
     if (!decisionSlug) {
       notFound();
+    }
+    if (isAdmin && adminSelectionEnabled) {
+      return <SelectWinnersPage instance={instance} />;
     }
     return (
       <ReviewPage
