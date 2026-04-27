@@ -2,21 +2,24 @@ import { invalidate } from '@op/cache';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
-  Organization,
-  Post,
-  PostToOrganization,
-  Profile,
+  EntityType,
   attachments,
+  organizations,
   posts,
+  postsToOrganizations,
   postsToProfiles,
+  profiles,
 } from '@op/db/schema';
 import { CreatePostInput } from '@op/types';
 import { waitUntil } from '@vercel/functions';
+import { permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
 import { CommonError } from '../../utils';
-import { getCurrentProfileId } from '../access';
+import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
+import { decisionPermission } from '../decision/permissions';
 import { sendCommentNotificationEmail } from '../email';
+import { resolvePostRoots } from './resolvePostRoots';
 
 interface CreatePostServiceInput extends CreatePostInput {
   authUserId: string;
@@ -28,67 +31,94 @@ const sendPostCommentNotification = async (
   commenterProfileId: string,
 ) => {
   try {
-    // Get parent post and author information, including organization associations
-    const parentPostToOrg = (await db._query.postsToOrganizations.findFirst({
-      where: (table, { eq }) => eq(table.postId, parentPostId),
-      with: {
-        organization: {
-          with: {
-            profile: true,
-          },
+    // The parent post may be attached to an organization profile (org feed,
+    // proposal comments) OR a non-org profile (decision-instance updates,
+    // user profile posts). The post author is always on `posts.profileId`,
+    // so we resolve the recipient there and look up the "posted in" context
+    // separately (org name when org-attached, profile name otherwise).
+    const [parentRow] = await db
+      .select({
+        post: {
+          id: posts.id,
+          content: posts.content,
+          profileId: posts.profileId,
         },
-        post: true,
-      },
-    })) as PostToOrganization & {
-      organization: Organization & { profile: Profile };
-      post: Post;
-    };
+        author: {
+          id: profiles.id,
+          name: profiles.name,
+          email: profiles.email,
+          slug: profiles.slug,
+        },
+      })
+      .from(posts)
+      .innerJoin(profiles, eq(profiles.id, posts.profileId))
+      .where(eq(posts.id, parentPostId))
+      .limit(1);
 
-    const parentPost = parentPostToOrg.post;
-    const parentProfile = parentPostToOrg.organization.profile;
-    const parentProfileId = parentProfile.id;
-    const parentProfileSlug = parentProfile.slug;
-
-    if (parentProfileId) {
-      // Parallelize commenter and post author queries
-      const commenterProfile = await db._query.profiles.findFirst({
-        where: (table, { eq }) => eq(table.id, commenterProfileId),
-      });
-
-      if (commenterProfile && parentProfile.email) {
-        // Don't send notification if user is commenting on their own post
-        if (parentProfileId !== commenterProfileId) {
-          const postAuthorName = parentProfile.name;
-
-          // For posts, we default to 'post' as the content type
-          const contentType = 'post';
-
-          // Create context name from post content (first 50 characters)
-          const contextName =
-            parentPost.content.length > 50
-              ? `${parentPost.content.slice(0, 50).trim()}...`
-              : parentPost.content.trim();
-
-          // Generate URL using the organization profile ID instead of post author's profile
-          const baseUrl = OPURLConfig('APP').ENV_URL;
-          const contentUrl = `${baseUrl}/profile/${parentProfileSlug}/posts/${parentPost.id}`;
-
-          await sendCommentNotificationEmail({
-            to: parentProfile.email,
-            commenterName: commenterProfile.name,
-            postContent: parentPost.content,
-            commentContent: commentContent,
-            postUrl: contentUrl,
-            recipientName: postAuthorName,
-            contentType,
-            contextName,
-            postedIn: postAuthorName,
-          });
-        }
-      }
+    if (!parentRow) {
+      return;
     }
+
+    const { post: parentPost, author: recipientProfile } = parentRow;
+
+    // Don't notify the user about comments on their own post
+    if (recipientProfile.id === commenterProfileId || !recipientProfile.email) {
+      return;
+    }
+
+    const [commenterRow, parentOrgLinkRow] = await Promise.all([
+      db
+        .select({ name: profiles.name })
+        .from(profiles)
+        .where(eq(profiles.id, commenterProfileId))
+        .limit(1),
+      db
+        .select({
+          orgProfileName: profiles.name,
+          orgProfileSlug: profiles.slug,
+        })
+        .from(postsToOrganizations)
+        .innerJoin(
+          organizations,
+          eq(organizations.id, postsToOrganizations.organizationId),
+        )
+        .innerJoin(profiles, eq(profiles.id, organizations.profileId))
+        .where(eq(postsToOrganizations.postId, parentPostId))
+        .limit(1),
+    ]);
+
+    const commenterProfile = commenterRow[0];
+    if (!commenterProfile) {
+      return;
+    }
+
+    const contextName =
+      parentPost.content.length > 50
+        ? `${parentPost.content.slice(0, 50).trim()}...`
+        : parentPost.content.trim();
+
+    // Prefer org context for the URL/postedIn field when the parent post is
+    // org-attached; otherwise fall back to the recipient (author) profile.
+    const parentOrgLink = parentOrgLinkRow[0];
+    const linkedProfileSlug =
+      parentOrgLink?.orgProfileSlug ?? recipientProfile.slug;
+    const postedIn = parentOrgLink?.orgProfileName ?? recipientProfile.name;
+
+    const baseUrl = OPURLConfig('APP').ENV_URL;
+    const contentUrl = `${baseUrl}/profile/${linkedProfileSlug}/posts/${parentPost.id}`;
+
+    await sendCommentNotificationEmail({
+      to: recipientProfile.email,
+      commenterName: commenterProfile.name,
+      postContent: parentPost.content,
+      commentContent,
+      postUrl: contentUrl,
+      recipientName: recipientProfile.name,
+      contentType: 'post',
+      contextName,
+      postedIn,
+    });
   } catch (emailError) {
-    // Log email error but don't fail the post creation
     console.error(
       'Failed to send post comment notification email:',
       emailError,
@@ -209,6 +239,41 @@ export const createPost = async (input: CreatePostServiceInput) => {
 
   const profileId = await getCurrentProfileId(authUserId);
 
+  // Resolve the access gate (rootProfileId) and thread root (rootPostId)
+  // before opening the insert transaction. Both are pinned at write time so
+  // read paths can dispatch on them without re-walking parents. The resolver
+  // also handles the proposal → parent decision lookup, so rootProfileId is
+  // always the *correct* gate (decision/org/individual), never a proposal.
+  const { rootProfileId, rootPostId } = await resolvePostRoots({
+    targetProfileId,
+    parentPostId,
+  });
+
+  // Authorize against the resolved gate. Decision profiles get a
+  // decision-permission gate; top-level posts (targetProfileId set) require
+  // ADMIN, comments (parentPostId only) require SUBMIT_PROPOSALS. Org and
+  // individual profile types fall through (no policy = lenient — callers on
+  // those paths layer their own membership checks).
+  await assertProfileTypeAccess({
+    user: { id: authUserId },
+    profileIds: rootProfileId ? [rootProfileId] : [],
+    policies: {
+      [EntityType.DECISION]: targetProfileId
+        ? { decisions: permission.ADMIN }
+        : { decisions: decisionPermission.SUBMIT_PROPOSALS },
+    },
+  });
+
+  // postsToProfiles inheritance for comments — separate concern from auth
+  // (which now uses rootProfileId). This stays as the feed/discovery index.
+  const parentProfiles =
+    !targetProfileId && parentPostId
+      ? await db
+          .select({ profileId: postsToProfiles.profileId })
+          .from(postsToProfiles)
+          .where(eq(postsToProfiles.postId, parentPostId))
+      : [];
+
   try {
     const newPost = await db.transaction(async (tx) => {
       // Get all storage objects that were attached to the post (inside transaction)
@@ -238,6 +303,8 @@ export const createPost = async (input: CreatePostServiceInput) => {
           content,
           parentPostId: parentPostId || null,
           profileId,
+          rootProfileId,
+          rootPostId,
         })
         .returning();
 
@@ -252,12 +319,7 @@ export const createPost = async (input: CreatePostServiceInput) => {
           profileId: targetProfileId,
         });
       } else if (parentPostId) {
-        // For comments (posts with parentPostId), inherit profile associations from parent post
-        const parentProfiles = await tx
-          .select({ profileId: postsToProfiles.profileId })
-          .from(postsToProfiles)
-          .where(eq(postsToProfiles.postId, parentPostId));
-
+        // For comments (posts with parentPostId), inherit profile associations from parent post.
         if (parentProfiles.length > 0) {
           await tx.insert(postsToProfiles).values(
             parentProfiles.map((profile) => ({
