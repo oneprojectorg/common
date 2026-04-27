@@ -35,6 +35,7 @@ if (!process.env.DB_SEEDING) {
 const allowedDatabaseUrls = [
   'postgresql://postgres:postgres@127.0.0.1:54322/postgres', // Development database
   'postgresql://postgres:postgres@127.0.0.1:55322/postgres', // Test database
+  'postgresql://postgres:postgres@dind:54322/postgres', // Docker dev database (.trees worktree)
 ];
 
 if (!allowedDatabaseUrls.includes(process.env.DATABASE_URL || '')) {
@@ -290,6 +291,21 @@ const seedOrgs = [
     offeringFundsDescription: 'offering description here',
     email: 'scott@oneproject.org',
     website: 'https://oneproject.org',
+    type: OrgType.NONPROFIT,
+    whereWeWork: [],
+  },
+  {
+    name: 'Common',
+    slug: 'common',
+    description: 'Common is a community of organizations.',
+    mission: 'Bring organizations together.',
+    city: 'New York',
+    bio: 'Common bio',
+    state: 'NY',
+    isOfferingFunds: false,
+    isReceivingFunds: false,
+    email: 'hello@common.io',
+    website: 'https://common.io',
     type: OrgType.NONPROFIT,
     whereWeWork: [],
   },

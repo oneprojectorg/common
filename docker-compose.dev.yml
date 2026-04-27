@@ -86,6 +86,7 @@ services:
     env_file: .env.docker
     environment:
       TIPTAP_PRO_TOKEN: ${TIPTAP_PRO_TOKEN}
+      NEXT_PUBLIC_SUPABASE_URL: "http://localhost:${PORT_PREFIX:-31}21"
       WATCHPACK_POLLING: "true"
     ports:
       - "${PORT_PREFIX:-31}01:3300"
