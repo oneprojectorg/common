@@ -18,6 +18,8 @@ type Severity = NonNullable<ImpactValue>;
 
 interface RouteScan {
   url: string;
+  /** Stable URL shown in reports — UUIDs replaced with placeholders. Defaults to `url`. */
+  displayUrl?: string;
   label: string;
   auth: boolean;
 }
@@ -40,6 +42,7 @@ interface ViolationSummary {
   help: string;
   helpUrl: string;
   nodeCount: number;
+  wcagCriteria: string[];
   nodes: ViolationNode[];
 }
 
@@ -67,6 +70,7 @@ interface BaselineReport {
     routes: number;
     help: string;
     helpUrl: string;
+    wcagCriteria: string[];
   }>;
   routes: RouteResult[];
 }
@@ -166,7 +170,7 @@ async function scanRoute(
     const violations = summarize(axe);
     await captureScreenshots(page, route, violations);
     return {
-      url: route.url,
+      url: route.displayUrl ?? route.url,
       label: route.label,
       auth: route.auth,
       status: 'ok',
@@ -177,7 +181,7 @@ async function scanRoute(
     };
   } catch (err) {
     return {
-      url: route.url,
+      url: route.displayUrl ?? route.url,
       label: route.label,
       auth: route.auth,
       status: 'error',
@@ -218,36 +222,43 @@ async function seedDynamicRoutes(
   return [
     {
       url: `/en/org/${org.organizationProfile.slug}`,
+      displayUrl: '/en/org/{slug}',
       label: 'Organization page',
       auth: true,
     },
     {
       url: `/en/org/${org.organizationProfile.slug}/relationships`,
+      displayUrl: '/en/org/{slug}/relationships',
       label: 'Org relationships',
       auth: true,
     },
     {
       url: `/en/profile/${adminProfile.slug}`,
+      displayUrl: '/en/profile/{slug}',
       label: 'User profile',
       auth: true,
     },
     {
       url: `/en/decisions/${instance.slug}`,
+      displayUrl: '/en/decisions/{slug}',
       label: 'Decision detail',
       auth: true,
     },
     {
       url: `/en/decisions/${instance.slug}/edit`,
+      displayUrl: '/en/decisions/{slug}/edit',
       label: 'Decision editor',
       auth: true,
     },
     {
       url: `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`,
+      displayUrl: '/en/decisions/{slug}/proposal/{profileId}',
       label: 'Proposal view',
       auth: true,
     },
     {
       url: `/en/decisions/${instance.slug}/proposal/${proposal.profileId}/edit`,
+      displayUrl: '/en/decisions/{slug}/proposal/{profileId}/edit',
       label: 'Proposal editor',
       auth: true,
     },
@@ -259,11 +270,8 @@ async function captureScreenshots(
   route: RouteScan,
   violations: ViolationSummary[],
 ): Promise<void> {
-  const routeDir = path.join(
-    REPORT_DIR,
-    SCREENSHOT_DIR_NAME,
-    slugForRoute(route.url),
-  );
+  const routeSlug = slugForRoute(route.displayUrl ?? route.url);
+  const routeDir = path.join(REPORT_DIR, SCREENSHOT_DIR_NAME, routeSlug);
   mkdirSync(routeDir, { recursive: true });
 
   for (const violation of violations) {
@@ -279,7 +287,7 @@ async function captureScreenshots(
       if (ok) {
         node.screenshotPath = path.posix.join(
           SCREENSHOT_DIR_NAME,
-          slugForRoute(route.url),
+          routeSlug,
           filename,
         );
       }
@@ -348,6 +356,7 @@ function summarize(axe: AxeResults): ViolationSummary[] {
       help: v.help,
       helpUrl: v.helpUrl,
       nodeCount: v.nodes.length,
+      wcagCriteria: extractWcagCriteria(v.tags),
       nodes: v.nodes.map((n) => ({
         target: n.target.map((t) =>
           Array.isArray(t) ? t.join(' ') : String(t),
@@ -357,6 +366,12 @@ function summarize(axe: AxeResults): ViolationSummary[] {
       })),
     }))
     .sort((a, b) => severityRank(b.impact) - severityRank(a.impact));
+}
+
+function extractWcagCriteria(tags: string[]): string[] {
+  return tags
+    .filter((t) => /^wcag\d{3,4}$/.test(t))
+    .map((t) => t.slice(4).split('').join('.'));
 }
 
 function normalizeImpact(impact: ImpactValue | undefined): Severity | null {
@@ -404,6 +419,7 @@ function buildReport(
       routes: Set<string>;
       help: string;
       helpUrl: string;
+      wcagCriteria: string[];
     }
   >();
 
@@ -424,6 +440,7 @@ function buildReport(
           routes: new Set([r.url]),
           help: v.help,
           helpUrl: v.helpUrl,
+          wcagCriteria: v.wcagCriteria,
         });
       }
     }
@@ -437,6 +454,7 @@ function buildReport(
       routes: r.routes.size,
       help: r.help,
       helpUrl: r.helpUrl,
+      wcagCriteria: r.wcagCriteria,
     }))
     .sort(
       (a, b) =>
@@ -464,6 +482,42 @@ function writeReport(report: BaselineReport): void {
     `${JSON.stringify(report, null, 2)}\n`,
   );
   writeFileSync(path.join(REPORT_DIR, 'report.md'), renderMarkdown(report));
+  writeFileSync(path.join(REPORT_DIR, 'report.csv'), renderCsv(report));
+}
+
+function renderCsv(r: BaselineReport): string {
+  const header = [
+    'Route',
+    'Rule ID',
+    'Impact',
+    'Description',
+    'Elements Affected',
+    'WCAG Criterion',
+  ];
+  const rows: string[][] = [header];
+  for (const route of r.routes) {
+    if (route.status !== 'ok') {
+      continue;
+    }
+    for (const v of route.violations) {
+      rows.push([
+        route.url,
+        v.id,
+        v.impact,
+        v.help,
+        String(v.nodeCount),
+        v.wcagCriteria.join(' '),
+      ]);
+    }
+  }
+  return `${rows.map((row) => row.map(escapeCsvCell).join(',')).join('\n')}\n`;
+}
+
+function escapeCsvCell(cell: string): string {
+  if (/[",\n\r]/.test(cell)) {
+    return `"${cell.replace(/"/g, '""')}"`;
+  }
+  return cell;
 }
 
 function renderMarkdown(r: BaselineReport): string {
@@ -502,11 +556,11 @@ function renderMarkdown(r: BaselineReport): string {
   lines.push('');
   lines.push('## Top rules');
   lines.push('');
-  lines.push('| Rule | Impact | Nodes | Routes | Help |');
-  lines.push('| --- | --- | ---: | ---: | --- |');
+  lines.push('| Rule | Impact | WCAG | Nodes | Routes | Help |');
+  lines.push('| --- | --- | --- | ---: | ---: | --- |');
   for (const rule of r.ruleTotals.slice(0, 30)) {
     lines.push(
-      `| \`${rule.id}\` | ${rule.impact} | ${rule.occurrences} | ${rule.routes} | [${rule.help}](${rule.helpUrl}) |`,
+      `| \`${rule.id}\` | ${rule.impact} | ${rule.wcagCriteria.join(', ') || '—'} | ${rule.occurrences} | ${rule.routes} | [${rule.help}](${rule.helpUrl}) |`,
     );
   }
   lines.push('');
@@ -523,11 +577,11 @@ function renderMarkdown(r: BaselineReport): string {
       lines.push('');
       continue;
     }
-    lines.push('| Rule | Impact | Nodes | Help |');
-    lines.push('| --- | --- | ---: | --- |');
+    lines.push('| Rule | Impact | WCAG | Nodes | Help |');
+    lines.push('| --- | --- | --- | ---: | --- |');
     for (const v of route.violations) {
       lines.push(
-        `| \`${v.id}\` | ${v.impact} | ${v.nodeCount} | [${v.help}](${v.helpUrl}) |`,
+        `| \`${v.id}\` | ${v.impact} | ${v.wcagCriteria.join(', ') || '—'} | ${v.nodeCount} | [${v.help}](${v.helpUrl}) |`,
       );
     }
     lines.push('');
