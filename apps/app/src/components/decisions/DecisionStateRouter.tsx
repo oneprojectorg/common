@@ -35,7 +35,6 @@ function DecisionStateRouterNew({
 }) {
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const reviewFlowEnabled = useFeatureFlag('review_flow');
-  const adminSelectionEnabled = useFeatureFlag('admin_review_selection');
 
   const { currentStateId } = instance;
   const phases = instance.instanceData?.phases ?? [];
@@ -48,7 +47,7 @@ function DecisionStateRouterNew({
     if (!decisionSlug) {
       notFound();
     }
-    if (isAdmin && adminSelectionEnabled) {
+    if (isAdmin) {
       return <SelectWinnersPage instance={instance} />;
     }
     return (
