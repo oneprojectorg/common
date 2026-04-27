@@ -98,13 +98,12 @@ export const proposalRevisionRequestListSchema = z.object({
 // ── Per-proposal review aggregates ─────────────────────────────────────
 
 /**
- * Per-proposal aggregates derived in SQL across review assignments and the
- * submitted reviews attached to them.
+ * Per-proposal aggregates derived from review assignments and their submitted
+ * reviews.
  *
- * `totalScore` is the sum of integer rubric criteria across submitted reviews;
- * `averageScore` is `totalScore / reviewsSubmitted` (0 when no submissions).
- * Both are returned so the client can render either one without a schema
- * change while the design is finalized.
+ * `averageScore` is the mean of per-review scores across submitted reviews
+ * (sum of integer rubric criteria, divided by `reviewsSubmitted`). Returns
+ * 0 when no submissions exist.
  *
  * `overallRecommendationCount` is a tally of submitted answers to the
  * well-known overall-recommendation criterion (e.g. `{ yes: 2, no: 1 }`).
@@ -113,7 +112,6 @@ export const proposalRevisionRequestListSchema = z.object({
 export const proposalReviewAggregatesSchema = z.object({
   assignmentsTotal: z.number().int(),
   reviewsSubmitted: z.number().int(),
-  totalScore: z.number(),
   averageScore: z.number(),
   overallRecommendationCount: z.record(z.string(), z.number().int()),
   reviewers: z.array(

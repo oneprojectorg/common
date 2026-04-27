@@ -408,7 +408,6 @@ function buildItem<
     aggregates: {
       assignmentsTotal: proposal.reviewAssignments.length,
       reviewsSubmitted,
-      totalScore,
       averageScore,
       overallRecommendationCount,
       reviewers,
