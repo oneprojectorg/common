@@ -1,4 +1,5 @@
 import type { User } from '@op/supabase/lib';
+import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils';
 import { getInstance } from './getInstance';
@@ -14,16 +15,20 @@ import {
 } from './schemas/reviews';
 import type { RubricTemplateSchema } from './types';
 
-export interface HydrateProposalsWithReviewAggregatesInput {
-  processInstanceId: string;
-  proposalIds: string[];
+export const hydrateProposalsWithReviewAggregatesInputSchema = z.object({
+  processInstanceId: z.uuid(),
   /**
    * Phase that scopes which review assignments and reviews count toward
    * aggregates. Defaults to the instance's current phase. Pass an explicit
    * value to look at a previous phase's reviews retrospectively.
    */
-  phaseId?: string;
-}
+  phaseId: z.string().optional(),
+  proposalIds: z.array(z.uuid()).min(1).max(200),
+});
+
+export type HydrateProposalsWithReviewAggregatesInput = z.infer<
+  typeof hydrateProposalsWithReviewAggregatesInputSchema
+>;
 
 /**
  * Admin-only hydration: enrich a caller-provided list of proposal IDs with

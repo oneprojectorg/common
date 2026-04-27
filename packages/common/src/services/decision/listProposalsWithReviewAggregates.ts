@@ -18,6 +18,7 @@ import {
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { count as countFn } from 'drizzle-orm';
+import { z } from 'zod';
 
 import { UnauthorizedError, decodeCursor, encodeCursor } from '../../utils';
 import { getInstance } from './getInstance';
@@ -34,8 +35,25 @@ import {
 } from './schemas/reviews';
 import type { RubricTemplateSchema } from './types';
 
-type SortBy = 'createdAt' | 'totalScore' | 'averageScore' | 'reviewsSubmitted';
-type SortDir = 'asc' | 'desc';
+export const listProposalsWithReviewAggregatesInputSchema = z.object({
+  processInstanceId: z.uuid(),
+  /**
+   * Phase that scopes the candidate set and the review aggregates.
+   * Defaults to the instance's current phase.
+   */
+  phaseId: z.string().optional(),
+  categoryId: z.uuid().optional(),
+  sortBy: z
+    .enum(['createdAt', 'totalScore', 'averageScore', 'reviewsSubmitted'])
+    .default('createdAt'),
+  dir: z.enum(['asc', 'desc']).default('desc'),
+  limit: z.number().int().min(1).max(100).default(50),
+  cursor: z.string().optional(),
+});
+
+export type ListProposalsWithReviewAggregatesInput = z.infer<
+  typeof listProposalsWithReviewAggregatesInputSchema
+>;
 
 type AggregatesCursor = {
   /** The sort column value of the last item on the previous page. */
@@ -43,22 +61,6 @@ type AggregatesCursor = {
   /** Tie-breaker so identical sort values still paginate deterministically. */
   id: string;
 };
-
-export interface ListProposalsWithReviewAggregatesInput {
-  processInstanceId: string;
-  /**
-   * Phase that scopes the candidate set and the review aggregates.
-   * Defaults to the instance's current phase.
-   */
-  phaseId?: string;
-  categoryId?: string;
-  sortBy?: SortBy;
-  dir?: SortDir;
-  limit?: number;
-  cursor?: string;
-}
-
-const DEFAULT_LIMIT = 50;
 
 /**
  * Admin-only paginated list of proposals belonging to a phase, enriched with
@@ -105,9 +107,7 @@ export async function listProposalsWithReviewAggregates(
     return { items: [], total: 0, nextCursor: null };
   }
 
-  const sortBy: SortBy = input.sortBy ?? 'createdAt';
-  const sortDir: SortDir = input.dir ?? 'desc';
-  const limit = input.limit ?? DEFAULT_LIMIT;
+  const { sortBy, dir: sortDir, limit } = input;
   const needsAggForSort = sortBy !== 'createdAt';
 
   // Per-review score expression: sum of integer rubric criteria. Non-numeric
