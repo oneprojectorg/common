@@ -1,5 +1,10 @@
 import { db, eq, inArray } from '@op/db/client';
 import {
+  type ObjectsInStorage,
+  type Profile,
+  type Proposal,
+  type ProposalReview,
+  type ProposalReviewAssignment,
   ProposalReviewState,
   proposalCategories,
   proposals,
@@ -9,7 +14,12 @@ import type { User } from '@op/supabase/lib';
 import { count as countFn } from 'drizzle-orm';
 import { z } from 'zod';
 
-import { UnauthorizedError, decodeCursor, encodeCursor } from '../../utils';
+import {
+  UnauthorizedError,
+  decodeCursor,
+  encodeCursor,
+  getCursorCondition,
+} from '../../utils';
 import { getInstance } from './getInstance';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import {
@@ -24,32 +34,29 @@ import {
 } from './schemas/reviews';
 import type { RubricTemplateSchema } from './types';
 
-// ── Input schemas ──────────────────────────────────────────────────────
+// ── Input schema ───────────────────────────────────────────────────────
 
-const hydrateInputSchema = z.object({
-  processInstanceId: z.uuid(),
-  /**
-   * Phase that scopes which review assignments and reviews count toward
-   * aggregates. Defaults to the instance's current phase.
-   */
-  phaseId: z.string().optional(),
-  proposalIds: z.array(z.uuid()).min(1).max(200),
-});
-
-const paginatedInputSchema = z.object({
-  processInstanceId: z.uuid(),
-  /**
-   * Phase that scopes the candidate set and the review aggregates.
-   * Defaults to the instance's current phase.
-   */
-  phaseId: z.string().optional(),
-  limit: z.number().int().min(1).max(100).default(50),
-  cursor: z.string().optional(),
-});
-
+/**
+ * Single union schema for both dispatch modes:
+ *   - filtered: caller passes `proposalIds`, no pagination.
+ *   - paginated: phase-scoped, cursor-paginated.
+ *
+ * Shared fields (`processInstanceId`, `phaseId`) are repeated so each
+ * variant of the union is a complete shape Zod can discriminate by
+ * presence of `proposalIds`.
+ */
 export const listProposalsWithReviewAggregatesInputSchema = z.union([
-  hydrateInputSchema,
-  paginatedInputSchema,
+  z.object({
+    processInstanceId: z.uuid(),
+    phaseId: z.string().optional(),
+    proposalIds: z.array(z.uuid()).min(1).max(200),
+  }),
+  z.object({
+    processInstanceId: z.uuid(),
+    phaseId: z.string().optional(),
+    limit: z.number().int().min(1).max(100).default(50),
+    cursor: z.string().optional(),
+  }),
 ]);
 
 export type ListProposalsWithReviewAggregatesInput = z.infer<
@@ -58,9 +65,39 @@ export type ListProposalsWithReviewAggregatesInput = z.infer<
 
 type AggregatesCursor = {
   /** `createdAt` of the last item on the previous page. */
-  createdAt: string;
+  value: string;
   /** Tie-breaker for items with identical `createdAt`. */
   id: string;
+};
+
+/**
+ * Profile rows with the avatar relation we attach. Used both for the
+ * proposal's author/submitter and the reviewer behind each assignment.
+ */
+type ProfileWithAvatar = Profile & {
+  avatarImage: ObjectsInStorage | null;
+};
+
+/**
+ * Review assignment row with the reviewer profile and reviews we load
+ * alongside it. The `reviews` array is 0-or-1 in practice (enforced by
+ * `proposal_reviews_assignment_unique`), but Drizzle returns a list because
+ * the relation is declared as many.
+ */
+type AssignmentWithReviewer = ProposalReviewAssignment & {
+  reviewer: ProfileWithAvatar;
+  reviews: ProposalReview[];
+};
+
+/**
+ * The proposal row plus the relations we attach in the aggregation query.
+ * Built off the schema's row types so changes to any of them propagate
+ * automatically.
+ */
+type ProposalWithReviewRelations = Proposal & {
+  profile: ProfileWithAvatar;
+  submittedBy: ProfileWithAvatar;
+  reviewAssignments: AssignmentWithReviewer[];
 };
 
 // ── Public entry ───────────────────────────────────────────────────────
@@ -69,7 +106,7 @@ type AggregatesCursor = {
  * Admin-only proposal list with per-proposal review aggregates. Two dispatch
  * modes determined by input shape:
  *
- *   - hydration (`proposalIds` present): caller-owned ID list, no pagination.
+ *   - filtered (`proposalIds` present): caller-owned ID list, no pagination.
  *   - paginated: phase-scoped, `createdAt DESC`, cursor-paginated.
  *
  * Both modes share the auth + instance + rubric setup; the split happens
@@ -95,7 +132,7 @@ export async function listProposalsWithReviewAggregates(
   const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
 
   if ('proposalIds' in input) {
-    return runHydrate({
+    return listProposalsFiltered({
       proposalIds: input.proposalIds,
       processInstanceId,
       phaseId,
@@ -103,7 +140,7 @@ export async function listProposalsWithReviewAggregates(
     });
   }
 
-  return runList({
+  return listProposalsPaginated({
     processInstanceId,
     phaseId,
     limit: input.limit,
@@ -112,9 +149,9 @@ export async function listProposalsWithReviewAggregates(
   });
 }
 
-// ── Hydration mode ─────────────────────────────────────────────────────
+// ── Filtered mode (caller-given proposalIds) ───────────────────────────
 
-async function runHydrate({
+async function listProposalsFiltered({
   proposalIds,
   processInstanceId,
   phaseId,
@@ -141,7 +178,7 @@ async function runHydrate({
     .filter((p): p is NonNullable<typeof p> => p !== undefined)
     .filter((p) => p.processInstanceId === processInstanceId)
     .map((proposal) =>
-      buildItem({
+      toProposalWithAggregates({
         proposal,
         scoredCriterionKeys,
         categories: categoriesByProposalId.get(proposal.id) ?? [],
@@ -155,9 +192,9 @@ async function runHydrate({
   });
 }
 
-// ── Paginated mode ─────────────────────────────────────────────────────
+// ── Paginated mode (phase-scoped, cursor) ──────────────────────────────
 
-async function runList({
+async function listProposalsPaginated({
   processInstanceId,
   phaseId,
   limit,
@@ -188,15 +225,13 @@ async function runList({
       where: {
         id: { in: phaseProposalIds },
         ...(decodedCursor && {
-          OR: [
-            { createdAt: { lt: decodedCursor.createdAt } },
-            {
-              AND: [
-                { createdAt: decodedCursor.createdAt },
-                { id: { lt: decodedCursor.id } },
-              ],
-            },
-          ],
+          RAW: (table) =>
+            getCursorCondition({
+              column: table.createdAt,
+              tieBreakerColumn: table.id,
+              cursor: decodedCursor,
+              direction: 'desc',
+            })!,
         }),
       },
       with: proposalRelations({ processInstanceId, phaseId }),
@@ -221,7 +256,7 @@ async function runList({
   const categoriesByProposalId = await loadCategoriesByProposalIds(pageIds);
 
   const items = pageRows.map((proposal) =>
-    buildItem({
+    toProposalWithAggregates({
       proposal,
       scoredCriterionKeys,
       categories: categoriesByProposalId.get(proposal.id) ?? [],
@@ -232,7 +267,7 @@ async function runList({
   if (hasMore) {
     const lastRow = pageRows[pageRows.length - 1]!;
     nextCursor = encodeCursor<AggregatesCursor>({
-      createdAt: lastRow.createdAt ?? '',
+      value: lastRow.createdAt ?? '',
       id: lastRow.id,
     });
   }
@@ -247,10 +282,10 @@ async function runList({
 // ── Helpers ────────────────────────────────────────────────────────────
 
 /**
- * `with` block for the proposal relational query — shared by hydrate and
- * list. The nested `where` on `reviewAssignments` is what scopes assignments
- * (and their reviews) to the right phase, so cross-phase reviews don't leak
- * into aggregates.
+ * `with` block for the proposal relational query — shared by filtered and
+ * paginated. The nested `where` on `reviewAssignments` is what scopes
+ * assignments (and their reviews) to the right phase, so cross-phase
+ * reviews don't leak into aggregates.
  */
 function proposalRelations({
   processInstanceId,
@@ -318,34 +353,16 @@ async function loadCategoriesByProposalIds(
 }
 
 /**
- * Build a single response item from a loaded proposal row. Generic over the
- * proposal shape so TS infers the type from the runtime call sites — the
- * constraint just lists the fields the body actually reads.
+ * Build a single response item from a loaded proposal row: pulls the proposal
+ * shape onto the response, computes per-proposal review aggregates from the
+ * loaded reviews, and attaches the categories sidecar.
  */
-function buildItem<
-  P extends {
-    id: string;
-    processInstanceId: string;
-    proposalData: unknown;
-    status: string | null;
-    visibility: string;
-    profileId: string | null;
-    profile: unknown;
-    submittedBy: unknown;
-    createdAt: string | null;
-    updatedAt: string | null;
-    reviewAssignments: Array<{
-      status: string;
-      reviewer: unknown;
-      reviews: Array<{ state: string; reviewData: unknown }>;
-    }>;
-  },
->({
+function toProposalWithAggregates({
   proposal,
   scoredCriterionKeys,
   categories,
 }: {
-  proposal: P;
+  proposal: ProposalWithReviewRelations;
   scoredCriterionKeys: string[];
   categories: ProposalCategoryItem[];
 }) {
