@@ -47,19 +47,18 @@ export function SelectWinnersList({
   // a follow-up PR. Stored as a Set so toggling is O(1) regardless of list size.
   const [advancing, setAdvancing] = useState<Set<string>>(() => new Set());
 
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
-    instanceId: processInstanceId,
-  });
-
   const { sortBy, dir } = SORT_TO_QUERY[sortKey];
 
-  const [data] = trpc.decision.listWithReviewAggregates.useSuspenseQuery({
-    processInstanceId,
-    sortBy,
-    dir,
-    limit: 100,
-    ...(categoryId ? { categoryId } : {}),
-  });
+  const [[instance, data]] = trpc.useSuspenseQueries((t) => [
+    t.decision.getInstance({ instanceId: processInstanceId }),
+    t.decision.listWithReviewAggregates({
+      processInstanceId,
+      sortBy,
+      dir,
+      limit: 100,
+      ...(categoryId ? { categoryId } : {}),
+    }),
+  ]);
 
   const items = data.items;
   const total = data.total;
