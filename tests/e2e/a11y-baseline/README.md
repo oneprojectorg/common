@@ -2,8 +2,11 @@
 
 Generated output from `pnpm a11y:baseline`. Drives WCAG 2.1 AA Compliance Sprint targets.
 
-- `report.json` — machine-readable totals + per-route violation summaries (axe-core impact: critical / serious / moderate / minor).
-- `report.md` — human-readable summary, top rules, per-route detail.
+- `summary.json` — committed. Stable per-route counts and per-rule occurrences for PR-vs-base diffing. No UUIDs, no per-node detail.
+- `report.json` — gitignored. Full per-node detail (selectors, html snippets, screenshot paths, axe `failureSummary`). Useful for debugging a single run; churns every run because of seeded UUIDs and React Aria autogen ids.
+- `report.md` — gitignored. Human-readable summary, top rules, per-route detail with embedded screenshots.
+- `report.csv` — gitignored. Flat one-row-per-(route, rule) table. Columns: `Route, Rule ID, Impact, Description, Elements Affected, WCAG Criterion`. Suitable for spreadsheet/JIRA import.
+- `screenshots/` — gitignored. PNG per visible violation node, organized by stable route slug.
 
 ## Run
 
@@ -16,7 +19,25 @@ pnpm build:e2e
 
 # each scan
 pnpm start:e2e &        # serves apps/app on :4100, apps/api on :4300
-pnpm a11y:baseline      # runs the spec, overwrites report.{json,md}
+pnpm a11y:baseline      # runs the spec, overwrites all four report files
 ```
 
-The baseline currently covers public + key authenticated routes (home, decisions index, profile index, search, org index + a seeded org page). Add dynamic routes (decision instances, proposals) to `tests/e2e/tests/a11y-baseline.spec.ts` as fixtures get seeded.
+## Routes
+
+Currently scans 16 routes (see `PUBLIC_ROUTES`, `STATIC_AUTH_ROUTES`, and `seedDynamicRoutes` in `tests/e2e/tests/a11y-baseline.spec.ts`):
+
+- 3 public — login, privacy, terms
+- 6 static authenticated — home, decisions index, profile index, search, org index, 404
+- 7 dynamic authenticated (seeded inline) — org page, org relationships, user profile, decision detail/editor, proposal view/editor
+
+## Known gaps
+
+These need follow-up work outside this PR:
+
+- Modal/overlay states (need post-interaction "soft-record" approach)
+- Form-validation error states (same)
+- Onboarding `/en/start` (fixture user is already onboarded)
+- App-admin routes (`/en/admin*` — fixture user is org-admin only)
+- Reviews route (`/en/decisions/{slug}/reviews/{reviewId}` — no review fixture helper yet)
+- Locale variants (`/pt`, `/es` etc.)
+- Phase-date determinism (seed schema dates from `Date.now()`, so the active decision phase drifts on a 7-day cycle and can shift visible affordances)
