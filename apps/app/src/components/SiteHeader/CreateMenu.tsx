@@ -38,9 +38,8 @@ export const CreateMenu = () => {
 
   const createDecisionMutation = useMutation({
     mutationFn: async () => {
-      const { processes: templates } = await utils.decision.listProcesses.fetch(
-        {},
-      );
+      const { processes: templates } =
+        await utils.decision.listProcesses.ensureData({});
       const firstTemplate = templates[0];
       if (!firstTemplate) {
         throw new Error('No decision process templates available');
@@ -53,11 +52,8 @@ export const CreateMenu = () => {
     onSuccess: (decisionProfile) => {
       router.push(`/decisions/${decisionProfile.slug}/edit`);
     },
-    onError: (error) => {
-      toast.error({
-        title: t('Failed to create decision'),
-        message: error instanceof Error ? error.message : '',
-      });
+    onError: () => {
+      toast.error({ title: t('Failed to create decision') });
     },
   });
   const isCreatingDecision =
