@@ -11,7 +11,7 @@ import { LuArrowDown, LuArrowUp } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-type SortColumn = 'createdAt' | 'totalScore';
+type SortColumn = 'createdAt' | 'averageScore';
 type SortDir = 'asc' | 'desc';
 
 type Item = ProposalWithAggregates;
@@ -122,8 +122,8 @@ function HeaderRow({
       </div>
       <SortableHeader
         label={t('Score ({pts}pts)', { pts: totalPoints })}
-        column="totalScore"
-        active={sortBy === 'totalScore'}
+        column="averageScore"
+        active={sortBy === 'averageScore'}
         dir={dir}
         onSortChange={onSortChange}
         className="hidden w-[80px] shrink-0 md:flex"
@@ -178,7 +178,7 @@ function BodyRow({
 
       {/* Score */}
       <div className="hidden w-[80px] shrink-0 text-sm text-neutral-black md:block">
-        <ScoreCell value={item.aggregates.totalScore} />
+        <ScoreCell value={item.aggregates.averageScore} />
       </div>
 
       {/* Advance button */}

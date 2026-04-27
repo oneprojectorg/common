@@ -26,12 +26,12 @@ type SortKey = 'newest' | 'oldest' | 'highestScore' | 'lowestScore';
 
 const SORT_TO_QUERY: Record<
   SortKey,
-  { sortBy: 'createdAt' | 'totalScore'; dir: 'asc' | 'desc' }
+  { sortBy: 'createdAt' | 'averageScore'; dir: 'asc' | 'desc' }
 > = {
   newest: { sortBy: 'createdAt', dir: 'desc' },
   oldest: { sortBy: 'createdAt', dir: 'asc' },
-  highestScore: { sortBy: 'totalScore', dir: 'desc' },
-  lowestScore: { sortBy: 'totalScore', dir: 'asc' },
+  highestScore: { sortBy: 'averageScore', dir: 'desc' },
+  lowestScore: { sortBy: 'averageScore', dir: 'asc' },
 };
 
 export function SelectWinnersList({
