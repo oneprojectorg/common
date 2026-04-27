@@ -356,7 +356,6 @@ export const listProposals = async ({
           },
         },
         profile: true,
-        decisions: true,
       },
       limit,
       offset,
@@ -509,10 +508,6 @@ export const listProposals = async ({
     const profile = Array.isArray(proposal.profile)
       ? proposal.profile[0]
       : proposal.profile;
-    const decisions = Array.isArray(proposal.decisions)
-      ? proposal.decisions
-      : [];
-
     const relationshipInfo = proposal.profileId
       ? relationshipData.get(proposal.profileId)
       : null;
@@ -538,7 +533,6 @@ export const listProposals = async ({
       profileId: proposal.profileId,
       submittedBy: submittedBy,
       profile: profile,
-      decisionCount: decisions.length,
       likesCount: relationshipInfo?.likesCount || 0,
       followersCount: relationshipInfo?.followersCount || 0,
       isLikedByUser: relationshipInfo?.isLikedByUser || false,

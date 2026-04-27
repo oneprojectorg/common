@@ -8,7 +8,6 @@ import {
   ProposalStatus,
   Visibility,
   decisionProcesses,
-  decisions,
   processInstances,
   stateTransitionHistory,
 } from '@op/db/schema';
@@ -438,19 +437,6 @@ export const proposalVersionListEncoder = z.object({
   versions: z.array(proposalVersionEncoder),
 });
 
-// Decision Encoder
-export const decisionEncoder = createSelectSchema(decisions)
-  .pick({
-    id: true,
-    decisionData: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    proposal: proposalSchema.optional(),
-    decidedBy: baseProfileEncoder.optional(),
-  });
-
 // State Transition History Encoder
 export const stateTransitionHistoryEncoder = createSelectSchema(
   stateTransitionHistory,
@@ -482,12 +468,6 @@ export const processInstanceListEncoder = z.object({
 export const instanceResultsEncoder = z.object({
   items: z.array(proposalSchema),
   next: z.string().nullish(),
-});
-
-export const decisionListEncoder = z.object({
-  decisions: z.array(decisionEncoder),
-  total: z.number(),
-  hasMore: z.boolean(),
 });
 
 // Input Schemas
