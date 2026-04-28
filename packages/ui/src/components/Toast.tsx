@@ -32,7 +32,7 @@ export const Toast = () => {
           actionButton:
             'group-[.toast]:bg-primary group-[.toast]:text-primary-fg',
           cancelButton: 'group-[.toast]:bg-muted group-[.toast]:text-muted-fg',
-          closeButton: '!absolute !right-0 top-0 !cursor-pointer',
+          closeButton: '!absolute !end-0 top-0 !cursor-pointer',
         },
       }}
     />
@@ -111,7 +111,7 @@ const ToastActions = ({
 
   if (isSingleLine) {
     return (
-      <div className="ml-auto flex shrink-0 items-center gap-2">
+      <div className="ms-auto flex shrink-0 items-center gap-2">
         {renderActions()}
       </div>
     );

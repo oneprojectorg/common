@@ -41,7 +41,7 @@ export const menuItemStyles = tv({
   base: 'group flex cursor-pointer items-center gap-4 rounded-md px-4 py-2 text-neutral-charcoal outline outline-0 -outline-offset-1 forced-color-adjust-none select-none',
   variants: {
     unstyled: {
-      true: 'group flex cursor-pointer items-center px-0 py-0 pt-0 pr-0 pb-0 pl-0 text-neutral-charcoal outline outline-0 -outline-offset-1 forced-color-adjust-none select-none',
+      true: 'group flex cursor-pointer items-center px-0 py-0 ps-0 pe-0 pt-0 pb-0 text-neutral-charcoal outline outline-0 -outline-offset-1 forced-color-adjust-none select-none',
       false: '',
     },
     selected: {
@@ -96,7 +96,7 @@ export const MenuItem = (
               {children}
             </span>
             {hasSubmenu && (
-              <LuChevronRight aria-hidden className="absolute right-2 size-4" />
+              <LuChevronRight aria-hidden className="absolute end-2 size-4" />
             )}
           </>
         ),

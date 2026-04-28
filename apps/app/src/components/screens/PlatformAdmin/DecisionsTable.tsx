@@ -94,7 +94,7 @@ const DecisionsTableContent = ({ searchQuery }: { searchQuery: string }) => {
           <TableColumn>{t('Participants')}</TableColumn>
           <TableColumn>{t('Status')}</TableColumn>
           <TableColumn>{t('Created')}</TableColumn>
-          <TableColumn className="text-right">{t('Actions')}</TableColumn>
+          <TableColumn className="text-end">{t('Actions')}</TableColumn>
         </TableHeader>
         <TableBody>
           {decisions.map((decision) => (
@@ -134,7 +134,7 @@ const DecisionsTableSkeleton = () => {
         <TableColumn>{t('Participants')}</TableColumn>
         <TableColumn>{t('Status')}</TableColumn>
         <TableColumn>{t('Created')}</TableColumn>
-        <TableColumn className="text-right">{t('Actions')}</TableColumn>
+        <TableColumn className="text-end">{t('Actions')}</TableColumn>
       </TableHeader>
       <TableBody>
         {[...Array(5)].map((_, i) => (

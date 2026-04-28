@@ -110,7 +110,7 @@ export function CollaborativeMultiSelectField({
         <Button
           variant="pill"
           color="pill"
-          className="w-fit justify-start text-left pressed:bg-primary-tealWhite pressed:text-primary-teal pressed:!shadow-none"
+          className="w-fit justify-start text-start pressed:bg-primary-tealWhite pressed:text-primary-teal pressed:!shadow-none"
         >
           {buttonLabel}
         </Button>

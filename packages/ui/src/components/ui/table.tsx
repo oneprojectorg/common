@@ -98,7 +98,7 @@ const ColumnResizer = ({ className, ...props }: ColumnResizerProps) => (
   <ColumnResizerPrimitive
     {...props}
     className={cx(
-      '&[data-resizable-direction=left]:cursor-e-resize &[data-resizable-direction=right]:cursor-w-resize absolute top-0 right-0 bottom-0 grid w-px touch-none place-content-center px-1 resizable-both:cursor-ew-resize [&[data-resizing]>div]:bg-primary',
+      '&[data-resizable-direction=left]:cursor-e-resize &[data-resizable-direction=right]:cursor-w-resize absolute top-0 end-0 bottom-0 grid w-px touch-none place-content-center px-1 resizable-both:cursor-ew-resize [&[data-resizing]>div]:bg-primary',
       className,
     )}
   >
@@ -128,14 +128,14 @@ const TableColumn = ({
         className,
         (className, { isHovered, allowsSorting }) =>
           twMerge(
-            'h-8 text-left text-sm font-normal',
+            'h-8 text-start text-sm font-normal',
             allowsSorting && isHovered ? 'text-neutral-gray3' : 'text-muted-fg',
             'allows-sorting:active:text-neutral-charcoal',
             'relative outline-hidden allows-sorting:cursor-default dragging:cursor-grabbing',
             'px-4 py-(--gutter-y)',
-            'first:pl-(--gutter,--spacing(2)) last:pr-(--gutter,--spacing(2))',
-            !bleed && 'sm:first:pl-1 sm:last:pr-1',
-            grid && 'border-l first:border-l-0',
+            'first:ps-(--gutter,--spacing(2)) last:pe-(--gutter,--spacing(2))',
+            !bleed && 'sm:first:ps-1 sm:last:pe-1',
+            grid && 'border-s first:border-s-0',
             isResizable && 'truncate overflow-hidden',
             className,
           ),
@@ -192,8 +192,8 @@ const TableHeader = <T extends object>({
         <Column
           data-slot="table-column"
           className={twMerge(
-            'first:pl-(--gutter,--spacing(2))',
-            !bleed && 'sm:first:pl-1 sm:last:pr-1',
+            'first:ps-(--gutter,--spacing(2))',
+            !bleed && 'sm:first:ps-1 sm:last:pe-1',
           )}
         />
       )}
@@ -201,8 +201,8 @@ const TableHeader = <T extends object>({
         <Column
           data-slot="table-column"
           className={twMerge(
-            'first:pl-(--gutter,--spacing(2))',
-            !bleed && 'sm:first:pl-1 sm:last:pr-1',
+            'first:ps-(--gutter,--spacing(2))',
+            !bleed && 'sm:first:ps-1 sm:last:pe-1',
           )}
         >
           {selectionMode === 'multiple' && (
@@ -319,10 +319,10 @@ const TableCell = ({ className, ref, ...props }: TableCellProps) => {
       {...props}
       className={cx(
         twJoin(
-          'group px-4 py-(--gutter-y) align-middle outline-hidden group-has-data-focus-visible-within:text-fg first:pl-(--gutter,--spacing(2)) last:pr-(--gutter,--spacing(2))',
+          'group px-4 py-(--gutter-y) align-middle outline-hidden group-has-data-focus-visible-within:text-fg first:ps-(--gutter,--spacing(2)) last:pe-(--gutter,--spacing(2))',
           !striped && 'border-b',
-          grid && 'border-l first:border-l-0',
-          !bleed && 'sm:first:pl-1 sm:last:pr-1',
+          grid && 'border-s first:border-s-0',
+          !bleed && 'sm:first:ps-1 sm:last:pe-1',
           allowResize && 'truncate overflow-hidden',
         ),
         className,

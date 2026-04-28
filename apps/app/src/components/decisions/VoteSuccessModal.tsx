@@ -67,9 +67,9 @@ const VoteSuccessModalSuspense = ({
               </div>
 
               {nextSteps.length > 0 && (
-                <div className="flex w-full flex-col gap-6 text-left text-base text-neutral-charcoal">
+                <div className="flex w-full flex-col gap-6 text-start text-base text-neutral-charcoal">
                   <Header3>{t("Here's what will happen next:")}</Header3>
-                  <ul className="flex flex-col gap-4 pl-4">
+                  <ul className="flex flex-col gap-4 ps-4">
                     {nextSteps.map((step) => (
                       <li key={step.id} className="flex items-start gap-2">
                         <span>•</span>

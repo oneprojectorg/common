@@ -212,7 +212,7 @@ const PostMenu = ({
   return (
     <OptionMenu
       aria-label={t('Post options')}
-      className="absolute top-0 right-0"
+      className="absolute end-0 top-0"
     >
       <DeletePost post={post} />
     </OptionMenu>

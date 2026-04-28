@@ -31,7 +31,7 @@ export function RubricEditorSkeleton() {
       </div>
 
       {/* Preview skeleton */}
-      <div className="hidden basis-1/2 border-l p-4 md:block md:p-8">
+      <div className="hidden basis-1/2 border-s p-4 md:block md:p-8">
         <div className="mx-auto max-w-120 space-y-4">
           <Skeleton className="h-6 w-32" />
           <Skeleton className="h-10 w-full" />

@@ -15,7 +15,7 @@ export const RevisionResubmittedEmail = ({
     <EmailTemplate
       previewText={`A revision to "${proposalName}" is ready for your review`}
     >
-      <Heading className="mx-0 !my-0 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
+      <Heading className="mx-0 !my-0 p-0 text-start font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
         Revision Resubmitted
       </Heading>
       <Text className="my-8 text-lg">

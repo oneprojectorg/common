@@ -152,7 +152,7 @@ function VersionItem({
         unstyled
         onPress={onSelect}
         isDisabled={isPending}
-        className="flex w-full flex-col items-start text-left shadow-none outline-hidden focus-visible:outline-none"
+        className="flex w-full flex-col items-start text-start shadow-none outline-hidden focus-visible:outline-none"
       >
         <p className="text-base text-neutral-black">{label}</p>
         <p className="text-sm text-neutral-charcoal">{sublabel}</p>

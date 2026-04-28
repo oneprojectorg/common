@@ -116,7 +116,7 @@ export const Calendar = <T extends DateValue>({
                   <span className="relative flex size-full items-center justify-center">
                     {formattedDate}
                     {isTodayCell && (
-                      <span className="absolute right-0 bottom-0 left-0 m-auto size-1 rounded-full bg-primary-teal" />
+                      <span className="absolute end-0 bottom-0 start-0 m-auto size-1 rounded-full bg-primary-teal" />
                     )}
                   </span>
                 )}

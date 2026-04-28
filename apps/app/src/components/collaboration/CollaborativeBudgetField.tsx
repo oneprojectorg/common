@@ -174,7 +174,7 @@ export function CollaborativeBudgetField({
           variant="pill"
           color="pill"
           onPress={handleStartEditing}
-          className="justify-start text-left"
+          className="justify-start text-start"
         >
           {budgetAmount !== null
             ? budgetAmount.toLocaleString(undefined, {

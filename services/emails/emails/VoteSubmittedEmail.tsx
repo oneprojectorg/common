@@ -25,7 +25,7 @@ export const VoteSubmittedEmail = ({
           : 'Your ballot is in!'
       }
     >
-      <Header className="mx-0 !my-0 mt-2 p-0 text-left font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
+      <Header className="mx-0 !my-0 mt-2 p-0 text-start font-serif text-[28px] font-light tracking-[-0.02625rem] text-[#222D38]">
         Your ballot is in!
       </Header>
       <Text className="my-8 text-lg">
@@ -45,7 +45,7 @@ export const VoteSubmittedEmail = ({
             Here&apos;s what will happen next:
           </Text>
           {nextSteps.map((step) => (
-            <Text key={step.name} className="my-1 pl-2 text-lg">
+            <Text key={step.name} className="my-1 ps-2 text-lg">
               &bull; {step.date ? `${step.name} on ${step.date}` : step.name}
             </Text>
           ))}

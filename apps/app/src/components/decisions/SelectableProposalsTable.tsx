@@ -66,7 +66,7 @@ export const SelectableProposalsTable = ({
         <TableColumn id="budget">{t('Budget')}</TableColumn>
         <TableColumn id="category">{t('Category')}</TableColumn>
         {showVotes ? <TableColumn id="votes">{t('Votes')}</TableColumn> : null}
-        <TableColumn id="select" className="w-32 text-right">
+        <TableColumn id="select" className="w-32 text-end">
           <span className="sr-only">{t('Select proposal')}</span>
         </TableColumn>
       </TableHeader>
@@ -121,12 +121,12 @@ export const SelectableProposalsTable = ({
                   </span>
                 </TableCell>
               ) : null}
-              <TableCell className="text-right">
+              <TableCell className="text-end">
                 <AdvanceToggleButton
                   isSelected={isSelected}
                   title={fields.title}
                   onPress={() => onToggle(proposal.id)}
-                  className="ml-auto"
+                  className="ms-auto"
                 />
               </TableCell>
             </TableRow>

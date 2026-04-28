@@ -55,7 +55,7 @@ export function ProposalEditorAside({
   }
 
   return (
-    <aside className="flex h-full w-96 shrink-0 flex-col border-l border-neutral-gray1 bg-white">
+    <aside className="flex h-full w-96 shrink-0 flex-col border-s border-neutral-gray1 bg-white">
       <ProposalEditorAsideHeader title={title} onClose={onClose} />
       <div className={cn('flex-1 overflow-y-auto', bodyClassName)}>
         {children}
@@ -75,7 +75,7 @@ export function ProposalEditorAsideSkeleton({
 
   return (
     <>
-      <aside className="hidden h-full w-96 shrink-0 flex-col border-l border-neutral-gray1 bg-white sm:flex">
+      <aside className="hidden h-full w-96 shrink-0 flex-col border-s border-neutral-gray1 bg-white sm:flex">
         <div className="flex h-editor-topbar shrink-0 items-center justify-between border-b border-neutral-gray1 px-6">
           <div className="h-4 w-36 animate-pulse rounded bg-neutral-gray1" />
           <div className="size-4 animate-pulse rounded bg-neutral-gray1" />

@@ -259,7 +259,7 @@ export const PersonalDetailsForm = ({
           />
           <AvatarUploader
             label={t('Profile Picture')}
-            className="absolute bottom-0 left-4 aspect-square size-20 sm:size-28"
+            className="absolute start-4 bottom-0 aspect-square size-20 sm:size-28"
             value={profileImageUrl ?? undefined}
             onChange={(file: File) =>
               handleImageUpload(file, setProfileImageUrl, uploadImage)

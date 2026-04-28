@@ -73,7 +73,7 @@ export const DropDownButton = (props: DropdownButtonProps) => {
       >
         <Menu>
           {items.map((item) => (
-            <MenuItem key={item.id} onAction={item.onAction} className="pr-3">
+            <MenuItem key={item.id} onAction={item.onAction} className="pe-3">
               <div className="flex items-center gap-2">
                 {item.icon && <span className="shrink-0">{item.icon}</span>}
                 <div className="flex flex-col">

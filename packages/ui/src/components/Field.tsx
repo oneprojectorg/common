@@ -42,7 +42,7 @@ export const Description = (props: TextProps) => {
       {...props}
       slot="description"
       className={twMerge(
-        'text-left text-sm text-neutral-gray4',
+        'text-start text-sm text-neutral-gray4',
         props.className,
       )}
     />
@@ -105,7 +105,7 @@ export const inputStyles = tv({
       small: 'h-8 px-4 py-2',
     },
     hasIcon: {
-      true: 'w-full pl-8',
+      true: 'w-full ps-8',
     },
   },
   defaultVariants: {
@@ -170,7 +170,7 @@ export const InputWithIcon = ({
           className,
         })}
       />
-      <span className="absolute top-1/2 left-3 -translate-y-1/2">
+      <span className="absolute start-3 top-1/2 -translate-y-1/2">
         {props.icon}
       </span>
     </span>

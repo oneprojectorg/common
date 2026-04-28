@@ -275,7 +275,7 @@ function RoleRow({
               onPress={handleSave}
               isDisabled={!roleName.trim() || isPending}
               aria-label={t('Save role')}
-              className="ml-auto"
+              className="ms-auto"
             >
               <LuCheck className="size-4" />
             </IconButton>
@@ -292,7 +292,7 @@ function RoleRow({
           <OptionMenu
             aria-label={t('Role options')}
             variant="outline"
-            className="ml-auto rounded bg-white shadow-light"
+            className="ms-auto rounded bg-white shadow-light"
             size="medium"
           >
             <Menu className="min-w-28 p-2">
@@ -739,7 +739,7 @@ function AddRoleRow({
           onPress={handleSave}
           isDisabled={!roleName.trim() || isPending}
           aria-label={t('Save role')}
-          className="ml-auto"
+          className="ms-auto"
         >
           <LuCheck className="size-4" />
         </IconButton>

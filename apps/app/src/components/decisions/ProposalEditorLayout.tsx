@@ -26,7 +26,7 @@ interface ProposalEditorLayoutProps {
   presenceSlot?: ReactNode;
   /** Optional slot for aside trigger icons in the header */
   asideHeaderIcons?: ReactNode;
-  /** Optional right-aligned status pill shown while viewing history */
+  /** Optional end-aligned status pill shown while viewing history */
   statusSlot?: ReactNode;
   /** Whether action controls should be rendered in the header */
   showHeaderActions?: boolean;
