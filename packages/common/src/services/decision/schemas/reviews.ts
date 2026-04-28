@@ -6,7 +6,7 @@ import {
 import { z } from 'zod';
 
 import type { RubricTemplateSchema } from '../types';
-import { proposalSchema } from './proposal';
+import { proposalProfileSchema, proposalSchema } from './proposal';
 
 export {
   ProposalReviewAssignmentStatus,
@@ -99,6 +99,57 @@ export const proposalRevisionRequestListSchema = z.object({
   revisionRequests: z.array(proposalRevisionRequestItemSchema),
 });
 
+// ── Per-proposal review aggregates ─────────────────────────────────────
+
+/**
+ * Per-proposal aggregates derived from review assignments and their submitted
+ * reviews.
+ *
+ * `averageScore` is the mean of per-review scores across submitted reviews
+ * (sum of integer rubric criteria, divided by `reviewsSubmitted`). Returns
+ * 0 when no submissions exist.
+ *
+ * `overallRecommendationCount` is a tally of submitted answers to the
+ * well-known overall-recommendation criterion (e.g. `{ yes: 2, no: 1 }`).
+ * Empty when the rubric doesn't include the field or no reviews are in.
+ */
+export const proposalReviewAggregatesSchema = z.object({
+  assignmentsTotal: z.number().int(),
+  reviewsSubmitted: z.number().int(),
+  averageScore: z.number(),
+  overallRecommendationCount: z.record(z.string(), z.number().int()),
+  reviewers: z.array(
+    z.object({
+      profile: proposalProfileSchema,
+      status: z.enum(ProposalReviewAssignmentStatus),
+    }),
+  ),
+});
+
+/** Taxonomy-backed category attached to a proposal. */
+export const proposalCategorySchema = z.object({
+  id: z.uuid(),
+  label: z.string(),
+  termUri: z.string(),
+});
+
+export const proposalWithAggregatesSchema = z.object({
+  proposal: proposalSchema,
+  aggregates: proposalReviewAggregatesSchema,
+  categories: z.array(proposalCategorySchema),
+});
+
+/**
+ * Single response shape for both hydration and pagination modes. In
+ * hydration mode `total` is just `items.length` and `next` is null —
+ * one shape is simpler than a union and clients can ignore the extras.
+ */
+export const proposalsWithReviewAggregatesListSchema = z.object({
+  items: z.array(proposalWithAggregatesSchema),
+  total: z.number().int(),
+  next: z.string().nullable(),
+});
+
 // ── Types ───────────────────────────────────────────────────────────────
 
 export type ProposalReviewAssignment = z.infer<
@@ -115,4 +166,14 @@ export type ProposalRevisionRequestItem = z.infer<
 >;
 export type ProposalRevisionRequestList = z.infer<
   typeof proposalRevisionRequestListSchema
+>;
+export type ProposalReviewAggregates = z.infer<
+  typeof proposalReviewAggregatesSchema
+>;
+export type ProposalCategoryItem = z.infer<typeof proposalCategorySchema>;
+export type ProposalWithAggregates = z.infer<
+  typeof proposalWithAggregatesSchema
+>;
+export type ProposalsWithReviewAggregatesList = z.infer<
+  typeof proposalsWithReviewAggregatesListSchema
 >;
