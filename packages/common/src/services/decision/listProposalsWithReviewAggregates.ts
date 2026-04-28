@@ -21,7 +21,6 @@ import {
   OVERALL_RECOMMENDATION_KEY,
   getRubricScoringInfo,
 } from './getRubricScoringInfo';
-import { parseProposalData } from './proposalDataSchema';
 import {
   type ProposalCategoryItem,
   type ProposalsWithReviewAggregatesList,
@@ -136,8 +135,7 @@ async function listProposalsFiltered({
     .filter((p): p is NonNullable<typeof p> => p !== undefined)
     .filter((p) => p.processInstanceId === processInstanceId)
     .map((proposal) => ({
-      ...proposal,
-      proposalData: parseProposalData(proposal.proposalData),
+      proposal,
       aggregates: computeReviewAggregates(
         proposal.reviewAssignments,
         scoredCriterionKeys,
@@ -216,8 +214,7 @@ async function listProposalsPaginated({
   const categoriesByProposalId = await loadCategoriesByProposalIds(pageIds);
 
   const items = pageRows.map((proposal) => ({
-    ...proposal,
-    proposalData: parseProposalData(proposal.proposalData),
+    proposal,
     aggregates: computeReviewAggregates(
       proposal.reviewAssignments,
       scoredCriterionKeys,
