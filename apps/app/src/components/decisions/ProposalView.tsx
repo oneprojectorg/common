@@ -313,7 +313,7 @@ export function ProposalView({
       }
     >
       {activeRevisionRequest ? (
-        <SplitPane className="mx-auto w-full max-w-[68rem]">
+        <SplitPane className="mx-auto w-full max-w-6xl">
           <SplitPane.Pane id="proposal" label={t('Proposal')} className="gap-8">
             {proposalBody}
           </SplitPane.Pane>

@@ -11,7 +11,7 @@ export function FormShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-col gap-6">
       <div className="border-b border-neutral-gray1 pb-4">
-        <Header3 className="font-serif !text-title-base font-light">
+        <Header3 className="font-serif">
           <TranslatedText text="Review Proposal" />
         </Header3>
       </div>

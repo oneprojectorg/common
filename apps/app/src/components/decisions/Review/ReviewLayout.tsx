@@ -34,10 +34,7 @@ export async function ReviewLayout({
         <div className="flex h-dvh flex-col bg-white">
           <ReviewNavbar decisionSlug={decisionSlug} />
 
-          <SplitPane
-            className="mx-auto max-w-[68rem]"
-            defaultMobileTabId="review"
-          >
+          <SplitPane className="mx-auto max-w-6xl" defaultMobileTabId="review">
             <SplitPane.Pane
               id="proposal"
               label={<TranslatedText text="Proposal" />}

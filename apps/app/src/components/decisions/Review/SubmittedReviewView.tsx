@@ -4,6 +4,7 @@ import {
   isOverallRecommendationField,
   parseSchemaOptions,
 } from '@op/common/client';
+import { Header3 } from '@op/ui/Header';
 import type { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -84,11 +85,7 @@ function ResultCard({
     <div className="flex flex-col gap-4 rounded-xl border border-neutral-gray1 p-6">
       {hasTopRow && (
         <div className="flex items-center gap-4">
-          {hasValue && (
-            <div className="font-serif text-title-base font-light text-neutral-black">
-              {value}
-            </div>
-          )}
+          {hasValue && <Header3 className="font-serif">{value}</Header3>}
           {hasDescription && (
             <div className="min-w-0 flex-1 text-sm text-neutral-gray4">
               {description}

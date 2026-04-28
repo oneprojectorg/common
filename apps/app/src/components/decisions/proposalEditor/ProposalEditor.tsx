@@ -433,7 +433,7 @@ function ProposalEditorInner({
           <RichTextEditorToolbar editor={focusedEditor} />
         </div>
         {revisionRequest ? (
-          <SplitPane className="mx-auto w-full max-w-[68rem]">
+          <SplitPane className="mx-auto w-full max-w-6xl">
             <SplitPane.Pane
               id="proposal"
               label={t('Proposal')}
