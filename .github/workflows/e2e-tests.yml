@@ -228,7 +228,7 @@ jobs:
           timeout 60 bash -c 'until curl -s http://localhost:4100 > /dev/null 2>&1 && curl -s http://localhost:4300 > /dev/null 2>&1; do sleep 1; done'
 
       - name: Run E2E tests
-        run: pnpm -C ./tests/e2e exec playwright test --grep-invert='axe-core baseline scan' --shard=${{ matrix.shard }}/2 --reporter=blob
+        run: pnpm -C ./tests/e2e exec playwright test --project=e2e --shard=${{ matrix.shard }}/2 --reporter=blob
 
       - name: Upload Playwright blob report
         uses: actions/upload-artifact@v4
@@ -290,11 +290,9 @@ jobs:
           path: tests/e2e/playwright-report/
           retention-days: 30
 
-  # ── A11y baseline: dedicated job that runs only the axe-core spec,
-  #    uploads the human-readable report (markdown + screenshots + CSV) as
-  #    an artifact, and posts a sticky PR comment summarizing the diff vs
-  #    the base branch's checked-in summary.json. The spec itself is excluded
-  #    from the sharded e2e run via --grep-invert above so it doesn't run twice. ──
+  # ── A11y baseline. The axe-core spec is in its own Playwright project
+  #    (`a11y`); the sharded e2e run uses `--project=e2e` which testIgnore's
+  #    that file, so it doesn't run twice. ──
   a11y-baseline:
     name: A11y Baseline
     runs-on: blacksmith-4vcpu-ubuntu-2204
