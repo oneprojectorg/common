@@ -1,10 +1,9 @@
-import { db, eq } from '@op/db/client';
-import {
-  type AccessRole,
-  type ObjectsInStorage,
-  type Profile,
-  type ProfileUser,
-  profileUsers,
+import { db } from '@op/db/client';
+import type {
+  AccessRole,
+  ObjectsInStorage,
+  Profile,
+  ProfileUser,
 } from '@op/db/schema';
 
 /**
@@ -36,8 +35,8 @@ export type ProfileUserWithRelations = ProfileUser & {
 export const getProfileUserWithRelations = async (
   profileUserId: string,
 ): Promise<ProfileUserWithRelations | null> => {
-  const profileUser = await db._query.profileUsers.findFirst({
-    where: eq(profileUsers.id, profileUserId),
+  const profileUser = await db.query.profileUsers.findFirst({
+    where: { id: profileUserId },
     with: {
       serviceUser: {
         with: {

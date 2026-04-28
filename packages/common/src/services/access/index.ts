@@ -1,5 +1,5 @@
 import { cache } from '@op/cache';
-import { and, db, eq } from '@op/db/client';
+import { db, eq } from '@op/db/client';
 import type { Profile, ProfileUser } from '@op/db/schema';
 import { organizations, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
@@ -37,12 +37,11 @@ export const getOrgAccessUser = async ({
   organizationId: string;
 }): Promise<OrgUserWithNormalizedRoles | undefined> => {
   const getOrgUser = async () => {
-    const orgUser = await db._query.organizationUsers.findFirst({
-      where: (table, { eq }) =>
-        and(
-          eq(table.organizationId, organizationId),
-          eq(table.authUserId, user.id),
-        ),
+    const orgUser = await db.query.organizationUsers.findFirst({
+      where: {
+        organizationId,
+        authUserId: user.id,
+      },
       with: {
         roles: {
           with: {
@@ -97,9 +96,11 @@ export const getProfileAccessUser = async ({
   user: { id: string };
   profileId: string;
 }): Promise<ProfileUserWithNormalizedRoles | undefined> => {
-  const profileUser = await db._query.profileUsers.findFirst({
-    where: (table, { eq }) =>
-      and(eq(table.profileId, profileId), eq(table.authUserId, user.id)),
+  const profileUser = await db.query.profileUsers.findFirst({
+    where: {
+      profileId,
+      authUserId: user.id,
+    },
     with: {
       profile: true,
       roles: {
@@ -328,8 +329,8 @@ export const getUserSession = async ({
   const validatedAuthUserId = validateAuthUserId(authUserId);
 
   try {
-    const dbUser = await db._query.users.findFirst({
-      where: (table, { eq }) => eq(table.authUserId, validatedAuthUserId),
+    const dbUser = await db.query.users.findFirst({
+      where: { authUserId: validatedAuthUserId },
       with: {
         organizationUsers: true,
       },

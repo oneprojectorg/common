@@ -1,6 +1,4 @@
-import { db, eq } from '@op/db/client';
-import { posts, postsToProfiles } from '@op/db/schema';
-import { desc, isNull } from 'drizzle-orm';
+import { db } from '@op/db/client';
 
 export interface GetProfilePostsInput {
   profileId: string;
@@ -14,11 +12,11 @@ export const getProfilePosts = async (input: GetProfilePostsInput) => {
 
   try {
     // Get posts attached to this profile via postsToProfiles junction table
-    const profilePosts = await db._query.postsToProfiles.findMany({
-      where: eq(postsToProfiles.profileId, input.profileId),
+    const profilePosts = await db.query.postsToProfiles.findMany({
+      where: { profileId: input.profileId },
       with: {
         post: {
-          where: isNull(posts.parentPostId), // Only top-level posts
+          where: { parentPostId: { isNull: true } }, // Only top-level posts
           with: {
             profile: {
               with: {
@@ -37,7 +35,7 @@ export const getProfilePosts = async (input: GetProfilePostsInput) => {
             },
             childPosts: {
               limit: 50,
-              orderBy: [desc(posts.createdAt)],
+              orderBy: (table, { desc }) => [desc(table.createdAt)],
               with: {
                 profile: {
                   with: {
@@ -54,7 +52,7 @@ export const getProfilePosts = async (input: GetProfilePostsInput) => {
           },
         },
       },
-      orderBy: [desc(postsToProfiles.createdAt)],
+      orderBy: (table, { desc }) => [desc(table.createdAt)],
       limit,
       offset,
     });

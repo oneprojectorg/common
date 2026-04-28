@@ -1,5 +1,5 @@
 import { and, db, eq, gt, lt, or, sql } from '@op/db/client';
-import { profileUsers, profiles, users } from '@op/db/schema';
+import { profiles, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -64,35 +64,6 @@ export const listProfileUsers = async ({
 
   assertAccess({ profile: permission.ADMIN }, profileAccessUser.roles ?? []);
 
-  // Build where clause with optional search filter (minimum 2 characters)
-  // Uses ILIKE for substring matching and trigram word_similarity for fuzzy matching
-  // The <% operator uses GIN trigram indexes for efficient fuzzy searching
-  const searchFilter =
-    query && query.length >= 2
-      ? (() => {
-          const ilikePattern = `%${query}%`;
-
-          // Email: ILIKE for substring + trigram for typo tolerance
-          const emailMatch = sql`(
-            ${profileUsers.email} ILIKE ${ilikePattern}
-            OR ${query} <% ${profileUsers.email}
-          )`;
-
-          return or(
-            emailMatch,
-            // Check profileUsers.name directly (for users without a linked profile)
-            sql`${profileUsers.name} ILIKE ${ilikePattern}`,
-            // Check via users → profiles join for users with a full profile
-            sql`${profileUsers.authUserId} IN (
-              SELECT u.auth_user_id FROM ${users} u
-              INNER JOIN ${profiles} p ON p.id = u.profile_id
-              WHERE p.name ILIKE ${ilikePattern} OR ${query} <% p.name
-            )`,
-          );
-        })()
-      : undefined;
-
-  // Build cursor condition for pagination
   // The cursor must match the ORDER BY columns for correct pagination
   type ProfileUserCursor = { value: string; tiebreaker?: string };
   const decodedCursor = cursor
@@ -101,50 +72,60 @@ export const listProfileUsers = async ({
 
   const compareFn = dir === 'asc' ? gt : lt;
 
-  const buildCursorCondition = () => {
-    if (!decodedCursor) {
-      return undefined;
-    }
-
-    if (orderBy === 'email') {
-      // Email is unique, no tiebreaker needed
-      return compareFn(profileUsers.email, decodedCursor.value);
-    }
-
-    if (orderBy === 'name') {
-      // ORDER BY name, email - compound condition
-      return or(
-        compareFn(profileUsers.name, decodedCursor.value),
-        and(
-          eq(profileUsers.name, decodedCursor.value),
-          compareFn(profileUsers.email, decodedCursor.tiebreaker ?? ''),
-        ),
-      );
-    }
-
-    // orderBy === 'role' - uses shared subquery helper
-    const roleSubquery = buildRoleNameSubquery(profileUsers.id);
-    const compareOp = dir === 'asc' ? sql`>` : sql`<`;
-    return sql`(
-      ${roleSubquery} ${compareOp} ${decodedCursor.value}
-      OR (${roleSubquery} = ${decodedCursor.value} AND ${profileUsers.email} ${compareOp} ${decodedCursor.tiebreaker ?? ''})
-    )`;
-  };
-
-  const cursorCondition = buildCursorCondition();
-
-  // Combine all conditions
-  const baseCondition = eq(profileUsers.profileId, profileId);
-  const conditions = [baseCondition, searchFilter, cursorCondition].filter(
-    Boolean,
-  );
-  const whereClause =
-    conditions.length > 1 ? and(...conditions) : baseCondition;
-
   // Fetch profile users with their roles and user profiles
   // Request one extra to check if there are more results
-  const profileUserResults = await db._query.profileUsers.findMany({
-    where: whereClause,
+  const profileUserResults = await db.query.profileUsers.findMany({
+    where: {
+      profileId,
+      RAW: (table) => {
+        const conditions = [];
+
+        // Search filter (minimum 2 characters): ILIKE for substring matching
+        // and trigram word_similarity for typo tolerance.
+        if (query && query.length >= 2) {
+          const ilikePattern = `%${query}%`;
+          const searchFilter = or(
+            sql`(${table.email} ILIKE ${ilikePattern} OR ${query} <% ${table.email})`,
+            sql`${table.name} ILIKE ${ilikePattern}`,
+            sql`${table.authUserId} IN (
+              SELECT u.auth_user_id FROM ${users} u
+              INNER JOIN ${profiles} p ON p.id = u.profile_id
+              WHERE p.name ILIKE ${ilikePattern} OR ${query} <% p.name
+            )`,
+          );
+          if (searchFilter) {
+            conditions.push(searchFilter);
+          }
+        }
+
+        if (decodedCursor) {
+          if (orderBy === 'email') {
+            conditions.push(compareFn(table.email, decodedCursor.value));
+          } else if (orderBy === 'name') {
+            const compoundName = or(
+              compareFn(table.name, decodedCursor.value),
+              and(
+                eq(table.name, decodedCursor.value),
+                compareFn(table.email, decodedCursor.tiebreaker ?? ''),
+              ),
+            );
+            if (compoundName) {
+              conditions.push(compoundName);
+            }
+          } else {
+            // orderBy === 'role' — uses shared subquery helper.
+            const roleSubquery = buildRoleNameSubquery(table.id);
+            const compareOp = dir === 'asc' ? sql`>` : sql`<`;
+            conditions.push(sql`(
+              ${roleSubquery} ${compareOp} ${decodedCursor.value}
+              OR (${roleSubquery} = ${decodedCursor.value} AND ${table.email} ${compareOp} ${decodedCursor.tiebreaker ?? ''})
+            )`);
+          }
+        }
+
+        return conditions.length > 0 ? and(...conditions)! : sql`TRUE`;
+      },
+    },
     with: {
       roles: {
         with: {

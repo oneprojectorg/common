@@ -1,7 +1,6 @@
 import { db } from '@op/db/client';
-import { JoinProfileRequestStatus, joinProfileRequests } from '@op/db/schema';
+import { JoinProfileRequestStatus } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { and, eq } from 'drizzle-orm';
 
 import {
   type PaginatedResult,
@@ -36,27 +35,26 @@ export const listProfileJoinRequests = async ({
   limit?: number;
   dir?: 'asc' | 'desc';
 }): Promise<PaginatedResult<JoinProfileRequestWithProfiles>> => {
-  // Build cursor condition for pagination
-  const cursorCondition = cursor
-    ? getCursorCondition({
-        column: joinProfileRequests.createdAt,
-        tieBreakerColumn: joinProfileRequests.id,
-        cursor: decodeCursor<ListJoinProfileRequestsCursor>(cursor),
-        direction: dir,
-      })
+  const decodedCursor = cursor
+    ? decodeCursor<ListJoinProfileRequestsCursor>(cursor)
     : undefined;
-
-  // Build where clause
-  const whereClause = and(
-    eq(joinProfileRequests.targetProfileId, targetProfileId),
-    status ? eq(joinProfileRequests.status, status) : undefined,
-    cursorCondition,
-  );
 
   const [, results] = await Promise.all([
     assertTargetProfileAdminAccess({ user, targetProfileId }),
-    db._query.joinProfileRequests.findMany({
-      where: whereClause,
+    db.query.joinProfileRequests.findMany({
+      where: {
+        targetProfileId,
+        ...(status && { status }),
+        ...(decodedCursor && {
+          RAW: (table) =>
+            getCursorCondition({
+              column: table.createdAt,
+              tieBreakerColumn: table.id,
+              cursor: decodedCursor,
+              direction: dir,
+            })!,
+        }),
+      },
       with: {
         requestProfile: true,
         targetProfile: true,

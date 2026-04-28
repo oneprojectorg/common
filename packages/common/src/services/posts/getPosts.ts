@@ -1,6 +1,4 @@
 import { db } from '@op/db/client';
-import { posts, postsToProfiles } from '@op/db/schema';
-import { and, desc, eq, isNull } from 'drizzle-orm';
 
 import { getCurrentProfileId } from '../access';
 import { getItemsWithReactionsAndComments } from './listPosts';
@@ -37,28 +35,24 @@ export const getPosts = async (input: GetPostsInput) => {
       return []; // Return empty array if neither profileId nor parentPostId provided
     }
 
-    // Build where conditions for posts within the profile
-    const conditions = [];
-
-    // Filter by parent post
-    if (parentPostId === null) {
-      // Top-level posts only (no parent) - these are "posts"
-      conditions.push(isNull(posts.parentPostId));
-    } else if (parentPostId) {
-      // Children of specific parent - these are "comments"
-      conditions.push(eq(posts.parentPostId, parentPostId));
-    }
-    // If parentPostId is undefined, we get all posts regardless of parent
+    // Filter by parent post: null = top-level only, set = comments under that
+    // parent, undefined = all regardless of parent.
+    const postWhere =
+      parentPostId === null
+        ? { parentPostId: { isNull: true as const } }
+        : parentPostId
+          ? { parentPostId }
+          : undefined;
 
     let postsData: any[];
 
     if (profileId) {
       // Query by profile through postsToProfiles
-      const profilePosts = await db._query.postsToProfiles.findMany({
-        where: eq(postsToProfiles.profileId, profileId),
+      const profilePosts = await db.query.postsToProfiles.findMany({
+        where: { profileId },
         with: {
           post: {
-            where: conditions.length > 0 ? and(...conditions) : undefined,
+            ...(postWhere && { where: postWhere }),
             with: {
               profile: {
                 with: {
@@ -79,7 +73,7 @@ export const getPosts = async (input: GetPostsInput) => {
                 ? {
                     childPosts: {
                       limit: 50,
-                      orderBy: [desc(posts.createdAt)],
+                      orderBy: (table, { desc }) => [desc(table.createdAt)],
                       with: {
                         profile: {
                           with: {
@@ -105,13 +99,13 @@ export const getPosts = async (input: GetPostsInput) => {
         },
         limit,
         offset,
-        orderBy: [desc(postsToProfiles.createdAt)],
+        orderBy: (table, { desc }) => [desc(table.createdAt)],
       });
       postsData = profilePosts;
     } else {
       // Query comments directly from posts table when no profileId but parentPostId exists
-      const directPosts = await db._query.posts.findMany({
-        where: conditions.length > 0 ? and(...conditions) : undefined,
+      const directPosts = await db.query.posts.findMany({
+        ...(postWhere && { where: postWhere }),
         with: {
           profile: {
             with: {
@@ -132,7 +126,7 @@ export const getPosts = async (input: GetPostsInput) => {
             ? {
                 childPosts: {
                   limit: 50,
-                  orderBy: [desc(posts.createdAt)],
+                  orderBy: (table, { desc }) => [desc(table.createdAt)],
                   with: {
                     profile: {
                       with: {
@@ -156,7 +150,7 @@ export const getPosts = async (input: GetPostsInput) => {
         },
         limit,
         offset,
-        orderBy: [desc(posts.createdAt)],
+        orderBy: (table, { desc }) => [desc(table.createdAt)],
       });
       // Transform to match postsToProfiles format
       postsData = directPosts.map((post) => ({ post }));

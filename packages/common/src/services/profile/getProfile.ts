@@ -1,5 +1,5 @@
-import { db, eq } from '@op/db/client';
-import { EntityType, profiles } from '@op/db/schema';
+import { db } from '@op/db/client';
+import { EntityType } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { z } from 'zod';
 
@@ -49,8 +49,8 @@ export const getProfile = async ({
   slug,
   user: _user, // Currently unused but kept for future extensibility
 }: GetProfileParams) => {
-  const profile = await db._query.profiles.findFirst({
-    where: eq(profiles.slug, slug),
+  const profile = await db.query.profiles.findFirst({
+    where: { slug },
     with: {
       avatarImage: true,
       headerImage: true,

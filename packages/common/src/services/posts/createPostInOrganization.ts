@@ -29,8 +29,8 @@ export const createPostInOrganization = async (
   // Get all storage objects that were attached to the post
   const allStorageObjects =
     attachmentIds.length > 0
-      ? await db._query.objectsInStorage.findMany({
-          where: (table, { inArray }) => inArray(table.id, attachmentIds),
+      ? await db.query.objectsInStorage.findMany({
+          where: { id: { in: attachmentIds } },
         })
       : [];
 

@@ -138,11 +138,11 @@ export const inviteUsersToProfile = async ({
       },
     }),
     // Get all users with their profile memberships for this profile
-    db._query.users.findMany({
-      where: (table, { inArray }) => inArray(table.email, normalizedEmails),
+    db.query.users.findMany({
+      where: { email: { in: normalizedEmails } },
       with: {
         profileUsers: {
-          where: (table, { eq }) => eq(table.profileId, profileId),
+          where: { profileId },
         },
       },
     }),

@@ -186,6 +186,10 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.profiles.id,
       to: r.organizations.profileId,
     }),
+    individual: r.one.individuals({
+      from: r.profiles.id,
+      to: r.individuals.profileId,
+    }),
     profileUsers: r.many.profileUsers({
       from: r.profiles.id,
       to: r.profileUsers.profileId,
@@ -336,6 +340,17 @@ export const relations = defineRelations(schema, (r) => ({
     roles: r.many.profileUserToAccessRoles({
       from: r.profileUsers.id,
       to: r.profileUserToAccessRoles.profileUserId,
+    }),
+    serviceUser: r.one.users({
+      from: r.profileUsers.authUserId,
+      to: r.users.authUserId,
+      alias: 'profileUser_serviceUser',
+    }),
+    profile: r.one.profiles({
+      from: r.profileUsers.profileId,
+      to: r.profiles.id,
+      alias: 'profileUser_profile',
+      optional: false,
     }),
   },
 
@@ -540,6 +555,88 @@ export const relations = defineRelations(schema, (r) => ({
   },
 
   /**
+   * Post relations
+   *
+   * `parentPost`/`childPosts` is the self-referential thread tree.
+   */
+  posts: {
+    profile: r.one.profiles({
+      from: r.posts.profileId,
+      to: r.profiles.id,
+      alias: 'post_profile',
+      optional: false,
+    }),
+    attachments: r.many.attachments({
+      from: r.posts.id,
+      to: r.attachments.postId,
+    }),
+    reactions: r.many.postReactions({
+      from: r.posts.id,
+      to: r.postReactions.postId,
+    }),
+    parentPost: r.one.posts({
+      from: r.posts.parentPostId,
+      to: r.posts.id,
+      alias: 'post_parent',
+    }),
+    childPosts: r.many.posts({
+      from: r.posts.id,
+      to: r.posts.parentPostId,
+      alias: 'post_children',
+    }),
+  },
+
+  /**
+   * Posts-to-organizations join table relations.
+   */
+  postsToOrganizations: {
+    post: r.one.posts({
+      from: r.postsToOrganizations.postId,
+      to: r.posts.id,
+      optional: false,
+    }),
+    organization: r.one.organizations({
+      from: r.postsToOrganizations.organizationId,
+      to: r.organizations.id,
+      optional: false,
+    }),
+  },
+
+  /**
+   * Posts-to-profiles join table relations.
+   */
+  postsToProfiles: {
+    post: r.one.posts({
+      from: r.postsToProfiles.postId,
+      to: r.posts.id,
+      optional: false,
+    }),
+    profile: r.one.profiles({
+      from: r.postsToProfiles.profileId,
+      to: r.profiles.id,
+      alias: 'postsToProfiles_profile',
+      optional: false,
+    }),
+  },
+
+  /**
+   * Post reaction relations.
+   */
+  postReactions: {
+    post: r.one.posts({
+      from: r.postReactions.postId,
+      to: r.posts.id,
+      optional: false,
+    }),
+    profile: r.one.profiles({
+      from: r.postReactions.profileId,
+      to: r.profiles.id,
+      alias: 'postReaction_profile',
+      optional: false,
+    }),
+  },
+
+  /**
    * Allow list relations
    */
   allowList: {
@@ -591,14 +688,14 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.users.authUserId,
       to: r.organizationUsers.authUserId,
     }),
+    profileUsers: r.many.profileUsers({
+      from: r.users.authUserId,
+      to: r.profileUsers.authUserId,
+    }),
     avatarImage: r.one.objectsInStorage({
       from: r.users.avatarImageId,
       to: r.objectsInStorage.id,
-    }),
-    authUser: r.one.authUsers({
-      from: r.users.authUserId,
-      to: r.authUsers.id,
-      optional: false,
+      alias: 'user_avatarImage',
     }),
   },
 

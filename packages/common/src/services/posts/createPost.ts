@@ -29,8 +29,8 @@ const sendPostCommentNotification = async (
 ) => {
   try {
     // Get parent post and author information, including organization associations
-    const parentPostToOrg = (await db._query.postsToOrganizations.findFirst({
-      where: (table, { eq }) => eq(table.postId, parentPostId),
+    const parentPostToOrg = (await db.query.postsToOrganizations.findFirst({
+      where: { postId: parentPostId },
       with: {
         organization: {
           with: {
@@ -51,8 +51,8 @@ const sendPostCommentNotification = async (
 
     if (parentProfileId) {
       // Parallelize commenter and post author queries
-      const commenterProfile = await db._query.profiles.findFirst({
-        where: (table, { eq }) => eq(table.id, commenterProfileId),
+      const commenterProfile = await db.query.profiles.findFirst({
+        where: { id: commenterProfileId },
       });
 
       if (commenterProfile && parentProfile.email) {
@@ -114,11 +114,11 @@ const sendProposalCommentNotification = async (
     if (proposal && proposal.profileId) {
       // Parallelize commenter and proposal author queries
       const [commenterProfile, proposalAuthorProfile] = await Promise.all([
-        db._query.profiles.findFirst({
-          where: (table, { eq }) => eq(table.id, commenterProfileId),
+        db.query.profiles.findFirst({
+          where: { id: commenterProfileId },
         }),
-        db._query.profiles.findFirst({
-          where: (table, { eq }) => eq(table.id, proposal.submittedByProfileId),
+        db.query.profiles.findFirst({
+          where: { id: proposal.submittedByProfileId },
         }),
       ]);
 
@@ -214,8 +214,8 @@ export const createPost = async (input: CreatePostServiceInput) => {
       // Get all storage objects that were attached to the post (inside transaction)
       const allStorageObjects =
         attachmentIds.length > 0
-          ? await tx._query.objectsInStorage.findMany({
-              where: (table, { inArray }) => inArray(table.id, attachmentIds),
+          ? await tx.query.objectsInStorage.findMany({
+              where: { id: { in: attachmentIds } },
             })
           : [];
 

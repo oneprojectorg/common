@@ -1,6 +1,4 @@
 import { db } from '@op/db/client';
-import { posts } from '@op/db/schema';
-import { desc, eq } from 'drizzle-orm';
 
 import { getCurrentProfileId } from '../access';
 import { getItemsWithReactionsAndComments } from './listPosts';
@@ -26,8 +24,8 @@ export const getPost = async ({
   try {
     // Query post directly by ID
     const [post, actorProfileId] = await Promise.all([
-      db._query.posts.findFirst({
-        where: eq(posts.id, postId),
+      db.query.posts.findFirst({
+        where: { id: postId },
         with: {
           profile: {
             with: {
@@ -48,7 +46,7 @@ export const getPost = async ({
             ? {
                 childPosts: {
                   limit: 50,
-                  orderBy: [desc(posts.createdAt)],
+                  orderBy: (table, { desc }) => [desc(table.createdAt)],
                   with: {
                     profile: {
                       with: {
