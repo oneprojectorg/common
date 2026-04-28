@@ -1,5 +1,5 @@
-import { db, eq } from '@op/db/client';
-import { profiles } from '@op/db/schema';
+import { db, eq, inArray } from '@op/db/client';
+import { profiles, taxonomyTerms } from '@op/db/schema';
 
 import { NotFoundError } from '../../utils';
 
@@ -51,12 +51,7 @@ export const getOrganization = async ({ slug }: { slug: string }) => {
           },
         },
       },
-      // TODO: CONVERT TO TERMS
-      strategies: {
-        with: {
-          term: true,
-        },
-      },
+      strategies: true,
     },
   });
 
@@ -64,9 +59,17 @@ export const getOrganization = async ({ slug }: { slug: string }) => {
     throw new NotFoundError('Could not find organization');
   }
 
+  const termIds = org.strategies.map((record) => record.taxonomyTermId);
+  const terms = termIds.length
+    ? await db
+        .select()
+        .from(taxonomyTerms)
+        .where(inArray(taxonomyTerms.id, termIds))
+    : [];
+
   return {
     ...org,
     whereWeWork: org.whereWeWork.map((record) => record.location),
-    strategies: org.strategies.map((record) => record.term),
+    strategies: terms,
   };
 };
