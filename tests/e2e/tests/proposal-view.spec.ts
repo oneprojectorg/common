@@ -657,17 +657,15 @@ test.describe('Proposal View', () => {
       throw new Error('Failed to create legacy cowop process');
     }
 
-    // 2. Decision profile (gives the slug needed for the new
-    //    /decisions/[slug] route — represents a partially-migrated instance
-    //    that has a profile but still has legacy-shaped instanceData).
-    const instanceSlug = `test-legacy-cowop-${randomUUID()}`;
+    // 2. Decision profile — needed for granting per-instance admin access via
+    //    profileUsers below; the legacy URL itself doesn't reference it.
     const instanceName = `COWOP Legacy Instance ${randomUUID().slice(0, 8)}`;
 
     const [instanceProfile] = await db
       .insert(profiles)
       .values({
         name: instanceName,
-        slug: instanceSlug,
+        slug: `test-legacy-cowop-${randomUUID()}`,
         type: EntityType.DECISION,
       })
       .returning();
@@ -741,10 +739,12 @@ test.describe('Proposal View', () => {
       },
     });
 
-    // 6. Navigate via the new /decisions/[slug] route — this is what #1001
-    //    broke. With current code, getInstance throws and the page 500s.
+    // 6. Navigate via the legacy /profile/[slug]/decisions/[id] route — this
+    //    is the canonical URL pattern for real cowop legacy proposals in
+    //    production (still served via shared public links). Pre-fix, this
+    //    page also called getInstance and 500'd on legacy data.
     await authenticatedPage.goto(
-      `/en/decisions/${instanceSlug}/proposal/${proposal.profileId}`,
+      `/en/profile/${org.organizationProfile.slug}/decisions/${processInstance.id}/proposal/${proposal.profileId}`,
     );
 
     await expect(
