@@ -99,6 +99,7 @@
   "Must be at most 150 characters": "Must be at most 150 characters",
   "Must be at most 1500 characters": "Must be at most 1500 characters",
   "Failed to load members": "Failed to load members",
+  "Failed to load proposals": "Failed to load proposals",
   "Failed to update reaction": "Failed to update reaction",
   "Communities We Serve": "Communities We Serve",
   "Contact": "Contact",

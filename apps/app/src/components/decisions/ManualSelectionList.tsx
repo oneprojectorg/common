@@ -3,9 +3,12 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
+import type { Proposal } from '@op/common/client';
+import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
-import { useState } from 'react';
+import { toast } from '@op/ui/Toast';
+import { useEffect, useMemo, useState } from 'react';
 import { LuLeaf, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -52,11 +55,30 @@ export const ManualSelectionList = ({
   );
   const candidates = candidatesQuery.data;
 
-  const [selectedProposals, setSelectedProposals] =
-    useManualSelectionDraft(instanceId);
-  const selectedIds = selectedProposals.map((p) => p.id);
+  const [selectedIds, setSelectedIds] = useManualSelectionDraft(instanceId);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Resolve selected ids → proposals via a cache that accumulates across
+  // refetches, so picks survive filter/sort changes that exclude them.
+  const [proposalCache, setProposalCache] = useState<Record<string, Proposal>>(
+    {},
+  );
+  useEffect(() => {
+    if (!candidates) return;
+    setProposalCache((prev) => {
+      const next = { ...prev };
+      for (const p of candidates.proposals) next[p.id] = p;
+      return next;
+    });
+  }, [candidates]);
+
+  const selectedProposals = useMemo(
+    () =>
+      selectedIds
+        .map((id) => proposalCache[id])
+        .filter((p): p is Proposal => Boolean(p)),
+    [selectedIds, proposalCache],
+  );
 
   const { filteredProposals, proposalFilter, setProposalFilter } =
     useProposalFilters({
@@ -73,15 +95,31 @@ export const ManualSelectionList = ({
   const submitMutation = trpc.decision.submitManualSelection.useMutation({
     onSuccess: () => {
       utils.decision.getInstance.invalidate({ instanceId });
-      setSelectedProposals([]);
+      setSelectedIds([]);
       setIsConfirmOpen(false);
-      setSubmitError(null);
     },
     onError: (error) => {
       setIsConfirmOpen(false);
-      setSubmitError(error.message);
+      toast.error({ message: error.message });
     },
   });
+
+  if (candidatesQuery.isError) {
+    return (
+      <EmptyState icon={<LuTriangleAlert className="size-6" />}>
+        <Header3 className="font-serif font-light">
+          {t('Failed to load proposals')}
+        </Header3>
+        <Button
+          onPress={() => candidatesQuery.refetch()}
+          color="secondary"
+          size="small"
+        >
+          {t('Try again')}
+        </Button>
+      </EmptyState>
+    );
+  }
 
   if (!candidates) {
     return null;
@@ -104,19 +142,14 @@ export const ManualSelectionList = ({
   }
 
   const toggleProposal = (proposalId: string) => {
-    if (selectedProposals.some((p) => p.id === proposalId)) {
-      setSelectedProposals(
-        selectedProposals.filter((p) => p.id !== proposalId),
-      );
-      return;
-    }
-    const match = proposals.find((p) => p.id === proposalId);
-    if (match) {
-      setSelectedProposals([...selectedProposals, match]);
-    }
+    setSelectedIds(
+      selectedIds.includes(proposalId)
+        ? selectedIds.filter((id) => id !== proposalId)
+        : [...selectedIds, proposalId],
+    );
   };
 
-  const numSelected = selectedProposals.length;
+  const numSelected = selectedIds.length;
   const currentPhaseName =
     instance.instanceData?.phases?.find(
       (p) => p.phaseId === instance.currentStateId,
@@ -152,16 +185,6 @@ export const ManualSelectionList = ({
           }
         />
       )}
-
-      {submitError ? (
-        <div
-          role="alert"
-          className="flex items-start gap-2 rounded-md border border-functional-red bg-functional-red/10 p-4 text-base text-functional-red"
-        >
-          <LuTriangleAlert className="mt-0.5 size-5 shrink-0" />
-          <span>{submitError}</span>
-        </div>
-      ) : null}
 
       <VotingSubmitFooter isVisible>
         <div className="flex w-full items-center justify-between px-4 sm:max-w-6xl sm:px-8">
