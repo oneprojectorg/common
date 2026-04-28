@@ -69,7 +69,7 @@ export const ToSContentShort = () => {
           All users of the Platform must comply with our Code of Conduct,
           including these core community principles:
         </p>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 list-disc ps-6">
           <li className="mb-2">
             <strong>Treat Everyone with Respect and Consideration</strong>{' '}
             (adopted from DisCO Caring Community Guidelines): Be kind,

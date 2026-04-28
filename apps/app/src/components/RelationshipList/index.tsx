@@ -91,7 +91,7 @@ const RelationshipListContent = ({
                           {relationshipMap[relationship.relationshipType]
                             ?.label ?? t('Relationship')}
                           {relationship.pending && (
-                            <TagGroup className="ml-1 inline-flex">
+                            <TagGroup className="ms-1 inline-flex">
                               <Tag className="rounded-md px-1 py-0.5 text-xs">
                                 {t('Pending')}
                               </Tag>

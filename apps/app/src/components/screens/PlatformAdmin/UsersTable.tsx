@@ -108,7 +108,7 @@ export const UsersTable = () => {
             aria-label={t('User options')}
             variant="outline"
             size="medium"
-            className="mr-1"
+            className="me-1"
           >
             <Menu>
               <MenuItem
@@ -176,7 +176,7 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
           <TableColumn>{t('Organization')}</TableColumn>
           <TableColumn>{t('Created')}</TableColumn>
           <TableColumn>{t('Last sign in')}</TableColumn>
-          <TableColumn className="text-right">{t('Actions')}</TableColumn>
+          <TableColumn className="text-end">{t('Actions')}</TableColumn>
         </TableHeader>
         <TableBody>
           {users.map((user) => (

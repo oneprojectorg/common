@@ -31,7 +31,7 @@ export const ProcessBuilderSidebar = ({
   return (
     <nav
       aria-label={t('Section navigation')}
-      className="hidden shrink-0 md:sticky md:top-0 md:flex md:h-full md:w-60 md:flex-col md:overflow-y-auto md:border-r md:p-4"
+      className="hidden shrink-0 md:sticky md:top-0 md:flex md:h-full md:w-60 md:flex-col md:overflow-y-auto md:border-e md:p-4"
     >
       <SidebarNavItems
         visibleSections={visibleSections}

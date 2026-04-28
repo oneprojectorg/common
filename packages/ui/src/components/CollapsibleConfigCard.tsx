@@ -147,7 +147,7 @@ export function CollapsibleConfigCard({
     >
       <div className="flex w-full items-center gap-2">
         {leadingElement}
-        <AccordionTrigger className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 pr-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
+        <AccordionTrigger className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 pe-2 text-start outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
           {headerContent}
         </AccordionTrigger>
       </div>
@@ -190,8 +190,8 @@ export function CollapsibleConfigCardDragPreview({
 
   return (
     <div className={cn('rounded-lg border bg-white p-4 shadow-lg', className)}>
-      <div className="flex items-center gap-2 pr-1">
-        <div className="mr-1 flex items-center justify-center text-neutral-gray4">
+      <div className="flex items-center gap-2 pe-1">
+        <div className="me-1 flex items-center justify-center text-neutral-gray4">
           <LuGripVertical className="size-4" />
         </div>
         {Icon ? (

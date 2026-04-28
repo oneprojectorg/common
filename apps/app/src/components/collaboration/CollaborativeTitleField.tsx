@@ -35,7 +35,7 @@ export function CollaborativeTitleField({
       Placeholder.configure({
         placeholder,
         emptyEditorClass:
-          'before:content-[attr(data-placeholder)] before:text-neutral-gray3 before:float-left before:h-0 before:pointer-events-none',
+          'before:content-[attr(data-placeholder)] before:text-neutral-gray3 before:float-start before:h-0 before:pointer-events-none',
       }),
       Collaboration.configure({
         document: ydoc,

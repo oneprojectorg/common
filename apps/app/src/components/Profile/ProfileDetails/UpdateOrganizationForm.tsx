@@ -274,7 +274,7 @@ export const UpdateOrganizationForm = forwardRef<
             error={uploadImage.error?.message || undefined}
           />
           <AvatarUploader
-            className="absolute bottom-0 left-4 aspect-square size-20 sm:size-28"
+            className="absolute start-4 bottom-0 aspect-square size-20 sm:size-28"
             value={profileImage?.url ?? undefined}
             onChange={(file: File) =>
               handleImageUpload(file, setProfileImage, uploadAvatarImage)
@@ -527,7 +527,7 @@ export const UpdateOrganizationForm = forwardRef<
                               placeholder: t('Add your contribution page here'),
                             }}
                           />
-                          <span className="text-left text-sm text-neutral-gray4">
+                          <span className="text-start text-sm text-neutral-gray4">
                             {t(
                               'Add a link to your donation page, Open Collective, GoFundMe or any platform where supporters can contribute or learn more about how.',
                             )}

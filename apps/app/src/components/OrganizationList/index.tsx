@@ -62,7 +62,7 @@ export const OrganizationList = ({
             return (
               <HorizontalListItem
                 key={org.id}
-                className="snap-start first:ml-8 last:mr-8"
+                className="snap-start first:ms-8 last:me-8"
               >
                 <Link
                   className="flex size-48"
@@ -97,7 +97,7 @@ export const OrganizationList = ({
                         )
                       }
                     />
-                    <div className="flex flex-col p-4 pt-0 text-left">
+                    <div className="flex flex-col p-4 pt-0 text-start">
                       <span>{org.profile.name}</span>
                     </div>
                   </Surface>
