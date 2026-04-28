@@ -439,6 +439,8 @@
   "How easy was it to review proposals and cast your vote? (1 to 5 scale)": "How easy was it to review proposals and cast your vote? (1 to 5 scale)",
   "Submitting...": "Submitting...",
   "Submit my votes": "Submit my votes",
+  "<highlight>{numSelected}</highlight> of {max, plural, one {# proposal} other {# proposals}} selected": "<highlight>{numSelected}</highlight> of {max, plural, one {# proposal} other {# proposals}} selected",
+  "<highlight>{numSelected, plural, one {# proposal} other {# proposals}}</highlight> selected": "<highlight>{numSelected, plural, one {# proposal} other {# proposals}}</highlight> selected",
   "Please select at least one role": "Please select at least one role",
   "Please select up to two options": "Please select up to two options",
   "Please select your region": "Please select your region",
