@@ -100,7 +100,11 @@ export function StandardDecisionPage({
                 }}
               >
                 <Suspense fallback={null}>
-                  <ManualSelectionList instanceId={instanceId} slug={slug} />
+                  <ManualSelectionList
+                    instanceId={instanceId}
+                    slug={slug}
+                    decisionSlug={decisionSlug}
+                  />
                 </Suspense>
               </APIErrorBoundary>
             ) : (
