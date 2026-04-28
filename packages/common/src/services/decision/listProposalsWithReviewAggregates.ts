@@ -242,9 +242,10 @@ async function listProposalsPaginated({
 
 /**
  * `with` block for the proposal relational query — shared by filtered and
- * paginated.
+ * paginated. Exported so the single-proposal endpoint loads the same
+ * relations and the downstream code can rely on identical row shape.
  */
-function proposalRelations({
+export function proposalRelations({
   processInstanceId,
   phaseId,
 }: {
@@ -268,7 +269,7 @@ function proposalRelations({
   } as const;
 }
 
-async function loadCategoriesByProposalIds(
+export async function loadCategoriesByProposalIds(
   proposalIds: string[],
 ): Promise<Map<string, ProposalCategoryItem[]>> {
   const map = new Map<string, ProposalCategoryItem[]>();
@@ -306,7 +307,7 @@ async function loadCategoriesByProposalIds(
  * `proposal_reviews_assignment_unique` makes `reviews` 0-or-1; we read just
  * the first row even though the relation is declared as many.
  */
-function computeReviewAggregates(
+export function computeReviewAggregates(
   reviewAssignments: Array<{
     status: string;
     reviewer: unknown;
@@ -325,28 +326,17 @@ function computeReviewAggregates(
 
   for (const assignment of reviewAssignments) {
     const review = assignment.reviews[0];
-    if (!review || review.state !== ProposalReviewState.SUBMITTED) {
+    const scored = scoreSubmittedReview(review, scoredCriterionKeys);
+    if (!scored) {
       continue;
     }
     reviewsSubmitted += 1;
+    totalScore += scored.score;
 
-    const data = review.reviewData as {
-      answers?: Record<string, unknown>;
-    } | null;
-    const answers = data?.answers ?? {};
-
-    for (const key of scoredCriterionKeys) {
-      const value = Number(answers[key]);
-      if (Number.isFinite(value)) {
-        totalScore += value;
-      }
-    }
-
-    const recommendation = answers[OVERALL_RECOMMENDATION_KEY];
-    if (recommendation != null) {
-      const recommendationKey = String(recommendation);
-      overallRecommendationCount[recommendationKey] =
-        (overallRecommendationCount[recommendationKey] ?? 0) + 1;
+    if (scored.overallRecommendation != null) {
+      const key = scored.overallRecommendation;
+      overallRecommendationCount[key] =
+        (overallRecommendationCount[key] ?? 0) + 1;
     }
   }
 
@@ -360,4 +350,38 @@ function computeReviewAggregates(
     overallRecommendationCount,
     reviewers,
   };
+}
+
+/**
+ * Score a single submitted review. Returns `null` when the row is missing
+ * or not in `SUBMITTED` state, so callers can use it as both a gate and a
+ * scorer in one pass. Shared between the per-proposal aggregator and the
+ * single-proposal-with-reviews endpoint to keep the math identical.
+ */
+export function scoreSubmittedReview(
+  review: { state: string; reviewData: unknown } | null | undefined,
+  scoredCriterionKeys: string[],
+): { score: number; overallRecommendation: string | null } | null {
+  if (!review || review.state !== ProposalReviewState.SUBMITTED) {
+    return null;
+  }
+
+  const data = review.reviewData as {
+    answers?: Record<string, unknown>;
+  } | null;
+  const answers = data?.answers ?? {};
+
+  let score = 0;
+  for (const key of scoredCriterionKeys) {
+    const value = Number(answers[key]);
+    if (Number.isFinite(value)) {
+      score += value;
+    }
+  }
+
+  const recommendation = answers[OVERALL_RECOMMENDATION_KEY];
+  const overallRecommendation =
+    recommendation == null ? null : String(recommendation);
+
+  return { score, overallRecommendation };
 }

@@ -150,6 +150,35 @@ export const proposalsWithReviewAggregatesListSchema = z.object({
   next: z.string().nullable(),
 });
 
+// ── Single proposal with submitted reviews ─────────────────────────────
+
+/**
+ * One submitted review with its reviewer and the precomputed values the
+ * review-detail UI needs (per-row score and overall recommendation are
+ * pulled out so clients don't redo the rubric math).
+ *
+ * The rubric template is intentionally not on this row — callers already
+ * have it from `instance.instanceData.rubricTemplate` and duplicating it
+ * per row would bloat every response.
+ */
+export const submittedReviewItemSchema = z.object({
+  review: proposalReviewSchema,
+  reviewer: proposalProfileSchema,
+  assignmentStatus: z.enum(ProposalReviewAssignmentStatus),
+  score: z.number(),
+  overallRecommendation: z.string().nullable(),
+});
+
+/**
+ * Single-proposal response: same `{ proposal, aggregates, categories }`
+ * triple as the list endpoint, plus the submitted reviews for the
+ * drill-down view.
+ */
+export const proposalWithSubmittedReviewsSchema =
+  proposalWithAggregatesSchema.extend({
+    reviews: z.array(submittedReviewItemSchema),
+  });
+
 // ── Types ───────────────────────────────────────────────────────────────
 
 export type ProposalReviewAssignment = z.infer<
@@ -176,4 +205,8 @@ export type ProposalWithAggregates = z.infer<
 >;
 export type ProposalsWithReviewAggregatesList = z.infer<
   typeof proposalsWithReviewAggregatesListSchema
+>;
+export type SubmittedReviewItem = z.infer<typeof submittedReviewItemSchema>;
+export type ProposalWithSubmittedReviews = z.infer<
+  typeof proposalWithSubmittedReviewsSchema
 >;
