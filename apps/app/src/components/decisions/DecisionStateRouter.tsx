@@ -41,6 +41,17 @@ function DecisionStateRouterNew({
   const isVotingEnabled = currentPhase?.rules?.voting?.submit === true;
   const isReviewEnabled = currentPhase?.rules?.proposals?.review === true;
 
+  if (!instance.selectionsAreConfirmed) {
+    return (
+      <StandardDecisionPage
+        instanceId={instanceId}
+        slug={slug}
+        decisionSlug={decisionSlug}
+        decisionProfileId={decisionProfileId}
+      />
+    );
+  }
+
   if (isReviewEnabled && reviewFlowEnabled) {
     if (!decisionSlug) {
       notFound();

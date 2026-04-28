@@ -146,7 +146,6 @@ interface ProposalsProps {
   slug: string;
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
-  isLoading: boolean;
   permissions?: DecisionAccess | null;
   votedProposalIds?: string[];
   hasFilter: boolean;
@@ -477,7 +476,7 @@ const ViewProposalsList = ({
 };
 
 const Proposals = (props: ProposalsProps) => {
-  const { isLoading, instanceId, isVotingPhase } = props;
+  const { instanceId, isVotingPhase } = props;
 
   // Get voting status for this user and process
   const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery({
@@ -488,10 +487,6 @@ const Proposals = (props: ProposalsProps) => {
   // voting status endpoint for backwards compatibility
   const isVotingEnabled =
     isVotingPhase || !!voteStatus?.votingConfiguration?.allowDecisions;
-
-  if (isLoading) {
-    return <ProposalListSkeletonGrid />;
-  }
 
   if (isVotingEnabled) {
     return <VotingProposalsList {...props} />;
@@ -611,8 +606,8 @@ export const ProposalsList = ({
     return params;
   }, [instanceId, selectedCategory, sortOrder, phase]);
 
-  const { data: proposalsData, isLoading } =
-    trpc.decision.listProposals.useQuery(queryParams);
+  const [proposalsData] =
+    trpc.decision.listProposals.useSuspenseQuery(queryParams);
 
   const { proposals: allProposals } = proposalsData ?? {};
   const canManageProposals = permissions?.admin ?? false;
@@ -877,7 +872,6 @@ export const ProposalsList = ({
         translations={translationState?.translations ?? {}}
       >
         <Proposals
-          isLoading={isLoading}
           proposals={proposals}
           instanceId={instanceId}
           slug={slug}
