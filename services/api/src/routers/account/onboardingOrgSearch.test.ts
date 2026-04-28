@@ -144,19 +144,23 @@ describe.concurrent('Onboarding Organization Search', () => {
     }) => {
       const testData = new TestOrganizationDataManager(task.id, onTestFinished);
 
-      // Create a searchable organization
-      const { organization, adminUser } = await testData.createOrganization({
+      // Create a searchable organization that the searcher is NOT a member of
+      const { organization } = await testData.createOrganization({
         users: { admin: 1 },
         organizationName: 'SearchTestOrg',
       });
 
-      // Search as the admin user (any authenticated user can search)
-      const { session } = await createIsolatedSession(adminUser.email);
+      // The searcher belongs to a different org so search returns the target
+      const { adminUser: searcher } = await testData.createOrganization({
+        users: { admin: 1 },
+        organizationName: 'SearcherOrg',
+      });
+
+      const { session } = await createIsolatedSession(searcher.email);
       const caller = createOrgCaller(
         await createTestContextWithSession(session),
       );
 
-      // The org name includes the testId suffix from createOrganization
       const result = await caller.search({
         q: 'SearchTestOrg',
         limit: 10,
@@ -165,8 +169,42 @@ describe.concurrent('Onboarding Organization Search', () => {
       expect(Array.isArray(result)).toBe(true);
 
       // Verify our org appears in results
-      const found = result.find((org) => org.id === organization.id);
+      const found = result.find(({ org }) => org.id === organization.id);
       expect(found).toBeDefined();
+    });
+
+    it('flags orgs the searcher already belongs to with isMember', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+      // Two orgs sharing a search prefix. The searcher belongs to the first;
+      // both should come back so the UI can display them, but only the
+      // already-member one is flagged so the UI can disable it.
+      const { organization: alreadyMemberOrg, adminUser: searcher } =
+        await testData.createOrganization({
+          users: { admin: 1 },
+          organizationName: 'SharedPrefixAlreadyMember',
+        });
+      const { organization: otherOrg } = await testData.createOrganization({
+        users: { admin: 1 },
+        organizationName: 'SharedPrefixOther',
+      });
+
+      const { session } = await createIsolatedSession(searcher.email);
+      const caller = createOrgCaller(
+        await createTestContextWithSession(session),
+      );
+
+      const result = await caller.search({
+        q: 'SharedPrefix',
+        limit: 10,
+      });
+
+      const found = new Map(result.map((entry) => [entry.org.id, entry]));
+      expect(found.get(alreadyMemberOrg.id)?.isMember).toBe(true);
+      expect(found.get(otherOrg.id)?.isMember).toBe(false);
     });
 
     it('creates join requests for selected organizations', async ({
@@ -284,8 +322,63 @@ describe.concurrent('Onboarding Organization Search', () => {
       // Verify the domain-matched org is returned
       expect(result.length).toBeGreaterThanOrEqual(1);
 
-      const matchedOrg = result.find((org) => org.id === organization.id);
+      const matchedOrg = result.find(({ org }) => org.id === organization.id);
       expect(matchedOrg).toBeDefined();
+    });
+
+    it('excludes domain-matched orgs the user is already a member of', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+
+      // Two orgs both share the user's email domain. The user is already a
+      // member of the first; onboarding should only surface the second.
+      const { organization: existingMembershipOrg } =
+        await testData.createOrganization({
+          users: { admin: 1 },
+          organizationName: 'AlreadyMemberDomainOrg',
+        });
+      const { organization: notYetJoinedOrg } =
+        await testData.createOrganization({
+          users: { admin: 1 },
+          organizationName: 'NotYetJoinedDomainOrg',
+        });
+
+      await db
+        .update(organizations)
+        .set({ domain: 'oneproject.org' })
+        .where(eq(organizations.id, existingMembershipOrg.id));
+      await db
+        .update(organizations)
+        .set({ domain: 'oneproject.org' })
+        .where(eq(organizations.id, notYetJoinedOrg.id));
+
+      const joinerEmail = `${task.id.slice(0, 8)}-already-domain@oneproject.org`;
+      const { user: authUser } = await createTestUser(joinerEmail);
+
+      if (!authUser) {
+        throw new Error('Failed to create auth user');
+      }
+
+      onTestFinished(() => cleanupUser(authUser.id));
+
+      await testData.addUserToOrganization({
+        authUserId: authUser.id,
+        organizationId: existingMembershipOrg.id,
+        email: joinerEmail,
+      });
+
+      const { session } = await createIsolatedSession(joinerEmail);
+      const caller = createAccountCaller(
+        await createTestContextWithSession(session),
+      );
+
+      const result = await caller.listMatchingDomainOrganizations(undefined);
+
+      const ids = result.map(({ org }) => org.id);
+      expect(ids).not.toContain(existingMembershipOrg.id);
+      expect(ids).toContain(notYetJoinedOrg.id);
     });
 
     it('allows domain-matched user to auto-join via organization.join', async ({
@@ -323,7 +416,9 @@ describe.concurrent('Onboarding Organization Search', () => {
       const matchingOrgs =
         await accountCaller.listMatchingDomainOrganizations(undefined);
 
-      const matchedOrg = matchingOrgs.find((org) => org.id === organization.id);
+      const matchedOrg = matchingOrgs.find(
+        ({ org }) => org.id === organization.id,
+      );
       expect(matchedOrg).toBeDefined();
 
       // Auto-join the domain-matched org (this is what happens for domain-matched orgs)
@@ -411,13 +506,13 @@ describe.concurrent('Onboarding Organization Search', () => {
       );
 
       const result = await caller.listMatchingDomainOrganizations(undefined);
-      const matchedOrg = result.find((org) => org.id === organization.id);
+      const matched = result.find(({ org }) => org.id === organization.id);
 
-      expect(matchedOrg).toBeDefined();
-      expect(matchedOrg!.whereWeWork).toBeDefined();
-      expect(matchedOrg!.whereWeWork.length).toBeGreaterThanOrEqual(1);
+      expect(matched).toBeDefined();
+      expect(matched!.org.whereWeWork).toBeDefined();
+      expect(matched!.org.whereWeWork.length).toBeGreaterThanOrEqual(1);
 
-      const locationNames = matchedOrg!.whereWeWork.map(
+      const locationNames = matched!.org.whereWeWork.map(
         (loc: { name?: string | null }) => loc.name,
       );
       expect(locationNames).toContain('Test City');

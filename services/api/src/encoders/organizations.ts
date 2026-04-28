@@ -96,7 +96,14 @@ export type OrganizationCreateInput = z.infer<
   typeof organizationsCreateInputEncoder
 >;
 
-export type OrganizationSearchResult = z.infer<typeof organizationsEncoder>;
+export const searchedOrganizationEncoder = z.object({
+  org: organizationsWithProfileEncoder,
+  isMember: z.boolean(),
+});
+
+export type OrganizationSearchResult = z.infer<
+  typeof searchedOrganizationEncoder
+>;
 export type Organization = z.infer<typeof organizationsWithProfileEncoder>;
 export type AdminOrg = z.infer<typeof adminOrgEncoder>;
 
