@@ -15,18 +15,16 @@ function ProposalViewPageContent({
   profileId: string;
   slug: string;
 }) {
-  // This is the v2 decision boundary — only new phase-based instances are
-  // served here. Legacy state-based instances are accessed via
-  // /profile/[slug]/decisions/[id]/proposal/[profileId].
-  const [proposal] = trpc.decision.getProposal.useSuspenseQuery({ profileId });
+  const [[proposal, decisionProfile]] = trpc.useSuspenseQueries((t) => [
+    t.decision.getProposal({ profileId }),
+    t.decision.getDecisionBySlug({ slug }),
+  ]);
 
   if (!proposal) {
     notFound();
   }
 
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
-    instanceId: proposal.processInstanceId,
-  });
+  const instance = decisionProfile.processInstance;
   const { user } = useUser();
 
   const currentPhase = instance.instanceData?.phases?.find(
@@ -36,6 +34,9 @@ function ProposalViewPageContent({
   const isAuthor =
     !!user.currentProfile?.id &&
     proposal.submittedBy?.id === user.currentProfile.id;
+  // Viewer is allowed to see submitted revision requests when the proposal
+  // is in a review phase and they are the author, an admin, or have
+  // explicit review access on the instance.
   const canSeeRevisions =
     isInReviewPhase &&
     (isAuthor ||
