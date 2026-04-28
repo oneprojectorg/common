@@ -70,13 +70,9 @@ export const ManualSelectionList = ({
   const categories = categoriesData.categories;
   const proposals = filteredProposals;
 
-  // Await invalidation before closing the modal to enforce synchronous
-  // behavior. Realtime channels still invalidate too, but waiting here
-  // guarantees selectionsAreConfirmed has flipped before the modal closes —
-  // without this we briefly render the empty-state during the channel race.
   const submitMutation = trpc.decision.submitManualSelection.useMutation({
-    onSuccess: async () => {
-      await utils.decision.getInstance.invalidate({ instanceId });
+    onSuccess: () => {
+      utils.decision.getInstance.invalidate({ instanceId });
       setSelectedProposals([]);
       setIsConfirmOpen(false);
       setSubmitError(null);
