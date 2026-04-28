@@ -18,7 +18,7 @@
   "dependencies": {
     "@formity/react": "^1.0.0",
     "@hocuspocus/transformer": "^3.4.3",
-    "@internationalized/date": "^3.8.2",
+    "@internationalized/date": "^3.12.1",
     "@mailchimp/mailchimp_marketing": "^3.0.80",
     "@next/bundle-analyzer": "^16.0.0",
     "@op/analytics": "workspace:^",

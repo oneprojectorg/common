@@ -2,7 +2,7 @@
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import { Select, SelectItem } from '@op/ui/Select';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type Key } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -65,7 +65,11 @@ export function CollaborativeDropdownField({
     return null;
   }
 
-  const handleSelectionChange = (key: string | number) => {
+  const handleSelectionChange = (key: Key | null) => {
+    if (key === null) {
+      setSelectedValue(null);
+      return;
+    }
     const value = String(key);
     if (value === EMPTY_KEY) {
       setSelectedValue(null);
