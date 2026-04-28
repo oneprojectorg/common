@@ -21,7 +21,6 @@ import { listUsersRouter } from './listUsers';
 import { reactionsRouter } from './reactions';
 import { removeRelationshipRouter } from './removeRelationship';
 import { searchOrganizationsRouter } from './searchOrganizations';
-import { organizationStatsRouter } from './stats';
 import { updateOrganizationRouter } from './updateOrganization';
 import { updateOrganizationUserRouter } from './updateOrganizationUser';
 import { uploadAvatarImage } from './uploadAvatarImage';
@@ -45,7 +44,6 @@ export const organizationRouter = mergeRouters(
   declineRelationshipRouter,
   listRelationshipsRouter,
   removeRelationshipRouter,
-  organizationStatsRouter,
   listRelatedOrganizationPostsRouter,
   joinOrganization,
   inviteUserRouter,

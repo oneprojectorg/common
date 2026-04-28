@@ -10,8 +10,6 @@ import { switchOrganization } from './updateLastOrgId';
 import updateUserProfile from './updateUserProfile';
 import { uploadAvatarImage } from './uploadAvatarImage';
 import { uploadBannerImage } from './uploadBannerImage';
-import usedStorage from './usedStorage';
-import usernameAvailable from './usernameAvailable';
 
 const accountRouter = mergeRouters(
   login,
@@ -20,8 +18,6 @@ const accountRouter = mergeRouters(
   getUserProfiles,
   listUserInvitesRouter,
   updateUserProfile,
-  usernameAvailable,
-  usedStorage,
   uploadAvatarImage,
   uploadBannerImage,
   switchOrganization,

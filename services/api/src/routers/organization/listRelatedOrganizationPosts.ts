@@ -1,7 +1,4 @@
-import {
-  listAllRelatedOrganizationPosts,
-  listRelatedOrganizationPosts,
-} from '@op/common';
+import { listAllRelatedOrganizationPosts } from '@op/common';
 import { z } from 'zod';
 
 import { organizationsWithProfileEncoder } from '../../encoders';
@@ -11,12 +8,6 @@ import {
 } from '../../encoders/posts';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
-
-const inputSchema = z.object({
-  organizationId: z.uuid({
-    error: 'Invalid organization ID',
-  }),
-});
 
 export const listRelatedOrganizationPostsRouter = router({
   listAllPosts: commonAuthedProcedure()
@@ -51,25 +42,5 @@ export const listRelatedOrganizationPostsRouter = router({
         })),
         next: result.next,
       };
-    }),
-  listRelatedPosts: commonAuthedProcedure()
-    .input(inputSchema)
-    .output(z.array(postsToOrganizationsEncoder))
-    .query(async ({ ctx, input }) => {
-      const { organizationId } = input;
-      const { user } = ctx;
-
-      const result = await listRelatedOrganizationPosts({
-        organizationId,
-        user,
-      });
-
-      return result.map((postToOrg) => ({
-        ...postToOrg,
-        organization: organizationsWithProfileEncoder.parse(
-          postToOrg.organization,
-        ),
-        post: postsEncoder.parse(postToOrg.post),
-      }));
     }),
 });
