@@ -3,13 +3,10 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import type { Proposal } from '@op/common/client';
 import { notFound, useParams } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { ProposalView } from '@/components/decisions/ProposalView';
-
-const LEGACY_ORG_SLUGS = ['people-powered', 'cowop', 'one-project'];
 
 function ProposalViewPageContent({
   profileId,
@@ -18,57 +15,18 @@ function ProposalViewPageContent({
   profileId: string;
   slug: string;
 }) {
-  const [[proposal, decisionProfile]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getProposal({ profileId }),
-    t.decision.getDecisionBySlug({ slug }),
-  ]);
+  // This is the v2 decision boundary — only new phase-based instances are
+  // served here. Legacy state-based instances are accessed via
+  // /profile/[slug]/decisions/[id]/proposal/[profileId].
+  const [proposal] = trpc.decision.getProposal.useSuspenseQuery({ profileId });
 
   if (!proposal) {
     notFound();
   }
 
-  const ownerSlug = decisionProfile?.processInstance?.owner?.slug;
-  const instanceId = decisionProfile?.processInstance?.id;
-
-  // Legacy orgs still own pre-v2 state-based instances that getInstance can't
-  // parse. Detect them at the path boundary and route through the legacy
-  // endpoint, mirroring the pattern in DecisionHeader / ResultsPage.
-  const useLegacy = !!ownerSlug && LEGACY_ORG_SLUGS.includes(ownerSlug);
-
-  const backHref =
-    useLegacy && instanceId
-      ? `/profile/${ownerSlug}/decisions/${instanceId}/`
-      : `/decisions/${slug}`;
-
-  if (useLegacy) {
-    return (
-      <ProposalView
-        proposal={proposal}
-        canSeeRevisions={false}
-        backHref={backHref}
-      />
-    );
-  }
-
-  return (
-    <NewInstanceProposalView
-      proposal={proposal}
-      instanceId={proposal.processInstanceId}
-      backHref={backHref}
-    />
-  );
-}
-
-function NewInstanceProposalView({
-  proposal,
-  instanceId,
-  backHref,
-}: {
-  proposal: Proposal;
-  instanceId: string;
-  backHref: string;
-}) {
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
+    instanceId: proposal.processInstanceId,
+  });
   const { user } = useUser();
 
   const currentPhase = instance.instanceData?.phases?.find(
@@ -88,7 +46,7 @@ function NewInstanceProposalView({
     <ProposalView
       proposal={proposal}
       canSeeRevisions={canSeeRevisions}
-      backHref={backHref}
+      backHref={`/decisions/${slug}`}
     />
   );
 }
