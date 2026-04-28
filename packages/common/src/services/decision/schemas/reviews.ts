@@ -129,7 +129,8 @@ export const proposalCategorySchema = z.object({
   termUri: z.string(),
 });
 
-export const proposalWithAggregatesSchema = proposalSchema.extend({
+export const proposalWithAggregatesSchema = z.object({
+  proposal: proposalSchema,
   aggregates: proposalReviewAggregatesSchema,
   categories: z.array(proposalCategorySchema),
 });
