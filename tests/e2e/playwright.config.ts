@@ -47,7 +47,16 @@ export default defineConfig({
 
   projects: [
     {
-      name: 'chromium',
+      name: 'e2e',
+      testIgnore: '**/a11y-baseline.spec.ts',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      // Path-based isolation of the axe-core baseline spec. CI runs `--project=e2e`
+      // for the sharded e2e run and `--project=a11y` for the dedicated baseline job
+      // so the spec is not double-executed.
+      name: 'a11y',
+      testMatch: '**/a11y-baseline.spec.ts',
       use: { ...devices['Desktop Chrome'] },
     },
   ],
