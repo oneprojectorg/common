@@ -1,6 +1,11 @@
 import { db } from '@op/db/client';
 
-import { NotFoundError, decodeCursor, encodeCursor } from '../../utils';
+import {
+  NotFoundError,
+  decodeCursor,
+  encodeCursor,
+  getCursorCondition,
+} from '../../utils';
 
 export const listOrganizations = async ({
   cursor,
@@ -18,14 +23,18 @@ export const listOrganizations = async ({
       ? decodeCursor<{ value: string | Date }>(cursor)
       : undefined;
 
-    const cursorOp = decodedCursor
-      ? dir === 'asc'
-        ? { gt: decodedCursor.value }
-        : { lt: decodedCursor.value }
-      : undefined;
-
     const result = await db.query.organizations.findMany({
-      where: cursorOp ? { [orderBy]: cursorOp } : undefined,
+      where: decodedCursor
+        ? {
+            RAW: (table) =>
+              getCursorCondition({
+                column:
+                  orderBy === 'createdAt' ? table.createdAt : table.updatedAt,
+                cursor: decodedCursor,
+                direction: dir,
+              })!,
+          }
+        : undefined,
       with: {
         projects: true,
         links: true,
