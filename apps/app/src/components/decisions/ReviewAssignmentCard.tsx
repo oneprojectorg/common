@@ -32,16 +32,18 @@ import {
 
 type AssignmentStatus = ProposalReviewAssignment['status'];
 
+type Reviewers = ProposalReviewAggregates['reviewers'];
+
 interface ReviewAssignmentCardProps {
   assignment: ReviewAssignmentExtended;
   viewHref?: string;
-  aggregates?: ProposalReviewAggregates;
+  reviewers?: Reviewers;
 }
 
 export function ReviewAssignmentCard({
   assignment: { assignment },
   viewHref,
-  aggregates,
+  reviewers,
 }: ReviewAssignmentCardProps) {
   const { proposal, status } = assignment;
   const isRevised = status === 'ready_for_re_review';
@@ -69,7 +71,7 @@ export function ReviewAssignmentCard({
       </ProposalCardContent>
       <div className="flex items-center justify-between gap-2">
         <ReviewStatusBadge status={status} />
-        {aggregates ? <ReviewersTooltip aggregates={aggregates} /> : null}
+        {reviewers ? <ReviewersTooltip reviewers={reviewers} /> : null}
       </div>
     </ProposalCard>
   );
@@ -80,14 +82,10 @@ const COMPLETED_REVIEWER_STATUSES: AssignmentStatus[] = [
   ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
 ];
 
-function ReviewersTooltip({
-  aggregates,
-}: {
-  aggregates: ProposalReviewAggregates;
-}) {
+function ReviewersTooltip({ reviewers }: { reviewers: Reviewers }) {
   const t = useTranslations();
 
-  const completedReviewers = aggregates.reviewers.filter((r) =>
+  const completedReviewers = reviewers.filter((r) =>
     COMPLETED_REVIEWER_STATUSES.includes(r.status),
   );
 
@@ -101,7 +99,7 @@ function ReviewersTooltip({
     <TooltipTrigger>
       <Button
         type="button"
-        className="cursor-help text-base text-neutral-gray4 underline decoration-dotted decoration-1 underline-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-primary-teal"
+        className="text-base text-neutral-gray4 underline decoration-dotted decoration-1 underline-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-primary-teal"
       >
         {t('{count} Reviewed', { count: completedReviewers.length })}
       </Button>

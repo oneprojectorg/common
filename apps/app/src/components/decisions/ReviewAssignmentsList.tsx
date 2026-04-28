@@ -4,7 +4,6 @@ import { trpc } from '@op/api/client';
 import {
   ProposalReviewAssignmentStatus,
   type ProposalReviewAggregates,
-  type ReviewAssignmentExtended,
 } from '@op/common/client';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
@@ -55,6 +54,26 @@ export function ReviewAssignmentsList({
   });
 
   const assignments = data?.assignments ?? [];
+  const proposalIds = assignments.map((a) => a.assignment.proposal.id);
+
+  const { data: aggregatesData } =
+    trpc.decision.listWithReviewAggregates.useQuery(
+      {
+        processInstanceId,
+        proposalIds,
+      },
+      {
+        enabled: canViewReviewers && proposalIds.length > 0,
+      },
+    );
+
+  const reviewersByProposalId = new Map<
+    string,
+    ProposalReviewAggregates['reviewers']
+  >();
+  for (const item of aggregatesData?.items ?? []) {
+    reviewersByProposalId.set(item.id, item.aggregates.reviewers);
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -120,64 +139,17 @@ export function ReviewAssignmentsList({
         </EmptyState>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {canViewReviewers ? (
-            <AdminAssignmentCards
-              processInstanceId={processInstanceId}
-              decisionSlug={decisionSlug}
-              assignments={assignments}
+          {assignments.map((item) => (
+            <ReviewAssignmentCard
+              key={item.assignment.id}
+              assignment={item}
+              viewHref={`/decisions/${decisionSlug}/reviews/${item.assignment.id}`}
+              reviewers={reviewersByProposalId.get(item.assignment.proposal.id)}
             />
-          ) : (
-            assignments.map((item) => (
-              <ReviewAssignmentCard
-                key={item.assignment.id}
-                assignment={item}
-                viewHref={`/decisions/${decisionSlug}/reviews/${item.assignment.id}`}
-              />
-            ))
-          )}
+          ))}
         </div>
       )}
     </div>
-  );
-}
-
-function AdminAssignmentCards({
-  processInstanceId,
-  decisionSlug,
-  assignments,
-}: {
-  processInstanceId: string;
-  decisionSlug: string;
-  assignments: ReviewAssignmentExtended[];
-}) {
-  const proposalIds = assignments.map((a) => a.assignment.proposal.id);
-
-  const { data } = trpc.decision.listWithReviewAggregates.useQuery(
-    {
-      processInstanceId,
-      proposalIds,
-    },
-    {
-      enabled: proposalIds.length > 0,
-    },
-  );
-
-  const aggregatesByProposalId = new Map<string, ProposalReviewAggregates>();
-  for (const item of data?.items ?? []) {
-    aggregatesByProposalId.set(item.id, item.aggregates);
-  }
-
-  return (
-    <>
-      {assignments.map((item) => (
-        <ReviewAssignmentCard
-          key={item.assignment.id}
-          assignment={item}
-          viewHref={`/decisions/${decisionSlug}/reviews/${item.assignment.id}`}
-          aggregates={aggregatesByProposalId.get(item.assignment.proposal.id)}
-        />
-      ))}
-    </>
   );
 }
 
