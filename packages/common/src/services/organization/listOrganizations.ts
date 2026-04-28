@@ -1,4 +1,5 @@
 import { db } from '@op/db/client';
+import { organizations } from '@op/db/schema';
 
 import {
   NotFoundError,
@@ -19,6 +20,11 @@ export const listOrganizations = async ({
   dir?: 'asc' | 'desc';
 }) => {
   try {
+    const orderByColumn =
+      orderBy === 'createdAt'
+        ? organizations.createdAt
+        : organizations.updatedAt;
+
     const decodedCursor = cursor
       ? decodeCursor<{ value: string | Date }>(cursor)
       : undefined;
@@ -26,13 +32,12 @@ export const listOrganizations = async ({
     const result = await db.query.organizations.findMany({
       where: decodedCursor
         ? {
-            RAW: (table) =>
+            RAW: () =>
               getCursorCondition({
-                column:
-                  orderBy === 'createdAt' ? table.createdAt : table.updatedAt,
+                column: orderByColumn,
                 cursor: decodedCursor,
                 direction: dir,
-              })!,
+              }),
           }
         : undefined,
       with: {
@@ -65,10 +70,8 @@ export const listOrganizations = async ({
           },
         },
       },
-      orderBy: (table, { asc, desc }) => {
-        const col = orderBy === 'createdAt' ? table.createdAt : table.updatedAt;
-        return dir === 'asc' ? asc(col) : desc(col);
-      },
+      orderBy: (_, { asc, desc }) =>
+        dir === 'asc' ? asc(orderByColumn) : desc(orderByColumn),
       limit: limit + 1, // Fetch one extra to check hasMore
     });
 
