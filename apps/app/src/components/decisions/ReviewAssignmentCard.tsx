@@ -77,16 +77,11 @@ export function ReviewAssignmentCard({
   );
 }
 
-const COMPLETED_REVIEWER_STATUSES: AssignmentStatus[] = [
-  ProposalReviewAssignmentStatus.COMPLETED,
-  ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
-];
-
 function ReviewersTooltip({ reviewers }: { reviewers: Reviewers }) {
   const t = useTranslations();
 
-  const completedReviewers = reviewers.filter((r) =>
-    COMPLETED_REVIEWER_STATUSES.includes(r.status),
+  const completedReviewers = reviewers.filter(
+    (r) => r.status === ProposalReviewAssignmentStatus.COMPLETED,
   );
 
   if (completedReviewers.length === 0) {
@@ -97,10 +92,7 @@ function ReviewersTooltip({ reviewers }: { reviewers: Reviewers }) {
 
   return (
     <TooltipTrigger>
-      <Button
-        type="button"
-        className="text-base text-neutral-gray4 underline decoration-dotted decoration-1 underline-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-primary-teal"
-      >
+      <Button className="text-neutral-gray4 underline decoration-dotted underline-offset-2">
         {t('{count} Reviewed', { count: completedReviewers.length })}
       </Button>
       <Tooltip>{names}</Tooltip>
