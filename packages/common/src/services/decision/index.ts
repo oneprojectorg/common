@@ -60,6 +60,7 @@ export * from './listProposalSubmitters';
 export * from './getReviewAssignment';
 export * from './listReviewAssignments';
 export * from './listProposalsWithReviewAggregates';
+export * from './getProposalWithReviewAggregates';
 export * from './listProposalsRevisionRequests';
 export * from './listProposalRevisionRequests';
 export * from './submitRevisionResponse';

@@ -150,6 +150,22 @@ export const proposalsWithReviewAggregatesListSchema = z.object({
   next: z.string().nullable(),
 });
 
+// ── Single proposal with submitted reviews ─────────────────────────────
+
+/** `score` and `overallRecommendation` are precomputed so clients don't redo the rubric math. */
+export const submittedReviewItemSchema = z.object({
+  review: proposalReviewSchema,
+  reviewer: proposalProfileSchema,
+  assignmentStatus: z.enum(ProposalReviewAssignmentStatus),
+  score: z.number(),
+  overallRecommendation: z.string().nullable(),
+});
+
+export const proposalWithSubmittedReviewsSchema =
+  proposalWithAggregatesSchema.extend({
+    reviews: z.array(submittedReviewItemSchema),
+  });
+
 // ── Types ───────────────────────────────────────────────────────────────
 
 export type ProposalReviewAssignment = z.infer<
@@ -176,4 +192,8 @@ export type ProposalWithAggregates = z.infer<
 >;
 export type ProposalsWithReviewAggregatesList = z.infer<
   typeof proposalsWithReviewAggregatesListSchema
+>;
+export type SubmittedReviewItem = z.infer<typeof submittedReviewItemSchema>;
+export type ProposalWithSubmittedReviews = z.infer<
+  typeof proposalWithSubmittedReviewsSchema
 >;

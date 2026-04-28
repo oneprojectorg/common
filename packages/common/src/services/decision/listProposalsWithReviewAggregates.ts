@@ -249,7 +249,7 @@ async function listProposalsPaginated({
  * `with` block for the proposal relational query — shared by filtered and
  * paginated.
  */
-function proposalRelations({
+export function proposalRelations({
   processInstanceId,
   phaseId,
 }: {
@@ -273,7 +273,7 @@ function proposalRelations({
   } as const;
 }
 
-async function getCategoriesByProposalIds(
+export async function getCategoriesByProposalIds(
   proposalIds: string[],
 ): Promise<Map<string, ProposalCategoryItem[]>> {
   const map = new Map<string, ProposalCategoryItem[]>();
@@ -311,7 +311,7 @@ async function getCategoriesByProposalIds(
  * `proposal_reviews_assignment_unique` makes `reviews` 0-or-1; we read just
  * the first row even though the relation is declared as many.
  */
-function getComputedReviewAggregates(
+export function getComputedReviewAggregates(
   reviewAssignments: Array<{
     status: string;
     reviewer: unknown;
@@ -330,28 +330,17 @@ function getComputedReviewAggregates(
 
   for (const assignment of reviewAssignments) {
     const review = assignment.reviews[0];
-    if (!review || review.state !== ProposalReviewState.SUBMITTED) {
+    const scored = getSubmittedReviewScore(review, scoredCriterionKeys);
+    if (!scored) {
       continue;
     }
     reviewsSubmittedCount += 1;
+    totalScore += scored.score;
 
-    const data = review.reviewData as {
-      answers?: Record<string, unknown>;
-    } | null;
-    const answers = data?.answers ?? {};
-
-    for (const key of scoredCriterionKeys) {
-      const value = Number(answers[key]);
-      if (Number.isFinite(value)) {
-        totalScore += value;
-      }
-    }
-
-    const recommendation = answers[OVERALL_RECOMMENDATION_KEY];
-    if (recommendation != null) {
-      const recommendationKey = String(recommendation);
-      overallRecommendationCount[recommendationKey] =
-        (overallRecommendationCount[recommendationKey] ?? 0) + 1;
+    if (scored.overallRecommendation != null) {
+      const key = scored.overallRecommendation;
+      overallRecommendationCount[key] =
+        (overallRecommendationCount[key] ?? 0) + 1;
     }
   }
 
@@ -365,4 +354,33 @@ function getComputedReviewAggregates(
     overallRecommendationCount,
     reviewers,
   };
+}
+
+/** Returns `null` for non-submitted rows so callers can gate and score in one pass. */
+export function getSubmittedReviewScore(
+  review: { state: string; reviewData: unknown } | null | undefined,
+  scoredCriterionKeys: string[],
+): { score: number; overallRecommendation: string | null } | null {
+  if (!review || review.state !== ProposalReviewState.SUBMITTED) {
+    return null;
+  }
+
+  const data = review.reviewData as {
+    answers?: Record<string, unknown>;
+  } | null;
+  const answers = data?.answers ?? {};
+
+  let score = 0;
+  for (const key of scoredCriterionKeys) {
+    const value = Number(answers[key]);
+    if (Number.isFinite(value)) {
+      score += value;
+    }
+  }
+
+  const recommendation = answers[OVERALL_RECOMMENDATION_KEY];
+  const overallRecommendation =
+    recommendation == null ? null : String(recommendation);
+
+  return { score, overallRecommendation };
 }
