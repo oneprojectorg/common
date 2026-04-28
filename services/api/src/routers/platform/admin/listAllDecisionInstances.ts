@@ -6,22 +6,13 @@ import {
 import { adminDecisionInstanceSchema } from '@op/common/client';
 import { and, count, countDistinct, db, ilike, inArray } from '@op/db/client';
 import { processInstances, proposals } from '@op/db/schema';
+import type { SQL } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { commonProcedure, router } from '../../../trpcFactory';
 import { dbFilter } from '../../../utils';
-
-// Drizzle's _query typing widens single `one` relations to `T | T[]` when nested
-// in findMany. See services/api/src/routers/decision/proposals/get.ts:54 for the
-// same workaround.
-const unwrapOne = <T>(value: T | T[] | null | undefined): T | undefined => {
-  if (value == null) {
-    return undefined;
-  }
-  return Array.isArray(value) ? value[0] : value;
-};
 
 const phaseLookupInstanceData = z
   .object({
@@ -101,30 +92,37 @@ export const listAllDecisionInstancesRouter = router({
     )
     .query(async ({ input }) => {
       const { cursor, dir = 'desc', query, limit } = input ?? {};
+      const decodedCursor = cursor ? decodeCursor(cursor) : undefined;
+      const hasSearch = !!(query && query.length >= 2);
 
-      const cursorCondition = cursor
-        ? getGenericCursorCondition({
-            columns: {
-              id: processInstances.id,
-              date: processInstances.createdAt,
-            },
-            cursor: decodeCursor(cursor),
-          })
+      // Used by the count() select below against the raw schema table.
+      const searchCondition = hasSearch
+        ? ilike(processInstances.name, `%${query}%`)
         : undefined;
 
-      const searchCondition =
-        query && query.length >= 2
-          ? ilike(processInstances.name, `%${query}%`)
-          : undefined;
-
-      const whereCondition =
-        searchCondition && cursorCondition
-          ? and(cursorCondition, searchCondition)
-          : searchCondition || cursorCondition;
+      const hasWhere = !!decodedCursor || hasSearch;
 
       const [instances, [totalCountResult]] = await Promise.all([
-        db._query.processInstances.findMany({
-          where: whereCondition,
+        db.query.processInstances.findMany({
+          // RAW receives V2's aliased table; build conditions against it.
+          where: hasWhere
+            ? {
+                RAW: (table) => {
+                  const conds: SQL[] = [];
+                  if (decodedCursor) {
+                    const cursorCond = getGenericCursorCondition({
+                      columns: { id: table.id, date: table.createdAt },
+                      cursor: decodedCursor,
+                    });
+                    if (cursorCond) conds.push(cursorCond);
+                  }
+                  if (hasSearch) {
+                    conds.push(ilike(table.name, `%${query}%`));
+                  }
+                  return conds.length > 1 ? and(...conds)! : conds[0]!;
+                },
+              }
+            : undefined,
           with: {
             steward: {
               columns: { name: true },
@@ -133,10 +131,7 @@ export const listAllDecisionInstancesRouter = router({
               columns: { processSchema: true },
             },
           },
-          orderBy: (_, { asc, desc }) =>
-            dir === 'asc'
-              ? asc(processInstances.createdAt)
-              : desc(processInstances.createdAt),
+          orderBy: { createdAt: dir },
           ...(limit !== undefined && { limit: limit + 1 }),
         }),
         db
@@ -177,8 +172,6 @@ export const listAllDecisionInstancesRouter = router({
 
       return {
         items: items.map((instance) => {
-          const steward = unwrapOne(instance.steward);
-          const process = unwrapOne(instance.process);
           const stats = statsByInstance.get(instance.id);
           return adminDecisionInstanceSchema.parse({
             id: instance.id,
@@ -186,9 +179,9 @@ export const listAllDecisionInstancesRouter = router({
             currentPhase: resolveCurrentPhase({
               currentStateId: instance.currentStateId,
               instanceData: instance.instanceData,
-              processSchema: process?.processSchema,
+              processSchema: instance.process?.processSchema,
             }),
-            stewardName: steward?.name ?? null,
+            stewardName: instance.steward?.name ?? null,
             status: instance.status,
             proposalCount: stats?.proposalCount ?? 0,
             participantCount: stats?.participantCount ?? 0,

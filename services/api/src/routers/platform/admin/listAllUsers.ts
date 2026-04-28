@@ -5,6 +5,7 @@ import {
 } from '@op/common';
 import { and, count, db, ilike } from '@op/db/client';
 import { users } from '@op/db/schema';
+import type { SQL } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { userEncoder } from '../../../encoders/';
@@ -34,36 +35,40 @@ export const listAllUsersRouter = router({
     )
     .query(async ({ input }) => {
       const { cursor, dir = 'desc', query, limit } = input ?? {};
+      const decodedCursor = cursor ? decodeCursor(cursor) : undefined;
+      const hasSearch = !!(query && query.length >= 2);
 
-      // Cursor-based pagination using createdAt timestamp
-      // Combines createdAt with id as tiebreaker for users created at the same time
-      const cursorCondition = cursor
-        ? getGenericCursorCondition({
-            columns: {
-              id: users.id,
-              date: users.createdAt,
-            },
-            cursor: decodeCursor(cursor),
-          })
+      // Used by the count() select below; references the raw schema table.
+      const searchCondition = hasSearch
+        ? ilike(users.email, `%${query}%`)
         : undefined;
 
-      // Build search condition if query is provided (separate from cursor for total count)
-      const searchCondition =
-        query && query.length >= 2
-          ? ilike(users.email, `%${query}%`)
-          : undefined;
+      const hasWhere = !!decodedCursor || hasSearch;
 
-      // Combine search with cursor for pagination query
-      const whereCondition =
-        searchCondition && cursorCondition
-          ? and(cursorCondition, searchCondition)
-          : searchCondition || cursorCondition;
-
-      // Parallel database queries for optimal performance
+      // Uses V2 `db.query` (single SQL via LATERAL joins) instead of V1 `db._query`
+      // to avoid fan-out that saturates the Supavisor transaction-mode pool.
+      // The RAW callback receives the aliased table used inside V2's generated
+      // SQL — conditions must be built against that alias, not the schema ref.
       const [allUsers, [totalCountResult]] = await Promise.all([
-        // Fetch users with complete profile, organization, and role data
-        db._query.users.findMany({
-          where: whereCondition,
+        db.query.users.findMany({
+          where: hasWhere
+            ? {
+                RAW: (table) => {
+                  const conds: SQL[] = [];
+                  if (decodedCursor) {
+                    const cursorCond = getGenericCursorCondition({
+                      columns: { id: table.id, date: table.createdAt },
+                      cursor: decodedCursor,
+                    });
+                    if (cursorCond) conds.push(cursorCond);
+                  }
+                  if (hasSearch) {
+                    conds.push(ilike(table.email, `%${query}%`));
+                  }
+                  return conds.length > 1 ? and(...conds)! : conds[0]!;
+                },
+              }
+            : undefined,
           with: {
             authUser: true,
             profile: true,
@@ -92,9 +97,7 @@ export const listAllUsersRouter = router({
               },
             },
           },
-          orderBy: (_, { asc, desc }) =>
-            dir === 'asc' ? asc(users.createdAt) : desc(users.createdAt),
-          // Fetch one extra item to determine if more pages exist (when limit is provided)
+          orderBy: { createdAt: dir },
           ...(limit !== undefined && { limit: limit + 1 }),
         }),
         db.select({ value: count() }).from(users).where(searchCondition),

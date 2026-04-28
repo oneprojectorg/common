@@ -48,12 +48,11 @@ export const addUsersToOrganizationRouter = router({
 
       // Validate all entities exist
       const [organization, users, existingRoles] = await Promise.all([
-        db._query.organizations.findFirst({
-          where: (table, { eq }) => eq(table.id, organizationId),
+        db.query.organizations.findFirst({
+          where: { id: organizationId },
         }),
-        db._query.users.findMany({
-          where: (table, { inArray }) =>
-            inArray(table.authUserId, allAuthUserIds),
+        db.query.users.findMany({
+          where: { authUserId: { in: allAuthUserIds } },
         }),
         db.query.accessRoles.findMany({
           where: { id: { in: allRoleIds } },
