@@ -82,13 +82,6 @@ export const simpleVoting: DecisionSchemaDefinition = {
           },
         },
       },
-      // Pass-all: every submitted proposal advances into review.
-      // Expressed as an empty pipeline (no blocks) which short-circuits to
-      // returning the full input set.
-      selectionPipeline: {
-        version: '1.0.0',
-        blocks: [],
-      },
     },
     {
       id: 'review',
@@ -116,8 +109,6 @@ export const simpleVoting: DecisionSchemaDefinition = {
           },
         },
       },
-      // No selectionPipeline → falls back to pass-none, requiring an admin
-      // to manually pick which proposals advance to voting.
     },
     {
       id: 'voting',

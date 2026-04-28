@@ -77,10 +77,6 @@ export const simpleVoting = {
           },
         },
       },
-      selectionPipeline: {
-        version: '1.0.0',
-        blocks: [],
-      },
     },
     {
       id: 'review',
