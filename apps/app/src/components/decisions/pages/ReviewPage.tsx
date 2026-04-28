@@ -85,6 +85,7 @@ export function ReviewPage({
                 <ReviewAssignmentsList
                   processInstanceId={instance.id}
                   decisionSlug={decisionSlug}
+                  canViewReviewers={Boolean(instance.access?.admin)}
                 />
               ) : (
                 <ProposalsList

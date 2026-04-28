@@ -25,9 +25,11 @@ const SORT_DIRS = ['asc', 'desc'] as const;
 export function ReviewAssignmentsList({
   processInstanceId,
   decisionSlug,
+  canViewReviewers = false,
 }: {
   processInstanceId: string;
   decisionSlug: string;
+  canViewReviewers?: boolean;
 }) {
   const t = useTranslations();
 
@@ -49,6 +51,18 @@ export function ReviewAssignmentsList({
   });
 
   const assignments = data?.assignments ?? [];
+  const proposalIds = assignments.map((a) => a.assignment.proposal.id);
+
+  const { data: aggregatesData } =
+    trpc.decision.listWithReviewAggregates.useQuery(
+      {
+        processInstanceId,
+        proposalIds,
+      },
+      {
+        enabled: canViewReviewers && proposalIds.length > 0,
+      },
+    );
 
   return (
     <div className="flex flex-col gap-6">
@@ -119,6 +133,11 @@ export function ReviewAssignmentsList({
               key={item.assignment.id}
               assignment={item}
               viewHref={`/decisions/${decisionSlug}/reviews/${item.assignment.id}`}
+              reviewers={
+                aggregatesData?.items.find(
+                  (i) => i.proposal.id === item.assignment.proposal.id,
+                )?.aggregates.reviewers
+              }
             />
           ))}
         </div>
