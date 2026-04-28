@@ -162,6 +162,98 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.objectsInStorage.id,
       optional: false,
     }),
+    post: r.one.posts({
+      from: r.attachments.postId,
+      to: r.posts.id,
+    }),
+  },
+
+  /**
+   * Post relations
+   *
+   * profileId is nullable in the schema. parentPostId is also nullable
+   * (top-level posts have no parent). The self-referential parent/children
+   * relations share an alias so v2 can pair them as inverses.
+   */
+  posts: {
+    profile: r.one.profiles({
+      from: r.posts.profileId,
+      to: r.profiles.id,
+    }),
+    parentPost: r.one.posts({
+      from: r.posts.parentPostId,
+      to: r.posts.id,
+      alias: 'post_parent_child',
+    }),
+    childPosts: r.many.posts({
+      from: r.posts.id,
+      to: r.posts.parentPostId,
+      alias: 'post_parent_child',
+    }),
+    attachments: r.many.attachments({
+      from: r.posts.id,
+      to: r.attachments.postId,
+    }),
+    reactions: r.many.postReactions({
+      from: r.posts.id,
+      to: r.postReactions.postId,
+    }),
+    postsToProfiles: r.many.postsToProfiles({
+      from: r.posts.id,
+      to: r.postsToProfiles.postId,
+    }),
+    postsToOrganizations: r.many.postsToOrganizations({
+      from: r.posts.id,
+      to: r.postsToOrganizations.postId,
+    }),
+  },
+
+  /**
+   * Posts-to-profiles join relations
+   */
+  postsToProfiles: {
+    post: r.one.posts({
+      from: r.postsToProfiles.postId,
+      to: r.posts.id,
+      optional: false,
+    }),
+    profile: r.one.profiles({
+      from: r.postsToProfiles.profileId,
+      to: r.profiles.id,
+      optional: false,
+    }),
+  },
+
+  /**
+   * Posts-to-organizations join relations
+   */
+  postsToOrganizations: {
+    post: r.one.posts({
+      from: r.postsToOrganizations.postId,
+      to: r.posts.id,
+      optional: false,
+    }),
+    organization: r.one.organizations({
+      from: r.postsToOrganizations.organizationId,
+      to: r.organizations.id,
+      optional: false,
+    }),
+  },
+
+  /**
+   * Post reaction relations
+   */
+  postReactions: {
+    post: r.one.posts({
+      from: r.postReactions.postId,
+      to: r.posts.id,
+      optional: false,
+    }),
+    profile: r.one.profiles({
+      from: r.postReactions.profileId,
+      to: r.profiles.id,
+      optional: false,
+    }),
   },
 
   /**
