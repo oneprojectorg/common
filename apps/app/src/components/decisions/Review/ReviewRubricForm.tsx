@@ -1,16 +1,15 @@
 'use client';
 
 import {
+  ProposalReviewState,
   type XFormatPropertySchema,
   isOverallRecommendationField,
   parseSchemaOptions,
 } from '@op/common/client';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Button } from '@op/ui/Button';
-import { Header3 } from '@op/ui/Header';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select, SelectItem } from '@op/ui/Select';
-import { Surface } from '@op/ui/Surface';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import type { Key } from 'react';
@@ -22,12 +21,10 @@ import { useTranslations } from '@/lib/i18n';
 import { FieldHeader } from '../forms/FieldHeader';
 import { compileRubricSchema } from '../forms/rubric';
 import type { FieldDescriptor } from '../forms/types';
-import {
-  getCriteria,
-  getCriterionMaxPoints,
-  inferCriterionType,
-} from '../rubricTemplate';
+import { getCriterionMaxPoints, inferCriterionType } from '../rubricTemplate';
 import { useReviewForm } from './ReviewFormContext';
+import { FormShell, TotalScoreCard } from './ReviewFormShell';
+import { SubmittedReviewView } from './SubmittedReviewView';
 import { ViewRevisionRequestModal } from './ViewRevisionRequestModal';
 
 /**
@@ -44,33 +41,26 @@ export function ReviewRubricForm() {
     handleRationaleChange,
     handleOverallCommentChange,
     isPausedForRevision,
+    review,
   } = useReviewForm();
   const fields = compileRubricSchema(template);
-  const criteria = getCriteria(template);
 
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(
     overallComment.length > 0,
   );
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
-  const totalScore = criteria.reduce<number | null>((total, criterion) => {
-    const value = values[criterion.id];
-
-    if (typeof value !== 'number') {
-      return total;
-    }
-
-    return (total ?? 0) + value;
-  }, null);
+  if (review?.state === ProposalReviewState.SUBMITTED) {
+    return (
+      <FormShell>
+        <SubmittedReviewView rubricTemplate={template} review={review} />
+        <TotalScoreCard rubricTemplate={template} values={values} />
+      </FormShell>
+    );
+  }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="border-b border-neutral-gray1 pb-4">
-        <Header3 className="font-serif !text-title-base font-light">
-          {t('Review Proposal')}
-        </Header3>
-      </div>
-
+    <FormShell>
       {isPausedForRevision && (
         <>
           <AlertBanner
@@ -154,20 +144,10 @@ export function ReviewRubricForm() {
             </Button>
           )}
 
-          <Surface
-            variant="filled"
-            className="flex items-start justify-between rounded-lg border-neutral-gray1 p-4"
-          >
-            <span className="text-base text-neutral-charcoal">
-              {t('Total Score')}
-            </span>
-            <span className="text-base text-neutral-black">
-              {totalScore === null ? '–' : totalScore}
-            </span>
-          </Surface>
+          <TotalScoreCard rubricTemplate={template} values={values} />
         </div>
       </div>
-    </div>
+    </FormShell>
   );
 }
 
@@ -204,7 +184,7 @@ function RubricCriterionSection({
 
           <div className="flex items-start gap-3">
             {field.schema.description && (
-              <p className="flex-1 text-base text-neutral-charcoal">
+              <p className="flex-1 text-sm text-neutral-charcoal">
                 {field.schema.description}
               </p>
             )}
@@ -214,13 +194,11 @@ function RubricCriterionSection({
         </>
       ) : (
         <>
-          <FieldHeader title={field.schema.title} badge={badgeLabel} />
-
-          {field.schema.description && (
-            <p className="text-base text-neutral-charcoal">
-              {field.schema.description}
-            </p>
-          )}
+          <FieldHeader
+            title={field.schema.title}
+            description={field.schema.description}
+            badge={badgeLabel}
+          />
 
           <RubricFieldInput field={field} value={value} onChange={onChange} />
         </>

@@ -7,6 +7,8 @@ import {
   type ProposalReviewAssignment,
   type ProposalReviewRequest,
   ProposalReviewRequestState,
+  ProposalReviewState,
+  type RubricReviewData,
   type RubricTemplateSchema,
   schemaValidator,
 } from '@op/common/client';
@@ -30,9 +32,9 @@ const AUTOSAVE_DEBOUNCE_MS = 1000;
 
 interface ReviewFormState {
   /** Rubric answers keyed by criterion id; validated against the rubricTemplate. */
-  values: Record<string, unknown>;
+  values: RubricReviewData['answers'];
   /** Optional free-text rationale per criterion id (always optional). */
-  rationales: Record<string, string>;
+  rationales: RubricReviewData['rationales'];
   /** Optional free-text feedback shown to the author after the review phase. */
   overallComment: string;
   canSubmit: boolean;
@@ -131,16 +133,16 @@ function ReviewFormProviderInner({
     null;
   const isOwnRevisionRequest = !!ownRevisionRequest;
 
-  const [values, setValues] = useState<Record<string, unknown>>(
+  const [values, setValues] = useState<RubricReviewData['answers']>(
     review?.reviewData.answers ?? {},
   );
-  const [rationales, setRationales] = useState<Record<string, string>>(
+  const [rationales, setRationales] = useState<RubricReviewData['rationales']>(
     review?.reviewData.rationales ?? {},
   );
   const [overallComment, setOverallComment] = useState<string>(
     review?.overallComment ?? '',
   );
-  const isSubmitted = review?.state === 'submitted';
+  const isSubmitted = review?.state === ProposalReviewState.SUBMITTED;
   const isPausedForRevision = hasAnyOpenRevisionRequest;
   const canRequestRevision = !isSubmitted && !hasAnyOpenRevisionRequest;
 
@@ -308,8 +310,8 @@ function useAutosaveDraft({
   enabled,
 }: {
   assignmentId: string;
-  answers: Record<string, unknown>;
-  rationales: Record<string, string>;
+  answers: RubricReviewData['answers'];
+  rationales: RubricReviewData['rationales'];
   overallComment: string;
   enabled: boolean;
 }) {
