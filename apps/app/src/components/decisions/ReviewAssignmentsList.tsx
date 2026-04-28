@@ -1,10 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import {
-  ProposalReviewAssignmentStatus,
-  type ProposalReviewAggregates,
-} from '@op/common/client';
+import { ProposalReviewAssignmentStatus } from '@op/common/client';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
@@ -66,14 +63,6 @@ export function ReviewAssignmentsList({
         enabled: canViewReviewers && proposalIds.length > 0,
       },
     );
-
-  const reviewersByProposalId = new Map<
-    string,
-    ProposalReviewAggregates['reviewers']
-  >();
-  for (const item of aggregatesData?.items ?? []) {
-    reviewersByProposalId.set(item.id, item.aggregates.reviewers);
-  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -144,7 +133,11 @@ export function ReviewAssignmentsList({
               key={item.assignment.id}
               assignment={item}
               viewHref={`/decisions/${decisionSlug}/reviews/${item.assignment.id}`}
-              reviewers={reviewersByProposalId.get(item.assignment.proposal.id)}
+              reviewers={
+                aggregatesData?.items.find(
+                  (i) => i.proposal.id === item.assignment.proposal.id,
+                )?.aggregates.reviewers
+              }
             />
           ))}
         </div>
