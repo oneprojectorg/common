@@ -1,10 +1,8 @@
-import { and, db, eq } from '@op/db/client';
+import { db } from '@op/db/client';
 import {
   type VoteData,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
-  processInstances,
-  proposals,
 } from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
 
@@ -149,8 +147,8 @@ export const submitVote = async ({
     const profileId = await getIndividualProfileId(authUserId);
 
     // Get process instance and schema
-    const processInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, data.processInstanceId),
+    const processInstance = await db.query.processInstances.findFirst({
+      where: { id: data.processInstanceId },
       columns: {
         id: true,
         profileId: true,
@@ -216,11 +214,11 @@ export const submitVote = async ({
     }
 
     // Check if user has already voted
-    const existingVote = await db._query.decisionsVoteSubmissions.findFirst({
-      where: and(
-        eq(decisionsVoteSubmissions.processInstanceId, data.processInstanceId),
-        eq(decisionsVoteSubmissions.submittedByProfileId, profileId),
-      ),
+    const existingVote = await db.query.decisionsVoteSubmissions.findFirst({
+      where: {
+        processInstanceId: data.processInstanceId,
+        submittedByProfileId: profileId,
+      },
     });
 
     if (existingVote) {
@@ -230,8 +228,8 @@ export const submitVote = async ({
     }
 
     // Get available proposals for this process instance
-    const availableProposals = await db._query.proposals.findMany({
-      where: eq(proposals.processInstanceId, data.processInstanceId),
+    const availableProposals = await db.query.proposals.findMany({
+      where: { processInstanceId: data.processInstanceId },
     });
 
     // Filter to eligible proposals for voting
@@ -346,8 +344,8 @@ export const getVotingStatus = async ({
     const profileId = await getIndividualProfileId(authUserId);
 
     // Get process instance and schema
-    const processInstance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, data.processInstanceId),
+    const processInstance = await db.query.processInstances.findFirst({
+      where: { id: data.processInstanceId },
       columns: {
         id: true,
         profileId: true,
@@ -398,11 +396,11 @@ export const getVotingStatus = async ({
     const { votingConfig } = schemaResult;
 
     // Check if user has voted
-    const voteSubmission = await db._query.decisionsVoteSubmissions.findFirst({
-      where: and(
-        eq(decisionsVoteSubmissions.processInstanceId, data.processInstanceId),
-        eq(decisionsVoteSubmissions.submittedByProfileId, profileId),
-      ),
+    const voteSubmission = await db.query.decisionsVoteSubmissions.findFirst({
+      where: {
+        processInstanceId: data.processInstanceId,
+        submittedByProfileId: profileId,
+      },
       with: {
         voteProposals: {
           with: {

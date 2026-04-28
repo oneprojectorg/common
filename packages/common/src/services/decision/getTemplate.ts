@@ -1,5 +1,4 @@
-import { db, eq } from '@op/db/client';
-import { decisionProcesses } from '@op/db/schema';
+import { db } from '@op/db/client';
 
 import { NotFoundError } from '../../utils';
 import type { DecisionSchemaDefinition } from './schemas/types';
@@ -11,8 +10,8 @@ import type { DecisionSchemaDefinition } from './schemas/types';
 export const getTemplate = async (
   templateId: string,
 ): Promise<DecisionSchemaDefinition> => {
-  const templateRecord = await db._query.decisionProcesses.findFirst({
-    where: eq(decisionProcesses.id, templateId),
+  const templateRecord = await db.query.decisionProcesses.findFirst({
+    where: { id: templateId },
   });
 
   if (!templateRecord) {

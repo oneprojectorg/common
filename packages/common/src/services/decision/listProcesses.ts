@@ -1,4 +1,4 @@
-import { and, db, desc, eq, ilike, sql } from '@op/db/client';
+import { and, db, eq, ilike, sql } from '@op/db/client';
 import { decisionProcesses } from '@op/db/schema';
 
 export interface ListProcessesInput {
@@ -40,12 +40,27 @@ export const listProcesses = async ({
     const whereClause = and(...conditions);
 
     const [processes, totalResult] = await Promise.all([
-      db._query.decisionProcesses.findMany({
-        where: whereClause,
+      db.query.decisionProcesses.findMany({
+        where: {
+          RAW: (table) => {
+            const parts = [
+              sql`${table.processSchema}->>'id' IS NOT NULL`,
+              sql`${table.processSchema}->>'version' IS NOT NULL`,
+              sql`${table.processSchema}->'phases' IS NOT NULL`,
+            ];
+            if (search) {
+              parts.push(ilike(table.name, `%${search}%`));
+            }
+            if (createdByProfileId) {
+              parts.push(eq(table.createdByProfileId, createdByProfileId));
+            }
+            return sql.join(parts, sql` AND `);
+          },
+        },
         with: {
           createdBy: true,
         },
-        orderBy: [desc(decisionProcesses.createdAt)],
+        orderBy: (table, { desc }) => [desc(table.createdAt)],
         limit: limit + 1, // Get one extra to check if there are more
         offset,
       }),

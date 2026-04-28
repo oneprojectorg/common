@@ -1,7 +1,6 @@
-import { and, asc, db, desc, eq, gt, inArray, or } from '@op/db/client';
+import { and, asc, db, eq, gt, inArray, or } from '@op/db/client';
 import {
   decisionProcessResultSelections,
-  decisionProcessResults,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
   processInstances,
@@ -63,9 +62,9 @@ export const getLatestResultWithProposals = async ({
   });
 
   // Get the latest result (without loading all selections)
-  const result = await db._query.decisionProcessResults.findFirst({
-    where: eq(decisionProcessResults.processInstanceId, processInstanceId),
-    orderBy: [desc(decisionProcessResults.executedAt)],
+  const result = await db.query.decisionProcessResults.findFirst({
+    where: { processInstanceId },
+    orderBy: (table, { desc }) => [desc(table.executedAt)],
   });
 
   if (!result) {

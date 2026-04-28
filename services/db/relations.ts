@@ -502,6 +502,44 @@ export const relations = defineRelations(schema, (r) => ({
   },
 
   /**
+   * Decision vote submission relations
+   */
+  decisionsVoteSubmissions: {
+    voteProposals: r.many.decisionsVoteProposals({
+      from: r.decisionsVoteSubmissions.id,
+      to: r.decisionsVoteProposals.voteSubmissionId,
+    }),
+  },
+
+  /**
+   * Decision vote proposal relations (junction table)
+   */
+  decisionsVoteProposals: {
+    proposal: r.one.proposals({
+      from: r.decisionsVoteProposals.proposalId,
+      to: r.proposals.id,
+      alias: 'decisionsVoteProposal_proposal',
+      optional: false,
+    }),
+  },
+
+  /**
+   * Decision process relations
+   */
+  decisionProcesses: {
+    createdBy: r.one.profiles({
+      from: r.decisionProcesses.createdByProfileId,
+      to: r.profiles.id,
+      alias: 'decisionProcess_createdBy',
+      optional: false,
+    }),
+    instances: r.many.processInstances({
+      from: r.decisionProcesses.id,
+      to: r.processInstances.processId,
+    }),
+  },
+
+  /**
    * Allow list relations
    */
   allowList: {
