@@ -72,7 +72,10 @@ export const SelectableProposalsTable = ({
       <TableBody>
         {proposals.map((proposal) => {
           const isSelected = selectedSet.has(proposal.id);
-          const fields = resolvePresentationFields(proposal, t);
+          const fields = resolvePresentationFields({
+            proposal,
+            defaultTitle: t('Untitled Proposal'),
+          });
           const href = getProposalHref?.(proposal);
 
           return (
@@ -149,7 +152,10 @@ const SelectableProposalCard = ({
   href?: string;
 }) => {
   const t = useTranslations();
-  const fields = resolvePresentationFields(proposal, t);
+  const fields = resolvePresentationFields({
+    proposal,
+    defaultTitle: t('Untitled Proposal'),
+  });
 
   return (
     <div
@@ -268,9 +274,13 @@ const ToggleAdvanceButton = ({
   );
 };
 
-type TranslateFn = ReturnType<typeof useTranslations>;
-
-const resolvePresentationFields = (proposal: Proposal, t: TranslateFn) => {
+const resolvePresentationFields = ({
+  proposal,
+  defaultTitle,
+}: {
+  proposal: Proposal;
+  defaultTitle: string;
+}) => {
   const {
     title: resolvedTitle,
     budget,
@@ -278,8 +288,7 @@ const resolvePresentationFields = (proposal: Proposal, t: TranslateFn) => {
   } = resolveProposalSystemFields(proposal);
   const visibleCategories = categories.slice(0, MAX_VISIBLE_CATEGORIES);
   const extraCategoryCount = categories.length - visibleCategories.length;
-  const title =
-    resolvedTitle || proposal.profile.name || t('Untitled proposal');
+  const title = resolvedTitle || proposal.profile.name || defaultTitle;
   const submitterName = proposal.submittedBy?.name;
   const formattedBudget = budget?.amount
     ? formatCurrency(budget.amount, undefined, budget.currency)
