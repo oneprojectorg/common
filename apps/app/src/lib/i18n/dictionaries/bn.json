@@ -1138,5 +1138,11 @@
   "Describe what you changed…": "আপনি কী পরিবর্তন করেছেন তা বর্ণনা করুন…",
   "Revised on": "সংশোধিত",
   "Author's revision note": "লেখকের সংশোধন নোট",
-  "View revision request": "সংশোধনের অনুরোধ দেখুন"
+  "View revision request": "সংশোধনের অনুরোধ দেখুন",
+  "Review Summary": "পর্যালোচনার সারসংক্ষেপ",
+  "Average Score": "গড় স্কোর",
+  "Submitted Reviews": "জমা দেওয়া পর্যালোচনা",
+  "Back to all reviewers": "সমস্ত পর্যালোচকের কাছে ফিরে যান",
+  "{submitted} out of {total} reviewers submitted a review for this proposal": "{total} জন পর্যালোচকের মধ্যে {submitted} জন এই প্রস্তাবের জন্য একটি পর্যালোচনা জমা দিয়েছেন",
+  "View review by {name}": "{name} এর পর্যালোচনা দেখুন"
 }

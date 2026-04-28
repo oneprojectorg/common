@@ -1137,5 +1137,11 @@
   "Describe what you changed…": "Describe lo que cambiaste…",
   "Revised on": "Revisado el",
   "Author's revision note": "Nota de revisión del autor",
-  "View revision request": "Ver solicitud de revisión"
+  "View revision request": "Ver solicitud de revisión",
+  "Review Summary": "Resumen de revisión",
+  "Average Score": "Puntuación media",
+  "Submitted Reviews": "Revisiones enviadas",
+  "Back to all reviewers": "Volver a todos los revisores",
+  "{submitted} out of {total} reviewers submitted a review for this proposal": "{submitted} de {total} revisores enviaron una revisión para esta propuesta",
+  "View review by {name}": "Ver revisión de {name}"
 }
