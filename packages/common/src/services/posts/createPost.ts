@@ -2,20 +2,22 @@ import { invalidate } from '@op/cache';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
-  Organization,
-  Post,
-  PostToOrganization,
-  Profile,
+  EntityType,
   attachments,
+  organizations,
   posts,
+  postsToOrganizations,
   postsToProfiles,
+  profiles,
 } from '@op/db/schema';
 import { CreatePostInput } from '@op/types';
 import { waitUntil } from '@vercel/functions';
+import { permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
 import { CommonError } from '../../utils';
-import { getCurrentProfileId } from '../access';
+import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
+import { decisionPermission } from '../decision/permissions';
 import { sendCommentNotificationEmail } from '../email';
 
 interface CreatePostServiceInput extends CreatePostInput {
@@ -28,67 +30,94 @@ const sendPostCommentNotification = async (
   commenterProfileId: string,
 ) => {
   try {
-    // Get parent post and author information, including organization associations
-    const parentPostToOrg = (await db._query.postsToOrganizations.findFirst({
-      where: (table, { eq }) => eq(table.postId, parentPostId),
-      with: {
-        organization: {
-          with: {
-            profile: true,
-          },
+    // The parent post may be attached to an organization profile (org feed,
+    // proposal comments) OR a non-org profile (decision-instance updates,
+    // user profile posts). The post author is always on `posts.profileId`,
+    // so we resolve the recipient there and look up the "posted in" context
+    // separately (org name when org-attached, profile name otherwise).
+    const [parentRow] = await db
+      .select({
+        post: {
+          id: posts.id,
+          content: posts.content,
+          profileId: posts.profileId,
         },
-        post: true,
-      },
-    })) as PostToOrganization & {
-      organization: Organization & { profile: Profile };
-      post: Post;
-    };
+        author: {
+          id: profiles.id,
+          name: profiles.name,
+          email: profiles.email,
+          slug: profiles.slug,
+        },
+      })
+      .from(posts)
+      .innerJoin(profiles, eq(profiles.id, posts.profileId))
+      .where(eq(posts.id, parentPostId))
+      .limit(1);
 
-    const parentPost = parentPostToOrg.post;
-    const parentProfile = parentPostToOrg.organization.profile;
-    const parentProfileId = parentProfile.id;
-    const parentProfileSlug = parentProfile.slug;
-
-    if (parentProfileId) {
-      // Parallelize commenter and post author queries
-      const commenterProfile = await db._query.profiles.findFirst({
-        where: (table, { eq }) => eq(table.id, commenterProfileId),
-      });
-
-      if (commenterProfile && parentProfile.email) {
-        // Don't send notification if user is commenting on their own post
-        if (parentProfileId !== commenterProfileId) {
-          const postAuthorName = parentProfile.name;
-
-          // For posts, we default to 'post' as the content type
-          const contentType = 'post';
-
-          // Create context name from post content (first 50 characters)
-          const contextName =
-            parentPost.content.length > 50
-              ? `${parentPost.content.slice(0, 50).trim()}...`
-              : parentPost.content.trim();
-
-          // Generate URL using the organization profile ID instead of post author's profile
-          const baseUrl = OPURLConfig('APP').ENV_URL;
-          const contentUrl = `${baseUrl}/profile/${parentProfileSlug}/posts/${parentPost.id}`;
-
-          await sendCommentNotificationEmail({
-            to: parentProfile.email,
-            commenterName: commenterProfile.name,
-            postContent: parentPost.content,
-            commentContent: commentContent,
-            postUrl: contentUrl,
-            recipientName: postAuthorName,
-            contentType,
-            contextName,
-            postedIn: postAuthorName,
-          });
-        }
-      }
+    if (!parentRow) {
+      return;
     }
+
+    const { post: parentPost, author: recipientProfile } = parentRow;
+
+    // Don't notify the user about comments on their own post
+    if (recipientProfile.id === commenterProfileId || !recipientProfile.email) {
+      return;
+    }
+
+    const [commenterRow, parentOrgLinkRow] = await Promise.all([
+      db
+        .select({ name: profiles.name })
+        .from(profiles)
+        .where(eq(profiles.id, commenterProfileId))
+        .limit(1),
+      db
+        .select({
+          orgProfileName: profiles.name,
+          orgProfileSlug: profiles.slug,
+        })
+        .from(postsToOrganizations)
+        .innerJoin(
+          organizations,
+          eq(organizations.id, postsToOrganizations.organizationId),
+        )
+        .innerJoin(profiles, eq(profiles.id, organizations.profileId))
+        .where(eq(postsToOrganizations.postId, parentPostId))
+        .limit(1),
+    ]);
+
+    const commenterProfile = commenterRow[0];
+    if (!commenterProfile) {
+      return;
+    }
+
+    const contextName =
+      parentPost.content.length > 50
+        ? `${parentPost.content.slice(0, 50).trim()}...`
+        : parentPost.content.trim();
+
+    // Prefer org context for the URL/postedIn field when the parent post is
+    // org-attached; otherwise fall back to the recipient (author) profile.
+    const parentOrgLink = parentOrgLinkRow[0];
+    const linkedProfileSlug =
+      parentOrgLink?.orgProfileSlug ?? recipientProfile.slug;
+    const postedIn = parentOrgLink?.orgProfileName ?? recipientProfile.name;
+
+    const baseUrl = OPURLConfig('APP').ENV_URL;
+    const contentUrl = `${baseUrl}/profile/${linkedProfileSlug}/posts/${parentPost.id}`;
+
+    await sendCommentNotificationEmail({
+      to: recipientProfile.email,
+      commenterName: commenterProfile.name,
+      postContent: parentPost.content,
+      commentContent,
+      postUrl: contentUrl,
+      recipientName: recipientProfile.name,
+      contentType: 'post',
+      contextName,
+      postedIn,
+    });
   } catch (emailError) {
-    // Log email error but don't fail the post creation
     console.error(
       'Failed to send post comment notification email:',
       emailError,
@@ -209,128 +238,138 @@ export const createPost = async (input: CreatePostServiceInput) => {
 
   const profileId = await getCurrentProfileId(authUserId);
 
-  try {
-    const newPost = await db.transaction(async (tx) => {
-      // Get all storage objects that were attached to the post (inside transaction)
-      const allStorageObjects =
-        attachmentIds.length > 0
-          ? await tx._query.objectsInStorage.findMany({
-              where: (table, { inArray }) => inArray(table.id, attachmentIds),
-            })
-          : [];
-
-      // If parentPostId is provided, verify the parent post exists (inside transaction)
-      if (parentPostId) {
-        const parentPost = await tx
-          .select({ id: posts.id })
-          .from(posts)
-          .where(eq(posts.id, parentPostId))
-          .limit(1);
-
-        if (parentPost.length === 0) {
-          throw new CommonError('Parent post not found');
-        }
-      }
-      // Create the post
-      const [newPost] = await tx
-        .insert(posts)
-        .values({
-          content,
-          parentPostId: parentPostId || null,
-          profileId,
-        })
-        .returning();
-
-      if (!newPost) {
-        throw new CommonError('Failed to create post');
-      }
-
-      // If targetProfileId is provided, create the profile association
-      if (targetProfileId) {
-        await tx.insert(postsToProfiles).values({
-          postId: newPost.id,
-          profileId: targetProfileId,
-        });
-      } else if (parentPostId) {
-        // For comments (posts with parentPostId), inherit profile associations from parent post
-        const parentProfiles = await tx
+  // Resolve which profiles to authorize against:
+  //   - top-level post on a profile     → [targetProfileId]
+  //   - reply (parentPostId, no target) → inherit parent's postsToProfiles rows
+  // The parent lookup is reused below to inherit associations onto the new post.
+  const parentProfiles =
+    !targetProfileId && parentPostId
+      ? await db
           .select({ profileId: postsToProfiles.profileId })
           .from(postsToProfiles)
-          .where(eq(postsToProfiles.postId, parentPostId));
+          .where(eq(postsToProfiles.postId, parentPostId))
+      : [];
 
-        if (parentProfiles.length > 0) {
-          await tx.insert(postsToProfiles).values(
-            parentProfiles.map((profile) => ({
-              postId: newPost.id,
-              profileId: profile.profileId,
-            })),
-          );
-        }
-      } else {
-        throw new CommonError('Failed to create post');
+  const profileIdsToAuthorize = targetProfileId
+    ? [targetProfileId]
+    : parentProfiles.map((p) => p.profileId);
+
+  // Decision profiles get a decision-permission gate. Top-level posts
+  // (targetProfileId set) require ADMIN; comments (parentPostId only)
+  // only require SUBMIT_PROPOSALS. Proposal/org/individual profile
+  // types fall through unchanged here — proposals don't carry their
+  // own permissions (they inherit from the parent decision), and the
+  // org/individual paths layer their own membership checks at the
+  // caller. The follow-up `root_profile_id` column will resolve the
+  // proposal-gate question correctly at write time.
+  await assertProfileTypeAccess({
+    user: { id: authUserId },
+    profileIds: profileIdsToAuthorize,
+    policies: {
+      [EntityType.DECISION]: targetProfileId
+        ? { decisions: permission.ADMIN }
+        : { decisions: decisionPermission.SUBMIT_PROPOSALS },
+    },
+  });
+
+  const newPost = await db.transaction(async (tx) => {
+    const allStorageObjects =
+      attachmentIds.length > 0
+        ? await tx.query.objectsInStorage.findMany({
+            where: { id: { in: attachmentIds } },
+          })
+        : [];
+
+    if (parentPostId) {
+      const parentPost = await tx
+        .select({ id: posts.id })
+        .from(posts)
+        .where(eq(posts.id, parentPostId))
+        .limit(1);
+
+      if (parentPost.length === 0) {
+        throw new CommonError('Parent post not found');
       }
-
-      // Create attachment records if any attachments were uploaded
-      if (allStorageObjects.length > 0) {
-        const attachmentValues = allStorageObjects.map((storageObject) => ({
-          postId: newPost.id,
-          storageObjectId: storageObject.id,
-          profileId,
-          fileName:
-            storageObject?.name
-              ?.split('/')
-              .slice(-1)[0]
-              ?.split('_')
-              .slice(1)
-              .join('_') ?? '',
-          mimeType: (storageObject.metadata as { mimetype: string }).mimetype,
-        }));
-
-        await tx.insert(attachments).values(attachmentValues);
-      }
-
-      return newPost;
-    });
-
-    // Send notification email based on the type of comment
-    // TODO: Use the message queue for this and remove @vercel/functions as a dependency in @op/common
-    waitUntil(
-      (async () => {
-        try {
-          if (parentPostId) {
-            // This is a reply to an existing post/comment
-            await sendPostCommentNotification(parentPostId, content, profileId);
-          } else if (targetProfileId && proposalId) {
-            // This is a comment on a proposal
-            await sendProposalCommentNotification(
-              proposalId,
-              content,
-              profileId,
-            );
-          }
-        } catch (error) {
-          // Log notification errors but don't fail the post creation
-          console.error('Failed to send notification email:', error);
-        }
-      })(),
-    );
-
-    // Invalidate cache for the target profile if this is a profile-associated post (like a proposal comment)
-    if (targetProfileId) {
-      await invalidate({
-        type: 'profile',
-        params: [targetProfileId],
-      });
     }
 
-    return {
-      ...newPost,
-      reactionCounts: {},
-      userReactions: [],
-      commentCount: 0,
-    };
-  } catch (error) {
-    console.error('Error creating post:', error);
-    throw error;
+    const [newPost] = await tx
+      .insert(posts)
+      .values({
+        content,
+        parentPostId: parentPostId || null,
+        profileId,
+      })
+      .returning();
+
+    if (!newPost) {
+      throw new CommonError('Failed to create post');
+    }
+
+    if (targetProfileId) {
+      await tx.insert(postsToProfiles).values({
+        postId: newPost.id,
+        profileId: targetProfileId,
+      });
+    } else if (parentPostId) {
+      if (parentProfiles.length > 0) {
+        await tx.insert(postsToProfiles).values(
+          parentProfiles.map((profile) => ({
+            postId: newPost.id,
+            profileId: profile.profileId,
+          })),
+        );
+      }
+    } else {
+      throw new CommonError('Failed to create post');
+    }
+
+    if (allStorageObjects.length > 0) {
+      const attachmentValues = allStorageObjects.map((storageObject) => ({
+        postId: newPost.id,
+        storageObjectId: storageObject.id,
+        profileId,
+        fileName:
+          storageObject?.name
+            ?.split('/')
+            .slice(-1)[0]
+            ?.split('_')
+            .slice(1)
+            .join('_') ?? '',
+        mimeType: (storageObject.metadata as { mimetype: string }).mimetype,
+      }));
+
+      await tx.insert(attachments).values(attachmentValues);
+    }
+
+    return newPost;
+  });
+
+  // TODO: Use the message queue for this and remove @vercel/functions as a dependency in @op/common
+  waitUntil(
+    (async () => {
+      try {
+        if (parentPostId) {
+          await sendPostCommentNotification(parentPostId, content, profileId);
+        } else if (targetProfileId && proposalId) {
+          await sendProposalCommentNotification(proposalId, content, profileId);
+        }
+      } catch (error) {
+        console.error('Failed to send notification email:', error);
+      }
+    })(),
+  );
+
+  if (targetProfileId) {
+    await invalidate({
+      type: 'profile',
+      params: [targetProfileId],
+    });
   }
+
+  return {
+    ...newPost,
+    reactionCounts: {},
+    userReactions: [],
+    commentCount: 0,
+  };
 };

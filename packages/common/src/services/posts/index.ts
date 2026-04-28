@@ -8,3 +8,4 @@ export * from './listRelatedOrganizationPosts';
 export * from './createPostInOrganization';
 export * from './createPostOnProfile';
 export * from './getProfilePosts';
+export * from './listProfilePosts';
