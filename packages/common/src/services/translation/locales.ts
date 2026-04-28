@@ -1,5 +1,5 @@
 /** Platform-supported locales matching the i18n dictionaries. */
-export const SUPPORTED_LOCALES = ['en', 'es', 'fr', 'pt', 'bn', 'so'] as const;
+export const SUPPORTED_LOCALES = ['en', 'es', 'fr', 'pt', 'bn', 'so', 'ar'] as const;
 
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
@@ -14,4 +14,5 @@ export const LOCALE_TO_DEEPL: Record<SupportedLocale, string> = {
   pt: 'PT-BR',
   bn: 'BN',
   so: 'SO',
+  ar: 'AR',
 } as const;
