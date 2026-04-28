@@ -114,7 +114,7 @@ export const WithoutDragHandle = () => {
               isDragging && 'shadow-lg'
             }`}
           >
-            <div className="flex-1 text-left">
+            <div className="flex-1 text-start">
               <h3>{task.title}</h3>
             </div>
             <span

@@ -126,7 +126,7 @@ const Sidebar = ({
             <MotionModal
               className={cn(
                 'fixed top-0 h-full w-64 bg-white',
-                isRight ? 'right-0' : 'left-0',
+                isRight ? 'end-0' : 'start-0',
               )}
               initial={{ x: isRight ? '100%' : '-100%' }}
               animate={{ x: 0 }}
@@ -167,8 +167,8 @@ const Sidebar = ({
           'absolute inset-0 flex size-full flex-col',
           'w-64 transition-[left,right,width] duration-200',
           side === 'left'
-            ? 'left-0 data-[state=collapsed]:-left-64'
-            : 'right-0 data-[state=collapsed]:-right-64',
+            ? 'start-0 data-[state=collapsed]:-start-64'
+            : 'end-0 data-[state=collapsed]:-end-64',
           className,
         )}
       >

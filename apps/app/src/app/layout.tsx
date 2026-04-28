@@ -15,6 +15,7 @@ import { OTelBrowserProvider } from '../components/OTelBrowserProvider';
 import { PostHogProvider } from '../components/PostHogProvider';
 import { QueryInvalidationSubscriber } from '../components/QueryInvalidationSubscriber';
 import { I18nProvider } from '../lib/i18n';
+import { getLocaleDirection } from '../lib/i18n/config';
 
 const roboto = Roboto({
   subsets: ['latin'],
@@ -74,9 +75,10 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   const ssrCookies = await getSSRCookies();
   const locale = await getLocale();
   const messages = await getMessages({ locale });
+  const dir = getLocaleDirection(locale);
 
   return (
-    <html lang={locale} className="h-full">
+    <html lang={locale} dir={dir} className="h-full">
       <head>
         <Script id="nfo-script" strategy="beforeInteractive">
           {printNFO()}

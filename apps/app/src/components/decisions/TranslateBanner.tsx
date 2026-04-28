@@ -22,7 +22,7 @@ export function TranslateBanner({
   const t = useTranslations();
 
   return (
-    <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2">
+    <div className="fixed start-1/2 bottom-6 z-50 -translate-x-1/2">
       <UITranslateBanner
         onTranslate={onTranslate}
         onDismiss={onDismiss}

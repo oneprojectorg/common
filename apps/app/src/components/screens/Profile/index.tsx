@@ -145,7 +145,7 @@ export const Profile = ({
   return (
     <>
       {/* nav arrow */}
-      <header className="absolute top-0 left-0 z-50 px-4 py-3 sm:hidden">
+      <header className="absolute start-0 top-0 z-50 px-4 py-3 sm:hidden">
         <Link href="/">
           <LuArrowLeft className="size-6 text-neutral-offWhite" />
         </Link>

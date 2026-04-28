@@ -917,8 +917,6 @@
   "Remove relationship": "Eliminar relación",
   "Are you sure you want to remove the {relationshipType} relationship?": "¿Estás seguro de que deseas eliminar la relación de {relationshipType}?",
   "You'll need to send a new request to restore this relationship on your profile.": "Necesitarás enviar una nueva solicitud para restaurar esta relación en tu perfil.",
-  "{count} relationship": "{count} relación",
-  "{count} relationships": "{count} relaciones",
   "with": "con",
   "Pending confirmation from {name}": "Confirmación pendiente de {name}",
   "You're all set!": "¡Todo listo!",
@@ -1159,5 +1157,13 @@
   "Untitled proposal": "Propuesta sin título",
   "Advance {title}": "Avanzar {title}",
   "Don't advance {title}": "No avanzar {title}",
-  "+{count} More": "+{count} más"
+  "+{count} More": "+{count} más",
+  "{count, plural, =1 {1 follower} other {# followers}}": "{count, plural, =1 {1 seguidor} other {# seguidores}}",
+  "{count, plural, =1 {1 relationship} other {# relationships}}": "{count, plural, =1 {1 relación} other {# relaciones}}",
+  "{count, plural, =1 {1 organization} other {# organizations}}": "{count, plural, =1 {1 organización} other {# organizaciones}}",
+  "{count, plural, =1 {1 member} other {# members}}": "{count, plural, =1 {1 miembro} other {# miembros}}",
+  "{count, plural, =1 {active relationship} other {active relationships}}": "{count, plural, =1 {relación activa} other {relaciones activas}}",
+  "Following {count, plural, =1 {# organization} other {# organizations}}": "Siguiendo a {count, plural, =1 {# organización} other {# organizaciones}}",
+  "Member of {count, plural, =1 {# Organization} other {# Organizations}}": "Miembro de {count, plural, =1 {# Organización} other {# Organizaciones}}",
+  "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}": "{count, plural, =1 {1 miembro ha enviado propuestas} other {# miembros han enviado propuestas}}"
 }

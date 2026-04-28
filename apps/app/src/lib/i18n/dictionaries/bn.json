@@ -919,8 +919,6 @@
   "Remove relationship": "সম্পর্ক সরান",
   "Are you sure you want to remove the {relationshipType} relationship?": "আপনি কি নিশ্চিত যে আপনি {relationshipType} সম্পর্কটি সরাতে চান?",
   "You'll need to send a new request to restore this relationship on your profile.": "আপনার প্রোফাইলে এই সম্পর্কটি পুনরুদ্ধার করতে আপনাকে একটি নতুন অনুরোধ পাঠাতে হবে।",
-  "{count} relationship": "{count}টি সম্পর্ক",
-  "{count} relationships": "{count}টি সম্পর্ক",
   "with": "সাথে",
   "Pending confirmation from {name}": "{name} থেকে নিশ্চিতকরণ মুলতুবি",
   "You're all set!": "সব প্রস্তুত!",
@@ -1160,5 +1158,13 @@
   "Untitled proposal": "নামহীন প্রস্তাব",
   "Advance {title}": "{title} অগ্রসর করুন",
   "Don't advance {title}": "{title} অগ্রসর করবেন না",
-  "+{count} More": "+{count} আরও"
+  "+{count} More": "+{count} আরও",
+  "{count, plural, =1 {1 follower} other {# followers}}": "{count, plural, =1 {১ অনুসরণকারী} other {# অনুসরণকারী}}",
+  "{count, plural, =1 {1 relationship} other {# relationships}}": "{count, plural, =1 {১টি সম্পর্ক} other {#টি সম্পর্ক}}",
+  "{count, plural, =1 {1 organization} other {# organizations}}": "{count, plural, =1 {১টি সংস্থা} other {#টি সংস্থা}}",
+  "{count, plural, =1 {1 member} other {# members}}": "{count, plural, =1 {১ সদস্য} other {# সদস্য}}",
+  "{count, plural, =1 {active relationship} other {active relationships}}": "{count, plural, =1 {সক্রিয় সম্পর্ক} other {সক্রিয় সম্পর্ক}}",
+  "Following {count, plural, =1 {# organization} other {# organizations}}": "{count, plural, =1 {#টি সংস্থা অনুসরণ করছে} other {#টি সংস্থা অনুসরণ করছে}}",
+  "Member of {count, plural, =1 {# Organization} other {# Organizations}}": "{count, plural, =1 {#টি সংস্থার সদস্য} other {#টি সংস্থার সদস্য}}",
+  "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}": "{count, plural, =1 {১ জন সদস্য প্রস্তাব জমা দিয়েছেন} other {# জন সদস্য প্রস্তাব জমা দিয়েছেন}}"
 }

@@ -21,7 +21,7 @@ import { useTranslations } from '@/lib/i18n';
 import { getFieldErrorMessage, useAppForm } from '@/components/form/utils';
 
 const overlayStyles = tv({
-  base: 'absolute top-0 left-0 isolate z-20 h-(--page-height) w-full bg-black/10 text-center backdrop-blur-[3px]',
+  base: 'absolute start-0 top-0 isolate z-20 h-(--page-height) w-full bg-black/10 text-center backdrop-blur-[3px]',
   variants: {
     isEntering: {
       true: 'animate-in duration-200 ease-out fade-in',
@@ -33,7 +33,7 @@ const overlayStyles = tv({
 });
 
 const modalStyles = tv({
-  base: 'max-h-[calc(var(--visual-viewport-height)*.9)] w-full max-w-[min(90vw,450px)] rounded-2xl border border-black/10 bg-white bg-clip-padding text-left align-middle font-sans text-neutral-gray4 shadow dark:border-white/10 dark:bg-neutral-800/70 dark:text-neutral-300 dark:backdrop-blur-2xl dark:backdrop-saturate-200 forced-colors:bg-[Canvas]',
+  base: 'max-h-[calc(var(--visual-viewport-height)*.9)] w-full max-w-[min(90vw,450px)] rounded-2xl border border-black/10 bg-white bg-clip-padding text-start align-middle font-sans text-neutral-gray4 shadow dark:border-white/10 dark:bg-neutral-800/70 dark:text-neutral-300 dark:backdrop-blur-2xl dark:backdrop-saturate-200 forced-colors:bg-[Canvas]',
   variants: {
     isEntering: {
       true: 'animate-in duration-200 ease-out zoom-in-105',
@@ -50,7 +50,7 @@ export const WaitlistSignup = () => {
     <DialogTrigger>
       <Button>{t('Decide with us')}</Button>
       <ModalOverlay isDismissable className={overlayStyles}>
-        <div className="sticky top-0 left-0 box-border flex h-(--visual-viewport-height) w-full items-center justify-center">
+        <div className="sticky start-0 top-0 box-border flex h-(--visual-viewport-height) w-full items-center justify-center">
           <Modal isDismissable className={modalStyles}>
             <Dialog className="relative max-h-[inherit] overflow-auto">
               {isSubmitted ? (
@@ -122,7 +122,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
           {t('Common')}
         </Heading>
         <IconButton
-          className="absolute top-3 right-3 size-8 text-neutral-gray3"
+          className="absolute end-3 top-3 size-8 text-neutral-gray3"
           slot="close"
         >
           <LuX className="size-6" />
@@ -237,7 +237,7 @@ const WaitlistSignupSuccess = () => {
           {t("You're on the list!")}
         </Heading>
         <IconButton
-          className="absolute top-3 left-3 size-8 text-neutral-gray3"
+          className="absolute start-3 top-3 size-8 text-neutral-gray3"
           slot="close"
         >
           <LuX className="size-6" />

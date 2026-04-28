@@ -26,7 +26,7 @@ const items = [
 export const Example = () => (
   <HorizontalList className="max-w-lg scroll-px-8 rounded-xl bg-gray-100 py-8">
     {items.map((item) => (
-      <HorizontalListItem key={item.title} className="first:ml-8 last:mr-8">
+      <HorizontalListItem key={item.title} className="first:ms-8 last:me-8">
         <Surface className="flex size-40 flex-col items-center justify-center border-gray-300 bg-gray-200 bg-white text-gray-400">
           <span>{item.title}</span>
         </Surface>

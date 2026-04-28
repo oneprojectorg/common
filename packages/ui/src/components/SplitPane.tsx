@@ -43,7 +43,7 @@ const paneStyles = tv({
       none: '',
     },
     divider: {
-      true: 'sm:border-r sm:border-neutral-gray1',
+      true: 'sm:border-e sm:border-neutral-gray1',
       false: '',
     },
     active: {

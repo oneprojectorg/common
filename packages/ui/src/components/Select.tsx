@@ -45,7 +45,7 @@ const selectStyles = tv({
 });
 
 const chevronStyles = tv({
-  base: 'ml-2 size-4 min-h-4 min-w-4',
+  base: 'ms-2 size-4 min-h-4 min-w-4',
   variants: {
     variant: {
       default: 'text-neutral-charcoal group-disabled:text-neutral-gray4',
@@ -119,7 +119,7 @@ export const Select = <T extends object>({
           <span className="flex h-full w-full flex-1 items-center justify-between gap-1">
             <SelectValue
               className={cn(
-                'min-w-0 flex-1 truncate text-left data-[placeholder]:text-neutral-gray4',
+                'min-w-0 flex-1 truncate text-start data-[placeholder]:text-neutral-gray4',
                 props.selectValueClassName,
               )}
             >

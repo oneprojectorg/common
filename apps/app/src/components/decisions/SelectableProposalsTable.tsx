@@ -65,7 +65,7 @@ export const SelectableProposalsTable = ({
         </TableColumn>
         <TableColumn id="budget">{t('Budget')}</TableColumn>
         <TableColumn id="category">{t('Category')}</TableColumn>
-        <TableColumn id="select" className="w-32 text-right">
+        <TableColumn id="select" className="w-32 text-end">
           <span className="sr-only">{t('Select proposal')}</span>
         </TableColumn>
       </TableHeader>
@@ -124,12 +124,12 @@ export const SelectableProposalsTable = ({
                   extraCount={fields.extraCategoryCount}
                 />
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-end">
                 <ToggleAdvanceButton
                   isSelected={isSelected}
                   title={fields.title}
                   onPress={() => onToggle(proposal.id)}
-                  className="ml-auto"
+                  className="ms-auto"
                 />
               </TableCell>
             </TableRow>

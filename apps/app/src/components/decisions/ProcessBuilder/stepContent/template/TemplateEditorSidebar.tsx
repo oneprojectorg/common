@@ -64,7 +64,7 @@ export function TemplateEditorSidebar({
   return (
     <Sidebar
       label={t('Template editor sidebar')}
-      className="border-r"
+      className="border-e"
       side={side}
     >
       <SidebarContent fields={fields} onAddField={onAddField} />
@@ -108,7 +108,7 @@ function SidebarContent({
             }
             return (
               <li key={field.id}>
-                <div className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-base text-neutral-charcoal">
+                <div className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-start text-base text-neutral-charcoal">
                   <Icon className="size-4 shrink-0 text-neutral-gray4" />
                   <span className="truncate">{field.label}</span>
                 </div>

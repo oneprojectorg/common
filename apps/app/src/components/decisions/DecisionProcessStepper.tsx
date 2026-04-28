@@ -158,7 +158,7 @@ export function DecisionProcessStepper({
           isDismissable={!transitionMutation.isPending}
           side="bottom"
         >
-          <SheetBody className="flex flex-col gap-4 p-4 text-left">
+          <SheetBody className="flex flex-col gap-4 p-4 text-start">
             <div className="font-serif text-title-sm">{title}</div>
             <p className="text-sm text-neutral-charcoal">{body}</p>
             <div className="flex flex-col gap-4">
@@ -188,7 +188,7 @@ export function DecisionProcessStepper({
           isDismissable={false}
           surface="flat"
         >
-          <ModalHeader className="px-6 pb-6 text-left">{title}</ModalHeader>
+          <ModalHeader className="px-6 pb-6 text-start">{title}</ModalHeader>
           <ModalBody className="px-6 py-6">
             <p className="text-sm text-neutral-charcoal">{body}</p>
           </ModalBody>
