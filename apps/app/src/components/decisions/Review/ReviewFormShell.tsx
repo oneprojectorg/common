@@ -1,4 +1,4 @@
-import type { RubricTemplateSchema } from '@op/common/client';
+import type { RubricReviewData, RubricTemplateSchema } from '@op/common/client';
 import { Header3 } from '@op/ui/Header';
 import { Surface } from '@op/ui/Surface';
 import type { ReactNode } from 'react';
@@ -25,7 +25,7 @@ export function TotalScoreCard({
   values,
 }: {
   rubricTemplate: RubricTemplateSchema;
-  values: Record<string, unknown>;
+  values: RubricReviewData['answers'];
 }) {
   const criteria = getCriteria(rubricTemplate);
 

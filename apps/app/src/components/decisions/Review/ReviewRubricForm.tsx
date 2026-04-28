@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  ProposalReviewState,
   type XFormatPropertySchema,
   isOverallRecommendationField,
   parseSchemaOptions,
@@ -49,7 +50,7 @@ export function ReviewRubricForm() {
   );
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
-  if (review?.state === 'submitted') {
+  if (review?.state === ProposalReviewState.SUBMITTED) {
     return (
       <FormShell>
         <SubmittedReviewView rubricTemplate={template} review={review} />
