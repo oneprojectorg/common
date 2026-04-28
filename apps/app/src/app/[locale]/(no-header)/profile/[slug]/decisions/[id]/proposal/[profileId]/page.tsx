@@ -16,10 +16,10 @@ function ProposalViewPageContent({
   orgSlug: string;
   instanceId: string;
 }) {
-  const [[proposal, instance]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getProposal({ profileId }),
-    t.decision.getInstance({ instanceId }),
-  ]);
+  // Legacy decision boundary — still served via shared public links.
+  // Revisions aren't available on legacy instances, so the instance fetch
+  // isn't needed.
+  const [proposal] = trpc.decision.getProposal.useSuspenseQuery({ profileId });
 
   if (!proposal) {
     notFound();
@@ -28,7 +28,11 @@ function ProposalViewPageContent({
   const backHref = `/profile/${orgSlug}/decisions/${instanceId}/`;
 
   return (
-    <ProposalView proposal={proposal} instance={instance} backHref={backHref} />
+    <ProposalView
+      proposal={proposal}
+      canSeeRevisions={false}
+      backHref={backHref}
+    />
   );
 }
 

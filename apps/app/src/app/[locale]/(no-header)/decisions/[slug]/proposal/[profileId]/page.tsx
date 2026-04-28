@@ -1,13 +1,12 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { notFound, useParams } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { ProposalView } from '@/components/decisions/ProposalView';
-
-const LEGACY_ORG_SLUGS = ['people-powered', 'cowop', 'one-project'];
 
 function ProposalViewPageContent({
   profileId,
@@ -25,20 +24,29 @@ function ProposalViewPageContent({
     notFound();
   }
 
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
-    instanceId: proposal.processInstanceId,
-  });
+  const instance = decisionProfile.processInstance;
+  const { user } = useUser();
 
-  const ownerSlug = decisionProfile?.processInstance?.owner?.slug;
-  const instanceId = decisionProfile?.processInstance?.id;
-
-  const backHref =
-    ownerSlug && LEGACY_ORG_SLUGS.includes(ownerSlug) && instanceId
-      ? `/profile/${ownerSlug}/decisions/${instanceId}/`
-      : `/decisions/${slug}`;
+  const currentPhase = instance.instanceData?.phases?.find(
+    (phase) => phase.phaseId === instance.currentStateId,
+  );
+  const isInReviewPhase = currentPhase?.rules?.proposals?.review === true;
+  const isAuthor =
+    !!user.currentProfile?.id &&
+    proposal.submittedBy?.id === user.currentProfile.id;
+  // Author, admin, or explicit review access — only in a review phase.
+  const canSeeRevisions =
+    isInReviewPhase &&
+    (isAuthor ||
+      instance.access?.admin === true ||
+      instance.access?.review === true);
 
   return (
-    <ProposalView proposal={proposal} instance={instance} backHref={backHref} />
+    <ProposalView
+      proposal={proposal}
+      canSeeRevisions={canSeeRevisions}
+      backHref={`/decisions/${slug}`}
+    />
   );
 }
 

@@ -408,10 +408,11 @@ test.describe('Proposal View', () => {
   });
 
   /**
-   * Simulates a real COWOP production instance where the proposalTemplate
-   * lives in `decision_processes.process_schema` (not instanceData) and
-   * budget is stored as a plain number. Verifies the full render path:
-   * resolveProposalTemplate fallback → proposalDataSchema normalization → UI.
+   * Real COWOP production instance: state-based legacy schema, plain-number
+   * budget on both processSchema.proposalTemplate and proposalData. Verifies
+   * the page doesn't 500 on legacy shape (regression #1001) and that the
+   * resolveProposalTemplate fallback → proposalDataSchema normalization → UI
+   * render path produces the expected output.
    *
    * @see https://github.com/oneprojectorg/common/pull/601#discussion_r2803602140
    */
@@ -419,11 +420,6 @@ test.describe('Proposal View', () => {
     authenticatedPage,
     org,
   }) => {
-    // 1. Create a dedicated cowop decision process.
-    //    The proposalTemplate in process_schema has budget: { type: 'number' },
-    //    matching real COWOP production data. We generate it from the actual
-    //    cowop schema function, then wrap it in a valid DecisionSchemaDefinition
-    //    envelope so the getDecisionBySlug encoder doesn't reject it.
     const cowopLegacySchema = cowopSchema({
       processName: 'COWOP Democratic Budgeting',
       totalBudget: 100000,
@@ -436,43 +432,11 @@ test.describe('Proposal View', () => {
       ],
     });
 
-    const cowopProcessSchema = {
-      id: 'cowop-legacy',
-      version: '1.0.0',
-      name: cowopLegacySchema.name,
-      description: cowopLegacySchema.description,
-      phases: [
-        {
-          id: 'ideaCollection',
-          name: 'Proposal Concept Generation',
-          description: 'Submit proposal concepts',
-          rules: {
-            proposals: { submit: true },
-            voting: { submit: false },
-            advancement: { method: 'manual' as const },
-          },
-        },
-        {
-          id: 'submission',
-          name: 'Proposal Development',
-          description: 'Develop proposals',
-          rules: {
-            proposals: { submit: false },
-            voting: { submit: false },
-            advancement: { method: 'manual' as const },
-          },
-        },
-      ],
-      // The legacy proposalTemplate — budget is { type: 'number' }, no x-field-order
-      proposalTemplate: cowopLegacySchema.proposalTemplate,
-    };
-
     const [cowopProcess] = await db
       .insert(decisionProcesses)
       .values({
         name: `COWOP Test ${randomUUID().slice(0, 8)}`,
-        description: 'Legacy cowop process for e2e testing',
-        processSchema: cowopProcessSchema,
+        processSchema: cowopLegacySchema,
         createdByProfileId: org.organizationProfile.id,
       })
       .returning();
@@ -481,16 +445,13 @@ test.describe('Proposal View', () => {
       throw new Error('Failed to create cowop process');
     }
 
-    // 2. Create the instance with COWOP-style instanceData (no proposalTemplate).
-    //    Mirrors production: proposalTemplate is only in process_schema.
-    const instanceSlug = `test-cowop-${randomUUID()}`;
     const instanceName = `COWOP Instance ${randomUUID().slice(0, 8)}`;
 
     const [instanceProfile] = await db
       .insert(profiles)
       .values({
         name: instanceName,
-        slug: instanceSlug,
+        slug: `test-cowop-${randomUUID()}`,
         type: EntityType.DECISION,
       })
       .returning();
@@ -499,20 +460,19 @@ test.describe('Proposal View', () => {
       throw new Error('Failed to create instance profile');
     }
 
-    // COWOP-style instanceData — no proposalTemplate, has fieldValues.
     const cowopInstanceData = {
       budget: 100000,
       hideBudget: false,
       phases: [
         {
-          phaseId: 'ideaCollection',
-          startDate: '2025-09-20',
-          endDate: '2025-10-01',
+          stateId: 'ideaCollection',
+          plannedStartDate: '2025-09-20',
+          plannedEndDate: '2025-10-01',
         },
         {
-          phaseId: 'submission',
-          startDate: '2025-10-02',
-          endDate: '2025-10-20',
+          stateId: 'submission',
+          plannedStartDate: '2025-10-02',
+          plannedEndDate: '2025-10-20',
         },
       ],
       fieldValues: {
@@ -542,7 +502,6 @@ test.describe('Proposal View', () => {
       throw new Error('Failed to create process instance');
     }
 
-    // 3. Grant admin access
     const [profileUser] = await db
       .insert(profileUsers)
       .values({
@@ -559,7 +518,6 @@ test.describe('Proposal View', () => {
       });
     }
 
-    // 4. Create a proposal with legacy plain-number budget and description
     const proposal = await createProposal({
       processInstanceId: processInstance.id,
       submittedByProfileId: org.organizationProfile.id,
@@ -574,29 +532,26 @@ test.describe('Proposal View', () => {
       },
     });
 
+    // Real cowop legacy proposals are served via the legacy URL pattern.
     await authenticatedPage.goto(
-      `/en/decisions/${instanceSlug}/proposal/${proposal.profileId}`,
+      `/en/profile/${org.organizationProfile.slug}/decisions/${processInstance.id}/proposal/${proposal.profileId}`,
     );
 
-    // Title renders
     await expect(
       authenticatedPage.getByRole('heading', {
         name: 'Worker Co-op Equipment Fund',
       }),
     ).toBeVisible({ timeout: 30_000 });
 
-    // Legacy plain-number budget (15000) normalised to { amount: 15000, currency: 'USD' }
-    // and rendered as "$15,000"
+    // Plain-number budget (15000) normalised to { amount: 15000, currency: 'USD' }.
     await expect(authenticatedPage.getByText('$15,000').first()).toBeVisible();
 
-    // Category value rendered in a Tag component on the proposal view
     await expect(
       authenticatedPage
         .getByText('Ai. Direct funding to worker-owned co-ops.')
         .first(),
     ).toBeVisible();
 
-    // Description content renders
     await expect(
       authenticatedPage
         .locator('strong', {
