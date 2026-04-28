@@ -1,6 +1,5 @@
 'use client';
 
-import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
 import { IconButton } from '@op/ui/IconButton';
 import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
@@ -355,7 +354,9 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
       <div className="flex flex-col gap-4 px-4 sm:px-0">
         <div className="flex items-center justify-between">
           <div className="w-full font-serif text-title-sm sm:text-title-lg">
-            {members.length} {pluralize(t('member'), members.length)}
+            {t('{count, plural, =1 {1 member} other {# members}}', {
+              count: members.length,
+            })}
           </div>
           <div className="w-72"></div>
         </div>

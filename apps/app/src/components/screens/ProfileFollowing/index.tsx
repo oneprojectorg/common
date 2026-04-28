@@ -1,6 +1,5 @@
 'use client';
 
-import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
 import { EntityType, ProfileRelationshipType } from '@op/api/encoders';
 import React, { Suspense, useMemo } from 'react';
@@ -41,7 +40,10 @@ export const ProfileFollowingSuspense = ({
     <div className="flex flex-col gap-4 text-base sm:gap-8 sm:py-8">
       <RelationshipList
         profiles={following}
-        title={`${t('Following')} ${following.length} ${pluralize(t('organization'), following.length)}`}
+        title={t(
+          'Following {count, plural, =1 {# organization} other {# organizations}}',
+          { count: following.length },
+        )}
       />
     </div>
   );

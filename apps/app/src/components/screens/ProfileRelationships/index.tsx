@@ -1,6 +1,5 @@
 'use client';
 
-import { pluralize } from '@/utils/pluralize';
 import { skipBatch, trpc } from '@op/api/client';
 import { RELATIONSHIP_OPTIONS, relationshipMap } from '@op/types/relationships';
 import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
@@ -95,7 +94,9 @@ export const ProfileRelationshipsSuspense = ({
         ) : null}
         <div className="flex items-center justify-between">
           <div className="w-full font-serif text-title-sm sm:text-title-lg">
-            {count} {pluralize(t('relationship'), count)}
+            {t('{count, plural, =1 {1 relationship} other {# relationships}}', {
+              count,
+            })}
           </div>
           <div className="w-72"></div>
         </div>
