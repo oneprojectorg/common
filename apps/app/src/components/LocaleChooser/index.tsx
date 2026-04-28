@@ -33,7 +33,10 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
   const params = useParams();
   const currentLocale = params.locale as string;
 
-  const handleSelectionChange = (selectedKey: React.Key) => {
+  const handleSelectionChange = (selectedKey: React.Key | null) => {
+    if (selectedKey === null) {
+      return;
+    }
     const newLocale = selectedKey as string;
     if (newLocale !== currentLocale) {
       i18nRouter.replace(pathname, { locale: newLocale });

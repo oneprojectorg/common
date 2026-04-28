@@ -101,7 +101,10 @@ export function BudgetFieldConfig({
   );
 
   const handleBudgetCurrencyChange = useCallback(
-    (key: Key) => {
+    (key: Key | null) => {
+      if (key === null) {
+        return;
+      }
       onTemplateChange((prev) => {
         const existing = getFieldSchema(prev, 'budget');
         if (!existing) {

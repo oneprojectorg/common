@@ -99,7 +99,10 @@ export function FieldCard({
     }
   };
 
-  const handleTypeChange = (key: Key) => {
+  const handleTypeChange = (key: Key | null) => {
+    if (key === null) {
+      return;
+    }
     onChangeFieldType?.(field.id, key as FieldType);
   };
 
