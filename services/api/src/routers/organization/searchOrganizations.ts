@@ -5,13 +5,9 @@ import { organizationUsers } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
-import { organizationsEncoder } from '../../encoders/organizations';
+import { searchedOrganizationEncoder } from '../../encoders/organizations';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
-
-const searchResultEncoder = organizationsEncoder.extend({
-  isCurrentMember: z.boolean(),
-});
 
 export const searchOrganizationsRouter = router({
   search: commonAuthedProcedure()
@@ -20,13 +16,13 @@ export const searchOrganizationsRouter = router({
         q: z.string(),
       }),
     )
-    .output(z.array(searchResultEncoder))
+    .output(z.array(searchedOrganizationEncoder))
     .query(async ({ ctx, input }) => {
       const { q, limit = 10 } = input;
 
-      // Each result carries an isCurrentMember flag (kept outside the search
-      // cache so it stays fresh when membership changes), letting the UI
-      // disable orgs the user already belongs to before they try to join.
+      // Membership is fetched alongside the search (and kept outside the
+      // search cache so it stays fresh when membership changes), letting the
+      // UI disable orgs the user already belongs to before they try to join.
       const [result, membershipRows] = await Promise.all([
         cache<ReturnType<typeof searchOrganizations>>({
           type: 'search',
@@ -62,9 +58,9 @@ export const searchOrganizationsRouter = router({
           // @ts-expect-error
           org.profile.avatarImage = null;
         }
-        return searchResultEncoder.parse({
-          ...org,
-          isCurrentMember: memberOrgIds.has(org.id),
+        return searchedOrganizationEncoder.parse({
+          org,
+          isMember: memberOrgIds.has(org.id),
         });
       });
     }),

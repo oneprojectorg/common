@@ -169,11 +169,11 @@ describe.concurrent('Onboarding Organization Search', () => {
       expect(Array.isArray(result)).toBe(true);
 
       // Verify our org appears in results
-      const found = result.find((org) => org.id === organization.id);
+      const found = result.find(({ org }) => org.id === organization.id);
       expect(found).toBeDefined();
     });
 
-    it('flags orgs the searcher already belongs to with isCurrentMember', async ({
+    it('flags orgs the searcher already belongs to with isMember', async ({
       task,
       onTestFinished,
     }) => {
@@ -202,9 +202,9 @@ describe.concurrent('Onboarding Organization Search', () => {
         limit: 10,
       });
 
-      const found = new Map(result.map((org) => [org.id, org]));
-      expect(found.get(alreadyMemberOrg.id)?.isCurrentMember).toBe(true);
-      expect(found.get(otherOrg.id)?.isCurrentMember).toBe(false);
+      const found = new Map(result.map((entry) => [entry.org.id, entry]));
+      expect(found.get(alreadyMemberOrg.id)?.isMember).toBe(true);
+      expect(found.get(otherOrg.id)?.isMember).toBe(false);
     });
 
     it('creates join requests for selected organizations', async ({
@@ -322,7 +322,7 @@ describe.concurrent('Onboarding Organization Search', () => {
       // Verify the domain-matched org is returned
       expect(result.length).toBeGreaterThanOrEqual(1);
 
-      const matchedOrg = result.find((org) => org.id === organization.id);
+      const matchedOrg = result.find(({ org }) => org.id === organization.id);
       expect(matchedOrg).toBeDefined();
     });
 
@@ -376,7 +376,7 @@ describe.concurrent('Onboarding Organization Search', () => {
 
       const result = await caller.listMatchingDomainOrganizations(undefined);
 
-      const ids = result.map((org) => org.id);
+      const ids = result.map(({ org }) => org.id);
       expect(ids).not.toContain(existingMembershipOrg.id);
       expect(ids).toContain(notYetJoinedOrg.id);
     });
@@ -416,7 +416,9 @@ describe.concurrent('Onboarding Organization Search', () => {
       const matchingOrgs =
         await accountCaller.listMatchingDomainOrganizations(undefined);
 
-      const matchedOrg = matchingOrgs.find((org) => org.id === organization.id);
+      const matchedOrg = matchingOrgs.find(
+        ({ org }) => org.id === organization.id,
+      );
       expect(matchedOrg).toBeDefined();
 
       // Auto-join the domain-matched org (this is what happens for domain-matched orgs)
@@ -504,13 +506,13 @@ describe.concurrent('Onboarding Organization Search', () => {
       );
 
       const result = await caller.listMatchingDomainOrganizations(undefined);
-      const matchedOrg = result.find((org) => org.id === organization.id);
+      const matched = result.find(({ org }) => org.id === organization.id);
 
-      expect(matchedOrg).toBeDefined();
-      expect(matchedOrg!.whereWeWork).toBeDefined();
-      expect(matchedOrg!.whereWeWork.length).toBeGreaterThanOrEqual(1);
+      expect(matched).toBeDefined();
+      expect(matched!.org.whereWeWork).toBeDefined();
+      expect(matched!.org.whereWeWork.length).toBeGreaterThanOrEqual(1);
 
-      const locationNames = matchedOrg!.whereWeWork.map(
+      const locationNames = matched!.org.whereWeWork.map(
         (loc: { name?: string | null }) => loc.name,
       );
       expect(locationNames).toContain('Test City');

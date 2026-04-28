@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { OrganizationSearchResult } from '@op/api/encoders';
+import type { Organization, OrganizationSearchResult } from '@op/api/encoders';
 import { useDebounce } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
@@ -68,18 +68,18 @@ export const OrganizationSearchScreen = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSelectOrg = useCallback((org: OrganizationSearchResult) => {
+  const handleSelectOrg = useCallback((result: OrganizationSearchResult) => {
     setSelectedOrgs((prev) => {
-      if (prev.some((o) => o.id === org.id)) {
+      if (prev.some((o) => o.org.id === result.org.id)) {
         return prev;
       }
-      return [...prev, org];
+      return [...prev, result];
     });
     setSearchQuery('');
   }, []);
 
   const handleRemoveOrg = useCallback((orgId: string) => {
-    setSelectedOrgs((prev) => prev.filter((o) => o.id !== orgId));
+    setSelectedOrgs((prev) => prev.filter((o) => o.org.id !== orgId));
   }, []);
 
   const handleShowToS = useCallback(() => {
@@ -88,11 +88,11 @@ export const OrganizationSearchScreen = ({
 
   const handleAcceptToS = useCallback(() => {
     onContinue(
-      selectedOrgs.flatMap((org) => {
+      selectedOrgs.flatMap(({ org, isMember }) => {
         const profileId = org.profile?.id;
         // Skip orgs the user is already a member of — the join request
         // backend rejects those, so don't bother dispatching one.
-        if (!profileId || org.isCurrentMember) {
+        if (!profileId || isMember) {
           return [];
         }
         return [{ id: org.id, profileId }];
@@ -155,7 +155,7 @@ export const OrganizationSearchScreen = ({
 
           {hasSelectedOrgs && (
             <div className="flex flex-wrap gap-2">
-              {selectedOrgs.map((org) => (
+              {selectedOrgs.map(({ org }) => (
                 <SelectedOrgChip
                   key={org.id}
                   org={org}
@@ -195,7 +195,7 @@ function SearchDropdown({
   searchResults: OrganizationSearchResult[] | undefined;
   isFetching: boolean;
   searchQuery: string;
-  onSelect: (org: OrganizationSearchResult) => void;
+  onSelect: (result: OrganizationSearchResult) => void;
   onAddOrganization?: (searchTerm: string) => void;
 }) {
   const t = useTranslations();
@@ -211,15 +211,16 @@ function SearchDropdown({
   return (
     <>
       {searchResults && searchResults.length > 0 ? (
-        searchResults.map((org) => {
+        searchResults.map((result) => {
+          const { org, isMember } = result;
           const location = getOrgLocation(org);
           return (
             <button
               key={org.id}
               type="button"
-              disabled={org.isCurrentMember}
+              disabled={isMember}
               className="flex w-full items-center px-4 py-3 text-left hover:bg-neutral-offWhite disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
-              onClick={() => onSelect(org)}
+              onClick={() => onSelect(result)}
             >
               <ProfileItem
                 size="small"
@@ -265,7 +266,7 @@ function SelectedOrgChip({
   org,
   onRemove,
 }: {
-  org: OrganizationSearchResult;
+  org: Organization;
   onRemove: () => void;
 }) {
   const t = useTranslations();
@@ -313,7 +314,7 @@ function OrDivider() {
 
 // --- Utilities ---
 
-const getOrgLocation = (org: OrganizationSearchResult): string => {
+const getOrgLocation = (org: Organization): string => {
   if (org.profile?.city && org.profile?.state) {
     return `${org.profile.city}, ${org.profile.state}`;
   }
