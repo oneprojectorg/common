@@ -116,7 +116,8 @@ export async function advancePhase(
     db,
   });
 
-  let selectedProposalIds: string[] = allProposals.map((p) => p.id);
+  // Default to pass-none; phases opt into pass-all via an empty-blocks pipeline.
+  let selectedProposalIds: string[] = [];
 
   if (selectionPipeline) {
     const proposalMetrics = await aggregateProposalMetrics(allProposals, db);

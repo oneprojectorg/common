@@ -51,7 +51,7 @@ export const simpleVoting: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: true },
         voting: { submit: false },
-        advancement: { method: 'date', endDate: '2026-01-01' },
+        advancement: { method: 'manual', endDate: '2026-01-01' },
       },
       // User-configurable settings, available as variables in selectionPipeline
       settings: {
@@ -82,6 +82,13 @@ export const simpleVoting: DecisionSchemaDefinition = {
           },
         },
       },
+      // Pass-all: every submitted proposal advances into review.
+      // Expressed as an empty pipeline (no blocks) which short-circuits to
+      // returning the full input set.
+      selectionPipeline: {
+        version: '1.0.0',
+        blocks: [],
+      },
     },
     {
       id: 'review',
@@ -90,7 +97,7 @@ export const simpleVoting: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: false },
         voting: { submit: false },
-        advancement: { method: 'date', endDate: '2026-01-02' },
+        advancement: { method: 'manual', endDate: '2026-01-02' },
       },
       settings: {
         type: 'object',
@@ -109,6 +116,8 @@ export const simpleVoting: DecisionSchemaDefinition = {
           },
         },
       },
+      // No selectionPipeline → falls back to pass-none, requiring an admin
+      // to manually pick which proposals advance to voting.
     },
     {
       id: 'voting',
@@ -117,7 +126,7 @@ export const simpleVoting: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: false },
         voting: { submit: true },
-        advancement: { method: 'date', endDate: '2026-01-03' },
+        advancement: { method: 'manual', endDate: '2026-01-03' },
       },
       // Phase-specific settings
       settings: {
@@ -175,7 +184,7 @@ export const simpleVoting: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: false },
         voting: { submit: false },
-        advancement: { method: 'date', endDate: '2026-01-04' },
+        advancement: { method: 'manual', endDate: '2026-01-04' },
       },
       settings: {
         type: 'object',

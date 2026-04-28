@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
+  schemaMissingPipeline,
   schemaWithPipeline,
   schemaWithThreePhasesAndPipelines,
   schemaWithoutPipeline,
@@ -128,7 +129,7 @@ describe.concurrent('Transition pipeline: join table population', () => {
     }
   });
 
-  it('creates join rows for ALL proposals when no selectionPipeline is defined', async ({
+  it('creates join rows for ALL proposals with an explicit pass-all pipeline (empty blocks)', async ({
     task,
     onTestFinished,
   }) => {
@@ -174,6 +175,53 @@ describe.concurrent('Transition pipeline: join table population', () => {
       );
 
     expect(joinRows).toHaveLength(3);
+  });
+
+  it('creates zero join rows when no selectionPipeline is defined (pass-none default)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaMissingPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
+
+    for (let i = 1; i <= 3; i++) {
+      await testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal ${i} ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      });
+    }
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+
+    const [transition] = await db
+      .select()
+      .from(stateTransitionHistory)
+      .where(eq(stateTransitionHistory.processInstanceId, instanceId))
+      .limit(1);
+
+    expect(transition).toBeDefined();
+
+    const joinRows = await db
+      .select()
+      .from(decisionTransitionProposals)
+      .where(
+        eq(decisionTransitionProposals.transitionHistoryId, transition!.id),
+      );
+
+    expect(joinRows).toHaveLength(0);
   });
 
   it('returns empty when pipeline eliminates every proposal (no legacy fallback for new instances)', async ({
