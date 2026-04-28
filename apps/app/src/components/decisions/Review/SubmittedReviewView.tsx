@@ -69,21 +69,38 @@ function ResultSection({
 function ResultCard({
   value,
   description,
+  rationale,
 }: {
   value?: ReactNode;
   description?: ReactNode;
+  rationale?: ReactNode;
 }) {
+  const hasValue = value !== undefined && value !== null && value !== '';
+  const hasDescription = !!description;
+  const hasRationale = !!rationale;
+  const hasTopRow = hasValue || hasDescription;
+
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-neutral-gray1 p-6">
-      {value !== undefined && value !== null && value !== '' && (
-        <div className="font-serif text-title-base font-light text-neutral-black">
-          {value}
+    <div className="flex flex-col gap-4 rounded-xl border border-neutral-gray1 p-6">
+      {hasTopRow && (
+        <div className="flex items-center gap-4">
+          {hasValue && (
+            <div className="font-serif text-title-base font-light text-neutral-black">
+              {value}
+            </div>
+          )}
+          {hasDescription && (
+            <div className="min-w-0 flex-1 text-sm text-neutral-gray4">
+              {description}
+            </div>
+          )}
         </div>
       )}
-      {description && (
-        <div className="min-w-0 flex-1 text-sm text-neutral-gray4">
-          {description}
-        </div>
+      {hasRationale && hasTopRow && (
+        <div className="h-px w-full bg-neutral-gray1" />
+      )}
+      {hasRationale && (
+        <div className="text-base text-neutral-charcoal">{rationale}</div>
       )}
     </div>
   );
@@ -125,6 +142,7 @@ function RubricFieldResult({
       <ResultCard
         value={selected?.value}
         description={selected?.title || rationale}
+        rationale={selected?.title ? rationale : undefined}
       />
     );
   }
