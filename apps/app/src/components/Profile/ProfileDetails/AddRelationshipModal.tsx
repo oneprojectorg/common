@@ -140,11 +140,10 @@ export const AddRelationshipModalSuspense = ({
         <DropDownButton
           label={
             <>
-              {relationships.length === 1
-                ? t('{count} relationship', { count: relationships.length })
-                : t('{count} relationships', {
-                    count: relationships.length,
-                  })}{' '}
+              {t(
+                '{count, plural, =1 {1 relationship} other {# relationships}}',
+                { count: relationships.length },
+              )}{' '}
               {user.currentProfile ? (
                 <>
                   {t('with')}

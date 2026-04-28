@@ -918,8 +918,6 @@
   "Remove relationship": "إزالة العلاقة",
   "Are you sure you want to remove the {relationshipType} relationship?": "هل أنت متأكد أنك تريد إزالة علاقة {relationshipType}؟",
   "You'll need to send a new request to restore this relationship on your profile.": "ستحتاج إلى إرسال طلب جديد لاستعادة هذه العلاقة على ملفك الشخصي.",
-  "{count} relationship": "{count} علاقة",
-  "{count} relationships": "{count} علاقات",
   "with": "مع",
   "Pending confirmation from {name}": "في انتظار التأكيد من {name}",
   "You're all set!": "أنت جاهز تمامًا!",
@@ -1157,5 +1155,13 @@
   "+{count} More": "+{count} المزيد",
   "Confirm advancing proposals": "تأكيد تقدم المقترحات",
   "These {numProposals} proposals will move on to the {phaseName} phase": "{numProposals, plural, one {سينتقل هذا # مقترح إلى مرحلة {phaseName}} other {ستنتقل هذه # مقترحات إلى مرحلة {phaseName}}}",
-  "PROPOSALS TO ADVANCE": "المقترحات للتقدم"
+  "PROPOSALS TO ADVANCE": "المقترحات للتقدم",
+  "{count, plural, =1 {1 follower} other {# followers}}": "{count, plural, =0 {لا يوجد متابعون} one {متابع واحد} two {متابعان} few {# متابعين} many {# متابعًا} other {# متابع}}",
+  "{count, plural, =1 {1 relationship} other {# relationships}}": "{count, plural, =0 {لا توجد علاقات} one {علاقة واحدة} two {علاقتان} few {# علاقات} many {# علاقة} other {# علاقة}}",
+  "{count, plural, =1 {1 organization} other {# organizations}}": "{count, plural, =0 {لا توجد مؤسسات} one {مؤسسة واحدة} two {مؤسستان} few {# مؤسسات} many {# مؤسسة} other {# مؤسسة}}",
+  "{count, plural, =1 {1 member} other {# members}}": "{count, plural, =0 {لا يوجد أعضاء} one {عضو واحد} two {عضوان} few {# أعضاء} many {# عضوًا} other {# عضو}}",
+  "{count, plural, =1 {active relationship} other {active relationships}}": "{count, plural, one {علاقة نشطة} two {علاقتان نشطتان} few {علاقات نشطة} many {علاقة نشطة} other {علاقات نشطة}}",
+  "Following {count, plural, =1 {# organization} other {# organizations}}": "متابعة {count, plural, =0 {لا توجد مؤسسات} one {مؤسسة واحدة} two {مؤسستين} few {# مؤسسات} many {# مؤسسة} other {# مؤسسة}}",
+  "Member of {count, plural, =1 {# Organization} other {# Organizations}}": "عضو في {count, plural, =0 {لا توجد مؤسسات} one {مؤسسة واحدة} two {مؤسستين} few {# مؤسسات} many {# مؤسسة} other {# مؤسسة}}",
+  "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}": "{count, plural, =0 {لم يقدم أي عضو مقترحات} one {قام عضو واحد بتقديم مقترحات} two {قام عضوان بتقديم مقترحات} few {قام # أعضاء بتقديم مقترحات} many {قام # عضوًا بتقديم مقترحات} other {قام # عضو بتقديم مقترحات}}"
 }
