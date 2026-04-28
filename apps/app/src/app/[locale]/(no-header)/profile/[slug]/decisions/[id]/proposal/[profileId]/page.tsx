@@ -16,9 +16,9 @@ function ProposalViewPageContent({
   orgSlug: string;
   instanceId: string;
 }) {
-  // Legacy decision boundary (deprecated, but still served via shared public
-  // links). The instance isn't needed here — ProposalView is encoder-agnostic
-  // and revisions are never available on legacy instances.
+  // Legacy decision boundary — still served via shared public links.
+  // Revisions aren't available on legacy instances, so the instance fetch
+  // isn't needed.
   const [proposal] = trpc.decision.getProposal.useSuspenseQuery({ profileId });
 
   if (!proposal) {

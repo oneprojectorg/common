@@ -34,9 +34,7 @@ function ProposalViewPageContent({
   const isAuthor =
     !!user.currentProfile?.id &&
     proposal.submittedBy?.id === user.currentProfile.id;
-  // Viewer is allowed to see submitted revision requests when the proposal
-  // is in a review phase and they are the author, an admin, or have
-  // explicit review access on the instance.
+  // Author, admin, or explicit review access — only in a review phase.
   const canSeeRevisions =
     isInReviewPhase &&
     (isAuthor ||

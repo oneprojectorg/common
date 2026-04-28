@@ -33,12 +33,6 @@ export function ProposalView({
   backHref,
 }: {
   proposal: Proposal;
-  /**
-   * Whether the viewer is allowed to see submitted revision requests on this
-   * proposal. Computed by the caller from the instance shape, the proposal
-   * author, and the current user — keeps ProposalView agnostic to which
-   * decision encoder produced the data.
-   */
   canSeeRevisions: boolean;
   backHref: string;
 }) {
