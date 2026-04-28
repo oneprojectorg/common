@@ -59,9 +59,31 @@ export const schemaWithThreePhasesAndPipelines = {
 };
 
 /**
- * Same schema without any selectionPipeline — all proposals survive the transition.
+ * Same shape as schemaWithPipeline but with an explicit pass-all selectionPipeline
+ * (empty blocks) on the submission phase. Use this when a test wants every
+ * proposal to survive the transition. Named "withoutPipeline" historically because
+ * it predates the pass-none default; the explicit empty pipeline now expresses the
+ * same intent.
  */
 export const schemaWithoutPipeline = {
+  ...schemaWithPipeline,
+  phases: [
+    {
+      id: 'submission',
+      name: 'Submission',
+      rules: {},
+      selectionPipeline: { version: '1.0.0', blocks: [] },
+    },
+    { id: 'review', name: 'Review', rules: {} },
+  ],
+};
+
+/**
+ * Schema with no selectionPipeline at all. Use this to exercise the pass-none
+ * default fallback in advancePhase — proposals are NOT carried into the next phase
+ * and the admin is expected to manually pick the survivors.
+ */
+export const schemaMissingPipeline = {
   ...schemaWithPipeline,
   phases: [
     { id: 'submission', name: 'Submission', rules: {} },
