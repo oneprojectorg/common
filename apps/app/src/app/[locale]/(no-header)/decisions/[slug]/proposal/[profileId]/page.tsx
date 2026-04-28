@@ -1,7 +1,9 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import type { Proposal } from '@op/common/client';
 import { notFound, useParams } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -25,20 +27,69 @@ function ProposalViewPageContent({
     notFound();
   }
 
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
-    instanceId: proposal.processInstanceId,
-  });
-
   const ownerSlug = decisionProfile?.processInstance?.owner?.slug;
   const instanceId = decisionProfile?.processInstance?.id;
 
+  // Legacy orgs still own pre-v2 state-based instances that getInstance can't
+  // parse. Detect them at the path boundary and route through the legacy
+  // endpoint, mirroring the pattern in DecisionHeader / ResultsPage.
+  const useLegacy = !!ownerSlug && LEGACY_ORG_SLUGS.includes(ownerSlug);
+
   const backHref =
-    ownerSlug && LEGACY_ORG_SLUGS.includes(ownerSlug) && instanceId
+    useLegacy && instanceId
       ? `/profile/${ownerSlug}/decisions/${instanceId}/`
       : `/decisions/${slug}`;
 
+  if (useLegacy) {
+    return (
+      <ProposalView
+        proposal={proposal}
+        canSeeRevisions={false}
+        backHref={backHref}
+      />
+    );
+  }
+
   return (
-    <ProposalView proposal={proposal} instance={instance} backHref={backHref} />
+    <NewInstanceProposalView
+      proposal={proposal}
+      instanceId={proposal.processInstanceId}
+      backHref={backHref}
+    />
+  );
+}
+
+function NewInstanceProposalView({
+  proposal,
+  instanceId,
+  backHref,
+}: {
+  proposal: Proposal;
+  instanceId: string;
+  backHref: string;
+}) {
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+  const { user } = useUser();
+
+  const currentPhase = instance.instanceData?.phases?.find(
+    (phase) => phase.phaseId === instance.currentStateId,
+  );
+  const isInReviewPhase = currentPhase?.rules?.proposals?.review === true;
+  const isAuthor =
+    !!user.currentProfile?.id &&
+    proposal.submittedBy?.id === user.currentProfile.id;
+  const canSeeRevisions =
+    isInReviewPhase &&
+    (isAuthor ||
+      instance.access?.admin === true ||
+      instance.access?.review === true);
+
+  return (
+    <ProposalView
+      proposal={proposal}
+      canSeeRevisions={canSeeRevisions}
+      backHref={backHref}
+    />
   );
 }
 
