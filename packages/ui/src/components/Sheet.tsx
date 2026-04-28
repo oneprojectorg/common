@@ -15,9 +15,9 @@ import { cn } from '../lib/utils';
 const SIDE_CLASSES: Record<SheetSide, string> = {
   bottom:
     'inset-x-0 bottom-0 top-auto w-full max-h-[85svh] rounded-t-2xl entering:animate-in entering:slide-in-from-bottom exiting:animate-out exiting:slide-out-to-bottom',
-  left: 'inset-y-0 left-0 right-auto h-full max-w-xs w-full rounded-none entering:animate-in entering:slide-in-from-left exiting:animate-out exiting:slide-out-to-left',
+  left: 'inset-y-0 start-0 end-auto h-full max-w-xs w-full rounded-none entering:animate-in entering:slide-in-from-left exiting:animate-out exiting:slide-out-to-left',
   right:
-    'inset-y-0 right-0 left-auto h-full max-w-xs w-full rounded-none entering:animate-in entering:slide-in-from-right exiting:animate-out exiting:slide-out-to-right',
+    'inset-y-0 end-0 start-auto h-full max-w-xs w-full rounded-none entering:animate-in entering:slide-in-from-right exiting:animate-out exiting:slide-out-to-right',
 };
 
 type SheetSide = 'bottom' | 'left' | 'right';
@@ -78,7 +78,7 @@ export const SheetHeader = ({
           type="button"
           aria-label="Close"
           onClick={onClose}
-          className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg outline-none hover:bg-neutral-gray1 focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2"
+          className="ms-auto flex h-8 w-8 items-center justify-center rounded-lg outline-none hover:bg-neutral-gray1 focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2"
         >
           <LuX className="size-4" />
         </button>

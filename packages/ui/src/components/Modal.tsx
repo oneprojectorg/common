@@ -81,7 +81,7 @@ export const ModalHeader = ({
             aria-label="Close modal"
             onClick={handleClose}
             className={cn(
-              'absolute right-6 flex h-6 w-6',
+              'absolute end-6 flex h-6 w-6',
               'items-center justify-center',
               'rounded-md outline-hidden hover:bg-neutral-gray1 focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2',
               'text-neutral-charcoal',
@@ -115,7 +115,7 @@ export const ModalBody = ({
   return (
     <div
       className={cn(
-        'flex w-full flex-col gap-2 p-6 text-left focus-visible:outline-0',
+        'flex w-full flex-col gap-2 p-6 text-start focus-visible:outline-0',
         className,
       )}
     >

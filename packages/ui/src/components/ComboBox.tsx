@@ -58,7 +58,7 @@ export const ComboBox = <T extends object>({
           color="ghost"
           {...props.buttonProps}
           className={cn(
-            'absolute top-1/2 right-1 aspect-square w-6 -translate-y-1/2 p-0',
+            'absolute end-1 top-1/2 aspect-square w-6 -translate-y-1/2 p-0',
             props.buttonProps?.className,
           )}
         >

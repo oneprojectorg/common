@@ -128,7 +128,7 @@ export function CollaborativeMultiSelectField({
           <Button
             variant="pill"
             color="pill"
-            className="justify-start text-left"
+            className="justify-start text-start"
             onPress={() => setIsEditing(true)}
           >
             {buttonLabel}

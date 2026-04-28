@@ -228,7 +228,7 @@ const MembersListContent = ({
             key={member.id}
             className="relative flex w-full gap-4 rounded border p-6"
           >
-            <div className="absolute top-4 right-4">
+            <div className="absolute end-4 top-4">
               <MemberMenu
                 member={member}
                 organizationId={organizationId}

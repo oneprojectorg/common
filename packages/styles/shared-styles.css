@@ -604,11 +604,11 @@
 @layer components {
   /* Collaboration cursor caret - border-color set inline by tiptap */
   .collaboration-carets__caret {
-    @apply pointer-events-none relative -mx-px border-r border-l break-normal;
+    @apply pointer-events-none relative -mx-px border-e border-s break-normal;
   }
 
   /* Collaboration cursor name label - background-color set inline by tiptap */
   .collaboration-carets__label {
-    @apply absolute -top-5 -left-px rounded-t rounded-br px-1.5 py-0.5 text-xs font-semibold whitespace-nowrap text-white select-none;
+    @apply absolute -top-5 -start-px rounded-t rounded-ee px-1.5 py-0.5 text-xs font-semibold whitespace-nowrap text-white select-none;
   }
 }

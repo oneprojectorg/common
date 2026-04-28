@@ -62,7 +62,7 @@ const Tooltip = ({ children, ...props }: TooltipProps) => {
         }),
       )}
     >
-      <OverlayArrow className="items-center justify-center group-placement-left:-ml-px group-placement-right:-mr-px group-placement-top:-mt-px group-placement-bottom:-mb-px">
+      <OverlayArrow className="items-center justify-center group-placement-left:-ms-px group-placement-right:-me-px group-placement-top:-mt-px group-placement-bottom:-mb-px">
         <svg
           width={12}
           height={12}

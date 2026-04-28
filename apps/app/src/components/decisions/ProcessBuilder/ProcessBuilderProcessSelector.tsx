@@ -74,7 +74,7 @@ export const ProcessBuilderProcessCard = ({
 
   return (
     <button
-      className="flex w-full cursor-pointer flex-col gap-2 rounded-lg border bg-white p-6 text-left transition-shadow hover:border-neutral-300 hover:shadow-md sm:w-72 md:aspect-[4/3] md:w-[360px] md:p-12 md:text-center"
+      className="flex w-full cursor-pointer flex-col gap-2 rounded-lg border bg-white p-6 text-start transition-shadow hover:border-neutral-300 hover:shadow-md sm:w-72 md:aspect-[4/3] md:w-[360px] md:p-12 md:text-center"
       onClick={onSelect}
     >
       <div className="flex gap-2 md:flex-col md:items-center md:gap-6">

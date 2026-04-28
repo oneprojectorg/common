@@ -117,60 +117,60 @@ export const PrivacyPolicyContent = () => {
           <table className="min-w-full border-collapse border border-gray-300">
             <thead>
               <tr className="bg-gray-100">
-                <th className="border border-gray-300 px-4 py-2 text-left"></th>
-                <th className="border border-gray-300 px-4 py-2 text-left">
+                <th className="border border-gray-300 px-4 py-2 text-start"></th>
+                <th className="border border-gray-300 px-4 py-2 text-start">
                   Identity and Contact Information
                 </th>
-                <th className="border border-gray-300 px-4 py-2 text-left">
+                <th className="border border-gray-300 px-4 py-2 text-start">
                   Demographic Information
                 </th>
-                <th className="border border-gray-300 px-4 py-2 text-left">
+                <th className="border border-gray-300 px-4 py-2 text-start">
                   Activity Data
                 </th>
-                <th className="border border-gray-300 px-4 py-2 text-left">
+                <th className="border border-gray-300 px-4 py-2 text-start">
                   Video, Audio, and Recorded Information
                 </th>
-                <th className="border border-gray-300 px-4 py-2 text-left">
+                <th className="border border-gray-300 px-4 py-2 text-start">
                   Technical or Electronic Network Activity Information
                 </th>
-                <th className="border border-gray-300 px-4 py-2 text-left">
+                <th className="border border-gray-300 px-4 py-2 text-start">
                   Financial Information
                 </th>
-                <th className="border border-gray-300 px-4 py-2 text-left">
+                <th className="border border-gray-300 px-4 py-2 text-start">
                   Professional, Employment, and Educational Information
                 </th>
-                <th className="border border-gray-300 px-4 py-2 text-left">
+                <th className="border border-gray-300 px-4 py-2 text-start">
                   Anonymized / De-Identified Data
                 </th>
               </tr>
               <tr className="text-sm">
-                <th className="border border-gray-300 px-4 py-2 text-left"></th>
-                <th className="border border-gray-300 px-4 py-2 text-left">
+                <th className="border border-gray-300 px-4 py-2 text-start"></th>
+                <th className="border border-gray-300 px-4 py-2 text-start">
                   This may include name, username, email, phone number, etc.
                 </th>
-                <th className="border border-gray-300 px-4 py-2 text-left">
+                <th className="border border-gray-300 px-4 py-2 text-start">
                   This may include characteristics of protected classifications
                   under some laws and may include age, gender, disability, etc.
                 </th>
-                <th className="border border-gray-300 px-4 py-2 text-left">
+                <th className="border border-gray-300 px-4 py-2 text-start">
                   This may include posts on the Platform, relational
                   connections, etc.
                 </th>
-                <th className="border border-gray-300 px-4 py-2 text-left">
+                <th className="border border-gray-300 px-4 py-2 text-start">
                   This may include photos, video, call, or chat recordings, etc.
                 </th>
-                <th className="border border-gray-300 px-4 py-2 text-left">
+                <th className="border border-gray-300 px-4 py-2 text-start">
                   This may include Internet Protocol (IP) address, browser,
                   device type, etc.
                 </th>
-                <th className="border border-gray-300 px-4 py-2 text-left">
+                <th className="border border-gray-300 px-4 py-2 text-start">
                   This may include financial information related to funding.
                 </th>
-                <th className="border border-gray-300 px-4 py-2 text-left">
+                <th className="border border-gray-300 px-4 py-2 text-start">
                   This may include job title or position, employer, focus area,
                   biography, etc.
                 </th>
-                <th className="border border-gray-300 px-4 py-2 text-left">
+                <th className="border border-gray-300 px-4 py-2 text-start">
                   Data that removes individual personal data
                 </th>
               </tr>
@@ -238,7 +238,7 @@ export const PrivacyPolicyContent = () => {
         <h5 className="mb-2 font-semibold">
           Identity and contact information, such as:
         </h5>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 list-disc ps-6">
           <li>first and last name or unique pseudonym</li>
           <li>honorifics and titles, preferred form of address</li>
           <li>employer / organization</li>
@@ -250,14 +250,14 @@ export const PrivacyPolicyContent = () => {
         <h5 className="mb-2 font-semibold">
           Demographic Information, such as:
         </h5>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 list-disc ps-6">
           <li>preferred language</li>
           <li>approximate location</li>
           <li>interests</li>
         </ul>
 
         <h5 className="mb-2 font-semibold">Activity Data</h5>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 list-disc ps-6">
           <li>Posts on the platform</li>
           <li>Relational connections</li>
         </ul>
@@ -265,7 +265,7 @@ export const PrivacyPolicyContent = () => {
         <h5 className="mb-2 font-semibold">
           Video, Audio, and Recorded Information, such as:
         </h5>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 list-disc ps-6">
           <li>Still images^</li>
           <li>Video (including videos posted on the platform)</li>
           <li>recordings of online events^</li>
@@ -278,7 +278,7 @@ export const PrivacyPolicyContent = () => {
         <h5 className="mb-2 font-semibold">
           Technical or electronic network activity information, such as:
         </h5>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 list-disc ps-6">
           <li>
             Internet Protocol (IP) addresses (which may identify your general
             geographic location or organization)
@@ -309,7 +309,7 @@ export const PrivacyPolicyContent = () => {
         </ul>
 
         <h5 className="mb-2 font-semibold">Financial information, such as:</h5>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 list-disc ps-6">
           <li>
             self-disclosed funding information (example: who funded you,,how
             much)
@@ -317,7 +317,7 @@ export const PrivacyPolicyContent = () => {
         </ul>
 
         <h5 className="mb-2 font-semibold">Anonymized / de-identified data:</h5>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 list-disc ps-6">
           <li>
             Anonymized and/or de-identified data is data for which your
             individual personal characteristics and information have been
@@ -328,7 +328,7 @@ export const PrivacyPolicyContent = () => {
         </ul>
 
         <h4 className="mb-2 font-semibold">Where do we get the data?</h4>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 list-disc ps-6">
           <li>you directly</li>
           <li>
             those authorized to provide Personal Data on your behalf, such as
@@ -348,7 +348,7 @@ export const PrivacyPolicyContent = () => {
         </ul>
 
         <h4 className="mb-2 font-semibold">Why do we process the data?</h4>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 list-disc ps-6">
           <li>to provide you with our Services</li>
           <li>to facilitate grant making</li>
           <li>to communicate with you</li>
@@ -379,7 +379,7 @@ export const PrivacyPolicyContent = () => {
         <h4 className="mb-2 font-semibold">
           What are the Lawful or Legal Bases of Processing?
         </h4>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 list-disc ps-6">
           <li>for the purposes of legitimate interests</li>
           <li>in preparation for or to perform a contract with you</li>
           <li>
@@ -393,7 +393,7 @@ export const PrivacyPolicyContent = () => {
         </ul>
 
         <h4 className="mb-2 font-semibold">Who receives the data?</h4>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 list-disc ps-6">
           <li>One Project, and our Affiliates</li>
           <li>
             individuals or entities that you designate or instruct us to share
@@ -563,7 +563,7 @@ export const PrivacyPolicyContent = () => {
           Depending on where you live, you may have the following rights with
           respect to some or all of your Personal Data:
         </p>
-        <ul className="mb-4 list-disc pl-6">
+        <ul className="mb-4 list-disc ps-6">
           <li>
             To request information about or explain whether, and how, we process
             your Personal Data
