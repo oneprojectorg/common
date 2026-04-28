@@ -32,6 +32,11 @@ export const reviewAssignmentWithConfig = {
       profile: true,
     },
   },
+  reviewer: {
+    with: {
+      avatarImage: true,
+    },
+  },
   reviews: true,
   requests: {
     orderBy: {
