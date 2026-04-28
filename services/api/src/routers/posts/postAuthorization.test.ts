@@ -240,6 +240,67 @@ describe.concurrent('decision-profile post authorization', () => {
     expect(result[0]?.content).toBe('Admin update for member to read.');
   });
 
+  it('rejects an outsider from fetching an update by postId directly', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const adminPost = await adminCaller.posts.createPost({
+      content: 'Admin update — outsider should not see directly.',
+      profileId: instance.profileId,
+    });
+
+    const outsiderCaller = await createOutsiderCaller(testData);
+
+    await expect(
+      outsiderCaller.posts.getPost({
+        postId: adminPost.id,
+        includeChildren: false,
+        maxDepth: 2,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+  });
+
+  it('allows a member to fetch an update by postId directly', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const adminPost = await adminCaller.posts.createPost({
+      content: 'Admin update — member fetches by id.',
+      profileId: instance.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const result = await memberCaller.posts.getPost({
+      postId: adminPost.id,
+      includeChildren: false,
+      maxDepth: 2,
+    });
+
+    expect(result.id).toBe(adminPost.id);
+    expect(result.content).toBe('Admin update — member fetches by id.');
+  });
+
   it('rejects an outsider from reacting to an update', async ({
     task,
     onTestFinished,
@@ -260,7 +321,7 @@ describe.concurrent('decision-profile post authorization', () => {
     const outsiderCaller = await createOutsiderCaller(testData);
 
     await expect(
-      outsiderCaller.organization.addReaction({
+      outsiderCaller.organization.toggleReaction({
         postId: adminPost.id,
         reactionType: 'like',
       }),
@@ -297,7 +358,7 @@ describe.concurrent('decision-profile post authorization', () => {
     });
 
     const memberCaller = await createAuthenticatedCaller(member.email);
-    await memberCaller.organization.addReaction({
+    await memberCaller.organization.toggleReaction({
       postId: adminPost.id,
       reactionType: 'like',
     });
@@ -422,7 +483,7 @@ describe.concurrent('non-decision (organization) post authorization', () => {
     });
 
     const outsiderCaller = await createOutsiderCaller(testData);
-    await outsiderCaller.organization.addReaction({
+    await outsiderCaller.organization.toggleReaction({
       postId: orgPost.id,
       reactionType: 'like',
     });
