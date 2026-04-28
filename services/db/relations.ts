@@ -416,6 +416,19 @@ export const relations = defineRelations(schema, (r) => ({
   },
 
   /**
+   * Organizations strategies (join to taxonomy terms).
+   */
+  organizationsStrategies: {
+    // @ts-expect-error - taxonomyTerms self-referential parentId breaks inference
+    term: r.one.taxonomyTerms({
+      from: r.organizationsStrategies.taxonomyTermId,
+      // @ts-expect-error - see above
+      to: r.taxonomyTerms.id,
+      optional: false,
+    }),
+  },
+
+  /**
    * Organization user relations
    *
    * organizationId is NOT NULL. authUserId links to the service user.
