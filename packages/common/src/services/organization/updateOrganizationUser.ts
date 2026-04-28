@@ -41,12 +41,11 @@ export async function updateOrganizationUser({
   assertAccess({ admin: permission.UPDATE }, orgUser?.roles || []);
 
   // Check if the organization user to update exists
-  const targetOrgUser = await db._query.organizationUsers.findFirst({
-    where: (table, { eq, and }) =>
-      and(
-        eq(table.id, organizationUserId),
-        eq(table.organizationId, organizationId),
-      ),
+  const targetOrgUser = await db.query.organizationUsers.findFirst({
+    where: {
+      id: organizationUserId,
+      organizationId,
+    },
   });
 
   if (!targetOrgUser) {
@@ -113,8 +112,8 @@ export async function updateOrganizationUser({
   }
 
   // Return the updated user with roles
-  const updatedUserWithRoles = await db._query.organizationUsers.findFirst({
-    where: (table, { eq }) => eq(table.id, organizationUserId),
+  const updatedUserWithRoles = await db.query.organizationUsers.findFirst({
+    where: { id: organizationUserId },
     with: {
       roles: {
         with: {

@@ -69,8 +69,8 @@ export const inviteUsersToOrganization = async (
 
   assertAccess({ profile: permission.ADMIN }, orgUser.roles || []);
 
-  const authUser = (await db._query.users.findFirst({
-    where: (table, { eq }) => eq(table.authUserId, user.id),
+  const authUser = (await db.query.users.findFirst({
+    where: { authUserId: user.id },
     with: {
       currentOrganization: {
         with: {
@@ -99,11 +99,11 @@ export const inviteUsersToOrganization = async (
     const email = rawEmail.toLowerCase();
     try {
       // Check if user already exists in the system
-      const existingUser = await db._query.users.findFirst({
-        where: (table, { eq }) => eq(table.email, email),
+      const existingUser = await db.query.users.findFirst({
+        where: { email },
         with: {
           organizationUsers: {
-            where: (table, { eq }) => eq(table.organizationId, organizationId),
+            where: { organizationId },
           },
         },
       });
@@ -165,8 +165,8 @@ export const inviteUsersToOrganization = async (
       }
 
       // Check if email is already in the allowList
-      const existingEntry = await db._query.allowList.findFirst({
-        where: (table, { eq }) => eq(table.email, email),
+      const existingEntry = await db.query.allowList.findFirst({
+        where: { email },
       });
 
       if (!existingEntry) {
@@ -259,8 +259,8 @@ export const inviteNewUsers = async (input: InviteNewUsersInput) => {
   const { emails, personalMessage, user } = input;
 
   // Get the current user's database record with profile details
-  const authUser = (await db._query.users.findFirst({
-    where: (table, { eq }) => eq(table.authUserId, user.id),
+  const authUser = (await db.query.users.findFirst({
+    where: { authUserId: user.id },
     with: {
       currentOrganization: {
         with: {
@@ -301,8 +301,8 @@ export const inviteNewUsers = async (input: InviteNewUsersInput) => {
     const email = rawEmail.toLowerCase();
     try {
       // Check if email is already in the allowList
-      const existingEntry = await db._query.allowList.findFirst({
-        where: (table, { eq }) => eq(table.email, email),
+      const existingEntry = await db.query.allowList.findFirst({
+        where: { email },
       });
 
       if (!existingEntry) {

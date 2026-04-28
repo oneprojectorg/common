@@ -28,8 +28,8 @@ export const getOrganizationUsers = async ({
   assertAccess({ admin: permission.READ }, orgUser?.roles || []);
 
   // Fetch all users in the organization with their roles and avatar images
-  const organizationUsers = await db._query.organizationUsers.findMany({
-    where: (table, { eq }) => eq(table.organizationId, organization.id),
+  const organizationUsers = await db.query.organizationUsers.findMany({
+    where: { organizationId: organization.id },
     with: {
       roles: {
         with: {

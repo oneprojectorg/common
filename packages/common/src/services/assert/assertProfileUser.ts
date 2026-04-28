@@ -11,8 +11,8 @@ export async function assertProfileUser(
   error: Error = new NotFoundError('User not found', id),
   db: DbClient = defaultDb,
 ): Promise<ProfileUser> {
-  const profileUser = await db._query.profileUsers.findFirst({
-    where: (table, { eq }) => eq(table.id, id),
+  const profileUser = await db.query.profileUsers.findFirst({
+    where: { id },
   });
 
   if (!profileUser) {

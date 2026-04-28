@@ -1,4 +1,4 @@
-import { and, eq, gt, lt, or, sql } from 'drizzle-orm';
+import { SQL, and, eq, gt, lt, or, sql } from 'drizzle-orm';
 import { PgColumn } from 'drizzle-orm/pg-core';
 
 import { CommonError } from './error';
@@ -58,7 +58,19 @@ type Cursor = {
  * If tieBreakerColumn is not provided, only the primary column comparison is used.
  * This is suitable for columns with high cardinality (like timestamps) where collisions are rare.
  */
-export const getCursorCondition = ({
+export function getCursorCondition(args: {
+  column: PgColumn;
+  tieBreakerColumn?: PgColumn;
+  cursor: Cursor;
+  direction: 'asc' | 'desc';
+}): SQL;
+export function getCursorCondition(args: {
+  column: PgColumn;
+  tieBreakerColumn?: PgColumn;
+  cursor?: Cursor;
+  direction: 'asc' | 'desc';
+}): SQL | undefined;
+export function getCursorCondition({
   column,
   tieBreakerColumn,
   cursor,
@@ -68,14 +80,13 @@ export const getCursorCondition = ({
   tieBreakerColumn?: PgColumn;
   cursor?: Cursor;
   direction: 'asc' | 'desc';
-}) => {
+}): SQL | undefined {
   if (!cursor) {
     return undefined;
   }
 
   const compareFn = direction === 'asc' ? gt : lt;
 
-  // If no tiebreaker, use simple comparison
   if (!tieBreakerColumn || !cursor.id) {
     return compareFn(column, cursor.value);
   }
@@ -83,8 +94,8 @@ export const getCursorCondition = ({
   return or(
     compareFn(column, cursor.value),
     and(eq(column, cursor.value), compareFn(tieBreakerColumn, cursor.id)),
-  );
-};
+  )!;
+}
 
 export const constructTextSearch = ({
   column,

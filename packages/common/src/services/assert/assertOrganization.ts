@@ -16,8 +16,8 @@ export async function assertOrganization(
   error: Error = new NotFoundError('Organization', id),
   db: DbClient = defaultDb,
 ): Promise<Organization> {
-  const organization = await db._query.organizations.findFirst({
-    where: (table, { eq }) => eq(table.id, id),
+  const organization = await db.query.organizations.findFirst({
+    where: { id },
   });
 
   if (!organization) {
@@ -40,8 +40,8 @@ export async function assertOrganizationByProfileId(
   error: Error = new NotFoundError('Organization', profileId),
   db: DbClient = defaultDb,
 ): Promise<Organization> {
-  const organization = await db._query.organizations.findFirst({
-    where: (table, { eq }) => eq(table.profileId, profileId),
+  const organization = await db.query.organizations.findFirst({
+    where: { profileId },
   });
 
   if (!organization) {
