@@ -84,7 +84,8 @@ export function StandardDecisionPage({
           <div className="flex flex-col gap-6 lg:col-span-3">
             {manualTransitionsEnabled &&
             !instance.selectionsAreConfirmed &&
-            instance.access?.admin ? (
+            instance.access?.admin &&
+            decisionSlug ? (
               <APIErrorBoundary
                 fallbacks={{
                   default: () => (
@@ -102,7 +103,6 @@ export function StandardDecisionPage({
                 <Suspense fallback={null}>
                   <ManualSelectionList
                     instanceId={instanceId}
-                    slug={slug}
                     decisionSlug={decisionSlug}
                   />
                 </Suspense>

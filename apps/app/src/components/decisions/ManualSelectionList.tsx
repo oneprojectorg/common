@@ -25,13 +25,11 @@ const EMPTY_VOTED_IDS: string[] = [];
 
 interface ManualSelectionListProps {
   instanceId: string;
-  slug: string;
-  decisionSlug?: string;
+  decisionSlug: string;
 }
 
 export const ManualSelectionList = ({
   instanceId,
-  slug,
   decisionSlug,
 }: ManualSelectionListProps) => {
   const t = useTranslations();
@@ -183,9 +181,7 @@ export const ManualSelectionList = ({
           selectedIds={selectedIds}
           onToggle={toggleProposal}
           getProposalHref={(p) =>
-            decisionSlug
-              ? `/decisions/${decisionSlug}/proposal/${p.profileId}`
-              : `/profile/${slug}/decisions/${instanceId}/proposal/${p.profileId}`
+            `/decisions/${decisionSlug}/proposal/${p.profileId}`
           }
         />
       )}
