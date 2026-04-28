@@ -183,7 +183,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     expect(result.items).toHaveLength(2);
 
     const reviewedItem = result.items.find(
-      (i) => i.id === withReview.proposal.id,
+      (i) => i.proposal.id === withReview.proposal.id,
     );
     expect(reviewedItem?.aggregates).toMatchObject({
       assignmentsTotal: 1,
@@ -195,7 +195,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     });
 
     const unreviewedItem = result.items.find(
-      (i) => i.id === withoutReview.proposal.id,
+      (i) => i.proposal.id === withoutReview.proposal.id,
     );
     expect(unreviewedItem?.aggregates).toMatchObject({
       assignmentsTotal: 1,
@@ -231,7 +231,9 @@ describe.concurrent('listWithReviewAggregates', () => {
       proposalIds: [primary.proposal.id, foreign.proposal.id],
     });
 
-    expect(result.items.map((i) => i.id)).toEqual([primary.proposal.id]);
+    expect(result.items.map((i) => i.proposal.id)).toEqual([
+      primary.proposal.id,
+    ]);
   });
 
   it('paginates by createdAt across pages', async ({
@@ -270,7 +272,9 @@ describe.concurrent('listWithReviewAggregates', () => {
     expect(page2.next).toBeNull();
 
     // All three proposals appear exactly once across the two pages.
-    const allIds = [...page1.items, ...page2.items].map((i) => i.id).sort();
+    const allIds = [...page1.items, ...page2.items]
+      .map((i) => i.proposal.id)
+      .sort();
     expect(allIds).toEqual(proposals.map((p) => p.proposal.id).sort());
   });
 
@@ -305,7 +309,9 @@ describe.concurrent('listWithReviewAggregates', () => {
       processInstanceId: context.instance.instance.id,
     });
 
-    const tagged = result.items.find((i) => i.id === created.proposal.id);
+    const tagged = result.items.find(
+      (i) => i.proposal.id === created.proposal.id,
+    );
     expect(tagged?.categories).toEqual([
       { id: term.id, label: 'Infrastructure', termUri: term.termUri },
     ]);
