@@ -38,8 +38,8 @@ export const posts = pgTable(
     index().on(table.id).concurrently(),
     index().on(table.profileId).concurrently(),
     index().on(table.parentPostId).concurrently(),
-    index().on(table.rootProfileId).concurrently(),
-    index().on(table.rootPostId).concurrently(),
+    index().on(table.rootProfileId),
+    index().on(table.rootPostId),
   ],
 );
 
