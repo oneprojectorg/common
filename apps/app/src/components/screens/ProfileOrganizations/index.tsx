@@ -1,13 +1,12 @@
 'use client';
 
-import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
 import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import { type ReactNode, Suspense } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
 
-import { Link } from '@/lib/i18n';
+import { Link, useTranslations } from '@/lib/i18n';
 
 import { ErrorMessage } from '@/components/ErrorMessage';
 import { OrganizationAvatar } from '@/components/OrganizationAvatar';
@@ -21,7 +20,7 @@ export const ProfileOrganizationsSuspense = ({
   slug: string;
   showBreadcrumb?: boolean;
 }) => {
-  // const [searchTerm] = useState('');
+  const t = useTranslations();
   const [profile] = trpc.profile.getBySlug.useSuspenseQuery({
     slug,
   });
@@ -42,8 +41,10 @@ export const ProfileOrganizationsSuspense = ({
         ) : null}
         <div className="flex items-center justify-between">
           <div className="font-serif text-title-sm sm:text-title-lg">
-            Member of {organizations.length}{' '}
-            {pluralize('Organization', organizations.length)}
+            {t(
+              'Member of {count, plural, =1 {# Organization} other {# Organizations}}',
+              { count: organizations.length },
+            )}
           </div>
         </div>
       </div>
