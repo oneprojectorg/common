@@ -61,7 +61,7 @@ async function advanceToReviewPhase(instanceId: string) {
     .where(eq(processInstances.id, instanceId));
 }
 
-describe.concurrent('getWithReviewAggregates', () => {
+describe.concurrent('getProposalWithReviewAggregates', () => {
   it('rejects callers without admin access on the instance', async ({
     task,
     onTestFinished,
@@ -75,7 +75,7 @@ describe.concurrent('getWithReviewAggregates', () => {
     const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
 
     await expect(
-      reviewerCaller.decision.getWithReviewAggregates({
+      reviewerCaller.decision.getProposalWithReviewAggregates({
         processInstanceId: created.context.instance.instance.id,
         proposalId: created.proposal.id,
       }),
@@ -98,7 +98,7 @@ describe.concurrent('getWithReviewAggregates', () => {
     );
 
     await expect(
-      adminCaller.decision.getWithReviewAggregates({
+      adminCaller.decision.getProposalWithReviewAggregates({
         processInstanceId: primary.context.instance.instance.id,
         proposalId: foreign.proposal.id,
       }),
@@ -116,7 +116,7 @@ describe.concurrent('getWithReviewAggregates', () => {
     );
 
     await expect(
-      adminCaller.decision.getWithReviewAggregates({
+      adminCaller.decision.getProposalWithReviewAggregates({
         processInstanceId: context.instance.instance.id,
         proposalId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -181,7 +181,7 @@ describe.concurrent('getWithReviewAggregates', () => {
       context.defaultReviewer.email,
     );
 
-    const result = await adminCaller.decision.getWithReviewAggregates({
+    const result = await adminCaller.decision.getProposalWithReviewAggregates({
       processInstanceId: context.instance.instance.id,
       proposalId: submittedScenario.proposal.id,
     });
@@ -267,7 +267,7 @@ describe.concurrent('getWithReviewAggregates', () => {
       context.defaultReviewer.email,
     );
 
-    const result = await adminCaller.decision.getWithReviewAggregates({
+    const result = await adminCaller.decision.getProposalWithReviewAggregates({
       processInstanceId: context.instance.instance.id,
       proposalId: firstScenario.proposal.id,
     });

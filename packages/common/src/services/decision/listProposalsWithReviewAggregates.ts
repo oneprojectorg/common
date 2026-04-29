@@ -338,9 +338,9 @@ export function getComputedReviewAggregates(
     totalScore += scored.score;
 
     if (scored.overallRecommendation != null) {
-      const key = scored.overallRecommendation;
-      overallRecommendationCount[key] =
-        (overallRecommendationCount[key] ?? 0) + 1;
+      const recommendation = scored.overallRecommendation;
+      overallRecommendationCount[recommendation] =
+        (overallRecommendationCount[recommendation] ?? 0) + 1;
     }
   }
 

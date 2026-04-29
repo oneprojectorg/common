@@ -6,8 +6,8 @@ import {
 
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
-export const getWithReviewAggregatesRouter = router({
-  getWithReviewAggregates: commonAuthedProcedure()
+export const getProposalWithReviewAggregatesRouter = router({
+  getProposalWithReviewAggregates: commonAuthedProcedure()
     .input(getProposalWithReviewAggregatesInputSchema)
     .output(proposalWithSubmittedReviewsSchema)
     .query(async ({ ctx, input }) => {
