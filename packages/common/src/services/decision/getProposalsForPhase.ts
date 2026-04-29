@@ -247,15 +247,10 @@ export async function getProposalIdsForPhase({
 
   const nonDraftPredicate = ne(proposals.status, ProposalStatus.DRAFT);
 
-  if (ctx.isLegacy) {
-    return getActiveIdsByPredicate({
-      instanceId,
-      predicate: nonDraftPredicate,
-      db,
-    });
-  }
+  const resolvedPhaseId = ctx.isLegacy
+    ? undefined
+    : (phaseId ?? ctx.currentPhaseId);
 
-  const resolvedPhaseId = phaseId ?? ctx.currentPhaseId;
   if (!resolvedPhaseId) {
     return getActiveIdsByPredicate({
       instanceId,
@@ -275,20 +270,27 @@ export async function getProposalIdsForPhase({
     return [];
   }
 
-  const attachmentIds = window.inbound
-    ? await attachmentIdsFor(window.inbound.id, db)
-    : [];
+  const [proposalIdsAttachedToPhase, nonDraftProposalIdsCreatedInPhase] =
+    await Promise.all([
+      window.inbound
+        ? attachmentIdsFor(window.inbound.id, db)
+        : Promise.resolve<string[]>([]),
+      getIdsCreatedDuringWindow({
+        instanceId,
+        predicate: nonDraftPredicate,
+        inboundAt: window.inbound?.transitionedAt,
+        outboundAt: window.outboundTransitionedAt,
+        inboundComparator: 'gt',
+        db,
+      }),
+    ]);
 
-  const duringIds = await getIdsCreatedDuringWindow({
-    instanceId,
-    predicate: nonDraftPredicate,
-    inboundAt: window.inbound?.transitionedAt,
-    outboundAt: window.outboundTransitionedAt,
-    inboundComparator: 'gt',
-    db,
-  });
-
-  return [...new Set([...attachmentIds, ...duringIds])];
+  return [
+    ...new Set([
+      ...proposalIdsAttachedToPhase,
+      ...nonDraftProposalIdsCreatedInPhase,
+    ]),
+  ];
 }
 
 /**
@@ -370,7 +372,11 @@ export async function getPhaseProposalAndDraftIds({
     return { nonDraftIds: [], draftIds: [] };
   }
 
-  const [attachmentIds, nonDraftWindowIds, draftIds] = await Promise.all([
+  const [
+    proposalIdsAttachedToPhase,
+    nonDraftProposalIdsCreatedInPhase,
+    draftProposalIdsCreatedInPhase,
+  ] = await Promise.all([
     window.inbound
       ? attachmentIdsFor(window.inbound.id, db)
       : Promise.resolve<string[]>([]),
@@ -393,8 +399,13 @@ export async function getPhaseProposalAndDraftIds({
   ]);
 
   return {
-    nonDraftIds: [...new Set([...attachmentIds, ...nonDraftWindowIds])],
-    draftIds,
+    nonDraftIds: [
+      ...new Set([
+        ...proposalIdsAttachedToPhase,
+        ...nonDraftProposalIdsCreatedInPhase,
+      ]),
+    ],
+    draftIds: draftProposalIdsCreatedInPhase,
   };
 }
 

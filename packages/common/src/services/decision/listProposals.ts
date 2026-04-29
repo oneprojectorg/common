@@ -181,6 +181,8 @@ export const listProposals = async ({
   // snapshots. The combined resolver shares a single instance-context lookup
   // and window resolution across both queries; we only fall back to it for
   // authenticated callers that need both sets.
+  // These are IDs only — the findMany below hydrates full rows using them as
+  // filter input.
   let phaseProposalIds: string[];
   let phaseDraftIds: string[];
 

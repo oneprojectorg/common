@@ -342,6 +342,108 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     expect(result.proposals.map((p) => p.id)).toContain(draft.id);
   });
 
+  it('does not leak another user’s phase-scoped draft to a member who lacks proposal-level access', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const [creator, otherMember] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
+
+    const draft = await testData.createProposal({
+      userEmail: creator.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: `Private draft ${task.id}` },
+    });
+
+    const otherCaller = await createAuthenticatedCaller(otherMember.email);
+    const result = await otherCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+      phaseId: 'submission',
+    });
+
+    // Phase scoping must not bypass the ownership pushdown: another instance
+    // member without proposal-level access must not see the creator's draft.
+    expect(result.proposals.map((p) => p.id)).not.toContain(draft.id);
+  });
+
+  it('shows a phase-scoped draft to an invited collaborator viewing the creation phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const [creator, collaborator] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
+
+    const draft = await testData.createProposal({
+      userEmail: creator.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: `Shared draft ${task.id}` },
+    });
+
+    if (!draft.profileId) {
+      throw new Error('Draft proposal missing profileId');
+    }
+
+    // Invite the collaborator to the proposal's profile (not the instance's).
+    // This is the membership the `profileUsers` subquery in
+    // `getPhaseProposalAndDraftIds` resolves against.
+    await testData.grantProfileAccess(
+      draft.profileId,
+      collaborator.authUserId,
+      collaborator.email,
+      false,
+    );
+
+    const collaboratorCaller = await createAuthenticatedCaller(
+      collaborator.email,
+    );
+    const result = await collaboratorCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+      phaseId: 'submission',
+    });
+
+    expect(result.proposals.map((p) => p.id)).toContain(draft.id);
+  });
+
   it('places a draft created exactly at the inbound transition timestamp into the new phase (half-open window)', async ({
     task,
     onTestFinished,
