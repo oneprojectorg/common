@@ -3,7 +3,7 @@
 import { pluralize } from '@/utils/pluralize';
 import { skipBatch, trpc } from '@op/api/client';
 import { RELATIONSHIP_OPTIONS, relationshipMap } from '@op/types/relationships';
-import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
+import { Breadcrumb, BreadcrumbLink, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import React, { Suspense, useMemo, useState } from 'react';
@@ -87,8 +87,10 @@ export const ProfileRelationshipsSuspense = ({
       <div className="flex flex-col gap-4 sm:px-0">
         {showBreadcrumb ? (
           <Breadcrumbs className="hidden sm:flex">
-            <Breadcrumb href={`/org/${slug}`}>
-              {organization.profile.name}
+            <Breadcrumb>
+              <BreadcrumbLink href={`/org/${slug}`}>
+                {organization.profile.name}
+              </BreadcrumbLink>
             </Breadcrumb>
             <Breadcrumb>{t('Relationships')}</Breadcrumb>
           </Breadcrumbs>

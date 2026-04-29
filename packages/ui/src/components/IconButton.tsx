@@ -1,50 +1,40 @@
 'use client';
 
-import { Button as RACButton } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
-import type { VariantProps } from 'tailwind-variants';
+import type { ComponentProps, ReactNode } from 'react';
 
-const iconButtonStyle = tv({
-  base: 'flex cursor-pointer items-center justify-center outline-0 outline-transparent duration-200 focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary-tealBlack',
-  variants: {
-    size: {
-      small: 'h-6 w-6 rounded-full',
-      medium: 'h-8 w-8 rounded-md',
-      large: 'h-10 w-10 rounded-lg',
-    },
-    variant: {
-      ghost: 'bg-white/80 hover:bg-neutral-gray1 pressed:bg-neutral-gray2',
-      solid: 'bg-neutral-gray1 hover:bg-neutral-gray2 pressed:bg-neutral-gray3',
-      outline:
-        'border bg-transparent hover:bg-neutral-gray1 pressed:bg-neutral-gray2',
-    },
-    isDisabled: {
-      true: 'pointer-events-none opacity-30',
-      false: '',
-    },
-  },
-  defaultVariants: {
-    size: 'medium',
-    variant: 'ghost',
-  },
-});
+import { Button } from './ui/button';
 
-type IconButtonVariants = VariantProps<typeof iconButtonStyle>;
+type LegacySize = 'small' | 'medium' | 'large';
+type LegacyVariant = 'ghost' | 'solid' | 'outline';
 
-export interface IconButtonProps
-  extends
-    Omit<React.ComponentProps<typeof RACButton>, 'children'>,
-    IconButtonVariants {
-  children: React.ReactNode;
+const sizeMap = {
+  small: 'icon-sm',
+  medium: 'icon',
+  large: 'icon-lg',
+} as const;
+
+const variantMap = {
+  ghost: 'ghost',
+  solid: 'secondary',
+  outline: 'outline',
+} as const;
+
+export interface IconButtonProps extends Omit<
+  ComponentProps<typeof Button>,
+  'variant' | 'size'
+> {
+  children: ReactNode;
+  size?: LegacySize;
+  variant?: LegacyVariant;
   className?: string;
 }
 
-export const IconButton = (props: IconButtonProps) => {
-  const { children, className, ...rest } = props;
-
+export const IconButton = ({
+  size = 'medium',
+  variant = 'ghost',
+  ...props
+}: IconButtonProps) => {
   return (
-    <RACButton {...rest} className={iconButtonStyle({ ...props, className })}>
-      {children}
-    </RACButton>
+    <Button {...props} size={sizeMap[size]} variant={variantMap[variant]} />
   );
 };
