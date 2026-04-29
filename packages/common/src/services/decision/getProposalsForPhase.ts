@@ -1,11 +1,13 @@
 import {
   type DbClient,
+  type SQL,
   and,
   asc,
   db as defaultDb,
   desc,
   eq,
   gt,
+  gte,
   inArray,
   isNull,
   lt,
@@ -16,6 +18,7 @@ import {
   ProposalStatus,
   decisionTransitionProposals,
   processInstances,
+  profileUsers,
   proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
@@ -144,20 +147,37 @@ async function attachmentIdsFor(
   return rows.map((r) => r.id);
 }
 
-/** Proposal ids with `createdAt` strictly between the phase's transition-in and transition-out timestamps. */
-async function submittedDuringIds(
-  instanceId: string,
-  inboundAt: Date | undefined,
-  outboundAt: Date | undefined,
-  db: DbClient,
-): Promise<string[]> {
-  const conditions = [
+/**
+ * Proposal ids matching `predicate` whose `createdAt` falls inside the
+ * phase's transition window. The inbound comparator (`'gt'` or `'gte'`) lets
+ * callers choose strict or half-open semantics: non-drafts use `'gt'` because
+ * the inbound boundary is covered by attachment snapshots, while drafts use
+ * `'gte'` to ensure boundary timestamps land in exactly one phase. Callers
+ * compose multiple constraints into a single `predicate` via `and(...)`.
+ */
+async function getIdsCreatedDuringWindow({
+  instanceId,
+  predicate,
+  inboundAt,
+  outboundAt,
+  inboundComparator,
+  db,
+}: {
+  instanceId: string;
+  predicate: SQL | undefined;
+  inboundAt: Date | undefined;
+  outboundAt: Date | undefined;
+  inboundComparator: 'gt' | 'gte';
+  db: DbClient;
+}): Promise<string[]> {
+  const conditions: (SQL | undefined)[] = [
     eq(proposals.processInstanceId, instanceId),
-    ne(proposals.status, ProposalStatus.DRAFT),
+    predicate,
     isNull(proposals.deletedAt),
   ];
   if (inboundAt) {
-    conditions.push(gt(proposals.createdAt, inboundAt.toISOString()));
+    const comparator = inboundComparator === 'gte' ? gte : gt;
+    conditions.push(comparator(proposals.createdAt, inboundAt.toISOString()));
   }
   if (outboundAt) {
     conditions.push(lt(proposals.createdAt, outboundAt.toISOString()));
@@ -170,17 +190,22 @@ async function submittedDuringIds(
   return rows.map((r) => r.id);
 }
 
-async function allActiveIds(
-  instanceId: string,
-  db: DbClient,
-): Promise<string[]> {
+async function getActiveIdsByPredicate({
+  instanceId,
+  predicate,
+  db,
+}: {
+  instanceId: string;
+  predicate: SQL | undefined;
+  db: DbClient;
+}): Promise<string[]> {
   const rows = await db
     .select({ id: proposals.id })
     .from(proposals)
     .where(
       and(
         eq(proposals.processInstanceId, instanceId),
-        ne(proposals.status, ProposalStatus.DRAFT),
+        predicate,
         isNull(proposals.deletedAt),
       ),
     );
@@ -188,12 +213,17 @@ async function allActiveIds(
 }
 
 /**
- * Returns IDs of proposals visible in the given phase.
+ * Returns IDs of non-draft proposals visible in the given phase.
  *
  * A proposal is in phase P iff it was attached to P's inbound transition
  * (survived the advance-in snapshot) OR it was submitted during P's window
  * (between advance-in and advance-out, or between advance-in and now for the
  * current phase).
+ *
+ * Non-drafts use a strict `(inboundAt, outboundAt)` window because the inbound
+ * boundary is covered by attachment snapshots. For drafts, use the sibling
+ * `getDraftIdsForPhase`, which applies a half-open `[inboundAt, outboundAt)`
+ * window since drafts have no attachment branch.
  *
  * - Legacy instances (no phases array in instanceData): returns all active
  *   non-draft proposals; phase scoping does not apply.
@@ -215,13 +245,23 @@ export async function getProposalIdsForPhase({
     return [];
   }
 
+  const nonDraftPredicate = ne(proposals.status, ProposalStatus.DRAFT);
+
   if (ctx.isLegacy) {
-    return allActiveIds(instanceId, db);
+    return getActiveIdsByPredicate({
+      instanceId,
+      predicate: nonDraftPredicate,
+      db,
+    });
   }
 
   const resolvedPhaseId = phaseId ?? ctx.currentPhaseId;
   if (!resolvedPhaseId) {
-    return allActiveIds(instanceId, db);
+    return getActiveIdsByPredicate({
+      instanceId,
+      predicate: nonDraftPredicate,
+      db,
+    });
   }
 
   const window = await resolvePhaseWindow(
@@ -239,14 +279,106 @@ export async function getProposalIdsForPhase({
     ? await attachmentIdsFor(window.inbound.id, db)
     : [];
 
-  const duringIds = await submittedDuringIds(
+  const duringIds = await getIdsCreatedDuringWindow({
     instanceId,
-    window.inbound?.transitionedAt,
-    window.outboundTransitionedAt,
+    predicate: nonDraftPredicate,
+    inboundAt: window.inbound?.transitionedAt,
+    outboundAt: window.outboundTransitionedAt,
+    inboundComparator: 'gt',
+    db,
+  });
+
+  return [...new Set([...attachmentIds, ...duringIds])];
+}
+
+/**
+ * Returns IDs of draft proposals attributable to the given phase, scoped to
+ * drafts the caller can access (creators and collaborators on the proposal's
+ * profile, via `profileUsers`).
+ *
+ * A draft belongs to phase P iff its `createdAt` falls inside P's
+ * half-open `[inboundAt, outboundAt)` window. Drafts are never attached to
+ * transitions, so only the temporal branch applies. The half-open window
+ * (vs. the strict window used for non-drafts) ensures that a draft created
+ * exactly at a transition boundary lands in the post-transition phase.
+ *
+ * The ownership filter is pushed into the SQL query (via a `profileUsers`
+ * subquery on `authUserId`) rather than applied after fetching, so we never
+ * load drafts the caller has no access to. This matters at scale: an instance
+ * may accumulate hundreds of thousands of drafts across users.
+ *
+ * - Legacy instances: returns all active drafts the caller can access; phase
+ *   scoping does not apply.
+ * - Unreached phase: returns [].
+ */
+export async function getDraftIdsForPhase({
+  instanceId,
+  phaseId,
+  authUserId,
+  db = defaultDb,
+}: {
+  instanceId: string;
+  phaseId?: string;
+  authUserId: string;
+  db?: DbClient;
+}): Promise<string[]> {
+  const ctx = await getInstanceContext(instanceId, db);
+
+  if (!ctx) {
+    return [];
+  }
+
+  // Compose the draft + ownership filter into a single predicate. Pushing the
+  // `profileUsers` ownership subquery into SQL ensures we never load drafts
+  // the caller has no access to — important at scale, where instances may
+  // accumulate hundreds of thousands of drafts across users.
+  const draftAccessPredicate = and(
+    eq(proposals.status, ProposalStatus.DRAFT),
+    inArray(
+      proposals.profileId,
+      db
+        .select({ profileId: profileUsers.profileId })
+        .from(profileUsers)
+        .where(eq(profileUsers.authUserId, authUserId)),
+    ),
+  );
+
+  if (ctx.isLegacy) {
+    return getActiveIdsByPredicate({
+      instanceId,
+      predicate: draftAccessPredicate,
+      db,
+    });
+  }
+
+  const resolvedPhaseId = phaseId ?? ctx.currentPhaseId;
+  if (!resolvedPhaseId) {
+    return getActiveIdsByPredicate({
+      instanceId,
+      predicate: draftAccessPredicate,
+      db,
+    });
+  }
+
+  const window = await resolvePhaseWindow(
+    instanceId,
+    resolvedPhaseId,
+    ctx.currentPhaseId,
     db,
   );
 
-  return [...new Set([...attachmentIds, ...duringIds])];
+  if (window.kind === 'unreached') {
+    return [];
+  }
+
+  return getIdsCreatedDuringWindow({
+    instanceId,
+    predicate: draftAccessPredicate,
+    inboundAt: window.inbound?.transitionedAt,
+    outboundAt: window.outboundTransitionedAt,
+    inboundComparator: 'gte',
+    db,
+  });
 }
 
 /**

@@ -20,7 +20,6 @@ import {
   postsToProfiles,
   processInstances,
   profileRelationships,
-  profileUsers,
   proposalCategories,
   proposals,
 } from '@op/db/schema';
@@ -35,7 +34,10 @@ import {
   getProfileAccessUser,
 } from '../access';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
-import { getProposalIdsForPhase } from './getProposalsForPhase';
+import {
+  getDraftIdsForPhase,
+  getProposalIdsForPhase,
+} from './getProposalsForPhase';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 
@@ -174,17 +176,31 @@ export const listProposals = async ({
     skipAccessCheck,
   });
 
-  const phaseProposalIds =
-    explicitScopeIds ??
-    (await getProposalIdsForPhase({
-      instanceId: processInstanceId,
-      phaseId: input.phaseId,
-    }));
+  // Resolve phase-scoped IDs for non-drafts and drafts in parallel. Drafts are
+  // phase-scoped via their own `createdAt`-window resolver (`getDraftIdsForPhase`)
+  // since they're never attached to transition snapshots. The draft fetch is
+  // skipped for trusted contexts because they never surface drafts anyway.
+  const [phaseProposalIds, phaseDraftIds] = await Promise.all([
+    explicitScopeIds
+      ? Promise.resolve(explicitScopeIds)
+      : getProposalIdsForPhase({
+          instanceId: processInstanceId,
+          phaseId: input.phaseId,
+        }),
+    skipAccessCheck
+      ? Promise.resolve<string[]>([])
+      : getDraftIdsForPhase({
+          instanceId: processInstanceId,
+          phaseId: input.phaseId,
+          authUserId: input.authUserId,
+        }),
+  ]);
 
   // For trusted contexts (skipAccessCheck), drafts are never returned and phase
   // scoping is the only proposal-id filter — so an empty phase set means no results.
-  // For authenticated callers we still need to consider drafts the user owns/collaborates
-  // on, which are not part of phaseProposalIds, so we cannot early-return here.
+  // For authenticated callers, drafts have their own phase-scoped ID set
+  // (`phaseDraftIds`) which may surface results even when `phaseProposalIds` is
+  // empty, so we cannot early-return here.
   if (skipAccessCheck && phaseProposalIds.length === 0) {
     return {
       proposals: [],
@@ -290,10 +306,11 @@ export const listProposals = async ({
       : categoryFilter;
   }
 
-  // Phase scoping applies to non-draft proposals only. Drafts are user-private
-  // and not part of any phase transition snapshot, so they bypass phaseProposalIds.
-  // When phaseProposalIds is empty (e.g. instance has no submitted proposals yet),
-  // the non-draft branch must short-circuit to false rather than emit an empty IN ().
+  // Phase scoping applies separately to non-drafts and drafts. Non-drafts are
+  // resolved via transition snapshots + a strict `createdAt` window; drafts use
+  // a half-open `createdAt` window only (they're never attached to a snapshot).
+  // When the relevant ID set is empty (e.g. instance has no submitted proposals
+  // yet), each branch must short-circuit to false rather than emit an empty IN ().
   const phaseScopedNonDraftIdFilter =
     phaseProposalIds.length > 0
       ? and(
@@ -308,20 +325,19 @@ export const listProposals = async ({
       ? and(whereClause, phaseScopedNonDraftIdFilter)
       : phaseScopedNonDraftIdFilter;
   } else {
-    // Draft proposals: only visible to users with proposal-level access
-    // (the creator and invited collaborators with a profileUsers record on the proposal's profile).
-    // Drafts are not phase-scoped and remain visible regardless of phaseId so that
-    // creators continue to see their own in-progress work alongside the current phase.
-    const draftFilter = and(
-      eq(proposals.status, ProposalStatus.DRAFT),
-      inArray(
-        proposals.profileId,
-        db
-          .select({ profileId: profileUsers.profileId })
-          .from(profileUsers)
-          .where(eq(profileUsers.authUserId, input.authUserId)),
-      ),
-    );
+    // Draft proposals are phase-scoped to their `createdAt` window: a draft made
+    // in Phase 1 is only visible when viewing Phase 1, even after the instance
+    // advances. Ownership scoping (creator + invited collaborators via
+    // `profileUsers`) is applied inside `getDraftIdsForPhase` via a subquery,
+    // so `phaseDraftIds` is already access-filtered — no further ownership
+    // filter is needed here.
+    const draftFilter =
+      phaseDraftIds.length > 0
+        ? and(
+            eq(proposals.status, ProposalStatus.DRAFT),
+            inArray(proposals.id, phaseDraftIds),
+          )
+        : sql`false`;
 
     // Non-draft proposals: phase-scoped, plus the HIDDEN visibility filter for
     // non-admins (admins and the owning profile still see hidden proposals).

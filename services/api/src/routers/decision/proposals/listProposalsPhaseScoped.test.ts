@@ -1,5 +1,11 @@
-import { db, eq } from '@op/db/client';
-import { ProcessStatus, ProposalStatus, proposals } from '@op/db/schema';
+import { and, db, eq } from '@op/db/client';
+import {
+  ProcessStatus,
+  ProposalStatus,
+  processInstances,
+  proposals,
+  stateTransitionHistory,
+} from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
@@ -184,5 +190,212 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     // Soft-deleted proposal must be excluded even though it's in the join table
     expect(result.proposals).toHaveLength(1);
     expect(result.proposals[0]?.id).toBe(p1.id);
+  });
+
+  it('shows the creator their draft when viewing the phase it was created in', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    const draft = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Phase-1 draft ${task.id}` },
+    });
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      phaseId: 'submission',
+    });
+
+    expect(result.proposals.map((p) => p.id)).toContain(draft.id);
+  });
+
+  it('hides a phase-1 draft from the creator after the instance advances to phase 2', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    const draft = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Phase-1 draft ${task.id}` },
+    });
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+
+    // Default phaseId resolves to the current phase (review). The phase-1 draft
+    // should NOT be visible.
+    const reviewResult = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+    });
+    expect(reviewResult.proposals.map((p) => p.id)).not.toContain(draft.id);
+
+    // Explicit phaseId='review' should likewise hide it.
+    const reviewExplicit = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      phaseId: 'review',
+    });
+    expect(reviewExplicit.proposals.map((p) => p.id)).not.toContain(draft.id);
+
+    // Querying back at the creation phase should re-surface the draft.
+    const submissionResult = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      phaseId: 'submission',
+    });
+    expect(submissionResult.proposals.map((p) => p.id)).toContain(draft.id);
+  });
+
+  it('shows a draft created in the current phase when no phaseId is passed', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+
+    const draftInReview = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Phase-2 draft ${task.id}` },
+    });
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+    });
+
+    expect(result.proposals.map((p) => p.id)).toContain(draftInReview.id);
+  });
+
+  it('shows all drafts for legacy instances regardless of phaseId', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    const draft = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Legacy draft ${task.id}` },
+    });
+
+    // Mark the instance as legacy by stamping `currentStateId` into instanceData.
+    const instanceRow = await db._query.processInstances.findFirst({
+      where: eq(processInstances.id, instanceId),
+    });
+    const legacyData = {
+      ...((instanceRow?.instanceData as Record<string, unknown> | null) ?? {}),
+      currentStateId: 'submission',
+    };
+    await db
+      .update(processInstances)
+      .set({ instanceData: legacyData })
+      .where(eq(processInstances.id, instanceId));
+
+    // Legacy instances bypass phase scoping for drafts (and non-drafts).
+    const result = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      phaseId: 'review',
+    });
+    expect(result.proposals.map((p) => p.id)).toContain(draft.id);
+  });
+
+  it('places a draft created exactly at the inbound transition timestamp into the new phase (half-open window)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+
+    const [inbound] = await db
+      .select({ transitionedAt: stateTransitionHistory.transitionedAt })
+      .from(stateTransitionHistory)
+      .where(
+        and(
+          eq(stateTransitionHistory.processInstanceId, instanceId),
+          eq(stateTransitionHistory.toStateId, 'review'),
+        ),
+      );
+    expect(inbound).toBeDefined();
+
+    const draft = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Boundary draft ${task.id}` },
+    });
+    // Pin the draft's createdAt to the exact transition timestamp.
+    await db
+      .update(proposals)
+      .set({ createdAt: inbound!.transitionedAt.toISOString() })
+      .where(eq(proposals.id, draft.id));
+
+    // The boundary draft must land in the post-transition phase (review), not
+    // the pre-transition phase (submission).
+    const submissionResult = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      phaseId: 'submission',
+    });
+    expect(submissionResult.proposals.map((p) => p.id)).not.toContain(draft.id);
+
+    const reviewResult = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      phaseId: 'review',
+    });
+    expect(reviewResult.proposals.map((p) => p.id)).toContain(draft.id);
   });
 });
