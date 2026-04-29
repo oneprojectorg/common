@@ -6,12 +6,12 @@ interface UseIntersectionObserverOptions {
   enabled?: boolean;
 }
 
-export const useIntersectionObserver = <T extends HTMLElement = HTMLElement>(
+export const useIntersectionObserver = (
   options: UseIntersectionObserverOptions = {},
 ) => {
   const { threshold = 0, rootMargin = '0px', enabled = true } = options;
   const [isIntersecting, setIsIntersecting] = useState(false);
-  const ref = useRef<T>(null);
+  const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!enabled || !ref.current) return;
