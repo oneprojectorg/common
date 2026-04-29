@@ -203,7 +203,7 @@ async function listProposalsPaginated({
               tieBreakerColumn: table.id,
               cursor: decodedCursor,
               direction: 'desc',
-            })!,
+            }),
         }),
       },
       with: proposalRelations({ processInstanceId, phaseId }),
