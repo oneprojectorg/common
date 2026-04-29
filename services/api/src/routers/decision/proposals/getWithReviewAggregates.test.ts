@@ -197,9 +197,7 @@ describe.concurrent('getWithReviewAggregates', () => {
 
     expect(result.reviews).toHaveLength(1);
     const onlyReview = result.reviews[0]!;
-    expect(onlyReview.reviewer.id).toBe(
-      submittedScenario.reviewer.profileId,
-    );
+    expect(onlyReview.reviewer.id).toBe(submittedScenario.reviewer.profileId);
     expect(onlyReview.score).toBe(11);
     expect(onlyReview.overallRecommendation).toBe('yes');
     expect(onlyReview.assignmentStatus).toBe(
