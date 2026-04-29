@@ -18,7 +18,10 @@ import {
 } from '../../utils';
 import { getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
-import { getProposalIdsForPhase } from './getProposalsForPhase';
+import {
+  deriveInstanceContext,
+  getProposalIdsForPhase,
+} from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import type {
@@ -188,6 +191,7 @@ export async function submitManualSelection({
       await getProposalIdsForPhase({
         instanceId: processInstanceId,
         phaseId: previousPhaseId,
+        instanceContext: deriveInstanceContext(lockedInstance),
         db: tx,
       }),
     );

@@ -25,6 +25,26 @@ import {
 
 import { isLegacyInstanceData } from './isLegacyInstance';
 
+export type InstanceContext = {
+  isLegacy: boolean;
+  currentPhaseId?: string | null;
+};
+
+/**
+ * Derives an `InstanceContext` from a `processInstances` row. Use this when
+ * the caller has already fetched the row and wants to pass context into the
+ * phase resolvers without triggering a duplicate read.
+ */
+export function deriveInstanceContext(row: {
+  instanceData: unknown;
+  currentStateId: string | null;
+}): InstanceContext {
+  return {
+    isLegacy: isLegacyInstanceData(row.instanceData),
+    currentPhaseId: row.currentStateId,
+  };
+}
+
 /**
  * Loads the instance's legacy/current-phase context in a single query.
  * Returns null if the instance does not exist.
@@ -32,7 +52,7 @@ import { isLegacyInstanceData } from './isLegacyInstance';
 async function getInstanceContext(
   instanceId: string,
   db: DbClient,
-): Promise<{ isLegacy: boolean; currentPhaseId?: string | null } | null> {
+): Promise<InstanceContext | null> {
   const [row] = await db
     .select({
       instanceData: processInstances.instanceData,
@@ -46,10 +66,7 @@ async function getInstanceContext(
     return null;
   }
 
-  return {
-    isLegacy: isLegacyInstanceData(row.instanceData),
-    currentPhaseId: row.currentStateId,
-  };
+  return deriveInstanceContext(row);
 }
 
 type PhaseWindow =
@@ -213,6 +230,25 @@ async function getActiveIdsByPredicate({
 }
 
 /**
+ * Returns IDs of all active (non-deleted) non-draft proposals for an instance,
+ * ignoring phase scoping. Use this for legacy instances or when the caller
+ * has decided not to apply phase scoping (e.g. instance has no current phase).
+ */
+export async function getActiveNonDraftIdsForInstance({
+  instanceId,
+  db = defaultDb,
+}: {
+  instanceId: string;
+  db?: DbClient;
+}): Promise<string[]> {
+  return getActiveIdsByPredicate({
+    instanceId,
+    predicate: ne(proposals.status, ProposalStatus.DRAFT),
+    db,
+  });
+}
+
+/**
  * Returns IDs of non-draft proposals visible in the given phase.
  *
  * A proposal is in phase P iff it was attached to P's inbound transition
@@ -225,21 +261,29 @@ async function getActiveIdsByPredicate({
  * `getPhaseProposalAndDraftIds`, which applies a half-open
  * `[inboundAt, outboundAt)` window since drafts have no attachment branch.
  *
- * - Legacy instances (no phases array in instanceData): returns all active
- *   non-draft proposals; phase scoping does not apply.
- * - Unreached phase (phaseId refers to a phase the instance hasn't entered):
- *   returns [].
+ * Legacy instances and instances without a current phase are NOT handled
+ * here — callers must check `instanceContext.isLegacy` / `currentPhaseId`
+ * upstream and use `getActiveNonDraftIdsForInstance` for those cases.
+ *
+ * Returns [] for an unreached phase (a phase the instance hasn't entered).
  */
 export async function getProposalIdsForPhase({
   instanceId,
   phaseId,
+  instanceContext,
   db = defaultDb,
 }: {
   instanceId: string;
-  phaseId?: string;
+  phaseId: string;
+  /**
+   * Pre-derived instance context. Pass this when the caller has already
+   * fetched the `processInstances` row to avoid a duplicate read. When
+   * omitted, the function performs its own lookup.
+   */
+  instanceContext?: InstanceContext;
   db?: DbClient;
 }): Promise<string[]> {
-  const ctx = await getInstanceContext(instanceId, db);
+  const ctx = instanceContext ?? (await getInstanceContext(instanceId, db));
 
   if (!ctx) {
     return [];
@@ -247,21 +291,9 @@ export async function getProposalIdsForPhase({
 
   const nonDraftPredicate = ne(proposals.status, ProposalStatus.DRAFT);
 
-  const resolvedPhaseId = ctx.isLegacy
-    ? undefined
-    : (phaseId ?? ctx.currentPhaseId);
-
-  if (!resolvedPhaseId) {
-    return getActiveIdsByPredicate({
-      instanceId,
-      predicate: nonDraftPredicate,
-      db,
-    });
-  }
-
   const window = await resolvePhaseWindow(
     instanceId,
-    resolvedPhaseId,
+    phaseId,
     ctx.currentPhaseId,
     db,
   );
@@ -316,14 +348,20 @@ export async function getPhaseProposalAndDraftIds({
   instanceId,
   phaseId,
   authUserId,
+  instanceContext,
   db = defaultDb,
 }: {
   instanceId: string;
   phaseId?: string;
   authUserId: string;
+  /**
+   * Pre-derived instance context. Pass this when the caller has already
+   * fetched the `processInstances` row to avoid a duplicate read.
+   */
+  instanceContext?: InstanceContext;
   db?: DbClient;
 }): Promise<{ nonDraftIds: string[]; draftIds: string[] }> {
-  const ctx = await getInstanceContext(instanceId, db);
+  const ctx = instanceContext ?? (await getInstanceContext(instanceId, db));
 
   if (!ctx) {
     return { nonDraftIds: [], draftIds: [] };
@@ -411,7 +449,9 @@ export async function getPhaseProposalAndDraftIds({
 
 /**
  * Returns the proposals visible in the given phase. See `getProposalIdsForPhase`
- * for membership semantics.
+ * for membership semantics. Defaults to the instance's current phase when
+ * `phaseId` is omitted and falls back to all active non-drafts for legacy
+ * instances or instances without a current phase.
  */
 export async function getProposalsForPhase({
   instanceId,
@@ -422,7 +462,24 @@ export async function getProposalsForPhase({
   phaseId?: string;
   db?: DbClient;
 }): Promise<Proposal[]> {
-  const ids = await getProposalIdsForPhase({ instanceId, phaseId, db });
+  const ctx = await getInstanceContext(instanceId, db);
+  if (!ctx) {
+    return [];
+  }
+
+  const resolvedPhaseId = ctx.isLegacy
+    ? undefined
+    : (phaseId ?? ctx.currentPhaseId);
+
+  const ids = resolvedPhaseId
+    ? await getProposalIdsForPhase({
+        instanceId,
+        phaseId: resolvedPhaseId,
+        instanceContext: ctx,
+        db,
+      })
+    : await getActiveNonDraftIdsForInstance({ instanceId, db });
+
   if (ids.length === 0) {
     return [];
   }
