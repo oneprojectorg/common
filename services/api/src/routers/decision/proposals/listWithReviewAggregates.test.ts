@@ -187,8 +187,8 @@ describe.concurrent('listWithReviewAggregates', () => {
       (i) => i.proposal.id === withReview.proposal.id,
     );
     expect(reviewedItem?.aggregates).toMatchObject({
-      assignmentsTotal: 1,
-      reviewsSubmitted: 1,
+      assignmentsCount: 1,
+      reviewsSubmittedCount: 1,
       averageScore: 11,
     });
     expect(reviewedItem?.aggregates.overallRecommendationCount).toEqual({
@@ -199,8 +199,8 @@ describe.concurrent('listWithReviewAggregates', () => {
       (i) => i.proposal.id === withoutReview.proposal.id,
     );
     expect(unreviewedItem?.aggregates).toMatchObject({
-      assignmentsTotal: 1,
-      reviewsSubmitted: 0,
+      assignmentsCount: 1,
+      reviewsSubmittedCount: 0,
       averageScore: 0,
       overallRecommendationCount: {},
     });
@@ -370,7 +370,7 @@ describe.concurrent('listWithReviewAggregates', () => {
 
     expect(result.items).toHaveLength(1);
     expect(result.items[0]?.aggregates).toMatchObject({
-      reviewsSubmitted: 0,
+      reviewsSubmittedCount: 0,
       averageScore: 0,
       overallRecommendationCount: {},
     });

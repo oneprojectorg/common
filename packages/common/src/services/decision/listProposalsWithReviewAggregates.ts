@@ -26,7 +26,6 @@ import {
   type ProposalsWithReviewAggregatesList,
   proposalsWithReviewAggregatesListSchema,
 } from './schemas/reviews';
-import type { RubricTemplateSchema } from './types';
 
 // ── Input schema ───────────────────────────────────────────────────────
 
@@ -78,8 +77,7 @@ export async function listProposalsWithReviewAggregates(
     );
   }
 
-  const rubricTemplate = (instance.instanceData.rubricTemplate ??
-    null) as RubricTemplateSchema | null;
+  const rubricTemplate = instance.instanceData.rubricTemplate;
   const scoredCriterionKeys = rubricTemplate
     ? getRubricScoringInfo(rubricTemplate)
         .criteria.filter((c) => c.scored)
@@ -141,24 +139,17 @@ async function listProposalsFiltered({
       where: { id: { in: filteredProposalIds } },
       with: proposalRelations({ processInstanceId, phaseId }),
     }),
-    loadCategoriesByProposalIds(filteredProposalIds),
+    getCategoriesByProposalIds(filteredProposalIds),
   ]);
 
-  const proposalsById = new Map(proposalsFull.map((p) => [p.id, p]));
-
-  // Drop unmatched (cross-instance, deleted, etc). Preserve caller order.
-  const items = filteredProposalIds
-    .map((id) => proposalsById.get(id))
-    .filter((p): p is NonNullable<typeof p> => p !== undefined)
-    .filter((p) => p.processInstanceId === processInstanceId)
-    .map((proposal) => ({
-      proposal,
-      aggregates: computeReviewAggregates(
-        proposal.reviewAssignments,
-        scoredCriterionKeys,
-      ),
-      categories: categoriesByProposalId.get(proposal.id) ?? [],
-    }));
+  const items = proposalsFull.map((proposal) => ({
+    proposal,
+    aggregates: getComputedReviewAggregates(
+      proposal.reviewAssignments,
+      scoredCriterionKeys,
+    ),
+    categories: categoriesByProposalId.get(proposal.id) ?? [],
+  }));
 
   return proposalsWithReviewAggregatesListSchema.parse({
     items,
@@ -225,11 +216,11 @@ async function listProposalsPaginated({
   }
 
   const pageIds = pageRows.map((p) => p.id);
-  const categoriesByProposalId = await loadCategoriesByProposalIds(pageIds);
+  const categoriesByProposalId = await getCategoriesByProposalIds(pageIds);
 
   const items = pageRows.map((proposal) => ({
     proposal,
-    aggregates: computeReviewAggregates(
+    aggregates: getComputedReviewAggregates(
       proposal.reviewAssignments,
       scoredCriterionKeys,
     ),
@@ -282,7 +273,7 @@ function proposalRelations({
   } as const;
 }
 
-async function loadCategoriesByProposalIds(
+async function getCategoriesByProposalIds(
   proposalIds: string[],
 ): Promise<Map<string, ProposalCategoryItem[]>> {
   const map = new Map<string, ProposalCategoryItem[]>();
@@ -320,7 +311,7 @@ async function loadCategoriesByProposalIds(
  * `proposal_reviews_assignment_unique` makes `reviews` 0-or-1; we read just
  * the first row even though the relation is declared as many.
  */
-function computeReviewAggregates(
+function getComputedReviewAggregates(
   reviewAssignments: Array<{
     status: string;
     reviewer: unknown;
@@ -333,7 +324,7 @@ function computeReviewAggregates(
     status: a.status,
   }));
 
-  let reviewsSubmitted = 0;
+  let reviewsSubmittedCount = 0;
   let totalScore = 0;
   const overallRecommendationCount: Record<string, number> = {};
 
@@ -342,7 +333,7 @@ function computeReviewAggregates(
     if (!review || review.state !== ProposalReviewState.SUBMITTED) {
       continue;
     }
-    reviewsSubmitted += 1;
+    reviewsSubmittedCount += 1;
 
     const data = review.reviewData as {
       answers?: Record<string, unknown>;
@@ -365,11 +356,11 @@ function computeReviewAggregates(
   }
 
   const averageScore =
-    reviewsSubmitted === 0 ? 0 : totalScore / reviewsSubmitted;
+    reviewsSubmittedCount === 0 ? 0 : totalScore / reviewsSubmittedCount;
 
   return {
-    assignmentsTotal: reviewAssignments.length,
-    reviewsSubmitted,
+    assignmentsCount: reviewAssignments.length,
+    reviewsSubmittedCount,
     averageScore,
     overallRecommendationCount,
     reviewers,

@@ -106,7 +106,7 @@ export const proposalRevisionRequestListSchema = z.object({
  * reviews.
  *
  * `averageScore` is the mean of per-review scores across submitted reviews
- * (sum of integer rubric criteria, divided by `reviewsSubmitted`). Returns
+ * (sum of integer rubric criteria, divided by `reviewsSubmittedCount`). Returns
  * 0 when no submissions exist.
  *
  * `overallRecommendationCount` is a tally of submitted answers to the
@@ -114,8 +114,8 @@ export const proposalRevisionRequestListSchema = z.object({
  * Empty when the rubric doesn't include the field or no reviews are in.
  */
 export const proposalReviewAggregatesSchema = z.object({
-  assignmentsTotal: z.number().int(),
-  reviewsSubmitted: z.number().int(),
+  assignmentsCount: z.number().int(),
+  reviewsSubmittedCount: z.number().int(),
   averageScore: z.number(),
   overallRecommendationCount: z.record(z.string(), z.number().int()),
   reviewers: z.array(
