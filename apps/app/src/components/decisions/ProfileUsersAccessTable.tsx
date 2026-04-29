@@ -183,7 +183,6 @@ const ProfileUserRoleSelect = ({
           }
         }}
         isDisabled={isPending}
-        size="small"
         className={className}
       >
         {roles.map((role) => (
@@ -312,7 +311,6 @@ const InviteRoleSelect = ({
           }
         }}
         isDisabled={isPending}
-        size="small"
         className={className}
       >
         {roles.map((role) => (

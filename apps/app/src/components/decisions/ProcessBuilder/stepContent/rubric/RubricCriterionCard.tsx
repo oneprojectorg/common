@@ -236,7 +236,6 @@ function CriterionTypeSelector({
       value={value}
       onChange={(newValue) => onChange(newValue as RubricCriterionType)}
       orientation="vertical"
-      labelClassName="text-base"
     >
       {CRITERION_TYPES.map((type) => {
         const entry = CRITERION_TYPE_REGISTRY[type];

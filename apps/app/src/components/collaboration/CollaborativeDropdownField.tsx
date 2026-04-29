@@ -76,14 +76,10 @@ export function CollaborativeDropdownField({
 
   return (
     <Select
-      variant="pill"
-      size="medium"
       placeholder={placeholder ?? t('Select option')}
       selectedKey={selectedValue}
       onSelectionChange={handleSelectionChange}
-      selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
       className="w-auto max-w-36 overflow-hidden sm:max-w-96"
-      popoverProps={{ className: 'sm:min-w-fit sm:max-w-2xl' }}
     >
       {allowEmpty && (
         <SelectItem className="min-w-fit" key={EMPTY_KEY} id={EMPTY_KEY}>

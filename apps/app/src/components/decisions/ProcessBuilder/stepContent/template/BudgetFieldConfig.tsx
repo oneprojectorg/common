@@ -176,7 +176,6 @@ export function BudgetFieldConfig({
               label={t('Currency')}
               selectedKey={budgetCurrency}
               onSelectionChange={handleBudgetCurrencyChange}
-              buttonClassName="bg-white"
             >
               {CURRENCIES.map((c) => (
                 <SelectItem key={c.code} id={c.code}>

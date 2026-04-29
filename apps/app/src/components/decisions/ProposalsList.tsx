@@ -248,8 +248,6 @@ const VotingProposalsList = ({
                       isVotedFor ? (
                         <Checkbox
                           isSelected={true}
-                          shape="circle"
-                          borderColor="light"
                           className="[&[data-disabled]_svg]:!text-white"
                           aria-label={t('Selected proposal')}
                           isDisabled
@@ -297,8 +295,6 @@ const VotingProposalsList = ({
                                 onChange={() => {
                                   toggleProposal(proposal.id);
                                 }}
-                                shape="circle"
-                                borderColor="light"
                                 aria-label={
                                   isSelected
                                     ? t('Deselect proposal')

@@ -74,7 +74,6 @@ export function ReviewSettingsContent({
           }
           aria-label={t('Coverage')}
           label={t('How should proposals get distributed to reviewers?')}
-          labelClassName="text-sm font-normal text-neutral-gray4"
           orientation="vertical"
         >
           <Radio value="full_coverage">

@@ -1,13 +1,8 @@
 'use client';
 
-import { useMediaQuery } from '@op/hooks';
-import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
-import { IconButton } from '@op/ui/IconButton';
 import { Select, SelectItem } from '@op/ui/Select';
 import { cn } from '@op/ui/utils';
 import { useParams } from 'next/navigation';
-import { LuGlobe } from 'react-icons/lu';
 
 import { useRouter as useI18nRouter, usePathname } from '@/lib/i18n';
 import { useTranslations } from '@/lib/i18n';
@@ -27,7 +22,6 @@ const localeDisplayNames: Record<string, string> = {
 
 export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
   const t = useTranslations();
-  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
   const i18nRouter = useI18nRouter();
   const pathname = usePathname();
   const params = useParams();
@@ -46,27 +40,6 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
       selectedKey={currentLocale}
       onSelectionChange={handleSelectionChange}
       aria-label={t('Select language')}
-      customTrigger={
-        <>
-          <IconButton
-            variant="outline"
-            size="medium"
-            className="hidden text-primary-teal sm:flex"
-          >
-            <LuGlobe className="size-4" />
-          </IconButton>
-          {isMobile ? (
-            <Button
-              color="neutral"
-              unstyled
-              variant="icon"
-              className="flex size-8 items-center justify-center rounded-full bg-neutral-offWhite sm:hidden"
-            >
-              <LuGlobe className="size-4" />
-            </Button>
-          ) : null}
-        </>
-      }
     >
       {i18nConfig.locales.map((locale) => (
         <SelectItem

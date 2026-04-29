@@ -94,7 +94,7 @@ function PolicyCheckbox({
 
   return (
     <div className="flex items-center gap-1">
-      <Checkbox size="small" value={'' + checked} onChange={onChange}>
+      <Checkbox value={'' + checked} onChange={onChange}>
         {t('I accept the')}{' '}
       </Checkbox>
       <DialogTrigger>

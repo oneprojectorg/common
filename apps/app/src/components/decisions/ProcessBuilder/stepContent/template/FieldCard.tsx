@@ -149,7 +149,6 @@ export function FieldCard({
               label={t('Type')}
               selectedKey={field.fieldType}
               onSelectionChange={handleTypeChange}
-              buttonClassName="bg-white"
               className="w-40"
             >
               {FIELD_TYPE_OPTIONS.map((opt) => (

@@ -95,8 +95,6 @@ const MyBallotProposals = ({
                 menu={
                   <Checkbox
                     isSelected={true}
-                    shape="circle"
-                    borderColor="light"
                     aria-label={t('Selected proposal')}
                     isDisabled={true}
                   />

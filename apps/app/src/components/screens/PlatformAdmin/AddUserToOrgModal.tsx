@@ -284,7 +284,6 @@ const OrganizationAndRoleSelection = ({
         selectedKey={selectedOrgId}
         onSelectionChange={(key) => setSelectedOrgId(String(key))}
         items={availableOrganizations}
-        popoverProps={{ className: 'max-w-md' }}
       >
         {(org) => (
           <ComboBoxItem key={org.id} id={org.id} textValue={org.profile.name}>

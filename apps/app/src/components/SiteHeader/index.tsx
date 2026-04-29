@@ -71,7 +71,6 @@ const ProfileMenuItem = ({
     <MenuItem
       key={profile.id}
       className="min-h-[60px] w-72"
-      selected={user.currentProfile?.id === profile.id}
       onAction={() => {
         if (user.currentProfile?.id === profile.id) {
           const profilePath =

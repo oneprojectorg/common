@@ -129,13 +129,12 @@ const DuplicateFormContent = ({
 
         <CheckboxGroup
           label={t('Include')}
-          labelClassName="font-serif text-title-sm12"
           className="gap-4"
           value={selectedIncludes}
           onChange={setSelectedIncludes}
         >
           {includeOptions.map((option) => (
-            <Checkbox key={option.key} value={option.key} size="small">
+            <Checkbox key={option.key} value={option.key}>
               {option.label}
             </Checkbox>
           ))}

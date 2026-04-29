@@ -368,7 +368,6 @@ function AddRoleDialog({
             {PERMISSION_COLUMNS.map(({ key, label }) => (
               <Checkbox
                 key={key}
-                size="small"
                 isSelected={permissions[key]}
                 onChange={() => togglePermission(key)}
                 aria-label={`${label} permission`}
@@ -518,7 +517,6 @@ function DecisionRoleCheckboxes({
     <TableCell key={key} className="text-center">
       <div className="flex justify-center">
         <Checkbox
-          size="small"
           isSelected={optimisticPermissions?.[key] ?? false}
           onChange={() => togglePermission(key)}
           aria-label={`${label} permission`}
@@ -546,7 +544,6 @@ function MobileDecisionRoles({
       {PERMISSION_COLUMNS.map(({ key, label }) => (
         <Checkbox
           key={key}
-          size="small"
           isSelected={optimisticPermissions?.[key] ?? false}
           onChange={() => togglePermission(key)}
           aria-label={`${label} permission`}
@@ -719,7 +716,6 @@ function AddRoleRow({
         <TableCell key={key} className="text-center">
           <div className="flex justify-center">
             <Checkbox
-              size="small"
               isSelected={permissions[key]}
               onChange={() => togglePermission(key)}
               aria-label={`${label} permission`}

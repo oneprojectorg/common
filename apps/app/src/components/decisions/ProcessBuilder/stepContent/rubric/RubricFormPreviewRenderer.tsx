@@ -111,10 +111,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
             className="gap-1"
           />
           <Select
-            variant="pill"
-            size="medium"
             placeholder={t('Select option')}
-            selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
             className="w-auto max-w-56 overflow-hidden sm:max-w-96"
           >
             {[]}
