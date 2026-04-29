@@ -89,9 +89,7 @@ function buildClassName(
   });
 }
 
-export interface ButtonProps
-  extends AriaButtonProps,
-    SharedButtonStyleProps {
+export interface ButtonProps extends AriaButtonProps, SharedButtonStyleProps {
   className?: string;
   isLoading?: boolean;
   ref?: Ref<HTMLButtonElement>;
@@ -116,14 +114,28 @@ export const Button = (props: ButtonProps) => {
     return (
       <AriaButton
         {...rest}
-        className={composeRenderProps(props.className, (className, renderProps) =>
-          buildClassName(
-            { variant, color, size, surface, unstyled, scaleOnPress, insetShadow, backglow, className },
-            renderProps,
-          ),
+        className={composeRenderProps(
+          props.className,
+          (className, renderProps) =>
+            buildClassName(
+              {
+                variant,
+                color,
+                size,
+                surface,
+                unstyled,
+                scaleOnPress,
+                insetShadow,
+                backglow,
+                className,
+              },
+              renderProps,
+            ),
         )}
       >
-        {composeRenderProps(children, (c) => <>{c}</>)}
+        {composeRenderProps(children, (c) => (
+          <>{c}</>
+        ))}
       </AriaButton>
     );
   }
@@ -134,7 +146,18 @@ export const Button = (props: ButtonProps) => {
       isPending
       className={composeRenderProps(props.className, (className, renderProps) =>
         buildClassName(
-          { variant, color, size, surface, unstyled, scaleOnPress, insetShadow, backglow, className, isLoading: true },
+          {
+            variant,
+            color,
+            size,
+            surface,
+            unstyled,
+            scaleOnPress,
+            insetShadow,
+            backglow,
+            className,
+            isLoading: true,
+          },
           renderProps,
         ),
       )}
@@ -165,8 +188,7 @@ type LowLevelPressHandlers =
   | 'onPressUp';
 
 export interface ButtonLinkProps
-  extends Omit<AriaLinkProps, LowLevelPressHandlers>,
-    SharedButtonStyleProps {
+  extends Omit<AriaLinkProps, LowLevelPressHandlers>, SharedButtonStyleProps {
   className?: string;
   isLoading?: boolean;
   ref?: Ref<HTMLAnchorElement>;
@@ -191,14 +213,28 @@ export const ButtonLink = (props: ButtonLinkProps) => {
     return (
       <AriaLink
         {...rest}
-        className={composeRenderProps(props.className, (className, renderProps) =>
-          buildClassName(
-            { variant, color, size, surface, unstyled, scaleOnPress, insetShadow, backglow, className },
-            renderProps,
-          ),
+        className={composeRenderProps(
+          props.className,
+          (className, renderProps) =>
+            buildClassName(
+              {
+                variant,
+                color,
+                size,
+                surface,
+                unstyled,
+                scaleOnPress,
+                insetShadow,
+                backglow,
+                className,
+              },
+              renderProps,
+            ),
         )}
       >
-        {composeRenderProps(children, (c) => <>{c}</>)}
+        {composeRenderProps(children, (c) => (
+          <>{c}</>
+        ))}
       </AriaLink>
     );
   }
@@ -210,7 +246,18 @@ export const ButtonLink = (props: ButtonLinkProps) => {
       aria-disabled="true"
       className={composeRenderProps(props.className, (className, renderProps) =>
         buildClassName(
-          { variant, color, size, surface, unstyled, scaleOnPress, insetShadow, backglow, className, isLoading: true },
+          {
+            variant,
+            color,
+            size,
+            surface,
+            unstyled,
+            scaleOnPress,
+            insetShadow,
+            backglow,
+            className,
+            isLoading: true,
+          },
           renderProps,
         ),
       )}

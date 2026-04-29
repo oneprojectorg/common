@@ -58,7 +58,4 @@ export * from './components/Tooltip';
 // legacy OP-flavored focusRing lives in ./utils and is used via direct import
 // by legacy components during migration.
 export * from './lib/utils';
-export {
-  composeTailwindRenderProps,
-  filterNullOrUndefined,
-} from './utils';
+export { composeTailwindRenderProps, filterNullOrUndefined } from './utils';
