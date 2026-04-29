@@ -42,8 +42,6 @@ export {
 } from './services/decision/getRubricScoringInfo';
 export {
   parseRubricReviewData,
-  readRubricNumber,
-  readRubricString,
   type ParsedRubricReviewData,
   type RubricAnswerValue,
 } from './services/decision/parseRubricReviewData';

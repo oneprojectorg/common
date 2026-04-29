@@ -48,85 +48,58 @@ const seiRubricTemplate = {
 } as const satisfies RubricTemplateSchema;
 
 describe('parseRubricReviewData', () => {
-  it('parses scored integer answers as numbers', () => {
-    const parsed = parseRubricReviewData(seiRubricTemplate, {
-      answers: { innovation: 4 },
-      rationales: {},
-    });
-
-    expect(parsed.answers.innovation).toBe(4);
-    expect(typeof parsed.answers.innovation).toBe('number');
-  });
-
-  it('parses dropdown const enums as their literal value', () => {
-    const parsed = parseRubricReviewData(seiRubricTemplate, {
-      answers: { meetsEligibility: 'yes' },
-      rationales: {},
-    });
-
-    expect(parsed.answers.meetsEligibility).toBe('yes');
-  });
-
-  it('parses the __overall_recommendation enum', () => {
-    const parsed = parseRubricReviewData(seiRubricTemplate, {
-      answers: { __overall_recommendation: 'maybe' },
-      rationales: {},
-    });
-
-    expect(parsed.answers.__overall_recommendation).toBe('maybe');
-  });
-
-  it('parses free-text criteria as strings', () => {
-    const parsed = parseRubricReviewData(seiRubricTemplate, {
-      answers: { strengthsSummary: 'Solid plan' },
-      rationales: {},
-    });
-
-    expect(parsed.answers.strengthsSummary).toBe('Solid plan');
-  });
-
-  it('drops a single malformed answer without losing siblings', () => {
+  it('parses a fully-populated wrapper with primitive narrowing', () => {
     const parsed = parseRubricReviewData(seiRubricTemplate, {
       answers: {
-        // out-of-range integer
-        innovation: 99,
-        // valid sibling
+        innovation: 4,
         meetsEligibility: 'yes',
+        strengthsSummary: 'Solid plan',
+        __overall_recommendation: 'maybe',
       },
-      rationales: {},
+      rationales: { innovation: 'Good fit' },
     });
 
-    expect(parsed.answers.innovation).toBeUndefined();
-    expect(parsed.answers.meetsEligibility).toBe('yes');
+    expect(parsed).toEqual({
+      answers: {
+        innovation: 4,
+        meetsEligibility: 'yes',
+        strengthsSummary: 'Solid plan',
+        __overall_recommendation: 'maybe',
+      },
+      rationales: { innovation: 'Good fit' },
+    });
+    expect(typeof parsed.answers.innovation).toBe('number');
+    expect(typeof parsed.answers.meetsEligibility).toBe('string');
   });
 
-  it('drops dropdown values that are not in the allowed consts', () => {
+  it('drops all answers (kept rationales) when Ajv rejects the payload', () => {
+    // out-of-range integer → Ajv rejects the whole answer payload, so we
+    // drop every answer rather than silently surfacing a malformed row
+    const parsed = parseRubricReviewData(seiRubricTemplate, {
+      answers: { innovation: 99, meetsEligibility: 'yes' },
+      rationales: { innovation: 'questionable' },
+    });
+
+    expect(parsed.answers).toEqual({});
+    expect(parsed.rationales).toEqual({ innovation: 'questionable' });
+  });
+
+  it('drops all answers when a dropdown value is not in the allowed consts', () => {
     const parsed = parseRubricReviewData(seiRubricTemplate, {
       answers: { meetsEligibility: 'kinda' },
       rationales: {},
     });
 
-    expect(parsed.answers.meetsEligibility).toBeUndefined();
+    expect(parsed.answers).toEqual({});
   });
 
-  it('coerces a stringified integer? no — keeps types strict', () => {
-    // Number criteria reject string-encoded numbers; the storage layer is
-    // expected to hold real JSON numbers.
+  it('rejects stringified numbers (Ajv coerceTypes is off)', () => {
     const parsed = parseRubricReviewData(seiRubricTemplate, {
       answers: { innovation: '4' },
       rationales: {},
     });
 
-    expect(parsed.answers.innovation).toBeUndefined();
-  });
-
-  it('preserves rationales when valid', () => {
-    const parsed = parseRubricReviewData(seiRubricTemplate, {
-      answers: { innovation: 3 },
-      rationales: { innovation: 'Good fit' },
-    });
-
-    expect(parsed.rationales).toEqual({ innovation: 'Good fit' });
+    expect(parsed.answers).toEqual({});
   });
 
   it('returns empty halves when reviewData is missing entirely', () => {
@@ -135,17 +108,25 @@ describe('parseRubricReviewData', () => {
     expect(parsed).toEqual({ answers: {}, rationales: {} });
   });
 
-  it('returns empty halves when reviewData has the wrong wrapper shape', () => {
+  it('returns empty halves when the wrapper shape is wrong', () => {
     const parsed = parseRubricReviewData(seiRubricTemplate, {
-      // rationales should be Record<string, string>
       answers: {},
-      rationales: { innovation: 42 },
+      rationales: { innovation: 42 }, // rationales must be Record<string, string>
     });
 
     expect(parsed).toEqual({ answers: {}, rationales: {} });
   });
 
-  it('preserves unknown primitive keys when the criterion was removed from the template', () => {
+  it('preserves a partial answer set (Ajv allows missing keys by default)', () => {
+    const parsed = parseRubricReviewData(seiRubricTemplate, {
+      answers: { innovation: 3 },
+      rationales: {},
+    });
+
+    expect(parsed.answers).toEqual({ innovation: 3 });
+  });
+
+  it('preserves keys for criteria removed from the template (additionalProperties default)', () => {
     const parsed = parseRubricReviewData(seiRubricTemplate, {
       answers: { legacyCriterion: 'kept' },
       rationales: {},
@@ -154,23 +135,25 @@ describe('parseRubricReviewData', () => {
     expect(parsed.answers.legacyCriterion).toBe('kept');
   });
 
-  it('drops unknown keys whose value is non-primitive', () => {
+  it('drops the answers when a value is non-primitive (Zod narrow rejects)', () => {
     const parsed = parseRubricReviewData(seiRubricTemplate, {
       answers: { legacyCriterion: { nested: true } },
       rationales: {},
     });
 
-    expect(parsed.answers.legacyCriterion).toBeUndefined();
+    expect(parsed.answers).toEqual({});
   });
 
-  it('treats a null template as an empty-template parse (primitives preserved)', () => {
+  it('skips Ajv when the template is null and narrows primitives via Zod', () => {
     const parsed = parseRubricReviewData(null, {
       answers: { __overall_recommendation: 'yes', score: 4 },
       rationales: { __overall_recommendation: 'good' },
     });
 
-    expect(parsed.answers.__overall_recommendation).toBe('yes');
-    expect(parsed.answers.score).toBe(4);
+    expect(parsed.answers).toEqual({
+      __overall_recommendation: 'yes',
+      score: 4,
+    });
     expect(parsed.rationales).toEqual({ __overall_recommendation: 'good' });
   });
 });
