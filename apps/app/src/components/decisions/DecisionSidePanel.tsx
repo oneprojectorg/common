@@ -115,18 +115,18 @@ export const DecisionSidePanel = ({
           }
           className="flex min-h-0 flex-1 flex-col gap-0"
         >
-          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-neutral-gray1 pr-2 sm:pr-0">
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-neutral-gray1 pr-4 sm:pr-0">
             <TabList
               aria-label={t('Decision side panel tabs')}
-              className="flex grow gap-4 overflow-x-auto border-b-0 px-6"
+              className="flex grow gap-4 overflow-x-auto border-b-0 px-4 sm:px-6"
             >
-              <Tab id="updates" className="px-0 py-4">
+              <Tab id="updates" className="h-auto px-0 py-3">
                 {t('Updates')}
               </Tab>
-              <Tab id="meetings" className="px-0 py-4">
+              <Tab id="meetings" className="h-auto px-0 py-3">
                 {t('Meetings')}
               </Tab>
-              <Tab id="resources" className="px-0 py-4">
+              <Tab id="resources" className="h-auto px-0 py-3">
                 {t('Resources')}
               </Tab>
             </TabList>
@@ -137,7 +137,7 @@ export const DecisionSidePanel = ({
                 onPress={close}
                 aria-label={t('Close')}
               >
-                <LuX className="size-4" />
+                <LuX className="size-5" />
               </IconButton>
             ) : null}
           </div>
@@ -189,7 +189,7 @@ const UpdatesTabContent = ({
   }, [utils, decisionProfileId]);
 
   return (
-    <div className="flex flex-col px-6 pt-4 pb-8">
+    <div className="flex flex-col px-4 pt-4 pb-8 sm:px-6">
       <Header2 className="font-serif text-title-base">{t('Updates')}</Header2>
       <div className="mt-4 flex flex-col gap-6">
         {canPostUpdate ? (
@@ -221,7 +221,7 @@ const UpdatesTabContent = ({
 const ComingSoonContent = ({ title }: { title: string }) => {
   const t = useTranslations();
   return (
-    <div className="flex flex-col px-6 pt-6 pb-8">
+    <div className="flex flex-col px-4 pt-6 pb-8 sm:px-6">
       <Header2 className="font-serif text-title-base">{title}</Header2>
       <p className="mt-4 text-sm text-neutral-gray4">{t('Coming soon')}</p>
     </div>
