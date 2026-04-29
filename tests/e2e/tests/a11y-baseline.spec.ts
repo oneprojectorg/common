@@ -2,10 +2,12 @@ import AxeBuilder from '@axe-core/playwright';
 import { profiles } from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import {
+  type CreateOrganizationResult,
   createDecisionInstance,
   createProposal,
   getSeededTemplate,
 } from '@op/test';
+import type { Page } from '@playwright/test';
 import type { AxeResults, ImpactValue, Result } from 'axe-core';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -60,21 +62,20 @@ interface ViolationNode {
   screenshotPath?: string;
 }
 
+type RuleTotal = Pick<Result, 'id' | 'help' | 'helpUrl'> & {
+  impact: Severity;
+  occurrences: number;
+  routes: number;
+  wcagCriteria: WcagCriterion[];
+};
+
 interface BaselineReport {
   axeVersion: string;
   wcagTags: string[];
   totals: Record<Severity, number>;
   totalViolations: number;
   routesScanned: number;
-  ruleTotals: Array<{
-    id: string;
-    impact: Severity;
-    occurrences: number;
-    routes: number;
-    help: string;
-    helpUrl: string;
-    wcagCriteria: WcagCriterion[];
-  }>;
+  ruleTotals: RuleTotal[];
   routes: RouteResult[];
   screenshotsAttempted: number;
   screenshotsCaptured: number;
@@ -86,13 +87,7 @@ interface BaselineSummary {
   totals: Record<Severity, number>;
   totalViolations: number;
   routesScanned: number;
-  ruleTotals: Array<{
-    id: string;
-    impact: Severity;
-    occurrences: number;
-    routes: number;
-    wcagCriteria: WcagCriterion[];
-  }>;
+  ruleTotals: Array<Omit<RuleTotal, 'help' | 'helpUrl'>>;
   routes: Array<{
     url: string;
     label: string;
@@ -227,7 +222,7 @@ test.describe('axe-core baseline scan', () => {
 });
 
 async function seedDynamicRoutes(
-  org: import('@op/test').CreateOrganizationResult,
+  org: CreateOrganizationResult,
 ): Promise<RouteScan[]> {
   const template = await getSeededTemplate();
   const instance = await createDecisionInstance({
@@ -301,7 +296,7 @@ async function seedDynamicRoutes(
 }
 
 async function scanRouteWithTimeout(
-  page: import('@playwright/test').Page,
+  page: Page,
   route: RouteScan,
 ): Promise<RouteResult> {
   let timeoutId: NodeJS.Timeout | undefined;
@@ -328,26 +323,20 @@ async function scanRouteWithTimeout(
   }
 }
 
-async function scanRoute(
-  page: import('@playwright/test').Page,
-  route: RouteScan,
-): Promise<RouteResult> {
+async function scanRoute(page: Page, route: RouteScan): Promise<RouteResult> {
   const reportUrl = route.displayUrl ?? route.url;
   try {
     await page.goto(route.url, {
       waitUntil: 'domcontentloaded',
       timeout: 30_000,
     });
-    // Best-effort settle: wait up to 15s for the page to quiesce so axe sees a stable DOM.
-    // Pages with persistent connections (websockets, SSE, hot reload) never reach idle —
-    // we proceed regardless and warn so CI logs flag routes that always fall through.
-    await page
-      .waitForLoadState('networkidle', { timeout: 15_000 })
-      .catch(() => {
-        console.warn(
-          `[a11y-baseline] networkidle timeout on ${route.label}; scanning anyway`,
-        );
-      });
+    // Wait for window.load (recommended over networkidle, which the Playwright docs
+    // discourage because apps with persistent connections never reach idle).
+    await page.waitForLoadState('load', { timeout: 15_000 }).catch(() => {
+      console.warn(
+        `[a11y-baseline] load event timeout on ${route.label}; scanning anyway`,
+      );
+    });
 
     const axe = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
     const violations = summarize(axe);
@@ -379,10 +368,15 @@ async function scanRoute(
 }
 
 async function captureScreenshots(
-  page: import('@playwright/test').Page,
+  page: Page,
   route: RouteScan,
   violations: ViolationSummary[],
 ): Promise<void> {
+  // Local-only: CI skips screenshots to keep artifacts small and the scan fast.
+  // Devs running `pnpm a11y:baseline` locally get the visual previews.
+  if (process.env.CI) {
+    return;
+  }
   const routeSlug = slugForRoute(route.displayUrl ?? route.url);
   const routeDir = path.join(REPORT_DIR, SCREENSHOT_DIR_NAME, routeSlug);
   mkdirSync(routeDir, { recursive: true });
@@ -410,7 +404,7 @@ async function captureScreenshots(
 }
 
 async function captureNodeScreenshot(
-  page: import('@playwright/test').Page,
+  page: Page,
   selector: string,
   outPath: string,
 ): Promise<boolean> {
@@ -656,42 +650,6 @@ function writeReport(report: BaselineReport): void {
     `${JSON.stringify(report, null, 2)}\n`,
   );
   writeFileSync(path.join(REPORT_DIR, 'report.md'), renderMarkdown(report));
-  writeFileSync(path.join(REPORT_DIR, 'report.csv'), renderCsv(report));
-}
-
-function renderCsv(r: BaselineReport): string {
-  const header = [
-    'Route',
-    'Rule ID',
-    'Impact',
-    'Description',
-    'Elements Affected',
-    'WCAG Criterion',
-  ];
-  const rows: string[][] = [header];
-  for (const route of r.routes) {
-    if (route.status !== 'ok') {
-      continue;
-    }
-    for (const v of route.violations) {
-      rows.push([
-        route.url,
-        v.id,
-        v.impact,
-        v.help,
-        String(v.nodes.length),
-        v.wcagCriteria.join(' '),
-      ]);
-    }
-  }
-  return `${rows.map((row) => row.map(escapeCsvCell).join(',')).join('\n')}\n`;
-}
-
-function escapeCsvCell(cell: string): string {
-  if (/[",\n\r]/.test(cell)) {
-    return `"${cell.replace(/"/g, '""')}"`;
-  }
-  return cell;
 }
 
 function renderMarkdown(r: BaselineReport): string {
@@ -700,9 +658,11 @@ function renderMarkdown(r: BaselineReport): string {
   lines.push('');
   lines.push(`Engine: axe-core ${r.axeVersion}`);
   lines.push(`WCAG tags: ${r.wcagTags.join(', ')}`);
-  lines.push(
-    `Screenshots: ${r.screenshotsCaptured}/${r.screenshotsAttempted} captured`,
-  );
+  if (r.screenshotsAttempted > 0) {
+    lines.push(
+      `Screenshots: ${r.screenshotsCaptured}/${r.screenshotsAttempted} captured`,
+    );
+  }
   lines.push('');
   lines.push('## Totals');
   lines.push('');

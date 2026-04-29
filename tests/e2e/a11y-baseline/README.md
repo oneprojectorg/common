@@ -3,10 +3,9 @@
 Generated output from `pnpm a11y:baseline`. Drives WCAG 2.1 AA Compliance Sprint targets.
 
 - `summary.json` — committed. Stable per-route counts and per-rule occurrences for PR-vs-base diffing. No UUIDs, no per-node detail.
-- `report.json` — gitignored. Full per-node detail (selectors, html snippets, screenshot paths, axe `failureSummary`). Useful for debugging a single run; churns every run because of seeded UUIDs and React Aria autogen ids.
-- `report.md` — gitignored. Human-readable summary, top rules, per-route detail with embedded screenshots.
-- `report.csv` — gitignored. Flat one-row-per-(route, rule) table. Columns: `Route, Rule ID, Impact, Description, Elements Affected, WCAG Criterion`. Suitable for spreadsheet/JIRA import.
-- `screenshots/` — gitignored. PNG per visible violation node, organized by stable route slug.
+- `report.json` — gitignored. Full per-node detail (selectors, html snippets, screenshot paths, axe `failureSummary`). Useful for local triage; churns every run because of seeded UUIDs and React Aria autogen ids.
+- `report.md` — gitignored. Human-readable summary, top rules, per-route detail with embedded screenshots when run locally.
+- `screenshots/` — gitignored, **local-only**. PNG per visible violation node, organized by stable route slug. CI skips screenshot capture (`process.env.CI`) to keep artifacts small and the scan fast — devs running `pnpm a11y:baseline` locally get the visual previews.
 
 ## Run
 
@@ -19,7 +18,7 @@ pnpm build:e2e
 
 # each scan
 pnpm start:e2e &        # serves apps/app on :4100, apps/api on :4300
-pnpm a11y:baseline      # runs the spec, overwrites all four report files
+pnpm a11y:baseline      # runs the spec, overwrites summary.json + report.{json,md} (+ screenshots/ locally)
 ```
 
 ## Routes
