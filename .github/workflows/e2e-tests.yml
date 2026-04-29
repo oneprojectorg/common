@@ -228,7 +228,7 @@ jobs:
           timeout 60 bash -c 'until curl -s http://localhost:4100 > /dev/null 2>&1 && curl -s http://localhost:4300 > /dev/null 2>&1; do sleep 1; done'
 
       - name: Run E2E tests
-        run: pnpm -C ./tests/e2e exec playwright test --shard=${{ matrix.shard }}/2 --reporter=blob
+        run: pnpm -C ./tests/e2e exec playwright test --project=e2e --shard=${{ matrix.shard }}/2 --reporter=blob
 
       - name: Upload Playwright blob report
         uses: actions/upload-artifact@v4
@@ -289,3 +289,191 @@ jobs:
           name: playwright-report
           path: tests/e2e/playwright-report/
           retention-days: 30
+
+  # ── A11y baseline. The axe-core spec is in its own Playwright project
+  #    (`a11y`); the sharded e2e run uses `--project=e2e` which testIgnore's
+  #    that file, so it doesn't run twice. ──
+  a11y-baseline:
+    name: A11y Baseline
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+    timeout-minutes: 10
+    needs: build
+    permissions:
+      contents: read
+      pull-requests: write
+
+    env:
+      # Tiptap Pro registry authentication
+      TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
+      # E2E Supabase instance environment variables (port 56xxx)
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:56321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
+      SUPABASE_URL: http://127.0.0.1:56321
+      SUPABASE_ANON_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:56322/postgres
+      S3_ASSET_ROOT: http://127.0.0.1:56321/storage/v1/object/public/assets
+      NEXT_PUBLIC_POSTHOG_KEY: phc_test_key_for_ci
+      # SSR secrets for cookie encryption (CI-specific key)
+      SSR_SECRETS_KEY: '{"alg":"A256CBC","ext":true,"k":"ClrCwvDCjk5wvgqFbotuW5PU4z35GL_nz5U7wXUrqTA","key_ops":["encrypt","decrypt"],"kty":"oct"}'
+      # Resend (email - stub)
+      RESEND_PASSWORD: re_test_key_for_ci
+      # Google OAuth (stub values - not used in E2E tests)
+      SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: test-client-id.apps.googleusercontent.com
+      SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: test-client-secret
+      # TipTap Cloud (collaborative editing - stub for tests)
+      NEXT_PUBLIC_TIPTAP_APP_ID: test-tiptap-app-id
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install pnpm
+        run: corepack prepare pnpm@latest --activate
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download app build
+        uses: actions/download-artifact@v4
+        with:
+          name: app-build
+          path: apps/app/.next/
+
+      - name: Download api build
+        uses: actions/download-artifact@v4
+        with:
+          name: api-build
+          path: apps/api/.next/
+
+      - name: Get Playwright version
+        id: playwright-version
+        run: |
+          PLAYWRIGHT_VERSION=$(pnpm -C ./tests/e2e exec playwright --version | head -n1 | awk '{print $2}')
+          echo "version=${PLAYWRIGHT_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm -C ./tests/e2e exec playwright install --with-deps chromium
+
+      - name: Install Playwright system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm -C ./tests/e2e exec playwright install-deps chromium
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.84.2
+
+      - name: Use E2E Supabase config
+        run: cp supabase/supabase-e2e.toml supabase/config.toml
+
+      - name: Start Supabase (E2E instance)
+        run: |
+          echo "Starting Supabase with E2E config (ports 56xxx)..."
+          supabase start
+          echo "Supabase E2E instance started successfully"
+
+      - name: Check Supabase status
+        run: supabase status
+
+      - name: Export Supabase auth keys
+        run: |
+          eval "$(supabase status -o env | grep -E '^(PUBLISHABLE_KEY|SECRET_KEY)=')"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${PUBLISHABLE_KEY}"
+            echo "SUPABASE_ANON_KEY=${PUBLISHABLE_KEY}"
+            echo "SUPABASE_SERVICE_ROLE=${SECRET_KEY}"
+          } >> "$GITHUB_ENV"
+
+      - name: Run database migrations
+        run: pnpm w:db migrate:e2e
+
+      - name: Seed test database
+        run: pnpm w:db seed:e2e
+
+      - name: Start E2E servers
+        run: pnpm start:e2e &
+
+      - name: Wait for servers
+        run: |
+          timeout 60 bash -c 'until curl -s http://localhost:4100 > /dev/null 2>&1 && curl -s http://localhost:4300 > /dev/null 2>&1; do sleep 1; done'
+
+      - name: Run a11y baseline scan
+        run: pnpm a11y:baseline
+
+      - name: Publish report to step summary
+        if: ${{ !cancelled() }}
+        run: |
+          if [ -f tests/e2e/a11y-baseline/report.md ]; then
+            cat tests/e2e/a11y-baseline/report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload baseline report
+        id: upload-report
+        uses: actions/upload-artifact@v4
+        if: ${{ always() && !cancelled() }}
+        with:
+          name: a11y-baseline-report
+          path: |
+            tests/e2e/a11y-baseline/report.md
+            tests/e2e/a11y-baseline/report.json
+            tests/e2e/a11y-baseline/summary.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Fetch base branch summary
+        if: ${{ github.event_name == 'pull_request' && !cancelled() }}
+        run: |
+          BASE="${{ github.base_ref }}"
+          git fetch origin "${BASE}" --depth=1
+          git show "origin/${BASE}:tests/e2e/a11y-baseline/summary.json" > /tmp/base-summary.json 2>/dev/null \
+            || echo '{}' > /tmp/base-summary.json
+
+      - name: Render a11y diff
+        if: ${{ github.event_name == 'pull_request' && !cancelled() }}
+        run: |
+          pnpm tsx scripts/a11y-baseline-diff.ts \
+            /tmp/base-summary.json \
+            tests/e2e/a11y-baseline/summary.json \
+            "${{ steps.upload-report.outputs.artifact-url }}" \
+            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            > /tmp/a11y-comment.md
+          cat /tmp/a11y-comment.md
+
+      - name: Post sticky PR comment
+        if: ${{ github.event_name == 'pull_request' && !cancelled() }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: a11y-baseline
+          path: /tmp/a11y-comment.md
