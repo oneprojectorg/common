@@ -9,10 +9,10 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
-} from '../src/components/ui/table';
+} from '../src/components/ui/data-table';
 
 const meta: Meta<typeof Table> = {
-  title: 'Intent UI/Table',
+  title: 'Components/DataTable',
   component: Table,
   parameters: {
     layout: 'padded',

@@ -5,7 +5,7 @@ import type { AdminOrg } from '@op/api/encoders';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
-import { TableCell } from '@op/ui/ui/table';
+import { TableCell } from '@op/ui/ui/data-table';
 import { useFormatter } from 'next-intl';
 import { useState } from 'react';
 import { Button } from 'react-aria-components';

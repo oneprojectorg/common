@@ -24,7 +24,7 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
-} from '@op/ui/ui/table';
+} from '@op/ui/ui/data-table';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { LuCheck, LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 

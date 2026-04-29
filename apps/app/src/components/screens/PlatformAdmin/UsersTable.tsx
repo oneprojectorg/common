@@ -16,7 +16,7 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
-} from '@op/ui/ui/table';
+} from '@op/ui/ui/data-table';
 import {
   Suspense,
   useCallback,

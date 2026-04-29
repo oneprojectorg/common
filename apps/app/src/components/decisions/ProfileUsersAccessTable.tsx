@@ -16,7 +16,7 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
-} from '@op/ui/ui/table';
+} from '@op/ui/ui/data-table';
 import { useState } from 'react';
 import type { SortDescriptor } from 'react-aria-components';
 import { LuUsers } from 'react-icons/lu';

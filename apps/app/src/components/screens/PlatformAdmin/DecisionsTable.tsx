@@ -13,7 +13,7 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
-} from '@op/ui/ui/table';
+} from '@op/ui/ui/data-table';
 import { Suspense, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
