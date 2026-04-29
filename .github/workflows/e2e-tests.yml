@@ -448,9 +448,7 @@ jobs:
           path: |
             tests/e2e/a11y-baseline/report.md
             tests/e2e/a11y-baseline/report.json
-            tests/e2e/a11y-baseline/report.csv
             tests/e2e/a11y-baseline/summary.json
-            tests/e2e/a11y-baseline/screenshots
           if-no-files-found: warn
           retention-days: 30
 
