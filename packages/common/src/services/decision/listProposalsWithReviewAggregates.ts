@@ -21,11 +21,13 @@ import {
   OVERALL_RECOMMENDATION_KEY,
   getRubricScoringInfo,
 } from './getRubricScoringInfo';
+import { parseRubricReviewData } from './parseRubricReviewData';
 import {
   type ProposalCategoryItem,
   type ProposalsWithReviewAggregatesList,
   proposalsWithReviewAggregatesListSchema,
 } from './schemas/reviews';
+import type { RubricTemplateSchema } from './types';
 
 // ── Input schema ───────────────────────────────────────────────────────
 
@@ -77,12 +79,7 @@ export async function listProposalsWithReviewAggregates(
     );
   }
 
-  const rubricTemplate = instance.instanceData.rubricTemplate;
-  const scoredCriterionKeys = rubricTemplate
-    ? getRubricScoringInfo(rubricTemplate)
-        .criteria.filter((c) => c.scored)
-        .map((c) => c.key)
-    : [];
+  const rubricTemplate = instance.instanceData.rubricTemplate ?? null;
 
   const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
   const phaseProposalIds = await getProposalIdsForPhase({
@@ -96,7 +93,7 @@ export async function listProposalsWithReviewAggregates(
       phaseProposalIds,
       processInstanceId,
       phaseId,
-      scoredCriterionKeys,
+      rubricTemplate,
     });
   }
 
@@ -106,7 +103,7 @@ export async function listProposalsWithReviewAggregates(
     phaseProposalIds,
     limit: input.limit,
     cursor: input.cursor,
-    scoredCriterionKeys,
+    rubricTemplate,
   });
 }
 
@@ -117,13 +114,13 @@ async function listProposalsFiltered({
   phaseProposalIds,
   processInstanceId,
   phaseId,
-  scoredCriterionKeys,
+  rubricTemplate,
 }: {
   proposalIds: string[];
   phaseProposalIds: string[];
   processInstanceId: string;
   phaseId: string | undefined;
-  scoredCriterionKeys: string[];
+  rubricTemplate: RubricTemplateSchema | null;
 }): Promise<ProposalsWithReviewAggregatesList> {
   const phaseProposalIdSet = new Set(phaseProposalIds);
   const filteredProposalIds = proposalIds.filter((id) =>
@@ -146,7 +143,7 @@ async function listProposalsFiltered({
     proposal,
     aggregates: getComputedReviewAggregates(
       proposal.reviewAssignments,
-      scoredCriterionKeys,
+      rubricTemplate,
     ),
     categories: categoriesByProposalId.get(proposal.id) ?? [],
   }));
@@ -166,14 +163,14 @@ async function listProposalsPaginated({
   phaseProposalIds,
   limit,
   cursor,
-  scoredCriterionKeys,
+  rubricTemplate,
 }: {
   processInstanceId: string;
   phaseId: string | undefined;
   phaseProposalIds: string[];
   limit: number;
   cursor: string | undefined;
-  scoredCriterionKeys: string[];
+  rubricTemplate: RubricTemplateSchema | null;
 }): Promise<ProposalsWithReviewAggregatesList> {
   if (phaseProposalIds.length === 0) {
     return { items: [], total: 0, next: null };
@@ -222,7 +219,7 @@ async function listProposalsPaginated({
     proposal,
     aggregates: getComputedReviewAggregates(
       proposal.reviewAssignments,
-      scoredCriterionKeys,
+      rubricTemplate,
     ),
     categories: categoriesByProposalId.get(proposal.id) ?? [],
   }));
@@ -310,6 +307,10 @@ async function getCategoriesByProposalIds(
  *
  * `proposal_reviews_assignment_unique` makes `reviews` 0-or-1; we read just
  * the first row even though the relation is declared as many.
+ *
+ * Rubric answers are parsed once via `parseRubricReviewData` so the loop
+ * works against typed values (`number` for scored criteria, `string` for the
+ * overall-recommendation enum) instead of casting and coercing per access.
  */
 function getComputedReviewAggregates(
   reviewAssignments: Array<{
@@ -317,12 +318,18 @@ function getComputedReviewAggregates(
     reviewer: unknown;
     reviews: Array<{ state: string; reviewData: unknown }>;
   }>,
-  scoredCriterionKeys: string[],
+  rubricTemplate: RubricTemplateSchema | null,
 ) {
   const reviewers = reviewAssignments.map((a) => ({
     profile: a.reviewer,
     status: a.status,
   }));
+
+  const scoredCriterionKeys = rubricTemplate
+    ? getRubricScoringInfo(rubricTemplate)
+        .criteria.filter((c) => c.scored)
+        .map((c) => c.key)
+    : [];
 
   let reviewsSubmittedCount = 0;
   let totalScore = 0;
@@ -335,23 +342,22 @@ function getComputedReviewAggregates(
     }
     reviewsSubmittedCount += 1;
 
-    const data = review.reviewData as {
-      answers?: Record<string, unknown>;
-    } | null;
-    const answers = data?.answers ?? {};
+    const { answers } = parseRubricReviewData(
+      rubricTemplate,
+      review.reviewData,
+    );
 
     for (const key of scoredCriterionKeys) {
-      const value = Number(answers[key]);
-      if (Number.isFinite(value)) {
+      const value = answers[key];
+      if (typeof value === 'number') {
         totalScore += value;
       }
     }
 
     const recommendation = answers[OVERALL_RECOMMENDATION_KEY];
-    if (recommendation != null) {
-      const recommendationKey = String(recommendation);
-      overallRecommendationCount[recommendationKey] =
-        (overallRecommendationCount[recommendationKey] ?? 0) + 1;
+    if (typeof recommendation === 'string') {
+      overallRecommendationCount[recommendation] =
+        (overallRecommendationCount[recommendation] ?? 0) + 1;
     }
   }
 

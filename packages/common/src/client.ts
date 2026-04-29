@@ -40,6 +40,13 @@ export {
   OVERALL_RECOMMENDATION_KEY,
   isOverallRecommendationField,
 } from './services/decision/getRubricScoringInfo';
+export {
+  parseRubricReviewData,
+  readRubricNumber,
+  readRubricString,
+  type ParsedRubricReviewData,
+  type RubricAnswerValue,
+} from './services/decision/parseRubricReviewData';
 export { REVIEWS_POLICIES } from './services/decision/schemas/types';
 export { isLastPhase } from './services/decision/schemas/instanceData';
 export {

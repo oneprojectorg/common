@@ -80,6 +80,7 @@ export * from './assembleProposalData';
 export * from './resolveProposalTemplate';
 export * from './getProposalTemplateFieldOrder';
 export * from './getRubricScoringInfo';
+export * from './parseRubricReviewData';
 export * from './tiptapExtensions';
 
 // Proposal attachments

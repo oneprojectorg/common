@@ -1,7 +1,9 @@
 import {
   type ProposalReview,
+  type RubricAnswerValue,
   type RubricTemplateSchema,
   isOverallRecommendationField,
+  parseRubricReviewData,
   parseSchemaOptions,
 } from '@op/common/client';
 import type { ReactNode } from 'react';
@@ -22,7 +24,10 @@ export function SubmittedReviewView({
 }) {
   const t = useTranslations();
   const fields = compileRubricSchema(rubricTemplate);
-  const { answers, rationales } = review.reviewData;
+  const { answers, rationales } = parseRubricReviewData(
+    rubricTemplate,
+    review.reviewData,
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -112,7 +117,7 @@ function RubricFieldResult({
   rationale,
 }: {
   field: FieldDescriptor;
-  value: unknown;
+  value: RubricAnswerValue | undefined;
   rationale?: string;
 }) {
   const t = useTranslations();
