@@ -222,8 +222,8 @@ async function getActiveIdsByPredicate({
  *
  * Non-drafts use a strict `(inboundAt, outboundAt)` window because the inbound
  * boundary is covered by attachment snapshots. For drafts, use the sibling
- * `getDraftIdsForPhase`, which applies a half-open `[inboundAt, outboundAt)`
- * window since drafts have no attachment branch.
+ * `getPhaseProposalAndDraftIds`, which applies a half-open
+ * `[inboundAt, outboundAt)` window since drafts have no attachment branch.
  *
  * - Legacy instances (no phases array in instanceData): returns all active
  *   non-draft proposals; phase scoping does not apply.
@@ -292,26 +292,25 @@ export async function getProposalIdsForPhase({
 }
 
 /**
- * Returns IDs of draft proposals attributable to the given phase, scoped to
- * drafts the caller can access (creators and collaborators on the proposal's
- * profile, via `profileUsers`).
+ * Returns both the non-draft and draft IDs visible in a phase for an
+ * authenticated caller, sharing a single instance-context lookup and phase
+ * window resolution. Use this from `listProposals` (which needs both sets)
+ * instead of calling the standalone resolvers separately, which would issue
+ * duplicate `processInstances` and `stateTransitionHistory` reads.
  *
- * A draft belongs to phase P iff its `createdAt` falls inside P's
- * half-open `[inboundAt, outboundAt)` window. Drafts are never attached to
- * transitions, so only the temporal branch applies. The half-open window
- * (vs. the strict window used for non-drafts) ensures that a draft created
- * exactly at a transition boundary lands in the post-transition phase.
+ * Non-drafts are scoped via attachment snapshots + a strict `(inboundAt,
+ * outboundAt)` window. Drafts use a half-open `[inboundAt, outboundAt)` window
+ * (so a draft created at a transition timestamp lands in the post-transition
+ * phase) and are filtered to ones the caller can access — creators and
+ * collaborators on the proposal's profile, via a `profileUsers` subquery
+ * pushed into SQL. The pushdown matters at scale, where an instance may
+ * accumulate hundreds of thousands of drafts across users.
  *
- * The ownership filter is pushed into the SQL query (via a `profileUsers`
- * subquery on `authUserId`) rather than applied after fetching, so we never
- * load drafts the caller has no access to. This matters at scale: an instance
- * may accumulate hundreds of thousands of drafts across users.
- *
- * - Legacy instances: returns all active drafts the caller can access; phase
- *   scoping does not apply.
- * - Unreached phase: returns [].
+ * - Legacy instances: returns all active non-drafts and all accessible drafts;
+ *   phase scoping does not apply.
+ * - Unreached phase: returns empty arrays for both.
  */
-export async function getDraftIdsForPhase({
+export async function getPhaseProposalAndDraftIds({
   instanceId,
   phaseId,
   authUserId,
@@ -321,17 +320,14 @@ export async function getDraftIdsForPhase({
   phaseId?: string;
   authUserId: string;
   db?: DbClient;
-}): Promise<string[]> {
+}): Promise<{ nonDraftIds: string[]; draftIds: string[] }> {
   const ctx = await getInstanceContext(instanceId, db);
 
   if (!ctx) {
-    return [];
+    return { nonDraftIds: [], draftIds: [] };
   }
 
-  // Compose the draft + ownership filter into a single predicate. Pushing the
-  // `profileUsers` ownership subquery into SQL ensures we never load drafts
-  // the caller has no access to — important at scale, where instances may
-  // accumulate hundreds of thousands of drafts across users.
+  const nonDraftPredicate = ne(proposals.status, ProposalStatus.DRAFT);
   const draftAccessPredicate = and(
     eq(proposals.status, ProposalStatus.DRAFT),
     inArray(
@@ -343,21 +339,24 @@ export async function getDraftIdsForPhase({
     ),
   );
 
-  if (ctx.isLegacy) {
-    return getActiveIdsByPredicate({
-      instanceId,
-      predicate: draftAccessPredicate,
-      db,
-    });
-  }
+  const resolvedPhaseId = ctx.isLegacy
+    ? undefined
+    : (phaseId ?? ctx.currentPhaseId);
 
-  const resolvedPhaseId = phaseId ?? ctx.currentPhaseId;
   if (!resolvedPhaseId) {
-    return getActiveIdsByPredicate({
-      instanceId,
-      predicate: draftAccessPredicate,
-      db,
-    });
+    const [nonDraftIds, draftIds] = await Promise.all([
+      getActiveIdsByPredicate({
+        instanceId,
+        predicate: nonDraftPredicate,
+        db,
+      }),
+      getActiveIdsByPredicate({
+        instanceId,
+        predicate: draftAccessPredicate,
+        db,
+      }),
+    ]);
+    return { nonDraftIds, draftIds };
   }
 
   const window = await resolvePhaseWindow(
@@ -368,17 +367,35 @@ export async function getDraftIdsForPhase({
   );
 
   if (window.kind === 'unreached') {
-    return [];
+    return { nonDraftIds: [], draftIds: [] };
   }
 
-  return getIdsCreatedDuringWindow({
-    instanceId,
-    predicate: draftAccessPredicate,
-    inboundAt: window.inbound?.transitionedAt,
-    outboundAt: window.outboundTransitionedAt,
-    inboundComparator: 'gte',
-    db,
-  });
+  const [attachmentIds, nonDraftWindowIds, draftIds] = await Promise.all([
+    window.inbound
+      ? attachmentIdsFor(window.inbound.id, db)
+      : Promise.resolve<string[]>([]),
+    getIdsCreatedDuringWindow({
+      instanceId,
+      predicate: nonDraftPredicate,
+      inboundAt: window.inbound?.transitionedAt,
+      outboundAt: window.outboundTransitionedAt,
+      inboundComparator: 'gt',
+      db,
+    }),
+    getIdsCreatedDuringWindow({
+      instanceId,
+      predicate: draftAccessPredicate,
+      inboundAt: window.inbound?.transitionedAt,
+      outboundAt: window.outboundTransitionedAt,
+      inboundComparator: 'gte',
+      db,
+    }),
+  ]);
+
+  return {
+    nonDraftIds: [...new Set([...attachmentIds, ...nonDraftWindowIds])],
+    draftIds,
+  };
 }
 
 /**

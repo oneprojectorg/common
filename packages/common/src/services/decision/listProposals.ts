@@ -35,7 +35,7 @@ import {
 } from '../access';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import {
-  getDraftIdsForPhase,
+  getPhaseProposalAndDraftIds,
   getProposalIdsForPhase,
 } from './getProposalsForPhase';
 import { parseProposalData } from './proposalDataSchema';
@@ -176,25 +176,37 @@ export const listProposals = async ({
     skipAccessCheck,
   });
 
-  // Resolve phase-scoped IDs for non-drafts and drafts in parallel. Drafts are
-  // phase-scoped via their own `createdAt`-window resolver (`getDraftIdsForPhase`)
-  // since they're never attached to transition snapshots. The draft fetch is
-  // skipped for trusted contexts because they never surface drafts anyway.
-  const [phaseProposalIds, phaseDraftIds] = await Promise.all([
-    explicitScopeIds
-      ? Promise.resolve(explicitScopeIds)
-      : getProposalIdsForPhase({
-          instanceId: processInstanceId,
-          phaseId: input.phaseId,
-        }),
-    skipAccessCheck
-      ? Promise.resolve<string[]>([])
-      : getDraftIdsForPhase({
-          instanceId: processInstanceId,
-          phaseId: input.phaseId,
-          authUserId: input.authUserId,
-        }),
-  ]);
+  // Resolve phase-scoped IDs for non-drafts and drafts. Drafts are phase-scoped
+  // via a `createdAt` window since they're never attached to transition
+  // snapshots. The combined resolver shares a single instance-context lookup
+  // and window resolution across both queries; we only fall back to it for
+  // authenticated callers that need both sets.
+  let phaseProposalIds: string[];
+  let phaseDraftIds: string[];
+
+  if (explicitScopeIds !== undefined) {
+    // Caller specified the exact ID set (proposalIds or votedByProfileId).
+    // Drafts can't appear in either: proposalIds is internal and votedByProfileId
+    // only matches submitted proposals on a ballot.
+    phaseProposalIds = explicitScopeIds;
+    phaseDraftIds = [];
+  } else if (skipAccessCheck) {
+    // Trusted contexts (background jobs) never surface drafts, so only resolve
+    // the non-draft phase set.
+    phaseProposalIds = await getProposalIdsForPhase({
+      instanceId: processInstanceId,
+      phaseId: input.phaseId,
+    });
+    phaseDraftIds = [];
+  } else {
+    const ids = await getPhaseProposalAndDraftIds({
+      instanceId: processInstanceId,
+      phaseId: input.phaseId,
+      authUserId: input.authUserId,
+    });
+    phaseProposalIds = ids.nonDraftIds;
+    phaseDraftIds = ids.draftIds;
+  }
 
   // For trusted contexts (skipAccessCheck), drafts are never returned and phase
   // scoping is the only proposal-id filter — so an empty phase set means no results.
@@ -328,9 +340,9 @@ export const listProposals = async ({
     // Draft proposals are phase-scoped to their `createdAt` window: a draft made
     // in Phase 1 is only visible when viewing Phase 1, even after the instance
     // advances. Ownership scoping (creator + invited collaborators via
-    // `profileUsers`) is applied inside `getDraftIdsForPhase` via a subquery,
-    // so `phaseDraftIds` is already access-filtered — no further ownership
-    // filter is needed here.
+    // `profileUsers`) is applied inside `getPhaseProposalAndDraftIds` via a
+    // subquery, so `phaseDraftIds` is already access-filtered — no further
+    // ownership filter is needed here.
     const draftFilter =
       phaseDraftIds.length > 0
         ? and(
