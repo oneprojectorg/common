@@ -190,7 +190,7 @@ export const MultiSelectComboBox = ({
               aria-expanded={isOpen}
               aria-controls={listboxId}
               aria-autocomplete="list"
-              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent pr-7 text-base outline-hidden placeholder:text-neutral-gray4"
+              className="ms-1 min-w-[40px] flex-1 border-none bg-transparent pe-7 text-base outline-hidden placeholder:text-neutral-gray4"
               value={inputValue}
               onChange={handleInputChange}
               onKeyDown={handleInputKeyDown}
@@ -201,7 +201,7 @@ export const MultiSelectComboBox = ({
               }}
               placeholder={placeholder}
             />
-            <span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-neutral-charcoal">
+            <span className="pointer-events-none absolute end-2 top-1/2 -translate-y-1/2 text-neutral-charcoal">
               {isLoading ? (
                 <LoadingSpinner className="size-4" color="gray" />
               ) : (
@@ -287,7 +287,7 @@ export const MultiSelectComboBox = ({
                     {option.label}
                   </span>
                   {showDefinitions && option.definition && !isParent ? (
-                    <span className="overflow-hidden text-left text-sm text-wrap text-ellipsis text-neutral-charcoal">
+                    <span className="overflow-hidden text-start text-sm text-wrap text-ellipsis text-neutral-charcoal">
                       {option.definition}
                     </span>
                   ) : null}

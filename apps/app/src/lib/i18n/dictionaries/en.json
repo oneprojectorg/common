@@ -918,8 +918,6 @@
   "Remove relationship": "Remove relationship",
   "Are you sure you want to remove the {relationshipType} relationship?": "Are you sure you want to remove the {relationshipType} relationship?",
   "You'll need to send a new request to restore this relationship on your profile.": "You'll need to send a new request to restore this relationship on your profile.",
-  "{count} relationship": "{count} relationship",
-  "{count} relationships": "{count} relationships",
   "with": "with",
   "Pending confirmation from {name}": "Pending confirmation from {name}",
   "You're all set!": "You're all set!",
@@ -1201,5 +1199,13 @@
   "+{count} More": "+{count} More",
   "Confirm advancing proposals": "Confirm advancing proposals",
   "These {numProposals} proposals will move on to the {phaseName} phase": "{numProposals, plural, one {This # proposal will move on to the {phaseName} phase} other {These # proposals will move on to the {phaseName} phase}}",
-  "PROPOSALS TO ADVANCE": "PROPOSALS TO ADVANCE"
+  "PROPOSALS TO ADVANCE": "PROPOSALS TO ADVANCE",
+  "{count, plural, =1 {1 follower} other {# followers}}": "{count, plural, =1 {1 follower} other {# followers}}",
+  "{count, plural, =1 {1 relationship} other {# relationships}}": "{count, plural, =1 {1 relationship} other {# relationships}}",
+  "{count, plural, =1 {1 organization} other {# organizations}}": "{count, plural, =1 {1 organization} other {# organizations}}",
+  "{count, plural, =1 {1 member} other {# members}}": "{count, plural, =1 {1 member} other {# members}}",
+  "{count, plural, =1 {active relationship} other {active relationships}}": "{count, plural, =1 {active relationship} other {active relationships}}",
+  "Following {count, plural, =1 {# organization} other {# organizations}}": "Following {count, plural, =1 {# organization} other {# organizations}}",
+  "Member of {count, plural, =1 {# Organization} other {# Organizations}}": "Member of {count, plural, =1 {# Organization} other {# Organizations}}",
+  "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}": "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}"
 }

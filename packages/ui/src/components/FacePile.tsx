@@ -21,7 +21,7 @@ export const FacePile = forwardRef<
       >
         <ul className={cn('-gap-2 flex', className)}>
           {items.map((node, i) => (
-            <li key={i} className="relative -ml-2">
+            <li key={i} className="relative -ms-2">
               {node}
             </li>
           ))}

@@ -111,7 +111,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
         </Link>
 
         {(canManage || canDelete) && (
-          <div className="flex items-center pt-4 pr-2 sm:pt-0 sm:pl-12">
+          <div className="flex items-center pe-2 pt-4 sm:ps-12 sm:pt-0">
             <OptionMenu
               variant="outline"
               className="rounded bg-white shadow-light"
@@ -163,7 +163,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
         onOpenChange={(open) => !open && setShowDeleteModal(false)}
         surface="flat"
       >
-        <ModalHeader className="pl-6 text-left">
+        <ModalHeader className="ps-6 text-start">
           {isDraft
             ? t('Delete draft?')
             : t('Delete {name}?', {

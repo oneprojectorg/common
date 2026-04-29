@@ -94,7 +94,7 @@ const OrgsTableContent = ({ searchQuery }: { searchQuery: string }) => {
           <TableColumn>{t('Domain')}</TableColumn>
           <TableColumn>{t('Members')}</TableColumn>
           <TableColumn>{t('Created')}</TableColumn>
-          <TableColumn className="text-right">{t('Actions')}</TableColumn>
+          <TableColumn className="text-end">{t('Actions')}</TableColumn>
         </TableHeader>
         <TableBody>
           {orgs.map((org) => (

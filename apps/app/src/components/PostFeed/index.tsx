@@ -203,7 +203,7 @@ const PostMenu = ({
   }
 
   return (
-    <OptionMenu className="absolute top-0 right-0">
+    <OptionMenu className="absolute end-0 top-0">
       <PostMenuContent
         post={post}
         profileId={user?.currentProfileId || ''}

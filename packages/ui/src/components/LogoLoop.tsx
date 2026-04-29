@@ -356,7 +356,7 @@ export const LogoLoop = React.memo<LogoLoopProps>(
                 'flex-none text-[length:var(--logoloop-logoHeight)] leading-[1]',
                 isVertical
                   ? 'mb-[var(--logoloop-gap)]'
-                  : 'mr-[var(--logoloop-gap)]',
+                  : 'me-[var(--logoloop-gap)]',
                 scaleOnHover && 'group/item overflow-visible',
               )}
               key={key}
@@ -433,7 +433,7 @@ export const LogoLoop = React.memo<LogoLoopProps>(
               'flex-none text-[length:var(--logoloop-logoHeight)] leading-[1]',
               isVertical
                 ? 'mb-[var(--logoloop-gap)]'
-                : 'mr-[var(--logoloop-gap)]',
+                : 'me-[var(--logoloop-gap)]',
               scaleOnHover && 'group/item overflow-visible',
             )}
             key={key}
@@ -511,7 +511,7 @@ export const LogoLoop = React.memo<LogoLoopProps>(
                 <div
                   aria-hidden
                   className={cx(
-                    'pointer-events-none absolute inset-y-0 left-0 z-10',
+                    'pointer-events-none absolute inset-y-0 start-0 z-10',
                     'w-[clamp(24px,8%,120px)]',
                     'bg-[linear-gradient(to_right,var(--logoloop-fadeColor,var(--logoloop-fadeColorAuto))_0%,rgba(0,0,0,0)_100%)]',
                   )}
@@ -519,7 +519,7 @@ export const LogoLoop = React.memo<LogoLoopProps>(
                 <div
                   aria-hidden
                   className={cx(
-                    'pointer-events-none absolute inset-y-0 right-0 z-10',
+                    'pointer-events-none absolute inset-y-0 end-0 z-10',
                     'w-[clamp(24px,8%,120px)]',
                     'bg-[linear-gradient(to_left,var(--logoloop-fadeColor,var(--logoloop-fadeColorAuto))_0%,rgba(0,0,0,0)_100%)]',
                   )}

@@ -379,7 +379,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           />
         ) : null}
       </Avatar>
-      <div className="absolute -right-1 -bottom-1 flex size-4 items-center justify-center rounded-full bg-neutral-offWhite outline -outline-offset-1 outline-white">
+      <div className="absolute -end-1 -bottom-1 flex size-4 items-center justify-center rounded-full bg-neutral-offWhite outline -outline-offset-1 outline-white">
         <LuChevronDown className="size-3" />{' '}
       </div>
     </Button>
@@ -524,7 +524,7 @@ export const SiteHeader = () => {
               <Button
                 unstyled
                 onPress={() => setIsMobileSearchExpanded(false)}
-                className="ml-3 whitespace-nowrap text-neutral-gray4"
+                className="ms-3 whitespace-nowrap text-neutral-gray4"
               >
                 Cancel
               </Button>
