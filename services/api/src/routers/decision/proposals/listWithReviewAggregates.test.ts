@@ -117,7 +117,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
-  it('rejects callers without admin access on the instance (hydration)', async ({
+  it('rejects callers without admin access on the instance (filtered)', async ({
     task,
     onTestFinished,
   }) => {
@@ -137,7 +137,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
-  it('returns aggregates for the requested proposalIds in hydration mode', async ({
+  it('returns aggregates for the requested proposalIds in filtered mode', async ({
     task,
     onTestFinished,
   }) => {
@@ -207,7 +207,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     expect(unreviewedItem?.aggregates.reviewers).toHaveLength(1);
   });
 
-  it('drops proposalIds belonging to a different instance in hydration mode', async ({
+  it('drops proposalIds belonging to a different instance in filtered mode', async ({
     task,
     onTestFinished,
   }) => {
@@ -237,7 +237,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     ]);
   });
 
-  it('drops soft-deleted proposalIds in hydration mode', async ({
+  it('drops soft-deleted proposalIds in filtered mode', async ({
     task,
     onTestFinished,
   }) => {
