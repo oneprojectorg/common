@@ -1,4 +1,1 @@
-export {
-  taxonomyTermsEncoder,
-  taxonomyTermsWithChildrenEncoder,
-} from '@op/common';
+export { taxonomyTermSchema, taxonomyTermWithChildrenSchema } from '@op/common';

@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 import type { RubricTemplateSchema } from '../types';
 import { proposalProfileSchema, proposalSchema } from './proposal';
-import { taxonomyTermSchema } from './taxonomyTerm';
+import { proposalCategorySchema } from './proposalCategory';
 
 export {
   ProposalReviewAssignmentStatus,
@@ -130,7 +130,7 @@ export const proposalReviewAggregatesSchema = z.object({
 export const proposalWithAggregatesSchema = z.object({
   proposal: proposalSchema,
   aggregates: proposalReviewAggregatesSchema,
-  categories: z.array(taxonomyTermSchema),
+  categories: z.array(proposalCategorySchema),
 });
 
 /**

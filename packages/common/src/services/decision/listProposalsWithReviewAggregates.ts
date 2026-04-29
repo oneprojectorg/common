@@ -21,11 +21,11 @@ import {
   OVERALL_RECOMMENDATION_KEY,
   getRubricScoringInfo,
 } from './getRubricScoringInfo';
+import type { ProposalCategoryItem } from './schemas/proposalCategory';
 import {
   type ProposalsWithReviewAggregatesList,
   proposalsWithReviewAggregatesListSchema,
 } from './schemas/reviews';
-import type { TaxonomyTerm } from './schemas/taxonomyTerm';
 
 // ── Input schema ───────────────────────────────────────────────────────
 
@@ -275,8 +275,8 @@ function proposalRelations({
 
 async function getCategoriesByProposalIds(
   proposalIds: string[],
-): Promise<Map<string, TaxonomyTerm[]>> {
-  const map = new Map<string, TaxonomyTerm[]>();
+): Promise<Map<string, ProposalCategoryItem[]>> {
+  const map = new Map<string, ProposalCategoryItem[]>();
   if (proposalIds.length === 0) {
     return map;
   }

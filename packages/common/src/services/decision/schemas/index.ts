@@ -4,5 +4,5 @@ export * from './instanceData';
 export * from './reviews';
 export * from './proposal';
 export * from './adminDecisionInstance';
-export * from './taxonomyTerm';
+export * from './proposalCategory';
 export * from './transitionData';

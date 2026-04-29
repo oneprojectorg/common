@@ -2,7 +2,7 @@ import { taxonomyTerms } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-export const taxonomyTermsEncoder = createSelectSchema(taxonomyTerms)
+export const taxonomyTermSchema = createSelectSchema(taxonomyTerms)
   .pick({
     id: true,
     taxonomyId: true,
@@ -17,7 +17,7 @@ export const taxonomyTermsEncoder = createSelectSchema(taxonomyTerms)
     termUri: z.string(),
   });
 
-export const taxonomyTermsWithChildrenEncoder: z.ZodType<any> =
-  taxonomyTermsEncoder.extend({
-    children: z.lazy(() => z.array(taxonomyTermsWithChildrenEncoder)),
+export const taxonomyTermWithChildrenSchema: z.ZodType<any> =
+  taxonomyTermSchema.extend({
+    children: z.lazy(() => z.array(taxonomyTermWithChildrenSchema)),
   });
