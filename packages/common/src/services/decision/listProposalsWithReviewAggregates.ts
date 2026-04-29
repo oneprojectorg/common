@@ -87,10 +87,15 @@ export async function listProposalsWithReviewAggregates(
     : [];
 
   const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
+  const phaseProposalIds = await getProposalIdsForPhase({
+    instanceId: processInstanceId,
+    phaseId,
+  });
 
   if ('proposalIds' in input) {
     return listProposalsFiltered({
       proposalIds: input.proposalIds,
+      phaseProposalIds,
       processInstanceId,
       phaseId,
       scoredCriterionKeys,
@@ -100,6 +105,7 @@ export async function listProposalsWithReviewAggregates(
   return listProposalsPaginated({
     processInstanceId,
     phaseId,
+    phaseProposalIds,
     limit: input.limit,
     cursor: input.cursor,
     scoredCriterionKeys,
@@ -110,27 +116,38 @@ export async function listProposalsWithReviewAggregates(
 
 async function listProposalsFiltered({
   proposalIds,
+  phaseProposalIds,
   processInstanceId,
   phaseId,
   scoredCriterionKeys,
 }: {
   proposalIds: string[];
+  phaseProposalIds: string[];
   processInstanceId: string;
   phaseId: string | undefined;
   scoredCriterionKeys: string[];
 }): Promise<ProposalsWithReviewAggregatesList> {
+  const phaseProposalIdSet = new Set(phaseProposalIds);
+  const filteredProposalIds = proposalIds.filter((id) =>
+    phaseProposalIdSet.has(id),
+  );
+
+  if (filteredProposalIds.length === 0) {
+    return { items: [], total: 0, next: null };
+  }
+
   const [proposalsFull, categoriesByProposalId] = await Promise.all([
     db.query.proposals.findMany({
-      where: { id: { in: proposalIds } },
+      where: { id: { in: filteredProposalIds } },
       with: proposalRelations({ processInstanceId, phaseId }),
     }),
-    loadCategoriesByProposalIds(proposalIds),
+    loadCategoriesByProposalIds(filteredProposalIds),
   ]);
 
   const proposalsById = new Map(proposalsFull.map((p) => [p.id, p]));
 
   // Drop unmatched (cross-instance, deleted, etc). Preserve caller order.
-  const items = proposalIds
+  const items = filteredProposalIds
     .map((id) => proposalsById.get(id))
     .filter((p): p is NonNullable<typeof p> => p !== undefined)
     .filter((p) => p.processInstanceId === processInstanceId)
@@ -155,21 +172,18 @@ async function listProposalsFiltered({
 async function listProposalsPaginated({
   processInstanceId,
   phaseId,
+  phaseProposalIds,
   limit,
   cursor,
   scoredCriterionKeys,
 }: {
   processInstanceId: string;
   phaseId: string | undefined;
+  phaseProposalIds: string[];
   limit: number;
   cursor: string | undefined;
   scoredCriterionKeys: string[];
 }): Promise<ProposalsWithReviewAggregatesList> {
-  const phaseProposalIds = await getProposalIdsForPhase({
-    instanceId: processInstanceId,
-    phaseId,
-  });
-
   if (phaseProposalIds.length === 0) {
     return { items: [], total: 0, next: null };
   }

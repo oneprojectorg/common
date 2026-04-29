@@ -4,6 +4,7 @@ import {
   ProposalReviewState,
   processInstances,
   proposalCategories,
+  proposals as proposalsTable,
   taxonomyTerms,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
@@ -234,6 +235,33 @@ describe.concurrent('listWithReviewAggregates', () => {
     expect(result.items.map((i) => i.proposal.id)).toEqual([
       primary.proposal.id,
     ]);
+  });
+
+  it('drops soft-deleted proposalIds in hydration mode', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Soft Deleted',
+    });
+    await advanceToReviewPhase(created.context.instance.instance.id);
+
+    await db
+      .update(proposalsTable)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(eq(proposalsTable.id, created.proposal.id));
+
+    const adminCaller = await createAuthenticatedCaller(
+      created.context.defaultReviewer.email,
+    );
+
+    const result = await adminCaller.decision.listWithReviewAggregates({
+      processInstanceId: created.context.instance.instance.id,
+      proposalIds: [created.proposal.id],
+    });
+
+    expect(result.items).toEqual([]);
   });
 
   it('paginates by createdAt across pages', async ({
