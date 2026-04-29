@@ -1,0 +1,99 @@
+/*
+ * Shadcn Theme
+ * Maps shadcn-standard CSS variables to OP brand tokens.
+ * Used by Taki components pulled via `pnpm dlx taki-ui@latest add <name>`.
+ *
+ * Intent UI tokens live in intent-ui-theme.css until Intent-era stubs are gone.
+ */
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-input: var(--input);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  /* Surfaces */
+  --background: var(--color-white);
+  --foreground: var(--color-neutral-charcoal);
+
+  --card: var(--color-white);
+  --card-foreground: var(--color-neutral-charcoal);
+
+  --popover: var(--color-white);
+  --popover-foreground: var(--color-neutral-charcoal);
+
+  /* Primary (inherits --primary from intent-ui-theme.css = teal) */
+  --primary-foreground: var(--color-white);
+
+  /* Secondary (inherits --secondary from intent-ui-theme.css = gray1) */
+  --secondary-foreground: var(--color-neutral-charcoal);
+
+  /* Muted (inherits --muted from intent-ui-theme.css) */
+  --muted-foreground: var(--color-neutral-gray4);
+
+  /* Accent */
+  --accent: var(--color-neutral-gray1);
+  --accent-foreground: var(--color-neutral-charcoal);
+
+  /* Destructive */
+  --destructive: var(--color-functional-red);
+  --destructive-foreground: var(--color-white);
+
+  /* Shadcn sidebar tokens (foreground-suffixed names) */
+  --sidebar-foreground: var(--color-neutral-charcoal);
+  --sidebar-primary-foreground: var(--color-primary-tealBlack);
+  --sidebar-accent-foreground: var(--color-neutral-charcoal);
+}
+
+.dark,
+[data-theme='dark'] {
+  --background: var(--color-neutral-black);
+  --foreground: var(--color-neutral-offWhite);
+
+  --card: var(--color-neutral-charcoal);
+  --card-foreground: var(--color-neutral-offWhite);
+
+  --popover: var(--color-neutral-charcoal);
+  --popover-foreground: var(--color-neutral-offWhite);
+
+  --primary-foreground: var(--color-neutral-black);
+
+  --secondary-foreground: var(--color-neutral-offWhite);
+
+  --muted-foreground: var(--color-neutral-gray2);
+
+  --accent: var(--color-neutral-gray4);
+  --accent-foreground: var(--color-neutral-offWhite);
+
+  --destructive: hsl(var(--op-red-400));
+  --destructive-foreground: var(--color-white);
+
+  --sidebar-foreground: var(--color-neutral-offWhite);
+  --sidebar-primary-foreground: var(--color-teal-200);
+  --sidebar-accent-foreground: var(--color-neutral-offWhite);
+}
