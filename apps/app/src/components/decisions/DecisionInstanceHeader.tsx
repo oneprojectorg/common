@@ -70,21 +70,29 @@ export const DecisionInstanceHeader = ({
 };
 
 const DecisionUpdatesToggle = ({ ariaLabel }: { ariaLabel: string }) => {
-  const [, setPanel] = useQueryState('panel', panelStateParser);
+  const [panel, setPanel] = useQueryState('panel', panelStateParser);
   const decisionUpdatesEnabled = useFeatureFlag('decision_updates');
 
   if (!decisionUpdatesEnabled) {
     return null;
   }
 
+  const isOpen = panel !== null;
+
   return (
     <IconButton
       variant="outline"
-      size="small"
-      onPress={() => setPanel('updates')}
+      size="medium"
+      onPress={() => setPanel(isOpen ? null : 'updates')}
       aria-label={ariaLabel}
+      aria-pressed={isOpen}
+      className={
+        isOpen
+          ? 'border-primary-teal bg-primary-tealWhite text-primary-teal'
+          : 'text-primary-teal'
+      }
     >
-      <LuMegaphone className="size-4 text-neutral-black md:text-teal" />
+      <LuMegaphone className="size-4" />
     </IconButton>
   );
 };
