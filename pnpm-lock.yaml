@@ -793,6 +793,9 @@ importers:
       drizzle-orm:
         specifier: 'catalog:'
         version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
+      drizzle-zod:
+        specifier: 1.0.0-beta.11-05230d9
+        version: 1.0.0-beta.11-05230d9(drizzle-orm@1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5))(zod@4.1.12)
       mitt:
         specifier: ^3.0.1
         version: 3.0.1

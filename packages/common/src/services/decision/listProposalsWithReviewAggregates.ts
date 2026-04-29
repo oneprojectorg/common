@@ -22,10 +22,10 @@ import {
   getRubricScoringInfo,
 } from './getRubricScoringInfo';
 import {
-  type ProposalCategoryItem,
   type ProposalsWithReviewAggregatesList,
   proposalsWithReviewAggregatesListSchema,
 } from './schemas/reviews';
+import type { TaxonomyTerm } from './schemas/taxonomyTerm';
 
 // ── Input schema ───────────────────────────────────────────────────────
 
@@ -275,8 +275,8 @@ function proposalRelations({
 
 async function getCategoriesByProposalIds(
   proposalIds: string[],
-): Promise<Map<string, ProposalCategoryItem[]>> {
-  const map = new Map<string, ProposalCategoryItem[]>();
+): Promise<Map<string, TaxonomyTerm[]>> {
+  const map = new Map<string, TaxonomyTerm[]>();
   if (proposalIds.length === 0) {
     return map;
   }
