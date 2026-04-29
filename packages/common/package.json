@@ -44,6 +44,7 @@
     "csv-stringify": "^6.6.0",
     "deepl-node": "^1.24.0",
     "drizzle-orm": "catalog:",
+    "drizzle-zod": "1.0.0-beta.11-05230d9",
     "mitt": "^3.0.1",
     "next": "catalog:",
     "p-map": "^7.0.3",

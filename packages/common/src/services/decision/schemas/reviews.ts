@@ -7,6 +7,7 @@ import { z } from 'zod';
 
 import type { RubricTemplateSchema } from '../types';
 import { proposalProfileSchema, proposalSchema } from './proposal';
+import { proposalCategorySchema } from './proposalCategory';
 
 export {
   ProposalReviewAssignmentStatus,
@@ -126,13 +127,6 @@ export const proposalReviewAggregatesSchema = z.object({
   ),
 });
 
-/** Taxonomy-backed category attached to a proposal. */
-export const proposalCategorySchema = z.object({
-  id: z.uuid(),
-  label: z.string(),
-  termUri: z.string(),
-});
-
 export const proposalWithAggregatesSchema = z.object({
   proposal: proposalSchema,
   aggregates: proposalReviewAggregatesSchema,
@@ -170,7 +164,6 @@ export type ProposalRevisionRequestList = z.infer<
 export type ProposalReviewAggregates = z.infer<
   typeof proposalReviewAggregatesSchema
 >;
-export type ProposalCategoryItem = z.infer<typeof proposalCategorySchema>;
 export type ProposalWithAggregates = z.infer<
   typeof proposalWithAggregatesSchema
 >;
