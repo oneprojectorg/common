@@ -129,8 +129,10 @@ const TableColumn = ({
         (className, { isHovered, allowsSorting }) =>
           twMerge(
             'h-8 text-left text-sm font-normal',
-            allowsSorting && isHovered ? 'text-neutral-gray3' : 'text-muted-fg',
-            'allows-sorting:active:text-neutral-charcoal',
+            allowsSorting && isHovered
+              ? 'text-muted-foreground'
+              : 'text-muted-foreground/70',
+            'allows-sorting:active:text-foreground',
             'relative outline-hidden allows-sorting:cursor-default dragging:cursor-grabbing',
             'px-4 py-(--gutter-y)',
             'first:pl-(--gutter,--spacing(2)) last:pr-(--gutter,--spacing(2))',
