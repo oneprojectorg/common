@@ -16,8 +16,8 @@ import StarterKit from '@tiptap/starter-kit';
  * and general text layout. Does NOT include focus or placeholder styles.
  */
 export const viewerProseStyles = [
-  'prose prose-lg !text-base text-neutral-black',
-  '[&_a:hover]:underline [&_a]:text-teal [&_a]:no-underline',
+  'prose prose-lg !text-base text-foreground',
+  '[&_a:hover]:underline [&_a]:text-primary [&_a]:no-underline',
   '[&_li_p]:my-0',
   '[&_blockquote]:font-normal',
   '[&_:is(h1,h2)]:my-4 [&_:is(h1,h2)]:font-serif',
@@ -28,7 +28,7 @@ export const viewerProseStyles = [
 /**
  * Styles applied to the editor element
  */
-export const baseEditorStyles = `${viewerProseStyles} outline-hidden placeholder:text-neutral-gray2`;
+export const baseEditorStyles = `${viewerProseStyles} outline-hidden placeholder:text-muted-foreground/70`;
 
 /**
  * Base extensions shared by both editor and viewer

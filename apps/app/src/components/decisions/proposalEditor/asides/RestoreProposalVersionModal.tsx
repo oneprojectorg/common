@@ -41,7 +41,7 @@ export function RestoreProposalVersionModal({
       }}
     >
       <ModalHeader>{t('Restore this version?')}</ModalHeader>
-      <ModalBody className="gap-4 text-base text-neutral-charcoal">
+      <ModalBody className="gap-4 text-base text-foreground">
         <p>
           {t.rich(
             'Your proposal will be restored to the version from <bold>{date}</bold>.',
@@ -59,7 +59,7 @@ export function RestoreProposalVersionModal({
           )}
         </p>
       </ModalBody>
-      <ModalFooter className="border-t border-neutral-gray1">
+      <ModalFooter className="border-t border-border">
         <Button color="secondary" onPress={onClose} isDisabled={isPending}>
           {t('Keep current')}
         </Button>

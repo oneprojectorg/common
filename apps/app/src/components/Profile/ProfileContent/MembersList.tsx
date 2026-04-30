@@ -159,7 +159,7 @@ const MemberMenu = ({
       <IconButton
         variant="ghost"
         size="small"
-        className="aria-expanded:bg-neutral-gray1"
+        className="aria-expanded:bg-accent"
       >
         <LuEllipsis className="size-4" />
       </IconButton>
@@ -175,7 +175,7 @@ const MemberMenu = ({
           <MenuItem
             key="remove-from-org"
             onAction={handleRemoveFromOrganization}
-            className="px-3 py-1 text-functional-red"
+            className="px-3 py-1 text-destructive"
           >
             {t('Remove from organization')}
           </MenuItem>
@@ -244,7 +244,7 @@ const MembersListContent = ({
                   {/* Show name as link if profile exists, otherwise plain text */}
                   {profile ? (
                     <Link
-                      className="truncate font-semibold text-neutral-black"
+                      className="truncate font-semibold text-foreground"
                       href={
                         profile.type === 'org'
                           ? `/org/${profile.slug}`
@@ -254,7 +254,7 @@ const MembersListContent = ({
                       {displayName}
                     </Link>
                   ) : (
-                    <div className="truncate font-semibold text-neutral-black">
+                    <div className="truncate font-semibold text-foreground">
                       {displayName}
                     </div>
                   )}
@@ -271,14 +271,12 @@ const MembersListContent = ({
                       </TagGroup>
                     </div>
                   ) : (
-                    <div className="text-sm text-neutral-charcoal">
-                      {t('Member')}
-                    </div>
+                    <div className="text-sm text-foreground">{t('Member')}</div>
                   )}
 
                   {/* Show email if different from display name */}
                   {(member.name || profile?.name) && (
-                    <div className="text-sm text-neutral-charcoal">
+                    <div className="text-sm text-foreground">
                       {member.profile?.email || member.email}
                     </div>
                   )}
@@ -286,7 +284,7 @@ const MembersListContent = ({
 
                 {/* Show about/bio information if available */}
                 {bio && (
-                  <div className="line-clamp-3 text-neutral-charcoal">
+                  <div className="line-clamp-3 text-foreground">
                     {bio.length > 200 ? `${bio.slice(0, 200)}...` : bio}
                   </div>
                 )}
@@ -337,13 +335,13 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
   if (!members || members.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-neutral-gray1">
-          <LuUsers className="h-6 w-6 text-neutral-gray4" />
+        <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-accent">
+          <LuUsers className="h-6 w-6 text-muted-foreground" />
         </div>
-        <div className="mb-2 font-serif text-title-base text-neutral-black">
+        <div className="mb-2 font-serif text-title-base text-foreground">
           {t('No members found')}
         </div>
-        <p className="max-w-md text-sm text-neutral-charcoal">
+        <p className="max-w-md text-sm text-foreground">
           {t("This organization doesn't have any members yet.")}
         </p>
       </div>

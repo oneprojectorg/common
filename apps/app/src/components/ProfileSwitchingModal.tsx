@@ -43,7 +43,7 @@ export const ProfileSwitchingModal = ({
           </div>
         </div>
         <div className="text-center">
-          <p className="text-neutral-black">Switching to {profileName}…</p>
+          <p className="text-foreground">Switching to {profileName}…</p>
         </div>
       </div>
     </Modal>

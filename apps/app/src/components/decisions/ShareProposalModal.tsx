@@ -369,7 +369,7 @@ function ShareProposalModalContent({
           typeof document !== 'undefined' &&
           createPortal(
             <div
-              className="fixed z-[9999999] mt-1 max-h-60 overflow-y-auto rounded-lg border border-neutral-gray1 bg-white shadow-lg"
+              className="fixed z-[9999999] mt-1 max-h-60 overflow-y-auto rounded-lg border border-border bg-white shadow-lg"
               style={{
                 top: dropdownPosition.top,
                 left: dropdownPosition.left,
@@ -403,7 +403,7 @@ function ShareProposalModalContent({
                     <ListBoxItem
                       id="add-email"
                       textValue={debouncedQuery}
-                      className="hover:bg-neutral-gray0 focus-visible:bg-neutral-gray0 cursor-pointer px-4 py-3 outline-none"
+                      className="cursor-pointer px-4 py-3 outline-none hover:bg-accent focus-visible:bg-accent"
                     >
                       <div className="text-sm">
                         {t('Invite {email}', { email: debouncedQuery })}
@@ -415,7 +415,7 @@ function ShareProposalModalContent({
                       key={result.id}
                       id={result.id}
                       textValue={result.name}
-                      className="hover:bg-neutral-gray0 focus-visible:bg-neutral-gray0 cursor-pointer px-4 py-3 outline-none"
+                      className="cursor-pointer px-4 py-3 outline-none hover:bg-accent focus-visible:bg-accent"
                     >
                       <ProfileItem
                         size="small"
@@ -442,7 +442,7 @@ function ShareProposalModalContent({
                   ))}
                 </ListBox>
               ) : (
-                <div className="p-4 text-center text-sm text-neutral-gray4">
+                <div className="p-4 text-center text-sm text-muted-foreground">
                   {t('No results')}
                 </div>
               )}
@@ -451,7 +451,7 @@ function ShareProposalModalContent({
           )}
 
         <div className="flex flex-col gap-2">
-          <span className="text-sm text-neutral-black">
+          <span className="text-sm text-foreground">
             {t('People with access')}
           </span>
 
@@ -459,7 +459,7 @@ function ShareProposalModalContent({
             {pendingInvites.map((item) => (
               <div
                 key={item.id}
-                className="flex h-14 items-center justify-between gap-4 rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
+                className="flex h-14 items-center justify-between gap-4 rounded-lg border border-border bg-white px-3 py-2"
               >
                 <ProfileItem
                   size="small"
@@ -478,7 +478,7 @@ function ShareProposalModalContent({
                   title={item.name}
                 >
                   {item.name !== item.email && (
-                    <div className="text-sm text-neutral-gray4">
+                    <div className="text-sm text-muted-foreground">
                       {item.email}
                     </div>
                   )}
@@ -502,7 +502,7 @@ function ShareProposalModalContent({
               return (
                 <div
                   key={invite.id}
-                  className="flex h-14 items-center justify-between gap-4 rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
+                  className="flex h-14 items-center justify-between gap-4 rounded-lg border border-border bg-white px-3 py-2"
                 >
                   <ProfileItem
                     size="small"
@@ -524,9 +524,9 @@ function ShareProposalModalContent({
                     title={displayName}
                   >
                     {invite.inviteeProfile?.name && (
-                      <div className="text-sm text-neutral-gray4">
+                      <div className="text-sm text-muted-foreground">
                         {invite.email} <Bullet />{' '}
-                        <span className="text-sm text-neutral-gray4">
+                        <span className="text-sm text-muted-foreground">
                           {t('Invited')}
                         </span>
                       </div>
@@ -553,7 +553,7 @@ function ShareProposalModalContent({
               optimisticUsers.map((user) => (
                 <div
                   key={user.id}
-                  className="flex h-14 items-center justify-between gap-4 rounded-lg border border-neutral-gray1 bg-white px-3 py-2"
+                  className="flex h-14 items-center justify-between gap-4 rounded-lg border border-border bg-white px-3 py-2"
                 >
                   <ProfileItem
                     size="small"
@@ -577,7 +577,7 @@ function ShareProposalModalContent({
                     title={user.name ?? user.email}
                   >
                     {user.name && (
-                      <div className="text-sm text-neutral-gray4">
+                      <div className="text-sm text-muted-foreground">
                         {user.email}
                       </div>
                     )}

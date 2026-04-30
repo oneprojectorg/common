@@ -54,10 +54,10 @@ export function RequestRevisionModal({
       <ModalBody>
         <div className="flex flex-col gap-2">
           <div className="flex flex-col gap-1">
-            <span className="text-base text-neutral-black">
+            <span className="text-base text-foreground">
               {t('Feedback for proposal author')}
             </span>
-            <span className="text-sm text-neutral-black">
+            <span className="text-sm text-foreground">
               {t('Shared anonymously with the proposal author and admins.')}
             </span>
           </div>

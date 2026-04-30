@@ -16,7 +16,7 @@ export interface PopoverProps extends Omit<AriaPopoverProps, 'children'> {
 }
 
 const styles = tv({
-  base: 'z-[9999999] rounded bg-neutral-gray1 text-neutral-black',
+  base: 'z-[9999999] rounded bg-accent text-foreground',
   variants: {
     isEntering: {
       true: 'animate-in transition-opacity duration-200 ease-out fade-in',
@@ -53,7 +53,7 @@ export const Popover = ({
             width={12}
             height={12}
             viewBox="0 0 12 12"
-            className="block fill-[#1f1f21] stroke-neutral-gray2 group-placement-left:-rotate-90 group-placement-right:rotate-90 group-placement-bottom:rotate-180"
+            className="block fill-[#1f1f21] stroke-muted-foreground/70 group-placement-left:-rotate-90 group-placement-right:rotate-90 group-placement-bottom:rotate-180"
           >
             <path d="M0 0 L6 6 L12 0" />
           </svg>

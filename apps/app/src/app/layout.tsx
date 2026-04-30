@@ -85,7 +85,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
       <TRPCProvider ssrCookies={ssrCookies}>
         <QueryInvalidationSubscriber />
         <body
-          className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} h-full overflow-x-hidden text-base text-neutral-black antialiased`}
+          className={`${roboto.variable} ${robotoMono.variable} ${robotoSerif.variable} h-full overflow-x-hidden text-base text-foreground antialiased`}
         >
           <I18nProvider locale={locale} messages={messages}>
             <OTelBrowserProvider>

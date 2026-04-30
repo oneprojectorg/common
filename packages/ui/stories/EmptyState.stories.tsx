@@ -43,26 +43,26 @@ export const WithAction = () => (
 
 export const Examples = () => (
   <div className="grid w-full max-w-3xl grid-cols-2 gap-8">
-    <div className="rounded-lg border border-neutral-gray2 p-4">
+    <div className="rounded-lg border border-input p-4">
       <EmptyState>
         <p>No items found</p>
       </EmptyState>
     </div>
 
-    <div className="rounded-lg border border-neutral-gray2 p-4">
+    <div className="rounded-lg border border-input p-4">
       <EmptyState icon={<LuInbox />}>
         <p>Your inbox is empty</p>
       </EmptyState>
     </div>
 
-    <div className="rounded-lg border border-neutral-gray2 p-4">
+    <div className="rounded-lg border border-input p-4">
       <EmptyState icon={<LuSearch />}>
         <p className="font-medium">No results found</p>
         <p className="text-sm">Try adjusting your search</p>
       </EmptyState>
     </div>
 
-    <div className="rounded-lg border border-neutral-gray2 p-4">
+    <div className="rounded-lg border border-input p-4">
       <EmptyState icon={<LuFileText />}>
         <p className="font-medium">No documents</p>
         <p className="mb-3 text-sm">Upload your first document</p>

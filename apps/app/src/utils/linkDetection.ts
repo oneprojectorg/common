@@ -36,7 +36,7 @@ export function linkifyText(text: string): React.ReactElement[] {
             href: part,
             target: '_blank',
             rel: 'noopener noreferrer',
-            className: 'text-primary-teal hover:underline',
+            className: 'text-primary hover:underline',
           },
           part,
         ),

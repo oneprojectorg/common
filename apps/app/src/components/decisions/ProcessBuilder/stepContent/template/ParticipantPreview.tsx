@@ -34,9 +34,9 @@ export function ParticipantPreview({
   const fields = useMemo(() => compileProposalSchema(template), [template]);
 
   return (
-    <aside className="hidden flex-1 basis-1/2 overflow-y-auto border-l bg-neutral-offWhite p-14 xl:block">
+    <aside className="hidden flex-1 basis-1/2 overflow-y-auto border-l bg-muted p-14 xl:block">
       <div className="rounded-lg bg-white p-6">
-        <div className="mb-6 flex items-center gap-2 text-sm text-neutral-gray3">
+        <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
           <LuEye className="size-4" />
           <span>{t('Participant Preview')}</span>
         </div>
@@ -48,13 +48,13 @@ export function ParticipantPreview({
           mode="preview-template"
         />
 
-        <div className="pointer-events-none mt-4 border-t border-neutral-gray2 pt-4">
+        <div className="pointer-events-none mt-4 border-t border-input pt-4">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <span className="font-serif text-title-sm14 text-neutral-charcoal">
+              <span className="font-serif text-title-sm14 text-foreground">
                 {t('Attachments (optional)')}
               </span>
-              <p className="text-sm text-neutral-charcoal">
+              <p className="text-sm text-foreground">
                 {t(
                   'Support your proposal with relevant documents like budgets or supporting research.',
                 )}

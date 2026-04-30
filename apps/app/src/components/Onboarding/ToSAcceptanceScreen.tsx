@@ -98,7 +98,7 @@ function PolicyCheckbox({
         {t('I accept the')}{' '}
       </Checkbox>
       <DialogTrigger>
-        <Button unstyled className="text-sm text-primary-teal hover:underline">
+        <Button unstyled className="text-sm text-primary hover:underline">
           {label}
         </Button>
         <Modal

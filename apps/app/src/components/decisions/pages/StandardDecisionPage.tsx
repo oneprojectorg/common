@@ -93,7 +93,7 @@ export function StandardDecisionPage({
                       <Header3 className="font-serif font-light">
                         {t("Couldn't load manual selection")}
                       </Header3>
-                      <p className="text-base text-neutral-charcoal">
+                      <p className="text-base text-foreground">
                         {t('Refresh the page to try again.')}
                       </p>
                     </EmptyState>
@@ -115,7 +115,7 @@ export function StandardDecisionPage({
                       <Header3 className="font-serif font-light">
                         {t("Couldn't load proposals")}
                       </Header3>
-                      <p className="text-base text-neutral-charcoal">
+                      <p className="text-base text-foreground">
                         {t('Refresh the page to try again.')}
                       </p>
                     </EmptyState>

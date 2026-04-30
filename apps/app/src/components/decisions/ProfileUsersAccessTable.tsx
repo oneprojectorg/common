@@ -98,7 +98,7 @@ export const ProfileUsersAccessTable = ({
 const InviteStatusLabel = ({ notifiedAt }: { notifiedAt: string | null }) => {
   const t = useTranslations();
   return (
-    <span className="text-sm text-neutral-gray4">
+    <span className="text-sm text-muted-foreground">
       {notifiedAt ? t('Invited') : t('Pending launch')}
     </span>
   );
@@ -191,7 +191,7 @@ const ProfileUserRoleSelect = ({
           </SelectItem>
         ))}
         {!isOwner && (
-          <SelectItem id="remove" className="text-functional-red">
+          <SelectItem id="remove" className="text-destructive">
             {t('Remove from process')}
           </SelectItem>
         )}
@@ -318,7 +318,7 @@ const InviteRoleSelect = ({
             {role.name}
           </SelectItem>
         ))}
-        <SelectItem id="remove" className="text-functional-red">
+        <SelectItem id="remove" className="text-destructive">
           {t('Remove from process')}
         </SelectItem>
       </Select>
@@ -385,7 +385,7 @@ const MobileProfileUserCard = ({
   const profileSlug = profileUser.profile?.slug;
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-neutral-gray1 p-4">
+    <div className="flex flex-col gap-4 rounded-lg border border-border p-4">
       <div className="flex gap-4">
         <ProfileAvatar profile={profileUser.profile} className="size-10" />
         <div className="flex min-w-0 flex-col gap-1">
@@ -393,18 +393,16 @@ const MobileProfileUserCard = ({
             {profileSlug ? (
               <Link
                 href={`/profile/${profileSlug}`}
-                className="text-base text-neutral-black hover:underline"
+                className="text-base text-foreground hover:underline"
               >
                 {displayName}
               </Link>
             ) : (
-              <span className="text-base text-neutral-black">
-                {displayName}
-              </span>
+              <span className="text-base text-foreground">{displayName}</span>
             )}
-            <span className="text-sm text-neutral-gray4">{status}</span>
+            <span className="text-sm text-muted-foreground">{status}</span>
           </div>
-          <span className="truncate text-base text-neutral-black">
+          <span className="truncate text-base text-foreground">
             {profileUser.email}
           </span>
         </div>
@@ -437,15 +435,15 @@ const MobileInviteCard = ({
   const displayName = invite.inviteeProfile?.name ?? invite.email;
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-neutral-gray1 p-4">
+    <div className="flex flex-col gap-4 rounded-lg border border-border p-4">
       <div className="flex gap-4">
         <ProfileAvatar profile={invite.inviteeProfile} className="size-10" />
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex flex-col">
-            <span className="text-base text-neutral-black">{displayName}</span>
+            <span className="text-base text-foreground">{displayName}</span>
             <InviteStatusLabel notifiedAt={invite.notifiedAt} />
           </div>
-          <span className="truncate text-base text-neutral-black">
+          <span className="truncate text-base text-foreground">
             {invite.email}
           </span>
         </div>
@@ -563,7 +561,7 @@ const ProfileUsersAccessTableContent = ({
                   <div className="flex items-center gap-2">
                     <ProfileAvatar profile={invite.inviteeProfile} />
                     <div className="flex flex-col">
-                      <span className="text-base text-neutral-black">
+                      <span className="text-base text-foreground">
                         {displayName}
                       </span>
                       <InviteStatusLabel notifiedAt={invite.notifiedAt} />
@@ -571,7 +569,7 @@ const ProfileUsersAccessTableContent = ({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className="text-base text-neutral-black">
+                  <span className="text-base text-foreground">
                     {invite.email}
                   </span>
                 </TableCell>
@@ -606,23 +604,23 @@ const ProfileUsersAccessTableContent = ({
                       {profileSlug ? (
                         <Link
                           href={`/profile/${profileSlug}`}
-                          className="text-base text-neutral-black hover:underline"
+                          className="text-base text-foreground hover:underline"
                         >
                           {displayName}
                         </Link>
                       ) : (
-                        <span className="text-base text-neutral-black">
+                        <span className="text-base text-foreground">
                           {displayName}
                         </span>
                       )}
-                      <span className="text-sm text-neutral-gray4">
+                      <span className="text-sm text-muted-foreground">
                         {status}
                       </span>
                     </div>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className="text-base text-neutral-black">
+                  <span className="text-base text-foreground">
                     {profileUser.email}
                   </span>
                 </TableCell>

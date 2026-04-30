@@ -11,7 +11,7 @@ export const ToSModal = () => {
 
   return (
     <DialogTrigger>
-      <Button unstyled className="text-primary-teal hover:underline">
+      <Button unstyled className="text-primary hover:underline">
         {t('Terms of Use')}
       </Button>
 

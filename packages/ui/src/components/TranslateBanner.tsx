@@ -40,9 +40,9 @@ export const TranslateBanner = ({
       isDisabled={isTranslating}
       aria-label={translateAriaLabel ?? label}
       unstyled
-      className="group flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-full text-left text-primary-teal outline-hidden transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue disabled:cursor-not-allowed disabled:opacity-60"
+      className="group flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-full text-left text-primary outline-hidden transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chart-3 disabled:cursor-not-allowed disabled:opacity-60"
     >
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-tealWhite">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-foreground">
         <LuLanguages className="size-4" />
       </span>
       <span className="text-sm leading-5 whitespace-nowrap">{label}</span>
@@ -52,7 +52,7 @@ export const TranslateBanner = ({
   return (
     <div
       className={cn(
-        'flex w-full max-w-md items-center gap-2 rounded-2xl border border-neutral-gray1 bg-white px-3 py-2 shadow-light',
+        'flex w-full max-w-md items-center gap-2 rounded-2xl border border-border bg-white px-3 py-2 shadow-light',
         className,
       )}
       {...props}
@@ -70,7 +70,7 @@ export const TranslateBanner = ({
         onPress={onDismiss}
         aria-label={dismissAriaLabel}
         unstyled
-        className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-neutral-gray4 outline-hidden transition-colors hover:bg-neutral-gray1 hover:text-neutral-charcoal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue"
+        className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground outline-hidden transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chart-3"
       >
         <LuX className="size-5" />
       </Button>

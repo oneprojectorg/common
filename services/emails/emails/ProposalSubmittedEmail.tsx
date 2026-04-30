@@ -38,7 +38,7 @@ export const ProposalSubmittedEmail = ({
       <Section className="pb-0">
         <Button
           href={proposalUrl}
-          className="rounded-lg bg-primary-teal px-4 py-3 text-white no-underline hover:bg-primary-teal/90"
+          className="rounded-lg bg-primary px-4 py-3 text-white no-underline hover:bg-primary/90"
           style={{
             fontSize: '0.875rem',
             textAlign: 'center',

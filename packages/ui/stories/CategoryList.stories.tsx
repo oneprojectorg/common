@@ -45,7 +45,7 @@ export const Controlled = () => {
         initialCategories={categories}
         onUpdateList={setCategories}
       />
-      <div className="text-sm text-neutral-gray4">
+      <div className="text-sm text-muted-foreground">
         <strong>Current categories:</strong>{' '}
         {categories.map((c) => c.label).join(', ')}
       </div>

@@ -91,7 +91,7 @@ export const Example = () => (
           title="Community Garden Initiative"
           description="Proposal to establish urban gardens in underserved neighborhoods"
         >
-          <div className="mt-3 text-sm text-neutral-charcoal">
+          <div className="mt-3 text-sm text-foreground">
             Funding Goal: $50,000 • Status: Active
           </div>
         </ProfileItem>
@@ -103,10 +103,10 @@ export const Example = () => (
           description="Comprehensive STEM education program for students ages 12-18"
         >
           <div className="mt-3 space-y-2">
-            <div className="text-sm text-neutral-charcoal">
+            <div className="text-sm text-foreground">
               <strong>Category:</strong> Education
             </div>
-            <div className="text-sm text-neutral-charcoal">
+            <div className="text-sm text-foreground">
               <strong>Timeline:</strong> 12 months
             </div>
             <div className="mt-3 flex gap-2">
@@ -155,10 +155,10 @@ export const ProposalWithDetails = {
     description: 'Comprehensive STEM education program for students ages 12-18',
     children: (
       <div className="mt-3 space-y-2">
-        <div className="text-sm text-neutral-charcoal">
+        <div className="text-sm text-foreground">
           <strong>Category:</strong> Education
         </div>
-        <div className="text-sm text-neutral-charcoal">
+        <div className="text-sm text-foreground">
           <strong>Timeline:</strong> 12 months
         </div>
         <div className="mt-3 flex gap-2">

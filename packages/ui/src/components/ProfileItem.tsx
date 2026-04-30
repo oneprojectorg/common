@@ -7,8 +7,8 @@ const titleStyles = tv({
   base: '',
   variants: {
     size: {
-      default: 'leading-base font-semibold text-neutral-black',
-      small: 'text-base text-neutral-charcoal',
+      default: 'leading-base font-semibold text-foreground',
+      small: 'text-base text-foreground',
     },
   },
   defaultVariants: {
@@ -51,7 +51,7 @@ export const ProfileItem = ({
         <div className={titleStyles({ size })}>{title}</div>
 
         {description ? (
-          <div className="mt-2 text-neutral-charcoal">{description}</div>
+          <div className="mt-2 text-foreground">{description}</div>
         ) : null}
 
         {children}

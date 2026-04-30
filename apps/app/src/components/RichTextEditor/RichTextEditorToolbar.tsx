@@ -113,7 +113,7 @@ export function RichTextEditorToolbar({
   return (
     <div
       className={cn(
-        'justify-between border-b px-6 py-2 text-neutral-charcoal',
+        'justify-between border-b px-6 py-2 text-foreground',
         className,
       )}
     >

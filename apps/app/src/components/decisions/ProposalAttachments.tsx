@@ -163,10 +163,10 @@ export function ProposalAttachments({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <span className="font-serif text-title-sm14 text-neutral-charcoal">
+        <span className="font-serif text-title-sm14 text-foreground">
           {t('Attachments (optional)')}
         </span>
-        <p className="text-sm text-neutral-charcoal">
+        <p className="text-sm text-foreground">
           {t(
             'Support your proposal with relevant documents like budgets or supporting research.',
           )}
@@ -180,7 +180,7 @@ export function ProposalAttachments({
         onSelectFiles={handleSelectFiles}
         label={t.rich('Drag a file here or <browse>browse</browse>', {
           browse: (chunks: ReactNode) => (
-            <span className="text-primary-teal hover:text-primary-tealBlack hover:underline">
+            <span className="text-primary hover:text-primary hover:underline">
               {chunks}
             </span>
           ),
@@ -193,7 +193,7 @@ export function ProposalAttachments({
         isDisabled={!canAddMore}
       />
 
-      <p className="text-sm text-neutral-gray4">
+      <p className="text-sm text-muted-foreground">
         {t('{count}/{max} attachments added', {
           count: optimisticAttachments.length,
           max: MAX_FILES,

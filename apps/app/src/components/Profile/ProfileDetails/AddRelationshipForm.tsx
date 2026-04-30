@@ -157,9 +157,9 @@ export const AddRelationshipForm = ({ profile }: { profile: Organization }) => {
                           value={option.key}
                         />
 
-                        <div className="flex flex-col text-neutral-charcoal">
+                        <div className="flex flex-col text-foreground">
                           <span>{option.label}</span>
-                          <span className="text-sm text-neutral-gray4">
+                          <span className="text-sm text-muted-foreground">
                             {option.description(profile.profile.name)}
                           </span>
                         </div>

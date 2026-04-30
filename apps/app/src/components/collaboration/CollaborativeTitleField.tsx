@@ -35,7 +35,7 @@ export function CollaborativeTitleField({
       Placeholder.configure({
         placeholder,
         emptyEditorClass:
-          'before:content-[attr(data-placeholder)] before:text-neutral-gray3 before:float-left before:h-0 before:pointer-events-none',
+          'before:content-[attr(data-placeholder)] before:text-muted-foreground before:float-left before:h-0 before:pointer-events-none',
       }),
       Collaboration.configure({
         document: ydoc,
@@ -54,7 +54,7 @@ export function CollaborativeTitleField({
     editorProps: {
       attributes: {
         class:
-          'h-auto border-0 p-0 font-serif text-title-lg text-neutral-charcoal outline-none',
+          'h-auto border-0 p-0 font-serif text-title-lg text-foreground outline-none',
       },
       handleKeyDown: (_view, event) => {
         if (event.key === 'Enter') {

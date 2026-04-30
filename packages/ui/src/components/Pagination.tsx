@@ -117,7 +117,7 @@ function PaginationRange(props: PaginationRangeProps): React.ReactElement {
   const end = Math.min((page + 1) * itemsPerPage, totalItems);
 
   return (
-    <div aria-live="polite" className="text-sm text-neutral-charcoal">
+    <div aria-live="polite" className="text-sm text-foreground">
       {start} - {end} of {totalItems} {label}
     </div>
   );

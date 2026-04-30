@@ -16,7 +16,7 @@ export const CoCModal = () => {
       <Button
         unstyled
         onPress={() => setIsToSOpen(true)}
-        className="text-primary-teal hover:underline"
+        className="text-primary hover:underline"
       >
         {t('Code of Conduct')}
       </Button>

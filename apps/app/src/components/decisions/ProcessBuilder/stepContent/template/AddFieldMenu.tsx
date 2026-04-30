@@ -39,7 +39,7 @@ export function AddFieldMenu({ onAddField }: AddFieldMenuProps) {
               <MenuItem
                 id={`header-${category.id}`}
                 isDisabled
-                className="px-4 py-1 text-xs font-medium text-neutral-gray4"
+                className="px-4 py-1 text-xs font-medium text-muted-foreground"
               >
                 {t(category.labelKey)}
               </MenuItem>
@@ -48,7 +48,7 @@ export function AddFieldMenu({ onAddField }: AddFieldMenuProps) {
                 const Icon = config.icon;
                 return (
                   <MenuItem key={type} id={type} className="gap-2">
-                    <Icon className="size-4 text-neutral-gray4" />
+                    <Icon className="size-4 text-muted-foreground" />
                     {t(config.labelKey)}
                   </MenuItem>
                 );

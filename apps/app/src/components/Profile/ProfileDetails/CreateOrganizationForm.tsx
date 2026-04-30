@@ -235,7 +235,7 @@ export const CreateOrganizationForm = forwardRef<
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               inputProps={{
-                icon: <LuLink className="size-4 text-neutral-black" />,
+                icon: <LuLink className="size-4 text-foreground" />,
                 placeholder: t("Enter your organization's website here"),
               }}
               errorMessage={getFieldErrorMessage(field)}
@@ -448,12 +448,12 @@ export const CreateOrganizationForm = forwardRef<
                             errorMessage={getFieldErrorMessage(field)}
                             inputProps={{
                               icon: (
-                                <LuLink className="size-4 text-neutral-black" />
+                                <LuLink className="size-4 text-foreground" />
                               ),
                               placeholder: t('Add your contribution page here'),
                             }}
                           />
-                          <span className="text-left text-sm text-neutral-gray4">
+                          <span className="text-left text-sm text-muted-foreground">
                             {t(
                               'Add a link to your donation page, Open Collective, GoFundMe or any platform where supporters can contribute or learn more about how.',
                             )}
@@ -544,11 +544,11 @@ export const CreateOrganizationForm = forwardRef<
                                           'Add a link to learn more about your funding process',
                                         ),
                                     icon: (
-                                      <LuLink className="size-4 text-neutral-black" />
+                                      <LuLink className="size-4 text-foreground" />
                                     ),
                                   }}
                                 />
-                                <span className="text-sm text-neutral-gray4">
+                                <span className="text-sm text-muted-foreground">
                                   {acceptingApplicationsField.state.value
                                     ? null
                                     : t(

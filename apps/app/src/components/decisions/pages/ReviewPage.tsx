@@ -70,10 +70,10 @@ export function ReviewPage({
             fallbacks={{
               default: () => (
                 <EmptyState icon={<LuLeaf className="size-6" />}>
-                  <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+                  <Header3 className="font-serif !text-title-base font-light text-foreground">
                     <TranslatedText text="We couldn't load proposals" />
                   </Header3>
-                  <p className="text-base text-neutral-charcoal">
+                  <p className="text-base text-foreground">
                     <TranslatedText text="Please refresh the page to try again." />
                   </p>
                 </EmptyState>

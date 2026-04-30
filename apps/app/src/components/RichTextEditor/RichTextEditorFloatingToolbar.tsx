@@ -78,7 +78,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleHeading({ level: 1 }).run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('heading', { level: 1 }) ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
+        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('heading', { level: 1 }) ? 'bg-gray-200 text-foreground' : 'text-foreground'}`}
         title={t('Heading 1')}
       >
         <LuHeading1 className="size-4" />
@@ -88,7 +88,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleHeading({ level: 2 }).run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('heading', { level: 2 }) ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
+        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('heading', { level: 2 }) ? 'bg-gray-200 text-foreground' : 'text-foreground'}`}
         title={t('Heading 2')}
       >
         <LuHeading2 className="size-4" />
@@ -98,7 +98,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleHeading({ level: 3 }).run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('heading', { level: 3 }) ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
+        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('heading', { level: 3 }) ? 'bg-gray-200 text-foreground' : 'text-foreground'}`}
         title={t('Heading 3')}
       >
         <LuHeading3 className="size-4" />
@@ -112,7 +112,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleBold().run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('bold') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
+        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('bold') ? 'bg-gray-200 text-foreground' : 'text-foreground'}`}
         title={t('Bold')}
       >
         <LuBold className="size-4" />
@@ -122,7 +122,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleItalic().run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('italic') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
+        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('italic') ? 'bg-gray-200 text-foreground' : 'text-foreground'}`}
         title={t('Italic')}
       >
         <LuItalic className="size-4" />
@@ -132,7 +132,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleUnderline().run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('underline') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
+        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('underline') ? 'bg-gray-200 text-foreground' : 'text-foreground'}`}
         title={t('Underline')}
       >
         <LuUnderline className="size-4" />
@@ -142,7 +142,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleStrike().run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('strike') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
+        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('strike') ? 'bg-gray-200 text-foreground' : 'text-foreground'}`}
         title={t('Strikethrough')}
       >
         <LuStrikethrough className="size-4" />
@@ -152,7 +152,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleCode().run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('code') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
+        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('code') ? 'bg-gray-200 text-foreground' : 'text-foreground'}`}
         title={t('Code')}
       >
         <LuCode className="size-4" />
@@ -166,7 +166,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleBulletList().run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('bulletList') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
+        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('bulletList') ? 'bg-gray-200 text-foreground' : 'text-foreground'}`}
         title={t('Bullet List')}
       >
         <LuList className="size-4" />
@@ -176,7 +176,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleOrderedList().run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('orderedList') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
+        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('orderedList') ? 'bg-gray-200 text-foreground' : 'text-foreground'}`}
         title={t('Numbered List')}
       >
         <LuListOrdered className="size-4" />
@@ -186,7 +186,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().toggleBlockquote().run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('blockquote') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
+        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('blockquote') ? 'bg-gray-200 text-foreground' : 'text-foreground'}`}
         title={t('Blockquote')}
       >
         <LuQuote className="size-4" />
@@ -200,7 +200,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().setTextAlign('left').run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive({ textAlign: 'left' }) ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
+        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive({ textAlign: 'left' }) ? 'bg-gray-200 text-foreground' : 'text-foreground'}`}
         title={t('Align Left')}
       >
         <LuAlignLeft className="size-4" />
@@ -210,7 +210,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().setTextAlign('center').run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive({ textAlign: 'center' }) ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
+        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive({ textAlign: 'center' }) ? 'bg-gray-200 text-foreground' : 'text-foreground'}`}
         title={t('Align Center')}
       >
         <LuAlignCenter className="size-4" />
@@ -220,7 +220,7 @@ export function RichTextEditorFloatingToolbar({
           editor.chain().focus().setTextAlign('right').run();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive({ textAlign: 'right' }) ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
+        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive({ textAlign: 'right' }) ? 'bg-gray-200 text-foreground' : 'text-foreground'}`}
         title={t('Align Right')}
       >
         <LuAlignRight className="size-4" />
@@ -234,7 +234,7 @@ export function RichTextEditorFloatingToolbar({
           addLink();
           onSelectionChange();
         }}
-        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('link') ? 'bg-gray-200 text-neutral-black' : 'text-neutral-charcoal'}`}
+        className={`rounded p-1.5 hover:bg-gray-100 ${editor.isActive('link') ? 'bg-gray-200 text-foreground' : 'text-foreground'}`}
         title={t('Add Link')}
       >
         <LuLink className="size-4" />

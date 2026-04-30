@@ -36,10 +36,7 @@ const TextCounter = ({ text, max }: { text: string; max: number }) => {
 
   return (
     <span
-      className={cn(
-        'text-neutral-charcoal',
-        countDown < 0 && 'text-functional-red',
-      )}
+      className={cn('text-foreground', countDown < 0 && 'text-destructive')}
     >
       {countDown}
     </span>
@@ -611,7 +608,7 @@ const PostUpdateWithUser = ({
             className="size-8 bg-white"
           />
         ) : (
-          <div className="size-8 rounded-full bg-neutral-gray1" />
+          <div className="size-8 rounded-full bg-accent" />
         )}
         <FeedMain className="relative">
           <Form onSubmit={handleSubmit} className="flex w-full flex-col gap-2">
@@ -632,7 +629,7 @@ const PostUpdateWithUser = ({
                   {filePreview.uploading ? (
                     <Skeleton className="relative flex aspect-video w-full items-center justify-center rounded text-white" />
                   ) : filePreview.file.type.startsWith('image/') ? (
-                    <div className="relative flex aspect-video w-full items-center justify-center rounded bg-neutral-gray1 text-white">
+                    <div className="relative flex aspect-video w-full items-center justify-center rounded bg-accent text-white">
                       {filePreview.error ? (
                         <p className="text-sm">{filePreview.error}</p>
                       ) : (
@@ -705,13 +702,13 @@ const PostUpdateWithUser = ({
                 };
                 input.click();
               }}
-              className="flex items-center gap-2 text-base text-neutral-charcoal transition-colors hover:text-black"
+              className="flex items-center gap-2 text-base text-foreground transition-colors hover:text-black"
               disabled={fileUpload.filePreviews.length >= 1}
             >
               <LuImage className="size-4" />
               {t('Media')}
             </button>
-            <div className="flex items-center gap-2 text-neutral-charcoal">
+            <div className="flex items-center gap-2 text-foreground">
               <TextCounter text={content} max={characterLimit} />
               {lastFailedPost && (
                 <Button

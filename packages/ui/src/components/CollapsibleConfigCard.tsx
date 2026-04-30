@@ -63,7 +63,7 @@ export function CollapsibleConfigCard({
 
   // The leading element: drag handle for editable cards, lock icon for locked cards.
   const leadingElement = locked ? (
-    <div className="flex size-6 items-center justify-center text-neutral-gray4">
+    <div className="flex size-6 items-center justify-center text-muted-foreground">
       <LuLock className="size-4" />
     </div>
   ) : (
@@ -82,19 +82,19 @@ export function CollapsibleConfigCard({
       {/* Icon + Label pill (or plain text when no icon) */}
       {locked ? (
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          {Icon && <Icon className="size-4 shrink-0 text-neutral-gray4" />}
-          <span className="truncate text-neutral-charcoal">{label}</span>
+          {Icon && <Icon className="size-4 shrink-0 text-muted-foreground" />}
+          <span className="truncate text-foreground">{label}</span>
         </div>
       ) : Icon ? (
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <div className="flex min-w-0 items-center gap-2 rounded bg-neutral-gray1 px-2 py-1">
-            <Icon className="size-4 shrink-0 text-neutral-charcoal" />
-            <span className="truncate text-neutral-black">{label}</span>
+          <div className="flex min-w-0 items-center gap-2 rounded bg-accent px-2 py-1">
+            <Icon className="size-4 shrink-0 text-foreground" />
+            <span className="truncate text-foreground">{label}</span>
           </div>
         </div>
       ) : (
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="truncate text-neutral-black">{label}</span>
+          <span className="truncate text-foreground">{label}</span>
         </div>
       )}
 
@@ -105,7 +105,7 @@ export function CollapsibleConfigCard({
 
       {/* Chevron (only when collapsible) */}
       {isCollapsible && (
-        <LuChevronDown className="size-4 shrink-0 text-neutral-charcoal transition-transform duration-200 group-data-[expanded]/accordion-item:rotate-180" />
+        <LuChevronDown className="size-4 shrink-0 text-foreground transition-transform duration-200 group-data-[expanded]/accordion-item:rotate-180" />
       )}
     </>
   );
@@ -116,7 +116,7 @@ export function CollapsibleConfigCard({
       <div
         className={cn(
           'rounded-lg border bg-white px-3 py-4',
-          locked && 'bg-neutral-offWhite',
+          locked && 'bg-muted',
           isDragging && 'opacity-50',
           className,
         )}
@@ -140,7 +140,7 @@ export function CollapsibleConfigCard({
       onExpandedChange={onExpandedChange}
       className={cn(
         'rounded-lg border bg-white px-3 py-4',
-        locked && 'bg-neutral-offWhite',
+        locked && 'bg-muted',
         isDragging && 'opacity-50',
         className,
       )}
@@ -191,25 +191,23 @@ export function CollapsibleConfigCardDragPreview({
   return (
     <div className={cn('rounded-lg border bg-white p-4 shadow-lg', className)}>
       <div className="flex items-center gap-2 pr-1">
-        <div className="mr-1 flex items-center justify-center text-neutral-gray4">
+        <div className="mr-1 flex items-center justify-center text-muted-foreground">
           <LuGripVertical className="size-4" />
         </div>
         {Icon ? (
           <div className="w-full grow">
-            <div className="flex w-fit shrink items-center gap-2 rounded bg-neutral-gray1 px-2 py-1">
-              <Icon className="size-4 text-neutral-gray4" />
-              <span className="truncate text-neutral-charcoal">{label}</span>
+            <div className="flex w-fit shrink items-center gap-2 rounded bg-accent px-2 py-1">
+              <Icon className="size-4 text-muted-foreground" />
+              <span className="truncate text-foreground">{label}</span>
             </div>
           </div>
         ) : (
-          <span className="w-full grow truncate text-neutral-charcoal">
-            {label}
-          </span>
+          <span className="w-full grow truncate text-foreground">{label}</span>
         )}
         {badgeLabel && (
-          <Chip className="shrink-0 text-neutral-gray4">{badgeLabel}</Chip>
+          <Chip className="shrink-0 text-muted-foreground">{badgeLabel}</Chip>
         )}
-        <LuChevronDown className="size-4 shrink-0 text-neutral-gray4" />
+        <LuChevronDown className="size-4 shrink-0 text-muted-foreground" />
       </div>
     </div>
   );

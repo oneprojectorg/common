@@ -100,7 +100,7 @@ export const AcceptedState = () => (
   <NotificationPanel>
     <NotificationPanelHeader title="Relationship Requests" count={1} />
     <NotificationPanelList>
-      <NotificationPanelItem className="bg-primary-tealWhite">
+      <NotificationPanelItem className="bg-primary-foreground">
         <div className="flex items-center gap-3">
           <Avatar placeholder="Green Earth Foundation" />
           <div className="flex h-full flex-col">
@@ -112,7 +112,7 @@ export const AcceptedState = () => (
           </div>
         </div>
         <NotificationPanelActions>
-          <span className="text-sm text-neutral-charcoal">Accepted</span>
+          <span className="text-sm text-foreground">Accepted</span>
         </NotificationPanelActions>
       </NotificationPanelItem>
     </NotificationPanelList>

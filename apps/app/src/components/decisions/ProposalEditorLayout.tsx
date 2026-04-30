@@ -73,9 +73,9 @@ export function ProposalEditorLayout({
       <div className="flex h-editor-topbar items-center justify-between gap-2 border-b px-4 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:px-6">
         <button
           onClick={() => router.push(backHref)}
-          className="flex cursor-pointer items-center gap-2 text-primary-teal hover:text-primary-tealBlack"
+          className="flex cursor-pointer items-center gap-2 text-primary hover:text-primary"
         >
-          <LuArrowLeft className="size-6 text-neutral-charcoal sm:size-4 sm:text-primary-teal" />
+          <LuArrowLeft className="size-6 text-foreground sm:size-4 sm:text-primary" />
           <span className="hidden sm:block">{t('Back')}</span>
         </button>
 

@@ -55,11 +55,11 @@ export function ReviewAssignmentsList({
       {/* Filter bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <span className="font-serif text-title-base text-neutral-black">
+          <span className="font-serif text-title-base text-foreground">
             {t('Proposals to review')}
           </span>
           <Bullet />
-          <span className="font-serif text-title-base text-neutral-black">
+          <span className="font-serif text-title-base text-foreground">
             {assignments.length}
           </span>
         </div>
@@ -101,12 +101,12 @@ export function ReviewAssignmentsList({
         <ReviewAssignmentListSkeletonGrid />
       ) : assignments.length === 0 ? (
         <EmptyState icon={<LuLeaf className="size-6" />}>
-          <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+          <Header3 className="font-serif !text-title-base font-light text-foreground">
             {statusFilter
               ? t('No reviews found matching the current filters.')
               : t('No reviews assigned yet')}
           </Header3>
-          <p className="text-base text-neutral-charcoal">
+          <p className="text-base text-foreground">
             {statusFilter
               ? t('Try adjusting your filter selection above.')
               : t('Review assignments will appear here once they are created.')}

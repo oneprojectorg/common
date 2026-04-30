@@ -12,7 +12,7 @@ const DecisionsListingPage = () => {
         <ListPageLayoutHeader>
           <TranslatedText text="Decision-making processes" />
         </ListPageLayoutHeader>
-        <p className="text-neutral-charcoal">
+        <p className="text-foreground">
           <TranslatedText text="Discover new ways to collectively decide together." />
         </p>
       </div>

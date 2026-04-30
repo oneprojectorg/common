@@ -176,18 +176,18 @@ export const NumberField = ({
         <Label
           className={cn(
             labelClassName,
-            'group-data-[invalid=true]:text-functional-red',
+            'group-data-[invalid=true]:text-destructive',
           )}
         >
           {label}
-          {isRequired && <span className="text-functional-red"> *</span>}
+          {isRequired && <span className="text-destructive"> *</span>}
         </Label>
       )}
       <FieldGroup className={cn(fieldClassName, prefixText && 'relative')}>
         {prefixText && (
           <span
             ref={prefixRef}
-            className="pointer-events-none absolute top-0 bottom-0 left-0 flex items-center justify-center pr-2 pl-3 text-neutral-gray4 select-none"
+            className="pointer-events-none absolute top-0 bottom-0 left-0 flex items-center justify-center pr-2 pl-3 text-muted-foreground select-none"
           >
             {prefixText}
           </span>
@@ -204,7 +204,7 @@ export const NumberField = ({
           }}
           className={cn(
             inputProps?.className,
-            'group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red',
+            'group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-destructive',
           )}
           ref={ref as React.RefObject<HTMLInputElement>}
         />

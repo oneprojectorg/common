@@ -85,12 +85,12 @@ function ViewField({
       {(title || description) && (
         <div className="flex flex-col gap-2">
           {title && (
-            <span className="font-serif text-title-sm14 text-neutral-charcoal">
+            <span className="font-serif text-title-sm14 text-foreground">
               {title}
             </span>
           )}
           {description && (
-            <p className="text-sm text-neutral-charcoal">{description}</p>
+            <p className="text-sm text-foreground">{description}</p>
           )}
         </div>
       )}
@@ -98,7 +98,7 @@ function ViewField({
         <ProposalHtmlContent html={html} />
       ) : (
         <div className={viewerProseStyles}>
-          <p className="text-neutral-gray3 italic">—</p>
+          <p className="text-muted-foreground italic">—</p>
         </div>
       )}
     </div>

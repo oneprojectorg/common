@@ -75,7 +75,7 @@ export const LaunchProcessModal = ({
         {invitesLoading ? (
           <Skeleton className="h-6 w-full" />
         ) : pendingNotificationCount > 0 ? (
-          <p className="text-neutral-charcoal">
+          <p className="text-foreground">
             {t('Launching your process will notify')}{' '}
             <span className="font-bold">
               {t(
@@ -85,7 +85,7 @@ export const LaunchProcessModal = ({
             </span>
           </p>
         ) : (
-          <p className="text-neutral-charcoal">
+          <p className="text-foreground">
             {t(
               'This will open {processName} for proposal submissions. Participants will be notified and can begin submitting proposals.',
               { processName },
@@ -94,22 +94,22 @@ export const LaunchProcessModal = ({
         )}
 
         {/* Summary Section */}
-        <div className="flex flex-col gap-2 rounded-lg border border-neutral-gray1 p-4">
-          <div className="flex items-center justify-between border-b border-neutral-gray1 pb-2">
-            <span className="text-neutral-gray4">{t('Phases')}</span>
-            <span className="text-neutral-charcoal">{phasesCount}</span>
+        <div className="flex flex-col gap-2 rounded-lg border border-border p-4">
+          <div className="flex items-center justify-between border-b border-border pb-2">
+            <span className="text-muted-foreground">{t('Phases')}</span>
+            <span className="text-foreground">{phasesCount}</span>
           </div>
           {organizeByCategories && (
             <div className="flex items-center justify-between">
-              <span className="text-neutral-gray4">{t('Categories')}</span>
-              <span className="text-neutral-charcoal">
+              <span className="text-muted-foreground">{t('Categories')}</span>
+              <span className="text-foreground">
                 {categoriesCount === 0 ? t('None') : categoriesCount}
               </span>
             </div>
           )}
         </div>
 
-        <p className="text-sm text-neutral-charcoal">
+        <p className="text-sm text-foreground">
           {t('You can edit settings and advance phases after launching.')}
         </p>
 

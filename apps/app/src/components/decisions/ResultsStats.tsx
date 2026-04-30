@@ -17,7 +17,7 @@ const StatNumber = ({
   return (
     <div
       className={cn(
-        'flex items-center justify-center font-serif text-title-lg !text-neutral-offWhite',
+        'flex items-center justify-center font-serif text-title-lg !text-muted',
         className,
       )}
     >
@@ -28,7 +28,7 @@ const StatNumber = ({
 
 const StatLabel = ({ children }: { children?: ReactNode }) => {
   return (
-    <div className="flex items-center justify-center text-center text-sm text-neutral-offWhite">
+    <div className="flex items-center justify-center text-center text-sm text-muted">
       {children}
     </div>
   );

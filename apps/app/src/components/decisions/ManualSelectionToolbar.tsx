@@ -39,7 +39,7 @@ export const ManualSelectionToolbar = ({
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
-      <span className="font-serif text-title-base text-neutral-black">
+      <span className="font-serif text-title-base text-foreground">
         {t('All proposals')} <Bullet /> {count}
       </span>
       <div className="flex flex-wrap items-center gap-2">

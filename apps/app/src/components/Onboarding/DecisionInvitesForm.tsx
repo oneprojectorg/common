@@ -110,10 +110,10 @@ export const DecisionInvitesForm = ({
       <FormContainer className="gap-6">
         {/* Header section - gap-2 (8px) between title and subtitle */}
         <div className="flex flex-col gap-2 text-center">
-          <Header1 className="text-neutral-black">
+          <Header1 className="text-foreground">
             {t('Join decision-making processes')}
           </Header1>
-          <p className="text-sm text-neutral-gray4">
+          <p className="text-sm text-muted-foreground">
             {t(
               "You've been invited to join the following decision-making processes",
             )}
@@ -151,7 +151,7 @@ export const DecisionInvitesForm = ({
           {invites.length === 1 && invites[0] && (
             <Button
               unstyled
-              className="h-10 px-2 py-2.5 text-sm text-primary-teal underline hover:text-primary-teal/80 disabled:opacity-50"
+              className="h-10 px-2 py-2.5 text-sm text-primary underline hover:text-primary/80 disabled:opacity-50"
               onPress={() => handleDecline(invites[0]!.id)}
               isDisabled={declineInvite.isPending}
             >

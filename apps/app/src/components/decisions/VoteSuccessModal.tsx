@@ -52,7 +52,7 @@ const VoteSuccessModalSuspense = ({
                   {t('Your ballot is in!')}
                 </Header1>
 
-                <p className="text-base text-neutral-charcoal">
+                <p className="text-base text-foreground">
                   {processTitle
                     ? t(
                         'Thank you for participating in {title}. Your voice helps shape how we invest in our community.',
@@ -67,7 +67,7 @@ const VoteSuccessModalSuspense = ({
               </div>
 
               {nextSteps.length > 0 && (
-                <div className="flex w-full flex-col gap-6 text-left text-base text-neutral-charcoal">
+                <div className="flex w-full flex-col gap-6 text-left text-base text-foreground">
                   <Header3>{t("Here's what will happen next:")}</Header3>
                   <ul className="flex flex-col gap-4 pl-4">
                     {nextSteps.map((step) => (

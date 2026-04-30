@@ -46,7 +46,7 @@ export function CollaborativePresence({
         key="overflow"
         placeholder={`+${overflowCount}`}
         size="sm"
-        className="border-2 border-white bg-neutral-charcoal"
+        className="border-2 border-white bg-foreground"
       />,
     );
   }

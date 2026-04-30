@@ -44,10 +44,10 @@ export const Example = () => (
         mimeType="application/pdf"
         size={2048000}
       >
-        <div className="flex aspect-video items-center justify-center rounded-t-lg bg-neutral-gray1">
+        <div className="flex aspect-video items-center justify-center rounded-t-lg bg-accent">
           <div className="text-center">
             <div className="mb-2 text-6xl">📄</div>
-            <div className="text-sm text-neutral-gray4">PDF Preview</div>
+            <div className="text-sm text-muted-foreground">PDF Preview</div>
           </div>
         </div>
       </MediaDisplay>
@@ -61,10 +61,10 @@ export const Example = () => (
         url="https://github.com/example/react-components"
         site="github.com"
       >
-        <div className="flex aspect-video items-center justify-center rounded-t-lg bg-neutral-gray1">
+        <div className="flex aspect-video items-center justify-center rounded-t-lg bg-accent">
           <div className="text-center">
             <div className="mb-2 text-6xl">🔗</div>
-            <div className="text-sm text-neutral-gray4">Web Preview</div>
+            <div className="text-sm text-muted-foreground">Web Preview</div>
           </div>
         </div>
       </MediaDisplay>
@@ -98,10 +98,10 @@ export const PDFDocument = {
     mimeType: 'application/pdf',
     size: 1024000,
     children: (
-      <div className="flex aspect-video items-center justify-center rounded-t-lg bg-neutral-gray1">
+      <div className="flex aspect-video items-center justify-center rounded-t-lg bg-accent">
         <div className="text-center">
           <div className="mb-2 text-6xl">📋</div>
-          <div className="text-sm text-neutral-gray4">PDF Document</div>
+          <div className="text-sm text-muted-foreground">PDF Document</div>
         </div>
       </div>
     ),
@@ -115,10 +115,10 @@ export const WebLink = {
     url: 'https://example.com',
     site: 'example.com',
     children: (
-      <div className="flex aspect-video items-center justify-center rounded-t-lg bg-neutral-gray1">
+      <div className="flex aspect-video items-center justify-center rounded-t-lg bg-accent">
         <div className="text-center">
           <div className="mb-2 text-6xl">🌐</div>
-          <div className="text-sm text-neutral-gray4">Website Preview</div>
+          <div className="text-sm text-muted-foreground">Website Preview</div>
         </div>
       </div>
     ),
@@ -146,10 +146,10 @@ export const MinimalContent = {
     title: 'Simple Title',
     url: 'https://example.com/simple',
     children: (
-      <div className="flex aspect-video items-center justify-center rounded-t-lg bg-neutral-gray1">
+      <div className="flex aspect-video items-center justify-center rounded-t-lg bg-accent">
         <div className="text-center">
           <div className="mb-2 text-6xl">📄</div>
-          <div className="text-sm text-neutral-gray4">Minimal Content</div>
+          <div className="text-sm text-muted-foreground">Minimal Content</div>
         </div>
       </div>
     ),
@@ -165,10 +165,10 @@ export const LongDescription = {
     url: 'https://example.com/article',
     site: 'example.com',
     children: (
-      <div className="flex aspect-video items-center justify-center rounded-t-lg bg-neutral-gray1">
+      <div className="flex aspect-video items-center justify-center rounded-t-lg bg-accent">
         <div className="text-center">
           <div className="mb-2 text-6xl">📝</div>
-          <div className="text-sm text-neutral-gray4">Long Description</div>
+          <div className="text-sm text-muted-foreground">Long Description</div>
         </div>
       </div>
     ),

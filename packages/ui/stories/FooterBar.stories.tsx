@@ -24,7 +24,7 @@ export default {
  */
 export const ReviewNavigation = () => (
   <div className="flex h-64 flex-col">
-    <div className="flex-1 bg-neutral-offWhite" />
+    <div className="flex-1 bg-muted" />
     <FooterBar padding="spacious">
       <FooterBar.Start>
         <Button color="neutral" size="medium">
@@ -34,9 +34,9 @@ export const ReviewNavigation = () => (
       </FooterBar.Start>
 
       <FooterBar.Center>
-        <span className="text-base text-neutral-black">Proposal 4 of 6</span>
-        <span className="mx-2 text-midGray">•</span>
-        <span className="text-base text-neutral-black">2 completed</span>
+        <span className="text-base text-foreground">Proposal 4 of 6</span>
+        <span className="mx-2 text-muted-foreground">•</span>
+        <span className="text-base text-foreground">2 completed</span>
       </FooterBar.Center>
 
       <FooterBar.End>
@@ -64,7 +64,7 @@ export const ReviewNavigation = () => (
  */
 export const ProcessNavigation = () => (
   <div className="flex h-64 flex-col">
-    <div className="flex-1 bg-neutral-offWhite" />
+    <div className="flex-1 bg-muted" />
     <FooterBar>
       <FooterBar.Start>
         <Button color="ghost" size="medium">
@@ -80,7 +80,7 @@ export const ProcessNavigation = () => (
         <div className="w-40">
           <StepperProgressIndicator currentStep={1} numItems={4} />
         </div>
-        <span className="shrink-0 text-base text-charcoal">50% complete</span>
+        <span className="shrink-0 text-base text-foreground">50% complete</span>
       </FooterBar.Center>
 
       <FooterBar.End>
@@ -97,7 +97,7 @@ export const ProcessNavigation = () => (
  */
 export const Minimal = () => (
   <div className="flex h-64 flex-col">
-    <div className="flex-1 bg-neutral-offWhite" />
+    <div className="flex-1 bg-muted" />
     <FooterBar>
       <FooterBar.Start>
         <Button color="neutral" size="medium">

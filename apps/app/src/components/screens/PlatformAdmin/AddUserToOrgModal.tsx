@@ -128,7 +128,7 @@ const AddUserToOrgModalContent = ({
       {/* Body */}
       <ModalBody className="space-y-4">
         {/* User Info */}
-        <div className="bg-neutral-gray0 rounded-lg p-4">
+        <div className="rounded-lg bg-accent p-4">
           <ProfileItem
             avatar={
               <Avatar
@@ -149,7 +149,7 @@ const AddUserToOrgModalContent = ({
         {user.organizationUsers && user.organizationUsers.length > 0 ? (
           <>
             <div>
-              <div className="mb-2 text-sm font-medium text-neutral-black">
+              <div className="mb-2 text-sm font-medium text-foreground">
                 {t('Current organizations')}
               </div>
               <div className="space-y-2">
@@ -314,9 +314,9 @@ const OrganizationAndRoleSelection = ({
         {(role) => (
           <ComboBoxItem key={role.id} id={role.id} textValue={role.name}>
             <div>
-              <div className="leading-base text-neutral-black">{role.name}</div>
+              <div className="leading-base text-foreground">{role.name}</div>
               {role.description && (
-                <div className="text-xs text-neutral-charcoal">
+                <div className="text-xs text-foreground">
                   {role.description}
                 </div>
               )}

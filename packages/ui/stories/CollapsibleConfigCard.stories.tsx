@@ -50,9 +50,7 @@ export const Collapsed = () => {
         controls={mockControls}
       >
         <div className="px-8">
-          <p className="text-neutral-charcoal">
-            This is the expanded body content.
-          </p>
+          <p className="text-foreground">This is the expanded body content.</p>
         </div>
       </CollapsibleConfigCard>
     </div>
@@ -74,11 +72,11 @@ export const Expanded = () => {
         controls={mockControls}
       >
         <div className="space-y-4 px-8">
-          <p className="text-neutral-charcoal">
+          <p className="text-foreground">
             This card starts expanded. The chevron is rotated.
           </p>
-          <div className="rounded border bg-neutral-gray1 p-3">
-            <span className="text-sm text-neutral-gray4">
+          <div className="rounded border bg-accent p-3">
+            <span className="text-sm text-muted-foreground">
               Configuration options would go here
             </span>
           </div>
@@ -104,7 +102,7 @@ export const NewlyAdded = () => {
         controls={mockControls}
       >
         <div className="px-8">
-          <p className="text-neutral-charcoal">
+          <p className="text-foreground">
             This card has a teal border that fades out after 3 seconds.
           </p>
         </div>
@@ -132,7 +130,7 @@ export const Locked = () => {
         locked
       >
         <div className="px-8 pt-2">
-          <p className="text-neutral-charcoal">
+          <p className="text-foreground">
             These are the categories you defined in Proposal Categories.
           </p>
         </div>
@@ -157,8 +155,8 @@ export const LockedCollapsible = () => {
       >
         <div className="space-y-4 px-8">
           <div className="flex items-center justify-between">
-            <span className="text-neutral-charcoal">Show in template?</span>
-            <span className="text-sm text-neutral-gray4">Toggle here</span>
+            <span className="text-foreground">Show in template?</span>
+            <span className="text-sm text-muted-foreground">Toggle here</span>
           </div>
         </div>
       </CollapsibleConfigCard>
@@ -199,9 +197,7 @@ export const MultipleCards = () => {
           controls={mockControls}
         >
           <div className="px-8">
-            <p className="text-neutral-charcoal">
-              Configuration for {card.label}
-            </p>
+            <p className="text-foreground">Configuration for {card.label}</p>
           </div>
         </CollapsibleConfigCard>
       ))}

@@ -74,9 +74,9 @@ export const TextField = ({
   const counterElement = maxLength != null && (
     <span
       className={cn(
-        'text-sm text-neutral-gray4',
+        'text-sm text-muted-foreground',
         'group-data-[disabled=true]:opacity-50',
-        (charCount === maxLength || isInvalid) && 'text-functional-red',
+        (charCount === maxLength || isInvalid) && 'text-destructive',
       )}
     >
       {charCount}/{maxLength}
@@ -98,11 +98,11 @@ export const TextField = ({
         <Label
           className={cn(
             labelClassName,
-            'group-data-[invalid=true]:text-functional-red',
+            'group-data-[invalid=true]:text-destructive',
           )}
         >
           {label}
-          {isRequired && <span className="text-functional-red"> *</span>}
+          {isRequired && <span className="text-destructive"> *</span>}
         </Label>
       )}
       <FieldGroup className={fieldClassName}>
@@ -111,7 +111,7 @@ export const TextField = ({
             {...textareaProps}
             className={cn(
               textareaProps?.className,
-              'group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red',
+              'group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-destructive',
             )}
             ref={ref as React.RefObject<HTMLTextAreaElement>}
           />
@@ -120,7 +120,7 @@ export const TextField = ({
             {...inputProps}
             className={cn(
               inputProps?.className,
-              'group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red',
+              'group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-destructive',
             )}
             ref={ref as React.RefObject<HTMLInputElement>}
           />

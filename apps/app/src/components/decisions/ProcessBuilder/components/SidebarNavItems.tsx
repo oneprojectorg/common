@@ -89,14 +89,14 @@ function SectionItem({
         className={cn(
           'flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-left text-base transition-colors',
           isActive
-            ? 'bg-primary-tealWhite text-primary'
-            : 'text-neutral-black hover:bg-neutral-gray1',
+            ? 'bg-primary-foreground text-primary'
+            : 'text-foreground hover:bg-accent',
         )}
       >
         {t(section.labelKey)}
         {isSectionId(section.id) &&
           validationSections[section.id] === false && (
-            <span className="size-1.5 shrink-0 rounded-full bg-primary-teal" />
+            <span className="size-1.5 shrink-0 rounded-full bg-primary" />
           )}
       </button>
       {section.id === 'phases' && phases.length > 0 && (
@@ -122,8 +122,8 @@ function SectionItem({
                 className={cn(
                   'flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-left text-sm transition-colors',
                   currentSectionId === child.id
-                    ? 'bg-primary-tealWhite text-primary'
-                    : 'text-neutral-black hover:bg-neutral-gray1',
+                    ? 'bg-primary-foreground text-primary'
+                    : 'text-foreground hover:bg-accent',
                 )}
               >
                 <CornerDownRight className="shrink-0 opacity-50" />
@@ -165,14 +165,14 @@ function PhaseItem({
         className={cn(
           'flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-left text-sm transition-colors',
           isActive
-            ? 'bg-primary-tealWhite text-primary'
-            : 'text-neutral-black hover:bg-neutral-gray1',
+            ? 'bg-primary-foreground text-primary'
+            : 'text-foreground hover:bg-accent',
         )}
       >
         <CornerDownRight className="shrink-0 opacity-50" />
         <span className="truncate">{phase.name || t('Untitled phase')}</span>
         {phaseValidation[phase.phaseId] === false && (
-          <span className="ml-auto size-1.5 shrink-0 rounded-full bg-primary-teal" />
+          <span className="ml-auto size-1.5 shrink-0 rounded-full bg-primary" />
         )}
       </button>
     </li>

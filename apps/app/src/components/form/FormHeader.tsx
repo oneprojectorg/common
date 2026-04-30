@@ -14,6 +14,6 @@ export const FormHeader = ({
   <div className={cn('flex flex-col gap-4', className)}>
     <Header1 className="text-center">{text}</Header1>
 
-    <p className="px-6 text-center text-darkGray">{children}</p>
+    <p className="px-6 text-center text-muted-foreground">{children}</p>
   </div>
 );

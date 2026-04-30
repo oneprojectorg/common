@@ -99,9 +99,9 @@ export const ProfileResults = ({
                 ) : null}
               </Avatar>
 
-              <div className="flex flex-col font-semibold text-neutral-charcoal group-hover/result:underline">
+              <div className="flex flex-col font-semibold text-foreground group-hover/result:underline">
                 {styledName}
-                <span className="text-sm text-neutral-gray4 capitalize">
+                <span className="text-sm text-muted-foreground capitalize">
                   {subtitle}
                 </span>
               </div>

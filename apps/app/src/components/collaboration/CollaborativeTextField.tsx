@@ -59,7 +59,7 @@ export function CollaborativeTextField({
       Placeholder.configure({
         placeholder,
         emptyEditorClass:
-          'before:content-[attr(data-placeholder)] before:text-neutral-gray3 before:float-left before:h-0 before:pointer-events-none',
+          'before:content-[attr(data-placeholder)] before:text-muted-foreground before:float-left before:h-0 before:pointer-events-none',
       }),
     ],
     [placeholder],
@@ -95,12 +95,12 @@ export function CollaborativeTextField({
       {(title || description) && (
         <div className="flex flex-col gap-2">
           {title && (
-            <span className="font-serif text-title-sm14 text-neutral-charcoal">
+            <span className="font-serif text-title-sm14 text-foreground">
               {title}
             </span>
           )}
           {description && (
-            <p className="text-sm text-neutral-charcoal">{description}</p>
+            <p className="text-sm text-foreground">{description}</p>
           )}
         </div>
       )}
@@ -115,8 +115,8 @@ export function CollaborativeTextField({
         <div className="flex justify-end">
           <span
             className={cn(
-              'text-sm text-neutral-gray4',
-              charCount >= maxLength && 'text-functional-red',
+              'text-sm text-muted-foreground',
+              charCount >= maxLength && 'text-destructive',
             )}
           >
             {charCount}/{maxLength}

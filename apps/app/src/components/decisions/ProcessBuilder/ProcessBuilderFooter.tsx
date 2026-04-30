@@ -124,7 +124,7 @@ export const ProcessBuilderFooter = ({
           <div className="flex items-center gap-2 md:w-60 md:shrink-0">
             <Link
               href={`/decisions/${slug}`}
-              className="inline-flex h-10 items-center gap-1 px-2 text-base text-charcoal transition-colors hover:bg-neutral-gray1"
+              className="inline-flex h-10 items-center gap-1 px-2 text-base text-foreground transition-colors hover:bg-accent"
             >
               <LuLogOut className="size-4 rotate-180" />
               {t('Exit')}

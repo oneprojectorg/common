@@ -22,7 +22,7 @@ export const Header2 = ({
   className?: string;
 }) => {
   return (
-    <h2 className={cn('text-title-lg text-neutral-black', className)}>
+    <h2 className={cn('text-title-lg text-foreground', className)}>
       {children}
     </h2>
   );
@@ -36,7 +36,7 @@ export const Header3 = ({
   className?: string;
 }) => {
   return (
-    <h3 className={cn('text-title-base text-neutral-black', className)}>
+    <h3 className={cn('text-title-base text-foreground', className)}>
       {children}
     </h3>
   );
@@ -50,9 +50,7 @@ export const Header4 = ({
   className?: string;
 }) => {
   return (
-    <h4
-      className={cn('font-serif text-title-sm14 text-neutral-black', className)}
-    >
+    <h4 className={cn('font-serif text-title-sm14 text-foreground', className)}>
       {children}
     </h4>
   );

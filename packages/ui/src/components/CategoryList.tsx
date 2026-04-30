@@ -118,14 +118,7 @@ export const CategoryList = <C extends CategoryItem>({
   );
 
   return (
-    <div
-      className={cn(
-        'flex flex-col',
-        'gap-2 p-4',
-        'bg-neutral-offWhite',
-        className,
-      )}
-    >
+    <div className={cn('flex flex-col', 'gap-2 p-4', 'bg-muted', className)}>
       <ul className="flex w-full flex-col gap-2">
         {categories.map((category, index) => (
           <li
@@ -151,7 +144,7 @@ export const CategoryList = <C extends CategoryItem>({
               onPress={() => removeCategory(index)}
               isDisabled={categories.length <= 1 && categories[0]?.label === ''}
             >
-              <LuX className="h-4 w-4 text-neutral-black" aria-hidden="true" />
+              <LuX className="h-4 w-4 text-foreground" aria-hidden="true" />
             </IconButton>
           </li>
         ))}
@@ -159,7 +152,7 @@ export const CategoryList = <C extends CategoryItem>({
       <Button
         color="secondary"
         onPress={addCategory}
-        className="flex w-full items-center justify-center gap-1 border-primary-teal shadow-none"
+        className="flex w-full items-center justify-center gap-1 border-primary shadow-none"
       >
         <LuPlus className="h-4 w-4" />
         Add Category

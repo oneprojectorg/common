@@ -107,7 +107,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
                   {description ? <Tooltip>{description}</Tooltip> : null}
 
                   {description ? (
-                    <div className="flex w-full items-center justify-center text-sm text-neutral-charcoal sm:hidden">
+                    <div className="flex w-full items-center justify-center text-sm text-foreground sm:hidden">
                       {description}
                     </div>
                   ) : null}
@@ -133,7 +133,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
                   </ButtonLink>
                   {description ? <Tooltip>{description}</Tooltip> : null}
                   {description ? (
-                    <div className="flex w-full items-center justify-center text-sm text-neutral-charcoal sm:hidden">
+                    <div className="flex w-full items-center justify-center text-sm text-foreground sm:hidden">
                       {description}
                     </div>
                   ) : null}

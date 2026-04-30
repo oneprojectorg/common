@@ -83,8 +83,8 @@ const EmptyDecisions = ({ profileId }: { profileId: string }) => {
 
   return (
     <div className="flex min-h-[400px] flex-col items-center justify-center gap-6 px-6 py-16 text-center">
-      <div className="flex size-10 items-center justify-center rounded-full bg-neutral-gray1">
-        <LuLeaf className="size-6 text-neutral-gray4" />
+      <div className="flex size-10 items-center justify-center rounded-full bg-accent">
+        <LuLeaf className="size-6 text-muted-foreground" />
       </div>
       <div className="flex max-w-md flex-col gap-2">
         <Header2 className="font-serif text-title-base">
@@ -93,7 +93,7 @@ const EmptyDecisions = ({ profileId }: { profileId: string }) => {
             : t('There are no current decision-making processes')}
         </Header2>
         {isProcessAdmin && (
-          <p className="text-base text-neutral-charcoal">
+          <p className="text-base text-foreground">
             {t(
               'Create your first participatory budgeting or grantmaking process to start collecting proposals from your community.',
             )}
@@ -154,7 +154,7 @@ export const ProfileDecisionsSuspense = ({
     <Suspense
       fallback={
         <div className="flex min-h-96 items-center justify-center">
-          <div className="animate-pulse text-base text-neutral-charcoal">
+          <div className="animate-pulse text-base text-foreground">
             {t('Loading...')}
           </div>
         </div>

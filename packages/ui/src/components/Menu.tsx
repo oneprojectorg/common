@@ -23,7 +23,7 @@ export function Menu<T extends object>(props: MenuProps<T>) {
     <AriaMenu
       {...props}
       className={cn(
-        'max-h-[inherit] overflow-auto outline-0',
+        'max-h-[inherit] overflow-auto rounded-md border bg-white p-2 text-foreground shadow-light outline-0',
         typeof props.className === 'string' ? props.className : undefined,
       )}
     />

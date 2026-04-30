@@ -10,7 +10,7 @@ import { getCriteria } from '../rubricTemplate';
 export function FormShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-col gap-6">
-      <div className="border-b border-neutral-gray1 pb-4">
+      <div className="border-b border-border pb-4">
         <Header3 className="font-serif font-light">
           <TranslatedText text="Review Proposal" />
         </Header3>
@@ -42,12 +42,12 @@ export function TotalScoreCard({
   return (
     <Surface
       variant="filled"
-      className="flex items-start justify-between rounded-lg border-neutral-gray1 p-4"
+      className="flex items-start justify-between rounded-lg border-border p-4"
     >
-      <span className="text-base text-neutral-charcoal">
+      <span className="text-base text-foreground">
         <TranslatedText text="Total Score" />
       </span>
-      <span className="text-base text-neutral-black">
+      <span className="text-base text-foreground">
         {totalScore === null ? '–' : totalScore}
       </span>
     </Surface>

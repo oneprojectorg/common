@@ -60,7 +60,7 @@ export const ProfileSummaryList = ({
                 </Avatar>
               </Link>
 
-              <div className="flex flex-col gap-3 text-neutral-black">
+              <div className="flex flex-col gap-3 text-foreground">
                 <div className="flex flex-col gap-2">
                   <Link
                     href={`/profile/${profile.slug}`}
@@ -69,12 +69,12 @@ export const ProfileSummaryList = ({
                     {profile.name}
                   </Link>
                   {whereWeWork?.length > 0 ? (
-                    <span className="text-sm text-neutral-gray4 sm:text-base">
+                    <span className="text-sm text-muted-foreground sm:text-base">
                       {whereWeWork}
                     </span>
                   ) : null}
                 </div>
-                <span className="text-neutral-charcoal">{trimmedBio}</span>
+                <span className="text-foreground">{trimmedBio}</span>
               </div>
             </div>
           </div>

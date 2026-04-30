@@ -133,14 +133,14 @@ export const OrganizationCardList = ({
             <div className="flex flex-col gap-2">
               <div className="flex flex-col gap-2">
                 <Link
-                  className="truncate font-semibold text-neutral-black"
+                  className="truncate font-semibold text-foreground"
                   href={`/org/${relationshipOrg.profile.slug}`}
                 >
                   {relationshipOrg.profile.name}
                 </Link>
               </div>
 
-              <div className="line-clamp-3 text-neutral-charcoal">
+              <div className="line-clamp-3 text-foreground">
                 {relationshipOrg.profile.bio &&
                 relationshipOrg.profile.bio.length > 200
                   ? `${relationshipOrg.profile.bio.slice(0, 200)}...`
@@ -198,7 +198,7 @@ export const OrganizationSummaryList = ({
                 </Avatar>
               </Link>
 
-              <div className="flex flex-col gap-3 text-neutral-black">
+              <div className="flex flex-col gap-3 text-foreground">
                 <div className="flex flex-col gap-2">
                   <Link
                     href={`/org/${org.profile.slug}`}
@@ -207,12 +207,12 @@ export const OrganizationSummaryList = ({
                     {org.profile.name}
                   </Link>
                   {org.whereWeWork?.length > 0 ? (
-                    <span className="text-sm text-neutral-gray4 sm:text-base">
+                    <span className="text-sm text-muted-foreground sm:text-base">
                       {whereWeWork}
                     </span>
                   ) : null}
                 </div>
-                <span className="text-neutral-charcoal">{trimmedBio}</span>
+                <span className="text-foreground">{trimmedBio}</span>
               </div>
             </div>
           </div>

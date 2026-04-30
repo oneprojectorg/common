@@ -55,7 +55,7 @@ export function ProposalEditorAside({
   }
 
   return (
-    <aside className="flex h-full w-96 shrink-0 flex-col border-l border-neutral-gray1 bg-white">
+    <aside className="flex h-full w-96 shrink-0 flex-col border-l border-border bg-white">
       <ProposalEditorAsideHeader title={title} onClose={onClose} />
       <div className={cn('flex-1 overflow-y-auto', bodyClassName)}>
         {children}
@@ -75,18 +75,18 @@ export function ProposalEditorAsideSkeleton({
 
   return (
     <>
-      <aside className="hidden h-full w-96 shrink-0 flex-col border-l border-neutral-gray1 bg-white sm:flex">
-        <div className="flex h-editor-topbar shrink-0 items-center justify-between border-b border-neutral-gray1 px-6">
-          <div className="h-4 w-36 animate-pulse rounded bg-neutral-gray1" />
-          <div className="size-4 animate-pulse rounded bg-neutral-gray1" />
+      <aside className="hidden h-full w-96 shrink-0 flex-col border-l border-border bg-white sm:flex">
+        <div className="flex h-editor-topbar shrink-0 items-center justify-between border-b border-border px-6">
+          <div className="h-4 w-36 animate-pulse rounded bg-accent" />
+          <div className="size-4 animate-pulse rounded bg-accent" />
         </div>
         <div className={bodyClasses}>{children}</div>
       </aside>
 
       <div className="fixed inset-x-0 bottom-0 z-[999999] max-h-[85svh] rounded-t-2xl bg-white shadow-xl sm:hidden">
-        <div className="flex h-editor-topbar shrink-0 items-center justify-between border-b border-neutral-gray1 px-6">
-          <div className="h-4 w-36 animate-pulse rounded bg-neutral-gray1" />
-          <div className="size-4 animate-pulse rounded bg-neutral-gray1" />
+        <div className="flex h-editor-topbar shrink-0 items-center justify-between border-b border-border px-6">
+          <div className="h-4 w-36 animate-pulse rounded bg-accent" />
+          <div className="size-4 animate-pulse rounded bg-accent" />
         </div>
         <div className={cn('pb-safe', bodyClasses)}>{children}</div>
       </div>
@@ -102,11 +102,11 @@ function ProposalEditorAsideHeader({
   onClose: () => void;
 }) {
   return (
-    <div className="flex h-editor-topbar shrink-0 items-center justify-between border-b border-neutral-gray1 px-6">
+    <div className="flex h-editor-topbar shrink-0 items-center justify-between border-b border-border px-6">
       <Header2 className="font-serif text-title-sm14">{title}</Header2>
       <button
         onClick={onClose}
-        className="cursor-pointer text-neutral-black hover:text-neutral-charcoal"
+        className="cursor-pointer text-foreground hover:text-foreground"
       >
         <LuX className="size-4" />
       </button>

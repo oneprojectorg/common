@@ -175,7 +175,7 @@ export const OrganizationFormFields = ({
             onBlur={field.handleBlur}
             onChange={field.handleChange}
             inputProps={{
-              icon: <LuLink className="size-4 text-neutral-black" />,
+              icon: <LuLink className="size-4 text-foreground" />,
               placeholder: t("Enter your organization's website here"),
             }}
             errorMessage={getFieldErrorMessage(field)}

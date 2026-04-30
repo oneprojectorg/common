@@ -59,7 +59,7 @@ export const FundingRoleModal = ({
                         organizationName,
                       })}
                     </div>
-                    <div className="text-sm text-neutral-gray4">
+                    <div className="text-sm text-muted-foreground">
                       {t(
                         'Your organization provides financial support to {organizationName}.',
                         { organizationName },
@@ -74,7 +74,7 @@ export const FundingRoleModal = ({
                         organizationName,
                       })}
                     </div>
-                    <div className="text-sm text-neutral-gray4">
+                    <div className="text-sm text-muted-foreground">
                       {t(
                         '{organizationName} provides financial support to your organization.',
                         { organizationName },
@@ -85,7 +85,7 @@ export const FundingRoleModal = ({
                 <Radio value="funderAndFundee">
                   <div className="flex flex-col">
                     <div>{t('Mutual funding')}</div>
-                    <div className="text-sm text-neutral-gray4">
+                    <div className="text-sm text-muted-foreground">
                       {t(
                         'Both organizations provide financial support to each other.',
                       )}

@@ -86,8 +86,8 @@ function FieldConfigDropdownOptions({
     }
     return (
       <div className="flex items-center gap-2">
-        <LuGripVertical className="size-4 text-neutral-gray3" />
-        <span className="mr-12 grow rounded-lg border border-neutral-gray2 bg-white px-4 py-3 text-neutral-charcoal shadow-lg">
+        <LuGripVertical className="size-4 text-muted-foreground" />
+        <span className="mr-12 grow rounded-lg border border-input bg-white px-4 py-3 text-foreground shadow-lg">
           {item.value || t('Option')}
         </span>
       </div>
@@ -121,7 +121,7 @@ function FieldConfigDropdownOptions({
 
   return (
     <div ref={containerRef} className="space-y-2">
-      <h4 className="text-sm text-neutral-charcoal">{t('Options')}</h4>
+      <h4 className="text-sm text-foreground">{t('Options')}</h4>
 
       <Sortable
         items={options}
@@ -139,7 +139,7 @@ function FieldConfigDropdownOptions({
               <DragHandle
                 {...controls.dragHandleProps}
                 aria-label={t('Drag to reorder option')}
-                className="text-neutral-gray3 hover:text-neutral-gray4"
+                className="text-muted-foreground hover:text-muted-foreground"
               />
               <TextField
                 value={option.value}
@@ -169,8 +169,8 @@ function FieldConfigDropdownOptions({
                   }}
                   className={`p-2 ${
                     options.length <= 2
-                      ? 'cursor-default text-neutral-gray3 opacity-30'
-                      : 'text-neutral-gray3 hover:text-neutral-charcoal'
+                      ? 'cursor-default text-muted-foreground opacity-30'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <LuX className="size-4" />
@@ -186,7 +186,7 @@ function FieldConfigDropdownOptions({
         color="ghost"
         size="small"
         onPress={handleAddOption}
-        className="hover:text-primary-tealDark gap-1 p-0 text-primary-teal"
+        className="hover:text-primaryDark gap-1 p-0 text-primary"
       >
         <LuPlus className="size-4" />
         <span>{t('Add option')}</span>

@@ -37,7 +37,7 @@ export function FieldListTrigger() {
   return (
     <Button
       color="secondary"
-      className="gap-2 text-neutral-charcoal"
+      className="gap-2 text-foreground"
       size="small"
       onPress={toggleSidebar}
     >
@@ -108,8 +108,8 @@ function SidebarContent({
             }
             return (
               <li key={field.id}>
-                <div className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-base text-neutral-charcoal">
-                  <Icon className="size-4 shrink-0 text-neutral-gray4" />
+                <div className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-base text-foreground">
+                  <Icon className="size-4 shrink-0 text-muted-foreground" />
                   <span className="truncate">{field.label}</span>
                 </div>
               </li>

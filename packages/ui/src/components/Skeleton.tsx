@@ -16,11 +16,7 @@ export const Skeleton = ({
 }: Omit<SkeletonProps, 'lines'>) => {
   return (
     <div
-      className={cn(
-        'min-h-4 rounded-md bg-neutral-gray1',
-        'animate-pulse',
-        className,
-      )}
+      className={cn('min-h-4 rounded-md bg-accent', 'animate-pulse', className)}
       {...props}
     >
       {children ? <span className="opacity-0">{children}</span> : null}
@@ -39,7 +35,7 @@ export const SkeletonLine: React.FC<SkeletonProps> = memo(
         {Array.from({ length: lines }).map((_, index) => (
           <div
             key={`${index + 1}`}
-            className="h-[1em] animate-pulse rounded-[0.25em] bg-gradient-to-br from-neutral-300 to-neutral-gray1"
+            className="h-[1em] animate-pulse rounded-[0.25em] bg-gradient-to-br from-neutral-300 to-accent"
             style={{
               backgroundSize: '200% 200%',
               width: randomWidth

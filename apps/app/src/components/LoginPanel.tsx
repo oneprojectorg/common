@@ -148,7 +148,7 @@ export const LoginPanel = () => {
   // TODO: using a tailwind v4 class here "min-w-xs"
   return (
     <div className="flex items-center justify-center sm:block">
-      <div className="z-[999999] max-h-full w-auto min-w-xs rounded-lg border-offWhite bg-white bg-clip-padding px-4 py-8 font-sans text-neutral-gray4 xs:w-96 sm:border-0">
+      <div className="z-[999999] max-h-full w-auto min-w-xs rounded-lg border-border bg-white bg-clip-padding px-4 py-8 font-sans text-muted-foreground xs:w-96 sm:border-0">
         <div className="flex flex-col gap-12 sm:gap-8">
           <section className="flex flex-col items-center justify-center gap-2 sm:gap-4">
             <Header1 className="text-center">
@@ -196,7 +196,7 @@ export const LoginPanel = () => {
                   })()}
             </Header1>
 
-            <div className="px-4 text-center text-sm leading-[130%] text-neutral-gray4 sm:text-base">
+            <div className="px-4 text-center text-sm leading-[130%] text-muted-foreground sm:text-base">
               {user?.error?.name === 'AuthRetryableFetchError'
                 ? t(
                     "{appName} can't connect to the internet. Please check your internet connection and try again.",
@@ -205,9 +205,7 @@ export const LoginPanel = () => {
                 : (() => {
                     if (combinedError || tokenError) {
                       return (
-                        <span
-                          className={cn(tokenError && 'text-functional-red')}
-                        >
+                        <span className={cn(tokenError && 'text-destructive')}>
                           {combinedError ||
                             tokenError ||
                             t('There was an error signing you in.')}
@@ -251,7 +249,7 @@ export const LoginPanel = () => {
                         {t('Continue with Google')}
                       </Button>
 
-                      <div className="flex w-full items-center justify-center gap-4 text-midGray">
+                      <div className="flex w-full items-center justify-center gap-4 text-muted-foreground">
                         <div className="h-px grow bg-current" />
                         <span>{t('or')}</span>
                         <div className="h-px grow bg-current" />
@@ -347,7 +345,7 @@ export const LoginPanel = () => {
                       }}
                     >
                       {isRefetchingUser ? (
-                        <div className="m-0.5 aspect-square w-5 animate-spin rounded-full border-2 border-b-0 border-neutral-gray3" />
+                        <div className="m-0.5 aspect-square w-5 animate-spin rounded-full border-2 border-b-0 border-input" />
                       ) : (
                         t('Try again')
                       )}
@@ -397,14 +395,14 @@ export const LoginPanel = () => {
                     {t('Back to home')}
                   </ButtonLink>
 
-                  <SocialLinks iconClassName="size-5 stroke-none text-neutral-gray3" />
+                  <SocialLinks iconClassName="size-5 stroke-none text-muted-foreground" />
                 </div>
               )}
 
               {user?.error?.name === 'AuthRetryableFetchError' ||
               login.isError ||
               !!combinedError ? null : (
-                <div className="flex flex-col items-center justify-center text-center text-xs text-midGray sm:text-sm">
+                <div className="flex flex-col items-center justify-center text-center text-xs text-muted-foreground sm:text-sm">
                   {isSignup ? (
                     <span>
                       {t(

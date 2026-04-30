@@ -31,7 +31,7 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
       <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between border-b bg-white px-6 md:px-8">
         <Link
           href={`/decisions/${decisionSlug}`}
-          className="flex items-center gap-2 text-base text-primary-teal"
+          className="flex items-center gap-2 text-base text-primary"
         >
           <LuArrowLeft className="size-4" />
           {t('Back to proposals')}

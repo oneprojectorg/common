@@ -37,7 +37,7 @@ const AccordionTitleInput = ({
       className={cn(
         'flex-1 rounded border bg-transparent px-2 py-1 font-serif text-title-sm font-medium',
         'disabled:cursor-default disabled:border-transparent',
-        'enabled:bg-neutral-gray1 enabled:focus:border enabled:focus:bg-white',
+        'enabled:bg-accent enabled:focus:border enabled:focus:bg-white',
         className,
       )}
     />
@@ -292,7 +292,7 @@ export const Nested: Story = {
                   </AccordionTrigger>
                 </AccordionHeader>
                 <AccordionContent className="pt-2">
-                  <div className="space-y-2 text-sm text-muted-fg">
+                  <div className="text-muted-fg space-y-2 text-sm">
                     <p>Advanced configuration options go here.</p>
                     <ul className="list-inside list-disc">
                       <li>Custom validation rules</li>
@@ -326,7 +326,7 @@ export const Controlled: Story = {
             Expand All
           </button>
           <button
-            className="rounded-lg bg-secondary px-3 py-1 text-sm text-secondary-fg"
+            className="text-secondary-fg rounded-lg bg-secondary px-3 py-1 text-sm"
             onClick={() => setExpandedKeys(new Set())}
           >
             Collapse All
@@ -369,7 +369,7 @@ export const Controlled: Story = {
           </AccordionItem>
         </Accordion>
 
-        <p className="mt-4 text-sm text-muted-fg">
+        <p className="text-muted-fg mt-4 text-sm">
           Expanded: {Array.from(expandedKeys).join(', ') || 'none'}
         </p>
       </div>
@@ -384,16 +384,16 @@ export const Unstyled: Story = {
         <AccordionItem
           id="1"
           variant="unstyled"
-          className="mb-2 rounded-lg border-2 border-dashed border-data-purple/40 bg-data-purple/10"
+          className="mb-2 rounded-lg border-2 border-dashed border-chart-1/40 bg-chart-1/10"
         >
           <AccordionHeader className="p-4">
-            <AccordionTrigger className="flex w-full items-center justify-between text-data-purple">
+            <AccordionTrigger className="flex w-full items-center justify-between text-chart-1">
               <span>Custom Styled Section 1</span>
-              <AccordionIndicator className="text-data-purple" />
+              <AccordionIndicator className="text-chart-1" />
             </AccordionTrigger>
           </AccordionHeader>
           <AccordionContent className="p-4 pt-0">
-            <p className="text-data-purple">
+            <p className="text-chart-1">
               This accordion uses unstyled mode with custom classes.
             </p>
           </AccordionContent>
@@ -402,16 +402,16 @@ export const Unstyled: Story = {
         <AccordionItem
           id="2"
           variant="unstyled"
-          className="mb-2 rounded-lg border-2 border-dashed border-primary-teal/40 bg-primary-tealWhite"
+          className="mb-2 rounded-lg border-2 border-dashed border-primary/40 bg-primary-foreground"
         >
           <AccordionHeader className="p-4">
-            <AccordionTrigger className="flex w-full items-center justify-between text-primary-tealBlack">
+            <AccordionTrigger className="flex w-full items-center justify-between text-primary">
               <span>Custom Styled Section 2</span>
-              <AccordionIndicator className="text-primary-teal" />
+              <AccordionIndicator className="text-primary" />
             </AccordionTrigger>
           </AccordionHeader>
           <AccordionContent className="p-4 pt-0">
-            <p className="text-primary-tealBlack">
+            <p className="text-primary">
               You have full control over the styling!
             </p>
           </AccordionContent>

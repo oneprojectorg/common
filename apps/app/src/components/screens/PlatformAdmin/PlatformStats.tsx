@@ -73,16 +73,11 @@ const StatCard = ({
 
   const content = (
     <Surface
-      className={cn(
-        'p-8',
-        isActive && 'border-primary-teal ring-1 ring-primary-teal',
-      )}
+      className={cn('p-8', isActive && 'border-primary ring-1 ring-primary')}
     >
       <div className="flex flex-col gap-2">
-        <div className="text-neutral-charcoal">{label}</div>
-        <div className="font-serif text-title-xxl text-neutral-black">
-          {value}
-        </div>
+        <div className="text-foreground">{label}</div>
+        <div className="font-serif text-title-xxl text-foreground">{value}</div>
       </div>
     </Surface>
   );

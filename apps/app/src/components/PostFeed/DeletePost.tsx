@@ -78,7 +78,7 @@ export const DeletePost = ({
     >
       <MenuItem
         key="delete"
-        className="!bg-transparent px-3 py-1 pr-3 pl-3 text-functional-red"
+        className="!bg-transparent px-3 py-1 pr-3 pl-3 text-destructive"
       >
         {t('Delete')}
       </MenuItem>

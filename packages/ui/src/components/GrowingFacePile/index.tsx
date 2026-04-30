@@ -41,7 +41,7 @@ export const GrowingFacePile = ({
 
   if (items.length > numItems) {
     renderedItems.push(
-      <Avatar className="bg-neutral-charcoal text-sm text-neutral-offWhite">
+      <Avatar className="bg-foreground text-sm text-muted">
         <span className="align-super">+</span>
         {items.length - numItems}
       </Avatar>,

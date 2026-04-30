@@ -232,7 +232,7 @@ function PhaseDetailForm({
     <div className="mx-auto w-full space-y-4 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-neutral-gray4">
+          <p className="text-sm text-muted-foreground">
             {t('Phase {index} of {total}', {
               index: phaseIndex,
               total: phaseCount,
@@ -294,7 +294,7 @@ function PhaseDetailForm({
             className="rounded-lg border border-border"
             editorClassName="min-h-24 p-3"
           />
-          <p className="text-sm text-neutral-gray4">
+          <p className="text-sm text-muted-foreground">
             {t(
               'Any additional information will appear in a modal titled "About the process"',
             )}
@@ -397,7 +397,7 @@ function PhaseDetailForm({
       <div className="border-t pt-4">
         <Button
           color="secondary"
-          className="text-functional-red"
+          className="text-destructive"
           onPress={() => setShowDeleteModal(true)}
         >
           <LuTrash2 className="size-4" />

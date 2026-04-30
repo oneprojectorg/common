@@ -63,11 +63,11 @@ export const LinkPreview = memo(
     if (loading) {
       return (
         <Surface className={cn('rounded-lg', className)}>
-          <div className="flex aspect-video w-full items-center justify-center bg-neutral-gray1">
+          <div className="flex aspect-video w-full items-center justify-center bg-accent">
             <LoadingSpinner className="size-8" />
           </div>
-          <div className="border-t border-neutral-gray2 px-4 py-3">
-            <span className="text-sm text-neutral-gray4">{domain}</span>
+          <div className="border-t border-input px-4 py-3">
+            <span className="text-sm text-muted-foreground">{domain}</span>
           </div>
         </Surface>
       );
@@ -83,8 +83,10 @@ export const LinkPreview = memo(
             rel="noopener noreferrer"
             className="flex items-center gap-3 p-4"
           >
-            <LuGlobe className="size-5 shrink-0 text-neutral-gray4" />
-            <span className="truncate text-sm text-neutral-gray4">{url}</span>
+            <LuGlobe className="size-5 shrink-0 text-muted-foreground" />
+            <span className="truncate text-sm text-muted-foreground">
+              {url}
+            </span>
           </a>
         </Surface>
       );
@@ -95,7 +97,7 @@ export const LinkPreview = memo(
     return (
       <Surface
         className={cn(
-          'group bg-neutral-white relative rounded-lg border-neutral-gray1',
+          'group bg-neutral-white relative rounded-lg border-border',
           className,
         )}
       >
@@ -107,7 +109,7 @@ export const LinkPreview = memo(
               e.stopPropagation();
               onRemove();
             }}
-            className="absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded border border-neutral-gray1 bg-white text-neutral-black opacity-0 transition-opacity group-hover:opacity-100 hover:bg-neutral-gray1 focus-visible:opacity-100"
+            className="absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded border border-border bg-white text-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:bg-accent focus-visible:opacity-100"
             aria-label={t('Remove preview')}
           >
             <LuX className="size-4" />
@@ -134,12 +136,12 @@ export const LinkPreview = memo(
             </div>
           ) : null}
           <div className="px-4 py-4">
-            <span className="text-sm text-neutral-black">
+            <span className="text-sm text-foreground">
               {title ?? domain}
               {title && (
                 <>
                   {' '}
-                  <span className="text-neutral-gray4">· {domain}</span>
+                  <span className="text-muted-foreground">· {domain}</span>
                 </>
               )}
             </span>

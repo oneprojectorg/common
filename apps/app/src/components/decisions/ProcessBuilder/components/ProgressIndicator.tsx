@@ -20,10 +20,10 @@ export function ProgressIndicator({
         aria-valuemax={100}
         aria-valuenow={clamped}
         aria-label={t('{count}% complete', { count: clamped })}
-        className="absolute inset-x-0 top-0 h-1 overflow-hidden bg-neutral-gray2 md:hidden"
+        className="absolute inset-x-0 top-0 h-1 overflow-hidden bg-muted-foreground/30 md:hidden"
       >
         <div
-          className="h-full bg-linear-to-r from-functional-green to-primary-teal transition-all duration-300"
+          className="h-full bg-linear-to-r from-positive to-primary transition-all duration-300"
           style={{ width: `${clamped}%` }}
         />
       </div>
@@ -38,18 +38,18 @@ export function ProgressIndicator({
         aria-valuemax={100}
         aria-valuenow={clamped}
         aria-label={t('{count}% complete', { count: clamped })}
-        className="h-1 flex-1 overflow-hidden rounded-full bg-neutral-gray2"
+        className="h-1 flex-1 overflow-hidden rounded-full bg-muted-foreground/30"
       >
         <div
-          className="h-full rounded-full bg-linear-to-r from-functional-green to-primary-teal transition-all duration-300"
+          className="h-full rounded-full bg-linear-to-r from-positive to-primary transition-all duration-300"
           style={{ width: `${clamped}%` }}
         />
       </div>
       <span
         className={
           clamped === 100
-            ? 'shrink-0 bg-linear-to-r from-functional-green to-primary-teal bg-clip-text text-base text-transparent'
-            : 'shrink-0 text-base text-neutral-black'
+            ? 'shrink-0 bg-linear-to-r from-positive to-primary bg-clip-text text-base text-transparent'
+            : 'shrink-0 text-base text-foreground'
         }
       >
         {t('{count}% complete', { count: clamped })}

@@ -59,13 +59,13 @@ export function ProposalViewLayout({
       <div className="grid grid-cols-3 items-center border-b px-6 py-4">
         <button
           onClick={() => router.push(backHref)}
-          className="flex cursor-pointer items-center gap-2 text-base text-primary-teal hover:text-primary-tealBlack"
+          className="flex cursor-pointer items-center gap-2 text-base text-primary hover:text-primary"
         >
-          <LuArrowLeft className="size-6 text-neutral-charcoal sm:size-4 sm:text-primary-teal" />
+          <LuArrowLeft className="size-6 text-foreground sm:size-4 sm:text-primary" />
           <span className="hidden sm:block">{t('Back to Proposals')}</span>
         </button>
 
-        <div className="flex justify-center text-lg font-medium text-neutral-black">
+        <div className="flex justify-center text-lg font-medium text-foreground">
           {title ?? null}
         </div>
 
@@ -116,7 +116,7 @@ export function ProposalViewLayout({
                 <LuStickyNote className="size-4" />
                 <span
                   aria-hidden
-                  className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-primary-orange2"
+                  className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-warning"
                 />
               </Button>
               <Tooltip>{revisionRequestLabel}</Tooltip>

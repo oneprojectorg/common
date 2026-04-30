@@ -18,7 +18,7 @@ import { TranslatedText } from '@/components/TranslatedText';
 import { DecisionListItem } from '../DecisionListItem';
 
 const DecisionListItemSkeleton = () => (
-  <div className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1">
+  <div className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b sm:border-b-accent">
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
         <Skeleton className="h-5 w-48" />
@@ -86,7 +86,7 @@ const DecisionsListSuspense = ({
 
   if (paginatedItems.length === 0) {
     return (
-      <div className="py-8 text-center text-neutral-gray4">
+      <div className="py-8 text-center text-muted-foreground">
         {t('No processes found')}
       </div>
     );

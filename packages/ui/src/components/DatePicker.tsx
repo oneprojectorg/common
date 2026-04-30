@@ -232,9 +232,9 @@ export const DatePicker = <T extends DateValue>({
             'absolute top-1/2 right-1 -translate-y-1/2',
             'h-8 w-8',
             'flex cursor-pointer items-center justify-center',
-            'text-neutral-black outline-hidden',
-            'rounded-md hover:bg-neutral-gray1 focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2',
-            props.isDisabled && 'cursor-not-allowed text-lightGray',
+            'text-foreground outline-hidden',
+            'rounded-md hover:bg-accent focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+            props.isDisabled && 'cursor-not-allowed text-muted-foreground/70',
           )}
         >
           <LuCalendar className="size-4" />

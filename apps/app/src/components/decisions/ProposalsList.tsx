@@ -126,12 +126,12 @@ const NoProposalsFound = ({ hasFilter }: { hasFilter: boolean }) => {
   const t = useTranslations();
   return (
     <EmptyState icon={<LuLeaf className="size-6" />}>
-      <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+      <Header3 className="font-serif !text-title-base font-light text-foreground">
         {hasFilter
           ? t('No proposals found matching the current filters.')
           : t('No proposals yet')}
       </Header3>
-      <p className="text-base text-neutral-charcoal">
+      <p className="text-base text-foreground">
         {hasFilter
           ? t('Try adjusting your filter selection above.')
           : t('You could be the first one to submit a proposal')}
@@ -360,8 +360,8 @@ const VotingProposalsList = ({
 
       <VotingSubmitFooter isVisible={canVote && !isReadOnly}>
         <div className="flex w-full items-center justify-between px-4 sm:max-w-6xl sm:px-8">
-          <span className="text-neutral-black">
-            <span className="text-primary-teal">{numSelected}</span> of{' '}
+          <span className="text-foreground">
+            <span className="text-primary">{numSelected}</span> of{' '}
             {maxVotesPerMember}{' '}
             {maxVotesPerMember === 1 ? 'proposal' : 'proposals'} selected
           </span>
@@ -756,7 +756,7 @@ export const ProposalsList = ({
       {/* Filters Bar */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">
-          <span className="font-serif text-title-base text-neutral-black">
+          <span className="font-serif text-title-base text-foreground">
             {proposalFilter === ProposalFilter.MY_BALLOT
               ? t('My ballot')
               : proposalFilter === ProposalFilter.MY_PROPOSALS
@@ -855,7 +855,7 @@ export const ProposalsList = ({
 
       {/* Translation attribution */}
       {translationState && (
-        <p className="text-sm text-neutral-gray3">
+        <p className="text-sm text-muted-foreground">
           {t('Translated from {language}', { language: sourceLanguageName })}{' '}
           &middot;{' '}
           <Link onPress={handleViewOriginal} className="text-sm font-semibold">

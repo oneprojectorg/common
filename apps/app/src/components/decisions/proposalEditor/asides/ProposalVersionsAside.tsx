@@ -144,8 +144,8 @@ function VersionItem({
   return (
     <div
       className={cn(
-        'flex w-full flex-col gap-2 rounded p-2 hover:bg-primary-tealWhite',
-        isSelected && 'bg-primary-tealWhite',
+        'flex w-full flex-col gap-2 rounded p-2 hover:bg-primary-foreground',
+        isSelected && 'bg-primary-foreground',
       )}
     >
       <Button
@@ -154,8 +154,8 @@ function VersionItem({
         isDisabled={isPending}
         className="flex w-full flex-col items-start text-left shadow-none outline-hidden focus-visible:outline-none"
       >
-        <p className="text-base text-neutral-black">{label}</p>
-        <p className="text-sm text-neutral-charcoal">{sublabel}</p>
+        <p className="text-base text-foreground">{label}</p>
+        <p className="text-sm text-foreground">{sublabel}</p>
       </Button>
       {isSelected && onRestore && (
         <Button size="small" onPress={onRestore} isDisabled={isPending}>

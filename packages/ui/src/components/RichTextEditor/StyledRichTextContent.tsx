@@ -10,7 +10,7 @@ export const StyledRichTextContent = ({
     {...props}
     className={cn(
       '[&_div:focus-visible]:outline-auto',
-      'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue',
+      'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chart-3',
       className,
     )}
   />

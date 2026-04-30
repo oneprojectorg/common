@@ -82,7 +82,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
           return (
             <NotificationPanelItem
               key={org.id}
-              className={isAccepted ? 'bg-primary-tealWhite' : ''}
+              className={isAccepted ? 'bg-primary-foreground' : ''}
             >
               <div className="flex items-center gap-3">
                 <OrganizationAvatar profile={org.profile} />

@@ -31,14 +31,14 @@ export function RubricParticipantPreview({
   }
 
   return (
-    <aside className="xxl:p-14 hidden flex-1 basis-1/2 overflow-y-auto border-l bg-neutral-offWhite p-8 lg:block xl:p-12">
+    <aside className="xxl:p-14 hidden flex-1 basis-1/2 overflow-y-auto border-l bg-muted p-8 lg:block xl:p-12">
       <div className="rounded-lg bg-white p-6">
-        <div className="mb-6 flex items-center gap-2 text-sm text-neutral-gray3">
+        <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
           <LuEye className="size-4" />
           <span>{t('Participant Preview')}</span>
         </div>
 
-        <Header2 className="mb-6 font-serif text-neutral-charcoal">
+        <Header2 className="mb-6 font-serif text-foreground">
           {t('Review Proposal')}
         </Header2>
 

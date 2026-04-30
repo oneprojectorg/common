@@ -14,7 +14,7 @@ export const PlatformAdminHeader = () => {
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-col gap-1">
-        <Header1 className="text-title-md text-neutral-black">
+        <Header1 className="text-title-md text-foreground">
           {t('Platform admin')}
         </Header1>
       </div>

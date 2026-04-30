@@ -25,7 +25,7 @@ const RelationshipCount = ({ profile }: { profile: Organization }) => {
   return (
     count > 0 && (
       <Link href={`/org/${profile.profile.slug}/relationships`}>
-        <span className="font-bold text-teal">
+        <span className="font-bold text-primary">
           {count} {pluralize(t('relationship'), count)}
         </span>
       </Link>
@@ -43,16 +43,16 @@ export const ProfileSummary = ({ profile }: { profile: Organization }) => {
       <Header1>{profile.profile.name}</Header1>
 
       {whereWeWork.length ? (
-        <div className="text-base text-neutral-gray4">{whereWeWork}</div>
+        <div className="text-base text-muted-foreground">{whereWeWork}</div>
       ) : null}
 
-      <div className="max-w-xl text-base text-neutral-charcoal">
+      <div className="max-w-xl text-base text-foreground">
         {profile.profile.bio}
       </div>
 
       <ErrorBoundary fallback={null}>
         <div className="flex flex-col-reverse gap-6 sm:flex-col">
-          <div className="flex gap-1 text-base text-neutral-gray4">
+          <div className="flex gap-1 text-base text-muted-foreground">
             <Suspense fallback={<Skeleton>482 relationships</Skeleton>}>
               <RelationshipCount profile={profile} />
             </Suspense>

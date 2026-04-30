@@ -162,7 +162,7 @@ const AvatarMenuContent = ({
     <>
       <MenuItemSimple
         isDisabled
-        className="flex cursor-default items-center gap-2 p-0 px-0 pb-4 text-neutral-charcoal hover:bg-transparent"
+        className="flex cursor-default items-center gap-2 p-0 px-0 pb-4 text-foreground hover:bg-transparent"
       >
         <Avatar className="size-6" placeholder={user.name ?? ''}>
           {avatarUrl ? (
@@ -182,13 +182,13 @@ const AvatarMenuContent = ({
               unstyled
               className=""
             >
-              <span className="text-primary-teal hover:underline">
+              <span className="text-primary hover:underline">
                 {t('Edit Profile')}
               </span>
             </Button>
             )
           </span>
-          <span className="max-w-72 text-sm text-neutral-gray4 sm:text-xs">
+          <span className="max-w-72 text-sm text-muted-foreground sm:text-xs">
             {user.currentOrganization ? (
               <>
                 {t('Admin for')}{' '}
@@ -216,7 +216,7 @@ const AvatarMenuContent = ({
                 <Chip>Active</Chip>
               ) : null}
             </div>
-            <div className="relative truncate overflow-hidden text-sm text-neutral-gray4">
+            <div className="relative truncate overflow-hidden text-sm text-muted-foreground">
               {profile.bio}
             </div>
           </div>
@@ -238,7 +238,7 @@ const AvatarMenuContent = ({
                 <Chip>Active</Chip>
               ) : null}
             </div>
-            <div className="relative truncate overflow-hidden text-sm text-neutral-gray4 capitalize">
+            <div className="relative truncate overflow-hidden text-sm text-muted-foreground capitalize">
               {t('Organization')}
             </div>
           </div>
@@ -247,7 +247,7 @@ const AvatarMenuContent = ({
       <MenuSeparator className="pt-4" />
       <MenuItem
         id="help"
-        className="px-0 py-2 text-neutral-charcoal hover:bg-neutral-offWhite focus-visible:bg-neutral-offWhite"
+        className="px-0 py-2 text-foreground hover:bg-muted focus-visible:bg-muted"
         onAction={() => {
           window.open(
             'https://harmonious-peridot-9d5.notion.site/Common-Platform-Feature-Requests-Bug-Submissions-21fa0d01a6d981f48c9cd48a4a63267e',
@@ -258,23 +258,22 @@ const AvatarMenuContent = ({
           onClose?.();
         }}
       >
-        <LuCircleHelp className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
+        <LuCircleHelp className="size-8 rounded-full bg-muted p-2" />{' '}
         {t('Feature Requests & Support')}
       </MenuItem>
       <MenuItem
         id="logout"
-        className="px-0 py-2 text-neutral-charcoal hover:bg-neutral-offWhite focus-visible:bg-neutral-offWhite"
+        className="px-0 py-2 text-foreground hover:bg-muted focus-visible:bg-muted"
         onAction={() => {
           void logout.refetch().finally(() => router.push('/'));
           onClose?.();
         }}
       >
-        <LuLogOut className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
-        {t('Log out')}
+        <LuLogOut className="size-8 rounded-full bg-muted p-2" /> {t('Log out')}
       </MenuItem>
       <MenuItemSimple
         isDisabled
-        className="flex flex-col items-start justify-start gap-2 px-0 pt-4 text-neutral-gray4 hover:bg-transparent sm:text-sm"
+        className="flex flex-col items-start justify-start gap-2 px-0 pt-4 text-muted-foreground hover:bg-transparent sm:text-sm"
       >
         <div>
           <PrivacyPolicyModal />
@@ -286,11 +285,11 @@ const AvatarMenuContent = ({
       </MenuItemSimple>
       <MenuItemSimple
         isDisabled
-        className="flex flex-col items-start justify-start gap-2 px-0 text-sm text-neutral-gray4 hover:bg-transparent"
+        className="flex flex-col items-start justify-start gap-2 px-0 text-sm text-muted-foreground hover:bg-transparent"
       >
         <div className="text-xs">
           <span
-            className="pointer text-primary-teal hover:underline"
+            className="pointer text-primary hover:underline"
             onClick={() => {
               window.open(
                 'https://github.com/oneprojectorg/common',
@@ -309,7 +308,7 @@ const AvatarMenuContent = ({
               {' • '}
               <Button
                 unstyled
-                className="cursor-pointer text-neutral-charcoal hover:underline"
+                className="cursor-pointer text-foreground hover:underline"
                 onPress={() => {
                   setIsOrgDeletionOpen(true);
                   onClose?.();
@@ -378,7 +377,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           />
         ) : null}
       </Avatar>
-      <div className="absolute -right-1 -bottom-1 flex size-4 items-center justify-center rounded-full bg-neutral-offWhite outline -outline-offset-1 outline-white">
+      <div className="absolute -right-1 -bottom-1 flex size-4 items-center justify-center rounded-full bg-muted outline -outline-offset-1 outline-white">
         <LuChevronDown className="size-3" />{' '}
       </div>
     </Button>
@@ -464,7 +463,7 @@ export const SiteHeader = () => {
 
   return (
     <>
-      <header className="gridCentered hidden h-auto w-full items-center justify-between border-b border-offWhite px-4 py-3 sm:grid">
+      <header className="gridCentered hidden h-auto w-full items-center justify-between border-b border-border px-4 py-3 sm:grid">
         <div className="flex items-center gap-3">
           <SidebarTrigger />
           <Link href="/" className="flex gap-1">
@@ -523,7 +522,7 @@ export const SiteHeader = () => {
               <Button
                 unstyled
                 onPress={() => setIsMobileSearchExpanded(false)}
-                className="ml-3 whitespace-nowrap text-neutral-gray4"
+                className="ml-3 whitespace-nowrap text-muted-foreground"
               >
                 Cancel
               </Button>
@@ -535,7 +534,7 @@ export const SiteHeader = () => {
                 onPress={() => setIsMobileSearchExpanded(true)}
                 className="flex items-center justify-center"
               >
-                <LuSearch className="size-4 text-neutral-gray4" />
+                <LuSearch className="size-4 text-muted-foreground" />
               </Button>
 
               <div className="flex items-center gap-3">

@@ -20,10 +20,10 @@ const NoProposalsFound = () => {
   const t = useTranslations();
   return (
     <EmptyState icon={<LuLeaf className="size-6" />}>
-      <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+      <Header3 className="font-serif !text-title-base font-light text-foreground">
         {t('No results yet for this decision.')}
       </Header3>
-      <p className="text-base text-neutral-charcoal">
+      <p className="text-base text-foreground">
         {t('Results are still being worked on.')}
       </p>
     </EmptyState>
@@ -85,7 +85,7 @@ export const ResultsList = ({
 
                   {/* Footer - Total Votes */}
                   <ProposalCardFooter>
-                    <div className="flex items-start gap-1 text-base text-neutral-charcoal">
+                    <div className="flex items-start gap-1 text-base text-foreground">
                       <span className="font-bold">
                         {proposal.voteCount ?? 0}
                       </span>

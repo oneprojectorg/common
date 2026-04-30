@@ -44,7 +44,7 @@ export const DecisionsTab = ({ profileId }: { profileId: string }) => {
     <Tab id="decisions">
       {t('Decisions')}
       {hasPublishedDecisions && (
-        <span className="ml-1.5 inline-block size-1 rounded-full bg-functional-green" />
+        <span className="ml-1.5 inline-block size-1 rounded-full bg-positive" />
       )}
     </Tab>
   );

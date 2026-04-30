@@ -195,9 +195,7 @@ export function BudgetFieldConfig({
           </>
         )}
         <div className="flex items-center justify-between">
-          <span className="text-neutral-charcoal">
-            {t('Show in template?')}
-          </span>
+          <span className="text-foreground">{t('Show in template?')}</span>
           <ToggleButton
             size="small"
             isSelected={showBudget}
@@ -208,7 +206,7 @@ export function BudgetFieldConfig({
         </div>
         {showBudget && (
           <div className="flex items-center justify-between">
-            <span className="text-neutral-charcoal">{t('Required?')}</span>
+            <span className="text-foreground">{t('Required?')}</span>
             <ToggleButton
               size="small"
               isSelected={budgetRequired}

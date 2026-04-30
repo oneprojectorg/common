@@ -55,13 +55,13 @@ export const Example = () => (
             <div className="mt-4 space-y-4">
               <div>
                 <h4 className="font-medium">Section 1</h4>
-                <p className="text-sm text-neutral-gray3">
+                <p className="text-sm text-muted-foreground">
                   Some detailed information about the first section.
                 </p>
               </div>
               <div>
                 <h4 className="font-medium">Section 2</h4>
-                <p className="text-sm text-neutral-gray3">
+                <p className="text-sm text-muted-foreground">
                   More information about the second section with additional
                   details.
                 </p>
@@ -112,14 +112,14 @@ export const WithForm = () => (
               <label className="block text-sm font-medium">Name</label>
               <input
                 type="text"
-                className="mt-1 block w-full rounded-lg border border-neutral-gray3 px-3 py-2"
+                className="mt-1 block w-full rounded-lg border border-input px-3 py-2"
                 placeholder="Enter name"
               />
             </div>
             <div>
               <label className="block text-sm font-medium">Description</label>
               <textarea
-                className="mt-1 block w-full rounded-lg border border-neutral-gray3 px-3 py-2"
+                className="mt-1 block w-full rounded-lg border border-input px-3 py-2"
                 rows={3}
                 placeholder="Enter description"
               />

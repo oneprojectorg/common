@@ -9,13 +9,13 @@ import { Menu, MenuItem, MenuTrigger } from './Menu';
 import { Popover } from './Popover';
 
 const dropdownButtonStyle = tv({
-  base: 'flex h-10 w-fit items-center justify-center gap-1 rounded-lg border border-solid p-4 text-center text-sm leading-6 font-normal shadow-md outline-0 outline-transparent duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue',
+  base: 'flex h-10 w-fit items-center justify-center gap-1 rounded-lg border border-solid p-4 text-center text-sm leading-6 font-normal shadow-md outline-0 outline-transparent duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chart-3',
   variants: {
     color: {
       primary:
-        'bg-primary-teal text-neutral-offWhite hover:bg-primary-tealBlack pressed:bg-primary-tealBlack pressed:text-neutral-gray2',
+        'bg-primary text-muted hover:bg-primary pressed:bg-primary pressed:text-muted-foreground/70',
       secondary:
-        'border-primary-teal bg-white text-primary-teal hover:bg-neutral-offWhite pressed:bg-white',
+        'border-primary bg-white text-primary hover:bg-muted pressed:bg-white',
     },
     isDisabled: {
       true: 'pointer-events-none opacity-30',
@@ -79,7 +79,7 @@ export const DropDownButton = (props: DropdownButtonProps) => {
                 <div className="flex flex-col">
                   <span>{item.label}</span>
                   {item.description && (
-                    <span className="text-sm text-neutral-charcoal">
+                    <span className="text-sm text-foreground">
                       {item.description}
                     </span>
                   )}

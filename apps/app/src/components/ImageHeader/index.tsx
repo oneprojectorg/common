@@ -14,13 +14,13 @@ export const ImageHeader = ({
     <div className="relative w-full pb-8 sm:pb-10">
       <div
         className={cn(
-          'relative aspect-[72/31] w-full bg-offWhite sm:aspect-[4.6]',
+          'relative aspect-[72/31] w-full bg-muted sm:aspect-[4.6]',
           headerClassName,
         )}
       >
         {headerImage}
       </div>
-      <div className="absolute bottom-0 left-4 aspect-square size-16 overflow-hidden rounded-full border-2 border-white bg-offWhite shadow-sm sm:size-[7.5rem] sm:border-4">
+      <div className="absolute bottom-0 left-4 aspect-square size-16 overflow-hidden rounded-full border-2 border-white bg-muted shadow-sm sm:size-[7.5rem] sm:border-4">
         {avatarImage}
       </div>
     </div>

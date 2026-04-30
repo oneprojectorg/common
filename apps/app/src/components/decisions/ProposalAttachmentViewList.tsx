@@ -36,10 +36,10 @@ export function ProposalAttachmentViewList({
       {files.map((file) => (
         <div
           key={file.id}
-          className="flex items-center gap-4 rounded-lg border border-neutral-gray1 bg-white p-4"
+          className="flex items-center gap-4 rounded-lg border border-border bg-white p-4"
         >
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-tealWhite">
-            <LuFileText className="size-5 text-neutral-gray4" />
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-foreground">
+            <LuFileText className="size-5 text-muted-foreground" />
           </div>
 
           {/* File info */}
@@ -50,16 +50,16 @@ export function ProposalAttachmentViewList({
                 target="_blank"
                 rel="noopener noreferrer"
                 download={file.fileName}
-                className="truncate text-base font-medium text-neutral-charcoal hover:text-primary-teal hover:underline"
+                className="truncate text-base font-medium text-foreground hover:text-primary hover:underline"
               >
                 {file.fileName}
               </a>
             ) : (
-              <span className="truncate text-base font-medium text-neutral-charcoal">
+              <span className="truncate text-base font-medium text-foreground">
                 {file.fileName}
               </span>
             )}
-            <span className="text-sm text-neutral-gray4">
+            <span className="text-sm text-muted-foreground">
               {formatFileSize(file.fileSize)}
             </span>
           </div>
@@ -71,7 +71,7 @@ export function ProposalAttachmentViewList({
               target="_blank"
               rel="noopener noreferrer"
               download={file.fileName}
-              className="shrink-0 text-neutral-gray4 hover:text-primary-teal"
+              className="shrink-0 text-muted-foreground hover:text-primary"
               aria-label={`Download ${file.fileName}`}
             >
               <LuDownload className="size-5" />

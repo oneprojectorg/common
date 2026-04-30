@@ -24,17 +24,17 @@ import { Button } from './Button';
 
 const cellStyles = tv({
   extend: focusRing,
-  base: 'flex size-8 cursor-default items-center justify-center rounded-sm text-base outline-2 outline-offset-2 outline-transparent forced-color-adjust-none hover:bg-neutral-offWhite focus-visible:outline-primary-teal',
+  base: 'flex size-8 cursor-default items-center justify-center rounded-sm text-base outline-2 outline-offset-2 outline-transparent forced-color-adjust-none hover:bg-muted focus-visible:outline-primary',
   variants: {
     isSelected: {
-      false: 'text-neutral-charcoal',
-      true: 'bg-primary-teal text-white hover:bg-primary-teal',
+      false: 'text-foreground',
+      true: 'bg-primary text-white hover:bg-primary',
     },
     isDisabled: {
-      true: 'text-neutral-gray3',
+      true: 'text-muted-foreground',
     },
     isOutsideMonth: {
-      true: 'text-neutral-gray4',
+      true: 'text-muted-foreground',
     },
   },
 });
@@ -54,7 +54,7 @@ export const CalendarHeader = () => {
       <Button
         variant="icon"
         slot="previous"
-        className="h-8 w-8 rounded-none bg-white p-0 text-neutral-charcoal shadow-none hover:bg-neutral-offWhite pressed:bg-neutral-offWhite pressed:shadow-none"
+        className="h-8 w-8 rounded-none bg-white p-0 text-foreground shadow-none hover:bg-muted pressed:bg-muted pressed:shadow-none"
       >
         {direction === 'rtl' ? (
           <LuChevronRight className="size-4" aria-hidden />
@@ -62,11 +62,11 @@ export const CalendarHeader = () => {
           <LuChevronLeft className="size-4" aria-hidden />
         )}
       </Button>
-      <Heading className="text-center text-base text-neutral-charcoal" />
+      <Heading className="text-center text-base text-foreground" />
       <Button
         variant="icon"
         slot="next"
-        className="h-8 w-8 rounded-none bg-white p-0 text-neutral-charcoal shadow-none hover:bg-neutral-offWhite pressed:bg-neutral-offWhite pressed:shadow-none"
+        className="h-8 w-8 rounded-none bg-white p-0 text-foreground shadow-none hover:bg-muted pressed:bg-muted pressed:shadow-none"
       >
         {direction === 'rtl' ? (
           <LuChevronLeft className="size-4" aria-hidden />
@@ -82,7 +82,7 @@ export const CalendarGridHeader = () => {
   return (
     <AriaCalendarGridHeader>
       {(day) => (
-        <CalendarHeaderCell className="text-base text-neutral-charcoal">
+        <CalendarHeaderCell className="text-base text-foreground">
           {day}
         </CalendarHeaderCell>
       )}
@@ -116,7 +116,7 @@ export const Calendar = <T extends DateValue>({
                   <span className="relative flex size-full items-center justify-center">
                     {formattedDate}
                     {isTodayCell && (
-                      <span className="absolute right-0 bottom-0 left-0 m-auto size-1 rounded-full bg-primary-teal" />
+                      <span className="absolute right-0 bottom-0 left-0 m-auto size-1 rounded-full bg-primary" />
                     )}
                   </span>
                 )}
@@ -126,7 +126,7 @@ export const Calendar = <T extends DateValue>({
         </CalendarGridBody>
       </CalendarGrid>
       {errorMessage && (
-        <Text slot="errorMessage" className="text-sm text-functional-redBlack">
+        <Text slot="errorMessage" className="text-sm text-destructive">
           {errorMessage}
         </Text>
       )}

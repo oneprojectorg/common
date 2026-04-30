@@ -5,7 +5,7 @@ import type { VariantProps } from 'tailwind-variants';
 import { cn } from '../lib/utils';
 
 const footerBarStyles = tv({
-  base: 'z-20 shrink-0 border-t border-neutral-gray1 bg-white backdrop-blur',
+  base: 'z-20 shrink-0 border-t border-border bg-white backdrop-blur',
   variants: {
     position: {
       sticky: 'sticky bottom-0',
@@ -85,7 +85,7 @@ function FooterBarEnd({
 }
 
 function FooterBarDivider({ className }: { className?: string }) {
-  return <div className={cn('h-6 w-px bg-neutral-gray1', className)} />;
+  return <div className={cn('h-6 w-px bg-accent', className)} />;
 }
 
 FooterBar.Start = FooterBarStart;

@@ -31,7 +31,7 @@ export const DecisionInstanceHeader = ({
       <div className="flex items-center gap-3">
         <Link
           href={backTo.href}
-          className="flex items-center gap-2 text-base text-neutral-black hover:text-primary-tealBlack md:text-primary-teal"
+          className="flex items-center gap-2 text-base text-foreground hover:text-primary md:text-primary"
         >
           <LuArrowLeft className="size-6 md:size-4" />
           <span className="hidden md:flex">
@@ -41,7 +41,7 @@ export const DecisionInstanceHeader = ({
       </div>
 
       <div className="flex justify-center text-center">
-        <Header1 className="font-serif text-title-sm text-neutral-charcoal sm:text-title-sm">
+        <Header1 className="font-serif text-title-sm text-foreground sm:text-title-sm">
           {title}
         </Header1>
       </div>
@@ -53,7 +53,7 @@ export const DecisionInstanceHeader = ({
             color="secondary"
             size="small"
           >
-            <LuSettings className="size-4 text-neutral-black md:text-teal" />
+            <LuSettings className="size-4 text-foreground md:text-primary" />
             <span className="hidden md:inline">{t('Settings')}</span>
           </ButtonLink>
         )}

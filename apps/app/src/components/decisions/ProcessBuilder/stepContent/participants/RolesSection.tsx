@@ -302,7 +302,7 @@ function RoleRow({
               <MenuItem
                 key="delete"
                 onAction={() => onDelete(role)}
-                className="text-functional-red"
+                className="text-destructive"
               >
                 <LuTrash2 className="size-4" />
                 {t('Delete')}
@@ -408,7 +408,7 @@ function RolesSectionContent({
         </Header2>
         <Button
           color="ghost"
-          className="text-primary-teal hover:text-primary-tealBlack"
+          className="text-primary hover:text-primary"
           onPress={() => setIsAdding(true)}
           isDisabled={isAdding}
         >
@@ -418,9 +418,7 @@ function RolesSectionContent({
       </div>
 
       <Suspense
-        fallback={
-          <div className="h-48 animate-pulse rounded-lg bg-neutral-gray1" />
-        }
+        fallback={<div className="h-48 animate-pulse rounded-lg bg-accent" />}
       >
         <RolesTable
           decisionProfileId={decisionProfileId}
@@ -569,7 +567,7 @@ function MobileRoleCard({
   const t = useTranslations();
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-neutral-gray1 p-4">
+    <div className="flex flex-col gap-4 rounded-lg border border-border p-4">
       <div className="flex items-center justify-between">
         <Header3 className="font-serif text-sm font-light">{role.name}</Header3>
         {(onDelete || onEdit) && (
@@ -585,7 +583,7 @@ function MobileRoleCard({
                 <MenuItem
                   key="delete"
                   onAction={() => onDelete(role)}
-                  className="text-functional-red"
+                  className="text-destructive"
                 >
                   <LuTrash2 className="size-4" />
                   {t('Delete')}
@@ -628,7 +626,7 @@ function MobileRoleFormCard({
   };
 
   return (
-    <div className="flex flex-col gap-4 rounded-md border border-neutral-gray1 p-4">
+    <div className="flex flex-col gap-4 rounded-md border border-border p-4">
       <div className="flex items-center justify-between gap-2">
         <TextField
           inputProps={{ placeholder: t('Role name…') }}
@@ -661,7 +659,7 @@ function MobileRoleFormCard({
             size="medium"
             onPress={() => onDelete(role)}
             aria-label={t('Delete')}
-            className="text-functional-red"
+            className="text-destructive"
           >
             <LuTrash2 className="size-4" />
           </IconButton>

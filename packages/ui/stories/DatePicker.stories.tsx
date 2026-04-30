@@ -26,7 +26,7 @@ export const Example = () => {
         value={value}
         onChange={setValue}
       />
-      <div className="text-sm text-neutral-gray4">
+      <div className="text-sm text-muted-foreground">
         Selected date:{' '}
         {value ? `${value.year}-${value.month}-${value.day}` : 'None'}
       </div>
@@ -47,7 +47,7 @@ export const InitialValue = () => {
         value={value}
         onChange={setValue}
       />
-      <div className="text-sm text-neutral-gray4">
+      <div className="text-sm text-muted-foreground">
         Selected date:{' '}
         {value ? `${value.year}-${value.month}-${value.day}` : 'None'}
       </div>

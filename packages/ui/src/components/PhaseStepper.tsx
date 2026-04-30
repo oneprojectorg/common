@@ -43,7 +43,7 @@ const RippleRings = ({ visible }: { visible: boolean }) => (
         key={i}
         className="absolute size-6 rounded-full"
         style={{
-          border: '1px solid var(--color-primary-teal)',
+          border: '1px solid var(--color-primary)',
           animation: `phase-ripple ${RIPPLE_DURATION_S}s ease-out ${i * (RIPPLE_DURATION_S / RIPPLE_COUNT)}s infinite`,
         }}
       />
@@ -66,11 +66,10 @@ const StepIndicator = ({
 
   const baseStyles = cn(
     'flex size-6 items-center justify-center rounded-full font-serif transition-all',
-    stepState === 'completed' &&
-      'bg-functional-greenWhite text-functional-green',
-    stepState === 'current' && 'bg-neutral-charcoal text-neutral-offWhite',
+    stepState === 'completed' && 'bg-positive-foreground text-positive',
+    stepState === 'current' && 'bg-foreground text-muted',
     stepState === 'upcoming' &&
-      'border border-neutral-charcoal bg-transparent text-neutral-charcoal',
+      'border border-foreground bg-transparent text-foreground',
   );
 
   const content =
@@ -99,7 +98,7 @@ const StepIndicator = ({
             variant="ghost"
             className={cn(
               baseStyles,
-              'relative cursor-pointer border-0 bg-primary-teal text-neutral-offWhite hover:bg-primary-teal pressed:bg-primary-teal',
+              'relative cursor-pointer border-0 bg-primary text-muted hover:bg-primary pressed:bg-primary',
             )}
           >
             {stepState === 'completed' ? (
@@ -149,10 +148,10 @@ const Step = ({
         phase={phase}
         onTransition={onTransition}
       />
-      <div className="flex max-w-6 flex-col items-center justify-center text-sm text-nowrap text-neutral-black">
+      <div className="flex max-w-6 flex-col items-center justify-center text-sm text-nowrap text-foreground">
         <div>{phase.name}</div>
         {(phase.startDate || phase.endDate) && (
-          <div className="text-xs text-neutral-gray4">
+          <div className="text-xs text-muted-foreground">
             {formatDateRange(phase.startDate, phase.endDate, locale)}
           </div>
         )}
@@ -203,7 +202,7 @@ export function PhaseStepper({
               {index < phases.length - 1 && (
                 <div className="flex flex-col items-center">
                   <div className="flex h-6 items-center">
-                    <div className="h-[1px] w-28 bg-neutral-gray2" />
+                    <div className="h-[1px] w-28 bg-muted-foreground/30" />
                   </div>
                 </div>
               )}

@@ -78,32 +78,32 @@ export function ReviewSettingsContent({
         >
           <Radio value="full_coverage">
             <div className="flex flex-col">
-              <span className="text-base text-neutral-charcoal">
+              <span className="text-base text-foreground">
                 {t('Full coverage')}
               </span>
-              <span className="text-sm text-neutral-gray4">
+              <span className="text-sm text-muted-foreground">
                 {t('Every reviewer scores every proposal')}
               </span>
             </div>
           </Radio>
           <Radio value="self_selection" isDisabled className="opacity-50">
             <div className="flex flex-col">
-              <span className="flex items-center gap-2 text-base text-neutral-charcoal">
+              <span className="flex items-center gap-2 text-base text-foreground">
                 {t('Self-selection')}
                 <Chip className="opacity-100">{t('Coming soon')}</Chip>
               </span>
-              <span className="text-sm text-neutral-gray4">
+              <span className="text-sm text-muted-foreground">
                 {t('Reviewers choose what proposals to review')}
               </span>
             </div>
           </Radio>
           <Radio value="random_assignment" isDisabled className="opacity-50">
             <div className="flex flex-col">
-              <span className="flex items-center gap-2 text-base text-neutral-charcoal">
+              <span className="flex items-center gap-2 text-base text-foreground">
                 {t('Random assignment')}
                 <Chip className="opacity-100">{t('Coming soon')}</Chip>
               </span>
-              <span className="text-sm text-neutral-gray4">
+              <span className="text-sm text-muted-foreground">
                 {t('Proposals are randomly distributed among reviewers')}
               </span>
             </div>
@@ -111,7 +111,7 @@ export function ReviewSettingsContent({
         </RadioGroup>
       </section>
 
-      <hr className="border-neutral-gray1" />
+      <hr className="border-border" />
 
       {/* Revisions */}
       <section className="space-y-4">

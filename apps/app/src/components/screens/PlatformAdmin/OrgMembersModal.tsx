@@ -30,7 +30,7 @@ export const OrgMembersModal = ({
       <ModalHeader>{t('Members of {orgName}', { orgName })}</ModalHeader>
       <ModalBody className="space-y-4 pb-6">
         {/* Organization Info */}
-        <div className="bg-neutral-gray0 rounded-lg p-4">
+        <div className="rounded-lg bg-accent p-4">
           <ProfileItem
             avatar={
               <Avatar placeholder={orgName} className="size-10 shrink-0" />
@@ -43,16 +43,14 @@ export const OrgMembersModal = ({
         {/* Members List */}
         {members.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-neutral-gray1">
-              <LuUsers className="h-6 w-6 text-neutral-gray4" />
+            <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-accent">
+              <LuUsers className="h-6 w-6 text-muted-foreground" />
             </div>
-            <p className="text-sm text-neutral-charcoal">
-              {t('No members found')}
-            </p>
+            <p className="text-sm text-foreground">{t('No members found')}</p>
           </div>
         ) : (
           <div>
-            <div className="mb-2 text-sm font-medium text-neutral-black">
+            <div className="mb-2 text-sm font-medium text-foreground">
               {t('Members')} ({members.length})
             </div>
             <div className="space-y-2">

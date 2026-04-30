@@ -66,11 +66,11 @@ export function ResubmitProposalModal({
       <ModalHeader>{t('Resubmit proposal')}</ModalHeader>
       <ModalBody>
         <div className="flex flex-col gap-2">
-          <span className="text-base text-neutral-black">
+          <span className="text-base text-foreground">
             {t('What did you change?')}
           </span>
           <div className="flex flex-col gap-1">
-            <span className="text-sm text-neutral-black">
+            <span className="text-sm text-foreground">
               {t(
                 'Briefly describe your revisions so reviewers know what to look for.',
               )}

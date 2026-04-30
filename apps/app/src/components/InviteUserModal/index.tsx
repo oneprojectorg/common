@@ -215,9 +215,9 @@ export const InviteUserModal = ({
             color="neutral"
             unstyled
             variant="icon"
-            className="flex size-8 items-center justify-center rounded-full bg-neutral-offWhite sm:hidden"
+            className="flex size-8 items-center justify-center rounded-full bg-muted sm:hidden"
           >
-            <LuUserPlus className="min-h-4 min-w-4 text-neutral-gray4" />
+            <LuUserPlus className="min-h-4 min-w-4 text-muted-foreground" />
           </Button>
         </>
       )

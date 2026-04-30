@@ -92,10 +92,10 @@ const SlashCommandsList = forwardRef<
       {props.items.length ? (
         props.items.map((item, index) => (
           <button
-            className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left hover:bg-neutral-gray1 ${
+            className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left hover:bg-accent ${
               index === selectedIndex
-                ? 'bg-neutral-gray1 text-neutral-black'
-                : 'text-neutral-charcoal'
+                ? 'bg-accent text-foreground'
+                : 'text-foreground'
             }`}
             key={index}
             onClick={() => selectItem(index)}
@@ -105,7 +105,9 @@ const SlashCommandsList = forwardRef<
             </div>
             <div>
               <p className="font-medium">{item.title}</p>
-              <p className="text-xs text-neutral-gray2">{item.description}</p>
+              <p className="text-xs text-muted-foreground/70">
+                {item.description}
+              </p>
             </div>
           </button>
         ))

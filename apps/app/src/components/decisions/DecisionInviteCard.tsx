@@ -78,7 +78,7 @@ export const DecisionInviteCard = ({
             title={steward?.name ?? ''}
           />
         </div>
-        <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
+        <div className="flex items-end gap-4 text-foreground sm:items-center sm:gap-12">
           <DecisionStat
             number={invite.participantCount}
             label={t('Participants')}
@@ -90,7 +90,7 @@ export const DecisionInviteCard = ({
       {showDecline && (
         <Button
           unstyled
-          className="self-center text-sm text-primary-teal underline hover:text-primary-teal/80 disabled:opacity-50"
+          className="self-center text-sm text-primary underline hover:text-primary/80 disabled:opacity-50"
           onPress={() => onDecline(invite.id)}
           isDisabled={isDeclining || isAccepting}
         >

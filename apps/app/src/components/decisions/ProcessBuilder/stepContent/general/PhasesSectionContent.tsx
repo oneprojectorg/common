@@ -126,18 +126,18 @@ export function PhasesSectionContent({
           savedAt={autosaveStatus.savedAt}
         />
       </div>
-      <p className="text-neutral-charcoal">
+      <p className="text-foreground">
         {t('Define the phases of your decision-making process')}
       </p>
 
       {phases.length === 0 ? (
         <div className="space-y-4">
-          <div className="rounded-lg border border-dashed border-neutral-gray3 p-8 text-center">
-            <p className="text-neutral-gray4">{t('No phases defined')}</p>
+          <div className="rounded-lg border border-dashed border-input p-8 text-center">
+            <p className="text-muted-foreground">{t('No phases defined')}</p>
           </div>
           <Button
             color="ghost"
-            className="text-primary-teal hover:text-primary-tealBlack"
+            className="text-primary hover:text-primary"
             onPress={addPhase}
           >
             <LuPlus className="size-4" />
@@ -181,12 +181,12 @@ export function PhasesSectionContent({
                     <div className="flex-1">
                       <p className="font-serif text-title-sm">{phase.name}</p>
                       {configured ? (
-                        <span className="flex items-center gap-1 text-sm text-primary-teal">
+                        <span className="flex items-center gap-1 text-sm text-primary">
                           <LuCheck className="size-3" />
                           {t('Configured')}
                         </span>
                       ) : (
-                        <span className="text-sm text-neutral-gray4">
+                        <span className="text-sm text-muted-foreground">
                           {t('Not configured yet')}
                         </span>
                       )}
@@ -202,7 +202,7 @@ export function PhasesSectionContent({
                       <IconButton
                         variant="outline"
                         size="medium"
-                        className="text-primary-teal hover:text-functional-red"
+                        className="text-primary hover:text-destructive"
                         onPress={() => setPhaseToDelete(phase.id)}
                         aria-label={t('Delete phase?')}
                       >
@@ -216,7 +216,7 @@ export function PhasesSectionContent({
           </Sortable>
           <Button
             color="secondary"
-            className="w-full text-primary-teal hover:text-primary-tealBlack"
+            className="w-full text-primary hover:text-primary"
             onPress={addPhase}
           >
             <LuPlus className="size-4" />
@@ -280,12 +280,12 @@ const PhaseDragPreview = ({
         <div className="flex-1">
           <p className="font-serif text-title-sm">{phase.name}</p>
           {configured ? (
-            <span className="flex items-center gap-1 text-sm text-primary-teal">
+            <span className="flex items-center gap-1 text-sm text-primary">
               <LuCheck className="size-3" />
               {t('Configured')}
             </span>
           ) : (
-            <span className="text-sm text-neutral-gray4">
+            <span className="text-sm text-muted-foreground">
               {t('Not configured yet')}
             </span>
           )}
@@ -294,11 +294,7 @@ const PhaseDragPreview = ({
           <Button color="secondary" size="small">
             {t('Configure')}
           </Button>
-          <IconButton
-            variant="outline"
-            size="medium"
-            className="text-primary-teal"
-          >
+          <IconButton variant="outline" size="medium" className="text-primary">
             <LuTrash2 className="size-4" />
           </IconButton>
         </div>

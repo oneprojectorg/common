@@ -49,7 +49,7 @@ const PostDisplayName = ({
 const PostTimestamp = ({ createdAt }: { createdAt: Date | string }) => {
   const relativeTime = useRelativeTime(createdAt);
 
-  return <span className="text-sm text-neutral-gray4">{relativeTime}</span>;
+  return <span className="text-sm text-muted-foreground">{relativeTime}</span>;
 };
 
 const PostContent = ({ content }: { content?: string }) => {
@@ -103,7 +103,7 @@ const AttachmentImage = ({
   if (!mimetype.startsWith('image/')) return null;
 
   return (
-    <div className="relative flex h-fit w-full items-center justify-center rounded bg-neutral-gray1 text-white">
+    <div className="relative flex h-fit w-full items-center justify-center rounded bg-accent text-white">
       <Image
         src={getPublicUrl(storageObjectName) ?? ''}
         alt={fileName}
@@ -235,8 +235,8 @@ export const EmptyPostsState = () => {
   return (
     <FeedItem>
       <FeedMain className="flex w-full flex-col items-center justify-center py-6">
-        <FeedContent className="flex flex-col items-center justify-center text-neutral-gray4">
-          <div className="flex size-10 items-center justify-center gap-4 rounded-full bg-neutral-gray1">
+        <FeedContent className="flex flex-col items-center justify-center text-muted-foreground">
+          <div className="flex size-10 items-center justify-center gap-4 rounded-full bg-accent">
             <LuLeaf />
           </div>
           <span>{t('No posts yet')}</span>

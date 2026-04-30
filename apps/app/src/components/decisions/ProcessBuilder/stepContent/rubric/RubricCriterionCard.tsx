@@ -119,9 +119,9 @@ export function RubricCriterionCard({
         controls={controls}
         dragHandleAriaLabel={t('Drag to reorder criterion')}
         className={cn(
-          'data-[expanded]:bg-neutral-offWhite',
+          'data-[expanded]:bg-muted',
           isNew && 'animate-border-highlight',
-          errors.length > 0 && 'border-functional-red',
+          errors.length > 0 && 'border-destructive',
         )}
       >
         <div className="space-y-2.5 px-8">
@@ -178,7 +178,7 @@ export function RubricCriterionCard({
           {errors.length > 0 && (
             <div className="space-y-1">
               {errors.map((error) => (
-                <p key={error} className="text-sm text-functional-red">
+                <p key={error} className="text-sm text-destructive">
                   {t(error)}
                 </p>
               ))}
@@ -188,7 +188,7 @@ export function RubricCriterionCard({
           {/* Footer: Required toggle + Delete button */}
           <div className="flex items-center justify-between border-t pt-4">
             <div className="flex items-center gap-2">
-              <span className="text-neutral-charcoal">{t('Required?')}</span>
+              <span className="text-foreground">{t('Required?')}</span>
               <ToggleButton
                 size="small"
                 isSelected={criterion.required}
@@ -204,7 +204,7 @@ export function RubricCriterionCard({
                 size="small"
                 onPress={() => onRemove(criterion.id)}
                 aria-label={t('Delete')}
-                className="text-neutral-charcoal hover:text-functional-red"
+                className="text-foreground hover:text-destructive"
               >
                 <LuTrash2 className="size-4" />
                 {t('Delete')}
@@ -247,7 +247,7 @@ function CriterionTypeSelector({
           >
             <div className="relative -top-0.5">
               <span>{t(entry.labelKey)}</span>
-              <p className="text-sm text-neutral-gray4">
+              <p className="text-sm text-muted-foreground">
                 {t(entry.descriptionKey)}
               </p>
             </div>
@@ -331,9 +331,7 @@ function ScoredCriterionConfig({
       />
 
       <div className="space-y-2">
-        <h4 className="text-neutral-charcoal">
-          {t('Define what each score means')}
-        </h4>
+        <h4 className="text-foreground">{t('Define what each score means')}</h4>
         <p className="text-sm">
           {t(
             'Help reviewers score consistently by describing what each point value represents',
@@ -346,7 +344,7 @@ function ScoredCriterionConfig({
             const scoreValue = max - i;
             return (
               <div key={scoreValue} className="flex items-start gap-2">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded bg-neutral-gray1 text-center text-right font-serif text-title-base text-neutral-gray4">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded bg-accent text-center text-right font-serif text-title-base text-muted-foreground">
                   {scoreValue}
                 </span>
                 <TextField
@@ -392,5 +390,5 @@ export function RubricCriterionDragPreview({
 }
 
 export function RubricCriterionDropIndicator() {
-  return <div className="h-16 rounded-lg border bg-neutral-offWhite" />;
+  return <div className="h-16 rounded-lg border bg-muted" />;
 }

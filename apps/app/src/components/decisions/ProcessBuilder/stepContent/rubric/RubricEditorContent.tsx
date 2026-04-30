@@ -314,7 +314,7 @@ export function RubricEditorContent({
             <div className="rounded-lg border p-16">
               <EmptyState icon={<LuLeaf className="size-5" />}>
                 <div className="flex flex-col items-center gap-2 text-center">
-                  <span className="font-medium text-neutral-charcoal">
+                  <span className="font-medium text-foreground">
                     {t('No review criteria yet')}
                   </span>
                   <span>
@@ -394,7 +394,7 @@ export function RubricEditorContent({
             </>
           )}
 
-          <hr className="border-neutral-gray1" />
+          <hr className="border-border" />
 
           <ToggleRow
             label={t('Overall Recommendation')}

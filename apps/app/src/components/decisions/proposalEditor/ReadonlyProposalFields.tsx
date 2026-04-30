@@ -15,7 +15,7 @@ export function ReadonlyTitleField({ value }: { value: string | null }) {
   const t = useTranslations();
 
   return (
-    <div className="h-auto border-0 p-0 font-serif text-title-lg text-neutral-charcoal">
+    <div className="h-auto border-0 p-0 font-serif text-title-lg text-foreground">
       {value || t('Untitled Proposal')}
     </div>
   );
@@ -54,7 +54,7 @@ export function ReadonlyTextField({
         />
       ) : (
         <div
-          className={`text-neutral-gray3 ${multiline ? 'min-h-32' : 'min-h-8'}`}
+          className={`text-muted-foreground ${multiline ? 'min-h-32' : 'min-h-8'}`}
         >
           {placeholder}
         </div>

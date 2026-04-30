@@ -48,7 +48,7 @@ export const OPRelationshipRequestEmail = ({
       <Section className="pb-0">
         <Button
           href={approvalUrl}
-          className="rounded-lg bg-primary-teal px-4 py-3 text-white no-underline hover:bg-primary-teal/90"
+          className="rounded-lg bg-primary px-4 py-3 text-white no-underline hover:bg-primary/90"
           style={{
             fontSize: '0.875rem',
             textAlign: 'center',
@@ -59,7 +59,7 @@ export const OPRelationshipRequestEmail = ({
         </Button>
       </Section>
 
-      <Text className="mb-0 text-xs text-neutral-gray4">
+      <Text className="mb-0 text-xs text-muted-foreground">
         Once you accept their request, <strong>{requesterOrgName}</strong> will
         appear in your relationships on Common.
       </Text>

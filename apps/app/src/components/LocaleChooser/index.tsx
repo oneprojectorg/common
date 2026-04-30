@@ -45,12 +45,12 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
         <SelectItem
           key={locale}
           id={locale}
-          className={cn(currentLocale === locale && 'text-primary-teal')}
+          className={cn(currentLocale === locale && 'text-primary')}
         >
           <div
             className={cn(
               'flex items-center justify-between',
-              currentLocale === locale && 'text-primary-teal',
+              currentLocale === locale && 'text-primary',
             )}
           >
             <span>{localeDisplayNames[locale] || locale}</span>

@@ -23,16 +23,16 @@ export const OrgsRowCells = ({ org }: { org: AdminOrg }) => {
 
   return (
     <>
-      <TableCell className="text-sm font-normal text-neutral-black">
+      <TableCell className="text-sm font-normal text-foreground">
         {org.profile?.name ?? '—'}
       </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-charcoal">
+      <TableCell className="text-sm font-normal text-foreground">
         {org.domain ?? '—'}
       </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-charcoal">
+      <TableCell className="text-sm font-normal text-foreground">
         {org.members?.length ?? 0}
       </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-charcoal">
+      <TableCell className="text-sm font-normal text-foreground">
         {createdAt ? (
           <TooltipTrigger>
             <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-hidden">
@@ -46,7 +46,7 @@ export const OrgsRowCells = ({ org }: { org: AdminOrg }) => {
           '—'
         )}
       </TableCell>
-      <TableCell className="text-sm text-neutral-charcoal">
+      <TableCell className="text-sm text-foreground">
         <div className="flex justify-end">
           <OptionMenu variant="outline" size="medium">
             <Menu className="min-w-48 p-2">

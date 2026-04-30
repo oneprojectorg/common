@@ -166,7 +166,7 @@ export function ProposalCategoriesSectionContent({
             savedAt={autosaveStatus.savedAt}
           />
         </div>
-        <p className="text-neutral-gray4">
+        <p className="text-muted-foreground">
           {t(
             'Define the categories that proposals in this process should advance. Proposers will select which categories their proposal supports.',
           )}
@@ -177,7 +177,7 @@ export function ProposalCategoriesSectionContent({
         <div className="rounded-lg border p-16">
           <EmptyState icon={<LuLeaf className="size-5" />}>
             <div className="flex flex-col items-center gap-2 text-center">
-              <span className="font-medium text-neutral-charcoal">
+              <span className="font-medium text-foreground">
                 {t('No categories defined yet')}
               </span>
               <span>
@@ -206,8 +206,8 @@ export function ProposalCategoriesSectionContent({
               className="group flex items-start gap-2 border-b py-3"
             >
               <div className="min-w-0 flex-1">
-                <span className="text-neutral-charcoal">{category.label}</span>
-                <p className="text-sm text-neutral-gray4">
+                <span className="text-foreground">{category.label}</span>
+                <p className="text-sm text-muted-foreground">
                   {category.description}
                 </p>
               </div>
@@ -215,7 +215,7 @@ export function ProposalCategoriesSectionContent({
                 <Button
                   variant="icon"
                   color="ghost"
-                  className="size-5 p-0 text-neutral-charcoal"
+                  className="size-5 p-0 text-foreground"
                   onPress={() => handleEdit(category)}
                   aria-label={`Edit ${category.label}`}
                 >
@@ -224,7 +224,7 @@ export function ProposalCategoriesSectionContent({
                 <Button
                   variant="icon"
                   color="ghost"
-                  className="size-5 p-0 text-neutral-charcoal hover:text-red"
+                  className="size-5 p-0 text-foreground hover:text-destructive"
                   onPress={() => handleDelete(category.id)}
                   aria-label={`Delete ${category.label}`}
                 >
@@ -236,7 +236,7 @@ export function ProposalCategoriesSectionContent({
           {!isFormVisible && (
             <Button
               color="ghost"
-              className="mt-2 px-2 text-primary-tealBlack hover:text-primary-teal"
+              className="mt-2 px-2 text-primary hover:text-primary"
               onPress={() => setIsFormVisible(true)}
             >
               <LuPlus className="size-4" />
@@ -300,7 +300,7 @@ export function ProposalCategoriesSectionContent({
               <span className="text-base">
                 {t('Require category selection')}
               </span>
-              <p className="text-sm text-neutral-gray4">
+              <p className="text-sm text-muted-foreground">
                 {t('Proposers must select at least one category')}
               </p>
             </div>
@@ -315,7 +315,7 @@ export function ProposalCategoriesSectionContent({
               <span className="text-base">
                 {t('Allow multiple categories')}
               </span>
-              <p className="text-sm text-neutral-gray4">
+              <p className="text-sm text-muted-foreground">
                 {t('Proposers can select more than one category')}
               </p>
             </div>
