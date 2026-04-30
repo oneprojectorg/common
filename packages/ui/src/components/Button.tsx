@@ -22,14 +22,33 @@ export type ButtonVariant = NonNullable<
 export type ButtonSize = NonNullable<ComponentProps<typeof TakiButton>['size']>;
 
 export interface ButtonProps extends ComponentProps<typeof TakiButton> {
-  /** Show a centered LoadingSpinner overlay; underlying button stays interactive-blocked via isPending. */
+  /**
+   * Show a centered LoadingSpinner overlay. The button is disabled
+   * (with opacity-100 preserved) and `aria-busy` while loading.
+   * `isPending` is treated as an alias so RAC-style callers keep
+   * working — see the inline note in the component for why we don't
+   * forward to Taki's `isPending` directly.
+   */
   isLoading?: boolean;
   ref?: Ref<HTMLButtonElement>;
 }
 
-export const Button = ({ isLoading, children, ...props }: ButtonProps) => {
-  if (!isLoading) {
-    return <TakiButton {...props}>{children}</TakiButton>;
+export const Button = ({
+  isLoading,
+  isPending,
+  children,
+  ...props
+}: ButtonProps) => {
+  // Alias: callers passing the RAC-native `isPending` get the same
+  // loading overlay treatment.
+  const loading = Boolean(isLoading || isPending);
+
+  if (!loading) {
+    return (
+      <TakiButton {...props} isPending={isPending}>
+        {children}
+      </TakiButton>
+    );
   }
 
   // We deliberately don't use Taki's `isPending` here — it sets
