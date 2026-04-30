@@ -28,15 +28,12 @@ import {
 } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
 
-export const panelStateParser = parseAsStringLiteral([
-  'updates',
-  'meetings',
-  'resources',
-] as const);
+const PANEL_TABS = ['updates', 'meetings', 'resources'] as const;
+type PanelTab = (typeof PANEL_TABS)[number];
+
+export const panelStateParser = parseAsStringLiteral(PANEL_TABS);
 
 const UPDATES_PAGE_SIZE = 20;
-const DESKTOP_PANEL_WIDTH = 360;
-const HEADER_HEIGHT = 57;
 
 export const DecisionSidePanel = ({
   decisionProfileId,
@@ -87,7 +84,7 @@ export const DecisionSidePanel = ({
 
   return (
     <>
-      {isOpen && isMobile ? (
+      {isOpen ? (
         <div
           aria-hidden="true"
           onClick={close}
@@ -98,21 +95,14 @@ export const DecisionSidePanel = ({
         role="dialog"
         aria-label={t('Decision updates panel')}
         aria-hidden={!isOpen}
-        style={
-          isMobile
-            ? { top: 0, width: '100%' }
-            : { top: HEADER_HEIGHT, width: DESKTOP_PANEL_WIDTH }
-        }
         className={cn(
-          'fixed right-0 bottom-0 z-40 flex max-w-full flex-col border-l border-neutral-gray1 bg-white shadow-xl transition-transform duration-300 ease-out',
+          'fixed top-0 right-0 bottom-0 z-40 flex w-full max-w-full flex-col border-l border-neutral-gray1 bg-white shadow-xl transition-transform duration-300 ease-out sm:top-14 sm:w-80',
           isOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full',
         )}
       >
         <Tabs
           selectedKey={activeTab}
-          onSelectionChange={(key) =>
-            setPanel(key as 'updates' | 'meetings' | 'resources')
-          }
+          onSelectionChange={(key) => setPanel(key as PanelTab)}
           className="flex min-h-0 flex-1 flex-col gap-0"
         >
           <div className="flex shrink-0 items-center justify-between gap-2 border-b border-neutral-gray1 pr-4 sm:pr-0">
@@ -130,27 +120,28 @@ export const DecisionSidePanel = ({
                 {t('Resources')}
               </Tab>
             </TabList>
-            {isMobile ? (
-              <IconButton
-                variant="ghost"
-                size="small"
-                onPress={close}
-                aria-label={t('Close')}
-              >
-                <LuX className="size-5" />
-              </IconButton>
-            ) : null}
+            <IconButton
+              variant="ghost"
+              size="small"
+              onPress={close}
+              aria-label={t('Close')}
+              className="sm:hidden"
+            >
+              <LuX className="size-5" />
+            </IconButton>
           </div>
 
           <TabPanel
             id="updates"
             className="flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto p-0 sm:p-0"
           >
-            <UpdatesTabContent
-              decisionProfileId={decisionProfileId}
-              canPostUpdate={canPostUpdate}
-              canReadUpdates={canReadUpdates}
-            />
+            {isOpen ? (
+              <UpdatesTabContent
+                decisionProfileId={decisionProfileId}
+                canPostUpdate={canPostUpdate}
+                canReadUpdates={canReadUpdates}
+              />
+            ) : null}
           </TabPanel>
           <TabPanel
             id="meetings"
@@ -238,20 +229,13 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
       {
         getNextPageParam: (lastPage) => lastPage.next ?? undefined,
         staleTime: 30 * 1000,
-        refetchOnMount: true,
-        refetchOnWindowFocus: true,
-        refetchOnReconnect: true,
       },
     );
 
   const posts = paginatedData.pages.flatMap((page) => page.items);
 
-  const stableFetchNextPage = useCallback(() => {
-    fetchNextPage();
-  }, [fetchNextPage]);
-
   const { ref, shouldShowTrigger } = useInfiniteScroll<HTMLDivElement>(
-    stableFetchNextPage,
+    fetchNextPage,
     {
       hasNextPage,
       isFetchingNextPage,
