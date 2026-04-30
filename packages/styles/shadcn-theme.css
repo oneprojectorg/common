@@ -2,12 +2,20 @@
  * Shadcn Theme — defaults verbatim, with OP brand overrides for primary/ring
  * and additional semantic tokens (positive/warning/info) on the OP palette.
  *
+ * Uses `@theme inline` so Tailwind utilities resolve to the runtime CSS
+ * vars (lets `.dark` swap colors without rebuilding utilities).
+ *
  * Custom radii / paddings / spacing inherit shadcn defaults.
  * Fonts are loaded by next/font in apps/app/src/app/layout.tsx and exposed
  * via the --font-sans / --font-serif / --font-mono CSS vars.
  */
 
-@theme {
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -46,14 +54,11 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --radius: 0.625rem;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
 }
 
 :root {
+  --radius: 0.625rem;
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
