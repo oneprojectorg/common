@@ -39,6 +39,16 @@
   ::file-selector-button {
     border-color: var(--color-border, currentColor);
   }
+
+  /*
+   * Tailwind v4 switched buttons from cursor: pointer to cursor: default.
+   * Restore the legacy behaviour per the shadcn install guide so our
+   * Taki-backed buttons feel clickable.
+   */
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
 }
 
 @theme {
