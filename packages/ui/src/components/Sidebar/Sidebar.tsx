@@ -197,11 +197,17 @@ const SidebarLayout = ({
 
 const SidebarTrigger = ({
   className,
+  variant = 'ghost',
   ...props
 }: Omit<IconButtonProps, 'children' | 'onPress'>) => {
   const { toggleSidebar } = useSidebar();
   return (
-    <IconButton onPress={toggleSidebar} className={className} {...props}>
+    <IconButton
+      onPress={toggleSidebar}
+      variant={variant}
+      className={className}
+      {...props}
+    >
       <LuAlignJustify className="size-4" />
     </IconButton>
   );
