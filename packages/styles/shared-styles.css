@@ -142,7 +142,22 @@
   --text-title-sm12--font-weight: 300;
   --text-title-sm12--letter-spacing: -0.01125rem;
 
-  /* Body sizes inherit Tailwind v4 defaults (xs=12, sm=14, base=16, lg=18). */
+  /* Body sizes (override Tailwind defaults with our custom scale + weight) */
+  --text-xs: 0.625rem;
+  --text-xs--line-height: 150%;
+  --text-xs--font-weight: 400;
+
+  --text-sm: 0.75rem;
+  --text-sm--line-height: 150%;
+  --text-sm--font-weight: 400;
+
+  --text-base: 0.875rem;
+  --text-base--line-height: 150%;
+  --text-base--font-weight: 400;
+
+  --text-lg: 1rem;
+  --text-lg--line-height: 150%;
+  --text-lg--font-weight: 400;
 
   /* ============================================
    * Spacing
