@@ -405,7 +405,7 @@ function RolesSectionContent({
         </Header2>
         <Button
           variant="ghost"
-          className="text-primary hover:text-primary"
+          className="text-primary hover:text-primary/80"
           onPress={() => setIsAdding(true)}
           isDisabled={isAdding}
         >

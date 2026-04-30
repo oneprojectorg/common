@@ -180,7 +180,7 @@ export function ProposalAttachments({
         onSelectFiles={handleSelectFiles}
         label={t.rich('Drag a file here or <browse>browse</browse>', {
           browse: (chunks: ReactNode) => (
-            <span className="text-primary hover:text-primary hover:underline">
+            <span className="text-primary hover:text-primary/80 hover:underline">
               {chunks}
             </span>
           ),

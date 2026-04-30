@@ -59,7 +59,7 @@ export function ProposalViewLayout({
       <div className="grid grid-cols-3 items-center border-b px-6 py-4">
         <button
           onClick={() => router.push(backHref)}
-          className="flex cursor-pointer items-center gap-2 text-base text-primary hover:text-primary"
+          className="flex cursor-pointer items-center gap-2 text-base text-primary hover:text-primary/80"
         >
           <LuArrowLeft className="size-6 text-foreground sm:size-4 sm:text-primary" />
           <span className="hidden sm:block">{t('Back to Proposals')}</span>

@@ -62,7 +62,7 @@ const dropZoneStyles = tv({
     ],
     labelWrapper: 'flex flex-col items-center gap-1',
     label: 'text-base text-foreground',
-    browse: 'text-primary hover:text-primary hover:underline',
+    browse: 'text-primary hover:text-primary/80 hover:underline',
     description: 'text-base text-muted-foreground',
   },
   variants: {

@@ -137,7 +137,7 @@ export function PhasesSectionContent({
           </div>
           <Button
             variant="ghost"
-            className="text-primary hover:text-primary"
+            className="text-primary hover:text-primary/80"
             onPress={addPhase}
           >
             <LuPlus className="size-4" />
@@ -215,7 +215,7 @@ export function PhasesSectionContent({
           </Sortable>
           <Button
             variant="outline"
-            className="w-full text-primary hover:text-primary"
+            className="w-full text-primary hover:text-primary/80"
             onPress={addPhase}
           >
             <LuPlus className="size-4" />
