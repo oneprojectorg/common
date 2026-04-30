@@ -5,7 +5,7 @@ import type { ReviewsPolicy } from '@op/common';
 import { Chip } from '@op/ui/Chip';
 import { Header2, Header3 } from '@op/ui/Header';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { Switch } from '@op/ui/Switch';
 import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -123,10 +123,9 @@ export function ReviewSettingsContent({
               'Reviewers can ask authors to revise their proposal before scoring',
             )}
           >
-            <ToggleButton
+            <Switch
               isSelected={settings.reviewsAllowRevisions}
               onChange={(val) => updateSettings({ reviewsAllowRevisions: val })}
-              size="sm"
             />
           </ToggleRow>
         </div>

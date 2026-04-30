@@ -6,7 +6,7 @@ import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2 } from '@op/ui/Header';
 import { Sortable } from '@op/ui/Sortable';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { Switch } from '@op/ui/Switch';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuLeaf, LuPlus } from 'react-icons/lu';
 
@@ -402,10 +402,9 @@ export function RubricEditorContent({
               'Reviewers recommend Yes, Maybe, or No per proposal',
             )}
           >
-            <ToggleButton
+            <Switch
               isSelected={overallRecommendationEnabled}
               onChange={handleOverallRecommendationToggle}
-              size="sm"
             />
           </ToggleRow>
         </div>

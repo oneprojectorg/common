@@ -8,8 +8,8 @@ import {
 import { NumberField } from '@op/ui/NumberField';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import type { SortableItemControls } from '@op/ui/Sortable';
+import { Switch } from '@op/ui/Switch';
 import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
 import { useRef, useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
@@ -189,8 +189,7 @@ export function RubricCriterionCard({
           <div className="flex items-center justify-between border-t pt-4">
             <div className="flex items-center gap-2">
               <span className="text-foreground">{t('Required?')}</span>
-              <ToggleButton
-                size="sm"
+              <Switch
                 isSelected={criterion.required}
                 onChange={(isSelected) =>
                   onUpdateRequired(criterion.id, isSelected)
@@ -201,7 +200,6 @@ export function RubricCriterionCard({
             {onRemove && (
               <Button
                 variant="ghost"
-                size="sm"
                 onPress={() => onRemove(criterion.id)}
                 aria-label={t('Delete')}
                 className="text-foreground hover:text-destructive"

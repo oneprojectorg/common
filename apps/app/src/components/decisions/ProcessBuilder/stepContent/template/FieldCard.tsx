@@ -8,8 +8,8 @@ import {
 } from '@op/ui/CollapsibleConfigCard';
 import { Select, SelectItem } from '@op/ui/Select';
 import type { SortableItemControls } from '@op/ui/Sortable';
+import { Switch } from '@op/ui/Switch';
 import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
 import type { Key } from 'react';
 import { useEffect, useRef } from 'react';
@@ -197,8 +197,7 @@ export function FieldCard({
           <div className="flex items-center justify-between border-t pt-4">
             <div className="flex items-center gap-2">
               <span className="text-foreground">{t('Required?')}</span>
-              <ToggleButton
-                size="sm"
+              <Switch
                 isSelected={field.required}
                 onChange={(isSelected) =>
                   onUpdateRequired?.(field.id, isSelected)
@@ -209,7 +208,6 @@ export function FieldCard({
             {onRemove && (
               <Button
                 variant="ghost"
-                size="sm"
                 onPress={() => onRemove(field.id)}
                 aria-label={t('Delete')}
                 className="text-muted-foreground hover:text-destructive"

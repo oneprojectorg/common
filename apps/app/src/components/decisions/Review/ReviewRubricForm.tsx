@@ -10,8 +10,8 @@ import { AlertBanner } from '@op/ui/AlertBanner';
 import { Button } from '@op/ui/Button';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select, SelectItem } from '@op/ui/Select';
+import { Switch } from '@op/ui/Switch';
 import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
 import type { Key } from 'react';
 import { useState } from 'react';
 import { LuCircleAlert, LuPlus } from 'react-icons/lu';
@@ -232,7 +232,6 @@ function RubricRationaleField({
     return (
       <Button
         variant="link"
-        size="sm"
         className="flex h-auto items-center p-0 leading-normal text-primary"
         onPress={() => setIsOpen(true)}
       >
@@ -276,8 +275,7 @@ function RubricFieldInput({
     case 'dropdown': {
       if (inferCriterionType(field.schema) === 'yes_no') {
         return (
-          <ToggleButton
-            size="sm"
+          <Switch
             isSelected={value === 'yes'}
             onChange={(isSelected) => {
               onChange(isSelected ? 'yes' : 'no');

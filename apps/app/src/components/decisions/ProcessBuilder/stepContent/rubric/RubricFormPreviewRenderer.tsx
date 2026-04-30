@@ -7,7 +7,7 @@ import {
 } from '@op/common/client';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select } from '@op/ui/Select';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { Switch } from '@op/ui/Switch';
 import { LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -90,7 +90,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
               {schema.description && (
                 <p className="text-sm text-foreground">{schema.description}</p>
               )}
-              <ToggleButton size="sm" className="ml-auto shrink-0" />
+              <Switch className="ml-auto shrink-0" />
             </div>
           </div>
         );

@@ -258,7 +258,7 @@ export function OverviewSectionForm({
                       'Group proposals into categories for better organization and evaluation.',
                     )}
                   >
-                    <field.ToggleButton
+                    <field.Switch
                       isSelected={field.state.value}
                       onChange={(value) => {
                         field.handleChange(value);
@@ -269,7 +269,6 @@ export function OverviewSectionForm({
                           config: { organizeByCategories: value },
                         });
                       }}
-                      size="sm"
                     />
                   </ToggleRow>
                 )}
@@ -284,10 +283,9 @@ export function OverviewSectionForm({
                       'Require proposals to be co-authored by at least 2 participants.',
                     )}
                   >
-                    <field.ToggleButton
+                    <field.Switch
                       isSelected={field.state.value}
                       onChange={field.handleChange}
-                      size="sm"
                     />
                   </ToggleRow>
                 )}
@@ -310,10 +308,9 @@ export function OverviewSectionForm({
                     'Anyone on Common can view this process. Only invited participants can submit.',
                   )}
                 >
-                  <field.ToggleButton
+                  <field.Switch
                     isSelected={!field.state.value}
                     onChange={(value) => field.handleChange(!value)}
-                    size="sm"
                   />
                 </ToggleRow>
               )}

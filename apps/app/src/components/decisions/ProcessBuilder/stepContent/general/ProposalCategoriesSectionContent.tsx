@@ -5,8 +5,8 @@ import type { ProposalCategory } from '@op/common';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2, Header3 } from '@op/ui/Header';
+import { Switch } from '@op/ui/Switch';
 import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
 import { useState } from 'react';
 import { LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
@@ -304,10 +304,9 @@ export function ProposalCategoriesSectionContent({
                 {t('Proposers must select at least one category')}
               </p>
             </div>
-            <ToggleButton
+            <Switch
               isSelected={requireCategorySelection}
               onChange={handleRequireCategoryChange}
-              size="sm"
             />
           </div>
           <div className="flex items-center justify-between gap-4">
@@ -319,10 +318,9 @@ export function ProposalCategoriesSectionContent({
                 {t('Proposers can select more than one category')}
               </p>
             </div>
-            <ToggleButton
+            <Switch
               isSelected={allowMultipleCategories}
               onChange={handleAllowMultipleChange}
-              size="sm"
             />
           </div>
         </div>

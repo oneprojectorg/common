@@ -11,8 +11,8 @@ import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalFooter } from '@op/ui/Modal';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { SelectItem } from '@op/ui/Select';
+import { Switch } from '@op/ui/Switch';
 import { toast } from '@op/ui/Toast';
-import { ToggleButton } from '@op/ui/ToggleButton';
 import { useRouter } from 'next/navigation';
 import { forwardRef, useState } from 'react';
 import { LuLink } from 'react-icons/lu';
@@ -468,7 +468,7 @@ export const UpdateOrganizationForm = forwardRef<
               {t(
                 'Does your organization serve as a network or coalition with member organizations?',
               )}
-              <field.ToggleButton
+              <field.Switch
                 isSelected={field.state.value as boolean}
                 onChange={field.handleChange}
                 aria-label={t(
@@ -488,7 +488,7 @@ export const UpdateOrganizationForm = forwardRef<
               <>
                 <ToggleRow>
                   <span>{t('Is your organization seeking funding?')}</span>
-                  <ToggleButton
+                  <Switch
                     isSelected={field.state.value as boolean}
                     onChange={field.handleChange}
                   />
@@ -549,7 +549,7 @@ export const UpdateOrganizationForm = forwardRef<
               <>
                 <ToggleRow>
                   <span>{t('Does your organization offer funding?')}</span>
-                  <ToggleButton
+                  <Switch
                     isSelected={field.state.value as boolean}
                     onChange={field.handleChange}
                   />
@@ -564,7 +564,7 @@ export const UpdateOrganizationForm = forwardRef<
                           {t(
                             'Are organizations currently able to apply for funding?',
                           )}
-                          <ToggleButton
+                          <Switch
                             isSelected={
                               acceptingApplicationsField.state.value as boolean
                             }

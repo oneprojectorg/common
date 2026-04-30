@@ -4,7 +4,7 @@ import { ProposalTemplateSchema } from '@op/common';
 import { CollapsibleConfigCard } from '@op/ui/CollapsibleConfigCard';
 import { NumberField } from '@op/ui/NumberField';
 import { Select, SelectItem } from '@op/ui/Select';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { Switch } from '@op/ui/Switch';
 import type { Key } from 'react';
 import { useCallback } from 'react';
 import { LuHash } from 'react-icons/lu';
@@ -196,8 +196,7 @@ export function BudgetFieldConfig({
         )}
         <div className="flex items-center justify-between">
           <span className="text-foreground">{t('Show in template?')}</span>
-          <ToggleButton
-            size="sm"
+          <Switch
             isSelected={showBudget}
             onChange={handleShowBudgetChange}
             aria-label={t('Show in template?')}
@@ -207,8 +206,7 @@ export function BudgetFieldConfig({
         {showBudget && (
           <div className="flex items-center justify-between">
             <span className="text-foreground">{t('Required?')}</span>
-            <ToggleButton
-              size="sm"
+            <Switch
               isSelected={budgetRequired}
               onChange={handleBudgetRequiredChange}
               aria-label={t('Required?')}

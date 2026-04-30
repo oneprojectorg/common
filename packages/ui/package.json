@@ -66,7 +66,7 @@
     "./TranslateBanner": "./src/components/TranslateBanner.tsx",
     "./TextField": "./src/components/TextField.tsx",
     "./Toast": "./src/components/Toast.tsx",
-    "./ToggleButton": "./src/components/ToggleButton.tsx",
+    "./Switch": "./src/components/Switch.tsx",
     "./Tooltip": "./src/components/Tooltip.tsx",
     "./LoadingSpinner": "./src/components/LoadingSpinner.tsx",
     "./useGesture": "./src/useGesture.ts",

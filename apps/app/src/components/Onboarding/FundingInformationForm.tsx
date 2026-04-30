@@ -1,6 +1,6 @@
 import { zodUrl } from '@op/common/validation';
 import type { Option } from '@op/ui/MultiSelectComboBox';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { Switch } from '@op/ui/Switch';
 import { LuLink } from 'react-icons/lu';
 import { z } from 'zod';
 
@@ -103,7 +103,7 @@ export const FundingInformationForm = ({
               <ToggleRow>
                 <span>{t('Is your organization seeking funding?')}</span>
 
-                <ToggleButton
+                <Switch
                   isSelected={field.state.value as boolean}
                   onChange={field.handleChange}
                 />
@@ -162,7 +162,7 @@ export const FundingInformationForm = ({
             <>
               <ToggleRow>
                 <span>{t('Does your organization offer funding?')}</span>
-                <ToggleButton
+                <Switch
                   isSelected={field.state.value as boolean}
                   onChange={field.handleChange}
                 />

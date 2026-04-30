@@ -314,7 +314,7 @@ export const OrganizationFormFields = ({
             {t(
               'Does your organization serve as a network or coalition with member organizations?',
             )}
-            <field.ToggleButton
+            <field.Switch
               isSelected={field.state.value as boolean}
               onChange={field.handleChange}
               aria-label={t(
