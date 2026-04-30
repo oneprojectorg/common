@@ -14,10 +14,10 @@ const DOT_COLOR_BY_INTENT: Record<StatusDotIntent, string> = {
 export interface StatusDotProps {
   /** Color of the dot. */
   intent?: StatusDotIntent;
-  /** Additional classes applied to the root element (the dot itself when standalone, the flex container when a label is present). */
+  /** Additional classes applied to the flex container. */
   className?: string;
-  /** Optional inline label rendered to the right of the dot. */
-  children?: ReactNode;
+  /** Inline label rendered to the right of the dot. Carries the accessible meaning of the status. */
+  children: ReactNode;
 }
 
 export const StatusDot = ({
@@ -25,20 +25,12 @@ export const StatusDot = ({
   className,
   children,
 }: StatusDotProps) => {
-  const dotColor = DOT_COLOR_BY_INTENT[intent];
-
-  if (!children) {
-    return (
-      <span
-        className={cn('inline-block size-2 rounded-full', dotColor, className)}
-        aria-hidden
-      />
-    );
-  }
-
   return (
     <div className={cn('flex items-center gap-1.5', className)}>
-      <span className={cn('size-2 rounded-full', dotColor)} aria-hidden />
+      <span
+        className={cn('size-2 rounded-full', DOT_COLOR_BY_INTENT[intent])}
+        aria-hidden
+      />
       {children}
     </div>
   );

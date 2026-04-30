@@ -23,6 +23,7 @@ const meta: Meta<typeof StatusDot> = {
   },
   args: {
     intent: 'neutral',
+    children: 'Status',
   },
 };
 
@@ -31,26 +32,19 @@ export default meta;
 type Story = StoryObj<typeof StatusDot>;
 
 export const Success: Story = {
-  args: { intent: 'success' },
+  args: { intent: 'success', children: 'Approved' },
 };
 
 export const Danger: Story = {
-  args: { intent: 'danger' },
+  args: { intent: 'danger', children: 'Rejected' },
 };
 
 export const Warning: Story = {
-  args: { intent: 'warning' },
+  args: { intent: 'warning', children: 'Maybe' },
 };
 
 export const Neutral: Story = {
-  args: { intent: 'neutral' },
-};
-
-export const WithLabel: Story = {
-  args: {
-    intent: 'success',
-    children: 'Approved',
-  },
+  args: { intent: 'neutral', children: 'Pending' },
 };
 
 export const GroupHeading: Story = {
