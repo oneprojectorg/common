@@ -15,7 +15,7 @@ const alertBannerStyles = tv({
   variants: {
     intent: {
       default: {
-        root: 'text-secondary-fg bg-muted/50',
+        root: 'bg-muted/50 text-secondary-fg',
       },
       info: {
         root: 'bg-info-subtle text-info-subtle-fg **:[.text-muted-fg]:text-info-subtle-fg/70',

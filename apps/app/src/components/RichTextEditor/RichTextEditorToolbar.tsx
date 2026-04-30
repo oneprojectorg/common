@@ -150,9 +150,7 @@ export function RichTextEditorToolbar({
             editor?.chain().focus().toggleHeading({ level: 1 }).run()
           }
           disabled={noEditor}
-          {...btnProps(
-            editor?.isActive('heading', { level: 1 }) ?? false,
-          )}
+          {...btnProps(editor?.isActive('heading', { level: 1 }) ?? false)}
           title={t('Heading 1')}
         >
           <LuHeading1 className="h-4 w-4" />
@@ -162,9 +160,7 @@ export function RichTextEditorToolbar({
             editor?.chain().focus().toggleHeading({ level: 2 }).run()
           }
           disabled={noEditor}
-          {...btnProps(
-            editor?.isActive('heading', { level: 2 }) ?? false,
-          )}
+          {...btnProps(editor?.isActive('heading', { level: 2 }) ?? false)}
           title={t('Heading 2')}
         >
           <LuHeading2 className="h-4 w-4" />
@@ -174,9 +170,7 @@ export function RichTextEditorToolbar({
             editor?.chain().focus().toggleHeading({ level: 3 }).run()
           }
           disabled={noEditor}
-          {...btnProps(
-            editor?.isActive('heading', { level: 3 }) ?? false,
-          )}
+          {...btnProps(editor?.isActive('heading', { level: 3 }) ?? false)}
           title={t('Heading 3')}
         >
           <LuHeading3 className="h-4 w-4" />
@@ -268,9 +262,7 @@ export function RichTextEditorToolbar({
         <button
           onClick={() => editor?.chain().focus().setTextAlign('center').run()}
           disabled={noEditor}
-          {...btnProps(
-            editor?.isActive({ textAlign: 'center' }) ?? false,
-          )}
+          {...btnProps(editor?.isActive({ textAlign: 'center' }) ?? false)}
           title={t('Align Center')}
         >
           <LuAlignCenter className="h-4 w-4" />
@@ -278,9 +270,7 @@ export function RichTextEditorToolbar({
         <button
           onClick={() => editor?.chain().focus().setTextAlign('right').run()}
           disabled={noEditor}
-          {...btnProps(
-            editor?.isActive({ textAlign: 'right' }) ?? false,
-          )}
+          {...btnProps(editor?.isActive({ textAlign: 'right' }) ?? false)}
           title={t('Align Right')}
         >
           <LuAlignRight className="h-4 w-4" />

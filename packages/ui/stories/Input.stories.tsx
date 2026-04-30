@@ -16,13 +16,9 @@ export const Default: StoryObj = {
 };
 
 export const Disabled: StoryObj = {
-  render: () => (
-    <Input placeholder="Disabled" className="w-72" disabled />
-  ),
+  render: () => <Input placeholder="Disabled" className="w-72" disabled />,
 };
 
 export const WithValue: StoryObj = {
-  render: () => (
-    <Input defaultValue="Pre-filled value" className="w-72" />
-  ),
+  render: () => <Input defaultValue="Pre-filled value" className="w-72" />,
 };

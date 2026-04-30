@@ -92,8 +92,7 @@ export function ResponsiveSelect<T extends string>({
                     className={cn(
                       'rounded-none px-6 py-4',
                       index < items.length - 1 && 'border-b border-border',
-                      isCurrent &&
-                        'bg-primary/10 data-[focused]:bg-primary/15',
+                      isCurrent && 'bg-primary/10 data-[focused]:bg-primary/15',
                     )}
                     onAction={() => {
                       onSelectionChange(item.id);

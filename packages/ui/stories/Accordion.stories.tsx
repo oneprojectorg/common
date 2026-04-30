@@ -292,7 +292,7 @@ export const Nested: Story = {
                   </AccordionTrigger>
                 </AccordionHeader>
                 <AccordionContent className="pt-2">
-                  <div className="text-muted-fg space-y-2 text-sm">
+                  <div className="space-y-2 text-sm text-muted-fg">
                     <p>Advanced configuration options go here.</p>
                     <ul className="list-inside list-disc">
                       <li>Custom validation rules</li>
@@ -320,13 +320,13 @@ export const Controlled: Story = {
       <div className="w-[400px]">
         <div className="mb-4 flex gap-2">
           <button
-            className="text-primary-fg rounded-lg bg-primary px-3 py-1 text-sm"
+            className="rounded-lg bg-primary px-3 py-1 text-sm text-primary-fg"
             onClick={() => setExpandedKeys(new Set(['1', '2', '3']))}
           >
             Expand All
           </button>
           <button
-            className="text-secondary-fg rounded-lg bg-secondary px-3 py-1 text-sm"
+            className="rounded-lg bg-secondary px-3 py-1 text-sm text-secondary-fg"
             onClick={() => setExpandedKeys(new Set())}
           >
             Collapse All
@@ -369,7 +369,7 @@ export const Controlled: Story = {
           </AccordionItem>
         </Accordion>
 
-        <p className="text-muted-fg mt-4 text-sm">
+        <p className="mt-4 text-sm text-muted-fg">
           Expanded: {Array.from(expandedKeys).join(', ') || 'none'}
         </p>
       </div>

@@ -228,7 +228,7 @@ export const EmptyWithMessage = () => (
     </TableHeader>
     <TableBody
       renderEmptyState={() => (
-        <div className="text-muted-fg p-4 text-center">No users found</div>
+        <div className="p-4 text-center text-muted-fg">No users found</div>
       )}
     >
       {[]}

@@ -30,9 +30,7 @@ export const Default: StoryObj = {
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>Are you sure?</DrawerTitle>
-          <DrawerDescription>
-            This action cannot be undone.
-          </DrawerDescription>
+          <DrawerDescription>This action cannot be undone.</DrawerDescription>
         </DrawerHeader>
         <DrawerFooter>
           <DrawerClose asChild>

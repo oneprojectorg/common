@@ -18,8 +18,10 @@ export type LegacyIconSize = 'sm' | 'small' | 'lg' | 'large' | 'medium';
 
 type AliasSize = IconSize | LegacyIconSize;
 
-export interface IconButtonProps
-  extends Omit<ComponentProps<typeof Button>, 'size'> {
+export interface IconButtonProps extends Omit<
+  ComponentProps<typeof Button>,
+  'size'
+> {
   /**
    * Defaults to "icon" (36px square). Prefer the IconSize values
    * directly. Legacy `small`/`medium`/`large` and Taki `sm`/`lg` are
