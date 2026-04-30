@@ -103,20 +103,20 @@ export const DecisionSidePanel = ({
         <Tabs
           selectedKey={activeTab}
           onSelectionChange={(key) => setPanel(key as PanelTab)}
-          className="flex min-h-0 flex-1 flex-col gap-0"
+          className="min-h-0 flex-1 gap-0"
         >
           <div className="flex shrink-0 items-center justify-between gap-2 border-b border-neutral-gray1 pr-4 sm:pr-0">
             <TabList
               aria-label={t('Decision side panel tabs')}
-              className="flex grow gap-4 overflow-x-auto border-b-0 px-4 sm:px-6"
+              className="grow border-b-0 px-4 sm:px-6"
             >
-              <Tab id="updates" className="h-auto px-0 py-3">
+              <Tab id="updates" className="h-auto px-0">
                 {t('Updates')}
               </Tab>
-              <Tab id="meetings" className="h-auto px-0 py-3">
+              <Tab id="meetings" className="h-auto px-0">
                 {t('Meetings')}
               </Tab>
-              <Tab id="resources" className="h-auto px-0 py-3">
+              <Tab id="resources" className="h-auto px-0">
                 {t('Resources')}
               </Tab>
             </TabList>
@@ -133,7 +133,7 @@ export const DecisionSidePanel = ({
 
           <TabPanel
             id="updates"
-            className="flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto p-0 sm:p-0"
+            className="flex min-h-0 flex-col overflow-y-auto p-0 sm:p-0"
           >
             {isOpen ? (
               <UpdatesTabContent
@@ -145,13 +145,13 @@ export const DecisionSidePanel = ({
           </TabPanel>
           <TabPanel
             id="meetings"
-            className="flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto p-0 sm:p-0"
+            className="flex min-h-0 flex-col overflow-y-auto p-0 sm:p-0"
           >
             <ComingSoonContent title={t('Meetings')} />
           </TabPanel>
           <TabPanel
             id="resources"
-            className="flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto p-0 sm:p-0"
+            className="flex min-h-0 flex-col overflow-y-auto p-0 sm:p-0"
           >
             <ComingSoonContent title={t('Resources')} />
           </TabPanel>
@@ -184,7 +184,7 @@ const UpdatesTabContent = ({
       <Header2 className="font-serif text-title-base">{t('Updates')}</Header2>
       <div className="mt-4 flex flex-col gap-6">
         {canPostUpdate ? (
-          <Surface className="border p-4">
+          <Surface className="p-4">
             <PostUpdate
               profileId={decisionProfileId}
               placeholder={t('Share an update with participants…')}
