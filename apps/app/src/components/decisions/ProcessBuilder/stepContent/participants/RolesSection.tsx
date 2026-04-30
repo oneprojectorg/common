@@ -24,7 +24,7 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
-} from '@op/ui/ui/table';
+} from '@op/ui/ui/data-table';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { LuCheck, LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
@@ -271,7 +271,6 @@ function RoleRow({
           <div className="flex gap-1">
             <IconButton
               variant="outline"
-              size="medium"
               onPress={handleSave}
               isDisabled={!roleName.trim() || isPending}
               aria-label={t('Save role')}
@@ -281,7 +280,6 @@ function RoleRow({
             </IconButton>
             <IconButton
               variant="outline"
-              size="medium"
               onPress={() => onDelete(role)}
               aria-label={t('Delete')}
             >
@@ -292,7 +290,6 @@ function RoleRow({
           <OptionMenu
             variant="outline"
             className="ml-auto rounded bg-white shadow-light"
-            size="medium"
           >
             <Menu className="min-w-28 p-2">
               <MenuItem key="edit" onAction={() => setIsEditing(true)}>
@@ -302,7 +299,7 @@ function RoleRow({
               <MenuItem
                 key="delete"
                 onAction={() => onDelete(role)}
-                className="text-functional-red"
+                className="text-destructive"
               >
                 <LuTrash2 className="size-4" />
                 {t('Delete')}
@@ -368,7 +365,6 @@ function AddRoleDialog({
             {PERMISSION_COLUMNS.map(({ key, label }) => (
               <Checkbox
                 key={key}
-                size="small"
                 isSelected={permissions[key]}
                 onChange={() => togglePermission(key)}
                 aria-label={`${label} permission`}
@@ -379,7 +375,7 @@ function AddRoleDialog({
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button color="secondary" onPress={onClose}>
+          <Button variant="outline" onPress={onClose}>
             {t('Cancel')}
           </Button>
           <Button
@@ -408,8 +404,8 @@ function RolesSectionContent({
           {t('Roles & permissions')}
         </Header2>
         <Button
-          color="ghost"
-          className="text-primary-teal hover:text-primary-tealBlack"
+          variant="ghost"
+          className="text-primary hover:text-primary/80"
           onPress={() => setIsAdding(true)}
           isDisabled={isAdding}
         >
@@ -419,9 +415,7 @@ function RolesSectionContent({
       </div>
 
       <Suspense
-        fallback={
-          <div className="h-48 animate-pulse rounded-lg bg-neutral-gray1" />
-        }
+        fallback={<div className="h-48 animate-pulse rounded-lg bg-accent" />}
       >
         <RolesTable
           decisionProfileId={decisionProfileId}
@@ -518,7 +512,6 @@ function DecisionRoleCheckboxes({
     <TableCell key={key} className="text-center">
       <div className="flex justify-center">
         <Checkbox
-          size="small"
           isSelected={optimisticPermissions?.[key] ?? false}
           onChange={() => togglePermission(key)}
           aria-label={`${label} permission`}
@@ -546,7 +539,6 @@ function MobileDecisionRoles({
       {PERMISSION_COLUMNS.map(({ key, label }) => (
         <Checkbox
           key={key}
-          size="small"
           isSelected={optimisticPermissions?.[key] ?? false}
           onChange={() => togglePermission(key)}
           aria-label={`${label} permission`}
@@ -572,7 +564,7 @@ function MobileRoleCard({
   const t = useTranslations();
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-neutral-gray1 p-4">
+    <div className="flex flex-col gap-4 rounded-lg border border-border p-4">
       <div className="flex items-center justify-between">
         <Header3 className="font-serif text-sm font-light">{role.name}</Header3>
         {(onDelete || onEdit) && (
@@ -588,7 +580,7 @@ function MobileRoleCard({
                 <MenuItem
                   key="delete"
                   onAction={() => onDelete(role)}
-                  className="text-functional-red"
+                  className="text-destructive"
                 >
                   <LuTrash2 className="size-4" />
                   {t('Delete')}
@@ -631,7 +623,7 @@ function MobileRoleFormCard({
   };
 
   return (
-    <div className="flex flex-col gap-4 rounded-md border border-neutral-gray1 p-4">
+    <div className="flex flex-col gap-4 rounded-md border border-border p-4">
       <div className="flex items-center justify-between gap-2">
         <TextField
           inputProps={{ placeholder: t('Role name…') }}
@@ -651,7 +643,6 @@ function MobileRoleFormCard({
         />
         <IconButton
           variant="outline"
-          size="medium"
           onPress={handleSave}
           isDisabled={!roleName.trim() || isPending}
           aria-label={t('Save role')}
@@ -661,10 +652,9 @@ function MobileRoleFormCard({
         {onDelete && (
           <IconButton
             variant="ghost"
-            size="medium"
             onPress={() => onDelete(role)}
             aria-label={t('Delete')}
-            className="text-functional-red"
+            className="text-destructive"
           >
             <LuTrash2 className="size-4" />
           </IconButton>
@@ -719,7 +709,6 @@ function AddRoleRow({
         <TableCell key={key} className="text-center">
           <div className="flex justify-center">
             <Checkbox
-              size="small"
               isSelected={permissions[key]}
               onChange={() => togglePermission(key)}
               aria-label={`${label} permission`}
@@ -730,7 +719,6 @@ function AddRoleRow({
       <TableCell className="w-22">
         <IconButton
           variant="outline"
-          size="medium"
           onPress={handleSave}
           isDisabled={!roleName.trim() || isPending}
           aria-label={t('Save role')}
@@ -877,11 +865,11 @@ function RolesTable({
             </p>
           </ModalBody>
           <ModalFooter>
-            <Button color="secondary" onPress={() => setRoleToDelete(null)}>
+            <Button variant="outline" onPress={() => setRoleToDelete(null)}>
               {t('Cancel')}
             </Button>
             <Button
-              color="destructive"
+              variant="destructive"
               onPress={handleDeleteConfirm}
               isDisabled={deleteRoleMutation.isPending}
             >

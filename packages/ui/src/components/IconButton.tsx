@@ -1,50 +1,46 @@
 'use client';
 
-import { Button as RACButton } from 'react-aria-components';
-import { tv } from 'tailwind-variants';
-import type { VariantProps } from 'tailwind-variants';
+import type { ComponentProps } from 'react';
 
-const iconButtonStyle = tv({
-  base: 'flex cursor-pointer items-center justify-center outline-0 outline-transparent duration-200 focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary-tealBlack',
-  variants: {
-    size: {
-      small: 'h-6 w-6 rounded-full',
-      medium: 'h-8 w-8 rounded-md',
-      large: 'h-10 w-10 rounded-lg',
-    },
-    variant: {
-      ghost: 'bg-white/80 hover:bg-neutral-gray1 pressed:bg-neutral-gray2',
-      solid: 'bg-neutral-gray1 hover:bg-neutral-gray2 pressed:bg-neutral-gray3',
-      outline:
-        'border bg-transparent hover:bg-neutral-gray1 pressed:bg-neutral-gray2',
-    },
-    isDisabled: {
-      true: 'pointer-events-none opacity-30',
-      false: '',
-    },
-  },
-  defaultVariants: {
-    size: 'medium',
-    variant: 'ghost',
-  },
-});
+import { Button } from './ui/button';
 
-type IconButtonVariants = VariantProps<typeof iconButtonStyle>;
+/** Canonical Taki/shadcn icon sizes — preferred for new code. */
+export type IconSize = 'icon-sm' | 'icon' | 'icon-lg';
 
-export interface IconButtonProps
-  extends
-    Omit<React.ComponentProps<typeof RACButton>, 'children'>,
-    IconButtonVariants {
-  children: React.ReactNode;
-  className?: string;
+/**
+ * @deprecated Use `IconSize` ('icon-sm' | 'icon' | 'icon-lg').
+ * Mapping during migration:
+ *   'sm' / 'small'   -> 'icon-sm'
+ *   'medium'         -> 'icon'
+ *   'lg' / 'large'   -> 'icon-lg'
+ */
+export type LegacyIconSize = 'sm' | 'small' | 'lg' | 'large' | 'medium';
+
+type AliasSize = IconSize | LegacyIconSize;
+
+export interface IconButtonProps extends Omit<
+  ComponentProps<typeof Button>,
+  'size'
+> {
+  /**
+   * Defaults to "icon" (36px square). Prefer the IconSize values
+   * directly. Legacy `small`/`medium`/`large` and Taki `sm`/`lg` are
+   * accepted as aliases during the migration but slated for removal.
+   */
+  size?: AliasSize;
 }
 
-export const IconButton = (props: IconButtonProps) => {
-  const { children, className, ...rest } = props;
+const sizeMap: Record<AliasSize, ComponentProps<typeof Button>['size']> = {
+  'icon-sm': 'icon-sm',
+  icon: 'icon',
+  'icon-lg': 'icon-lg',
+  sm: 'icon-sm',
+  small: 'icon-sm',
+  medium: 'icon',
+  lg: 'icon-lg',
+  large: 'icon-lg',
+};
 
-  return (
-    <RACButton {...rest} className={iconButtonStyle({ ...props, className })}>
-      {children}
-    </RACButton>
-  );
+export const IconButton = ({ size = 'icon', ...props }: IconButtonProps) => {
+  return <Button {...props} size={sizeMap[size]} />;
 };

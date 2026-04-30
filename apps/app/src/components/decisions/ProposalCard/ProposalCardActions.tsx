@@ -52,8 +52,8 @@ export function ProposalCardActions({
     <div className="flex w-full items-center gap-4 sm:w-auto">
       <Button
         onPress={handleLikeClick}
-        size="small"
-        color={isLikedByUser ? 'verified' : 'secondary'}
+        size="sm"
+        variant="outline"
         className="w-full text-nowrap"
         isDisabled={isLoading}
       >
@@ -62,8 +62,8 @@ export function ProposalCardActions({
       </Button>
       <Button
         onPress={handleFollowClick}
-        size="small"
-        color={isFollowedByUser ? 'verified' : 'secondary'}
+        size="sm"
+        variant="outline"
         className="w-full text-nowrap"
         isDisabled={isLoading}
       >
@@ -108,8 +108,8 @@ export function ProposalCardOwnerActions({
       <div className="flex w-full items-center gap-4">
         <ButtonLink
           href={editHref}
-          color="secondary"
-          size="small"
+          variant="outline"
+          size="sm"
           className="w-full"
         >
           <LuPencil className="size-4" />
@@ -121,8 +121,8 @@ export function ProposalCardOwnerActions({
         >
           <Button
             onPress={() => setIsDeleteModalOpen(true)}
-            color="secondary"
-            size="small"
+            variant="outline"
+            size="sm"
             className="w-full"
             isDisabled={deleteProposalMutation.isPending}
           >
@@ -140,14 +140,14 @@ export function ProposalCardOwnerActions({
             </ModalBody>
             <ModalFooter>
               <Button
-                color="secondary"
+                variant="outline"
                 className="w-full sm:w-fit"
                 onPress={() => setIsDeleteModalOpen(false)}
               >
                 {t('Cancel')}
               </Button>
               <Button
-                color="destructive"
+                variant="destructive"
                 onPress={handleDelete}
                 className="w-full sm:w-fit"
                 isDisabled={deleteProposalMutation.isPending}

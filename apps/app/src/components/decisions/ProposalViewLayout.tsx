@@ -59,22 +59,21 @@ export function ProposalViewLayout({
       <div className="grid grid-cols-3 items-center border-b px-6 py-4">
         <button
           onClick={() => router.push(backHref)}
-          className="flex cursor-pointer items-center gap-2 text-base text-primary-teal hover:text-primary-tealBlack"
+          className="flex cursor-pointer items-center gap-2 text-base text-primary hover:text-primary/80"
         >
-          <LuArrowLeft className="size-6 text-neutral-charcoal sm:size-4 sm:text-primary-teal" />
+          <LuArrowLeft className="size-6 text-foreground sm:size-4 sm:text-primary" />
           <span className="hidden sm:block">{t('Back to Proposals')}</span>
         </button>
 
-        <div className="flex justify-center text-lg font-medium text-neutral-black">
+        <div className="flex justify-center text-lg font-medium text-foreground">
           {title ?? null}
         </div>
 
         <div className="flex items-center justify-end gap-4">
           {canEdit && editHref && (
             <Button
-              color="secondary"
-              surface="outline"
-              size="small"
+              variant="outline"
+              size="sm"
               onPress={() => router.push(editHref)}
               className="px-4 py-2"
             >
@@ -83,9 +82,8 @@ export function ProposalViewLayout({
             </Button>
           )}
           <Button
-            surface={isLiked ? undefined : 'ghost'}
-            color={isLiked ? 'verified' : 'secondary'}
-            size="small"
+            variant={isLiked ? 'outline' : 'ghost'}
+            size="sm"
             onPress={onLike}
             isDisabled={isLoading}
           >
@@ -93,9 +91,8 @@ export function ProposalViewLayout({
             {isLiked ? t('Liked') : t('Like')}
           </Button>
           <Button
-            surface={isFollowing ? undefined : 'ghost'}
-            color={isFollowing ? 'verified' : 'secondary'}
-            size="small"
+            variant={isFollowing ? 'outline' : 'ghost'}
+            size="sm"
             onPress={onFollow}
           >
             <LuBookmark className="size-4" />
@@ -105,9 +102,8 @@ export function ProposalViewLayout({
           {revisionToggle && (
             <TooltipTrigger>
               <Button
-                color="secondary"
-                variant="icon"
-                size="small"
+                variant="outline"
+                size="icon-sm"
                 onPress={revisionToggle.onToggle}
                 aria-label={revisionRequestLabel}
                 aria-pressed={revisionToggle.isActive}
@@ -116,7 +112,7 @@ export function ProposalViewLayout({
                 <LuStickyNote className="size-4" />
                 <span
                   aria-hidden
-                  className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-primary-orange2"
+                  className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-warning"
                 />
               </Button>
               <Tooltip>{revisionRequestLabel}</Tooltip>

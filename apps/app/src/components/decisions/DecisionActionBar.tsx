@@ -58,7 +58,7 @@ export const DecisionActionBar = ({
       <div className="flex w-full max-w-[12rem] flex-col items-center justify-center gap-4 sm:flex-row">
         {description ? (
           <DialogTrigger>
-            <Button color="secondary" className="w-full">
+            <Button variant="outline" className="w-full">
               {t('About the process')}
             </Button>
 
@@ -88,7 +88,7 @@ export const DecisionActionBar = ({
 
         {showSubmitButton && (
           <Button
-            color="primary"
+            variant="default"
             className="w-full"
             isDisabled={isCreating}
             onPress={handleCreateProposal}

@@ -5,7 +5,7 @@ import type { AdminOrg } from '@op/api/encoders';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
-import { TableCell } from '@op/ui/ui/table';
+import { TableCell } from '@op/ui/ui/data-table';
 import { useFormatter } from 'next-intl';
 import { useState } from 'react';
 import { Button } from 'react-aria-components';
@@ -23,16 +23,16 @@ export const OrgsRowCells = ({ org }: { org: AdminOrg }) => {
 
   return (
     <>
-      <TableCell className="text-sm font-normal text-neutral-black">
+      <TableCell className="text-sm font-normal text-foreground">
         {org.profile?.name ?? '—'}
       </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-charcoal">
+      <TableCell className="text-sm font-normal text-foreground">
         {org.domain ?? '—'}
       </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-charcoal">
+      <TableCell className="text-sm font-normal text-foreground">
         {org.members?.length ?? 0}
       </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-charcoal">
+      <TableCell className="text-sm font-normal text-foreground">
         {createdAt ? (
           <TooltipTrigger>
             <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-hidden">
@@ -46,9 +46,9 @@ export const OrgsRowCells = ({ org }: { org: AdminOrg }) => {
           '—'
         )}
       </TableCell>
-      <TableCell className="text-sm text-neutral-charcoal">
+      <TableCell className="text-sm text-foreground">
         <div className="flex justify-end">
-          <OptionMenu variant="outline" size="medium">
+          <OptionMenu variant="outline">
             <Menu className="min-w-48 p-2">
               <MenuItem
                 key="view-members"

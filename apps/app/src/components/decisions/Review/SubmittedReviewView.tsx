@@ -59,7 +59,7 @@ function ResultSection({
   children: ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
+    <section className="flex flex-col gap-4 border-b border-border pb-6">
       <FieldHeader title={title} description={description} />
       {children}
     </section>
@@ -81,26 +81,24 @@ function ResultCard({
   const hasTopRow = hasValue || hasDescription;
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-neutral-gray1 p-6">
+    <div className="flex flex-col gap-4 rounded-xl border border-border p-6">
       {hasTopRow && (
         <div className="flex items-center gap-4">
           {hasValue && (
-            <span className="font-serif !text-title-base text-neutral-black">
+            <span className="font-serif !text-title-base text-foreground">
               {value}
             </span>
           )}
           {hasDescription && (
-            <div className="min-w-0 flex-1 text-sm text-neutral-gray4">
+            <div className="min-w-0 flex-1 text-sm text-muted-foreground">
               {description}
             </div>
           )}
         </div>
       )}
-      {hasRationale && hasTopRow && (
-        <div className="h-px w-full bg-neutral-gray1" />
-      )}
+      {hasRationale && hasTopRow && <div className="h-px w-full bg-accent" />}
       {hasRationale && (
-        <div className="text-base text-neutral-charcoal">{rationale}</div>
+        <div className="text-base text-foreground">{rationale}</div>
       )}
     </div>
   );

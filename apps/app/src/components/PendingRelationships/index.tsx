@@ -82,7 +82,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
           return (
             <NotificationPanelItem
               key={org.id}
-              className={isAccepted ? 'bg-primary-tealWhite' : ''}
+              className={isAccepted ? 'bg-primary/10' : ''}
             >
               <div className="flex items-center gap-3">
                 <OrganizationAvatar profile={org.profile} />
@@ -116,8 +116,8 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                 {!isAccepted ? (
                   <>
                     <Button
-                      color="secondary"
-                      size="small"
+                      variant="outline"
+                      size="sm"
                       className="w-full sm:w-auto"
                       onPress={() => {
                         remove.mutate({
@@ -130,7 +130,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                       {remove.isPending ? <LoadingSpinner /> : t('Decline')}
                     </Button>
                     <Button
-                      size="small"
+                      size="sm"
                       className="w-full sm:w-auto"
                       onPress={() =>
                         approve.mutate({

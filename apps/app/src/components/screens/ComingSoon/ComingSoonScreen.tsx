@@ -31,7 +31,7 @@ export const ComingSoonScreen = () => {
         <img src="/logo-common.svg" alt="Common" className="h-4" />
         <ButtonLink
           href="/login"
-          color="secondary"
+          variant="outline"
           className="rounded-lg text-black shadow-md"
         >
           {t('Log in')}
@@ -45,7 +45,7 @@ export const ComingSoonScreen = () => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 2, delay: 0.25 }}
           >
-            <h1 className="flex flex-col font-serif text-title-md text-balance text-neutral-charcoal sm:text-3xl">
+            <h1 className="flex flex-col font-serif text-title-md text-balance text-foreground sm:text-3xl">
               <span>
                 {t('Helping people decide together how to use their resources')}
               </span>
@@ -137,7 +137,7 @@ export const ComingSoonScreen = () => {
           </section>
         </FadeInWrapper>
       </main>
-      <footer className="mt-16 flex flex-col items-center justify-center pb-36 text-sm text-neutral-gray4 sm:mt-0 sm:flex-row sm:gap-4">
+      <footer className="mt-16 flex flex-col items-center justify-center pb-36 text-sm text-muted-foreground sm:mt-0 sm:flex-row sm:gap-4">
         <p>{t('Beautifully designed')}</p>
         <p>•</p>
         <p>{t('Easy to set up')}</p>

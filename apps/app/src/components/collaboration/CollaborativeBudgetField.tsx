@@ -171,8 +171,6 @@ export function CollaborativeBudgetField({
       {!isEditing && (
         <Button
           ref={buttonRef}
-          variant="pill"
-          color="pill"
           onPress={handleStartEditing}
           className="justify-start text-left"
         >

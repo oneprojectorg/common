@@ -112,8 +112,8 @@ export const ManualSelectionList = ({
         </Header3>
         <Button
           onPress={() => candidatesQuery.refetch()}
-          color="secondary"
-          size="small"
+          variant="outline"
+          size="sm"
         >
           {t('Try again')}
         </Button>
@@ -134,7 +134,7 @@ export const ManualSelectionList = ({
         <Header3 className="font-serif font-light">
           {t('No proposals available to select')}
         </Header3>
-        <p className="text-base text-neutral-charcoal">
+        <p className="text-base text-foreground">
           {t('The previous phase did not leave any eligible proposals.')}
         </p>
       </EmptyState>
@@ -188,7 +188,7 @@ export const ManualSelectionList = ({
 
       <VotingSubmitFooter isVisible>
         <div className="flex w-full items-center justify-between px-4 sm:max-w-6xl sm:px-8">
-          <span className="text-neutral-black">
+          <span className="text-foreground">
             {t('{count} proposals advancing', { count: numSelected })}
           </span>
           <SelectionConfirmDialog

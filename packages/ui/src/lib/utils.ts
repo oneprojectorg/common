@@ -1,10 +1,21 @@
 import { clsx } from 'clsx';
 import type { ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { tv } from 'tailwind-variants';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+export const focusRing = tv({
+  base: 'outline-none',
+  variants: {
+    isFocusVisible: {
+      false: 'outline-0',
+      true: 'border-ring ring-[3px] ring-ring/50',
+    },
+  },
+});
 
 export const GRADIENT_COLORS = [
   { gradient: 'bg-gradient', hex: '#1fa88f' },

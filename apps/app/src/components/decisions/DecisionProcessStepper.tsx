@@ -160,10 +160,10 @@ export function DecisionProcessStepper({
         >
           <SheetBody className="flex flex-col gap-4 p-4 text-left">
             <div className="font-serif text-title-sm">{title}</div>
-            <p className="text-sm text-neutral-charcoal">{body}</p>
+            <p className="text-sm text-foreground">{body}</p>
             <div className="flex flex-col gap-4">
               <Button
-                color="primary"
+                variant="default"
                 isLoading={transitionMutation.isPending}
                 onPress={handleAdvancePhase}
                 className="w-full"
@@ -171,7 +171,7 @@ export function DecisionProcessStepper({
                 {t('Advance Phase')}
               </Button>
               <Button
-                color="secondary"
+                variant="outline"
                 isDisabled={transitionMutation.isPending}
                 onPress={() => setShowConfirmModal(false)}
                 className="w-full"
@@ -190,18 +190,18 @@ export function DecisionProcessStepper({
         >
           <ModalHeader className="px-6 pb-6 text-left">{title}</ModalHeader>
           <ModalBody className="px-6 py-6">
-            <p className="text-sm text-neutral-charcoal">{body}</p>
+            <p className="text-sm text-foreground">{body}</p>
           </ModalBody>
           <ModalFooter className="px-6 py-6">
             <Button
-              color="secondary"
+              variant="outline"
               isDisabled={transitionMutation.isPending}
               onPress={() => setShowConfirmModal(false)}
             >
               {t('Cancel')}
             </Button>
             <Button
-              color="primary"
+              variant="default"
               isLoading={transitionMutation.isPending}
               onPress={handleAdvancePhase}
             >

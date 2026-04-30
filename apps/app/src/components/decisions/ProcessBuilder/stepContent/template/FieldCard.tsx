@@ -8,8 +8,8 @@ import {
 } from '@op/ui/CollapsibleConfigCard';
 import { Select, SelectItem } from '@op/ui/Select';
 import type { SortableItemControls } from '@op/ui/Sortable';
+import { Switch } from '@op/ui/Switch';
 import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
 import type { Key } from 'react';
 import { useEffect, useRef } from 'react';
@@ -127,7 +127,7 @@ export function FieldCard({
         })}
         className={cn(
           isNew && 'animate-border-highlight',
-          errors.length > 0 && 'border-functional-red',
+          errors.length > 0 && 'border-destructive',
         )}
       >
         <div className="space-y-4 px-8">
@@ -149,7 +149,6 @@ export function FieldCard({
               label={t('Type')}
               selectedKey={field.fieldType}
               onSelectionChange={handleTypeChange}
-              buttonClassName="bg-white"
               className="w-40"
             >
               {FIELD_TYPE_OPTIONS.map((opt) => (
@@ -187,7 +186,7 @@ export function FieldCard({
           {errors.length > 0 && (
             <div className="space-y-1">
               {errors.map((error) => (
-                <p key={error} className="text-functional-red">
+                <p key={error} className="text-destructive">
                   {t(error as TranslationKey)}
                 </p>
               ))}
@@ -197,9 +196,8 @@ export function FieldCard({
           {/* Footer: Required toggle + Delete button */}
           <div className="flex items-center justify-between border-t pt-4">
             <div className="flex items-center gap-2">
-              <span className="text-neutral-charcoal">{t('Required?')}</span>
-              <ToggleButton
-                size="small"
+              <span className="text-foreground">{t('Required?')}</span>
+              <Switch
                 isSelected={field.required}
                 onChange={(isSelected) =>
                   onUpdateRequired?.(field.id, isSelected)
@@ -209,11 +207,10 @@ export function FieldCard({
             </div>
             {onRemove && (
               <Button
-                color="ghost"
-                size="small"
+                variant="ghost"
                 onPress={() => onRemove(field.id)}
                 aria-label={t('Delete')}
-                className="text-neutral-gray4 hover:text-functional-red"
+                className="text-muted-foreground hover:text-destructive"
               >
                 <LuTrash2 className="size-4" />
                 {t('Delete')}
@@ -245,5 +242,5 @@ export function FieldCardDragPreview({ field }: { field: FieldView }) {
  * Drop indicator shown where a field will be placed.
  */
 export function FieldCardDropIndicator() {
-  return <div className="h-16 rounded-lg border bg-neutral-offWhite" />;
+  return <div className="h-16 rounded-lg border bg-muted" />;
 }

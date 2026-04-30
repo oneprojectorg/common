@@ -1,6 +1,10 @@
 import type { Meta } from '@storybook/react-vite';
 
-import { Breadcrumb, Breadcrumbs } from '../src/components/Breadcrumbs';
+import {
+  Breadcrumb,
+  BreadcrumbLink,
+  Breadcrumbs,
+} from '../src/components/Breadcrumbs';
 
 const meta: Meta<typeof Breadcrumbs> = {
   component: Breadcrumbs,
@@ -14,8 +18,12 @@ export default meta;
 
 export const Example = (args: any) => (
   <Breadcrumbs {...args}>
-    <Breadcrumb href="/">Home</Breadcrumb>
-    <Breadcrumb href="/react-aria">React Aria</Breadcrumb>
+    <Breadcrumb>
+      <BreadcrumbLink href="/">Home</BreadcrumbLink>
+    </Breadcrumb>
+    <Breadcrumb>
+      <BreadcrumbLink href="/react-aria">React Aria</BreadcrumbLink>
+    </Breadcrumb>
     <Breadcrumb>Breadcrumbs</Breadcrumb>
   </Breadcrumbs>
 );

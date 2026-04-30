@@ -1,0 +1,23 @@
+# Files allowed to carry `// @ts-nocheck`. One path per line, relative
+# to the repo root, comments and blank lines ignored. Adding a new
+# entry is acceptable for newly-vendored Taki files with type
+# strictness mismatches against tsgo, but should be paired with a
+# follow-up issue.
+
+# Vendored Taki primitives — type mismatches against tsgo / our RAC version
+packages/ui/src/components/ui/carousel.tsx
+packages/ui/src/components/ui/chart.tsx
+packages/ui/src/components/ui/command.tsx
+packages/ui/src/components/ui/date-picker.tsx
+packages/ui/src/components/ui/input-group.tsx
+packages/ui/src/components/ui/range-calendar.tsx
+packages/ui/src/components/ui/search-field.tsx
+packages/ui/src/components/ui/sidebar.tsx
+packages/ui/src/components/ui/slider.tsx
+packages/ui/src/components/ui/text-field.tsx
+packages/ui/src/components/ui/toggle-button-group.tsx
+packages/ui/src/components/ui/tree.tsx
+
+# Pre-existing scripts / aggregate stories
+apps/app/scripts/check-missing-intl-keys.ts
+packages/ui/stories/AllComponents.stories.tsx

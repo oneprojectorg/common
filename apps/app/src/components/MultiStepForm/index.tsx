@@ -158,7 +158,7 @@ export const MultiStepForm: React.FC<{
         error={error}
       />
       {error && (
-        <div className="mt-4 font-medium text-functional-red">{error}</div>
+        <div className="mt-4 font-medium text-destructive">{error}</div>
       )}
       {ProgressComponent ? (
         <ProgressComponent numItems={steps.length} currentStep={step + 1} />

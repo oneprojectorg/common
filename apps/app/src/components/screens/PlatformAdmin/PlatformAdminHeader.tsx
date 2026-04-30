@@ -14,7 +14,7 @@ export const PlatformAdminHeader = () => {
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-col gap-1">
-        <Header1 className="text-title-md text-neutral-black">
+        <Header1 className="text-title-md text-foreground">
           {t('Platform admin')}
         </Header1>
       </div>
@@ -22,8 +22,8 @@ export const PlatformAdminHeader = () => {
         onPress={() => {
           window.open(posthogUIHost, '_blank');
         }}
-        color="secondary"
-        size="small"
+        variant="outline"
+        size="sm"
         className="gap-2"
       >
         <LuArrowUpRight className="size-4" />

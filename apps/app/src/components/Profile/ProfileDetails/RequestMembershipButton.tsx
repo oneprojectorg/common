@@ -116,7 +116,7 @@ const RequestMembershipButtonSuspense = ({
     return (
       <DialogTrigger>
         <ButtonTooltip
-          color="secondary"
+          variant="outline"
           className="min-w-full sm:min-w-fit"
           tooltipProps={{
             children: t('Your membership request is pending approval'),
@@ -141,13 +141,13 @@ const RequestMembershipButtonSuspense = ({
                 <ModalFooter>
                   <Button
                     onPress={close}
-                    color="neutral"
+                    variant="outline"
                     className="w-full sm:w-fit"
                   >
                     {t('Keep request')}
                   </Button>
                   <Button
-                    color="destructive"
+                    variant="destructive"
                     onPress={() => handleCancelRequest(close)}
                     isPending={isPending}
                     className="w-full sm:w-fit"
@@ -165,7 +165,7 @@ const RequestMembershipButtonSuspense = ({
 
   return (
     <ButtonTooltip
-      color="secondary"
+      variant="outline"
       onPress={handleRequestMembership}
       isPending={isPending}
       className="min-w-full sm:min-w-fit"

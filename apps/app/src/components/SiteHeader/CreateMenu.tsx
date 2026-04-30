@@ -67,7 +67,7 @@ export const CreateMenu = () => {
       >
         <Button
           className="h-8 rounded-md px-2 sm:px-3"
-          color={isMobile ? 'secondary' : 'primary'}
+          variant={isMobile ? 'outline' : 'default'}
         >
           <LuPlus className="size-4" />
           <span className="hidden sm:block">{t('Create')}</span>

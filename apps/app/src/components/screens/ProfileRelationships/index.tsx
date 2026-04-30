@@ -3,7 +3,7 @@
 import { pluralize } from '@/utils/pluralize';
 import { skipBatch, trpc } from '@op/api/client';
 import { RELATIONSHIP_OPTIONS, relationshipMap } from '@op/types/relationships';
-import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
+import { Breadcrumb, BreadcrumbLink, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import React, { Suspense, useMemo, useState } from 'react';
@@ -87,8 +87,10 @@ export const ProfileRelationshipsSuspense = ({
       <div className="flex flex-col gap-4 sm:px-0">
         {showBreadcrumb ? (
           <Breadcrumbs className="hidden sm:flex">
-            <Breadcrumb href={`/org/${slug}`}>
-              {organization.profile.name}
+            <Breadcrumb>
+              <BreadcrumbLink href={`/org/${slug}`}>
+                {organization.profile.name}
+              </BreadcrumbLink>
             </Breadcrumb>
             <Breadcrumb>{t('Relationships')}</Breadcrumb>
           </Breadcrumbs>
@@ -102,13 +104,11 @@ export const ProfileRelationshipsSuspense = ({
       </div>
 
       <Tabs>
-        <TabList className="px-4 sm:px-0" variant="pill">
-          <Tab id="all" variant="pill">
-            {t('All relationships')}
-          </Tab>
+        <TabList className="px-4 sm:px-0">
+          <Tab id="all">{t('All relationships')}</Tab>
           {relationshipsSegmented.map(([noun, items]) =>
             items?.length ? (
-              <Tab id={noun} key={noun} variant="pill">
+              <Tab id={noun} key={noun}>
                 {noun}s
               </Tab>
             ) : null,
@@ -147,7 +147,7 @@ export const ProfileRelationships = ({ slug }: { slug: string }) => {
         <ErrorBoundary
           errorComponent={() => (
             <Link href="/" className="flex items-center gap-2">
-              <LuArrowLeft className="size-6 text-neutral-black" />
+              <LuArrowLeft className="size-6 text-foreground" />
             </Link>
           )}
         >

@@ -36,7 +36,7 @@ export const ListBox = <T extends object>({
       {label && (
         <Label>
           {label}
-          {isRequired && <span className="text-red"> *</span>}
+          {isRequired && <span className="text-destructive"> *</span>}
         </Label>
       )}
       <AriaListBox
@@ -57,11 +57,11 @@ export const itemStyles = tv({
   base: 'group relative flex cursor-default items-center gap-8 rounded px-2.5 py-1.5 text-sm will-change-transform forced-color-adjust-none select-none',
   variants: {
     isSelected: {
-      false: 'text-neutral-gray4 -outline-offset-2 hover:bg-neutral-300',
-      true: 'bg-neutral-gray1 text-neutral-black -outline-offset-4 [&+[data-selected]]:rounded-t-none [&:has(+[data-selected])]:rounded-b-none',
+      false: 'text-muted-foreground -outline-offset-2 hover:bg-neutral-300',
+      true: 'bg-accent text-foreground -outline-offset-4 [&+[data-selected]]:rounded-t-none [&:has(+[data-selected])]:rounded-b-none',
     },
     isDisabled: {
-      true: 'text-neutral-gray2',
+      true: 'text-muted-foreground/70',
     },
   },
 });
@@ -98,18 +98,18 @@ export const dropdownItemStyles = tv({
   base: 'group flex cursor-pointer items-center gap-4 rounded py-2 pr-1.5 pl-3 outline outline-0 forced-color-adjust-none select-none',
   variants: {
     isDisabled: {
-      false: 'text-neutral-black',
-      true: 'text-neutral-gray2',
+      false: 'text-foreground',
+      true: 'text-muted-foreground/70',
     },
     isFocused: {
-      true: 'bg-neutral-gray1',
+      true: 'bg-accent',
     },
   },
   compoundVariants: [
     {
       isFocused: false,
       isOpen: true,
-      className: 'bg-neutral-gray1',
+      className: 'bg-accent',
     },
   ],
 });
@@ -134,7 +134,7 @@ export const DropdownItem = (
     >
       {composeRenderProps(props.children, (children, { isSelected }) => (
         <>
-          <span className="flex h-full flex-1 items-center gap-2 font-normal text-inherit group-hover:bg-neutral-gray1">
+          <span className="flex h-full flex-1 items-center gap-2 font-normal text-inherit group-hover:bg-accent">
             {children}
           </span>
           <span className="flex w-5 items-center">
@@ -156,7 +156,7 @@ export const DropdownSection = <T extends object>(
 ) => {
   return (
     <ListBoxSection className="after:block after:h-[5px] after:content-[''] first:mt-[-5px]">
-      <Header className="sticky top-[-5px] z-10 -mx-1 -mt-px truncate border-y border-neutral-300 bg-neutral-gray1 px-4 py-1 text-sm font-semibold text-neutral-gray4 [&+*]:mt-1">
+      <Header className="sticky top-[-5px] z-10 -mx-1 -mt-px truncate border-y border-neutral-300 bg-accent px-4 py-1 text-sm font-semibold text-muted-foreground [&+*]:mt-1">
         {props.title}
       </Header>
       <Collection items={props.items}>{props.children}</Collection>

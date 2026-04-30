@@ -10,14 +10,14 @@ import { Popover } from './Popover';
 import { ReactionTooltip } from './ReactionTooltip';
 
 const reactionButtonStyle = tv({
-  base: 'flex items-center justify-center gap-1 rounded-full border-0 bg-neutral-offWhite p-1 text-xs leading-6 font-normal outline-hidden transition-colors duration-200 hover:bg-neutral-gray1 focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-data-blue pressed:bg-neutral-gray2',
+  base: 'flex items-center justify-center gap-1 rounded-full border-0 bg-muted p-1 text-xs leading-6 font-normal outline-hidden transition-colors duration-200 hover:bg-accent focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-chart-3 pressed:bg-muted-foreground/30',
   variants: {
     size: {
       small: 'h-8 min-w-8 px-2',
       icon: 'h-8 w-8 p-1',
     },
     active: {
-      true: 'bg-neutral-gray1',
+      true: 'bg-accent',
       false: '',
     },
   },
@@ -133,7 +133,6 @@ const ReactionPicker = ({
     <Menu className="flex" onAction={(key) => onReactionSelect(key as string)}>
       {availableOptions.map((option) => (
         <MenuItem
-          unstyled
           className="p-2"
           key={option.emoji}
           id={option.emoji}

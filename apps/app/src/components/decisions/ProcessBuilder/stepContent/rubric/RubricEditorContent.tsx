@@ -6,7 +6,7 @@ import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2 } from '@op/ui/Header';
 import { Sortable } from '@op/ui/Sortable';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { Switch } from '@op/ui/Switch';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuLeaf, LuPlus } from 'react-icons/lu';
 
@@ -314,7 +314,7 @@ export function RubricEditorContent({
             <div className="rounded-lg border p-16">
               <EmptyState icon={<LuLeaf className="size-5" />}>
                 <div className="flex flex-col items-center gap-2 text-center">
-                  <span className="font-medium text-neutral-charcoal">
+                  <span className="font-medium text-foreground">
                     {t('No review criteria yet')}
                   </span>
                   <span>
@@ -323,7 +323,7 @@ export function RubricEditorContent({
                     )}
                   </span>
                   <Button
-                    color="primary"
+                    variant="default"
                     className="mt-2"
                     onPress={handleAddCriterion}
                   >
@@ -384,7 +384,7 @@ export function RubricEditorContent({
               </Sortable>
 
               <Button
-                color="secondary"
+                variant="outline"
                 className="w-full"
                 onPress={handleAddCriterion}
               >
@@ -394,7 +394,7 @@ export function RubricEditorContent({
             </>
           )}
 
-          <hr className="border-neutral-gray1" />
+          <hr className="border-border" />
 
           <ToggleRow
             label={t('Overall Recommendation')}
@@ -402,10 +402,9 @@ export function RubricEditorContent({
               'Reviewers recommend Yes, Maybe, or No per proposal',
             )}
           >
-            <ToggleButton
+            <Switch
               isSelected={overallRecommendationEnabled}
               onChange={handleOverallRecommendationToggle}
-              size="small"
             />
           </ToggleRow>
         </div>

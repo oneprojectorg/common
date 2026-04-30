@@ -7,7 +7,7 @@ const variantStyles = tv({
   variants: {
     variant: {
       empty: '',
-      filled: 'bg-neutral-offWhite',
+      filled: 'bg-muted',
     },
   },
   defaultVariants: {

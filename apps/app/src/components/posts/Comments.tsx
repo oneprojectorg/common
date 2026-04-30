@@ -56,7 +56,7 @@ export function Comments({
   if (comments.length === 0) {
     return (
       <div
-        className="py-8 text-center text-neutral-gray4"
+        className="py-8 text-center text-muted-foreground"
         role="status"
         aria-label={t('No comments yet. Be the first to comment!')}
       >

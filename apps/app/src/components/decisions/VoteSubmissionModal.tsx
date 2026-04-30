@@ -58,7 +58,7 @@ export const VoteSubmissionModal = ({
       <ModalFooter>
         <Button
           className="w-full"
-          color="primary"
+          variant="default"
           onPress={handleSubmit}
           isDisabled={submitVoteMutation.isPending}
         >

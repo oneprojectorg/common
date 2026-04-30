@@ -21,7 +21,7 @@ export default meta;
 
 export const Example = (args: any) => (
   <DialogTrigger>
-    <Button variant="icon" aria-label="Help">
+    <Button size="icon" aria-label="Help">
       <LuCircleHelp className="size-4" />
     </Button>
     <Popover {...args} className="max-w-[250px]">

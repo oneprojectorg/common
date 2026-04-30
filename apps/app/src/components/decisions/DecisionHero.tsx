@@ -29,7 +29,7 @@ export function DecisionHero({
         <div
           className={cn(
             'flex flex-col gap-2 text-base',
-            variant !== 'results' && 'text-neutral-charcoal',
+            variant !== 'results' && 'text-foreground',
           )}
         >
           {typeof description === 'string' ? <p>{description}</p> : description}

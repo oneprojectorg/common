@@ -17,7 +17,7 @@ import { Button } from './Button';
 import { Confetti } from './Confetti';
 
 const overlayStyles = tv({
-  base: 'fixed! inset-0! z-[99999] flex items-center justify-center bg-neutral-black/15 p-4 text-center backdrop-blur-sm entering:animate-in entering:duration-300 entering:ease-out entering:fade-in exiting:animate-out exiting:duration-300 exiting:ease-in exiting:fade-out',
+  base: 'fixed! inset-0! z-[99999] flex items-center justify-center bg-foreground/15 p-4 text-center backdrop-blur-sm entering:animate-in entering:duration-300 entering:ease-out entering:fade-in exiting:animate-out exiting:duration-300 exiting:ease-in exiting:fade-out',
 });
 
 const modalStyles = tv({
@@ -83,8 +83,8 @@ export const ModalHeader = ({
             className={cn(
               'absolute right-6 flex h-6 w-6',
               'items-center justify-center',
-              'rounded-md outline-hidden hover:bg-neutral-gray1 focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2',
-              'text-neutral-charcoal',
+              'rounded-md outline-hidden hover:bg-accent focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+              'text-foreground',
             )}
           >
             <LuX className="h-6 w-6" aria-hidden="true" />
@@ -179,12 +179,12 @@ export const ModalStepper = memo(
       >
         <span className="flex-1">
           {!isFirstStep && (
-            <Button color="secondary" onPress={handlePrevious}>
+            <Button variant="outline" onPress={handlePrevious}>
               Back
             </Button>
           )}
         </span>
-        <span className="flex-1 text-center text-sm text-neutral-gray4">
+        <span className="flex-1 text-center text-sm text-muted-foreground">
           Step {currentStep} of {totalSteps}
         </span>
         <div className="flex flex-1 justify-end">

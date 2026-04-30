@@ -35,7 +35,7 @@ export const UpdateUserProfileModal = ({
     <DialogTrigger>
       <Button
         onPress={() => setIsOpen(true)}
-        color="primary"
+        variant="default"
         className="min-w-full sm:min-w-fit"
       >
         <LuPencil className="size-4" />

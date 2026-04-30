@@ -22,7 +22,7 @@ export const NoVoteFound = () => {
   const t = useTranslations();
   return (
     <EmptyState icon={<LuLeaf className="size-6" />}>
-      <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+      <Header3 className="font-serif !text-title-base font-light text-foreground">
         {t('You did not vote in this process.')}
       </Header3>
     </EmptyState>
@@ -95,8 +95,6 @@ const MyBallotProposals = ({
                 menu={
                   <Checkbox
                     isSelected={true}
-                    shape="circle"
-                    borderColor="light"
                     aria-label={t('Selected proposal')}
                     isDisabled={true}
                   />
@@ -110,7 +108,7 @@ const MyBallotProposals = ({
               <div className="border-neutral-silver h-0 w-full border-b" />
 
               <ProposalCardFooter>
-                <div className="flex items-start gap-1 text-base text-neutral-charcoal">
+                <div className="flex items-start gap-1 text-base text-foreground">
                   <span className="font-bold">{proposal.voteCount ?? 0}</span>
                   <span>{t('Total Votes')}</span>
                 </div>

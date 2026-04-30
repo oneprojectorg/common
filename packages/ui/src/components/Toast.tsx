@@ -5,7 +5,7 @@ import { LuCircleAlert, LuCircleCheck, LuX } from 'react-icons/lu';
 import { Toaster as Sonner, toast as sonnerToast } from 'sonner';
 
 import { cn } from '../lib/utils';
-import { Button } from './Button';
+import { UnstyledButton } from './Button';
 
 export const Toast = () => {
   return (
@@ -16,19 +16,15 @@ export const Toast = () => {
       visibleToasts={3}
       duration={3000}
       icons={{
-        success: (
-          <LuCircleCheck className="size-6 shrink-0 text-functional-green" />
-        ),
-        close: <LuX className="size-6 shrink-0 text-neutral-black" />,
-        error: (
-          <LuCircleAlert className="size-6 shrink-0 text-functional-red" />
-        ),
+        success: <LuCircleCheck className="size-6 shrink-0 text-positive" />,
+        close: <LuX className="size-6 shrink-0 text-foreground" />,
+        error: <LuCircleAlert className="size-6 shrink-0 text-destructive" />,
       }}
       toastOptions={{
         classNames: {
           toast:
-            'group relative text-5 toast w-full bg-neutral-offWhite rounded-lg backdrop-blur-md border text-neutral-black p-3 flex gap-3',
-          description: 'text-neutral-charcoal',
+            'group relative text-5 toast w-full bg-muted rounded-lg backdrop-blur-md border text-foreground p-3 flex gap-3',
+          description: 'text-foreground',
           actionButton:
             'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
           cancelButton:
@@ -60,13 +56,12 @@ const ToastWrapper = ({
     >
       {children}
       {dismissable && (
-        <Button
-          unstyled
+        <UnstyledButton
           className="w-6 transition-opacity hover:opacity-70"
           onPress={() => sonnerToast.dismiss(id)}
         >
           <LuX className="size-6" />
-        </Button>
+        </UnstyledButton>
       )}
     </div>
   );
@@ -81,14 +76,14 @@ const ToastBody = ({
 }) => {
   if (isSingleLine) {
     return (
-      <div className="flex w-full min-w-0 items-center gap-2 text-base text-neutral-charcoal">
+      <div className="flex w-full min-w-0 items-center gap-2 text-base text-foreground">
         {children}
       </div>
     );
   }
 
   return (
-    <div className="flex w-full flex-col gap-2 px-1 pt-1 text-base text-neutral-charcoal">
+    <div className="flex w-full flex-col gap-2 px-1 pt-1 text-base text-foreground">
       {children}
     </div>
   );
@@ -128,9 +123,7 @@ const ToastTitle = ({
   children: React.ReactNode;
 }) => {
   return (
-    <div className="font-serif text-title-base text-neutral-black">
-      {children}
-    </div>
+    <div className="font-serif text-title-base text-foreground">{children}</div>
   );
 };
 
@@ -168,7 +161,7 @@ export const toast = {
         dismissable={dismissable}
         isSingleLine={isSingleLine}
       >
-        <LuCircleCheck className="size-6 shrink-0 text-functional-green" />
+        <LuCircleCheck className="size-6 shrink-0 text-positive" />
         <ToastBody isSingleLine={isSingleLine}>
           {title && <ToastTitle>{title}</ToastTitle>}
           {message &&
@@ -233,7 +226,7 @@ export const toast = {
       ),
       {
         style: {
-          background: 'rgb(203 57 5)', // bg-functional-redBlack equivalent
+          background: 'rgb(203 57 5)', // bg-destructive equivalent
           color: 'white',
           border: 'none',
         },

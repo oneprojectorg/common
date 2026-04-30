@@ -50,9 +50,12 @@ export * from './components/Tabs';
 export * from './components/TagGroup';
 export * from './components/TextField';
 export * from './components/Toast';
-export * from './components/ToggleButton';
+export * from './components/Switch';
 export * from './components/Tooltip';
 
 // Export everything from lib and utils
+// `focusRing` from ./lib/utils (shadcn/Taki flavor) wins the barrel export;
+// legacy OP-flavored focusRing lives in ./utils and is used via direct import
+// by legacy components during migration.
 export * from './lib/utils';
-export * from './utils';
+export { composeTailwindRenderProps, filterNullOrUndefined } from './utils';

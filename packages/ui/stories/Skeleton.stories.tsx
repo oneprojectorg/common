@@ -100,7 +100,7 @@ export const Lines = () => (
 
 export const ContentLayout = () => (
   <div className="w-full max-w-md space-y-6">
-    <div className="rounded-lg border border-neutral-gray3 p-6">
+    <div className="rounded-lg border border-input p-6">
       <div className="mb-4 flex items-center gap-4">
         <Skeleton className="size-12 rounded-full" />
         <div className="flex-1">
@@ -111,7 +111,7 @@ export const ContentLayout = () => (
       <SkeletonLine lines={3} />
     </div>
 
-    <div className="rounded-lg border border-neutral-gray3 p-6">
+    <div className="rounded-lg border border-input p-6">
       <Skeleton className="mb-4 h-6 w-48" />
       <div className="grid grid-cols-2 gap-4">
         <div>
@@ -127,7 +127,7 @@ export const ContentLayout = () => (
       </div>
     </div>
 
-    <div className="rounded-lg border border-neutral-gray3 p-6">
+    <div className="rounded-lg border border-input p-6">
       <div className="mb-4 flex items-center justify-between">
         <Skeleton className="h-6 w-32" />
         <Skeleton className="h-8 w-20 rounded-lg" />

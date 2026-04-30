@@ -157,9 +157,8 @@ export default function ProposalEditorLayout({
     ? [
         <TooltipTrigger key="revision-request">
           <Button
-            color="secondary"
-            variant="icon"
-            size="small"
+            variant="outline"
+            size="icon-sm"
             onPress={toggleRevisionRequest}
             aria-label={revisionRequestLabel}
             aria-pressed={Boolean(reviewRevision)}
@@ -168,7 +167,7 @@ export default function ProposalEditorLayout({
             <LuStickyNote className="size-4" />
             <span
               aria-hidden
-              className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-primary-orange2"
+              className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-warning"
             />
           </Button>
           <Tooltip>{revisionRequestLabel}</Tooltip>
@@ -325,9 +324,8 @@ function useProposalEditorAsideHeaderIcons({
     return (
       <TooltipTrigger key={asideKey}>
         <Button
-          color="secondary"
-          variant="icon"
-          size="small"
+          variant="outline"
+          size="icon-sm"
           onPress={() => onToggleAside(asideKey)}
           aria-label={definition.label}
           aria-pressed={aside === asideKey}

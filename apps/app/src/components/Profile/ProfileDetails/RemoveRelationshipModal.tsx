@@ -61,14 +61,14 @@ export const RemoveRelationshipModal = ({
             <ModalFooter>
               <Button
                 onPress={close}
-                color="neutral"
+                variant="outline"
                 type="button"
                 className="w-full sm:w-fit"
               >
                 {t('Cancel')}
               </Button>
               <Button
-                color="destructive"
+                variant="destructive"
                 type="submit"
                 isPending={isSubmitting}
                 className="w-full sm:w-fit"

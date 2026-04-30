@@ -73,7 +73,7 @@ const RelationshipListContent = ({
               <div className="flex flex-col gap-2">
                 <div className="flex flex-col gap-2">
                   <Link
-                    className="truncate font-semibold text-neutral-black"
+                    className="truncate font-semibold text-foreground"
                     href={
                       profile.type === 'org'
                         ? `/org/${profile.slug}`
@@ -85,7 +85,7 @@ const RelationshipListContent = ({
 
                   {/* Show relationship types if available */}
                   {profile.relationships && relationshipMap ? (
-                    <div className="text-neutral-black">
+                    <div className="text-foreground">
                       {profile.relationships.map((relationship, i, arr) => (
                         <React.Fragment key={relationship.relationshipType}>
                           {relationshipMap[relationship.relationshipType]
@@ -105,7 +105,7 @@ const RelationshipListContent = ({
                     </div>
                   ) : (
                     /* Show profile type if no relationships */
-                    <div className="text-sm text-neutral-charcoal capitalize">
+                    <div className="text-sm text-foreground capitalize">
                       {profile.type === 'org'
                         ? t('Organization')
                         : t('Individual')}
@@ -114,7 +114,7 @@ const RelationshipListContent = ({
                 </div>
 
                 {profile.bio && (
-                  <div className="line-clamp-3 text-neutral-charcoal">
+                  <div className="line-clamp-3 text-foreground">
                     {profile.bio.length > 200
                       ? `${profile.bio.slice(0, 200)}...`
                       : profile.bio}

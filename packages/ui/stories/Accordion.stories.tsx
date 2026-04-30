@@ -37,7 +37,7 @@ const AccordionTitleInput = ({
       className={cn(
         'flex-1 rounded border bg-transparent px-2 py-1 font-serif text-title-sm font-medium',
         'disabled:cursor-default disabled:border-transparent',
-        'enabled:bg-neutral-gray1 enabled:focus:border enabled:focus:bg-white',
+        'enabled:bg-accent enabled:focus:border enabled:focus:bg-white',
         className,
       )}
     />
@@ -320,7 +320,7 @@ export const Controlled: Story = {
       <div className="w-[400px]">
         <div className="mb-4 flex gap-2">
           <button
-            className="text-primary-fg rounded-lg bg-primary px-3 py-1 text-sm"
+            className="rounded-lg bg-primary px-3 py-1 text-sm text-primary-fg"
             onClick={() => setExpandedKeys(new Set(['1', '2', '3']))}
           >
             Expand All
@@ -384,16 +384,16 @@ export const Unstyled: Story = {
         <AccordionItem
           id="1"
           variant="unstyled"
-          className="mb-2 rounded-lg border-2 border-dashed border-data-purple/40 bg-data-purple/10"
+          className="mb-2 rounded-lg border-2 border-dashed border-chart-1/40 bg-chart-1/10"
         >
           <AccordionHeader className="p-4">
-            <AccordionTrigger className="flex w-full items-center justify-between text-data-purple">
+            <AccordionTrigger className="flex w-full items-center justify-between text-chart-1">
               <span>Custom Styled Section 1</span>
-              <AccordionIndicator className="text-data-purple" />
+              <AccordionIndicator className="text-chart-1" />
             </AccordionTrigger>
           </AccordionHeader>
           <AccordionContent className="p-4 pt-0">
-            <p className="text-data-purple">
+            <p className="text-chart-1">
               This accordion uses unstyled mode with custom classes.
             </p>
           </AccordionContent>
@@ -402,16 +402,16 @@ export const Unstyled: Story = {
         <AccordionItem
           id="2"
           variant="unstyled"
-          className="mb-2 rounded-lg border-2 border-dashed border-primary-teal/40 bg-primary-tealWhite"
+          className="mb-2 rounded-lg border-2 border-dashed border-primary/40 bg-primary-foreground"
         >
           <AccordionHeader className="p-4">
-            <AccordionTrigger className="flex w-full items-center justify-between text-primary-tealBlack">
+            <AccordionTrigger className="flex w-full items-center justify-between text-primary">
               <span>Custom Styled Section 2</span>
-              <AccordionIndicator className="text-primary-teal" />
+              <AccordionIndicator className="text-primary" />
             </AccordionTrigger>
           </AccordionHeader>
           <AccordionContent className="p-4 pt-0">
-            <p className="text-primary-tealBlack">
+            <p className="text-primary">
               You have full control over the styling!
             </p>
           </AccordionContent>

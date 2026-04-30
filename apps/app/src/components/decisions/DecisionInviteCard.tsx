@@ -2,7 +2,7 @@
 
 import { getPublicUrl } from '@/utils';
 import { Avatar } from '@op/ui/Avatar';
-import { Button } from '@op/ui/Button';
+import { UnstyledButton } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ProfileItem } from '@op/ui/ProfileItem';
@@ -58,7 +58,7 @@ export const DecisionInviteCard = ({
             {profile.name}
           </Header2>
           <ProfileItem
-            size="small"
+            size="sm"
             className="items-center gap-1"
             avatar={
               <Avatar
@@ -78,7 +78,7 @@ export const DecisionInviteCard = ({
             title={steward?.name ?? ''}
           />
         </div>
-        <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
+        <div className="flex items-end gap-4 text-foreground sm:items-center sm:gap-12">
           <DecisionStat
             number={invite.participantCount}
             label={t('Participants')}
@@ -88,14 +88,13 @@ export const DecisionInviteCard = ({
       </div>
 
       {showDecline && (
-        <Button
-          unstyled
-          className="self-center text-sm text-primary-teal underline hover:text-primary-teal/80 disabled:opacity-50"
+        <UnstyledButton
+          className="self-center text-sm text-primary underline hover:text-primary/80 disabled:opacity-50"
           onPress={() => onDecline(invite.id)}
           isDisabled={isDeclining || isAccepting}
         >
           {isDeclining ? <LoadingSpinner /> : t("I don't want to participate")}
-        </Button>
+        </UnstyledButton>
       )}
     </div>
   );

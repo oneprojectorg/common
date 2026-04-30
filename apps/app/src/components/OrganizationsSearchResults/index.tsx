@@ -36,11 +36,11 @@ export const ProfileSearchResultsSuspense = ({
   return totalResults > 0 ? (
     <>
       <ListPageLayoutHeader>
-        <span className="text-neutral-gray4">
+        <span className="text-muted-foreground">
           {t.rich('Results for <highlight>{query}</highlight>', {
             query: query,
             highlight: (chunks: React.ReactNode) => (
-              <span className="text-neutral-black">{chunks}</span>
+              <span className="text-foreground">{chunks}</span>
             ),
           })}
         </span>
@@ -50,17 +50,17 @@ export const ProfileSearchResultsSuspense = ({
   ) : (
     <>
       <ListPageLayoutHeader className="flex justify-center gap-2">
-        <span className="text-neutral-gray4">
+        <span className="text-muted-foreground">
           {t.rich('No results for <highlight>{query}</highlight>', {
             query: query,
             highlight: (chunks: React.ReactNode) => (
-              <span className="text-neutral-black">{chunks}</span>
+              <span className="text-foreground">{chunks}</span>
             ),
           })}
         </span>
       </ListPageLayoutHeader>
       <div className="flex justify-center">
-        <span className="max-w-96 text-center text-neutral-black">
+        <span className="max-w-96 text-center text-foreground">
           {t(
             'You may want to try using different keywords, checking for typos, or adjusting your filters.',
           )}
@@ -84,16 +84,16 @@ export const TabbedProfileSearchResults = ({
   return (
     // Use the defaultSelectedKey as the key for the Tabs component so that it switches to the tab with available results.
     <Tabs key={defaultSelectedKey} defaultSelectedKey={defaultSelectedKey}>
-      <TabList variant="pill">
+      <TabList>
         {profiles.map(({ type, results }) => {
           const label = match(type, {
             [EntityType.INDIVIDUAL]: t('Individuals'),
             [EntityType.ORG]: t('Organizations'),
           });
           return (
-            <Tab id={type} variant="pill" className="gap-2" key={`${type}-tab`}>
+            <Tab id={type} className="gap-2" key={`${type}-tab`}>
               {label}
-              <span className="text-neutral-gray4">{results.length}</span>
+              <span className="text-muted-foreground">{results.length}</span>
             </Tab>
           );
         })}
@@ -108,7 +108,7 @@ export const TabbedProfileSearchResults = ({
             {results.length > 0 ? (
               <ProfileSummaryList profiles={results} />
             ) : (
-              <div className="mt-2 w-full rounded p-8 text-center text-neutral-gray4">
+              <div className="mt-2 w-full rounded p-8 text-center text-muted-foreground">
                 {t('No {type} found.', { type: label })}
               </div>
             )}

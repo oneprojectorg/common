@@ -11,8 +11,8 @@ import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalFooter } from '@op/ui/Modal';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { SelectItem } from '@op/ui/Select';
+import { Switch } from '@op/ui/Switch';
 import { toast } from '@op/ui/Toast';
-import { ToggleButton } from '@op/ui/ToggleButton';
 import { useRouter } from 'next/navigation';
 import { forwardRef, useState } from 'react';
 import { LuLink } from 'react-icons/lu';
@@ -309,7 +309,7 @@ export const UpdateOrganizationForm = forwardRef<
               onBlur={field.handleBlur}
               onChange={field.handleChange}
               inputProps={{
-                icon: <LuLink className="size-4 text-neutral-black" />,
+                icon: <LuLink className="size-4 text-foreground" />,
                 placeholder: t("Enter your organization's website here"),
               }}
               errorMessage={getFieldErrorMessage(field)}
@@ -468,7 +468,7 @@ export const UpdateOrganizationForm = forwardRef<
               {t(
                 'Does your organization serve as a network or coalition with member organizations?',
               )}
-              <field.ToggleButton
+              <field.Switch
                 isSelected={field.state.value as boolean}
                 onChange={field.handleChange}
                 aria-label={t(
@@ -488,7 +488,7 @@ export const UpdateOrganizationForm = forwardRef<
               <>
                 <ToggleRow>
                   <span>{t('Is your organization seeking funding?')}</span>
-                  <ToggleButton
+                  <Switch
                     isSelected={field.state.value as boolean}
                     onChange={field.handleChange}
                   />
@@ -522,12 +522,12 @@ export const UpdateOrganizationForm = forwardRef<
                             errorMessage={getFieldErrorMessage(field)}
                             inputProps={{
                               icon: (
-                                <LuLink className="size-4 text-neutral-black" />
+                                <LuLink className="size-4 text-foreground" />
                               ),
                               placeholder: t('Add your contribution page here'),
                             }}
                           />
-                          <span className="text-left text-sm text-neutral-gray4">
+                          <span className="text-left text-sm text-muted-foreground">
                             {t(
                               'Add a link to your donation page, Open Collective, GoFundMe or any platform where supporters can contribute or learn more about how.',
                             )}
@@ -549,7 +549,7 @@ export const UpdateOrganizationForm = forwardRef<
               <>
                 <ToggleRow>
                   <span>{t('Does your organization offer funding?')}</span>
-                  <ToggleButton
+                  <Switch
                     isSelected={field.state.value as boolean}
                     onChange={field.handleChange}
                   />
@@ -564,7 +564,7 @@ export const UpdateOrganizationForm = forwardRef<
                           {t(
                             'Are organizations currently able to apply for funding?',
                           )}
-                          <ToggleButton
+                          <Switch
                             isSelected={
                               acceptingApplicationsField.state.value as boolean
                             }
@@ -618,11 +618,11 @@ export const UpdateOrganizationForm = forwardRef<
                                           'Add a link to learn more about your funding process',
                                         ),
                                     icon: (
-                                      <LuLink className="size-4 text-neutral-black" />
+                                      <LuLink className="size-4 text-foreground" />
                                     ),
                                   }}
                                 />
-                                <span className="text-sm text-neutral-gray4">
+                                <span className="text-sm text-muted-foreground">
                                   {acceptingApplicationsField.state.value
                                     ? null
                                     : t(

@@ -39,9 +39,7 @@ export const SelectionConfirmDialog = ({
 
   return (
     <DialogTrigger isOpen={isOpen} onOpenChange={onOpenChange}>
-      <Button isDisabled={triggerDisabled} variant="primary">
-        {t('Confirm decisions')}
-      </Button>
+      <Button isDisabled={triggerDisabled}>{t('Confirm decisions')}</Button>
 
       <Modal isDismissable>
         <Dialog className="h-full">
@@ -56,7 +54,7 @@ export const SelectionConfirmDialog = ({
           <ModalFooter>
             <Button
               className="w-full"
-              color="primary"
+              variant="default"
               onPress={onConfirm}
               isDisabled={isSubmitting}
             >
@@ -82,7 +80,7 @@ const SelectedProposalsReview = ({
 
   return (
     <div className="space-y-4">
-      <p className="text-base text-neutral-charcoal">
+      <p className="text-base text-foreground">
         {t(
           'These {numProposals} proposals will move on to the {phaseName} phase',
           { numProposals: count, phaseName },
@@ -90,19 +88,19 @@ const SelectedProposalsReview = ({
       </p>
 
       <div className="space-y-2">
-        <div className="text-sm tracking-wider text-neutral-gray4 uppercase">
+        <div className="text-sm tracking-wider text-muted-foreground uppercase">
           {t('PROPOSALS TO ADVANCE')}
         </div>
 
         {proposals.map((proposal) => (
-          <ProposalCard className="bg-neutral-offWhite p-3" key={proposal.id}>
+          <ProposalCard className="bg-muted p-3" key={proposal.id}>
             <ProposalCardContent>
               <ProposalCardHeader
                 className="flex-row flex-wrap justify-between"
                 proposal={proposal}
               />
               <div className="flex items-center gap-2">
-                <span className="text-sm text-neutral-charcoal">
+                <span className="text-sm text-foreground">
                   {proposal.submittedBy?.name}
                 </span>
                 <ProposalCardCategory proposal={proposal} />

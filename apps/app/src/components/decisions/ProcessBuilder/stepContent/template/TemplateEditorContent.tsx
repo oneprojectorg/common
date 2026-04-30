@@ -405,7 +405,7 @@ export function TemplateEditorContent({
                 savedAt={autosaveStatus.savedAt}
               />
             </div>
-            <p className="text-neutral-charcoal">
+            <p className="text-foreground">
               <span className="hidden md:inline">
                 {t('Build your proposal using the tools on the left')}
               </span>
@@ -433,11 +433,12 @@ export function TemplateEditorContent({
                   locked
                 >
                   <div className="px-8 pt-2">
-                    <p className="text-neutral-charcoal">
+                    <p className="text-foreground">
                       {t('These are the categories you defined in')}{' '}
                       <Button
                         variant="link"
-                        size="inline"
+                        size="sm"
+                        className="h-auto p-0"
                         onPress={() => {
                           void setStep('general');
                           void setSection('proposalCategories');

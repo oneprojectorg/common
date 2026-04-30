@@ -77,7 +77,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
 
   return (
     <>
-      <div className="flex items-start gap-0 rounded-lg border hover:bg-primary-tealWhite sm:items-center sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1">
+      <div className="flex items-start gap-0 rounded-lg border hover:bg-primary/10 sm:items-center sm:rounded-none sm:border-0 sm:border-b sm:border-b-accent">
         <Link
           href={`/decisions/${item.slug}${isDraft ? '/edit' : ''}`}
           className="flex flex-1 flex-col gap-4 p-4 hover:no-underline sm:flex-row sm:items-center sm:justify-between"
@@ -87,9 +87,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
             currentState={currentPhaseName}
             stewardName={displayProfile?.name}
             stewardAvatarPath={displayProfile?.avatarImage?.name}
-            chipClassName={
-              isDraft ? 'bg-neutral-gray1 text-neutral-charcoal' : undefined
-            }
+            chipClassName={isDraft ? 'bg-accent text-foreground' : undefined}
           >
             {closingDate && (
               <div className="flex flex-wrap items-center gap-2 py-1 text-xs sm:gap-6">
@@ -98,7 +96,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
             )}
           </DecisionCardHeader>
 
-          <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
+          <div className="flex items-end gap-4 text-foreground sm:items-center sm:gap-12">
             <DecisionStat
               number={processInstance.participantCount ?? 0}
               label="Participants"
@@ -115,7 +113,6 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
             <OptionMenu
               variant="outline"
               className="rounded bg-white shadow-light"
-              size="medium"
             >
               <Menu className="min-w-28 p-2">
                 {canManage && (
@@ -138,7 +135,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
                   <MenuItem
                     key="delete"
                     onAction={() => setShowDeleteModal(true)}
-                    className="text-functional-red"
+                    className="text-destructive"
                   >
                     {t('Delete')}
                   </MenuItem>
@@ -182,11 +179,11 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
           </p>
         </ModalBody>
         <ModalFooter>
-          <Button color="secondary" onPress={() => setShowDeleteModal(false)}>
+          <Button variant="outline" onPress={() => setShowDeleteModal(false)}>
             {isDraft ? t('Keep draft') : t('Cancel')}
           </Button>
           <Button
-            color="destructive"
+            variant="destructive"
             onPress={handleDeleteConfirm}
             isDisabled={deleteMutation.isPending}
           >
@@ -229,7 +226,7 @@ export const ProfileDecisionListItem = ({
       >
         <div className="flex flex-col flex-wrap gap-2 py-1 text-xs sm:flex-row sm:items-center sm:justify-between">
           {closingDate && <DecisionClosingDate closingDate={closingDate} />}
-          <div className="flex items-end gap-4 text-neutral-black">
+          <div className="flex items-end gap-4 text-foreground">
             <DecisionStat
               number={processInstance.participantCount ?? 0}
               label="Participants"
@@ -269,7 +266,7 @@ export const LegacyDecisionListItem = ({
   return (
     <Link
       href={href}
-      className="flex flex-col gap-4 rounded-lg border p-4 hover:bg-primary-tealWhite hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1"
+      className="flex flex-col gap-4 rounded-lg border p-4 hover:bg-primary/10 hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b sm:border-b-accent"
     >
       <DecisionCardHeader
         name={name}
@@ -284,7 +281,7 @@ export const LegacyDecisionListItem = ({
         )}
       </DecisionCardHeader>
 
-      <div className="flex items-end gap-4 text-neutral-black sm:items-center sm:gap-12">
+      <div className="flex items-end gap-4 text-foreground sm:items-center sm:gap-12">
         <DecisionStat number={participantCount} label="Participants" />
         <DecisionStat number={proposalCount} label="Proposals" />
       </div>
@@ -319,13 +316,11 @@ const DecisionClosingDate = ({ closingDate }: { closingDate: string }) => {
   return (
     <div className="flex items-center gap-1">
       <LuCalendar
-        className={`size-4 ${isClosingSoon(closingDate) ? 'text-functional-red' : 'text-neutral-charcoal'}`}
+        className={`size-4 ${isClosingSoon(closingDate) ? 'text-destructive' : 'text-foreground'}`}
       />
       <span
         className={cn(
-          isClosingSoon(closingDate)
-            ? 'text-functional-red'
-            : 'text-neutral-charcoal',
+          isClosingSoon(closingDate) ? 'text-destructive' : 'text-foreground',
           'text-sm',
         )}
       >

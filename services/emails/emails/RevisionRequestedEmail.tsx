@@ -27,7 +27,7 @@ export const RevisionRequestedEmail = ({
       <Section className="pb-0">
         <Button
           href={proposalUrl}
-          className="rounded-lg bg-primary-teal px-4 py-3 text-white no-underline hover:bg-primary-teal/90"
+          className="rounded-lg bg-primary px-4 py-3 text-white no-underline hover:bg-primary/90"
           style={{
             fontSize: '0.875rem',
             textAlign: 'center',
@@ -38,7 +38,7 @@ export const RevisionRequestedEmail = ({
         </Button>
       </Section>
 
-      <Text className="mt-8 mb-0 text-xs text-neutral-gray4">
+      <Text className="mt-8 mb-0 text-xs text-muted-foreground">
         You're receiving this because you're the author of this proposal.
       </Text>
     </EmailTemplate>

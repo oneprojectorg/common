@@ -161,7 +161,7 @@ export const MultiSelectComboBox = ({
       {label && (
         <Label>
           {label}
-          {isRequired && <span className="text-functional-red"> *</span>}
+          {isRequired && <span className="text-destructive"> *</span>}
         </Label>
       )}
 
@@ -169,8 +169,8 @@ export const MultiSelectComboBox = ({
         <div
           className={`flex min-h-10 w-full cursor-pointer items-center rounded-lg border bg-white px-3 py-2 text-base ${
             errorMessage
-              ? 'border-functional-red'
-              : 'border-offWhite hover:border-neutral-gray2'
+              ? 'border-destructive'
+              : 'border-border hover:border-input'
           }`}
           onClick={() => {
             if (document.activeElement !== inputRef.current) {
@@ -190,7 +190,7 @@ export const MultiSelectComboBox = ({
               aria-expanded={isOpen}
               aria-controls={listboxId}
               aria-autocomplete="list"
-              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent pr-7 text-base outline-hidden placeholder:text-neutral-gray4"
+              className="ml-1 min-w-[40px] flex-1 border-none bg-transparent pr-7 text-base outline-hidden placeholder:text-muted-foreground"
               value={inputValue}
               onChange={handleInputChange}
               onKeyDown={handleInputKeyDown}
@@ -201,7 +201,7 @@ export const MultiSelectComboBox = ({
               }}
               placeholder={placeholder}
             />
-            <span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-neutral-charcoal">
+            <span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-foreground">
               {isLoading ? (
                 <LoadingSpinner className="size-4" color="gray" />
               ) : (
@@ -228,7 +228,7 @@ export const MultiSelectComboBox = ({
       </div>
 
       {errorMessage && (
-        <p className="text-sm text-functional-red">
+        <p className="text-sm text-destructive">
           {typeof errorMessage === 'function'
             ? errorMessage({
                 isInvalid: true,
@@ -273,8 +273,8 @@ export const MultiSelectComboBox = ({
                     (_className, renderProps) =>
                       `flex flex-col items-start px-3 py-2 text-base outline-none ${
                         isParent
-                          ? 'cursor-default text-sm text-neutral-gray4'
-                          : `cursor-pointer hover:bg-neutral-gray1 ${renderProps.isFocused ? 'bg-neutral-gray1' : ''}`
+                          ? 'cursor-default text-sm text-muted-foreground'
+                          : `cursor-pointer hover:bg-accent ${renderProps.isFocused ? 'bg-accent' : ''}`
                       }`,
                   )}
                   style={{
@@ -282,12 +282,12 @@ export const MultiSelectComboBox = ({
                   }}
                 >
                   <span
-                    className={isParent ? 'text-sm text-neutral-gray4' : ''}
+                    className={isParent ? 'text-sm text-muted-foreground' : ''}
                   >
                     {option.label}
                   </span>
                   {showDefinitions && option.definition && !isParent ? (
-                    <span className="overflow-hidden text-left text-sm text-wrap text-ellipsis text-neutral-charcoal">
+                    <span className="overflow-hidden text-left text-sm text-wrap text-ellipsis text-foreground">
                       {option.definition}
                     </span>
                   ) : null}

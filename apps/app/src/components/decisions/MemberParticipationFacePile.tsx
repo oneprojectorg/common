@@ -50,7 +50,7 @@ export const MemberParticipationFacePile = ({
           </Link>
         ))}
       >
-        <span className="w-fit text-sm text-neutral-charcoal">
+        <span className="w-fit text-sm text-foreground">
           {submitters.length} {pluralize(t('member'), submitters.length)}{' '}
           {submitters.length > 1 ? t('have') : t('has')}{' '}
           {t('submitted proposals')}

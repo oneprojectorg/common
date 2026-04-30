@@ -5,7 +5,7 @@ import type { ReviewsPolicy } from '@op/common';
 import { Chip } from '@op/ui/Chip';
 import { Header2, Header3 } from '@op/ui/Header';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { Switch } from '@op/ui/Switch';
 import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -74,37 +74,36 @@ export function ReviewSettingsContent({
           }
           aria-label={t('Coverage')}
           label={t('How should proposals get distributed to reviewers?')}
-          labelClassName="text-sm font-normal text-neutral-gray4"
           orientation="vertical"
         >
           <Radio value="full_coverage">
             <div className="flex flex-col">
-              <span className="text-base text-neutral-charcoal">
+              <span className="text-base text-foreground">
                 {t('Full coverage')}
               </span>
-              <span className="text-sm text-neutral-gray4">
+              <span className="text-sm text-muted-foreground">
                 {t('Every reviewer scores every proposal')}
               </span>
             </div>
           </Radio>
           <Radio value="self_selection" isDisabled className="opacity-50">
             <div className="flex flex-col">
-              <span className="flex items-center gap-2 text-base text-neutral-charcoal">
+              <span className="flex items-center gap-2 text-base text-foreground">
                 {t('Self-selection')}
                 <Chip className="opacity-100">{t('Coming soon')}</Chip>
               </span>
-              <span className="text-sm text-neutral-gray4">
+              <span className="text-sm text-muted-foreground">
                 {t('Reviewers choose what proposals to review')}
               </span>
             </div>
           </Radio>
           <Radio value="random_assignment" isDisabled className="opacity-50">
             <div className="flex flex-col">
-              <span className="flex items-center gap-2 text-base text-neutral-charcoal">
+              <span className="flex items-center gap-2 text-base text-foreground">
                 {t('Random assignment')}
                 <Chip className="opacity-100">{t('Coming soon')}</Chip>
               </span>
-              <span className="text-sm text-neutral-gray4">
+              <span className="text-sm text-muted-foreground">
                 {t('Proposals are randomly distributed among reviewers')}
               </span>
             </div>
@@ -112,7 +111,7 @@ export function ReviewSettingsContent({
         </RadioGroup>
       </section>
 
-      <hr className="border-neutral-gray1" />
+      <hr className="border-border" />
 
       {/* Revisions */}
       <section className="space-y-4">
@@ -124,10 +123,9 @@ export function ReviewSettingsContent({
               'Reviewers can ask authors to revise their proposal before scoring',
             )}
           >
-            <ToggleButton
+            <Switch
               isSelected={settings.reviewsAllowRevisions}
               onChange={(val) => updateSettings({ reviewsAllowRevisions: val })}
-              size="small"
             />
           </ToggleRow>
         </div>

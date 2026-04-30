@@ -13,7 +13,7 @@ export function RevisedOnBadge({ respondedAt }: { respondedAt: string }) {
   const t = useTranslations();
   return (
     <span className="flex items-center gap-1">
-      <LuRefreshCw className="size-4 text-primary-orange2" />
+      <LuRefreshCw className="size-4 text-warning" />
       {t('Revised on')} {formatDate(respondedAt)}
     </span>
   );
@@ -25,12 +25,12 @@ export function AuthorRevisionNote({ comment }: { comment: string }) {
 
   return (
     <>
-      <div className="flex flex-col gap-3 rounded-lg border border-neutral-gray1 bg-neutral-offWhite p-4">
-        <span className="font-serif text-title-sm14 text-neutral-black">
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted p-4">
+        <span className="font-serif text-title-sm14 text-foreground">
           {t("Author's revision note")}
         </span>
         <div className="flex flex-col gap-2">
-          <p className="text-base whitespace-pre-wrap text-neutral-charcoal">
+          <p className="text-base whitespace-pre-wrap text-foreground">
             {comment}
           </p>
           <Link

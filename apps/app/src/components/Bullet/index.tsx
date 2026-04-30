@@ -1,1 +1,1 @@
-export const Bullet = () => <span className="text-neutral-gray4">•</span>;
+export const Bullet = () => <span className="text-muted-foreground">•</span>;

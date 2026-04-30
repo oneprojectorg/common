@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 @import './tokens.css';
 @import './tw-animate.css';
-@import './intent-ui-theme.css';
+@import './shadcn-theme.css';
 
 /* Tell Tailwind where to scan for classes in the UI package */
 @source '../ui/src/**/*.{js,ts,jsx,tsx}';
@@ -37,7 +37,17 @@
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-neutral-gray1, currentColor);
+    border-color: var(--color-border, currentColor);
+  }
+
+  /*
+   * Tailwind v4 switched buttons from cursor: pointer to cursor: default.
+   * Restore the legacy behaviour per the shadcn install guide so our
+   * Taki-backed buttons feel clickable.
+   */
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
   }
 }
 
@@ -55,14 +65,6 @@
    * center: true, padding: 2rem, screens: { '2xl': '1400px' }
    * ============================================ */
 
-  /* ============================================
-   * Border Radius
-   * ============================================ */
-  --radius-sm: 0.125rem;
-  --radius: 0.25rem;
-  --radius-md: 0.25rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
 
   /* ============================================
    * Font Families
@@ -140,7 +142,7 @@
   --text-title-sm12--font-weight: 300;
   --text-title-sm12--letter-spacing: -0.01125rem;
 
-  /* Body sizes (override defaults with custom weights) */
+  /* Body sizes (override Tailwind defaults with our custom scale + weight) */
   --text-xs: 0.625rem;
   --text-xs--line-height: 150%;
   --text-xs--font-weight: 400;
@@ -163,103 +165,12 @@
   --spacing-editor-topbar: 4rem;
   --spacing-18: 4.5rem;
 
-  /* ============================================
-   * Colors - Teal
-   * ============================================ */
-  --color-teal-50: hsl(var(--op-teal-50));
-  --color-teal-100: hsl(var(--op-teal-100));
-  --color-teal-200: hsl(var(--op-teal-200));
-  --color-teal-300: hsl(var(--op-teal-300));
-  --color-teal: hsl(var(--op-teal-500));
-
-  /* ============================================
-   * Colors - Red
-   * ============================================ */
-  --color-red-100: hsl(var(--op-red-100));
-  --color-red-300: hsl(var(--op-red-300));
-  --color-red-600: hsl(var(--op-red-600));
-  --color-red-700: hsl(var(--op-red-700));
-  --color-red: hsl(var(--op-red-500));
-
-  /* ============================================
-   * Colors - Green
-   * ============================================ */
-  --color-green-500: hsl(var(--op-green-500));
-  --color-green-700: hsl(var(--op-green-700));
-  --color-green: hsl(var(--op-green-500));
-
-  /* ============================================
-   * Colors - Semantic Neutrals
-   * ============================================ */
-  --color-black: hsl(var(--op-neutral-950));
-  --color-charcoal: hsl(var(--op-neutral-900));
-  --color-darkGray: hsl(var(--op-neutral-700));
-  --color-midGray: hsl(var(--op-neutral-500));
-  --color-lightGray: hsl(var(--op-neutral-400));
-  --color-offWhite: hsl(var(--op-neutral-200));
-  --color-whiteish: hsl(var(--op-neutral-50));
-  --color-white: hsl(var(--op-white));
-
-  /* ============================================
-   * Colors - Border
-   * ============================================ */
-  --color-border: hsl(var(--op-offWhite));
-
-  /* ============================================
-   * Colors - Primary
-   * ============================================ */
-  --color-primary: hsl(var(--op-teal-500));
-  --color-primary-teal: hsl(var(--op-teal-500));
-  --color-primary-tealWhite: hsl(var(--op-teal-white));
-  --color-primary-tealBlack: hsl(var(--op-teal-600));
-  --color-primary-yellow: hsl(var(--op-yellow-500));
-  --color-primary-orange1: hsl(var(--op-orange1-500));
-  --color-primary-orange2: hsl(var(--op-orange2-500));
-
-  /* ============================================
-   * Colors - Neutral (semantic aliases)
-   * ============================================ */
-  --color-neutral-offWhite: hsl(var(--op-neutral-50));
-  --color-neutral-gray1: hsl(var(--op-neutral-200));
-  --color-neutral-gray2: hsl(var(--op-neutral-400));
-  --color-neutral-gray3: hsl(var(--op-neutral-500));
-  --color-neutral-gray4: hsl(var(--op-neutral-700));
-  --color-neutral-charcoal: hsl(var(--op-neutral-900));
-  --color-neutral-black: hsl(var(--op-neutral-950));
-
-  /* ============================================
-   * Colors - Functional
-   * ============================================ */
-  --color-functional-red: hsl(var(--op-red-500));
-  --color-functional-redBlack: hsl(var(--op-red-600));
-  --color-functional-redWhite: hsl(var(--op-red-50));
-  --color-functional-green: hsl(var(--op-green-500));
-  --color-functional-greenWhite: hsl(var(--op-green-50));
-  --color-functional-yellowWhite: hsl(var(--op-yellow-50));
-  --color-status-green: hsl(var(--op-status-green));
-  --color-status-greenBg: hsl(var(--op-status-green-bg));
-
-  /* ============================================
-   * Colors - Data Visualization
-   * ============================================ */
-  --color-data-purple: hsl(var(--op-purple-500));
-  --color-data-blue: hsl(var(--op-blue-500));
-
-  /* ============================================
-   * Colors - Accent (from tailwindcss/colors.neutral)
-   * These are the default Tailwind neutral palette
-   * ============================================ */
-  --color-accent-50: #fafafa;
-  --color-accent-100: #f5f5f5;
-  --color-accent-200: #e5e5e5;
-  --color-accent-300: #d4d4d4;
-  --color-accent-400: #a3a3a3;
-  --color-accent-500: #737373;
-  --color-accent-600: #525252;
-  --color-accent-700: #404040;
-  --color-accent-800: #262626;
-  --color-accent-900: #171717;
-  --color-accent-950: #0a0a0a;
+  /*
+   * Colors are defined in shadcn-theme.css against shadcn token names
+   * (--color-background, --color-primary, --color-destructive, etc.).
+   * OP-specific class names (text-primary-teal, bg-neutral-gray1, etc.)
+   * are no longer first-class — use shadcn token classes instead.
+   */
 
   /* ============================================
    * Box Shadows
@@ -399,18 +310,18 @@
 
   /* Base body styles */
   body {
-    background-color: var(--color-white);
+    background-color: var(--color-background);
     font-family: var(--font-sans);
-    color: var(--color-neutral-charcoal);
+    color: var(--color-foreground);
   }
 
   /* Placeholder styles */
   input::placeholder {
-    color: var(--color-neutral-gray3);
+    color: var(--color-muted-foreground);
   }
 
   textarea::placeholder {
-    color: var(--color-neutral-gray3);
+    color: var(--color-muted-foreground);
   }
 
   /* Hide Google extension bubble */
@@ -426,7 +337,7 @@
   /* Default hr styling - Tailwind v4 reset removes borders */
   hr {
     border-top-width: 1px;
-    border-color: var(--color-neutral-gray1);
+    border-color: var(--color-border);
   }
 
   /* Only show focus outlines for keyboard navigation, not mouse clicks */
@@ -443,7 +354,7 @@
 @utility better-scrollbar {
   overflow-y: scroll;
   scrollbar-width: thin;
-  scrollbar-color: var(--color-neutral-gray4) transparent;
+  scrollbar-color: var(--color-muted-foreground) transparent;
 }
 
 @utility scrollable-hidden-scrollbar {
@@ -491,7 +402,7 @@
 /* Border glow utility */
 @utility border-glow {
   border: 1px solid
-    color-mix(in srgb, var(--color-neutral-gray3) 50%, transparent);
+    color-mix(in srgb, var(--color-muted-foreground) 50%, transparent);
   background-clip: padding-box;
   backdrop-filter: blur(40px) contrast(1.5) saturate(3);
   box-shadow:
@@ -553,11 +464,11 @@
 @keyframes border-highlight {
   0%,
   40% {
-    border-color: var(--color-primary-teal);
+    border-color: var(--color-primary);
   }
 
   100% {
-    border-color: var(--color-neutral-gray1);
+    border-color: var(--color-border);
   }
 }
 

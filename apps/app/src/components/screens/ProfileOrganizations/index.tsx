@@ -2,7 +2,7 @@
 
 import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
-import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
+import { Breadcrumb, BreadcrumbLink, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import { type ReactNode, Suspense } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
@@ -36,7 +36,11 @@ export const ProfileOrganizationsSuspense = ({
       <div className="flex flex-col gap-4 sm:px-0">
         {showBreadcrumb ? (
           <Breadcrumbs className="hidden sm:flex">
-            <Breadcrumb href={`/org/${slug}`}>{profile.name}</Breadcrumb>
+            <Breadcrumb>
+              <BreadcrumbLink href={`/org/${slug}`}>
+                {profile.name}
+              </BreadcrumbLink>
+            </Breadcrumb>
             <Breadcrumb>Organizations</Breadcrumb>
           </Breadcrumbs>
         ) : null}
@@ -62,8 +66,8 @@ export const OrganizationNameSuspense = ({ slug }: { slug: string }) => {
       href={`/org/${organization.profile.slug}`}
       className="flex items-center gap-2"
     >
-      <LuArrowLeft className="size-6 text-neutral-black" />
-      <div className="flex items-center gap-1 text-sm font-semibold text-neutral-black">
+      <LuArrowLeft className="size-6 text-foreground" />
+      <div className="flex items-center gap-1 text-sm font-semibold text-foreground">
         <OrganizationAvatar profile={organization.profile} className="size-6" />
         {organization.profile.name}
       </div>

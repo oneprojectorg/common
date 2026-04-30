@@ -30,13 +30,13 @@ export function SaveStatusIndicator({
       {status === 'saving' && (
         <>
           <LoadingSpinner className="size-4" />
-          <span className="text-neutral-gray4">{t('Saving...')}</span>
+          <span className="text-muted-foreground">{t('Saving...')}</span>
         </>
       )}
       {status === 'saved' && (
         <>
-          <LuCheck className="size-4 text-functional-green" />
-          <span className="text-neutral-gray4">
+          <LuCheck className="size-4 text-positive" />
+          <span className="text-muted-foreground">
             {savedAt
               ? t('Saved at {time}', { time: formatTime(savedAt) })
               : t('Saved')}
@@ -45,8 +45,8 @@ export function SaveStatusIndicator({
       )}
       {status === 'error' && (
         <>
-          <LuX className="size-4 text-functional-red" />
-          <span className="text-functional-red">{t('Failed to save')}</span>
+          <LuX className="size-4 text-destructive" />
+          <span className="text-destructive">{t('Failed to save')}</span>
         </>
       )}
     </div>

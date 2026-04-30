@@ -126,7 +126,7 @@ export const WithCharacterLimit = () => (
         <h3 className="font-serif text-title-sm">
           Character limit with error and helper text
         </h3>
-        <p className="text-sm text-neutral-charcoal">
+        <p className="text-sm text-foreground">
           Note that the helper text is replaced by the error message. But when a
           value is entered, the error message is replaced by the helper text.
         </p>

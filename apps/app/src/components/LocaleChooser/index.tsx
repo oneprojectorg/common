@@ -1,12 +1,11 @@
 'use client';
 
-import { useMediaQuery } from '@op/hooks';
-import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
 import { IconButton } from '@op/ui/IconButton';
-import { Select, SelectItem } from '@op/ui/Select';
+import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
+import { Popover } from '@op/ui/Popover';
 import { cn } from '@op/ui/utils';
 import { useParams } from 'next/navigation';
+import type { Key } from 'react';
 import { LuGlobe } from 'react-icons/lu';
 
 import { useRouter as useI18nRouter, usePathname } from '@/lib/i18n';
@@ -27,14 +26,13 @@ const localeDisplayNames: Record<string, string> = {
 
 export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
   const t = useTranslations();
-  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
   const i18nRouter = useI18nRouter();
   const pathname = usePathname();
   const params = useParams();
   const currentLocale = params.locale as string;
 
-  const handleSelectionChange = (selectedKey: React.Key) => {
-    const newLocale = selectedKey as string;
+  const handleAction = (key: Key) => {
+    const newLocale = key as string;
     if (newLocale !== currentLocale) {
       i18nRouter.replace(pathname, { locale: newLocale });
     }
@@ -42,48 +40,27 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
   };
 
   return (
-    <Select
-      selectedKey={currentLocale}
-      onSelectionChange={handleSelectionChange}
-      aria-label={t('Select language')}
-      customTrigger={
-        <>
-          <IconButton
-            variant="outline"
-            size="medium"
-            className="hidden text-primary-teal sm:flex"
-          >
-            <LuGlobe className="size-4" />
-          </IconButton>
-          {isMobile ? (
-            <Button
-              color="neutral"
-              unstyled
-              variant="icon"
-              className="flex size-8 items-center justify-center rounded-full bg-neutral-offWhite sm:hidden"
+    <MenuTrigger>
+      <IconButton
+        variant="outline"
+        aria-label={t('Select language')}
+        className="text-primary"
+      >
+        <LuGlobe className="size-4" />
+      </IconButton>
+      <Popover placement="bottom end">
+        <Menu onAction={handleAction}>
+          {i18nConfig.locales.map((locale) => (
+            <MenuItem
+              key={locale}
+              id={locale}
+              className={cn(currentLocale === locale && 'text-primary')}
             >
-              <LuGlobe className="size-4" />
-            </Button>
-          ) : null}
-        </>
-      }
-    >
-      {i18nConfig.locales.map((locale) => (
-        <SelectItem
-          key={locale}
-          id={locale}
-          className={cn(currentLocale === locale && 'text-primary-teal')}
-        >
-          <div
-            className={cn(
-              'flex items-center justify-between',
-              currentLocale === locale && 'text-primary-teal',
-            )}
-          >
-            <span>{localeDisplayNames[locale] || locale}</span>
-          </div>
-        </SelectItem>
-      ))}
-    </Select>
+              {localeDisplayNames[locale] || locale}
+            </MenuItem>
+          ))}
+        </Menu>
+      </Popover>
+    </MenuTrigger>
   );
 };

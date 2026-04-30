@@ -72,7 +72,7 @@ const ActiveDecisionsNotificationsSuspense = () => {
               />
               <NotificationPanelActions>
                 <ButtonLink
-                  size="small"
+                  size="sm"
                   className="w-full sm:w-auto"
                   href={`/decisions/${decision.slug}`}
                   onPress={() => setNavigatingId(decision.id)}
@@ -100,7 +100,7 @@ export const ActiveDecisionsNotifications = () => {
 };
 
 const RevisionRequestIcon = () => (
-  <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary-orange2/10 text-primary-orange2">
+  <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-warning/10 text-warning">
     <LuPenLine className="size-6" />
   </div>
 );
@@ -134,15 +134,15 @@ const RevisionRequestRow = ({
       />
       <NotificationPanelActions>
         <Button
-          size="small"
-          color="secondary"
+          size="sm"
+          variant="outline"
           className="w-full sm:w-auto"
           onPress={() => setDismissed(true)}
         >
           {t('Ignore')}
         </Button>
         <ButtonLink
-          size="small"
+          size="sm"
           className="w-full sm:w-auto"
           href={editHref}
           onPress={() => setNavigating(true)}

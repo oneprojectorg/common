@@ -118,8 +118,8 @@ const JoinProfileRequestsNotificationsSuspense = ({
               />
               <NotificationPanelActions>
                 <Button
-                  size="small"
-                  color="secondary"
+                  size="sm"
+                  variant="outline"
                   className="w-full sm:w-auto"
                   onPress={() =>
                     handleUpdateRequest(
@@ -132,7 +132,7 @@ const JoinProfileRequestsNotificationsSuspense = ({
                   {isLoadingReject ? <LoadingSpinner /> : t('Decline')}
                 </Button>
                 <Button
-                  size="small"
+                  size="sm"
                   className="w-full sm:w-auto"
                   onPress={() =>
                     handleUpdateRequest(

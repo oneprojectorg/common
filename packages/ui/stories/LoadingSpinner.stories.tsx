@@ -75,28 +75,28 @@ export const Large = {
 
 export const InContext = () => (
   <div className="space-y-8">
-    <div className="rounded-lg border border-neutral-gray3 p-6">
+    <div className="rounded-lg border border-input p-6">
       <div className="flex items-center gap-3">
         <LoadingSpinner className="size-4" />
         <span className="text-sm">Loading...</span>
       </div>
     </div>
 
-    <div className="rounded-lg border border-neutral-gray3 p-6">
+    <div className="rounded-lg border border-input p-6">
       <div className="flex flex-col items-center gap-3">
         <LoadingSpinner className="size-8" />
-        <span className="text-sm text-neutral-gray3">
+        <span className="text-sm text-muted-foreground">
           Please wait while we process your request
         </span>
       </div>
     </div>
 
-    <div className="rounded-lg border border-neutral-gray3 p-6">
+    <div className="rounded-lg border border-input p-6">
       <div className="flex min-h-[200px] items-center justify-center">
         <div className="text-center">
           <LoadingSpinner className="mx-auto mb-4 size-12" />
           <h3 className="font-medium">Loading content</h3>
-          <p className="text-sm text-neutral-gray3">
+          <p className="text-sm text-muted-foreground">
             This may take a few moments
           </p>
         </div>

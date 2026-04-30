@@ -30,7 +30,7 @@ const SamplePane = ({
   tone: 'muted' | 'plain';
 }) => (
   <div
-    className={`flex flex-col gap-4 ${tone === 'muted' ? 'text-neutral-gray4' : 'text-charcoal'}`}
+    className={`flex flex-col gap-4 ${tone === 'muted' ? 'text-muted-foreground' : 'text-foreground'}`}
   >
     <h2 className="text-title-base">{title}</h2>
     {Array.from({ length: 12 }).map((_, i) => (

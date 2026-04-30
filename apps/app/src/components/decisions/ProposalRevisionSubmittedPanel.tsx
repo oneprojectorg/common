@@ -20,12 +20,12 @@ export function ProposalRevisionSubmittedPanel({
 
   return (
     <div className="flex flex-col gap-6 px-12 pt-12 pb-4">
-      <div className="flex flex-col gap-4 border-b border-neutral-gray1 pb-4">
+      <div className="flex flex-col gap-4 border-b border-border pb-4">
         <Header3 className="font-serif text-title-base">
           {t('Revision submitted')}
         </Header3>
 
-        <p className="text-neutral-black">
+        <p className="text-foreground">
           {t(
             'Your revision has been submitted and reviewers have been notified.',
           )}
@@ -33,7 +33,7 @@ export function ProposalRevisionSubmittedPanel({
       </div>
 
       <div className="flex flex-col gap-4">
-        <span className="font-serif text-title-sm14 text-neutral-charcoal">
+        <span className="font-serif text-title-sm14 text-foreground">
           {t('Reviewer feedback')}
         </span>
 
@@ -46,7 +46,7 @@ export function ProposalRevisionSubmittedPanel({
 
       {responseComment && (
         <div className="flex flex-col gap-4">
-          <span className="font-serif text-title-sm14 text-neutral-charcoal">
+          <span className="font-serif text-title-sm14 text-foreground">
             {t('Your revision note')}
           </span>
 

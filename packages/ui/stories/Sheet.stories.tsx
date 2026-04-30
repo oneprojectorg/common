@@ -27,7 +27,7 @@ export const BottomSheet = () => (
               <button
                 key={item}
                 type="button"
-                className="flex h-10 items-center rounded-lg px-4 text-sm hover:bg-neutral-gray1"
+                className="flex h-10 items-center rounded-lg px-4 text-sm hover:bg-accent"
               >
                 {item}
               </button>
@@ -88,7 +88,7 @@ export const LeftSheet = () => (
             <button
               key={item}
               type="button"
-              className="flex h-10 items-center rounded-lg px-4 text-sm hover:bg-neutral-gray1"
+              className="flex h-10 items-center rounded-lg px-4 text-sm hover:bg-accent"
             >
               {item}
             </button>
@@ -102,11 +102,11 @@ export const LeftSheet = () => (
 export const AllSides = () => (
   <div className="flex flex-wrap gap-3">
     <SheetTrigger>
-      <Button color="secondary">Bottom</Button>
+      <Button variant="outline">Bottom</Button>
       <Sheet side="bottom">
         <SheetHeader>Bottom Sheet</SheetHeader>
         <SheetBody className="p-4">
-          <p className="text-sm text-neutral-gray4">
+          <p className="text-sm text-muted-foreground">
             Slides up from the bottom. Useful for mobile navigation menus.
           </p>
         </SheetBody>
@@ -114,11 +114,11 @@ export const AllSides = () => (
     </SheetTrigger>
 
     <SheetTrigger>
-      <Button color="secondary">Right</Button>
+      <Button variant="outline">Right</Button>
       <Sheet side="right">
         <SheetHeader>Right Sheet</SheetHeader>
         <SheetBody className="p-4">
-          <p className="text-sm text-neutral-gray4">
+          <p className="text-sm text-muted-foreground">
             Slides in from the right. Useful for detail panels and filters.
           </p>
         </SheetBody>
@@ -126,11 +126,11 @@ export const AllSides = () => (
     </SheetTrigger>
 
     <SheetTrigger>
-      <Button color="secondary">Left</Button>
+      <Button variant="outline">Left</Button>
       <Sheet side="left">
         <SheetHeader>Left Sheet</SheetHeader>
         <SheetBody className="p-4">
-          <p className="text-sm text-neutral-gray4">
+          <p className="text-sm text-muted-foreground">
             Slides in from the left. Useful for sidebars and navigation.
           </p>
         </SheetBody>

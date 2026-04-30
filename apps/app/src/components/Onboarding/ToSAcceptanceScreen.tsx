@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
+import { Button, UnstyledButton } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
@@ -63,7 +63,7 @@ export const ToSAcceptanceScreen = ({
 
           <Button
             className="w-full"
-            color="neutral"
+            variant="outline"
             onPress={onGoBack}
             isDisabled={isSubmitting}
           >
@@ -94,13 +94,13 @@ function PolicyCheckbox({
 
   return (
     <div className="flex items-center gap-1">
-      <Checkbox size="small" value={'' + checked} onChange={onChange}>
+      <Checkbox value={'' + checked} onChange={onChange}>
         {t('I accept the')}{' '}
       </Checkbox>
       <DialogTrigger>
-        <Button unstyled className="text-sm text-primary-teal hover:underline">
+        <UnstyledButton className="text-sm text-primary hover:underline">
           {label}
-        </Button>
+        </UnstyledButton>
         <Modal
           className="h-screen max-h-none w-screen max-w-none overflow-y-auto sm:h-auto sm:max-h-[75vh] sm:w-[36rem] sm:max-w-[36rem]"
           isDismissable

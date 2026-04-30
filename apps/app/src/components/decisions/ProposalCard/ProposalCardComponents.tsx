@@ -122,7 +122,7 @@ export function ProposalCardTitle({
     cardTranslation?.title ??
     (title || proposal.profile.name || t('Untitled Proposal'));
   const titleClasses =
-    'max-w-full truncate text-nowrap font-serif !text-title-sm text-neutral-black';
+    'max-w-full truncate text-nowrap font-serif !text-title-sm text-foreground';
 
   if (asLink && viewHref) {
     return (
@@ -131,7 +131,7 @@ export function ProposalCardTitle({
         className={cn(
           titleClasses,
           className,
-          'transition-colors hover:text-primary-teal',
+          'transition-colors hover:text-primary',
         )}
       >
         {titleText}
@@ -159,10 +159,7 @@ export function ProposalCardBudget({
   if (!isNullish(allocated)) {
     return (
       <span
-        className={cn(
-          'font-serif text-title-base text-neutral-charcoal',
-          className,
-        )}
+        className={cn('font-serif text-title-base text-foreground', className)}
       >
         {formatCurrency(
           Number(allocated),
@@ -179,10 +176,7 @@ export function ProposalCardBudget({
 
   return (
     <span
-      className={cn(
-        'font-serif text-title-base text-neutral-charcoal',
-        className,
-      )}
+      className={cn('font-serif text-title-base text-foreground', className)}
     >
       {formatCurrency(budget.amount, undefined, budget.currency)}
     </span>
@@ -240,12 +234,12 @@ export function ProposalCardAuthor({
       {withLink ? (
         <Link
           href={`/profile/${proposal.submittedBy.slug}`}
-          className="max-w-32 truncate text-base text-nowrap text-neutral-charcoal"
+          className="max-w-32 truncate text-base text-nowrap text-foreground"
         >
           {proposal.submittedBy.name}
         </Link>
       ) : (
-        <div className="max-w-32 truncate text-base text-nowrap text-neutral-charcoal">
+        <div className="max-w-32 truncate text-base text-nowrap text-foreground">
           {proposal.submittedBy.name}
         </div>
       )}
@@ -309,9 +303,7 @@ export function ProposalCardStatus({
     return (
       <>
         <Bullet />
-        <span
-          className={cn('text-sm text-nowrap text-primary-orange2', className)}
-        >
+        <span className={cn('text-sm text-nowrap text-warning', className)}>
           {t('Hidden')}
         </span>
       </>
@@ -322,9 +314,7 @@ export function ProposalCardStatus({
     [ProposalStatus.DRAFT]: (
       <>
         <Bullet />
-        <span
-          className={cn('text-sm text-nowrap text-neutral-charcoal', className)}
-        >
+        <span className={cn('text-sm text-nowrap text-foreground', className)}>
           {t('Draft')}
         </span>
       </>
@@ -332,7 +322,7 @@ export function ProposalCardStatus({
     [ProposalStatus.APPROVED]: (
       <>
         <Bullet />
-        <span className={cn('text-sm text-green-700', className)}>
+        <span className={cn('text-positive-700 text-sm', className)}>
           {t('Shortlisted')}
         </span>
       </>
@@ -340,7 +330,7 @@ export function ProposalCardStatus({
     [ProposalStatus.SELECTED]: (
       <>
         <Bullet />
-        <span className={cn('text-sm text-green-700', className)}>
+        <span className={cn('text-positive-700 text-sm', className)}>
           {t('Funded')}
         </span>
       </>
@@ -348,9 +338,7 @@ export function ProposalCardStatus({
     [ProposalStatus.REJECTED]: (
       <>
         <Bullet />
-        <span
-          className={cn('text-sm text-nowrap text-neutral-charcoal', className)}
-        >
+        <span className={cn('text-sm text-nowrap text-foreground', className)}>
           {t('Not shortlisted')}
         </span>
       </>
@@ -390,9 +378,7 @@ export function ProposalCardPreview({
   }
 
   return (
-    <p
-      className={cn('line-clamp-3 text-base text-neutral-charcoal', className)}
-    >
+    <p className={cn('line-clamp-3 text-base text-foreground', className)}>
       {displayText}
     </p>
   );
@@ -412,7 +398,7 @@ export function ProposalCardMetrics({
   return (
     <div
       className={cn(
-        'flex w-full items-center justify-between gap-4 text-base text-neutral-gray4',
+        'flex w-full items-center justify-between gap-4 text-base text-muted-foreground',
         className,
       )}
     >

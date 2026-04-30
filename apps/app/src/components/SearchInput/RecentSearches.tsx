@@ -25,7 +25,7 @@ export const RecentSearches = ({
 
   return (
     <div className="pb-4">
-      <SearchResultItem className="py-2 pt-6 text-neutral-gray4 hover:bg-transparent">
+      <SearchResultItem className="py-2 pt-6 text-muted-foreground hover:bg-transparent">
         {t('Recent Searches')}
       </SearchResultItem>
       {recentSearches.map((recentQuery, index) => (
@@ -39,7 +39,7 @@ export const RecentSearches = ({
             href={`/search/?q=${recentQuery}`}
             onClick={() => onSearch(query)}
           >
-            <LuClock className="size-4 text-neutral-charcoal" /> {recentQuery}
+            <LuClock className="size-4 text-foreground" /> {recentQuery}
           </Link>
         </SearchResultItem>
       ))}

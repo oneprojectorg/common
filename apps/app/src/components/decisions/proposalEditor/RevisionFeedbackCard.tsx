@@ -24,13 +24,13 @@ export function RevisionFeedbackCard({
   return (
     <div
       className={cn(
-        'flex flex-col gap-2 rounded-xl border border-neutral-gray1 p-6',
-        variant === 'author' && 'bg-primary-tealWhite',
+        'flex flex-col gap-2 rounded-xl border border-border p-6',
+        variant === 'author' && 'bg-primary/10',
       )}
     >
       <p
         className={cn(
-          'text-base whitespace-pre-wrap text-neutral-charcoal',
+          'text-base whitespace-pre-wrap text-foreground',
           variant === 'reviewer' && 'italic',
         )}
       >
@@ -46,7 +46,7 @@ function SentAtLine({ sentAt }: { sentAt: string }) {
   const timeAgo = useRelativeTime(sentAt, { style: 'long' });
 
   return (
-    <p className="text-sm text-neutral-gray4">
+    <p className="text-sm text-muted-foreground">
       {t('Sent {timeAgo}', { timeAgo })}
     </p>
   );

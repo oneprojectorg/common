@@ -9,7 +9,7 @@ import { Menu, MenuItem, MenuSeparator } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
-import { TableCell } from '@op/ui/ui/table';
+import { TableCell } from '@op/ui/ui/data-table';
 import { useFormatter } from 'next-intl';
 import { useState } from 'react';
 import { Button } from 'react-aria-components';
@@ -42,16 +42,16 @@ export const UsersRowCells = ({ user }: { user: User }) => {
 
   return (
     <>
-      <TableCell className="text-sm font-normal text-neutral-black">
+      <TableCell className="text-sm font-normal text-foreground">
         {user.profile?.name ?? user.name ?? '—'}
       </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-black">
+      <TableCell className="text-sm font-normal text-foreground">
         {user.email}
       </TableCell>
       <UserRolesAndOrganizationCells
         organizationUsers={user.organizationUsers ?? []}
       />
-      <TableCell className="text-sm font-normal text-neutral-charcoal">
+      <TableCell className="text-sm font-normal text-foreground">
         {createdAt ? (
           <TooltipTrigger>
             <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-hidden">
@@ -65,7 +65,7 @@ export const UsersRowCells = ({ user }: { user: User }) => {
           '—'
         )}
       </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-charcoal">
+      <TableCell className="text-sm font-normal text-foreground">
         {lastSignInAt ? (
           <TooltipTrigger>
             <Button className="cursor-default text-sm font-normal underline decoration-dotted underline-offset-2 outline-hidden">
@@ -79,9 +79,9 @@ export const UsersRowCells = ({ user }: { user: User }) => {
           '—'
         )}
       </TableCell>
-      <TableCell className="text-sm text-neutral-charcoal">
+      <TableCell className="text-sm text-foreground">
         <div className="flex justify-end">
-          <OptionMenu variant="outline" size="medium">
+          <OptionMenu variant="outline">
             <Menu className="min-w-48 p-2">
               <MenuItem
                 key="view-analytics"
@@ -121,7 +121,7 @@ export const UsersRowCells = ({ user }: { user: User }) => {
                 }}
                 className="px-3 py-1"
               >
-                <span className="text-functional-red">{t('Remove user')}</span>
+                <span className="text-destructive">{t('Remove user')}</span>
               </MenuItem>
             </Menu>
           </OptionMenu>
@@ -159,8 +159,8 @@ const UserRolesAndOrganizationCells = ({
   if (!organizationUsers || organizationUsers.length === 0) {
     return (
       <>
-        <TableCell className="text-sm text-neutral-charcoal">-</TableCell>
-        <TableCell className="text-sm text-neutral-charcoal">-</TableCell>
+        <TableCell className="text-sm text-foreground">-</TableCell>
+        <TableCell className="text-sm text-foreground">-</TableCell>
       </>
     );
   }
@@ -172,10 +172,10 @@ const UserRolesAndOrganizationCells = ({
   if (!selectedOrgUser) {
     return (
       <>
-        <TableCell className="text-sm text-neutral-charcoal">
+        <TableCell className="text-sm text-foreground">
           Something went wrong
         </TableCell>
-        <TableCell className="text-sm text-neutral-charcoal">
+        <TableCell className="text-sm text-foreground">
           Something went wrong
         </TableCell>
       </>
@@ -190,10 +190,10 @@ const UserRolesAndOrganizationCells = ({
 
   return (
     <>
-      <TableCell className="text-sm font-normal text-neutral-black">
+      <TableCell className="text-sm font-normal text-foreground">
         {roleNames}
       </TableCell>
-      <TableCell className="text-sm font-normal text-neutral-black">
+      <TableCell className="text-sm font-normal text-foreground">
         <Select
           className="w-full"
           defaultSelectedKey={selectedOrgUserId}

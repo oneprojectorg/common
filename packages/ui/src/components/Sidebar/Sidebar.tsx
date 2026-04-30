@@ -115,7 +115,7 @@ const Sidebar = ({
           <MotionModalOverlay
             // force open state to ensure exit animation fires
             isOpen
-            className={'fixed inset-0 z-50 bg-neutral-black/20 backdrop-blur'}
+            className={'fixed inset-0 z-50 bg-foreground/20 backdrop-blur'}
             onOpenChange={setOpen}
             isDismissable
             initial={{ opacity: 0 }}
@@ -186,7 +186,7 @@ const SidebarLayout = ({
     <div
       data-slot="sidebar-layout"
       className={cn(
-        'bg-background relative flex size-full flex-1 flex-col overflow-y-auto',
+        'relative flex size-full flex-1 flex-col overflow-y-auto bg-background',
         'sm:flex-row',
         className,
       )}
@@ -197,11 +197,17 @@ const SidebarLayout = ({
 
 const SidebarTrigger = ({
   className,
+  variant = 'ghost',
   ...props
 }: Omit<IconButtonProps, 'children' | 'onPress'>) => {
   const { toggleSidebar } = useSidebar();
   return (
-    <IconButton onPress={toggleSidebar} className={className} {...props}>
+    <IconButton
+      onPress={toggleSidebar}
+      variant={variant}
+      className={className}
+      {...props}
+    >
       <LuAlignJustify className="size-4" />
     </IconButton>
   );

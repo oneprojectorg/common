@@ -43,7 +43,7 @@ const CreateModeHeader = () => {
   return (
     <header className="relative sticky top-0 z-20 flex h-14 w-dvw shrink-0 items-center justify-between border-b bg-white">
       <div className="flex items-center gap-2 pl-4 md:pl-8">
-        <Link href="/" className="flex items-center gap-2 text-neutral-black">
+        <Link href="/" className="flex items-center gap-2 text-foreground">
           <LuHouse className="size-4" />
           {t('Home')}
         </Link>
@@ -85,7 +85,7 @@ const ProcessBuilderHeaderContent = ({
       <div className="flex min-w-0 items-center gap-2 pl-4 md:pl-8">
         <Link
           href="/"
-          className="flex shrink-0 items-center gap-2 text-neutral-black"
+          className="flex shrink-0 items-center gap-2 text-foreground"
         >
           <LuHouse className="size-4" />
           {t('Home')}

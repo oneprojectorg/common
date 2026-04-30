@@ -173,12 +173,12 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
           color: 'muted',
           size: 'small',
           icon: isSearching ? (
-            <LoadingSpinner className="size-4 text-neutral-gray4" />
+            <LoadingSpinner className="size-4 text-muted-foreground" />
           ) : (
-            <LuSearch className="size-4 text-neutral-gray4" />
+            <LuSearch className="size-4 text-muted-foreground" />
           ),
           className: cn(
-            'bg-transparent placeholder:text-neutral-gray4 focus-visible:bg-white active:bg-white active:text-neutral-gray3',
+            'bg-transparent placeholder:text-muted-foreground focus-visible:bg-white active:bg-white active:text-muted-foreground',
             'active:border-inherit', // override TextField input styles that are used everywhere
             dropdownShowing && 'sm:rounded-b-none',
           ),
@@ -207,7 +207,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
       >
         {dropdownShowing ? (
           <div
-            className="absolute top-10 z-10 hidden !max-h-80 w-(--trigger-width) min-w-96 overflow-y-auto rounded-b border border-t-0 bg-white group-hover:border-neutral-gray2 sm:block"
+            className="absolute top-10 z-10 hidden !max-h-80 w-(--trigger-width) min-w-96 overflow-y-auto rounded-b border border-t-0 bg-white group-hover:border-input sm:block"
             role="listbox"
             aria-label={t('Search results')}
           >
@@ -225,8 +225,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
                     href={`/search/?q=${query}`}
                     onClick={() => recordSearch(query)}
                   >
-                    <LuSearch className="size-4 text-neutral-charcoal" />{' '}
-                    {query}
+                    <LuSearch className="size-4 text-foreground" /> {query}
                   </Link>
                 </SearchResultItem>
               )}
@@ -271,7 +270,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
                   href={`/search/?q=${query}`}
                   onClick={() => recordSearch(query)}
                 >
-                  <LuSearch className="size-4 text-neutral-charcoal" /> {query}
+                  <LuSearch className="size-4 text-foreground" /> {query}
                 </Link>
               </SearchResultItem>
             )}

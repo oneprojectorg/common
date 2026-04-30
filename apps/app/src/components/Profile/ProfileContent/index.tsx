@@ -50,7 +50,7 @@ const FocusAreas = ({
   const t = useTranslations();
 
   return (
-    <section className="flex flex-col gap-2 text-neutral-charcoal">
+    <section className="flex flex-col gap-2 text-foreground">
       <Header3>{t('Focus Areas')}</Header3>
       <TagGroup>
         {focusAreas.map((term) => (
@@ -96,7 +96,7 @@ const CommunitiesServed = ({ profileId }: { profileId: string }) => {
   if (!communitiesServed?.length) return null;
 
   return (
-    <section className="flex flex-col gap-2 text-neutral-charcoal">
+    <section className="flex flex-col gap-2 text-foreground">
       <Header3>{t('Communities We Serve')}</Header3>
       <TagGroup>
         {communitiesServed.map((term) => (
@@ -129,7 +129,7 @@ const ProfileAbout = ({
         {email || website ? (
           <section className="flex flex-col gap-2">
             <Header3>{t('Contact')}</Header3>
-            <div className="flex flex-col text-teal">
+            <div className="flex flex-col text-primary">
               {website ? (
                 <ContactLink>
                   <LuGlobe />
@@ -146,8 +146,8 @@ const ProfileAbout = ({
                 <ContactLink
                   button={
                     <Button
-                      color="secondary"
-                      size="small"
+                      variant="outline"
+                      size="sm"
                       onPress={() => {
                         navigator.clipboard.writeText(email);
                         toast.success({
@@ -176,7 +176,7 @@ const ProfileAbout = ({
         ) : null}
 
         {orgType ? (
-          <section className="flex flex-col gap-2 text-neutral-charcoal">
+          <section className="flex flex-col gap-2 text-foreground">
             <Header3>{t('Organizational Status')}</Header3>
             <TagGroup>
               <Tag className="capitalize">{orgType}</Tag>
@@ -185,14 +185,14 @@ const ProfileAbout = ({
         ) : null}
 
         {mission ? (
-          <section className="flex flex-col gap-2 text-neutral-charcoal">
+          <section className="flex flex-col gap-2 text-foreground">
             <Header3>{t('Mission Statement')}</Header3>
             <p>{mission}</p>
           </section>
         ) : null}
 
         {strategies?.length > 0 ? (
-          <section className="flex flex-col gap-2 text-neutral-charcoal">
+          <section className="flex flex-col gap-2 text-foreground">
             <Header3>{t('Strategies')}</Header3>
             <TagGroup>
               {strategies.map((strategy) =>
@@ -210,7 +210,7 @@ const ProfileAbout = ({
         <ErrorBoundary fallback={null}>
           <Suspense
             fallback={
-              <section className="flex flex-col gap-2 text-neutral-charcoal">
+              <section className="flex flex-col gap-2 text-foreground">
                 <Header3>{t('Focus Areas')}</Header3>
                 <div className="flex flex-wrap gap-2">
                   <Skeleton className="h-6 w-16" />
@@ -231,7 +231,7 @@ const ProfileAbout = ({
         <ErrorBoundary fallback={null}>
           <Suspense
             fallback={
-              <section className="flex flex-col gap-2 text-neutral-charcoal">
+              <section className="flex flex-col gap-2 text-foreground">
                 <Header3>{t('Communities We Serve')}</Header3>
                 <div className="flex flex-wrap gap-2">
                   <Skeleton className="h-6 w-18" />
@@ -271,7 +271,7 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
         <Fragment key={item.id}>
           <ProfileDecisionListItem
             item={item}
-            className="rounded border p-4 transition-colors sm:rounded-none sm:border-none sm:px-6 hover:sm:bg-primary-tealWhite"
+            className="rounded border p-4 transition-colors sm:rounded-none sm:border-none sm:px-6 hover:sm:bg-primary/10"
           />
           {index < data.items.length - 1 && <hr />}
         </Fragment>

@@ -5,8 +5,8 @@ import type { ProposalCategory } from '@op/common';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2, Header3 } from '@op/ui/Header';
+import { Switch } from '@op/ui/Switch';
 import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
 import { useState } from 'react';
 import { LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
@@ -166,7 +166,7 @@ export function ProposalCategoriesSectionContent({
             savedAt={autosaveStatus.savedAt}
           />
         </div>
-        <p className="text-neutral-gray4">
+        <p className="text-muted-foreground">
           {t(
             'Define the categories that proposals in this process should advance. Proposers will select which categories their proposal supports.',
           )}
@@ -177,7 +177,7 @@ export function ProposalCategoriesSectionContent({
         <div className="rounded-lg border p-16">
           <EmptyState icon={<LuLeaf className="size-5" />}>
             <div className="flex flex-col items-center gap-2 text-center">
-              <span className="font-medium text-neutral-charcoal">
+              <span className="font-medium text-foreground">
                 {t('No categories defined yet')}
               </span>
               <span>
@@ -186,7 +186,7 @@ export function ProposalCategoriesSectionContent({
                 )}
               </span>
               <Button
-                color="primary"
+                variant="default"
                 className="mt-2"
                 onPress={() => setIsFormVisible(true)}
               >
@@ -206,25 +206,25 @@ export function ProposalCategoriesSectionContent({
               className="group flex items-start gap-2 border-b py-3"
             >
               <div className="min-w-0 flex-1">
-                <span className="text-neutral-charcoal">{category.label}</span>
-                <p className="text-sm text-neutral-gray4">
+                <span className="text-foreground">{category.label}</span>
+                <p className="text-sm text-muted-foreground">
                   {category.description}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                 <Button
-                  variant="icon"
-                  color="ghost"
-                  className="size-5 p-0 text-neutral-charcoal"
+                  size="icon"
+                  variant="ghost"
+                  className="size-5 p-0 text-foreground"
                   onPress={() => handleEdit(category)}
                   aria-label={`Edit ${category.label}`}
                 >
                   <LuPencil className="size-4" />
                 </Button>
                 <Button
-                  variant="icon"
-                  color="ghost"
-                  className="size-5 p-0 text-neutral-charcoal hover:text-red"
+                  size="icon"
+                  variant="ghost"
+                  className="size-5 p-0 text-foreground hover:text-destructive"
                   onPress={() => handleDelete(category.id)}
                   aria-label={`Delete ${category.label}`}
                 >
@@ -235,8 +235,8 @@ export function ProposalCategoriesSectionContent({
           ))}
           {!isFormVisible && (
             <Button
-              color="ghost"
-              className="mt-2 px-2 text-primary-tealBlack hover:text-primary-teal"
+              variant="ghost"
+              className="mt-2 px-2 text-primary hover:text-primary/80"
               onPress={() => setIsFormVisible(true)}
             >
               <LuPlus className="size-4" />
@@ -278,11 +278,11 @@ export function ProposalCategoriesSectionContent({
               )}
             />
             <div className="flex items-center justify-end gap-2">
-              <Button color="secondary" onPress={resetForm}>
+              <Button variant="outline" onPress={resetForm}>
                 {t('Cancel')}
               </Button>
               <Button
-                color="primary"
+                variant="default"
                 onPress={handleAddOrUpdate}
                 isDisabled={!formLabel.trim()}
               >
@@ -300,14 +300,13 @@ export function ProposalCategoriesSectionContent({
               <span className="text-base">
                 {t('Require category selection')}
               </span>
-              <p className="text-sm text-neutral-gray4">
+              <p className="text-sm text-muted-foreground">
                 {t('Proposers must select at least one category')}
               </p>
             </div>
-            <ToggleButton
+            <Switch
               isSelected={requireCategorySelection}
               onChange={handleRequireCategoryChange}
-              size="small"
             />
           </div>
           <div className="flex items-center justify-between gap-4">
@@ -315,14 +314,13 @@ export function ProposalCategoriesSectionContent({
               <span className="text-base">
                 {t('Allow multiple categories')}
               </span>
-              <p className="text-sm text-neutral-gray4">
+              <p className="text-sm text-muted-foreground">
                 {t('Proposers can select more than one category')}
               </p>
             </div>
-            <ToggleButton
+            <Switch
               isSelected={allowMultipleCategories}
               onChange={handleAllowMultipleChange}
-              size="small"
             />
           </div>
         </div>

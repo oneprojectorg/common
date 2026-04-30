@@ -50,8 +50,8 @@ export function ReviewAssignmentCard({
             <>
               <Bullet />
               <div className="flex items-center gap-1">
-                <LuRefreshCw className="size-4 text-primary-orange2" />
-                <span className="text-sm text-neutral-charcoal">
+                <LuRefreshCw className="size-4 text-warning" />
+                <span className="text-sm text-foreground">
                   <TranslatedText text="Revised" />
                 </span>
               </div>
@@ -76,33 +76,33 @@ const statusConfig: Record<
 > = {
   pending: {
     icon: LuCircleDashed,
-    bgClass: 'bg-neutral-offWhite p-2',
-    textClass: 'text-neutral-gray4',
-    iconClass: 'text-neutral-gray4',
+    bgClass: 'bg-muted p-2',
+    textClass: 'text-muted-foreground',
+    iconClass: 'text-muted-foreground',
   },
   in_progress: {
     icon: LuTimer,
-    bgClass: 'bg-primary-tealWhite p-2',
-    textClass: 'text-neutral-charcoal',
-    iconClass: 'text-primary-teal',
+    bgClass: 'bg-primary/10 p-2',
+    textClass: 'text-foreground',
+    iconClass: 'text-primary',
   },
   completed: {
     icon: LuCircleCheck,
-    bgClass: 'bg-status-greenBg p-2',
-    textClass: 'text-neutral-charcoal',
-    iconClass: 'text-status-green',
+    bgClass: 'bg-positive/10 p-2',
+    textClass: 'text-foreground',
+    iconClass: 'text-positive',
   },
   awaiting_author_revision: {
     icon: LuRefreshCw,
     bgClass: 'bg-white py-2',
-    textClass: 'text-neutral-charcoal',
-    iconClass: 'text-primary-orange2',
+    textClass: 'text-foreground',
+    iconClass: 'text-warning',
   },
   ready_for_re_review: {
     icon: LuCircleAlert,
-    bgClass: 'bg-functional-yellowWhite p-2',
-    textClass: 'text-neutral-charcoal',
-    iconClass: 'text-primary-orange2',
+    bgClass: 'bg-warning-foreground p-2',
+    textClass: 'text-foreground',
+    iconClass: 'text-warning',
   },
 };
 

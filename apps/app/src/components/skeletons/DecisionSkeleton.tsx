@@ -6,7 +6,7 @@ import { Skeleton } from '@op/ui/Skeleton';
  */
 export const DecisionHeaderSkeleton = () => {
   return (
-    <div className="bg-neutral-offWhite">
+    <div className="bg-muted">
       {/* Header skeleton */}
       <div className="flex items-center justify-between border-b bg-white px-6 py-4">
         <Skeleton className="h-6 w-32" />
@@ -42,7 +42,7 @@ export const DecisionPageSkeleton = () => {
       <DecisionHeaderSkeleton />
 
       {/* Content area */}
-      <div className="min-h-full bg-neutral-offWhite pt-8">
+      <div className="min-h-full bg-muted pt-8">
         <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4">
           {/* Hero skeleton */}
           <div className="flex flex-col gap-2">

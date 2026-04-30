@@ -1,22 +1,18 @@
-import { ReactNode } from 'react';
+'use client';
 
-import { cn } from '../lib/utils';
+import type { ComponentProps } from 'react';
 
-export const Chip = ({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) => {
-  return (
-    <span
-      className={cn(
-        'items-center rounded-md bg-neutral-gray1 p-1 text-xs text-neutral-charcoal',
-        className,
-      )}
-    >
-      {children}
-    </span>
-  );
+import { Badge } from './ui/badge';
+
+export interface ChipProps extends Omit<
+  ComponentProps<typeof Badge>,
+  'variant'
+> {
+  variant?: ComponentProps<typeof Badge>['variant'];
+}
+
+export const Chip = ({ variant = 'secondary', ...props }: ChipProps) => {
+  return <Badge {...props} variant={variant} />;
 };
+
+export { Badge };

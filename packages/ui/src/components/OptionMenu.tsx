@@ -12,7 +12,7 @@ export const OptionMenu = ({
   children,
   className,
   variant = 'ghost',
-  size = 'small',
+  size = 'sm',
 }: {
   children: ReactNode;
   className?: string;
@@ -24,10 +24,7 @@ export const OptionMenu = ({
       <IconButton
         variant={variant}
         size={size}
-        className={cn(
-          'aspect-square aria-expanded:bg-neutral-gray1',
-          className,
-        )}
+        className={cn('aspect-square aria-expanded:bg-accent', className)}
       >
         <LuEllipsis className="size-4" />
       </IconButton>

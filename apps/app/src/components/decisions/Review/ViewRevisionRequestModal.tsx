@@ -43,16 +43,16 @@ export function ViewRevisionRequestModal({
       <ModalHeader>{t('Revision request')}</ModalHeader>
       <ModalBody>
         <div className="flex flex-col gap-2">
-          <span className="text-base text-neutral-black">
+          <span className="text-base text-foreground">
             {t('Feedback for proposal author')}
           </span>
 
-          <div className="flex flex-col gap-2 rounded-lg border border-neutral-gray1 bg-neutral-offWhite p-3">
-            <p className="text-base text-neutral-charcoal">
+          <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted p-3">
+            <p className="text-base text-foreground">
               {revisionRequest.requestComment}
             </p>
             {sentDate && (
-              <p className="text-sm text-neutral-gray4">
+              <p className="text-sm text-muted-foreground">
                 {t('Sent {date}', {
                   date: sentDate.toLocaleDateString(undefined, {
                     month: 'short',
@@ -68,7 +68,7 @@ export function ViewRevisionRequestModal({
       <ModalFooter>
         {isOwnRevisionRequest && (
           <Button
-            color="secondary"
+            variant="outline"
             onPress={handleCancelRequest}
             isDisabled={isCancellingRevision}
           >
@@ -78,7 +78,7 @@ export function ViewRevisionRequestModal({
             {t('Cancel request')}
           </Button>
         )}
-        <Button color="primary" onPress={() => onOpenChange(false)}>
+        <Button variant="default" onPress={() => onOpenChange(false)}>
           {t('Close')}
         </Button>
       </ModalFooter>

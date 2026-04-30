@@ -28,39 +28,39 @@ export const Example = () => (
   <div className="flex flex-col gap-8">
     Medium:
     <ButtonLink href="#">ButtonLink</ButtonLink>
-    <ButtonLink href="#" color="secondary">
+    <ButtonLink href="#" variant="outline">
       ButtonLink
     </ButtonLink>
-    <ButtonLink href="#" color="destructive">
+    <ButtonLink href="#" variant="destructive">
       ButtonLink
     </ButtonLink>
-    <ButtonLink href="#" isDisabled color="destructive">
+    <ButtonLink href="#" isDisabled variant="destructive">
       ButtonLink
     </ButtonLink>
     Small:
-    <ButtonLink href="#" size="small">
+    <ButtonLink href="#" size="sm">
       ButtonLink
     </ButtonLink>
-    <ButtonLink href="#" size="small" color="secondary">
+    <ButtonLink href="#" size="sm" variant="outline">
       ButtonLink
     </ButtonLink>
-    <ButtonLink href="#" isDisabled size="small">
+    <ButtonLink href="#" isDisabled size="sm">
       ButtonLink
     </ButtonLink>
     Loading:
     <ButtonLink href="#" isLoading>
       ButtonLink
     </ButtonLink>
-    <ButtonLink href="#" isLoading color="secondary">
+    <ButtonLink href="#" isLoading variant="outline">
       ButtonLink
     </ButtonLink>
-    <ButtonLink href="#" isLoading color="destructive">
+    <ButtonLink href="#" isLoading variant="destructive">
       ButtonLink
     </ButtonLink>
-    <ButtonLink href="#" isLoading size="small">
+    <ButtonLink href="#" isLoading size="sm">
       ButtonLink
     </ButtonLink>
-    <ButtonLink href="#" isLoading size="small" color="secondary">
+    <ButtonLink href="#" isLoading size="sm" variant="outline">
       ButtonLink
     </ButtonLink>
   </div>

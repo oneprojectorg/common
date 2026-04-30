@@ -36,7 +36,7 @@ export const Example = () => (
             </DialogDescription>
           </DialogContent>
           <DialogFooter>
-            <Button color="secondary">Cancel</Button>
+            <Button variant="outline">Cancel</Button>
             <Button>Confirm</Button>
           </DialogFooter>
         </Dialog>
@@ -44,7 +44,7 @@ export const Example = () => (
     </DialogTrigger>
 
     <DialogTrigger>
-      <Button color="secondary">Open Complex Dialog</Button>
+      <Button variant="outline">Open Complex Dialog</Button>
       <Modal>
         <Dialog>
           <DialogHeader>Complex Dialog</DialogHeader>
@@ -55,13 +55,13 @@ export const Example = () => (
             <div className="mt-4 space-y-4">
               <div>
                 <h4 className="font-medium">Section 1</h4>
-                <p className="text-sm text-neutral-gray3">
+                <p className="text-sm text-muted-foreground">
                   Some detailed information about the first section.
                 </p>
               </div>
               <div>
                 <h4 className="font-medium">Section 2</h4>
-                <p className="text-sm text-neutral-gray3">
+                <p className="text-sm text-muted-foreground">
                   More information about the second section with additional
                   details.
                 </p>
@@ -69,8 +69,8 @@ export const Example = () => (
             </div>
           </DialogContent>
           <DialogFooter>
-            <Button color="secondary">Cancel</Button>
-            <Button color="destructive">Delete</Button>
+            <Button variant="outline">Cancel</Button>
+            <Button variant="destructive">Delete</Button>
             <Button>Save Changes</Button>
           </DialogFooter>
         </Dialog>
@@ -89,7 +89,7 @@ export const BasicDialog = () => (
           <DialogDescription>This is a basic dialog example.</DialogDescription>
         </DialogContent>
         <DialogFooter>
-          <Button color="secondary">Cancel</Button>
+          <Button variant="outline">Cancel</Button>
           <Button>OK</Button>
         </DialogFooter>
       </Dialog>
@@ -112,14 +112,14 @@ export const WithForm = () => (
               <label className="block text-sm font-medium">Name</label>
               <input
                 type="text"
-                className="mt-1 block w-full rounded-lg border border-neutral-gray3 px-3 py-2"
+                className="mt-1 block w-full rounded-lg border border-input px-3 py-2"
                 placeholder="Enter name"
               />
             </div>
             <div>
               <label className="block text-sm font-medium">Description</label>
               <textarea
-                className="mt-1 block w-full rounded-lg border border-neutral-gray3 px-3 py-2"
+                className="mt-1 block w-full rounded-lg border border-input px-3 py-2"
                 rows={3}
                 placeholder="Enter description"
               />
@@ -127,7 +127,7 @@ export const WithForm = () => (
           </form>
         </DialogContent>
         <DialogFooter>
-          <Button color="secondary">Cancel</Button>
+          <Button variant="outline">Cancel</Button>
           <Button>Create</Button>
         </DialogFooter>
       </Dialog>
@@ -137,7 +137,7 @@ export const WithForm = () => (
 
 export const DestructiveAction = () => (
   <DialogTrigger>
-    <Button color="destructive">Delete Item</Button>
+    <Button variant="destructive">Delete Item</Button>
     <Modal>
       <Dialog>
         <DialogHeader>Confirm Deletion</DialogHeader>
@@ -148,8 +148,8 @@ export const DestructiveAction = () => (
           </DialogDescription>
         </DialogContent>
         <DialogFooter>
-          <Button color="secondary">Cancel</Button>
-          <Button color="destructive">Delete</Button>
+          <Button variant="outline">Cancel</Button>
+          <Button variant="destructive">Delete</Button>
         </DialogFooter>
       </Dialog>
     </Modal>

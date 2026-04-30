@@ -181,10 +181,10 @@ const SelectProfileStep = ({
                 value={profile.id}
               >
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-base leading-[1.05] text-neutral-charcoal">
+                  <span className="text-base leading-[1.05] text-foreground">
                     {profile.name}
                   </span>
-                  <p className="text-neutral-gray4">{profileType}</p>
+                  <p className="text-muted-foreground">{profileType}</p>
                 </div>
               </Radio>
             );
@@ -193,14 +193,14 @@ const SelectProfileStep = ({
       </div>
       <ModalFooter>
         <Button
-          color="neutral"
+          variant="outline"
           onPress={cancelButtonAction}
           className="w-full sm:w-auto"
         >
           {t('Cancel')}
         </Button>
         <Button
-          color="destructive"
+          variant="destructive"
           type="button"
           onPress={submitButtonAction}
           isDisabled={!selectedProfile}
@@ -239,7 +239,7 @@ const ConfirmProfileStep = ({
             'You are about to delete this account. This action cannot be undone.',
           )}
         </p>
-        <div className="flex gap-2 rounded border border-red-100 p-4">
+        <div className="border-destructive-100 flex gap-2 rounded border p-4">
           <Avatar
             className="size-8 shrink-0"
             placeholder={profileToDelete.name ?? ''}
@@ -255,21 +255,21 @@ const ConfirmProfileStep = ({
           </Avatar>
           <div className="flex flex-col">
             <p className="font-medium">{profileToDelete.name}</p>
-            <p className="text-sm text-neutral-charcoal">{profileType}</p>
+            <p className="text-sm text-foreground">{profileType}</p>
           </div>
         </div>
       </div>
       <ModalFooter>
         <Button
           className="w-full sm:w-auto"
-          color="neutral"
+          variant="outline"
           onPress={backButtonAction}
         >
           {t('Back')}
         </Button>
         <Button
           className="w-full sm:w-auto"
-          color="destructive"
+          variant="destructive"
           type="button"
           onPress={submitButtonAction}
           isPending={isSubmitting}

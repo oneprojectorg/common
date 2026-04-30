@@ -103,8 +103,8 @@ export function AnimatedGradientBackground() {
 
   const background = useMotionTemplate`radial-gradient(
     ellipse at ${gradientX}% ${gradientY}%,
-    var(--color-teal-300),
-    var(--color-teal-50)
+    var(--color-primary/50),
+    var(--color-primary/10)
   )`;
 
   return (

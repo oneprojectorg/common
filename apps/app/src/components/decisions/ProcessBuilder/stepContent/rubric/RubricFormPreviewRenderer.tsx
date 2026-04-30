@@ -7,7 +7,7 @@ import {
 } from '@op/common/client';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select } from '@op/ui/Select';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { Switch } from '@op/ui/Switch';
 import { LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -43,7 +43,7 @@ function RationalePlaceholder() {
   const t = useTranslations();
 
   return (
-    <div className="flex items-center gap-1 px-2 py-1.5 text-base text-primary-teal">
+    <div className="flex items-center gap-1 px-2 py-1.5 text-base text-primary">
       <LuPlus className="size-4" />
       {t('Add Note')}
     </div>
@@ -88,11 +88,9 @@ function RubricField({ field }: { field: FieldDescriptor }) {
             />
             <div className="flex items-center gap-3">
               {schema.description && (
-                <p className="text-sm text-neutral-charcoal">
-                  {schema.description}
-                </p>
+                <p className="text-sm text-foreground">{schema.description}</p>
               )}
-              <ToggleButton size="small" className="ml-auto shrink-0" />
+              <Switch className="ml-auto shrink-0" />
             </div>
           </div>
         );
@@ -111,10 +109,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
             className="gap-1"
           />
           <Select
-            variant="pill"
-            size="medium"
             placeholder={t('Select option')}
-            selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
             className="w-auto max-w-56 overflow-hidden sm:max-w-96"
           >
             {[]}
@@ -133,7 +128,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
             className="gap-1"
           />
           <div
-            className={`${format === 'long-text' ? 'min-h-32' : 'min-h-8'} text-neutral-gray3`}
+            className={`${format === 'long-text' ? 'min-h-32' : 'min-h-8'} text-muted-foreground`}
           >
             {t('Start typing...')}
           </div>

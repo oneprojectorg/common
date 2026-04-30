@@ -42,7 +42,7 @@ export const ToSForm = ({
     >
       <FormContainer className="max-w-lg">
         <FormHeader text={t('Terms of Use Overview')}></FormHeader>
-        <span className="text-neutral-charcoal">
+        <span className="text-foreground">
           {t('Effective Date: March 15, 2025')}
         </span>
 
@@ -52,7 +52,7 @@ export const ToSForm = ({
         <ToSContent />
 
         <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
-          <form.Button color="secondary" onPress={onBack}>
+          <form.Button variant="outline" onPress={onBack}>
             {t('Back')}
           </form.Button>
           <form.SubmitButton>{t('Accept & Continue')}</form.SubmitButton>

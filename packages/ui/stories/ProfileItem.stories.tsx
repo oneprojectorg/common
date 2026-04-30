@@ -46,8 +46,8 @@ export const Example = () => (
           description="Supporting open source projects and communities"
         >
           <div className="mt-3 flex gap-2">
-            <Button size="small">Join</Button>
-            <Button size="small" color="secondary">
+            <Button size="sm">Join</Button>
+            <Button size="sm" variant="outline">
               Learn More
             </Button>
           </div>
@@ -69,8 +69,8 @@ export const Example = () => (
           description="Full-stack developer and open source contributor"
         >
           <div className="mt-3 flex gap-2">
-            <Button size="small">Follow</Button>
-            <Button size="small" color="secondary">
+            <Button size="sm">Follow</Button>
+            <Button size="sm" variant="outline">
               Message
             </Button>
           </div>
@@ -91,7 +91,7 @@ export const Example = () => (
           title="Community Garden Initiative"
           description="Proposal to establish urban gardens in underserved neighborhoods"
         >
-          <div className="mt-3 text-sm text-neutral-charcoal">
+          <div className="mt-3 text-sm text-foreground">
             Funding Goal: $50,000 • Status: Active
           </div>
         </ProfileItem>
@@ -103,15 +103,15 @@ export const Example = () => (
           description="Comprehensive STEM education program for students ages 12-18"
         >
           <div className="mt-3 space-y-2">
-            <div className="text-sm text-neutral-charcoal">
+            <div className="text-sm text-foreground">
               <strong>Category:</strong> Education
             </div>
-            <div className="text-sm text-neutral-charcoal">
+            <div className="text-sm text-foreground">
               <strong>Timeline:</strong> 12 months
             </div>
             <div className="mt-3 flex gap-2">
-              <Button size="small">Support</Button>
-              <Button size="small" color="secondary">
+              <Button size="sm">Support</Button>
+              <Button size="sm" variant="outline">
                 View Details
               </Button>
             </div>
@@ -129,8 +129,8 @@ export const OrganizationWithActions = {
     description: 'Environmental conservation and sustainability initiatives',
     children: (
       <div className="mt-3 flex gap-2">
-        <Button size="small">Join</Button>
-        <Button size="small" color="secondary">
+        <Button size="sm">Join</Button>
+        <Button size="sm" variant="outline">
           Learn More
         </Button>
       </div>
@@ -155,15 +155,15 @@ export const ProposalWithDetails = {
     description: 'Comprehensive STEM education program for students ages 12-18',
     children: (
       <div className="mt-3 space-y-2">
-        <div className="text-sm text-neutral-charcoal">
+        <div className="text-sm text-foreground">
           <strong>Category:</strong> Education
         </div>
-        <div className="text-sm text-neutral-charcoal">
+        <div className="text-sm text-foreground">
           <strong>Timeline:</strong> 12 months
         </div>
         <div className="mt-3 flex gap-2">
-          <Button size="small">Support</Button>
-          <Button size="small" color="secondary">
+          <Button size="sm">Support</Button>
+          <Button size="sm" variant="outline">
             View Details
           </Button>
         </div>

@@ -21,12 +21,12 @@ export const PlatformHighlights = () => {
     <Surface className="shadow-light">
       <div className="flex flex-col items-center justify-between gap-6 px-10 py-6 sm:flex-row sm:gap-4">
         <Highlight>
-          <HighlightNumber className="bg-tealGreen">
+          <HighlightNumber className="bg-primaryGreen">
             {stats.newOrganizations}
           </HighlightNumber>
           <HighlightLabel>{t('new organizations to explore')}</HighlightLabel>
         </Highlight>
-        <hr className="hidden h-20 w-0.5 border-0 bg-neutral-gray1 sm:block" />
+        <hr className="hidden h-20 w-0.5 border-0 bg-accent sm:block" />
         <Highlight>
           <HighlightNumber className="bg-orange">
             {stats.totalRelationships}
@@ -35,14 +35,14 @@ export const PlatformHighlights = () => {
             {t('active')} {pluralize('relationship', stats.totalRelationships)}
           </HighlightLabel>
         </Highlight>
-        <hr className="hidden h-20 w-0.5 border-0 bg-neutral-gray1 sm:block" />
+        <hr className="hidden h-20 w-0.5 border-0 bg-accent sm:block" />
         <Highlight>
           <HighlightNumber className="bg-redTeal">
             {stats.totalOrganizations}
           </HighlightNumber>
           <HighlightLabel>{t('organizations on Common')}</HighlightLabel>
         </Highlight>
-        <hr className="hidden h-20 w-0.5 border-0 bg-neutral-gray1 sm:block" />
+        <hr className="hidden h-20 w-0.5 border-0 bg-accent sm:block" />
         <Highlight>
           <HighlightNumber className="bg-redPurple">
             {stats.totalUsers}
@@ -50,7 +50,7 @@ export const PlatformHighlights = () => {
           <HighlightLabel>{t('people on Common')}</HighlightLabel>
         </Highlight>
       </div>
-      <div className="flex flex-col justify-center gap-2 border-0 border-t bg-neutral-offWhite p-6 text-sm text-neutral-charcoal sm:flex-row sm:items-center">
+      <div className="flex flex-col justify-center gap-2 border-0 border-t bg-muted p-6 text-sm text-foreground sm:flex-row sm:items-center">
         <Suspense>
           <div className="flex max-w-full items-center gap-2">
             <OrganizationFacePile>
@@ -88,7 +88,7 @@ const HighlightNumber = ({
 
 const HighlightLabel = ({ children }: { children?: ReactNode }) => {
   return (
-    <div className="col-span-2 flex h-12 max-w-32 items-center text-neutral-charcoal xxs:col-span-3">
+    <div className="col-span-2 flex h-12 max-w-32 items-center text-foreground xxs:col-span-3">
       {children}
     </div>
   );
@@ -158,7 +158,7 @@ const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
   if (stats.totalOrganizations > numItems) {
     items.push(
       <Link key="more" href="/org" className="hover:no-underline">
-        <Avatar className="bg-neutral-charcoal text-sm text-neutral-offWhite">
+        <Avatar className="bg-foreground text-sm text-muted">
           <span className="align-super">+</span>
           {stats.totalOrganizations - numItems}
         </Avatar>

@@ -15,10 +15,10 @@ const styles = tv({
   base: 'rounded transition disabled:cursor-default disabled:no-underline',
   variants: {
     variant: {
-      primary: 'text-teal no-underline hover:underline',
+      primary: 'text-primary no-underline hover:underline',
       secondary:
-        'text-neutral-gray4 underline decoration-neutral-gray4/70 hover:decoration-neutral-gray4',
-      neutral: 'text-neutral-gray4',
+        'text-muted-foreground underline decoration-muted-foreground/70 hover:decoration-muted-foreground',
+      neutral: 'text-muted-foreground',
     },
   },
   defaultVariants: {

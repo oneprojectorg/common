@@ -175,7 +175,7 @@ export const OrganizationFormFields = ({
             onBlur={field.handleBlur}
             onChange={field.handleChange}
             inputProps={{
-              icon: <LuLink className="size-4 text-neutral-black" />,
+              icon: <LuLink className="size-4 text-foreground" />,
               placeholder: t("Enter your organization's website here"),
             }}
             errorMessage={getFieldErrorMessage(field)}
@@ -221,7 +221,6 @@ export const OrganizationFormFields = ({
             onBlur={field.handleBlur}
             errorMessage={getFieldErrorMessage(field)}
             className="w-full"
-            size="medium"
           >
             <SelectItem id="nonprofit">{t('Nonprofit')}</SelectItem>
             <SelectItem id="forprofit">{t('Forprofit')}</SelectItem>
@@ -315,7 +314,7 @@ export const OrganizationFormFields = ({
             {t(
               'Does your organization serve as a network or coalition with member organizations?',
             )}
-            <field.ToggleButton
+            <field.Switch
               isSelected={field.state.value as boolean}
               onChange={field.handleChange}
               aria-label={t(

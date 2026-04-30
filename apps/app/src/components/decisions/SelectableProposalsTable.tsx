@@ -13,7 +13,7 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
-} from '@op/ui/ui/table';
+} from '@op/ui/ui/data-table';
 import { cn } from '@op/ui/utils';
 import { LuCheck } from 'react-icons/lu';
 
@@ -83,9 +83,7 @@ export const SelectableProposalsTable = ({
               key={proposal.id}
               id={proposal.id}
               className={
-                isSelected
-                  ? 'bg-primary-tealWhite hover:bg-primary-tealWhite/80'
-                  : undefined
+                isSelected ? 'bg-primary/10 hover:bg-primary/20' : undefined
               }
             >
               <TableCell>
@@ -93,17 +91,17 @@ export const SelectableProposalsTable = ({
                   {href ? (
                     <Link
                       href={href}
-                      className="text-base text-neutral-black hover:underline"
+                      className="text-base text-foreground hover:underline"
                     >
                       {fields.title}
                     </Link>
                   ) : (
-                    <span className="text-base text-neutral-black">
+                    <span className="text-base text-foreground">
                       {fields.title}
                     </span>
                   )}
                   {fields.submitterName ? (
-                    <span className="text-sm text-neutral-gray4">
+                    <span className="text-sm text-muted-foreground">
                       {fields.submitterName}
                     </span>
                   ) : null}
@@ -111,11 +109,11 @@ export const SelectableProposalsTable = ({
               </TableCell>
               <TableCell>
                 {fields.budget ? (
-                  <span className="text-base text-neutral-black">
+                  <span className="text-base text-foreground">
                     {fields.budget}
                   </span>
                 ) : (
-                  <span className="text-sm text-neutral-gray4">—</span>
+                  <span className="text-sm text-muted-foreground">—</span>
                 )}
               </TableCell>
               <TableCell>
@@ -161,24 +159,22 @@ const SelectableProposalCard = ({
     <div
       className={cn(
         'flex flex-col gap-3 rounded-lg border p-4',
-        isSelected
-          ? 'border-primary-teal bg-primary-tealWhite'
-          : 'border-neutral-gray1 bg-white',
+        isSelected ? 'border-primary bg-primary/10' : 'border-border bg-white',
       )}
     >
       <div className="flex flex-col gap-1">
         {href ? (
           <Link
             href={href}
-            className="text-base text-neutral-black hover:underline"
+            className="text-base text-foreground hover:underline"
           >
             {fields.title}
           </Link>
         ) : (
-          <span className="text-base text-neutral-black">{fields.title}</span>
+          <span className="text-base text-foreground">{fields.title}</span>
         )}
         {fields.submitterName ? (
-          <span className="text-sm text-neutral-gray4">
+          <span className="text-sm text-muted-foreground">
             {fields.submitterName}
           </span>
         ) : null}
@@ -186,7 +182,7 @@ const SelectableProposalCard = ({
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         {fields.budget ? (
-          <span className="text-base text-neutral-black">{fields.budget}</span>
+          <span className="text-base text-foreground">{fields.budget}</span>
         ) : null}
         <CategoryChips
           categories={fields.visibleCategories}
@@ -214,7 +210,7 @@ const CategoryChips = ({
   const t = useTranslations();
 
   if (categories.length === 0) {
-    return <span className="text-sm text-neutral-gray4">—</span>;
+    return <span className="text-sm text-muted-foreground">—</span>;
   }
 
   return (
@@ -223,7 +219,7 @@ const CategoryChips = ({
         <Chip key={category}>{category}</Chip>
       ))}
       {extraCount > 0 ? (
-        <span className="text-xs text-neutral-gray4">
+        <span className="text-xs text-muted-foreground">
           {t('+{count} More', { count: extraCount })}
         </span>
       ) : null}
@@ -246,8 +242,8 @@ const ToggleAdvanceButton = ({
 
   return (
     <Button
-      size="small"
-      color={isSelected ? 'verified' : 'secondary'}
+      size="sm"
+      variant="outline"
       onPress={onPress}
       aria-label={
         isSelected

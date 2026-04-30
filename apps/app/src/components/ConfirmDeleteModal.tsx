@@ -33,14 +33,14 @@ export function ConfirmDeleteModal({
       </ModalBody>
       <ModalFooter>
         <Button
-          color="secondary"
+          variant="outline"
           className="w-full sm:w-fit"
           onPress={onCancel}
         >
           {t('Cancel')}
         </Button>
         <Button
-          color="destructive"
+          variant="destructive"
           className="w-full sm:w-fit"
           onPress={onConfirm}
         >

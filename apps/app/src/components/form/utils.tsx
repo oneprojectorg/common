@@ -3,8 +3,8 @@ import type { ButtonProps } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
 import { Select } from '@op/ui/Select';
+import { Switch } from '@op/ui/Switch';
 import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
 import {
   AnyFieldApi,
@@ -19,7 +19,7 @@ export const { useAppForm } = createFormHook({
     TextField,
     Select,
     MultiSelectComboBox,
-    ToggleButton,
+    Switch,
     Checkbox,
   },
   formComponents: {

@@ -92,11 +92,11 @@ export const LandingScreenSkeleton: React.FC = async () => {
       </div>
 
       <Tabs className="pb-8 sm:hidden">
-        <TabList variant="pill">
-          <Tab id="discover" variant="pill">
+        <TabList>
+          <Tab id="discover">
             <TranslatedText text="Discover" />
           </Tab>
-          <Tab id="recent" variant="pill">
+          <Tab id="recent">
             <TranslatedText text="Recent" />
           </Tab>
         </TabList>
@@ -155,7 +155,7 @@ const PostFeedSection = async ({
         <ErrorBoundary
           fallback={
             <div className="flex flex-col items-center justify-center py-8">
-              <span className="text-neutral-charcoal">
+              <span className="text-foreground">
                 <TranslatedText text="Unable to load posts. Please try refreshing." />
               </span>
             </div>
@@ -187,11 +187,11 @@ const LandingScreenFeeds = ({
         </div>
       </div>
       <Tabs className="gap-8 pb-8 sm:hidden">
-        <TabList variant="pill">
-          <Tab id="discover" variant="pill">
+        <TabList>
+          <Tab id="discover">
             <TranslatedText text="Discover" />
           </Tab>
-          <Tab id="recent" variant="pill">
+          <Tab id="recent">
             <TranslatedText text="Recent" />
           </Tab>
         </TabList>
@@ -215,7 +215,7 @@ const WelcomeSection = async () => {
   return (
     <div className="flex flex-col gap-2">
       <Welcome user={user} />
-      <span className="text-center text-neutral-charcoal">
+      <span className="text-center text-foreground">
         <TranslatedText text="Explore new connections and strengthen existing relationships." />
       </span>
     </div>

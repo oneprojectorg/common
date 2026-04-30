@@ -32,9 +32,9 @@ const initialTasks: Task[] = [
 ];
 
 const priorityColors = {
-  low: 'bg-functional-greenWhite text-functional-green',
-  medium: 'bg-primary-yellow/10 text-primary-yellow',
-  high: 'bg-functional-redWhite text-functional-redBlack',
+  low: 'bg-positive-foreground text-positive',
+  medium: 'bg-warning/10 text-warning',
+  high: 'bg-destructive-foreground text-destructive',
 };
 
 /**
@@ -48,7 +48,7 @@ export const WithDragHandle = () => {
   return (
     <div className="w-[400px]">
       <h3 className="mb-4 text-lg font-semibold">With Drag Handle</h3>
-      <p className="mb-4 text-sm text-neutral-gray3">
+      <p className="mb-4 text-sm text-muted-foreground">
         The drag handle provides keyboard and screen reader accessibility. Mouse
         users can drag the entire row.
       </p>
@@ -80,7 +80,7 @@ export const WithDragHandle = () => {
           </div>
         )}
       </Sortable>
-      <div className="mt-4 text-sm text-neutral-gray3">
+      <div className="mt-4 text-sm text-muted-foreground">
         Current order: {tasks.map((t) => t.id).join(', ')}
       </div>
     </div>
@@ -97,7 +97,7 @@ export const WithoutDragHandle = () => {
   return (
     <div className="w-[400px]">
       <h3 className="mb-4 text-lg font-semibold">Without Drag Handle</h3>
-      <p className="mb-4 text-sm text-neutral-gray3">
+      <p className="mb-4 text-sm text-muted-foreground">
         The entire item is the drag target. Press Enter on an item to start
         dragging with keyboard.
       </p>
@@ -125,7 +125,7 @@ export const WithoutDragHandle = () => {
           </div>
         )}
       </Sortable>
-      <div className="mt-4 text-sm text-neutral-gray3">
+      <div className="mt-4 text-sm text-muted-foreground">
         Current order: {tasks.map((t) => t.id).join(', ')}
       </div>
     </div>
@@ -141,7 +141,7 @@ export const CustomDragPreview = () => {
   return (
     <div className="w-[400px]">
       <h3 className="mb-4 text-lg font-semibold">Custom Drag Preview</h3>
-      <p className="mb-4 text-sm text-neutral-gray3">
+      <p className="mb-4 text-sm text-muted-foreground">
         A custom preview is shown while dragging instead of the default item
         clone.
       </p>
@@ -152,7 +152,7 @@ export const CustomDragPreview = () => {
         getItemLabel={(task) => task.title}
         className="gap-2"
         renderDragPreview={(items) => (
-          <div className="rounded-lg bg-primary-teal px-4 py-2 text-white shadow-xl">
+          <div className="rounded-lg bg-primary px-4 py-2 text-white shadow-xl">
             Moving: {items[0]?.title}
           </div>
         )}
@@ -175,7 +175,7 @@ export const CustomDragPreview = () => {
           </div>
         )}
       </Sortable>
-      <div className="mt-4 text-sm text-neutral-gray3">
+      <div className="mt-4 text-sm text-muted-foreground">
         Current order: {tasks.map((t) => t.id).join(', ')}
       </div>
     </div>
@@ -191,7 +191,7 @@ export const WithDropPlaceholder = () => {
   return (
     <div className="w-[400px]">
       <h3 className="mb-4 text-lg font-semibold">With Drop Placeholder</h3>
-      <p className="mb-4 text-sm text-neutral-gray3">
+      <p className="mb-4 text-sm text-muted-foreground">
         A placeholder shows where the dragged item will be dropped.
       </p>
       <Sortable
@@ -223,7 +223,7 @@ export const WithDropPlaceholder = () => {
           </div>
         )}
       </Sortable>
-      <div className="mt-4 text-sm text-neutral-gray3">
+      <div className="mt-4 text-sm text-muted-foreground">
         Current order: {tasks.map((t) => t.id).join(', ')}
       </div>
     </div>
@@ -239,7 +239,7 @@ export const WithLineIndicator = () => {
   return (
     <div className="w-[400px]">
       <h3 className="mb-4 text-lg font-semibold">With Line Indicator</h3>
-      <p className="mb-4 text-sm text-neutral-gray3">
+      <p className="mb-4 text-sm text-muted-foreground">
         A thin line shows where the item will be dropped.
       </p>
       <Sortable
@@ -271,7 +271,7 @@ export const WithLineIndicator = () => {
           </div>
         )}
       </Sortable>
-      <div className="mt-4 text-sm text-neutral-gray3">
+      <div className="mt-4 text-sm text-muted-foreground">
         Current order: {tasks.map((t) => t.id).join(', ')}
       </div>
     </div>
@@ -287,7 +287,7 @@ export const CustomDropIndicator = () => {
   return (
     <div className="w-[400px]">
       <h3 className="mb-4 text-lg font-semibold">Custom Drop Indicator</h3>
-      <p className="mb-4 text-sm text-neutral-gray3">
+      <p className="mb-4 text-sm text-muted-foreground">
         You can create your own drop indicator with custom styling.
       </p>
       <Sortable
@@ -323,7 +323,7 @@ export const CustomDropIndicator = () => {
           </div>
         )}
       </Sortable>
-      <div className="mt-4 text-sm text-neutral-gray3">
+      <div className="mt-4 text-sm text-muted-foreground">
         Current order: {tasks.map((t) => t.id).join(', ')}
       </div>
     </div>
@@ -376,7 +376,7 @@ export const VariableHeightItems = () => {
   return (
     <div className="w-[400px]">
       <h3 className="mb-4 text-lg font-semibold">Variable Height Items</h3>
-      <p className="mb-4 text-sm text-neutral-gray3">
+      <p className="mb-4 text-sm text-muted-foreground">
         Items with different content lengths sort correctly. A line indicator
         shows where the item will be dropped.
       </p>
@@ -402,14 +402,14 @@ export const VariableHeightItems = () => {
             />
             <div className="flex-1">
               <h3 className="font-medium">{item.title}</h3>
-              <p className="mt-1 text-sm whitespace-pre-wrap text-neutral-gray3">
+              <p className="mt-1 text-sm whitespace-pre-wrap text-muted-foreground">
                 {item.description}
               </p>
             </div>
           </div>
         )}
       </Sortable>
-      <div className="mt-4 text-sm text-neutral-gray3">
+      <div className="mt-4 text-sm text-muted-foreground">
         Current order: {items.map((i) => i.id).join(', ')}
       </div>
     </div>

@@ -6,7 +6,7 @@ import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter'
 
 function DecisionHeaderSkeleton() {
   return (
-    <div className="border-b bg-neutral-offWhite">
+    <div className="border-b bg-muted">
       {/* Header skeleton */}
       <div className="flex items-center justify-between border-b bg-white px-6 py-4">
         <Skeleton className="h-6 w-32" />

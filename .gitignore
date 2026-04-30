@@ -78,3 +78,5 @@ ralph.sh
 
 # pnpm local store (created inside bind-mounted /app when container runs pnpm)
 .pnpm-store/
+
+.gstack/

@@ -2,7 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
-import { Button, ButtonLink } from '@op/ui/Button';
+import { Button, ButtonLink, UnstyledButton } from '@op/ui/Button';
 import { Header1, Header2 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { toast } from '@op/ui/Toast';
@@ -22,12 +22,12 @@ const NoAccessMessage = () => {
   return (
     <div className="flex size-full flex-col items-center justify-center gap-4 text-center">
       <Header1>{t("You don't have access to this page")}</Header1>
-      <p className="text-neutral-gray4">
+      <p className="text-muted-foreground">
         {t(
           'Contact the person who shared this link if you think this is a mistake.',
         )}
       </p>
-      <ButtonLink href="/" color="primary">
+      <ButtonLink href="/" variant="default">
         {t('Go to Common')}
       </ButtonLink>
     </div>
@@ -91,7 +91,7 @@ const ForbiddenWithInviteCheck = () => {
                 processInstanceName: matchingInvite.profile?.name,
               })}
             </Header1>
-            <Header2 className="text-neutral-gray4">
+            <Header2 className="text-muted-foreground">
               {t('A decision-making process stewarded by {stewardName}.', {
                 stewardName: steward?.name ?? '',
               })}
@@ -118,9 +118,8 @@ const ForbiddenWithInviteCheck = () => {
             >
               {acceptInvite.isPending ? <LoadingSpinner /> : t('Accept')}
             </Button>
-            <Button
-              unstyled
-              className="h-10 px-2 py-2.5 text-sm text-primary-teal underline hover:text-primary-teal/80 disabled:opacity-50"
+            <UnstyledButton
+              className="h-10 px-2 py-2.5 text-sm text-primary underline hover:text-primary/80 disabled:opacity-50"
               onPress={() =>
                 declineInvite.mutate({ inviteId: matchingInvite.id })
               }
@@ -131,7 +130,7 @@ const ForbiddenWithInviteCheck = () => {
               ) : (
                 t("I don't want to participate")
               )}
-            </Button>
+            </UnstyledButton>
           </div>
         </FormContainer>
       </div>

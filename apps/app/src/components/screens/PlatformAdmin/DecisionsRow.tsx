@@ -6,7 +6,7 @@ import { Menu, MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
-import { TableCell } from '@op/ui/ui/table';
+import { TableCell } from '@op/ui/ui/data-table';
 import { useFormatter } from 'next-intl';
 import { useState } from 'react';
 import { Button } from 'react-aria-components';
@@ -37,14 +37,14 @@ export const DecisionsRowCells = ({
   return (
     <>
       <TableCell>{decision.name}</TableCell>
-      <TableCell className="text-neutral-charcoal">
+      <TableCell className="text-foreground">
         {decision.currentPhase ? (
           <div className="flex flex-col">
             <span>
               {decision.currentPhase.name ?? decision.currentPhase.id}
             </span>
             {phaseEndDate ? (
-              <span className="text-xs text-neutral-gray4">
+              <span className="text-xs text-muted-foreground">
                 {t('Ends {date}', {
                   date: format.dateTime(phaseEndDate, { dateStyle: 'medium' }),
                 })}
@@ -55,21 +55,21 @@ export const DecisionsRowCells = ({
           '—'
         )}
       </TableCell>
-      <TableCell className="text-neutral-charcoal">
+      <TableCell className="text-foreground">
         {decision.stewardName ?? '—'}
       </TableCell>
-      <TableCell className="text-neutral-charcoal">
+      <TableCell className="text-foreground">
         {decision.proposalCount}
       </TableCell>
-      <TableCell className="text-neutral-charcoal">
+      <TableCell className="text-foreground">
         {decision.participantCount}
       </TableCell>
-      <TableCell className="text-neutral-charcoal">
+      <TableCell className="text-foreground">
         {decision.status
           ? (STATUS_DISPLAY[decision.status] ?? decision.status)
           : '—'}
       </TableCell>
-      <TableCell className="text-neutral-charcoal">
+      <TableCell className="text-foreground">
         {createdAt ? (
           <TooltipTrigger>
             <Button className="underline decoration-dotted underline-offset-2 outline-hidden">
@@ -85,7 +85,7 @@ export const DecisionsRowCells = ({
       </TableCell>
       <TableCell>
         <div className="flex justify-end">
-          <OptionMenu variant="outline" size="medium">
+          <OptionMenu variant="outline">
             <Menu className="min-w-48 p-2">
               <MenuItem
                 key="view-instance-data"
@@ -125,7 +125,7 @@ const InstanceDataModal = ({
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
       <ModalHeader>{t('Instance data for {name}', { name })}</ModalHeader>
       <ModalBody className="pb-6">
-        <pre className="bg-neutral-gray0 max-h-[60vh] overflow-auto rounded-lg p-4 text-xs">
+        <pre className="max-h-[60vh] overflow-auto rounded-lg bg-accent p-4 text-xs">
           {JSON.stringify(instanceData, null, 2)}
         </pre>
       </ModalBody>

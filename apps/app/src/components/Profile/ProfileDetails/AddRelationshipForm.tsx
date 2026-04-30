@@ -157,9 +157,9 @@ export const AddRelationshipForm = ({ profile }: { profile: Organization }) => {
                           value={option.key}
                         />
 
-                        <div className="flex flex-col text-neutral-charcoal">
+                        <div className="flex flex-col text-foreground">
                           <span>{option.label}</span>
-                          <span className="text-sm text-neutral-gray4">
+                          <span className="text-sm text-muted-foreground">
                             {option.description(profile.profile.name)}
                           </span>
                         </div>
@@ -172,13 +172,13 @@ export const AddRelationshipForm = ({ profile }: { profile: Organization }) => {
                 <Button
                   onPress={close}
                   className="w-full sm:w-fit"
-                  color="secondary"
+                  variant="outline"
                   type="button"
                 >
                   {t('Cancel')}
                 </Button>
                 <Button
-                  color="primary"
+                  variant="default"
                   type="submit"
                   className="w-full sm:w-fit"
                   isPending={isSubmitting}

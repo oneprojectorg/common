@@ -2,7 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
+import { Button, UnstyledButton } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { toast } from '@op/ui/Toast';
@@ -110,10 +110,10 @@ export const DecisionInvitesForm = ({
       <FormContainer className="gap-6">
         {/* Header section - gap-2 (8px) between title and subtitle */}
         <div className="flex flex-col gap-2 text-center">
-          <Header1 className="text-neutral-black">
+          <Header1 className="text-foreground">
             {t('Join decision-making processes')}
           </Header1>
-          <p className="text-sm text-neutral-gray4">
+          <p className="text-sm text-muted-foreground">
             {t(
               "You've been invited to join the following decision-making processes",
             )}
@@ -149,14 +149,13 @@ export const DecisionInvitesForm = ({
           </Button>
           {/* Show single decline link at bottom only for single invite */}
           {invites.length === 1 && invites[0] && (
-            <Button
-              unstyled
-              className="h-10 px-2 py-2.5 text-sm text-primary-teal underline hover:text-primary-teal/80 disabled:opacity-50"
+            <UnstyledButton
+              className="h-10 px-2 py-2.5 text-sm text-primary underline hover:text-primary/80 disabled:opacity-50"
               onPress={() => handleDecline(invites[0]!.id)}
               isDisabled={declineInvite.isPending}
             >
               {t("I don't want to participate")}
-            </Button>
+            </UnstyledButton>
           )}
         </div>
       </FormContainer>

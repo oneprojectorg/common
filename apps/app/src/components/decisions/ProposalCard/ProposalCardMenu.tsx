@@ -255,7 +255,7 @@ export function ProposalCardMenu({
         <MenuItem
           key={item.key}
           onAction={item.onAction}
-          className={`rounded-none px-6 py-4 ${item.isDestructive ? 'text-functional-red' : ''} ${index < items.length - 1 ? 'border-b border-neutral-gray1' : ''}`}
+          className={`rounded-none px-6 py-4 ${item.isDestructive ? 'text-destructive' : ''} ${index < items.length - 1 ? 'border-b border-border' : ''}`}
           isDisabled={item.isDisabled}
         >
           {item.icon}
@@ -268,7 +268,7 @@ export function ProposalCardMenu({
       <MenuItem
         key={item.key}
         onAction={item.onAction}
-        className={`min-w-48 py-2 ${item.isDestructive ? 'text-functional-red' : ''}`}
+        className={`min-w-48 py-2 ${item.isDestructive ? 'text-destructive' : ''}`}
         isDisabled={item.isDisabled}
       >
         {item.icon}
@@ -280,8 +280,8 @@ export function ProposalCardMenu({
   const menuTriggerButton = (
     <IconButton
       variant="ghost"
-      size="small"
-      className="aspect-square aria-expanded:bg-neutral-gray1"
+      size="sm"
+      className="aspect-square aria-expanded:bg-accent"
       onPress={isMobile ? () => setIsMenuSheetOpen(true) : undefined}
     >
       <LuEllipsis className="size-4" />
@@ -336,14 +336,14 @@ export function ProposalCardMenu({
             </ModalBody>
             <ModalFooter>
               <Button
-                color="secondary"
+                variant="outline"
                 className="w-full sm:w-fit"
                 onPress={() => setIsDeleteModalOpen(false)}
               >
                 {t('Cancel')}
               </Button>
               <Button
-                color="destructive"
+                variant="destructive"
                 onPress={handleDeleteConfirm}
                 className="w-full sm:w-fit"
                 isDisabled={deleteProposalMutation.isPending}

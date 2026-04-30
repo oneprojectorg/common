@@ -28,15 +28,11 @@ export const DecisionCardHeader = ({
 }) => (
   <div className={cn('flex flex-col gap-2', className)}>
     <div className="flex items-start justify-between gap-2 sm:items-center sm:justify-start">
-      <Header3 className="font-serif !text-title-base text-neutral-black">
+      <Header3 className="font-serif !text-title-base text-foreground">
         {name}
       </Header3>
       {currentState ? (
-        <Chip
-          className={
-            chipClassName ?? 'bg-primary-tealWhite text-primary-tealBlack'
-          }
-        >
+        <Chip className={chipClassName ?? 'bg-primary/10 text-primary'}>
           <TranslatedText text={currentState as TranslationKey} />
         </Chip>
       ) : null}
@@ -53,7 +49,7 @@ export const DecisionCardHeader = ({
             />
           ) : null}
         </Avatar>
-        <span className="text-sm text-neutral-black">{stewardName}</span>
+        <span className="text-sm text-foreground">{stewardName}</span>
       </div>
     ) : null}
     {children}

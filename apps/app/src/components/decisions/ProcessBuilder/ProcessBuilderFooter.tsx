@@ -124,14 +124,14 @@ export const ProcessBuilderFooter = ({
           <div className="flex items-center gap-2 md:w-60 md:shrink-0">
             <Link
               href={`/decisions/${slug}`}
-              className="inline-flex h-10 items-center gap-1 px-2 text-base text-charcoal transition-colors hover:bg-neutral-gray1"
+              className="inline-flex h-10 items-center gap-1 px-2 text-base text-foreground transition-colors hover:bg-accent"
             >
               <LuLogOut className="size-4 rotate-180" />
               {t('Exit')}
             </Link>
             {hasPrev && (
               <Button
-                color="secondary"
+                variant="outline"
                 onPress={goBack}
                 className="hidden md:inline-flex"
               >
@@ -152,7 +152,7 @@ export const ProcessBuilderFooter = ({
             {/* Desktop action buttons */}
             <div className="flex shrink-0 items-center gap-2">
               {hasNext && (
-                <Button color="secondary" onPress={goNext}>
+                <Button variant="outline" onPress={goNext}>
                   {t('Next')}
                 </Button>
               )}
@@ -173,12 +173,12 @@ export const ProcessBuilderFooter = ({
           <div className="flex items-center justify-end gap-2 md:hidden">
             <SidebarTrigger />
             {hasPrev && (
-              <Button color="secondary" onPress={goBack}>
+              <Button variant="outline" onPress={goBack}>
                 {t('Back')}
               </Button>
             )}
             {hasNext && (
-              <Button color="secondary" onPress={goNext}>
+              <Button variant="outline" onPress={goNext}>
                 {t('Next')}
               </Button>
             )}

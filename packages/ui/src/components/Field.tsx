@@ -29,7 +29,7 @@ export const Label = (props: LabelProps) => {
     <RACLabel
       {...props}
       className={twMerge(
-        'w-fit cursor-default text-sm font-normal text-neutral-black',
+        'w-fit cursor-default text-sm font-normal text-foreground',
         props.className,
       )}
     />
@@ -42,7 +42,7 @@ export const Description = (props: TextProps) => {
       {...props}
       slot="description"
       className={twMerge(
-        'text-left text-sm text-neutral-gray4',
+        'text-left text-sm text-muted-foreground',
         props.className,
       )}
     />
@@ -55,7 +55,7 @@ export const FieldError = (props: FieldErrorProps) => {
       {...props}
       className={composeTailwindRenderProps(
         props.className,
-        'text-sm text-functional-red',
+        'text-sm text-destructive',
       )}
     />
   );
@@ -65,10 +65,10 @@ export const fieldBorderStyles = tv({
   variants: {
     isFocusWithin: {
       false: '',
-      true: 'border-red',
+      true: 'border-destructive',
     },
     isInvalid: {
-      true: 'border-red-300',
+      true: 'border-destructive-300',
     },
     isDisabled: {
       true: 'border-neutral-300',
@@ -78,7 +78,7 @@ export const fieldBorderStyles = tv({
 
 export const fieldGroupStyles = tv({
   extend: focusRing,
-  base: 'group flex items-center bg-white placeholder:text-teal disabled:placeholder:text-lightGray',
+  base: 'group flex items-center bg-white placeholder:text-primary disabled:placeholder:text-muted-foreground/70',
   variants: fieldBorderStyles.variants,
 });
 
@@ -94,12 +94,12 @@ export const FieldGroup = (props: GroupProps) => {
 };
 
 export const inputStyles = tv({
-  base: 'h-10 min-w-0 flex-1 rounded-lg border p-4 text-base leading-[0.5rem] text-neutral-black outline outline-0 placeholder:text-neutral-gray4 hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue active:border-neutral-gray4 disabled:border-neutral-gray2 disabled:bg-neutral-gray1 disabled:text-lightGray',
+  base: 'h-10 min-w-0 flex-1 rounded-lg border p-4 text-base leading-[0.5rem] text-foreground outline outline-0 placeholder:text-muted-foreground hover:border-input focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chart-3 active:border-input disabled:border-input disabled:bg-accent disabled:text-muted-foreground/70',
   variants: {
     color: {
       primary: '',
-      muted: 'bg-offWhite text-neutral-gray4',
-      error: 'border-functional-red outline-functional-red',
+      muted: 'bg-muted text-muted-foreground',
+      error: 'border-destructive outline-destructive',
     },
     size: {
       small: 'h-8 px-4 py-2',
@@ -179,12 +179,12 @@ export const InputWithIcon = ({
 
 const textAreaStyles = tv({
   base: [
-    'w-full min-w-0 resize-none rounded-lg border p-3 text-base text-neutral-black',
-    'outline outline-0 placeholder:text-base placeholder:text-neutral-gray4',
-    'active:border-neutral-gray4 active:outline',
-    'hover:border-neutral-gray2',
-    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue',
-    'disabled:border-neutral-gray2 disabled:bg-neutral-gray1 disabled:text-lightGray',
+    'w-full min-w-0 resize-none rounded-lg border p-3 text-base text-foreground',
+    'outline outline-0 placeholder:text-base placeholder:text-muted-foreground',
+    'active:border-input active:outline',
+    'hover:border-input',
+    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chart-3',
+    'disabled:border-input disabled:bg-accent disabled:text-muted-foreground/70',
   ],
   variants: {
     variant: {

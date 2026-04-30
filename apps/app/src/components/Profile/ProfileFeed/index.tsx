@@ -152,7 +152,7 @@ export const ProfileFeedCards = ({
           <HorizontalListItem>
             <div ref={infiniteScrollRef as React.RefObject<HTMLDivElement>}>
               {isFetchingNextPage ? (
-                <div className="text-sm text-neutral-gray4">
+                <div className="text-sm text-muted-foreground">
                   <SkeletonLine lines={2} />
                 </div>
               ) : null}
@@ -212,7 +212,7 @@ export const ProfileFeedList = ({
           className="flex justify-center py-4"
         >
           {isFetchingNextPage ? (
-            <div className="text-sm text-neutral-gray4">
+            <div className="text-sm text-muted-foreground">
               <SkeletonLine lines={2} />
             </div>
           ) : null}

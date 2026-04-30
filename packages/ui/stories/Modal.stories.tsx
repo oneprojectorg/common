@@ -37,14 +37,14 @@ export const Example = () => (
           <p>This is a basic modal with header, body, and footer sections.</p>
         </ModalBody>
         <ModalFooter>
-          <Button color="secondary">Cancel</Button>
+          <Button variant="outline">Cancel</Button>
           <Button>Confirm</Button>
         </ModalFooter>
       </Modal>
     </DialogTrigger>
 
     <DialogTrigger>
-      <Button color="secondary">Open Modal with Confetti</Button>
+      <Button variant="outline">Open Modal with Confetti</Button>
       <Modal confetti>
         <ModalHeader>Success Modal</ModalHeader>
         <ModalBody>
@@ -57,7 +57,7 @@ export const Example = () => (
     </DialogTrigger>
 
     <DialogTrigger>
-      <Button color="destructive">Open Large Modal</Button>
+      <Button variant="destructive">Open Large Modal</Button>
       <Modal className="max-w-2xl">
         <ModalHeader>Large Modal</ModalHeader>
         <ModalBody>
@@ -66,14 +66,14 @@ export const Example = () => (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <h4 className="font-medium">Section 1</h4>
-                <p className="text-sm text-neutral-gray3">
+                <p className="text-sm text-muted-foreground">
                   Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
                   do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                 </p>
               </div>
               <div className="space-y-2">
                 <h4 className="font-medium">Section 2</h4>
-                <p className="text-sm text-neutral-gray3">
+                <p className="text-sm text-muted-foreground">
                   Ut enim ad minim veniam, quis nostrud exercitation ullamco
                   laboris nisi ut aliquip ex ea commodo consequat.
                 </p>
@@ -81,7 +81,7 @@ export const Example = () => (
             </div>
             <div className="space-y-2">
               <h4 className="font-medium">Additional Content</h4>
-              <p className="text-sm text-neutral-gray3">
+              <p className="text-sm text-muted-foreground">
                 Duis aute irure dolor in reprehenderit in voluptate velit esse
                 cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
                 cupidatat non proident, sunt in culpa qui officia deserunt
@@ -91,8 +91,8 @@ export const Example = () => (
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button color="secondary">Cancel</Button>
-          <Button color="destructive">Delete</Button>
+          <Button variant="outline">Cancel</Button>
+          <Button variant="destructive">Delete</Button>
           <Button>Save Changes</Button>
         </ModalFooter>
       </Modal>
@@ -109,7 +109,7 @@ export const BasicModal = () => (
         <p>This is the modal content.</p>
       </ModalBody>
       <ModalFooter>
-        <Button color="secondary">Cancel</Button>
+        <Button variant="outline">Cancel</Button>
         <Button>OK</Button>
       </ModalFooter>
     </Modal>
@@ -143,7 +143,7 @@ export const DismissableModal = () => {
           <p>This modal is dismissable.</p>
         </ModalBody>
         <ModalFooter>
-          <Button color="secondary">Cancel</Button>
+          <Button variant="outline">Cancel</Button>
           <Button>Confirm</Button>
         </ModalFooter>
       </Modal>
@@ -164,7 +164,7 @@ export const WithForm = () => (
             </label>
             <input
               type="text"
-              className="w-full rounded-lg border border-neutral-gray3 px-3 py-2"
+              className="w-full rounded-lg border border-input px-3 py-2"
               placeholder="Enter project name"
             />
           </div>
@@ -173,14 +173,14 @@ export const WithForm = () => (
               Description
             </label>
             <textarea
-              className="w-full rounded-lg border border-neutral-gray3 px-3 py-2"
+              className="w-full rounded-lg border border-input px-3 py-2"
               rows={3}
               placeholder="Enter project description"
             />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium">Category</label>
-            <select className="w-full rounded-lg border border-neutral-gray3 px-3 py-2">
+            <select className="w-full rounded-lg border border-input px-3 py-2">
               <option>Select category</option>
               <option>Web Development</option>
               <option>Mobile App</option>
@@ -191,7 +191,7 @@ export const WithForm = () => (
         </form>
       </ModalBody>
       <ModalFooter>
-        <Button color="secondary">Cancel</Button>
+        <Button variant="outline">Cancel</Button>
         <Button>Create Project</Button>
       </ModalFooter>
     </Modal>
@@ -207,9 +207,9 @@ export const LargeModal = () => (
         <div className="space-y-6">
           <div className="grid grid-cols-3 gap-4">
             {Array.from({ length: 6 }, (_, i) => (
-              <div key={i} className="rounded border border-neutral-gray3 p-4">
+              <div key={i} className="rounded border border-input p-4">
                 <h4 className="font-medium">Item {i + 1}</h4>
-                <p className="text-sm text-neutral-gray3">
+                <p className="text-sm text-muted-foreground">
                   This is item {i + 1} with some sample content.
                 </p>
               </div>
@@ -217,7 +217,7 @@ export const LargeModal = () => (
           </div>
           <div>
             <h3 className="mb-2 font-medium">Additional Information</h3>
-            <p className="text-sm text-neutral-gray3">
+            <p className="text-sm text-muted-foreground">
               This modal demonstrates how content can be organized in a larger
               modal with multiple sections and complex layouts.
             </p>
@@ -225,7 +225,7 @@ export const LargeModal = () => (
         </div>
       </ModalBody>
       <ModalFooter>
-        <Button color="secondary">Cancel</Button>
+        <Button variant="outline">Cancel</Button>
         <Button>Save All</Button>
       </ModalFooter>
     </Modal>
@@ -276,14 +276,10 @@ const ModalStepperExample = () => {
 
     return {
       header: (
-        <h3 className="text-title-sm text-neutral-black">
-          {currentStep.title}
-        </h3>
+        <h3 className="text-title-sm text-foreground">{currentStep.title}</h3>
       ),
       content: (
-        <p className="text-base text-neutral-charcoal">
-          {currentStep.description}
-        </p>
+        <p className="text-base text-foreground">{currentStep.description}</p>
       ),
     };
   };

@@ -6,6 +6,7 @@ import { Button } from '@op/ui/Button';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
+import { cn } from '@op/ui/utils';
 import { type ReactNode, useState } from 'react';
 import { LuChevronDown } from 'react-icons/lu';
 
@@ -31,8 +32,8 @@ interface ResponsiveSelectProps<T extends string> {
   'aria-label'?: string;
   /** Additional class for the trigger button/select */
   className?: string;
-  /** Size variant */
-  size?: 'small' | 'medium';
+  /** Size variant — passed to the inner Button */
+  size?: 'sm' | 'default' | 'lg';
   /** Render custom label for selected item (defaults to item.label) */
   renderSelectedLabel?: (item: SelectOption<T> | undefined) => ReactNode;
 }
@@ -47,7 +48,7 @@ export function ResponsiveSelect<T extends string>({
   items,
   'aria-label': ariaLabel,
   className = 'min-w-36',
-  size = 'small',
+  size = 'sm',
   renderSelectedLabel,
 }: ResponsiveSelectProps<T>) {
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
@@ -62,7 +63,7 @@ export function ResponsiveSelect<T extends string>({
     return (
       <>
         <Button
-          color="secondary"
+          variant="outline"
           size={size}
           className={`${className} justify-between`}
           onPress={() => setIsOpen(true)}
@@ -80,21 +81,28 @@ export function ResponsiveSelect<T extends string>({
         >
           <ModalBody className="pb-safe p-0">
             <Menu className="flex min-w-full flex-col border-0 p-0 shadow-none">
-              {items.map((item, index) => (
-                <MenuItem
-                  key={item.id}
-                  id={item.id}
-                  selected={selectedKey === item.id}
-                  isDisabled={item.isDisabled}
-                  className={`rounded-none px-6 py-4 ${index < items.length - 1 ? 'border-b border-neutral-gray1' : ''}`}
-                  onAction={() => {
-                    onSelectionChange(item.id);
-                    setIsOpen(false);
-                  }}
-                >
-                  {item.label}
-                </MenuItem>
-              ))}
+              {items.map((item, index) => {
+                const isCurrent = selectedKey === item.id;
+                return (
+                  <MenuItem
+                    key={item.id}
+                    id={item.id}
+                    data-current={isCurrent || undefined}
+                    isDisabled={item.isDisabled}
+                    className={cn(
+                      'rounded-none px-6 py-4',
+                      index < items.length - 1 && 'border-b border-border',
+                      isCurrent && 'bg-primary/10 data-[focused]:bg-primary/15',
+                    )}
+                    onAction={() => {
+                      onSelectionChange(item.id);
+                      setIsOpen(false);
+                    }}
+                  >
+                    {item.label}
+                  </MenuItem>
+                );
+              })}
             </Menu>
           </ModalBody>
         </Modal>
@@ -105,7 +113,6 @@ export function ResponsiveSelect<T extends string>({
   return (
     <Select
       selectedKey={selectedKey}
-      size={size}
       className={className}
       onSelectionChange={(key) => onSelectionChange(key as T)}
       aria-label={ariaLabel}

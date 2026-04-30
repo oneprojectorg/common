@@ -16,7 +16,7 @@ export default function PageNotFound() {
           <TranslatedText text="It might have been moved, deleted, or maybe it never existed." />
         </p>
       </div>
-      <ButtonLink href="/" color="primary">
+      <ButtonLink href="/" variant="default">
         <TranslatedText text="Take me home" />
       </ButtonLink>
     </div>

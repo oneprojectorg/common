@@ -7,8 +7,8 @@ import { Button } from '@op/ui/Button';
 import { DatePicker } from '@op/ui/DatePicker';
 import { Header2 } from '@op/ui/Header';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Switch } from '@op/ui/Switch';
 import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
 import { useQueryState } from 'nuqs';
 import { useRef, useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
@@ -232,7 +232,7 @@ function PhaseDetailForm({
     <div className="mx-auto w-full space-y-4 p-4 [scrollbar-gutter:stable] md:max-w-160 md:p-8">
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-neutral-gray4">
+          <p className="text-sm text-muted-foreground">
             {t('Phase {index} of {total}', {
               index: phaseIndex,
               total: phaseCount,
@@ -294,7 +294,7 @@ function PhaseDetailForm({
             className="rounded-lg border border-border"
             editorClassName="min-h-24 p-3"
           />
-          <p className="text-sm text-neutral-gray4">
+          <p className="text-sm text-muted-foreground">
             {t(
               'Any additional information will appear in a modal titled "About the process"',
             )}
@@ -335,28 +335,26 @@ function PhaseDetailForm({
             'Participants can submit new proposals during this phase.',
           )}
         >
-          <ToggleButton
+          <Switch
             isSelected={phase.rules?.proposals?.submit ?? false}
             onChange={(val) =>
               updateRules({
                 proposals: { ...phase.rules?.proposals, submit: val },
               })
             }
-            size="small"
           />
         </ToggleRow>
         <ToggleRow
           label={t('Proposal editing')}
           description={t('Authors can edit their proposals after submitting')}
         >
-          <ToggleButton
+          <Switch
             isSelected={phase.rules?.proposals?.edit ?? false}
             onChange={(val) =>
               updateRules({
                 proposals: { ...phase.rules?.proposals, edit: val },
               })
             }
-            size="small"
           />
         </ToggleRow>
         <ToggleRow
@@ -365,14 +363,13 @@ function PhaseDetailForm({
             'Proposals can be assessed and scored during this phase.',
           )}
         >
-          <ToggleButton
+          <Switch
             isSelected={phase.rules?.proposals?.review ?? false}
             onChange={(val) =>
               updateRules({
                 proposals: { ...phase.rules?.proposals, review: val },
               })
             }
-            size="small"
           />
         </ToggleRow>
         <ToggleRow
@@ -381,14 +378,13 @@ function PhaseDetailForm({
             'Participants can vote on proposals during this phase.',
           )}
         >
-          <ToggleButton
+          <Switch
             isSelected={phase.rules?.voting?.submit ?? false}
             onChange={(val) =>
               updateRules({
                 voting: { ...phase.rules?.voting, submit: val },
               })
             }
-            size="small"
           />
         </ToggleRow>
       </div>
@@ -396,8 +392,8 @@ function PhaseDetailForm({
       {/* Delete */}
       <div className="border-t pt-4">
         <Button
-          color="secondary"
-          className="text-functional-red"
+          variant="outline"
+          className="text-destructive"
           onPress={() => setShowDeleteModal(true)}
         >
           <LuTrash2 className="size-4" />
@@ -424,14 +420,14 @@ function PhaseDetailForm({
         </ModalBody>
         <ModalFooter>
           <Button
-            color="secondary"
+            variant="outline"
             className="w-full sm:w-fit"
             onPress={() => setShowDeleteModal(false)}
           >
             {t('Cancel')}
           </Button>
           <Button
-            color="destructive"
+            variant="destructive"
             className="w-full sm:w-fit"
             onPress={confirmDelete}
           >

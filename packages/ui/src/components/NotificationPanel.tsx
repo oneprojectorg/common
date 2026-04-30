@@ -12,9 +12,9 @@ export const NotificationPanelHeader = ({
   count: number;
 }) => {
   return (
-    <Header2 className="flex items-center gap-1 p-6 font-serif text-title-sm text-neutral-black">
+    <Header2 className="flex items-center gap-1 p-6 font-serif text-title-sm text-foreground">
       {title}{' '}
-      <span className="flex size-4 items-center justify-center rounded-full bg-functional-red font-sans text-xs text-neutral-offWhite">
+      <span className="flex size-4 items-center justify-center rounded-full bg-destructive font-sans text-xs text-muted">
         {count}
       </span>
     </Header2>

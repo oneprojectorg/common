@@ -82,10 +82,10 @@ const RemoveRelationshipModalContent = ({
         </div>
       </ModalBody>
       <ModalFooter>
-        <Button onPress={onClose} color="neutral" type="button">
+        <Button onPress={onClose} variant="outline" type="button">
           {t('Cancel')}
         </Button>
-        <Button color="destructive" type="submit" isPending={isSubmitting}>
+        <Button variant="destructive" type="submit" isPending={isSubmitting}>
           {isSubmitting ? <LoadingSpinner /> : t('Remove')}
         </Button>
       </ModalFooter>
@@ -162,7 +162,7 @@ export const AddRelationshipModalSuspense = ({
             'min-w-full sm:min-w-fit',
             relationships.some((r) => r.pending)
               ? 'bg-transparent'
-              : 'bg-primary-tealWhite',
+              : 'bg-primary/10',
           )}
         />
       ) : relationships.length === 1 ? (
@@ -172,10 +172,7 @@ export const AddRelationshipModalSuspense = ({
             isDisabled={!relationship.pending}
           >
             <DialogTrigger>
-              <Button
-                className="w-full sm:w-auto"
-                color={relationship.pending ? 'unverified' : 'verified'}
-              >
+              <Button className="w-full sm:w-auto" variant="outline">
                 {relationship.pending ? (
                   <LuClock className="size-4" />
                 ) : (

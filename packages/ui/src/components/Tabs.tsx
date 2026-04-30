@@ -44,7 +44,7 @@ const tabListStyles = tv({
       pill: 'border-none',
     },
     orientation: {
-      horizontal: 'flex-row border-b border-offWhite',
+      horizontal: 'flex-row border-b border-border',
       vertical: 'flex-col gap-2 border-none',
     },
   },
@@ -74,26 +74,25 @@ export const TabList = <T extends object>(
 };
 
 const tabProps = tv({
-  base: 'flex h-8 cursor-default items-center px-2 py-3 text-base font-normal text-nowrap text-neutral-gray4 outline-hidden transition forced-color-adjust-none focus-visible:bg-neutral-offWhite sm:h-auto sm:bg-transparent',
+  base: 'flex h-8 cursor-default items-center px-2 py-3 text-base font-normal text-nowrap text-muted-foreground outline-hidden transition forced-color-adjust-none focus-visible:bg-muted sm:h-auto sm:bg-transparent',
   variants: {
     variant: {
       default: 'border-b-none border-transparent',
-      pill: 'rounded-md border-none border-transparent bg-neutral-offWhite p-3 focus-visible:outline-2 focus-visible:outline-solid sm:py-2',
+      pill: 'rounded-md border-none border-transparent bg-muted p-3 focus-visible:outline-2 focus-visible:outline-solid sm:py-2',
     },
     isSelected: {
       false: 'border-b border-transparent',
-      true: 'border-b border-charcoal text-charcoal',
+      true: 'border-b border-foreground text-foreground',
     },
     isDisabled: {
-      true: 'text-lightGray',
+      true: 'text-muted-foreground/70',
     },
   },
   compoundVariants: [
     {
       variant: 'pill',
       isSelected: true,
-      class:
-        'border-none bg-neutral-gray1 text-neutral-charcoal sm:bg-neutral-gray1',
+      class: 'border-none bg-accent text-foreground sm:bg-accent',
     },
     {
       variant: 'pill',

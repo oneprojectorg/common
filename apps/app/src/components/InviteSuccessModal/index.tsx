@@ -45,10 +45,10 @@ export const InviteSuccessModal = ({
           )}
         </p>
         <div className="flex w-full flex-col gap-2">
-          <Button color="primary" onPress={onClose} className="w-full">
+          <Button variant="default" onPress={onClose} className="w-full">
             Done
           </Button>
-          <Button color="secondary" onPress={onInviteMore} className="w-full">
+          <Button variant="outline" onPress={onInviteMore} className="w-full">
             Invite more people
           </Button>
         </div>

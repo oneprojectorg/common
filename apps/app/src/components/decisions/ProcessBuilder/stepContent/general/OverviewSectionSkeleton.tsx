@@ -21,7 +21,7 @@ export function OverviewSectionSkeleton() {
         </div>
       </section>
 
-      <hr className="border-neutral-gray1" />
+      <hr className="border-border" />
 
       {/* Process Details Section */}
       <section className="space-y-6">

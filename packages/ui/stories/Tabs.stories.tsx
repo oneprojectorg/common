@@ -31,7 +31,7 @@ export const Example = () => (
         <TabPanel id="photos">
           <div className="p-4">
             <h4 className="mb-2 font-medium">Photos Panel</h4>
-            <p className="text-sm text-neutral-gray3">
+            <p className="text-sm text-muted-foreground">
               This is the photos content panel. You can display images,
               galleries, or photo-related content here.
             </p>
@@ -40,7 +40,7 @@ export const Example = () => (
         <TabPanel id="videos">
           <div className="p-4">
             <h4 className="mb-2 font-medium">Videos Panel</h4>
-            <p className="text-sm text-neutral-gray3">
+            <p className="text-sm text-muted-foreground">
               This is the videos content panel. You can display video players,
               playlists, or video-related content here.
             </p>
@@ -49,7 +49,7 @@ export const Example = () => (
         <TabPanel id="music">
           <div className="p-4">
             <h4 className="mb-2 font-medium">Music Panel</h4>
-            <p className="text-sm text-neutral-gray3">
+            <p className="text-sm text-muted-foreground">
               This is the music content panel. You can display audio players,
               playlists, or music-related content here.
             </p>
@@ -61,24 +61,16 @@ export const Example = () => (
     <div className="space-y-4">
       <h3 className="font-medium">Pill Variant</h3>
       <Tabs>
-        <TabList aria-label="Settings" variant="pill">
-          <Tab id="general" variant="pill">
-            General
-          </Tab>
-          <Tab id="security" variant="pill">
-            Security
-          </Tab>
-          <Tab id="notifications" variant="pill">
-            Notifications
-          </Tab>
-          <Tab id="billing" variant="pill">
-            Billing
-          </Tab>
+        <TabList aria-label="Settings">
+          <Tab id="general">General</Tab>
+          <Tab id="security">Security</Tab>
+          <Tab id="notifications">Notifications</Tab>
+          <Tab id="billing">Billing</Tab>
         </TabList>
         <TabPanel id="general">
           <div className="p-4">
             <h4 className="mb-2 font-medium">General Settings</h4>
-            <p className="text-sm text-neutral-gray3">
+            <p className="text-sm text-muted-foreground">
               Configure your general application settings here.
             </p>
           </div>
@@ -86,7 +78,7 @@ export const Example = () => (
         <TabPanel id="security">
           <div className="p-4">
             <h4 className="mb-2 font-medium">Security Settings</h4>
-            <p className="text-sm text-neutral-gray3">
+            <p className="text-sm text-muted-foreground">
               Manage your security preferences and authentication settings.
             </p>
           </div>
@@ -94,7 +86,7 @@ export const Example = () => (
         <TabPanel id="notifications">
           <div className="p-4">
             <h4 className="mb-2 font-medium">Notification Settings</h4>
-            <p className="text-sm text-neutral-gray3">
+            <p className="text-sm text-muted-foreground">
               Configure how and when you receive notifications.
             </p>
           </div>
@@ -102,7 +94,7 @@ export const Example = () => (
         <TabPanel id="billing">
           <div className="p-4">
             <h4 className="mb-2 font-medium">Billing Settings</h4>
-            <p className="text-sm text-neutral-gray3">
+            <p className="text-sm text-muted-foreground">
               Manage your subscription and billing information.
             </p>
           </div>
@@ -122,7 +114,7 @@ export const Example = () => (
         <TabPanel id="dashboard">
           <div className="p-4">
             <h4 className="mb-2 font-medium">Dashboard</h4>
-            <p className="text-sm text-neutral-gray3">
+            <p className="text-sm text-muted-foreground">
               Overview of your main metrics and key performance indicators.
             </p>
           </div>
@@ -130,7 +122,7 @@ export const Example = () => (
         <TabPanel id="analytics">
           <div className="p-4">
             <h4 className="mb-2 font-medium">Analytics</h4>
-            <p className="text-sm text-neutral-gray3">
+            <p className="text-sm text-muted-foreground">
               Detailed analytics and insights about your data.
             </p>
           </div>
@@ -138,7 +130,7 @@ export const Example = () => (
         <TabPanel id="reports">
           <div className="p-4">
             <h4 className="mb-2 font-medium">Reports</h4>
-            <p className="text-sm text-neutral-gray3">
+            <p className="text-sm text-muted-foreground">
               Generate and view various reports and exports.
             </p>
           </div>
@@ -146,7 +138,7 @@ export const Example = () => (
         <TabPanel id="settings">
           <div className="p-4">
             <h4 className="mb-2 font-medium">Settings</h4>
-            <p className="text-sm text-neutral-gray3">
+            <p className="text-sm text-muted-foreground">
               Configure your application preferences and options.
             </p>
           </div>
@@ -168,7 +160,7 @@ export const Example = () => (
         <TabPanel id="overview">
           <div className="p-4">
             <h4 className="mb-2 font-medium">Project Overview</h4>
-            <p className="text-sm text-neutral-gray3">
+            <p className="text-sm text-muted-foreground">
               Get an overview of your project status and progress.
             </p>
           </div>
@@ -176,7 +168,7 @@ export const Example = () => (
         <TabPanel id="files">
           <div className="p-4">
             <h4 className="mb-2 font-medium">Project Files</h4>
-            <p className="text-sm text-neutral-gray3">
+            <p className="text-sm text-muted-foreground">
               View and manage all files associated with this project.
             </p>
           </div>
@@ -184,7 +176,7 @@ export const Example = () => (
         <TabPanel id="settings">
           <div className="p-4">
             <h4 className="mb-2 font-medium">Project Settings</h4>
-            <p className="text-sm text-neutral-gray3">
+            <p className="text-sm text-muted-foreground">
               This tab is disabled and cannot be accessed.
             </p>
           </div>
@@ -192,7 +184,7 @@ export const Example = () => (
         <TabPanel id="team">
           <div className="p-4">
             <h4 className="mb-2 font-medium">Team Management</h4>
-            <p className="text-sm text-neutral-gray3">
+            <p className="text-sm text-muted-foreground">
               Manage team members and their permissions.
             </p>
           </div>
@@ -217,16 +209,10 @@ export const DefaultTabs = () => (
 
 export const PillVariant = () => (
   <Tabs>
-    <TabList aria-label="Settings" variant="pill">
-      <Tab id="general" variant="pill">
-        General
-      </Tab>
-      <Tab id="security" variant="pill">
-        Security
-      </Tab>
-      <Tab id="notifications" variant="pill">
-        Notifications
-      </Tab>
+    <TabList aria-label="Settings">
+      <Tab id="general">General</Tab>
+      <Tab id="security">Security</Tab>
+      <Tab id="notifications">Notifications</Tab>
     </TabList>
     <TabPanel id="general">
       <div className="p-4">General settings content</div>
@@ -286,16 +272,10 @@ export const WithDisabledTab = () => (
 
 export const VerticalPillVariant = () => (
   <Tabs orientation="vertical">
-    <TabList aria-label="Vertical Pills" orientation="vertical" variant="pill">
-      <Tab id="profile" variant="pill">
-        Profile
-      </Tab>
-      <Tab id="account" variant="pill">
-        Account
-      </Tab>
-      <Tab id="preferences" variant="pill">
-        Preferences
-      </Tab>
+    <TabList aria-label="Vertical Pills" orientation="vertical">
+      <Tab id="profile">Profile</Tab>
+      <Tab id="account">Account</Tab>
+      <Tab id="preferences">Preferences</Tab>
     </TabList>
     <TabPanel id="profile">
       <div className="p-4">Profile settings content</div>
@@ -338,37 +318,37 @@ export const UnstyledTabs = () => (
       <Tab
         id="custom1"
         unstyled
-        className="rounded-t-lg border-b-2 border-transparent bg-data-blue/15 px-4 py-2 text-data-blue data-[selected]:border-data-blue data-[selected]:bg-data-blue/25"
+        className="rounded-t-lg border-b-2 border-transparent bg-chart-3/15 px-4 py-2 text-chart-3 data-[selected]:border-chart-3 data-[selected]:bg-chart-3/25"
       >
         Custom 1
       </Tab>
       <Tab
         id="custom2"
         unstyled
-        className="rounded-t-lg border-b-2 border-transparent bg-functional-green/15 px-4 py-2 text-functional-green data-[selected]:border-functional-green data-[selected]:bg-functional-green/25"
+        className="rounded-t-lg border-b-2 border-transparent bg-positive/15 px-4 py-2 text-positive data-[selected]:border-positive data-[selected]:bg-positive/25"
       >
         Custom 2
       </Tab>
       <Tab
         id="custom3"
         unstyled
-        className="rounded-t-lg border-b-2 border-transparent bg-data-purple/15 px-4 py-2 text-data-purple data-[selected]:border-data-purple data-[selected]:bg-data-purple/25"
+        className="rounded-t-lg border-b-2 border-transparent bg-chart-1/15 px-4 py-2 text-chart-1 data-[selected]:border-chart-1 data-[selected]:bg-chart-1/25"
       >
         Custom 3
       </Tab>
     </TabList>
     <TabPanel id="custom1">
-      <div className="rounded-b-lg bg-data-blue/10 p-4">
+      <div className="rounded-b-lg bg-chart-3/10 p-4">
         Custom styled content 1
       </div>
     </TabPanel>
     <TabPanel id="custom2">
-      <div className="rounded-b-lg bg-functional-greenWhite p-4">
+      <div className="rounded-b-lg bg-positive-foreground p-4">
         Custom styled content 2
       </div>
     </TabPanel>
     <TabPanel id="custom3">
-      <div className="rounded-b-lg bg-data-purple/10 p-4">
+      <div className="rounded-b-lg bg-chart-1/10 p-4">
         Custom styled content 3
       </div>
     </TabPanel>

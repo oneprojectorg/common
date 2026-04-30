@@ -100,7 +100,7 @@ export function ProposalPreview({
 
         {/* Translation attribution */}
         {translation && (
-          <p className="text-sm text-neutral-gray3">
+          <p className="text-sm text-muted-foreground">
             {t('Translated from {language}', {
               language: translation.sourceLanguageName,
             })}{' '}
@@ -118,7 +118,7 @@ export function ProposalPreview({
           {/* Metadata Row */}
           <div className="flex flex-wrap gap-4 sm:flex-row sm:items-center">
             {budget && (
-              <span className="font-serif text-title-base text-neutral-black">
+              <span className="font-serif text-title-base text-foreground">
                 {formatCurrency(budget.amount, undefined, budget.currency)}
               </span>
             )}
@@ -147,18 +147,18 @@ export function ProposalPreview({
                 <div className="flex flex-col">
                   <NavLink
                     href={`/profile/${proposal.submittedBy.slug}`}
-                    className="text-base text-neutral-black hover:no-underline"
+                    className="text-base text-foreground hover:no-underline"
                   >
                     {proposal.submittedBy.name || proposal.submittedBy.slug}
                   </NavLink>
                   {!isDraft && (
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-charcoal">
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
                       <span>
                         {t('Submitted on')} {formatDate(proposal.createdAt)}
                       </span>
                       {submissionMetaSuffix && (
                         <>
-                          <span className="text-neutral-gray4">•</span>
+                          <span className="text-muted-foreground">•</span>
                           {submissionMetaSuffix}
                         </>
                       )}
@@ -170,7 +170,7 @@ export function ProposalPreview({
           </div>
 
           {/* Engagement Stats */}
-          <div className="flex items-center gap-4 border-t border-b py-4 text-sm text-neutral-gray4">
+          <div className="flex items-center gap-4 border-t border-b py-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <LuHeart className="h-4 w-4" />
               <span>

@@ -30,7 +30,7 @@ export const Example = () => (
             description="Vote on how to allocate community funds for the upcoming year"
           />
           <NotificationPanelActions>
-            <Button size="small">Participate</Button>
+            <Button size="sm">Participate</Button>
           </NotificationPanelActions>
         </NotificationPanelItem>
         <NotificationPanelItem>
@@ -40,7 +40,7 @@ export const Example = () => (
             description="Help decide the new features for Central Park renovation"
           />
           <NotificationPanelActions>
-            <Button size="small">Participate</Button>
+            <Button size="sm">Participate</Button>
           </NotificationPanelActions>
         </NotificationPanelItem>
         <NotificationPanelItem>
@@ -50,7 +50,7 @@ export const Example = () => (
             description="Propose and vote on local transportation improvements"
           />
           <NotificationPanelActions>
-            <Button size="small">Participate</Button>
+            <Button size="sm">Participate</Button>
           </NotificationPanelActions>
         </NotificationPanelItem>
       </NotificationPanelList>
@@ -71,10 +71,10 @@ export const RelationshipRequests = () => (
           </div>
         </div>
         <NotificationPanelActions>
-          <Button color="secondary" size="small">
+          <Button variant="outline" size="sm">
             Decline
           </Button>
-          <Button size="small">Accept</Button>
+          <Button size="sm">Accept</Button>
         </NotificationPanelActions>
       </NotificationPanelItem>
       <NotificationPanelItem>
@@ -86,10 +86,10 @@ export const RelationshipRequests = () => (
           </div>
         </div>
         <NotificationPanelActions>
-          <Button color="secondary" size="small">
+          <Button variant="outline" size="sm">
             Decline
           </Button>
-          <Button size="small">Accept</Button>
+          <Button size="sm">Accept</Button>
         </NotificationPanelActions>
       </NotificationPanelItem>
     </NotificationPanelList>
@@ -100,7 +100,7 @@ export const AcceptedState = () => (
   <NotificationPanel>
     <NotificationPanelHeader title="Relationship Requests" count={1} />
     <NotificationPanelList>
-      <NotificationPanelItem className="bg-primary-tealWhite">
+      <NotificationPanelItem className="bg-primary-foreground">
         <div className="flex items-center gap-3">
           <Avatar placeholder="Green Earth Foundation" />
           <div className="flex h-full flex-col">
@@ -112,7 +112,7 @@ export const AcceptedState = () => (
           </div>
         </div>
         <NotificationPanelActions>
-          <span className="text-sm text-neutral-charcoal">Accepted</span>
+          <span className="text-sm text-foreground">Accepted</span>
         </NotificationPanelActions>
       </NotificationPanelItem>
     </NotificationPanelList>
@@ -130,10 +130,10 @@ export const SingleNotification = () => (
           description="Review and approve the annual community report"
         />
         <NotificationPanelActions>
-          <Button color="secondary" size="small">
+          <Button variant="outline" size="sm">
             Later
           </Button>
-          <Button size="small">Review</Button>
+          <Button size="sm">Review</Button>
         </NotificationPanelActions>
       </NotificationPanelItem>
     </NotificationPanelList>

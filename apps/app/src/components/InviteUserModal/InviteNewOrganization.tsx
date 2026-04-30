@@ -98,7 +98,7 @@ export const InviteNewOrganization = ({
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium">{t('Send to')}</label>
-          <div className="flex min-h-[80px] flex-wrap gap-2 rounded-lg border border-neutral-gray2 p-2">
+          <div className="flex min-h-[80px] flex-wrap gap-2 rounded-lg border border-input p-2">
             <TagGroup>
               {emailBadges.map((email, index) => (
                 <Tag className="sm:rounded-md" key={index}>
@@ -133,7 +133,7 @@ export const InviteNewOrganization = ({
             value={personalMessage}
             onChange={(e) => setPersonalMessage(e.target.value)}
             placeholder={t('Add a personal note to your invitation')}
-            className="min-h-[80px] rounded-lg border border-neutral-gray2 p-2 outline-hidden focus-visible:border-primary-teal focus-visible:ring-1 focus-visible:ring-primary-teal"
+            className="min-h-[80px] rounded-lg border border-input p-2 outline-hidden focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
             rows={3}
           />
         </div>

@@ -1,0 +1,202 @@
+/*
+ * Shadcn Theme — defaults verbatim, with OP brand overrides for primary/ring
+ * and additional semantic tokens (positive/warning/info) on the OP palette.
+ *
+ * Uses `@theme inline` so Tailwind utilities resolve to the runtime CSS
+ * vars (lets `.dark` swap colors without rebuilding utilities).
+ *
+ * Custom radii / paddings / spacing inherit shadcn defaults.
+ * Fonts are loaded by next/font in apps/app/src/app/layout.tsx and exposed
+ * via the --font-sans / --font-serif / --font-mono CSS vars.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-positive: var(--positive);
+  --color-positive-foreground: var(--positive-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /*
+   * Short -fg aliases for the canonical -foreground tokens. Some
+   * vendored Taki files emit `text-muted-fg` etc., so we alias
+   * rather than rewrite.
+   */
+  --color-foreground-fg: var(--foreground);
+  --color-card-fg: var(--card-foreground);
+  --color-popover-fg: var(--popover-foreground);
+  --color-primary-fg: var(--primary-foreground);
+  --color-secondary-fg: var(--secondary-foreground);
+  --color-muted-fg: var(--muted-foreground);
+  --color-accent-fg: var(--accent-foreground);
+  --color-destructive-fg: var(--destructive-foreground);
+  --color-positive-fg: var(--positive-foreground);
+  --color-warning-fg: var(--warning-foreground);
+  --color-info-fg: var(--info-foreground);
+  --color-sidebar-fg: var(--sidebar-foreground);
+  --color-sidebar-primary-fg: var(--sidebar-primary-foreground);
+  --color-sidebar-accent-fg: var(--sidebar-accent-foreground);
+
+  /*
+   * Subtle variants — pale-tinted bg with darker readable fg, used by
+   * AlertBanner. `danger`/`success` map to `destructive`/`positive` so
+   * Intent-era naming keeps working.
+   */
+  --color-info-subtle: var(--info-subtle);
+  --color-info-subtle-fg: var(--info-subtle-fg);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-warning-subtle-fg: var(--warning-subtle-fg);
+  --color-danger-subtle: var(--destructive-subtle);
+  --color-danger-subtle-fg: var(--destructive-subtle-fg);
+  --color-destructive-subtle: var(--destructive-subtle);
+  --color-destructive-subtle-fg: var(--destructive-subtle-fg);
+  --color-success-subtle: var(--positive-subtle);
+  --color-success-subtle-fg: var(--positive-subtle-fg);
+  --color-positive-subtle: var(--positive-subtle);
+  --color-positive-subtle-fg: var(--positive-subtle-fg);
+}
+
+:root {
+  --radius: 0.625rem;
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+
+  --primary: hsl(var(--op-teal-500));
+  --primary-foreground: oklch(0.985 0 0);
+
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  --positive: hsl(var(--op-green-500));
+  --positive-foreground: oklch(0.985 0 0);
+  --positive-subtle: hsl(var(--op-green-500) / 0.15);
+  --positive-subtle-fg: hsl(var(--op-green-700));
+  --warning: hsl(var(--op-yellow-500));
+  --warning-foreground: oklch(0.205 0 0);
+  --warning-subtle: hsl(var(--op-yellow-500) / 0.2);
+  --warning-subtle-fg: hsl(var(--op-yellow-700));
+  --info: hsl(var(--op-teal-400));
+  --info-foreground: oklch(0.985 0 0);
+  --info-subtle: hsl(var(--op-teal-400) / 0.15);
+  --info-subtle-fg: hsl(var(--op-teal-700));
+  --destructive-subtle: hsl(var(--op-red-500) / 0.15);
+  --destructive-subtle-fg: hsl(var(--op-red-700));
+
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: hsl(var(--op-teal-500));
+
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: hsl(var(--op-teal-500));
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: hsl(var(--op-teal-500));
+}
+
+.dark,
+[data-theme='dark'] {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.269 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+
+  --primary: hsl(var(--op-teal-400));
+  --primary-foreground: oklch(0.205 0 0);
+
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.371 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  --positive: hsl(var(--op-green-500));
+  --positive-foreground: oklch(0.985 0 0);
+  --positive-subtle: hsl(var(--op-green-500) / 0.1);
+  --positive-subtle-fg: hsl(var(--op-green-300));
+  --warning: hsl(var(--op-yellow-500));
+  --warning-foreground: oklch(0.205 0 0);
+  --warning-subtle: hsl(var(--op-yellow-500) / 0.1);
+  --warning-subtle-fg: hsl(var(--op-yellow-400));
+  --info: hsl(var(--op-teal-400));
+  --info-foreground: oklch(0.985 0 0);
+  --info-subtle: hsl(var(--op-teal-400) / 0.1);
+  --info-subtle-fg: hsl(var(--op-teal-200));
+  --destructive-subtle: hsl(var(--op-red-500) / 0.1);
+  --destructive-subtle-fg: hsl(var(--op-red-300));
+
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: hsl(var(--op-teal-400));
+
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: hsl(var(--op-teal-400));
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: hsl(var(--op-teal-400));
+}

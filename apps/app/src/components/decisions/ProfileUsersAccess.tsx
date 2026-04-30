@@ -122,8 +122,8 @@ export const ProfileUsersAccess = ({
             className="w-full md:max-w-96"
           />
           <Button
-            color="secondary"
-            size="small"
+            variant="outline"
+            size="sm"
             onPress={() => setIsInviteModalOpen(true)}
           >
             <LuUserPlus className="size-4" />

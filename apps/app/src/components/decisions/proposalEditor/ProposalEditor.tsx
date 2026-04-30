@@ -381,7 +381,7 @@ function ProposalEditorInner({
         previewVersionFragmentContents={versionPreview?.fragmentContents}
       />
 
-      <div className="border-t border-neutral-gray1 pt-8">
+      <div className="border-t border-border pt-8">
         <ProposalAttachments
           proposalId={proposal.id}
           attachments={
@@ -408,7 +408,7 @@ function ProposalEditorInner({
       title={isPreviewMode ? previewTitle || draft.title : draft.title}
       statusSlot={
         viewingLabel ? (
-          <div className="rounded-sm bg-neutral-gray1 px-4 py-2 text-sm text-neutral-charcoal">
+          <div className="rounded-sm bg-accent px-4 py-2 text-sm text-foreground">
             {viewingLabel}
           </div>
         ) : undefined
@@ -427,7 +427,7 @@ function ProposalEditorInner({
     >
       <div className="flex h-full min-h-0 flex-col">
         <div
-          className="sticky top-0 z-10 border-b border-neutral-gray1 bg-white"
+          className="sticky top-0 z-10 border-b border-border bg-white"
           onMouseDown={(e) => e.preventDefault()}
         >
           <RichTextEditorToolbar editor={focusedEditor} />

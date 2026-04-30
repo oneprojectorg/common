@@ -73,9 +73,9 @@ export function ProposalEditorLayout({
       <div className="flex h-editor-topbar items-center justify-between gap-2 border-b px-4 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:px-6">
         <button
           onClick={() => router.push(backHref)}
-          className="flex cursor-pointer items-center gap-2 text-primary-teal hover:text-primary-tealBlack"
+          className="flex cursor-pointer items-center gap-2 text-primary hover:text-primary/80"
         >
-          <LuArrowLeft className="size-6 text-neutral-charcoal sm:size-4 sm:text-primary-teal" />
+          <LuArrowLeft className="size-6 text-foreground sm:size-4 sm:text-primary" />
           <span className="hidden sm:block">{t('Back')}</span>
         </button>
 
@@ -91,9 +91,8 @@ export function ProposalEditorLayout({
               {asideHeaderIcons}
               {!readOnlyMode && canShare && (
                 <Button
-                  color="secondary"
-                  variant="icon"
-                  size="small"
+                  variant="outline"
+                  size="icon-sm"
                   onPress={() => setIsShareModalOpen(true)}
                 >
                   <LuShare2 className="size-4" />
@@ -102,9 +101,8 @@ export function ProposalEditorLayout({
               )}
               {!readOnlyMode && (
                 <Button
-                  color="primary"
-                  variant="icon"
-                  size="small"
+                  variant="default"
+                  size="icon-sm"
                   onPress={
                     isRevisionMode
                       ? () => setIsResubmitModalOpen(true)

@@ -10,8 +10,8 @@ import { AlertBanner } from '@op/ui/AlertBanner';
 import { Button } from '@op/ui/Button';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select, SelectItem } from '@op/ui/Select';
+import { Switch } from '@op/ui/Switch';
 import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
 import type { Key } from 'react';
 import { useState } from 'react';
 import { LuCircleAlert, LuPlus } from 'react-icons/lu';
@@ -115,7 +115,7 @@ export function ReviewRubricForm() {
           ))}
 
           {isFeedbackOpen ? (
-            <section className="flex flex-col gap-3 border-b border-neutral-gray1 pb-6">
+            <section className="flex flex-col gap-3 border-b border-border pb-6">
               <FieldHeader
                 title={t('Feedback to Author')}
                 description={t(
@@ -134,8 +134,7 @@ export function ReviewRubricForm() {
             </section>
           ) : (
             <Button
-              color="secondary"
-              size="medium"
+              variant="outline"
               className="w-full"
               onPress={() => setIsFeedbackOpen(true)}
             >
@@ -177,14 +176,14 @@ function RubricCriterionSection({
   const badgeLabel = criterionType === 'yes_no' ? t('No/Yes') : scoreLabel;
 
   return (
-    <section className="flex flex-col gap-4 border-b border-neutral-gray1 pb-6">
+    <section className="flex flex-col gap-4 border-b border-border pb-6">
       {criterionType === 'yes_no' ? (
         <>
           <FieldHeader title={field.schema.title} badge={badgeLabel} />
 
           <div className="flex items-start gap-3">
             {field.schema.description && (
-              <p className="flex-1 text-sm text-neutral-charcoal">
+              <p className="flex-1 text-sm text-foreground">
                 {field.schema.description}
               </p>
             )}
@@ -233,8 +232,7 @@ function RubricRationaleField({
     return (
       <Button
         variant="link"
-        size="inline"
-        className="flex items-center px-2 py-1.5 leading-normal text-primary-tealBlack"
+        className="flex h-auto items-center p-0 leading-normal text-primary"
         onPress={() => setIsOpen(true)}
       >
         <LuPlus className="size-4" />
@@ -247,7 +245,7 @@ function RubricRationaleField({
 
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-sm text-neutral-black">{label}</span>
+      <span className="text-sm text-foreground">{label}</span>
       <TextField
         aria-label={label}
         value={value}
@@ -277,8 +275,7 @@ function RubricFieldInput({
     case 'dropdown': {
       if (inferCriterionType(field.schema) === 'yes_no') {
         return (
-          <ToggleButton
-            size="small"
+          <Switch
             isSelected={value === 'yes'}
             onChange={(isSelected) => {
               onChange(isSelected ? 'yes' : 'no');
