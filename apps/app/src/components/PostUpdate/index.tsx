@@ -642,8 +642,8 @@ const PostUpdateWithUser = ({
                       <Button
                         onPress={() => fileUpload.removeFile(filePreview.id)}
                         className="absolute top-2 right-2 size-6 rounded-full p-0 opacity-80 hover:opacity-100 focus-visible:outline-1"
-                        size="small"
-                        color="neutral"
+                        size="sm"
+                        variant="outline"
                       >
                         <LuX className="size-4" />
                       </Button>
@@ -659,8 +659,8 @@ const PostUpdateWithUser = ({
                       <Button
                         onPress={() => fileUpload.removeFile(filePreview.id)}
                         className="absolute top-2 right-2 size-6 rounded-full p-0 opacity-80 hover:opacity-100 focus-visible:outline-1"
-                        size="small"
-                        color="neutral"
+                        size="sm"
+                        variant="outline"
                       >
                         <LuX className="size-3" />
                       </Button>
@@ -712,8 +712,8 @@ const PostUpdateWithUser = ({
               <TextCounter text={content} max={characterLimit} />
               {lastFailedPost && (
                 <Button
-                  size="small"
-                  color="secondary"
+                  size="sm"
+                  variant="outline"
                   onPress={retryFailedPost}
                   isDisabled={
                     createPost.isPending || createOrganizationPost.isPending
@@ -725,7 +725,7 @@ const PostUpdateWithUser = ({
                 </Button>
               )}
               <Button
-                size="small"
+                size="sm"
                 isDisabled={
                   !(content.length > 0 || fileUpload.hasUploadedFiles()) ||
                   content.length > characterLimit ||

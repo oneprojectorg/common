@@ -83,7 +83,7 @@ const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
     <Button
       onPress={handleFollowToggle}
       isPending={isPending}
-      color={isFollowing ? 'verified' : 'primary'}
+      variant={isFollowing ? 'outline' : 'default'}
       className="min-w-full sm:min-w-fit"
     >
       {isPending ? (

@@ -190,7 +190,7 @@ export function RubricCriterionCard({
             <div className="flex items-center gap-2">
               <span className="text-foreground">{t('Required?')}</span>
               <ToggleButton
-                size="small"
+                size="sm"
                 isSelected={criterion.required}
                 onChange={(isSelected) =>
                   onUpdateRequired(criterion.id, isSelected)
@@ -200,8 +200,8 @@ export function RubricCriterionCard({
             </div>
             {onRemove && (
               <Button
-                color="ghost"
-                size="small"
+                variant="ghost"
+                size="sm"
                 onPress={() => onRemove(criterion.id)}
                 aria-label={t('Delete')}
                 className="text-foreground hover:text-destructive"

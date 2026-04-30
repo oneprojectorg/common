@@ -52,7 +52,7 @@ export const CalendarHeader = () => {
   return (
     <header className="flex w-full items-center justify-between gap-2 px-1 pb-4">
       <Button
-        variant="icon"
+        size="icon"
         slot="previous"
         className="h-8 w-8 rounded-none bg-white p-0 text-foreground shadow-none hover:bg-muted pressed:bg-muted pressed:shadow-none"
       >
@@ -64,7 +64,7 @@ export const CalendarHeader = () => {
       </Button>
       <Heading className="text-center text-base text-foreground" />
       <Button
-        variant="icon"
+        size="icon"
         slot="next"
         className="h-8 w-8 rounded-none bg-white p-0 text-foreground shadow-none hover:bg-muted pressed:bg-muted pressed:shadow-none"
       >

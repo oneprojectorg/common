@@ -76,9 +76,7 @@ export function ReadonlyDropdownField({
   placeholder: string;
 }) {
   const content = (
-    <Button variant="pill" color="pill" className="justify-start text-left">
-      {value ?? placeholder}
-    </Button>
+    <Button className="justify-start text-left">{value ?? placeholder}</Button>
   );
 
   if (!title && !description) {
@@ -105,11 +103,7 @@ export function ReadonlyBudgetField({
   description?: string;
   placeholder: string;
 }) {
-  const content = (
-    <Button variant="pill" color="pill">
-      {value ?? placeholder}
-    </Button>
-  );
+  const content = <Button>{value ?? placeholder}</Button>;
 
   if (!title && !description) {
     return content;

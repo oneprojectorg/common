@@ -1,7 +1,7 @@
 import { LuLanguages, LuX } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
-import { Button } from './Button';
+import { UnstyledButton } from './Button';
 import { Tooltip, TooltipTrigger } from './Tooltip';
 
 export interface TranslateBannerProps extends Omit<
@@ -35,18 +35,17 @@ export const TranslateBanner = ({
   ...props
 }: TranslateBannerProps) => {
   const translateButton = (
-    <Button
+    <UnstyledButton
       onPress={onTranslate}
       isDisabled={isTranslating}
       aria-label={translateAriaLabel ?? label}
-      unstyled
       className="group flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-full text-left text-primary outline-hidden transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chart-3 disabled:cursor-not-allowed disabled:opacity-60"
     >
       <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-foreground">
         <LuLanguages className="size-4" />
       </span>
       <span className="text-sm leading-5 whitespace-nowrap">{label}</span>
-    </Button>
+    </UnstyledButton>
   );
 
   return (
@@ -66,14 +65,13 @@ export const TranslateBanner = ({
         translateButton
       )}
 
-      <Button
+      <UnstyledButton
         onPress={onDismiss}
         aria-label={dismissAriaLabel}
-        unstyled
         className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground outline-hidden transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chart-3"
       >
         <LuX className="size-5" />
-      </Button>
+      </UnstyledButton>
     </div>
   );
 };

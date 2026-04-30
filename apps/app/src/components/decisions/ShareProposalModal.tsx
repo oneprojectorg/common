@@ -418,7 +418,7 @@ function ShareProposalModalContent({
                       className="cursor-pointer px-4 py-3 outline-none hover:bg-accent focus-visible:bg-accent"
                     >
                       <ProfileItem
-                        size="small"
+                        size="sm"
                         avatar={
                           <Avatar
                             placeholder={result.name}
@@ -462,7 +462,7 @@ function ShareProposalModalContent({
                 className="flex h-14 items-center justify-between gap-4 rounded-lg border border-border bg-white px-3 py-2"
               >
                 <ProfileItem
-                  size="small"
+                  size="sm"
                   avatar={
                     <Avatar placeholder={item.name} className="size-6 shrink-0">
                       {item.avatarUrl ? (
@@ -484,7 +484,7 @@ function ShareProposalModalContent({
                   )}
                 </ProfileItem>
                 <IconButton
-                  size="small"
+                  size="sm"
                   onPress={() => handleRemovePending(item.id)}
                   aria-label={t('Remove {name}', { name: item.name })}
                 >
@@ -505,7 +505,7 @@ function ShareProposalModalContent({
                   className="flex h-14 items-center justify-between gap-4 rounded-lg border border-border bg-white px-3 py-2"
                 >
                   <ProfileItem
-                    size="small"
+                    size="sm"
                     avatar={
                       <Avatar
                         placeholder={displayName}
@@ -533,7 +533,7 @@ function ShareProposalModalContent({
                     )}
                   </ProfileItem>
                   <IconButton
-                    size="small"
+                    size="sm"
                     onPress={() => handleDeleteInvite(invite.id)}
                     aria-label={t('Remove {name}', { name: displayName })}
                   >
@@ -556,7 +556,7 @@ function ShareProposalModalContent({
                   className="flex h-14 items-center justify-between gap-4 rounded-lg border border-border bg-white px-3 py-2"
                 >
                   <ProfileItem
-                    size="small"
+                    size="sm"
                     avatar={
                       <Avatar
                         placeholder={user.name ?? user.email}
@@ -584,7 +584,7 @@ function ShareProposalModalContent({
                   </ProfileItem>
                   {!user.isOwner && (
                     <IconButton
-                      size="small"
+                      size="sm"
                       onPress={() => handleRemoveExistingUser(user.id)}
                       aria-label={t('Remove {name}', {
                         name: user.name ?? user.email,
@@ -601,12 +601,12 @@ function ShareProposalModalContent({
       </ModalBody>
 
       <ModalFooter className="flex-row items-center justify-between">
-        <Button color="secondary" onPress={handleCopyLink}>
+        <Button variant="outline" onPress={handleCopyLink}>
           <LuLink className="size-4" />
           {t('Copy link')}
         </Button>
         <Button
-          color="primary"
+          variant="default"
           onPress={handleDone}
           isDisabled={inviteMutation.isPending}
         >

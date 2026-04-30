@@ -60,7 +60,7 @@ export function RestoreProposalVersionModal({
         </p>
       </ModalBody>
       <ModalFooter className="border-t border-border">
-        <Button color="secondary" onPress={onClose} isDisabled={isPending}>
+        <Button variant="outline" onPress={onClose} isDisabled={isPending}>
           {t('Keep current')}
         </Button>
         <Button onPress={onConfirm} isPending={isPending}>

@@ -92,11 +92,11 @@ export const LandingScreenSkeleton: React.FC = async () => {
       </div>
 
       <Tabs className="pb-8 sm:hidden">
-        <TabList variant="pill">
-          <Tab id="discover" variant="pill">
+        <TabList>
+          <Tab id="discover">
             <TranslatedText text="Discover" />
           </Tab>
-          <Tab id="recent" variant="pill">
+          <Tab id="recent">
             <TranslatedText text="Recent" />
           </Tab>
         </TabList>
@@ -187,11 +187,11 @@ const LandingScreenFeeds = ({
         </div>
       </div>
       <Tabs className="gap-8 pb-8 sm:hidden">
-        <TabList variant="pill">
-          <Tab id="discover" variant="pill">
+        <TabList>
+          <Tab id="discover">
             <TranslatedText text="Discover" />
           </Tab>
-          <Tab id="recent" variant="pill">
+          <Tab id="recent">
             <TranslatedText text="Recent" />
           </Tab>
         </TabList>

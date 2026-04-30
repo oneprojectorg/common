@@ -122,7 +122,7 @@ export const InviteToOrganizationButton = ({
 
   if (isMember) {
     return (
-      <Button color="secondary" isDisabled>
+      <Button variant="outline" isDisabled>
         <LuCheck className="size-4" />
         Member
       </Button>
@@ -131,7 +131,7 @@ export const InviteToOrganizationButton = ({
 
   return user.currentProfile ? (
     <Button
-      color="secondary"
+      variant="outline"
       onPress={handleInvite}
       isDisabled={inviteUser.isPending}
       className="min-w-fit"

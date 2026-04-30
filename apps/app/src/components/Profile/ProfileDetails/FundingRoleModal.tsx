@@ -101,14 +101,14 @@ export const FundingRoleModal = ({
                 onClose();
                 close();
               }}
-              color="secondary"
+              variant="outline"
               type="button"
               className="w-full sm:w-fit"
             >
               {t('Cancel')}
             </Button>
             <Button
-              color="primary"
+              variant="default"
               type="button"
               isPending={isSubmitting}
               isDisabled={!selectedRole}

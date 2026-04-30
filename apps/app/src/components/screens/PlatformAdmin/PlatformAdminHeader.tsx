@@ -22,8 +22,8 @@ export const PlatformAdminHeader = () => {
         onPress={() => {
           window.open(posthogUIHost, '_blank');
         }}
-        color="secondary"
-        size="small"
+        variant="outline"
+        size="sm"
         className="gap-2"
       >
         <LuArrowUpRight className="size-4" />

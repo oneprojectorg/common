@@ -104,7 +104,7 @@ export const UsersTable = () => {
               onChange={setSearchQuery}
             />
           </div>
-          <OptionMenu variant="outline" size="medium" className="mr-1">
+          <OptionMenu variant="outline" className="mr-1">
             <Menu>
               <MenuItem
                 onAction={handleExportAllUsers}

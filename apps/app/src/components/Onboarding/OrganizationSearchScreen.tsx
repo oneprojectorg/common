@@ -173,7 +173,11 @@ export const OrganizationSearchScreen = ({
         ) : (
           <>
             <OrDivider />
-            <Button className="w-full" color="neutral" onPress={handleShowToS}>
+            <Button
+              className="w-full"
+              variant="outline"
+              onPress={handleShowToS}
+            >
               {t('Skip for now')}
             </Button>
           </>
@@ -223,7 +227,7 @@ function SearchDropdown({
               onClick={() => onSelect(result)}
             >
               <ProfileItem
-                size="small"
+                size="sm"
                 avatar={
                   <OrganizationAvatar
                     profile={org.profile}

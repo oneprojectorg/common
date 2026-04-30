@@ -9,7 +9,7 @@ import { EntityType, Profile } from '@op/api/encoders';
 import { useAuthLogout, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Avatar } from '@op/ui/Avatar';
-import { Button } from '@op/ui/Button';
+import { UnstyledButton } from '@op/ui/Button';
 import { Chip } from '@op/ui/Chip';
 import { Menu, MenuItem, MenuItemSimple, MenuSeparator } from '@op/ui/Menu';
 import { Modal, ModalBody } from '@op/ui/Modal';
@@ -177,15 +177,11 @@ const AvatarMenuContent = ({
         <div className="flex flex-col">
           <span className="sm:text-sm">
             {t('Logged in as')} {user.profile?.name ?? user.name} (
-            <Button
-              onPress={() => setIsProfileOpen(true)}
-              unstyled
-              className=""
-            >
+            <UnstyledButton onPress={() => setIsProfileOpen(true)} className="">
               <span className="text-primary hover:underline">
                 {t('Edit Profile')}
               </span>
-            </Button>
+            </UnstyledButton>
             )
           </span>
           <span className="max-w-72 text-sm text-muted-foreground sm:text-xs">
@@ -306,8 +302,7 @@ const AvatarMenuContent = ({
           {deleteOrganizationEnabled && (
             <>
               {' • '}
-              <Button
-                unstyled
+              <UnstyledButton
                 className="cursor-pointer text-foreground hover:underline"
                 onPress={() => {
                   setIsOrgDeletionOpen(true);
@@ -315,7 +310,7 @@ const AvatarMenuContent = ({
                 }}
               >
                 {t('Delete my account')}
-              </Button>
+              </UnstyledButton>
             </>
           )}
         </div>
@@ -362,8 +357,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   }, [user.currentProfile?.id, isSwitchingProfile]);
 
   const avatarButton = (
-    <Button
-      unstyled
+    <UnstyledButton
       className={cn('relative', className)}
       onPress={() => (isMobile ? setIsDrawerOpen(true) : undefined)}
     >
@@ -380,7 +374,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
       <div className="absolute -right-1 -bottom-1 flex size-4 items-center justify-center rounded-full bg-muted outline -outline-offset-1 outline-white">
         <LuChevronDown className="size-3" />{' '}
       </div>
-    </Button>
+    </UnstyledButton>
   );
 
   if (isMobile) {
@@ -500,7 +494,7 @@ export const SiteHeader = () => {
       <header className="flex h-auto w-full items-center justify-between px-4 py-2 sm:hidden">
         {!isMobileSearchExpanded && (
           <div className="flex items-center gap-3">
-            <SidebarTrigger className="p-1" size="small" />
+            <SidebarTrigger className="p-1" size="sm" />
             <Link href="/" className="flex gap-1">
               <CommonLogo />
             </Link>
@@ -519,23 +513,21 @@ export const SiteHeader = () => {
                   />
                 </ErrorBoundary>
               </div>
-              <Button
-                unstyled
+              <UnstyledButton
                 onPress={() => setIsMobileSearchExpanded(false)}
                 className="ml-3 whitespace-nowrap text-muted-foreground"
               >
                 Cancel
-              </Button>
+              </UnstyledButton>
             </>
           ) : (
             <>
-              <Button
-                unstyled
+              <UnstyledButton
                 onPress={() => setIsMobileSearchExpanded(true)}
                 className="flex items-center justify-center"
               >
                 <LuSearch className="size-4 text-muted-foreground" />
-              </Button>
+              </UnstyledButton>
 
               <div className="flex items-center gap-3">
                 <ClientOnly>

@@ -3,7 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
-import { Button } from '@op/ui/Button';
+import { Button, UnstyledButton } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
@@ -205,20 +205,15 @@ export const InviteUserModal = ({
   const triggerButton = isOrg
     ? children || (
         <>
-          <Button color="secondary" variant="icon" className="hidden sm:flex">
+          <Button variant="outline" size="icon" className="hidden sm:flex">
             <LuUserPlus className="min-h-4 min-w-4" />
             <div className="hidden text-nowrap md:block">
               {t('Invite users')}
             </div>
           </Button>
-          <Button
-            color="neutral"
-            unstyled
-            variant="icon"
-            className="flex size-8 items-center justify-center rounded-full bg-muted sm:hidden"
-          >
+          <UnstyledButton className="flex size-8 items-center justify-center rounded-full bg-muted sm:hidden">
             <LuUserPlus className="min-h-4 min-w-4 text-muted-foreground" />
-          </Button>
+          </UnstyledButton>
         </>
       )
     : null;
@@ -280,7 +275,7 @@ export const InviteUserModal = ({
             </ModalBody>
             <ModalFooter>
               <Button
-                color="primary"
+                variant="default"
                 className="w-full sm:w-fit"
                 onPress={handleSendInvite}
                 isDisabled={

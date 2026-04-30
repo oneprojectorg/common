@@ -197,7 +197,7 @@ export function BudgetFieldConfig({
         <div className="flex items-center justify-between">
           <span className="text-foreground">{t('Show in template?')}</span>
           <ToggleButton
-            size="small"
+            size="sm"
             isSelected={showBudget}
             onChange={handleShowBudgetChange}
             aria-label={t('Show in template?')}
@@ -208,7 +208,7 @@ export function BudgetFieldConfig({
           <div className="flex items-center justify-between">
             <span className="text-foreground">{t('Required?')}</span>
             <ToggleButton
-              size="small"
+              size="sm"
               isSelected={budgetRequired}
               onChange={handleBudgetRequiredChange}
               aria-label={t('Required?')}

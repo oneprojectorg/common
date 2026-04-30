@@ -94,7 +94,7 @@ const StepIndicator = ({
           <IconButton
             aria-label={label}
             onPress={() => onTransition?.(phase.id)}
-            size="small"
+            size="sm"
             variant="ghost"
             className={cn(
               baseStyles,
@@ -114,7 +114,7 @@ const StepIndicator = ({
           <IconButton
             aria-label={label}
             onPress={() => onTransition?.(phase.id)}
-            size="small"
+            size="sm"
             variant="ghost"
             className={baseStyles}
           >

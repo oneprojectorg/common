@@ -37,14 +37,14 @@ export const Example = () => (
           <p>This is a basic modal with header, body, and footer sections.</p>
         </ModalBody>
         <ModalFooter>
-          <Button color="secondary">Cancel</Button>
+          <Button variant="outline">Cancel</Button>
           <Button>Confirm</Button>
         </ModalFooter>
       </Modal>
     </DialogTrigger>
 
     <DialogTrigger>
-      <Button color="secondary">Open Modal with Confetti</Button>
+      <Button variant="outline">Open Modal with Confetti</Button>
       <Modal confetti>
         <ModalHeader>Success Modal</ModalHeader>
         <ModalBody>
@@ -57,7 +57,7 @@ export const Example = () => (
     </DialogTrigger>
 
     <DialogTrigger>
-      <Button color="destructive">Open Large Modal</Button>
+      <Button variant="destructive">Open Large Modal</Button>
       <Modal className="max-w-2xl">
         <ModalHeader>Large Modal</ModalHeader>
         <ModalBody>
@@ -91,8 +91,8 @@ export const Example = () => (
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button color="secondary">Cancel</Button>
-          <Button color="destructive">Delete</Button>
+          <Button variant="outline">Cancel</Button>
+          <Button variant="destructive">Delete</Button>
           <Button>Save Changes</Button>
         </ModalFooter>
       </Modal>
@@ -109,7 +109,7 @@ export const BasicModal = () => (
         <p>This is the modal content.</p>
       </ModalBody>
       <ModalFooter>
-        <Button color="secondary">Cancel</Button>
+        <Button variant="outline">Cancel</Button>
         <Button>OK</Button>
       </ModalFooter>
     </Modal>
@@ -143,7 +143,7 @@ export const DismissableModal = () => {
           <p>This modal is dismissable.</p>
         </ModalBody>
         <ModalFooter>
-          <Button color="secondary">Cancel</Button>
+          <Button variant="outline">Cancel</Button>
           <Button>Confirm</Button>
         </ModalFooter>
       </Modal>
@@ -191,7 +191,7 @@ export const WithForm = () => (
         </form>
       </ModalBody>
       <ModalFooter>
-        <Button color="secondary">Cancel</Button>
+        <Button variant="outline">Cancel</Button>
         <Button>Create Project</Button>
       </ModalFooter>
     </Modal>
@@ -225,7 +225,7 @@ export const LargeModal = () => (
         </div>
       </ModalBody>
       <ModalFooter>
-        <Button color="secondary">Cancel</Button>
+        <Button variant="outline">Cancel</Button>
         <Button>Save All</Button>
       </ModalFooter>
     </Modal>

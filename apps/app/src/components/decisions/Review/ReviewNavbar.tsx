@@ -39,8 +39,8 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
         <div className="flex items-center gap-4">
           {canRequestRevision && (
             <Button
-              color="secondary"
-              size="small"
+              variant="outline"
+              size="sm"
               isDisabled={isSubmitted}
               onPress={() => setIsRequestModalOpen(true)}
             >
@@ -48,8 +48,8 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
             </Button>
           )}
           <Button
-            color="primary"
-            size="small"
+            variant="default"
+            size="sm"
             onPress={handleSubmit}
             isDisabled={!canSubmit || isSubmitting}
           >

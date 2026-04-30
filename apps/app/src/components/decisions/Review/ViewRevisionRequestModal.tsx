@@ -68,7 +68,7 @@ export function ViewRevisionRequestModal({
       <ModalFooter>
         {isOwnRevisionRequest && (
           <Button
-            color="secondary"
+            variant="outline"
             onPress={handleCancelRequest}
             isDisabled={isCancellingRevision}
           >
@@ -78,7 +78,7 @@ export function ViewRevisionRequestModal({
             {t('Cancel request')}
           </Button>
         )}
-        <Button color="primary" onPress={() => onOpenChange(false)}>
+        <Button variant="default" onPress={() => onOpenChange(false)}>
           {t('Close')}
         </Button>
       </ModalFooter>

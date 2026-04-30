@@ -342,7 +342,7 @@ function PhaseDetailForm({
                 proposals: { ...phase.rules?.proposals, submit: val },
               })
             }
-            size="small"
+            size="sm"
           />
         </ToggleRow>
         <ToggleRow
@@ -356,7 +356,7 @@ function PhaseDetailForm({
                 proposals: { ...phase.rules?.proposals, edit: val },
               })
             }
-            size="small"
+            size="sm"
           />
         </ToggleRow>
         <ToggleRow
@@ -372,7 +372,7 @@ function PhaseDetailForm({
                 proposals: { ...phase.rules?.proposals, review: val },
               })
             }
-            size="small"
+            size="sm"
           />
         </ToggleRow>
         <ToggleRow
@@ -388,7 +388,7 @@ function PhaseDetailForm({
                 voting: { ...phase.rules?.voting, submit: val },
               })
             }
-            size="small"
+            size="sm"
           />
         </ToggleRow>
       </div>
@@ -396,7 +396,7 @@ function PhaseDetailForm({
       {/* Delete */}
       <div className="border-t pt-4">
         <Button
-          color="secondary"
+          variant="outline"
           className="text-destructive"
           onPress={() => setShowDeleteModal(true)}
         >
@@ -424,14 +424,14 @@ function PhaseDetailForm({
         </ModalBody>
         <ModalFooter>
           <Button
-            color="secondary"
+            variant="outline"
             className="w-full sm:w-fit"
             onPress={() => setShowDeleteModal(false)}
           >
             {t('Cancel')}
           </Button>
           <Button
-            color="destructive"
+            variant="destructive"
             className="w-full sm:w-fit"
             onPress={confirmDelete}
           >

@@ -172,13 +172,13 @@ export const AddRelationshipForm = ({ profile }: { profile: Organization }) => {
                 <Button
                   onPress={close}
                   className="w-full sm:w-fit"
-                  color="secondary"
+                  variant="outline"
                   type="button"
                 >
                   {t('Cancel')}
                 </Button>
                 <Button
-                  color="primary"
+                  variant="default"
                   type="submit"
                   className="w-full sm:w-fit"
                   isPending={isSubmitting}

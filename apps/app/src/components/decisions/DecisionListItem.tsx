@@ -113,7 +113,6 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
             <OptionMenu
               variant="outline"
               className="rounded bg-white shadow-light"
-              size="medium"
             >
               <Menu className="min-w-28 p-2">
                 {canManage && (
@@ -180,11 +179,11 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
           </p>
         </ModalBody>
         <ModalFooter>
-          <Button color="secondary" onPress={() => setShowDeleteModal(false)}>
+          <Button variant="outline" onPress={() => setShowDeleteModal(false)}>
             {isDraft ? t('Keep draft') : t('Cancel')}
           </Button>
           <Button
-            color="destructive"
+            variant="destructive"
             onPress={handleDeleteConfirm}
             isDisabled={deleteMutation.isPending}
           >

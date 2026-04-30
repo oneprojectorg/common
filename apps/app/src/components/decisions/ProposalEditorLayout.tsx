@@ -91,9 +91,8 @@ export function ProposalEditorLayout({
               {asideHeaderIcons}
               {!readOnlyMode && canShare && (
                 <Button
-                  color="secondary"
-                  variant="icon"
-                  size="small"
+                  variant="outline"
+                  size="icon-sm"
                   onPress={() => setIsShareModalOpen(true)}
                 >
                   <LuShare2 className="size-4" />
@@ -102,9 +101,8 @@ export function ProposalEditorLayout({
               )}
               {!readOnlyMode && (
                 <Button
-                  color="primary"
-                  variant="icon"
-                  size="small"
+                  variant="default"
+                  size="icon-sm"
                   onPress={
                     isRevisionMode
                       ? () => setIsResubmitModalOpen(true)

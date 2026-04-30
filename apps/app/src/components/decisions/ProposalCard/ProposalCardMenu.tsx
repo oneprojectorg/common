@@ -280,7 +280,7 @@ export function ProposalCardMenu({
   const menuTriggerButton = (
     <IconButton
       variant="ghost"
-      size="small"
+      size="sm"
       className="aspect-square aria-expanded:bg-accent"
       onPress={isMobile ? () => setIsMenuSheetOpen(true) : undefined}
     >
@@ -336,14 +336,14 @@ export function ProposalCardMenu({
             </ModalBody>
             <ModalFooter>
               <Button
-                color="secondary"
+                variant="outline"
                 className="w-full sm:w-fit"
                 onPress={() => setIsDeleteModalOpen(false)}
               >
                 {t('Cancel')}
               </Button>
               <Button
-                color="destructive"
+                variant="destructive"
                 onPress={handleDeleteConfirm}
                 className="w-full sm:w-fit"
                 isDisabled={deleteProposalMutation.isPending}

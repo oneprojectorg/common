@@ -90,7 +90,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
               {schema.description && (
                 <p className="text-sm text-foreground">{schema.description}</p>
               )}
-              <ToggleButton size="small" className="ml-auto shrink-0" />
+              <ToggleButton size="sm" className="ml-auto shrink-0" />
             </div>
           </div>
         );

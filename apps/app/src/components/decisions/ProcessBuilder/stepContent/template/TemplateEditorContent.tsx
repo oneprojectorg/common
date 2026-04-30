@@ -437,7 +437,8 @@ export function TemplateEditorContent({
                       {t('These are the categories you defined in')}{' '}
                       <Button
                         variant="link"
-                        size="inline"
+                        size="sm"
+                        className="h-auto p-0"
                         onPress={() => {
                           void setStep('general');
                           void setSection('proposalCategories');

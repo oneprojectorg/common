@@ -104,13 +104,11 @@ export const ProfileRelationshipsSuspense = ({
       </div>
 
       <Tabs>
-        <TabList className="px-4 sm:px-0" variant="pill">
-          <Tab id="all" variant="pill">
-            {t('All relationships')}
-          </Tab>
+        <TabList className="px-4 sm:px-0">
+          <Tab id="all">{t('All relationships')}</Tab>
           {relationshipsSegmented.map(([noun, items]) =>
             items?.length ? (
-              <Tab id={noun} key={noun} variant="pill">
+              <Tab id={noun} key={noun}>
                 {noun}s
               </Tab>
             ) : null,

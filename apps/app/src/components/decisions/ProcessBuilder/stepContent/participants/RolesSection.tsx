@@ -271,7 +271,6 @@ function RoleRow({
           <div className="flex gap-1">
             <IconButton
               variant="outline"
-              size="medium"
               onPress={handleSave}
               isDisabled={!roleName.trim() || isPending}
               aria-label={t('Save role')}
@@ -281,7 +280,6 @@ function RoleRow({
             </IconButton>
             <IconButton
               variant="outline"
-              size="medium"
               onPress={() => onDelete(role)}
               aria-label={t('Delete')}
             >
@@ -292,7 +290,6 @@ function RoleRow({
           <OptionMenu
             variant="outline"
             className="ml-auto rounded bg-white shadow-light"
-            size="medium"
           >
             <Menu className="min-w-28 p-2">
               <MenuItem key="edit" onAction={() => setIsEditing(true)}>
@@ -378,7 +375,7 @@ function AddRoleDialog({
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button color="secondary" onPress={onClose}>
+          <Button variant="outline" onPress={onClose}>
             {t('Cancel')}
           </Button>
           <Button
@@ -407,7 +404,7 @@ function RolesSectionContent({
           {t('Roles & permissions')}
         </Header2>
         <Button
-          color="ghost"
+          variant="ghost"
           className="text-primary hover:text-primary"
           onPress={() => setIsAdding(true)}
           isDisabled={isAdding}
@@ -646,7 +643,6 @@ function MobileRoleFormCard({
         />
         <IconButton
           variant="outline"
-          size="medium"
           onPress={handleSave}
           isDisabled={!roleName.trim() || isPending}
           aria-label={t('Save role')}
@@ -656,7 +652,6 @@ function MobileRoleFormCard({
         {onDelete && (
           <IconButton
             variant="ghost"
-            size="medium"
             onPress={() => onDelete(role)}
             aria-label={t('Delete')}
             className="text-destructive"
@@ -724,7 +719,6 @@ function AddRoleRow({
       <TableCell className="w-22">
         <IconButton
           variant="outline"
-          size="medium"
           onPress={handleSave}
           isDisabled={!roleName.trim() || isPending}
           aria-label={t('Save role')}
@@ -871,11 +865,11 @@ function RolesTable({
             </p>
           </ModalBody>
           <ModalFooter>
-            <Button color="secondary" onPress={() => setRoleToDelete(null)}>
+            <Button variant="outline" onPress={() => setRoleToDelete(null)}>
               {t('Cancel')}
             </Button>
             <Button
-              color="destructive"
+              variant="destructive"
               onPress={handleDeleteConfirm}
               isDisabled={deleteRoleMutation.isPending}
             >

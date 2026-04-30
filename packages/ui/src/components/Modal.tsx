@@ -179,7 +179,7 @@ export const ModalStepper = memo(
       >
         <span className="flex-1">
           {!isFirstStep && (
-            <Button color="secondary" onPress={handlePrevious}>
+            <Button variant="outline" onPress={handlePrevious}>
               Back
             </Button>
           )}

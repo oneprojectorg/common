@@ -46,8 +46,8 @@ export const Example = () => (
           description="Supporting open source projects and communities"
         >
           <div className="mt-3 flex gap-2">
-            <Button size="small">Join</Button>
-            <Button size="small" color="secondary">
+            <Button size="sm">Join</Button>
+            <Button size="sm" variant="outline">
               Learn More
             </Button>
           </div>
@@ -69,8 +69,8 @@ export const Example = () => (
           description="Full-stack developer and open source contributor"
         >
           <div className="mt-3 flex gap-2">
-            <Button size="small">Follow</Button>
-            <Button size="small" color="secondary">
+            <Button size="sm">Follow</Button>
+            <Button size="sm" variant="outline">
               Message
             </Button>
           </div>
@@ -110,8 +110,8 @@ export const Example = () => (
               <strong>Timeline:</strong> 12 months
             </div>
             <div className="mt-3 flex gap-2">
-              <Button size="small">Support</Button>
-              <Button size="small" color="secondary">
+              <Button size="sm">Support</Button>
+              <Button size="sm" variant="outline">
                 View Details
               </Button>
             </div>
@@ -129,8 +129,8 @@ export const OrganizationWithActions = {
     description: 'Environmental conservation and sustainability initiatives',
     children: (
       <div className="mt-3 flex gap-2">
-        <Button size="small">Join</Button>
-        <Button size="small" color="secondary">
+        <Button size="sm">Join</Button>
+        <Button size="sm" variant="outline">
           Learn More
         </Button>
       </div>
@@ -162,8 +162,8 @@ export const ProposalWithDetails = {
           <strong>Timeline:</strong> 12 months
         </div>
         <div className="mt-3 flex gap-2">
-          <Button size="small">Support</Button>
-          <Button size="small" color="secondary">
+          <Button size="sm">Support</Button>
+          <Button size="sm" variant="outline">
             View Details
           </Button>
         </div>

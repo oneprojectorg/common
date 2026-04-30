@@ -193,14 +193,14 @@ const SelectProfileStep = ({
       </div>
       <ModalFooter>
         <Button
-          color="neutral"
+          variant="outline"
           onPress={cancelButtonAction}
           className="w-full sm:w-auto"
         >
           {t('Cancel')}
         </Button>
         <Button
-          color="destructive"
+          variant="destructive"
           type="button"
           onPress={submitButtonAction}
           isDisabled={!selectedProfile}
@@ -262,14 +262,14 @@ const ConfirmProfileStep = ({
       <ModalFooter>
         <Button
           className="w-full sm:w-auto"
-          color="neutral"
+          variant="outline"
           onPress={backButtonAction}
         >
           {t('Back')}
         </Button>
         <Button
           className="w-full sm:w-auto"
-          color="destructive"
+          variant="destructive"
           type="button"
           onPress={submitButtonAction}
           isPending={isSubmitting}

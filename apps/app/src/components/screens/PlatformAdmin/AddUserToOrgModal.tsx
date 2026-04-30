@@ -206,7 +206,7 @@ const AddUserToOrgModalContent = ({
       {/* Footer */}
       <ModalFooter>
         <Button
-          color="primary"
+          variant="default"
           type="submit"
           isPending={isSubmitting}
           isDisabled={!selectedOrgId || !selectedRoleId || isSubmitting}

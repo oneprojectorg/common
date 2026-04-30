@@ -142,7 +142,7 @@ const DuplicateFormContent = ({
       </ModalBody>
       <ModalFooter>
         <Button
-          color="primary"
+          variant="default"
           className="w-full sm:w-auto"
           onPress={handleDuplicate}
           isDisabled={

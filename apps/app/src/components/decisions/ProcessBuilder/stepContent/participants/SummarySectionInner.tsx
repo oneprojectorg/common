@@ -109,7 +109,7 @@ export function SummarySectionInner({
                   {t(item.labelKey)}
                 </span>
                 <Button
-                  color="secondary"
+                  variant="outline"
                   className="shrink-0"
                   onPress={() => {
                     const sectionId = checklistSectionMap[item.id];

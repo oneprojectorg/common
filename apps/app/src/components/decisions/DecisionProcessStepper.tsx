@@ -163,7 +163,7 @@ export function DecisionProcessStepper({
             <p className="text-sm text-foreground">{body}</p>
             <div className="flex flex-col gap-4">
               <Button
-                color="primary"
+                variant="default"
                 isLoading={transitionMutation.isPending}
                 onPress={handleAdvancePhase}
                 className="w-full"
@@ -171,7 +171,7 @@ export function DecisionProcessStepper({
                 {t('Advance Phase')}
               </Button>
               <Button
-                color="secondary"
+                variant="outline"
                 isDisabled={transitionMutation.isPending}
                 onPress={() => setShowConfirmModal(false)}
                 className="w-full"
@@ -194,14 +194,14 @@ export function DecisionProcessStepper({
           </ModalBody>
           <ModalFooter className="px-6 py-6">
             <Button
-              color="secondary"
+              variant="outline"
               isDisabled={transitionMutation.isPending}
               onPress={() => setShowConfirmModal(false)}
             >
               {t('Cancel')}
             </Button>
             <Button
-              color="primary"
+              variant="default"
               isLoading={transitionMutation.isPending}
               onPress={handleAdvancePhase}
             >

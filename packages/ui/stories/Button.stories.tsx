@@ -30,31 +30,31 @@ export const Example = () => (
   <div className="flex flex-col gap-8">
     Medium:
     <Button>Button</Button>
-    <Button color="secondary">Button</Button>
-    <Button color="destructive">Button</Button>
-    <Button isDisabled color="destructive">
+    <Button variant="outline">Button</Button>
+    <Button variant="destructive">Button</Button>
+    <Button isDisabled variant="destructive">
       Button
     </Button>
     Small:
-    <Button size="small">Button</Button>
-    <Button size="small" color="secondary">
+    <Button size="sm">Button</Button>
+    <Button size="sm" variant="outline">
       Button
     </Button>
-    <Button isDisabled size="small">
+    <Button isDisabled size="sm">
       Button
     </Button>
     Loading:
     <Button isLoading>Button</Button>
-    <Button isLoading color="secondary">
+    <Button isLoading variant="outline">
       Button
     </Button>
-    <Button isLoading color="destructive">
+    <Button isLoading variant="destructive">
       Button
     </Button>
-    <Button isLoading size="small">
+    <Button isLoading size="sm">
       Button
     </Button>
-    <Button isLoading size="small" color="secondary">
+    <Button isLoading size="sm" variant="outline">
       Button
     </Button>
   </div>

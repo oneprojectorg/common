@@ -84,14 +84,14 @@ export const TabbedProfileSearchResults = ({
   return (
     // Use the defaultSelectedKey as the key for the Tabs component so that it switches to the tab with available results.
     <Tabs key={defaultSelectedKey} defaultSelectedKey={defaultSelectedKey}>
-      <TabList variant="pill">
+      <TabList>
         {profiles.map(({ type, results }) => {
           const label = match(type, {
             [EntityType.INDIVIDUAL]: t('Individuals'),
             [EntityType.ORG]: t('Organizations'),
           });
           return (
-            <Tab id={type} variant="pill" className="gap-2" key={`${type}-tab`}>
+            <Tab id={type} className="gap-2" key={`${type}-tab`}>
               {label}
               <span className="text-muted-foreground">{results.length}</span>
             </Tab>

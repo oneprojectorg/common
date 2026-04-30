@@ -150,7 +150,7 @@ export const CategoryList = <C extends CategoryItem>({
         ))}
       </ul>
       <Button
-        color="secondary"
+        variant="outline"
         onPress={addCategory}
         className="flex w-full items-center justify-center gap-1 border-primary shadow-none"
       >

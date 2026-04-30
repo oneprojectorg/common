@@ -57,7 +57,7 @@ export function ReviewPage({
           variant="standard"
         >
           <div className="flex justify-center pt-2">
-            <ButtonLink color="secondary" size="medium" href="#">
+            <ButtonLink variant="outline" href="#">
               <TranslatedText text="Learn more" />
             </ButtonLink>
           </div>

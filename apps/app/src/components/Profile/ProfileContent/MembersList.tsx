@@ -156,11 +156,7 @@ const MemberMenu = ({
 
   return (
     <MenuTrigger>
-      <IconButton
-        variant="ghost"
-        size="small"
-        className="aria-expanded:bg-accent"
-      >
+      <IconButton variant="ghost" size="sm" className="aria-expanded:bg-accent">
         <LuEllipsis className="size-4" />
       </IconButton>
       <Popover placement="bottom end">
@@ -360,13 +356,11 @@ export const MembersList = ({ profileId }: { profileId: string }) => {
       </div>
 
       <Tabs>
-        <TabList className="px-4 sm:px-0" variant="pill">
-          <Tab id="all" variant="pill">
-            {t('All members')}
-          </Tab>
+        <TabList className="px-4 sm:px-0">
+          <Tab id="all">{t('All members')}</Tab>
           {rolesSegmented.map(([roleName, roleMembers]) =>
             roleMembers?.length ? (
-              <Tab id={roleName} key={roleName} variant="pill">
+              <Tab id={roleName} key={roleName}>
                 {roleName}s
               </Tab>
             ) : null,

@@ -2,7 +2,7 @@
 
 import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
 import { useRelativeTime } from '@op/hooks';
-import { Button } from '@op/ui/Button';
+import { Button, UnstyledButton } from '@op/ui/Button';
 import { cn } from '@op/ui/utils';
 import type { THistoryVersion } from '@tiptap-pro/provider';
 import { useLocale } from 'next-intl';
@@ -148,17 +148,16 @@ function VersionItem({
         isSelected && 'bg-primary-foreground',
       )}
     >
-      <Button
-        unstyled
+      <UnstyledButton
         onPress={onSelect}
         isDisabled={isPending}
         className="flex w-full flex-col items-start text-left shadow-none outline-hidden focus-visible:outline-none"
       >
         <p className="text-base text-foreground">{label}</p>
         <p className="text-sm text-foreground">{sublabel}</p>
-      </Button>
+      </UnstyledButton>
       {isSelected && onRestore && (
-        <Button size="small" onPress={onRestore} isDisabled={isPending}>
+        <Button size="sm" onPress={onRestore} isDisabled={isPending}>
           {t('Restore this version')}
         </Button>
       )}

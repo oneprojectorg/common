@@ -246,8 +246,8 @@ const ToggleAdvanceButton = ({
 
   return (
     <Button
-      size="small"
-      color={isSelected ? 'verified' : 'secondary'}
+      size="sm"
+      variant="outline"
       onPress={onPress}
       aria-label={
         isSelected

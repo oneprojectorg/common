@@ -515,7 +515,7 @@ function ProfileInviteModalContent({
                       className="cursor-pointer px-4 py-3 outline-none hover:bg-accent focus-visible:bg-accent"
                     >
                       <ProfileItem
-                        size="small"
+                        size="sm"
                         avatar={
                           <Avatar
                             placeholder={result.name}
@@ -651,7 +651,7 @@ function ProfileInviteModalContent({
             : null}
         </div>
         <Button
-          color="primary"
+          variant="default"
           onPress={handleSend}
           isDisabled={allSelectedItems.length === 0}
           isPending={isSubmitting}
@@ -679,7 +679,7 @@ function PersonRow({
   return (
     <div className="flex h-14 items-center justify-between gap-4 rounded-lg border border-border bg-white px-3 py-2">
       <ProfileItem
-        size="small"
+        size="sm"
         avatar={
           <Avatar placeholder={name} className="size-6 shrink-0">
             {avatarUrl ? (
@@ -692,7 +692,7 @@ function PersonRow({
         {subtitle}
       </ProfileItem>
       {onRemove && (
-        <IconButton size="small" onPress={onRemove} aria-label={removeLabel}>
+        <IconButton size="sm" onPress={onRemove} aria-label={removeLabel}>
           <LuX className="size-4" />
         </IconButton>
       )}

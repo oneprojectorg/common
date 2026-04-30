@@ -126,7 +126,7 @@ export function ReviewSettingsContent({
             <ToggleButton
               isSelected={settings.reviewsAllowRevisions}
               onChange={(val) => updateSettings({ reviewsAllowRevisions: val })}
-              size="small"
+              size="sm"
             />
           </ToggleRow>
         </div>

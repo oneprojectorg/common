@@ -5,7 +5,7 @@ import { LuCircleAlert, LuCircleCheck, LuX } from 'react-icons/lu';
 import { Toaster as Sonner, toast as sonnerToast } from 'sonner';
 
 import { cn } from '../lib/utils';
-import { Button } from './Button';
+import { UnstyledButton } from './Button';
 
 export const Toast = () => {
   return (
@@ -56,13 +56,12 @@ const ToastWrapper = ({
     >
       {children}
       {dismissable && (
-        <Button
-          unstyled
+        <UnstyledButton
           className="w-6 transition-opacity hover:opacity-70"
           onPress={() => sonnerToast.dismiss(id)}
         >
           <LuX className="size-6" />
-        </Button>
+        </UnstyledButton>
       )}
     </div>
   );

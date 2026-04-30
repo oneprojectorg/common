@@ -17,7 +17,7 @@ export const Example = (args: any) => (
 );
 
 export const Small = (args: any) => (
-  <ToggleButton {...args} size="small">
+  <ToggleButton {...args} size="sm">
     Pin
   </ToggleButton>
 );

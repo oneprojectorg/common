@@ -112,8 +112,8 @@ export const ManualSelectionList = ({
         </Header3>
         <Button
           onPress={() => candidatesQuery.refetch()}
-          color="secondary"
-          size="small"
+          variant="outline"
+          size="sm"
         >
           {t('Try again')}
         </Button>

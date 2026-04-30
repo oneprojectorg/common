@@ -27,7 +27,7 @@ export const ReviewNavigation = () => (
     <div className="flex-1 bg-muted" />
     <FooterBar padding="spacious">
       <FooterBar.Start>
-        <Button color="neutral" size="medium">
+        <Button variant="outline">
           <LuChevronLeft className="size-4" />
           Previous
         </Button>
@@ -40,7 +40,7 @@ export const ReviewNavigation = () => (
       </FooterBar.Center>
 
       <FooterBar.End>
-        <Button color="secondary" size="medium">
+        <Button variant="outline">
           Next
           <LuChevronRight className="size-4" />
         </Button>
@@ -49,7 +49,7 @@ export const ReviewNavigation = () => (
       <FooterBar.Divider />
 
       <FooterBar.End>
-        <Button color="primary" size="medium">
+        <Button variant="default">
           <LuCheck className="size-4" />
           Review Complete
         </Button>
@@ -67,13 +67,11 @@ export const ProcessNavigation = () => (
     <div className="flex-1 bg-muted" />
     <FooterBar>
       <FooterBar.Start>
-        <Button color="ghost" size="medium">
+        <Button variant="ghost">
           <LuLogOut className="size-4 rotate-180" />
           Exit
         </Button>
-        <Button color="secondary" size="medium">
-          Back
-        </Button>
+        <Button variant="outline">Back</Button>
       </FooterBar.Start>
 
       <FooterBar.Center className="gap-4">
@@ -84,9 +82,7 @@ export const ProcessNavigation = () => (
       </FooterBar.Center>
 
       <FooterBar.End>
-        <Button color="secondary" size="medium">
-          Next
-        </Button>
+        <Button variant="outline">Next</Button>
       </FooterBar.End>
     </FooterBar>
   </div>
@@ -100,7 +96,7 @@ export const Minimal = () => (
     <div className="flex-1 bg-muted" />
     <FooterBar>
       <FooterBar.Start>
-        <Button color="neutral" size="medium">
+        <Button variant="outline">
           <LuChevronLeft className="size-4" />
           Back
         </Button>
@@ -109,9 +105,7 @@ export const Minimal = () => (
       <FooterBar.Center />
 
       <FooterBar.End>
-        <Button color="primary" size="medium">
-          Save &amp; Continue
-        </Button>
+        <Button variant="default">Save &amp; Continue</Button>
       </FooterBar.End>
     </FooterBar>
   </div>

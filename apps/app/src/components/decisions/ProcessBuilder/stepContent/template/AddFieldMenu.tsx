@@ -24,7 +24,7 @@ export function AddFieldMenu({ onAddField }: AddFieldMenuProps) {
 
   return (
     <MenuTrigger>
-      <Button color="neutral" className="w-full justify-center gap-2">
+      <Button variant="outline" className="w-full justify-center gap-2">
         <LuPlus className="size-4" />
         {t('Add field')}
       </Button>

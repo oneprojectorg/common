@@ -96,7 +96,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
               <TooltipTrigger key={link.id}>
                 <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                   <ButtonLink
-                    color="secondary"
+                    variant="outline"
                     href={formatToUrl(link.href)}
                     target="_blank"
                     className="min-w-full sm:min-w-fit"
@@ -123,7 +123,7 @@ const ProfileInteractions = ({ profile }: { profile: Organization }) => {
               <TooltipTrigger key={link.id}>
                 <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                   <ButtonLink
-                    color="secondary"
+                    variant="outline"
                     href={formatToUrl(link.href)}
                     target="_blank"
                     className="min-w-full sm:min-w-fit"

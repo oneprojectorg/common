@@ -72,9 +72,8 @@ export function ProposalViewLayout({
         <div className="flex items-center justify-end gap-4">
           {canEdit && editHref && (
             <Button
-              color="secondary"
-              surface="outline"
-              size="small"
+              variant="outline"
+              size="sm"
               onPress={() => router.push(editHref)}
               className="px-4 py-2"
             >
@@ -83,9 +82,8 @@ export function ProposalViewLayout({
             </Button>
           )}
           <Button
-            surface={isLiked ? undefined : 'ghost'}
-            color={isLiked ? 'verified' : 'secondary'}
-            size="small"
+            variant={isLiked ? 'outline' : 'ghost'}
+            size="sm"
             onPress={onLike}
             isDisabled={isLoading}
           >
@@ -93,9 +91,8 @@ export function ProposalViewLayout({
             {isLiked ? t('Liked') : t('Like')}
           </Button>
           <Button
-            surface={isFollowing ? undefined : 'ghost'}
-            color={isFollowing ? 'verified' : 'secondary'}
-            size="small"
+            variant={isFollowing ? 'outline' : 'ghost'}
+            size="sm"
             onPress={onFollow}
           >
             <LuBookmark className="size-4" />
@@ -105,9 +102,8 @@ export function ProposalViewLayout({
           {revisionToggle && (
             <TooltipTrigger>
               <Button
-                color="secondary"
-                variant="icon"
-                size="small"
+                variant="outline"
+                size="icon-sm"
                 onPress={revisionToggle.onToggle}
                 aria-label={revisionRequestLabel}
                 aria-pressed={revisionToggle.isActive}

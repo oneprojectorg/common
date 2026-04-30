@@ -136,7 +136,7 @@ export function PhasesSectionContent({
             <p className="text-muted-foreground">{t('No phases defined')}</p>
           </div>
           <Button
-            color="ghost"
+            variant="ghost"
             className="text-primary hover:text-primary"
             onPress={addPhase}
           >
@@ -193,15 +193,14 @@ export function PhasesSectionContent({
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
                       <Button
-                        color="secondary"
-                        size="small"
+                        variant="outline"
+                        size="sm"
                         onPress={() => setSection(phaseToSectionId(phase.id))}
                       >
                         {t('Configure')}
                       </Button>
                       <IconButton
                         variant="outline"
-                        size="medium"
                         className="text-primary hover:text-destructive"
                         onPress={() => setPhaseToDelete(phase.id)}
                         aria-label={t('Delete phase?')}
@@ -215,7 +214,7 @@ export function PhasesSectionContent({
             }}
           </Sortable>
           <Button
-            color="secondary"
+            variant="outline"
             className="w-full text-primary hover:text-primary"
             onPress={addPhase}
           >
@@ -244,14 +243,14 @@ export function PhasesSectionContent({
         </ModalBody>
         <ModalFooter>
           <Button
-            color="secondary"
+            variant="outline"
             className="w-full sm:w-fit"
             onPress={() => setPhaseToDelete(null)}
           >
             {t('Cancel')}
           </Button>
           <Button
-            color="destructive"
+            variant="destructive"
             className="w-full sm:w-fit"
             onPress={confirmRemovePhase}
           >
@@ -291,10 +290,10 @@ const PhaseDragPreview = ({
           )}
         </div>
         <div className="flex shrink-0 items-center gap-3">
-          <Button color="secondary" size="small">
+          <Button variant="outline" size="sm">
             {t('Configure')}
           </Button>
-          <IconButton variant="outline" size="medium" className="text-primary">
+          <IconButton variant="outline" className="text-primary">
             <LuTrash2 className="size-4" />
           </IconButton>
         </div>

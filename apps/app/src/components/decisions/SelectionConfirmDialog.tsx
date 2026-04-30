@@ -39,9 +39,7 @@ export const SelectionConfirmDialog = ({
 
   return (
     <DialogTrigger isOpen={isOpen} onOpenChange={onOpenChange}>
-      <Button isDisabled={triggerDisabled} variant="primary">
-        {t('Confirm decisions')}
-      </Button>
+      <Button isDisabled={triggerDisabled}>{t('Confirm decisions')}</Button>
 
       <Modal isDismissable>
         <Dialog className="h-full">
@@ -56,7 +54,7 @@ export const SelectionConfirmDialog = ({
           <ModalFooter>
             <Button
               className="w-full"
-              color="primary"
+              variant="default"
               onPress={onConfirm}
               isDisabled={isSubmitting}
             >

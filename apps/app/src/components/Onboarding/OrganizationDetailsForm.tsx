@@ -43,7 +43,7 @@ export const OrganizationDetailsForm = ({
             {formFields}
 
             <div className="flex flex-col-reverse justify-between gap-4 sm:flex-row sm:gap-2">
-              <form.Button color="secondary" onPress={onBack}>
+              <form.Button variant="outline" onPress={onBack}>
                 {t('Back')}
               </form.Button>
               <form.SubmitButton>{t('Continue')}</form.SubmitButton>

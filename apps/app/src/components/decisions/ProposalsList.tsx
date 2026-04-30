@@ -313,7 +313,7 @@ const VotingProposalsList = ({
                 <ProposalCardFooter>
                   <ButtonLink
                     href={proposalHref}
-                    color="secondary"
+                    variant="outline"
                     className="w-full"
                   >
                     {t('Read full proposal')}
@@ -345,7 +345,7 @@ const VotingProposalsList = ({
                   <ProposalCardFooter>
                     <ButtonLink
                       href={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
-                      color="secondary"
+                      variant="outline"
                       className="w-full"
                     >
                       {t('Read full proposal')}
@@ -367,7 +367,7 @@ const VotingProposalsList = ({
           </span>
 
           <DialogTrigger>
-            <Button isDisabled={numSelected === 0} variant="primary">
+            <Button isDisabled={numSelected === 0}>
               {t('Submit my votes')}
             </Button>
 
@@ -832,8 +832,8 @@ export const ProposalsList = ({
               <ButtonLink
                 href={downloadUrl}
                 download={downloadFileName}
-                color="secondary"
-                size="small"
+                variant="outline"
+                size="sm"
               >
                 <LuArrowDownToLine className="size-4" />
                 {t('Click to download')}
@@ -842,8 +842,8 @@ export const ProposalsList = ({
               <Button
                 onPress={handleExport}
                 isDisabled={isExporting}
-                color="secondary"
-                size="small"
+                variant="outline"
+                size="sm"
               >
                 <LuArrowDownToLine className="size-4" />
                 {isExporting ? t('Exporting...') : t('Export')}

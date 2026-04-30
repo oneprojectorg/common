@@ -135,18 +135,10 @@ const AllDecisionsTabs = () => {
         setTab(key === 'active' ? null : String(key));
       }}
     >
-      <TabList variant="pill" className="gap-4 border-none">
-        <Tab id="active" variant="pill">
-          {t('Your active processes')}
-        </Tab>
-        {hasDrafts && (
-          <Tab id="drafts" variant="pill">
-            {t('Your drafts')}
-          </Tab>
-        )}
-        <Tab id="other" variant="pill">
-          {t('Other processes')}
-        </Tab>
+      <TabList className="gap-4 border-none">
+        <Tab id="active">{t('Your active processes')}</Tab>
+        {hasDrafts && <Tab id="drafts">{t('Your drafts')}</Tab>}
+        <Tab id="other">{t('Other processes')}</Tab>
       </TabList>
       <TabPanel id="active" className="p-0 sm:p-0">
         <Suspense fallback={<DecisionsListSkeleton />}>

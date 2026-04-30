@@ -116,8 +116,8 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                 {!isAccepted ? (
                   <>
                     <Button
-                      color="secondary"
-                      size="small"
+                      variant="outline"
+                      size="sm"
                       className="w-full sm:w-auto"
                       onPress={() => {
                         remove.mutate({
@@ -130,7 +130,7 @@ const PendingRelationshipsSuspense = ({ slug }: { slug: string }) => {
                       {remove.isPending ? <LoadingSpinner /> : t('Decline')}
                     </Button>
                     <Button
-                      size="small"
+                      size="sm"
                       className="w-full sm:w-auto"
                       onPress={() =>
                         approve.mutate({

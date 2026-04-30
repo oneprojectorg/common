@@ -81,7 +81,7 @@ const VoteSuccessModalSuspense = ({
               )}
             </div>
 
-            <Button onPress={onClose} color="primary" className="w-full">
+            <Button onPress={onClose} variant="default" className="w-full">
               {t('View all proposals')}
             </Button>
           </div>

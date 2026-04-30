@@ -238,8 +238,8 @@ export const LoginPanel = () => {
                   {!loginSuccess && (
                     <>
                       <Button
-                        color="secondary"
-                        variant="icon"
+                        variant="outline"
+                        size="icon"
                         className="w-full text-black"
                         onPress={() => {
                           void handleLogin();
@@ -389,7 +389,6 @@ export const LoginPanel = () => {
                 <div className="flex flex-col items-center justify-center gap-4">
                   <ButtonLink
                     href={`${OPURLConfig('APP').ENV_URL}/login`}
-                    color="gradient"
                     className="flex w-full items-center justify-center"
                   >
                     {t('Back to home')}

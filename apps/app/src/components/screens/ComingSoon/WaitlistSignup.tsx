@@ -250,7 +250,7 @@ const WaitlistSignupSuccess = () => {
           )}
         </p>
         <p>{t("We'll be in touch soon!")}</p>
-        <Button color="secondary" className="w-9/10" slot="close">
+        <Button variant="outline" className="w-9/10" slot="close">
           {t('Done')}
         </Button>
       </div>

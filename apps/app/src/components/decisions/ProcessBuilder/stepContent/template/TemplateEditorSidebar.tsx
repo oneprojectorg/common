@@ -36,9 +36,9 @@ export function FieldListTrigger() {
 
   return (
     <Button
-      color="secondary"
+      variant="outline"
       className="gap-2 text-foreground"
-      size="small"
+      size="sm"
       onPress={toggleSidebar}
     >
       <LuAlignJustify className="size-4" />

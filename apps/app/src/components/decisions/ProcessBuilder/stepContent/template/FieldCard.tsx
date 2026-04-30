@@ -198,7 +198,7 @@ export function FieldCard({
             <div className="flex items-center gap-2">
               <span className="text-foreground">{t('Required?')}</span>
               <ToggleButton
-                size="small"
+                size="sm"
                 isSelected={field.required}
                 onChange={(isSelected) =>
                   onUpdateRequired?.(field.id, isSelected)
@@ -208,8 +208,8 @@ export function FieldCard({
             </div>
             {onRemove && (
               <Button
-                color="ghost"
-                size="small"
+                variant="ghost"
+                size="sm"
                 onPress={() => onRemove(field.id)}
                 aria-label={t('Delete')}
                 className="text-muted-foreground hover:text-destructive"

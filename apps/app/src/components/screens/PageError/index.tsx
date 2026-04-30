@@ -31,7 +31,7 @@ export default function PageError({ error }: ErrorProps) {
         </p>
       ),
       actions: (
-        <Button onPress={() => window.history.back()} color="primary">
+        <Button onPress={() => window.history.back()} variant="default">
           {t('Go back')}
         </Button>
       ),
@@ -46,7 +46,7 @@ export default function PageError({ error }: ErrorProps) {
         </p>
       ),
       actions: (
-        <Button onPress={() => window.location.reload()} color="primary">
+        <Button onPress={() => window.location.reload()} variant="default">
           {t('Try again')}
         </Button>
       ),

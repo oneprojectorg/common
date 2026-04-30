@@ -323,7 +323,7 @@ export function RubricEditorContent({
                     )}
                   </span>
                   <Button
-                    color="primary"
+                    variant="default"
                     className="mt-2"
                     onPress={handleAddCriterion}
                   >
@@ -384,7 +384,7 @@ export function RubricEditorContent({
               </Sortable>
 
               <Button
-                color="secondary"
+                variant="outline"
                 className="w-full"
                 onPress={handleAddCriterion}
               >
@@ -405,7 +405,7 @@ export function RubricEditorContent({
             <ToggleButton
               isSelected={overallRecommendationEnabled}
               onChange={handleOverallRecommendationToggle}
-              size="small"
+              size="sm"
             />
           </ToggleRow>
         </div>

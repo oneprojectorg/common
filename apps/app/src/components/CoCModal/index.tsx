@@ -1,4 +1,4 @@
-import { Button } from '@op/ui/Button';
+import { UnstyledButton } from '@op/ui/Button';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { Dialog, DialogTrigger } from '@op/ui/RAC';
 import { useState } from 'react';
@@ -13,13 +13,12 @@ export const CoCModal = () => {
 
   return (
     <DialogTrigger>
-      <Button
-        unstyled
+      <UnstyledButton
         onPress={() => setIsToSOpen(true)}
         className="text-primary hover:underline"
       >
         {t('Code of Conduct')}
-      </Button>
+      </UnstyledButton>
 
       <Modal onOpenChange={setIsToSOpen} isDismissable isOpen={isToSOpen}>
         <Dialog>

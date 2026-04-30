@@ -102,7 +102,7 @@ export const LeftSheet = () => (
 export const AllSides = () => (
   <div className="flex flex-wrap gap-3">
     <SheetTrigger>
-      <Button color="secondary">Bottom</Button>
+      <Button variant="outline">Bottom</Button>
       <Sheet side="bottom">
         <SheetHeader>Bottom Sheet</SheetHeader>
         <SheetBody className="p-4">
@@ -114,7 +114,7 @@ export const AllSides = () => (
     </SheetTrigger>
 
     <SheetTrigger>
-      <Button color="secondary">Right</Button>
+      <Button variant="outline">Right</Button>
       <Sheet side="right">
         <SheetHeader>Right Sheet</SheetHeader>
         <SheetBody className="p-4">
@@ -126,7 +126,7 @@ export const AllSides = () => (
     </SheetTrigger>
 
     <SheetTrigger>
-      <Button color="secondary">Left</Button>
+      <Button variant="outline">Left</Button>
       <Sheet side="left">
         <SheetHeader>Left Sheet</SheetHeader>
         <SheetBody className="p-4">

@@ -50,8 +50,8 @@ export const DecisionInstanceHeader = ({
         {isAdmin && decisionSlug && (
           <ButtonLink
             href={`/decisions/${decisionSlug}/edit`}
-            color="secondary"
-            size="small"
+            variant="outline"
+            size="sm"
           >
             <LuSettings className="size-4 text-foreground md:text-primary" />
             <span className="hidden md:inline">{t('Settings')}</span>

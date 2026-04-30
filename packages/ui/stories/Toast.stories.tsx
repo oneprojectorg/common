@@ -26,7 +26,7 @@ export const Example = () => (
       </Button>
 
       <Button
-        color="destructive"
+        variant="destructive"
         onPress={() =>
           toast.error({
             title: 'Error!',
@@ -38,7 +38,7 @@ export const Example = () => (
       </Button>
 
       <Button
-        color="secondary"
+        variant="outline"
         onPress={() =>
           toast.success({
             title: 'Simple Success',
@@ -50,7 +50,7 @@ export const Example = () => (
       </Button>
 
       <Button
-        color="secondary"
+        variant="outline"
         onPress={() =>
           toast.error({
             title: 'Persistent Error',
@@ -149,7 +149,7 @@ export const ErrorToast = () => (
     <Toast />
     <div className="flex gap-4">
       <Button
-        color="destructive"
+        variant="destructive"
         onPress={() =>
           toast.error({
             title: 'Error!',
@@ -161,7 +161,7 @@ export const ErrorToast = () => (
       </Button>
 
       <Button
-        color="destructive"
+        variant="destructive"
         onPress={() =>
           toast.error({
             title: 'Validation Error',
@@ -174,7 +174,7 @@ export const ErrorToast = () => (
       </Button>
 
       <Button
-        color="destructive"
+        variant="destructive"
         onPress={() =>
           toast.error({
             title: 'Network Error',
@@ -195,19 +195,19 @@ export const StatusToasts = () => (
       <div className="space-y-2">
         <h4 className="font-medium">HTTP Status Codes</h4>
         <div className="flex flex-col gap-2">
-          <Button size="small" onPress={() => toast.status({ code: 200 })}>
+          <Button size="sm" onPress={() => toast.status({ code: 200 })}>
             200 OK
           </Button>
 
-          <Button size="small" onPress={() => toast.status({ code: 404 })}>
+          <Button size="sm" onPress={() => toast.status({ code: 404 })}>
             404 Not Found
           </Button>
 
-          <Button size="small" onPress={() => toast.status({ code: 403 })}>
+          <Button size="sm" onPress={() => toast.status({ code: 403 })}>
             403 Forbidden
           </Button>
 
-          <Button size="small" onPress={() => toast.status({ code: 500 })}>
+          <Button size="sm" onPress={() => toast.status({ code: 500 })}>
             500 Internal Server Error
           </Button>
         </div>
@@ -217,7 +217,7 @@ export const StatusToasts = () => (
         <h4 className="font-medium">Custom Messages</h4>
         <div className="flex flex-col gap-2">
           <Button
-            size="small"
+            size="sm"
             onPress={() =>
               toast.status({
                 code: 404,
@@ -229,7 +229,7 @@ export const StatusToasts = () => (
           </Button>
 
           <Button
-            size="small"
+            size="sm"
             onPress={() =>
               toast.status({
                 code: 403,
@@ -241,7 +241,7 @@ export const StatusToasts = () => (
           </Button>
 
           <Button
-            size="small"
+            size="sm"
             onPress={() =>
               toast.status({
                 code: 500,
@@ -304,7 +304,7 @@ export const ToastWithActions = () => (
           toast.success({
             title: 'File Upload Complete',
             message: 'Your document has been successfully uploaded.',
-            actions: [<Button color="primary">View File</Button>],
+            actions: [<Button variant="default">View File</Button>],
           })
         }
       >
@@ -318,8 +318,8 @@ export const ToastWithActions = () => (
             message: 'Your internet connection has been restored.',
             dismissable: true,
             actions: [
-              <Button color="primary">Retry</Button>,
-              <Button color="secondary">Dismiss</Button>,
+              <Button variant="default">Retry</Button>,
+              <Button variant="outline">Dismiss</Button>,
             ],
           })
         }
@@ -340,7 +340,7 @@ export const SingleLineToasts = () => (
             message:
               'Cooperativum mutualitas communis, equitatis prosperum. Societas nostra fundata est super principia cooperationis et mutuae auxilii.',
             actions: [
-              <Button color="primary" size="small">
+              <Button variant="default" size="sm">
                 View profile
               </Button>,
             ],
@@ -356,10 +356,10 @@ export const SingleLineToasts = () => (
             message:
               'Cooperativum mutualitas communis, equitatis prosperum. Societas nostra fundata est super principia cooperationis et mutuae auxilii.',
             actions: [
-              <Button color="primary" size="small">
+              <Button variant="default" size="sm">
                 View profile
               </Button>,
-              <Button color="secondary" size="small">
+              <Button variant="outline" size="sm">
                 Undo
               </Button>,
             ],
@@ -370,7 +370,7 @@ export const SingleLineToasts = () => (
       </Button>
 
       <Button
-        color="destructive"
+        variant="destructive"
         onPress={() =>
           toast.error({
             message:

@@ -12,7 +12,7 @@ export const OptionMenu = ({
   children,
   className,
   variant = 'ghost',
-  size = 'small',
+  size = 'sm',
 }: {
   children: ReactNode;
   className?: string;

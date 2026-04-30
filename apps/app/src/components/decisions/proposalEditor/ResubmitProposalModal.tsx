@@ -89,11 +89,11 @@ export function ResubmitProposalModal({
         </div>
       </ModalBody>
       <ModalFooter>
-        <Button color="secondary" onPress={handleCancel}>
+        <Button variant="outline" onPress={handleCancel}>
           {t('Cancel')}
         </Button>
         <Button
-          color="primary"
+          variant="default"
           onPress={handleSubmit}
           isDisabled={submitRevisionResponse.isPending}
         >

@@ -1,165 +1,43 @@
 'use client';
 
-import type { Ref } from 'react';
+import type { ComponentProps, Ref } from 'react';
 import {
   Button as AriaButton,
   Link as AriaLink,
   composeRenderProps,
 } from 'react-aria-components';
-import type {
-  ButtonProps as AriaButtonProps,
-  LinkProps as AriaLinkProps,
-} from 'react-aria-components';
+import type { LinkProps as AriaLinkProps } from 'react-aria-components';
 
 import { cn } from '../lib/utils';
 import { LoadingSpinner } from './LoadingSpinner';
 import { Tooltip, TooltipTrigger } from './Tooltip';
 import type { TooltipProps, TooltipTriggerProps } from './Tooltip';
-import { buttonVariants } from './ui/button';
+import { Button as TakiButton, buttonVariants } from './ui/button';
 
-type TakiVariant =
-  | 'default'
-  | 'destructive'
-  | 'outline'
-  | 'secondary'
-  | 'ghost'
-  | 'link';
-type TakiSize = 'default' | 'sm' | 'lg' | 'icon' | 'icon-sm' | 'icon-lg';
+export { buttonVariants };
 
-type LegacyVariant = 'primary' | 'icon' | 'pill' | 'link';
-type LegacyColor =
-  | 'primary'
-  | 'secondary'
-  | 'gradient'
-  | 'unverified'
-  | 'verified'
-  | 'neutral'
-  | 'destructive'
-  | 'ghost'
-  | 'pill';
-type LegacySize = 'small' | 'medium' | 'inline';
+export type ButtonVariant = NonNullable<
+  ComponentProps<typeof TakiButton>['variant']
+>;
+export type ButtonSize = NonNullable<ComponentProps<typeof TakiButton>['size']>;
 
-interface SharedButtonStyleProps {
-  variant?: LegacyVariant;
-  color?: LegacyColor;
-  size?: LegacySize;
-  surface?: 'solid' | 'outline' | 'ghost';
-  unstyled?: boolean;
-  scaleOnPress?: boolean;
-  insetShadow?: boolean;
-  backglow?: boolean;
-}
-
-function resolveTakiVariant(
-  variant: LegacyVariant | undefined,
-  color: LegacyColor | undefined,
-): TakiVariant {
-  if (variant === 'link') return 'link';
-  if (color === 'destructive') return 'destructive';
-  if (color === 'ghost') return 'ghost';
-  if (color === 'secondary' || color === 'neutral') return 'outline';
-  if (color === 'unverified' || color === 'verified') return 'outline';
-  return 'default';
-}
-
-function resolveTakiSize(size: LegacySize | undefined): TakiSize {
-  if (size === 'small') return 'sm';
-  if (size === 'inline') return 'default';
-  return 'default';
-}
-
-function buildClassName(
-  props: SharedButtonStyleProps & { className?: string; isLoading?: boolean },
-  renderProps: { isDisabled?: boolean; isPending?: boolean },
-): string {
-  if (props.unstyled) return props.className ?? '';
-
-  const extra = cn(
-    props.size === 'inline' && 'h-auto rounded-none p-0 shadow-none',
-    props.isLoading && 'relative',
-    props.className,
-  );
-
-  return buttonVariants({
-    variant: resolveTakiVariant(props.variant, props.color),
-    size: resolveTakiSize(props.size),
-    isDisabled: props.isLoading ? false : renderProps.isDisabled,
-    isPending: props.isLoading || renderProps.isPending,
-    className: extra,
-  });
-}
-
-export interface ButtonProps extends AriaButtonProps, SharedButtonStyleProps {
-  className?: string;
+export interface ButtonProps extends ComponentProps<typeof TakiButton> {
+  /** Show a centered LoadingSpinner overlay; underlying button stays interactive-blocked via isPending. */
   isLoading?: boolean;
   ref?: Ref<HTMLButtonElement>;
 }
 
-export const Button = (props: ButtonProps) => {
-  const {
-    variant,
-    color,
-    size,
-    surface,
-    unstyled,
-    scaleOnPress,
-    insetShadow,
-    backglow,
-    isLoading,
-    children,
-    ...rest
-  } = props;
-
+export const Button = ({ isLoading, children, ...props }: ButtonProps) => {
   if (!isLoading) {
-    return (
-      <AriaButton
-        {...rest}
-        className={composeRenderProps(
-          props.className,
-          (className, renderProps) =>
-            buildClassName(
-              {
-                variant,
-                color,
-                size,
-                surface,
-                unstyled,
-                scaleOnPress,
-                insetShadow,
-                backglow,
-                className,
-              },
-              renderProps,
-            ),
-        )}
-      >
-        {composeRenderProps(children, (c) => (
-          <>{c}</>
-        ))}
-      </AriaButton>
-    );
+    return <TakiButton {...props}>{children}</TakiButton>;
   }
 
   return (
-    <AriaButton
-      {...rest}
+    <TakiButton
+      {...props}
       isPending
-      className={composeRenderProps(props.className, (className, renderProps) =>
-        buildClassName(
-          {
-            variant,
-            color,
-            size,
-            surface,
-            unstyled,
-            scaleOnPress,
-            insetShadow,
-            backglow,
-            className,
-            isLoading: true,
-          },
-          renderProps,
-        ),
+      className={composeRenderProps(props.className, (className) =>
+        cn('relative', className),
       )}
     >
       {(renderProps) => (
@@ -171,13 +49,15 @@ export const Button = (props: ButtonProps) => {
             <LoadingSpinner
               className={cn(
                 'fill-transparent text-current',
-                size === 'small' ? 'size-4' : 'size-5',
+                props.size === 'sm' || props.size === 'icon-sm'
+                  ? 'size-4'
+                  : 'size-5',
               )}
             />
           </span>
         </>
       )}
-    </AriaButton>
+    </TakiButton>
   );
 };
 
@@ -187,49 +67,36 @@ type LowLevelPressHandlers =
   | 'onPressChange'
   | 'onPressUp';
 
-export interface ButtonLinkProps
-  extends Omit<AriaLinkProps, LowLevelPressHandlers>, SharedButtonStyleProps {
+export interface ButtonLinkProps extends Omit<
+  AriaLinkProps,
+  LowLevelPressHandlers
+> {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
   className?: string;
   isLoading?: boolean;
   ref?: Ref<HTMLAnchorElement>;
 }
 
-export const ButtonLink = (props: ButtonLinkProps) => {
-  const {
-    variant,
-    color,
-    size,
-    surface,
-    unstyled,
-    scaleOnPress,
-    insetShadow,
-    backglow,
-    isLoading,
-    children,
-    ...rest
-  } = props;
+/**
+ * <a> styled as a Taki Button. Same variants/sizes as Button.
+ */
+export const ButtonLink = ({
+  variant,
+  size,
+  isLoading,
+  children,
+  ...props
+}: ButtonLinkProps) => {
+  const buildClass = (className: string | undefined) =>
+    cn(buttonVariants({ variant, size }), isLoading && 'relative', className);
 
   if (!isLoading) {
     return (
       <AriaLink
-        {...rest}
-        className={composeRenderProps(
-          props.className,
-          (className, renderProps) =>
-            buildClassName(
-              {
-                variant,
-                color,
-                size,
-                surface,
-                unstyled,
-                scaleOnPress,
-                insetShadow,
-                backglow,
-                className,
-              },
-              renderProps,
-            ),
+        {...props}
+        className={composeRenderProps(props.className, (className) =>
+          buildClass(className),
         )}
       >
         {composeRenderProps(children, (c) => (
@@ -241,25 +108,11 @@ export const ButtonLink = (props: ButtonLinkProps) => {
 
   return (
     <AriaLink
-      {...rest}
+      {...props}
       aria-busy="true"
       aria-disabled="true"
-      className={composeRenderProps(props.className, (className, renderProps) =>
-        buildClassName(
-          {
-            variant,
-            color,
-            size,
-            surface,
-            unstyled,
-            scaleOnPress,
-            insetShadow,
-            backglow,
-            className,
-            isLoading: true,
-          },
-          renderProps,
-        ),
+      className={composeRenderProps(props.className, (className) =>
+        buildClass(className),
       )}
     >
       {(renderProps) => (
@@ -271,7 +124,7 @@ export const ButtonLink = (props: ButtonLinkProps) => {
             <LoadingSpinner
               className={cn(
                 'fill-transparent text-current',
-                size === 'small' ? 'size-4' : 'size-5',
+                size === 'sm' || size === 'icon-sm' ? 'size-4' : 'size-5',
               )}
             />
           </span>
@@ -286,8 +139,11 @@ export interface ButtonTooltipProps extends ButtonProps {
   tooltipProps: TooltipProps;
 }
 
-export const ButtonTooltip = (props: ButtonTooltipProps) => {
-  const { triggerProps, tooltipProps, ...rest } = props;
+export const ButtonTooltip = ({
+  triggerProps,
+  tooltipProps,
+  ...rest
+}: ButtonTooltipProps) => {
   return (
     <TooltipTrigger {...triggerProps}>
       <Button {...rest} />
@@ -295,3 +151,10 @@ export const ButtonTooltip = (props: ButtonTooltipProps) => {
     </TooltipTrigger>
   );
 };
+
+/**
+ * RAC Button passthrough — focus + keyboard semantics without any Taki
+ * styling. Use this where the legacy `<Button unstyled>` pattern was
+ * used to render a custom-styled clickable region.
+ */
+export const UnstyledButton = AriaButton;

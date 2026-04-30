@@ -91,14 +91,14 @@ Validation.args = {
 
 export const PillVariant = (args: any) => (
   <div className="flex flex-col gap-4">
-    <Select {...args} variant="pill" placeholder="Select category">
+    <Select {...args} placeholder="Select category">
       <SelectItem>Planning</SelectItem>
       <SelectItem>Design</SelectItem>
       <SelectItem>Development</SelectItem>
       <SelectItem>Testing</SelectItem>
       <SelectItem>Deployment</SelectItem>
     </Select>
-    <Select {...args} variant="pill" placeholder="Select category" isDisabled>
+    <Select {...args} placeholder="Select category" isDisabled>
       <SelectItem>Planning</SelectItem>
       <SelectItem>Design</SelectItem>
       <SelectItem>Development</SelectItem>
@@ -120,7 +120,7 @@ export const NarrowTrigger = () => (
 
 export const SmallVariant = (args: any) => (
   <div className="flex flex-col gap-4">
-    <Select {...args} size="small" placeholder="Select category">
+    <Select {...args} size="sm" placeholder="Select category">
       <SelectItem id="chocolate">All proposals</SelectItem>
       <SelectItem id="mint">Mint</SelectItem>
       <SelectItem id="strawberry">Strawberry</SelectItem>

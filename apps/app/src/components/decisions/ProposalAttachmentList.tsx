@@ -72,8 +72,8 @@ export function ProposalAttachmentList({
 
           {/* Remove button */}
           <Button
-            color="ghost"
-            size="small"
+            variant="ghost"
+            size="sm"
             onPress={() => onRemove(file.id)}
             isDisabled={file.uploading}
             className="shrink-0"

@@ -61,19 +61,11 @@ export const Example = () => (
     <div className="space-y-4">
       <h3 className="font-medium">Pill Variant</h3>
       <Tabs>
-        <TabList aria-label="Settings" variant="pill">
-          <Tab id="general" variant="pill">
-            General
-          </Tab>
-          <Tab id="security" variant="pill">
-            Security
-          </Tab>
-          <Tab id="notifications" variant="pill">
-            Notifications
-          </Tab>
-          <Tab id="billing" variant="pill">
-            Billing
-          </Tab>
+        <TabList aria-label="Settings">
+          <Tab id="general">General</Tab>
+          <Tab id="security">Security</Tab>
+          <Tab id="notifications">Notifications</Tab>
+          <Tab id="billing">Billing</Tab>
         </TabList>
         <TabPanel id="general">
           <div className="p-4">
@@ -217,16 +209,10 @@ export const DefaultTabs = () => (
 
 export const PillVariant = () => (
   <Tabs>
-    <TabList aria-label="Settings" variant="pill">
-      <Tab id="general" variant="pill">
-        General
-      </Tab>
-      <Tab id="security" variant="pill">
-        Security
-      </Tab>
-      <Tab id="notifications" variant="pill">
-        Notifications
-      </Tab>
+    <TabList aria-label="Settings">
+      <Tab id="general">General</Tab>
+      <Tab id="security">Security</Tab>
+      <Tab id="notifications">Notifications</Tab>
     </TabList>
     <TabPanel id="general">
       <div className="p-4">General settings content</div>
@@ -286,16 +272,10 @@ export const WithDisabledTab = () => (
 
 export const VerticalPillVariant = () => (
   <Tabs orientation="vertical">
-    <TabList aria-label="Vertical Pills" orientation="vertical" variant="pill">
-      <Tab id="profile" variant="pill">
-        Profile
-      </Tab>
-      <Tab id="account" variant="pill">
-        Account
-      </Tab>
-      <Tab id="preferences" variant="pill">
-        Preferences
-      </Tab>
+    <TabList aria-label="Vertical Pills" orientation="vertical">
+      <Tab id="profile">Profile</Tab>
+      <Tab id="account">Account</Tab>
+      <Tab id="preferences">Preferences</Tab>
     </TabList>
     <TabPanel id="profile">
       <div className="p-4">Profile settings content</div>

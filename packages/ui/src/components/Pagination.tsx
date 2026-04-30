@@ -75,8 +75,8 @@ const PaginationNavigation = React.forwardRef<
       className={clsx('flex justify-end gap-2', className)}
     >
       <Button
-        color="neutral"
-        size="small"
+        variant="outline"
+        size="sm"
         isDisabled={!previous}
         onPress={async () => {
           if (previous) {
@@ -88,8 +88,8 @@ const PaginationNavigation = React.forwardRef<
         Previous
       </Button>
       <Button
-        color="neutral"
-        size="small"
+        variant="outline"
+        size="sm"
         isDisabled={!next}
         onPress={async () => {
           if (next) {

@@ -63,7 +63,7 @@ export const Medium: Story = {
 
 export const Large: Story = {
   args: {
-    size: 'large',
+    size: 'lg',
     children: <DummyIcon />,
   },
 };
@@ -77,7 +77,7 @@ export const Ghost: Story = {
 
 export const Solid: Story = {
   args: {
-    variant: 'solid',
+    variant: 'secondary',
     children: <DummyIcon />,
   },
 };
@@ -107,7 +107,7 @@ export const AllVariants: Story = {
       </div>
       <div className="flex flex-col items-center gap-2">
         <span className="text-sm font-medium">Solid</span>
-        <IconButton variant="solid">
+        <IconButton variant="secondary">
           <DummyIcon />
         </IconButton>
       </div>
@@ -132,19 +132,19 @@ export const AllSizes: Story = {
     <div className="flex items-center gap-4">
       <div className="flex flex-col items-center gap-2">
         <span className="text-sm font-medium">Small</span>
-        <IconButton size="small">
+        <IconButton size="sm">
           <DummyIcon />
         </IconButton>
       </div>
       <div className="flex flex-col items-center gap-2">
         <span className="text-sm font-medium">Medium</span>
-        <IconButton size="medium">
+        <IconButton>
           <DummyIcon />
         </IconButton>
       </div>
       <div className="flex flex-col items-center gap-2">
         <span className="text-sm font-medium">Large</span>
-        <IconButton size="large">
+        <IconButton size="lg">
           <DummyIcon />
         </IconButton>
       </div>

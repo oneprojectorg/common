@@ -37,7 +37,7 @@ export const WithAction = () => (
     <p className="mb-3 text-sm">
       Get started by inviting your first team member
     </p>
-    <Button size="small">Invite Member</Button>
+    <Button size="sm">Invite Member</Button>
   </EmptyState>
 );
 
@@ -66,7 +66,7 @@ export const Examples = () => (
       <EmptyState icon={<LuFileText />}>
         <p className="font-medium">No documents</p>
         <p className="mb-3 text-sm">Upload your first document</p>
-        <Button size="small">Upload</Button>
+        <Button size="sm">Upload</Button>
       </EmptyState>
     </div>
   </div>

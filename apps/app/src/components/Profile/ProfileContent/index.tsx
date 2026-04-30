@@ -146,8 +146,8 @@ const ProfileAbout = ({
                 <ContactLink
                   button={
                     <Button
-                      color="secondary"
-                      size="small"
+                      variant="outline"
+                      size="sm"
                       onPress={() => {
                         navigator.clipboard.writeText(email);
                         toast.success({

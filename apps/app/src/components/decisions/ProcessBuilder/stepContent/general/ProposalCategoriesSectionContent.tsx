@@ -186,7 +186,7 @@ export function ProposalCategoriesSectionContent({
                 )}
               </span>
               <Button
-                color="primary"
+                variant="default"
                 className="mt-2"
                 onPress={() => setIsFormVisible(true)}
               >
@@ -213,8 +213,8 @@ export function ProposalCategoriesSectionContent({
               </div>
               <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                 <Button
-                  variant="icon"
-                  color="ghost"
+                  size="icon"
+                  variant="ghost"
                   className="size-5 p-0 text-foreground"
                   onPress={() => handleEdit(category)}
                   aria-label={`Edit ${category.label}`}
@@ -222,8 +222,8 @@ export function ProposalCategoriesSectionContent({
                   <LuPencil className="size-4" />
                 </Button>
                 <Button
-                  variant="icon"
-                  color="ghost"
+                  size="icon"
+                  variant="ghost"
                   className="size-5 p-0 text-foreground hover:text-destructive"
                   onPress={() => handleDelete(category.id)}
                   aria-label={`Delete ${category.label}`}
@@ -235,7 +235,7 @@ export function ProposalCategoriesSectionContent({
           ))}
           {!isFormVisible && (
             <Button
-              color="ghost"
+              variant="ghost"
               className="mt-2 px-2 text-primary hover:text-primary"
               onPress={() => setIsFormVisible(true)}
             >
@@ -278,11 +278,11 @@ export function ProposalCategoriesSectionContent({
               )}
             />
             <div className="flex items-center justify-end gap-2">
-              <Button color="secondary" onPress={resetForm}>
+              <Button variant="outline" onPress={resetForm}>
                 {t('Cancel')}
               </Button>
               <Button
-                color="primary"
+                variant="default"
                 onPress={handleAddOrUpdate}
                 isDisabled={!formLabel.trim()}
               >
@@ -307,7 +307,7 @@ export function ProposalCategoriesSectionContent({
             <ToggleButton
               isSelected={requireCategorySelection}
               onChange={handleRequireCategoryChange}
-              size="small"
+              size="sm"
             />
           </div>
           <div className="flex items-center justify-between gap-4">
@@ -322,7 +322,7 @@ export function ProposalCategoriesSectionContent({
             <ToggleButton
               isSelected={allowMultipleCategories}
               onChange={handleAllowMultipleChange}
-              size="small"
+              size="sm"
             />
           </div>
         </div>

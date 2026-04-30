@@ -47,8 +47,8 @@ export const SearchField = ({
           className="px-10 [&::-webkit-search-cancel-button]:hidden"
         />
         <Button
-          variant="icon"
-          color="ghost"
+          size="icon"
+          variant="ghost"
           className="absolute top-1/2 right-1 aspect-square w-6 -translate-y-1/2 p-0 group-empty:invisible"
         >
           <LuX aria-hidden className="size-4" />

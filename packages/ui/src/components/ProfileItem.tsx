@@ -8,7 +8,7 @@ const titleStyles = tv({
   variants: {
     size: {
       default: 'leading-base font-semibold text-foreground',
-      small: 'text-base text-foreground',
+      sm: 'text-base text-foreground',
     },
   },
   defaultVariants: {

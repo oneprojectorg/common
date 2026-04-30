@@ -152,8 +152,8 @@ function FieldConfigDropdownOptions({
               />
               <TooltipTrigger isDisabled={options.length > 2}>
                 <Button
-                  color="ghost"
-                  size="small"
+                  variant="ghost"
+                  size="sm"
                   aria-label={t('Remove option')}
                   aria-disabled={options.length <= 2 || undefined}
                   aria-description={
@@ -183,8 +183,8 @@ function FieldConfigDropdownOptions({
       </Sortable>
 
       <Button
-        color="ghost"
-        size="small"
+        variant="ghost"
+        size="sm"
         onPress={handleAddOption}
         className="hover:text-primaryDark gap-1 p-0 text-primary"
       >

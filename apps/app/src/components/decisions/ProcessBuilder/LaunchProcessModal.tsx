@@ -123,7 +123,7 @@ export const LaunchProcessModal = ({
       </ModalBody>
       <ModalFooter>
         <Button
-          color="neutral"
+          variant="outline"
           onPress={() => onOpenChange(false)}
           className="w-full sm:w-auto"
         >

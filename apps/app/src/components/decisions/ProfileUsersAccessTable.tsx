@@ -57,7 +57,7 @@ export const ProfileUsersAccessTable = ({
     return (
       <EmptyState>
         <span>{t('Members could not be loaded')}</span>
-        <Button onPress={onRetry} color="secondary" size="small">
+        <Button onPress={onRetry} variant="outline" size="sm">
           {t('Try again')}
         </Button>
       </EmptyState>
@@ -218,14 +218,14 @@ const ProfileUserRoleSelect = ({
             </ModalBody>
             <ModalFooter>
               <Button
-                color="secondary"
+                variant="outline"
                 className="w-full sm:w-fit"
                 onPress={() => setIsRemoveModalOpen(false)}
               >
                 {t('Cancel')}
               </Button>
               <Button
-                color="destructive"
+                variant="destructive"
                 className="w-full sm:w-fit"
                 onPress={() => removeUser.mutate({ profileUserId })}
                 isDisabled={removeUser.isPending}
@@ -343,14 +343,14 @@ const InviteRoleSelect = ({
           </ModalBody>
           <ModalFooter>
             <Button
-              color="secondary"
+              variant="outline"
               className="w-full sm:w-fit"
               onPress={() => setIsRemoveModalOpen(false)}
             >
               {t('Cancel')}
             </Button>
             <Button
-              color="destructive"
+              variant="destructive"
               className="w-full sm:w-fit"
               onPress={() => deleteInvite.mutate({ inviteId })}
               isDisabled={deleteInvite.isPending}

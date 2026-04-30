@@ -269,7 +269,7 @@ export function OverviewSectionForm({
                           config: { organizeByCategories: value },
                         });
                       }}
-                      size="small"
+                      size="sm"
                     />
                   </ToggleRow>
                 )}
@@ -287,7 +287,7 @@ export function OverviewSectionForm({
                     <field.ToggleButton
                       isSelected={field.state.value}
                       onChange={field.handleChange}
-                      size="small"
+                      size="sm"
                     />
                   </ToggleRow>
                 )}
@@ -313,7 +313,7 @@ export function OverviewSectionForm({
                   <field.ToggleButton
                     isSelected={!field.state.value}
                     onChange={(value) => field.handleChange(!value)}
-                    size="small"
+                    size="sm"
                   />
                 </ToggleRow>
               )}

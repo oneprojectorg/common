@@ -31,7 +31,7 @@ export const ComingSoonScreen = () => {
         <img src="/logo-common.svg" alt="Common" className="h-4" />
         <ButtonLink
           href="/login"
-          color="secondary"
+          variant="outline"
           className="rounded-lg text-black shadow-md"
         >
           {t('Log in')}

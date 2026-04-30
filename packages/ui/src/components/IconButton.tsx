@@ -1,40 +1,39 @@
 'use client';
 
-import type { ComponentProps, ReactNode } from 'react';
+import type { ComponentProps } from 'react';
 
 import { Button } from './ui/button';
 
-type LegacySize = 'small' | 'medium' | 'large';
-type LegacyVariant = 'ghost' | 'solid' | 'outline';
-
-const sizeMap = {
-  small: 'icon-sm',
-  medium: 'icon',
-  large: 'icon-lg',
-} as const;
-
-const variantMap = {
-  ghost: 'ghost',
-  solid: 'secondary',
-  outline: 'outline',
-} as const;
+type AliasSize =
+  | 'sm'
+  | 'small'
+  | 'lg'
+  | 'large'
+  | 'medium'
+  | 'icon-sm'
+  | 'icon'
+  | 'icon-lg';
 
 export interface IconButtonProps extends Omit<
   ComponentProps<typeof Button>,
-  'variant' | 'size'
+  'size'
 > {
-  children: ReactNode;
-  size?: LegacySize;
-  variant?: LegacyVariant;
-  className?: string;
+  /** Defaults to "icon" (36px square). Legacy `small`/`medium`/`large`
+   * and Taki `sm`/`lg` map to `icon-sm`/`icon`/`icon-lg`. */
+  size?: AliasSize;
 }
 
-export const IconButton = ({
-  size = 'medium',
-  variant = 'ghost',
-  ...props
-}: IconButtonProps) => {
-  return (
-    <Button {...props} size={sizeMap[size]} variant={variantMap[variant]} />
-  );
+const sizeMap: Record<AliasSize, ComponentProps<typeof Button>['size']> = {
+  sm: 'icon-sm',
+  small: 'icon-sm',
+  lg: 'icon-lg',
+  large: 'icon-lg',
+  medium: 'icon',
+  'icon-sm': 'icon-sm',
+  icon: 'icon',
+  'icon-lg': 'icon-lg',
+};
+
+export const IconButton = ({ size = 'icon', ...props }: IconButtonProps) => {
+  return <Button {...props} size={sizeMap[size]} />;
 };

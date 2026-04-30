@@ -31,8 +31,8 @@ interface ResponsiveSelectProps<T extends string> {
   'aria-label'?: string;
   /** Additional class for the trigger button/select */
   className?: string;
-  /** Size variant */
-  size?: 'small' | 'medium';
+  /** Size variant — passed to the inner Button */
+  size?: 'sm' | 'default' | 'lg';
   /** Render custom label for selected item (defaults to item.label) */
   renderSelectedLabel?: (item: SelectOption<T> | undefined) => ReactNode;
 }
@@ -47,7 +47,7 @@ export function ResponsiveSelect<T extends string>({
   items,
   'aria-label': ariaLabel,
   className = 'min-w-36',
-  size = 'small',
+  size = 'sm',
   renderSelectedLabel,
 }: ResponsiveSelectProps<T>) {
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
@@ -62,7 +62,7 @@ export function ResponsiveSelect<T extends string>({
     return (
       <>
         <Button
-          color="secondary"
+          variant="outline"
           size={size}
           className={`${className} justify-between`}
           onPress={() => setIsOpen(true)}

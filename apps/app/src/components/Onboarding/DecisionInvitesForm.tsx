@@ -2,7 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
+import { Button, UnstyledButton } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { toast } from '@op/ui/Toast';
@@ -149,14 +149,13 @@ export const DecisionInvitesForm = ({
           </Button>
           {/* Show single decline link at bottom only for single invite */}
           {invites.length === 1 && invites[0] && (
-            <Button
-              unstyled
+            <UnstyledButton
               className="h-10 px-2 py-2.5 text-sm text-primary underline hover:text-primary/80 disabled:opacity-50"
               onPress={() => handleDecline(invites[0]!.id)}
               isDisabled={declineInvite.isPending}
             >
               {t("I don't want to participate")}
-            </Button>
+            </UnstyledButton>
           )}
         </div>
       </FormContainer>

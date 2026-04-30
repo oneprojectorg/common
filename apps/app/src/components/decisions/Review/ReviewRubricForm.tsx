@@ -134,8 +134,7 @@ export function ReviewRubricForm() {
             </section>
           ) : (
             <Button
-              color="secondary"
-              size="medium"
+              variant="outline"
               className="w-full"
               onPress={() => setIsFeedbackOpen(true)}
             >
@@ -233,8 +232,8 @@ function RubricRationaleField({
     return (
       <Button
         variant="link"
-        size="inline"
-        className="flex items-center px-2 py-1.5 leading-normal text-primary"
+        size="sm"
+        className="flex h-auto items-center p-0 leading-normal text-primary"
         onPress={() => setIsOpen(true)}
       >
         <LuPlus className="size-4" />
@@ -278,7 +277,7 @@ function RubricFieldInput({
       if (inferCriterionType(field.schema) === 'yes_no') {
         return (
           <ToggleButton
-            size="small"
+            size="sm"
             isSelected={value === 'yes'}
             onChange={(isSelected) => {
               onChange(isSelected ? 'yes' : 'no');
