@@ -9,6 +9,13 @@ import { useRouter } from 'next/navigation';
 
 import { useTranslations } from '@/lib/i18n';
 
+/**
+ * Delete-post menu fragment. Renders a bare <Menu> + MenuItem; the
+ * caller is expected to wrap this inside an <OptionMenu> (or
+ * MenuTrigger + Popover) that provides anchoring and trigger UI. Do
+ * not render <DeletePost> at the top of the React tree on its own —
+ * the menu won't be portaled and won't be clickable as a popover.
+ */
 export const DeletePost = ({
   post,
   profileId,
