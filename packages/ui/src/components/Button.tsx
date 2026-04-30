@@ -32,12 +32,19 @@ export const Button = ({ isLoading, children, ...props }: ButtonProps) => {
     return <TakiButton {...props}>{children}</TakiButton>;
   }
 
+  // We deliberately don't use Taki's `isPending` here — it sets
+  // text-transparent on the button, which makes our spinner overlay
+  // inherit color: transparent. Instead: keep the original text color,
+  // hide the children with `invisible` (preserves layout), block clicks
+  // with isDisabled, and override the disabled opacity so the button
+  // doesn't dim while loading.
   return (
     <TakiButton
       {...props}
-      isPending
+      isDisabled={true}
+      aria-busy="true"
       className={composeRenderProps(props.className, (className) =>
-        cn('relative', className),
+        cn('relative !opacity-100', className),
       )}
     >
       {(renderProps) => (
@@ -89,7 +96,11 @@ export const ButtonLink = ({
   ...props
 }: ButtonLinkProps) => {
   const buildClass = (className: string | undefined) =>
-    cn(buttonVariants({ variant, size }), isLoading && 'relative', className);
+    cn(
+      buttonVariants({ variant, size }),
+      isLoading && 'relative !opacity-100',
+      className,
+    );
 
   if (!isLoading) {
     return (
