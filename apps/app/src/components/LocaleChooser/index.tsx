@@ -41,7 +41,11 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
 
   return (
     <MenuTrigger>
-      <IconButton variant="ghost" aria-label={t('Select language')}>
+      <IconButton
+        variant="outline"
+        aria-label={t('Select language')}
+        className="text-primary"
+      >
         <LuGlobe className="size-4" />
       </IconButton>
       <Popover placement="bottom end">

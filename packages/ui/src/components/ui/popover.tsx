@@ -17,7 +17,7 @@ export interface PopoverProps extends Omit<AriaPopoverProps, 'children'> {
 }
 
 const styles = tv({
-  base: 'w-72 overflow-hidden rounded-md border bg-popover font-sans text-popover-foreground shadow-md outline-0',
+  base: 'w-fit min-w-(--trigger-width) overflow-hidden rounded-md border bg-popover font-sans text-popover-foreground shadow-md outline-0',
   variants: {
     isEntering: {
       true: 'animate-in duration-200 ease-out fade-in placement-left:slide-in-from-right-1 placement-right:slide-in-from-left-1 placement-top:slide-in-from-bottom-1 placement-bottom:slide-in-from-top-1',
