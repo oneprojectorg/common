@@ -1,8 +1,12 @@
 'use client';
 
-import { Select, SelectItem } from '@op/ui/Select';
+import { IconButton } from '@op/ui/IconButton';
+import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
+import { Popover } from '@op/ui/Popover';
 import { cn } from '@op/ui/utils';
 import { useParams } from 'next/navigation';
+import type { Key } from 'react';
+import { LuGlobe } from 'react-icons/lu';
 
 import { useRouter as useI18nRouter, usePathname } from '@/lib/i18n';
 import { useTranslations } from '@/lib/i18n';
@@ -27,8 +31,8 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
   const params = useParams();
   const currentLocale = params.locale as string;
 
-  const handleSelectionChange = (selectedKey: React.Key) => {
-    const newLocale = selectedKey as string;
+  const handleAction = (key: Key) => {
+    const newLocale = key as string;
     if (newLocale !== currentLocale) {
       i18nRouter.replace(pathname, { locale: newLocale });
     }
@@ -36,27 +40,23 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
   };
 
   return (
-    <Select
-      selectedKey={currentLocale}
-      onSelectionChange={handleSelectionChange}
-      aria-label={t('Select language')}
-    >
-      {i18nConfig.locales.map((locale) => (
-        <SelectItem
-          key={locale}
-          id={locale}
-          className={cn(currentLocale === locale && 'text-primary')}
-        >
-          <div
-            className={cn(
-              'flex items-center justify-between',
-              currentLocale === locale && 'text-primary',
-            )}
-          >
-            <span>{localeDisplayNames[locale] || locale}</span>
-          </div>
-        </SelectItem>
-      ))}
-    </Select>
+    <MenuTrigger>
+      <IconButton variant="ghost" aria-label={t('Select language')}>
+        <LuGlobe className="size-4" />
+      </IconButton>
+      <Popover placement="bottom end">
+        <Menu onAction={handleAction}>
+          {i18nConfig.locales.map((locale) => (
+            <MenuItem
+              key={locale}
+              id={locale}
+              className={cn(currentLocale === locale && 'text-primary')}
+            >
+              {localeDisplayNames[locale] || locale}
+            </MenuItem>
+          ))}
+        </Menu>
+      </Popover>
+    </MenuTrigger>
   );
 };
