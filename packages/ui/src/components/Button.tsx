@@ -28,6 +28,10 @@ export interface ButtonProps extends ComponentProps<typeof TakiButton> {
    * `isPending` is treated as an alias so RAC-style callers keep
    * working — see the inline note in the component for why we don't
    * forward to Taki's `isPending` directly.
+   *
+   * Loading takes precedence over the `isDisabled` prop; passing both
+   * is redundant. Only one of `isLoading` / `isPending` should be set
+   * at a time.
    */
   isLoading?: boolean;
   ref?: Ref<HTMLButtonElement>;

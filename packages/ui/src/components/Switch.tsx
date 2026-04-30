@@ -11,6 +11,12 @@ import { tv } from 'tailwind-variants';
 import { cn } from '../lib/utils';
 
 export interface SwitchProps extends Omit<AriaSwitchProps, 'children'> {
+  /**
+   * Inline label rendered after the toggle. If you don't render a
+   * label here, give the switch an accessible name via `aria-label`
+   * or `aria-labelledby` — RAC needs one of the three for screen
+   * readers.
+   */
   children?: ReactNode;
 }
 
