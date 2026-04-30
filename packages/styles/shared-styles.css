@@ -310,18 +310,18 @@
 
   /* Base body styles */
   body {
-    background-color: var(--color-white);
+    background-color: var(--color-background);
     font-family: var(--font-sans);
-    color: var(--color-neutral-charcoal);
+    color: var(--color-foreground);
   }
 
   /* Placeholder styles */
   input::placeholder {
-    color: var(--color-neutral-gray3);
+    color: var(--color-muted-foreground);
   }
 
   textarea::placeholder {
-    color: var(--color-neutral-gray3);
+    color: var(--color-muted-foreground);
   }
 
   /* Hide Google extension bubble */
@@ -354,7 +354,7 @@
 @utility better-scrollbar {
   overflow-y: scroll;
   scrollbar-width: thin;
-  scrollbar-color: var(--color-neutral-gray4) transparent;
+  scrollbar-color: var(--color-muted-foreground) transparent;
 }
 
 @utility scrollable-hidden-scrollbar {
@@ -402,7 +402,7 @@
 /* Border glow utility */
 @utility border-glow {
   border: 1px solid
-    color-mix(in srgb, var(--color-neutral-gray3) 50%, transparent);
+    color-mix(in srgb, var(--color-muted-foreground) 50%, transparent);
   background-clip: padding-box;
   backdrop-filter: blur(40px) contrast(1.5) saturate(3);
   box-shadow:

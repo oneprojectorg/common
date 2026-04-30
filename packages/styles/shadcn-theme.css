@@ -54,6 +54,44 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /*
+   * Short -fg aliases for the canonical -foreground tokens. Some
+   * vendored Taki files emit `text-muted-fg` etc., so we alias
+   * rather than rewrite.
+   */
+  --color-foreground-fg: var(--foreground);
+  --color-card-fg: var(--card-foreground);
+  --color-popover-fg: var(--popover-foreground);
+  --color-primary-fg: var(--primary-foreground);
+  --color-secondary-fg: var(--secondary-foreground);
+  --color-muted-fg: var(--muted-foreground);
+  --color-accent-fg: var(--accent-foreground);
+  --color-destructive-fg: var(--destructive-foreground);
+  --color-positive-fg: var(--positive-foreground);
+  --color-warning-fg: var(--warning-foreground);
+  --color-info-fg: var(--info-foreground);
+  --color-sidebar-fg: var(--sidebar-foreground);
+  --color-sidebar-primary-fg: var(--sidebar-primary-foreground);
+  --color-sidebar-accent-fg: var(--sidebar-accent-foreground);
+
+  /*
+   * Subtle variants — pale-tinted bg with darker readable fg, used by
+   * AlertBanner. `danger`/`success` map to `destructive`/`positive` so
+   * Intent-era naming keeps working.
+   */
+  --color-info-subtle: var(--info-subtle);
+  --color-info-subtle-fg: var(--info-subtle-fg);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-warning-subtle-fg: var(--warning-subtle-fg);
+  --color-danger-subtle: var(--destructive-subtle);
+  --color-danger-subtle-fg: var(--destructive-subtle-fg);
+  --color-destructive-subtle: var(--destructive-subtle);
+  --color-destructive-subtle-fg: var(--destructive-subtle-fg);
+  --color-success-subtle: var(--positive-subtle);
+  --color-success-subtle-fg: var(--positive-subtle-fg);
+  --color-positive-subtle: var(--positive-subtle);
+  --color-positive-subtle-fg: var(--positive-subtle-fg);
 }
 
 :root {
@@ -80,10 +118,18 @@
 
   --positive: hsl(var(--op-green-500));
   --positive-foreground: oklch(0.985 0 0);
+  --positive-subtle: hsl(var(--op-green-500) / 0.15);
+  --positive-subtle-fg: hsl(var(--op-green-700));
   --warning: hsl(var(--op-yellow-500));
   --warning-foreground: oklch(0.205 0 0);
+  --warning-subtle: hsl(var(--op-yellow-500) / 0.2);
+  --warning-subtle-fg: hsl(var(--op-yellow-700));
   --info: hsl(var(--op-teal-400));
   --info-foreground: oklch(0.985 0 0);
+  --info-subtle: hsl(var(--op-teal-400) / 0.15);
+  --info-subtle-fg: hsl(var(--op-teal-700));
+  --destructive-subtle: hsl(var(--op-red-500) / 0.15);
+  --destructive-subtle-fg: hsl(var(--op-red-700));
 
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
@@ -128,10 +174,18 @@
 
   --positive: hsl(var(--op-green-500));
   --positive-foreground: oklch(0.985 0 0);
+  --positive-subtle: hsl(var(--op-green-500) / 0.1);
+  --positive-subtle-fg: hsl(var(--op-green-300));
   --warning: hsl(var(--op-yellow-500));
   --warning-foreground: oklch(0.205 0 0);
+  --warning-subtle: hsl(var(--op-yellow-500) / 0.1);
+  --warning-subtle-fg: hsl(var(--op-yellow-400));
   --info: hsl(var(--op-teal-400));
   --info-foreground: oklch(0.985 0 0);
+  --info-subtle: hsl(var(--op-teal-400) / 0.1);
+  --info-subtle-fg: hsl(var(--op-teal-200));
+  --destructive-subtle: hsl(var(--op-red-500) / 0.1);
+  --destructive-subtle-fg: hsl(var(--op-red-300));
 
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
