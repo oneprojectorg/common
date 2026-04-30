@@ -25,7 +25,7 @@ export function RevisionFeedbackCard({
     <div
       className={cn(
         'flex flex-col gap-2 rounded-xl border border-border p-6',
-        variant === 'author' && 'bg-primary-foreground',
+        variant === 'author' && 'bg-primary/10',
       )}
     >
       <p

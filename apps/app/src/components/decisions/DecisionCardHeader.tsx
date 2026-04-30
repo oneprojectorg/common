@@ -32,7 +32,7 @@ export const DecisionCardHeader = ({
         {name}
       </Header3>
       {currentState ? (
-        <Chip className={chipClassName ?? 'bg-primary-foreground text-primary'}>
+        <Chip className={chipClassName ?? 'bg-primary/10 text-primary'}>
           <TranslatedText text={currentState as TranslationKey} />
         </Chip>
       ) : null}

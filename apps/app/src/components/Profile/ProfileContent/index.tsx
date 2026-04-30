@@ -271,7 +271,7 @@ const ProfileDecisions = ({ profileId }: { profileId: string }) => {
         <Fragment key={item.id}>
           <ProfileDecisionListItem
             item={item}
-            className="rounded border p-4 transition-colors sm:rounded-none sm:border-none sm:px-6 hover:sm:bg-primary-foreground"
+            className="rounded border p-4 transition-colors sm:rounded-none sm:border-none sm:px-6 hover:sm:bg-primary/10"
           />
           {index < data.items.length - 1 && <hr />}
         </Fragment>

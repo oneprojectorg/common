@@ -89,7 +89,7 @@ function SectionItem({
         className={cn(
           'flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-left text-base transition-colors',
           isActive
-            ? 'bg-primary-foreground text-primary'
+            ? 'bg-primary/10 text-primary'
             : 'text-foreground hover:bg-accent',
         )}
       >
@@ -122,7 +122,7 @@ function SectionItem({
                 className={cn(
                   'flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-left text-sm transition-colors',
                   currentSectionId === child.id
-                    ? 'bg-primary-foreground text-primary'
+                    ? 'bg-primary/10 text-primary'
                     : 'text-foreground hover:bg-accent',
                 )}
               >
@@ -165,7 +165,7 @@ function PhaseItem({
         className={cn(
           'flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-left text-sm transition-colors',
           isActive
-            ? 'bg-primary-foreground text-primary'
+            ? 'bg-primary/10 text-primary'
             : 'text-foreground hover:bg-accent',
         )}
       >

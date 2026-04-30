@@ -42,7 +42,7 @@ export const VotingProposalCard = ({
         'relative w-full min-w-80 justify-between',
         canInteract && 'cursor-pointer hover:shadow-md',
         canInteract && !isHighlighted && 'hover:border-input',
-        isHighlighted && 'border-primary bg-primary-foreground',
+        isHighlighted && 'border-primary bg-primary/10',
         className,
       )}
       onClick={canInteract ? handleCardClick : undefined}

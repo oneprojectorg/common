@@ -77,7 +77,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
 
   return (
     <>
-      <div className="flex items-start gap-0 rounded-lg border hover:bg-primary-foreground sm:items-center sm:rounded-none sm:border-0 sm:border-b sm:border-b-accent">
+      <div className="flex items-start gap-0 rounded-lg border hover:bg-primary/10 sm:items-center sm:rounded-none sm:border-0 sm:border-b sm:border-b-accent">
         <Link
           href={`/decisions/${item.slug}${isDraft ? '/edit' : ''}`}
           className="flex flex-1 flex-col gap-4 p-4 hover:no-underline sm:flex-row sm:items-center sm:justify-between"
@@ -266,7 +266,7 @@ export const LegacyDecisionListItem = ({
   return (
     <Link
       href={href}
-      className="flex flex-col gap-4 rounded-lg border p-4 hover:bg-primary-foreground hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b sm:border-b-accent"
+      className="flex flex-col gap-4 rounded-lg border p-4 hover:bg-primary/10 hover:no-underline sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b sm:border-b-accent"
     >
       <DecisionCardHeader
         name={name}

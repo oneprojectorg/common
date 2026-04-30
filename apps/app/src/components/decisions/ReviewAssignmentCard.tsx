@@ -82,7 +82,7 @@ const statusConfig: Record<
   },
   in_progress: {
     icon: LuTimer,
-    bgClass: 'bg-primary-foreground p-2',
+    bgClass: 'bg-primary/10 p-2',
     textClass: 'text-foreground',
     iconClass: 'text-primary',
   },

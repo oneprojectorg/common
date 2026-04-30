@@ -162,7 +162,7 @@ export const AddRelationshipModalSuspense = ({
             'min-w-full sm:min-w-fit',
             relationships.some((r) => r.pending)
               ? 'bg-transparent'
-              : 'bg-primary-foreground',
+              : 'bg-primary/10',
           )}
         />
       ) : relationships.length === 1 ? (

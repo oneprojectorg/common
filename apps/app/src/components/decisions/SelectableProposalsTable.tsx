@@ -84,7 +84,7 @@ export const SelectableProposalsTable = ({
               id={proposal.id}
               className={
                 isSelected
-                  ? 'bg-primary-foreground hover:bg-primary-foreground/80'
+                  ? 'bg-primary/10 hover:bg-primary/20'
                   : undefined
               }
             >
@@ -162,7 +162,7 @@ const SelectableProposalCard = ({
       className={cn(
         'flex flex-col gap-3 rounded-lg border p-4',
         isSelected
-          ? 'border-primary bg-primary-foreground'
+          ? 'border-primary bg-primary/10'
           : 'border-border bg-white',
       )}
     >

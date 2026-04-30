@@ -144,8 +144,8 @@ function VersionItem({
   return (
     <div
       className={cn(
-        'flex w-full flex-col gap-2 rounded p-2 hover:bg-primary-foreground',
-        isSelected && 'bg-primary-foreground',
+        'flex w-full flex-col gap-2 rounded p-2 hover:bg-primary/10',
+        isSelected && 'bg-primary/10',
       )}
     >
       <UnstyledButton

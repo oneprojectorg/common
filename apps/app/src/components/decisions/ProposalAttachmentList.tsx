@@ -35,7 +35,7 @@ export function ProposalAttachmentList({
           key={file.id}
           className="flex items-center gap-4 rounded-lg border border-border bg-white p-4"
         >
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-foreground">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
             <LuFileText className="size-5 text-muted-foreground" />
           </div>
 
