@@ -131,8 +131,8 @@ test.describe('Proposal Editor Toolbar', () => {
       summarySection.locator('strong', { hasText: 'Summary bold text' }),
     ).toBeVisible();
 
-    // Verify bold button shows active state (bg-gray-200 class)
-    await expect(boldButton).toHaveClass(/bg-gray-200/);
+    // Verify bold button shows active state via aria-pressed.
+    await expect(boldButton).toHaveAttribute('aria-pressed', 'true');
 
     // -- Step 2: Click into details, apply italic via toolbar -----------------
 
@@ -149,10 +149,10 @@ test.describe('Proposal Editor Toolbar', () => {
     ).toBeVisible();
 
     // Verify italic button shows active state
-    await expect(italicButton).toHaveClass(/bg-gray-200/);
+    await expect(italicButton).toHaveAttribute('aria-pressed', 'true');
 
     // Bold button should NOT be active (we're in details, which has no bold)
-    await expect(boldButton).not.toHaveClass(/bg-gray-200/);
+    await expect(boldButton).toHaveAttribute('aria-pressed', 'false');
 
     // -- Step 3: Verify summary still has bold (formatting persisted) ---------
 
@@ -166,10 +166,10 @@ test.describe('Proposal Editor Toolbar', () => {
     await authenticatedPage.keyboard.press(`${modifier}+a`);
 
     // Bold button should now be active again (reflecting summary's bold state)
-    await expect(boldButton).toHaveClass(/bg-gray-200/);
+    await expect(boldButton).toHaveAttribute('aria-pressed', 'true');
 
     // Italic button should NOT be active (summary has no italic)
-    await expect(italicButton).not.toHaveClass(/bg-gray-200/);
+    await expect(italicButton).toHaveAttribute('aria-pressed', 'false');
 
     // Bold text still there
     await expect(
