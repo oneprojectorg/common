@@ -37,7 +37,7 @@
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-neutral-gray1, currentColor);
+    border-color: var(--color-border, currentColor);
   }
 }
 
@@ -335,7 +335,7 @@
   /* Default hr styling - Tailwind v4 reset removes borders */
   hr {
     border-top-width: 1px;
-    border-color: var(--color-neutral-gray1);
+    border-color: var(--color-border);
   }
 
   /* Only show focus outlines for keyboard navigation, not mouse clicks */
@@ -462,11 +462,11 @@
 @keyframes border-highlight {
   0%,
   40% {
-    border-color: var(--color-primary-teal);
+    border-color: var(--color-primary);
   }
 
   100% {
-    border-color: var(--color-neutral-gray1);
+    border-color: var(--color-border);
   }
 }
 
