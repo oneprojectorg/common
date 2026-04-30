@@ -47,6 +47,7 @@
     "./ProfileItem": "./src/components/ProfileItem.tsx",
     "./RadioGroup": "./src/components/RadioGroup.tsx",
     "./ReactionsButton": "./src/components/ReactionsButton.tsx",
+    "./StatusDot": "./src/components/StatusDot.tsx",
     "./RichTextEditor": "./src/components/RichTextEditor/index.ts",
     "./Sortable": "./src/components/Sortable/index.ts",
     "./SplitPane": "./src/components/SplitPane.tsx",
