@@ -35,7 +35,7 @@ export function Menu<T extends object>(props: MenuProps<T>) {
   return (
     <Popover
       placement={props.placement}
-      className={cn('min-w-(--trigger-width) w-fit', props.className)}
+      className={cn('w-fit min-w-(--trigger-width)', props.className)}
     >
       <AriaMenu
         {...props}

@@ -51,7 +51,9 @@ async function fetchItem(name) {
     mkdirSync(dirname(dest), { recursive: true });
     writeFileSync(dest, file.content);
     if (wasNew) newFiles.push(dest.replace(REPO_ROOT + '/', ''));
-    console.log(`${wasNew ? 'new' : 'updated'} ${dest.replace(REPO_ROOT + '/', '')}`);
+    console.log(
+      `${wasNew ? 'new' : 'updated'} ${dest.replace(REPO_ROOT + '/', '')}`,
+    );
   }
 }
 

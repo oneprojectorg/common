@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { execSync } from 'node:child_process';
 /*
  * Map legacy <Button> / <ButtonLink> props to the new Taki-aligned API.
  *
@@ -13,7 +14,6 @@
  * reviewed.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
-import { execSync } from 'node:child_process';
 
 const PROP_REPLACEMENTS = [
   // Color -> variant

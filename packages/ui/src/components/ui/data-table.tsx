@@ -251,15 +251,15 @@ const TableRow = <T extends object>({
             isFocusVisible &&
               'bg-primary/5 ring-3 ring-ring/20 outline-primary hover:bg-primary/10',
             isDragging &&
-              'cursor-grabbing bg-primary/10 text-fg outline-primary',
+              'text-fg cursor-grabbing bg-primary/10 outline-primary',
             isSelected &&
-              'bg-(--table-selected-bg) text-fg hover:bg-(--table-selected-bg)/50',
+              'text-fg bg-(--table-selected-bg) hover:bg-(--table-selected-bg)/50',
             striped && 'even:bg-muted',
             (props.href || props.onAction || selectionMode === 'multiple') &&
-              'hover:bg-(--table-selected-bg) hover:text-fg',
+              'hover:text-fg hover:bg-(--table-selected-bg)',
             (props.href || props.onAction || selectionMode === 'multiple') &&
               isFocusVisibleWithin &&
-              'bg-(--table-selected-bg)/50 text-fg selected:bg-(--table-selected-bg)/50',
+              'text-fg bg-(--table-selected-bg)/50 selected:bg-(--table-selected-bg)/50',
             isDisabled && 'opacity-50',
             className,
           ),

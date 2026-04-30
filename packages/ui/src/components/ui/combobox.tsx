@@ -87,7 +87,7 @@ export function ComboBox<T extends object>({
       </div>
       {description && <FieldDescription>{description}</FieldDescription>}
       <FieldError>{errorMessage}</FieldError>
-      <Popover className="min-w-(--trigger-width) w-fit">
+      <Popover className="w-fit min-w-(--trigger-width)">
         <ListBox
           items={items}
           className="max-h-[inherit] overflow-auto p-1 outline-hidden [clip-path:inset(0_0_0_0_round_.75rem)]"

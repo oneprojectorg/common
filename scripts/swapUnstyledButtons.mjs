@@ -1,10 +1,10 @@
 #!/usr/bin/env node
+import { execSync } from 'node:child_process';
 /*
  * Convert <Button unstyled ...> -> <UnstyledButton ...>.
  * Updates the @op/ui/Button import to include UnstyledButton.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
-import { execSync } from 'node:child_process';
 
 const files = execSync(`git ls-files '*.tsx'`, {
   encoding: 'utf8',
@@ -39,13 +39,10 @@ for (const f of files) {
   );
 
   // self-closing variant
-  out = out.replace(
-    /<Button(\s+[^>]*?\bunstyled\b[^>]*?)\/>/g,
-    (_m, attrs) => {
-      const cleanedAttrs = attrs.replace(/\s+unstyled\b/, '');
-      return `<UnstyledButton${cleanedAttrs}/>`;
-    },
-  );
+  out = out.replace(/<Button(\s+[^>]*?\bunstyled\b[^>]*?)\/>/g, (_m, attrs) => {
+    const cleanedAttrs = attrs.replace(/\s+unstyled\b/, '');
+    return `<UnstyledButton${cleanedAttrs}/>`;
+  });
 
   // Update import
   out = out.replace(

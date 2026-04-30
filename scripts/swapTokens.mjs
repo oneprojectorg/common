@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { execSync } from 'node:child_process';
 /*
  * Phase B: swap OP brand Tailwind classes to shadcn-token classes.
  *
@@ -9,7 +10,6 @@
  * services/, excluding node_modules and dist.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
-import { execSync } from 'node:child_process';
 
 const REPLACEMENTS = [
   // Primary / teal — longest first
@@ -129,10 +129,10 @@ const REPLACEMENTS = [
 
 import { existsSync } from 'node:fs';
 
-const files = execSync(
-  `git ls-files '*.ts' '*.tsx' '*.css' '*.mdx'`,
-  { encoding: 'utf8', cwd: process.cwd() },
-)
+const files = execSync(`git ls-files '*.ts' '*.tsx' '*.css' '*.mdx'`, {
+  encoding: 'utf8',
+  cwd: process.cwd(),
+})
   .trim()
   .split('\n')
   .filter(Boolean)
@@ -154,7 +154,10 @@ for (const f of files) {
   const src = readFileSync(f, 'utf8');
   let out = src;
   for (const [needle, repl] of REPLACEMENTS) {
-    const re = new RegExp(needle.includes('\\b') ? needle : escapeRegex(needle), 'g');
+    const re = new RegExp(
+      needle.includes('\\b') ? needle : escapeRegex(needle),
+      'g',
+    );
     out = out.replace(re, repl);
   }
   if (out !== src) {
