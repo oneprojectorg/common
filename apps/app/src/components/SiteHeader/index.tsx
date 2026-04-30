@@ -67,10 +67,15 @@ const ProfileMenuItem = ({
       router.refresh();
     },
   });
+  const isCurrent = user.currentProfile?.id === profile.id;
   return (
     <MenuItem
       key={profile.id}
-      className="min-h-[60px] w-72"
+      data-current={isCurrent || undefined}
+      className={cn(
+        'min-h-[60px] w-72',
+        isCurrent && 'bg-primary/10 data-[focused]:bg-primary/15',
+      )}
       onAction={() => {
         if (user.currentProfile?.id === profile.id) {
           const profilePath =

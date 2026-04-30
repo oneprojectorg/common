@@ -6,6 +6,7 @@ import { Button } from '@op/ui/Button';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
+import { cn } from '@op/ui/utils';
 import { type ReactNode, useState } from 'react';
 import { LuChevronDown } from 'react-icons/lu';
 
@@ -80,20 +81,29 @@ export function ResponsiveSelect<T extends string>({
         >
           <ModalBody className="pb-safe p-0">
             <Menu className="flex min-w-full flex-col border-0 p-0 shadow-none">
-              {items.map((item, index) => (
-                <MenuItem
-                  key={item.id}
-                  id={item.id}
-                  isDisabled={item.isDisabled}
-                  className={`rounded-none px-6 py-4 ${index < items.length - 1 ? 'border-b border-border' : ''}`}
-                  onAction={() => {
-                    onSelectionChange(item.id);
-                    setIsOpen(false);
-                  }}
-                >
-                  {item.label}
-                </MenuItem>
-              ))}
+              {items.map((item, index) => {
+                const isCurrent = selectedKey === item.id;
+                return (
+                  <MenuItem
+                    key={item.id}
+                    id={item.id}
+                    data-current={isCurrent || undefined}
+                    isDisabled={item.isDisabled}
+                    className={cn(
+                      'rounded-none px-6 py-4',
+                      index < items.length - 1 && 'border-b border-border',
+                      isCurrent &&
+                        'bg-primary/10 data-[focused]:bg-primary/15',
+                    )}
+                    onAction={() => {
+                      onSelectionChange(item.id);
+                      setIsOpen(false);
+                    }}
+                  >
+                    {item.label}
+                  </MenuItem>
+                );
+              })}
             </Menu>
           </ModalBody>
         </Modal>
