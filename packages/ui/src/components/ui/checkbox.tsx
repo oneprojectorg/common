@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, Minus } from 'lucide-react';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import {
   CheckboxProps,
   composeRenderProps,
