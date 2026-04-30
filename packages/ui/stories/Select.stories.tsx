@@ -131,4 +131,5 @@ export const SmallVariant = (args: any) => (
 
 PillVariant.args = {
   label: undefined,
+  variant: 'pill',
 };
