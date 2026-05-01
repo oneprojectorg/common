@@ -5,6 +5,7 @@ import { createClient } from '@op/api/serverClient';
 import { UnauthorizedError, ValidationError } from '@op/common';
 import { isSafeRedirectPath } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
+import { logger } from '@op/logging';
 import { createSBServerClient } from '@op/supabase/server';
 import { TRPCError } from '@trpc/server';
 import { NextResponse } from 'next/server';
@@ -56,7 +57,12 @@ export const GET = async (request: NextRequest) => {
       await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
-      console.error(error);
+      logger.error('[auth/callback] oauth exchange failed', {
+        name: error.name,
+        message: error.message,
+        code: error.code,
+        status: error.status,
+      });
       return buildErrorRedirect(request, 'oauth_failed', redirectPath);
     }
 
@@ -74,7 +80,17 @@ export const GET = async (request: NextRequest) => {
     } catch (loginError) {
       const errorCode = classifyLoginError(loginError);
       if (errorCode === 'unknown') {
-        console.error('[auth/callback] login query failed', loginError);
+        const cause =
+          loginError instanceof TRPCError ? loginError.cause : loginError;
+        logger.error('[auth/callback] login query failed', {
+          name: loginError instanceof Error ? loginError.name : undefined,
+          message:
+            loginError instanceof Error
+              ? loginError.message
+              : String(loginError),
+          causeName: cause instanceof Error ? cause.name : undefined,
+          causeMessage: cause instanceof Error ? cause.message : undefined,
+        });
       }
       // Login failed for any reason — clear the partial Supabase session
       // before redirecting so the user isn't left half-authenticated.
