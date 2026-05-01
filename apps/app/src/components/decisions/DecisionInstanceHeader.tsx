@@ -1,14 +1,18 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { ButtonLink } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
-import { LuArrowLeft, LuSettings } from 'react-icons/lu';
+import { IconButton } from '@op/ui/IconButton';
+import { useQueryState } from 'nuqs';
+import { LuArrowLeft, LuMegaphone, LuSettings } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
+import { panelStateParser } from './DecisionSidePanel';
 
 export const DecisionInstanceHeader = ({
   backTo,
@@ -47,6 +51,7 @@ export const DecisionInstanceHeader = ({
       </div>
 
       <div className="flex items-center justify-end gap-2 md:gap-4">
+        <DecisionUpdatesToggle ariaLabel={t('Open updates panel')} />
         {isAdmin && decisionSlug && (
           <ButtonLink
             href={`/decisions/${decisionSlug}/edit`}
@@ -61,5 +66,33 @@ export const DecisionInstanceHeader = ({
         <UserAvatarMenu />
       </div>
     </header>
+  );
+};
+
+const DecisionUpdatesToggle = ({ ariaLabel }: { ariaLabel: string }) => {
+  const [panel, setPanel] = useQueryState('panel', panelStateParser);
+  const decisionUpdatesEnabled = useFeatureFlag('decision_updates');
+
+  if (!decisionUpdatesEnabled) {
+    return null;
+  }
+
+  const isOpen = panel !== null;
+
+  return (
+    <IconButton
+      variant="outline"
+      size="medium"
+      onPress={() => setPanel(isOpen ? null : 'updates')}
+      aria-label={ariaLabel}
+      aria-pressed={isOpen}
+      className={
+        isOpen
+          ? 'border-primary-teal bg-primary-tealWhite text-primary-teal'
+          : 'text-primary-teal'
+      }
+    >
+      <LuMegaphone className="size-4" />
+    </IconButton>
   );
 };
