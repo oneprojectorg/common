@@ -74,26 +74,17 @@ export const LoginPanel = () => {
       case null:
         return undefined;
       case 'not_invited':
-        return t(
-          '{appName} is invite-only. You’re now on the waitlist — keep an eye on your inbox for updates.',
-          { appName: APP_NAME },
-        );
+        return `${APP_NAME} is invite-only. You’re now on the waitlist — keep an eye on your inbox for updates.`;
       case 'invalid_email':
-        return t(
-          'We couldn’t read the email on your account. Please try a different sign-in method.',
-        );
+        return 'We couldn’t read the email on your account. Please try a different sign-in method.';
       case 'oauth_cancelled':
-        return t('Sign-in was cancelled. Please try again.');
+        return 'Sign-in was cancelled. Please try again.';
       case 'oauth_failed':
-        return t(
-          'We couldn’t complete sign-in with your provider. Please try again.',
-        );
+        return 'We couldn’t complete sign-in with your provider. Please try again.';
       case 'no_email':
-        return t(
-          'Your account didn’t share an email address. Please try a different sign-in method.',
-        );
+        return 'Your account didn’t share an email address. Please try a different sign-in method.';
       default:
-        return t('There was an error signing you in.');
+        return 'There was an error signing you in.';
     }
   })();
   const isWaitlistError = errorCode === 'not_invited';
