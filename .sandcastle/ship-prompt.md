@@ -25,8 +25,10 @@ continue to subsequent steps. Do not move the Asana task on failure.
    git push -u origin {{BRANCH}}
    ```
 
-2. **Open a PR** with `gh pr create`.
+2. **Open a PR** with `gh pr create --draft`.
 
+   - **Always open in draft mode.** A human marks the PR ready for review
+     after sanity-checking the work.
    - **Title**: Conventional Commits format (`feat:`, `fix:`, `chore:`,
      `docs:`, `refactor:`, `test:`, `perf:`, `build:`, `ci:`). Use a scope
      when it sharpens the title (e.g. `feat(reviews): ...`). Under 70
@@ -37,8 +39,8 @@ continue to subsequent steps. Do not move the Asana task on failure.
      - Test plan: a short checklist, only if non-trivial steps are
        needed; otherwise omit the section entirely.
 
-   Use `--base {{TARGET_BRANCH}}` and `--head {{BRANCH}}`. Capture the PR
-   URL printed to stdout.
+   Use `--draft --base {{TARGET_BRANCH}} --head {{BRANCH}}`. Capture the
+   PR URL printed to stdout.
 
 3. **Move the Asana task to In Review** with the PR URL as a comment:
 

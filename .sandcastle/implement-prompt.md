@@ -3,52 +3,27 @@
 1. Run `/caveman full` — every task starts in ultra-compressed
    communication mode.
 
-2. Generate a per-run agent ID (UUID) and persist it for this run:
+2. Base branch `{{BRANCH}}` on the latest `dev`:
 
    ```
-   cat /proc/sys/kernel/random/uuid > /tmp/sandcastle-agent-id
+   git fetch origin dev
+   git rebase origin/dev
    ```
 
-   Every later step in this run reads the agent ID from that file via
-   `$(cat /tmp/sandcastle-agent-id)`. Do not regenerate it.
+   `dev` is the only valid base — never branch off `main`.
 
 # TASK
 
 Fix issue {{TASK_ID}}: {{ISSUE_TITLE}}
+
+The task has already been claimed and moved into the In-Progress section
+by the planner. Begin work directly.
 
 Pull in the issue using `sandcastle-asana view {{TASK_ID}}`. If it has a parent PRD, pull that in too.
 
 Only work on the issue specified.
 
 Work on branch {{BRANCH}}. Make commits and run tests.
-
-# CLAIM
-
-Optimistic-concurrency claim. Run these in order. If any step fails, stop
-immediately — do not implement, commit, push, or move sections further.
-
-1. Stamp our agent ID onto the task description:
-
-   ```
-   sandcastle-asana claim {{TASK_ID}} --agent-id "$(cat /tmp/sandcastle-agent-id)"
-   ```
-
-2. Move the task into the In-Progress section:
-
-   ```
-   sandcastle-asana move {{TASK_ID}} --section "$ASANA_IN_PROGRESS_SECTION_ID"
-   ```
-
-3. Re-fetch the description and verify our agent ID is still the last
-   `Claimed by:` line. Another agent may have claimed in between:
-
-   ```
-   sandcastle-asana verify-claim {{TASK_ID}} --agent-id "$(cat /tmp/sandcastle-agent-id)"
-   ```
-
-   If `verify-claim` exits non-zero, ANOTHER AGENT HAS CLAIMED THIS TASK.
-   Stop now and output `<promise>SKIPPED</promise>`. Do not roll back the
-   section move — the other agent's work is already in progress there.
 
 # CONTEXT
 
