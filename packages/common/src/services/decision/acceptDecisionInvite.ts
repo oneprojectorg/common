@@ -8,7 +8,6 @@ import type { User } from '@op/supabase/lib';
 
 import {
   CommonError,
-  ConflictError,
   NotFoundError,
   UnauthorizedError,
 } from '../../utils/error';
@@ -47,10 +46,6 @@ export const acceptDecisionInvite = async ({
 
   if (!invite) {
     throw new NotFoundError('No pending invite found for this decision');
-  }
-
-  if (invite.acceptedOn) {
-    throw new ConflictError('This invite has already been accepted');
   }
 
   const existingMembership = await db.query.profileUsers.findFirst({
