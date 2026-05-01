@@ -21,11 +21,10 @@
 // Or add to package.json:
 //   "scripts": { "sandcastle": "npx tsx .sandcastle/main.ts" }
 
-import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-
-import * as sandcastle from "@ai-hero/sandcastle";
-import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
+import * as sandcastle from '@ai-hero/sandcastle';
+import { docker } from '@ai-hero/sandcastle/sandboxes/docker';
+import { execFileSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -49,17 +48,17 @@ const MAX_PARALLEL_ISSUES = Number(process.env.MAX_PARALLEL_ISSUES ?? 2);
 // Branch new worktrees fork from, and the PR base for ship. Override with
 // BASE_BRANCH. Defaults to `sandcastle` until the agent infrastructure
 // (`.sandcastle/`, `.claude/hooks/`, etc.) lands on `dev`.
-const BASE_BRANCH = process.env.BASE_BRANCH ?? "sandcastle";
+const BASE_BRANCH = process.env.BASE_BRANCH ?? 'sandcastle';
 
 // Load .sandcastle/.env into process.env so the heartbeat can hit Asana
 // without spinning up a sandbox. Existing process env wins; we only fill
 // in unset keys.
-const envPath = ".sandcastle/.env";
+const envPath = '.sandcastle/.env';
 if (existsSync(envPath)) {
-  for (const line of readFileSync(envPath, "utf-8").split("\n")) {
+  for (const line of readFileSync(envPath, 'utf-8').split('\n')) {
     const match = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
     if (match && process.env[match[1]!] === undefined) {
-      process.env[match[1]!] = match[2]!.replace(/^["']|["']$/g, "");
+      process.env[match[1]!] = match[2]!.replace(/^["']|["']$/g, '');
     }
   }
 }
@@ -81,12 +80,12 @@ interface AsanaTask {
 async function asanaGet<T>(path: string): Promise<T> {
   const token = process.env.ASANA_PERSONAL_ACCESS_TOKEN;
   if (!token) {
-    throw new Error("ASANA_PERSONAL_ACCESS_TOKEN is not set");
+    throw new Error('ASANA_PERSONAL_ACCESS_TOKEN is not set');
   }
   const res = await fetch(`https://app.asana.com/api/1.0${path}`, {
     headers: {
       Authorization: `Bearer ${token}`,
-      Accept: "application/json",
+      Accept: 'application/json',
     },
   });
   if (!res.ok) {
@@ -100,19 +99,19 @@ async function asanaGet<T>(path: string): Promise<T> {
 async function countMatchingBacklogTasks(): Promise<number> {
   const sectionId = process.env.ASANA_BACKLOG_SECTION_ID;
   if (!sectionId) {
-    throw new Error("ASANA_BACKLOG_SECTION_ID is not set");
+    throw new Error('ASANA_BACKLOG_SECTION_ID is not set');
   }
 
-  const me = await asanaGet<{ data: { gid: string } }>("/users/me");
+  const me = await asanaGet<{ data: { gid: string } }>('/users/me');
   const myGid = me.data.gid;
 
   const fields = [
-    "gid",
-    "assignee.gid",
-    "custom_fields.name",
-    "custom_fields.multi_enum_values.name",
-    "custom_fields.enum_value.name",
-  ].join(",");
+    'gid',
+    'assignee.gid',
+    'custom_fields.name',
+    'custom_fields.multi_enum_values.name',
+    'custom_fields.enum_value.name',
+  ].join(',');
   const tasks = await asanaGet<{ data: AsanaTask[] }>(
     `/sections/${sectionId}/tasks?completed_since=now&limit=100&opt_fields=${fields}`,
   );
@@ -120,12 +119,12 @@ async function countMatchingBacklogTasks(): Promise<number> {
   return tasks.data.filter((task) => {
     if (task.assignee?.gid !== myGid) return false;
     const types = task.custom_fields
-      .filter((cf) => cf.name === "Type")
+      .filter((cf) => cf.name === 'Type')
       .flatMap((cf) => [
         ...(cf.multi_enum_values ?? []).map((v) => v.name),
         ...(cf.enum_value ? [cf.enum_value.name] : []),
       ]);
-    return types.includes("Agent");
+    return types.includes('Agent');
   }).length;
 }
 
@@ -140,7 +139,7 @@ async function waitForBacklog(): Promise<boolean> {
       return true;
     }
     if (HEARTBEAT_INTERVAL_SECONDS <= 0) {
-      console.log("Heartbeat disabled and backlog empty. Exiting.");
+      console.log('Heartbeat disabled and backlog empty. Exiting.');
       return false;
     }
     console.log(
@@ -162,9 +161,9 @@ const hooks = {
     onSandboxReady: [
       {
         command:
-          "mkdir -p .claude && printf '%s\\n' '{\"sandbox\":{\"enabled\":false}}' > .claude/settings.local.json",
+          'mkdir -p .claude && printf \'%s\\n\' \'{"sandbox":{"enabled":false}}\' > .claude/settings.local.json',
       },
-      { command: "pnpm install" },
+      { command: 'pnpm install' },
     ],
   },
 };
@@ -172,7 +171,7 @@ const hooks = {
 // Copy node_modules from the host into the worktree before each sandbox
 // starts. Avoids a full npm install from scratch; the hook above handles
 // platform-specific binaries and any packages added since the last copy.
-const copyToWorktree = [".env", ".env.local", "node_modules"];
+const copyToWorktree = ['.env', '.env.local', 'node_modules'];
 
 // ---------------------------------------------------------------------------
 // Main loop
@@ -198,13 +197,13 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   const plan = await sandcastle.run({
     hooks,
     sandbox: docker(),
-    name: "planner",
+    name: 'planner',
     // One iteration is enough: the planner just needs to read and reason,
     // not write code.
     maxIterations: 1,
     // Opus for planning: dependency analysis benefits from deeper reasoning.
-    agent: sandcastle.claudeCode("claude-opus-4-6"),
-    promptFile: "./.sandcastle/plan-prompt.md",
+    agent: sandcastle.claudeCode('claude-opus-4-6'),
+    promptFile: './.sandcastle/plan-prompt.md',
     promptArgs: {
       MAX_PARALLEL_ISSUES: String(MAX_PARALLEL_ISSUES),
     },
@@ -214,7 +213,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   const planMatch = plan.stdout.match(/<plan>([\s\S]*?)<\/plan>/);
   if (!planMatch) {
     throw new Error(
-      "Planning agent did not produce a <plan> tag.\n\n" + plan.stdout,
+      'Planning agent did not produce a <plan> tag.\n\n' + plan.stdout,
     );
   }
 
@@ -227,7 +226,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     // The planner saw matching tasks but didn't claim one (race lost,
     // everything blocked, or zero unblocked). Don't burn an iteration —
     // heartbeat-wait and retry.
-    console.log("Planner produced empty plan. Heartbeating before retry.");
+    console.log('Planner produced empty plan. Heartbeating before retry.');
     iteration--;
     continue;
   }
@@ -242,8 +241,10 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   // Refresh origin/<BASE_BRANCH> so every new worktree forks off the latest.
   // baseBranch is ignored when the branch already exists, so resumed work
   // on a prior branch keeps its state.
-  console.log(`Fetching origin/${BASE_BRANCH} so new worktrees fork off the latest...`);
-  execFileSync("git", ["fetch", "origin", BASE_BRANCH], { stdio: "inherit" });
+  console.log(
+    `Fetching origin/${BASE_BRANCH} so new worktrees fork off the latest...`,
+  );
+  execFileSync('git', ['fetch', 'origin', BASE_BRANCH], { stdio: 'inherit' });
 
   // -------------------------------------------------------------------------
   // Phase 2: Execute + Review
@@ -270,10 +271,10 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
       try {
         // Run the implementer
         const implement = await sandbox.run({
-          name: "implementer",
+          name: 'implementer',
           maxIterations: 100,
-          agent: sandcastle.claudeCode("claude-opus-4-6"),
-          promptFile: "./.sandcastle/implement-prompt.md",
+          agent: sandcastle.claudeCode('claude-opus-4-6'),
+          promptFile: './.sandcastle/implement-prompt.md',
           promptArgs: {
             TASK_ID: issue.id,
             ISSUE_TITLE: issue.title,
@@ -289,10 +290,10 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 
         // Reviewer: refines the implementer's work in-place.
         const review = await sandbox.run({
-          name: "reviewer",
+          name: 'reviewer',
           maxIterations: 1,
-          agent: sandcastle.claudeCode("claude-opus-4-6"),
-          promptFile: "./.sandcastle/review-prompt.md",
+          agent: sandcastle.claudeCode('claude-opus-4-6'),
+          promptFile: './.sandcastle/review-prompt.md',
           promptArgs: {
             BRANCH: issue.branch,
             TASK_ID: issue.id,
@@ -302,10 +303,10 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 
         // Ship: pushes the branch, opens a PR, and closes the Asana task.
         const ship = await sandbox.run({
-          name: "ship",
+          name: 'ship',
           maxIterations: 1,
-          agent: sandcastle.claudeCode("claude-opus-4-6"),
-          promptFile: "./.sandcastle/ship-prompt.md",
+          agent: sandcastle.claudeCode('claude-opus-4-6'),
+          promptFile: './.sandcastle/ship-prompt.md',
           promptArgs: {
             BRANCH: issue.branch,
             TASK_ID: issue.id,
@@ -318,11 +319,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
         // Each sandbox.run() only returns commits from its own run.
         return {
           ...ship,
-          commits: [
-            ...implement.commits,
-            ...review.commits,
-            ...ship.commits,
-          ],
+          commits: [...implement.commits, ...review.commits, ...ship.commits],
         };
       } finally {
         await sandbox.close();
@@ -332,7 +329,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 
   // Log any agents that threw (network error, sandbox crash, etc.).
   for (const [i, outcome] of settled.entries()) {
-    if (outcome.status === "rejected") {
+    if (outcome.status === 'rejected') {
       console.error(
         `  ✗ ${issues[i]!.id} (${issues[i]!.branch}) failed: ${outcome.reason}`,
       );
@@ -345,7 +342,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     .map((outcome, i) => ({ outcome, issue: issues[i]! }))
     .filter(
       (entry) =>
-        entry.outcome.status === "fulfilled" &&
+        entry.outcome.status === 'fulfilled' &&
         entry.outcome.value.commits.length > 0,
     )
     .map((entry) => entry.issue);
@@ -361,7 +358,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 
   if (completedBranches.length === 0) {
     // All agents ran but none made commits — nothing to merge this cycle.
-    console.log("No commits produced. Nothing to merge.");
+    console.log('No commits produced. Nothing to merge.');
     continue;
   }
 
@@ -377,21 +374,19 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   await sandcastle.run({
     hooks,
     sandbox: docker(),
-    name: "merger",
+    name: 'merger',
     maxIterations: 1,
-    agent: sandcastle.claudeCode("claude-opus-4-6"),
-    promptFile: "./.sandcastle/merge-prompt.md",
+    agent: sandcastle.claudeCode('claude-opus-4-6'),
+    promptFile: './.sandcastle/merge-prompt.md',
     promptArgs: {
       // A markdown list of branch names, one per line.
-      BRANCHES: completedBranches.map((b) => `- ${b}`).join("\n"),
+      BRANCHES: completedBranches.map((b) => `- ${b}`).join('\n'),
       // A markdown list of issue IDs and titles, one per line.
-      ISSUES: completedIssues
-        .map((i) => `- ${i.id}: ${i.title}`)
-        .join("\n"),
+      ISSUES: completedIssues.map((i) => `- ${i.id}: ${i.title}`).join('\n'),
     },
   });
 
-  console.log("\nBranches merged.");
+  console.log('\nBranches merged.');
 }
 
-console.log("\nAll done.");
+console.log('\nAll done.');
