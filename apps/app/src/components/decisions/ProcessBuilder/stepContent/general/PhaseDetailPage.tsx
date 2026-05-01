@@ -10,6 +10,7 @@ import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { useQueryState } from 'nuqs';
+import { usePostHog } from 'posthog-js/react';
 import { useRef, useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
 
@@ -75,6 +76,7 @@ function PhaseDetailForm({
   onDelete: () => void;
 }) {
   const t = useTranslations();
+  const posthog = usePostHog();
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
   const instancePhases = instance.instanceData?.phases;
   const templatePhases = instance.process?.processSchema?.phases;
@@ -318,8 +320,14 @@ function PhaseDetailForm({
               value={safeParseLocal(phase.endDate)}
               minValue={safeParseLocal(phase.startDate)}
               onChange={(date) => {
-                updatePhase({ endDate: formatDateValue(date) });
+                const newEndDate = formatDateValue(date);
+                updatePhase({ endDate: newEndDate });
                 markTouched('endDate');
+                posthog.capture('phase_end_date_changed', {
+                  process_instance_id: instanceId,
+                  phase_id: phaseId,
+                  new_end_date: newEndDate,
+                });
               }}
               errorMessage={getErrorMessage('endDate')}
             />

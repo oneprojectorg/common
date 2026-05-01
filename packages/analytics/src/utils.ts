@@ -400,3 +400,67 @@ export async function trackUserVoted(
     }),
   });
 }
+
+/**
+ * Manual transition analytics
+ */
+
+export async function trackManualTransitionInitiated(
+  userId: string,
+  processId: string,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEventWithContext(
+    userId,
+    'manual_transition_initiated',
+    getDecisionCommonProperties(processId, undefined, additionalProps),
+  );
+}
+
+export async function trackManualTransitionConfirmed(
+  userId: string,
+  processId: string,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEventWithContext(
+    userId,
+    'manual_transition_confirmed',
+    getDecisionCommonProperties(processId, undefined, additionalProps),
+  );
+}
+
+export async function trackManualTransitionDismissed(
+  userId: string,
+  processId: string,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEventWithContext(
+    userId,
+    'manual_transition_dismissed',
+    getDecisionCommonProperties(processId, undefined, additionalProps),
+  );
+}
+
+export async function trackManualSelectionSubmitted(
+  userId: string,
+  processId: string,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEventWithContext(
+    userId,
+    'manual_selection_submitted',
+    getDecisionCommonProperties(processId, undefined, additionalProps),
+  );
+}
+
+export async function trackPhaseEndDateChanged(
+  userId: string,
+  processId: string,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEventWithContext(
+    userId,
+    'phase_end_date_changed',
+    getDecisionCommonProperties(processId, undefined, additionalProps),
+  );
+}
