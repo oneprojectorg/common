@@ -21,6 +21,7 @@
 // Or add to package.json:
 //   "scripts": { "sandcastle": "npx tsx .sandcastle/main.ts" }
 
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 
 import * as sandcastle from "@ai-hero/sandcastle";
@@ -40,6 +41,10 @@ const MAX_ITERATIONS = 10;
 const HEARTBEAT_INTERVAL_SECONDS = Number(
   process.env.HEARTBEAT_INTERVAL_SECONDS ?? 120,
 );
+
+// Maximum number of issues the planner may claim per iteration. Phase 2 runs
+// these pipelines concurrently. Override with MAX_PARALLEL_ISSUES.
+const MAX_PARALLEL_ISSUES = Number(process.env.MAX_PARALLEL_ISSUES ?? 2);
 
 // Load .sandcastle/.env into process.env so the heartbeat can hit Asana
 // without spinning up a sandbox. Existing process env wins; we only fill
@@ -119,12 +124,19 @@ async function countMatchingBacklogTasks(): Promise<number> {
   }).length;
 }
 
-async function waitForBacklog(): Promise<void> {
+async function waitForBacklog(): Promise<boolean> {
+  // Returns true when there's work to do. Returns false if heartbeat is
+  // disabled (HEARTBEAT_INTERVAL_SECONDS <= 0) and the backlog is empty —
+  // the caller should exit the loop in that case.
   while (true) {
     const count = await countMatchingBacklogTasks();
     if (count > 0) {
       console.log(`Heartbeat: ${count} matching task(s) in backlog. Resuming.`);
-      return;
+      return true;
+    }
+    if (HEARTBEAT_INTERVAL_SECONDS <= 0) {
+      console.log("Heartbeat disabled and backlog empty. Exiting.");
+      return false;
     }
     console.log(
       `Heartbeat: no matching tasks. Sleeping ${HEARTBEAT_INTERVAL_SECONDS}s before re-polling.`,
@@ -166,7 +178,8 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 
   // Heartbeat: block until at least one matching task is in the backlog.
   // Cheap REST poll — does NOT spend tokens on the planner agent.
-  await waitForBacklog();
+  // Set HEARTBEAT_INTERVAL_SECONDS=0 to disable: the loop exits if empty.
+  if (!(await waitForBacklog())) break;
 
   // -------------------------------------------------------------------------
   // Phase 1: Plan
@@ -187,6 +200,9 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     // Opus for planning: dependency analysis benefits from deeper reasoning.
     agent: sandcastle.claudeCode("claude-opus-4-6"),
     promptFile: "./.sandcastle/plan-prompt.md",
+    promptArgs: {
+      MAX_PARALLEL_ISSUES: String(MAX_PARALLEL_ISSUES),
+    },
   });
 
   // Extract the <plan>…</plan> block from the agent's stdout.
@@ -218,6 +234,12 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     console.log(`  ${issue.id}: ${issue.title} → ${issue.branch}`);
   }
 
+  // Refresh origin/dev so every new worktree forks off the latest commits.
+  // baseBranch is ignored when the branch already exists, so resumed work
+  // on a prior branch keeps its state.
+  console.log("Fetching origin/dev so new worktrees fork off the latest...");
+  execFileSync("git", ["fetch", "origin", "dev"], { stdio: "inherit" });
+
   // -------------------------------------------------------------------------
   // Phase 2: Execute + Review
   //
@@ -232,6 +254,9 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     issues.map(async (issue) => {
       const sandbox = await sandcastle.createSandbox({
         branch: issue.branch,
+        // Always fork from the latest origin/dev (refreshed above) for new
+        // branches. Ignored if the branch already exists.
+        baseBranch: "origin/dev",
         sandbox: docker(),
         hooks,
         copyToWorktree,
