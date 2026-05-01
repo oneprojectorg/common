@@ -20,12 +20,18 @@ export const OAuthHashErrorHandler = () => {
       return;
     }
     const hash = window.location.hash;
-    if (!hash || !hash.includes('error')) {
+    if (!hash) {
       return;
     }
     const params = new URLSearchParams(
       hash.startsWith('#') ? hash.slice(1) : hash,
     );
+    // `sb` is Supabase's marker on OAuth-error redirects. Gating on it avoids
+    // colliding with regular in-page anchor links that happen to contain
+    // "error".
+    if (!params.has('sb')) {
+      return;
+    }
     const providerError = params.get('error');
     if (!providerError) {
       return;
