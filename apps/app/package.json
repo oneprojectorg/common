@@ -13,6 +13,7 @@
     "format:check": "oxfmt --check",
     "start": "next start -p 3100",
     "start:e2e": "NEXT_PUBLIC_APP_PORT=4100 NEXT_PUBLIC_API_PORT=4300 next start -p 4100",
+    "test": "vitest run",
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
