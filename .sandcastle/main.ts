@@ -21,8 +21,8 @@
 // Or add to package.json:
 //   "scripts": { "sandcastle": "npx tsx .sandcastle/main.ts" }
 
-import * as sandcastle from "@ai-hero/sandcastle";
-import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
+import * as sandcastle from '@ai-hero/sandcastle';
+import { docker } from '@ai-hero/sandcastle/sandboxes/docker';
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -42,9 +42,9 @@ const hooks = {
     onSandboxReady: [
       {
         command:
-          "mkdir -p .claude && printf '%s\\n' '{\"sandbox\":{\"enabled\":false}}' > .claude/settings.local.json",
+          'mkdir -p .claude && printf \'%s\\n\' \'{"sandbox":{"enabled":false}}\' > .claude/settings.local.json',
       },
-      { command: "pnpm install" },
+      { command: 'pnpm install' },
     ],
   },
 };
@@ -52,7 +52,7 @@ const hooks = {
 // Copy node_modules from the host into the worktree before each sandbox
 // starts. Avoids a full npm install from scratch; the hook above handles
 // platform-specific binaries and any packages added since the last copy.
-const copyToWorktree = [".env", ".env.local", "node_modules"];
+const copyToWorktree = ['.env', '.env.local', 'node_modules'];
 
 // ---------------------------------------------------------------------------
 // Main loop
@@ -73,20 +73,20 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   const plan = await sandcastle.run({
     hooks,
     sandbox: docker(),
-    name: "planner",
+    name: 'planner',
     // One iteration is enough: the planner just needs to read and reason,
     // not write code.
     maxIterations: 1,
     // Opus for planning: dependency analysis benefits from deeper reasoning.
-    agent: sandcastle.claudeCode("claude-opus-4-6"),
-    promptFile: "./.sandcastle/plan-prompt.md",
+    agent: sandcastle.claudeCode('claude-opus-4-6'),
+    promptFile: './.sandcastle/plan-prompt.md',
   });
 
   // Extract the <plan>…</plan> block from the agent's stdout.
   const planMatch = plan.stdout.match(/<plan>([\s\S]*?)<\/plan>/);
   if (!planMatch) {
     throw new Error(
-      "Planning agent did not produce a <plan> tag.\n\n" + plan.stdout,
+      'Planning agent did not produce a <plan> tag.\n\n' + plan.stdout,
     );
   }
 
@@ -97,7 +97,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 
   if (issues.length === 0) {
     // No unblocked work — either everything is done or everything is blocked.
-    console.log("No unblocked issues to work on. Exiting.");
+    console.log('No unblocked issues to work on. Exiting.');
     break;
   }
 
@@ -130,10 +130,10 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
       try {
         // Run the implementer
         const implement = await sandbox.run({
-          name: "implementer",
+          name: 'implementer',
           maxIterations: 100,
-          agent: sandcastle.claudeCode("claude-opus-4-6"),
-          promptFile: "./.sandcastle/implement-prompt.md",
+          agent: sandcastle.claudeCode('claude-opus-4-6'),
+          promptFile: './.sandcastle/implement-prompt.md',
           promptArgs: {
             TASK_ID: issue.id,
             ISSUE_TITLE: issue.title,
@@ -148,10 +148,10 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 
         // Reviewer: refines the implementer's work in-place.
         const review = await sandbox.run({
-          name: "reviewer",
+          name: 'reviewer',
           maxIterations: 1,
-          agent: sandcastle.claudeCode("claude-opus-4-6"),
-          promptFile: "./.sandcastle/review-prompt.md",
+          agent: sandcastle.claudeCode('claude-opus-4-6'),
+          promptFile: './.sandcastle/review-prompt.md',
           promptArgs: {
             BRANCH: issue.branch,
             TASK_ID: issue.id,
@@ -161,10 +161,10 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 
         // Ship: pushes the branch, opens a PR, and closes the Asana task.
         const ship = await sandbox.run({
-          name: "ship",
+          name: 'ship',
           maxIterations: 1,
-          agent: sandcastle.claudeCode("claude-opus-4-6"),
-          promptFile: "./.sandcastle/ship-prompt.md",
+          agent: sandcastle.claudeCode('claude-opus-4-6'),
+          promptFile: './.sandcastle/ship-prompt.md',
           promptArgs: {
             BRANCH: issue.branch,
             TASK_ID: issue.id,
@@ -176,11 +176,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
         // Each sandbox.run() only returns commits from its own run.
         return {
           ...ship,
-          commits: [
-            ...implement.commits,
-            ...review.commits,
-            ...ship.commits,
-          ],
+          commits: [...implement.commits, ...review.commits, ...ship.commits],
         };
       } finally {
         await sandbox.close();
@@ -190,7 +186,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 
   // Log any agents that threw (network error, sandbox crash, etc.).
   for (const [i, outcome] of settled.entries()) {
-    if (outcome.status === "rejected") {
+    if (outcome.status === 'rejected') {
       console.error(
         `  ✗ ${issues[i]!.id} (${issues[i]!.branch}) failed: ${outcome.reason}`,
       );
@@ -203,7 +199,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     .map((outcome, i) => ({ outcome, issue: issues[i]! }))
     .filter(
       (entry) =>
-        entry.outcome.status === "fulfilled" &&
+        entry.outcome.status === 'fulfilled' &&
         entry.outcome.value.commits.length > 0,
     )
     .map((entry) => entry.issue);
@@ -219,7 +215,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 
   if (completedBranches.length === 0) {
     // All agents ran but none made commits — nothing to merge this cycle.
-    console.log("No commits produced. Nothing to merge.");
+    console.log('No commits produced. Nothing to merge.');
     continue;
   }
 
@@ -235,21 +231,19 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   await sandcastle.run({
     hooks,
     sandbox: docker(),
-    name: "merger",
+    name: 'merger',
     maxIterations: 1,
-    agent: sandcastle.claudeCode("claude-opus-4-6"),
-    promptFile: "./.sandcastle/merge-prompt.md",
+    agent: sandcastle.claudeCode('claude-opus-4-6'),
+    promptFile: './.sandcastle/merge-prompt.md',
     promptArgs: {
       // A markdown list of branch names, one per line.
-      BRANCHES: completedBranches.map((b) => `- ${b}`).join("\n"),
+      BRANCHES: completedBranches.map((b) => `- ${b}`).join('\n'),
       // A markdown list of issue IDs and titles, one per line.
-      ISSUES: completedIssues
-        .map((i) => `- ${i.id}: ${i.title}`)
-        .join("\n"),
+      ISSUES: completedIssues.map((i) => `- ${i.id}: ${i.title}`).join('\n'),
     },
   });
 
-  console.log("\nBranches merged.");
+  console.log('\nBranches merged.');
 }
 
-console.log("\nAll done.");
+console.log('\nAll done.');
