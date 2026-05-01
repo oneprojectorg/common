@@ -89,10 +89,16 @@ export async function getReviewProgress(
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
-/**
- * Total assigned reviewers and the subset that are "active" (status past
- * PENDING) for a phase — single query, two aggregates.
- */
+function instancePhaseConditions(
+  processInstanceId: string,
+  phaseId: string | undefined,
+) {
+  return [
+    eq(proposalReviewAssignments.processInstanceId, processInstanceId),
+    ...(phaseId ? [eq(proposalReviewAssignments.phaseId, phaseId)] : []),
+  ];
+}
+
 async function getReviewerCounts({
   processInstanceId,
   phaseId,
@@ -100,13 +106,6 @@ async function getReviewerCounts({
   processInstanceId: string;
   phaseId: string | undefined;
 }): Promise<{ total: number; active: number }> {
-  const conditions = [
-    eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-  ];
-  if (phaseId) {
-    conditions.push(eq(proposalReviewAssignments.phaseId, phaseId));
-  }
-
   const activeStatuses = sql.join(
     ACTIVE_ASSIGNMENT_STATUSES.map((status) => sql`${status}`),
     sql`, `,
@@ -118,7 +117,7 @@ async function getReviewerCounts({
       active: sql<number>`COUNT(DISTINCT CASE WHEN ${proposalReviewAssignments.status} IN (${activeStatuses}) THEN ${proposalReviewAssignments.reviewerProfileId} END)`,
     })
     .from(proposalReviewAssignments)
-    .where(and(...conditions));
+    .where(and(...instancePhaseConditions(processInstanceId, phaseId)));
 
   return {
     total: Number(row?.total ?? 0),
@@ -127,8 +126,6 @@ async function getReviewerCounts({
 }
 
 /**
- * Count of phase-scoped proposals whose every assignment is COMPLETED.
- *
  * Restricted to `proposalIds` so soft-deleted/draft proposals can't slip in
  * via stale assignments. A proposal is "reviewed" iff it has ≥1 assignment
  * AND every one of those assignments is COMPLETED.
@@ -147,12 +144,9 @@ async function getCompletedProposalsCount({
   }
 
   const conditions = [
-    eq(proposalReviewAssignments.processInstanceId, processInstanceId),
+    ...instancePhaseConditions(processInstanceId, phaseId),
     inArray(proposalReviewAssignments.proposalId, proposalIds),
   ];
-  if (phaseId) {
-    conditions.push(eq(proposalReviewAssignments.phaseId, phaseId));
-  }
 
   const rows = await db
     .select({ proposalId: proposalReviewAssignments.proposalId })

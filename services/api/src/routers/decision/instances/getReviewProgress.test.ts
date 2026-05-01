@@ -26,18 +26,6 @@ async function createAuthenticatedCaller(email: string) {
 }
 
 /**
- * Phase scoping defaults to `instance.currentStateId`. Test review assignments
- * are tagged `phaseId='review'` (the production default), so the instance must
- * be advanced into the review phase before exercising the API.
- */
-async function advanceToReviewPhase(instanceId: string) {
-  await db
-    .update(processInstances)
-    .set({ currentStateId: 'review' })
-    .where(eq(processInstances.id, instanceId));
-}
-
-/**
  * Adds a phase entry for `phaseId='review'` so `daysLeft` has an `endDate` to
  * resolve against. The test instance template only ships `initial` and `final`
  * phases, neither of which match the assignment phase used by review fixtures.
@@ -84,7 +72,7 @@ describe.concurrent('getReviewProgress', () => {
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
-    await advanceToReviewPhase(context.instance.instance.id);
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
     const adminCaller = await createAuthenticatedCaller(
       context.defaultReviewer.email,
@@ -109,7 +97,7 @@ describe.concurrent('getReviewProgress', () => {
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
-    await advanceToReviewPhase(context.instance.instance.id);
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
     // Single-assignment proposals at three lifecycle stages.
     const [, mixed] = await Promise.all([
@@ -160,7 +148,7 @@ describe.concurrent('getReviewProgress', () => {
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
-    await advanceToReviewPhase(context.instance.instance.id);
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
     // defaultReviewer: one IN_PROGRESS assignment → active.
     await testData.createReviewAssignment({
@@ -196,7 +184,7 @@ describe.concurrent('getReviewProgress', () => {
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
-    await advanceToReviewPhase(context.instance.instance.id);
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
     await testData.createReviewAssignment({
       context,
@@ -230,7 +218,7 @@ describe.concurrent('getReviewProgress', () => {
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
-    await advanceToReviewPhase(context.instance.instance.id);
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
     // Same default reviewer assigned to two proposals → still 1 distinct reviewer.
     await testData.createReviewAssignment({
@@ -264,7 +252,7 @@ describe.concurrent('getReviewProgress', () => {
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
-    await advanceToReviewPhase(context.instance.instance.id);
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
     // Review-phase assignment for the default reviewer (active).
     await testData.createReviewAssignment({
@@ -319,8 +307,8 @@ describe.concurrent('getReviewProgress', () => {
     ]);
 
     await Promise.all([
-      advanceToReviewPhase(primary.context.instance.instance.id),
-      advanceToReviewPhase(foreign.context.instance.instance.id),
+      testData.setCurrentPhase(primary.context.instance.instance.id, 'review'),
+      testData.setCurrentPhase(foreign.context.instance.instance.id, 'review'),
     ]);
 
     const adminCaller = await createAuthenticatedCaller(
@@ -343,7 +331,7 @@ describe.concurrent('getReviewProgress', () => {
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
-    await advanceToReviewPhase(context.instance.instance.id);
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
     const tenDaysOut = new Date(Date.now() + 10 * 86_400_000).toISOString();
     await setReviewPhaseEndDate(context.instance.instance.id, tenDaysOut);
@@ -366,7 +354,7 @@ describe.concurrent('getReviewProgress', () => {
   }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
-    await advanceToReviewPhase(context.instance.instance.id);
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
     const adminCaller = await createAuthenticatedCaller(
       context.defaultReviewer.email,
@@ -387,7 +375,7 @@ describe.concurrent('getReviewProgress', () => {
     // assignment status is the source of truth for "reviewed".
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
-    await advanceToReviewPhase(context.instance.instance.id);
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
     const created = await testData.createReviewAssignment({
       context,

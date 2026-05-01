@@ -188,6 +188,19 @@ export class TestReviewsDataManager {
     };
   }
 
+  /**
+   * Advances a process instance to the given phase by stamping `currentStateId`
+   * directly. Used by review API tests because review assignments are tagged
+   * with a `phaseId` (production default `'review'`), so the instance has to
+   * be on that phase for phase-scoped queries to return them.
+   */
+  async setCurrentPhase(instanceId: string, phaseId: string) {
+    await db
+      .update(processInstances)
+      .set({ currentStateId: phaseId })
+      .where(eq(processInstances.id, instanceId));
+  }
+
   /** Sets the rubric template on a process instance for review API tests. */
   async setRubricTemplate(
     context: ReviewAssignmentContext,
