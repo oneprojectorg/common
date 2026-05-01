@@ -64,9 +64,36 @@ export const LoginPanel = () => {
 
   const { mounted } = useMount();
   const searchParams = useSearchParams();
-  const error = searchParams.get('error');
+  const errorCode = searchParams.get('error');
   const isSignup = searchParams.get('signup');
   const redirectParam = searchParams.get('redirect');
+
+  const urlErrorMessage = (() => {
+    switch (errorCode) {
+      case null:
+        return undefined;
+      case 'not_invited':
+        return t(
+          '{appName} is invite-only. You’re now on the waitlist — keep an eye on your inbox for updates.',
+          { appName: APP_NAME },
+        );
+      case 'invalid_email':
+        return t(
+          'We couldn’t read the email on your account. Please try a different sign-in method.',
+        );
+      case 'oauth_failed':
+        return t(
+          'We couldn’t complete sign-in with your provider. Please try again.',
+        );
+      case 'no_email':
+        return t(
+          'Your account didn’t share an email address. Please try a different sign-in method.',
+        );
+      default:
+        return t('There was an error signing you in.');
+    }
+  })();
+  const isWaitlistError = errorCode === 'not_invited';
 
   const {
     email,
@@ -117,7 +144,11 @@ export const LoginPanel = () => {
     },
   );
 
-  const combinedError = (login.error?.message || error) ?? undefined;
+  const combinedError = (login.error?.message || urlErrorMessage) ?? undefined;
+  const isInviteRelatedError =
+    isWaitlistError ||
+    combinedError?.includes('invite') ||
+    combinedError?.includes('waitlist');
 
   const emailParser = z.email();
 
@@ -155,11 +186,8 @@ export const LoginPanel = () => {
               {user?.error?.name === 'AuthRetryableFetchError'
                 ? t('Connection issue')
                 : (() => {
-                    if (login.isError || error || tokenError) {
-                      if (
-                        combinedError?.includes('invite') ||
-                        combinedError?.includes('waitlist')
-                      ) {
+                    if (login.isError || combinedError || tokenError) {
+                      if (isInviteRelatedError) {
                         return t('Stay tuned!');
                       }
 
