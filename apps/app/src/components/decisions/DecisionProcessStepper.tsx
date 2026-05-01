@@ -80,8 +80,7 @@ export function DecisionProcessStepper({
         : '',
       currentPhaseAdvancement:
         idx >= 0 ? phases[idx]!.advancementMethod : undefined,
-      currentPhaseEndDate:
-        idx >= 0 ? phases[idx]!.phase?.endDate : undefined,
+      currentPhaseEndDate: idx >= 0 ? phases[idx]!.phase?.endDate : undefined,
     };
   }, [phases, currentStateId, translatedPhaseNames]);
 
@@ -116,7 +115,7 @@ export function DecisionProcessStepper({
     ],
   );
 
-  const trackingProps = useCallback(
+  const getTrackingProps = useCallback(
     () => ({
       process_instance_id: instanceId,
       from_phase_id: currentStateId,
@@ -132,7 +131,7 @@ export function DecisionProcessStepper({
     if (!instanceId || transitionMutation.isPending) {
       return;
     }
-    posthog.capture('manual_transition_confirmed', trackingProps());
+    posthog.capture('manual_transition_confirmed', getTrackingProps());
     transitionMutation.mutate({
       instanceId,
       fromPhaseId: currentStateId,
@@ -141,7 +140,7 @@ export function DecisionProcessStepper({
 
   const handleDismiss = (open: boolean) => {
     if (!open && !transitionMutation.isPending) {
-      posthog.capture('manual_transition_dismissed', trackingProps());
+      posthog.capture('manual_transition_dismissed', getTrackingProps());
       setShowConfirmModal(false);
     }
   };
@@ -164,7 +163,7 @@ export function DecisionProcessStepper({
             ? () => {
                 posthog.capture(
                   'manual_transition_initiated',
-                  trackingProps(),
+                  getTrackingProps(),
                 );
                 setShowConfirmModal(true);
               }

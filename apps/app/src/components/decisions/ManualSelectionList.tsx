@@ -109,6 +109,35 @@ export const ManualSelectionList = ({
     },
   });
 
+  const handleConfirmDialogOpenChange = useCallback(
+    (open: boolean) => {
+      if (open) {
+        posthog.capture('manual_selection_dialog_opened', {
+          process_instance_id: instanceId,
+          proposal_count: selectedIds.length,
+        });
+      } else if (!submitMutation.isPending) {
+        posthog.capture('manual_selection_dialog_dismissed', {
+          process_instance_id: instanceId,
+          proposal_count: selectedIds.length,
+        });
+      }
+      setIsConfirmOpen(open);
+    },
+    [instanceId, selectedIds.length, submitMutation.isPending, posthog],
+  );
+
+  const handleConfirmSelection = useCallback(() => {
+    posthog.capture('manual_selection_dialog_confirmed', {
+      process_instance_id: instanceId,
+      proposal_count: selectedIds.length,
+    });
+    submitMutation.mutate({
+      processInstanceId: instanceId,
+      proposalIds: selectedIds,
+    });
+  }, [instanceId, selectedIds, submitMutation, posthog]);
+
   if (candidatesQuery.isError) {
     return (
       <EmptyState icon={<LuTriangleAlert className="size-6" />}>
@@ -145,35 +174,6 @@ export const ManualSelectionList = ({
       </EmptyState>
     );
   }
-
-  const handleConfirmDialogOpenChange = useCallback(
-    (open: boolean) => {
-      if (open) {
-        posthog.capture('manual_selection_dialog_opened', {
-          process_instance_id: instanceId,
-          proposal_count: selectedIds.length,
-        });
-      } else if (!submitMutation.isPending) {
-        posthog.capture('manual_selection_dialog_dismissed', {
-          process_instance_id: instanceId,
-          proposal_count: selectedIds.length,
-        });
-      }
-      setIsConfirmOpen(open);
-    },
-    [instanceId, selectedIds.length, submitMutation.isPending, posthog],
-  );
-
-  const handleConfirmSelection = useCallback(() => {
-    posthog.capture('manual_selection_dialog_confirmed', {
-      process_instance_id: instanceId,
-      proposal_count: selectedIds.length,
-    });
-    submitMutation.mutate({
-      processInstanceId: instanceId,
-      proposalIds: selectedIds,
-    });
-  }, [instanceId, selectedIds, submitMutation, posthog]);
 
   const toggleProposal = (proposalId: string) => {
     setSelectedIds(
