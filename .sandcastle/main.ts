@@ -46,6 +46,11 @@ const HEARTBEAT_INTERVAL_SECONDS = Number(
 // these pipelines concurrently. Override with MAX_PARALLEL_ISSUES.
 const MAX_PARALLEL_ISSUES = Number(process.env.MAX_PARALLEL_ISSUES ?? 2);
 
+// Branch new worktrees fork from, and the PR base for ship. Override with
+// BASE_BRANCH. Defaults to `sandcastle` until the agent infrastructure
+// (`.sandcastle/`, `.claude/hooks/`, etc.) lands on `dev`.
+const BASE_BRANCH = process.env.BASE_BRANCH ?? "sandcastle";
+
 // Load .sandcastle/.env into process.env so the heartbeat can hit Asana
 // without spinning up a sandbox. Existing process env wins; we only fill
 // in unset keys.
@@ -234,11 +239,11 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     console.log(`  ${issue.id}: ${issue.title} → ${issue.branch}`);
   }
 
-  // Refresh origin/dev so every new worktree forks off the latest commits.
+  // Refresh origin/<BASE_BRANCH> so every new worktree forks off the latest.
   // baseBranch is ignored when the branch already exists, so resumed work
   // on a prior branch keeps its state.
-  console.log("Fetching origin/dev so new worktrees fork off the latest...");
-  execFileSync("git", ["fetch", "origin", "dev"], { stdio: "inherit" });
+  console.log(`Fetching origin/${BASE_BRANCH} so new worktrees fork off the latest...`);
+  execFileSync("git", ["fetch", "origin", BASE_BRANCH], { stdio: "inherit" });
 
   // -------------------------------------------------------------------------
   // Phase 2: Execute + Review
@@ -254,9 +259,9 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     issues.map(async (issue) => {
       const sandbox = await sandcastle.createSandbox({
         branch: issue.branch,
-        // Always fork from the latest origin/dev (refreshed above) for new
-        // branches. Ignored if the branch already exists.
-        baseBranch: "origin/dev",
+        // Always fork from the latest origin/<BASE_BRANCH> (refreshed above)
+        // for new branches. Ignored if the branch already exists.
+        baseBranch: `origin/${BASE_BRANCH}`,
         sandbox: docker(),
         hooks,
         copyToWorktree,
@@ -273,6 +278,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
             TASK_ID: issue.id,
             ISSUE_TITLE: issue.title,
             BRANCH: issue.branch,
+            BASE_BRANCH,
           },
         });
 
@@ -304,6 +310,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
             BRANCH: issue.branch,
             TASK_ID: issue.id,
             ISSUE_TITLE: issue.title,
+            TARGET_BRANCH: BASE_BRANCH,
           },
         });
 
