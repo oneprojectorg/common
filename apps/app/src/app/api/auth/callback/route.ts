@@ -72,13 +72,14 @@ export const GET = async (request: NextRequest) => {
         usingOAuth: true,
       });
     } catch (loginError) {
-      // If the user is not invited or not registered, sign them out
+      const errorCode = classifyLoginError(loginError);
+      if (errorCode === 'unknown') {
+        console.error('[auth/callback] login query failed', loginError);
+      }
+      // Login failed for any reason — clear the partial Supabase session
+      // before redirecting so the user isn't left half-authenticated.
       await supabase.auth.signOut();
-      return buildErrorRedirect(
-        request,
-        classifyLoginError(loginError),
-        redirectPath,
-      );
+      return buildErrorRedirect(request, errorCode, redirectPath);
     }
   }
 
