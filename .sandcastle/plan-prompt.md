@@ -24,19 +24,22 @@ For each unblocked issue, assign a branch name using the format `issue-{id}-{slu
 
 # SELECT
 
-From the unblocked issues, pick the **single** highest-priority one to
-work on this iteration. We only claim one task per planner run — other
-unblocked issues stay in Backlog for the next run (or for another agent).
-
-If every issue is blocked, pick the single candidate with the fewest or
-weakest dependencies.
+From the unblocked issues, pick **up to {{MAX_PARALLEL_ISSUES}}** of the
+highest-priority ones to work on in parallel this iteration. Prefer
+selections that touch disjoint files/modules so the parallel pipelines
+don't conflict. If fewer unblocked issues exist than the limit, pick what's
+available. If every issue is blocked, pick the single candidate with the
+fewest or weakest dependencies.
 
 # CLAIM
 
-Claim the selected issue at the moment you move it to In-Progress. The
-claim and the move are paired — do not perform either alone.
+For each selected issue, claim it at the moment you move it to In-Progress.
+The claim and the move are paired — do not perform either alone. Process
+issues sequentially: fully claim+move+verify one before starting the next.
 
-1. Generate a fresh UUID:
+For each selected issue:
+
+1. Generate a fresh UUID for this issue:
 
    ```
    AGENT_ID=$(cat /proc/sys/kernel/random/uuid)
@@ -57,19 +60,24 @@ claim and the move are paired — do not perform either alone.
    ```
 
    If `verify-claim` exits non-zero, ANOTHER AGENT IS WORKING ON THIS
-   ISSUE. **Emit an empty plan** (no issues this run). Do not roll back
-   the section move; the other agent owns the task now.
+   ISSUE. **Drop it from the plan** — do not include it in the JSON
+   output below. Do not roll back the section move; the other agent owns
+   the task now. Continue with the other selected issue (if any).
 
 # OUTPUT
 
-Output your plan as a JSON object wrapped in `<plan>` tags. Include
-**at most one** issue:
+Output your plan as a JSON object wrapped in `<plan>` tags. Include **at
+most {{MAX_PARALLEL_ISSUES}}** issues — only those that passed the
+claim+move+verify steps:
 
 <plan>
-{"issues": [{"id": "42", "title": "Fix auth bug", "branch": "issue-42-fix-auth-bug"}]}
+{"issues": [
+  {"id": "42", "title": "Fix auth bug", "branch": "issue-42-fix-auth-bug"},
+  {"id": "43", "title": "Add rate limiting", "branch": "issue-43-add-rate-limiting"}
+]}
 </plan>
 
-If the verify step failed, emit an empty plan:
+If every verify step failed (or no issues qualified), emit an empty plan:
 
 <plan>
 {"issues": []}
