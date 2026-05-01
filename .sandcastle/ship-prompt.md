@@ -25,11 +25,17 @@ continue to subsequent steps. Do not move the Asana task on failure.
    git push -u origin {{BRANCH}}
    ```
 
-2. **Open a PR** with `gh pr create`. Derive a concise title from the
-   commits (under 70 chars). The body must include:
-   - A short Summary section (1-3 bullets describing the change)
-   - A line `Closes Asana task {{TASK_ID}}`
-   - A Test plan checklist
+2. **Open a PR** with `gh pr create`.
+
+   - **Title**: Conventional Commits format (`feat:`, `fix:`, `chore:`,
+     `docs:`, `refactor:`, `test:`, `perf:`, `build:`, `ci:`). Use a scope
+     when it sharpens the title (e.g. `feat(reviews): ...`). Under 70
+     chars. No trailing period.
+   - **Body**: keep it minimal — no background, no narrative. Exactly:
+     - Summary: 1–3 bullets describing what changed.
+     - `Closes Asana task {{TASK_ID}}`
+     - Test plan: a short checklist, only if non-trivial steps are
+       needed; otherwise omit the section entirely.
 
    Use `--base {{TARGET_BRANCH}}` and `--head {{BRANCH}}`. Capture the PR
    URL printed to stdout.
