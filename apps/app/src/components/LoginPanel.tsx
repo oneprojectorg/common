@@ -19,6 +19,7 @@ import { FcGoogle as GoogleIcon } from 'react-icons/fc';
 import { z } from 'zod';
 import { create } from 'zustand';
 
+import { isLoginErrorCode, loginErrorMessages } from '@/lib/auth/loginError';
 import { useTranslations } from '@/lib/i18n';
 
 import { CommonLogo } from './CommonLogo';
@@ -64,9 +65,17 @@ export const LoginPanel = () => {
 
   const { mounted } = useMount();
   const searchParams = useSearchParams();
-  const error = searchParams.get('error');
+  const rawErrorCode = searchParams.get('error');
+  const errorCode = isLoginErrorCode(rawErrorCode)
+    ? rawErrorCode
+    : rawErrorCode
+      ? 'unknown'
+      : null;
+  const errorDescription = searchParams.get('error_description');
   const isSignup = searchParams.get('signup');
   const redirectParam = searchParams.get('redirect');
+
+  const urlErrorMessage = errorCode ? loginErrorMessages[errorCode] : undefined;
 
   const {
     email,
@@ -117,7 +126,11 @@ export const LoginPanel = () => {
     },
   );
 
-  const combinedError = (login.error?.message || error) ?? undefined;
+  const combinedError = login.error?.message || urlErrorMessage;
+  const isInviteRelatedError =
+    errorCode === 'not_invited' ||
+    combinedError?.includes('invite') ||
+    combinedError?.includes('waitlist');
 
   const emailParser = z.email();
 
@@ -145,91 +158,83 @@ export const LoginPanel = () => {
 
   if (!mounted) return null;
 
+  const isOffline = user?.error?.name === 'AuthRetryableFetchError';
+  const hasError = login.isError || combinedError || tokenError;
+  const errorMessage =
+    combinedError || tokenError || t('There was an error signing you in.');
+  const showDescription = !!errorDescription && !tokenError;
+
+  const headerContent = isOffline ? (
+    t('Connection issue')
+  ) : hasError ? (
+    isInviteRelatedError ? (
+      t('Stay tuned!')
+    ) : (
+      t('Oops!')
+    )
+  ) : !loginSuccess ? (
+    isSignup ? (
+      t('Sign up to {appName}', { appName: APP_NAME })
+    ) : (
+      <div className="flex flex-col gap-2">
+        <span className="sm:text-base">{t('Welcome to')}</span>
+        <span>
+          <CommonLogo className="h-8 w-auto" />
+        </span>
+      </div>
+    )
+  ) : (
+    <div className="flex flex-col items-center justify-center gap-4">
+      <CheckIcon />
+      <span className="text-title-base sm:text-title-lg">
+        {t('Email sent!')}
+      </span>
+    </div>
+  );
+
+  const bodyContent = isOffline ? (
+    t(
+      "{appName} can't connect to the internet. Please check your internet connection and try again.",
+      { appName: APP_NAME },
+    )
+  ) : hasError ? (
+    showDescription ? (
+      <div
+        className={cn(
+          'flex flex-col gap-2',
+          tokenError && 'text-functional-red',
+        )}
+      >
+        <span>{errorMessage}</span>
+        <span className="text-sm text-neutral-gray4">{errorDescription}</span>
+      </div>
+    ) : (
+      <span className={cn(tokenError && 'text-functional-red')}>
+        {errorMessage}
+      </span>
+    )
+  ) : !loginSuccess ? (
+    t(
+      'Connect with aligned organizations and funders building a new economy together',
+    )
+  ) : (
+    <span>
+      {t('A code was sent to {email}. Type the code below to sign in.', {
+        email,
+      })}
+    </span>
+  );
+
   // TODO: using a tailwind v4 class here "min-w-xs"
   return (
     <div className="flex items-center justify-center sm:block">
       <div className="z-[999999] max-h-full w-auto min-w-xs rounded-lg border-offWhite bg-white bg-clip-padding px-4 py-8 font-sans text-neutral-gray4 xs:w-96 sm:border-0">
         <div className="flex flex-col gap-12 sm:gap-8">
           <section className="flex flex-col items-center justify-center gap-2 sm:gap-4">
-            <Header1 className="text-center">
-              {user?.error?.name === 'AuthRetryableFetchError'
-                ? t('Connection issue')
-                : (() => {
-                    if (login.isError || error || tokenError) {
-                      if (
-                        combinedError?.includes('invite') ||
-                        combinedError?.includes('waitlist')
-                      ) {
-                        return t('Stay tuned!');
-                      }
-
-                      return t('Oops!');
-                    }
-
-                    if (!loginSuccess) {
-                      if (isSignup) {
-                        return t('Sign up to {appName}', {
-                          appName: APP_NAME,
-                        });
-                      }
-
-                      return (
-                        <div className="flex flex-col gap-2">
-                          <span className="sm:text-base">
-                            {t('Welcome to')}
-                          </span>
-                          <span>
-                            <CommonLogo className="h-8 w-auto" />
-                          </span>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div className="flex flex-col items-center justify-center gap-4">
-                        <CheckIcon />
-                        <span className="text-title-base sm:text-title-lg">
-                          {t('Email sent!')}
-                        </span>
-                      </div>
-                    );
-                  })()}
-            </Header1>
+            <Header1 className="text-center">{headerContent}</Header1>
 
             <div className="px-4 text-center text-sm leading-[130%] text-neutral-gray4 sm:text-base">
-              {user?.error?.name === 'AuthRetryableFetchError'
-                ? t(
-                    "{appName} can't connect to the internet. Please check your internet connection and try again.",
-                    { appName: APP_NAME },
-                  )
-                : (() => {
-                    if (combinedError || tokenError) {
-                      return (
-                        <span
-                          className={cn(tokenError && 'text-functional-red')}
-                        >
-                          {combinedError ||
-                            tokenError ||
-                            t('There was an error signing you in.')}
-                        </span>
-                      );
-                    }
-
-                    if (!loginSuccess) {
-                      return t(
-                        'Connect with aligned organizations and funders building a new economy together',
-                      );
-                    }
-
-                    return (
-                      <span>
-                        {t(
-                          'A code was sent to {email}. Type the code below to sign in.',
-                          { email },
-                        )}
-                      </span>
-                    );
-                  })()}
+              {bodyContent}
             </div>
           </section>
 
