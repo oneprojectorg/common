@@ -43,11 +43,11 @@
     "w:supabase": "pnpm -C ./services/supabase",
     "w:translation": "pnpm -C ./services/translation",
     "w:ui": "pnpm -C ./packages/ui",
-    "w:workflows": "pnpm -C ./services/workflows"
+    "w:workflows": "pnpm -C ./services/workflows",
+    "sandcastle": "npx tsx .sandcastle/main.ts"
   },
-  "dependencies": {},
   "devDependencies": {
-    "oxfmt": "^0.46.0",
+    "@ai-hero/sandcastle": "^0.5.6",
     "@op/core": "workspace:*",
     "@op/typescript-config": "workspace:*",
     "@react-three/drei": "^10.0.4",
@@ -89,6 +89,7 @@
     "nanoid": "5.1.2",
     "next": "catalog:",
     "open": "^10.1.0",
+    "oxfmt": "^0.46.0",
     "postcss": "^8.5.3",
     "postgres": "^3.4.5",
     "react": "^19.0.1",
