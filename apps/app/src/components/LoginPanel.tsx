@@ -239,7 +239,7 @@ export const LoginPanel = () => {
                               t('There was an error signing you in.')}
                           </span>
                           {errorDescription && !tokenError && (
-                            <span className="text-xs text-neutral-gray3">
+                            <span className="text-sm text-neutral-gray4">
                               {errorDescription}
                             </span>
                           )}
