@@ -44,7 +44,8 @@
     "w:translation": "pnpm -C ./services/translation",
     "w:ui": "pnpm -C ./packages/ui",
     "w:workflows": "pnpm -C ./services/workflows",
-    "agent:run": "npx tsx .sandcastle/main.ts"
+    "agent:run": "npx tsx .sandcastle/main.ts",
+    "agent:build": "sandcastle docker build-image"
   },
   "devDependencies": {
     "@ai-hero/sandcastle": "^0.5.6",

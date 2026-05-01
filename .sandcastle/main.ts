@@ -21,6 +21,8 @@
 // Or add to package.json:
 //   "scripts": { "sandcastle": "npx tsx .sandcastle/main.ts" }
 
+import { existsSync, readFileSync } from "node:fs";
+
 import * as sandcastle from "@ai-hero/sandcastle";
 import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
 
@@ -31,6 +33,107 @@ import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
 // Maximum number of plan→execute→merge cycles before stopping.
 // Raise this if your backlog is large; lower it for a quick smoke-test run.
 const MAX_ITERATIONS = 10;
+
+// Heartbeat: how long to sleep (seconds) between Asana polls when the backlog
+// is empty. Cheap REST check — does NOT invoke Claude. Override with
+// HEARTBEAT_INTERVAL_SECONDS in the environment.
+const HEARTBEAT_INTERVAL_SECONDS = Number(
+  process.env.HEARTBEAT_INTERVAL_SECONDS ?? 120,
+);
+
+// Load .sandcastle/.env into process.env so the heartbeat can hit Asana
+// without spinning up a sandbox. Existing process env wins; we only fill
+// in unset keys.
+const envPath = ".sandcastle/.env";
+if (existsSync(envPath)) {
+  for (const line of readFileSync(envPath, "utf-8").split("\n")) {
+    const match = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
+    if (match && process.env[match[1]!] === undefined) {
+      process.env[match[1]!] = match[2]!.replace(/^["']|["']$/g, "");
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Heartbeat — poll Asana for matching backlog tasks without invoking Claude
+// ---------------------------------------------------------------------------
+
+interface AsanaTask {
+  gid: string;
+  assignee: { gid: string } | null;
+  custom_fields: Array<{
+    name: string;
+    multi_enum_values?: Array<{ name: string }> | null;
+    enum_value?: { name: string } | null;
+  }>;
+}
+
+async function asanaGet<T>(path: string): Promise<T> {
+  const token = process.env.ASANA_PERSONAL_ACCESS_TOKEN;
+  if (!token) {
+    throw new Error("ASANA_PERSONAL_ACCESS_TOKEN is not set");
+  }
+  const res = await fetch(`https://app.asana.com/api/1.0${path}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+    },
+  });
+  if (!res.ok) {
+    throw new Error(
+      `Asana GET ${path} failed: ${res.status} ${await res.text()}`,
+    );
+  }
+  return (await res.json()) as T;
+}
+
+async function countMatchingBacklogTasks(): Promise<number> {
+  const sectionId = process.env.ASANA_BACKLOG_SECTION_ID;
+  if (!sectionId) {
+    throw new Error("ASANA_BACKLOG_SECTION_ID is not set");
+  }
+
+  const me = await asanaGet<{ data: { gid: string } }>("/users/me");
+  const myGid = me.data.gid;
+
+  const fields = [
+    "gid",
+    "assignee.gid",
+    "custom_fields.name",
+    "custom_fields.multi_enum_values.name",
+    "custom_fields.enum_value.name",
+  ].join(",");
+  const tasks = await asanaGet<{ data: AsanaTask[] }>(
+    `/sections/${sectionId}/tasks?completed_since=now&limit=100&opt_fields=${fields}`,
+  );
+
+  return tasks.data.filter((task) => {
+    if (task.assignee?.gid !== myGid) return false;
+    const types = task.custom_fields
+      .filter((cf) => cf.name === "Type")
+      .flatMap((cf) => [
+        ...(cf.multi_enum_values ?? []).map((v) => v.name),
+        ...(cf.enum_value ? [cf.enum_value.name] : []),
+      ]);
+    return types.includes("Agent");
+  }).length;
+}
+
+async function waitForBacklog(): Promise<void> {
+  while (true) {
+    const count = await countMatchingBacklogTasks();
+    if (count > 0) {
+      console.log(`Heartbeat: ${count} matching task(s) in backlog. Resuming.`);
+      return;
+    }
+    console.log(
+      `Heartbeat: no matching tasks. Sleeping ${HEARTBEAT_INTERVAL_SECONDS}s before re-polling.`,
+    );
+    await new Promise((resolve) =>
+      setTimeout(resolve, HEARTBEAT_INTERVAL_SECONDS * 1000),
+    );
+  }
+}
 
 // Hooks run inside the sandbox before the agent starts each iteration.
 // The disable-sandbox hook overrides .claude/settings.json (which enables
@@ -60,6 +163,10 @@ const copyToWorktree = [".env", ".env.local", "node_modules"];
 
 for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   console.log(`\n=== Iteration ${iteration}/${MAX_ITERATIONS} ===\n`);
+
+  // Heartbeat: block until at least one matching task is in the backlog.
+  // Cheap REST poll — does NOT spend tokens on the planner agent.
+  await waitForBacklog();
 
   // -------------------------------------------------------------------------
   // Phase 1: Plan
@@ -96,9 +203,12 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   };
 
   if (issues.length === 0) {
-    // No unblocked work — either everything is done or everything is blocked.
-    console.log("No unblocked issues to work on. Exiting.");
-    break;
+    // The planner saw matching tasks but didn't claim one (race lost,
+    // everything blocked, or zero unblocked). Don't burn an iteration —
+    // heartbeat-wait and retry.
+    console.log("Planner produced empty plan. Heartbeating before retry.");
+    iteration--;
+    continue;
   }
 
   console.log(
