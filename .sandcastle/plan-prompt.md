@@ -4,7 +4,7 @@ Here are the open issues in the repo:
 
 <issues-json>
 
-!`sandcastle-asana list --section "$ASANA_BACKLOG_SECTION_ID" --tag Agent --assignee me`
+!`sandcastle-asana list --section "$ASANA_BACKLOG_SECTION_ID" --type Agent --assignee me`
 
 </issues-json>
 
