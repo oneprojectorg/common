@@ -38,7 +38,8 @@ export * from './getResultsStats';
 // Selection pipeline
 export * from './selectionPipeline';
 
-// Proposal invites
+// Invites
+export * from './acceptDecisionInvite';
 export * from './acceptProposalInvite';
 
 // Proposal management

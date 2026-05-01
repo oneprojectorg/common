@@ -237,11 +237,13 @@ export const inviteUsersToProfile = async ({
   const profileName = profile.name;
   const baseUrl = OPURLConfig('APP').ENV_URL;
 
-  // Build the full invite URL for proposal profiles
+  // Build the full invite URL based on profile type
   let inviteUrl = baseUrl;
   const decisionSlug = proposalWithDecision?.processInstance?.profile?.slug;
   if (profile.type === 'proposal' && decisionSlug) {
     inviteUrl = `${baseUrl}/decisions/${decisionSlug}/proposal/${profileId}/invite`;
+  } else if (profile.type === 'decision' && profile.slug) {
+    inviteUrl = `${baseUrl}/decisions/${profile.slug}/invite`;
   }
 
   const usersByEmail = new Map(
