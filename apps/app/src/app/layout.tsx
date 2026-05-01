@@ -11,6 +11,7 @@ import Script from 'next/script';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
 import { IconProvider } from '../components/IconProvider';
+import { OAuthHashErrorHandler } from '../components/OAuthHashErrorHandler';
 import { OTelBrowserProvider } from '../components/OTelBrowserProvider';
 import { PostHogProvider } from '../components/PostHogProvider';
 import { QueryInvalidationSubscriber } from '../components/QueryInvalidationSubscriber';
@@ -91,7 +92,10 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
             <OTelBrowserProvider>
               <PostHogProvider>
                 <NuqsAdapter>
-                  <IconProvider>{children}</IconProvider>
+                  <IconProvider>
+                    <OAuthHashErrorHandler />
+                    {children}
+                  </IconProvider>
                 </NuqsAdapter>
               </PostHogProvider>
             </OTelBrowserProvider>

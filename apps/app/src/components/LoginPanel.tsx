@@ -65,6 +65,7 @@ export const LoginPanel = () => {
   const { mounted } = useMount();
   const searchParams = useSearchParams();
   const errorCode = searchParams.get('error');
+  const errorDescription = searchParams.get('error_description');
   const isSignup = searchParams.get('signup');
   const redirectParam = searchParams.get('redirect');
 
@@ -81,6 +82,8 @@ export const LoginPanel = () => {
         return t(
           'We couldn’t read the email on your account. Please try a different sign-in method.',
         );
+      case 'oauth_cancelled':
+        return t('Sign-in was cancelled. Please try again.');
       case 'oauth_failed':
         return t(
           'We couldn’t complete sign-in with your provider. Please try again.',
@@ -233,13 +236,23 @@ export const LoginPanel = () => {
                 : (() => {
                     if (combinedError || tokenError) {
                       return (
-                        <span
-                          className={cn(tokenError && 'text-functional-red')}
+                        <div
+                          className={cn(
+                            'flex flex-col gap-2',
+                            tokenError && 'text-functional-red',
+                          )}
                         >
-                          {combinedError ||
-                            tokenError ||
-                            t('There was an error signing you in.')}
-                        </span>
+                          <span>
+                            {combinedError ||
+                              tokenError ||
+                              t('There was an error signing you in.')}
+                          </span>
+                          {errorDescription && !tokenError && (
+                            <span className="text-xs text-neutral-gray3">
+                              {errorDescription}
+                            </span>
+                          )}
+                        </div>
                       );
                     }
 

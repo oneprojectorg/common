@@ -1204,6 +1204,7 @@
   "PROPOSALS TO ADVANCE": "PROPOSALS TO ADVANCE",
   "{appName} is invite-only. You’re now on the waitlist — keep an eye on your inbox for updates.": "{appName} is invite-only. You’re now on the waitlist — keep an eye on your inbox for updates.",
   "We couldn’t read the email on your account. Please try a different sign-in method.": "We couldn’t read the email on your account. Please try a different sign-in method.",
+  "Sign-in was cancelled. Please try again.": "Sign-in was cancelled. Please try again.",
   "We couldn’t complete sign-in with your provider. Please try again.": "We couldn’t complete sign-in with your provider. Please try again.",
   "Your account didn’t share an email address. Please try a different sign-in method.": "Your account didn’t share an email address. Please try a different sign-in method."
 }
