@@ -1,3 +1,17 @@
+# SETUP
+
+1. Run `/caveman full` — every task starts in ultra-compressed
+   communication mode.
+
+2. Generate a per-run agent ID (UUID) and persist it for this run:
+
+   ```
+   cat /proc/sys/kernel/random/uuid > /tmp/sandcastle-agent-id
+   ```
+
+   Every later step in this run reads the agent ID from that file via
+   `$(cat /tmp/sandcastle-agent-id)`. Do not regenerate it.
+
 # TASK
 
 Fix issue {{TASK_ID}}: {{ISSUE_TITLE}}
@@ -10,12 +24,31 @@ Work on branch {{BRANCH}}. Make commits and run tests.
 
 # CLAIM
 
-Before doing anything else, claim the task by moving it into the In-Progress
-section:
+Optimistic-concurrency claim. Run these in order. If any step fails, stop
+immediately — do not implement, commit, push, or move sections further.
 
-```
-sandcastle-asana move {{TASK_ID}} --section "$ASANA_IN_PROGRESS_SECTION_ID"
-```
+1. Stamp our agent ID onto the task description:
+
+   ```
+   sandcastle-asana claim {{TASK_ID}} --agent-id "$(cat /tmp/sandcastle-agent-id)"
+   ```
+
+2. Move the task into the In-Progress section:
+
+   ```
+   sandcastle-asana move {{TASK_ID}} --section "$ASANA_IN_PROGRESS_SECTION_ID"
+   ```
+
+3. Re-fetch the description and verify our agent ID is still the last
+   `Claimed by:` line. Another agent may have claimed in between:
+
+   ```
+   sandcastle-asana verify-claim {{TASK_ID}} --agent-id "$(cat /tmp/sandcastle-agent-id)"
+   ```
+
+   If `verify-claim` exits non-zero, ANOTHER AGENT HAS CLAIMED THIS TASK.
+   Stop now and output `<promise>SKIPPED</promise>`. Do not roll back the
+   section move — the other agent's work is already in progress there.
 
 # CONTEXT
 
@@ -44,11 +77,23 @@ If applicable, use RGR to complete the task.
 
 # FEEDBACK LOOPS
 
-Before committing, run `npm run typecheck` and `npm run test` to ensure the tests pass.
+Follow the gates defined in @.sandcastle/CODING_STANDARDS.md.
+
+Before each commit:
+
+- `pnpm format`
+
+Before signaling the task complete:
+
+- `pnpm typecheck`
+- `pnpm test`
+- `npx fallow audit --format json` (verdict must be `pass`)
+
+If any check fails, fix and re-run before continuing.
 
 # COMMIT
 
-Make a git commit. The commit message must:
+Run `pnpm format`, then make a git commit. The commit message must:
 
 1. Start with `RALPH:` prefix
 2. Include task completed + PRD reference

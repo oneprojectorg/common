@@ -26,6 +26,30 @@
 - Prefer composition over inheritance
 -->
 
+## Pre-commit
+
+Before every `git commit`:
+
+- Run `pnpm format` so the touched files are formatted. CI's format check
+  will block the PR otherwise.
+
+## Quality gates (before review / end of task)
+
+Before signaling the task complete and before opening a PR, every change
+must pass these checks. The reviewer re-runs them and fails review if any
+are still red.
+
+1. `pnpm typecheck` — must complete with no errors.
+2. `pnpm test` — all tests must pass.
+3. `npx fallow audit --format json` — verdict must be `pass`. The audit
+   gates only findings (dead code, duplication, complexity) introduced by
+   this changeset; fix or document any new issues before review. See
+   [How agents use Fallow](https://github.com/fallow-rs/fallow#how-agents-use-fallow)
+   for the broader workflow (`fallow --format json`,
+   `fallow fix --dry-run --format json`).
+
+If any check fails, fix and re-run before continuing.
+
 ## Branching & Git
 
 - **NEVER branch off of `main`.** All new branches must be created off of `dev` or an existing feature branch.

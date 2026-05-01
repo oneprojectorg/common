@@ -68,12 +68,12 @@ cmd="${1:-}"; shift || true
 
 case "$cmd" in
   list)
-    section=""; tag=""; assignee=""
+    section=""; type_filter=""; assignee=""
     while [[ $# -gt 0 ]]; do
       case "$1" in
-        --section)  section="$2";  shift 2 ;;
-        --tag)      tag="$2";      shift 2 ;;
-        --assignee) assignee="$2"; shift 2 ;;
+        --section)  section="$2";     shift 2 ;;
+        --type)     type_filter="$2"; shift 2 ;;
+        --assignee) assignee="$2";    shift 2 ;;
         *) echo "sandcastle-asana list: unknown arg $1" >&2; exit 2 ;;
       esac
     done
@@ -81,14 +81,30 @@ case "$cmd" in
     if [[ "$assignee" == "me" ]]; then
       assignee=$(call GET "/users/me" | jq -r '.data.gid')
     fi
-    raw=$(call GET "/sections/${section}/tasks?completed_since=now&limit=100&opt_fields=gid,name,notes,tags.name,assignee.gid")
+    # The "Type" custom field is multi_enum; we project its values into a
+    # `type` array on each task so callers can filter without knowing the
+    # custom field gid. Asana tags are returned as `tags` for context.
+    raw=$(call GET "/sections/${section}/tasks?completed_since=now&limit=100&opt_fields=gid,name,notes,tags.name,assignee.gid,custom_fields.name,custom_fields.multi_enum_values.name,custom_fields.enum_value.name")
     if [[ "$(printf '%s' "$raw" | jq -r '.next_page // empty')" != "" ]]; then
       echo "sandcastle-asana list: warning — section has more than 100 incomplete tasks; results truncated" >&2
     fi
-    printf '%s' "$raw" | jq --arg tag "$tag" --arg assignee "$assignee" '
+    printf '%s' "$raw" | jq --arg type "$type_filter" --arg assignee "$assignee" '
       [.data[]
-        | {id: .gid, name: .name, notes: (.notes // ""), tags: [.tags[].name], assignee: (.assignee.gid // "")}
-        | select($tag == "" or (.tags | index($tag)))
+        | {
+            id: .gid,
+            name: .name,
+            notes: (.notes // ""),
+            tags: [.tags[].name],
+            assignee: (.assignee.gid // ""),
+            type: [
+              .custom_fields[]?
+              | select(.name == "Type")
+              | ((.multi_enum_values // []) | map(.name))
+              + (if .enum_value then [.enum_value.name] else [] end)
+              | .[]
+            ]
+          }
+        | select($type == "" or (.type | index($type)))
         | select($assignee == "" or .assignee == $assignee)
       ]'
     ;;
@@ -100,6 +116,53 @@ case "$cmd" in
     stories=$(call GET "/tasks/${gid}/stories?opt_fields=gid,created_at,created_by.name,text,type")
     printf '\n--\n'
     printf '%s' "$stories" | jq -r '.data | map(select(.type == "comment")) | if length == 0 then "(no comments)" else map("[\(.created_at)] \(.created_by.name // "unknown"): \(.text)") | join("\n\n") end'
+    ;;
+  claim)
+    gid="${1:-}"; shift || true
+    agent_id=""
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --agent-id) agent_id="$2"; shift 2 ;;
+        *) echo "sandcastle-asana claim: unknown arg $1" >&2; exit 2 ;;
+      esac
+    done
+    [[ -z "$gid"      ]] && { echo "sandcastle-asana claim: <task_gid> required"      >&2; exit 2; }
+    [[ -z "$agent_id" ]] && { echo "sandcastle-asana claim: --agent-id <uuid> required" >&2; exit 2; }
+    current_notes=$(call GET "/tasks/${gid}?opt_fields=notes" | jq -r '.data.notes // ""')
+    trimmed=$(printf '%s' "$current_notes" | sed -E 's/[[:space:]]+$//')
+    if [[ -z "$trimmed" ]]; then
+      new_notes="Claimed by: ${agent_id}"
+    else
+      new_notes="${trimmed}
+
+Claimed by: ${agent_id}"
+    fi
+    payload=$(jq -nc --arg n "$new_notes" '{data:{notes:$n}}')
+    call PUT "/tasks/${gid}" "$payload" >/dev/null
+    echo "Claimed task $gid as $agent_id"
+    ;;
+  verify-claim)
+    gid="${1:-}"; shift || true
+    agent_id=""
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --agent-id) agent_id="$2"; shift 2 ;;
+        *) echo "sandcastle-asana verify-claim: unknown arg $1" >&2; exit 2 ;;
+      esac
+    done
+    [[ -z "$gid"      ]] && { echo "sandcastle-asana verify-claim: <task_gid> required"      >&2; exit 2; }
+    [[ -z "$agent_id" ]] && { echo "sandcastle-asana verify-claim: --agent-id <uuid> required" >&2; exit 2; }
+    current_notes=$(call GET "/tasks/${gid}?opt_fields=notes" | jq -r '.data.notes // ""')
+    expected="Claimed by: ${agent_id}"
+    last_line=$(printf '%s\n' "$current_notes" | awk 'NF{p=$0} END{print p}')
+    if [[ "$last_line" == "$expected" ]]; then
+      echo "Verified claim on $gid for $agent_id"
+      exit 0
+    fi
+    echo "sandcastle-asana verify-claim: claim mismatch on $gid" >&2
+    echo "  last line: ${last_line}" >&2
+    echo "  expected:  ${expected}"  >&2
+    exit 1
     ;;
   move)
     gid="${1:-}"; shift || true
@@ -141,9 +204,11 @@ case "$cmd" in
   ""|-h|--help|help)
     cat <<'USAGE'
 Usage:
-  sandcastle-asana list --section <section_gid> [--tag <name>] [--assignee me|<user_gid>]
-  sandcastle-asana view <task_gid>
-  sandcastle-asana move <task_gid> --section <section_gid> [--comment "..."]
+  sandcastle-asana list  --section <section_gid> [--type <name>] [--assignee me|<user_gid>]
+  sandcastle-asana view  <task_gid>
+  sandcastle-asana claim <task_gid> --agent-id <uuid>
+  sandcastle-asana verify-claim <task_gid> --agent-id <uuid>
+  sandcastle-asana move  <task_gid> --section <section_gid> [--comment "..."]
   sandcastle-asana close <task_gid> [--comment "..."]
 USAGE
     [[ "$cmd" == "" ]] && exit 2 || exit 0
