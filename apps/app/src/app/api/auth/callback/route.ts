@@ -15,7 +15,9 @@ export const GET = async (request: NextRequest) => {
   // On successful verification, always redirect the user to the app
   const useUrl = OPURLConfig('APP');
 
-  const errorRedirect = request.nextUrl.clone().origin;
+  // Errors are surfaced by LoginPanel via the `?error=` query param. Sending
+  // them to the bare origin landed unauthed users on a page with no error UI.
+  const errorRedirect = new URL('/login', request.nextUrl.origin).toString();
 
   if (code) {
     const supabase = await createSBServerClient();
