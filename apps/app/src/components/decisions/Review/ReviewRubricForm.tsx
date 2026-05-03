@@ -275,7 +275,9 @@ function RubricFieldInput({
 
   switch (field.format) {
     case 'dropdown': {
-      if (inferCriterionType(field.schema) === 'yes_no') {
+      const criterionType = inferCriterionType(field.schema);
+
+      if (criterionType === 'yes_no') {
         return (
           <ToggleButton
             size="small"
@@ -306,52 +308,56 @@ function RubricFieldInput({
         );
       }
 
-      // Scored rubric criterion: highest score first (to match the process
-      // builder); each option renders the score with its description below
-      // so reviewers can tell options apart on long scales.
-      const options = [...parseSchemaOptions(field.schema)].sort(
-        (a, b) => Number(b.value) - Number(a.value),
-      );
-      const selectedKey =
-        typeof value === 'string' || typeof value === 'number'
-          ? String(value)
-          : null;
+      if (criterionType === 'scored') {
+        // Highest score first (to match the process builder); each option
+        // renders the score with its description below so reviewers can
+        // tell options apart on long scales.
+        const options = [...parseSchemaOptions(field.schema)].sort(
+          (a, b) => Number(b.value) - Number(a.value),
+        );
+        const selectedKey =
+          typeof value === 'string' || typeof value === 'number'
+            ? String(value)
+            : null;
 
-      return (
-        <Select
-          aria-label={field.schema.title}
-          placeholder={t('Select an option')}
-          selectedKey={selectedKey}
-          onSelectionChange={(key) => {
-            onChange(parseSelectedValue(key, field.schema));
-          }}
-          className="w-full"
-        >
-          {options.map((option) => {
-            const triggerLabel = option.title
-              ? `${option.value} - ${option.title}`
-              : String(option.value);
-            return (
-              <SelectItem
-                key={String(option.value)}
-                id={String(option.value)}
-                textValue={triggerLabel}
-              >
-                {option.title ? (
-                  <div className="flex flex-col">
-                    <span>{option.value}</span>
-                    <span className="text-sm text-neutral-gray4">
-                      {option.title}
-                    </span>
-                  </div>
-                ) : (
-                  String(option.value)
-                )}
-              </SelectItem>
-            );
-          })}
-        </Select>
-      );
+        return (
+          <Select
+            aria-label={field.schema.title}
+            placeholder={t('Select an option')}
+            selectedKey={selectedKey}
+            onSelectionChange={(key) => {
+              onChange(parseSelectedValue(key, field.schema));
+            }}
+            className="w-full"
+          >
+            {options.map((option) => {
+              const triggerLabel = option.title
+                ? `${option.value} - ${option.title}`
+                : String(option.value);
+              return (
+                <SelectItem
+                  key={String(option.value)}
+                  id={String(option.value)}
+                  textValue={triggerLabel}
+                >
+                  {option.title ? (
+                    <div className="flex flex-col">
+                      <span>{option.value}</span>
+                      <span className="text-sm text-neutral-gray4">
+                        {option.title}
+                      </span>
+                    </div>
+                  ) : (
+                    String(option.value)
+                  )}
+                </SelectItem>
+              );
+            })}
+          </Select>
+        );
+      }
+
+      return null;
     }
 
     case 'long-text':
