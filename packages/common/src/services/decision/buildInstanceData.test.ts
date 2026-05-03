@@ -333,9 +333,7 @@ describe('buildInstanceData', () => {
 
       const encoded = instanceDataEncoder.parse(duplicated);
 
-      const reviewPhase = encoded.phases?.find(
-        (p) => p.phaseId === 'review',
-      );
+      const reviewPhase = encoded.phases?.find((p) => p.phaseId === 'review');
       expect(reviewPhase?.rules?.proposals?.review).toBe(true);
     });
 
