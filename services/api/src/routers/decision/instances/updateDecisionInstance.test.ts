@@ -1,4 +1,7 @@
-import { type DecisionInstanceData } from '@op/common';
+import {
+  type DecisionInstanceData,
+  type RubricTemplateSchema,
+} from '@op/common';
 import { db } from '@op/db/client';
 import { ProcessStatus } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -582,7 +585,7 @@ describe.concurrent('updateDecisionInstance', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const validRubricTemplate = {
+    const validRubricTemplate: RubricTemplateSchema = {
       type: 'object',
       'x-field-order': [
         'innovation',
@@ -648,9 +651,7 @@ describe.concurrent('updateDecisionInstance', () => {
 
     const result = await caller.decision.updateDecisionInstance({
       instanceId: instance.instance.id,
-      rubricTemplate: validRubricTemplate as typeof validRubricTemplate & {
-        type: 'object';
-      },
+      rubricTemplate: validRubricTemplate,
     });
 
     expect(result.processInstance.id).toBe(instance.instance.id);
@@ -719,6 +720,7 @@ describe.concurrent('updateDecisionInstance', () => {
     await expect(
       caller.decision.updateDecisionInstance({
         instanceId: instance.instance.id,
+        // @ts-expect-error testing runtime rejection of invalid JSON Schema type
         rubricTemplate: { type: 'bogus' },
       }),
     ).rejects.toMatchObject({

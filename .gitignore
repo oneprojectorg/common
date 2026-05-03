@@ -78,3 +78,6 @@ ralph.sh
 
 # pnpm local store (created inside bind-mounted /app when container runs pnpm)
 .pnpm-store/
+
+# Workspace-local one-shot/dev scripts (e.g. services/db/scripts/local/*.ts)
+**/scripts/local/

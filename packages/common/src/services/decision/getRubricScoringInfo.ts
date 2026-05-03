@@ -7,6 +7,15 @@ import type { RubricTemplateSchema, XFormat } from './types';
  */
 export const OVERALL_RECOMMENDATION_KEY = '__overall_recommendation';
 
+export const RECOMMENDATION_OPTION = {
+  YES: { value: 'yes', label: 'Yes' },
+  MAYBE: { value: 'maybe', label: 'Maybe' },
+  NO: { value: 'no', label: 'No' },
+} as const;
+
+export type RecommendationValue =
+  (typeof RECOMMENDATION_OPTION)[keyof typeof RECOMMENDATION_OPTION]['value'];
+
 export function isOverallRecommendationField(key: string): boolean {
   return key === OVERALL_RECOMMENDATION_KEY;
 }

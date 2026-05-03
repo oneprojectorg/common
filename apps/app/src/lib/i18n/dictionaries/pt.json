@@ -1159,5 +1159,17 @@
   "Untitled proposal": "Proposta sem título",
   "Advance {title}": "Avançar {title}",
   "Don't advance {title}": "Não avançar {title}",
-  "+{count} More": "+{count} mais"
+  "+{count} More": "+{count} mais",
+  "REVIEWS COMPLETE": "REVISÕES CONCLUÍDAS",
+  "Select which proposals move on to the next phase": "Selecione quais propostas avançam para a próxima fase",
+  "Don't advance": "Não avançar",
+  "Filter by category": "Filtrar por categoria",
+  "Highest Score": "Pontuação mais alta",
+  "Lowest Score": "Pontuação mais baixa",
+  "Maybe": "Talvez",
+  "Overall recommendation": "Recomendação geral",
+  "Score ({pts}pts)": "Pontuação ({pts}pts)",
+  "{pts} pts": "{pts} pts",
+  "No proposals to review yet": "Ainda não há propostas para revisar",
+  "Proposals will appear here once they are submitted.": "As propostas aparecerão aqui assim que forem enviadas."
 }

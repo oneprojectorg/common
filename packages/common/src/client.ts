@@ -38,6 +38,8 @@ export { serverExtensions } from './services/decision/tiptapExtensions';
 export {
   getRubricScoringInfo,
   OVERALL_RECOMMENDATION_KEY,
+  RECOMMENDATION_OPTION,
+  type RecommendationValue,
   isOverallRecommendationField,
 } from './services/decision/getRubricScoringInfo';
 export { REVIEWS_POLICIES } from './services/decision/schemas/types';

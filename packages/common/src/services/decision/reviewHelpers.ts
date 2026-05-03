@@ -163,12 +163,18 @@ export function resolveAssignmentProposal(assignment: {
 
   const proposalData = parseProposalData(snapshot.proposalData);
 
-  if (!proposalData.collaborationDocId) {
-    throw new ValidationError(`Proposal ${id} is missing collaborationDocId`);
+  // Temporary: accept HTML-only proposals until local TipTap lands.
+  if (!proposalData.collaborationDocId && !proposalData.description) {
+    throw new ValidationError(`Proposal ${id} has no document content`);
   }
 
-  if (proposalData.collaborationDocVersionId == null) {
-    console.warn(`Proposal ${id} is missing collaborationDocVersionId`);
+  if (
+    !proposalData.collaborationDocId ||
+    !proposalData.collaborationDocVersionId
+  ) {
+    console.error(
+      `Proposal ${id} is missing collaborationDocId or collaborationDocVersionId`,
+    );
   }
 
   return { ...snapshot, id, proposalData };

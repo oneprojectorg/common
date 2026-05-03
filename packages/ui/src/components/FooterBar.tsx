@@ -5,24 +5,41 @@ import type { VariantProps } from 'tailwind-variants';
 import { cn } from '../lib/utils';
 
 const footerBarStyles = tv({
-  base: 'z-20 shrink-0 border-t border-neutral-gray1 bg-white backdrop-blur',
+  base: 'shrink-0 border-t border-neutral-gray1 bg-white backdrop-blur',
   variants: {
     position: {
-      sticky: 'sticky bottom-0',
-      static: '',
-    },
-    padding: {
-      compact: 'px-8 py-2',
-      spacious: 'px-18 py-2',
+      sticky: 'sticky bottom-0 z-20',
+      fixed: 'fixed inset-x-0 bottom-0 z-50',
+      static: 'z-20',
     },
   },
   defaultVariants: {
     position: 'sticky',
+  },
+});
+
+const footerBarContentStyles = tv({
+  base: 'flex items-center gap-4',
+  variants: {
+    padding: {
+      compact: 'px-8 py-2',
+      spacious: 'px-18 py-2',
+    },
+    // For fixed mode, center the inner content at the page max-width so
+    // Start/End slots align with the content above.
+    position: {
+      sticky: '',
+      fixed: 'mx-auto w-full max-w-6xl',
+      static: '',
+    },
+  },
+  defaultVariants: {
     padding: 'compact',
   },
 });
 
-type FooterBarVariants = VariantProps<typeof footerBarStyles>;
+type FooterBarVariants = VariantProps<typeof footerBarStyles> &
+  VariantProps<typeof footerBarContentStyles>;
 
 interface FooterBarProps extends FooterBarVariants {
   className?: string;
@@ -31,8 +48,10 @@ interface FooterBarProps extends FooterBarVariants {
 
 function FooterBar({ className, children, position, padding }: FooterBarProps) {
   return (
-    <footer className={footerBarStyles({ position, padding, className })}>
-      <div className="flex items-center gap-4">{children}</div>
+    <footer className={footerBarStyles({ position, className })}>
+      <div className={footerBarContentStyles({ position, padding })}>
+        {children}
+      </div>
     </footer>
   );
 }

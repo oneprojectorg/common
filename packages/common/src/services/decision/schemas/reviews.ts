@@ -16,9 +16,41 @@ export {
 
 const jsonObjectSchema = z.record(z.string(), z.unknown());
 
-const rubricTemplateSchema = jsonObjectSchema.transform(
-  (data): RubricTemplateSchema => data as RubricTemplateSchema,
-);
+/**
+ * Probe schema — not enforced. We log when a rubric drifts from this shape so
+ * we hear about bad data without breaking the response.
+ */
+const rubricTemplateProbe = z
+  .object({
+    type: z.literal('object'),
+    properties: z
+      .record(
+        z.string(),
+        z
+          .object({
+            type: z.string().optional(),
+            'x-format': z.string().optional(),
+          })
+          .passthrough(),
+      )
+      .optional(),
+    'x-field-order': z.array(z.string()).optional(),
+  })
+  .passthrough();
+
+export const rubricTemplateSchema = z
+  .custom<RubricTemplateSchema>(
+    (val) => typeof val === 'object' && val !== null && !Array.isArray(val),
+  )
+  .transform((data) => {
+    const result = rubricTemplateProbe.safeParse(data);
+    if (!result.success) {
+      console.error('rubricTemplate did not match expected shape', {
+        issues: result.error.issues,
+      });
+    }
+    return data;
+  });
 
 /**
  * Review data is split into two parallel maps keyed by criterion id:
