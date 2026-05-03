@@ -3,14 +3,14 @@
 1. Run `/caveman full` — every task starts in ultra-compressed
    communication mode.
 
-2. Base branch `{{BRANCH}}` on the latest `{{BASE_BRANCH}}`:
+2. Base branch `{{BRANCH}}` on the latest `{{TARGET_BRANCH}}`:
 
    ```
-   git fetch origin {{BASE_BRANCH}}
-   git rebase origin/{{BASE_BRANCH}}
+   git fetch origin {{TARGET_BRANCH}}
+   git rebase origin/{{TARGET_BRANCH}}
    ```
 
-   `{{BASE_BRANCH}}` is the only valid base — never branch off `main`.
+   `{{TARGET_BRANCH}}` is the only valid base — never branch off `main`.
 
 # TASK
 
