@@ -68,12 +68,13 @@ cmd="${1:-}"; shift || true
 
 case "$cmd" in
   list)
-    section=""; type_filter=""; assignee=""
+    section=""; type_filter=""; assignee=""; include_comments=""
     while [[ $# -gt 0 ]]; do
       case "$1" in
-        --section)  section="$2";     shift 2 ;;
-        --type)     type_filter="$2"; shift 2 ;;
-        --assignee) assignee="$2";    shift 2 ;;
+        --section)          section="$2";       shift 2 ;;
+        --type)             type_filter="$2";   shift 2 ;;
+        --assignee)         assignee="$2";      shift 2 ;;
+        --include-comments) include_comments=1; shift   ;;
         *) echo "sandcastle-asana list: unknown arg $1" >&2; exit 2 ;;
       esac
     done
@@ -88,7 +89,7 @@ case "$cmd" in
     if [[ "$(printf '%s' "$raw" | jq -r '.next_page // empty')" != "" ]]; then
       echo "sandcastle-asana list: warning — section has more than 100 incomplete tasks; results truncated" >&2
     fi
-    printf '%s' "$raw" | jq --arg type "$type_filter" --arg assignee "$assignee" '
+    filtered=$(printf '%s' "$raw" | jq --arg type "$type_filter" --arg assignee "$assignee" '
       [.data[]
         | {
             id: .gid,
@@ -106,7 +107,21 @@ case "$cmd" in
           }
         | select($type == "" or (.type | index($type)))
         | select($assignee == "" or .assignee == $assignee)
-      ]'
+      ]')
+    if [[ -z "$include_comments" ]]; then
+      printf '%s' "$filtered"
+    else
+      # Per-task /stories fetch (N+1). Filter has already trimmed N.
+      enriched=$(printf '%s' "$filtered" | jq -c '.[]' | while IFS= read -r task; do
+        gid=$(printf '%s' "$task" | jq -r '.id')
+        stories=$(call GET "/tasks/${gid}/stories?opt_fields=created_at,created_by.name,text,type")
+        comments=$(printf '%s' "$stories" | jq '[.data[]
+          | select(.type == "comment")
+          | {at: .created_at, by: (.created_by.name // "unknown"), text: .text}]')
+        printf '%s' "$task" | jq --argjson c "$comments" '. + {comments: $c}'
+      done | jq -s '.')
+      printf '%s' "$enriched"
+    fi
     ;;
   view)
     gid="${1:-}"
@@ -204,7 +219,7 @@ Claimed by: ${agent_id}"
   ""|-h|--help|help)
     cat <<'USAGE'
 Usage:
-  sandcastle-asana list  --section <section_gid> [--type <name>] [--assignee me|<user_gid>]
+  sandcastle-asana list  --section <section_gid> [--type <name>] [--assignee me|<user_gid>] [--include-comments]
   sandcastle-asana view  <task_gid>
   sandcastle-asana claim <task_gid> --agent-id <uuid>
   sandcastle-asana verify-claim <task_gid> --agent-id <uuid>
