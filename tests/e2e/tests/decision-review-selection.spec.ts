@@ -288,4 +288,83 @@ test.describe('Decision Review Selection — review → voting flow', () => {
       }),
     ).not.toBeVisible();
   });
+
+  // Per-proposal Review Summary has its own sticky footer with an
+  // "Advance proposal" CTA that writes into the same persisted draft the
+  // parent ReviewSelectionList reads. This is the contract: toggle on the
+  // detail page, walk back to the list, see the row reflect the selection.
+  test('selecting a proposal from its review summary footer propagates back to the parent list', async ({
+    authenticatedPage: page,
+    org,
+  }) => {
+    const { instance } = await seedOnReviewPhase(org, [
+      'Proposal Alpha',
+      'Proposal Beta',
+    ]);
+
+    await page.goto(`/en/decisions/${instance.slug}`, {
+      waitUntil: 'networkidle',
+    });
+
+    // Drive the instance into the review→voting selection state — same path
+    // as the full-flow test. Once it lands, ReviewSelectionList renders and
+    // the proposal title links navigate to the per-proposal Review Summary.
+    await page.getByRole('button', { name: 'Start Voting' }).first().click();
+    const advanceDialog = page.getByRole('dialog');
+    await advanceDialog.getByRole('button', { name: 'Advance Phase' }).click();
+
+    await expect(
+      page.getByRole('columnheader', { name: 'Overall recommendation' }),
+    ).toBeVisible({ timeout: 15_000 });
+
+    // Sanity: footer starts at zero before any cross-page selection.
+    await expect(page.getByText('0 proposals advancing')).toBeVisible();
+
+    // The proposal title is rendered as a link to the review summary.
+    // `exact: true` keeps this from matching the row's "Advance Proposal
+    // Alpha" toggle button, which contains the same accessible name as a
+    // substring.
+    await page
+      .getByRole('link', { name: 'Proposal Alpha', exact: true })
+      .click();
+    await page.waitForURL(/\/proposal\/.*\/reviews$/, { timeout: 15_000 });
+
+    // Footer "Advance proposal" CTA is the unselected state. `exact: true`
+    // disambiguates from the per-row "Advance Proposal Alpha" toggles, which
+    // would otherwise match by substring.
+    const advanceButton = page.getByRole('button', {
+      name: 'Advance proposal',
+      exact: true,
+    });
+    await expect(advanceButton).toBeVisible({ timeout: 15_000 });
+    await advanceButton.click();
+
+    // Same button flips to "Advancing proposal" + count picks up the entry.
+    await expect(
+      page.getByRole('button', { name: 'Advancing proposal', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText('1 proposal advancing')).toBeVisible();
+
+    // Walk back to the parent list. The list should reflect the selection
+    // that was just made on the detail page — this is what the persisted
+    // draft buys us across the navigation boundary.
+    await page.getByRole('link', { name: 'Back', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/decisions/${instance.slug}$`), {
+      timeout: 10_000,
+    });
+
+    // Row toggle aria-label flips to "Don't advance ..." once selected.
+    await expect(
+      page.getByRole('button', { name: "Don't advance Proposal Alpha" }),
+    ).toBeVisible({ timeout: 15_000 });
+    // The other proposal stays unselected.
+    await expect(
+      page.getByRole('button', { name: 'Advance Proposal Beta' }),
+    ).toBeVisible();
+    // Footer count + Confirm CTA reflect the persisted draft.
+    await expect(page.getByText('1 proposal advancing')).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Confirm decisions' }),
+    ).toBeEnabled();
+  });
 });

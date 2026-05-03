@@ -1150,6 +1150,8 @@
   "PROPOSALS TO ADVANCE": "PROPUESTAS A AVANZAR",
   "Advance": "Avanzar",
   "Advancing": "Avanzando",
+  "Advance proposal": "Avanzar propuesta",
+  "Advancing proposal": "Propuesta avanzando",
   "Confirm decisions": "Confirmar decisiones",
   "{count} proposals advancing": "{count, plural, one {# propuesta avanzando} other {# propuestas avanzando}}",
   "Eligible proposals": "Propuestas elegibles",
@@ -1171,5 +1173,11 @@
   "Score ({pts}pts)": "Puntuación ({pts}pts)",
   "{pts} pts": "{pts} pts",
   "No proposals to review yet": "Aún no hay propuestas para revisar",
-  "Proposals will appear here once they are submitted.": "Las propuestas aparecerán aquí una vez que sean enviadas."
+  "Proposals will appear here once they are submitted.": "Las propuestas aparecerán aquí una vez que sean enviadas.",
+  "Review Summary": "Resumen de revisión",
+  "Average Score": "Puntuación media",
+  "Submitted Reviews": "Revisiones enviadas",
+  "Back to all reviewers": "Volver a todos los revisores",
+  "{submitted} out of {total} reviewers submitted a review for this proposal": "{submitted} de {total} revisores enviaron una revisión para esta propuesta",
+  "View review by {name}": "Ver revisión de {name}"
 }

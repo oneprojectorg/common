@@ -1,8 +1,8 @@
 import {
   type ProposalReview,
   type RubricTemplateSchema,
+  findSchemaOption,
   isOverallRecommendationField,
-  parseSchemaOptions,
 } from '@op/common/client';
 import type { ReactNode } from 'react';
 
@@ -124,10 +124,7 @@ function RubricFieldResult({
       return <ResultCard value={label} description={rationale} />;
     }
 
-    const options = parseSchemaOptions(field.schema);
-    const selected = options.find(
-      (option) => String(option.value) === String(value),
-    );
+    const selected = findSchemaOption(field.schema, value);
 
     if (isOverallRecommendationField(field.key)) {
       return (

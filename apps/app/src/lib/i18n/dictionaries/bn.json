@@ -1151,6 +1151,8 @@
   "PROPOSALS TO ADVANCE": "অগ্রসর করার প্রস্তাব",
   "Advance": "অগ্রসর",
   "Advancing": "অগ্রসর হচ্ছে",
+  "Advance proposal": "প্রস্তাব অগ্রসর করুন",
+  "Advancing proposal": "প্রস্তাব অগ্রসর হচ্ছে",
   "Confirm decisions": "সিদ্ধান্ত নিশ্চিত করুন",
   "{count} proposals advancing": "{count, plural, other {# প্রস্তাব অগ্রসর হচ্ছে}}",
   "Eligible proposals": "যোগ্য প্রস্তাব",
@@ -1172,5 +1174,11 @@
   "Score ({pts}pts)": "স্কোর ({pts}পয়েন্ট)",
   "{pts} pts": "{pts} পয়েন্ট",
   "No proposals to review yet": "পর্যালোচনার জন্য এখনও কোন প্রস্তাব নেই",
-  "Proposals will appear here once they are submitted.": "প্রস্তাবগুলি জমা দেওয়ার পর এখানে দেখা যাবে।"
+  "Proposals will appear here once they are submitted.": "প্রস্তাবগুলি জমা দেওয়ার পর এখানে দেখা যাবে।",
+  "Review Summary": "পর্যালোচনার সারসংক্ষেপ",
+  "Average Score": "গড় স্কোর",
+  "Submitted Reviews": "জমা দেওয়া পর্যালোচনা",
+  "Back to all reviewers": "সমস্ত পর্যালোচকের কাছে ফিরে যান",
+  "{submitted} out of {total} reviewers submitted a review for this proposal": "{total} জন পর্যালোচকের মধ্যে {submitted} জন এই প্রস্তাবের জন্য একটি পর্যালোচনা জমা দিয়েছেন",
+  "View review by {name}": "{name} এর পর্যালোচনা দেখুন"
 }
