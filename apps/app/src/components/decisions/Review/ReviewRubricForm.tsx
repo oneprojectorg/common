@@ -306,10 +306,12 @@ function RubricFieldInput({
         );
       }
 
-      const options = parseSchemaOptions(field.schema).map((option) => ({
-        value: option.value,
-        label: option.title || String(option.value),
-      }));
+      // Scored rubric criterion: highest score first (to match the process
+      // builder); each option renders the score with its description below
+      // so reviewers can tell options apart on long scales.
+      const options = [...parseSchemaOptions(field.schema)].sort(
+        (a, b) => Number(b.value) - Number(a.value),
+      );
       const selectedKey =
         typeof value === 'string' || typeof value === 'number'
           ? String(value)
@@ -325,11 +327,29 @@ function RubricFieldInput({
           }}
           className="w-full"
         >
-          {options.map((option) => (
-            <SelectItem key={String(option.value)} id={String(option.value)}>
-              {option.label}
-            </SelectItem>
-          ))}
+          {options.map((option) => {
+            const triggerLabel = option.title
+              ? `${option.value} - ${option.title}`
+              : String(option.value);
+            return (
+              <SelectItem
+                key={String(option.value)}
+                id={String(option.value)}
+                textValue={triggerLabel}
+              >
+                {option.title ? (
+                  <div className="flex flex-col">
+                    <span>{option.value}</span>
+                    <span className="text-sm text-neutral-gray4">
+                      {option.title}
+                    </span>
+                  </div>
+                ) : (
+                  String(option.value)
+                )}
+              </SelectItem>
+            );
+          })}
         </Select>
       );
     }
