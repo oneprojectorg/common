@@ -796,6 +796,33 @@ describe.concurrent('submitProposal', () => {
   });
 });
 
+const hiddenDefaultSchema = {
+  id: 'hidden-default-schema',
+  version: '1.0.0',
+  name: 'Hidden Default Schema',
+  config: { defaultProposalsHidden: true },
+  phases: [
+    {
+      id: 'initial',
+      name: 'Initial Phase',
+      rules: {
+        proposals: { submit: true },
+        voting: { submit: false },
+        advancement: { method: 'manual' as const },
+      },
+    },
+    {
+      id: 'final',
+      name: 'Final Phase',
+      rules: {
+        proposals: { submit: false },
+        voting: { submit: false },
+        advancement: { method: 'manual' as const },
+      },
+    },
+  ],
+};
+
 describe.concurrent('submitProposal defaultProposalsHidden', () => {
   it('should set visibility to HIDDEN when defaultProposalsHidden config is enabled', async ({
     task,
@@ -806,32 +833,7 @@ describe.concurrent('submitProposal defaultProposalsHidden', () => {
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,
       grantAccess: true,
-      processSchema: {
-        id: 'hidden-default-schema',
-        version: '1.0.0',
-        name: 'Hidden Default Schema',
-        config: { defaultProposalsHidden: true },
-        phases: [
-          {
-            id: 'initial',
-            name: 'Initial Phase',
-            rules: {
-              proposals: { submit: true },
-              voting: { submit: false },
-              advancement: { method: 'manual' as const },
-            },
-          },
-          {
-            id: 'final',
-            name: 'Final Phase',
-            rules: {
-              proposals: { submit: false },
-              voting: { submit: false },
-              advancement: { method: 'manual' as const },
-            },
-          },
-        ],
-      },
+      processSchema: hiddenDefaultSchema,
     });
 
     const instance = setup.instances[0];
@@ -896,32 +898,7 @@ describe.concurrent('submitProposal defaultProposalsHidden', () => {
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,
       grantAccess: true,
-      processSchema: {
-        id: 'hidden-default-schema',
-        version: '1.0.0',
-        name: 'Hidden Default Schema',
-        config: { defaultProposalsHidden: true },
-        phases: [
-          {
-            id: 'initial',
-            name: 'Initial Phase',
-            rules: {
-              proposals: { submit: true },
-              voting: { submit: false },
-              advancement: { method: 'manual' as const },
-            },
-          },
-          {
-            id: 'final',
-            name: 'Final Phase',
-            rules: {
-              proposals: { submit: false },
-              voting: { submit: false },
-              advancement: { method: 'manual' as const },
-            },
-          },
-        ],
-      },
+      processSchema: hiddenDefaultSchema,
     });
 
     const instance = setup.instances[0];
@@ -971,32 +948,7 @@ describe.concurrent('submitProposal defaultProposalsHidden', () => {
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,
       grantAccess: true,
-      processSchema: {
-        id: 'hidden-default-schema',
-        version: '1.0.0',
-        name: 'Hidden Default Schema',
-        config: { defaultProposalsHidden: true },
-        phases: [
-          {
-            id: 'initial',
-            name: 'Initial Phase',
-            rules: {
-              proposals: { submit: true },
-              voting: { submit: false },
-              advancement: { method: 'manual' as const },
-            },
-          },
-          {
-            id: 'final',
-            name: 'Final Phase',
-            rules: {
-              proposals: { submit: false },
-              voting: { submit: false },
-              advancement: { method: 'manual' as const },
-            },
-          },
-        ],
-      },
+      processSchema: hiddenDefaultSchema,
     });
 
     const instance = setup.instances[0];
