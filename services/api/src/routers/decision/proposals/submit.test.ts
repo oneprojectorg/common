@@ -1,5 +1,10 @@
 import { mockCollab } from '@op/collab/testing';
-import { ProposalStatus, processInstances, proposals } from '@op/db/schema';
+import {
+  ProposalStatus,
+  Visibility,
+  processInstances,
+  proposals,
+} from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import { describe, expect, it } from 'vitest';
 
@@ -788,5 +793,161 @@ describe.concurrent('submitProposal', () => {
     });
 
     expect(result.status).toBe(ProposalStatus.SUBMITTED);
+  });
+
+  it('should set visibility to HIDDEN when defaultRules.proposals.defaultHidden is true', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Set defaultRules on the instance to hide proposals by default
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: eq(processInstances.id, instance.instance.id),
+    });
+
+    if (!instanceRecord) {
+      throw new Error('Instance record not found');
+    }
+
+    const existingData = instanceRecord.instanceData as Record<string, unknown>;
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...existingData,
+          defaultRules: {
+            proposals: { defaultHidden: true },
+          },
+        },
+      })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Should Be Hidden' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitProposal({
+      proposalId: proposal.id,
+    });
+
+    expect(result.status).toBe(ProposalStatus.SUBMITTED);
+    expect(result.visibility).toBe(Visibility.HIDDEN);
+  });
+
+  it('should keep visibility VISIBLE when defaultRules.proposals.defaultHidden is not set', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Should Stay Visible' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitProposal({
+      proposalId: proposal.id,
+    });
+
+    expect(result.status).toBe(ProposalStatus.SUBMITTED);
+    expect(result.visibility).toBe(Visibility.VISIBLE);
+  });
+
+  it('should allow phase rules to override defaultRules.proposals.defaultHidden', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Set defaultRules to hide proposals, but override at the phase level to show them
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: eq(processInstances.id, instance.instance.id),
+    });
+
+    if (!instanceRecord) {
+      throw new Error('Instance record not found');
+    }
+
+    const existingData = instanceRecord.instanceData as Record<string, unknown>;
+    const phases = existingData.phases as Array<Record<string, unknown>>;
+
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...existingData,
+          defaultRules: {
+            proposals: { defaultHidden: true },
+          },
+          phases: phases.map((p) =>
+            p.phaseId === instanceRecord.currentStateId
+              ? {
+                  ...p,
+                  rules: {
+                    ...(p.rules as Record<string, unknown>),
+                    proposals: {
+                      ...((p.rules as Record<string, unknown>)?.proposals as Record<string, unknown>),
+                      defaultHidden: false,
+                    },
+                  },
+                }
+              : p,
+          ),
+        },
+      })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Phase Override Visible' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitProposal({
+      proposalId: proposal.id,
+    });
+
+    expect(result.status).toBe(ProposalStatus.SUBMITTED);
+    expect(result.visibility).toBe(Visibility.VISIBLE);
   });
 });

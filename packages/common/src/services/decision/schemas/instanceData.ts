@@ -49,6 +49,8 @@ export interface PhaseInstanceData {
  */
 export interface DecisionInstanceData {
   config?: ProcessConfig;
+  /** Instance-level default rules deep-merged into every phase's rules (phase overrides). */
+  defaultRules?: PhaseRules;
   fieldValues?: Record<string, unknown>;
   templateId?: string;
   templateVersion?: string;

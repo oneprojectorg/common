@@ -142,6 +142,9 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
                 ...existing,
                 ...data,
                 config: { ...existing?.config, ...data.config },
+                defaultRules: data.defaultRules
+                  ? { ...existing?.defaultRules, ...data.defaultRules }
+                  : existing?.defaultRules,
               },
             },
           };

@@ -346,6 +346,45 @@ function PhaseDetailForm({
           />
         </ToggleRow>
         <ToggleRow
+          label={t('Hide proposals by default')}
+          description={t(
+            'New proposals are hidden from other participants until an admin makes them visible.',
+          )}
+        >
+          <ToggleButton
+            isSelected={
+              instance.instanceData?.defaultRules?.proposals?.defaultHidden ??
+              false
+            }
+            onChange={(val) => {
+              saveChanges({
+                defaultRules: {
+                  proposals: { defaultHidden: val },
+                },
+              });
+              utils.decision.getInstance.setData({ instanceId }, (old) => {
+                if (!old?.instanceData) {
+                  return old;
+                }
+                return {
+                  ...old,
+                  instanceData: {
+                    ...old.instanceData,
+                    defaultRules: {
+                      ...old.instanceData.defaultRules,
+                      proposals: {
+                        ...old.instanceData.defaultRules?.proposals,
+                        defaultHidden: val,
+                      },
+                    },
+                  },
+                };
+              });
+            }}
+            size="small"
+          />
+        </ToggleRow>
+        <ToggleRow
           label={t('Proposal editing')}
           description={t('Authors can edit their proposals after submitting')}
         >

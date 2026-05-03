@@ -98,6 +98,7 @@ const phaseRulesEncoder = z.object({
       submit: z.boolean().optional(),
       edit: z.boolean().optional(),
       review: z.boolean().optional(),
+      defaultHidden: z.boolean().optional(),
     })
     .optional(),
   voting: z
@@ -230,6 +231,7 @@ export const instancePhaseDataEncoder = z.object({
 /** Instance data encoder for new schema format */
 const instanceDataWithSchemaEncoder = z.object({
   config: processConfigEncoder.optional(),
+  defaultRules: phaseRulesEncoder.optional(),
   fieldValues: z.record(z.string(), z.unknown()).optional(),
   templateId: z.string().optional(),
   templateVersion: z.string().optional(),
@@ -505,6 +507,8 @@ export const updateDecisionInstanceInputSchema = z.object({
   stewardProfileId: z.string().uuid().optional(),
   /** Process-level configuration (e.g., hideBudget, categories) */
   config: processConfigEncoder.optional(),
+  /** Instance-level default rules deep-merged into every phase's rules */
+  defaultRules: phaseRulesEncoder.optional(),
   /** Phase overrides for dates, rules, and settings */
   phases: z.array(instancePhaseDataInputEncoder).optional(),
   /** Proposal template (JSON Schema) */

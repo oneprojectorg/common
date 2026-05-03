@@ -565,6 +565,8 @@
   "Phases": "পর্যায়সমূহ",
   "Define the phases of your decision-making process": "আপনার সিদ্ধান্ত গ্রহণ প্রক্রিয়ার পর্যায়গুলি নির্ধারণ করুন",
   "Proposal submission": "প্রস্তাব জমা",
+  "Hide proposals by default": "Hide proposals by default",
+  "New proposals are hidden from other participants until an admin makes them visible.": "New proposals are hidden from other participants until an admin makes them visible.",
   "Participants can submit new proposals during this phase.": "অংশগ্রহণকারীরা এই পর্যায়ে নতুন প্রস্তাব জমা দিতে পারেন।",
   "Proposal editing": "প্রস্তাব সম্পাদনা",
   "Authors can edit their proposals after submitting": "লেখকরা জমা দেওয়ার পরে তাদের প্রস্তাব সম্পাদনা করতে পারেন",

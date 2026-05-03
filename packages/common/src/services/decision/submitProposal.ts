@@ -1,6 +1,11 @@
 import { getTipTapClient } from '@op/collab';
 import { db, eq } from '@op/db/client';
-import { type ProcessInstance, ProposalStatus, proposals } from '@op/db/schema';
+import {
+  type ProcessInstance,
+  ProposalStatus,
+  Visibility,
+  proposals,
+} from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
@@ -9,7 +14,10 @@ import { decisionPermission } from './permissions';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
-import { checkProposalsAllowed } from './utils/proposal';
+import {
+  checkProposalsAllowed,
+  shouldDefaultHideProposals,
+} from './utils/proposal';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
 export interface SubmitProposalInput {
@@ -119,6 +127,11 @@ export const submitProposal = async ({
       return null;
     });
 
+  const hideByDefault = shouldDefaultHideProposals(
+    instanceData,
+    currentPhaseId,
+  );
+
   // Update proposal status to submitted and re-query with profile
   const updatedProposal = await db.transaction(async (tx) => {
     const proposalDataUpdate =
@@ -133,6 +146,7 @@ export const submitProposal = async ({
       .update(proposals)
       .set({
         status: ProposalStatus.SUBMITTED,
+        ...(hideByDefault ? { visibility: Visibility.HIDDEN } : {}),
         ...(proposalDataUpdate ? { proposalData: proposalDataUpdate } : {}),
       })
       .where(eq(proposals.id, data.proposalId))

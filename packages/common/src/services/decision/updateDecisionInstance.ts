@@ -21,7 +21,7 @@ import type {
   DecisionInstanceData,
   PhaseOverride,
 } from './schemas/instanceData';
-import type { ProcessConfig } from './schemas/types';
+import type { PhaseRules, ProcessConfig } from './schemas/types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
 /**
@@ -34,6 +34,7 @@ export const updateDecisionInstance = async ({
   status,
   stewardProfileId,
   config,
+  defaultRules,
   phases,
   proposalTemplate,
   rubricTemplate,
@@ -46,6 +47,8 @@ export const updateDecisionInstance = async ({
   stewardProfileId?: string;
   /** Process-level configuration (e.g., hideBudget) */
   config?: ProcessConfig;
+  /** Instance-level default rules deep-merged into every phase's rules */
+  defaultRules?: PhaseRules;
   /** Optional phase overrides (dates and settings) */
   phases?: PhaseOverride[];
   /** Proposal template (JSON Schema) */
@@ -120,12 +123,14 @@ export const updateDecisionInstance = async ({
 
   // Apply config, phase overrides, and/or template updates to existing instanceData
   const hasConfigUpdate = config !== undefined;
+  const hasDefaultRulesUpdate = defaultRules !== undefined;
   const hasPhaseUpdates = phases && phases.length > 0;
   const hasProposalTemplateUpdate = proposalTemplate !== undefined;
   const hasRubricTemplateUpdate = rubricTemplate !== undefined;
 
   if (
     hasConfigUpdate ||
+    hasDefaultRulesUpdate ||
     hasPhaseUpdates ||
     hasProposalTemplateUpdate ||
     hasRubricTemplateUpdate
@@ -152,6 +157,22 @@ export const updateDecisionInstance = async ({
         ...existingInstanceData.config,
         ...config,
         ...(config?.categories ? { categories: normalizedCategories } : {}),
+      };
+    }
+
+    // Apply defaultRules update (merge with existing defaultRules)
+    if (hasDefaultRulesUpdate) {
+      updatedInstanceData.defaultRules = {
+        ...existingInstanceData.defaultRules,
+        ...defaultRules,
+        proposals: {
+          ...existingInstanceData.defaultRules?.proposals,
+          ...defaultRules?.proposals,
+        },
+        voting: {
+          ...existingInstanceData.defaultRules?.voting,
+          ...defaultRules?.voting,
+        },
       };
     }
 

@@ -161,14 +161,17 @@ export function ProcessBuilderAutosaveProvider({
       }
 
       // Accumulate dirty fields for the next debounced save.
-      // Deep-merge config so rapid cross-section edits don't overwrite
-      // each other's config sub-fields within the debounce window.
+      // Deep-merge config and defaultRules so rapid cross-section edits
+      // don't overwrite each other's sub-fields within the debounce window.
       dirtyFieldsRef.current = {
         ...dirtyFieldsRef.current,
         ...data,
         config: data.config
           ? { ...dirtyFieldsRef.current.config, ...data.config }
           : dirtyFieldsRef.current.config,
+        defaultRules: data.defaultRules
+          ? { ...dirtyFieldsRef.current.defaultRules, ...data.defaultRules }
+          : dirtyFieldsRef.current.defaultRules,
       };
 
       debouncedSave();
