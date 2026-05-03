@@ -8,9 +8,35 @@ Here are the open issues in the repo:
 
 </issues-json>
 
+# VERIFICATION GATE
+
+Before any further analysis, every issue MUST specify how to verify it is
+complete — beyond the standard checks (`pnpm typecheck`, `pnpm test`,
+`npx fallow audit`). Look in the issue's `notes` (description) and
+`comments` for explicit verification steps: manual QA flows, specific
+URLs/screens to check, behaviors to observe, data to inspect, etc.
+
+The verification doesn't need a specific format — a heading like
+`## Verification`, a comment starting with "Verify by:", an
+"Acceptance criteria" list, or any clearly demarcated set of concrete
+steps all qualify. Vague text like "make sure it works" or a bare ticket
+title does NOT qualify.
+
+For every issue WITHOUT acceptable verification steps, run:
+
+```
+sandcastle-asana move <id> --section "$ASANA_ON_HOLD_SECTION_ID" \
+  --comment "Moved to On Hold: missing verification criteria. Add a section to the description (or post a comment) describing how to verify this task is complete — manual QA steps, URLs to check, behaviors to confirm, etc. Then move it back to Backlog."
+```
+
+Then **exclude that issue from the dependency graph and selection
+below.** Only issues that pass this gate are eligible.
+
+If no issues remain after the gate, emit an empty plan (see OUTPUT).
+
 # TASK
 
-Analyze the open issues and build a dependency graph. For each issue, determine whether it **blocks** or **is blocked by** any other open issue.
+Analyze the remaining issues and build a dependency graph. For each issue, determine whether it **blocks** or **is blocked by** any other open issue.
 
 An issue B is **blocked by** issue A if:
 
