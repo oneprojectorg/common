@@ -63,6 +63,12 @@ Before signaling the task complete:
 - `pnpm typecheck`
 - `pnpm test`
 - `npx fallow audit --format json` (verdict must be `pass`)
+- **Task-specific verification** — walk through every verification step
+  named in the Asana task's description and comments (from the
+  `sandcastle-asana view` output above). For each step, execute it (run
+  the URL, walk the flow, inspect the data, etc.) and confirm the
+  observed behavior matches what's expected. The reviewer will re-run
+  these independently — don't sign off if any are failing.
 
 If any check fails, fix and re-run before continuing.
 

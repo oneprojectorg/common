@@ -50,6 +50,19 @@ are still red.
 
 If any check fails, fix and re-run before continuing.
 
+## Task verification criteria
+
+Every Asana task picked up by an agent MUST specify task-specific
+verification steps in its description or comments — beyond the standard
+quality gates above. Examples: a URL to test, a flow to walk through,
+data to confirm, a screen to inspect, an output to diff against expected.
+
+A task without verification criteria is moved to **On Hold** by the
+planner and skipped. To unblock it, add the criteria and move it back
+to Backlog. "Make sure it works" or a bare title does not qualify —
+verification must be concrete enough that a reviewer can actually
+execute it.
+
 ## Branching & Git
 
 - **NEVER branch off of `main`.** All new branches must be created off of `dev` or an existing feature branch.

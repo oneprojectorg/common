@@ -1,6 +1,13 @@
 # TASK
 
-Review the code changes on branch `{{BRANCH}}` and improve code clarity, consistency, and maintainability while preserving exact functionality.
+Review the code changes on branch `{{BRANCH}}` for issue {{TASK_ID}}: {{ISSUE_TITLE}}.
+
+You have two responsibilities, in this order:
+
+1. **QA**: independently verify the change satisfies the task's verification criteria.
+2. **Refine**: improve code clarity, consistency, and maintainability while preserving exact functionality.
+
+If QA fails, fix it or escalate via an Asana comment — do NOT proceed to the refine pass and do NOT emit `<promise>COMPLETE</promise>`.
 
 # CONTEXT
 
@@ -11,6 +18,44 @@ Review the code changes on branch `{{BRANCH}}` and improve code clarity, consist
 ## Commits on this branch
 
 !`git log {{SOURCE_BRANCH}}..{{BRANCH}} --oneline`
+
+# VERIFICATION
+
+Before refining the code, confirm the change actually does what the task
+asked for. The implementer self-checked these — your job is to verify
+independently. Don't accept the implementer's word; re-run everything.
+
+1. Pull the task (and any parent PRD) for the verification criteria:
+
+   `sandcastle-asana view {{TASK_ID}}`
+
+2. Re-run the standard gates from scratch:
+
+   - `pnpm typecheck`
+   - `pnpm test`
+   - `npx fallow audit --format json` (verdict must be `pass`)
+
+3. Walk through every task-specific verification step named in the task's
+   description and comments. For each step, execute it (open the URL,
+   walk the flow, query the data, diff the output) and confirm the
+   observed behavior matches what's expected.
+
+   For UI/web flows, bring up the dev environment with `pnpm docker:dev`
+   and drive the browser with the Playwright MCP tools
+   (`mcp__playwright__browser_navigate`, `browser_click`,
+   `browser_snapshot`, `browser_console_messages`, etc.). Capture a
+   `browser_take_screenshot` for any visual criterion so the trail is in
+   the log.
+
+4. If any check fails:
+
+   - If you can fix it on this branch, do so and commit the fix.
+   - If you can't (out of scope, unclear, blocked), post a comment on the
+     Asana task via `sandcastle-asana comment {{TASK_ID}} ...` describing
+     what failed, and stop. Do NOT output `<promise>COMPLETE</promise>`
+     in that case — ship must not run on a broken change.
+
+Only continue to the code-cleanup pass below once every gate is green.
 
 # REVIEW PROCESS
 
