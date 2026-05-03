@@ -637,6 +637,8 @@
   "Only invited members can view and participate in this process": "Solo los miembros invitados pueden ver y participar en este proceso",
   "Open for learning": "Abierto para aprender",
   "Anyone on Common can view this process. Only invited participants can submit.": "Cualquiera en Common puede ver este proceso. Solo los participantes invitados pueden enviar.",
+  "Hide proposals by default": "Ocultar propuestas por defecto",
+  "New proposals are hidden from other participants until an admin makes them visible.": "Las nuevas propuestas están ocultas para otros participantes hasta que un administrador las haga visibles.",
   "Process Overview": "Resumen del proceso",
   "Organize proposals into categories": "Organizar propuestas en categorías",
   "Group proposals into categories for better organization and evaluation.": "Agrupar propuestas en categorías para una mejor organización y evaluación.",

@@ -1,6 +1,11 @@
 import { getTipTapClient } from '@op/collab';
 import { db, eq } from '@op/db/client';
-import { type ProcessInstance, ProposalStatus, proposals } from '@op/db/schema';
+import {
+  type ProcessInstance,
+  ProposalStatus,
+  Visibility,
+  proposals,
+} from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
@@ -119,6 +124,8 @@ export const submitProposal = async ({
       return null;
     });
 
+  const defaultHidden = instanceData.config?.defaultProposalsHidden === true;
+
   // Update proposal status to submitted and re-query with profile
   const updatedProposal = await db.transaction(async (tx) => {
     const proposalDataUpdate =
@@ -133,6 +140,7 @@ export const submitProposal = async ({
       .update(proposals)
       .set({
         status: ProposalStatus.SUBMITTED,
+        ...(defaultHidden ? { visibility: Visibility.HIDDEN } : {}),
         ...(proposalDataUpdate ? { proposalData: proposalDataUpdate } : {}),
       })
       .where(eq(proposals.id, data.proposalId))

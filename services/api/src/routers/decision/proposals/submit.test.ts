@@ -1,5 +1,10 @@
 import { mockCollab } from '@op/collab/testing';
-import { ProposalStatus, processInstances, proposals } from '@op/db/schema';
+import {
+  ProposalStatus,
+  Visibility,
+  processInstances,
+  proposals,
+} from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import { describe, expect, it } from 'vitest';
 
@@ -788,5 +793,240 @@ describe.concurrent('submitProposal', () => {
     });
 
     expect(result.status).toBe(ProposalStatus.SUBMITTED);
+  });
+});
+
+describe.concurrent('submitProposal defaultProposalsHidden', () => {
+  it('should set visibility to HIDDEN when defaultProposalsHidden config is enabled', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      processSchema: {
+        id: 'hidden-default-schema',
+        version: '1.0.0',
+        name: 'Hidden Default Schema',
+        config: { defaultProposalsHidden: true },
+        phases: [
+          {
+            id: 'initial',
+            name: 'Initial Phase',
+            rules: {
+              proposals: { submit: true },
+              voting: { submit: false },
+              advancement: { method: 'manual' as const },
+            },
+          },
+          {
+            id: 'final',
+            name: 'Final Phase',
+            rules: {
+              proposals: { submit: false },
+              voting: { submit: false },
+              advancement: { method: 'manual' as const },
+            },
+          },
+        ],
+      },
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Auto-Hidden Proposal' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitProposal({
+      proposalId: proposal.id,
+    });
+
+    expect(result.status).toBe(ProposalStatus.SUBMITTED);
+    expect(result.visibility).toBe(Visibility.HIDDEN);
+  });
+
+  it('should keep visibility as VISIBLE when defaultProposalsHidden is not set', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Normal Proposal' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitProposal({
+      proposalId: proposal.id,
+    });
+
+    expect(result.status).toBe(ProposalStatus.SUBMITTED);
+    expect(result.visibility).toBe(Visibility.VISIBLE);
+  });
+
+  it('should allow admin to see hidden-by-default proposals and non-admin to not see them', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      processSchema: {
+        id: 'hidden-default-schema',
+        version: '1.0.0',
+        name: 'Hidden Default Schema',
+        config: { defaultProposalsHidden: true },
+        phases: [
+          {
+            id: 'initial',
+            name: 'Initial Phase',
+            rules: {
+              proposals: { submit: true },
+              voting: { submit: false },
+              advancement: { method: 'manual' as const },
+            },
+          },
+          {
+            id: 'final',
+            name: 'Final Phase',
+            rules: {
+              proposals: { submit: false },
+              voting: { submit: false },
+              advancement: { method: 'manual' as const },
+            },
+          },
+        ],
+      },
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Hidden By Default' },
+    });
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+
+    await adminCaller.decision.submitProposal({
+      proposalId: proposal.id,
+    });
+
+    // Admin should see the proposal
+    const adminResult = await adminCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+    expect(adminResult.proposals).toHaveLength(1);
+    expect(adminResult.proposals[0]?.visibility).toBe(Visibility.HIDDEN);
+
+    // Non-admin should NOT see the hidden-by-default proposal
+    const memberUser = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const memberCaller = await createAuthenticatedCaller(memberUser.email);
+
+    const memberResult = await memberCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+    expect(memberResult.proposals).toHaveLength(0);
+  });
+
+  it('should allow proposal owner to see their own hidden-by-default proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      processSchema: {
+        id: 'hidden-default-schema',
+        version: '1.0.0',
+        name: 'Hidden Default Schema',
+        config: { defaultProposalsHidden: true },
+        phases: [
+          {
+            id: 'initial',
+            name: 'Initial Phase',
+            rules: {
+              proposals: { submit: true },
+              voting: { submit: false },
+              advancement: { method: 'manual' as const },
+            },
+          },
+          {
+            id: 'final',
+            name: 'Final Phase',
+            rules: {
+              proposals: { submit: false },
+              voting: { submit: false },
+              advancement: { method: 'manual' as const },
+            },
+          },
+        ],
+      },
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Create a member who submits a proposal
+    const submitter = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: submitter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'My Hidden Proposal' },
+    });
+
+    const submitterCaller = await createAuthenticatedCaller(submitter.email);
+
+    await submitterCaller.decision.submitProposal({
+      proposalId: proposal.id,
+    });
+
+    // Submitter should still see their own hidden proposal
+    const result = await submitterCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+    expect(result.proposals).toHaveLength(1);
+    expect(result.proposals[0]?.visibility).toBe(Visibility.HIDDEN);
   });
 });

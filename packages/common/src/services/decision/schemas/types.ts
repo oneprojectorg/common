@@ -73,6 +73,7 @@ export interface ProcessConfig {
   organizeByCategories?: boolean;
   requireCollaborativeProposals?: boolean;
   isPrivate?: boolean;
+  defaultProposalsHidden?: boolean;
   reviewsPolicy?: ReviewsPolicy;
   reviewsAllowRevisions?: boolean;
   reviewsAnonymousFeedback?: boolean;

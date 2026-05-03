@@ -639,6 +639,8 @@
   "Only invited members can view and participate in this process": "শুধুমাত্র আমন্ত্রিত সদস্যরা এই প্রক্রিয়া দেখতে এবং অংশগ্রহণ করতে পারেন",
   "Open for learning": "শেখার জন্য খোলা",
   "Anyone on Common can view this process. Only invited participants can submit.": "Common-এ যে কেউ এই প্রক্রিয়াটি দেখতে পারে। শুধুমাত্র আমন্ত্রিত অংশগ্রহণকারীরা জমা দিতে পারে।",
+  "Hide proposals by default": "ডিফল্টভাবে প্রস্তাব লুকান",
+  "New proposals are hidden from other participants until an admin makes them visible.": "নতুন প্রস্তাবগুলি অন্য অংশগ্রহণকারীদের কাছ থেকে লুকানো থাকে যতক্ষণ না একজন প্রশাসক সেগুলি দৃশ্যমান করেন।",
   "Process Overview": "প্রক্রিয়া সংক্ষেপ",
   "Organize proposals into categories": "প্রস্তাবগুলি বিভাগে সংগঠিত করুন",
   "Group proposals into categories for better organization and evaluation.": "ভালো সংগঠন এবং মূল্যায়নের জন্য প্রস্তাবগুলি বিভাগে গোষ্ঠীবদ্ধ করুন।",

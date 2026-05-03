@@ -639,6 +639,8 @@
   "Only invited members can view and participate in this process": "Only invited members can view and participate in this process",
   "Open for learning": "Open for learning",
   "Anyone on Common can view this process. Only invited participants can submit.": "Anyone on Common can view this process. Only invited participants can submit.",
+  "Hide proposals by default": "Hide proposals by default",
+  "New proposals are hidden from other participants until an admin makes them visible.": "New proposals are hidden from other participants until an admin makes them visible.",
   "Process Overview": "Process Overview",
   "Organize proposals into categories": "Organize proposals into categories",
   "Group proposals into categories for better organization and evaluation.": "Group proposals into categories for better organization and evaluation.",
