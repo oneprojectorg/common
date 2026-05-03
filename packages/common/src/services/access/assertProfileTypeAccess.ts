@@ -4,6 +4,7 @@ import type { AccessZonePermission, NormalizedRole } from 'access-zones';
 import { assertAccess, permission } from 'access-zones';
 import { inArray } from 'drizzle-orm';
 
+import { UnauthorizedError } from '../../utils/error';
 import { type RoleJunction, getNormalizedRoles } from './utils';
 
 // Per-profile-type permission policy. Omitting a type from the record means
@@ -29,14 +30,19 @@ export const assertProfileTypeAccess = async ({
   profileIds,
   policies,
 }: AssertProfileTypeAccessOptions) => {
-  if (profileIds.length === 0) {
+  const uniqueProfileIds = [...new Set(profileIds)];
+  if (uniqueProfileIds.length === 0) {
     return;
   }
 
   const profileRows = await db
     .select({ id: profiles.id, type: profiles.type })
     .from(profiles)
-    .where(inArray(profiles.id, profileIds));
+    .where(inArray(profiles.id, uniqueProfileIds));
+
+  if (profileRows.length !== uniqueProfileIds.length) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
 
   const gatedRows = profileRows.flatMap((row) => {
     const requiredPermission = policies[row.type as EntityType];
