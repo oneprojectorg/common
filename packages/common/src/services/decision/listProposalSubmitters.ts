@@ -13,11 +13,7 @@ import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
-import {
-  getActiveNonDraftIdsForInstance,
-  getProposalIdsForPhase,
-} from './getProposalsForPhase';
-import { isLegacyInstanceData } from './isLegacyInstance';
+import { getProposalIdsForPhase } from './getProposalsForPhase';
 
 export interface ListProposalSubmittersInput {
   processInstanceId: string;
@@ -61,15 +57,7 @@ export const listProposalSubmitters = async ({
     orgFallbackPermissions: { decisions: permission.READ },
   });
 
-  const phaseProposalIds =
-    isLegacyInstanceData(instance.instanceData) || !instance.currentStateId
-      ? await getActiveNonDraftIdsForInstance({
-          instanceId: processInstanceId,
-        })
-      : await getProposalIdsForPhase({
-          instance,
-          phaseId: instance.currentStateId,
-        });
+  const phaseProposalIds = await getProposalIdsForPhase({ instance });
 
   if (phaseProposalIds.length === 0) {
     return { submitters: [] };

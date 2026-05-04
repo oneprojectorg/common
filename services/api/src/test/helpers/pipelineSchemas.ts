@@ -68,3 +68,17 @@ export const schemaWithoutPipeline = {
     { id: 'review', name: 'Review', rules: {} },
   ],
 };
+
+/**
+ * Three-phase schema without any selectionPipeline. Lets a middle phase have
+ * both inbound and outbound transitions so tests can exercise drafts created
+ * strictly inside a bounded phase window.
+ */
+export const schemaWithThreePhases = {
+  ...schemaWithPipeline,
+  phases: [
+    { id: 'submission', name: 'Submission', rules: {} },
+    { id: 'review', name: 'Review', rules: {} },
+    { id: 'final', name: 'Final', rules: {} },
+  ],
+};

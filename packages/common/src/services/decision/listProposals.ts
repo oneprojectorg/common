@@ -35,11 +35,9 @@ import {
 } from '../access';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import {
-  getActiveNonDraftIdsForInstance,
   getPhaseProposalAndDraftIds,
   getProposalIdsForPhase,
 } from './getProposalsForPhase';
-import { isLegacyInstanceData } from './isLegacyInstance';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 
@@ -216,20 +214,13 @@ export const listProposals = async ({
     }
     if (skipAccessCheck) {
       // Trusted contexts (background jobs) never surface drafts, so only
-      // resolve the non-draft phase set. Legacy instances (and instances
-      // without a current phase) skip phase scoping and return all active
-      // non-drafts.
-      const resolvedPhaseId = isLegacyInstanceData(instance.instanceData)
-        ? undefined
-        : (input.phaseId ?? instance.currentStateId);
-      const ids = resolvedPhaseId
-        ? await getProposalIdsForPhase({
-            instance,
-            phaseId: resolvedPhaseId,
-          })
-        : await getActiveNonDraftIdsForInstance({
-            instanceId: processInstanceId,
-          });
+      // resolve the non-draft phase set. Legacy instances and instances
+      // without a current phase fall back to all active non-drafts inside
+      // `getProposalIdsForPhase`.
+      const ids = await getProposalIdsForPhase({
+        instance,
+        phaseId: input.phaseId,
+      });
       return { phaseProposalIds: ids, phaseDraftIds: [] };
     }
     const ids = await getPhaseProposalAndDraftIds({

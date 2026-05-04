@@ -17,6 +17,7 @@ import { transformFormDataToProcessSchema as cowopSchema } from '../../../../../
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   schemaWithPipeline,
+  schemaWithThreePhases,
   schemaWithoutPipeline,
 } from '../../../test/helpers/pipelineSchemas';
 import {
@@ -2073,6 +2074,68 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       phaseId: 'submission',
     });
     expect(submissionResult.proposals.map((p) => p.id)).not.toContain(draft.id);
+
+    const reviewResult = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      phaseId: 'review',
+    });
+    expect(reviewResult.proposals.map((p) => p.id)).toContain(draft.id);
+  });
+
+  it('hides a draft created mid-phase from views of earlier and later phases (strict bounded window)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithThreePhases,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const { userEmail } = setup;
+    const caller = await createAuthenticatedCaller(userEmail);
+
+    // Advance into the middle phase so the draft is created strictly after
+    // review's inbound transition (not at the boundary).
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+
+    const draft = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Mid-phase draft ${task.id}` },
+    });
+
+    // Visible from the current (review) phase view.
+    const reviewWhileCurrent = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      phaseId: 'review',
+    });
+    expect(reviewWhileCurrent.proposals.map((p) => p.id)).toContain(draft.id);
+
+    // Advance past review so it now has both inbound and outbound transitions —
+    // the draft sits strictly inside review's bounded window.
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'review',
+      toPhaseId: 'final',
+    });
+
+    const submissionResult = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      phaseId: 'submission',
+    });
+    expect(submissionResult.proposals.map((p) => p.id)).not.toContain(draft.id);
+
+    const finalResult = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      phaseId: 'final',
+    });
+    expect(finalResult.proposals.map((p) => p.id)).not.toContain(draft.id);
 
     const reviewResult = await caller.decision.listProposals({
       processInstanceId: instanceId,
