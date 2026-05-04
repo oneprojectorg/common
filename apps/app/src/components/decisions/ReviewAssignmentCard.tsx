@@ -1,8 +1,13 @@
-import type {
-  ProposalReviewAssignment,
-  ReviewAssignmentExtended,
+import {
+  ProposalReviewAssignmentStatus,
+  type ProposalReviewAggregates,
+  type ProposalReviewAssignment,
+  type ReviewAssignmentExtended,
 } from '@op/common/client';
+import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { cn } from '@op/ui/utils';
+import { useRef } from 'react';
+import { useFocusable } from 'react-aria';
 import {
   LuCircleAlert,
   LuCircleCheck,
@@ -12,6 +17,7 @@ import {
 } from 'react-icons/lu';
 
 import type { TranslationKey } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
 import { TranslatedText } from '@/components/TranslatedText';
 
@@ -27,14 +33,18 @@ import {
 
 type AssignmentStatus = ProposalReviewAssignment['status'];
 
+type Reviewers = ProposalReviewAggregates['reviewers'];
+
 interface ReviewAssignmentCardProps {
   assignment: ReviewAssignmentExtended;
   viewHref?: string;
+  reviewers?: Reviewers;
 }
 
 export function ReviewAssignmentCard({
   assignment: { assignment },
   viewHref,
+  reviewers,
 }: ReviewAssignmentCardProps) {
   const { proposal, status } = assignment;
   const isRevised = status === 'ready_for_re_review';
@@ -60,8 +70,50 @@ export function ReviewAssignmentCard({
         </div>
         <ProposalCardPreview proposal={proposal} className="line-clamp-2" />
       </ProposalCardContent>
-      <ReviewStatusBadge status={status} />
+      <div className="flex items-center justify-between gap-2">
+        <ReviewStatusBadge status={status} />
+        {reviewers ? <ReviewersTooltip reviewers={reviewers} /> : null}
+      </div>
     </ProposalCard>
+  );
+}
+
+function ReviewersTooltip({ reviewers }: { reviewers: Reviewers }) {
+  const t = useTranslations();
+
+  const completedReviewers = reviewers.filter(
+    (r) => r.status === ProposalReviewAssignmentStatus.COMPLETED,
+  );
+
+  if (completedReviewers.length === 0) {
+    return null;
+  }
+
+  const names = completedReviewers.map((r) => r.profile.name).join(', ');
+
+  return (
+    <TooltipTrigger>
+      <FocusableSpan className="text-neutral-gray4 underline decoration-dotted underline-offset-2">
+        {t('{count} Reviewed', { count: completedReviewers.length })}
+      </FocusableSpan>
+      <Tooltip>{names}</Tooltip>
+    </TooltipTrigger>
+  );
+}
+
+function FocusableSpan({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const { focusableProps } = useFocusable({}, ref);
+  return (
+    <span {...focusableProps} ref={ref} tabIndex={0} className={className}>
+      {children}
+    </span>
   );
 }
 
