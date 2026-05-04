@@ -1190,6 +1190,8 @@
   "Publish": "Publish",
   "Advance": "Advance",
   "Advancing": "Advancing",
+  "Advance proposal": "Advance proposal",
+  "Advancing proposal": "Advancing proposal",
   "Confirm decisions": "Confirm decisions",
   "{count} proposals advancing": "{count, plural, one {# proposal advancing} other {# proposals advancing}}",
   "Eligible proposals": "Eligible proposals",
@@ -1214,5 +1216,11 @@
   "Score ({pts}pts)": "Score ({pts}pts)",
   "{pts} pts": "{pts} pts",
   "No proposals to review yet": "No proposals to review yet",
-  "Proposals will appear here once they are submitted.": "Proposals will appear here once they are submitted."
+  "Proposals will appear here once they are submitted.": "Proposals will appear here once they are submitted.",
+  "Review Summary": "Review Summary",
+  "Average Score": "Average Score",
+  "Submitted Reviews": "Submitted Reviews",
+  "Back to all reviewers": "Back to all reviewers",
+  "{submitted} out of {total} reviewers submitted a review for this proposal": "{submitted} out of {total} reviewers submitted a review for this proposal",
+  "View review by {name}": "View review by {name}"
 }

@@ -3,10 +3,11 @@
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { useState } from 'react';
-import { LuArrowLeft, LuCheck } from 'react-icons/lu';
+import { LuCheck } from 'react-icons/lu';
 
-import { Link, useTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
+import { DecisionSubpageHeader } from '../DecisionSubpageHeader';
 import { RequestRevisionModal } from './RequestRevisionModal';
 import { useReviewForm } from './ReviewFormContext';
 
@@ -28,14 +29,10 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between border-b bg-white px-6 md:px-8">
-        <Link
-          href={`/decisions/${decisionSlug}`}
-          className="flex items-center gap-2 text-base text-primary-teal"
-        >
-          <LuArrowLeft className="size-4" />
-          {t('Back to proposals')}
-        </Link>
+      <DecisionSubpageHeader
+        backHref={`/decisions/${decisionSlug}`}
+        backLabel={t('Back to proposals')}
+      >
         <div className="flex items-center gap-4">
           {canRequestRevision && (
             <Button
@@ -61,7 +58,7 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
             {t('Submit review')}
           </Button>
         </div>
-      </header>
+      </DecisionSubpageHeader>
 
       <RequestRevisionModal
         isOpen={isRequestModalOpen}

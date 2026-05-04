@@ -312,6 +312,24 @@ export function schemaHasOptions(
   return parseSchemaOptions(schema).length > 0;
 }
 
+/**
+ * Find the option in a JSON Schema property whose `value` matches the given
+ * stored value. Stringifies both sides so callers don't have to worry about
+ * `string` vs `number` consts in `oneOf`.
+ */
+export function findSchemaOption(
+  schema: XFormatPropertySchema | null | undefined,
+  value: unknown,
+): SchemaOption | undefined {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+  const stringified = String(value);
+  return parseSchemaOptions(schema).find(
+    (option) => String(option.value) === stringified,
+  );
+}
+
 export function schemaAllowsMultipleSelection(
   schema: XFormatPropertySchema | null | undefined,
 ): boolean {
