@@ -25,48 +25,28 @@ import {
 
 import { isLegacyInstanceData } from './isLegacyInstance';
 
-export type InstanceContext = {
-  isLegacy: boolean;
-  currentPhaseId?: string | null;
-};
-
 /**
- * Derives an `InstanceContext` from a `processInstances` row. Use this when
- * the caller has already fetched the row and wants to pass context into the
- * phase resolvers without triggering a duplicate read.
+ * Minimal `processInstances` row shape required by the phase resolvers.
+ * Callers must pre-fetch these fields rather than passing only an ID — this
+ * forces them to make better decisions about data fetching (typically the
+ * row is already loaded for access checks).
  */
-export function deriveInstanceContext(row: {
+export type PhaseScopedInstance = {
+  id: string;
   instanceData: unknown;
   currentStateId: string | null;
-}): InstanceContext {
+};
+
+type InstanceContext = {
+  isLegacy: boolean;
+  currentPhaseId: string | null;
+};
+
+function deriveInstanceContext(instance: PhaseScopedInstance): InstanceContext {
   return {
-    isLegacy: isLegacyInstanceData(row.instanceData),
-    currentPhaseId: row.currentStateId,
+    isLegacy: isLegacyInstanceData(instance.instanceData),
+    currentPhaseId: instance.currentStateId,
   };
-}
-
-/**
- * Loads the instance's legacy/current-phase context in a single query.
- * Returns null if the instance does not exist.
- */
-async function getInstanceContext(
-  instanceId: string,
-  db: DbClient,
-): Promise<InstanceContext | null> {
-  const [row] = await db
-    .select({
-      instanceData: processInstances.instanceData,
-      currentStateId: processInstances.currentStateId,
-    })
-    .from(processInstances)
-    .where(eq(processInstances.id, instanceId))
-    .limit(1);
-
-  if (!row) {
-    return null;
-  }
-
-  return deriveInstanceContext(row);
 }
 
 type PhaseWindow =
@@ -262,56 +242,47 @@ export async function getActiveNonDraftIdsForInstance({
  * `[inboundAt, outboundAt)` window since drafts have no attachment branch.
  *
  * Legacy instances and instances without a current phase are NOT handled
- * here — callers must check `instanceContext.isLegacy` / `currentPhaseId`
- * upstream and use `getActiveNonDraftIdsForInstance` for those cases.
+ * here — callers must check the instance row upstream (e.g. via
+ * `isLegacyInstanceData`) and use `getActiveNonDraftIdsForInstance` for
+ * those cases.
  *
  * Returns [] for an unreached phase (a phase the instance hasn't entered).
  */
 export async function getProposalIdsForPhase({
-  instanceId,
+  instance,
   phaseId,
-  instanceContext,
   db = defaultDb,
 }: {
-  instanceId: string;
+  instance: PhaseScopedInstance;
   phaseId: string;
-  /**
-   * Pre-derived instance context. Pass this when the caller has already
-   * fetched the `processInstances` row to avoid a duplicate read. When
-   * omitted, the function performs its own lookup.
-   */
-  instanceContext?: InstanceContext;
   db?: DbClient;
 }): Promise<string[]> {
-  const ctx = instanceContext ?? (await getInstanceContext(instanceId, db));
-
-  if (!ctx) {
-    return [];
-  }
+  const ctx = deriveInstanceContext(instance);
+  const instanceId = instance.id;
 
   const nonDraftPredicate = ne(proposals.status, ProposalStatus.DRAFT);
 
-  const window = await resolvePhaseWindow(
+  const phaseWindow = await resolvePhaseWindow(
     instanceId,
     phaseId,
     ctx.currentPhaseId,
     db,
   );
 
-  if (window.kind === 'unreached') {
+  if (phaseWindow.kind === 'unreached') {
     return [];
   }
 
   const [proposalIdsAttachedToPhase, nonDraftProposalIdsCreatedInPhase] =
     await Promise.all([
-      window.inbound
-        ? attachmentIdsFor(window.inbound.id, db)
+      phaseWindow.inbound
+        ? attachmentIdsFor(phaseWindow.inbound.id, db)
         : Promise.resolve<string[]>([]),
       getIdsCreatedDuringWindow({
         instanceId,
         predicate: nonDraftPredicate,
-        inboundAt: window.inbound?.transitionedAt,
-        outboundAt: window.outboundTransitionedAt,
+        inboundAt: phaseWindow.inbound?.transitionedAt,
+        outboundAt: phaseWindow.outboundTransitionedAt,
         inboundComparator: 'gt',
         db,
       }),
@@ -327,10 +298,10 @@ export async function getProposalIdsForPhase({
 
 /**
  * Returns both the non-draft and draft IDs visible in a phase for an
- * authenticated caller, sharing a single instance-context lookup and phase
- * window resolution. Use this from `listProposals` (which needs both sets)
- * instead of calling the standalone resolvers separately, which would issue
- * duplicate `processInstances` and `stateTransitionHistory` reads.
+ * authenticated caller, sharing a single phase-window resolution across
+ * both queries. Use this from `listProposals` (which needs both sets)
+ * instead of calling the standalone resolvers separately, which would
+ * issue duplicate `stateTransitionHistory` reads.
  *
  * Non-drafts are scoped via attachment snapshots + a strict `(inboundAt,
  * outboundAt)` window. Drafts use a half-open `[inboundAt, outboundAt)` window
@@ -345,27 +316,18 @@ export async function getProposalIdsForPhase({
  * - Unreached phase: returns empty arrays for both.
  */
 export async function getPhaseProposalAndDraftIds({
-  instanceId,
+  instance,
   phaseId,
   authUserId,
-  instanceContext,
   db = defaultDb,
 }: {
-  instanceId: string;
+  instance: PhaseScopedInstance;
   phaseId?: string;
   authUserId: string;
-  /**
-   * Pre-derived instance context. Pass this when the caller has already
-   * fetched the `processInstances` row to avoid a duplicate read.
-   */
-  instanceContext?: InstanceContext;
   db?: DbClient;
 }): Promise<{ nonDraftIds: string[]; draftIds: string[] }> {
-  const ctx = instanceContext ?? (await getInstanceContext(instanceId, db));
-
-  if (!ctx) {
-    return { nonDraftIds: [], draftIds: [] };
-  }
+  const ctx = deriveInstanceContext(instance);
+  const instanceId = instance.id;
 
   const nonDraftPredicate = ne(proposals.status, ProposalStatus.DRAFT);
   const draftAccessPredicate = and(
@@ -399,14 +361,14 @@ export async function getPhaseProposalAndDraftIds({
     return { nonDraftIds, draftIds };
   }
 
-  const window = await resolvePhaseWindow(
+  const phaseWindow = await resolvePhaseWindow(
     instanceId,
     resolvedPhaseId,
     ctx.currentPhaseId,
     db,
   );
 
-  if (window.kind === 'unreached') {
+  if (phaseWindow.kind === 'unreached') {
     return { nonDraftIds: [], draftIds: [] };
   }
 
@@ -415,22 +377,22 @@ export async function getPhaseProposalAndDraftIds({
     nonDraftProposalIdsCreatedInPhase,
     draftProposalIdsCreatedInPhase,
   ] = await Promise.all([
-    window.inbound
-      ? attachmentIdsFor(window.inbound.id, db)
+    phaseWindow.inbound
+      ? attachmentIdsFor(phaseWindow.inbound.id, db)
       : Promise.resolve<string[]>([]),
     getIdsCreatedDuringWindow({
       instanceId,
       predicate: nonDraftPredicate,
-      inboundAt: window.inbound?.transitionedAt,
-      outboundAt: window.outboundTransitionedAt,
+      inboundAt: phaseWindow.inbound?.transitionedAt,
+      outboundAt: phaseWindow.outboundTransitionedAt,
       inboundComparator: 'gt',
       db,
     }),
     getIdsCreatedDuringWindow({
       instanceId,
       predicate: draftAccessPredicate,
-      inboundAt: window.inbound?.transitionedAt,
-      outboundAt: window.outboundTransitionedAt,
+      inboundAt: phaseWindow.inbound?.transitionedAt,
+      outboundAt: phaseWindow.outboundTransitionedAt,
       inboundComparator: 'gte',
       db,
     }),
@@ -462,20 +424,29 @@ export async function getProposalsForPhase({
   phaseId?: string;
   db?: DbClient;
 }): Promise<Proposal[]> {
-  const ctx = await getInstanceContext(instanceId, db);
-  if (!ctx) {
+  const [instance] = await db
+    .select({
+      id: processInstances.id,
+      instanceData: processInstances.instanceData,
+      currentStateId: processInstances.currentStateId,
+    })
+    .from(processInstances)
+    .where(eq(processInstances.id, instanceId))
+    .limit(1);
+
+  if (!instance) {
     return [];
   }
 
+  const ctx = deriveInstanceContext(instance);
   const resolvedPhaseId = ctx.isLegacy
     ? undefined
     : (phaseId ?? ctx.currentPhaseId);
 
   const ids = resolvedPhaseId
     ? await getProposalIdsForPhase({
-        instanceId,
+        instance,
         phaseId: resolvedPhaseId,
-        instanceContext: ctx,
         db,
       })
     : await getActiveNonDraftIdsForInstance({ instanceId, db });

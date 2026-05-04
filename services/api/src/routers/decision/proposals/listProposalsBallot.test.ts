@@ -1,5 +1,6 @@
 import { db } from '@op/db/client';
 import {
+  ProposalStatus,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
 } from '@op/db/schema';
@@ -203,9 +204,7 @@ describe.concurrent('listProposals: votedByProfileId (ballot filter)', () => {
       userEmail: voter.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: `Submitted ${task.id}` },
-    });
-    await voterCaller.decision.submitProposal({
-      proposalId: submittedProposal.id,
+      status: ProposalStatus.SUBMITTED,
     });
 
     const draftProposal = await testData.createProposal({

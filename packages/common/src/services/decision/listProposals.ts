@@ -35,11 +35,11 @@ import {
 } from '../access';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import {
-  deriveInstanceContext,
   getActiveNonDraftIdsForInstance,
   getPhaseProposalAndDraftIds,
   getProposalIdsForPhase,
 } from './getProposalsForPhase';
+import { isLegacyInstanceData } from './isLegacyInstance';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 
@@ -179,6 +179,7 @@ export const listProposals = async ({
   const [instanceRows, explicitScopeIds] = await Promise.all([
     db
       .select({
+        id: processInstances.id,
         profileId: processInstances.profileId,
         ownerProfileId: processInstances.ownerProfileId,
         instanceData: processInstances.instanceData,
@@ -196,8 +197,6 @@ export const listProposals = async ({
     throw new UnauthorizedError('User does not have access to this process');
   }
   const instanceProfileId = instance.profileId;
-
-  const instanceContext = deriveInstanceContext(instance);
 
   // Resolve phase-scoped IDs for non-drafts and drafts. Drafts are phase-scoped
   // via a `createdAt` window since they're never attached to transition
@@ -220,14 +219,13 @@ export const listProposals = async ({
       // resolve the non-draft phase set. Legacy instances (and instances
       // without a current phase) skip phase scoping and return all active
       // non-drafts.
-      const resolvedPhaseId = instanceContext.isLegacy
+      const resolvedPhaseId = isLegacyInstanceData(instance.instanceData)
         ? undefined
-        : (input.phaseId ?? instanceContext.currentPhaseId);
+        : (input.phaseId ?? instance.currentStateId);
       const ids = resolvedPhaseId
         ? await getProposalIdsForPhase({
-            instanceId: processInstanceId,
+            instance,
             phaseId: resolvedPhaseId,
-            instanceContext,
           })
         : await getActiveNonDraftIdsForInstance({
             instanceId: processInstanceId,
@@ -235,10 +233,9 @@ export const listProposals = async ({
       return { phaseProposalIds: ids, phaseDraftIds: [] };
     }
     const ids = await getPhaseProposalAndDraftIds({
-      instanceId: processInstanceId,
+      instance,
       phaseId: input.phaseId,
       authUserId: input.authUserId,
-      instanceContext,
     });
     return { phaseProposalIds: ids.nonDraftIds, phaseDraftIds: ids.draftIds };
   })();

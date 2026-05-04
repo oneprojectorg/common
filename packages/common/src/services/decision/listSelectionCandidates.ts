@@ -5,10 +5,7 @@ import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError } from '../../utils';
 import { getProfileAccessUser } from '../access';
-import {
-  deriveInstanceContext,
-  getProposalIdsForPhase,
-} from './getProposalsForPhase';
+import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import { listProposals } from './listProposals';
 import type { DecisionInstanceData } from './schemas/instanceData';
@@ -78,9 +75,8 @@ export async function listSelectionCandidates({
   }
 
   const phaseCandidateIds = await getProposalIdsForPhase({
-    instanceId: processInstanceId,
+    instance,
     phaseId: previousPhaseId,
-    instanceContext: deriveInstanceContext(instance),
     db,
   });
 

@@ -18,10 +18,7 @@ import {
 } from '../../utils';
 import { getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
-import {
-  deriveInstanceContext,
-  getProposalIdsForPhase,
-} from './getProposalsForPhase';
+import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import type {
@@ -189,9 +186,12 @@ export async function submitManualSelection({
 
     const candidateIds = new Set(
       await getProposalIdsForPhase({
-        instanceId: processInstanceId,
+        instance: {
+          id: processInstanceId,
+          instanceData: lockedInstance.instanceData,
+          currentStateId: lockedInstance.currentStateId,
+        },
         phaseId: previousPhaseId,
-        instanceContext: deriveInstanceContext(lockedInstance),
         db: tx,
       }),
     );

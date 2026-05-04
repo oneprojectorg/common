@@ -14,10 +14,10 @@ import { permission } from 'access-zones';
 import { UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import {
-  deriveInstanceContext,
   getActiveNonDraftIdsForInstance,
   getProposalIdsForPhase,
 } from './getProposalsForPhase';
+import { isLegacyInstanceData } from './isLegacyInstance';
 
 export interface ListProposalSubmittersInput {
   processInstanceId: string;
@@ -41,6 +41,7 @@ export const listProposalSubmitters = async ({
   const instance = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
     columns: {
+      id: true,
       profileId: true,
       ownerProfileId: true,
       instanceData: true,
@@ -60,16 +61,14 @@ export const listProposalSubmitters = async ({
     orgFallbackPermissions: { decisions: permission.READ },
   });
 
-  const instanceContext = deriveInstanceContext(instance);
   const phaseProposalIds =
-    instanceContext.isLegacy || !instanceContext.currentPhaseId
+    isLegacyInstanceData(instance.instanceData) || !instance.currentStateId
       ? await getActiveNonDraftIdsForInstance({
           instanceId: processInstanceId,
         })
       : await getProposalIdsForPhase({
-          instanceId: processInstanceId,
-          phaseId: instanceContext.currentPhaseId,
-          instanceContext,
+          instance,
+          phaseId: instance.currentStateId,
         });
 
   if (phaseProposalIds.length === 0) {
