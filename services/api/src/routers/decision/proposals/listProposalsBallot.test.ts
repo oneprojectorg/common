@@ -1,5 +1,6 @@
 import { db } from '@op/db/client';
 import {
+  ProposalStatus,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
 } from '@op/db/schema';
@@ -172,6 +173,61 @@ describe.concurrent('listProposals: votedByProfileId (ballot filter)', () => {
         votedByProfileId: voter.profileId,
       }),
     ).rejects.toThrowError(TRPCError);
+  });
+
+  it('does not leak the voter’s own drafts into ballot results', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const voter = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    const voterCaller = await createAuthenticatedCaller(voter.email);
+
+    // Voter creates one submitted proposal (which will be on the ballot) and
+    // one draft proposal (which must NOT appear in ballot results).
+    const submittedProposal = await testData.createProposal({
+      userEmail: voter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: `Submitted ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    const draftProposal = await testData.createProposal({
+      userEmail: voter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: `Draft (must not leak) ${task.id}` },
+    });
+
+    await seedBallot({
+      processInstanceId: instance.instance.id,
+      voterProfileId: voter.profileId,
+      proposalIds: [submittedProposal.id],
+    });
+
+    const result = await voterCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+      votedByProfileId: voter.profileId,
+    });
+
+    const ids = result.proposals.map((p) => p.id);
+    expect(ids).toContain(submittedProposal.id);
+    expect(ids).not.toContain(draftProposal.id);
+    expect(result.total).toBe(1);
   });
 
   it('rejects a decision admin trying to view another user’s ballot', async ({

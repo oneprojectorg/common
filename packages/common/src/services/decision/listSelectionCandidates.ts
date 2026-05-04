@@ -75,7 +75,7 @@ export async function listSelectionCandidates({
   }
 
   const phaseCandidateIds = await getProposalIdsForPhase({
-    instanceId: processInstanceId,
+    instance,
     phaseId: previousPhaseId,
     db,
   });

@@ -1,11 +1,13 @@
 import {
   type DbClient,
+  type SQL,
   and,
   asc,
   db as defaultDb,
   desc,
   eq,
   gt,
+  gte,
   inArray,
   isNull,
   lt,
@@ -16,6 +18,7 @@ import {
   ProposalStatus,
   decisionTransitionProposals,
   processInstances,
+  profileUsers,
   proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
@@ -23,29 +26,26 @@ import {
 import { isLegacyInstanceData } from './isLegacyInstance';
 
 /**
- * Loads the instance's legacy/current-phase context in a single query.
- * Returns null if the instance does not exist.
+ * Minimal `processInstances` row shape required by the phase resolvers.
+ * Callers must pre-fetch these fields rather than passing only an ID — this
+ * forces them to make better decisions about data fetching (typically the
+ * row is already loaded for access checks).
  */
-async function getInstanceContext(
-  instanceId: string,
-  db: DbClient,
-): Promise<{ isLegacy: boolean; currentPhaseId?: string | null } | null> {
-  const [row] = await db
-    .select({
-      instanceData: processInstances.instanceData,
-      currentStateId: processInstances.currentStateId,
-    })
-    .from(processInstances)
-    .where(eq(processInstances.id, instanceId))
-    .limit(1);
+export type PhaseScopedInstance = {
+  id: string;
+  instanceData: unknown;
+  currentStateId: string | null;
+};
 
-  if (!row) {
-    return null;
-  }
+type InstanceContext = {
+  isLegacy: boolean;
+  currentPhaseId: string | null;
+};
 
+function deriveInstanceContext(instance: PhaseScopedInstance): InstanceContext {
   return {
-    isLegacy: isLegacyInstanceData(row.instanceData),
-    currentPhaseId: row.currentStateId,
+    isLegacy: isLegacyInstanceData(instance.instanceData),
+    currentPhaseId: instance.currentStateId,
   };
 }
 
@@ -144,20 +144,37 @@ async function attachmentIdsFor(
   return rows.map((r) => r.id);
 }
 
-/** Proposal ids with `createdAt` strictly between the phase's transition-in and transition-out timestamps. */
-async function submittedDuringIds(
-  instanceId: string,
-  inboundAt: Date | undefined,
-  outboundAt: Date | undefined,
-  db: DbClient,
-): Promise<string[]> {
-  const conditions = [
+/**
+ * Proposal ids matching `predicate` whose `createdAt` falls inside the
+ * phase's transition window. The inbound comparator (`'gt'` or `'gte'`) lets
+ * callers choose strict or half-open semantics: non-drafts use `'gt'` because
+ * the inbound boundary is covered by attachment snapshots, while drafts use
+ * `'gte'` to ensure boundary timestamps land in exactly one phase. Callers
+ * compose multiple constraints into a single `predicate` via `and(...)`.
+ */
+async function getIdsCreatedDuringWindow({
+  instanceId,
+  predicate,
+  inboundAt,
+  outboundAt,
+  inboundComparator,
+  db,
+}: {
+  instanceId: string;
+  predicate: SQL | undefined;
+  inboundAt: Date | undefined;
+  outboundAt: Date | undefined;
+  inboundComparator: 'gt' | 'gte';
+  db: DbClient;
+}): Promise<string[]> {
+  const conditions: (SQL | undefined)[] = [
     eq(proposals.processInstanceId, instanceId),
-    ne(proposals.status, ProposalStatus.DRAFT),
+    predicate,
     isNull(proposals.deletedAt),
   ];
   if (inboundAt) {
-    conditions.push(gt(proposals.createdAt, inboundAt.toISOString()));
+    const comparator = inboundComparator === 'gte' ? gte : gt;
+    conditions.push(comparator(proposals.createdAt, inboundAt.toISOString()));
   }
   if (outboundAt) {
     conditions.push(lt(proposals.createdAt, outboundAt.toISOString()));
@@ -170,17 +187,22 @@ async function submittedDuringIds(
   return rows.map((r) => r.id);
 }
 
-async function allActiveIds(
-  instanceId: string,
-  db: DbClient,
-): Promise<string[]> {
+async function getActiveIdsByPredicate({
+  instanceId,
+  predicate,
+  db,
+}: {
+  instanceId: string;
+  predicate: SQL | undefined;
+  db: DbClient;
+}): Promise<string[]> {
   const rows = await db
     .select({ id: proposals.id })
     .from(proposals)
     .where(
       and(
         eq(proposals.processInstanceId, instanceId),
-        ne(proposals.status, ProposalStatus.DRAFT),
+        predicate,
         isNull(proposals.deletedAt),
       ),
     );
@@ -188,70 +210,218 @@ async function allActiveIds(
 }
 
 /**
- * Returns IDs of proposals visible in the given phase.
+ * Returns IDs of all active (non-deleted) non-draft proposals for an instance,
+ * ignoring phase scoping. Use this for legacy instances or when the caller
+ * has decided not to apply phase scoping (e.g. instance has no current phase).
+ */
+async function getActiveNonDraftIdsForInstance({
+  instanceId,
+  db = defaultDb,
+}: {
+  instanceId: string;
+  db?: DbClient;
+}): Promise<string[]> {
+  return getActiveIdsByPredicate({
+    instanceId,
+    predicate: ne(proposals.status, ProposalStatus.DRAFT),
+    db,
+  });
+}
+
+/**
+ * Returns IDs of non-draft proposals visible in the given phase.
  *
  * A proposal is in phase P iff it was attached to P's inbound transition
  * (survived the advance-in snapshot) OR it was submitted during P's window
  * (between advance-in and advance-out, or between advance-in and now for the
  * current phase).
  *
- * - Legacy instances (no phases array in instanceData): returns all active
- *   non-draft proposals; phase scoping does not apply.
- * - Unreached phase (phaseId refers to a phase the instance hasn't entered):
- *   returns [].
+ * Non-drafts use a strict `(inboundAt, outboundAt)` window because the inbound
+ * boundary is covered by attachment snapshots. For drafts, use the sibling
+ * `getPhaseProposalAndDraftIds`, which applies a half-open
+ * `[inboundAt, outboundAt)` window since drafts have no attachment branch.
+ *
+ * Legacy instances and instances without a resolvable phase (no `phaseId`
+ * passed and no `currentStateId` on the instance) skip phase scoping and
+ * return all active non-drafts. In particular, legacy instances bypass the
+ * unreached-phase check entirely — any `phaseId` is ignored.
+ *
+ * Returns [] for an unreached phase (a phase the instance hasn't entered)
+ * on non-legacy instances.
  */
 export async function getProposalIdsForPhase({
-  instanceId,
+  instance,
   phaseId,
   db = defaultDb,
 }: {
-  instanceId: string;
+  instance: PhaseScopedInstance;
   phaseId?: string;
   db?: DbClient;
 }): Promise<string[]> {
-  const ctx = await getInstanceContext(instanceId, db);
+  const ctx = deriveInstanceContext(instance);
+  const instanceId = instance.id;
+  const resolvedPhaseId = ctx.isLegacy
+    ? undefined
+    : (phaseId ?? ctx.currentPhaseId);
 
-  if (!ctx) {
-    return [];
-  }
-
-  if (ctx.isLegacy) {
-    return allActiveIds(instanceId, db);
-  }
-
-  const resolvedPhaseId = phaseId ?? ctx.currentPhaseId;
   if (!resolvedPhaseId) {
-    return allActiveIds(instanceId, db);
+    return getActiveNonDraftIdsForInstance({ instanceId, db });
   }
 
-  const window = await resolvePhaseWindow(
+  const nonDraftPredicate = ne(proposals.status, ProposalStatus.DRAFT);
+
+  const phaseWindow = await resolvePhaseWindow(
     instanceId,
     resolvedPhaseId,
     ctx.currentPhaseId,
     db,
   );
 
-  if (window.kind === 'unreached') {
+  if (phaseWindow.kind === 'unreached') {
     return [];
   }
 
-  const attachmentIds = window.inbound
-    ? await attachmentIdsFor(window.inbound.id, db)
-    : [];
+  const [proposalIdsAttachedToPhase, nonDraftProposalIdsCreatedInPhase] =
+    await Promise.all([
+      phaseWindow.inbound
+        ? attachmentIdsFor(phaseWindow.inbound.id, db)
+        : Promise.resolve<string[]>([]),
+      getIdsCreatedDuringWindow({
+        instanceId,
+        predicate: nonDraftPredicate,
+        inboundAt: phaseWindow.inbound?.transitionedAt,
+        outboundAt: phaseWindow.outboundTransitionedAt,
+        inboundComparator: 'gt',
+        db,
+      }),
+    ]);
 
-  const duringIds = await submittedDuringIds(
+  return [
+    ...new Set([
+      ...proposalIdsAttachedToPhase,
+      ...nonDraftProposalIdsCreatedInPhase,
+    ]),
+  ];
+}
+
+/**
+ * Returns both the non-draft and draft IDs visible in a phase for an
+ * authenticated caller, sharing a single phase-window resolution across
+ * both queries. Use this from `listProposals` (which needs both sets)
+ * instead of calling the standalone resolvers separately, which would
+ * issue duplicate `stateTransitionHistory` reads.
+ *
+ * Non-drafts are scoped via attachment snapshots + a strict `(inboundAt,
+ * outboundAt)` window. Drafts use a half-open `[inboundAt, outboundAt)` window
+ * (so a draft created at a transition timestamp lands in the post-transition
+ * phase) and are filtered to ones the caller can access — creators and
+ * collaborators on the proposal's profile, via a `profileUsers` subquery
+ * pushed into SQL. The pushdown matters at scale, where an instance may
+ * accumulate hundreds of thousands of drafts across users.
+ *
+ * - Legacy instances: returns all active non-drafts and all accessible drafts;
+ *   phase scoping does not apply (any `phaseId` is ignored).
+ * - Unreached phase (non-legacy only): returns empty arrays for both.
+ */
+export async function getPhaseProposalAndDraftIds({
+  instance,
+  phaseId,
+  authUserId,
+  db = defaultDb,
+}: {
+  instance: PhaseScopedInstance;
+  phaseId?: string;
+  authUserId: string;
+  db?: DbClient;
+}): Promise<{ nonDraftIds: string[]; draftIds: string[] }> {
+  const ctx = deriveInstanceContext(instance);
+  const instanceId = instance.id;
+
+  const nonDraftPredicate = ne(proposals.status, ProposalStatus.DRAFT);
+  const draftAccessPredicate = and(
+    eq(proposals.status, ProposalStatus.DRAFT),
+    inArray(
+      proposals.profileId,
+      db
+        .select({ profileId: profileUsers.profileId })
+        .from(profileUsers)
+        .where(eq(profileUsers.authUserId, authUserId)),
+    ),
+  );
+
+  const resolvedPhaseId = ctx.isLegacy
+    ? undefined
+    : (phaseId ?? ctx.currentPhaseId);
+
+  if (!resolvedPhaseId) {
+    const [nonDraftIds, draftIds] = await Promise.all([
+      getActiveIdsByPredicate({
+        instanceId,
+        predicate: nonDraftPredicate,
+        db,
+      }),
+      getActiveIdsByPredicate({
+        instanceId,
+        predicate: draftAccessPredicate,
+        db,
+      }),
+    ]);
+    return { nonDraftIds, draftIds };
+  }
+
+  const phaseWindow = await resolvePhaseWindow(
     instanceId,
-    window.inbound?.transitionedAt,
-    window.outboundTransitionedAt,
+    resolvedPhaseId,
+    ctx.currentPhaseId,
     db,
   );
 
-  return [...new Set([...attachmentIds, ...duringIds])];
+  if (phaseWindow.kind === 'unreached') {
+    return { nonDraftIds: [], draftIds: [] };
+  }
+
+  const [
+    proposalIdsAttachedToPhase,
+    nonDraftProposalIdsCreatedInPhase,
+    draftProposalIdsCreatedInPhase,
+  ] = await Promise.all([
+    phaseWindow.inbound
+      ? attachmentIdsFor(phaseWindow.inbound.id, db)
+      : Promise.resolve<string[]>([]),
+    getIdsCreatedDuringWindow({
+      instanceId,
+      predicate: nonDraftPredicate,
+      inboundAt: phaseWindow.inbound?.transitionedAt,
+      outboundAt: phaseWindow.outboundTransitionedAt,
+      inboundComparator: 'gt',
+      db,
+    }),
+    getIdsCreatedDuringWindow({
+      instanceId,
+      predicate: draftAccessPredicate,
+      inboundAt: phaseWindow.inbound?.transitionedAt,
+      outboundAt: phaseWindow.outboundTransitionedAt,
+      inboundComparator: 'gte',
+      db,
+    }),
+  ]);
+
+  return {
+    nonDraftIds: [
+      ...new Set([
+        ...proposalIdsAttachedToPhase,
+        ...nonDraftProposalIdsCreatedInPhase,
+      ]),
+    ],
+    draftIds: draftProposalIdsCreatedInPhase,
+  };
 }
 
 /**
  * Returns the proposals visible in the given phase. See `getProposalIdsForPhase`
- * for membership semantics.
+ * for membership semantics. Defaults to the instance's current phase when
+ * `phaseId` is omitted and falls back to all active non-drafts for legacy
+ * instances or instances without a current phase.
  */
 export async function getProposalsForPhase({
   instanceId,
@@ -262,7 +432,22 @@ export async function getProposalsForPhase({
   phaseId?: string;
   db?: DbClient;
 }): Promise<Proposal[]> {
-  const ids = await getProposalIdsForPhase({ instanceId, phaseId, db });
+  const [instance] = await db
+    .select({
+      id: processInstances.id,
+      instanceData: processInstances.instanceData,
+      currentStateId: processInstances.currentStateId,
+    })
+    .from(processInstances)
+    .where(eq(processInstances.id, instanceId))
+    .limit(1);
+
+  if (!instance) {
+    return [];
+  }
+
+  const ids = await getProposalIdsForPhase({ instance, phaseId, db });
+
   if (ids.length === 0) {
     return [];
   }

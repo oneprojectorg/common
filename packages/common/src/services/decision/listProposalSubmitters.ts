@@ -37,10 +37,12 @@ export const listProposalSubmitters = async ({
   const instance = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
     columns: {
+      id: true,
       profileId: true,
       ownerProfileId: true,
       instanceData: true,
       processId: true,
+      currentStateId: true,
     },
   });
 
@@ -55,9 +57,7 @@ export const listProposalSubmitters = async ({
     orgFallbackPermissions: { decisions: permission.READ },
   });
 
-  const phaseProposalIds = await getProposalIdsForPhase({
-    instanceId: processInstanceId,
-  });
+  const phaseProposalIds = await getProposalIdsForPhase({ instance });
 
   if (phaseProposalIds.length === 0) {
     return { submitters: [] };

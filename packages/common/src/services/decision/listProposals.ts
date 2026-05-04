@@ -20,7 +20,6 @@ import {
   postsToProfiles,
   processInstances,
   profileRelationships,
-  profileUsers,
   proposalCategories,
   proposals,
 } from '@op/db/schema';
@@ -35,7 +34,10 @@ import {
   getProfileAccessUser,
 } from '../access';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
-import { getProposalIdsForPhase } from './getProposalsForPhase';
+import {
+  getPhaseProposalAndDraftIds,
+  getProposalIdsForPhase,
+} from './getProposalsForPhase';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 
@@ -168,62 +170,84 @@ export const listProposals = async ({
   // HIDDEN visibility filter, and owner/editable checks further down.
   const currentProfileId = await getCurrentProfileId(input.authUserId);
 
-  const explicitScopeIds = await resolveExplicitScope({
-    input,
-    currentProfileId,
-    skipAccessCheck,
-  });
+  // Fetch the instance row up front and resolve the explicit ID scope in
+  // parallel. The row is reused for the phase-resolution context (instead of
+  // re-reading inside getInstanceContext), the access checks, and template
+  // resolution.
+  const [instanceRows, explicitScopeIds] = await Promise.all([
+    db
+      .select({
+        id: processInstances.id,
+        profileId: processInstances.profileId,
+        ownerProfileId: processInstances.ownerProfileId,
+        instanceData: processInstances.instanceData,
+        processId: processInstances.processId,
+        currentStateId: processInstances.currentStateId,
+      })
+      .from(processInstances)
+      .where(eq(processInstances.id, processInstanceId))
+      .limit(1),
+    resolveExplicitScope({ input, currentProfileId, skipAccessCheck }),
+  ]);
 
-  const phaseProposalIds =
-    explicitScopeIds ??
-    (await getProposalIdsForPhase({
-      instanceId: processInstanceId,
-      phaseId: input.phaseId,
-    }));
-
-  // For trusted contexts (skipAccessCheck), drafts are never returned and phase
-  // scoping is the only proposal-id filter — so an empty phase set means no results.
-  // For authenticated callers we still need to consider drafts the user owns/collaborates
-  // on, which are not part of phaseProposalIds, so we cannot early-return here.
-  if (skipAccessCheck && phaseProposalIds.length === 0) {
-    return {
-      proposals: [],
-      total: 0,
-      hasMore: false,
-      canManageProposals: false,
-    };
-  }
-
-  // Get the instance's profile for access checks + template resolution
-  const instance = await db
-    .select({
-      profileId: processInstances.profileId,
-      ownerProfileId: processInstances.ownerProfileId,
-      instanceData: processInstances.instanceData,
-      processId: processInstances.processId,
-    })
-    .from(processInstances)
-    .where(eq(processInstances.id, processInstanceId))
-    .limit(1);
-
-  if (!instance[0]?.profileId) {
+  const instance = instanceRows[0];
+  if (!instance?.profileId) {
     throw new UnauthorizedError('User does not have access to this process');
   }
+  const instanceProfileId = instance.profileId;
 
-  let canManageProposals = false;
-  let profileUser: Awaited<ReturnType<typeof getProfileAccessUser>> = undefined;
-
-  // Only perform access checks if not skipped
-  if (!skipAccessCheck) {
-    // Check view access via profileUser on the instance's profile
-    profileUser = await getProfileAccessUser({
-      user,
-      profileId: instance[0].profileId,
+  // Resolve phase-scoped IDs for non-drafts and drafts. Drafts are phase-scoped
+  // via a `createdAt` window since they're never attached to transition
+  // snapshots. The combined resolver shares a single instance-context lookup
+  // and window resolution across both queries; we only fall back to it for
+  // authenticated callers that need both sets. These are IDs only — the
+  // findMany below hydrates full rows using them as filter input.
+  const phaseIdsPromise: Promise<{
+    phaseProposalIds: string[];
+    phaseDraftIds: string[];
+  }> = (async () => {
+    if (explicitScopeIds !== undefined) {
+      // Caller specified the exact ID set (proposalIds or votedByProfileId).
+      // Drafts can't appear in either: proposalIds is internal and
+      // votedByProfileId only matches submitted proposals on a ballot.
+      return { phaseProposalIds: explicitScopeIds, phaseDraftIds: [] };
+    }
+    if (skipAccessCheck) {
+      // Trusted contexts (background jobs) never surface drafts, so only
+      // resolve the non-draft phase set. Legacy instances and instances
+      // without a current phase fall back to all active non-drafts inside
+      // `getProposalIdsForPhase`.
+      const ids = await getProposalIdsForPhase({
+        instance,
+        phaseId: input.phaseId,
+      });
+      return { phaseProposalIds: ids, phaseDraftIds: [] };
+    }
+    const ids = await getPhaseProposalAndDraftIds({
+      instance,
+      phaseId: input.phaseId,
+      authUserId: input.authUserId,
     });
+    return { phaseProposalIds: ids.nonDraftIds, phaseDraftIds: ids.draftIds };
+  })();
 
+  // Run access checks in parallel with the phase-IDs resolution. Both depend
+  // only on the instance row (already fetched), so there's no ordering
+  // dependency — the auth check still throws on failure, just slightly later.
+  const accessPromise: Promise<{
+    profileUser: Awaited<ReturnType<typeof getProfileAccessUser>>;
+    canManageProposals: boolean;
+  }> = (async () => {
+    if (skipAccessCheck) {
+      return { profileUser: undefined, canManageProposals: false };
+    }
+    const profileUser = await getProfileAccessUser({
+      user,
+      profileId: instanceProfileId,
+    });
     await assertInstanceProfileAccess({
       user,
-      instance: instance[0],
+      instance,
       profilePermissions: [
         { decisions: permission.ADMIN },
         { decisions: permission.READ },
@@ -233,12 +257,32 @@ export const listProposals = async ({
         { decisions: permission.READ },
       ],
     });
+    return {
+      profileUser,
+      canManageProposals: checkPermission(
+        { profile: permission.ADMIN },
+        profileUser?.roles ?? [],
+      ),
+    };
+  })();
 
-    // Check if user can manage proposals (approve/reject)
-    canManageProposals = checkPermission(
-      { profile: permission.ADMIN },
-      profileUser?.roles ?? [],
-    );
+  const [
+    { phaseProposalIds, phaseDraftIds },
+    { profileUser, canManageProposals },
+  ] = await Promise.all([phaseIdsPromise, accessPromise]);
+
+  // For trusted contexts (skipAccessCheck), drafts are never returned and phase
+  // scoping is the only proposal-id filter — so an empty phase set means no results.
+  // For authenticated callers, drafts have their own phase-scoped ID set
+  // (`phaseDraftIds`) which may surface results even when `phaseProposalIds` is
+  // empty, so we cannot early-return here.
+  if (skipAccessCheck && phaseProposalIds.length === 0) {
+    return {
+      proposals: [],
+      total: 0,
+      hasMore: false,
+      canManageProposals: false,
+    };
   }
 
   const { limit = 20, offset = 0, orderBy = 'createdAt', dir = 'desc' } = input;
@@ -290,10 +334,11 @@ export const listProposals = async ({
       : categoryFilter;
   }
 
-  // Phase scoping applies to non-draft proposals only. Drafts are user-private
-  // and not part of any phase transition snapshot, so they bypass phaseProposalIds.
-  // When phaseProposalIds is empty (e.g. instance has no submitted proposals yet),
-  // the non-draft branch must short-circuit to false rather than emit an empty IN ().
+  // Phase scoping applies separately to non-drafts and drafts. Non-drafts are
+  // resolved via transition snapshots + a strict `createdAt` window; drafts use
+  // a half-open `createdAt` window only (they're never attached to a snapshot).
+  // When the relevant ID set is empty (e.g. instance has no submitted proposals
+  // yet), each branch must short-circuit to false rather than emit an empty IN ().
   const phaseScopedNonDraftIdFilter =
     phaseProposalIds.length > 0
       ? and(
@@ -308,20 +353,19 @@ export const listProposals = async ({
       ? and(whereClause, phaseScopedNonDraftIdFilter)
       : phaseScopedNonDraftIdFilter;
   } else {
-    // Draft proposals: only visible to users with proposal-level access
-    // (the creator and invited collaborators with a profileUsers record on the proposal's profile).
-    // Drafts are not phase-scoped and remain visible regardless of phaseId so that
-    // creators continue to see their own in-progress work alongside the current phase.
-    const draftFilter = and(
-      eq(proposals.status, ProposalStatus.DRAFT),
-      inArray(
-        proposals.profileId,
-        db
-          .select({ profileId: profileUsers.profileId })
-          .from(profileUsers)
-          .where(eq(profileUsers.authUserId, input.authUserId)),
-      ),
-    );
+    // Draft proposals are phase-scoped to their `createdAt` window: a draft made
+    // in Phase 1 is only visible when viewing Phase 1, even after the instance
+    // advances. Ownership scoping (creator + invited collaborators via
+    // `profileUsers`) is applied inside `getPhaseProposalAndDraftIds` via a
+    // subquery, so `phaseDraftIds` is already access-filtered — no further
+    // ownership filter is needed here.
+    const draftFilter =
+      phaseDraftIds.length > 0
+        ? and(
+            eq(proposals.status, ProposalStatus.DRAFT),
+            inArray(proposals.id, phaseDraftIds),
+          )
+        : sql`false`;
 
     // Non-draft proposals: phase-scoped, plus the HIDDEN visibility filter for
     // non-admins (admins and the owning profile still see hidden proposals).
@@ -369,8 +413,8 @@ export const listProposals = async ({
 
   // Resolve proposalTemplate from instanceData, falling back to processSchema
   const proposalTemplate = await resolveProposalTemplate(
-    instance[0].instanceData as Record<string, unknown> | null,
-    instance[0].processId,
+    instance.instanceData as Record<string, unknown> | null,
+    instance.processId,
   );
 
   type ProposalListItem = (typeof proposalList)[number];

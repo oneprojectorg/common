@@ -86,7 +86,7 @@ export async function listProposalsWithReviewAggregates(
 
   const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
   const phaseProposalIds = await getProposalIdsForPhase({
-    instanceId: processInstanceId,
+    instance,
     phaseId,
   });
 

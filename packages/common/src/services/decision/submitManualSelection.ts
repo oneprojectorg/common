@@ -186,7 +186,11 @@ export async function submitManualSelection({
 
     const candidateIds = new Set(
       await getProposalIdsForPhase({
-        instanceId: processInstanceId,
+        instance: {
+          id: processInstanceId,
+          instanceData: lockedInstance.instanceData,
+          currentStateId: lockedInstance.currentStateId,
+        },
         phaseId: previousPhaseId,
         db: tx,
       }),
