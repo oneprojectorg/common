@@ -76,6 +76,11 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
         process: true,
         owner: true,
         steward: true,
+        profile: {
+          columns: {
+            slug: true,
+          },
+        },
         proposals: {
           columns: {
             id: true,
@@ -153,6 +158,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
 
     return {
       ...instance,
+      slug: instance.profile?.slug ?? null,
       instanceData: filteredInstanceData,
       proposalCount,
       participantCount,

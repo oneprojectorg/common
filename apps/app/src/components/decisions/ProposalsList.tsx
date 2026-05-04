@@ -18,6 +18,7 @@ import { Button, ButtonLink } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
+import { FooterBar } from '@op/ui/FooterBar';
 import { Header3 } from '@op/ui/Header';
 import { Link } from '@op/ui/Link';
 import { Modal } from '@op/ui/Modal';
@@ -50,7 +51,6 @@ import { TranslateBanner } from './TranslateBanner';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
 import { VotingProposalCard } from './VotingProposalCard';
-import { VotingSubmitFooter } from './VotingSubmitFooter';
 import { useProposalExport } from './useProposalExport';
 import { useProposalFilters } from './useProposalFilters';
 
@@ -362,32 +362,36 @@ const VotingProposalsList = ({
         })}
       </div>
 
-      <VotingSubmitFooter isVisible={canVote && !isReadOnly}>
-        <div className="flex w-full items-center justify-between px-4 sm:max-w-6xl sm:px-8">
-          <span className="text-neutral-black">
-            <span className="text-primary-teal">{numSelected}</span> of{' '}
-            {maxVotesPerMember}{' '}
-            {maxVotesPerMember === 1 ? 'proposal' : 'proposals'} selected
-          </span>
+      {canVote && !isReadOnly && (
+        <FooterBar position="fixed" className="bg-neutral-offWhite/95">
+          <FooterBar.Start>
+            <span className="text-base text-neutral-black">
+              <span className="text-primary-teal">{numSelected}</span> of{' '}
+              {maxVotesPerMember}{' '}
+              {maxVotesPerMember === 1 ? 'proposal' : 'proposals'} selected
+            </span>
+          </FooterBar.Start>
+          <FooterBar.Center />
+          <FooterBar.End>
+            <DialogTrigger>
+              <Button isDisabled={numSelected === 0} variant="primary">
+                {t('Submit my votes')}
+              </Button>
 
-          <DialogTrigger>
-            <Button isDisabled={numSelected === 0} variant="primary">
-              {t('Submit my votes')}
-            </Button>
-
-            <Modal isDismissable>
-              <Dialog className="h-full">
-                <VoteSubmissionModal
-                  selectedProposals={selectedProposals}
-                  instanceId={instanceId}
-                  maxVotes={maxVotesPerMember}
-                  onSuccess={handleVoteSuccess}
-                />
-              </Dialog>
-            </Modal>
-          </DialogTrigger>
-        </div>
-      </VotingSubmitFooter>
+              <Modal isDismissable>
+                <Dialog className="h-full">
+                  <VoteSubmissionModal
+                    selectedProposals={selectedProposals}
+                    instanceId={instanceId}
+                    maxVotes={maxVotesPerMember}
+                    onSuccess={handleVoteSuccess}
+                  />
+                </Dialog>
+              </Modal>
+            </DialogTrigger>
+          </FooterBar.End>
+        </FooterBar>
+      )}
 
       <VoteSuccessModal
         isOpen={showSuccessModal}

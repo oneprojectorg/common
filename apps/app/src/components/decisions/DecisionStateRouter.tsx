@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation';
 
 import { ResultsPage } from './pages/ResultsPage';
 import { ReviewPage } from './pages/ReviewPage';
+import { ReviewSelectionPage } from './pages/ReviewSelectionPage';
 import { StandardDecisionPage } from './pages/StandardDecisionPage';
 import { VotingPage } from './pages/VotingPage';
 
@@ -40,8 +41,26 @@ function DecisionStateRouterNew({
   const currentPhase = phases.find((p) => p.phaseId === currentStateId);
   const isVotingEnabled = currentPhase?.rules?.voting?.submit === true;
   const isReviewEnabled = currentPhase?.rules?.proposals?.review === true;
+  const isAdmin = Boolean(instance.access?.admin);
 
   if (!instance.selectionsAreConfirmed) {
+    // The current phase has an empty inbound transition awaiting selection.
+    // When the *previous* phase was a review phase, an admin can advance
+    // proposals using rich review aggregates — that's the ReviewSelection view.
+    // Everyone else falls back to the generic manual-selection prompt.
+    const currentIdx = phases.findIndex((p) => p.phaseId === currentStateId);
+    const previousPhase = currentIdx > 0 ? phases[currentIdx - 1] : null;
+    const previousWasReview =
+      previousPhase?.rules?.proposals?.review === true && reviewFlowEnabled;
+
+    if (previousWasReview && previousPhase && isAdmin) {
+      return (
+        <ReviewSelectionPage
+          instance={instance}
+          previousPhaseId={previousPhase.phaseId}
+        />
+      );
+    }
     return (
       <StandardDecisionPage
         instanceId={instanceId}

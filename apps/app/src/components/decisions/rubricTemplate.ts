@@ -15,6 +15,7 @@ import type {
 } from '@op/common/client';
 import {
   OVERALL_RECOMMENDATION_KEY,
+  RECOMMENDATION_OPTION,
   isOverallRecommendationField,
 } from '@op/common/client';
 import type { JSONSchema7 } from 'json-schema';
@@ -450,11 +451,10 @@ export function enableOverallRecommendation(
     type: 'string',
     title: 'Overall Recommendation',
     'x-format': 'dropdown',
-    oneOf: [
-      { const: 'yes', title: 'Yes' },
-      { const: 'maybe', title: 'Maybe' },
-      { const: 'no', title: 'No' },
-    ],
+    oneOf: Object.values(RECOMMENDATION_OPTION).map(({ value, label }) => ({
+      const: value,
+      title: label,
+    })),
   };
   let updated = addProperty(template, OVERALL_RECOMMENDATION_KEY, schema);
   updated = setPropertyRequired(updated, OVERALL_RECOMMENDATION_KEY, true);

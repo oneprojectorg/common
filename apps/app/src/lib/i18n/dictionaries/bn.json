@@ -1160,5 +1160,17 @@
   "Untitled proposal": "নামহীন প্রস্তাব",
   "Advance {title}": "{title} অগ্রসর করুন",
   "Don't advance {title}": "{title} অগ্রসর করবেন না",
-  "+{count} More": "+{count} আরও"
+  "+{count} More": "+{count} আরও",
+  "REVIEWS COMPLETE": "পর্যালোচনা সম্পূর্ণ",
+  "Select which proposals move on to the next phase": "কোন প্রস্তাবগুলি পরবর্তী পর্যায়ে যাবে তা নির্বাচন করুন",
+  "Don't advance": "অগ্রসর করবেন না",
+  "Filter by category": "বিভাগ অনুযায়ী ফিল্টার করুন",
+  "Highest Score": "সর্বোচ্চ স্কোর",
+  "Lowest Score": "সর্বনিম্ন স্কোর",
+  "Maybe": "হয়তো",
+  "Overall recommendation": "সামগ্রিক সুপারিশ",
+  "Score ({pts}pts)": "স্কোর ({pts}পয়েন্ট)",
+  "{pts} pts": "{pts} পয়েন্ট",
+  "No proposals to review yet": "পর্যালোচনার জন্য এখনও কোন প্রস্তাব নেই",
+  "Proposals will appear here once they are submitted.": "প্রস্তাবগুলি জমা দেওয়ার পর এখানে দেখা যাবে।"
 }

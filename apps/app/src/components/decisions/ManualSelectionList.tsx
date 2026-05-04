@@ -6,6 +6,7 @@ import { ProposalFilter } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
+import { FooterBar } from '@op/ui/FooterBar';
 import { Header3 } from '@op/ui/Header';
 import { toast } from '@op/ui/Toast';
 import { useEffect, useMemo, useState } from 'react';
@@ -16,8 +17,7 @@ import { useTranslations } from '@/lib/i18n';
 import { ManualSelectionToolbar } from './ManualSelectionToolbar';
 import { SelectableProposalsTable } from './SelectableProposalsTable';
 import { SelectionConfirmDialog } from './SelectionConfirmDialog';
-import { VotingSubmitFooter } from './VotingSubmitFooter';
-import { useManualSelectionDraft } from './useManualSelectionDraft';
+import { useManualSelection } from './useManualSelection';
 import { useProposalFilters } from './useProposalFilters';
 
 // Stable reference: useProposalFilters memoizes on `votedProposalIds`.
@@ -55,7 +55,10 @@ export const ManualSelectionList = ({
   );
   const candidates = candidatesQuery.data;
 
-  const [selectedIds, setSelectedIds] = useManualSelectionDraft(instanceId);
+  const [selectedIds, setSelectedIds] = useManualSelection(
+    instanceId,
+    instance.currentStateId ?? '',
+  );
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   // Resolve selected ids → proposals via a cache that accumulates across
@@ -186,11 +189,14 @@ export const ManualSelectionList = ({
         />
       )}
 
-      <VotingSubmitFooter isVisible>
-        <div className="flex w-full items-center justify-between px-4 sm:max-w-6xl sm:px-8">
-          <span className="text-neutral-black">
+      <FooterBar position="fixed" className="bg-neutral-offWhite/95">
+        <FooterBar.Start>
+          <span className="text-base text-neutral-black">
             {t('{count} proposals advancing', { count: numSelected })}
           </span>
+        </FooterBar.Start>
+        <FooterBar.Center />
+        <FooterBar.End>
           <SelectionConfirmDialog
             isOpen={isConfirmOpen}
             onOpenChange={setIsConfirmOpen}
@@ -206,8 +212,8 @@ export const ManualSelectionList = ({
               })
             }
           />
-        </div>
-      </VotingSubmitFooter>
+        </FooterBar.End>
+      </FooterBar>
     </div>
   );
 };

@@ -4,8 +4,6 @@ import { formatCurrency } from '@/utils/formatting';
 import type { Proposal } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
-import { Chip } from '@op/ui/Chip';
 import {
   Table,
   TableBody,
@@ -14,12 +12,13 @@ import {
   TableHeader,
   TableRow,
 } from '@op/ui/ui/table';
-import { cn } from '@op/ui/utils';
-import { LuCheck } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
 import { resolveProposalSystemFields } from './proposalContentUtils';
+import { AdvanceToggleButton } from './selection/AdvanceToggleButton';
+import { SelectionCard } from './selection/SelectionCard';
+import { SelectionCategoryChips } from './selection/SelectionCategoryChips';
 
 interface SelectableProposalsTableProps {
   proposals: Proposal[];
@@ -27,8 +26,6 @@ interface SelectableProposalsTableProps {
   onToggle: (proposalId: string) => void;
   getProposalHref?: (proposal: Proposal) => string;
 }
-
-const MAX_VISIBLE_CATEGORIES = 2;
 
 export const SelectableProposalsTable = ({
   proposals,
@@ -79,15 +76,7 @@ export const SelectableProposalsTable = ({
           const href = getProposalHref?.(proposal);
 
           return (
-            <TableRow
-              key={proposal.id}
-              id={proposal.id}
-              className={
-                isSelected
-                  ? 'bg-primary-tealWhite hover:bg-primary-tealWhite/80'
-                  : undefined
-              }
-            >
+            <TableRow key={proposal.id} id={proposal.id}>
               <TableCell>
                 <div className="flex flex-col">
                   {href ? (
@@ -119,13 +108,10 @@ export const SelectableProposalsTable = ({
                 )}
               </TableCell>
               <TableCell>
-                <CategoryChips
-                  categories={fields.visibleCategories}
-                  extraCount={fields.extraCategoryCount}
-                />
+                <SelectionCategoryChips labels={fields.categories} />
               </TableCell>
               <TableCell className="text-right">
-                <ToggleAdvanceButton
+                <AdvanceToggleButton
                   isSelected={isSelected}
                   title={fields.title}
                   onPress={() => onToggle(proposal.id)}
@@ -158,14 +144,7 @@ const SelectableProposalCard = ({
   });
 
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-3 rounded-lg border p-4',
-        isSelected
-          ? 'border-primary-teal bg-primary-tealWhite'
-          : 'border-neutral-gray1 bg-white',
-      )}
-    >
+    <SelectionCard isSelected={isSelected}>
       <div className="flex flex-col gap-1">
         {href ? (
           <Link
@@ -188,89 +167,16 @@ const SelectableProposalCard = ({
         {fields.budget ? (
           <span className="text-base text-neutral-black">{fields.budget}</span>
         ) : null}
-        <CategoryChips
-          categories={fields.visibleCategories}
-          extraCount={fields.extraCategoryCount}
-        />
+        <SelectionCategoryChips labels={fields.categories} />
       </div>
 
-      <ToggleAdvanceButton
+      <AdvanceToggleButton
         isSelected={isSelected}
         title={fields.title}
         onPress={() => onToggle(proposal.id)}
         className="w-full"
       />
-    </div>
-  );
-};
-
-const CategoryChips = ({
-  categories,
-  extraCount,
-}: {
-  categories: string[];
-  extraCount: number;
-}) => {
-  const t = useTranslations();
-
-  if (categories.length === 0) {
-    return <span className="text-sm text-neutral-gray4">—</span>;
-  }
-
-  return (
-    <div className="flex flex-wrap items-center gap-1">
-      {categories.map((category) => (
-        <Chip key={category}>{category}</Chip>
-      ))}
-      {extraCount > 0 ? (
-        <span className="text-xs text-neutral-gray4">
-          {t('+{count} More', { count: extraCount })}
-        </span>
-      ) : null}
-    </div>
-  );
-};
-
-const ToggleAdvanceButton = ({
-  isSelected,
-  title,
-  onPress,
-  className,
-}: {
-  isSelected: boolean;
-  title: string;
-  onPress: () => void;
-  className?: string;
-}) => {
-  const t = useTranslations();
-
-  return (
-    <Button
-      size="small"
-      color={isSelected ? 'verified' : 'secondary'}
-      onPress={onPress}
-      aria-label={
-        isSelected
-          ? t("Don't advance {title}", { title })
-          : t('Advance {title}', { title })
-      }
-      className={cn('relative', className)}
-    >
-      <span className="invisible flex items-center gap-1">
-        <LuCheck className="size-4" />
-        {t('Advancing')}
-      </span>
-      <span className="absolute inset-0 flex items-center justify-center gap-1">
-        {isSelected ? (
-          <>
-            <LuCheck className="size-4" />
-            {t('Advancing')}
-          </>
-        ) : (
-          t('Advance')
-        )}
-      </span>
-    </Button>
+    </SelectionCard>
   );
 };
 
@@ -286,8 +192,6 @@ const resolvePresentationFields = ({
     budget,
     category: categories = [],
   } = resolveProposalSystemFields(proposal);
-  const visibleCategories = categories.slice(0, MAX_VISIBLE_CATEGORIES);
-  const extraCategoryCount = categories.length - visibleCategories.length;
   const title = resolvedTitle || proposal.profile.name || defaultTitle;
   const submitterName = proposal.submittedBy?.name;
   const formattedBudget = budget?.amount
@@ -298,7 +202,6 @@ const resolvePresentationFields = ({
     title,
     submitterName,
     budget: formattedBudget,
-    visibleCategories,
-    extraCategoryCount,
+    categories,
   };
 };

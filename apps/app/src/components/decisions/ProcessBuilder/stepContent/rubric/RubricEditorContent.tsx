@@ -69,7 +69,7 @@ export function RubricEditorContent({
   const initialTemplate = useMemo(() => {
     const saved = storeRubricTemplate ?? instanceData?.rubricTemplate;
     if (saved && Object.keys(saved.properties ?? {}).length > 0) {
-      return saved as RubricTemplateSchema;
+      return saved;
     }
     return createEmptyRubricTemplate();
   }, [storeRubricTemplate, instanceData?.rubricTemplate]);

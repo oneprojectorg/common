@@ -283,6 +283,8 @@ export async function createDecisionInstance(
       name: phase.name,
       description: phase.description,
       rules: phase.rules,
+      selectionPipeline:
+        'selectionPipeline' in phase ? phase.selectionPipeline : undefined,
       startDate: new Date(
         Date.now() + index * 7 * 24 * 60 * 60 * 1000,
       ).toISOString(),

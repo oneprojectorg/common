@@ -22,6 +22,7 @@ import type {
   PhaseOverride,
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
+import type { RubricTemplateSchema } from './types';
 import { updateTransitionsForProcess } from './updateTransitionsForProcess';
 
 /**
@@ -51,7 +52,7 @@ export const updateDecisionInstance = async ({
   /** Proposal template (JSON Schema) */
   proposalTemplate?: Record<string, unknown>;
   /** Rubric template (JSON Schema defining evaluation criteria) */
-  rubricTemplate?: Record<string, unknown>;
+  rubricTemplate?: RubricTemplateSchema;
   user: User;
 }) => {
   // Fetch existing instance
