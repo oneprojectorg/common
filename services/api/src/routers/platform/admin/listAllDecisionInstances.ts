@@ -4,8 +4,16 @@ import {
   getGenericCursorCondition,
 } from '@op/common';
 import { adminDecisionInstanceSchema } from '@op/common/client';
-import { and, count, countDistinct, db, ilike, inArray } from '@op/db/client';
-import { processInstances, proposals } from '@op/db/schema';
+import {
+  and,
+  count,
+  countDistinct,
+  db,
+  ilike,
+  inArray,
+  sql,
+} from '@op/db/client';
+import { ProposalStatus, processInstances, proposals } from '@op/db/schema';
 import type { SQL } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -158,7 +166,11 @@ export const listAllDecisionInstancesRouter = router({
           ? await db
               .select({
                 processInstanceId: proposals.processInstanceId,
-                proposalCount: count(proposals.id),
+                proposalCount:
+                  sql<number>`count(*) filter (where ${proposals.status} <> ${ProposalStatus.DRAFT})`.mapWith(
+                    Number,
+                  ),
+                totalProposalCount: count(proposals.id),
                 participantCount: countDistinct(proposals.submittedByProfileId),
               })
               .from(proposals)
@@ -184,6 +196,7 @@ export const listAllDecisionInstancesRouter = router({
             stewardName: instance.steward?.name ?? null,
             status: instance.status,
             proposalCount: stats?.proposalCount ?? 0,
+            totalProposalCount: stats?.totalProposalCount ?? 0,
             participantCount: stats?.participantCount ?? 0,
             createdAt: instance.createdAt,
             instanceData: instance.instanceData,

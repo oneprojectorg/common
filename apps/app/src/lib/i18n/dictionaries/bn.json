@@ -515,6 +515,7 @@
   "Instance data for {name}": "{name}-এর ইনস্ট্যান্স ডেটা",
   "decisions": "সিদ্ধান্ত",
   "Ends {date}": "{date} তারিখে শেষ হবে",
+  "{nonDraft} non-draft proposals, {total} total including drafts": "{nonDraft}টি অ-খসড়া প্রস্তাব, খসড়াসহ মোট {total}টি",
   "Join requests": "অনুরোধ",
   "{name} wants to join your organization": "{name} আপনার সংস্থায় যোগ দিতে চায়",
   "Request accepted": "অনুরোধ গৃহীত",

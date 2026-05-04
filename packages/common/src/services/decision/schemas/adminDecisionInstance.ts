@@ -15,6 +15,7 @@ export const adminDecisionInstanceSchema = z.object({
   currentPhase: adminDecisionCurrentPhaseSchema.nullable(),
   stewardName: z.string().nullable(),
   proposalCount: z.number(),
+  totalProposalCount: z.number(),
   participantCount: z.number(),
   instanceData: z.unknown(),
 });
