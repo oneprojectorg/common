@@ -512,6 +512,7 @@
   "Instance data for {name}": "Datos de la instancia para {name}",
   "decisions": "decisiones",
   "Ends {date}": "Finaliza el {date}",
+  "{nonDraft} non-draft proposals, {total} total including drafts": "{nonDraft} propuestas no borrador, {total} en total incluyendo borradores",
   "No more updates.": "No hay más actualizaciones.",
   "Join requests": "Solicitudes",
   "{name} wants to join your organization": "{name} quiere unirse a tu organización",

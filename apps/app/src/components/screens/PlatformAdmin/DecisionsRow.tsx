@@ -59,7 +59,24 @@ export const DecisionsRowCells = ({
         {decision.stewardName ?? '—'}
       </TableCell>
       <TableCell className="text-neutral-charcoal">
-        {decision.proposalCount}
+        {decision.totalProposalCount > decision.proposalCount ? (
+          <TooltipTrigger>
+            <Button className="underline decoration-dotted underline-offset-2 outline-hidden">
+              {decision.proposalCount} ({decision.totalProposalCount})
+            </Button>
+            <Tooltip>
+              {t(
+                '{nonDraft} non-draft proposals, {total} total including drafts',
+                {
+                  nonDraft: decision.proposalCount,
+                  total: decision.totalProposalCount,
+                },
+              )}
+            </Tooltip>
+          </TooltipTrigger>
+        ) : (
+          decision.proposalCount
+        )}
       </TableCell>
       <TableCell className="text-neutral-charcoal">
         {decision.participantCount}
