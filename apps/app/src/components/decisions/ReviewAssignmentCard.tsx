@@ -6,7 +6,8 @@ import {
 } from '@op/common/client';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { cn } from '@op/ui/utils';
-import { Button } from 'react-aria-components';
+import { useRef } from 'react';
+import { useFocusable } from 'react-aria';
 import {
   LuCircleAlert,
   LuCircleCheck,
@@ -92,11 +93,27 @@ function ReviewersTooltip({ reviewers }: { reviewers: Reviewers }) {
 
   return (
     <TooltipTrigger>
-      <Button className="text-neutral-gray4 underline decoration-dotted underline-offset-2">
+      <FocusableSpan className="text-neutral-gray4 underline decoration-dotted underline-offset-2">
         {t('{count} Reviewed', { count: completedReviewers.length })}
-      </Button>
+      </FocusableSpan>
       <Tooltip>{names}</Tooltip>
     </TooltipTrigger>
+  );
+}
+
+function FocusableSpan({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const { focusableProps } = useFocusable({}, ref);
+  return (
+    <span {...focusableProps} ref={ref} tabIndex={0} className={className}>
+      {children}
+    </span>
   );
 }
 
