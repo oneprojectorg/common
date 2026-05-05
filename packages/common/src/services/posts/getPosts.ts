@@ -8,7 +8,7 @@ import { getItemsWithReactionsAndComments } from './listPosts';
 
 export interface GetPostsInput {
   profileId?: string;
-  parentPostId?: string | null; // null for top-level posts, string for child posts, undefined for all
+  parentPostId?: string | null; // null for top-level posts, string for child posts
   limit?: number;
   offset?: number;
   includeChildren?: boolean;
@@ -41,6 +41,13 @@ export const getPosts = async (input: GetPostsInput) => {
     return [];
   }
 
+  // When scoping by profile without an explicit parentPostId, default to
+  // top-level posts. Comments inherit their parent's profile associations,
+  // so without this filter a profile feed would surface comments alongside
+  // updates and silently mix authorization contexts.
+  const effectiveParentPostId =
+    profileId && parentPostId === undefined ? null : parentPostId;
+
   const profileIdsToAuthorize = profileId
     ? [profileId]
     : parentPostId
@@ -61,10 +68,10 @@ export const getPosts = async (input: GetPostsInput) => {
   });
 
   const postWhere =
-    parentPostId === null
+    effectiveParentPostId === null
       ? ({ parentPostId: { isNull: true } } as const)
-      : parentPostId
-        ? { parentPostId }
+      : effectiveParentPostId
+        ? { parentPostId: effectiveParentPostId }
         : undefined;
 
   const childPostsRelation =

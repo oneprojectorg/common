@@ -82,7 +82,7 @@ export const listProfilePosts = async ({
         ? and(eq(postsToProfiles.profileId, profileId), cursorCondition)
         : eq(postsToProfiles.profileId, profileId),
     )
-    .orderBy(desc(postsToProfiles.createdAt))
+    .orderBy(desc(postsToProfiles.createdAt), desc(postsToProfiles.postId))
     .limit(limit + 1);
 
   const hasMore = pageRows.length > limit;

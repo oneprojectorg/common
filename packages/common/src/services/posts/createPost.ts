@@ -311,11 +311,28 @@ export const createPost = async (input: CreatePostServiceInput) => {
         profileId: targetProfileId,
       });
     } else if (parentPostId) {
-      if (parentProfiles.length > 0) {
+      // Re-read parent associations inside the tx and intersect with the
+      // auth-time snapshot. If new associations were added between the auth
+      // check and this insert, we must NOT inherit them — the user wasn't
+      // authorized against those profiles. If associations were removed,
+      // we drop them too.
+      const currentParentProfiles = await tx
+        .select({ profileId: postsToProfiles.profileId })
+        .from(postsToProfiles)
+        .where(eq(postsToProfiles.postId, parentPostId));
+
+      const authorizedProfileIds = new Set(
+        parentProfiles.map((p) => p.profileId),
+      );
+      const profileIdsToInherit = currentParentProfiles
+        .map((p) => p.profileId)
+        .filter((id) => authorizedProfileIds.has(id));
+
+      if (profileIdsToInherit.length > 0) {
         await tx.insert(postsToProfiles).values(
-          parentProfiles.map((profile) => ({
+          profileIdsToInherit.map((profileId) => ({
             postId: newPost.id,
-            profileId: profile.profileId,
+            profileId,
           })),
         );
       }
