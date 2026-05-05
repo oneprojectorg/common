@@ -1,7 +1,11 @@
-import { and, db } from '@op/db/client';
-import { EntityType, postsToProfiles } from '@op/db/schema';
+import { db } from '@op/db/client';
+import {
+  EntityType,
+  posts as postsTable,
+  postsToProfiles,
+} from '@op/db/schema';
 import { permission } from 'access-zones';
-import { eq } from 'drizzle-orm';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 
 import {
   decodeCursor,
@@ -55,34 +59,53 @@ export const listProfilePosts = async ({
       })
     : undefined;
 
-  const result = await db._query.postsToProfiles.findMany({
-    where: cursorCondition
-      ? and(eq(postsToProfiles.profileId, profileId), cursorCondition)
-      : (table, { eq: eqOp }) => eqOp(table.profileId, profileId),
-    with: {
-      post: {
-        where: (table, { isNull: isNullOp }) => isNullOp(table.parentPostId),
-        with: {
-          profile: {
-            with: { avatarImage: true },
-          },
-          attachments: {
-            with: { storageObject: true },
-          },
-          reactions: {
-            with: { profile: true },
-          },
-        },
-      },
-    },
-    orderBy: (table, { desc: descOp }) => descOp(table.createdAt),
-    limit: limit + 1,
-  });
+  // Filter top-level posts at the SQL level so pagination doesn't under-fetch
+  // when comments inherit profile associations from their parent. A relational
+  // `where: { post: { parentPostId: isNull } }` produces a LEFT JOIN that
+  // returns nulls for filtered rows — paginating on those rows silently drops
+  // pages.
+  const pageRows = await db
+    .select({
+      postId: postsToProfiles.postId,
+      createdAt: postsToProfiles.createdAt,
+    })
+    .from(postsToProfiles)
+    .innerJoin(
+      postsTable,
+      and(
+        eq(postsTable.id, postsToProfiles.postId),
+        isNull(postsTable.parentPostId),
+      ),
+    )
+    .where(
+      cursorCondition
+        ? and(eq(postsToProfiles.profileId, profileId), cursorCondition)
+        : eq(postsToProfiles.profileId, profileId),
+    )
+    .orderBy(desc(postsToProfiles.createdAt))
+    .limit(limit + 1);
 
-  const filtered = result.filter((item) => item.post !== null);
-  const hasMore = filtered.length > limit;
-  const items = filtered.slice(0, limit);
-  const lastItem = items[items.length - 1];
+  const hasMore = pageRows.length > limit;
+  const pageItems = pageRows.slice(0, limit);
+  const postIds = pageItems.map((row) => row.postId);
+
+  const hydrated = postIds.length
+    ? await db.query.posts.findMany({
+        where: { id: { in: postIds } },
+        with: {
+          profile: { with: { avatarImage: true } },
+          attachments: { with: { storageObject: true } },
+          reactions: { with: { profile: true } },
+        },
+      })
+    : [];
+
+  const postById = new Map(hydrated.map((post) => [post.id, post]));
+  const orderedPosts = postIds
+    .map((id) => postById.get(id))
+    .filter((post): post is NonNullable<typeof post> => post !== undefined);
+
+  const lastItem = pageItems[pageItems.length - 1];
   const nextCursor =
     hasMore && lastItem && lastItem.createdAt
       ? encodeCursor({
@@ -93,7 +116,7 @@ export const listProfilePosts = async ({
 
   const actorProfileId = await getCurrentProfileId(authUserId);
   const itemsWithReactions = await getItemsWithReactionsAndComments({
-    items: items.map((item) => ({ post: item.post })),
+    items: orderedPosts.map((post) => ({ post })),
     profileId: actorProfileId,
   });
 
