@@ -45,6 +45,8 @@ export const assertProfileTypeAccess = async ({
   }
 
   const gatedRows = profileRows.flatMap((row) => {
+    // `enumToPgEnum` widens enum columns to `string`; narrowing here until
+    // the helper preserves literal types.
     const requiredPermission = policies[row.type as EntityType];
     return requiredPermission ? [{ id: row.id, requiredPermission }] : [];
   });
