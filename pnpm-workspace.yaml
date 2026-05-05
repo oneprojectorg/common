@@ -43,3 +43,7 @@ catalog:
   '@tiptap/extension-text-align': ^3.15.3
   '@tiptap/extension-underline': ^3.15.3
   '@tiptap/suggestion': ^3.15.3
+  react-aria: ^3.48.0
+  react-aria-components: ^1.17.0
+  react-stately: ^3.46.0
+  '@internationalized/date': ^3.12.1
