@@ -111,31 +111,13 @@ export async function trackUserVoted(
   _additionalProps?: Record<string, any>,
 ): Promise<void> {}
 
-export async function trackManualTransitionInitiated(
-  _userId: string,
-  _processId: string,
-  _additionalProps?: Record<string, any>,
-): Promise<void> {}
-
 export async function trackManualTransitionConfirmed(
   _userId: string,
   _processId: string,
   _additionalProps?: Record<string, any>,
 ): Promise<void> {}
 
-export async function trackManualTransitionDismissed(
-  _userId: string,
-  _processId: string,
-  _additionalProps?: Record<string, any>,
-): Promise<void> {}
-
 export async function trackManualSelectionSubmitted(
-  _userId: string,
-  _processId: string,
-  _additionalProps?: Record<string, any>,
-): Promise<void> {}
-
-export async function trackPhaseEndDateChanged(
   _userId: string,
   _processId: string,
   _additionalProps?: Record<string, any>,
