@@ -9,7 +9,7 @@ import {
 } from '@op/test';
 import type { ConsoleMessage, Page } from '@playwright/test';
 import type { AxeResults, ImpactValue, Result } from 'axe-core';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -60,6 +60,27 @@ interface ViolationNode {
   html: string;
   failureSummary: string;
   screenshotPath?: string;
+  /** Stable identity within a route. Computed in the browser; not present until
+   * after `attachFingerprints` runs. */
+  fingerprint?: string;
+}
+
+/** One line of `known-violations.json`. Identity = (rule, route, fingerprint).
+ * Other fields are metadata for human review and are not used for matching. */
+interface KnownViolation {
+  rule: string;
+  impact: Severity;
+  route: string;
+  fingerprint: string;
+  snippet: string;
+  wcagCriteria: WcagCriterion[];
+  notes?: string;
+}
+
+interface KnownViolationsFile {
+  version: 1;
+  axeVersion: string;
+  violations: KnownViolation[];
 }
 
 type RuleTotal = Pick<Result, 'id' | 'help' | 'helpUrl'> & {
@@ -81,29 +102,12 @@ interface BaselineReport {
   screenshotsCaptured: number;
 }
 
-interface BaselineSummary {
-  axeVersion: string;
-  wcagTags: string[];
-  totals: Record<Severity, number>;
-  totalViolations: number;
-  routesScanned: number;
-  ruleTotals: Array<Omit<RuleTotal, 'help' | 'helpUrl'>>;
-  routes: Array<{
-    url: string;
-    label: string;
-    auth: 'public' | 'authenticated';
-    status: 'ok' | 'error';
-    counts: Record<Severity, number>;
-    error?: string;
-  }>;
-  screenshotsAttempted: number;
-  screenshotsCaptured: number;
-}
-
 // Truncates each node's HTML in markdown <details> blocks; keeps entries roughly three lines wide
 // once GitHub renders them inside a collapsed details summary.
 const HTML_PREVIEW_LIMIT = 240;
 const SCREENSHOT_DIR_NAME = 'screenshots';
+const KNOWN_VIOLATIONS_FILE = 'known-violations.json';
+const SNIPPET_LIMIT = 200;
 const PER_ROUTE_TIMEOUT_MS = 90_000;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -221,6 +225,7 @@ test.describe('axe-core baseline scan', () => {
     const report = buildReport(results, axeVersion);
     writeReport(report);
 
+    const flat = flattenViolations(results);
     console.log(
       `[a11y-baseline] ${report.totalViolations} violations across ${report.routesScanned} routes`,
     );
@@ -230,6 +235,27 @@ test.describe('axe-core baseline scan', () => {
     console.log(
       `[a11y-baseline] screenshots ${report.screenshotsCaptured}/${report.screenshotsAttempted}`,
     );
+
+    if (process.env.A11Y_SEED === '1') {
+      writeKnownViolations({
+        version: 1,
+        axeVersion,
+        violations: flat,
+      });
+      console.log(
+        `[a11y-baseline] seeded ${flat.length} entries into ${KNOWN_VIOLATIONS_FILE}`,
+      );
+      return;
+    }
+
+    const known = loadKnownViolations();
+    const diff = diffViolations(known.violations, flat);
+    console.log(
+      `[a11y-baseline] new=${diff.added.length} resolved=${diff.resolved.length} debt=${flat.length}`,
+    );
+    if (diff.added.length > 0 || diff.resolved.length > 0) {
+      throw new Error(formatDiffMessage(diff));
+    }
   });
 });
 
@@ -371,6 +397,7 @@ async function scanRoute(page: Page, route: RouteScan): Promise<RouteResult> {
 
     const axe = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
     const violations = summarize(axe);
+    await attachFingerprints(page, violations);
     await captureScreenshots(page, route, violations);
     return {
       url: reportUrl,
@@ -436,6 +463,290 @@ async function waitForDomSettle(
       }),
     { quietMs, timeoutMs },
   );
+}
+
+/**
+ * Walk the DOM up from each violating node to a stable anchor (data-testid,
+ * role, landmark, or heading text) and emit a route-scoped fingerprint that
+ * survives React Aria autogen IDs, generated CSS classes, and locale changes
+ * for non-text anchors. Runs once per route to amortize the page.evaluate cost.
+ */
+async function attachFingerprints(
+  page: Page,
+  violations: ViolationSummary[],
+): Promise<void> {
+  const inputs: Array<{
+    violationIdx: number;
+    nodeIdx: number;
+    selector: string;
+  }> = [];
+  for (const [violationIdx, v] of violations.entries()) {
+    for (const [nodeIdx, n] of v.nodes.entries()) {
+      const selector = n.target[0];
+      if (selector) {
+        inputs.push({ violationIdx, nodeIdx, selector });
+      }
+    }
+  }
+  if (inputs.length === 0) {
+    return;
+  }
+  const fingerprints = await page.evaluate((inputs) => {
+    const LANDMARKS = new Set([
+      'main',
+      'nav',
+      'header',
+      'footer',
+      'aside',
+      'article',
+      'section',
+    ]);
+    const HEADINGS = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
+
+    function describeAnchor(el: Element): string {
+      const testid = el instanceof HTMLElement ? el.dataset.testid : undefined;
+      if (testid) {
+        return `[data-testid=${testid}]`;
+      }
+      const role = el.getAttribute('role');
+      if (role) {
+        return `[role=${role}]`;
+      }
+      const tag = el.tagName.toLowerCase();
+      if (HEADINGS.has(tag)) {
+        const text = (el.textContent ?? '')
+          .trim()
+          .replace(/\s+/g, ' ')
+          .slice(0, 60);
+        return `${tag}[text=${JSON.stringify(text)}]`;
+      }
+      return tag;
+    }
+
+    function nearestAnchor(start: Element): Element {
+      let cur: Element | null = start;
+      while (cur && cur !== document.body) {
+        const tag = cur.tagName.toLowerCase();
+        if (cur instanceof HTMLElement && cur.dataset.testid) {
+          return cur;
+        }
+        if (cur.hasAttribute('role')) {
+          return cur;
+        }
+        if (LANDMARKS.has(tag)) {
+          return cur;
+        }
+        if (HEADINGS.has(tag)) {
+          return cur;
+        }
+        cur = cur.parentElement;
+      }
+      return document.body;
+    }
+
+    function pathFromAnchor(anchor: Element, target: Element): string {
+      const segments: string[] = [];
+      let cur: Element | null = target;
+      while (cur && cur !== anchor) {
+        const parent: Element | null = cur.parentElement;
+        if (!parent) {
+          break;
+        }
+        const tag = cur.tagName.toLowerCase();
+        const sameTag = Array.from(parent.children).filter(
+          (c) => c.tagName === cur!.tagName,
+        );
+        const idx = sameTag.indexOf(cur) + 1;
+        segments.unshift(
+          sameTag.length === 1 ? tag : `${tag}:nth-of-type(${idx})`,
+        );
+        cur = parent;
+      }
+      return segments.join(' > ');
+    }
+
+    return inputs.map(({ violationIdx, nodeIdx, selector }) => {
+      let el: Element | null = null;
+      try {
+        el = document.querySelector(selector);
+      } catch {
+        // Some axe selectors are not valid querySelector syntax; fall back below.
+      }
+      if (!el) {
+        return { violationIdx, nodeIdx, fingerprint: `unresolved:${selector}` };
+      }
+      const anchor = nearestAnchor(el);
+      const anchorDesc = describeAnchor(anchor);
+      const path = el === anchor ? '' : pathFromAnchor(anchor, el);
+      const fingerprint = path ? `${anchorDesc} > ${path}` : anchorDesc;
+      return { violationIdx, nodeIdx, fingerprint };
+    });
+  }, inputs);
+
+  for (const { violationIdx, nodeIdx, fingerprint } of fingerprints) {
+    const node = violations[violationIdx]?.nodes[nodeIdx];
+    if (node) {
+      node.fingerprint = fingerprint;
+    }
+  }
+}
+
+/** Strip React Aria autogen IDs and trim length so the snippet stays readable
+ * across runs. Used for human inspection only — never as identity. */
+function normalizeSnippet(html: string): string {
+  const stripped = html
+    .replace(/\s+id="[^"]*react-aria[^"]*"/g, '')
+    .replace(/\s+id=":r[a-z0-9]+:"/g, '')
+    .replace(
+      /\s+aria-(labelledby|describedby|controls)="[^"]*react-aria[^"]*"/g,
+      '',
+    )
+    .replace(/\s+aria-(labelledby|describedby|controls)=":r[a-z0-9]+:"/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return stripped.length <= SNIPPET_LIMIT
+    ? stripped
+    : `${stripped.slice(0, SNIPPET_LIMIT - 1)}…`;
+}
+
+function flattenViolations(results: RouteResult[]): KnownViolation[] {
+  const out: KnownViolation[] = [];
+  for (const r of results) {
+    if (r.status !== 'ok') {
+      continue;
+    }
+    for (const v of r.violations) {
+      for (const n of v.nodes) {
+        if (!n.fingerprint) {
+          continue;
+        }
+        out.push({
+          rule: v.id,
+          impact: v.impact,
+          route: r.url,
+          fingerprint: n.fingerprint,
+          snippet: normalizeSnippet(n.html),
+          wcagCriteria: v.wcagCriteria,
+        });
+      }
+    }
+  }
+  return out.sort(violationOrder);
+}
+
+function violationOrder(a: KnownViolation, b: KnownViolation): number {
+  return (
+    severityRank(b.impact) - severityRank(a.impact) ||
+    a.rule.localeCompare(b.rule) ||
+    a.route.localeCompare(b.route) ||
+    a.fingerprint.localeCompare(b.fingerprint)
+  );
+}
+
+function violationKey(
+  v: Pick<KnownViolation, 'rule' | 'route' | 'fingerprint'>,
+): string {
+  return `${v.rule} ${v.route} ${v.fingerprint}`;
+}
+
+function loadKnownViolations(): KnownViolationsFile {
+  const file = path.join(REPORT_DIR, KNOWN_VIOLATIONS_FILE);
+  let raw: string;
+  try {
+    raw = readFileSync(file, 'utf8');
+  } catch {
+    throw new Error(
+      `${KNOWN_VIOLATIONS_FILE} not found at ${file}. ` +
+        `Seed it with \`A11Y_SEED=1 pnpm a11y:baseline\` (or \`pnpm a11y:seed\`).`,
+    );
+  }
+  const parsed = JSON.parse(raw) as Partial<KnownViolationsFile>;
+  if (parsed.version !== 1 || !Array.isArray(parsed.violations)) {
+    throw new Error(
+      `${KNOWN_VIOLATIONS_FILE} has unexpected shape; expected { version: 1, violations: [...] }`,
+    );
+  }
+  return {
+    version: 1,
+    axeVersion: parsed.axeVersion ?? 'unknown',
+    violations: parsed.violations,
+  };
+}
+
+function writeKnownViolations(file: KnownViolationsFile): void {
+  mkdirSync(REPORT_DIR, { recursive: true });
+  const sorted: KnownViolationsFile = {
+    ...file,
+    violations: [...file.violations].sort(violationOrder),
+  };
+  writeFileSync(
+    path.join(REPORT_DIR, KNOWN_VIOLATIONS_FILE),
+    `${JSON.stringify(sorted, null, 2)}\n`,
+  );
+}
+
+interface ViolationDiff {
+  added: KnownViolation[];
+  resolved: KnownViolation[];
+}
+
+function diffViolations(
+  expected: KnownViolation[],
+  actual: KnownViolation[],
+): ViolationDiff {
+  const expectedByKey = new Map(expected.map((v) => [violationKey(v), v]));
+  const actualByKey = new Map(actual.map((v) => [violationKey(v), v]));
+  const added: KnownViolation[] = [];
+  const resolved: KnownViolation[] = [];
+  for (const [key, v] of actualByKey) {
+    if (!expectedByKey.has(key)) {
+      added.push(v);
+    }
+  }
+  for (const [key, v] of expectedByKey) {
+    if (!actualByKey.has(key)) {
+      resolved.push(v);
+    }
+  }
+  return {
+    added: added.sort(violationOrder),
+    resolved: resolved.sort(violationOrder),
+  };
+}
+
+function formatDiffMessage(diff: ViolationDiff): string {
+  const lines: string[] = [];
+  lines.push(
+    `[a11y-baseline] mismatch with ${KNOWN_VIOLATIONS_FILE}: ` +
+      `${diff.added.length} new, ${diff.resolved.length} resolved`,
+  );
+  lines.push('');
+  if (diff.added.length > 0) {
+    lines.push(
+      `NEW (${diff.added.length}) — these violations are not in the list. ` +
+        `Either fix them or add an entry to tests/e2e/a11y-baseline/${KNOWN_VIOLATIONS_FILE}.`,
+    );
+    for (const v of diff.added) {
+      lines.push('');
+      lines.push(`  [${v.impact}] ${v.rule} on ${v.route}`);
+      lines.push(`    fingerprint: ${v.fingerprint}`);
+      lines.push(`    snippet:     ${v.snippet}`);
+    }
+    lines.push('');
+  }
+  if (diff.resolved.length > 0) {
+    lines.push(
+      `RESOLVED (${diff.resolved.length}) — these entries no longer fire. ` +
+        `Delete them from tests/e2e/a11y-baseline/${KNOWN_VIOLATIONS_FILE}.`,
+    );
+    for (const v of diff.resolved) {
+      lines.push('');
+      lines.push(`  [${v.impact}] ${v.rule} on ${v.route}`);
+      lines.push(`    fingerprint: ${v.fingerprint}`);
+    }
+    lines.push('');
+  }
+  return lines.join('\n');
 }
 
 async function captureScreenshots(
@@ -669,53 +980,10 @@ function buildReport(
   };
 }
 
-function buildSummary(report: BaselineReport): BaselineSummary {
-  return {
-    axeVersion: report.axeVersion,
-    wcagTags: report.wcagTags,
-    totals: report.totals,
-    totalViolations: report.totalViolations,
-    routesScanned: report.routesScanned,
-    ruleTotals: report.ruleTotals.map((r) => ({
-      id: r.id,
-      impact: r.impact,
-      occurrences: r.occurrences,
-      routes: r.routes,
-      wcagCriteria: r.wcagCriteria,
-    })),
-    routes: report.routes.map((r) => {
-      if (r.status === 'ok') {
-        return {
-          url: r.url,
-          label: r.label,
-          auth: r.auth,
-          status: 'ok',
-          counts: r.counts,
-        };
-      }
-      return {
-        url: r.url,
-        label: r.label,
-        auth: r.auth,
-        status: 'error',
-        counts: emptyCounts(),
-        error: r.error,
-      };
-    }),
-    screenshotsAttempted: report.screenshotsAttempted,
-    screenshotsCaptured: report.screenshotsCaptured,
-  };
-}
-
 function writeReport(report: BaselineReport): void {
   mkdirSync(REPORT_DIR, { recursive: true });
-  // summary.json is committed and used for PR-vs-base diffing — kept small and stable.
-  // report.json carries full per-node detail (selectors, html snippets, screenshot paths)
-  // and is gitignored because those churn every run.
-  writeFileSync(
-    path.join(REPORT_DIR, 'summary.json'),
-    `${JSON.stringify(buildSummary(report), null, 2)}\n`,
-  );
+  // known-violations.json is the source of truth for CI matching; report.{json,md}
+  // are gitignored triage artifacts that churn every run.
   writeFileSync(
     path.join(REPORT_DIR, 'report.json'),
     `${JSON.stringify(report, null, 2)}\n`,

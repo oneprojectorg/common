@@ -448,32 +448,6 @@ jobs:
           path: |
             tests/e2e/a11y-baseline/report.md
             tests/e2e/a11y-baseline/report.json
-            tests/e2e/a11y-baseline/summary.json
+            tests/e2e/a11y-baseline/known-violations.json
           if-no-files-found: warn
           retention-days: 30
-
-      - name: Fetch base branch summary
-        if: ${{ github.event_name == 'pull_request' && !cancelled() }}
-        run: |
-          BASE="${{ github.base_ref }}"
-          git fetch origin "${BASE}" --depth=1
-          git show "origin/${BASE}:tests/e2e/a11y-baseline/summary.json" > /tmp/base-summary.json 2>/dev/null \
-            || echo '{}' > /tmp/base-summary.json
-
-      - name: Render a11y diff
-        if: ${{ github.event_name == 'pull_request' && !cancelled() }}
-        run: |
-          pnpm tsx scripts/a11y-baseline-diff.ts \
-            /tmp/base-summary.json \
-            tests/e2e/a11y-baseline/summary.json \
-            "${{ steps.upload-report.outputs.artifact-url }}" \
-            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            > /tmp/a11y-comment.md
-          cat /tmp/a11y-comment.md
-
-      - name: Post sticky PR comment
-        if: ${{ github.event_name == 'pull_request' && !cancelled() }}
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          header: a11y-baseline
-          path: /tmp/a11y-comment.md
