@@ -7,7 +7,7 @@ import {
   createProposal,
   getSeededTemplate,
 } from '@op/test';
-import type { Page } from '@playwright/test';
+import type { ConsoleMessage, Page } from '@playwright/test';
 import type { AxeResults, ImpactValue, Result } from 'axe-core';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -110,6 +110,18 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPORT_DIR = path.resolve(__dirname, '../a11y-baseline');
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const SEVERITIES: Severity[] = ['critical', 'serious', 'moderate', 'minor'];
+
+// React 18/19 hydration warnings are emitted via console. If any fire during a
+// route render, the DOM is unstable across runs and axe will produce drifting
+// counts; treat the route as errored rather than baselining a half-hydrated page.
+const HYDRATION_ERROR_PATTERNS = [
+  /hydration failed because the server rendered html didn't match the client/i,
+  /hydration completed but contains mismatches/i,
+  /hydration (text content|node|attribute) mismatch/i,
+];
+
+const DOM_SETTLE_QUIET_MS = 500;
+const DOM_SETTLE_TIMEOUT_MS = 5_000;
 
 const PUBLIC_ROUTES: RouteScan[] = [
   { url: '/login', label: 'Login', auth: 'public' },
@@ -325,18 +337,37 @@ async function scanRouteWithTimeout(
 
 async function scanRoute(page: Page, route: RouteScan): Promise<RouteResult> {
   const reportUrl = route.displayUrl ?? route.url;
+  const hydrationErrors: string[] = [];
+  const onConsole = (msg: ConsoleMessage) => {
+    const text = msg.text();
+    if (HYDRATION_ERROR_PATTERNS.some((p) => p.test(text))) {
+      hydrationErrors.push(text);
+    }
+  };
+  page.on('console', onConsole);
+
   try {
     await page.goto(route.url, {
       waitUntil: 'domcontentloaded',
       timeout: 30_000,
     });
-    // Wait for window.load (recommended over networkidle, which the Playwright docs
-    // discourage because apps with persistent connections never reach idle).
-    await page.waitForLoadState('load', { timeout: 15_000 }).catch(() => {
-      console.warn(
-        `[a11y-baseline] load event timeout on ${route.label}; scanning anyway`,
-      );
+    // Don't swallow the load timeout — a partial render produces a partial axe
+    // scan and silently shifts the baseline. Let it throw into the catch below.
+    await page.waitForLoadState('load', { timeout: 15_000 });
+    // axe `color-contrast` reads computed font metrics; without this wait it
+    // measures fallback-font widths and counts drift run-to-run.
+    await page.evaluate(async () => {
+      await document.fonts.ready;
     });
+    // Suspense queries and React Aria autogen IDs keep swapping DOM after the
+    // load event. Wait for mutations to quiet so axe sees a stable tree.
+    await waitForDomSettle(page, DOM_SETTLE_QUIET_MS, DOM_SETTLE_TIMEOUT_MS);
+
+    if (hydrationErrors.length > 0) {
+      throw new Error(
+        `hydration error: ${hydrationErrors[0]?.slice(0, 200) ?? ''}`,
+      );
+    }
 
     const axe = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
     const violations = summarize(axe);
@@ -364,7 +395,47 @@ async function scanRoute(page: Page, route: RouteScan): Promise<RouteResult> {
       finalUrl: page.url(),
       error: err instanceof Error ? err.message : String(err),
     };
+  } finally {
+    page.off('console', onConsole);
   }
+}
+
+async function waitForDomSettle(
+  page: Page,
+  quietMs: number,
+  timeoutMs: number,
+): Promise<void> {
+  await page.evaluate(
+    ({ quietMs, timeoutMs }) =>
+      new Promise<void>((resolve, reject) => {
+        let lastMutation = Date.now();
+        const observer = new MutationObserver(() => {
+          lastMutation = Date.now();
+        });
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          characterData: true,
+        });
+        const start = Date.now();
+        const tick = () => {
+          if (Date.now() - lastMutation >= quietMs) {
+            observer.disconnect();
+            resolve();
+            return;
+          }
+          if (Date.now() - start >= timeoutMs) {
+            observer.disconnect();
+            reject(new Error(`DOM did not settle within ${timeoutMs}ms`));
+            return;
+          }
+          setTimeout(tick, 100);
+        };
+        tick();
+      }),
+    { quietMs, timeoutMs },
+  );
 }
 
 async function captureScreenshots(
