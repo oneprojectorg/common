@@ -482,10 +482,17 @@ export const PrivacyPolicyContent = () => {
           of cookies, there is a simple procedure in most browsers that allows
           you to automatically decline cookies or be given the choice of
           declining or accepting the transfer to your computer of a particular
-          cookie (or cookies) from a particular site. Visit
-          http://www.allaboutcookies.org/manage-cookies/index.html for more
-          information. If, however, you do not accept these cookies, you may
-          experience some inconvenience in your use of the Services. For
+          cookie (or cookies) from a particular site. Visit{' '}
+          <a
+            href="http://www.allaboutcookies.org/manage-cookies/index.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-teal hover:underline"
+          >
+            http://www.allaboutcookies.org/manage-cookies/index.html
+          </a>{' '}
+          for more information. If, however, you do not accept these cookies,
+          you may experience some inconvenience in your use of the Services. For
           example, we may not be able to recognize your computer, and you may
           need to log in every time you visit.
         </p>
@@ -713,7 +720,15 @@ export const PrivacyPolicyContent = () => {
           Personal Data is processed, or to exercise your privacy rights, please
           contact us by one of the methods below:
         </p>
-        <p className="mb-2">Email: privacy@oneproject.org</p>
+        <p className="mb-2">
+          Email:{' '}
+          <a
+            href="mailto:privacy@oneproject.org"
+            className="text-primary-teal hover:underline"
+          >
+            privacy@oneproject.org
+          </a>
+        </p>
         <p className="mb-2">
           Mail: 548 Market Street, Suite 85871, San Francisco, California 94104
         </p>

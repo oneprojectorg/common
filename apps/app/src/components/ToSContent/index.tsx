@@ -437,11 +437,17 @@ export const ToSContent = () => {
           Millennium Copyright Act ("DMCA") and other applicable intellectual
           property laws with respect to any alleged or actual infringement. A
           notification of claimed copyright infringement should be emailed to
-          One Project's Copyright Agent at privacy@oneproject.org (Subject line:
-          "DMCA Takedown Request"). You may also contact us by mail at: 548
-          Market Street, Suite 85871, San Francisco, California 94104. To be
-          effective, the notification must be in writing and contain the
-          following information:
+          One Project's Copyright Agent at{' '}
+          <a
+            href="mailto:privacy@oneproject.org"
+            className="text-primary-teal hover:underline"
+          >
+            privacy@oneproject.org
+          </a>{' '}
+          (Subject line: "DMCA Takedown Request"). You may also contact us by
+          mail at: 548 Market Street, Suite 85871, San Francisco, California
+          94104. To be effective, the notification must be in writing and
+          contain the following information:
         </p>
         <ul className="mb-4 list-disc pl-6">
           <li className="mb-2">
@@ -825,22 +831,37 @@ export const ToSContent = () => {
           dispute) shall be conducted by a single, neutral arbitrator
           administered by JAMS or its successor ("JAMS") and conducted pursuant
           to the then-current Streamlined Arbitration Rules and Procedures
-          (available at https://www.jamsadr.com/rules-streamlined-arbitration/)
-          and, if you are an individual, in accordance with JAMS' Consumer
-          Arbitration Minimum Standards (available at
-          https://www.jamsadr.com/consumer-minimum-standards/) (as applicable,
-          the "JAMS Rules"). If the JAMS Rules conflict with any portion of
-          these Terms of Service, these Terms of Service shall control. You and
-          One Project shall mutually agree on a neutral arbitrator, provided
-          that if the parties cannot agree on an arbitrator within ten (10)
-          days, then JAMS will choose the arbitrator. The arbitration of any
-          claims or disputes hereunder shall be conducted in San Francisco,
-          California, except that if you are an individual the arbitration may
-          be conducted in the county or parish of your primary residence. You or
-          we also may choose to have the arbitration conducted by telephone,
-          based on written submissions, or in person at another mutually agreed
-          location. Payment of all filing, administration, and arbitrator fees
-          will be governed by the JAMS Rules.
+          (available at{' '}
+          <a
+            href="https://www.jamsadr.com/rules-streamlined-arbitration/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-teal hover:underline"
+          >
+            https://www.jamsadr.com/rules-streamlined-arbitration/
+          </a>
+          ) and, if you are an individual, in accordance with JAMS' Consumer
+          Arbitration Minimum Standards (available at{' '}
+          <a
+            href="https://www.jamsadr.com/consumer-minimum-standards/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-teal hover:underline"
+          >
+            https://www.jamsadr.com/consumer-minimum-standards/
+          </a>
+          ) (as applicable, the "JAMS Rules"). If the JAMS Rules conflict with
+          any portion of these Terms of Service, these Terms of Service shall
+          control. You and One Project shall mutually agree on a neutral
+          arbitrator, provided that if the parties cannot agree on an arbitrator
+          within ten (10) days, then JAMS will choose the arbitrator. The
+          arbitration of any claims or disputes hereunder shall be conducted in
+          San Francisco, California, except that if you are an individual the
+          arbitration may be conducted in the county or parish of your primary
+          residence. You or we also may choose to have the arbitration conducted
+          by telephone, based on written submissions, or in person at another
+          mutually agreed location. Payment of all filing, administration, and
+          arbitrator fees will be governed by the JAMS Rules.
         </p>
         <p className="mb-4">
           The arbitrator shall apply the law of the State of California as
@@ -907,10 +928,23 @@ export const ToSContent = () => {
           Terms of Service. The address for One Project for notice purposes
           under these Terms of Service is 548 Market Street, Suite 85871, San
           Francisco, California 94104, although you may also send a copy of any
-          notice sent to that address to support@oneproject.org. All other
-          feedback, comments, requests for technical support, and other
-          communications from you relating to the Services or these Terms of
-          Service should be directed to: support@oneproject.org.
+          notice sent to that address to{' '}
+          <a
+            href="mailto:support@oneproject.org"
+            className="text-primary-teal hover:underline"
+          >
+            support@oneproject.org
+          </a>
+          . All other feedback, comments, requests for technical support, and
+          other communications from you relating to the Services or these Terms
+          of Service should be directed to:{' '}
+          <a
+            href="mailto:support@oneproject.org"
+            className="text-primary-teal hover:underline"
+          >
+            support@oneproject.org
+          </a>
+          .
         </p>
       </FormalSection>
     </div>
