@@ -61,6 +61,7 @@ export * from './getReviewAssignment';
 export * from './listReviewAssignments';
 export * from './listProposalsWithReviewAggregates';
 export * from './getProposalWithReviewAggregates';
+export * from './getPhaseReviewProgress';
 export * from './listProposalsRevisionRequests';
 export * from './listProposalRevisionRequests';
 export * from './submitRevisionResponse';
