@@ -449,5 +449,23 @@ jobs:
             tests/e2e/a11y-baseline/report.md
             tests/e2e/a11y-baseline/report.json
             tests/e2e/a11y-baseline/known-violations.json
+            tests/e2e/a11y-baseline/diff.md
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Append run links to PR comment body
+        if: ${{ github.event_name == 'pull_request' && !cancelled() }}
+        run: |
+          if [ -f tests/e2e/a11y-baseline/diff.md ]; then
+            {
+              echo ""
+              echo "[Browse full report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}#summary) · [Download artifact](${{ steps.upload-report.outputs.artifact-url }})"
+            } >> tests/e2e/a11y-baseline/diff.md
+          fi
+
+      - name: Post sticky PR comment
+        if: ${{ github.event_name == 'pull_request' && !cancelled() && hashFiles('tests/e2e/a11y-baseline/diff.md') != '' }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: a11y-baseline
+          path: tests/e2e/a11y-baseline/diff.md
