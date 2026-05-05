@@ -48,10 +48,14 @@ export const duplicateInstance = async ({
     new UnauthorizedError('User must be authenticated'),
   );
 
-  const ownerProfileId = dbUser.currentProfileId ?? dbUser.profileId;
+  // Owner is always the individual creator. Steward defaults to the profile the
+  // user is acting as (an org when in org context, otherwise the individual).
+  const ownerProfileId = dbUser.profileId;
   if (!ownerProfileId) {
-    throw new UnauthorizedError('User must have an active profile');
+    throw new UnauthorizedError('User must have a profile');
   }
+  const resolvedStewardProfileId =
+    stewardProfileId ?? dbUser.currentProfileId ?? ownerProfileId;
 
   if (!user.email) {
     throw new CommonError(
@@ -98,7 +102,7 @@ export const duplicateInstance = async ({
     name,
     description: sourceInstance.description ?? undefined,
     ownerProfileId,
-    stewardProfileId,
+    stewardProfileId: resolvedStewardProfileId,
     creatorAuthUserId: user.id,
     creatorEmail: user.email,
     instanceData: newInstanceData,

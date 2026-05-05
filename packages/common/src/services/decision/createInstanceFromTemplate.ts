@@ -147,11 +147,14 @@ export const createInstanceFromTemplate = async ({
     new UnauthorizedError('User must be authenticated'),
   );
 
-  const ownerProfileId = dbUser.currentProfileId ?? dbUser.profileId;
+  // Owner is always the individual creator. Steward is the profile the user is
+  // acting as (an org when in org context, otherwise the individual themselves).
+  const ownerProfileId = dbUser.profileId;
   if (!ownerProfileId) {
     // TODO: profileId should not be nullable in the schema
-    throw new UnauthorizedError('User must have an active profile');
+    throw new UnauthorizedError('User must have a profile');
   }
+  const stewardProfileId = dbUser.currentProfileId ?? ownerProfileId;
 
   // TODO: This shouldn't be a requirement in the future and we need to resolve that (SMS accounts for instance)
   if (!user.email) {
@@ -168,7 +171,7 @@ export const createInstanceFromTemplate = async ({
     instanceData,
     name,
     ownerProfileId,
-    stewardProfileId: ownerProfileId,
+    stewardProfileId,
     creatorAuthUserId: user.id,
     creatorEmail: user.email,
   });
