@@ -250,6 +250,7 @@ test.describe('axe-core baseline scan', () => {
 
     const known = loadKnownViolations();
     const diff = diffViolations(known.violations, flat);
+    writeDiffMarkdown(formatDiffMarkdown(diff, flat));
     console.log(
       `[a11y-baseline] new=${diff.added.length} resolved=${diff.resolved.length} debt=${flat.length}`,
     );
@@ -747,6 +748,78 @@ function formatDiffMessage(diff: ViolationDiff): string {
     lines.push('');
   }
   return lines.join('\n');
+}
+
+function totalsBySeverity(
+  violations: KnownViolation[],
+): Record<Severity, number> {
+  const counts: Record<Severity, number> = {
+    critical: 0,
+    serious: 0,
+    moderate: 0,
+    minor: 0,
+  };
+  for (const v of violations) {
+    counts[v.impact] += 1;
+  }
+  return counts;
+}
+
+/** Sticky PR comment body. Always written so reviewers see "no changes; debt N"
+ * on green PRs as well as "+X new ⚠️ / -Y resolved ✅" on diffs. */
+function formatDiffMarkdown(
+  diff: ViolationDiff,
+  current: KnownViolation[],
+): string {
+  const totals = totalsBySeverity(current);
+  const lines: string[] = [];
+  lines.push('<!-- a11y-known-violations -->');
+  lines.push('## Accessibility known violations');
+  lines.push('');
+  lines.push(
+    `**Debt:** ${current.length} (critical ${totals.critical}, serious ${totals.serious}, moderate ${totals.moderate}, minor ${totals.minor})`,
+  );
+  lines.push('');
+  if (diff.added.length === 0 && diff.resolved.length === 0) {
+    lines.push(
+      'No changes vs `tests/e2e/a11y-baseline/known-violations.json`.',
+    );
+    lines.push('');
+    return `${lines.join('\n')}\n`;
+  }
+  if (diff.added.length > 0) {
+    lines.push(`### New (${diff.added.length}) ⚠️`);
+    lines.push('');
+    lines.push(
+      'Either fix or add an entry to `tests/e2e/a11y-baseline/known-violations.json`.',
+    );
+    for (const v of diff.added) {
+      lines.push('');
+      lines.push(`- **[${v.impact}] \`${v.rule}\`** on \`${v.route}\``);
+      lines.push(`  - fingerprint: \`${v.fingerprint}\``);
+      lines.push(`  - snippet: \`${v.snippet}\``);
+    }
+    lines.push('');
+  }
+  if (diff.resolved.length > 0) {
+    lines.push(`### Resolved (${diff.resolved.length}) ✅`);
+    lines.push('');
+    lines.push(
+      'Delete these from `tests/e2e/a11y-baseline/known-violations.json`.',
+    );
+    for (const v of diff.resolved) {
+      lines.push('');
+      lines.push(`- **[${v.impact}] \`${v.rule}\`** on \`${v.route}\``);
+      lines.push(`  - fingerprint: \`${v.fingerprint}\``);
+    }
+    lines.push('');
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+function writeDiffMarkdown(content: string): void {
+  mkdirSync(REPORT_DIR, { recursive: true });
+  writeFileSync(path.join(REPORT_DIR, 'diff.md'), content);
 }
 
 async function captureScreenshots(
