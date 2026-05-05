@@ -64,8 +64,8 @@ export type SelectVariantsProps = VariantProps<typeof selectStyles>;
 export interface SelectProps<
   T extends object,
   M extends SelectionMode = 'single',
-> extends Omit<AriaSelectProps<T, M>, 'children'>,
-    SelectVariantsProps {
+>
+  extends Omit<AriaSelectProps<T, M>, 'children'>, SelectVariantsProps {
   label?: string;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
