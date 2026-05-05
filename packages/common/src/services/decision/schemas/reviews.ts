@@ -215,7 +215,7 @@ export const proposalWithSubmittedReviewsSchema =
  * `daysLeft` is rounded up from now to the phase's `endDate`. `null` when
  * the phase has no end date or no phase is resolvable.
  */
-export const reviewProgressSchema = z.object({
+export const phaseReviewProgressSchema = z.object({
   proposalsReviewed: z.number().int(),
   proposalsTotal: z.number().int(),
   activeReviewers: z.number().int(),
@@ -223,7 +223,7 @@ export const reviewProgressSchema = z.object({
   daysLeft: z.number().int().nullable(),
 });
 
-export type ReviewProgress = z.infer<typeof reviewProgressSchema>;
+export type PhaseReviewProgress = z.infer<typeof phaseReviewProgressSchema>;
 
 // ── Types ───────────────────────────────────────────────────────────────
 

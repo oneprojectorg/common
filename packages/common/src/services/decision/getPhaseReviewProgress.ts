@@ -1,4 +1,4 @@
-import { and, db, eq, inArray, sql } from '@op/db/client';
+import { and, countDistinct, db, eq, inArray, sql } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
   proposalReviewAssignments,
@@ -9,27 +9,30 @@ import { z } from 'zod';
 import { UnauthorizedError } from '../../utils';
 import { getInstance } from './getInstance';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
-import { type ReviewProgress, reviewProgressSchema } from './schemas/reviews';
+import {
+  type PhaseReviewProgress,
+  phaseReviewProgressSchema,
+} from './schemas/reviews';
 
-export const getReviewProgressInputSchema = z.object({
+export const getPhaseReviewProgressInputSchema = z.object({
   processInstanceId: z.uuid(),
   phaseId: z.string().optional(),
 });
 
-export type GetReviewProgressInput = z.infer<
-  typeof getReviewProgressInputSchema
+export type GetPhaseReviewProgressInput = z.infer<
+  typeof getPhaseReviewProgressInputSchema
 >;
 
 /**
  * Statuses that count as "active" for the active-reviewer denominator —
  * anything past PENDING means the reviewer has engaged with their queue.
  */
-const ACTIVE_ASSIGNMENT_STATUSES = [
+const ACTIVE_ASSIGNMENT_STATUSES: ProposalReviewAssignmentStatus[] = [
   ProposalReviewAssignmentStatus.IN_PROGRESS,
   ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
   ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
   ProposalReviewAssignmentStatus.COMPLETED,
-] as const;
+];
 
 /**
  * Instance-level progress metrics for the admin overview header.
@@ -46,9 +49,9 @@ const ACTIVE_ASSIGNMENT_STATUSES = [
  * assignment is COMPLETED. A proposal with zero assignments does not count
  * as reviewed — there is no review work to be done.
  */
-export async function getReviewProgress(
-  input: GetReviewProgressInput & { user: User },
-): Promise<ReviewProgress> {
+export async function getPhaseReviewProgress(
+  input: GetPhaseReviewProgressInput & { user: User },
+): Promise<PhaseReviewProgress> {
   const { user, processInstanceId } = input;
 
   const instance = await getInstance({ instanceId: processInstanceId, user });
@@ -62,7 +65,7 @@ export async function getReviewProgress(
   const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
 
   const phaseProposalIds = await getProposalIdsForPhase({
-    instanceId: processInstanceId,
+    instance,
     phaseId,
   });
 
@@ -75,7 +78,7 @@ export async function getReviewProgress(
     }),
   ]);
 
-  return reviewProgressSchema.parse({
+  return phaseReviewProgressSchema.parse({
     proposalsReviewed: completedProposalsCount,
     proposalsTotal: phaseProposalIds.length,
     activeReviewers: reviewerCounts.active,
@@ -106,22 +109,21 @@ async function getReviewerCounts({
   processInstanceId: string;
   phaseId: string | undefined;
 }): Promise<{ total: number; active: number }> {
-  const activeStatuses = sql.join(
-    ACTIVE_ASSIGNMENT_STATUSES.map((status) => sql`${status}`),
-    sql`, `,
-  );
-
   const [row] = await db
     .select({
-      total: sql<number>`COUNT(DISTINCT ${proposalReviewAssignments.reviewerProfileId})`,
-      active: sql<number>`COUNT(DISTINCT CASE WHEN ${proposalReviewAssignments.status} IN (${activeStatuses}) THEN ${proposalReviewAssignments.reviewerProfileId} END)`,
+      total: countDistinct(proposalReviewAssignments.reviewerProfileId),
+      active:
+        sql<number>`count(distinct ${proposalReviewAssignments.reviewerProfileId}) filter (where ${inArray(
+          proposalReviewAssignments.status,
+          ACTIVE_ASSIGNMENT_STATUSES,
+        )})`.mapWith(Number),
     })
     .from(proposalReviewAssignments)
     .where(and(...instancePhaseConditions(processInstanceId, phaseId)));
 
   return {
-    total: Number(row?.total ?? 0),
-    active: Number(row?.active ?? 0),
+    total: row?.total ?? 0,
+    active: row?.active ?? 0,
   };
 }
 
@@ -154,7 +156,7 @@ async function getCompletedProposalsCount({
     .where(and(...conditions))
     .groupBy(proposalReviewAssignments.proposalId)
     .having(
-      sql`COUNT(*) = COUNT(*) FILTER (WHERE ${proposalReviewAssignments.status} = ${ProposalReviewAssignmentStatus.COMPLETED})`,
+      sql`count(*) = count(*) filter (where ${proposalReviewAssignments.status} = ${ProposalReviewAssignmentStatus.COMPLETED})`,
     );
 
   return rows.length;

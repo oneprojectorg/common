@@ -48,7 +48,7 @@ async function setReviewPhaseEndDate(instanceId: string, endDate: string) {
     .where(eq(processInstances.id, instanceId));
 }
 
-describe.concurrent('getReviewProgress', () => {
+describe.concurrent('getPhaseReviewProgress', () => {
   it('rejects callers without admin access on the instance', async ({
     task,
     onTestFinished,
@@ -60,7 +60,7 @@ describe.concurrent('getReviewProgress', () => {
     const reviewerCaller = await createAuthenticatedCaller(reviewer.email);
 
     await expect(
-      reviewerCaller.decision.getReviewProgress({
+      reviewerCaller.decision.getPhaseReviewProgress({
         processInstanceId: context.instance.instance.id,
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
@@ -78,7 +78,7 @@ describe.concurrent('getReviewProgress', () => {
       context.defaultReviewer.email,
     );
 
-    const result = await adminCaller.decision.getReviewProgress({
+    const result = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
     });
 
@@ -134,7 +134,7 @@ describe.concurrent('getReviewProgress', () => {
       context.defaultReviewer.email,
     );
 
-    const result = await adminCaller.decision.getReviewProgress({
+    const result = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
     });
 
@@ -170,7 +170,7 @@ describe.concurrent('getReviewProgress', () => {
       context.defaultReviewer.email,
     );
 
-    const result = await adminCaller.decision.getReviewProgress({
+    const result = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
     });
 
@@ -204,7 +204,7 @@ describe.concurrent('getReviewProgress', () => {
       context.defaultReviewer.email,
     );
 
-    const result = await adminCaller.decision.getReviewProgress({
+    const result = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
     });
 
@@ -236,7 +236,7 @@ describe.concurrent('getReviewProgress', () => {
       context.defaultReviewer.email,
     );
 
-    const result = await adminCaller.decision.getReviewProgress({
+    const result = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
     });
 
@@ -281,7 +281,7 @@ describe.concurrent('getReviewProgress', () => {
       context.defaultReviewer.email,
     );
 
-    const result = await adminCaller.decision.getReviewProgress({
+    const result = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
     });
 
@@ -315,7 +315,7 @@ describe.concurrent('getReviewProgress', () => {
       primary.context.defaultReviewer.email,
     );
 
-    const result = await adminCaller.decision.getReviewProgress({
+    const result = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: primary.context.instance.instance.id,
     });
 
@@ -340,7 +340,7 @@ describe.concurrent('getReviewProgress', () => {
       context.defaultReviewer.email,
     );
 
-    const result = await adminCaller.decision.getReviewProgress({
+    const result = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
     });
 
@@ -360,7 +360,7 @@ describe.concurrent('getReviewProgress', () => {
       context.defaultReviewer.email,
     );
 
-    const result = await adminCaller.decision.getReviewProgress({
+    const result = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
     });
 
@@ -394,7 +394,7 @@ describe.concurrent('getReviewProgress', () => {
       context.defaultReviewer.email,
     );
 
-    const before = await adminCaller.decision.getReviewProgress({
+    const before = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
     });
     expect(before.proposalsReviewed).toBe(0);
@@ -405,7 +405,7 @@ describe.concurrent('getReviewProgress', () => {
       .set({ status: ProposalReviewAssignmentStatus.COMPLETED })
       .where(eq(proposalReviewAssignments.id, created.assignment.id));
 
-    const after = await adminCaller.decision.getReviewProgress({
+    const after = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
     });
     expect(after.proposalsReviewed).toBe(1);
