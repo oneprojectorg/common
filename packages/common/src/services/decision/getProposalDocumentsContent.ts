@@ -6,11 +6,16 @@ import { parseProposalData } from './proposalDataSchema';
 import type { ProposalTemplateSchema } from './types';
 
 /**
- * Proposal document content can be either TipTap JSON or legacy HTML
+ * Proposal document content can be either TipTap JSON, legacy HTML, or
+ * `unavailable` when a collaborationDocId was set but the fetch failed.
+ * The `unavailable` variant lets callers distinguish a real load failure
+ * (worth surfacing to the user) from a proposal that genuinely has no body
+ * (e.g. an unedited draft).
  */
 export type ProposalDocumentContent =
   | { type: 'json'; fragments: TipTapFragmentResponse }
-  | { type: 'html'; content: string };
+  | { type: 'html'; content: string }
+  | { type: 'unavailable' };
 
 /**
  * Fetch document contents for proposals, handling both TipTap collaboration docs
@@ -97,6 +102,8 @@ export async function getProposalDocumentsContent(
     for (const { id, fragments } of results) {
       if (fragments) {
         documentContentMap.set(id, { type: 'json', fragments });
+      } else {
+        documentContentMap.set(id, { type: 'unavailable' });
       }
     }
   }

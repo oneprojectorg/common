@@ -19,6 +19,7 @@ import { useTranslations } from '@/lib/i18n';
 import { Link as NavLink } from '@/lib/i18n/routing';
 
 import { ProfileAvatar } from '../ProfileAvatar';
+import { DocumentNotAvailable } from './DocumentNotAvailable';
 import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { ProposalContentRenderer } from './ProposalContentRenderer';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
@@ -209,6 +210,8 @@ export function ProposalPreview({
           htmlContent={htmlContent}
           translatedMeta={translatedMeta}
         />
+      ) : proposal.documentContent?.type === 'unavailable' ? (
+        <DocumentNotAvailable />
       ) : null}
 
       {/* Attachments Section */}

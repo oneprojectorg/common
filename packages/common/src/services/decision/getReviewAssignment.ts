@@ -63,7 +63,7 @@ export async function getReviewAssignment({
 
   const documentContent = documentContentMap.get(proposalSnapshot.id);
 
-  if (!documentContent) {
+  if (!documentContent || documentContent.type === 'unavailable') {
     throw new ValidationError(
       `Could not resolve document content for proposal ${proposalSnapshot.id}`,
     );

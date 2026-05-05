@@ -22,6 +22,7 @@ import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { Bullet } from '../../Bullet';
+import { DocumentNotAvailable } from '../DocumentNotAvailable';
 import { useCardTranslation } from '../ProposalTranslationContext';
 import {
   getProposalContentPreview,
@@ -379,6 +380,10 @@ export function ProposalCardPreview({
       : undefined;
 
   const displayText = translatedPreview ?? previewText;
+
+  if (proposal.documentContent?.type === 'unavailable') {
+    return <DocumentNotAvailable className="py-4" />;
+  }
 
   if (displayText === null) {
     return null;
