@@ -79,6 +79,9 @@ export const documentContentSchema = z.discriminatedUnion('type', [
     type: z.literal('html'),
     content: z.string(),
   }),
+  z.object({
+    type: z.literal('unavailable'),
+  }),
 ]);
 
 export const proposalAccessSchema = z.object({
