@@ -135,7 +135,6 @@ export function DecisionProcessStepper({
     if (!instanceId || transitionMutation.isPending) {
       return;
     }
-    posthog.capture('manual_transition_confirmed', getTrackingProps());
     transitionMutation.mutate({
       instanceId,
       fromPhaseId: currentStateId,
