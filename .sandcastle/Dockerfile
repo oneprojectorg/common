@@ -6,11 +6,59 @@ RUN apt-get update && apt-get install -y \
   git \
   curl \
   jq \
+  ca-certificates \
+  gnupg \
+  lsb-release \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install the Docker CLI (client only — no daemon). The sandbox talks to a
+# DinD sidecar started by .sandcastle/main.ts via DOCKER_HOST=tcp://127.0.0.1:2375,
+# which gives integration tests a working `supabase start` without privileged.
+RUN install -m 0755 -d /etc/apt/keyrings \
+  && curl -fsSL https://download.docker.com/linux/debian/gpg \
+       | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
+  && chmod a+r /etc/apt/keyrings/docker.gpg \
+  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+       > /etc/apt/sources.list.d/docker.list \
+  && apt-get update \
+  && apt-get install -y docker-ce-cli docker-compose-plugin \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install the Supabase CLI. Used by `pnpm w:api test:supabase:start` to bring
+# up the test-only Supabase stack (Postgres on 55322, Kong on 55321, etc.) so
+# vitest's globalSetup can run migrations.
+RUN ARCH="$(dpkg --print-architecture)" \
+  && curl -fsSL "https://github.com/supabase/cli/releases/latest/download/supabase_linux_${ARCH}.tar.gz" \
+       | tar -xz -C /usr/local/bin supabase \
+  && chmod +x /usr/local/bin/supabase
+
+# Chromium system dependencies for Playwright. The reviewer's QA prompt drives
+# UI verification via the Playwright MCP server (configured per-sandbox by the
+# orchestrator), which launches a headless Chromium inside this container.
+RUN apt-get update && apt-get install -y \
+  libnss3 libnspr4 libdbus-1-3 libatk1.0-0 libatk-bridge2.0-0 \
+  libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 \
+  libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2 libatspi2.0-0 \
+  libx11-6 libxext6 libxcb1 fonts-liberation \
   && rm -rf /var/lib/apt/lists/*
 
 # Enable corepack so pnpm is resolved from the workspace's package.json
 # (packageManager field) at runtime — always the correct version.
 RUN corepack enable
+
+# Install bun. Required by the vendored gstack at .claude/skills/gstack/ —
+# the linux/amd64 versions of the bun-compiled binaries (browse, design,
+# find-browse, gstack-global-discover) are rebuilt the first time a sandbox
+# starts (see .sandcastle/main.ts → issueHooks → bun-build hook).
+RUN curl -fsSL https://bun.sh/install | bash \
+  && ln -s /root/.bun/bin/bun /usr/local/bin/bun \
+  && chmod -R a+rX /root/.bun
+
+# Install the OpenAI codex CLI. Required by gstack's /codex skill, which
+# is invoked from the reviewer prompt for an independent second opinion.
+# Soft dependency: the skill checks for OPENAI_API_KEY at runtime and
+# degrades gracefully if not configured.
+RUN npm install -g @openai/codex
 
 # Bake .sandcastle/.env into the image so sandcastle-asana works regardless of
 # whether the invoking shell inherits container env vars (prompt shell
@@ -269,6 +317,13 @@ USER root
 RUN chmod -R a+rwX /home/agent
 USER agent
 WORKDIR /home/agent
+
+# Pre-install Chrome-for-Testing for the Playwright MCP server. The reviewer's
+# QA prompt drives UI verification by spawning `npx @playwright/mcp` inside
+# this container, which (with `--browser chromium`) launches the
+# chrome-for-testing build distributed by the same `@playwright/mcp` package.
+# Pre-installing avoids a 200MB+ download on first agent invocation.
+RUN npx --yes @playwright/mcp@latest install-browser chrome-for-testing
 
 # In worktree sandbox mode, Sandcastle bind-mounts the git worktree at /home/agent/workspace
 # and overrides the working directory to /home/agent/workspace at container start.

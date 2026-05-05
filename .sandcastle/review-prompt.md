@@ -40,14 +40,16 @@ independently. Don't accept the implementer's word; re-run everything.
    walk the flow, query the data, diff the output) and confirm the
    observed behavior matches what's expected.
 
-   For UI/web flows, bring up the dev environment with `pnpm docker:dev`
-   and drive the browser with the Playwright MCP tools
-   (`mcp__playwright__browser_navigate`, `browser_click`,
-   `browser_snapshot`, `browser_console_messages`, etc.). Capture a
-   `browser_take_screenshot` for any visual criterion so the trail is in
-   the log.
+4. Run `/qa` to drive the changed feature in a real headless browser and
+   verify the task's acceptance criteria. The skill produces before/after
+   health scores and screenshots — review them and treat any regression
+   as a failing gate.
 
-4. If any check fails:
+5. Run `/cso` to audit the diff for secrets, OWASP issues, and dependency
+   risks. Reviewer-time security gate; any high-severity finding is a
+   failing gate.
+
+6. If any check fails:
 
    - If you can fix it on this branch, do so and commit the fix.
    - If you can't (out of scope, unclear, blocked), post a comment on the
@@ -59,33 +61,23 @@ Only continue to the code-cleanup pass below once every gate is green.
 
 # REVIEW PROCESS
 
-1. **Understand the change**: Read the diff and commits above to understand the intent.
+1. Run `/review` to analyze the diff against the base branch. The skill
+   covers SQL safety, LLM trust boundaries, conditional side effects,
+   naming, nesting, dead code, and structural smell, AND runs a built-in
+   adversarial pass (Claude adversarial subagent + Codex adversarial
+   challenge when `OPENAI_API_KEY` is set). Apply structural fixes it
+   surfaces; commit them on this branch.
 
-2. **Analyze for improvements**: Look for opportunities to:
-   - Reduce unnecessary complexity and nesting
-   - Eliminate redundant code and abstractions
-   - Improve readability through clear variable and function names
-   - Consolidate related logic
-   - Remove unnecessary comments that describe obvious code
-   - Avoid nested ternary operators - prefer switch statements or if/else chains
-   - Choose clarity over brevity - explicit code is often better than overly compact code
+2. The clarity / readability cleanup the prior prompt described is
+   subsumed by `/review`. Only do additional manual cleanup if `/review`
+   flagged none and the diff still has obvious smell (over-deep nesting,
+   misleading names, copy-paste blocks).
 
-3. **Check correctness**:
-   - Does the implementation match the intent? Are edge cases handled?
-   - Are new/changed behaviours covered by tests?
-   - Are there unsafe casts, `any` types, or unchecked assumptions?
-   - Does the change introduce injection vulnerabilities, credential leaks, or other security issues?
+3. Apply project standards from @.sandcastle/CODING_STANDARDS.md.
 
-4. **Maintain balance**: Avoid over-simplification that could:
-   - Reduce code clarity or maintainability
-   - Create overly clever solutions that are hard to understand
-   - Combine too many concerns into single functions or components
-   - Remove helpful abstractions that improve code organization
-   - Make the code harder to debug or extend
-
-5. **Apply project standards**: Follow the coding standards defined in @.sandcastle/CODING_STANDARDS.md
-
-6. **Preserve functionality**: Never change what the code does - only how it does it. All original features, outputs, and behaviors must remain intact.
+4. **Preserve functionality**: Never change what the code does — only how
+   it does it. All original features, outputs, and behaviours must remain
+   intact.
 
 # EXECUTION
 

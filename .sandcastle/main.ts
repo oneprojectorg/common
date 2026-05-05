@@ -23,6 +23,7 @@
 
 import * as sandcastle from '@ai-hero/sandcastle';
 import { docker } from '@ai-hero/sandcastle/sandboxes/docker';
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 
 // ---------------------------------------------------------------------------
@@ -150,14 +151,109 @@ async function waitForBacklog(): Promise<boolean> {
 // Claude Code's bubblewrap sandbox for host-side use) — Docker is already
 // providing isolation, and bwrap/socat aren't installed in the image.
 // pnpm install ensures the sandbox always has fresh dependencies.
-const hooks = {
+//
+// `enabledMcpjsonServers: ["playwright"]` allowlists the playwright entry
+// from `.mcp.json` so Claude Code starts it without the first-run approval
+// prompt. We also overwrite `.mcp.json` in the worktree with a sandbox-only
+// version that:
+//   - drops figma-dev-mode (SSE to host's localhost:3845 — unreachable here)
+//   - drops asana SSE (different auth surface; sandcastle-asana CLI is used)
+//   - passes `--browser chromium` to @playwright/mcp so it uses the chromium
+//     bundle pre-installed by the Dockerfile instead of looking for Chrome
+const SETTINGS_LOCAL_JSON =
+  '{"sandbox":{"enabled":false},"enabledMcpjsonServers":["playwright"]}';
+const SANDBOX_MCP_JSON = JSON.stringify({
+  mcpServers: {
+    playwright: {
+      type: 'stdio',
+      command: 'npx',
+      args: ['@playwright/mcp@latest', '--headless', '--browser', 'chromium'],
+    },
+  },
+});
+const writeSettingsLocal = {
+  command:
+    `mkdir -p .claude && printf '%s\\n' '${SETTINGS_LOCAL_JSON}' > .claude/settings.local.json && ` +
+    `printf '%s\\n' '${SANDBOX_MCP_JSON}' > .mcp.json`,
+};
+
+// Symlink the vendored gstack into ~/.claude/skills/gstack so the gstack
+// skills' hardcoded `~/.claude/skills/gstack/bin/...` preamble paths resolve
+// inside the sandbox. The container has no host home, so this just points
+// at the vendored copy on the worktree.
+const linkGstack = {
+  command:
+    'mkdir -p ~/.claude/skills && ' +
+    'ln -sfn "$PWD/.claude/skills/gstack" ~/.claude/skills/gstack',
+};
+
+// Build the gstack bun-compiled binaries (browse, design, make-pdf,
+// gstack-global-discover) for linux/amd64. The host-side binaries are macOS
+// arm64 and excluded from the vendored copy (see scripts/sync-gstack.sh),
+// so the first sandbox start has to rebuild them. The conditional makes
+// subsequent runs a no-op once the binaries are cached on the worktree.
+const buildGstack = {
+  command:
+    'if [ ! -x .claude/skills/gstack/browse/dist/browse ]; then ' +
+    '(cd .claude/skills/gstack && bun install && bun run build); ' +
+    'fi',
+  timeoutMs: 5 * 60 * 1000,
+};
+
+// Register the OpenAI API key with the codex CLI so gstack /review's Step 5.7
+// adversarial pass can call `codex exec` non-interactively. The CLI does NOT
+// auto-pickup OPENAI_API_KEY from env — it requires credentials at
+// ~/.codex/auth.json, which `--with-api-key` writes from stdin. No-op when
+// the key isn't forwarded; /review then reports "Codex CLI not authed" and
+// continues with Claude-only adversarial coverage.
+const loginCodex = {
+  command:
+    'if [ -n "${OPENAI_API_KEY:-}" ] && [ ! -f ~/.codex/auth.json ]; then ' +
+    'printenv OPENAI_API_KEY | codex login --with-api-key; ' +
+    'fi',
+};
+
+// Hooks for the planner and merger phases. Both run in temp worktrees
+// (branchStrategy: merge-to-head, see the run() calls below) so the
+// worktree starts as a fresh checkout with no node_modules.
+//
+// We deliberately skip `pnpm install` here:
+//   - The planner only invokes `sandcastle-asana`, which is baked into
+//     the Docker image at /usr/local/bin (see .sandcastle/Dockerfile).
+//   - The merger is a no-op (see .sandcastle/merge-prompt.md).
+// Adding `pnpm install` would burn ~1 min per planner heartbeat for no
+// benefit. If either phase ever grows a need for node_modules, copy
+// from the host via `copyToWorktree: ['node_modules', ...]` and
+// re-add the install hook for platform-specific binaries.
+const planHooks = {
+  sandbox: {
+    onSandboxReady: [writeSettingsLocal, linkGstack],
+  },
+};
+
+// Implementer/reviewer/ship sandboxes additionally bring up the test Supabase
+// stack so `pnpm test` works. The DinD sidecar (set up below) provides the
+// docker daemon; `supabase start` spawns Postgres + Kong + GoTrue inside it.
+// Wait-for-supabase loops until the API gateway is reachable so vitest's
+// globalSetup can run migrations against a healthy stack.
+const issueHooks = {
   sandbox: {
     onSandboxReady: [
-      {
-        command:
-          'mkdir -p .claude && printf \'%s\\n\' \'{"sandbox":{"enabled":false}}\' > .claude/settings.local.json',
-      },
+      writeSettingsLocal,
+      linkGstack,
+      buildGstack,
+      loginCodex,
       { command: 'pnpm install' },
+      // The dind sidecar starts cold every sandbox, but its /var/lib/docker
+      // is bind-mounted to a shared named volume (see startDindSidecar
+      // below) so supabase image layers persist across runs. First time
+      // that volume is populated → ~5-8min of pulls. Every run after →
+      // ~30-60s of container starts. 10min ceiling absorbs the worst-case
+      // cold-pull on a slow network.
+      {
+        command: 'pnpm w:api test:supabase:start',
+        timeoutMs: 10 * 60 * 1000,
+      },
     ],
   },
 };
@@ -166,6 +262,89 @@ const hooks = {
 // starts. Avoids a full npm install from scratch; the hook above handles
 // platform-specific binaries and any packages added since the last copy.
 const copyToWorktree = ['.env', '.env.local', 'node_modules'];
+
+// ---------------------------------------------------------------------------
+// DinD sidecar — one privileged docker:dind container per issue sandbox.
+//
+// Sandcastle's docker() provider doesn't expose --privileged, so we can't run
+// dockerd inside the sandbox itself. Instead we start a sidecar dind container
+// and have the sandbox join its network namespace (--network container:<id>).
+// The sandbox then sees the sidecar's loopback as 127.0.0.1, so:
+//   - DOCKER_HOST=tcp://127.0.0.1:2375 in the sandbox talks to the sidecar's
+//     dockerd.
+//   - `supabase start` spawns Postgres/Kong/etc. inside the sidecar; the ports
+//     they expose (55321/55322) are reachable from vitest at 127.0.0.1.
+// Each sandbox gets its own sidecar, so parallel agents don't collide.
+// ---------------------------------------------------------------------------
+
+interface SidecarHandle {
+  readonly name: string;
+  stop(): void;
+}
+
+function startDindSidecar(issueId: string): SidecarHandle {
+  const name = `sandcastle-dind-${issueId}-${Date.now()}`;
+  // Per-issue named volume for /var/lib/docker so a revision or retry of
+  // the SAME issue reuses the layer cache it pulled the first time
+  // (saves ~3GB of supabase image re-downloads on every retry). Issues
+  // are sequenced (no two sandboxes share an issue ID concurrently), so
+  // the volume only ever has one writer at a time — safe.
+  //
+  // Cross-issue caching needs a docker registry pull-through mirror;
+  // mounting a single shared /var/lib/docker into parallel dind
+  // sidecars corrupts dockerd's boltdb lock. NOT done here.
+  const cacheVolume = `sandcastle-dind-cache-${issueId}`;
+  // dind exposes its daemon on tcp://127.0.0.1:2375 with TLS disabled.
+  // DOCKER_TLS_CERTDIR="" suppresses dind's auto-TLS bootstrap.
+  execFileSync(
+    'docker',
+    [
+      'run',
+      '-d',
+      '--rm',
+      '--privileged',
+      '--name',
+      name,
+      '-e',
+      'DOCKER_TLS_CERTDIR=',
+      '-v',
+      `${cacheVolume}:/var/lib/docker`,
+      'docker:27-dind',
+    ],
+    { stdio: 'pipe' },
+  );
+
+  // Wait for dockerd inside the sidecar to be ready — supabase start will
+  // fail fast otherwise. Try `docker info` over TCP for up to ~30s.
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    try {
+      execFileSync(
+        'docker',
+        ['exec', name, 'docker', '-H', 'tcp://127.0.0.1:2375', 'info'],
+        { stdio: 'ignore' },
+      );
+      return {
+        name,
+        stop() {
+          try {
+            execFileSync('docker', ['rm', '-f', name], { stdio: 'ignore' });
+          } catch {
+            /* best-effort cleanup */
+          }
+        },
+      };
+    } catch {
+      // dockerd not ready yet
+    }
+  }
+  try {
+    execFileSync('docker', ['rm', '-f', name], { stdio: 'ignore' });
+  } catch {
+    /* best-effort */
+  }
+  throw new Error(`DinD sidecar ${name} failed to become ready within 30s`);
+}
 
 // ---------------------------------------------------------------------------
 // Main loop
@@ -189,8 +368,20 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   // It outputs a <plan> JSON block — we parse that to drive Phase 2.
   // -------------------------------------------------------------------------
   const plan = await sandcastle.run({
-    hooks,
-    sandbox: docker(),
+    hooks: planHooks,
+    sandbox: docker({
+      // Tell gstack skills they're spawned (non-interactive). The planner
+      // doesn't currently invoke skills, but the symlink hook is shared
+      // with issue sandboxes — this is cheap insurance against drift.
+      env: { OPENCLAW_SESSION: '1' },
+    }),
+    // Without an explicit branchStrategy, sandcastle's docker provider
+    // defaults to { type: "head" } — which BIND-MOUNTS the host repo
+    // directory directly. The hooks then write to host files
+    // (.mcp.json, .claude/settings.local.json) and `pnpm install` would
+    // overwrite host node_modules with linux binaries. Force a temp
+    // worktree so the planner stays sandboxed.
+    branchStrategy: { type: 'merge-to-head' },
     name: 'planner',
     // One iteration is enough: the planner just needs to read and reason,
     // not write code.
@@ -244,16 +435,45 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 
   const settled = await Promise.allSettled(
     issues.map(async (issue) => {
-      const sandbox = await sandcastle.createSandbox({
-        branch: issue.branch,
-        // Default baseBranch (HEAD) is the host's current branch — sandcastle
-        // also exposes it to prompts as the {{TARGET_BRANCH}} built-in. The
-        // implementer fetches and rebases against origin/<that branch> as
-        // the first step, so we always pick up the latest.
-        sandbox: docker(),
-        hooks,
-        copyToWorktree,
-      });
+      // Privileged dind container that the sandbox will share a network
+      // namespace with. Required for `supabase start` (and `docker:dev`).
+      const dind = startDindSidecar(issue.id);
+
+      let sandbox: sandcastle.Sandbox;
+      try {
+        sandbox = await sandcastle.createSandbox({
+          branch: issue.branch,
+          // Default baseBranch (HEAD) is the host's current branch — sandcastle
+          // also exposes it to prompts as the {{TARGET_BRANCH}} built-in. The
+          // implementer fetches and rebases against origin/<that branch> as
+          // the first step, so we always pick up the latest.
+          sandbox: docker({
+            // Share the dind sidecar's network namespace: the sandbox's
+            // 127.0.0.1 is now the sidecar's loopback, where supabase ports
+            // will be exposed.
+            network: `container:${dind.name}`,
+            env: {
+              // The Supabase CLI (and any docker invocation inside the
+              // sandbox) hits the sidecar dockerd over TCP.
+              DOCKER_HOST: 'tcp://127.0.0.1:2375',
+              // Tell gstack skills they're running in a spawned (non-
+              // interactive) session so they auto-pick recommended options
+              // instead of deadlocking on AskUserQuestion gates.
+              OPENCLAW_SESSION: '1',
+              // Forward the OpenAI key so the reviewer's /codex skill can
+              // auth. If unset on the host, /codex degrades gracefully.
+              ...(process.env.OPENAI_API_KEY
+                ? { OPENAI_API_KEY: process.env.OPENAI_API_KEY }
+                : {}),
+            },
+          }),
+          hooks: issueHooks,
+          copyToWorktree,
+        });
+      } catch (err) {
+        dind.stop();
+        throw err;
+      }
 
       try {
         // Run the implementer
@@ -308,6 +528,10 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
         };
       } finally {
         await sandbox.close();
+        // Tear down the privileged dind sidecar AFTER the sandbox is gone —
+        // otherwise the sandbox's `--network container:<dind>` reference
+        // breaks mid-shutdown.
+        dind.stop();
       }
     }),
   );
@@ -357,8 +581,18 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   // uses to know which branches to merge and which issues to close.
   // -------------------------------------------------------------------------
   await sandcastle.run({
-    hooks,
-    sandbox: docker(),
+    // Merger runs `pnpm test` after merging, so it also needs the test
+    // Supabase stack — but no DinD sidecar (no privileged containers needed
+    // because the merger doesn't run docker itself; the test-supabase hook
+    // would need one). Use planHooks for now and revisit if the merger
+    // grows DB-touching test requirements.
+    hooks: planHooks,
+    sandbox: docker({
+      env: { OPENCLAW_SESSION: '1' },
+    }),
+    // Same reason as the planner above — force a temp worktree so hooks
+    // can't write to the host filesystem.
+    branchStrategy: { type: 'merge-to-head' },
     name: 'merger',
     maxIterations: 1,
     agent: sandcastle.claudeCode('claude-opus-4-6'),
