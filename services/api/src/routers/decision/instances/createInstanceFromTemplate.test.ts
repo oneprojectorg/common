@@ -259,4 +259,86 @@ describe.concurrent('createInstanceFromTemplate', () => {
     const instanceData = instance!.instanceData as DecisionInstanceData;
     expect(instanceData.proposalTemplate).toEqual(proposalTemplate);
   });
+
+  it('should set ownerProfileId to individual profile and stewardProfileId to currentProfileId', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, setup.userEmail));
+
+    expect(userRecord!.profileId).toBeDefined();
+    expect(userRecord!.currentProfileId).toBe(setup.organization.profileId);
+
+    const [template] = await db
+      .insert(decisionProcesses)
+      .values({
+        name: `Owner/Steward Template ${task.id}`,
+        processSchema: simpleVoting,
+        createdByProfileId: userRecord!.profileId!,
+      })
+      .returning();
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.createInstanceFromTemplate({
+      templateId: template!.id,
+      name: `Owner Steward Test ${task.id}`,
+    });
+
+    testData.trackProfileForCleanup(result.id);
+
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: result.processInstance.id },
+    });
+
+    expect(instance!.ownerProfileId).toBe(userRecord!.profileId);
+    expect(instance!.stewardProfileId).toBe(setup.organization.profileId);
+  });
+
+  it('should fall back stewardProfileId to individual profile when currentProfileId is null', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, setup.userEmail));
+
+    await db
+      .update(users)
+      .set({ currentProfileId: null })
+      .where(eq(users.id, userRecord!.id));
+
+    const [template] = await db
+      .insert(decisionProcesses)
+      .values({
+        name: `No Org Context Template ${task.id}`,
+        processSchema: simpleVoting,
+        createdByProfileId: userRecord!.profileId!,
+      })
+      .returning();
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.createInstanceFromTemplate({
+      templateId: template!.id,
+      name: `No Org Context Test ${task.id}`,
+    });
+
+    testData.trackProfileForCleanup(result.id);
+
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: result.processInstance.id },
+    });
+
+    expect(instance!.ownerProfileId).toBe(userRecord!.profileId);
+    expect(instance!.stewardProfileId).toBe(userRecord!.profileId);
+  });
 });
