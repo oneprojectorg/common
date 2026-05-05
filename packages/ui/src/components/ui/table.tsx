@@ -131,7 +131,7 @@ const TableColumn = ({
             'h-8 text-left text-sm font-normal',
             allowsSorting && isHovered ? 'text-neutral-gray3' : 'text-muted-fg',
             'allows-sorting:active:text-neutral-charcoal',
-            'relative outline-hidden allows-sorting:cursor-default dragging:cursor-grabbing',
+            'allows-sorting:cursor-default dragging:cursor-grabbing relative outline-hidden',
             'px-4 py-(--gutter-y)',
             'first:pl-(--gutter,--spacing(2)) last:pr-(--gutter,--spacing(2))',
             !bleed && 'sm:first:pl-1 sm:last:pr-1',
@@ -261,7 +261,7 @@ const TableRow = <T extends object>({
               'hover:bg-(--table-selected-bg) hover:text-fg',
             (props.href || props.onAction || selectionMode === 'multiple') &&
               isFocusVisibleWithin &&
-              'bg-(--table-selected-bg)/50 text-fg selected:bg-(--table-selected-bg)/50',
+              'selected:bg-(--table-selected-bg)/50 bg-(--table-selected-bg)/50 text-fg',
             isDisabled && 'opacity-50',
             className,
           ),

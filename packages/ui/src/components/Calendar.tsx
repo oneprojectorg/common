@@ -54,7 +54,7 @@ export const CalendarHeader = () => {
       <Button
         variant="icon"
         slot="previous"
-        className="h-8 w-8 rounded-none bg-white p-0 text-neutral-charcoal shadow-none hover:bg-neutral-offWhite pressed:bg-neutral-offWhite pressed:shadow-none"
+        className="pressed:bg-neutral-offWhite pressed:shadow-none h-8 w-8 rounded-none bg-white p-0 text-neutral-charcoal shadow-none hover:bg-neutral-offWhite"
       >
         {direction === 'rtl' ? (
           <LuChevronRight className="size-4" aria-hidden />
@@ -66,7 +66,7 @@ export const CalendarHeader = () => {
       <Button
         variant="icon"
         slot="next"
-        className="h-8 w-8 rounded-none bg-white p-0 text-neutral-charcoal shadow-none hover:bg-neutral-offWhite pressed:bg-neutral-offWhite pressed:shadow-none"
+        className="pressed:bg-neutral-offWhite pressed:shadow-none h-8 w-8 rounded-none bg-white p-0 text-neutral-charcoal shadow-none hover:bg-neutral-offWhite"
       >
         {direction === 'rtl' ? (
           <LuChevronLeft className="size-4" aria-hidden />

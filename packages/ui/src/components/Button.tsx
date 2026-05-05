@@ -16,24 +16,24 @@ const buttonStyle = tv({
       primary: '',
       icon: 'flex gap-2 text-sm sm:text-base',
       pill: 'h-auto border-0 bg-primary-tealWhite p-2 text-primary-teal shadow-none hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue active:bg-teal-50 active:text-primary-tealBlack',
-      link: 'border-0 bg-transparent text-primary-teal shadow-none hover:underline pressed:underline',
+      link: 'pressed:underline border-0 bg-transparent text-primary-teal shadow-none hover:underline',
     },
     color: {
       primary:
-        'bg-primary-teal text-neutral-offWhite hover:bg-primary-tealBlack pressed:bg-primary-tealBlack pressed:text-neutral-gray2',
+        'pressed:bg-primary-tealBlack pressed:text-neutral-gray2 bg-primary-teal text-neutral-offWhite hover:bg-primary-tealBlack',
       secondary:
-        'border border-neutral-gray1 bg-white text-neutral-black shadow-light hover:bg-neutral-offWhite pressed:bg-neutral-gray1',
+        'pressed:bg-neutral-gray1 border border-neutral-gray1 bg-white text-neutral-black shadow-light hover:bg-neutral-offWhite',
       gradient: '',
       unverified:
-        'border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-offWhite pressed:bg-white',
+        'pressed:bg-white border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-offWhite',
       verified:
-        'border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-offWhite pressed:bg-white',
+        'pressed:bg-white border border-primary-teal bg-primary-tealWhite text-teal hover:bg-neutral-offWhite',
       neutral:
-        'border border-neutral-gray1 bg-white text-neutral-charcoal shadow-light hover:bg-neutral-offWhite pressed:bg-white',
+        'pressed:bg-white border border-neutral-gray1 bg-white text-neutral-charcoal shadow-light hover:bg-neutral-offWhite',
       destructive:
         'border-functional-red bg-functional-red text-neutral-offWhite hover:bg-functional-redBlack',
       ghost:
-        'border-0 bg-transparent text-midGray shadow-none hover:text-darkGray pressed:text-darkGray pressed:shadow-none',
+        'pressed:text-darkGray pressed:shadow-none border-0 bg-transparent text-midGray shadow-none hover:text-darkGray',
       pill: '',
     },
     size: {
@@ -53,7 +53,7 @@ const buttonStyle = tv({
     unstyled: {
       true: '',
       false:
-        'appearance-noned outline-0 outline-transparent duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue pressed:shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]',
+        'appearance-noned pressed:shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)] outline-0 outline-transparent duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue',
     },
 
     isDisabled: {
@@ -80,7 +80,7 @@ const buttonStyle = tv({
       variant: 'link',
       unstyled: false,
       className:
-        'bg-transparent text-primary-teal shadow-none hover:bg-transparent pressed:bg-transparent pressed:text-primary-teal pressed:!shadow-none',
+        'pressed:bg-transparent pressed:text-primary-teal pressed:!shadow-none bg-transparent text-primary-teal shadow-none hover:bg-transparent',
     },
   ],
 
