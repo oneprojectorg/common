@@ -57,7 +57,7 @@ const PostContent = ({ content }: { content?: string }) => {
     return null;
   }
 
-  return linkifyText(content);
+  return <p className="whitespace-pre-wrap">{linkifyText(content)}</p>;
 };
 
 const PostAttachments = ({
