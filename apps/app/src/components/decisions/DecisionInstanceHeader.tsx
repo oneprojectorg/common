@@ -53,7 +53,7 @@ export const DecisionInstanceHeader = ({
             color="secondary"
             size="small"
           >
-            <LuSettings className="size-4 text-neutral-black md:text-teal" />
+            <LuSettings className="size-4" />
             <span className="hidden md:inline">{t('Settings')}</span>
           </ButtonLink>
         )}
