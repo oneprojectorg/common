@@ -22,6 +22,8 @@ import type { DropdownSectionProps } from './ListBox';
 import { Popover } from './Popover';
 import type { PopoverProps } from './Popover';
 
+type SelectionMode = 'single' | 'multiple';
+
 const selectStyles = tv({
   base: 'flex min-w-0 flex-row justify-between rounded-lg border text-base leading-none text-neutral-black outline outline-0 group-data-[invalid=true]:outline-1 group-data-[invalid=true]:outline-functional-red placeholder:text-neutral-gray4 hover:border-neutral-gray2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue active:border-neutral-gray4 active:outline disabled:border-neutral-gray2',
   variants: {
@@ -59,8 +61,11 @@ const chevronStyles = tv({
 
 export type SelectVariantsProps = VariantProps<typeof selectStyles>;
 
-export interface SelectProps<T extends object>
-  extends Omit<AriaSelectProps<T>, 'children'>, SelectVariantsProps {
+export interface SelectProps<
+  T extends object,
+  M extends SelectionMode = 'single',
+> extends Omit<AriaSelectProps<T, M>, 'children'>,
+    SelectVariantsProps {
   label?: string;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
@@ -72,25 +77,24 @@ export interface SelectProps<T extends object>
   selectValueClassName?: string;
   customTrigger?: React.ReactNode;
   popoverProps?: Omit<PopoverProps, 'children'>;
-  selectionMode?: 'single' | 'multiple';
   variant?: 'default' | 'pill';
   icon?: ReactNode;
   size?: 'small' | 'medium';
 }
 
-export const Select = <T extends object>({
+export const Select = <T extends object, M extends SelectionMode = 'single'>({
   label,
   description,
   errorMessage,
   children,
   items,
-  selectionMode = 'single',
   isRequired,
   variant = 'default',
   size,
   icon,
   ...props
-}: SelectProps<T>) => {
+}: SelectProps<T, M>) => {
+  const selectionMode = props.selectionMode ?? 'single';
   const { className: popoverClassName, ...popoverProps } =
     props.popoverProps || {};
 
