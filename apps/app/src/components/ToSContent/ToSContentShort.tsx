@@ -196,7 +196,15 @@ export const ToSContentShort = () => {
 
       <FormalSection>
         <Header3 className="font-serif">Contact Us</Header3>
-        <p className="mb-4">Questions? Email us at support@oneproject.org</p>
+        <p className="mb-4">
+          Questions? Email us at{' '}
+          <a
+            href="mailto:support@oneproject.org"
+            className="text-primary-teal hover:underline"
+          >
+            support@oneproject.org
+          </a>
+        </p>
       </FormalSection>
     </div>
   );

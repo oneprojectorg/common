@@ -96,16 +96,27 @@ export const CoCContent = () => {
         <p>
           Violations of the code of conduct may result in temporary suspension
           or permanent account termination. If you witness or experience any
-          behavior that violates this Code of Conduct please contact
-          support@oneproject.org. This Code of Conduct will be updated and
-          evolved in collaboration with partners.
+          behavior that violates this Code of Conduct please contact{' '}
+          <a
+            href="mailto:support@oneproject.org"
+            className="text-primary-teal hover:underline"
+          >
+            support@oneproject.org
+          </a>
+          . This Code of Conduct will be updated and evolved in collaboration
+          with partners.
         </p>
       </FormalSection>
 
       <FormalSection>
         <p>
-          Last updated: June 18, 2025. Questions? Contact us at:
-          support@oneproject.org
+          Last updated: June 18, 2025. Questions? Contact us at:{' '}
+          <a
+            href="mailto:support@oneproject.org"
+            className="text-primary-teal hover:underline"
+          >
+            support@oneproject.org
+          </a>
         </p>
       </FormalSection>
     </div>
