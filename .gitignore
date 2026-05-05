@@ -78,3 +78,11 @@ ralph.sh
 
 # pnpm local store (created inside bind-mounted /app when container runs pnpm)
 .pnpm-store/
+
+# Vendored gstack — `node_modules/` and `*/dist/` are already covered above.
+# These are the platform-specific bun-compiled binaries that live outside
+# `dist/`, plus gstack's own bun lockfile (regenerated in the container).
+.claude/skills/gstack/bin/gstack-global-discover
+.claude/skills/gstack/bun.lock
+.claude/skills/gstack/.feature-prompted-*
+.claude/skills/gstack/.completeness-intro-seen
