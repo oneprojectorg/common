@@ -622,4 +622,74 @@ describe.concurrent('listProfilePosts authorization and pagination', () => {
       expect(firstIds.has(p.id)).toBe(false);
     });
   });
+
+  it('paginates correctly when comments inherit profile associations from updates', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // Comments inherit postsToProfiles rows from their parent (createPost.ts).
+    // A naive relational query that filters parentPostId at the post relation
+    // returns nulls for comment associations and silently shrinks pages,
+    // causing `next` to report null while older updates still exist. Pin
+    // SQL-level filtering by interleaving comments with updates and walking
+    // every page until exhausted.
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    const updateIds: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const update = await adminCaller.posts.createPost({
+        content: `Update ${i}.`,
+        profileId: instance.profileId,
+      });
+      updateIds.push(update.id);
+      // Two comments per update, each writing inherited postsToProfiles rows
+      // ahead of the next update in createdAt order — this is the shape that
+      // breaks naive pagination.
+      await memberCaller.posts.createPost({
+        content: `Comment ${i}.a`,
+        parentPostId: update.id,
+      });
+      await memberCaller.posts.createPost({
+        content: `Comment ${i}.b`,
+        parentPostId: update.id,
+      });
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+
+    const collected: string[] = [];
+    let cursor: string | null | undefined = undefined;
+    let pages = 0;
+    do {
+      const page = await memberCaller.posts.listProfilePosts({
+        profileId: instance.profileId,
+        limit: 2,
+        cursor,
+      });
+      page.items.forEach((post) => {
+        expect(post.parentPostId).toBeNull();
+        collected.push(post.id);
+      });
+      cursor = page.next;
+      pages += 1;
+      // Defensive bound — should never need more than 3 pages here.
+      if (pages > 5) {
+        throw new Error('Pagination did not terminate');
+      }
+    } while (cursor);
+
+    expect(collected).toHaveLength(3);
+    expect(new Set(collected)).toEqual(new Set(updateIds));
+  });
 });
