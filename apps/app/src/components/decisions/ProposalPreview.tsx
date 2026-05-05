@@ -27,7 +27,6 @@ import { Link as NavLink } from '@/lib/i18n/routing';
 
 import { ProfileAvatar } from '../ProfileAvatar';
 import { BudgetDisplay, formatBudget } from './BudgetDisplay';
-import { DocumentNotAvailable } from './DocumentNotAvailable';
 import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { ProposalContentRenderer } from './ProposalContentRenderer';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
@@ -253,9 +252,7 @@ export function ProposalPreview({
           location={proposal.proposalData?.location}
           translatedMeta={translatedMeta}
         />
-      ) : (
-        <DocumentNotAvailable />
-      )}
+      ) : null}
 
       {/* Attachments Section */}
       {proposal.attachments && proposal.attachments.length > 0 && (
