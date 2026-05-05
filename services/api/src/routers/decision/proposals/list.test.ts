@@ -703,8 +703,9 @@ describe.concurrent('listProposals', () => {
     });
 
     const foundProposal = result.proposals.find((p) => p.id === proposal.id);
-    // When TipTap fetch fails, documentContent should be undefined
-    expect(foundProposal?.documentContent).toBeUndefined();
+    // When TipTap fetch fails, documentContent is marked unavailable so the UI
+    // can distinguish a load failure from a proposal with no body.
+    expect(foundProposal?.documentContent).toEqual({ type: 'unavailable' });
   });
 
   it('should fetch multiple TipTap documents in parallel', async ({
