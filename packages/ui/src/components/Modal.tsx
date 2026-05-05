@@ -83,7 +83,7 @@ export const ModalHeader = ({
             className={cn(
               'absolute right-6 flex h-6 w-6',
               'items-center justify-center',
-              'rounded-md outline-hidden hover:bg-neutral-gray1 focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2',
+              'cursor-pointer rounded-md outline-hidden hover:bg-neutral-gray1 focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2',
               'text-neutral-charcoal',
             )}
           >
