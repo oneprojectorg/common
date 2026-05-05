@@ -68,7 +68,7 @@ export const DecisionActionBar = ({
                 <ModalBody>
                   {markup && description ? (
                     <div
-                      className="prose prose-gray max-w-none"
+                      className="prose max-w-none prose-gray"
                       dangerouslySetInnerHTML={{
                         __html: he.decode(description),
                       }}

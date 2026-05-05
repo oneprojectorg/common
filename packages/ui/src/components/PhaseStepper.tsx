@@ -99,7 +99,7 @@ const StepIndicator = ({
             variant="ghost"
             className={cn(
               baseStyles,
-              'pressed:bg-primary-teal relative cursor-pointer border-0 bg-primary-teal text-neutral-offWhite hover:bg-primary-teal',
+              'relative cursor-pointer border-0 bg-primary-teal text-neutral-offWhite hover:bg-primary-teal pressed:bg-primary-teal',
             )}
           >
             {stepState === 'completed' ? (

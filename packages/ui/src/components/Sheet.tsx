@@ -36,12 +36,12 @@ export const Sheet = ({
   return (
     <ModalOverlay
       isDismissable={isDismissable}
-      className="entering:animate-in entering:duration-300 entering:fade-in exiting:animate-out exiting:duration-300 exiting:fade-out fixed inset-0 z-[99999] bg-neutral-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-[99999] bg-neutral-black/40 backdrop-blur-sm entering:animate-in entering:duration-300 entering:fade-in exiting:animate-out exiting:duration-300 exiting:fade-out"
       {...props}
     >
       <Modal
         className={cn(
-          'entering:duration-300 entering:ease-out exiting:duration-200 exiting:ease-in fixed z-[999999] overflow-hidden bg-white shadow-xl outline-hidden',
+          'fixed z-[999999] overflow-hidden bg-white shadow-xl outline-hidden entering:duration-300 entering:ease-out exiting:duration-200 exiting:ease-in',
           SIDE_CLASSES[side],
           className,
         )}
