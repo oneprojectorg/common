@@ -239,7 +239,7 @@ function PhaseDetailForm({
             })}
           </p>
           <Header2 className="font-serif text-title-base">
-            {t('Add phase')}
+            {phase.name?.trim() ? phase.name : t('Add phase')}
           </Header2>
         </div>
         <SaveStatusIndicator
