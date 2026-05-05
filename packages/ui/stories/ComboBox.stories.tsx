@@ -1,5 +1,6 @@
 import type { Meta } from '@storybook/react-vite';
 import { Form } from 'react-aria-components';
+import { LuSearch } from 'react-icons/lu';
 
 import { Button } from '../src/components/Button';
 import {
@@ -16,6 +17,7 @@ const meta: Meta<typeof ComboBox> = {
   tags: ['autodocs'],
   args: {
     label: 'Ice cream flavor',
+    placeholder: 'Pick a flavor',
   },
 };
 
@@ -73,4 +75,18 @@ export const Validation = (args: any) => (
 
 Validation.args = {
   isRequired: true,
+};
+
+export const WithSearchIcon = (args: any) => (
+  <ComboBox {...args} icon={<LuSearch aria-hidden className="size-4" />}>
+    <ComboBoxItem>Chocolate</ComboBoxItem>
+    <ComboBoxItem id="mint">Mint</ComboBoxItem>
+    <ComboBoxItem>Strawberry</ComboBoxItem>
+    <ComboBoxItem>Vanilla</ComboBoxItem>
+  </ComboBox>
+);
+
+WithSearchIcon.args = {
+  label: 'Search flavors',
+  placeholder: 'Type to search...',
 };
