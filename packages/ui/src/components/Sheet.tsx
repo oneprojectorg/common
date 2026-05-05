@@ -36,12 +36,12 @@ export const Sheet = ({
   return (
     <ModalOverlay
       isDismissable={isDismissable}
-      className="fixed inset-0 z-[99999] bg-neutral-black/40 backdrop-blur-sm entering:animate-in entering:duration-300 entering:fade-in exiting:animate-out exiting:duration-300 exiting:fade-out"
+      className="entering:animate-in entering:duration-300 entering:fade-in exiting:animate-out exiting:duration-300 exiting:fade-out fixed inset-0 z-[99999] bg-neutral-black/40 backdrop-blur-sm"
       {...props}
     >
       <Modal
         className={cn(
-          'fixed z-[999999] overflow-hidden bg-white shadow-xl outline-hidden entering:duration-300 entering:ease-out exiting:duration-200 exiting:ease-in',
+          'entering:duration-300 entering:ease-out exiting:duration-200 exiting:ease-in fixed z-[999999] overflow-hidden bg-white shadow-xl outline-hidden',
           SIDE_CLASSES[side],
           className,
         )}
@@ -78,7 +78,7 @@ export const SheetHeader = ({
           type="button"
           aria-label="Close"
           onClick={onClose}
-          className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg outline-none hover:bg-neutral-gray1 focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2"
+          className="ml-auto flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg outline-none hover:bg-neutral-gray1 focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2"
         >
           <LuX className="size-4" />
         </button>

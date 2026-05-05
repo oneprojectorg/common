@@ -33,7 +33,7 @@ export const Toast = () => {
             'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
           cancelButton:
             'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground',
-          closeButton: '!absolute !right-0 top-0',
+          closeButton: '!absolute !right-0 top-0 !cursor-pointer',
         },
       }}
     />
@@ -62,7 +62,7 @@ const ToastWrapper = ({
       {dismissable && (
         <Button
           unstyled
-          className="w-6 transition-opacity hover:opacity-70"
+          className="w-6 cursor-pointer transition-opacity hover:opacity-70"
           onPress={() => sonnerToast.dismiss(id)}
         >
           <LuX className="size-6" />
