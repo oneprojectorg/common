@@ -4,8 +4,8 @@ import type { AccessZonePermission, NormalizedRole } from 'access-zones';
 import { assertAccess, permission } from 'access-zones';
 import { inArray } from 'drizzle-orm';
 
-import { UnauthorizedError } from '../../utils/error';
-import { type RoleJunction, getNormalizedRoles } from './utils';
+import { ValidationError } from '../../utils/error';
+import { getNormalizedRoles } from './utils';
 
 // Per-profile-type permission policy. Omitting a type from the record means
 // that type is NOT gated — the caller is opting into lenient pass-through
@@ -41,7 +41,7 @@ export const assertProfileTypeAccess = async ({
     .where(inArray(profiles.id, uniqueProfileIds));
 
   if (profileRows.length !== uniqueProfileIds.length) {
-    throw new UnauthorizedError("You don't have access to do this");
+    throw new ValidationError('One or more profileIds do not exist');
   }
 
   const gatedRows = profileRows.flatMap((row) => {
@@ -75,9 +75,7 @@ export const assertProfileTypeAccess = async ({
   const rolesByProfileId = new Map<string, NormalizedRole[]>(
     profileUsers.map((profileUser) => [
       profileUser.profileId,
-      getNormalizedRoles(
-        profileUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
-      ),
+      getNormalizedRoles(profileUser.roles),
     ]),
   );
 
