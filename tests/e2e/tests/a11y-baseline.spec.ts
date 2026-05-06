@@ -166,6 +166,11 @@ test.describe('axe-core baseline scan', () => {
       recursive: true,
       force: true,
     });
+    // diff.md is consumed by the workflow's sticky comment step. If a previous
+    // run left one on disk and this run errors before writing a fresh one, the
+    // workflow would post yesterday's data. Clear it up front so a missing
+    // file is the unambiguous "test errored before producing diff" signal.
+    rmSync(path.join(REPORT_DIR, 'diff.md'), { force: true });
 
     const dynamicAuthRoutes = await seedDynamicRoutes(org);
     const allRoutes: RouteScan[] = [
@@ -237,6 +242,14 @@ test.describe('axe-core baseline scan', () => {
     );
 
     if (process.env.A11Y_SEED === '1') {
+      // Seed mode overwrites the source of truth and does not compare. Forbid
+      // it in CI so a leaked env var can't silently rewrite the baseline and
+      // let regressions land green.
+      if (process.env.CI) {
+        throw new Error(
+          '[a11y-baseline] A11Y_SEED is forbidden in CI — seeding overwrites known-violations.json. Run `pnpm a11y:seed` locally instead.',
+        );
+      }
       writeKnownViolations({
         version: 1,
         axeVersion,
@@ -248,14 +261,21 @@ test.describe('axe-core baseline scan', () => {
       return;
     }
 
-    const known = loadKnownViolations();
-    const diff = diffViolations(known.violations, flat);
-    writeDiffMarkdown(formatDiffMarkdown(diff, flat));
-    console.log(
-      `[a11y-baseline] new=${diff.added.length} resolved=${diff.resolved.length} debt=${flat.length}`,
+    const erroredRoutes = new Set(
+      results.filter((r) => r.status === 'error').map((r) => r.url),
     );
-    if (diff.added.length > 0 || diff.resolved.length > 0) {
-      throw new Error(formatDiffMessage(diff));
+    const known = loadKnownViolations();
+    const diff = diffViolations(known.violations, flat, erroredRoutes);
+    writeDiffMarkdown(formatDiffMarkdown(diff, flat, erroredRoutes));
+    console.log(
+      `[a11y-baseline] new=${diff.added.length} resolved=${diff.resolved.length} errored=${erroredRoutes.size} debt=${flat.length}`,
+    );
+    if (
+      diff.added.length > 0 ||
+      diff.resolved.length > 0 ||
+      erroredRoutes.size > 0
+    ) {
+      throw new Error(formatDiffMessage(diff, erroredRoutes));
     }
   });
 });
@@ -398,6 +418,11 @@ async function scanRoute(page: Page, route: RouteScan): Promise<RouteResult> {
 
     const axe = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
     const violations = summarize(axe);
+    // Re-settle before fingerprinting: axe.analyze() awaits internally, and
+    // Suspense / React Aria can swap nodes during that window. If a violating
+    // node has detached by the time attachFingerprints runs, querySelector
+    // returns null and the node is dropped — re-settling minimizes that loss.
+    await waitForDomSettle(page, DOM_SETTLE_QUIET_MS, DOM_SETTLE_TIMEOUT_MS);
     await attachFingerprints(page, violations);
     await captureScreenshots(page, route, violations);
     return {
@@ -567,28 +592,53 @@ async function attachFingerprints(
     }
 
     return inputs.map(({ violationIdx, nodeIdx, selector }) => {
+      let queryError: string | null = null;
       let el: Element | null = null;
       try {
         el = document.querySelector(selector);
-      } catch {
-        // Some axe selectors are not valid querySelector syntax; fall back below.
+      } catch (err) {
+        queryError = err instanceof Error ? err.message : String(err);
       }
       if (!el) {
-        return { violationIdx, nodeIdx, fingerprint: `unresolved:${selector}` };
+        return {
+          violationIdx,
+          nodeIdx,
+          fingerprint: null,
+          selector,
+          queryError,
+        };
       }
       const anchor = nearestAnchor(el);
       const anchorDesc = describeAnchor(anchor);
       const path = el === anchor ? '' : pathFromAnchor(anchor, el);
       const fingerprint = path ? `${anchorDesc} > ${path}` : anchorDesc;
-      return { violationIdx, nodeIdx, fingerprint };
+      return { violationIdx, nodeIdx, fingerprint, selector, queryError: null };
     });
   }, inputs);
 
-  for (const { violationIdx, nodeIdx, fingerprint } of fingerprints) {
+  for (const {
+    violationIdx,
+    nodeIdx,
+    fingerprint,
+    selector,
+    queryError,
+  } of fingerprints) {
     const node = violations[violationIdx]?.nodes[nodeIdx];
-    if (node) {
-      node.fingerprint = fingerprint;
+    if (!node) {
+      continue;
     }
+    // An unresolvable selector (invalid CSS, DOM mutated since axe scan)
+    // cannot serve as stable identity — selector text drifts across runs as
+    // build hashes/autogen IDs flip. Skip the node so it doesn't get baselined
+    // under a fragile key. flattenViolations drops nodes without a fingerprint.
+    if (fingerprint === null) {
+      const reason = queryError ?? 'querySelector returned null';
+      console.warn(
+        `[a11y-baseline] dropping unresolvable violation node: ${reason} (selector=${selector})`,
+      );
+      continue;
+    }
+    node.fingerprint = fingerprint;
   }
 }
 
@@ -694,6 +744,7 @@ interface ViolationDiff {
 function diffViolations(
   expected: KnownViolation[],
   actual: KnownViolation[],
+  erroredRoutes: Set<string>,
 ): ViolationDiff {
   const expectedByKey = new Map(expected.map((v) => [violationKey(v), v]));
   const actualByKey = new Map(actual.map((v) => [violationKey(v), v]));
@@ -705,7 +756,12 @@ function diffViolations(
     }
   }
   for (const [key, v] of expectedByKey) {
-    if (!actualByKey.has(key)) {
+    // A transient route error (timeout, hydration warning) has every existing
+    // entry on that route disappear from the actual scan. Treating those as
+    // "resolved" would tell the dev to delete legitimate entries. Suppress
+    // resolveds for routes that errored; the route's failure is surfaced
+    // separately so the run can't pass silently.
+    if (!actualByKey.has(key) && !erroredRoutes.has(v.route)) {
       resolved.push(v);
     }
   }
@@ -715,13 +771,25 @@ function diffViolations(
   };
 }
 
-function formatDiffMessage(diff: ViolationDiff): string {
+function formatDiffMessage(
+  diff: ViolationDiff,
+  erroredRoutes: Set<string>,
+): string {
   const lines: string[] = [];
   lines.push(
     `[a11y-baseline] mismatch with ${KNOWN_VIOLATIONS_FILE}: ` +
-      `${diff.added.length} new, ${diff.resolved.length} resolved`,
+      `${diff.added.length} new, ${diff.resolved.length} resolved, ${erroredRoutes.size} routes errored`,
   );
   lines.push('');
+  if (erroredRoutes.size > 0) {
+    lines.push(
+      `ERRORED ROUTES (${erroredRoutes.size}) — could not scan; resolveds on these routes were suppressed.`,
+    );
+    for (const route of erroredRoutes) {
+      lines.push(`  ${route}`);
+    }
+    lines.push('');
+  }
   if (diff.added.length > 0) {
     lines.push(
       `NEW (${diff.added.length}) — these violations are not in the list. ` +
@@ -770,6 +838,7 @@ function totalsBySeverity(
 function formatDiffMarkdown(
   diff: ViolationDiff,
   current: KnownViolation[],
+  erroredRoutes: Set<string>,
 ): string {
   const totals = totalsBySeverity(current);
   const lines: string[] = [];
@@ -780,7 +849,23 @@ function formatDiffMarkdown(
     `**Debt:** ${current.length} (critical ${totals.critical}, serious ${totals.serious}, moderate ${totals.moderate}, minor ${totals.minor})`,
   );
   lines.push('');
-  if (diff.added.length === 0 && diff.resolved.length === 0) {
+  if (erroredRoutes.size > 0) {
+    lines.push(`### Errored routes (${erroredRoutes.size}) ⚠️`);
+    lines.push('');
+    lines.push(
+      'These routes could not be scanned. Resolveds on these routes were suppressed; investigate the failure rather than deleting entries.',
+    );
+    for (const route of erroredRoutes) {
+      lines.push('');
+      lines.push(`- \`${route}\``);
+    }
+    lines.push('');
+  }
+  if (
+    diff.added.length === 0 &&
+    diff.resolved.length === 0 &&
+    erroredRoutes.size === 0
+  ) {
     lines.push(
       'No changes vs `tests/e2e/a11y-baseline/known-violations.json`.',
     );
