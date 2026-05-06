@@ -10,6 +10,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, tstzrange } from '../../helpers';
+import { locations } from './locations.sql';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
 import { proposalColumns, proposals } from './proposals.sql';
@@ -109,6 +110,10 @@ export const proposalHistoryRelations = relations(
     lastEditedBy: one(profiles, {
       fields: [proposalHistory.lastEditedByProfileId],
       references: [profiles.id],
+    }),
+    location: one(locations, {
+      fields: [proposalHistory.locationId],
+      references: [locations.id],
     }),
   }),
 );
