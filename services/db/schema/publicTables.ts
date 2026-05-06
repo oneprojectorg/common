@@ -90,7 +90,12 @@ export {
   type JoinProfileRequest,
 } from './tables/joinProfileRequests.sql';
 export { locations } from './tables/locations.sql';
-export { profiles, profilesRelations } from './tables/profiles.sql';
+export {
+  profiles,
+  profilesLocations,
+  profilesLocationsRelations,
+  profilesRelations,
+} from './tables/profiles.sql';
 export type { Profile } from './tables/profiles.sql';
 export { projects, projectsRelations } from './tables/projects.sql';
 export {

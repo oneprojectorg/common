@@ -1,7 +1,14 @@
 import { sql } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import { relations } from 'drizzle-orm/_relations';
-import { index, pgTable, text, uuid, varchar } from 'drizzle-orm/pg-core';
+import {
+  index,
+  pgTable,
+  primaryKey,
+  text,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core';
 
 import {
   autoId,
@@ -11,6 +18,7 @@ import {
 } from '../../helpers';
 import { EntityType, entityTypeEnum } from './entities.sql';
 import { individuals } from './individuals.sql';
+import { locations } from './locations.sql';
 import { profileModules } from './modules.sql';
 import { organizations } from './organizations.sql';
 import { posts } from './posts.sql';
@@ -93,6 +101,44 @@ export const profilesRelations = relations(profiles, ({ many, one }) => ({
   }),
   modules: many(profileModules),
   profileUsers: many(profileUsers),
+  locations: many(profilesLocations),
 }));
+
+export const profilesLocations = pgTable(
+  'profiles_locations',
+  {
+    profileId: uuid('profile_id')
+      .notNull()
+      .references(() => profiles.id, {
+        onUpdate: 'cascade',
+        onDelete: 'cascade',
+      }),
+    locationId: uuid('location_id')
+      .notNull()
+      .references(() => locations.id, {
+        onUpdate: 'cascade',
+        onDelete: 'cascade',
+      }),
+  },
+  (table) => [
+    ...serviceRolePolicies,
+    primaryKey(table.profileId, table.locationId),
+    index().on(table.locationId),
+  ],
+);
+
+export const profilesLocationsRelations = relations(
+  profilesLocations,
+  ({ one }) => ({
+    profile: one(profiles, {
+      fields: [profilesLocations.profileId],
+      references: [profiles.id],
+    }),
+    location: one(locations, {
+      fields: [profilesLocations.locationId],
+      references: [locations.id],
+    }),
+  }),
+);
 
 export type Profile = typeof profiles.$inferSelect;
