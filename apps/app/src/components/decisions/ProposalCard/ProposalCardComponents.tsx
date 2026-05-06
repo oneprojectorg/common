@@ -381,8 +381,12 @@ export function ProposalCardPreview({
 
   const displayText = translatedPreview ?? previewText;
 
-  if (displayText === null) {
+  if (proposal.documentContent?.type === 'unavailable') {
     return <DocumentNotAvailable className="py-4" />;
+  }
+
+  if (displayText === null) {
+    return null;
   }
 
   if (!displayText) {

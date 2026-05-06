@@ -394,8 +394,9 @@ describe.concurrent('getProposal', () => {
       title: 'Missing Doc Proposal',
       collaborationDocId: expect.any(String),
     });
-    // When TipTap fetch fails, documentContent is undefined (UI handles error state)
-    expect(result.documentContent).toBeUndefined();
+    // When TipTap fetch fails, documentContent is marked unavailable so the UI
+    // can distinguish a load failure from a proposal with no body.
+    expect(result.documentContent).toEqual({ type: 'unavailable' });
   });
 
   it('should fetch the saved collaboration version for non-draft proposals', async ({

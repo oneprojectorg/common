@@ -72,7 +72,7 @@ const ProposalEditPage = () => {
   }>();
 
   return (
-    <ErrorBoundary fallback={<DocumentNotAvailable />}>
+    <ErrorBoundary key={profileId} fallback={<DocumentNotAvailable />}>
       <Suspense fallback={<ProposalEditPageSkeleton />}>
         <ProposalEditPageContent
           profileId={profileId}

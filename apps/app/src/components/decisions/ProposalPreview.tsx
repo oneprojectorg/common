@@ -210,9 +210,9 @@ export function ProposalPreview({
           htmlContent={htmlContent}
           translatedMeta={translatedMeta}
         />
-      ) : (
+      ) : proposal.documentContent?.type === 'unavailable' ? (
         <DocumentNotAvailable />
-      )}
+      ) : null}
 
       {/* Attachments Section */}
       {proposal.attachments && proposal.attachments.length > 0 && (
