@@ -189,7 +189,8 @@ test.describe('Default Hidden Proposals', () => {
       email: memberUser.email,
       proposalData: {
         title: 'Hidden By Default Proposal',
-        description: '<p>This proposal should be hidden from other members.</p>',
+        description:
+          '<p>This proposal should be hidden from other members.</p>',
       },
       status: ProposalStatus.SUBMITTED,
     });
@@ -204,9 +205,9 @@ test.describe('Default Hidden Proposals', () => {
       waitUntil: 'domcontentloaded',
     });
 
-    await expect(
-      authenticatedPage.getByRole('heading', { name }),
-    ).toBeVisible({ timeout: 30_000 });
+    await expect(authenticatedPage.getByRole('heading', { name })).toBeVisible({
+      timeout: 30_000,
+    });
 
     await expect(
       authenticatedPage.getByRole('link', {
@@ -243,9 +244,9 @@ test.describe('Default Hidden Proposals', () => {
       waitUntil: 'domcontentloaded',
     });
 
-    await expect(
-      otherMemberPage.getByRole('heading', { name }),
-    ).toBeVisible({ timeout: 30_000 });
+    await expect(otherMemberPage.getByRole('heading', { name })).toBeVisible({
+      timeout: 30_000,
+    });
 
     // Other member should NOT see the hidden proposal
     await expect(
@@ -309,9 +310,9 @@ test.describe('Default Hidden Proposals', () => {
       waitUntil: 'domcontentloaded',
     });
 
-    await expect(
-      submitterPage.getByRole('heading', { name }),
-    ).toBeVisible({ timeout: 30_000 });
+    await expect(submitterPage.getByRole('heading', { name })).toBeVisible({
+      timeout: 30_000,
+    });
 
     await expect(
       submitterPage.getByRole('link', {
