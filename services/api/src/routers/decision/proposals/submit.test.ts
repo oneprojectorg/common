@@ -814,7 +814,7 @@ describe.concurrent('submitProposal', () => {
 
     // Enable defaultHidden on the initial phase
     const instanceRecord = await db.query.processInstances.findFirst({
-      where: eq(processInstances.id, instance.instance.id),
+      where: { id: instance.instance.id },
     });
 
     if (!instanceRecord) {
