@@ -86,7 +86,6 @@ export const proposalColumns = {
     },
   ),
 
-  // GIS-enabled location (mirrors organizations_where_we_work pattern)
   locationId: uuid('location_id').references(() => locations.id, {
     onUpdate: 'cascade',
     onDelete: 'set null',

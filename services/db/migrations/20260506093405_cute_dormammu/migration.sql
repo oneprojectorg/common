@@ -1,6 +1,6 @@
 ALTER TABLE "decision_proposal_history" ADD COLUMN "location_id" uuid;--> statement-breakpoint
 ALTER TABLE "decision_proposals" ADD COLUMN "location_id" uuid;--> statement-breakpoint
-CREATE INDEX CONCURRENTLY "decision_proposals_location_id_index" ON "decision_proposals" ("location_id");--> statement-breakpoint
+CREATE INDEX "decision_proposals_location_id_index" ON "decision_proposals" ("location_id");--> statement-breakpoint
 ALTER TABLE "decision_proposal_history" ADD CONSTRAINT "decision_proposal_history_location_id_locations_id_fkey" FOREIGN KEY ("location_id") REFERENCES "locations"("id") ON DELETE SET NULL ON UPDATE CASCADE;--> statement-breakpoint
 ALTER TABLE "decision_proposals" ADD CONSTRAINT "decision_proposals_location_id_locations_id_fkey" FOREIGN KEY ("location_id") REFERENCES "locations"("id") ON DELETE SET NULL ON UPDATE CASCADE;--> statement-breakpoint
 
