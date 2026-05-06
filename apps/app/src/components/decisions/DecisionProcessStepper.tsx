@@ -11,7 +11,8 @@ import { type Phase, PhaseStepper } from '@op/ui/PhaseStepper';
 import { Sheet, SheetBody } from '@op/ui/Sheet';
 import { toast } from '@op/ui/Toast';
 import { useLocale } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { usePostHog } from 'posthog-js/react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
@@ -43,6 +44,7 @@ export function DecisionProcessStepper({
     [translation],
   );
 
+  const posthog = usePostHog();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
 
@@ -64,6 +66,7 @@ export function DecisionProcessStepper({
     currentPhaseName,
     nextPhaseName,
     currentPhaseAdvancement,
+    currentPhaseEndDate,
   } = useMemo(() => {
     const idx = phases.findIndex((p) => p.id === currentStateId);
     const nextId =
@@ -79,6 +82,7 @@ export function DecisionProcessStepper({
         : '',
       currentPhaseAdvancement:
         idx >= 0 ? phases[idx]!.advancementMethod : undefined,
+      currentPhaseEndDate: idx >= 0 ? phases[idx]!.phase?.endDate : undefined,
     };
   }, [phases, currentStateId, translatedPhaseNames]);
 
@@ -115,6 +119,18 @@ export function DecisionProcessStepper({
     ],
   );
 
+  const getTrackingProps = useCallback(
+    () => ({
+      process_instance_id: instanceId,
+      from_phase_id: currentStateId,
+      to_phase_id: nextPhaseId,
+      before_end_date: currentPhaseEndDate
+        ? new Date() < new Date(currentPhaseEndDate)
+        : null,
+    }),
+    [instanceId, currentStateId, nextPhaseId, currentPhaseEndDate],
+  );
+
   const handleAdvancePhase = () => {
     if (!instanceId || transitionMutation.isPending) {
       return;
@@ -127,6 +143,7 @@ export function DecisionProcessStepper({
 
   const handleDismiss = (open: boolean) => {
     if (!open && !transitionMutation.isPending) {
+      posthog.capture('manual_transition_dismissed', getTrackingProps());
       setShowConfirmModal(false);
     }
   };
@@ -146,7 +163,13 @@ export function DecisionProcessStepper({
         locale={locale}
         onTransition={
           manualTransitionsEnabled && isAdmin
-            ? () => setShowConfirmModal(true)
+            ? () => {
+                posthog.capture(
+                  'manual_transition_initiated',
+                  getTrackingProps(),
+                );
+                setShowConfirmModal(true);
+              }
             : undefined
         }
       />

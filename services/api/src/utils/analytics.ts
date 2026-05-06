@@ -2,6 +2,8 @@ import {
   trackEventWithContext,
   trackFundingToggle as trackFundingToggleOriginal,
   trackImageUpload as trackImageUploadOriginal,
+  trackManualSelectionSubmitted as trackManualSelectionSubmittedOriginal,
+  trackManualTransitionConfirmed as trackManualTransitionConfirmedOriginal,
   trackProcessViewed as trackProcessViewedOriginal,
   trackProposalCommented as trackProposalCommentedOriginal,
   trackProposalFollowed as trackProposalFollowedOriginal,
@@ -168,6 +170,36 @@ export const trackFundingToggle = (
   },
 ) => {
   return trackFundingToggleOriginal(organizationContext, fundingStatus);
+};
+
+/**
+ * Track manual selection submission with automatic context injection
+ */
+export const trackManualSelectionSubmitted = (
+  ctx: AnalyticsContext,
+  processId: string,
+  additionalProps?: Record<string, any>,
+) => {
+  return trackManualSelectionSubmittedOriginal(
+    ctx.user.id,
+    processId,
+    additionalProps,
+  );
+};
+
+/**
+ * Track manual transition confirmed with automatic context injection
+ */
+export const trackManualTransitionConfirmed = (
+  ctx: AnalyticsContext,
+  processId: string,
+  additionalProps?: Record<string, any>,
+) => {
+  return trackManualTransitionConfirmedOriginal(
+    ctx.user.id,
+    processId,
+    additionalProps,
+  );
 };
 
 /**

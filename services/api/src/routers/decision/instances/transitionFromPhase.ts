@@ -1,7 +1,9 @@
 import { Channels, triggerPhaseAdvancement } from '@op/common';
+import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { trackManualTransitionConfirmed } from '../../../utils/analytics';
 
 export const transitionFromPhaseRouter = router({
   transitionFromPhase: commonAuthedProcedure()
@@ -27,6 +29,13 @@ export const transitionFromPhaseRouter = router({
       ctx.registerMutationChannels([
         Channels.decisionInstance(input.instanceId),
       ]);
+
+      waitUntil(
+        trackManualTransitionConfirmed(ctx, input.instanceId, {
+          from_phase_id: result.previousPhaseId,
+          to_phase_id: result.currentPhaseId,
+        }),
+      );
 
       return result;
     }),
