@@ -28,6 +28,16 @@ import {
   generateTestEmail,
 } from './test-data';
 
+/** Fixed window bounds for seeded decision-instance phase dates. Phase 0
+ * spans 2025-01-01 → 2035-01-01 so it's always the active phase regardless
+ * of when the test runs; phases 1+ stack one week each after 2035-01-01.
+ * Pinning to concrete UTC instants makes the rendered editor independent of
+ * wall-clock time so a11y-baseline fingerprints don't drift day-to-day. */
+const FIXTURE_PHASE0_START_MS = Date.UTC(2025, 0, 1);
+const FIXTURE_PHASE0_END_MS = Date.UTC(2035, 0, 1);
+const FIXTURE_LATER_PHASE_BASE_MS = FIXTURE_PHASE0_END_MS;
+const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
 /** Well-known slug for the seeded decision template profile */
 export const SEEDED_TEMPLATE_PROFILE_SLUG = 'decision-template-library';
 
@@ -278,20 +288,31 @@ export async function createDecisionInstance(
     templateVersion: schema.version,
     templateName: schema.name,
     templateDescription: schema.description,
-    phases: schema.phases.map((phase, index) => ({
-      phaseId: phase.id,
-      name: phase.name,
-      description: phase.description,
-      rules: phase.rules,
-      selectionPipeline:
-        'selectionPipeline' in phase ? phase.selectionPipeline : undefined,
-      startDate: new Date(
-        Date.now() + index * 7 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      endDate: new Date(
-        Date.now() + (index + 1) * 7 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-    })),
+    phases: schema.phases.map((phase, index) => {
+      // Phase 0 spans a wide fixed window so it remains the active phase
+      // across runs (mirroring the previous Date.now()-based behavior where
+      // phase 0 always started "now"). Phases 1+ stack one week each after
+      // phase 0 ends. Fixed instants keep the rendered editor deterministic
+      // so a11y-baseline fingerprints don't drift with wall-clock time.
+      const startMs =
+        index === 0
+          ? FIXTURE_PHASE0_START_MS
+          : FIXTURE_LATER_PHASE_BASE_MS + (index - 1) * ONE_WEEK_MS;
+      const endMs =
+        index === 0
+          ? FIXTURE_PHASE0_END_MS
+          : FIXTURE_LATER_PHASE_BASE_MS + index * ONE_WEEK_MS;
+      return {
+        phaseId: phase.id,
+        name: phase.name,
+        description: phase.description,
+        rules: phase.rules,
+        selectionPipeline:
+          'selectionPipeline' in phase ? phase.selectionPipeline : undefined,
+        startDate: new Date(startMs).toISOString(),
+        endDate: new Date(endMs).toISOString(),
+      };
+    }),
     proposalTemplate: proposalTemplateOverride ?? {
       type: 'object' as const,
       required: ['title'],
