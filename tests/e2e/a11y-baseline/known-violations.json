@@ -156,16 +156,6 @@
       "rule": "color-contrast",
       "impact": "serious",
       "route": "/en/decisions",
-      "fingerprint": "[role=tabpanel] > div > div > a > div:nth-of-type(1) > div:nth-of-type(3) > div > span",
-      "snippet": "<span class=\"text-functional-red text-sm\">Closes May 12, 2026</span>",
-      "wcagCriteria": [
-        "1.4.3"
-      ]
-    },
-    {
-      "rule": "color-contrast",
-      "impact": "serious",
-      "route": "/en/decisions",
       "fingerprint": "header > div:nth-of-type(2) > button:nth-of-type(1) > span",
       "snippet": "<span class=\"hidden sm:block\">Create</span>",
       "wcagCriteria": [
@@ -298,16 +288,6 @@
       "route": "/en/org",
       "fingerprint": "header > div:nth-of-type(2) > button:nth-of-type(1) > span",
       "snippet": "<span class=\"hidden sm:block\">Create</span>",
-      "wcagCriteria": [
-        "1.4.3"
-      ]
-    },
-    {
-      "rule": "color-contrast",
-      "impact": "serious",
-      "route": "/en/org/{slug}",
-      "fingerprint": "[role=tabpanel] > div > div:nth-of-type(2) > div:nth-of-type(1) > a > div > div:nth-of-type(2) > div:nth-of-type(1) > span",
-      "snippet": "<span class=\"text-functional-red text-sm\">Closes May 12, 2026</span>",
       "wcagCriteria": [
         "1.4.3"
       ]
