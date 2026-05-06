@@ -1,6 +1,11 @@
 import { getTipTapClient } from '@op/collab';
 import { db, eq } from '@op/db/client';
-import { type ProcessInstance, ProposalStatus, proposals } from '@op/db/schema';
+import {
+  type ProcessInstance,
+  ProposalStatus,
+  Visibility,
+  proposals,
+} from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
@@ -85,6 +90,11 @@ export const submitProposal = async ({
     );
   }
 
+  const currentPhase = instanceData.phases.find(
+    (p) => p.phaseId === currentPhaseId,
+  );
+  const defaultHidden = currentPhase?.rules?.proposals?.defaultHidden === true;
+
   // Validate proposal data against the proposal template schema
   const proposalTemplate = await resolveProposalTemplate(
     instanceData,
@@ -133,6 +143,7 @@ export const submitProposal = async ({
       .update(proposals)
       .set({
         status: ProposalStatus.SUBMITTED,
+        ...(defaultHidden ? { visibility: Visibility.HIDDEN } : {}),
         ...(proposalDataUpdate ? { proposalData: proposalDataUpdate } : {}),
       })
       .where(eq(proposals.id, data.proposalId))

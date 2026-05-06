@@ -1,5 +1,11 @@
 import { mockCollab } from '@op/collab/testing';
-import { ProposalStatus, processInstances, proposals } from '@op/db/schema';
+import type { DecisionInstanceData } from '@op/common';
+import {
+  ProposalStatus,
+  Visibility,
+  processInstances,
+  proposals,
+} from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import { describe, expect, it } from 'vitest';
 
@@ -788,5 +794,99 @@ describe.concurrent('submitProposal', () => {
     });
 
     expect(result.status).toBe(ProposalStatus.SUBMITTED);
+  });
+
+  it('should set visibility to HIDDEN when phase has defaultHidden enabled', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Enable defaultHidden on the initial phase
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+
+    if (!instanceRecord) {
+      throw new Error('Instance not found');
+    }
+
+    const instanceData = instanceRecord.instanceData as DecisionInstanceData;
+    const updatedPhases = instanceData.phases.map((phase) => {
+      if (phase.phaseId === 'initial') {
+        return {
+          ...phase,
+          rules: {
+            ...phase.rules,
+            proposals: { ...phase.rules?.proposals, defaultHidden: true },
+          },
+        };
+      }
+      return phase;
+    });
+
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: { ...instanceData, phases: updatedPhases },
+      })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Should Be Hidden' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitProposal({
+      proposalId: proposal.id,
+    });
+
+    expect(result.status).toBe(ProposalStatus.SUBMITTED);
+    expect(result.visibility).toBe(Visibility.HIDDEN);
+  });
+
+  it('should keep visibility VISIBLE when phase does not have defaultHidden', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Should Stay Visible' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitProposal({
+      proposalId: proposal.id,
+    });
+
+    expect(result.status).toBe(ProposalStatus.SUBMITTED);
+    expect(result.visibility).toBe(Visibility.VISIBLE);
   });
 });
