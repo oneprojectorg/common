@@ -14,7 +14,6 @@ import {
 
 import { autoId, enumToPgEnum, serviceRolePolicies } from '../../helpers';
 import { decisionsVoteProposals } from './decisions_vote_proposals.sql';
-import { locations } from './locations.sql';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
 import { proposalAttachments } from './proposalAttachments.sql';
@@ -86,11 +85,6 @@ export const proposalColumns = {
     },
   ),
 
-  locationId: uuid('location_id').references(() => locations.id, {
-    onUpdate: 'cascade',
-    onDelete: 'set null',
-  }),
-
   // Timestamps
   createdAt: timestamp({
     withTimezone: true,
@@ -129,7 +123,6 @@ export const proposals = pgTable(
     index().on(table.submittedByProfileId).concurrently(),
     index().on(table.lastEditedByProfileId).concurrently(),
     index().on(table.profileId).concurrently(),
-    index().on(table.locationId).concurrently(),
     index().on(table.status).concurrently(),
     index('proposals_status_created_at_idx')
       .on(table.status, table.createdAt)
@@ -177,10 +170,6 @@ export const proposalsRelations = relations(proposals, ({ one, many }) => ({
   profile: one(profiles, {
     fields: [proposals.profileId],
     references: [profiles.id],
-  }),
-  location: one(locations, {
-    fields: [proposals.locationId],
-    references: [locations.id],
   }),
   categories: many(proposalCategories),
   attachments: many(proposalAttachments),
