@@ -565,6 +565,8 @@
   "Define the phases of your decision-making process": "Define las fases de tu proceso de toma de decisiones",
   "Proposal submission": "Envío de propuestas",
   "Participants can submit new proposals during this phase.": "Los participantes pueden enviar nuevas propuestas durante esta fase.",
+  "Hide proposals by default": "Ocultar propuestas por defecto",
+  "New proposals are hidden from other participants until an admin makes them visible.": "Las nuevas propuestas están ocultas para otros participantes hasta que un administrador las haga visibles.",
   "Proposal editing": "Edición de propuestas",
   "Authors can edit their proposals after submitting": "Los autores pueden editar sus propuestas después de enviarlas",
   "Proposal review": "Revisión de propuestas",
