@@ -295,6 +295,7 @@ const PhaseDragPreview = ({
             {t('Configure')}
           </Button>
           <IconButton
+            aria-label={t('Delete phase')}
             variant="outline"
             size="medium"
             className="text-primary-teal"

@@ -8,7 +8,11 @@ import { Dialog, Modal, ModalOverlay } from 'react-aria-components';
 import { LuAlignJustify } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
-import { IconButton, IconButtonProps } from '../IconButton';
+import {
+  IconButton,
+  IconButtonProps,
+  RequireAccessibleName,
+} from '../IconButton';
 
 // Tailwind v4 default sm breakpoint (640px)
 const SM_BREAKPOINT = screens.sm;
@@ -195,10 +199,14 @@ const SidebarLayout = ({
   );
 };
 
-const SidebarTrigger = ({
-  className,
-  ...props
-}: Omit<IconButtonProps, 'children' | 'onPress'>) => {
+type SidebarTriggerProps = RequireAccessibleName<
+  Omit<
+    IconButtonProps,
+    'children' | 'onPress' | 'aria-label' | 'aria-labelledby'
+  >
+>;
+
+const SidebarTrigger = ({ className, ...props }: SidebarTriggerProps) => {
   const { toggleSidebar } = useSidebar();
   return (
     <IconButton onPress={toggleSidebar} className={className} {...props}>

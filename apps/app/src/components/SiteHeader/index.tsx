@@ -461,13 +461,14 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
 };
 
 export const SiteHeader = () => {
+  const t = useTranslations();
   const [isMobileSearchExpanded, setIsMobileSearchExpanded] = useState(false);
 
   return (
     <>
       <header className="gridCentered hidden h-auto w-full items-center justify-between border-b border-offWhite px-4 py-3 sm:grid">
         <div className="flex items-center gap-3">
-          <SidebarTrigger />
+          <SidebarTrigger aria-label={t('Open menu')} />
           <Link href="/" className="flex gap-1">
             <CommonLogo />
           </Link>
@@ -502,7 +503,11 @@ export const SiteHeader = () => {
       <header className="flex h-auto w-full items-center justify-between px-4 py-2 sm:hidden">
         {!isMobileSearchExpanded && (
           <div className="flex items-center gap-3">
-            <SidebarTrigger className="p-1" size="small" />
+            <SidebarTrigger
+              aria-label={t('Open menu')}
+              className="p-1"
+              size="small"
+            />
             <Link href="/" className="flex gap-1">
               <CommonLogo />
             </Link>

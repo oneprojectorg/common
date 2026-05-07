@@ -127,7 +127,7 @@ export const Button = (props: ButtonProps) => {
     <RACButton {...buttonRest} isPending className={className}>
       {(renderProps) => (
         <>
-          <span className="invisible flex items-center gap-1">
+          <span className="flex items-center gap-1 opacity-0">
             {typeof children === 'function' ? children(renderProps) : children}
           </span>
           <span className="absolute inset-0 flex items-center justify-center">
@@ -182,7 +182,7 @@ export const ButtonLink = (props: ButtonLinkProps) => {
     >
       {(renderProps) => (
         <>
-          <span className="invisible flex items-center gap-1">
+          <span className="flex items-center gap-1 opacity-0">
             {typeof children === 'function' ? children(renderProps) : children}
           </span>
           <span className="pointer-events-none absolute inset-0 flex items-center justify-center">

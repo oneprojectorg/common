@@ -101,25 +101,25 @@ export const AllVariants: Story = {
     <div className="flex items-center gap-4">
       <div className="flex flex-col items-center gap-2">
         <span className="text-sm font-medium">Ghost</span>
-        <IconButton variant="ghost">
+        <IconButton variant="ghost" aria-label="ghost">
           <DummyIcon />
         </IconButton>
       </div>
       <div className="flex flex-col items-center gap-2">
         <span className="text-sm font-medium">Solid</span>
-        <IconButton variant="solid">
+        <IconButton variant="solid" aria-label="solid">
           <DummyIcon />
         </IconButton>
       </div>
       <div className="flex flex-col items-center gap-2">
         <span className="text-sm font-medium">Outline</span>
-        <IconButton variant="outline">
+        <IconButton variant="outline" aria-label="outline">
           <DummyIcon />
         </IconButton>
       </div>
       <div className="flex flex-col items-center gap-2">
         <span className="text-sm font-medium">Disabled</span>
-        <IconButton isDisabled>
+        <IconButton isDisabled aria-label="disabled">
           <DummyIcon />
         </IconButton>
       </div>
@@ -132,19 +132,19 @@ export const AllSizes: Story = {
     <div className="flex items-center gap-4">
       <div className="flex flex-col items-center gap-2">
         <span className="text-sm font-medium">Small</span>
-        <IconButton size="small">
+        <IconButton size="small" aria-label="small">
           <DummyIcon />
         </IconButton>
       </div>
       <div className="flex flex-col items-center gap-2">
         <span className="text-sm font-medium">Medium</span>
-        <IconButton size="medium">
+        <IconButton size="medium" aria-label="medium">
           <DummyIcon />
         </IconButton>
       </div>
       <div className="flex flex-col items-center gap-2">
         <span className="text-sm font-medium">Large</span>
-        <IconButton size="large">
+        <IconButton size="large" aria-label="large">
           <DummyIcon />
         </IconButton>
       </div>

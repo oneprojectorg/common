@@ -279,6 +279,7 @@ export function ProposalCardMenu({
 
   const menuTriggerButton = (
     <IconButton
+      aria-label={t('Proposal options')}
       variant="ghost"
       size="small"
       className="aspect-square aria-expanded:bg-neutral-gray1"

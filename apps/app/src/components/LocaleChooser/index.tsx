@@ -52,6 +52,7 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
       customTrigger={
         <>
           <IconButton
+            aria-label={t('Select language')}
             variant="outline"
             size="medium"
             className="hidden text-primary-teal sm:flex"

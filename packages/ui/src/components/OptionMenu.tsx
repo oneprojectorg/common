@@ -13,15 +13,18 @@ export const OptionMenu = ({
   className,
   variant = 'ghost',
   size = 'small',
+  'aria-label': ariaLabel = 'Options',
 }: {
   children: ReactNode;
   className?: string;
   variant?: IconButtonProps['variant'];
   size?: IconButtonProps['size'];
+  'aria-label'?: string;
 }) => {
   return (
     <MenuTrigger>
       <IconButton
+        aria-label={ariaLabel}
         variant={variant}
         size={size}
         className={cn(

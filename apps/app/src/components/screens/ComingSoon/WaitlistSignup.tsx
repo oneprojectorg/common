@@ -122,6 +122,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
           {t('Common')}
         </Heading>
         <IconButton
+          aria-label={t('Close')}
           className="absolute top-3 right-3 size-8 text-neutral-gray3"
           slot="close"
         >
@@ -237,6 +238,7 @@ const WaitlistSignupSuccess = () => {
           {t("You're on the list!")}
         </Heading>
         <IconButton
+          aria-label={t('Close')}
           className="absolute top-3 left-3 size-8 text-neutral-gray3"
           slot="close"
         >

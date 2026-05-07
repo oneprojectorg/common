@@ -157,6 +157,7 @@ const MemberMenu = ({
   return (
     <MenuTrigger>
       <IconButton
+        aria-label={t('Member options')}
         variant="ghost"
         size="small"
         className="aria-expanded:bg-neutral-gray1"
