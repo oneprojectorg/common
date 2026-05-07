@@ -22,7 +22,6 @@ import { Link } from '@/lib/i18n/routing';
 
 import { Bullet } from '../../Bullet';
 import { BudgetDisplay, formatBudget } from '../BudgetDisplay';
-import { DocumentNotAvailable } from '../DocumentNotAvailable';
 import { useCardTranslation } from '../ProposalTranslationContext';
 import { RevisionRequestChip } from '../RevisionRequestChip';
 import {
@@ -411,10 +410,6 @@ export function ProposalCardPreview({
       : undefined;
 
   const displayText = translatedPreview ?? previewText;
-
-  if (proposal.documentContent?.type === 'unavailable') {
-    return <DocumentNotAvailable className="py-4" />;
-  }
 
   if (displayText === null) {
     return null;
