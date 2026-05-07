@@ -344,15 +344,7 @@ const instanceDataEncoder = z.preprocess(
     budget: z.number().optional(),
     hideBudget: z.boolean().optional(),
     fieldValues: z.record(z.string(), z.unknown()).optional(),
-    phases: z
-      .array(
-        z.object({
-          phaseId: z.string(),
-          startDate: z.string().optional(),
-          endDate: z.string().optional(),
-        }),
-      )
-      .optional(),
+    phases: z.array(instancePhaseDataEncoder).optional(),
   }),
 );
 

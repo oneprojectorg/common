@@ -8,6 +8,7 @@ import type {
 import {
   ProfileRelationshipType,
   ProposalStatus,
+  Visibility,
   posts,
   postsToProfiles,
   profileRelationships,
@@ -201,6 +202,28 @@ export const getProposal = async ({
       { decisions: permission.ADMIN },
     ],
   });
+
+  // Hidden proposals are only visible to admins on the instance's profile and
+  // the submitting profile itself (mirrors listProposals visibility filter).
+  // Throw NotFoundError rather than UnauthorizedError to avoid leaking existence.
+  if (proposal.visibility === Visibility.HIDDEN) {
+    const isOwner = proposal.submittedByProfileId === dbUser.currentProfileId;
+    const instanceProfileId = proposal.processInstance.profileId;
+    let canManageProposals = false;
+    if (!isOwner && instanceProfileId) {
+      const profileUser = await getProfileAccessUser({
+        user,
+        profileId: instanceProfileId,
+      });
+      canManageProposals = checkPermission(
+        { profile: permission.ADMIN },
+        profileUser?.roles ?? [],
+      );
+    }
+    if (!isOwner && !canManageProposals) {
+      throw new NotFoundError('Proposal');
+    }
+  }
 
   // Generate signed URLs for attachments
   let attachmentsWithUrls = proposal.attachments ?? [];

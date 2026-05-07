@@ -892,4 +892,170 @@ describe.concurrent('submitProposal', () => {
     expect(result.status).toBe(ProposalStatus.SUBMITTED);
     expect(result.visibility).toBe(Visibility.VISIBLE);
   });
+
+  it('should keep visibility VISIBLE when defaults.hidden is explicitly false', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+
+    if (!instanceRecord) {
+      throw new Error('Instance not found');
+    }
+
+    const instanceData = instanceRecord.instanceData as DecisionInstanceData;
+    const updatedPhases = instanceData.phases.map((phase) => {
+      if (phase.phaseId === 'initial') {
+        return {
+          ...phase,
+          rules: {
+            ...phase.rules,
+            proposals: {
+              ...phase.rules?.proposals,
+              defaults: { hidden: false },
+            },
+          },
+        };
+      }
+      return phase;
+    });
+
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: { ...instanceData, phases: updatedPhases },
+      })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Explicit False Stays Visible' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitProposal({
+      proposalId: proposal.id,
+    });
+
+    expect(result.status).toBe(ProposalStatus.SUBMITTED);
+    expect(result.visibility).toBe(Visibility.VISIBLE);
+  });
+
+  it('should keep visibility VISIBLE when defaults object is empty', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+
+    if (!instanceRecord) {
+      throw new Error('Instance not found');
+    }
+
+    const instanceData = instanceRecord.instanceData as DecisionInstanceData;
+    const updatedPhases = instanceData.phases.map((phase) => {
+      if (phase.phaseId === 'initial') {
+        return {
+          ...phase,
+          rules: {
+            ...phase.rules,
+            proposals: {
+              ...phase.rules?.proposals,
+              defaults: {},
+            },
+          },
+        };
+      }
+      return phase;
+    });
+
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: { ...instanceData, phases: updatedPhases },
+      })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Empty Defaults Stays Visible' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitProposal({
+      proposalId: proposal.id,
+    });
+
+    expect(result.status).toBe(ProposalStatus.SUBMITTED);
+    expect(result.visibility).toBe(Visibility.VISIBLE);
+  });
+
+  it('should reject submission when currentStateId points at a missing phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Create the proposal first (while currentStateId is still valid), then
+    // corrupt the instance to point at a phase that doesn't exist. We expect
+    // the upstream phase-allow check to reject submission rather than the
+    // defaults.hidden lookup silently picking VISIBLE.
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Missing Phase Should Reject' },
+    });
+
+    await db
+      .update(processInstances)
+      .set({ currentStateId: 'nonexistent-phase' })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.submitProposal({ proposalId: proposal.id }),
+    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
 });

@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDate } from '@/utils/formatting';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { useLocale } from 'next-intl';
 import { LuLock } from 'react-icons/lu';
@@ -19,7 +20,7 @@ export function HiddenProposalsBanner({
   const locale = useLocale();
 
   const formattedDate = currentPhaseEndDate
-    ? new Date(currentPhaseEndDate).toLocaleDateString(locale, {
+    ? formatDate(currentPhaseEndDate, locale, {
         month: 'short',
         day: 'numeric',
       })
@@ -40,6 +41,8 @@ export function HiddenProposalsBanner({
       fullWidth
       icon={<LuLock className="size-4" />}
       className="border-t-0 border-b-neutral-gray1"
+      role="status"
+      aria-live="polite"
     >
       {message}
     </AlertBanner>

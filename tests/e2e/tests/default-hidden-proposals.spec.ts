@@ -26,6 +26,12 @@ import {
   test,
 } from '../fixtures/index.js';
 
+function isoDateOffset(daysFromNow: number) {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + daysFromNow);
+  return d.toISOString().slice(0, 10);
+}
+
 async function createProcessWithDefaultHidden({
   org,
 }: {
@@ -34,6 +40,12 @@ async function createProcessWithDefaultHidden({
     adminUser: { authUserId: string; email: string };
   };
 }) {
+  // Rolling dates so the submission phase is always "current" relative to test run.
+  const submissionStart = isoDateOffset(-1);
+  const submissionEnd = isoDateOffset(30);
+  const reviewStart = isoDateOffset(31);
+  const reviewEnd = isoDateOffset(60);
+
   const processSchema = {
     id: 'default-hidden-test',
     version: '1.0.0',
@@ -75,8 +87,8 @@ async function createProcessWithDefaultHidden({
           voting: { submit: false },
           advancement: { method: 'manual' as const },
         },
-        startDate: '2025-01-01',
-        endDate: '2025-12-31',
+        startDate: submissionStart,
+        endDate: submissionEnd,
       },
       {
         phaseId: 'review',
@@ -86,8 +98,8 @@ async function createProcessWithDefaultHidden({
           voting: { submit: false },
           advancement: { method: 'manual' as const },
         },
-        startDate: '2026-01-01',
-        endDate: '2026-12-31',
+        startDate: reviewStart,
+        endDate: reviewEnd,
       },
     ],
   };
@@ -201,7 +213,7 @@ test.describe('Default Hidden Proposals', () => {
       .set({ visibility: Visibility.HIDDEN })
       .where(eq(proposals.id, hiddenProposal.id));
 
-    // Admin navigates — should see the proposal
+    // Admin navigates — should see the proposal, banner, and filters.
     await authenticatedPage.goto(`/en/decisions/${slug}`, {
       waitUntil: 'domcontentloaded',
     });
@@ -210,18 +222,33 @@ test.describe('Default Hidden Proposals', () => {
       timeout: 30_000,
     });
 
+    // Banner is rendered as role="status" with the privacy copy.
     await expect(
-      authenticatedPage.getByRole('link', {
-        name: 'Hidden By Default Proposal',
+      authenticatedPage.getByRole('status').filter({
+        hasText: 'Proposals are private during this phase',
       }),
     ).toBeVisible({ timeout: 15_000 });
 
-    // Admin should see the "Hidden" label
+    const adminProposalLink = authenticatedPage.getByRole('link', {
+      name: 'Hidden By Default Proposal',
+    });
+    await expect(adminProposalLink).toBeVisible({ timeout: 15_000 });
+
+    // Admins keep the filter dropdowns visible.
     await expect(
-      authenticatedPage.getByText('Hidden', { exact: true }),
+      authenticatedPage.getByLabel('Filter proposals', { exact: true }),
     ).toBeVisible();
 
-    // Member who did NOT submit the proposal navigates — should NOT see it
+    // The "Hidden" badge is scoped to the proposal card containing the link.
+    const adminProposalCard = authenticatedPage
+      .locator('div')
+      .filter({ has: adminProposalLink })
+      .first();
+    await expect(
+      adminProposalCard.getByText('Hidden', { exact: true }),
+    ).toBeVisible();
+
+    // Member who did NOT submit the proposal navigates — should NOT see it.
     const otherMemberOrg = await createOrganization({
       testId: `dhp-other-${Date.now()}`,
       supabaseAdmin,
@@ -251,12 +278,32 @@ test.describe('Default Hidden Proposals', () => {
       timeout: 30_000,
     });
 
-    // Other member should NOT see the hidden proposal
+    // Banner is shown to non-admins too.
+    await expect(
+      otherMemberPage.getByRole('status').filter({
+        hasText: 'Proposals are private during this phase',
+      }),
+    ).toBeVisible({ timeout: 15_000 });
+
+    // Filters are hidden for non-admins when proposals are default-hidden.
+    await expect(
+      otherMemberPage.getByLabel('Filter proposals', { exact: true }),
+    ).toBeHidden();
+
+    // Wait for the empty-state copy (positive readiness signal) so we're not
+    // racing the lazy load before asserting the proposal link is absent.
+    await expect(
+      otherMemberPage.getByText(
+        "You'll see your proposal here once you submit.",
+      ),
+    ).toBeVisible({ timeout: 15_000 });
+
+    // Other member should NOT see the hidden proposal.
     await expect(
       otherMemberPage.getByRole('link', {
         name: 'Hidden By Default Proposal',
       }),
-    ).not.toBeVisible({ timeout: 5_000 });
+    ).toBeHidden();
 
     await otherMemberCtx.close();
   });
@@ -317,11 +364,32 @@ test.describe('Default Hidden Proposals', () => {
       timeout: 30_000,
     });
 
+    // Submitter sees the privacy banner just like everyone else.
     await expect(
-      submitterPage.getByRole('link', {
-        name: 'My Hidden Proposal',
+      submitterPage.getByRole('status').filter({
+        hasText: 'Proposals are private during this phase',
       }),
     ).toBeVisible({ timeout: 15_000 });
+
+    // Filters remain hidden for non-admin submitters even though they see
+    // their own proposal — the filter UI is admin-only in this phase.
+    await expect(
+      submitterPage.getByLabel('Filter proposals', { exact: true }),
+    ).toBeHidden();
+
+    const submitterProposalLink = submitterPage.getByRole('link', {
+      name: 'My Hidden Proposal',
+    });
+    await expect(submitterProposalLink).toBeVisible({ timeout: 15_000 });
+
+    // The "Hidden" badge shows on the owner's view of their own card.
+    const submitterProposalCard = submitterPage
+      .locator('div')
+      .filter({ has: submitterProposalLink })
+      .first();
+    await expect(
+      submitterProposalCard.getByText('Hidden', { exact: true }),
+    ).toBeVisible();
 
     await submitterCtx.close();
   });

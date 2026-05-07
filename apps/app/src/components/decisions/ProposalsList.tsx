@@ -122,24 +122,8 @@ export const ProposalListSkeleton = () => {
   );
 };
 
-const NoProposalsFound = ({
-  hasFilter,
-  proposalsHiddenByDefault = false,
-}: {
-  hasFilter: boolean;
-  proposalsHiddenByDefault?: boolean;
-}) => {
+const NoProposalsFound = ({ hasFilter }: { hasFilter: boolean }) => {
   const t = useTranslations();
-
-  if (proposalsHiddenByDefault && !hasFilter) {
-    return (
-      <EmptyState icon={<LuLeaf className="size-6" />}>
-        <p className="text-base text-neutral-charcoal">
-          {t("You'll see your proposal here once you submit.")}
-        </p>
-      </EmptyState>
-    );
-  }
 
   return (
     <EmptyState icon={<LuLeaf className="size-6" />}>
@@ -152,6 +136,18 @@ const NoProposalsFound = ({
         {hasFilter
           ? t('Try adjusting your filter selection above.')
           : t('You could be the first one to submit a proposal')}
+      </p>
+    </EmptyState>
+  );
+};
+
+const HiddenProposalsEmptyState = () => {
+  const t = useTranslations();
+
+  return (
+    <EmptyState icon={<LuLeaf className="size-6" />}>
+      <p className="text-base text-neutral-charcoal">
+        {t("You'll see your proposal here once you submit.")}
       </p>
     </EmptyState>
   );
@@ -237,12 +233,10 @@ const VotingProposalsList = ({
   };
 
   if (!proposals || proposals.length === 0) {
-    return (
-      <NoProposalsFound
-        hasFilter={hasFilter}
-        proposalsHiddenByDefault={proposalsHiddenByDefault}
-      />
-    );
+    if (proposalsHiddenByDefault && !hasFilter) {
+      return <HiddenProposalsEmptyState />;
+    }
+    return <NoProposalsFound hasFilter={hasFilter} />;
   }
 
   return (
@@ -438,12 +432,10 @@ const ViewProposalsList = ({
 }: ProposalsProps) => {
   const canManageProposals = permissions?.admin ?? false;
   if (!proposals || proposals.length === 0) {
-    return (
-      <NoProposalsFound
-        hasFilter={hasFilter}
-        proposalsHiddenByDefault={proposalsHiddenByDefault}
-      />
-    );
+    if (proposalsHiddenByDefault && !hasFilter) {
+      return <HiddenProposalsEmptyState />;
+    }
+    return <NoProposalsFound hasFilter={hasFilter} />;
   }
 
   return (

@@ -2,7 +2,6 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import { type InstancePhaseData } from '@op/api/encoders';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { Suspense } from 'react';
@@ -45,13 +44,9 @@ export function StandardDecisionPage({
     (phase) => phase.phaseId === currentPhaseId,
   );
   const currentPhase =
-    currentPhaseIndex >= 0
-      ? (phases[currentPhaseIndex] as InstancePhaseData)
-      : undefined;
+    currentPhaseIndex >= 0 ? phases[currentPhaseIndex] : undefined;
   const nextPhase =
-    currentPhaseIndex >= 0
-      ? (phases[currentPhaseIndex + 1] as InstancePhaseData | undefined)
-      : undefined;
+    currentPhaseIndex >= 0 ? phases[currentPhaseIndex + 1] : undefined;
   const allowProposals = currentPhase?.rules?.proposals?.submit === true;
   const proposalsHiddenByDefault =
     currentPhase?.rules?.proposals?.defaults?.hidden === true;

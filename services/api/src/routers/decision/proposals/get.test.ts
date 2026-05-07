@@ -302,6 +302,56 @@ describe.concurrent('getProposal', () => {
     expect(result.visibility).toBe(Visibility.HIDDEN);
   });
 
+  it('should hide proposal with HIDDEN visibility from non-admin, non-owner members', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Submitter creates the proposal; another member tries to fetch it once hidden
+    const [submitter, otherMember, adminCaller] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    const proposal = await testData.createProposal({
+      userEmail: submitter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Secret Proposal', description: 'Hidden idea' },
+    });
+
+    // Admin hides the proposal
+    await adminCaller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { visibility: Visibility.HIDDEN },
+    });
+
+    // Another member (read access, but not admin or owner) should get NotFound
+    const otherCaller = await createAuthenticatedCaller(otherMember.email);
+    await expect(
+      otherCaller.decision.getProposal({
+        profileId: proposal.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+  });
+
   it('should return json documentContent when collaborationDocId exists and doc is fetched', async ({
     task,
     onTestFinished,
