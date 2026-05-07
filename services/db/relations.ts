@@ -194,6 +194,26 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.profiles.id,
       to: r.proposalReviewAssignments.reviewerProfileId,
     }),
+    locations: r.many.profilesLocations({
+      from: r.profiles.id,
+      to: r.profilesLocations.profileId,
+    }),
+  },
+
+  /**
+   * Profiles locations relations (join table)
+   */
+  profilesLocations: {
+    profile: r.one.profiles({
+      from: r.profilesLocations.profileId,
+      to: r.profiles.id,
+      optional: false,
+    }),
+    location: r.one.locations({
+      from: r.profilesLocations.locationId,
+      to: r.locations.id,
+      optional: false,
+    }),
   },
 
   /**
