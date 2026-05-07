@@ -1,10 +1,13 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { GradientHeader } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { TranslatedText } from '@/components/TranslatedText';
+
+import { DecisionHero } from '../DecisionHero';
 
 export function ReviewProgressBanner({
   processInstanceId,
@@ -21,7 +24,7 @@ export function ReviewProgressBanner({
   });
 
   return (
-    <BannerShell>
+    <DecisionHero title={<TranslatedText text="Review Progress" />}>
       <div className="flex w-full flex-wrap items-center justify-center gap-6 py-2">
         <ReviewProgressStat
           value={`${progress.proposalsReviewedCount}/${progress.proposalsTotalCount}`}
@@ -42,13 +45,13 @@ export function ReviewProgressBanner({
           </>
         ) : null}
       </div>
-    </BannerShell>
+    </DecisionHero>
   );
 }
 
 export function ReviewProgressBannerSkeleton() {
   return (
-    <BannerShell>
+    <DecisionHero title={<TranslatedText text="Review Progress" />}>
       <div className="flex w-full flex-wrap items-center justify-center gap-6 py-2">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="flex w-24 flex-col items-center gap-2">
@@ -57,20 +60,7 @@ export function ReviewProgressBannerSkeleton() {
           </div>
         ))}
       </div>
-    </BannerShell>
-  );
-}
-
-function BannerShell({ children }: { children: React.ReactNode }) {
-  const t = useTranslations();
-
-  return (
-    <div className="flex flex-col items-center gap-2 py-8">
-      <GradientHeader className="uppercase">
-        {t('Review Progress')}
-      </GradientHeader>
-      {children}
-    </div>
+    </DecisionHero>
   );
 }
 

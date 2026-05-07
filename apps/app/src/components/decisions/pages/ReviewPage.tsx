@@ -46,7 +46,7 @@ export function ReviewPage({
   return (
     <div className="min-h-full">
       {isAdmin ? (
-        <div className="border-b bg-neutral-offWhite px-4">
+        <div className="border-b bg-neutral-offWhite px-4 py-8">
           <APIErrorBoundary fallbacks={{ default: () => null }}>
             <Suspense fallback={<ReviewProgressBannerSkeleton />}>
               <ReviewProgressBanner
