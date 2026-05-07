@@ -44,7 +44,7 @@ const alertBannerStyles = tv({
         content: 'group-has-data-[slot=icon]:col-start-2',
       },
       banner: {
-        root: 'flex items-start gap-1',
+        root: 'flex items-start gap-1 shadow-none',
         content: 'flex min-w-0 items-center gap-1',
       },
     },
@@ -59,14 +59,14 @@ const alertBannerStyles = tv({
       variant: 'banner',
       intent: 'warning',
       class: {
-        root: 'border-primary-orange1 text-neutral-black [background:linear-gradient(rgba(255,255,255,0.92),rgba(255,255,255,0.92)),var(--color-primary-orange1)]',
+        root: 'border-primary-orange1White text-neutral-black [background:linear-gradient(rgba(255,255,255,0.92),rgba(255,255,255,0.92)),var(--color-primary-orange1)]',
       },
     },
     {
       variant: 'banner',
       intent: 'danger',
       class: {
-        root: 'border-functional-red text-neutral-black [background:linear-gradient(rgba(255,255,255,0.96),rgba(255,255,255,0.96)),var(--color-functional-red)]',
+        root: 'border-functional-redWhite text-neutral-black [background:linear-gradient(rgba(255,255,255,0.96),rgba(255,255,255,0.96)),var(--color-functional-red)]',
       },
     },
     {

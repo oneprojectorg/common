@@ -214,6 +214,7 @@
   --color-primary-tealBlack: hsl(var(--op-teal-600));
   --color-primary-yellow: hsl(var(--op-yellow-500));
   --color-primary-orange1: hsl(var(--op-orange1-500));
+  --color-primary-orange1White: hsl(var(--op-orange1-white));
   --color-primary-orange2: hsl(var(--op-orange2-500));
 
   /* ============================================
@@ -232,7 +233,7 @@
    * ============================================ */
   --color-functional-red: hsl(var(--op-red-500));
   --color-functional-redBlack: hsl(var(--op-red-600));
-  --color-functional-redWhite: hsl(var(--op-red-50));
+  --color-functional-redWhite: hsl(var(--op-red-white));
   --color-functional-green: hsl(var(--op-green-500));
   --color-functional-greenWhite: hsl(var(--op-green-50));
   --color-functional-yellowWhite: hsl(var(--op-yellow-50));
