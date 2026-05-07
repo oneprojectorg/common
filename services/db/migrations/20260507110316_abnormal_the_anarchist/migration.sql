@@ -1,6 +1,9 @@
 CREATE TABLE "profiles_locations" (
 	"profile_id" uuid,
 	"location_id" uuid,
+	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
+	"deleted_at" timestamp with time zone,
 	CONSTRAINT "profiles_locations_pkey" PRIMARY KEY("profile_id","location_id")
 );
 --> statement-breakpoint
