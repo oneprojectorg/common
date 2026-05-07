@@ -1,6 +1,11 @@
 'use client';
 
-import { ComboBox as AriaComboBox, ListBox } from 'react-aria-components';
+import { ReactNode, useContext } from 'react';
+import {
+  ComboBox as AriaComboBox,
+  ComboBoxStateContext,
+  ListBox,
+} from 'react-aria-components';
 import type {
   ComboBoxProps as AriaComboBoxProps,
   ListBoxItemProps,
@@ -32,6 +37,8 @@ export interface ComboBoxProps<T extends object> extends Omit<
   fieldGroupClassName?: string;
   buttonProps?: Omit<ButtonProps, 'children'>;
   popoverProps?: Omit<PopoverProps, 'children'>;
+  icon?: ReactNode;
+  placeholder?: string;
 }
 
 export const ComboBox = <T extends object>({
@@ -40,6 +47,8 @@ export const ComboBox = <T extends object>({
   errorMessage,
   children,
   items,
+  icon,
+  placeholder,
   ...props
 }: ComboBoxProps<T>) => {
   return (
@@ -52,7 +61,10 @@ export const ComboBox = <T extends object>({
     >
       <Label className={props.labelClassName}>{label}</Label>
       <FieldGroup className={cn('relative', props.fieldGroupClassName)}>
-        <Input className={props.inputClassName} />
+        <ComboBoxInput
+          className={props.inputClassName}
+          placeholder={placeholder}
+        />
         <Button
           variant="icon"
           color="ghost"
@@ -62,7 +74,7 @@ export const ComboBox = <T extends object>({
             props.buttonProps?.className,
           )}
         >
-          <LuChevronDown aria-hidden className="size-4" />
+          {icon ?? <LuChevronDown aria-hidden className="size-4" />}
         </Button>
       </FieldGroup>
       {description && <Description>{description}</Description>}
@@ -70,14 +82,14 @@ export const ComboBox = <T extends object>({
       <Popover
         {...props.popoverProps}
         className={cn(
-          'min-w-(--trigger-width) bg-white',
+          'absolute z-10 !max-h-60 min-w-(--trigger-width) overflow-hidden rounded border bg-white p-2 shadow',
           props.popoverProps?.className,
         )}
       >
         <ListBox
           items={items}
           className={cn(
-            'max-h-[inherit] overflow-auto p-1 outline-0 [clip-path:inset(0_0_0_0_round_.75rem)]',
+            'max-h-60 overflow-auto py-1 outline-hidden',
             props.listBoxClassName,
           )}
         >
@@ -85,6 +97,23 @@ export const ComboBox = <T extends object>({
         </ListBox>
       </Popover>
     </AriaComboBox>
+  );
+};
+
+const ComboBoxInput = ({
+  className,
+  placeholder,
+}: {
+  className?: string;
+  placeholder?: string;
+}) => {
+  const state = useContext(ComboBoxStateContext);
+  return (
+    <Input
+      className={className}
+      placeholder={placeholder}
+      onClick={() => state?.open()}
+    />
   );
 };
 

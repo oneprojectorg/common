@@ -1,5 +1,6 @@
 import type { Meta } from '@storybook/react-vite';
 import { Form } from 'react-aria-components';
+import { LuSearch } from 'react-icons/lu';
 
 import { Button } from '../src/components/Button';
 import {
@@ -16,6 +17,7 @@ const meta: Meta<typeof ComboBox> = {
   tags: ['autodocs'],
   args: {
     label: 'Ice cream flavor',
+    placeholder: 'Pick a flavor',
   },
 };
 
@@ -73,4 +75,72 @@ export const Validation = (args: any) => (
 
 Validation.args = {
   isRequired: true,
+};
+
+const US_STATES = [
+  'Alabama',
+  'Alaska',
+  'Arizona',
+  'Arkansas',
+  'California',
+  'Colorado',
+  'Connecticut',
+  'Delaware',
+  'Florida',
+  'Georgia',
+  'Hawaii',
+  'Idaho',
+  'Illinois',
+  'Indiana',
+  'Iowa',
+  'Kansas',
+  'Kentucky',
+  'Louisiana',
+  'Maine',
+  'Maryland',
+  'Massachusetts',
+  'Michigan',
+  'Minnesota',
+  'Mississippi',
+  'Missouri',
+  'Montana',
+  'Nebraska',
+  'Nevada',
+  'New Hampshire',
+  'New Jersey',
+  'New Mexico',
+  'New York',
+  'North Carolina',
+  'North Dakota',
+  'Ohio',
+  'Oklahoma',
+  'Oregon',
+  'Pennsylvania',
+  'Rhode Island',
+  'South Carolina',
+  'South Dakota',
+  'Tennessee',
+  'Texas',
+  'Utah',
+  'Vermont',
+  'Virginia',
+  'Washington',
+  'West Virginia',
+  'Wisconsin',
+  'Wyoming',
+];
+
+export const WithSearchIcon = (args: any) => (
+  <ComboBox {...args} icon={<LuSearch aria-hidden className="size-4" />}>
+    {US_STATES.map((state) => (
+      <ComboBoxItem key={state} id={state}>
+        {state}
+      </ComboBoxItem>
+    ))}
+  </ComboBox>
+);
+
+WithSearchIcon.args = {
+  label: 'State',
+  placeholder: 'Search states...',
 };
