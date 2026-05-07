@@ -1,7 +1,7 @@
 import {
   Channels,
   getPhaseReviewProgress,
-  getPhaseReviewProgressInputSchema,
+  instancePhaseRefSchema,
   phaseReviewProgressSchema,
 } from '@op/common';
 
@@ -9,7 +9,7 @@ import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 export const getPhaseReviewProgressRouter = router({
   getPhaseReviewProgress: commonAuthedProcedure()
-    .input(getPhaseReviewProgressInputSchema)
+    .input(instancePhaseRefSchema)
     .output(phaseReviewProgressSchema)
     .query(async ({ ctx, input }) => {
       ctx.registerQueryChannels([

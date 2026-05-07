@@ -4,29 +4,20 @@ import {
   proposalReviewAssignments,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils';
 import { getInstance } from './getInstance';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
+import type { InstancePhaseRef } from './schemas/instance';
 import type { PhaseInstanceData } from './schemas/instanceData';
 import type { PhaseReviewProgress } from './schemas/reviews';
-
-export const getPhaseReviewProgressInputSchema = z.object({
-  processInstanceId: z.uuid(),
-  phaseId: z.string().optional(),
-});
-
-export type GetPhaseReviewProgressInput = z.infer<
-  typeof getPhaseReviewProgressInputSchema
->;
 
 const ACTIVE_ASSIGNMENT_STATUSES = Object.values(
   ProposalReviewAssignmentStatus,
 ).filter((status) => status !== ProposalReviewAssignmentStatus.PENDING);
 
 export async function getPhaseReviewProgress(
-  input: GetPhaseReviewProgressInput & { user: User },
+  input: InstancePhaseRef & { user: User },
 ): Promise<PhaseReviewProgress> {
   const { user, processInstanceId } = input;
 
@@ -40,13 +31,13 @@ export async function getPhaseReviewProgress(
 
   const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
 
-  const reviewerCountsPromise = getReviewerCounts({
+  const assignedReviewerCountsPromise = getAssignedReviewerCounts({
     processInstanceId,
     phaseId,
   });
   const phaseProposalIds = await getProposalIdsForPhase({ instance, phaseId });
-  const [reviewerCounts, completedProposalsCount] = await Promise.all([
-    reviewerCountsPromise,
+  const [assignedReviewerCounts, completedProposalsCount] = await Promise.all([
+    assignedReviewerCountsPromise,
     getCompletedProposalsCount({
       processInstanceId,
       phaseId,
@@ -55,10 +46,10 @@ export async function getPhaseReviewProgress(
   ]);
 
   return {
-    proposalsReviewed: completedProposalsCount,
-    proposalsTotal: phaseProposalIds.length,
-    activeReviewers: reviewerCounts.active,
-    reviewersTotal: reviewerCounts.total,
+    proposalsReviewedCount: completedProposalsCount,
+    proposalsTotalCount: phaseProposalIds.length,
+    activeReviewersCount: assignedReviewerCounts.active,
+    reviewersTotalCount: assignedReviewerCounts.total,
     daysLeft: computeDaysLeft({
       phaseId,
       phases: instance.instanceData.phases,
@@ -78,7 +69,10 @@ function instancePhaseConditions(
   ];
 }
 
-async function getReviewerCounts({
+// Counts distinct reviewers from `proposalReviewAssignments` rows for this
+// instance/phase — i.e. reviewers who actually have an assignment, not
+// users with the reviewer role.
+async function getAssignedReviewerCounts({
   processInstanceId,
   phaseId,
 }: {

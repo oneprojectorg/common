@@ -205,21 +205,20 @@ export const proposalWithSubmittedReviewsSchema =
  * header above the proposal grid.
  *
  * Counts are per-phase (defaults to the instance's current phase):
- *   - `proposalsReviewed` / `proposalsTotal`: phase-scoped non-draft
- *     proposals; `proposalsReviewed` is the subset with all assignments
- *     COMPLETED. Proposals with zero assignments are not counted as
- *     reviewed.
- *   - `activeReviewers` / `reviewersTotal`: distinct reviewers assigned
- *     in this phase; "active" means at least one assignment past PENDING.
+ *   - `proposalsReviewedCount` / `proposalsTotalCount`: phase-scoped
+ *     non-draft proposals; `proposalsReviewedCount` is the subset with
+ *     all assignments COMPLETED (zero assignments doesn't count).
+ *   - `activeReviewersCount` / `reviewersTotalCount`: distinct reviewers
+ *     in phase; "active" means at least one assignment past PENDING.
  *
  * `daysLeft` is rounded up from now to the phase's `endDate`. `null` when
  * the phase has no end date or no phase is resolvable.
  */
 export const phaseReviewProgressSchema = z.object({
-  proposalsReviewed: z.number().int(),
-  proposalsTotal: z.number().int(),
-  activeReviewers: z.number().int(),
-  reviewersTotal: z.number().int(),
+  proposalsReviewedCount: z.number().int(),
+  proposalsTotalCount: z.number().int(),
+  activeReviewersCount: z.number().int(),
+  reviewersTotalCount: z.number().int(),
   daysLeft: z.number().int().nullable(),
 });
 

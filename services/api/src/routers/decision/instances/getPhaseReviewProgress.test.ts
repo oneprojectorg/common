@@ -59,10 +59,10 @@ describe.concurrent('getPhaseReviewProgress', () => {
     });
 
     expect(result).toEqual({
-      proposalsReviewed: 0,
-      proposalsTotal: 0,
-      activeReviewers: 0,
-      reviewersTotal: 0,
+      proposalsReviewedCount: 0,
+      proposalsTotalCount: 0,
+      activeReviewersCount: 0,
+      reviewersTotalCount: 0,
       daysLeft: null,
     });
   });
@@ -112,8 +112,8 @@ describe.concurrent('getPhaseReviewProgress', () => {
       processInstanceId: context.instance.instance.id,
     });
 
-    expect(result.proposalsTotal).toBe(3);
-    expect(result.proposalsReviewed).toBe(1);
+    expect(result.proposalsTotalCount).toBe(3);
+    expect(result.proposalsReviewedCount).toBe(1);
   });
 
   it('counts active reviewers as those with at least one non-PENDING assignment', async ({
@@ -146,8 +146,8 @@ describe.concurrent('getPhaseReviewProgress', () => {
       processInstanceId: context.instance.instance.id,
     });
 
-    expect(result.reviewersTotal).toBe(2);
-    expect(result.activeReviewers).toBe(1);
+    expect(result.reviewersTotalCount).toBe(2);
+    expect(result.activeReviewersCount).toBe(1);
   });
 
   it('treats AWAITING_AUTHOR_REVISION and READY_FOR_RE_REVIEW as active', async ({
@@ -180,8 +180,8 @@ describe.concurrent('getPhaseReviewProgress', () => {
       processInstanceId: context.instance.instance.id,
     });
 
-    expect(result.activeReviewers).toBe(2);
-    expect(result.reviewersTotal).toBe(2);
+    expect(result.activeReviewersCount).toBe(2);
+    expect(result.reviewersTotalCount).toBe(2);
   });
 
   it('counts reviewers and assignments distinctly across multiple proposals', async ({
@@ -211,10 +211,10 @@ describe.concurrent('getPhaseReviewProgress', () => {
       processInstanceId: context.instance.instance.id,
     });
 
-    expect(result.reviewersTotal).toBe(1);
-    expect(result.activeReviewers).toBe(1);
-    expect(result.proposalsTotal).toBe(2);
-    expect(result.proposalsReviewed).toBe(1);
+    expect(result.reviewersTotalCount).toBe(1);
+    expect(result.activeReviewersCount).toBe(1);
+    expect(result.proposalsTotalCount).toBe(2);
+    expect(result.proposalsReviewedCount).toBe(1);
   });
 
   it('scopes counts to the requested phase and ignores cross-phase assignments', async ({
@@ -254,8 +254,8 @@ describe.concurrent('getPhaseReviewProgress', () => {
       processInstanceId: context.instance.instance.id,
     });
 
-    expect(result.reviewersTotal).toBe(1);
-    expect(result.activeReviewers).toBe(1);
+    expect(result.reviewersTotalCount).toBe(1);
+    expect(result.activeReviewersCount).toBe(1);
   });
 
   it('isolates counts to the requested instance', async ({
@@ -288,10 +288,10 @@ describe.concurrent('getPhaseReviewProgress', () => {
       processInstanceId: primary.context.instance.instance.id,
     });
 
-    expect(result.proposalsTotal).toBe(1);
-    expect(result.proposalsReviewed).toBe(0);
-    expect(result.reviewersTotal).toBe(1);
-    expect(result.activeReviewers).toBe(1);
+    expect(result.proposalsTotalCount).toBe(1);
+    expect(result.proposalsReviewedCount).toBe(0);
+    expect(result.reviewersTotalCount).toBe(1);
+    expect(result.activeReviewersCount).toBe(1);
   });
 
   it('returns daysLeft from the resolved phase endDate', async ({
@@ -340,7 +340,7 @@ describe.concurrent('getPhaseReviewProgress', () => {
     expect(result.daysLeft).toBeNull();
   });
 
-  it('only flips proposalsReviewed when assignment status — not just review state — is COMPLETED', async ({
+  it('only flips proposalsReviewedCount when assignment status — not just review state — is COMPLETED', async ({
     task,
     onTestFinished,
   }) => {
@@ -368,8 +368,8 @@ describe.concurrent('getPhaseReviewProgress', () => {
     const before = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
     });
-    expect(before.proposalsReviewed).toBe(0);
-    expect(before.proposalsTotal).toBe(1);
+    expect(before.proposalsReviewedCount).toBe(0);
+    expect(before.proposalsTotalCount).toBe(1);
 
     await db
       .update(proposalReviewAssignments)
@@ -379,7 +379,7 @@ describe.concurrent('getPhaseReviewProgress', () => {
     const after = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
     });
-    expect(after.proposalsReviewed).toBe(1);
+    expect(after.proposalsReviewedCount).toBe(1);
   });
 });
 
