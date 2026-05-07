@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import { isLastPhase } from '@op/common/client';
 import { notFound } from 'next/navigation';
@@ -34,7 +33,6 @@ function DecisionStateRouterNew({
   decisionProfileId?: string | null;
 }) {
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
-  const reviewFlowEnabled = useFeatureFlag('review_flow');
 
   const { currentStateId } = instance;
   const phases = instance.instanceData?.phases ?? [];
@@ -50,8 +48,7 @@ function DecisionStateRouterNew({
     // Everyone else falls back to the generic manual-selection prompt.
     const currentIdx = phases.findIndex((p) => p.phaseId === currentStateId);
     const previousPhase = currentIdx > 0 ? phases[currentIdx - 1] : null;
-    const previousWasReview =
-      previousPhase?.rules?.proposals?.review === true && reviewFlowEnabled;
+    const previousWasReview = previousPhase?.rules?.proposals?.review === true;
 
     if (previousWasReview && previousPhase && isAdmin) {
       return (
@@ -71,7 +68,7 @@ function DecisionStateRouterNew({
     );
   }
 
-  if (isReviewEnabled && reviewFlowEnabled) {
+  if (isReviewEnabled) {
     if (!decisionSlug) {
       notFound();
     }

@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { type InstancePhaseData } from '@op/api/encoders';
@@ -33,7 +32,6 @@ export function StandardDecisionPage({
 }) {
   const t = useTranslations();
   const translation = useDecisionTranslation();
-  const manualTransitionsEnabled = useFeatureFlag('manual_transitions');
 
   const [[instance, { submitters }]] = trpc.useSuspenseQueries((t) => [
     t.decision.getInstance({ instanceId }),
@@ -82,8 +80,7 @@ export function StandardDecisionPage({
       <div className="mt-8 flex w-full justify-center border-t bg-white">
         <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
           <div className="flex flex-col gap-6 lg:col-span-3">
-            {manualTransitionsEnabled &&
-            !instance.selectionsAreConfirmed &&
+            {!instance.selectionsAreConfirmed &&
             instance.access?.admin &&
             decisionSlug ? (
               <APIErrorBoundary
