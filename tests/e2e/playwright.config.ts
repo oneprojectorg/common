@@ -64,9 +64,11 @@ export default defineConfig({
         // a Mac in dark mode and a Linux CI runner in light mode see different
         // DOM trees if anything in the app branches on those media queries.
         colorScheme: 'light',
-        reducedMotion: 'no-preference',
         locale: 'en-US',
         timezoneId: 'UTC',
+        contextOptions: {
+          reducedMotion: 'no-preference',
+        },
       },
     },
   ],
