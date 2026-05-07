@@ -23,13 +23,12 @@ import { decisionPermission } from './permissions';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteSelection } from './schemaValidators';
 import type { DecisionInstanceData } from './schemas/instanceData';
-import type { VoteCap } from './schemas/types';
 import { isVotingEligible } from './votingEligibility';
 
 interface PhaseConfig {
   allowProposals: boolean;
   allowDecisions: boolean;
-  maxVotesPerMember: VoteCap;
+  maxVotesPerMember: number | undefined;
 }
 
 /** Extract voting/proposal rules for the current phase. */
@@ -120,7 +119,7 @@ export interface VotingStatusResult {
   }> | null;
   votingConfiguration: {
     allowDecisions: boolean;
-    maxVotesPerMember: VoteCap;
+    maxVotesPerMember: number | undefined;
     schemaType: string;
     isReadOnly: boolean;
   };

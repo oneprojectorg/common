@@ -5,7 +5,6 @@ import {
   SchemaValidationResult,
   VotingConfig,
 } from './schemaTypes';
-import type { VoteCap } from './schemas/types';
 
 export function isValidDecisionProcessSchema(
   data: unknown,
@@ -154,7 +153,7 @@ export function extractSupportedProperties(
 
 export function validateVoteSelection(
   selectedProposalIds: string[],
-  maxVotesPerMember: VoteCap,
+  maxVotesPerMember: number | undefined,
   availableProposalIds: string[],
 ): {
   isValid: boolean;

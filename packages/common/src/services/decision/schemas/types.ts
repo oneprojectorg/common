@@ -8,9 +8,6 @@ import type { JSONSchema7 } from 'json-schema';
 import type { SelectionPipeline } from '../selectionPipeline/types';
 import type { ProposalTemplateSchema, RubricTemplateSchema } from '../types';
 
-/** Per-participant vote cap. Undefined means unlimited. */
-export type VoteCap = number | undefined;
-
 /**
  * Phase behavior rules
  */
@@ -24,7 +21,7 @@ export interface PhaseRules {
     submit?: boolean;
     edit?: boolean;
     /** Undefined = no limit (distinct from 0, which would block all voting). */
-    maxVotesPerMember?: VoteCap;
+    maxVotesPerMember?: number;
   };
   advancement?: {
     method: 'date' | 'manual';
