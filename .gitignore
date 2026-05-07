@@ -73,7 +73,6 @@ tests/e2e/a11y-baseline/report.md
 tests/e2e/a11y-baseline/report.json
 tests/e2e/a11y-baseline/diff.md
 tests/e2e/a11y-baseline/live-violations.json
-tests/e2e/a11y-baseline/debug-editor-section.html
 tests/e2e/a11y-baseline/screenshots/
 .playwright-mcp
 ralph.sh
