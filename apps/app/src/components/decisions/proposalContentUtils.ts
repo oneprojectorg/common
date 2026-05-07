@@ -30,7 +30,7 @@ export function getProposalContentPreview(
   documentContent: DocumentContent | undefined,
   proposalTemplate: ProposalTemplateSchema | undefined,
 ): string | null {
-  if (!documentContent || documentContent.type === 'unavailable') {
+  if (!documentContent) {
     return null;
   }
 
