@@ -48,7 +48,7 @@ export function StandardDecisionPage({
   const nextPhase =
     currentPhaseIndex >= 0 ? phases[currentPhaseIndex + 1] : undefined;
   const allowProposals = currentPhase?.rules?.proposals?.submit === true;
-  const proposalsHiddenByDefault =
+  const proposalsHidden =
     currentPhase?.rules?.proposals?.defaults?.hidden === true;
   const description =
     instance.description ?? instance.instanceData?.templateDescription;
@@ -84,7 +84,7 @@ export function StandardDecisionPage({
       </div>
 
       <div className="mt-8 flex w-full flex-col items-center border-t bg-white">
-        {proposalsHiddenByDefault && (
+        {proposalsHidden && (
           <HiddenProposalsBanner
             nextPhaseName={nextPhase?.name}
             currentPhaseEndDate={currentPhase?.endDate}
@@ -138,7 +138,7 @@ export function StandardDecisionPage({
                     decisionSlug={decisionSlug}
                     decisionProfileId={decisionProfileId}
                     permissions={instance.access}
-                    proposalsHiddenByDefault={proposalsHiddenByDefault}
+                    proposalsHidden={proposalsHidden}
                   />
                 </Suspense>
               </APIErrorBoundary>

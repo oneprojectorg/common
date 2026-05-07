@@ -165,7 +165,7 @@ interface ProposalsProps {
   /** When true, the current phase has voting enabled — always show voting UI */
   isVotingPhase?: boolean;
   /** When true, new proposals are hidden by default in the current phase. */
-  proposalsHiddenByDefault?: boolean;
+  proposalsHidden?: boolean;
 }
 
 const VotingProposalsList = ({
@@ -175,7 +175,7 @@ const VotingProposalsList = ({
   permissions,
   votedProposalIds = [],
   hasFilter,
-  proposalsHiddenByDefault,
+  proposalsHidden,
 }: ProposalsProps) => {
   const canVote = permissions?.vote ?? false;
   const canManageProposals = permissions?.admin ?? false;
@@ -233,7 +233,7 @@ const VotingProposalsList = ({
   };
 
   if (!proposals || proposals.length === 0) {
-    if (proposalsHiddenByDefault && !hasFilter) {
+    if (proposalsHidden && !hasFilter) {
       return <HiddenProposalsEmptyState />;
     }
     return <NoProposalsFound hasFilter={hasFilter} />;
@@ -428,11 +428,11 @@ const ViewProposalsList = ({
   decisionSlug,
   permissions,
   hasFilter,
-  proposalsHiddenByDefault,
+  proposalsHidden,
 }: ProposalsProps) => {
   const canManageProposals = permissions?.admin ?? false;
   if (!proposals || proposals.length === 0) {
-    if (proposalsHiddenByDefault && !hasFilter) {
+    if (proposalsHidden && !hasFilter) {
       return <HiddenProposalsEmptyState />;
     }
     return <NoProposalsFound hasFilter={hasFilter} />;
@@ -531,7 +531,7 @@ export const ProposalsList = ({
   initialFilter,
   phase,
   isVotingPhase,
-  proposalsHiddenByDefault,
+  proposalsHidden,
 }: {
   slug: string;
   instanceId: string;
@@ -548,7 +548,7 @@ export const ProposalsList = ({
   /** When true, the current phase has voting enabled — always show voting UI */
   isVotingPhase?: boolean;
   /** When true, new proposals are hidden by default in the current phase. */
-  proposalsHiddenByDefault?: boolean;
+  proposalsHidden?: boolean;
 }) => {
   const t = useTranslations();
   const { user } = useUser();
@@ -785,25 +785,25 @@ export const ProposalsList = ({
     );
   };
 
-  const hideFilters = proposalsHiddenByDefault && !canManageProposals;
+  const hideFilters = proposalsHidden && !canManageProposals;
 
   return (
     <div className="flex flex-col gap-6 pb-12">
       {/* Filters Bar */}
-      {!hideFilters && (
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <span className="font-serif text-title-base text-neutral-black">
-              {proposalFilter === ProposalFilter.MY_BALLOT
-                ? t('My ballot')
-                : proposalFilter === ProposalFilter.MY_PROPOSALS
-                  ? t('My proposals')
-                  : proposalFilter === ProposalFilter.SHORTLISTED
-                    ? t('Shortlisted proposals')
-                    : t('All proposals')}{' '}
-              <Bullet /> {proposals?.length ?? 0}
-            </span>
-          </div>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <span className="font-serif text-title-base text-neutral-black">
+            {proposalFilter === ProposalFilter.MY_BALLOT
+              ? t('My ballot')
+              : proposalFilter === ProposalFilter.MY_PROPOSALS
+                ? t('My proposals')
+                : proposalFilter === ProposalFilter.SHORTLISTED
+                  ? t('Shortlisted proposals')
+                  : t('All proposals')}{' '}
+            <Bullet /> {proposals?.length ?? 0}
+          </span>
+        </div>
+        {!hideFilters && (
           <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
             <ResponsiveSelect
               selectedKey={proposalFilter}
@@ -888,8 +888,8 @@ export const ProposalsList = ({
               )
             ) : null}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Translation attribution */}
       {translationState && (
@@ -914,7 +914,7 @@ export const ProposalsList = ({
           votedProposalIds={selectedProposalIds}
           hasFilter={selectedCategory !== 'all-categories'}
           isVotingPhase={isVotingPhase}
-          proposalsHiddenByDefault={proposalsHiddenByDefault}
+          proposalsHidden={proposalsHidden}
         />
       </ProposalTranslationProvider>
 
