@@ -18,7 +18,7 @@ interface ReviewSummaryViewProps {
   instanceId: string;
   proposalId: string;
   proposalProfileId: string;
-  phaseId: string | undefined;
+  phaseId: string;
 }
 
 export function ReviewSummaryView({

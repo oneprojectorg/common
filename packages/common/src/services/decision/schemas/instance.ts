@@ -9,3 +9,12 @@ export const instancePhaseRefSchema = z.object({
 });
 
 export type InstancePhaseRef = z.infer<typeof instancePhaseRefSchema>;
+
+/**
+ * Reference to a specific proposal scoped to an instance phase.
+ */
+export const proposalPhaseRefSchema = instancePhaseRefSchema.extend({
+  proposalId: z.uuid(),
+});
+
+export type ProposalPhaseRef = z.infer<typeof proposalPhaseRefSchema>;

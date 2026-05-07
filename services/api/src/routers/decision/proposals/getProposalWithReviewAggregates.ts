@@ -1,6 +1,6 @@
 import {
   getProposalWithReviewAggregates,
-  getProposalWithReviewAggregatesInputSchema,
+  proposalPhaseRefSchema,
   proposalWithSubmittedReviewsSchema,
 } from '@op/common';
 
@@ -8,7 +8,7 @@ import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 export const getProposalWithReviewAggregatesRouter = router({
   getProposalWithReviewAggregates: commonAuthedProcedure()
-    .input(getProposalWithReviewAggregatesInputSchema)
+    .input(proposalPhaseRefSchema)
     .output(proposalWithSubmittedReviewsSchema)
     .query(async ({ ctx, input }) => {
       return await getProposalWithReviewAggregates({
