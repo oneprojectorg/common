@@ -138,6 +138,7 @@
     "@tailwindcss/postcss": "4.1.18",
     "axe-playwright": "^2.2.0",
     "http-server": "^14.1.1",
+    "playwright": "catalog:",
     "@types/react": "19.0.10",
     "postcss": "^8.5.3",
     "react": "^19.0.1",

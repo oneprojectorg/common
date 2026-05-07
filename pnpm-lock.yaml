@@ -9,6 +9,9 @@ catalogs:
     '@internationalized/date':
       specifier: ^3.12.1
       version: 3.12.1
+    '@playwright/test':
+      specifier: ^1.58.0
+      version: 1.58.2
     '@rjsf/utils':
       specifier: ^5.24.12
       version: 5.24.12
@@ -93,6 +96,9 @@ catalogs:
     next:
       specifier: 16.2.0
       version: 16.2.0
+    playwright:
+      specifier: ^1.58.0
+      version: 1.58.2
     react-aria:
       specifier: ^3.48.0
       version: 3.48.0
@@ -1112,6 +1118,9 @@ importers:
       http-server:
         specifier: ^14.1.1
         version: 14.1.1
+      playwright:
+        specifier: 'catalog:'
+        version: 1.58.2
       postcss:
         specifier: ^8.5.3
         version: 8.5.3
@@ -1589,7 +1598,7 @@ importers:
         specifier: workspace:*
         version: link:../../configs/typescript-config
       '@playwright/test':
-        specifier: ^1.58.0
+        specifier: 'catalog:'
         version: 1.58.2
       '@rjsf/utils':
         specifier: ^6.3.1
