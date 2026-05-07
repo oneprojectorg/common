@@ -46,7 +46,7 @@
       "rule": "button-name",
       "impact": "critical",
       "route": "/en/decisions/{slug}/edit",
-      "fingerprint": "section > div:nth-of-type(6) > div:nth-of-type(1) > button",
+      "fingerprint": "section > div:nth-of-type(5) > div:nth-of-type(1) > button",
       "snippet": "<button type=\"button\" aria-pressed=\"true\" class=\"focus-within:outline...\" data-rac=\"\" data-selected=\"true\">",
       "wcagCriteria": [
         "4.1.2"
@@ -56,7 +56,7 @@
       "rule": "button-name",
       "impact": "critical",
       "route": "/en/decisions/{slug}/edit",
-      "fingerprint": "section > div:nth-of-type(6) > div:nth-of-type(2) > button",
+      "fingerprint": "section > div:nth-of-type(5) > div:nth-of-type(2) > button",
       "snippet": "<button type=\"button\" aria-pressed=\"false\" class=\"focus-within:outline-offWhite focus-visible:outline-offWhite flex cursor-pointer items-center rounded-full p-1 outline-offset-0 outline-transparent t…",
       "wcagCriteria": [
         "4.1.2"
@@ -206,7 +206,7 @@
       "rule": "color-contrast",
       "impact": "serious",
       "route": "/en/decisions/{slug}/edit",
-      "fingerprint": "section > div:nth-of-type(4) > div:nth-of-type(2) > span",
+      "fingerprint": "section > div:nth-of-type(3) > div:nth-of-type(2) > span",
       "snippet": "<span class=\"text-sm group-data-[disabled=true]:opacity-50 text-functional-red\">50/50</span>",
       "wcagCriteria": [
         "1.4.3"
