@@ -76,3 +76,71 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+
+  ui-a11y:
+    name: UI Component A11y
+    runs-on: blacksmith-2vcpu-ubuntu-2204
+
+    env:
+      TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install pnpm
+        run: corepack prepare pnpm@latest --activate
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+        working-directory: packages/ui
+
+      - name: Build Storybook
+        run: pnpm turbo build --filter=@op/ui
+
+      - name: Run component a11y tests
+        id: a11y
+        continue-on-error: true
+        run: pnpm w:ui test:a11y 2>&1 | tee packages/ui/test-runner-output.log
+
+      - name: Upload test-runner output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-a11y-report
+          path: packages/ui/test-runner-output.log
+          if-no-files-found: ignore
+
+      - name: Job summary
+        if: always()
+        run: |
+          echo "### UI Component A11y" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Status: ${{ steps.a11y.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "_Informational only — does not gate merging. See \`ui-a11y-report\` artifact for violations._" >> $GITHUB_STEP_SUMMARY

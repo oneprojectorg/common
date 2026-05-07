@@ -28,6 +28,9 @@
     },
     "format:check": {},
     "test": {},
+    "test:a11y": {
+      "dependsOn": ["build"]
+    },
     "dev": {
       "cache": false,
       "persistent": true
