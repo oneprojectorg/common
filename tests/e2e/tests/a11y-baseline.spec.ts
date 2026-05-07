@@ -125,14 +125,8 @@ const HYDRATION_ERROR_PATTERNS = [
   /hydration (text content|node|attribute) mismatch/i,
 ];
 
-// CI is slower per-op than local, so more wall-clock time elapses before the
-// settle quiet window starts. React Aria's interaction-layer wires (adding
-// `tabindex` and `data-react-aria-pressable`) fire late, after first paint
-// and after Suspense data has resolved. CI captures that wiring; local was
-// scanning before it landed. A longer quiet window pushes both envs past the
-// React Aria wiring point so fingerprints match.
-const DOM_SETTLE_QUIET_MS = 5_000;
-const DOM_SETTLE_TIMEOUT_MS = 15_000;
+const DOM_SETTLE_QUIET_MS = 500;
+const DOM_SETTLE_TIMEOUT_MS = 5_000;
 
 const PUBLIC_ROUTES: RouteScan[] = [
   { url: '/login', label: 'Login', auth: 'public' },
@@ -436,7 +430,6 @@ async function scanRoute(page: Page, route: RouteScan): Promise<RouteResult> {
     // returns null and the node is dropped — re-settling minimizes that loss.
     await waitForDomSettle(page, DOM_SETTLE_QUIET_MS, DOM_SETTLE_TIMEOUT_MS);
     await attachFingerprints(page, violations);
-    await dumpDebugHtml(page, route);
     await captureScreenshots(page, route, violations);
     return {
       url: reportUrl,
@@ -653,28 +646,6 @@ async function attachFingerprints(
     }
     node.fingerprint = fingerprint;
   }
-}
-
-/** Diagnostic: dump section.outerHTML to disk for routes that show local-vs-CI
- * fingerprint drift. Both envs upload as artifact; diff to find the offender. */
-async function dumpDebugHtml(page: Page, route: RouteScan): Promise<void> {
-  const reportUrl = route.displayUrl ?? route.url;
-  if (reportUrl !== '/en/decisions/{slug}/edit') {
-    return;
-  }
-  const html = await page.evaluate(() => {
-    const section = document.querySelector('section');
-    return section ? section.outerHTML : '<no-section-found />';
-  });
-  // Strip React Aria autogen IDs so the diff isn't drowned in id churn.
-  const stripped = html
-    .replace(/id="(?:react-aria[^"]*|:r[a-z0-9]+:)"/g, 'id=""')
-    .replace(
-      /aria-(labelledby|describedby|controls)="(?:react-aria[^"]*|:r[a-z0-9]+:)"/g,
-      'aria-$1=""',
-    );
-  mkdirSync(REPORT_DIR, { recursive: true });
-  writeFileSync(path.join(REPORT_DIR, 'debug-editor-section.html'), stripped);
 }
 
 /** Strip React Aria autogen IDs and trim length so the snippet stays readable
