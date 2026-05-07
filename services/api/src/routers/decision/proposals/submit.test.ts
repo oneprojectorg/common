@@ -796,7 +796,7 @@ describe.concurrent('submitProposal', () => {
     expect(result.status).toBe(ProposalStatus.SUBMITTED);
   });
 
-  it('should set visibility to HIDDEN when phase has defaultHidden enabled', async ({
+  it('should set visibility to HIDDEN when phase has defaults.hidden enabled', async ({
     task,
     onTestFinished,
   }) => {
@@ -812,7 +812,7 @@ describe.concurrent('submitProposal', () => {
       throw new Error('No instance created');
     }
 
-    // Enable defaultHidden on the initial phase
+    // Enable defaults.hidden on the initial phase
     const instanceRecord = await db.query.processInstances.findFirst({
       where: { id: instance.instance.id },
     });
@@ -828,7 +828,10 @@ describe.concurrent('submitProposal', () => {
           ...phase,
           rules: {
             ...phase.rules,
-            proposals: { ...phase.rules?.proposals, defaultHidden: true },
+            proposals: {
+              ...phase.rules?.proposals,
+              defaults: { hidden: true },
+            },
           },
         };
       }
@@ -858,7 +861,7 @@ describe.concurrent('submitProposal', () => {
     expect(result.visibility).toBe(Visibility.HIDDEN);
   });
 
-  it('should keep visibility VISIBLE when phase does not have defaultHidden', async ({
+  it('should keep visibility VISIBLE when phase does not have defaults.hidden', async ({
     task,
     onTestFinished,
   }) => {

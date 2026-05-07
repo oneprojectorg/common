@@ -44,7 +44,7 @@ async function createProcessWithDefaultHidden({
         name: 'Proposal Submission',
         description: 'Submit proposals',
         rules: {
-          proposals: { submit: true, defaultHidden: true },
+          proposals: { submit: true, defaults: { hidden: true } },
           voting: { submit: false },
           advancement: { method: 'manual' as const },
         },
@@ -70,7 +70,7 @@ async function createProcessWithDefaultHidden({
         phaseId: 'submission',
         name: 'Proposal Submission',
         rules: {
-          proposals: { submit: true, defaultHidden: true },
+          proposals: { submit: true, defaults: { hidden: true } },
           voting: { submit: false },
           advancement: { method: 'manual' as const },
         },
@@ -181,7 +181,7 @@ test.describe('Default Hidden Proposals', () => {
     });
 
     // Create a proposal submitted by the member, then set HIDDEN visibility
-    // (simulating what submitProposal does when defaultHidden is true)
+    // (simulating what submitProposal does when defaults.hidden is true)
     const hiddenProposal = await createProposal({
       processInstanceId: instance.id,
       submittedByProfileId: memberOrg.organizationProfile.id,

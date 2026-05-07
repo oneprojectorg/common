@@ -93,7 +93,8 @@ export const submitProposal = async ({
   const currentPhase = instanceData.phases.find(
     (p) => p.phaseId === currentPhaseId,
   );
-  const defaultHidden = currentPhase?.rules?.proposals?.defaultHidden === true;
+  const defaultHidden =
+    currentPhase?.rules?.proposals?.defaults?.hidden === true;
 
   // Validate proposal data against the proposal template schema
   const proposalTemplate = await resolveProposalTemplate(

@@ -353,12 +353,15 @@ function PhaseDetailForm({
             )}
           >
             <ToggleButton
-              isSelected={phase.rules?.proposals?.defaultHidden ?? false}
+              isSelected={phase.rules?.proposals?.defaults?.hidden ?? false}
               onChange={(val) =>
                 updateRules({
                   proposals: {
                     ...phase.rules?.proposals,
-                    defaultHidden: val,
+                    defaults: {
+                      ...phase.rules?.proposals?.defaults,
+                      hidden: val,
+                    },
                   },
                 })
               }
