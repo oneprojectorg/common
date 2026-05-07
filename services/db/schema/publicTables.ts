@@ -93,7 +93,6 @@ export { locations } from './tables/locations.sql';
 export {
   profiles,
   profilesLocations,
-  profilesLocationsRelations,
   profilesRelations,
 } from './tables/profiles.sql';
 export type { Profile } from './tables/profiles.sql';

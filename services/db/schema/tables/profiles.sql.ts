@@ -127,18 +127,4 @@ export const profilesLocations = pgTable(
   ],
 );
 
-export const profilesLocationsRelations = relations(
-  profilesLocations,
-  ({ one }) => ({
-    profile: one(profiles, {
-      fields: [profilesLocations.profileId],
-      references: [profiles.id],
-    }),
-    location: one(locations, {
-      fields: [profilesLocations.locationId],
-      references: [locations.id],
-    }),
-  }),
-);
-
 export type Profile = typeof profiles.$inferSelect;
