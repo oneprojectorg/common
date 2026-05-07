@@ -121,7 +121,7 @@ jobs:
         working-directory: packages/ui
 
       - name: Build Storybook
-        run: pnpm w:ui build
+        run: pnpm turbo build --filter=@op/ui
 
       - name: Run component a11y tests
         id: a11y
