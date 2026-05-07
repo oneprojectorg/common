@@ -11,6 +11,10 @@ import { TranslatedText } from '@/components/TranslatedText';
 
 import { DecisionHero } from '../DecisionHero';
 import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
+import {
+  ReviewProgressBanner,
+  ReviewProgressBannerSkeleton,
+} from '../Review/ReviewProgressBanner';
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
 
 type Instance = RouterOutput['decision']['getInstance'];
@@ -36,35 +40,49 @@ export function ReviewPage({
     throw new Error(`Phase "${currentPhaseId}" not found in instance phases`);
   }
 
-  // Profile admins already get review=true via ALL_TRUE_ACCESS in getInstance.
-  // Decisions-zone admins ("Manage Process") without explicit review
-  // permission fall through to the proposals grid — they can't actually submit
-  // reviews, so the assignments list would be empty.
   const canReview = Boolean(instance.access?.review);
+  const isAdmin = Boolean(instance.access?.admin);
 
   return (
-    <div className="min-h-full pt-8">
-      <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pb-8">
-        <DecisionHero
-          title={
-            currentPhase.headline ?? <TranslatedText text="REVIEW PROPOSALS." />
-          }
-          description={
-            currentPhase.description ? (
-              <p>{currentPhase.description}</p>
-            ) : undefined
-          }
-          variant="standard"
-        >
-          <div className="flex justify-center pt-2">
-            <ButtonLink color="secondary" size="medium" href="#">
-              <TranslatedText text="Learn more" />
-            </ButtonLink>
+    <div className="min-h-full">
+      {isAdmin ? (
+        <div className="flex w-full justify-center border-b bg-neutral-offWhite px-4">
+          <APIErrorBoundary fallbacks={{ default: () => null }}>
+            <Suspense fallback={<ReviewProgressBannerSkeleton />}>
+              <ReviewProgressBanner
+                processInstanceId={instance.id}
+                phaseId={currentPhase.phaseId}
+              />
+            </Suspense>
+          </APIErrorBoundary>
+        </div>
+      ) : (
+        <div className="pt-8">
+          <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pb-8">
+            <DecisionHero
+              title={
+                currentPhase.headline ?? (
+                  <TranslatedText text="REVIEW PROPOSALS." />
+                )
+              }
+              description={
+                currentPhase.description ? (
+                  <p>{currentPhase.description}</p>
+                ) : undefined
+              }
+              variant="standard"
+            >
+              <div className="flex justify-center pt-2">
+                <ButtonLink color="secondary" size="medium" href="#">
+                  <TranslatedText text="Learn more" />
+                </ButtonLink>
+              </div>
+            </DecisionHero>
           </div>
-        </DecisionHero>
-      </div>
+        </div>
+      )}
 
-      <div className="flex w-full justify-center border-t bg-white">
+      <div className="flex w-full justify-center bg-white">
         <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
           <APIErrorBoundary
             fallbacks={{
@@ -85,7 +103,7 @@ export function ReviewPage({
                 <ReviewAssignmentsList
                   processInstanceId={instance.id}
                   decisionSlug={decisionSlug}
-                  canViewReviewers={Boolean(instance.access?.admin)}
+                  canViewReviewers={isAdmin}
                 />
               ) : (
                 <ProposalsList
