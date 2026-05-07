@@ -461,6 +461,7 @@ jobs:
             || echo '{}' > /tmp/base-summary.json
 
       - name: Render a11y diff
+        id: render-diff
         if: ${{ github.event_name == 'pull_request' && !cancelled() }}
         run: |
           pnpm tsx scripts/a11y-baseline-diff.ts \
@@ -470,10 +471,24 @@ jobs:
             "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             > /tmp/a11y-comment.md
           cat /tmp/a11y-comment.md
+          # The diff script emits these section headers only when there's
+          # something to show; their absence means "clean run, no deviation."
+          if grep -qE "^### (New rules|Resolved rules|Changed rules|Changed routes)" /tmp/a11y-comment.md; then
+            echo "has-changes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-changes=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Post sticky PR comment
-        if: ${{ github.event_name == 'pull_request' && !cancelled() }}
+        if: ${{ github.event_name == 'pull_request' && !cancelled() && steps.render-diff.outputs.has-changes == 'true' }}
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: a11y-baseline
           path: /tmp/a11y-comment.md
+
+      - name: Remove sticky PR comment when no deviation
+        if: ${{ github.event_name == 'pull_request' && !cancelled() && steps.render-diff.outputs.has-changes == 'false' }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: a11y-baseline
+          delete: true
