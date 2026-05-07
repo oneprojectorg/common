@@ -45,7 +45,7 @@ export const updateProfileInvite = async ({
   ]);
 
   if (!invite) {
-    throw new NotFoundError('Invite not found');
+    throw new NotFoundError('Profile invite', inviteId);
   }
 
   if (!role) {

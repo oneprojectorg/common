@@ -26,7 +26,7 @@ export const deleteProfileInvite = async ({
   });
 
   if (!invite) {
-    throw new NotFoundError('Invite not found');
+    throw new NotFoundError('Profile invite', inviteId);
   }
 
   // Check if user has ADMIN access on the profile
@@ -47,7 +47,7 @@ export const deleteProfileInvite = async ({
     .returning();
 
   if (!deleted) {
-    throw new NotFoundError('Failed to delete invite');
+    throw new NotFoundError('Profile invite', inviteId);
   }
 
   return deleted;

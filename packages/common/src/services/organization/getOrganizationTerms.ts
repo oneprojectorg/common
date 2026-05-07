@@ -27,7 +27,7 @@ export const getOrganizationTerms = async ({
     .execute();
 
   if (!orgTerms) {
-    throw new NotFoundError('Organization terms not found');
+    throw new NotFoundError('Organization terms', organizationId);
   }
 
   const termUris = orgTerms.reduce(

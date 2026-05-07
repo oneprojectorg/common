@@ -16,7 +16,7 @@ export const getTemplate = async (
   });
 
   if (!templateRecord) {
-    throw new NotFoundError(`Template '${templateId}' not found`);
+    throw new NotFoundError('Template', templateId);
   }
 
   return templateRecord.processSchema as DecisionSchemaDefinition;

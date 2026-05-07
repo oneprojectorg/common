@@ -36,7 +36,7 @@ export async function deleteOrganizationUser({
   });
 
   if (!targetOrgUser) {
-    throw new NotFoundError('Organization user not found');
+    throw new NotFoundError('Organization user', organizationUserId);
   }
 
   // Prevent users from deleting themselves
@@ -65,7 +65,7 @@ export async function deleteOrganizationUser({
   });
 
   if (!deletedUser) {
-    throw new NotFoundError('Failed to delete organization user');
+    throw new NotFoundError('Organization user', organizationUserId);
   }
 
   return deletedUser;

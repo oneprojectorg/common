@@ -28,7 +28,7 @@ export const createPostOnProfile = async (input: CreatePostOnProfileInput) => {
       .returning();
 
     if (!post) {
-      throw new NotFoundError('Failed to create post');
+      throw new NotFoundError('Post');
     }
 
     // Link the post to the target profile so it appears there

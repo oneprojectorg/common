@@ -405,7 +405,7 @@ export const switchUserOrganization = async (
     .returning();
 
   if (!result.length || !result[0]) {
-    throw new NotFoundError('User');
+    throw new NotFoundError('User', authUserId);
   }
 
   return result[0];

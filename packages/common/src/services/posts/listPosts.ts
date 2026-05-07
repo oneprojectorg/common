@@ -48,7 +48,7 @@ export const listPosts = async ({
     const profileId = profile?.[0]?.id;
 
     if (!profileId) {
-      throw new NotFoundError('Could not find organization');
+      throw new NotFoundError('Organization', slug);
     }
 
     const org = await db._query.organizations.findFirst({
@@ -60,7 +60,7 @@ export const listPosts = async ({
         profileId,
         slug,
       });
-      throw new NotFoundError('Organization not found');
+      throw new NotFoundError('Organization', profileId);
     }
 
     const result = await db._query.postsToOrganizations.findMany({

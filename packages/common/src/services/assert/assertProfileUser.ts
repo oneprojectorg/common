@@ -8,7 +8,7 @@ import { NotFoundError } from '../../utils';
  */
 export async function assertProfileUser(
   id: string,
-  error: Error = new NotFoundError('User not found', id),
+  error: Error = new NotFoundError('Profile user', id),
   db: DbClient = defaultDb,
 ): Promise<ProfileUser> {
   const profileUser = await db.query.profileUsers.findFirst({

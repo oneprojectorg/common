@@ -56,7 +56,7 @@ export async function translateDecision({
     .limit(1);
 
   if (instances.length === 0) {
-    throw new NotFoundError('Decision profile not found');
+    throw new NotFoundError('Decision profile', decisionProfileId);
   }
 
   const processInstance = instances[0]!;

@@ -30,7 +30,7 @@ export async function cancelRevisionRequest({
   const existingRequest = context.revisionRequest;
 
   if (!existingRequest || existingRequest.id !== revisionRequestId) {
-    throw new NotFoundError('Revision request');
+    throw new NotFoundError('Revision request', revisionRequestId);
   }
 
   if (existingRequest.state !== ProposalReviewRequestState.REQUESTED) {

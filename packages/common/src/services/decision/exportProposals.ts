@@ -44,11 +44,11 @@ export const exportProposals = async ({
     .limit(1);
 
   if (!result[0]) {
-    throw new NotFoundError('Process instance not found');
+    throw new NotFoundError('Process instance', processInstanceId);
   }
 
   if (!result[0].profileId) {
-    throw new NotFoundError('Decision profile not found');
+    throw new NotFoundError('Decision profile', processInstanceId);
   }
 
   // Check user permissions via profile

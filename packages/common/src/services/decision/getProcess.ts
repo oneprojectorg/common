@@ -13,7 +13,7 @@ export const getProcess = async (processId: string) => {
     });
 
     if (!process) {
-      throw new NotFoundError('Decision process not found');
+      throw new NotFoundError('Decision process', processId);
     }
 
     return process;
@@ -22,6 +22,6 @@ export const getProcess = async (processId: string) => {
       throw error;
     }
     console.error('Error fetching decision process:', error);
-    throw new NotFoundError('Decision process not found');
+    throw new NotFoundError('Decision process', processId);
   }
 };

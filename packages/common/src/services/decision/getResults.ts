@@ -52,7 +52,7 @@ export const getLatestResultWithProposals = async ({
     .limit(1);
 
   if (!instance[0]) {
-    throw new NotFoundError('Process instance');
+    throw new NotFoundError('Process instance', processInstanceId);
   }
 
   await assertInstanceProfileAccess({

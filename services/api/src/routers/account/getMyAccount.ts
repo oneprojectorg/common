@@ -33,7 +33,7 @@ export const getMyAccount = router({
 
       if (!user) {
         if (!email) {
-          throw new NotFoundError('Could not find user');
+          throw new NotFoundError('User', id);
         }
 
         // if there is no user but the user is authenticated, create one

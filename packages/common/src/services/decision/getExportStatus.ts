@@ -55,11 +55,11 @@ export const getExportStatus = async ({
     .limit(1);
 
   if (!instance[0]) {
-    throw new NotFoundError('Process instance not found');
+    throw new NotFoundError('Process instance', exportStatus.processInstanceId);
   }
 
   if (!instance[0].profileId) {
-    throw new NotFoundError('Decision profile not found');
+    throw new NotFoundError('Decision profile', exportStatus.processInstanceId);
   }
 
   // Get user's profile membership and roles

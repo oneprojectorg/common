@@ -36,7 +36,7 @@ export async function listProposalRevisionRequests({
   });
 
   if (!proposal) {
-    throw new NotFoundError('Proposal not found');
+    throw new NotFoundError('Proposal', proposalId);
   }
 
   const instance = await getInstance({

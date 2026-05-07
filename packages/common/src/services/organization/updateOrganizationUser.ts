@@ -49,7 +49,7 @@ export async function updateOrganizationUser({
   });
 
   if (!targetOrgUser) {
-    throw new NotFoundError('Organization user not found');
+    throw new NotFoundError('Organization user', organizationUserId);
   }
 
   // Update the organization user basic info
@@ -86,7 +86,7 @@ export async function updateOrganizationUser({
         .where(inArray(accessRoles.id, data.roleIds));
 
       if (existingRoles.length !== data.roleIds.length) {
-        throw new NotFoundError('One or more role IDs are invalid');
+        throw new NotFoundError('Role');
       }
     }
 
@@ -124,7 +124,7 @@ export async function updateOrganizationUser({
   });
 
   if (!updatedUserWithRoles) {
-    throw new NotFoundError('Failed to retrieve updated user');
+    throw new NotFoundError('Organization user', organizationUserId);
   }
 
   await invalidate({

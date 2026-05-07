@@ -104,7 +104,7 @@ export const getDecisionBySlug = async ({
   ]);
 
   if (!authAndStatsResult || !profile?.processInstance) {
-    throw new NotFoundError('Decision profile not found');
+    throw new NotFoundError('Decision profile', slug);
   }
 
   return {

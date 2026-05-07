@@ -33,11 +33,7 @@ export const deletePost = router({
         .limit(1);
 
       if (!organization.length) {
-        throw new NotFoundError(
-          'Organization',
-          profileId,
-          'Organization not found for the specified profileId',
-        );
+        throw new NotFoundError('Organization', profileId);
       }
 
       const organizationId = organization[0]!.id;

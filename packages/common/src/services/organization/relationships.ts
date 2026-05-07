@@ -97,7 +97,7 @@ export const sendRelationshipNotification = async ({
   ]);
 
   if (!sourceOrg || !targetOrg) {
-    throw new NotFoundError('Organization not found');
+    throw new NotFoundError('Organization');
   }
 
   // Send email notifications to target organization admin users only

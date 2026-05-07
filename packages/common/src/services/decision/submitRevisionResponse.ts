@@ -46,7 +46,7 @@ export async function submitRevisionResponse({
   ]);
 
   if (!request) {
-    throw new NotFoundError('Revision request');
+    throw new NotFoundError('Revision request', revisionRequestId);
   }
 
   if (!dbUser.profileId) {

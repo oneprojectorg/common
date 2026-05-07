@@ -110,7 +110,7 @@ export async function assertReviewAssignmentContext({
   ]);
 
   if (!assignment) {
-    throw new NotFoundError('Review assignment');
+    throw new NotFoundError('Review assignment', assignmentId);
   }
 
   if (!dbUser.profileId) {

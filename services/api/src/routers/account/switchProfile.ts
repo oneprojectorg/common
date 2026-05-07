@@ -24,7 +24,7 @@ export const switchProfile = router({
       const user = await getUserForProfileSwitch({ authUserId: id });
 
       if (!user) {
-        throw new NotFoundError('User');
+        throw new NotFoundError('User', id);
       }
 
       // Check if switching to user's own individual profile
@@ -57,7 +57,7 @@ export const switchProfile = router({
       });
 
       if (!result.length || !result[0]) {
-        throw new NotFoundError('User');
+        throw new NotFoundError('User', id);
       }
 
       // Invalidate user cache since current profile/organization context has changed

@@ -36,12 +36,12 @@ export const deleteProposal = async ({
     }
 
     if (!existingProposal) {
-      throw new NotFoundError('Proposal');
+      throw new NotFoundError('Proposal', proposalId);
     }
 
     const processInstance = existingProposal.processInstance as ProcessInstance;
     if (!processInstance) {
-      throw new NotFoundError('Process instance not found');
+      throw new NotFoundError('Process instance');
     }
 
     // Check permissions on proposal's profile and instance's profile in parallel

@@ -22,7 +22,7 @@ export async function assertProposalVersionPermissions({
   });
 
   if (!proposal) {
-    throw new NotFoundError('Proposal');
+    throw new NotFoundError('Proposal', proposalId);
   }
 
   const proposalProfileUser = await getProfileAccessUser({

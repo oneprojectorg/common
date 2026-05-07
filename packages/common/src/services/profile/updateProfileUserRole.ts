@@ -44,7 +44,7 @@ export const updateProfileUserRoles = async ({
   ]);
 
   if (!targetProfileUser) {
-    throw new NotFoundError('User not found');
+    throw new NotFoundError('Profile user', profileUserId);
   }
 
   if (validRoles.length !== roleIdsDeduped.length) {

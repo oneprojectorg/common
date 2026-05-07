@@ -41,7 +41,7 @@ export async function listSelectionCandidates({
   });
 
   if (!instance) {
-    throw new NotFoundError('Process instance not found');
+    throw new NotFoundError('Process instance', processInstanceId);
   }
 
   if (!instance.profileId) {

@@ -53,7 +53,7 @@ export const createProposal = async ({
     });
 
     if (!instance) {
-      throw new NotFoundError('Process instance not found');
+      throw new NotFoundError('Process instance', data.processInstanceId);
     }
 
     if (!instance.profileId) {
