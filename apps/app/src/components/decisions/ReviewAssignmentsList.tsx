@@ -10,7 +10,6 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ProposalCard } from './ProposalCard';
 import {
-  ReviewCardFooter,
   ReviewCardGrid,
   ReviewersTooltip,
   ReviewListHeader,
@@ -108,12 +107,12 @@ export function ReviewAssignmentsList({
                   viewHref={`/decisions/${decisionSlug}/reviews/${item.assignment.id}`}
                   isRevised={isRevised}
                 />
-                <ReviewCardFooter>
+                <div className="flex items-center justify-between gap-2">
                   <ReviewStatusBadge status={status} />
                   {reviewers ? (
                     <ReviewersTooltip reviewers={reviewers} />
                   ) : null}
-                </ReviewCardFooter>
+                </div>
               </ProposalCard>
             );
           })}

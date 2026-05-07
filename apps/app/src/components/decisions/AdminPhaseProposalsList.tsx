@@ -10,7 +10,6 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ProposalCard } from './ProposalCard';
 import {
-  ReviewCardFooter,
   ReviewCardGrid,
   ReviewersTooltip,
   ReviewListHeader,
@@ -106,9 +105,9 @@ export function AdminPhaseProposalsList({
                   isRevised={isRevised}
                 />
                 {reviewers ? (
-                  <ReviewCardFooter className="justify-end">
+                  <div className="flex items-center justify-end gap-2">
                     <ReviewersTooltip reviewers={reviewers} />
-                  </ReviewCardFooter>
+                  </div>
                 ) : null}
               </ProposalCard>
             );
