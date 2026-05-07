@@ -57,19 +57,7 @@ export default defineConfig({
       // so the spec is not double-executed.
       name: 'a11y',
       testMatch: '**/a11y-baseline.spec.ts',
-      use: {
-        ...devices['Desktop Chrome'],
-        // Pin browser context to eliminate env-driven render differences. Playwright
-        // defaults `colorScheme` and `reducedMotion` to null (= use OS), which means
-        // a Mac in dark mode and a Linux CI runner in light mode see different
-        // DOM trees if anything in the app branches on those media queries.
-        colorScheme: 'light',
-        locale: 'en-US',
-        timezoneId: 'UTC',
-        contextOptions: {
-          reducedMotion: 'no-preference',
-        },
-      },
+      use: { ...devices['Desktop Chrome'] },
     },
   ],
 });
