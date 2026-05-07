@@ -4,8 +4,7 @@ Generated output from `pnpm a11y:baseline`. Tracks WCAG 2.1 AA Compliance Sprint
 
 The scan runs axe-core on every committed route and matches each violation against a committed list of **known violations**. CI fails on any violation not on the list, and on any list entry that no longer fires. Each entry is debt to drive to zero — the list is a punch-list, not an allow-list.
 
-- `known-violations.json` — committed. The source of truth. Identity-keyed list of `(rule, route, fingerprint)` tuples plus metadata (impact, snippet, WCAG criteria) for human review. Reflects CI's render, not yours; refresh via the CI artifact (see "Reseeding" below).
-- `live-violations.json` — gitignored. Same shape as `known-violations.json`, regenerated from the current scan on every run. Uploaded as part of the CI artifact so you can copy it over the committed file when you need to refresh.
+- `known-violations.json` — committed. The source of truth. Identity-keyed list of `(rule, route, fingerprint)` tuples plus metadata (impact, snippet, WCAG criteria) for human review.
 - `report.json` — gitignored. Full per-node detail (axe selectors, html, screenshot paths). Useful for local triage; churns every run because of seeded UUIDs and React Aria autogen IDs.
 - `report.md` — gitignored. Human-readable summary, top rules, per-route detail with embedded screenshots when run locally.
 - `diff.md` — gitignored. Sticky-comment body posted to PRs.
@@ -52,26 +51,16 @@ When your PR fixes a violation:
 
 ## Reseeding the list
 
-The committed `known-violations.json` reflects what **CI** sees, not what your local machine sees. Local-vs-CI render differs slightly (React Aria interaction-layer timing, font availability, etc.) so the canonical seed must come from a CI run, never from a local `pnpm a11y:seed`.
-
-To refresh:
+If you intentionally rewrite the baseline (e.g. a refactor that legitimately moves many fingerprints), regenerate from a fresh local scan:
 
 ```bash
-# 1. Find the latest a11y CI run on your branch
-gh run list --workflow=e2e-tests.yml --branch=$(git branch --show-current) --limit=1 --json databaseId
-
-# 2. Download the artifact
-gh run download <RUN-ID> -R oneprojectorg/common -n a11y-baseline-report --dir /tmp/a11y
-
-# 3. Copy live-violations.json over the committed file
-cp /tmp/a11y/live-violations.json tests/e2e/a11y-baseline/known-violations.json
-
-# 4. Commit + push
-git add tests/e2e/a11y-baseline/known-violations.json
-git commit -m "test(a11y): refresh known violations from CI run <RUN-ID>"
+pnpm build:e2e          # ensure local build matches latest source
+pnpm start:e2e &
+pnpm a11y:seed          # overwrites known-violations.json from the current scan
+git diff tests/e2e/a11y-baseline/known-violations.json   # sanity-check
 ```
 
-Use sparingly — every entry should have an explicit reason to exist. `pnpm a11y:seed` exists for bootstrapping but produces a *local* render that won't match CI; only useful when standing the file up from scratch on a branch where CI hasn't run yet.
+`pnpm a11y:seed` is forbidden in CI — seeding bypasses comparison and would let regressions land green.
 
 ## Routes
 
@@ -85,7 +74,7 @@ Currently scans 16 routes (see `PUBLIC_ROUTES`, `STATIC_AUTH_ROUTES`, and `seedD
 
 ### Persistent fingerprint drift on a route you didn't change
 
-Stale e2e build artifacts can produce a different render than CI. If `pnpm a11y:baseline` shows the same 3-new/3-resolved diff on a route that hasn't actually changed, refresh the build before re-running:
+Stale e2e build artifacts can produce a different render than CI. If `pnpm a11y:baseline` shows the same new/resolved diff on a route that hasn't actually changed, refresh the build before re-running:
 
 ```bash
 pnpm build:e2e
