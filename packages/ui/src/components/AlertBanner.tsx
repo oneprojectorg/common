@@ -50,7 +50,7 @@ const alertBannerStyles = tv({
     },
     fullWidth: {
       true: {
-        root: 'justify-center rounded-none border-x-0',
+        root: 'justify-center rounded-none border-x-0 p-2',
       },
     },
   },
