@@ -67,7 +67,7 @@ describe.concurrent('getPhaseReviewProgress', () => {
     });
   });
 
-  it('counts proposals as reviewed only when every assignment is COMPLETED', async ({
+  it('counts a proposal as reviewed once any assignment is COMPLETED', async ({
     task,
     onTestFinished,
   }) => {
@@ -94,7 +94,7 @@ describe.concurrent('getPhaseReviewProgress', () => {
     ]);
 
     // Second reviewer on `mixed` is COMPLETED while the first is IN_PROGRESS —
-    // proves the gate is "every assignment completed", not "any completed".
+    // proves a single COMPLETED assignment is enough to count as reviewed.
     const secondReviewer = await testData.createReviewer(context);
     await db.insert(proposalReviewAssignments).values({
       processInstanceId: context.instance.instance.id,
@@ -113,7 +113,7 @@ describe.concurrent('getPhaseReviewProgress', () => {
     });
 
     expect(result.proposalsTotalCount).toBe(3);
-    expect(result.proposalsReviewedCount).toBe(1);
+    expect(result.proposalsReviewedCount).toBe(2);
   });
 
   it('counts active reviewers as those with at least one non-PENDING assignment', async ({

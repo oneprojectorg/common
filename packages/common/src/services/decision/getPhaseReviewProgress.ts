@@ -36,9 +36,9 @@ export async function getPhaseReviewProgress(
     phaseId,
   });
   const phaseProposalIds = await getProposalIdsForPhase({ instance, phaseId });
-  const [assignedReviewerCounts, completedProposalsCount] = await Promise.all([
+  const [assignedReviewerCounts, reviewedProposalsCount] = await Promise.all([
     assignedReviewerCountsPromise,
-    getCompletedProposalsCount({
+    getReviewedProposalsCount({
       processInstanceId,
       phaseId,
       proposalIds: phaseProposalIds,
@@ -46,7 +46,7 @@ export async function getPhaseReviewProgress(
   ]);
 
   return {
-    proposalsReviewedCount: completedProposalsCount,
+    proposalsReviewedCount: reviewedProposalsCount,
     proposalsTotalCount: phaseProposalIds.length,
     activeReviewersCount: assignedReviewerCounts.active,
     reviewersTotalCount: assignedReviewerCounts.total,
@@ -58,16 +58,6 @@ export async function getPhaseReviewProgress(
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────
-
-function instancePhaseConditions(
-  processInstanceId: string,
-  phaseId: string | undefined,
-) {
-  return [
-    eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-    ...(phaseId ? [eq(proposalReviewAssignments.phaseId, phaseId)] : []),
-  ];
-}
 
 // Counts distinct reviewers from `proposalReviewAssignments` rows for this
 // instance/phase — i.e. reviewers who actually have an assignment, not
@@ -89,7 +79,12 @@ async function getAssignedReviewerCounts({
         )})`.mapWith(Number),
     })
     .from(proposalReviewAssignments)
-    .where(and(...instancePhaseConditions(processInstanceId, phaseId)));
+    .where(
+      and(
+        eq(proposalReviewAssignments.processInstanceId, processInstanceId),
+        ...(phaseId ? [eq(proposalReviewAssignments.phaseId, phaseId)] : []),
+      ),
+    );
 
   return {
     total: row?.total ?? 0,
@@ -97,10 +92,10 @@ async function getAssignedReviewerCounts({
   };
 }
 
-// Restricted to `proposalIds` so soft-deleted/draft proposals can't slip in
-// via stale assignments. A proposal counts as reviewed iff it has ≥1
-// assignment AND none are non-COMPLETED.
-async function getCompletedProposalsCount({
+// A proposal counts as reviewed once it has ≥1 COMPLETED assignment.
+// Restricted to `proposalIds` so soft-deleted/draft proposals can't slip
+// in via stale assignments.
+async function getReviewedProposalsCount({
   processInstanceId,
   phaseId,
   proposalIds,
@@ -113,21 +108,24 @@ async function getCompletedProposalsCount({
     return 0;
   }
 
-  const conditions = [
-    ...instancePhaseConditions(processInstanceId, phaseId),
-    inArray(proposalReviewAssignments.proposalId, proposalIds),
-  ];
-
-  const rows = await db
-    .select({ proposalId: proposalReviewAssignments.proposalId })
+  const [row] = await db
+    .select({
+      count: countDistinct(proposalReviewAssignments.proposalId),
+    })
     .from(proposalReviewAssignments)
-    .where(and(...conditions))
-    .groupBy(proposalReviewAssignments.proposalId)
-    .having(
-      sql`count(*) filter (where ${proposalReviewAssignments.status} <> ${ProposalReviewAssignmentStatus.COMPLETED}) = 0`,
+    .where(
+      and(
+        eq(proposalReviewAssignments.processInstanceId, processInstanceId),
+        ...(phaseId ? [eq(proposalReviewAssignments.phaseId, phaseId)] : []),
+        inArray(proposalReviewAssignments.proposalId, proposalIds),
+        eq(
+          proposalReviewAssignments.status,
+          ProposalReviewAssignmentStatus.COMPLETED,
+        ),
+      ),
     );
 
-  return rows.length;
+  return row?.count ?? 0;
 }
 
 export function computeDaysLeft({

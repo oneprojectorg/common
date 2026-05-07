@@ -207,7 +207,7 @@ export const proposalWithSubmittedReviewsSchema =
  * Counts are per-phase (defaults to the instance's current phase):
  *   - `proposalsReviewedCount` / `proposalsTotalCount`: phase-scoped
  *     non-draft proposals; `proposalsReviewedCount` is the subset with
- *     all assignments COMPLETED (zero assignments doesn't count).
+ *     at least one COMPLETED assignment.
  *   - `activeReviewersCount` / `reviewersTotalCount`: distinct reviewers
  *     in phase; "active" means at least one assignment past PENDING.
  *
