@@ -3,7 +3,6 @@
 import { parseAbsoluteToLocal, toCalendarDate } from '@internationalized/date';
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
-import type { VoteCap } from '@op/common';
 import { Button } from '@op/ui/Button';
 import { DatePicker } from '@op/ui/DatePicker';
 import { Header2 } from '@op/ui/Header';
@@ -491,8 +490,8 @@ function VoteLimitSelect({
   maxVotes,
   onChange,
 }: {
-  maxVotes: VoteCap;
-  onChange: (maxVotes: VoteCap) => void;
+  maxVotes: number | undefined;
+  onChange: (maxVotes: number | undefined) => void;
 }) {
   const t = useTranslations();
   const selectedKey = maxVotes === undefined ? 'none' : String(maxVotes);
