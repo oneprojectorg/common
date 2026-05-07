@@ -101,25 +101,25 @@ export const AllVariants: Story = {
     <div className="flex items-center gap-4">
       <div className="flex flex-col items-center gap-2">
         <span className="text-sm font-medium">Ghost</span>
-        <IconButton variant="ghost" aria-label="ghost">
+        <IconButton variant="ghost" aria-label="Ghost variant">
           <DummyIcon />
         </IconButton>
       </div>
       <div className="flex flex-col items-center gap-2">
         <span className="text-sm font-medium">Solid</span>
-        <IconButton variant="solid" aria-label="solid">
+        <IconButton variant="solid" aria-label="Solid variant">
           <DummyIcon />
         </IconButton>
       </div>
       <div className="flex flex-col items-center gap-2">
         <span className="text-sm font-medium">Outline</span>
-        <IconButton variant="outline" aria-label="outline">
+        <IconButton variant="outline" aria-label="Outline variant">
           <DummyIcon />
         </IconButton>
       </div>
       <div className="flex flex-col items-center gap-2">
         <span className="text-sm font-medium">Disabled</span>
-        <IconButton isDisabled aria-label="disabled">
+        <IconButton isDisabled aria-label="Disabled variant">
           <DummyIcon />
         </IconButton>
       </div>
@@ -132,19 +132,19 @@ export const AllSizes: Story = {
     <div className="flex items-center gap-4">
       <div className="flex flex-col items-center gap-2">
         <span className="text-sm font-medium">Small</span>
-        <IconButton size="small" aria-label="small">
+        <IconButton size="small" aria-label="Small size">
           <DummyIcon />
         </IconButton>
       </div>
       <div className="flex flex-col items-center gap-2">
         <span className="text-sm font-medium">Medium</span>
-        <IconButton size="medium" aria-label="medium">
+        <IconButton size="medium" aria-label="Medium size">
           <DummyIcon />
         </IconButton>
       </div>
       <div className="flex flex-col items-center gap-2">
         <span className="text-sm font-medium">Large</span>
-        <IconButton size="large" aria-label="large">
+        <IconButton size="large" aria-label="Large size">
           <DummyIcon />
         </IconButton>
       </div>
