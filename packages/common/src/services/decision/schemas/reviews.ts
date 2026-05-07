@@ -201,18 +201,10 @@ export const proposalWithSubmittedReviewsSchema =
 // ── Instance-level review progress (admin overview header) ─────────────
 
 /**
- * Instance-level review-progress counters. Powers the admin overview
- * header above the proposal grid.
- *
- * Counts are per-phase (defaults to the instance's current phase):
- *   - `proposalsReviewedCount` / `proposalsTotalCount`: phase-scoped
- *     non-draft proposals; `proposalsReviewedCount` is the subset with
- *     at least one COMPLETED assignment.
- *   - `activeReviewersCount` / `reviewersTotalCount`: distinct reviewers
- *     in phase; "active" means at least one assignment past PENDING.
- *
- * `daysLeft` is rounded up from now to the phase's `endDate`. `null` when
- * the phase has no end date or no phase is resolvable.
+ * Per-phase review-progress counters (defaults to the current phase).
+ *   - proposalsReviewedCount: non-draft proposals with ≥1 COMPLETED assignment.
+ *   - activeReviewersCount: distinct reviewers with ≥1 non-PENDING assignment.
+ *   - daysLeft: ceil(now → phase endDate); null if no end date or phase.
  */
 export const phaseReviewProgressSchema = z.object({
   proposalsReviewedCount: z.number().int(),

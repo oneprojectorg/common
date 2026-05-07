@@ -57,8 +57,6 @@ export async function getPhaseReviewProgress(
   };
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────
-
 // Counts distinct reviewers from `proposalReviewAssignments` rows for this
 // instance/phase — i.e. reviewers who actually have an assignment, not
 // users with the reviewer role.
