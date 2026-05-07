@@ -107,6 +107,7 @@ interface BaselineReport {
 const HTML_PREVIEW_LIMIT = 240;
 const SCREENSHOT_DIR_NAME = 'screenshots';
 const KNOWN_VIOLATIONS_FILE = 'known-violations.json';
+const LIVE_VIOLATIONS_FILE = 'live-violations.json';
 const SNIPPET_LIMIT = 200;
 const PER_ROUTE_TIMEOUT_MS = 90_000;
 
@@ -231,6 +232,11 @@ test.describe('axe-core baseline scan', () => {
     writeReport(report);
 
     const flat = flattenViolations(results);
+    // Always write the live snapshot so devs can refresh `known-violations.json`
+    // by downloading the CI artifact and copying this file over the committed
+    // one. Local-vs-CI render differs (React Aria interaction-layer timing) so
+    // canonical seeds must come from CI, not from local scans.
+    writeLiveViolations({ version: 1, axeVersion, violations: flat });
     console.log(
       `[a11y-baseline] ${report.totalViolations} violations across ${report.routesScanned} routes`,
     );
@@ -725,13 +731,24 @@ function loadKnownViolations(): KnownViolationsFile {
 }
 
 function writeKnownViolations(file: KnownViolationsFile): void {
+  writeViolationsFile(KNOWN_VIOLATIONS_FILE, file);
+}
+
+function writeLiveViolations(file: KnownViolationsFile): void {
+  writeViolationsFile(LIVE_VIOLATIONS_FILE, file);
+}
+
+function writeViolationsFile(
+  filename: string,
+  file: KnownViolationsFile,
+): void {
   mkdirSync(REPORT_DIR, { recursive: true });
   const sorted: KnownViolationsFile = {
     ...file,
     violations: [...file.violations].sort(violationOrder),
   };
   writeFileSync(
-    path.join(REPORT_DIR, KNOWN_VIOLATIONS_FILE),
+    path.join(REPORT_DIR, filename),
     `${JSON.stringify(sorted, null, 2)}\n`,
   );
 }
