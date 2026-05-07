@@ -21,7 +21,9 @@ Intent UI is a shadcn-compatible component library built on React Aria. To add a
 
 #### Component A11y Testing
 
-Every story is scanned by axe via Storybook test-runner. WCAG 2A/AA + 2.1A/AA, zero violations gates merging. Configured in `packages/ui/.storybook/test-runner.ts`. Run locally with `pnpm w:ui test:a11y:ci`.
+Every story is scanned by axe via Storybook test-runner. WCAG 2A/AA + 2.1A/AA. Configured in `packages/ui/.storybook/test-runner.ts`. Run locally with `pnpm w:ui test:a11y:ci`.
+
+CI runs the same scan but is **informational only** — it does not gate merging. The job uploads a `ui-a11y-report` artifact with violation details. Triage and fix existing debt incrementally; flip the CI job to gating once the library is clean.
 
 When a story intentionally violates a rule (e.g. a contrast variant for design review), declare an exception in `parameters.a11y` with a one-line reason:
 

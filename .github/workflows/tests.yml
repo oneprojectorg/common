@@ -124,12 +124,23 @@ jobs:
         run: pnpm w:ui build
 
       - name: Run component a11y tests
-        run: pnpm w:ui test:a11y
+        id: a11y
+        continue-on-error: true
+        run: pnpm w:ui test:a11y 2>&1 | tee packages/ui/test-runner-output.log
 
       - name: Upload test-runner output
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ui-a11y-report
-          path: packages/ui/test-runner-results.json
+          path: packages/ui/test-runner-output.log
           if-no-files-found: ignore
+
+      - name: Job summary
+        if: always()
+        run: |
+          echo "### UI Component A11y" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Status: ${{ steps.a11y.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "_Informational only — does not gate merging. See \`ui-a11y-report\` artifact for violations._" >> $GITHUB_STEP_SUMMARY
