@@ -453,19 +453,37 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
-      - name: Append run links to PR comment body
+      - name: Detect a11y baseline deviation
+        id: a11y-diff
         if: ${{ github.event_name == 'pull_request' && !cancelled() }}
         run: |
-          if [ -f tests/e2e/a11y-baseline/diff.md ]; then
+          if [ ! -f tests/e2e/a11y-baseline/diff.md ]; then
+            echo "has-changes=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # The spec writes section headers (### New / ### Resolved /
+          # ### Errored routes) only when the scan deviates from
+          # known-violations.json; their absence is a clean run.
+          if grep -qE "^### " tests/e2e/a11y-baseline/diff.md; then
+            echo "has-changes=true" >> "$GITHUB_OUTPUT"
             {
               echo ""
               echo "[Browse full report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}#summary) · [Download artifact](${{ steps.upload-report.outputs.artifact-url }})"
             } >> tests/e2e/a11y-baseline/diff.md
+          else
+            echo "has-changes=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Post sticky PR comment
-        if: ${{ github.event_name == 'pull_request' && !cancelled() && hashFiles('tests/e2e/a11y-baseline/diff.md') != '' }}
+        if: ${{ github.event_name == 'pull_request' && !cancelled() && steps.a11y-diff.outputs.has-changes == 'true' }}
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: a11y-baseline
           path: tests/e2e/a11y-baseline/diff.md
+
+      - name: Remove sticky PR comment when no deviation
+        if: ${{ github.event_name == 'pull_request' && !cancelled() && steps.a11y-diff.outputs.has-changes == 'false' }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: a11y-baseline
+          delete: true
