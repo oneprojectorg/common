@@ -2,7 +2,6 @@ import { computeDaysLeft } from '@op/common';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewState,
-  processInstances,
   proposalReviewAssignments,
 } from '@op/db/schema';
 import { db } from '@op/db/test';
@@ -23,29 +22,6 @@ const createCaller = createCallerFactory(appRouter);
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
-}
-
-/**
- * Adds a phase entry for `phaseId='review'` so `daysLeft` has an `endDate` to
- * resolve against. The test instance template only ships `initial` and `final`
- * phases, neither of which match the assignment phase used by review fixtures.
- */
-async function setReviewPhaseEndDate(instanceId: string, endDate: string) {
-  const instanceRecord = await db.query.processInstances.findFirst({
-    where: { id: instanceId },
-  });
-  const instanceData =
-    (instanceRecord?.instanceData as { phases?: Array<unknown> } | null) ?? {};
-  const phases = Array.isArray(instanceData.phases) ? instanceData.phases : [];
-  await db
-    .update(processInstances)
-    .set({
-      instanceData: {
-        ...instanceData,
-        phases: [...phases, { phaseId: 'review', endDate }],
-      },
-    })
-    .where(eq(processInstances.id, instanceId));
 }
 
 describe.concurrent('getPhaseReviewProgress', () => {
@@ -99,7 +75,6 @@ describe.concurrent('getPhaseReviewProgress', () => {
     const context = await testData.createContext();
     await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
-    // Single-assignment proposals at three lifecycle stages.
     const [, mixed] = await Promise.all([
       testData.createReviewAssignment({
         context,
@@ -118,9 +93,8 @@ describe.concurrent('getPhaseReviewProgress', () => {
       }),
     ]);
 
-    // Add a second reviewer to `mixed` whose assignment is COMPLETED while the
-    // first reviewer's is still IN_PROGRESS — proves the "every assignment
-    // completed" gate (one COMPLETED out of two isn't enough).
+    // Second reviewer on `mixed` is COMPLETED while the first is IN_PROGRESS —
+    // proves the gate is "every assignment completed", not "any completed".
     const secondReviewer = await testData.createReviewer(context);
     await db.insert(proposalReviewAssignments).values({
       processInstanceId: context.instance.instance.id,
@@ -150,14 +124,12 @@ describe.concurrent('getPhaseReviewProgress', () => {
     const context = await testData.createContext();
     await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
-    // defaultReviewer: one IN_PROGRESS assignment → active.
     await testData.createReviewAssignment({
       context,
       title: 'Active reviewer assignment',
       status: ProposalReviewAssignmentStatus.IN_PROGRESS,
     });
 
-    // pendingOnlyReviewer: only PENDING assignments → assigned but not active.
     const pendingOnlyReviewer = await testData.createReviewer(context);
     await testData.createReviewAssignment({
       context,
@@ -220,7 +192,6 @@ describe.concurrent('getPhaseReviewProgress', () => {
     const context = await testData.createContext();
     await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
-    // Same default reviewer assigned to two proposals → still 1 distinct reviewer.
     await testData.createReviewAssignment({
       context,
       title: 'Proposal A',
@@ -254,15 +225,13 @@ describe.concurrent('getPhaseReviewProgress', () => {
     const context = await testData.createContext();
     await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
-    // Review-phase assignment for the default reviewer (active).
     await testData.createReviewAssignment({
       context,
       title: 'Review phase',
       status: ProposalReviewAssignmentStatus.IN_PROGRESS,
     });
 
-    // Stray assignment in a different phase, distinct reviewer — must not
-    // contaminate the review-phase counts.
+    // Distinct reviewer on a different phase must not leak into review-phase counts.
     const otherPhaseReviewer = await testData.createReviewer(context);
     const otherPhaseProposal = await testData.createReviewAssignment({
       context,
@@ -334,7 +303,11 @@ describe.concurrent('getPhaseReviewProgress', () => {
     await testData.setCurrentPhase(context.instance.instance.id, 'review');
 
     const tenDaysOut = new Date(Date.now() + 10 * 86_400_000).toISOString();
-    await setReviewPhaseEndDate(context.instance.instance.id, tenDaysOut);
+    await testData.setPhaseEndDate(
+      context.instance.instance.id,
+      'review',
+      tenDaysOut,
+    );
 
     const adminCaller = await createAuthenticatedCaller(
       context.defaultReviewer.email,
@@ -371,8 +344,6 @@ describe.concurrent('getPhaseReviewProgress', () => {
     task,
     onTestFinished,
   }) => {
-    // A SUBMITTED review row alone does not flip the assignment to COMPLETED;
-    // assignment status is the source of truth for "reviewed".
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
     await testData.setCurrentPhase(context.instance.instance.id, 'review');

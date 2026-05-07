@@ -9,10 +9,8 @@ import { z } from 'zod';
 import { UnauthorizedError } from '../../utils';
 import { getInstance } from './getInstance';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
-import {
-  type PhaseReviewProgress,
-  phaseReviewProgressSchema,
-} from './schemas/reviews';
+import type { PhaseInstanceData } from './schemas/instanceData';
+import type { PhaseReviewProgress } from './schemas/reviews';
 
 export const getPhaseReviewProgressInputSchema = z.object({
   processInstanceId: z.uuid(),
@@ -23,32 +21,10 @@ export type GetPhaseReviewProgressInput = z.infer<
   typeof getPhaseReviewProgressInputSchema
 >;
 
-/**
- * Statuses that count as "active" for the active-reviewer denominator —
- * anything past PENDING means the reviewer has engaged with their queue.
- */
-const ACTIVE_ASSIGNMENT_STATUSES: ProposalReviewAssignmentStatus[] = [
-  ProposalReviewAssignmentStatus.IN_PROGRESS,
-  ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
-  ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
-  ProposalReviewAssignmentStatus.COMPLETED,
-];
+const ACTIVE_ASSIGNMENT_STATUSES = Object.values(
+  ProposalReviewAssignmentStatus,
+).filter((status) => status !== ProposalReviewAssignmentStatus.PENDING);
 
-/**
- * Instance-level progress metrics for the admin overview header.
- *
- * Three numerator/denominator pairs computed in a single SQL pass against
- * `decision_proposal_review_assignments`, plus `daysLeft` derived from the
- * current phase's `endDate` in `instanceData`.
- *
- * Phase scoping defaults to `instance.currentStateId` so the admin overview
- * always reflects the live phase. `proposalsTotal` is the count of non-draft
- * proposals visible in that phase (see `getProposalIdsForPhase`).
- *
- * `proposalsReviewed` is the number of phase-scoped proposals where every
- * assignment is COMPLETED. A proposal with zero assignments does not count
- * as reviewed — there is no review work to be done.
- */
 export async function getPhaseReviewProgress(
   input: GetPhaseReviewProgressInput & { user: User },
 ): Promise<PhaseReviewProgress> {
@@ -64,13 +40,13 @@ export async function getPhaseReviewProgress(
 
   const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
 
-  const phaseProposalIds = await getProposalIdsForPhase({
-    instance,
+  const reviewerCountsPromise = getReviewerCounts({
+    processInstanceId,
     phaseId,
   });
-
+  const phaseProposalIds = await getProposalIdsForPhase({ instance, phaseId });
   const [reviewerCounts, completedProposalsCount] = await Promise.all([
-    getReviewerCounts({ processInstanceId, phaseId }),
+    reviewerCountsPromise,
     getCompletedProposalsCount({
       processInstanceId,
       phaseId,
@@ -78,7 +54,7 @@ export async function getPhaseReviewProgress(
     }),
   ]);
 
-  return phaseReviewProgressSchema.parse({
+  return {
     proposalsReviewed: completedProposalsCount,
     proposalsTotal: phaseProposalIds.length,
     activeReviewers: reviewerCounts.active,
@@ -87,7 +63,7 @@ export async function getPhaseReviewProgress(
       phaseId,
       phases: instance.instanceData.phases,
     }),
-  });
+  };
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────
@@ -127,11 +103,9 @@ async function getReviewerCounts({
   };
 }
 
-/**
- * Restricted to `proposalIds` so soft-deleted/draft proposals can't slip in
- * via stale assignments. A proposal is "reviewed" iff it has ≥1 assignment
- * AND every one of those assignments is COMPLETED.
- */
+// Restricted to `proposalIds` so soft-deleted/draft proposals can't slip in
+// via stale assignments. A proposal counts as reviewed iff it has ≥1
+// assignment AND none are non-COMPLETED.
 async function getCompletedProposalsCount({
   processInstanceId,
   phaseId,
@@ -156,24 +130,19 @@ async function getCompletedProposalsCount({
     .where(and(...conditions))
     .groupBy(proposalReviewAssignments.proposalId)
     .having(
-      sql`count(*) = count(*) filter (where ${proposalReviewAssignments.status} = ${ProposalReviewAssignmentStatus.COMPLETED})`,
+      sql`count(*) filter (where ${proposalReviewAssignments.status} <> ${ProposalReviewAssignmentStatus.COMPLETED}) = 0`,
     );
 
   return rows.length;
 }
 
-/**
- * Days from "now" to the phase's `endDate` (rounded up — a phase ending
- * later today still has 1 day left). Returns `null` if the phase has no
- * end date or has already passed.
- */
 export function computeDaysLeft({
   phaseId,
   phases,
   now = new Date(),
 }: {
   phaseId: string | undefined;
-  phases: ReadonlyArray<{ phaseId: string; endDate?: string }>;
+  phases: ReadonlyArray<Pick<PhaseInstanceData, 'phaseId' | 'endDate'>>;
   now?: Date;
 }): number | null {
   if (!phaseId) {

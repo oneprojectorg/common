@@ -201,6 +201,33 @@ export class TestReviewsDataManager {
       .where(eq(processInstances.id, instanceId));
   }
 
+  /**
+   * Appends a phase entry to `instanceData.phases` so phase-scoped queries
+   * can resolve fields like `endDate`. The test instance template only ships
+   * `initial`/`final` phases; review fixtures tag assignments `phaseId='review'`
+   * which has no template entry by default.
+   */
+  async setPhaseEndDate(instanceId: string, phaseId: string, endDate: string) {
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+    });
+    const instanceData =
+      (instanceRecord?.instanceData as { phases?: Array<unknown> } | null) ??
+      {};
+    const phases = Array.isArray(instanceData.phases)
+      ? instanceData.phases
+      : [];
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...instanceData,
+          phases: [...phases, { phaseId, endDate }],
+        },
+      })
+      .where(eq(processInstances.id, instanceId));
+  }
+
   /** Sets the rubric template on a process instance for review API tests. */
   async setRubricTemplate(
     context: ReviewAssignmentContext,
