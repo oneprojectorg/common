@@ -1,5 +1,6 @@
 import {
   EntityType,
+  ProcessStatus,
   ProposalStatus,
   Visibility,
   decisionProcesses,
@@ -127,7 +128,7 @@ async function createProcessWithDefaultHidden({
       profileId: profile.id,
       instanceData,
       currentStateId: 'submission',
-      status: 'PUBLISHED',
+      status: ProcessStatus.PUBLISHED,
       ownerProfileId: org.organizationProfile.id,
     })
     .returning();
@@ -184,7 +185,7 @@ test.describe('Default Hidden Proposals', () => {
     // (simulating what submitProposal does when defaults.hidden is true)
     const hiddenProposal = await createProposal({
       processInstanceId: instance.id,
-      submittedByProfileId: memberOrg.organizationProfile.id,
+      submittedByProfileId: memberUser.profileId,
       authUserId: memberUser.authUserId,
       email: memberUser.email,
       proposalData: {
@@ -216,7 +217,9 @@ test.describe('Default Hidden Proposals', () => {
     ).toBeVisible({ timeout: 15_000 });
 
     // Admin should see the "Hidden" label
-    await expect(authenticatedPage.getByText('Hidden')).toBeVisible();
+    await expect(
+      authenticatedPage.getByText('Hidden', { exact: true }),
+    ).toBeVisible();
 
     // Member who did NOT submit the proposal navigates — should NOT see it
     const otherMemberOrg = await createOrganization({
@@ -283,7 +286,7 @@ test.describe('Default Hidden Proposals', () => {
 
     const ownerProposal = await createProposal({
       processInstanceId: instance.id,
-      submittedByProfileId: submitterOrg.organizationProfile.id,
+      submittedByProfileId: submitter.profileId,
       authUserId: submitter.authUserId,
       email: submitter.email,
       proposalData: {

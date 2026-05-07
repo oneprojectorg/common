@@ -122,8 +122,25 @@ export const ProposalListSkeleton = () => {
   );
 };
 
-const NoProposalsFound = ({ hasFilter }: { hasFilter: boolean }) => {
+const NoProposalsFound = ({
+  hasFilter,
+  proposalsHiddenByDefault = false,
+}: {
+  hasFilter: boolean;
+  proposalsHiddenByDefault?: boolean;
+}) => {
   const t = useTranslations();
+
+  if (proposalsHiddenByDefault && !hasFilter) {
+    return (
+      <EmptyState icon={<LuLeaf className="size-6" />}>
+        <p className="text-base text-neutral-charcoal">
+          {t("You'll see your proposal here once you submit.")}
+        </p>
+      </EmptyState>
+    );
+  }
+
   return (
     <EmptyState icon={<LuLeaf className="size-6" />}>
       <Header3 className="font-serif !text-title-base font-light text-neutral-black">
@@ -151,6 +168,8 @@ interface ProposalsProps {
   hasFilter: boolean;
   /** When true, the current phase has voting enabled — always show voting UI */
   isVotingPhase?: boolean;
+  /** When true, new proposals are hidden by default in the current phase. */
+  proposalsHiddenByDefault?: boolean;
 }
 
 const VotingProposalsList = ({
@@ -160,6 +179,7 @@ const VotingProposalsList = ({
   permissions,
   votedProposalIds = [],
   hasFilter,
+  proposalsHiddenByDefault,
 }: ProposalsProps) => {
   const canVote = permissions?.vote ?? false;
   const canManageProposals = permissions?.admin ?? false;
@@ -217,7 +237,12 @@ const VotingProposalsList = ({
   };
 
   if (!proposals || proposals.length === 0) {
-    return <NoProposalsFound hasFilter={hasFilter} />;
+    return (
+      <NoProposalsFound
+        hasFilter={hasFilter}
+        proposalsHiddenByDefault={proposalsHiddenByDefault}
+      />
+    );
   }
 
   return (
@@ -409,10 +434,16 @@ const ViewProposalsList = ({
   decisionSlug,
   permissions,
   hasFilter,
+  proposalsHiddenByDefault,
 }: ProposalsProps) => {
   const canManageProposals = permissions?.admin ?? false;
   if (!proposals || proposals.length === 0) {
-    return <NoProposalsFound hasFilter={hasFilter} />;
+    return (
+      <NoProposalsFound
+        hasFilter={hasFilter}
+        proposalsHiddenByDefault={proposalsHiddenByDefault}
+      />
+    );
   }
 
   return (
@@ -508,6 +539,7 @@ export const ProposalsList = ({
   initialFilter,
   phase,
   isVotingPhase,
+  proposalsHiddenByDefault,
 }: {
   slug: string;
   instanceId: string;
@@ -523,6 +555,8 @@ export const ProposalsList = ({
   phase?: 'results';
   /** When true, the current phase has voting enabled — always show voting UI */
   isVotingPhase?: boolean;
+  /** When true, new proposals are hidden by default in the current phase. */
+  proposalsHiddenByDefault?: boolean;
 }) => {
   const t = useTranslations();
   const { user } = useUser();
@@ -884,6 +918,7 @@ export const ProposalsList = ({
           votedProposalIds={selectedProposalIds}
           hasFilter={selectedCategory !== 'all-categories'}
           isVotingPhase={isVotingPhase}
+          proposalsHiddenByDefault={proposalsHiddenByDefault}
         />
       </ProposalTranslationProvider>
 
