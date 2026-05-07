@@ -119,6 +119,7 @@ export const profilesLocations = pgTable(
         onUpdate: 'cascade',
         onDelete: 'cascade',
       }),
+    ...timestamps,
   },
   (table) => [
     ...serviceRolePolicies,
