@@ -36,7 +36,7 @@ export function HiddenProposalsBanner({
   return (
     <AlertBanner
       variant="banner"
-      intent="default"
+      intent="warning"
       fullWidth
       icon={<LuLock className="size-4" />}
     >

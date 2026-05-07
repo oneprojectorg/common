@@ -793,107 +793,111 @@ export const ProposalsList = ({
     );
   };
 
+  const hideFilters = proposalsHiddenByDefault && !canManageProposals;
+
   return (
     <div className="flex flex-col gap-6 pb-12">
       {/* Filters Bar */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <span className="font-serif text-title-base text-neutral-black">
-            {proposalFilter === ProposalFilter.MY_BALLOT
-              ? t('My ballot')
-              : proposalFilter === ProposalFilter.MY_PROPOSALS
-                ? t('My proposals')
-                : proposalFilter === ProposalFilter.SHORTLISTED
-                  ? t('Shortlisted proposals')
-                  : t('All proposals')}{' '}
-            <Bullet /> {proposals?.length ?? 0}
-          </span>
+      {!hideFilters && (
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <span className="font-serif text-title-base text-neutral-black">
+              {proposalFilter === ProposalFilter.MY_BALLOT
+                ? t('My ballot')
+                : proposalFilter === ProposalFilter.MY_PROPOSALS
+                  ? t('My proposals')
+                  : proposalFilter === ProposalFilter.SHORTLISTED
+                    ? t('Shortlisted proposals')
+                    : t('All proposals')}{' '}
+              <Bullet /> {proposals?.length ?? 0}
+            </span>
+          </div>
+          <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
+            <ResponsiveSelect
+              selectedKey={proposalFilter}
+              onSelectionChange={(key) => {
+                // If selecting "My proposals" but no current profile, ignore
+                if (key === ProposalFilter.MY_PROPOSALS && !currentProfileId) {
+                  return;
+                }
+                setProposalFilter(key);
+              }}
+              aria-label={t('Filter proposals')}
+              items={[
+                { id: ProposalFilter.ALL, label: t('All proposals') },
+                {
+                  id: ProposalFilter.MY_PROPOSALS,
+                  label: t('My proposals'),
+                  isDisabled: !currentProfileId,
+                },
+                {
+                  id: ProposalFilter.SHORTLISTED,
+                  label: t('Shortlisted proposals'),
+                },
+                ...(hasVoted
+                  ? [
+                      {
+                        id: ProposalFilter.MY_BALLOT,
+                        label: t('My ballot'),
+                      },
+                    ]
+                  : []),
+              ]}
+            />
+            <ResponsiveSelect
+              selectedKey={selectedCategory}
+              onSelectionChange={(category) => {
+                setSelectedCategory(category);
+                updateURLParams({ category });
+              }}
+              aria-label={t('Filter proposals by category')}
+              items={[
+                { id: 'all-categories', label: t('All categories') },
+                ...categories.map((category) => ({
+                  id: category.id,
+                  label: category.name,
+                })),
+              ]}
+            />
+            <ResponsiveSelect
+              selectedKey={sortOrder}
+              onSelectionChange={(sort) => {
+                setSortOrder(sort);
+                updateURLParams({ sort });
+              }}
+              aria-label={t('Sort proposals')}
+              className="min-w-32"
+              items={[
+                { id: 'newest', label: t('Newest First') },
+                { id: 'oldest', label: t('Oldest First') },
+              ]}
+            />
+            {canManageProposals ? (
+              isDownloadReady && downloadUrl ? (
+                <ButtonLink
+                  href={downloadUrl}
+                  download={downloadFileName}
+                  color="secondary"
+                  size="small"
+                >
+                  <LuArrowDownToLine className="size-4" />
+                  {t('Click to download')}
+                </ButtonLink>
+              ) : (
+                <Button
+                  onPress={handleExport}
+                  isDisabled={isExporting}
+                  color="secondary"
+                  size="small"
+                >
+                  <LuArrowDownToLine className="size-4" />
+                  {isExporting ? t('Exporting...') : t('Export')}
+                </Button>
+              )
+            ) : null}
+          </div>
         </div>
-        <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
-          <ResponsiveSelect
-            selectedKey={proposalFilter}
-            onSelectionChange={(key) => {
-              // If selecting "My proposals" but no current profile, ignore
-              if (key === ProposalFilter.MY_PROPOSALS && !currentProfileId) {
-                return;
-              }
-              setProposalFilter(key);
-            }}
-            aria-label={t('Filter proposals')}
-            items={[
-              { id: ProposalFilter.ALL, label: t('All proposals') },
-              {
-                id: ProposalFilter.MY_PROPOSALS,
-                label: t('My proposals'),
-                isDisabled: !currentProfileId,
-              },
-              {
-                id: ProposalFilter.SHORTLISTED,
-                label: t('Shortlisted proposals'),
-              },
-              ...(hasVoted
-                ? [
-                    {
-                      id: ProposalFilter.MY_BALLOT,
-                      label: t('My ballot'),
-                    },
-                  ]
-                : []),
-            ]}
-          />
-          <ResponsiveSelect
-            selectedKey={selectedCategory}
-            onSelectionChange={(category) => {
-              setSelectedCategory(category);
-              updateURLParams({ category });
-            }}
-            aria-label={t('Filter proposals by category')}
-            items={[
-              { id: 'all-categories', label: t('All categories') },
-              ...categories.map((category) => ({
-                id: category.id,
-                label: category.name,
-              })),
-            ]}
-          />
-          <ResponsiveSelect
-            selectedKey={sortOrder}
-            onSelectionChange={(sort) => {
-              setSortOrder(sort);
-              updateURLParams({ sort });
-            }}
-            aria-label={t('Sort proposals')}
-            className="min-w-32"
-            items={[
-              { id: 'newest', label: t('Newest First') },
-              { id: 'oldest', label: t('Oldest First') },
-            ]}
-          />
-          {canManageProposals ? (
-            isDownloadReady && downloadUrl ? (
-              <ButtonLink
-                href={downloadUrl}
-                download={downloadFileName}
-                color="secondary"
-                size="small"
-              >
-                <LuArrowDownToLine className="size-4" />
-                {t('Click to download')}
-              </ButtonLink>
-            ) : (
-              <Button
-                onPress={handleExport}
-                isDisabled={isExporting}
-                color="secondary"
-                size="small"
-              >
-                <LuArrowDownToLine className="size-4" />
-                {isExporting ? t('Exporting...') : t('Export')}
-              </Button>
-            )
-          ) : null}
-        </div>
-      </div>
+      )}
 
       {/* Translation attribution */}
       {translationState && (
