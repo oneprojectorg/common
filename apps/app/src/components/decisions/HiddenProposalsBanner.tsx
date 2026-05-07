@@ -39,7 +39,7 @@ export function HiddenProposalsBanner({
       intent="warning"
       fullWidth
       icon={<LuLock className="size-4" />}
-      className="border-t-0 border-b-neutral-gray2"
+      className="border-t-0 border-b-neutral-gray1"
     >
       {message}
     </AlertBanner>
