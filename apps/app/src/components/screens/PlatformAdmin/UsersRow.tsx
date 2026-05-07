@@ -81,7 +81,11 @@ export const UsersRowCells = ({ user }: { user: User }) => {
       </TableCell>
       <TableCell className="text-sm text-neutral-charcoal">
         <div className="flex justify-end">
-          <OptionMenu variant="outline" size="medium">
+          <OptionMenu
+            aria-label={t('User options')}
+            variant="outline"
+            size="medium"
+          >
             <Menu className="min-w-48 p-2">
               <MenuItem
                 key="view-analytics"

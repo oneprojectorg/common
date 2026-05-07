@@ -192,6 +192,7 @@ const PostMenu = ({
   post: Post;
   user?: OrganizationUser;
 }) => {
+  const t = useTranslations();
   // We check against whether this is the user's post, or whether the org that it was posted to currently matches the user's context
   const canShowMenu =
     (post?.profileId === user?.currentProfileId ||
@@ -203,7 +204,10 @@ const PostMenu = ({
   }
 
   return (
-    <OptionMenu className="absolute top-0 right-0">
+    <OptionMenu
+      aria-label={t('Post options')}
+      className="absolute top-0 right-0"
+    >
       <PostMenuContent
         post={post}
         profileId={user?.currentProfileId || ''}
