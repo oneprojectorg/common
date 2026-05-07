@@ -502,4 +502,40 @@ describe.concurrent('duplicateInstance', () => {
     expect(instanceData.proposalTemplate).toBeUndefined();
     expect(instanceData.rubricTemplate).toBeUndefined();
   });
+
+  it('should default ownerProfileId to individual and stewardProfileId to currentProfileId when steward not provided', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const {
+      result: source,
+      caller,
+      userEmail,
+    } = await createSourceInstance(testData, task.id);
+
+    const [userRecord] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, userEmail));
+
+    expect(userRecord!.profileId).toBeDefined();
+    expect(userRecord!.currentProfileId).toBeDefined();
+    expect(userRecord!.currentProfileId).not.toBe(userRecord!.profileId);
+
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: `Default Steward Test ${task.id}`,
+      include: ALL_INCLUDED,
+    });
+
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: duplicate.processInstance.id },
+    });
+
+    expect(instance!.ownerProfileId).toBe(userRecord!.profileId);
+    expect(instance!.stewardProfileId).toBe(userRecord!.currentProfileId);
+  });
 });
