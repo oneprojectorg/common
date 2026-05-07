@@ -51,7 +51,10 @@ export function ReviewPage({
         <div className="flex w-full justify-center border-b bg-neutral-offWhite px-4">
           <APIErrorBoundary fallbacks={{ default: () => null }}>
             <Suspense fallback={<ReviewProgressBannerSkeleton />}>
-              <ReviewProgressBanner processInstanceId={instance.id} />
+              <ReviewProgressBanner
+                processInstanceId={instance.id}
+                phaseId={currentPhase.phaseId}
+              />
             </Suspense>
           </APIErrorBoundary>
         </div>

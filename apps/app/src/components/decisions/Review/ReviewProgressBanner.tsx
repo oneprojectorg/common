@@ -13,13 +13,13 @@ export function ReviewProgressBanner({
   phaseId,
 }: {
   processInstanceId: string;
-  phaseId?: string;
+  phaseId: string;
 }) {
   const t = useTranslations();
 
   const [progress] = trpc.decision.getPhaseReviewProgress.useSuspenseQuery({
     processInstanceId,
-    ...(phaseId && { phaseId }),
+    phaseId,
   });
 
   return (
