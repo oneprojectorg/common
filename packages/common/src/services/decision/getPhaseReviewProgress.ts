@@ -17,6 +17,8 @@ const ACTIVE_ASSIGNMENT_STATUSES = Object.values(
   ProposalReviewAssignmentStatus,
 ).filter((status) => status !== ProposalReviewAssignmentStatus.PENDING);
 
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
 export async function getPhaseReviewProgress(
   input: InstancePhaseRef & { user: User },
 ): Promise<PhaseReviewProgress> {
@@ -149,5 +151,5 @@ export function computeDaysLeft({
   if (diffMs <= 0) {
     return 0;
   }
-  return Math.ceil(diffMs / 86_400_000);
+  return Math.ceil(diffMs / MS_PER_DAY);
 }
