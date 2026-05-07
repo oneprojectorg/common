@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { LuTriangleAlert } from 'react-icons/lu';
+import { LuLock, LuTriangleAlert } from 'react-icons/lu';
 
 import { AlertBanner } from '../src/components/AlertBanner';
 
@@ -86,4 +86,16 @@ export const DefaultVariant: Story = {
     intent: 'warning',
     children: 'This uses the default AlertBanner styling with indicator.',
   },
+};
+
+export const FullWidth: Story = {
+  args: {
+    variant: 'banner',
+    intent: 'default',
+    fullWidth: true,
+    icon: <LuLock className="size-4" />,
+    children:
+      'Proposals are private during this phase. All proposals will move to Committee Review on Sep 16.',
+  },
+  parameters: { layout: 'fullscreen' },
 };

@@ -48,6 +48,11 @@ const alertBannerStyles = tv({
         content: 'flex min-w-0 items-center gap-1',
       },
     },
+    fullWidth: {
+      true: {
+        root: 'justify-center rounded-none border-x-0',
+      },
+    },
   },
   compoundVariants: [
     {
@@ -95,6 +100,8 @@ export interface AlertBannerProps extends React.HtmlHTMLAttributes<HTMLDivElemen
   indicator?: boolean;
   icon?: ReactNode;
   contentClassName?: string;
+  /** Span the parent's full width: removes side borders and rounded corners, centers content. */
+  fullWidth?: boolean;
 }
 
 export function AlertBanner({
@@ -104,9 +111,10 @@ export function AlertBanner({
   icon,
   className,
   contentClassName,
+  fullWidth = false,
   ...props
 }: AlertBannerProps) {
-  const styles = alertBannerStyles({ intent, variant });
+  const styles = alertBannerStyles({ intent, variant, fullWidth });
   const IconComponent = iconMap[intent] || null;
 
   return (
