@@ -98,4 +98,9 @@ export const FullWidth: Story = {
       'Proposals are private during this phase. All proposals will move to Committee Review on Sep 16.',
   },
   parameters: { layout: 'fullscreen' },
+  render: (args) => (
+    <div className="p-8">
+      <AlertBanner {...args} />
+    </div>
+  ),
 };
