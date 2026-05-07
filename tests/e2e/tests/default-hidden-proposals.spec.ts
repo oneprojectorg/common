@@ -234,9 +234,11 @@ test.describe('Default Hidden Proposals', () => {
     });
     await expect(adminProposalLink).toBeVisible({ timeout: 15_000 });
 
-    // Admins keep the filter dropdowns visible.
+    // Admins keep the filter dropdowns visible. The Select renders a button
+    // whose accessible name is `<selected value> Filter proposals`, so anchor
+    // the regex at the end to avoid also matching "Filter proposals by category".
     await expect(
-      authenticatedPage.getByLabel('Filter proposals', { exact: true }),
+      authenticatedPage.getByRole('button', { name: /Filter proposals$/ }),
     ).toBeVisible();
 
     // The "Hidden" badge is scoped to the proposal card containing the link.
@@ -287,7 +289,7 @@ test.describe('Default Hidden Proposals', () => {
 
     // Filters are hidden for non-admins when proposals are default-hidden.
     await expect(
-      otherMemberPage.getByLabel('Filter proposals', { exact: true }),
+      otherMemberPage.getByRole('button', { name: /Filter proposals$/ }),
     ).toBeHidden();
 
     // Wait for the empty-state copy (positive readiness signal) so we're not
@@ -374,7 +376,7 @@ test.describe('Default Hidden Proposals', () => {
     // Filters remain hidden for non-admin submitters even though they see
     // their own proposal — the filter UI is admin-only in this phase.
     await expect(
-      submitterPage.getByLabel('Filter proposals', { exact: true }),
+      submitterPage.getByRole('button', { name: /Filter proposals$/ }),
     ).toBeHidden();
 
     const submitterProposalLink = submitterPage.getByRole('link', {
