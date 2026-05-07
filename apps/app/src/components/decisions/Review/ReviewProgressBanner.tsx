@@ -26,12 +26,12 @@ export function ReviewProgressBanner({
     <BannerShell>
       <div className="flex flex-wrap items-center justify-center gap-6 py-2">
         <ReviewProgressStat
-          value={`${progress.proposalsReviewed}/${progress.proposalsTotal}`}
+          value={`${progress.proposalsReviewedCount}/${progress.proposalsTotalCount}`}
           label={t('Proposals Reviewed')}
         />
         <Divider />
         <ReviewProgressStat
-          value={`${progress.activeReviewers}/${progress.reviewersTotal}`}
+          value={`${progress.activeReviewersCount}/${progress.reviewersTotalCount}`}
           label={t('Active Reviewers')}
         />
         {progress.daysLeft !== null ? (
