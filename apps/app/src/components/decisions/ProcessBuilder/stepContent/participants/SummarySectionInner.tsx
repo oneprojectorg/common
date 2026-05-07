@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
@@ -41,16 +40,14 @@ export function SummarySectionInner({
 
   const [, setSectionParam] = useQueryState('section', { history: 'push' });
 
-  const reviewFlowEnabled = useFeatureFlag('review_flow');
-  const rubricSection = reviewFlowEnabled ? 'reviewRubric' : 'criteria';
   const checklistSectionMap: Record<string, string> = {
     processNameDescription: 'overview',
     atLeastOnePhase: 'phases',
     phaseDetails: 'phases',
     proposalTemplate: 'templateEditor',
     proposalTemplateErrors: 'templateEditor',
-    rubricCriteria: rubricSection,
-    rubricCriteriaErrors: rubricSection,
+    rubricCriteria: 'reviewRubric',
+    rubricCriteriaErrors: 'reviewRubric',
     inviteMembers: 'participants',
   };
 

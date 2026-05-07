@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import { useMemo } from 'react';
 
@@ -23,7 +22,6 @@ export function useNavigationConfig(
     decisionProfileId ? s.instances[decisionProfileId]?.phases : undefined,
   );
 
-  const reviewFlowEnabled = useFeatureFlag('review_flow');
   const storeOrganizeByCategories = useProcessBuilderStore((s) =>
     decisionProfileId
       ? s.instances[decisionProfileId]?.config?.organizeByCategories
@@ -50,11 +48,9 @@ export function useNavigationConfig(
           : DEFAULT_NAVIGATION_CONFIG.sections?.general?.filter(
               (s) => s !== 'proposalCategories',
             ),
-        reviews: reviewFlowEnabled
-          ? ['reviewSettings', 'reviewRubric']
-          : ['criteria'],
+        reviews: ['reviewSettings', 'reviewRubric'],
       },
     }),
-    [hasReviewPhase, reviewFlowEnabled, organizeByCategories],
+    [hasReviewPhase, organizeByCategories],
   );
 }
