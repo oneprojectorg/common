@@ -11,10 +11,7 @@ import { TranslatedText } from '@/components/TranslatedText';
 
 import { DecisionHero } from '../DecisionHero';
 import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
-import {
-  ReviewProgressBanner,
-  ReviewProgressBannerSkeleton,
-} from '../Review/ReviewProgressBanner';
+import { ReviewProgressStats } from '../Review/ReviewProgressStats';
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
 
 type Instance = RouterOutput['decision']['getInstance'];
@@ -45,42 +42,38 @@ export function ReviewPage({
 
   return (
     <div className="min-h-full">
-      {isAdmin ? (
-        <div className="border-b bg-neutral-offWhite px-4 py-8">
-          <APIErrorBoundary fallbacks={{ default: () => null }}>
-            <Suspense fallback={<ReviewProgressBannerSkeleton />}>
-              <ReviewProgressBanner
-                processInstanceId={instance.id}
-                phaseId={currentPhase.phaseId}
-              />
-            </Suspense>
-          </APIErrorBoundary>
-        </div>
-      ) : (
-        <div className="pt-8">
-          <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pb-8">
-            <DecisionHero
-              title={
-                currentPhase.headline ?? (
-                  <TranslatedText text="REVIEW PROPOSALS." />
-                )
-              }
-              description={
-                currentPhase.description ? (
-                  <p>{currentPhase.description}</p>
-                ) : undefined
-              }
-              variant="standard"
-            >
-              <div className="flex justify-center pt-2">
-                <ButtonLink color="secondary" size="medium" href="#">
-                  <TranslatedText text="Learn more" />
-                </ButtonLink>
-              </div>
-            </DecisionHero>
-          </div>
-        </div>
-      )}
+      <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 py-8">
+        <DecisionHero
+          title={
+            isAdmin ? (
+              <TranslatedText text="Review Progress" />
+            ) : (
+              (currentPhase.headline ?? (
+                <TranslatedText text="REVIEW PROPOSALS." />
+              ))
+            )
+          }
+          description={
+            !isAdmin && currentPhase.description ? (
+              <p>{currentPhase.description}</p>
+            ) : undefined
+          }
+          variant="standard"
+        >
+          {isAdmin ? (
+            <ReviewProgressStats
+              processInstanceId={instance.id}
+              phaseId={currentPhase.phaseId}
+            />
+          ) : (
+            <div className="flex justify-center pt-2">
+              <ButtonLink color="secondary" size="medium" href="#">
+                <TranslatedText text="Learn more" />
+              </ButtonLink>
+            </div>
+          )}
+        </DecisionHero>
+      </div>
 
       <div className="flex w-full justify-center bg-white">
         <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
