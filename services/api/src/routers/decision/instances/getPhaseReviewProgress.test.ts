@@ -38,8 +38,29 @@ describe.concurrent('getPhaseReviewProgress', () => {
     await expect(
       reviewerCaller.decision.getPhaseReviewProgress({
         processInstanceId: context.instance.instance.id,
+        phaseId: 'review',
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('rejects a phaseId that does not exist on the instance', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+    await testData.setCurrentPhase(context.instance.instance.id, 'review');
+
+    const adminCaller = await createAuthenticatedCaller(
+      context.defaultReviewer.email,
+    );
+
+    await expect(
+      adminCaller.decision.getPhaseReviewProgress({
+        processInstanceId: context.instance.instance.id,
+        phaseId: 'this-phase-does-not-exist',
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 
   it('returns zero counts for an instance with no assignments', async ({
@@ -56,6 +77,7 @@ describe.concurrent('getPhaseReviewProgress', () => {
 
     const result = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
     });
 
     expect(result).toEqual({
@@ -110,6 +132,7 @@ describe.concurrent('getPhaseReviewProgress', () => {
 
     const result = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
     });
 
     expect(result.proposalsTotalCount).toBe(3);
@@ -144,6 +167,7 @@ describe.concurrent('getPhaseReviewProgress', () => {
 
     const result = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
     });
 
     expect(result.reviewersTotalCount).toBe(2);
@@ -178,6 +202,7 @@ describe.concurrent('getPhaseReviewProgress', () => {
 
     const result = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
     });
 
     expect(result.activeReviewersCount).toBe(2);
@@ -209,6 +234,7 @@ describe.concurrent('getPhaseReviewProgress', () => {
 
     const result = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
     });
 
     expect(result.reviewersTotalCount).toBe(1);
@@ -252,6 +278,7 @@ describe.concurrent('getPhaseReviewProgress', () => {
 
     const result = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
     });
 
     expect(result.reviewersTotalCount).toBe(1);
@@ -286,6 +313,7 @@ describe.concurrent('getPhaseReviewProgress', () => {
 
     const result = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: primary.context.instance.instance.id,
+      phaseId: 'review',
     });
 
     expect(result.proposalsTotalCount).toBe(1);
@@ -315,6 +343,7 @@ describe.concurrent('getPhaseReviewProgress', () => {
 
     const result = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
     });
 
     // Rounding up — 10 days minus a few ms of test overhead still ceils to 10.
@@ -335,6 +364,7 @@ describe.concurrent('getPhaseReviewProgress', () => {
 
     const result = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
     });
 
     expect(result.daysLeft).toBeNull();
@@ -367,6 +397,7 @@ describe.concurrent('getPhaseReviewProgress', () => {
 
     const before = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
     });
     expect(before.proposalsReviewedCount).toBe(0);
     expect(before.proposalsTotalCount).toBe(1);
@@ -378,6 +409,7 @@ describe.concurrent('getPhaseReviewProgress', () => {
 
     const after = await adminCaller.decision.getPhaseReviewProgress({
       processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
     });
     expect(after.proposalsReviewedCount).toBe(1);
   });
@@ -413,16 +445,6 @@ describe('computeDaysLeft', () => {
     expect(
       computeDaysLeft({
         phaseId: 'no-end',
-        phases,
-        now: new Date('2026-01-01T00:00:00.000Z'),
-      }),
-    ).toBeNull();
-  });
-
-  it('returns null when phaseId is undefined', () => {
-    expect(
-      computeDaysLeft({
-        phaseId: undefined,
         phases,
         now: new Date('2026-01-01T00:00:00.000Z'),
       }),

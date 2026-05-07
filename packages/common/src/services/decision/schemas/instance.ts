@@ -1,13 +1,11 @@
 import { z } from 'zod';
 
 /**
- * Reference to a process instance, optionally narrowed to a specific
- * phase. When `phaseId` is omitted, callers should default to the
- * instance's current phase.
+ * Reference to a specific phase within a process instance.
  */
 export const instancePhaseRefSchema = z.object({
   processInstanceId: z.uuid(),
-  phaseId: z.string().optional(),
+  phaseId: z.string(),
 });
 
 export type InstancePhaseRef = z.infer<typeof instancePhaseRefSchema>;

@@ -11,6 +11,7 @@ import { getProposalIdsForPhase } from './getProposalsForPhase';
 import type { InstancePhaseRef } from './schemas/instance';
 import type { PhaseInstanceData } from './schemas/instanceData';
 import type { PhaseReviewProgress } from './schemas/reviews';
+import { assertInstancePhase } from './utils/instance';
 
 const ACTIVE_ASSIGNMENT_STATUSES = Object.values(
   ProposalReviewAssignmentStatus,
@@ -19,7 +20,7 @@ const ACTIVE_ASSIGNMENT_STATUSES = Object.values(
 export async function getPhaseReviewProgress(
   input: InstancePhaseRef & { user: User },
 ): Promise<PhaseReviewProgress> {
-  const { user, processInstanceId } = input;
+  const { user, processInstanceId, phaseId } = input;
 
   const instance = await getInstance({ instanceId: processInstanceId, user });
 
@@ -29,7 +30,7 @@ export async function getPhaseReviewProgress(
     );
   }
 
-  const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
+  assertInstancePhase({ instance, phaseId });
 
   const assignedReviewerCountsPromise = getAssignedReviewerCounts({
     processInstanceId,
@@ -65,7 +66,7 @@ async function getAssignedReviewerCounts({
   phaseId,
 }: {
   processInstanceId: string;
-  phaseId: string | undefined;
+  phaseId: string;
 }): Promise<{ total: number; active: number }> {
   const [row] = await db
     .select({
@@ -80,7 +81,7 @@ async function getAssignedReviewerCounts({
     .where(
       and(
         eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-        ...(phaseId ? [eq(proposalReviewAssignments.phaseId, phaseId)] : []),
+        eq(proposalReviewAssignments.phaseId, phaseId),
       ),
     );
 
@@ -99,7 +100,7 @@ async function getReviewedProposalsCount({
   proposalIds,
 }: {
   processInstanceId: string;
-  phaseId: string | undefined;
+  phaseId: string;
   proposalIds: string[];
 }): Promise<number> {
   if (proposalIds.length === 0) {
@@ -114,7 +115,7 @@ async function getReviewedProposalsCount({
     .where(
       and(
         eq(proposalReviewAssignments.processInstanceId, processInstanceId),
-        ...(phaseId ? [eq(proposalReviewAssignments.phaseId, phaseId)] : []),
+        eq(proposalReviewAssignments.phaseId, phaseId),
         inArray(proposalReviewAssignments.proposalId, proposalIds),
         eq(
           proposalReviewAssignments.status,
@@ -131,13 +132,10 @@ export function computeDaysLeft({
   phases,
   now = new Date(),
 }: {
-  phaseId: string | undefined;
+  phaseId: string;
   phases: ReadonlyArray<Pick<PhaseInstanceData, 'phaseId' | 'endDate'>>;
   now?: Date;
 }): number | null {
-  if (!phaseId) {
-    return null;
-  }
   const phase = phases.find((p) => p.phaseId === phaseId);
   const endDate = phase?.endDate;
   if (!endDate) {

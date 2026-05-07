@@ -92,6 +92,9 @@ export * from './deleteProposalAttachment';
 export * from './permissions';
 export * from './decisionRoles';
 
+// Instance utilities
+export * from './utils/instance';
+
 // Voting management
 export * from './voting';
 

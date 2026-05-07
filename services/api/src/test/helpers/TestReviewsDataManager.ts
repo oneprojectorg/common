@@ -12,6 +12,7 @@ import {
   createInstanceMember as coreCreateInstanceMember,
   createReviewScenario,
   defaultReviewSettings,
+  testSimpleVotingSchema,
 } from '@op/test';
 import { eq } from 'drizzle-orm';
 
@@ -63,6 +64,7 @@ export class TestReviewsDataManager {
     const setup = await this.decisions.createDecisionSetup({
       instanceCount: 1,
       grantAccess: true,
+      processSchema: testSimpleVotingSchema,
     });
 
     const instance = setup.instances[0];
@@ -189,10 +191,10 @@ export class TestReviewsDataManager {
   }
 
   /**
-   * Advances a process instance to the given phase by stamping `currentStateId`
-   * directly. Used by review API tests because review assignments are tagged
-   * with a `phaseId` (production default `'review'`), so the instance has to
-   * be on that phase for phase-scoped queries to return them.
+   * Advances a process instance to the given phase by stamping `currentStateId`.
+   * The reviews context configures the instance with `testSimpleVotingSchema`,
+   * which already includes `'review'` in `instanceData.phases`, so no further
+   * fixture mutation is needed here.
    */
   async setCurrentPhase(instanceId: string, phaseId: string) {
     await db
@@ -201,28 +203,24 @@ export class TestReviewsDataManager {
       .where(eq(processInstances.id, instanceId));
   }
 
-  /**
-   * Appends a phase entry to `instanceData.phases` so phase-scoped queries
-   * can resolve fields like `endDate`. The test instance template only ships
-   * `initial`/`final` phases; review fixtures tag assignments `phaseId='review'`
-   * which has no template entry by default.
-   */
+  /** Sets `endDate` on a phase entry in `instanceData.phases`. */
   async setPhaseEndDate(instanceId: string, phaseId: string, endDate: string) {
     const instanceRecord = await db.query.processInstances.findFirst({
       where: { id: instanceId },
     });
     const instanceData =
-      (instanceRecord?.instanceData as { phases?: Array<unknown> } | null) ??
-      {};
-    const phases = Array.isArray(instanceData.phases)
-      ? instanceData.phases
-      : [];
+      (instanceRecord?.instanceData as {
+        phases?: Array<Record<string, unknown>>;
+      } | null) ?? {};
+    const phases = (instanceData.phases ?? []).map((p) =>
+      p?.phaseId === phaseId ? { ...p, endDate } : p,
+    );
     await db
       .update(processInstances)
       .set({
         instanceData: {
           ...instanceData,
-          phases: [...phases, { phaseId, endDate }],
+          phases,
         },
       })
       .where(eq(processInstances.id, instanceId));
