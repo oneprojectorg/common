@@ -451,6 +451,7 @@ jobs:
             tests/e2e/a11y-baseline/known-violations.json
             tests/e2e/a11y-baseline/live-violations.json
             tests/e2e/a11y-baseline/diff.md
+            tests/e2e/a11y-baseline/debug-editor-section.html
           if-no-files-found: warn
           retention-days: 30
 
