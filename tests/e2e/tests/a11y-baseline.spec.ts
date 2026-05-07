@@ -125,8 +125,14 @@ const HYDRATION_ERROR_PATTERNS = [
   /hydration (text content|node|attribute) mismatch/i,
 ];
 
-const DOM_SETTLE_QUIET_MS = 500;
-const DOM_SETTLE_TIMEOUT_MS = 5_000;
+// CI is slower per-op than local, so more wall-clock time elapses before the
+// settle quiet window starts. React Aria's interaction-layer wires (adding
+// `tabindex` and `data-react-aria-pressable`) fire late, after first paint
+// and after Suspense data has resolved. CI captures that wiring; local was
+// scanning before it landed. A longer quiet window pushes both envs past the
+// React Aria wiring point so fingerprints match.
+const DOM_SETTLE_QUIET_MS = 5_000;
+const DOM_SETTLE_TIMEOUT_MS = 15_000;
 
 const PUBLIC_ROUTES: RouteScan[] = [
   { url: '/login', label: 'Login', auth: 'public' },
