@@ -469,6 +469,121 @@ describe.concurrent('duplicateInstance', () => {
     ).rejects.toThrow(/not found/i);
   });
 
+  it('should preserve rubric template and review settings when duplicating', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { result: source, caller } = await createSourceInstance(
+      testData,
+      task.id,
+    );
+
+    const rubricTemplate = {
+      type: 'object' as const,
+      properties: {
+        quality: {
+          type: 'integer',
+          title: 'Quality',
+          'x-format': 'dropdown',
+          minimum: 1,
+          maximum: 5,
+          oneOf: [
+            { const: 1, title: 'Poor' },
+            { const: 2, title: 'Fair' },
+            { const: 3, title: 'Good' },
+            { const: 4, title: 'Very Good' },
+            { const: 5, title: 'Excellent' },
+          ],
+        },
+      },
+      'x-field-order': ['quality'],
+      required: ['quality'],
+    };
+
+    // Add rubric and enable review on the review phase
+    await caller.decision.updateDecisionInstance({
+      instanceId: source.processInstance.id,
+      rubricTemplate,
+      phases: [
+        {
+          phaseId: 'submission',
+          name: 'Proposal Submission',
+          headline: 'Submit proposals',
+          description: 'Members submit proposals for consideration.',
+          endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+          phaseId: 'review',
+          name: 'Review & Shortlist',
+          headline: 'Review proposals',
+          description: 'Reviewers evaluate and shortlist proposals.',
+          endDate: new Date(
+            Date.now() + 14 * 24 * 60 * 60 * 1000,
+          ).toISOString(),
+          rules: {
+            proposals: { submit: false, review: true },
+            voting: { submit: false },
+            advancement: { method: 'date' as const },
+          },
+        },
+        {
+          phaseId: 'voting',
+          name: 'Voting',
+          headline: 'Vote on proposals',
+          description: 'Members vote on shortlisted proposals.',
+          endDate: new Date(
+            Date.now() + 21 * 24 * 60 * 60 * 1000,
+          ).toISOString(),
+        },
+        {
+          phaseId: 'results',
+          name: 'Results',
+          headline: 'View results',
+          description: 'View final results and winning proposals.',
+          endDate: new Date(
+            Date.now() + 28 * 24 * 60 * 60 * 1000,
+          ).toISOString(),
+        },
+      ],
+    });
+
+    // Verify source has rubric and review enabled
+    const sourceInstance = await db.query.processInstances.findFirst({
+      where: { id: source.processInstance.id },
+    });
+    const sourceData = sourceInstance!.instanceData as DecisionInstanceData;
+    expect(sourceData.rubricTemplate).toBeDefined();
+    expect(
+      sourceData.phases.some((p) => p.rules?.proposals?.review === true),
+    ).toBe(true);
+
+    // Duplicate with all includes
+    const duplicate = await caller.decision.duplicateInstance({
+      instanceId: source.processInstance.id,
+      name: 'Rubric Duplicate',
+      include: ALL_INCLUDED,
+    });
+
+    testData.trackProfileForCleanup(duplicate.id);
+
+    const dupInstance = await db.query.processInstances.findFirst({
+      where: { id: duplicate.processInstance.id },
+    });
+    const dupData = dupInstance!.instanceData as DecisionInstanceData;
+
+    // Rubric template must be preserved with criteria
+    expect(dupData.rubricTemplate).toBeDefined();
+    expect(dupData.rubricTemplate!['x-field-order']).toEqual(['quality']);
+    expect(dupData.rubricTemplate!.properties).toBeDefined();
+    expect(dupData.rubricTemplate!.properties!.quality).toBeDefined();
+    expect(dupData.rubricTemplate!.properties!.quality.title).toBe('Quality');
+
+    // Review settings must be preserved
+    const reviewPhase = dupData.phases.find((p) => p.phaseId === 'review');
+    expect(reviewPhase?.rules?.proposals?.review).toBe(true);
+  });
+
   it('should duplicate with no includes and still have valid structure', async ({
     task,
     onTestFinished,
