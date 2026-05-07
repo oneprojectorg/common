@@ -793,14 +793,20 @@ export const ProposalsList = ({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           <span className="font-serif text-title-base text-neutral-black">
-            {proposalFilter === ProposalFilter.MY_BALLOT
-              ? t('My ballot')
-              : proposalFilter === ProposalFilter.MY_PROPOSALS
-                ? t('My proposals')
-                : proposalFilter === ProposalFilter.SHORTLISTED
-                  ? t('Shortlisted proposals')
-                  : t('All proposals')}{' '}
-            <Bullet /> {proposals?.length ?? 0}
+            {hideFilters ? (
+              t('My proposals')
+            ) : (
+              <>
+                {proposalFilter === ProposalFilter.MY_BALLOT
+                  ? t('My ballot')
+                  : proposalFilter === ProposalFilter.MY_PROPOSALS
+                    ? t('My proposals')
+                    : proposalFilter === ProposalFilter.SHORTLISTED
+                      ? t('Shortlisted proposals')
+                      : t('All proposals')}{' '}
+                <Bullet /> {proposals?.length ?? 0}
+              </>
+            )}
           </span>
         </div>
         {!hideFilters && (
