@@ -4,17 +4,11 @@ import rateLimited from '../lib/rateLimited';
 import type { MiddlewareBuilderBase } from '../types';
 
 const withRateLimited = (opts = { windowSize: 10, maxRequests: 10 }) => {
-  // E2E: bursty mutation→refetch cycles in tests exhaust the per-URL counter
-  // and produce flaky failures. Real users don't burst this fast. Same opt-out
-  // pattern as services/db/index.ts.
-  if (process.env.E2E) {
-    const passthrough: MiddlewareBuilderBase = ({ ctx, next }) => next({ ctx });
-    return passthrough;
-  }
-
   const withRateLimitedInner: MiddlewareBuilderBase = async ({ ctx, next }) => {
-    // Skip rate limiting for server-side calls since they are trusted
-    if (ctx.isServerSideCall) {
+    // Skip rate limiting for server-side calls since they are trusted, and in
+    // E2E where bursty mutation→refetch cycles exhaust the per-URL counter
+    // and produce flaky failures. Real users don't burst this fast.
+    if (ctx.isServerSideCall || process.env.E2E) {
       return next({ ctx });
     }
 
