@@ -92,7 +92,7 @@ export function StandardDecisionPage({
         {proposalsHiddenByDefault && (
           <HiddenProposalsBanner
             nextPhaseName={nextPhase?.name}
-            nextPhaseStartDate={nextPhase?.startDate}
+            currentPhaseEndDate={currentPhase?.endDate}
           />
         )}
         <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">

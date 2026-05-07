@@ -8,18 +8,18 @@ import { useTranslations } from '@/lib/i18n/routing';
 
 interface HiddenProposalsBannerProps {
   nextPhaseName?: string;
-  nextPhaseStartDate?: string;
+  currentPhaseEndDate?: string;
 }
 
 export function HiddenProposalsBanner({
   nextPhaseName,
-  nextPhaseStartDate,
+  currentPhaseEndDate,
 }: HiddenProposalsBannerProps) {
   const t = useTranslations();
   const locale = useLocale();
 
-  const formattedDate = nextPhaseStartDate
-    ? new Date(nextPhaseStartDate).toLocaleDateString(locale, {
+  const formattedDate = currentPhaseEndDate
+    ? new Date(currentPhaseEndDate).toLocaleDateString(locale, {
         month: 'short',
         day: 'numeric',
       })
