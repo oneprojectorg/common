@@ -5,9 +5,7 @@ import type { MiddlewareBuilderBase } from '../types';
 
 const withRateLimited = (opts = { windowSize: 10, maxRequests: 10 }) => {
   const withRateLimitedInner: MiddlewareBuilderBase = async ({ ctx, next }) => {
-    // Skip rate limiting for server-side calls since they are trusted, and in
-    // E2E where bursty mutation→refetch cycles exhaust the per-URL counter
-    // and produce flaky failures. Real users don't burst this fast.
+    // Trusted server-side calls and E2E (bursty test traffic) bypass rate limits.
     if (ctx.isServerSideCall || process.env.E2E) {
       return next({ ctx });
     }
