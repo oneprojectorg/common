@@ -60,8 +60,7 @@ interface ViolationNode {
   html: string;
   failureSummary: string;
   screenshotPath?: string;
-  /** Stable identity within a route. Computed in the browser; not present until
-   * after `attachFingerprints` runs. */
+  /** Stable per-route identity, set by attachFingerprints. */
   fingerprint?: string;
 }
 
@@ -107,6 +106,9 @@ interface BaselineReport {
 const HTML_PREVIEW_LIMIT = 240;
 const SCREENSHOT_DIR_NAME = 'screenshots';
 const KNOWN_VIOLATIONS_FILE = 'known-violations.json';
+const REPORT_JSON_FILE = 'report.json';
+const REPORT_MD_FILE = 'report.md';
+const DIFF_MD_FILE = 'diff.md';
 const SNIPPET_LIMIT = 200;
 const PER_ROUTE_TIMEOUT_MS = 90_000;
 
@@ -170,7 +172,7 @@ test.describe('axe-core baseline scan', () => {
     // run left one on disk and this run errors before writing a fresh one, the
     // workflow would post yesterday's data. Clear it up front so a missing
     // file is the unambiguous "test errored before producing diff" signal.
-    rmSync(path.join(REPORT_DIR, 'diff.md'), { force: true });
+    rmSync(path.join(REPORT_DIR, DIFF_MD_FILE), { force: true });
 
     const dynamicAuthRoutes = await seedDynamicRoutes(org);
     const allRoutes: RouteScan[] = [
@@ -230,7 +232,6 @@ test.describe('axe-core baseline scan', () => {
     const report = buildReport(results, axeVersion);
     writeReport(report);
 
-    const flat = flattenViolations(results);
     console.log(
       `[a11y-baseline] ${report.totalViolations} violations across ${report.routesScanned} routes`,
     );
@@ -240,6 +241,8 @@ test.describe('axe-core baseline scan', () => {
     console.log(
       `[a11y-baseline] screenshots ${report.screenshotsCaptured}/${report.screenshotsAttempted}`,
     );
+
+    const flat = flattenViolations(results);
 
     if (process.env.A11Y_SEED === '1') {
       // Seed mode overwrites the source of truth and does not compare. Forbid
@@ -418,12 +421,14 @@ async function scanRoute(page: Page, route: RouteScan): Promise<RouteResult> {
 
     const axe = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
     const violations = summarize(axe);
-    // Re-settle before fingerprinting: axe.analyze() awaits internally, and
-    // Suspense / React Aria can swap nodes during that window. If a violating
-    // node has detached by the time attachFingerprints runs, querySelector
-    // returns null and the node is dropped — re-settling minimizes that loss.
-    await waitForDomSettle(page, DOM_SETTLE_QUIET_MS, DOM_SETTLE_TIMEOUT_MS);
-    await attachFingerprints(page, violations);
+    if (violations.length > 0) {
+      // Re-settle before fingerprinting: axe.analyze() awaits internally, and
+      // Suspense / React Aria can swap nodes during that window. If a violating
+      // node has detached by the time attachFingerprints runs, querySelector
+      // returns null and the node is dropped — re-settling minimizes that loss.
+      await waitForDomSettle(page, DOM_SETTLE_QUIET_MS, DOM_SETTLE_TIMEOUT_MS);
+      await attachFingerprints(page, violations);
+    }
     await captureScreenshots(page, route, violations);
     return {
       url: reportUrl,
@@ -711,28 +716,43 @@ function loadKnownViolations(): KnownViolationsFile {
         `Seed it with \`A11Y_SEED=1 pnpm a11y:baseline\` (or \`pnpm a11y:seed\`).`,
     );
   }
-  const parsed = JSON.parse(raw) as Partial<KnownViolationsFile>;
-  if (parsed.version !== 1 || !Array.isArray(parsed.violations)) {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(
+      `${KNOWN_VIOLATIONS_FILE} at ${file} is not valid JSON: ${err instanceof Error ? err.message : err}`,
+    );
+  }
+  if (
+    typeof parsed !== 'object' ||
+    parsed === null ||
+    !('version' in parsed) ||
+    parsed.version !== 1 ||
+    !('violations' in parsed) ||
+    !Array.isArray(parsed.violations)
+  ) {
     throw new Error(
       `${KNOWN_VIOLATIONS_FILE} has unexpected shape; expected { version: 1, violations: [...] }`,
     );
   }
+  const axeVersion =
+    'axeVersion' in parsed && typeof parsed.axeVersion === 'string'
+      ? parsed.axeVersion
+      : 'unknown';
   return {
     version: 1,
-    axeVersion: parsed.axeVersion ?? 'unknown',
+    axeVersion,
     violations: parsed.violations,
   };
 }
 
 function writeKnownViolations(file: KnownViolationsFile): void {
+  // Caller passes a list already sorted by `flattenViolations`; no resort here.
   mkdirSync(REPORT_DIR, { recursive: true });
-  const sorted: KnownViolationsFile = {
-    ...file,
-    violations: [...file.violations].sort(violationOrder),
-  };
   writeFileSync(
     path.join(REPORT_DIR, KNOWN_VIOLATIONS_FILE),
-    `${JSON.stringify(sorted, null, 2)}\n`,
+    `${JSON.stringify(file, null, 2)}\n`,
   );
 }
 
@@ -904,7 +924,7 @@ function formatDiffMarkdown(
 
 function writeDiffMarkdown(content: string): void {
   mkdirSync(REPORT_DIR, { recursive: true });
-  writeFileSync(path.join(REPORT_DIR, 'diff.md'), content);
+  writeFileSync(path.join(REPORT_DIR, DIFF_MD_FILE), content);
 }
 
 async function captureScreenshots(
@@ -1143,10 +1163,10 @@ function writeReport(report: BaselineReport): void {
   // known-violations.json is the source of truth for CI matching; report.{json,md}
   // are gitignored triage artifacts that churn every run.
   writeFileSync(
-    path.join(REPORT_DIR, 'report.json'),
+    path.join(REPORT_DIR, REPORT_JSON_FILE),
     `${JSON.stringify(report, null, 2)}\n`,
   );
-  writeFileSync(path.join(REPORT_DIR, 'report.md'), renderMarkdown(report));
+  writeFileSync(path.join(REPORT_DIR, REPORT_MD_FILE), renderMarkdown(report));
 }
 
 function renderMarkdown(r: BaselineReport): string {
