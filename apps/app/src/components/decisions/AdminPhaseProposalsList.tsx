@@ -15,56 +15,53 @@ import {
   ReviewListHeader,
   ReviewProposalCardBody,
   ReviewProposalCardSkeleton,
-  ReviewStatusBadge,
   SortFilterSelect,
-  StatusFilterSelect,
   useSortDir,
-  useStatusFilter,
 } from './Review';
 
-export function ReviewAssignmentsList({
+export function AdminPhaseProposalsList({
   processInstanceId,
+  phaseId,
   decisionSlug,
-  canViewReviewers = false,
 }: {
   processInstanceId: string;
+  phaseId?: string;
   decisionSlug: string;
-  canViewReviewers?: boolean;
 }) {
   const t = useTranslations();
-
-  const [statusFilter] = useStatusFilter();
   const [dir] = useSortDir();
 
-  const { data, isLoading } = trpc.decision.listReviewAssignments.useQuery({
-    processInstanceId,
-    ...(statusFilter && {
-      status: statusFilter as ProposalReviewAssignmentStatus,
-    }),
-    dir,
-  });
+  const { data: proposalsData, isLoading: proposalsLoading } =
+    trpc.decision.listProposals.useQuery({
+      processInstanceId,
+      ...(phaseId && { phaseId }),
+      dir,
+      limit: 50,
+    });
 
-  const assignments = data?.assignments ?? [];
-  const proposalIds = assignments.map((a) => a.assignment.proposal.id);
+  const proposals = proposalsData?.proposals ?? [];
+  const proposalIds = proposals.map((p) => p.id);
 
-  const { data: aggregatesData } =
+  const { data: aggregatesData, isLoading: aggregatesLoading } =
     trpc.decision.listWithReviewAggregates.useQuery(
       {
         processInstanceId,
         proposalIds,
       },
       {
-        enabled: canViewReviewers && proposalIds.length > 0,
+        enabled: proposalIds.length > 0,
       },
     );
+
+  const isLoading =
+    proposalsLoading || (proposalIds.length > 0 && aggregatesLoading);
 
   return (
     <div className="flex flex-col gap-6">
       <ReviewListHeader
-        title={t('Proposals to review')}
-        count={assignments.length}
+        title={t('Proposals in review')}
+        count={proposals.length}
       >
-        <StatusFilterSelect />
         <SortFilterSelect />
       </ReviewListHeader>
 
@@ -74,45 +71,44 @@ export function ReviewAssignmentsList({
             <ReviewProposalCardSkeleton key={i} />
           ))}
         </ReviewCardGrid>
-      ) : assignments.length === 0 ? (
+      ) : proposals.length === 0 ? (
         <EmptyState icon={<LuLeaf className="size-6" />}>
           <Header3 className="font-serif !text-title-base font-light text-neutral-black">
-            {statusFilter
-              ? t('No reviews found matching the current filters.')
-              : t('No reviews assigned yet')}
+            {t('No proposals in this phase yet')}
           </Header3>
           <p className="text-base text-neutral-charcoal">
-            {statusFilter
-              ? t('Try adjusting your filter selection above.')
-              : t('Review assignments will appear here once they are created.')}
+            {t('Proposals will appear here once they are submitted.')}
           </p>
         </EmptyState>
       ) : (
         <ReviewCardGrid>
-          {assignments.map((item) => {
-            const { proposal, status } = item.assignment;
-            const isRevised = status === 'ready_for_re_review';
+          {proposals.map((proposal) => {
             const reviewers = aggregatesData?.items.find(
               (i) => i.proposal.id === proposal.id,
             )?.aggregates.reviewers;
+            const isRevised =
+              reviewers?.some(
+                (r) =>
+                  r.status ===
+                  ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
+              ) ?? false;
 
             return (
               <ProposalCard
-                key={item.assignment.id}
+                key={proposal.id}
                 proposal={proposal}
                 className="rounded-lg"
               >
                 <ReviewProposalCardBody
                   proposal={proposal}
-                  viewHref={`/decisions/${decisionSlug}/reviews/${item.assignment.id}`}
+                  viewHref={`/decisions/${decisionSlug}/proposal/${proposal.profileId}`}
                   isRevised={isRevised}
                 />
-                <div className="flex items-center justify-between gap-2">
-                  <ReviewStatusBadge status={status} />
-                  {reviewers ? (
+                {reviewers ? (
+                  <div className="flex items-center justify-end gap-2">
                     <ReviewersTooltip reviewers={reviewers} />
-                  ) : null}
-                </div>
+                  </div>
+                ) : null}
               </ProposalCard>
             );
           })}
