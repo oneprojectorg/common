@@ -61,6 +61,7 @@ export * from './getReviewAssignment';
 export * from './listReviewAssignments';
 export * from './listProposalsWithReviewAggregates';
 export * from './getProposalWithReviewAggregates';
+export * from './getPhaseReviewProgress';
 export * from './listProposalsRevisionRequests';
 export * from './listProposalRevisionRequests';
 export * from './submitRevisionResponse';
@@ -90,6 +91,9 @@ export * from './deleteProposalAttachment';
 // Decision-specific permissions
 export * from './permissions';
 export * from './decisionRoles';
+
+// Instance utilities
+export * from './utils/instance';
 
 // Voting management
 export * from './voting';

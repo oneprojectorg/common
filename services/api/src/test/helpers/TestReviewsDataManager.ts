@@ -12,6 +12,7 @@ import {
   createInstanceMember as coreCreateInstanceMember,
   createReviewScenario,
   defaultReviewSettings,
+  testSimpleVotingSchema,
 } from '@op/test';
 import { eq } from 'drizzle-orm';
 
@@ -63,6 +64,7 @@ export class TestReviewsDataManager {
     const setup = await this.decisions.createDecisionSetup({
       instanceCount: 1,
       grantAccess: true,
+      processSchema: testSimpleVotingSchema,
     });
 
     const instance = setup.instances[0];
@@ -186,6 +188,42 @@ export class TestReviewsDataManager {
       email: user.email,
       profileId: user.profileId,
     };
+  }
+
+  /**
+   * Advances a process instance to the given phase by stamping `currentStateId`.
+   * The reviews context configures the instance with `testSimpleVotingSchema`,
+   * which already includes `'review'` in `instanceData.phases`, so no further
+   * fixture mutation is needed here.
+   */
+  async setCurrentPhase(instanceId: string, phaseId: string) {
+    await db
+      .update(processInstances)
+      .set({ currentStateId: phaseId })
+      .where(eq(processInstances.id, instanceId));
+  }
+
+  /** Sets `endDate` on a phase entry in `instanceData.phases`. */
+  async setPhaseEndDate(instanceId: string, phaseId: string, endDate: string) {
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+    });
+    const instanceData =
+      (instanceRecord?.instanceData as {
+        phases?: Array<Record<string, unknown>>;
+      } | null) ?? {};
+    const phases = (instanceData.phases ?? []).map((p) =>
+      p?.phaseId === phaseId ? { ...p, endDate } : p,
+    );
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...instanceData,
+          phases,
+        },
+      })
+      .where(eq(processInstances.id, instanceId));
   }
 
   /** Sets the rubric template on a process instance for review API tests. */

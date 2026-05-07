@@ -198,6 +198,24 @@ export const proposalWithSubmittedReviewsSchema =
     reviews: z.array(submittedReviewItemSchema),
   });
 
+// ── Instance-level review progress (admin overview header) ─────────────
+
+/**
+ * Per-phase review-progress counters (defaults to the current phase).
+ *   - proposalsReviewedCount: non-draft proposals with ≥1 COMPLETED assignment.
+ *   - activeReviewersCount: distinct reviewers with ≥1 non-PENDING assignment.
+ *   - daysLeft: ceil(now → phase endDate); null if no end date or phase.
+ */
+export const phaseReviewProgressSchema = z.object({
+  proposalsReviewedCount: z.number().int(),
+  proposalsTotalCount: z.number().int(),
+  activeReviewersCount: z.number().int(),
+  reviewersTotalCount: z.number().int(),
+  daysLeft: z.number().int().nullable(),
+});
+
+export type PhaseReviewProgress = z.infer<typeof phaseReviewProgressSchema>;
+
 // ── Types ───────────────────────────────────────────────────────────────
 
 export type ProposalReviewAssignment = z.infer<

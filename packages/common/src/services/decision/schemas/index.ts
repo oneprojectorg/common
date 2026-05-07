@@ -1,5 +1,6 @@
 export * from './types';
 export * from './definitions';
+export * from './instance';
 export * from './instanceData';
 export * from './reviews';
 export * from './proposal';
