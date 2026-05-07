@@ -1,7 +1,7 @@
 /*
  * This route is used to handle the callback from OAuth providers.
  */
-import { trpcVanilla } from '@op/api/serverClient';
+import { createClient } from '@op/api/serverClient';
 import { isSafeRedirectPath } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { createSBServerClient } from '@op/supabase/server';
@@ -39,7 +39,8 @@ export const GET = async (request: NextRequest) => {
       // Note: User and profile are automatically created by database trigger
       // when Supabase creates the auth.users record
       try {
-        await trpcVanilla.account.login.query({
+        const client = await createClient();
+        await client.account.login({
           email: authData.user.email,
           usingOAuth: true,
         });
