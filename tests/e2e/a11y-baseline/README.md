@@ -81,6 +81,18 @@ Currently scans 16 routes (see `PUBLIC_ROUTES`, `STATIC_AUTH_ROUTES`, and `seedD
 - 6 static authenticated — home, decisions index, profile index, search, org index, 404
 - 7 dynamic authenticated (seeded inline) — org page, org relationships, user profile, decision detail/editor, proposal view/editor
 
+## Troubleshooting
+
+### Persistent fingerprint drift on a route you didn't change
+
+Stale e2e build artifacts can produce a different render than CI. If `pnpm a11y:baseline` shows the same 3-new/3-resolved diff on a route that hasn't actually changed, refresh the build before re-running:
+
+```bash
+pnpm build:e2e
+# restart pnpm start:e2e
+pnpm a11y:baseline
+```
+
 ## Known gaps
 
 These need follow-up work outside this PR:
