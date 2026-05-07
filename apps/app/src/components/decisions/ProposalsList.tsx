@@ -395,7 +395,6 @@ const VotingProposalsList = ({
                   <VoteSubmissionModal
                     selectedProposals={selectedProposals}
                     instanceId={instanceId}
-                    maxVotes={maxVotesPerMember}
                     onSuccess={handleVoteSuccess}
                   />
                 </Dialog>
