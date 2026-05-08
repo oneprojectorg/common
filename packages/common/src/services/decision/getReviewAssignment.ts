@@ -89,8 +89,6 @@ export async function getReviewAssignment({
     rubricTemplate,
     review,
     revisionRequest,
-    reviewsAllowRevisions:
-      instance.instanceData.config?.reviewsAllowRevisions ?? true,
   });
 }
 

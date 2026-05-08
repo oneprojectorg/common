@@ -107,8 +107,6 @@ export async function listReviewAssignments({
       rubricTemplate,
       review: assignment.reviews[0] ?? null,
       revisionRequest: getActiveRevisionRequest(assignment.requests),
-      reviewsAllowRevisions:
-        instance.instanceData.config?.reviewsAllowRevisions ?? true,
     };
   });
 

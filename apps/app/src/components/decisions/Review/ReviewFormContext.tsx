@@ -98,13 +98,16 @@ function ReviewFormProviderInner({
     { refetchOnMount: 'always' },
   );
 
-  const {
-    rubricTemplate,
-    review,
-    revisionRequest,
-    assignment,
-    reviewsAllowRevisions,
-  } = reviewAssignment;
+  const [decisionProfile] = trpc.decision.getDecisionBySlug.useSuspenseQuery({
+    slug: decisionSlug,
+  });
+
+  const reviewsAllowRevisions =
+    decisionProfile.processInstance.instanceData.config
+      ?.reviewsAllowRevisions ?? true;
+
+  const { rubricTemplate, review, revisionRequest, assignment } =
+    reviewAssignment;
 
   if (!rubricTemplate) {
     throw new Error(`Review assignment ${assignmentId} has no rubric template`);

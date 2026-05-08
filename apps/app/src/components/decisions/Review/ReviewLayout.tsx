@@ -23,7 +23,10 @@ export async function ReviewLayout({
 }: ReviewLayoutProps) {
   const { utils, queryClient } = await createServerUtils();
 
-  await utils.decision.getReviewAssignment.prefetch({ assignmentId });
+  await Promise.all([
+    utils.decision.getReviewAssignment.prefetch({ assignmentId }),
+    utils.decision.getDecisionBySlug.prefetch({ slug: decisionSlug }),
+  ]);
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
