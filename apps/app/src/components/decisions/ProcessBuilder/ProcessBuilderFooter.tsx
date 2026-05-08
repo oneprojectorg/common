@@ -171,7 +171,7 @@ export const ProcessBuilderFooter = ({
 
           {/* Mobile: Menu + Back + Next + Launch */}
           <div className="flex items-center justify-end gap-2 md:hidden">
-            <SidebarTrigger />
+            <SidebarTrigger aria-label={t('Open process steps')} />
             {hasPrev && (
               <Button color="secondary" onPress={goBack}>
                 {t('Back')}

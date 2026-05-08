@@ -4,6 +4,8 @@ import { Button as RACButton } from 'react-aria-components';
 import { tv } from 'tailwind-variants';
 import type { VariantProps } from 'tailwind-variants';
 
+import { RequireAccessibleName } from '../lib/a11y';
+
 const iconButtonStyle = tv({
   base: 'flex cursor-pointer items-center justify-center outline-0 outline-transparent duration-200 focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary-tealBlack',
   variants: {
@@ -31,13 +33,10 @@ const iconButtonStyle = tv({
 
 type IconButtonVariants = VariantProps<typeof iconButtonStyle>;
 
-export interface IconButtonProps
-  extends
-    Omit<React.ComponentProps<typeof RACButton>, 'children'>,
-    IconButtonVariants {
-  children: React.ReactNode;
-  className?: string;
-}
+export type IconButtonProps = RequireAccessibleName<
+  Omit<React.ComponentProps<typeof RACButton>, 'children'> &
+    IconButtonVariants & { children: React.ReactNode; className?: string }
+>;
 
 export const IconButton = (props: IconButtonProps) => {
   const { children, className, ...rest } = props;

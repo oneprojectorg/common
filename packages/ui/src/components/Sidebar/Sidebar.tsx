@@ -7,6 +7,7 @@ import { createContext, use, useCallback, useMemo, useState } from 'react';
 import { Dialog, Modal, ModalOverlay } from 'react-aria-components';
 import { LuAlignJustify } from 'react-icons/lu';
 
+import { RequireAccessibleName } from '../../lib/a11y';
 import { cn } from '../../lib/utils';
 import { IconButton, IconButtonProps } from '../IconButton';
 
@@ -195,10 +196,14 @@ const SidebarLayout = ({
   );
 };
 
-const SidebarTrigger = ({
-  className,
-  ...props
-}: Omit<IconButtonProps, 'children' | 'onPress'>) => {
+type SidebarTriggerProps = RequireAccessibleName<
+  Omit<
+    IconButtonProps,
+    'children' | 'onPress' | 'aria-label' | 'aria-labelledby'
+  >
+>;
+
+const SidebarTrigger = ({ className, ...props }: SidebarTriggerProps) => {
   const { toggleSidebar } = useSidebar();
   return (
     <IconButton onPress={toggleSidebar} className={className} {...props}>

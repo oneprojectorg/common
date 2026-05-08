@@ -7,19 +7,19 @@
     "wcag21aa"
   ],
   "totals": {
-    "critical": 13,
+    "critical": 3,
     "serious": 41,
     "moderate": 16,
     "minor": 0
   },
-  "totalViolations": 70,
+  "totalViolations": 60,
   "routesScanned": 16,
   "ruleTotals": [
     {
       "id": "button-name",
       "impact": "critical",
-      "occurrences": 13,
-      "routes": 10,
+      "occurrences": 3,
+      "routes": 1,
       "wcagCriteria": [
         "4.1.2"
       ]
@@ -106,7 +106,7 @@
       "auth": "authenticated",
       "status": "ok",
       "counts": {
-        "critical": 1,
+        "critical": 0,
         "serious": 3,
         "moderate": 1,
         "minor": 0
@@ -118,7 +118,7 @@
       "auth": "authenticated",
       "status": "ok",
       "counts": {
-        "critical": 2,
+        "critical": 0,
         "serious": 3,
         "moderate": 1,
         "minor": 0
@@ -130,7 +130,7 @@
       "auth": "authenticated",
       "status": "ok",
       "counts": {
-        "critical": 1,
+        "critical": 0,
         "serious": 2,
         "moderate": 1,
         "minor": 0
@@ -142,7 +142,7 @@
       "auth": "authenticated",
       "status": "ok",
       "counts": {
-        "critical": 1,
+        "critical": 0,
         "serious": 2,
         "moderate": 1,
         "minor": 0
@@ -154,7 +154,7 @@
       "auth": "authenticated",
       "status": "ok",
       "counts": {
-        "critical": 1,
+        "critical": 0,
         "serious": 2,
         "moderate": 1,
         "minor": 0
@@ -166,7 +166,7 @@
       "auth": "authenticated",
       "status": "ok",
       "counts": {
-        "critical": 1,
+        "critical": 0,
         "serious": 3,
         "moderate": 1,
         "minor": 0
@@ -178,7 +178,7 @@
       "auth": "authenticated",
       "status": "ok",
       "counts": {
-        "critical": 1,
+        "critical": 0,
         "serious": 4,
         "moderate": 1,
         "minor": 0
@@ -190,7 +190,7 @@
       "auth": "authenticated",
       "status": "ok",
       "counts": {
-        "critical": 1,
+        "critical": 0,
         "serious": 3,
         "moderate": 1,
         "minor": 0
@@ -202,7 +202,7 @@
       "auth": "authenticated",
       "status": "ok",
       "counts": {
-        "critical": 1,
+        "critical": 0,
         "serious": 3,
         "moderate": 1,
         "minor": 0
@@ -257,6 +257,6 @@
       }
     }
   ],
-  "screenshotsAttempted": 70,
-  "screenshotsCaptured": 54
+  "screenshotsAttempted": 0,
+  "screenshotsCaptured": 0
 }

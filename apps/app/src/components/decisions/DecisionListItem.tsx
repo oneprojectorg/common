@@ -113,6 +113,7 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
         {(canManage || canDelete) && (
           <div className="flex items-center pt-4 pr-2 sm:pt-0 sm:pl-12">
             <OptionMenu
+              aria-label={t('Decision options')}
               variant="outline"
               className="rounded bg-white shadow-light"
               size="medium"

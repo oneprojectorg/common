@@ -48,7 +48,11 @@ export const OrgsRowCells = ({ org }: { org: AdminOrg }) => {
       </TableCell>
       <TableCell className="text-sm text-neutral-charcoal">
         <div className="flex justify-end">
-          <OptionMenu variant="outline" size="medium">
+          <OptionMenu
+            aria-label={t('Organization options')}
+            variant="outline"
+            size="medium"
+          >
             <Menu className="min-w-48 p-2">
               <MenuItem
                 key="view-members"

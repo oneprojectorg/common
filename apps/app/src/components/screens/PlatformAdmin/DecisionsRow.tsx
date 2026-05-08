@@ -102,7 +102,11 @@ export const DecisionsRowCells = ({
       </TableCell>
       <TableCell>
         <div className="flex justify-end">
-          <OptionMenu variant="outline" size="medium">
+          <OptionMenu
+            aria-label={t('Decision options')}
+            variant="outline"
+            size="medium"
+          >
             <Menu className="min-w-48 p-2">
               <MenuItem
                 key="view-instance-data"

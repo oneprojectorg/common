@@ -3,25 +3,30 @@
 import { ReactNode } from 'react';
 import { LuEllipsis } from 'react-icons/lu';
 
+import { RequireAccessibleName } from '../lib/a11y';
 import { cn } from '../lib/utils';
 import { IconButton, IconButtonProps } from './IconButton';
 import { MenuTrigger } from './Menu';
 import { Popover } from './Popover';
+
+type OptionMenuProps = RequireAccessibleName<{
+  children: ReactNode;
+  className?: string;
+  variant?: IconButtonProps['variant'];
+  size?: IconButtonProps['size'];
+}>;
 
 export const OptionMenu = ({
   children,
   className,
   variant = 'ghost',
   size = 'small',
-}: {
-  children: ReactNode;
-  className?: string;
-  variant?: IconButtonProps['variant'];
-  size?: IconButtonProps['size'];
-}) => {
+  ...rest
+}: OptionMenuProps) => {
   return (
     <MenuTrigger>
       <IconButton
+        {...rest}
         variant={variant}
         size={size}
         className={cn(

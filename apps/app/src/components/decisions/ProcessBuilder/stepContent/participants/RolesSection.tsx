@@ -290,6 +290,7 @@ function RoleRow({
           </div>
         ) : (
           <OptionMenu
+            aria-label={t('Role options')}
             variant="outline"
             className="ml-auto rounded bg-white shadow-light"
             size="medium"
@@ -576,7 +577,11 @@ function MobileRoleCard({
       <div className="flex items-center justify-between">
         <Header3 className="font-serif text-sm font-light">{role.name}</Header3>
         {(onDelete || onEdit) && (
-          <OptionMenu variant="outline" className="rounded-lg">
+          <OptionMenu
+            aria-label={t('Role options')}
+            variant="outline"
+            className="rounded-lg"
+          >
             <Menu className="min-w-28 p-2">
               {onEdit && (
                 <MenuItem key="edit" onAction={() => onEdit(role)}>
