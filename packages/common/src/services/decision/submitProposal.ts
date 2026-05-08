@@ -90,9 +90,7 @@ export const submitProposal = async ({
     );
   }
 
-  const currentPhase = instanceData.phases.find(
-    (p) => p.phaseId === currentPhaseId,
-  );
+  const currentPhase = assertInstancePhase(instance, currentPhaseId)
   const defaultHidden =
     currentPhase?.rules?.proposals?.defaults?.hidden === true;
 
