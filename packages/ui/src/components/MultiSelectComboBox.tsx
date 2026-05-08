@@ -37,7 +37,6 @@ export type MultiSelectComboBoxProps = {
   disableParentSelection?: boolean;
   enableLocalSearch?: boolean;
   isLoading?: boolean;
-  autoFocus?: boolean;
 };
 
 export const MultiSelectComboBox = ({
@@ -54,7 +53,6 @@ export const MultiSelectComboBox = ({
   disableParentSelection = true,
   enableLocalSearch = true,
   isLoading = false,
-  autoFocus = false,
 }: MultiSelectComboBoxProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -187,7 +185,6 @@ export const MultiSelectComboBox = ({
             <input
               ref={inputRef}
               type="text"
-              autoFocus={autoFocus}
               role="combobox"
               aria-haspopup="listbox"
               aria-expanded={isOpen}

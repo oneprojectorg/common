@@ -33,6 +33,7 @@
     "./HorizontalList": "./src/components/HorizontalList/index.tsx",
     "./IconButton": "./src/components/IconButton.tsx",
     "./Link": "./src/components/Link.tsx",
+    "./ListBox": "./src/components/ListBox.tsx",
     "./LogoLoop": "./src/components/LogoLoop.tsx",
     "./Menu": "./src/components/Menu.tsx",
     "./Modal": "./src/components/Modal.tsx",
