@@ -428,3 +428,15 @@ export async function trackManualSelectionSubmitted(
     getDecisionCommonProperties(processId, undefined, additionalProps),
   );
 }
+
+export async function trackPhaseEndDateChanged(
+  userId: string,
+  processId: string,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEventWithContext(
+    userId,
+    'phase_end_date_changed',
+    getDecisionCommonProperties(processId, undefined, additionalProps),
+  );
+}

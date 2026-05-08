@@ -123,6 +123,12 @@ export async function trackManualSelectionSubmitted(
   _additionalProps?: Record<string, any>,
 ): Promise<void> {}
 
+export async function trackPhaseEndDateChanged(
+  _userId: string,
+  _processId: string,
+  _additionalProps?: Record<string, any>,
+): Promise<void> {}
+
 export type {
   AnalyticsEvent,
   AnalyticsIdentify,

@@ -10,7 +10,7 @@ import { FooterBar } from '@op/ui/FooterBar';
 import { Header3 } from '@op/ui/Header';
 import { toast } from '@op/ui/Toast';
 import { usePostHog } from 'posthog-js/react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuLeaf, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -62,6 +62,7 @@ export const ManualSelectionList = ({
     instance.currentStateId ?? '',
   );
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const submissionInitiatedRef = useRef(false);
 
   // Resolve selected ids → proposals via a cache that accumulates across
   // refetches, so picks survive filter/sort changes that exclude them.
@@ -112,11 +113,12 @@ export const ManualSelectionList = ({
   const handleConfirmDialogOpenChange = useCallback(
     (open: boolean) => {
       if (open) {
+        submissionInitiatedRef.current = false;
         posthog.capture('manual_selection_dialog_opened', {
           process_instance_id: instanceId,
           proposal_count: selectedIds.length,
         });
-      } else if (!submitMutation.isPending) {
+      } else if (!submitMutation.isPending && !submissionInitiatedRef.current) {
         posthog.capture('manual_selection_dialog_dismissed', {
           process_instance_id: instanceId,
           proposal_count: selectedIds.length,
@@ -128,6 +130,7 @@ export const ManualSelectionList = ({
   );
 
   const handleConfirmSelection = useCallback(() => {
+    submissionInitiatedRef.current = true;
     posthog.capture('manual_selection_dialog_confirmed', {
       process_instance_id: instanceId,
       proposal_count: selectedIds.length,
