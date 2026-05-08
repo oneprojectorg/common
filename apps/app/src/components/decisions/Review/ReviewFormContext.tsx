@@ -98,8 +98,13 @@ function ReviewFormProviderInner({
     { refetchOnMount: 'always' },
   );
 
-  const { rubricTemplate, review, revisionRequest, assignment } =
-    reviewAssignment;
+  const {
+    rubricTemplate,
+    review,
+    revisionRequest,
+    assignment,
+    reviewsAllowRevisions,
+  } = reviewAssignment;
 
   if (!rubricTemplate) {
     throw new Error(`Review assignment ${assignmentId} has no rubric template`);
@@ -144,7 +149,8 @@ function ReviewFormProviderInner({
   );
   const isSubmitted = review?.state === ProposalReviewState.SUBMITTED;
   const isPausedForRevision = hasAnyOpenRevisionRequest;
-  const canRequestRevision = !isSubmitted && !hasAnyOpenRevisionRequest;
+  const canRequestRevision =
+    reviewsAllowRevisions && !isSubmitted && !hasAnyOpenRevisionRequest;
 
   const submitReview = trpc.decision.submitReview.useMutation({
     onSuccess: () => {

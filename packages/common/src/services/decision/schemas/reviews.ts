@@ -113,6 +113,7 @@ export const reviewAssignmentExtendedSchema = z.object({
   rubricTemplate: rubricTemplateSchema.nullable(),
   review: proposalReviewSchema.nullable(),
   revisionRequest: proposalReviewRequestSchema.nullable(),
+  reviewsAllowRevisions: z.boolean(),
 });
 
 export const reviewAssignmentListSchema = z.object({
