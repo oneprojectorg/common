@@ -220,7 +220,7 @@ export const getProposal = async ({
       instanceProfileUser?.roles ?? [],
     );
     if (!proposalProfileUser && !canManageProposals) {
-      throw new NotFoundError('Proposal');
+      throw new NotFoundError('Proposal', profileId);
     }
   }
 
