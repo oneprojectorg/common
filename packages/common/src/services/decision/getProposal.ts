@@ -208,22 +208,17 @@ export const getProposal = async ({
   // via the proposal profile's profileUsers).
   // Throw NotFoundError rather than UnauthorizedError to avoid leaking existence.
   if (proposal.visibility === Visibility.HIDDEN) {
-    const proposalProfileUser = await getProfileAccessUser({
-      user,
-      profileId: proposal.profileId,
-    });
     const instanceProfileId = proposal.processInstance.profileId;
-    let canManageProposals = false;
-    if (!proposalProfileUser && instanceProfileId) {
-      const instanceProfileUser = await getProfileAccessUser({
-        user,
-        profileId: instanceProfileId,
-      });
-      canManageProposals = checkPermission(
-        { profile: permission.ADMIN },
-        instanceProfileUser?.roles ?? [],
-      );
-    }
+    const [proposalProfileUser, instanceProfileUser] = await Promise.all([
+      getProfileAccessUser({ user, profileId: proposal.profileId }),
+      instanceProfileId
+        ? getProfileAccessUser({ user, profileId: instanceProfileId })
+        : Promise.resolve(null),
+    ]);
+    const canManageProposals = checkPermission(
+      { profile: permission.ADMIN },
+      instanceProfileUser?.roles ?? [],
+    );
     if (!proposalProfileUser && !canManageProposals) {
       throw new NotFoundError('Proposal');
     }
