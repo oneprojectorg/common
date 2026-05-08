@@ -70,6 +70,7 @@ export function useReviewForm(): ReviewFormState {
 export function ReviewFormProvider(props: {
   assignmentId: string;
   decisionSlug: string;
+  allowRevisions: boolean;
   children: ReactNode;
 }) {
   return (
@@ -82,10 +83,12 @@ export function ReviewFormProvider(props: {
 function ReviewFormProviderInner({
   assignmentId,
   decisionSlug,
+  allowRevisions,
   children,
 }: {
   assignmentId: string;
   decisionSlug: string;
+  allowRevisions: boolean;
   children: ReactNode;
 }) {
   const t = useTranslations();
@@ -144,7 +147,8 @@ function ReviewFormProviderInner({
   );
   const isSubmitted = review?.state === ProposalReviewState.SUBMITTED;
   const isPausedForRevision = hasAnyOpenRevisionRequest;
-  const canRequestRevision = !isSubmitted && !hasAnyOpenRevisionRequest;
+  const canRequestRevision =
+    allowRevisions && !isSubmitted && !hasAnyOpenRevisionRequest;
 
   const submitReview = trpc.decision.submitReview.useMutation({
     onSuccess: () => {

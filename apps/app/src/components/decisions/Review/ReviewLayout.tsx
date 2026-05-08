@@ -3,7 +3,10 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
+import { createClient } from '@op/api/serverClient';
+import { CommonError } from '@op/common';
 import { SplitPane } from '@op/ui/SplitPane';
+import { forbidden, notFound } from 'next/navigation';
 
 import { TranslatedText } from '@/components/TranslatedText';
 
@@ -21,15 +24,38 @@ export async function ReviewLayout({
   decisionSlug,
   assignmentId,
 }: ReviewLayoutProps) {
-  const { utils, queryClient } = await createServerUtils();
+  const [client, { utils, queryClient }] = await Promise.all([
+    createClient(),
+    createServerUtils(),
+  ]);
 
-  await utils.decision.getReviewAssignment.prefetch({ assignmentId });
+  let decisionProfile;
+  try {
+    [decisionProfile] = await Promise.all([
+      client.decision.getDecisionBySlug({ slug: decisionSlug }),
+      utils.decision.getReviewAssignment.prefetch({ assignmentId }),
+    ]);
+  } catch (error) {
+    const cause = error instanceof Error ? error.cause : null;
+    if (cause instanceof CommonError && cause.statusCode === 403) {
+      forbidden();
+    }
+    if (cause instanceof CommonError && cause.statusCode === 404) {
+      notFound();
+    }
+    throw error;
+  }
+
+  const allowRevisions =
+    decisionProfile.processInstance.instanceData.config
+      ?.reviewsAllowRevisions ?? true;
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <ReviewFormProvider
         assignmentId={assignmentId}
         decisionSlug={decisionSlug}
+        allowRevisions={allowRevisions}
       >
         <div className="flex h-dvh flex-col bg-white">
           <ReviewNavbar decisionSlug={decisionSlug} />

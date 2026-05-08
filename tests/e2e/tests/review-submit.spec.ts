@@ -440,4 +440,71 @@ test.describe('Review Submit', () => {
       rationales: { innovation: innovationRationale },
     });
   });
+
+  test('hides Request revision button when reviewsAllowRevisions is false', async ({
+    authenticatedPage: page,
+    org,
+  }) => {
+    const template = await getSeededTemplate();
+
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: REVIEW_SCHEMA,
+    });
+
+    // Inject rubricTemplate, set current phase to "review", and disable
+    // the reviewer's ability to request revisions on this instance.
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...(instance.instance.instanceData as Record<string, unknown>),
+          rubricTemplate: RUBRIC_TEMPLATE,
+          config: { reviewsAllowRevisions: false },
+        },
+        currentStateId: 'review',
+      })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    await createReviewScenario({
+      instance: { id: instance.instance.id },
+      author: {
+        profileId: org.organizationProfile.id,
+        authUserId: org.adminUser.authUserId,
+        email: org.adminUser.email,
+      },
+      reviewer: { profileId: org.adminUser.profileId },
+      proposalData: {
+        title: PROPOSAL_TITLE,
+        collaborationDocId: 'test-proposal-view-doc',
+      },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    const decisionUrl = `/en/decisions/${instance.slug}`;
+
+    await page.goto(decisionUrl, { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByText('Proposals to review')).toBeVisible({
+      timeout: 36_000,
+    });
+    await page.getByText(PROPOSAL_TITLE).first().click();
+    await expect(page).toHaveURL(/\/reviews\//, { timeout: 10_000 });
+    await expect(
+      page.getByText('Review Proposal', { exact: true }).first(),
+    ).toBeVisible({ timeout: 36_000 });
+
+    // Submit review is the baseline navbar action — wait for it to confirm
+    // the navbar has rendered before asserting the absence of the other.
+    await expect(
+      page.getByRole('button', { name: 'Submit review' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Request revision' }),
+    ).toHaveCount(0);
+  });
 });
