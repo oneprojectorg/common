@@ -204,23 +204,27 @@ export const getProposal = async ({
   });
 
   // Hidden proposals are only visible to admins on the instance's profile and
-  // the submitting profile itself (mirrors listProposals visibility filter).
+  // users with proposal-level access (creator and invited collaborators tracked
+  // via the proposal profile's profileUsers).
   // Throw NotFoundError rather than UnauthorizedError to avoid leaking existence.
   if (proposal.visibility === Visibility.HIDDEN) {
-    const isOwner = proposal.submittedByProfileId === dbUser.currentProfileId;
+    const proposalProfileUser = await getProfileAccessUser({
+      user,
+      profileId: proposal.profileId,
+    });
     const instanceProfileId = proposal.processInstance.profileId;
     let canManageProposals = false;
-    if (!isOwner && instanceProfileId) {
-      const profileUser = await getProfileAccessUser({
+    if (!proposalProfileUser && instanceProfileId) {
+      const instanceProfileUser = await getProfileAccessUser({
         user,
         profileId: instanceProfileId,
       });
       canManageProposals = checkPermission(
         { profile: permission.ADMIN },
-        profileUser?.roles ?? [],
+        instanceProfileUser?.roles ?? [],
       );
     }
-    if (!isOwner && !canManageProposals) {
+    if (!proposalProfileUser && !canManageProposals) {
       throw new NotFoundError('Proposal');
     }
   }
