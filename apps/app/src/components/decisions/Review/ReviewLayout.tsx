@@ -24,13 +24,17 @@ export async function ReviewLayout({
   decisionSlug,
   assignmentId,
 }: ReviewLayoutProps) {
-  const client = await createClient();
+  const [client, { utils, queryClient }] = await Promise.all([
+    createClient(),
+    createServerUtils(),
+  ]);
 
   let decisionProfile;
   try {
-    decisionProfile = await client.decision.getDecisionBySlug({
-      slug: decisionSlug,
-    });
+    [decisionProfile] = await Promise.all([
+      client.decision.getDecisionBySlug({ slug: decisionSlug }),
+      utils.decision.getReviewAssignment.prefetch({ assignmentId }),
+    ]);
   } catch (error) {
     const cause = error instanceof Error ? error.cause : null;
     if (cause instanceof CommonError && cause.statusCode === 403) {
@@ -42,20 +46,16 @@ export async function ReviewLayout({
     throw error;
   }
 
-  const reviewsAllowRevisions =
+  const allowRevisions =
     decisionProfile.processInstance.instanceData.config
       ?.reviewsAllowRevisions ?? true;
-
-  const { utils, queryClient } = await createServerUtils();
-
-  await utils.decision.getReviewAssignment.prefetch({ assignmentId });
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <ReviewFormProvider
         assignmentId={assignmentId}
         decisionSlug={decisionSlug}
-        reviewsAllowRevisions={reviewsAllowRevisions}
+        allowRevisions={allowRevisions}
       >
         <div className="flex h-dvh flex-col bg-white">
           <ReviewNavbar decisionSlug={decisionSlug} />
