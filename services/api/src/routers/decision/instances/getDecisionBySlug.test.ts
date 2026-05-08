@@ -62,7 +62,11 @@ describe.concurrent('getDecisionBySlug', () => {
     });
     const caller = await createAuthenticatedCaller(otherUser.email);
 
-    await expect(caller.decision.getDecisionBySlug({ slug })).rejects.toThrow();
+    await expect(
+      caller.decision.getDecisionBySlug({ slug }),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError', statusCode: 403 },
+    });
   });
 
   it('should throw error for non-existent slug', async ({
@@ -79,7 +83,9 @@ describe.concurrent('getDecisionBySlug', () => {
 
     await expect(
       caller.decision.getDecisionBySlug({ slug: 'non-existent-slug' }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError', statusCode: 403 },
+    });
   });
 
   it('should include process and owner information', async ({
