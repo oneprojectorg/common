@@ -1039,8 +1039,7 @@ describe.concurrent('submitProposal', () => {
 
     // Create the proposal first (while currentStateId is still valid), then
     // corrupt the instance to point at a phase that doesn't exist. We expect
-    // the upstream phase-allow check to reject submission rather than the
-    // defaults.hidden lookup silently picking VISIBLE.
+    // the upstream phase-allow check to reject submission.
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,

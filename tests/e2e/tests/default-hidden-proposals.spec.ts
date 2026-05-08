@@ -194,7 +194,7 @@ test.describe('Default Hidden Proposals', () => {
     });
 
     // Create a proposal submitted by the member, then set HIDDEN visibility
-    // (simulating what submitProposal does when defaults.hidden is true)
+    // (simulating what createProposal does when defaults.hidden is true)
     const hiddenProposal = await createProposal({
       processInstanceId: instance.id,
       submittedByProfileId: memberUser.profileId,
