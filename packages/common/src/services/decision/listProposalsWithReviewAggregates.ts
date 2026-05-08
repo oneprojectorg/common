@@ -21,11 +21,13 @@ import {
   OVERALL_RECOMMENDATION_KEY,
   getRubricScoringInfo,
 } from './getRubricScoringInfo';
+import { instancePhaseRefSchema } from './schemas/instance';
 import {
   type ProposalCategoryItem,
   type ProposalsWithReviewAggregatesList,
   proposalsWithReviewAggregatesListSchema,
 } from './schemas/reviews';
+import { assertInstancePhase } from './utils/instance';
 
 // ── Input schema ───────────────────────────────────────────────────────
 
@@ -35,14 +37,10 @@ import {
  *   - paginated: phase-scoped, cursor-paginated.
  */
 export const listProposalsWithReviewAggregatesInputSchema = z.union([
-  z.object({
-    processInstanceId: z.uuid(),
-    phaseId: z.string().optional(),
+  instancePhaseRefSchema.extend({
     proposalIds: z.array(z.uuid()).min(1),
   }),
-  z.object({
-    processInstanceId: z.uuid(),
-    phaseId: z.string().optional(),
+  instancePhaseRefSchema.extend({
     limit: z.number().int().min(1).max(100).default(50),
     cursor: z.string().optional(),
   }),
@@ -67,7 +65,7 @@ export type ListProposalsWithReviewAggregatesInput = z.infer<
 export async function listProposalsWithReviewAggregates(
   input: ListProposalsWithReviewAggregatesInput & { user: User },
 ): Promise<ProposalsWithReviewAggregatesList> {
-  const { user, processInstanceId } = input;
+  const { user, processInstanceId, phaseId } = input;
 
   const instance = await getInstance({ instanceId: processInstanceId, user });
 
@@ -77,6 +75,8 @@ export async function listProposalsWithReviewAggregates(
     );
   }
 
+  assertInstancePhase({ instance, phaseId });
+
   const rubricTemplate = instance.instanceData.rubricTemplate;
   const scoredCriterionKeys = rubricTemplate
     ? getRubricScoringInfo(rubricTemplate)
@@ -84,7 +84,6 @@ export async function listProposalsWithReviewAggregates(
         .map((c) => c.key)
     : [];
 
-  const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
   const phaseProposalIds = await getProposalIdsForPhase({
     instance,
     phaseId,

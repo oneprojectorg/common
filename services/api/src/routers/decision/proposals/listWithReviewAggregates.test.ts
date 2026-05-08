@@ -100,6 +100,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     await expect(
       reviewerCaller.decision.listWithReviewAggregates({
         processInstanceId: context.instance.instance.id,
+        phaseId: 'review',
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
@@ -120,6 +121,7 @@ describe.concurrent('listWithReviewAggregates', () => {
       reviewerCaller.decision.listWithReviewAggregates({
         processInstanceId: created.context.instance.instance.id,
         proposalIds: [created.proposal.id],
+        phaseId: 'review',
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
@@ -166,6 +168,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     const result = await adminCaller.decision.listWithReviewAggregates({
       processInstanceId: context.instance.instance.id,
       proposalIds: [withReview.proposal.id, withoutReview.proposal.id],
+      phaseId: 'review',
     });
 
     expect(result.items).toHaveLength(2);
@@ -217,6 +220,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     const result = await adminCaller.decision.listWithReviewAggregates({
       processInstanceId: primary.context.instance.instance.id,
       proposalIds: [primary.proposal.id, foreign.proposal.id],
+      phaseId: 'review',
     });
 
     expect(result.items.map((i) => i.proposal.id)).toEqual([
@@ -249,6 +253,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     const result = await adminCaller.decision.listWithReviewAggregates({
       processInstanceId: created.context.instance.instance.id,
       proposalIds: [created.proposal.id],
+      phaseId: 'review',
     });
 
     expect(result.items).toEqual([]);
@@ -274,6 +279,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     const page1 = await adminCaller.decision.listWithReviewAggregates({
       processInstanceId: context.instance.instance.id,
       limit: 2,
+      phaseId: 'review',
     });
 
     expect(page1.total).toBe(3);
@@ -284,6 +290,7 @@ describe.concurrent('listWithReviewAggregates', () => {
       processInstanceId: context.instance.instance.id,
       limit: 2,
       cursor: page1.next!,
+      phaseId: 'review',
     });
 
     expect(page2.items).toHaveLength(1);
@@ -325,6 +332,7 @@ describe.concurrent('listWithReviewAggregates', () => {
 
     const result = await adminCaller.decision.listWithReviewAggregates({
       processInstanceId: context.instance.instance.id,
+      phaseId: 'review',
     });
 
     const tagged = result.items.find(
@@ -356,6 +364,7 @@ describe.concurrent('listWithReviewAggregates', () => {
     const result = await adminCaller.decision.listWithReviewAggregates({
       processInstanceId: context.instance.instance.id,
       proposalIds: [created.proposal.id],
+      phaseId: 'review',
     });
 
     expect(result.items).toHaveLength(1);
