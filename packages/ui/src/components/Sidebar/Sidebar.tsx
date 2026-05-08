@@ -7,12 +7,9 @@ import { createContext, use, useCallback, useMemo, useState } from 'react';
 import { Dialog, Modal, ModalOverlay } from 'react-aria-components';
 import { LuAlignJustify } from 'react-icons/lu';
 
+import { RequireAccessibleName } from '../../lib/a11y';
 import { cn } from '../../lib/utils';
-import {
-  IconButton,
-  IconButtonProps,
-  RequireAccessibleName,
-} from '../IconButton';
+import { IconButton, IconButtonProps } from '../IconButton';
 
 // Tailwind v4 default sm breakpoint (640px)
 const SM_BREAKPOINT = screens.sm;

@@ -3,12 +3,9 @@
 import { ReactNode } from 'react';
 import { LuEllipsis } from 'react-icons/lu';
 
+import { RequireAccessibleName } from '../lib/a11y';
 import { cn } from '../lib/utils';
-import {
-  IconButton,
-  IconButtonProps,
-  RequireAccessibleName,
-} from './IconButton';
+import { IconButton, IconButtonProps } from './IconButton';
 import { MenuTrigger } from './Menu';
 import { Popover } from './Popover';
 
