@@ -23,16 +23,20 @@ export async function ReviewLayout({
 }: ReviewLayoutProps) {
   const { utils, queryClient } = await createServerUtils();
 
-  await Promise.all([
+  const [decision] = await Promise.all([
+    utils.decision.getDecisionBySlug.fetch({ slug: decisionSlug }),
     utils.decision.getReviewAssignment.prefetch({ assignmentId }),
-    utils.decision.getDecisionBySlug.prefetch({ slug: decisionSlug }),
   ]);
+
+  const reviewsAllowRevisions =
+    decision.processInstance.instanceData.config?.reviewsAllowRevisions ?? true;
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <ReviewFormProvider
         assignmentId={assignmentId}
         decisionSlug={decisionSlug}
+        reviewsAllowRevisions={reviewsAllowRevisions}
       >
         <div className="flex h-dvh flex-col bg-white">
           <ReviewNavbar decisionSlug={decisionSlug} />

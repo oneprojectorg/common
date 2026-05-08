@@ -70,6 +70,7 @@ export function useReviewForm(): ReviewFormState {
 export function ReviewFormProvider(props: {
   assignmentId: string;
   decisionSlug: string;
+  reviewsAllowRevisions: boolean;
   children: ReactNode;
 }) {
   return (
@@ -82,10 +83,12 @@ export function ReviewFormProvider(props: {
 function ReviewFormProviderInner({
   assignmentId,
   decisionSlug,
+  reviewsAllowRevisions,
   children,
 }: {
   assignmentId: string;
   decisionSlug: string;
+  reviewsAllowRevisions: boolean;
   children: ReactNode;
 }) {
   const t = useTranslations();
@@ -97,14 +100,6 @@ function ReviewFormProviderInner({
     // realtime channel via the tRPC client link.
     { refetchOnMount: 'always' },
   );
-
-  const [decisionProfile] = trpc.decision.getDecisionBySlug.useSuspenseQuery({
-    slug: decisionSlug,
-  });
-
-  const reviewsAllowRevisions =
-    decisionProfile.processInstance.instanceData.config
-      ?.reviewsAllowRevisions ?? true;
 
   const { rubricTemplate, review, revisionRequest, assignment } =
     reviewAssignment;
