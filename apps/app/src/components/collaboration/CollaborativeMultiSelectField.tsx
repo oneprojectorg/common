@@ -3,9 +3,15 @@
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import { parseCategoryFragmentValue } from '@op/common/client';
 import { Button } from '@op/ui/Button';
-import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
+import { DialogTrigger } from '@op/ui/Dialog';
+import { ListBox } from '@op/ui/ListBox';
+import { Popover } from '@op/ui/Popover';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import type { Key } from 'react';
+import { Dialog, ListBoxItem } from 'react-aria-components';
+import type { Selection } from 'react-aria-components';
+import { LuCheck } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -47,18 +53,14 @@ export function CollaborativeMultiSelectField({
     () => parseCategoryFragmentValue(syncedValue),
     [syncedValue],
   );
+  const selectedKeys = useMemo(() => new Set(selectedValues), [selectedValues]);
   const selectedOptions = useMemo(
-    () =>
-      options
-        .filter((option) => selectedValues.includes(option.value))
-        .map((option) => ({ id: option.value, label: option.label })),
+    () => options.filter((option) => selectedValues.includes(option.value)),
     [options, selectedValues],
   );
 
   const onChangeRef = useRef(onChange);
   const lastEmittedValueRef = useRef<string | undefined>(undefined);
-  const fieldRef = useRef<HTMLDivElement>(null);
-  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -74,28 +76,21 @@ export function CollaborativeMultiSelectField({
     onChangeRef.current?.(selectedValues);
   }, [selectedValues]);
 
-  useEffect(() => {
-    if (!isEditing) {
+  const handleSelectionChange = (keys: Selection) => {
+    if (keys === 'all') {
+      setSyncedValue(JSON.stringify(options.map((o) => o.value)));
       return;
     }
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as Node;
-
-      if (!fieldRef.current?.contains(target)) {
-        setIsEditing(false);
-      }
-    };
-
-    document.addEventListener('pointerdown', handlePointerDown);
-    return () => document.removeEventListener('pointerdown', handlePointerDown);
-  }, [isEditing]);
-
-  const handleSelectedOptionsChange = (
-    value: Array<{ id: string; label: string }>,
-  ) => {
-    const nextValues = value.map((option) => option.id);
+    const nextValues = options
+      .map((option) => option.value)
+      .filter((value) => keys.has(value));
     setSyncedValue(JSON.stringify(nextValues));
+  };
+
+  const handleTagRemove = (keys: Set<Key>) => {
+    setSyncedValue(
+      JSON.stringify(selectedValues.filter((value) => !keys.has(value))),
+    );
   };
 
   const buttonLabel =
@@ -110,50 +105,65 @@ export function CollaborativeMultiSelectField({
   }
 
   return (
-    <div ref={fieldRef} className="flex flex-col gap-1.5">
-      {isEditing ? (
-        <div className="w-full max-w-md">
-          <MultiSelectComboBox
-            items={options.map((option) => ({
-              id: option.value,
-              label: option.label,
-            }))}
-            value={selectedOptions}
-            onChange={handleSelectedOptionsChange}
-            placeholder={t('Search')}
-          />
-        </div>
-      ) : (
-        <>
-          <Button
-            variant="pill"
-            color="pill"
-            className="justify-start text-left"
-            onPress={() => setIsEditing(true)}
-          >
-            {buttonLabel}
-          </Button>
-          {selectedOptions.length > 0 && (
-            <TagGroup
-              onRemove={(keys) => {
-                handleSelectedOptionsChange(
-                  selectedOptions.filter((option) => !keys.has(option.id)),
-                );
-              }}
+    <div className="flex flex-col gap-1.5">
+      <DialogTrigger>
+        <Button
+          variant="pill"
+          color="pill"
+          className="w-fit justify-start text-left pressed:bg-primary-tealWhite pressed:text-primary-teal pressed:!shadow-none"
+        >
+          {buttonLabel}
+        </Button>
+        <Popover
+          placement="bottom start"
+          className="min-w-(--trigger-width) overflow-hidden rounded border bg-white shadow"
+        >
+          <Dialog className="outline-hidden">
+            <ListBox
+              aria-label={placeholder ?? t('Select option')}
+              items={options.map((option) => ({
+                id: option.value,
+                label: option.label,
+              }))}
+              selectionMode="multiple"
+              selectedKeys={selectedKeys}
+              onSelectionChange={handleSelectionChange}
+              className="max-h-60 overflow-auto rounded border-0 p-2 outline-hidden"
             >
-              {selectedOptions.map((option) => (
-                <Tag
-                  key={option.id}
-                  id={option.id}
-                  textValue={option.label}
-                  className="text-base leading-none"
+              {(item) => (
+                <ListBoxItem
+                  id={item.id}
+                  textValue={item.label}
+                  className="group flex cursor-pointer items-center gap-4 rounded px-3 py-2 text-neutral-black outline-hidden select-none data-[focus-visible]:bg-neutral-gray1 data-[hovered]:bg-neutral-gray1"
                 >
-                  {option.label}
-                </Tag>
-              ))}
-            </TagGroup>
-          )}
-        </>
+                  <span className="flex h-full flex-1 items-center gap-2 font-normal">
+                    {item.label}
+                  </span>
+                  <span className="flex w-5 items-center">
+                    <LuCheck
+                      aria-hidden
+                      className="size-4 opacity-0 group-selected:opacity-100"
+                    />
+                  </span>
+                </ListBoxItem>
+              )}
+            </ListBox>
+          </Dialog>
+        </Popover>
+      </DialogTrigger>
+      {selectedOptions.length > 0 && (
+        <TagGroup onRemove={handleTagRemove}>
+          {selectedOptions.map((option) => (
+            <Tag
+              key={option.value}
+              id={option.value}
+              textValue={option.label}
+              className="text-base leading-none"
+            >
+              {option.label}
+            </Tag>
+          ))}
+        </TagGroup>
       )}
     </div>
   );
