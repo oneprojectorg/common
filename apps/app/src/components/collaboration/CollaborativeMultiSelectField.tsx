@@ -121,6 +121,7 @@ export function CollaborativeMultiSelectField({
             value={selectedOptions}
             onChange={handleSelectedOptionsChange}
             placeholder={t('Search')}
+            autoFocus
           />
         </div>
       ) : (
