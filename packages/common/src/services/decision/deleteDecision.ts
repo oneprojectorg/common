@@ -18,7 +18,7 @@ export const deleteDecision = async ({
   });
 
   if (!instance) {
-    throw new NotFoundError('Decision not found');
+    throw new NotFoundError('Decision', instanceId);
   }
 
   if (!instance.profileId) {

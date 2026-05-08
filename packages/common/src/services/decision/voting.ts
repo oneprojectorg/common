@@ -161,11 +161,11 @@ export const submitVote = async ({
     });
 
     if (!processInstance) {
-      throw new NotFoundError('Process instance not found');
+      throw new NotFoundError('Process instance', data.processInstanceId);
     }
 
     if (!processInstance.profileId) {
-      throw new NotFoundError('Decision profile not found');
+      throw new NotFoundError('Decision profile', data.processInstanceId);
     }
 
     const instanceData = processInstance.instanceData as DecisionInstanceData;
@@ -358,7 +358,7 @@ export const getVotingStatus = async ({
     });
 
     if (!processInstance) {
-      throw new NotFoundError('Process instance not found');
+      throw new NotFoundError('Process instance', data.processInstanceId);
     }
 
     const instanceData = processInstance.instanceData as DecisionInstanceData;

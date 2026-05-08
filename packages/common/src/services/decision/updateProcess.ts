@@ -36,7 +36,7 @@ export const updateProcess = async ({
     });
 
     if (!existingProcess) {
-      throw new NotFoundError('Decision process not found');
+      throw new NotFoundError('Decision process', processId);
     }
 
     // Only allow editing from the context of the process owner (usually an org)

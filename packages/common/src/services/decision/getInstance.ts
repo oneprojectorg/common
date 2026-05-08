@@ -92,7 +92,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
     });
 
     if (!instance) {
-      throw new NotFoundError('Process instance not found');
+      throw new NotFoundError('Process instance', instanceId);
     }
 
     // Fetch profileUser and assert access in parallel — both need the instance
@@ -112,7 +112,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
     // Resolve access capabilities for the current user.
     // profileId is guaranteed non-null here: assertInstanceProfileAccess throws above if null.
     if (!instance.profileId) {
-      throw new NotFoundError('Process instance not found');
+      throw new NotFoundError('Process instance', instanceId);
     }
     const access = await resolveInstanceAccess(
       user,
@@ -170,6 +170,6 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       throw error;
     }
     console.error('Error fetching process instance:', error);
-    throw new NotFoundError('Process instance not found');
+    throw new NotFoundError('Process instance', instanceId);
   }
 };

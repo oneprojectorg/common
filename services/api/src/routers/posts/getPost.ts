@@ -19,7 +19,7 @@ export const getPost = router({
       });
 
       if (!post) {
-        throw new NotFoundError('Post');
+        throw new NotFoundError('Post', input.postId);
       }
 
       return outputSchema.parse(post);

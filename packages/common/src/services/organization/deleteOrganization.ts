@@ -20,7 +20,7 @@ export async function deleteOrganization({
   });
 
   if (!organization) {
-    throw new NotFoundError('Organization not found');
+    throw new NotFoundError('Organization', organizationProfileId);
   }
 
   // Get the org access user and assert admin DELETE permissions
@@ -43,7 +43,7 @@ export async function deleteOrganization({
     .returning();
 
   if (!deletedOrganization) {
-    throw new NotFoundError('Failed to delete organization');
+    throw new NotFoundError('Organization', organizationProfileId);
   }
 
   // Invalidate caches for the deleted organization

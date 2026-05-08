@@ -70,7 +70,7 @@ export const listOrganizations = async ({
     });
 
     if (!result) {
-      throw new NotFoundError('Organizations not found');
+      throw new NotFoundError('Organizations');
     }
 
     const flattened = result.map((org) => ({

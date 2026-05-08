@@ -59,7 +59,7 @@ export const getProfile = async ({
   });
 
   if (!profile) {
-    throw new NotFoundError('Profile not found');
+    throw new NotFoundError('Profile', slug);
   }
 
   return profileResultSchema.parse(profile);

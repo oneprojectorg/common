@@ -28,7 +28,7 @@ export const declineProfileInvite = async ({
   });
 
   if (!invite) {
-    throw new NotFoundError('Invite not found or already processed');
+    throw new NotFoundError('Profile invite', inviteId);
   }
 
   // Verify user email matches invite email (case-insensitive)

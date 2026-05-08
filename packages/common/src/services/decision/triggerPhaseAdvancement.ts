@@ -55,7 +55,7 @@ export async function triggerPhaseAdvancement({
   }
 
   if (!instance) {
-    throw new NotFoundError('Process instance not found');
+    throw new NotFoundError('Process instance', instanceId);
   }
 
   if (!instance.profileId) {

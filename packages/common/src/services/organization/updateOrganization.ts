@@ -62,7 +62,7 @@ export const updateOrganization = async ({
     .returning();
 
   if (!orgToUpdate) {
-    throw new NotFoundError('Failed to update organization');
+    throw new NotFoundError('Organization', organizationId);
   }
 
   // Loop through changes concurrently
@@ -304,7 +304,7 @@ export const updateOrganization = async ({
   ]);
 
   if (!updatedOrg || !updatedProfile) {
-    throw new NotFoundError('Organization not found after update');
+    throw new NotFoundError('Organization', organizationId);
   }
 
   // @ts-ignore

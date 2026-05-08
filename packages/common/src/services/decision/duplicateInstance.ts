@@ -69,7 +69,7 @@ export const duplicateInstance = async ({
   });
 
   if (!sourceInstance) {
-    throw new NotFoundError('Process instance not found');
+    throw new NotFoundError('Process instance', instanceId);
   }
 
   if (!sourceInstance.profileId) {

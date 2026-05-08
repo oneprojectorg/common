@@ -129,11 +129,7 @@ export const uploadBannerImage = router({
           // Track analytics (non-blocking)
           waitUntil(trackImageUpload(ctx, 'banner', !!hadPreviousImage));
         } else {
-          throw new NotFoundError(
-            'User profile',
-            undefined,
-            'User profile not found. Please create a profile first.',
-          );
+          throw new NotFoundError('User profile');
         }
       }
 

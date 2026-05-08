@@ -55,7 +55,7 @@ export async function submitManualSelection({
   ]);
 
   if (!instance) {
-    throw new NotFoundError('Process instance not found');
+    throw new NotFoundError('Process instance', processInstanceId);
   }
 
   if (!instance.profileId) {
@@ -110,7 +110,7 @@ export async function submitManualSelection({
       .for('update');
 
     if (!lockedInstance) {
-      throw new NotFoundError('Process instance not found');
+      throw new NotFoundError('Process instance', processInstanceId);
     }
 
     if (lockedInstance.status !== ProcessStatus.PUBLISHED) {

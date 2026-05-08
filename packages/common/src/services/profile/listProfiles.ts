@@ -96,7 +96,7 @@ export const listProfiles = async ({
     });
 
     if (!result) {
-      throw new NotFoundError('Profiles not found');
+      throw new NotFoundError('Profiles');
     }
 
     const hasMore = result.length > limit;

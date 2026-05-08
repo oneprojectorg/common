@@ -61,7 +61,7 @@ export const updateDecisionInstance = async ({
   });
 
   if (!existingInstance) {
-    throw new NotFoundError('Process instance not found');
+    throw new NotFoundError('Process instance', instanceId);
   }
 
   const { profileId } = existingInstance;

@@ -40,7 +40,7 @@ export const acceptProposalInvite = async ({
   });
 
   if (!invite) {
-    throw new NotFoundError('No pending invite found for this proposal');
+    throw new NotFoundError('Proposal invite');
   }
 
   if (invite.acceptedOn) {

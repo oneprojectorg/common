@@ -116,7 +116,7 @@ export const updateProposal = async ({
   });
 
   if (!existingProposal) {
-    throw new NotFoundError('Proposal');
+    throw new NotFoundError('Proposal', proposalId);
   }
 
   const processInstance = existingProposal.processInstance;

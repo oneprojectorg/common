@@ -157,7 +157,7 @@ export const createOrganization = async ({
       .returning();
 
     if (!newOrg) {
-      throw new NotFoundError('Failed to create organization');
+      throw new NotFoundError('Organization');
     }
 
     // Insert organizationUser linking the user to organization, with a default role of owner

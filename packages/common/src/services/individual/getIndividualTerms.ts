@@ -26,7 +26,7 @@ export const getIndividualTerms = async ({
     .execute();
 
   if (!indTerms) {
-    throw new NotFoundError('Could not get individual terms');
+    throw new NotFoundError('Individual terms', individualId);
   }
 
   const termUris = indTerms.reduce(

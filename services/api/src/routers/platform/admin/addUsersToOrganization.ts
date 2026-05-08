@@ -71,7 +71,7 @@ export const addUsersToOrganizationRouter = router({
         (authUserId) => !existingAuthUserIds.has(authUserId),
       );
       if (invalidAuthUserIds.length > 0) {
-        throw new NotFoundError('User');
+        throw new NotFoundError('User', invalidAuthUserIds[0]);
       }
 
       // Check all role IDs exist
@@ -80,7 +80,7 @@ export const addUsersToOrganizationRouter = router({
         (roleId) => !existingRoleIds.has(roleId),
       );
       if (invalidRoleIds.length > 0) {
-        throw new NotFoundError('Role');
+        throw new NotFoundError('Role', invalidRoleIds[0]);
       }
 
       // Join each user to the organization

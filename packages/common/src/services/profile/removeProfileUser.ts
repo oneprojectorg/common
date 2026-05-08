@@ -47,7 +47,7 @@ export const removeProfileUser = async ({
     .returning();
 
   if (!deletedUser) {
-    throw new NotFoundError('Failed to delete profile user');
+    throw new NotFoundError('Profile user', profileUserId);
   }
 
   await Promise.all([

@@ -36,7 +36,7 @@ export const submitProposal = async ({
   });
 
   if (!existingProposal) {
-    throw new NotFoundError('Proposal');
+    throw new NotFoundError('Proposal', data.proposalId);
   }
 
   // Only allow submitting drafts
@@ -49,7 +49,7 @@ export const submitProposal = async ({
   const instance = existingProposal.processInstance as ProcessInstance;
 
   if (!instance.profileId) {
-    throw new NotFoundError('Decision profile not found');
+    throw new NotFoundError('Decision profile');
   }
 
   // Authorization check - verify user has access to the decision profile

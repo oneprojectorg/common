@@ -5,7 +5,7 @@ import { NotFoundError } from '../../utils';
 
 export const getOrganization = async ({ slug }: { slug: string }) => {
   if (!slug) {
-    throw new NotFoundError('Organization not found');
+    throw new NotFoundError('Organization');
   }
 
   const profile = await db
@@ -17,7 +17,7 @@ export const getOrganization = async ({ slug }: { slug: string }) => {
   const profileId = profile?.[0]?.id;
 
   if (!profileId) {
-    throw new NotFoundError('Could not find organization');
+    throw new NotFoundError('Organization', slug);
   }
 
   const org = await db.query.organizations.findFirst({
@@ -60,7 +60,7 @@ export const getOrganization = async ({ slug }: { slug: string }) => {
   });
 
   if (!org) {
-    throw new NotFoundError('Could not find organization');
+    throw new NotFoundError('Organization', slug);
   }
 
   return {

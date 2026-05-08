@@ -22,11 +22,7 @@ export const getInstanceResultsRouter = router({
       });
 
       if (!result) {
-        throw new NotFoundError(
-          'Results',
-          input?.instanceId,
-          'Results have not been processed yet for this instance',
-        );
+        throw new NotFoundError('Results', input?.instanceId);
       }
 
       return result;
