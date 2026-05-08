@@ -851,6 +851,14 @@ describe.concurrent('submitProposal', () => {
       proposalData: { title: 'Should Be Hidden' },
     });
 
+    // Visibility is applied at creation time, not at submit. A draft authored
+    // under a hidden-by-default phase must already be HIDDEN before submit.
+    const draftBeforeSubmit = await db.query.proposals.findFirst({
+      where: { id: proposal.id },
+    });
+    expect(draftBeforeSubmit?.status).toBe(ProposalStatus.DRAFT);
+    expect(draftBeforeSubmit?.visibility).toBe(Visibility.HIDDEN);
+
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const result = await caller.decision.submitProposal({
@@ -882,6 +890,14 @@ describe.concurrent('submitProposal', () => {
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Should Stay Visible' },
     });
+
+    // Negative case: without defaults.hidden, the draft must be VISIBLE at
+    // creation — locks down the inverse half of the createProposal contract.
+    const draftBeforeSubmit = await db.query.proposals.findFirst({
+      where: { id: proposal.id },
+    });
+    expect(draftBeforeSubmit?.status).toBe(ProposalStatus.DRAFT);
+    expect(draftBeforeSubmit?.visibility).toBe(Visibility.VISIBLE);
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
