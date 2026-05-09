@@ -1,7 +1,6 @@
 'use client';
 
 import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
-import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import {
   type Proposal,
@@ -9,17 +8,14 @@ import {
   type ProposalTranslation,
   type SupportedLocale,
 } from '@op/common/client';
-import { Header3 } from '@op/ui/Header';
 import { SplitPane } from '@op/ui/SplitPane';
-import { Surface } from '@op/ui/Surface';
 import { useLocale } from 'next-intl';
 import { useQueryStates } from 'nuqs';
-import { type ReactNode, useCallback, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
-import { PostUpdate } from '../PostUpdate';
+import { ProposalComments } from './ProposalComments';
 import { ProposalPreview } from './ProposalPreview';
 import { ProposalRevisionSubmittedPanel } from './ProposalRevisionSubmittedPanel';
 import { ProposalViewLayout } from './ProposalViewLayout';
@@ -38,7 +34,6 @@ export function ProposalView({
 }) {
   const t = useTranslations();
   const locale = useLocale();
-  const commentsContainerRef = useRef<HTMLDivElement>(null);
 
   const { data: proposal } = trpc.decision.getProposal.useQuery({
     profileId: initialProposal.profileId,
@@ -46,9 +41,6 @@ export function ProposalView({
 
   // Safety check - fallback to initial data if query returns undefined
   const currentProposal = proposal || initialProposal;
-
-  // Get current user to check edit permissions
-  const { user } = useUser();
 
   // Use relationship mutations hook for like/follow functionality
   const {
@@ -113,36 +105,6 @@ export function ProposalView({
       { history: 'push', scroll: false },
     );
   }, [firstRevisionRequestId, reviewRevision, setQueryState]);
-
-  // Get comments for the proposal using the posts API
-  const { data: commentsData, isLoading: commentsLoading } =
-    trpc.posts.getPosts.useQuery({
-      profileId: currentProposal.profileId || undefined,
-      parentPostId: null, // Get top-level comments only
-      limit: 50,
-      offset: 0,
-      includeChildren: false,
-    });
-
-  const comments = commentsData || [];
-
-  const { handleReactionClick } = usePostFeedActions();
-
-  // Function to scroll to show comments after adding a new one
-  const scrollToComments = useCallback(() => {
-    if (commentsContainerRef.current) {
-      setTimeout(() => {
-        const container = commentsContainerRef.current;
-        if (container) {
-          container.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start',
-            inline: 'nearest',
-          });
-        }
-      }, 100);
-    }
-  }, []);
 
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
@@ -211,65 +173,7 @@ export function ProposalView({
         }
       />
 
-      {/* Comments Section */}
-      <div ref={commentsContainerRef}>
-        <div className="border-t pt-8">
-          <Header3 className="mb-6">
-            {t('Comments')} ({comments.length})
-          </Header3>
-
-          {/* Comment Input */}
-          <div className="mb-8">
-            <Surface className="border-0 p-0 sm:border sm:p-4">
-              <PostUpdate
-                profileId={currentProposal.profileId || undefined}
-                placeholder={`${t('Comment')}${user.currentProfile?.name ? ` as ${user.currentProfile?.name}` : ''}...`}
-                label={t('Comment')}
-                onSuccess={scrollToComments}
-                proposalId={currentProposal.id}
-                processInstanceId={currentProposal.processInstanceId}
-              />
-            </Surface>
-          </div>
-
-          {/* Comments Display */}
-          {commentsLoading ? (
-            <div
-              className="py-8 text-center text-gray-500"
-              role="status"
-              aria-label={t('Loading comments')}
-            >
-              {t('Loading comments...')}
-            </div>
-          ) : comments.length > 0 ? (
-            <div role="feed" aria-label={`${comments.length} comments`}>
-              <PostFeed>
-                {comments.map((comment, i) => (
-                  <div key={comment.id}>
-                    <PostItem
-                      post={comment}
-                      organization={null}
-                      user={user}
-                      withLinks={false}
-                      onReactionClick={handleReactionClick}
-                      className="sm:px-0"
-                    />
-                    {comments.length !== i + 1 && <hr className="my-4" />}
-                  </div>
-                ))}
-              </PostFeed>
-            </div>
-          ) : (
-            <div
-              className="py-8 text-center text-gray-500"
-              role="status"
-              aria-label={t('No comments')}
-            >
-              {t('No comments yet. Be the first to comment!')}
-            </div>
-          )}
-        </div>
-      </div>
+      <ProposalComments proposal={currentProposal} />
     </>
   );
 

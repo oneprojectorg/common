@@ -2,6 +2,7 @@
 
 import { ProposalReviewRequestState } from '@op/common/client';
 
+import { ProposalComments } from '../ProposalComments';
 import { ProposalPreview } from '../ProposalPreview';
 import { AuthorRevisionNote, RevisedOnBadge } from './AuthorRevisionNote';
 import { useReviewForm } from './ReviewFormContext';
@@ -16,16 +17,20 @@ export function ReviewProposalPane() {
   const responseComment = respondedAt ? revisionRequest?.responseComment : null;
 
   return (
-    <ProposalPreview
-      proposal={assignment.proposal}
-      submissionMetaSuffix={
-        respondedAt ? <RevisedOnBadge respondedAt={respondedAt} /> : undefined
-      }
-      headerBanner={
-        responseComment ? (
-          <AuthorRevisionNote comment={responseComment} />
-        ) : undefined
-      }
-    />
+    <>
+      <ProposalPreview
+        proposal={assignment.proposal}
+        submissionMetaSuffix={
+          respondedAt ? <RevisedOnBadge respondedAt={respondedAt} /> : undefined
+        }
+        headerBanner={
+          responseComment ? (
+            <AuthorRevisionNote comment={responseComment} />
+          ) : undefined
+        }
+      />
+
+      <ProposalComments proposal={assignment.proposal} />
+    </>
   );
 }
