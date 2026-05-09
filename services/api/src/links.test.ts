@@ -90,7 +90,9 @@ describe('createChannelRegistrationLink', () => {
       });
 
       expect(observed).toHaveLength(1);
-      expect((observed[0] as { result: { data: unknown } }).result.data).toEqual({
+      expect(
+        (observed[0] as { result: { data: unknown } }).result.data,
+      ).toEqual({
         processInstance: { id: 'abc', instanceData: { phases: [] } },
       });
     });
@@ -147,10 +149,9 @@ describe('createChannelRegistrationLink', () => {
     });
 
     it('registers mutation channels on the client', () => {
-      const wrapped = wrapResponseWithChannels(
-        { ok: true },
-        ['org:invalidate'],
-      );
+      const wrapped = wrapResponseWithChannels({ ok: true }, [
+        'org:invalidate',
+      ]);
 
       runLink({
         isServer: false,
