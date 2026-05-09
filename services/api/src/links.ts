@@ -143,6 +143,7 @@ export function createChannelRegistrationLink(): TRPCLink<AppRouter> {
                   }
                 }
 
+                // Unwrap data before passing to application
                 observer.next({
                   ...value,
                   result: {
