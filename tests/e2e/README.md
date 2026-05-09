@@ -84,7 +84,7 @@ pnpm w:e2e supabase:reset    # Reset DB (destructive)
 When `E2E=true`, webpack aliases swap external services for in-process mocks:
 
 - **`@op/collab`** → `@op/collab/testing` (TipTap Cloud — no HTTP calls)
-- **`@op/analytics`** → `@op/analytics/testing` (PostHog — no network calls, reduces idle time)
+- **`@op/analytics/client`** → `client.testing.ts` (PostHog — no network calls, reduces idle time)
 
 ## Writing Tests
 
