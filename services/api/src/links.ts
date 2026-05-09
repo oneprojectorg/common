@@ -97,12 +97,20 @@ function createFetchWithSSRCookies(encryptedCookies?: string) {
  * Custom link that registers queries and mutations with the channel registry.
  *
  * Extracts channels from wrapped response body (_meta.channels) and unwraps
- * data before passing to application.
+ * data before passing to application. Unwrapping happens on both server (SSR)
+ * and client; channel registration only happens on the client because the
+ * registry is a module singleton that would leak across requests on the server.
  *
  * For queries: Registers channels for future invalidation lookup
  * For mutations: Triggers invalidation of queries registered on matching channels
+ *
+ * @param opts.isServer - Override the runtime check (used by tests). Defaults
+ * to `typeof window === 'undefined'`.
  */
-function createChannelRegistrationLink(): TRPCLink<AppRouter> {
+export function createChannelRegistrationLink(opts?: {
+  isServer?: boolean;
+}): TRPCLink<AppRouter> {
+  const isServerForLink = opts?.isServer ?? isServer;
   return () => {
     return ({ next, op }) => {
       return observable((observer) => {
@@ -115,17 +123,14 @@ function createChannelRegistrationLink(): TRPCLink<AppRouter> {
 
         const unsubscribe = next(op).subscribe({
           next(value) {
-            // Handle channel registration from response body (both queries and mutations)
-            if (!isServer && value.result?.data !== undefined) {
+            if (value.result?.data !== undefined) {
               const unwrapped = unwrapResponseWithChannels(value.result.data);
               if (unwrapped) {
                 const { data, channels } = unwrapped;
-                if (channels.length > 0) {
+                if (!isServerForLink && channels.length > 0) {
                   if (op.type === 'query') {
-                    // Register query's channels for future invalidation
                     queryChannelRegistry.registerQuery({ queryKey, channels });
                   } else if (op.type === 'mutation') {
-                    // Get request ID from response headers, fallback to random UUID
                     const response = value.context?.response as
                       | Response
                       | undefined;
@@ -133,7 +138,6 @@ function createChannelRegistrationLink(): TRPCLink<AppRouter> {
                       response?.headers.get('x-request-id') ??
                       crypto.randomUUID();
 
-                    // Register mutation to trigger invalidation of matching queries
                     queryChannelRegistry.registerMutation({
                       channels,
                       mutationId: requestId,
@@ -141,7 +145,6 @@ function createChannelRegistrationLink(): TRPCLink<AppRouter> {
                   }
                 }
 
-                // Unwrap data before passing to application
                 observer.next({
                   ...value,
                   result: {
@@ -211,5 +214,3 @@ export function createLinks(encryptedCookies?: string): TRPCLink<AppRouter>[] {
   ];
 }
 
-// Backwards compatibility - creates links without SSR cookies
-export const links = createLinks();
