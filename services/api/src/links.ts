@@ -121,12 +121,13 @@ export function createChannelRegistrationLink(): TRPCLink<AppRouter> {
               const unwrapped = unwrapResponseWithChannels(value.result.data);
               if (unwrapped) {
                 const { data, channels } = unwrapped;
-                // Read lazily so tests can flip the runtime via stubGlobal('window', ...)
                 const isServerRuntime = typeof window === 'undefined';
                 if (!isServerRuntime && channels.length > 0) {
                   if (op.type === 'query') {
+                    // Register query's channels for future invalidation
                     queryChannelRegistry.registerQuery({ queryKey, channels });
                   } else if (op.type === 'mutation') {
+                    // Get request ID from response headers, fallback to random UUID
                     const response = value.context?.response as
                       | Response
                       | undefined;
@@ -134,6 +135,7 @@ export function createChannelRegistrationLink(): TRPCLink<AppRouter> {
                       response?.headers.get('x-request-id') ??
                       crypto.randomUUID();
 
+                    // Register mutation to trigger invalidation of matching queries
                     queryChannelRegistry.registerMutation({
                       channels,
                       mutationId: requestId,
