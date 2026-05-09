@@ -103,14 +103,8 @@ function createFetchWithSSRCookies(encryptedCookies?: string) {
  *
  * For queries: Registers channels for future invalidation lookup
  * For mutations: Triggers invalidation of queries registered on matching channels
- *
- * @param opts.isServer - Override the runtime check (used by tests). Defaults
- * to `typeof window === 'undefined'`.
  */
-export function createChannelRegistrationLink(opts?: {
-  isServer?: boolean;
-}): TRPCLink<AppRouter> {
-  const isServerForLink = opts?.isServer ?? isServer;
+export function createChannelRegistrationLink(): TRPCLink<AppRouter> {
   return () => {
     return ({ next, op }) => {
       return observable((observer) => {
@@ -127,7 +121,9 @@ export function createChannelRegistrationLink(opts?: {
               const unwrapped = unwrapResponseWithChannels(value.result.data);
               if (unwrapped) {
                 const { data, channels } = unwrapped;
-                if (!isServerForLink && channels.length > 0) {
+                // Read lazily so tests can flip the runtime via stubGlobal('window', ...)
+                const isServerRuntime = typeof window === 'undefined';
+                if (!isServerRuntime && channels.length > 0) {
                   if (op.type === 'query') {
                     queryChannelRegistry.registerQuery({ queryKey, channels });
                   } else if (op.type === 'mutation') {

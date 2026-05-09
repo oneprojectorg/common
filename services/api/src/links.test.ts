@@ -10,6 +10,10 @@ import { createChannelRegistrationLink } from './links';
  * the values seen by the downstream observer (i.e. what reaches the
  * application). The link is supposed to unwrap any `{ _data, _meta }` envelope
  * regardless of runtime.
+ *
+ * `isServer` is simulated by toggling `globalThis.window`: vitest's node env
+ * starts with no `window`, so the server case is the default; the client case
+ * stubs an empty object. `vi.unstubAllGlobals()` in `afterEach` resets it.
  */
 function runLink({
   isServer,
@@ -20,7 +24,13 @@ function runLink({
   op: { type: 'query' | 'mutation'; path: string; input?: unknown };
   emitted: unknown;
 }): unknown[] {
-  const link = createChannelRegistrationLink({ isServer })({} as never);
+  if (isServer) {
+    vi.stubGlobal('window', undefined);
+  } else {
+    vi.stubGlobal('window', {});
+  }
+
+  const link = createChannelRegistrationLink()({} as never);
 
   const next = () =>
     observable<{ result: { data: unknown } }, unknown>((emit) => {
@@ -56,6 +66,7 @@ describe('createChannelRegistrationLink', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   describe('unwrap symmetry — wrap on the wire MUST be unwrapped before the app sees it', () => {
@@ -108,7 +119,7 @@ describe('createChannelRegistrationLink', () => {
 
   describe('channel registry is browser-only (would leak across requests on the server)', () => {
     it('registers query channels on the client', () => {
-      const wrapped = wrapResponseWithChannels({ id: 'x' }, ['ch:x']);
+      const wrapped = wrapResponseWithChannels({ id: 'x' }, ['org:x']);
 
       runLink({
         isServer: false,
@@ -118,12 +129,12 @@ describe('createChannelRegistrationLink', () => {
 
       expect(registerQuery).toHaveBeenCalledTimes(1);
       expect(registerQuery).toHaveBeenCalledWith(
-        expect.objectContaining({ channels: ['ch:x'] }),
+        expect.objectContaining({ channels: ['org:x'] }),
       );
     });
 
     it('does NOT touch the registry on the server', () => {
-      const wrapped = wrapResponseWithChannels({ id: 'x' }, ['ch:x']);
+      const wrapped = wrapResponseWithChannels({ id: 'x' }, ['org:x']);
 
       runLink({
         isServer: true,
@@ -138,7 +149,7 @@ describe('createChannelRegistrationLink', () => {
     it('registers mutation channels on the client', () => {
       const wrapped = wrapResponseWithChannels(
         { ok: true },
-        ['ch:invalidate'],
+        ['org:invalidate'],
       );
 
       runLink({
@@ -149,7 +160,7 @@ describe('createChannelRegistrationLink', () => {
 
       expect(registerMutation).toHaveBeenCalledTimes(1);
       expect(registerMutation).toHaveBeenCalledWith(
-        expect.objectContaining({ channels: ['ch:invalidate'] }),
+        expect.objectContaining({ channels: ['org:invalidate'] }),
       );
     });
   });
