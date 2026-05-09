@@ -84,6 +84,14 @@ export const updateDecisionInstance = async ({
     schemaValidator.validateJsonSchema(proposalTemplate);
   }
 
+  // Phases whose endDate actually changed — emitted to the caller so it can
+  // fire `phase_end_date_changed` analytics events for committed changes only.
+  const phaseEndDateChanges: Array<{
+    phaseId: string;
+    previousEndDate: string | undefined;
+    newEndDate: string;
+  }> = [];
+
   // Validate rubricTemplate is a structurally valid JSON Schema before persisting
   if (rubricTemplate !== undefined) {
     schemaValidator.validateJsonSchema(rubricTemplate);
@@ -165,6 +173,20 @@ export const updateDecisionInstance = async ({
         existingInstanceData.phases.map((p) => [p.phaseId, p]),
       );
 
+      for (const phase of phases) {
+        if (phase.endDate === undefined) {
+          continue;
+        }
+        const existing = existingPhaseMap.get(phase.phaseId);
+        if (existing && existing.endDate !== phase.endDate) {
+          phaseEndDateChanges.push({
+            phaseId: phase.phaseId,
+            previousEndDate: existing.endDate,
+            newEndDate: phase.endDate,
+          });
+        }
+      }
+
       updatedInstanceData.phases = phases.map((phase) => {
         const existing = existingPhaseMap.get(phase.phaseId);
         return {
@@ -219,7 +241,7 @@ export const updateDecisionInstance = async ({
       throw new CommonError('Failed to fetch decision profile');
     }
 
-    return profile;
+    return { profile, phaseEndDateChanges };
   }
 
   const isBeingPublished =
@@ -329,7 +351,7 @@ export const updateDecisionInstance = async ({
       // Use the first invite's inviter as the sender
       const firstInvite = queuedInvites[0];
       if (!firstInvite) {
-        return;
+        return { profile, phaseEndDateChanges };
       }
       const senderProfileId = firstInvite.invitedBy;
 
@@ -345,5 +367,5 @@ export const updateDecisionInstance = async ({
     }
   }
 
-  return profile;
+  return { profile, phaseEndDateChanges };
 };

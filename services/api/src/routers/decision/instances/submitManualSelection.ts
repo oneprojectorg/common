@@ -1,7 +1,9 @@
 import { Channels, submitManualSelection } from '@op/common';
+import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { trackManualSelectionSubmitted } from '../../../utils/analytics';
 
 const submitManualSelectionInputSchema = z.object({
   processInstanceId: z.uuid(),
@@ -21,5 +23,11 @@ export const submitManualSelectionRouter = router({
       ctx.registerMutationChannels([
         Channels.decisionInstance(input.processInstanceId),
       ]);
+
+      waitUntil(
+        trackManualSelectionSubmitted(ctx, input.processInstanceId, {
+          proposal_count: input.proposalIds.length,
+        }),
+      );
     }),
 });

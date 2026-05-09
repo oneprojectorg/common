@@ -10,7 +10,8 @@ import { type Phase, PhaseStepper } from '@op/ui/PhaseStepper';
 import { Sheet, SheetBody } from '@op/ui/Sheet';
 import { toast } from '@op/ui/Toast';
 import { useLocale } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { usePostHog } from 'posthog-js/react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
@@ -41,7 +42,9 @@ export function DecisionProcessStepper({
     [translation],
   );
 
+  const posthog = usePostHog();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const transitionInitiatedRef = useRef(false);
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
 
   const transitionMutation = trpc.decision.transitionFromPhase.useMutation({
@@ -62,21 +65,21 @@ export function DecisionProcessStepper({
     currentPhaseName,
     nextPhaseName,
     currentPhaseAdvancement,
+    currentPhaseEndDate,
   } = useMemo(() => {
     const idx = phases.findIndex((p) => p.id === currentStateId);
-    const nextId =
-      idx >= 0 && idx < phases.length - 1 ? phases[idx + 1]!.id : undefined;
+    const currentPhase = idx >= 0 ? phases[idx] : undefined;
+    const nextPhase = idx >= 0 ? phases[idx + 1] : undefined;
     return {
-      nextPhaseId: nextId,
-      currentPhaseName:
-        idx >= 0
-          ? (translatedPhaseNames?.get(phases[idx]!.id) ?? phases[idx]!.name)
-          : '',
-      nextPhaseName: nextId
-        ? (translatedPhaseNames?.get(nextId) ?? phases[idx + 1]!.name)
+      nextPhaseId: nextPhase?.id,
+      currentPhaseName: currentPhase
+        ? (translatedPhaseNames?.get(currentPhase.id) ?? currentPhase.name)
         : '',
-      currentPhaseAdvancement:
-        idx >= 0 ? phases[idx]!.advancementMethod : undefined,
+      nextPhaseName: nextPhase
+        ? (translatedPhaseNames?.get(nextPhase.id) ?? nextPhase.name)
+        : '',
+      currentPhaseAdvancement: currentPhase?.advancementMethod,
+      currentPhaseEndDate: currentPhase?.phase?.endDate,
     };
   }, [phases, currentStateId, translatedPhaseNames]);
 
@@ -111,10 +114,23 @@ export function DecisionProcessStepper({
     ],
   );
 
+  const getTrackingProps = useCallback(
+    () => ({
+      process_instance_id: instanceId,
+      from_phase_id: currentStateId,
+      to_phase_id: nextPhaseId,
+      before_end_date: currentPhaseEndDate
+        ? isBeforeEndOfDayLocal(new Date(), currentPhaseEndDate)
+        : null,
+    }),
+    [instanceId, currentStateId, nextPhaseId, currentPhaseEndDate],
+  );
+
   const handleAdvancePhase = () => {
     if (!instanceId || transitionMutation.isPending) {
       return;
     }
+    transitionInitiatedRef.current = true;
     transitionMutation.mutate({
       instanceId,
       fromPhaseId: currentStateId,
@@ -123,6 +139,9 @@ export function DecisionProcessStepper({
 
   const handleDismiss = (open: boolean) => {
     if (!open && !transitionMutation.isPending) {
+      if (!transitionInitiatedRef.current) {
+        posthog.capture('manual_transition_dismissed', getTrackingProps());
+      }
       setShowConfirmModal(false);
     }
   };
@@ -140,7 +159,18 @@ export function DecisionProcessStepper({
         currentPhaseId={currentStateId}
         className={className}
         locale={locale}
-        onTransition={isAdmin ? () => setShowConfirmModal(true) : undefined}
+        onTransition={
+          isAdmin
+            ? () => {
+                transitionInitiatedRef.current = false;
+                posthog.capture(
+                  'manual_transition_initiated',
+                  getTrackingProps(),
+                );
+                setShowConfirmModal(true);
+              }
+            : undefined
+        }
       />
 
       {isMobile ? (
@@ -204,4 +234,25 @@ export function DecisionProcessStepper({
       )}
     </>
   );
+}
+
+// Phase end dates are persisted as ISO datetimes representing local midnight on
+// the deadline day (see PhaseDetailPage formatDateValue). The deadline conceptually
+// covers the entire day, so "before end date" must compare against the end of the
+// stored day in local time, not its midnight start.
+function isBeforeEndOfDayLocal(now: Date, endDate: string): boolean {
+  const parsed = new Date(endDate);
+  if (Number.isNaN(parsed.getTime())) {
+    return false;
+  }
+  const endOfDayLocal = new Date(
+    parsed.getFullYear(),
+    parsed.getMonth(),
+    parsed.getDate() + 1,
+    0,
+    0,
+    0,
+    0,
+  );
+  return now < endOfDayLocal;
 }

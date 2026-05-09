@@ -9,7 +9,8 @@ import { EmptyState } from '@op/ui/EmptyState';
 import { FooterBar } from '@op/ui/FooterBar';
 import { Header3 } from '@op/ui/Header';
 import { toast } from '@op/ui/Toast';
-import { useEffect, useMemo, useState } from 'react';
+import { usePostHog } from 'posthog-js/react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuLeaf, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -34,6 +35,7 @@ export const ManualSelectionList = ({
 }: ManualSelectionListProps) => {
   const t = useTranslations();
   const { user } = useUser();
+  const posthog = usePostHog();
 
   const [selectedCategory, setSelectedCategory] = useState('all-categories');
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
@@ -60,6 +62,7 @@ export const ManualSelectionList = ({
     instance.currentStateId ?? '',
   );
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const submissionInitiatedRef = useRef(false);
 
   // Resolve selected ids → proposals via a cache that accumulates across
   // refetches, so picks survive filter/sort changes that exclude them.
@@ -106,6 +109,37 @@ export const ManualSelectionList = ({
       toast.error({ message: error.message });
     },
   });
+
+  const handleConfirmDialogOpenChange = useCallback(
+    (open: boolean) => {
+      if (open) {
+        submissionInitiatedRef.current = false;
+        posthog.capture('manual_selection_dialog_opened', {
+          process_instance_id: instanceId,
+          proposal_count: selectedIds.length,
+        });
+      } else if (!submitMutation.isPending && !submissionInitiatedRef.current) {
+        posthog.capture('manual_selection_dialog_dismissed', {
+          process_instance_id: instanceId,
+          proposal_count: selectedIds.length,
+        });
+      }
+      setIsConfirmOpen(open);
+    },
+    [instanceId, selectedIds.length, submitMutation.isPending, posthog],
+  );
+
+  const handleConfirmSelection = useCallback(() => {
+    submissionInitiatedRef.current = true;
+    posthog.capture('manual_selection_dialog_confirmed', {
+      process_instance_id: instanceId,
+      proposal_count: selectedIds.length,
+    });
+    submitMutation.mutate({
+      processInstanceId: instanceId,
+      proposalIds: selectedIds,
+    });
+  }, [instanceId, selectedIds, submitMutation, posthog]);
 
   if (candidatesQuery.isError) {
     return (
@@ -199,18 +233,13 @@ export const ManualSelectionList = ({
         <FooterBar.End>
           <SelectionConfirmDialog
             isOpen={isConfirmOpen}
-            onOpenChange={setIsConfirmOpen}
+            onOpenChange={handleConfirmDialogOpenChange}
             proposals={selectedProposals}
             count={numSelected}
             phaseName={currentPhaseName}
             triggerDisabled={numSelected === 0}
             isSubmitting={submitMutation.isPending}
-            onConfirm={() =>
-              submitMutation.mutate({
-                processInstanceId: instanceId,
-                proposalIds: selectedIds,
-              })
-            }
+            onConfirm={handleConfirmSelection}
           />
         </FooterBar.End>
       </FooterBar>
