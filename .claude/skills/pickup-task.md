@@ -133,14 +133,13 @@ If the verify passes, this task is yours. Proceed to Step 4.
 
 ## Step 4 — start work
 
-1. Read the task's `notes` (description) and the most recent stories for verification steps. Verification can show up as `## Verification`, "Verify by:", "Acceptance criteria", or any clearly demarcated set of concrete steps. If verification is missing or explicitly says "skip", fall back to the standard gates: `pnpm w:app typecheck`, `pnpm test`.
-2. Create a feature branch off `dev` named `issue-$TASK_GID` — the literal `issue-` prefix followed by the Asana task gid you claimed:
+1. Create a feature branch off `dev` named `issue-$TASK_GID` — the literal `issue-` prefix followed by the Asana task gid you claimed:
    ```bash
    git checkout dev && git pull
    git checkout -b "issue-$TASK_GID"
    ```
-3. Implement, following the rest of the skills in `.claude/skills/`.
-4. Open a PR targeting `dev`. The branch hooks will block any attempt to commit/push to `main` or `dev` directly.
+2. Run the `implement-task` skill to drive the work end-to-end. It owns reading the task body, BUG MODE (`/investigate`), PLAN REVIEW (`/autoplan`), the exploration test-scan, RGR execution, and the full gate suite (typecheck / test / e2e / fallow + task-specific verification). Pass `TASK_ID=$TASK_GID`.
+3. Open a PR targeting `dev`. The branch hooks will block any attempt to commit/push to `main` or `dev` directly.
 
 ## Step 5 — when done
 
