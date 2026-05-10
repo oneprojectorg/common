@@ -3,33 +3,17 @@ import {
   decisionProcessResultSelections,
   decisionProcessResults,
   decisionsVoteSubmissions,
-  processInstances,
 } from '@op/db/schema';
 
 import { CommonError } from '../../utils';
 import { getProposalsForPhase } from './getProposalsForPhase';
 
 /**
- * Record the proposals that advanced into the current (final) phase as the
- * decision's selections. Selection itself happens upstream — the prior phase's
- * pipeline (or admin manual selection) decides what advances; we just persist
- * that set as `decision_process_result_selections` so the Results screen can
- * read it.
- *
- * Append-only: every run inserts a new `decision_process_results` row with its
- * own `executedAt`. Read sites pick the latest. This preserves an audit trail
- * across re-runs and across schema edits that shift which phase is "final" —
- * the prior outcome stays in the table even when a new phase is added after
- * results were already processed. `proposals.status` is intentionally left
- * alone here: pre-existing proposals carry historical status values, and
- * writing new values from this code path would conflate "selected as a
- * result" with the broader evaluation lifecycle.
- *
- * Pass `tx` to run inline in a caller's transaction (atomic with whatever
- * upstream write produced the inbound attachments — e.g. submitManualSelection).
- * Errors propagate so the caller's transaction rolls back. When `tx` is omitted,
- * processResults manages its own transaction and stamps a failure row on
- * uncaught errors so the Results screen can surface that the run failed.
+ * Persist the proposals attached to the current phase as the decision's
+ * selections. Append-only: each run inserts a new `decision_process_results`
+ * row; readers pick the latest by `executedAt`. Pass `tx` to run inline in a
+ * caller's transaction; otherwise this manages its own and stamps a failure
+ * row on uncaught errors.
  */
 export async function processResults({
   processInstanceId,
@@ -54,12 +38,12 @@ export async function processResults({
 
     try {
       const voterCount = await fetchVoterCount(db, processInstanceId);
-
       await db.transaction(async (failureTx) =>
-        recordUnexpectedFailure({
+        writeResultRow({
           tx: failureTx,
           processInstanceId,
           errorMessage,
+          selectedProposalIds: [],
           voterCount,
         }),
       );
@@ -75,28 +59,16 @@ async function runProcessResults(
   tx: DbClient,
   processInstanceId: string,
 ): Promise<void> {
-  const [instance] = await tx
-    .select({ id: processInstances.id })
-    .from(processInstances)
-    .where(eq(processInstances.id, processInstanceId))
-    .limit(1);
+  const [processProposals, voterCount] = await Promise.all([
+    getProposalsForPhase({ instanceId: processInstanceId, db: tx }),
+    fetchVoterCount(tx, processInstanceId),
+  ]);
 
-  if (!instance) {
-    throw new CommonError(`Process instance not found: ${processInstanceId}`);
-  }
-
-  const processProposals = await getProposalsForPhase({
-    instanceId: processInstanceId,
-    db: tx,
-  });
-  const selectedProposalIds = processProposals.map((p) => p.id);
-
-  const voterCount = await fetchVoterCount(tx, processInstanceId);
-
-  await insertResultRecord({
+  await writeResultRow({
     tx,
     processInstanceId,
-    selectedProposalIds,
+    errorMessage: null,
+    selectedProposalIds: processProposals.map((p) => p.id),
     voterCount,
   });
 }
@@ -112,19 +84,16 @@ async function fetchVoterCount(
   return rows[0]?.count ?? 0;
 }
 
-/**
- * Insert a new result row plus its selections. We never update an existing
- * row — each run is a fresh snapshot, and the read side picks the latest by
- * `executedAt`.
- */
-async function insertResultRecord({
+async function writeResultRow({
   tx,
   processInstanceId,
+  errorMessage,
   selectedProposalIds,
   voterCount,
 }: {
   tx: DbClient;
   processInstanceId: string;
+  errorMessage: string | null;
   selectedProposalIds: string[];
   voterCount: number;
 }): Promise<void> {
@@ -132,8 +101,8 @@ async function insertResultRecord({
     .insert(decisionProcessResults)
     .values({
       processInstanceId,
-      success: true,
-      errorMessage: null,
+      success: errorMessage === null,
+      errorMessage,
       selectedCount: selectedProposalIds.length,
       voterCount,
       pipelineConfig: null,
@@ -143,49 +112,14 @@ async function insertResultRecord({
   if (!row) {
     throw new CommonError('Failed to insert process result record');
   }
-  const resultId = row.id;
 
   if (selectedProposalIds.length > 0) {
     await tx.insert(decisionProcessResultSelections).values(
       selectedProposalIds.map((proposalId) => ({
-        processResultId: resultId,
+        processResultId: row.id,
         proposalId,
         selectionRank: 0,
       })),
     );
-  }
-}
-
-/**
- * Outer-catch fallback: an unexpected error happened before the selection set
- * could be persisted (DB read failure, instance lookup, etc). Insert a failure
- * row so the Results screen can surface that the latest run failed; prior
- * successful rows stay in the table as part of the audit trail.
- */
-async function recordUnexpectedFailure({
-  tx,
-  processInstanceId,
-  errorMessage,
-  voterCount,
-}: {
-  tx: DbClient;
-  processInstanceId: string;
-  errorMessage: string;
-  voterCount: number;
-}): Promise<void> {
-  const [row] = await tx
-    .insert(decisionProcessResults)
-    .values({
-      processInstanceId,
-      success: false,
-      errorMessage,
-      selectedCount: 0,
-      voterCount,
-      pipelineConfig: null,
-    })
-    .returning({ id: decisionProcessResults.id });
-
-  if (!row) {
-    throw new CommonError('Failed to record processing failure');
   }
 }

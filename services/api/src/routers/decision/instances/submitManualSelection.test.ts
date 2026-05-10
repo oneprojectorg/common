@@ -489,11 +489,8 @@ describe.concurrent('submitManualSelection', () => {
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    // Three-phase schema where 'review' has a zero-selecting pipeline. The
-    // submission→review transition attaches all proposals; the review→final
-    // transition then strands them, leaving the inbound transition to 'final'
-    // with zero attachments — the natural "awaiting manual selection on the
-    // final phase" state.
+    // review→final's zero-limit pipeline strands proposals, leaving 'final'
+    // awaiting manual selection.
     const schemaWithZeroSelectingReview = {
       ...schemaWithoutPipeline,
       phases: [
@@ -530,13 +527,9 @@ describe.concurrent('submitManualSelection', () => {
       }),
     ]);
 
-    // submission → review: no pipeline at submission, so both proposals attach
-    // to the inbound transition for 'review'.
     await caller.decision.transitionFromPhase({ instanceId });
-    // review → final: zero-limit pipeline at review, so nothing attaches to
-    // 'final'. Hitting the last phase fires processResults via the
-    // post-advance hook, writing an initial decision_process_results row
-    // with selectedCount = 0.
+    // review → final fires processResults via the post-advance hook, writing
+    // an initial row with selectedCount = 0.
     await caller.decision.transitionFromPhase({ instanceId });
 
     const initialResults = await db
@@ -555,9 +548,6 @@ describe.concurrent('submitManualSelection', () => {
       proposalIds: [p1.id, p2.id],
     });
 
-    // Append-only: manual selection inserts a new result row rather than
-    // overwriting the initial one. Both runs stay in the table as an audit
-    // trail; the read side picks the latest by executedAt.
     const allResults = await db
       .select()
       .from(decisionProcessResults)
@@ -585,12 +575,8 @@ describe.concurrent('submitManualSelection', () => {
       new Set([p1.id, p2.id]),
     );
 
-    // processResults must not mutate proposals.status. Both proposals were
-    // created APPROVED above; after running through both the standalone-tx
-    // path (post-advance hook on the final-phase transition) and the
-    // inline-tx path (submitManualSelection), they should still be APPROVED.
-    // The selections table is the source of truth for which proposals
-    // advanced — proposals.status is left to other lifecycle code paths.
+    // Regression: processResults must not mutate proposals.status — the
+    // selections table is the source of truth for advancement.
     const proposalRows = await db
       .select({ id: proposals.id, status: proposals.status })
       .from(proposals)

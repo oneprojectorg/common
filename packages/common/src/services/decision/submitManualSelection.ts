@@ -254,14 +254,8 @@ export async function submitManualSelection({
       })),
     );
 
-    // Mirror the auto-advance side-effect: when manual selection lands on the
-    // final phase, fold results processing into the same transaction so the
-    // decision_process_results row reflects the manually selected proposals
-    // atomically with the attachment write. processResults upserts on
-    // process_instance_id, updating the row written when the instance
-    // auto-advanced into the last phase. Errors here roll back the manual
-    // selection — the caller must retry rather than land in an inconsistent
-    // half-committed state.
+    // On the final phase, fold results processing into this transaction so
+    // the new result row is atomic with the attachment write.
     if (isLastPhase(currentStateId, lockedPhases ?? [])) {
       await processResults({ processInstanceId, tx });
     }

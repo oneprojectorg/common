@@ -14,14 +14,8 @@ export interface OnPhaseAdvancedInput {
 }
 
 /**
- * Post-advance hook that runs after a successful phase transition commits.
- *
- * Centralises side-effects that should happen whenever a decision instance
- * moves to a new phase — regardless of whether the advance was manual or
- * cron-triggered — so callers of `advancePhase` don't duplicate logic.
- *
- * Runs outside the advance transaction on purpose: a failure here must not
- * roll back the phase transition itself.
+ * Side-effects after a phase transition commits. Runs outside the advance
+ * transaction so failures here don't roll back the transition itself.
  */
 export async function onPhaseAdvanced(
   input: OnPhaseAdvancedInput,
@@ -50,10 +44,7 @@ export async function onPhaseAdvanced(
   }
 
   if (isLastPhase(input.toPhaseId, input.phases)) {
-    // Auto-advance side-effect: failures are logged, not thrown, so a
-    // results-processing failure doesn't abort the post-advance flow or
-    // surface as an API error after a successful phase transition.
-    // processResults already records a failure row for the Results screen.
+    // Best-effort: processResults stamps its own failure row; don't abort the post-advance flow.
     try {
       await processResults({ processInstanceId: input.instanceId });
     } catch (error) {
