@@ -3,33 +3,48 @@ import {
   decisionProcessResultSelections,
   decisionProcessResults,
   decisionsVoteSubmissions,
+  processInstances,
 } from '@op/db/schema';
 
 import { CommonError } from '../../utils';
-import { getProposalsForPhase } from './getProposalsForPhase';
+import {
+  type PhaseScopedInstance,
+  getProposalIdsForPhase,
+} from './getProposalsForPhase';
 
 /**
  * Persist the proposals attached to the current phase as the decision's
  * selections. Append-only: each run inserts a new `decision_process_results`
  * row; readers pick the latest by `executedAt`. Pass `tx` to run inline in a
  * caller's transaction; otherwise this manages its own and stamps a failure
- * row on uncaught errors.
+ * row on uncaught errors. Pass `instance` when the caller already loaded the
+ * row (e.g. inside a locking tx) to skip a redundant fetch.
  */
 export async function processResults({
   processInstanceId,
   tx,
+  instance,
 }: {
   processInstanceId: string;
   tx?: DbClient;
+  instance?: PhaseScopedInstance;
 }): Promise<void> {
   if (tx) {
-    await runProcessResults(tx, processInstanceId);
+    await runProcessResults({
+      tx,
+      processInstanceId,
+      preloadedInstance: instance,
+    });
     return;
   }
 
   try {
     await db.transaction(async (newTx) =>
-      runProcessResults(newTx, processInstanceId),
+      runProcessResults({
+        tx: newTx,
+        processInstanceId,
+        preloadedInstance: instance,
+      }),
     );
   } catch (error) {
     console.error('Error processing results:', error);
@@ -37,7 +52,7 @@ export async function processResults({
       error instanceof Error ? error.message : 'Unknown error';
 
     try {
-      const voterCount = await fetchVoterCount(db, processInstanceId);
+      const voterCount = await fetchVoterCount({ db, processInstanceId });
       await db.transaction(async (failureTx) =>
         writeResultRow({
           tx: failureTx,
@@ -55,29 +70,62 @@ export async function processResults({
   }
 }
 
-async function runProcessResults(
-  tx: DbClient,
-  processInstanceId: string,
-): Promise<void> {
-  const [processProposals, voterCount] = await Promise.all([
-    getProposalsForPhase({ instanceId: processInstanceId, db: tx }),
-    fetchVoterCount(tx, processInstanceId),
+async function runProcessResults({
+  tx,
+  processInstanceId,
+  preloadedInstance,
+}: {
+  tx: DbClient;
+  processInstanceId: string;
+  preloadedInstance?: PhaseScopedInstance;
+}): Promise<void> {
+  const resolvedInstance =
+    preloadedInstance ??
+    (await loadPhaseScopedInstance({ db: tx, processInstanceId }));
+
+  const [selectedProposalIds, voterCount] = await Promise.all([
+    resolvedInstance
+      ? getProposalIdsForPhase({ instance: resolvedInstance, db: tx })
+      : Promise.resolve<string[]>([]),
+    fetchVoterCount({ db: tx, processInstanceId }),
   ]);
 
   await writeResultRow({
     tx,
     processInstanceId,
     errorMessage: null,
-    selectedProposalIds: processProposals.map((p) => p.id),
+    selectedProposalIds,
     voterCount,
   });
 }
 
-async function fetchVoterCount(
-  dbOrTx: DbClient,
-  processInstanceId: string,
-): Promise<number> {
-  const rows = await dbOrTx
+async function loadPhaseScopedInstance({
+  db,
+  processInstanceId,
+}: {
+  db: DbClient;
+  processInstanceId: string;
+}): Promise<PhaseScopedInstance | undefined> {
+  const [row] = await db
+    .select({
+      id: processInstances.id,
+      instanceData: processInstances.instanceData,
+      currentStateId: processInstances.currentStateId,
+    })
+    .from(processInstances)
+    .where(eq(processInstances.id, processInstanceId))
+    .limit(1);
+  return row;
+}
+
+async function fetchVoterCount({
+  db,
+  processInstanceId,
+}: {
+  db: DbClient;
+  processInstanceId: string;
+}): Promise<number> {
+  const rows = await db
     .select({ count: count() })
     .from(decisionsVoteSubmissions)
     .where(eq(decisionsVoteSubmissions.processInstanceId, processInstanceId));

@@ -257,7 +257,15 @@ export async function submitManualSelection({
     // On the final phase, fold results processing into this transaction so
     // the new result row is atomic with the attachment write.
     if (isLastPhase(currentStateId, lockedPhases ?? [])) {
-      await processResults({ processInstanceId, tx });
+      await processResults({
+        processInstanceId,
+        tx,
+        instance: {
+          id: processInstanceId,
+          instanceData: lockedInstance.instanceData,
+          currentStateId: lockedInstance.currentStateId,
+        },
+      });
     }
   });
 }
