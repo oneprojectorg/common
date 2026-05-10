@@ -1,31 +1,52 @@
+import { EntityType } from '@op/db/schema';
+
+import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
+import { decisionPermission } from '../decision/permissions';
+import { loadPostContext, type PostContext } from '../posts/postContext';
 import { addReaction } from './addReaction';
 import { getExistingReaction } from './getExistingReaction';
 import { removeReaction } from './removeReaction';
 
 export interface ToggleReactionOptions {
+  user: { id: string };
   postId: string;
-  profileId: string;
   reactionType: string;
 }
 
-export const toggleReaction = async (options: ToggleReactionOptions) => {
-  const { postId, profileId, reactionType } = options;
+export type ToggleReactionResult = {
+  action: 'added' | 'removed' | 'replaced';
+  context: PostContext;
+};
 
+export const toggleReaction = async ({
+  user,
+  postId,
+  reactionType,
+}: ToggleReactionOptions): Promise<ToggleReactionResult> => {
+  const context = await loadPostContext(postId);
+
+  await assertProfileTypeAccess({
+    user,
+    profileIds: context.associatedProfileIds,
+    policies: {
+      [EntityType.DECISION]: {
+        decisions: decisionPermission.SUBMIT_PROPOSALS,
+      },
+    },
+  });
+
+  const profileId = await getCurrentProfileId(user.id);
   const existingReaction = await getExistingReaction({ postId, profileId });
 
   if (existingReaction) {
-    // If user has the same reaction type, remove it
     if (existingReaction.reactionType === reactionType) {
       await removeReaction({ postId, profileId });
-      return { action: 'removed' as const };
-    } else {
-      // If user has a different reaction type, replace it
-      await addReaction({ postId, profileId, reactionType });
-      return { action: 'replaced' as const };
+      return { action: 'removed', context };
     }
-  } else {
-    // No existing reaction, add new one
     await addReaction({ postId, profileId, reactionType });
-    return { action: 'added' as const };
+    return { action: 'replaced', context };
   }
+
+  await addReaction({ postId, profileId, reactionType });
+  return { action: 'added', context };
 };

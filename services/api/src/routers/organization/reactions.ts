@@ -1,8 +1,4 @@
-import {
-  authorizeReactionForPost,
-  channelsForPost,
-  toggleReaction,
-} from '@op/common';
+import { channelsForPost, toggleReaction } from '@op/common';
 import { VALID_REACTION_TYPES } from '@op/types';
 import { z } from 'zod';
 
@@ -24,14 +20,14 @@ export const reactionsRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       const { postId, reactionType } = input;
-      const { context, profileId } = await authorizeReactionForPost({
+      const { action, context } = await toggleReaction({
         user: ctx.user,
         postId,
+        reactionType,
       });
 
-      const result = await toggleReaction({ postId, profileId, reactionType });
       ctx.registerMutationChannels(channelsForPost(context));
 
-      return result;
+      return { action };
     }),
 });

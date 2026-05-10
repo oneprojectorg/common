@@ -1,7 +1,11 @@
 import { db } from '@op/db/client';
-import { EntityType, postsToProfiles } from '@op/db/schema';
+import {
+  EntityType,
+  posts as postsTable,
+  postsToProfiles,
+} from '@op/db/schema';
 import { permission } from 'access-zones';
-import { eq } from 'drizzle-orm';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 
 import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
 import { getItemsWithReactionsAndComments } from './listPosts';
@@ -15,12 +19,6 @@ export interface GetPostsInput {
   maxDepth?: number;
   authUserId: string;
 }
-
-const postRelations = {
-  profile: { with: { avatarImage: true } },
-  attachments: { with: { storageObject: true } },
-  reactions: { with: { profile: true } },
-} as const;
 
 export const getPosts = async (input: GetPostsInput) => {
   const {
@@ -40,6 +38,12 @@ export const getPosts = async (input: GetPostsInput) => {
   if (!profileId && !parentPostId) {
     return [];
   }
+
+  const postRelations = {
+    profile: { with: { avatarImage: true } },
+    attachments: { with: { storageObject: true } },
+    reactions: { with: { profile: true } },
+  } as const;
 
   // When scoping by profile without an explicit parentPostId, default to
   // top-level posts. Comments inherit their parent's profile associations,
@@ -87,19 +91,57 @@ export const getPosts = async (input: GetPostsInput) => {
 
   const postWith = { ...postRelations, ...childPostsRelation };
 
+  // Filter at the SQL level so pagination doesn't under-fetch when comments
+  // inherit profile associations from their parent. A relational
+  // `where: { post: { parentPostId: ... } }` produces a LEFT JOIN that returns
+  // nulls for filtered rows — paginating on those rows silently drops pages.
+  const parentPostCondition =
+    effectiveParentPostId === null
+      ? isNull(postsTable.parentPostId)
+      : effectiveParentPostId
+        ? eq(postsTable.parentPostId, effectiveParentPostId)
+        : undefined;
+
   const postsData = profileId
-    ? await db.query.postsToProfiles.findMany({
-        where: { profileId },
-        with: {
-          post: {
-            where: postWhere,
-            with: postWith,
-          },
-        },
-        limit,
-        offset,
-        orderBy: { createdAt: 'desc' as const },
-      })
+    ? await (async () => {
+        const pageRows = await db
+          .select({ postId: postsToProfiles.postId })
+          .from(postsToProfiles)
+          .innerJoin(
+            postsTable,
+            parentPostCondition
+              ? and(
+                  eq(postsTable.id, postsToProfiles.postId),
+                  parentPostCondition,
+                )
+              : eq(postsTable.id, postsToProfiles.postId),
+          )
+          .where(eq(postsToProfiles.profileId, profileId))
+          .orderBy(
+            desc(postsToProfiles.createdAt),
+            desc(postsToProfiles.postId),
+          )
+          .limit(limit)
+          .offset(offset);
+
+        const postIds = pageRows.map((row) => row.postId);
+        if (postIds.length === 0) {
+          return [];
+        }
+
+        const hydrated = await db.query.posts.findMany({
+          where: { id: { in: postIds } },
+          with: postWith,
+        });
+
+        const postById = new Map(hydrated.map((post) => [post.id, post]));
+        return postIds
+          .map((id) => postById.get(id))
+          .filter(
+            (post): post is NonNullable<typeof post> => post !== undefined,
+          )
+          .map((post) => ({ post }));
+      })()
     : (
         await db.query.posts.findMany({
           where: postWhere,
