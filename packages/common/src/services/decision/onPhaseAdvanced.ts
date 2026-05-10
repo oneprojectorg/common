@@ -50,6 +50,6 @@ export async function onPhaseAdvanced(
   }
 
   if (isLastPhase(input.toPhaseId, input.phases)) {
-    await runResultsProcessing(input);
+    await runResultsProcessing({ instanceId: input.instanceId });
   }
 }

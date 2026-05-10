@@ -3,6 +3,8 @@ import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
   ProposalStatus,
+  decisionProcessResultSelections,
+  decisionProcessResults,
   decisionTransitionProposals,
   stateTransitionHistory,
 } from '@op/db/schema';
@@ -479,5 +481,99 @@ describe.concurrent('submitManualSelection', () => {
       });
       expect(advanceResult.status).toBe('fulfilled');
     }
+  });
+
+  it('updates the existing decision_process_results row when manual selection lands on the final phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    // Three-phase schema where 'review' has a zero-selecting pipeline. The
+    // submission→review transition attaches all proposals; the review→final
+    // transition then strands them, leaving the inbound transition to 'final'
+    // with zero attachments — the natural "awaiting manual selection on the
+    // final phase" state.
+    const schemaWithZeroSelectingReview = {
+      ...schemaWithoutPipeline,
+      phases: [
+        { id: 'submission', name: 'Submission', rules: {} },
+        {
+          id: 'review',
+          name: 'Review',
+          rules: {},
+          selectionPipeline: {
+            version: '1.0.0',
+            blocks: [{ id: 'zero', type: 'limit', count: 0 }],
+          },
+        },
+        { id: 'final', name: 'Final', rules: {} },
+      ],
+    };
+    const { instanceId, userEmail, caller } = await seedInstance(
+      testData,
+      schemaWithZeroSelectingReview,
+    );
+
+    const [p1, p2] = await Promise.all([
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal 1 ${task.id}` },
+        status: ProposalStatus.APPROVED,
+      }),
+      testData.createProposal({
+        userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `Proposal 2 ${task.id}` },
+        status: ProposalStatus.APPROVED,
+      }),
+    ]);
+
+    // submission → review: no pipeline at submission, so both proposals attach
+    // to the inbound transition for 'review'.
+    await caller.decision.transitionFromPhase({ instanceId });
+    // review → final: zero-limit pipeline at review, so nothing attaches to
+    // 'final'. Hitting the last phase fires runResultsProcessing, writing an
+    // initial decision_process_results row with selectedCount = 0.
+    await caller.decision.transitionFromPhase({ instanceId });
+
+    const initialResults = await db
+      .select()
+      .from(decisionProcessResults)
+      .where(eq(decisionProcessResults.processInstanceId, instanceId));
+    expect(initialResults).toHaveLength(1);
+    const initialResult = initialResults[0];
+    if (!initialResult) {
+      throw new Error('Expected an initial decision_process_results row');
+    }
+    expect(initialResult.selectedCount).toBe(0);
+
+    await caller.decision.submitManualSelection({
+      processInstanceId: instanceId,
+      proposalIds: [p1.id, p2.id],
+    });
+
+    const updatedResults = await db
+      .select()
+      .from(decisionProcessResults)
+      .where(eq(decisionProcessResults.processInstanceId, instanceId));
+    expect(updatedResults).toHaveLength(1);
+    const updatedResult = updatedResults[0];
+    if (!updatedResult) {
+      throw new Error('Expected the decision_process_results row to remain');
+    }
+    expect(updatedResult.id).toBe(initialResult.id);
+    expect(updatedResult.selectedCount).toBe(2);
+    expect(updatedResult.success).toBe(true);
+
+    const selections = await db
+      .select({ proposalId: decisionProcessResultSelections.proposalId })
+      .from(decisionProcessResultSelections)
+      .where(
+        eq(decisionProcessResultSelections.processResultId, initialResult.id),
+      );
+    expect(new Set(selections.map((s) => s.proposalId))).toEqual(
+      new Set([p1.id, p2.id]),
+    );
   });
 });

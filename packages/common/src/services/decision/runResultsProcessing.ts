@@ -1,24 +1,25 @@
-import type { OnPhaseAdvancedInput } from './onPhaseAdvanced';
 import { processResults } from './processResults';
 
 /** Run results processing for an instance that reached its final phase. Failures are logged, not thrown. */
-export async function runResultsProcessing(
-  input: OnPhaseAdvancedInput,
-): Promise<void> {
+export async function runResultsProcessing({
+  instanceId,
+}: {
+  instanceId: string;
+}): Promise<void> {
   try {
     const processingResult = await processResults({
-      processInstanceId: input.instanceId,
+      processInstanceId: instanceId,
     });
 
     if (!processingResult.success) {
       console.error(
-        `Results processing failed for process instance ${input.instanceId}:`,
+        `Results processing failed for process instance ${instanceId}:`,
         processingResult.error,
       );
     }
   } catch (error) {
     console.error(
-      `Error processing results for process instance ${input.instanceId}:`,
+      `Error processing results for process instance ${instanceId}:`,
       error,
     );
   }
