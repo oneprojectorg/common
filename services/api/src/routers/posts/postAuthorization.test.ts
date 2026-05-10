@@ -693,3 +693,76 @@ describe.concurrent('listProfilePosts authorization and pagination', () => {
     expect(new Set(collected)).toEqual(new Set(updateIds));
   });
 });
+
+describe.concurrent('getPosts pagination', () => {
+  it('paginates correctly when comments inherit profile associations from updates', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // Same regression as the listProfilePosts test, against the getPosts
+    // profileId branch (called by ProposalView). Comments inherit
+    // postsToProfiles rows from their parent; a relational `with: { post: ... }`
+    // filter would LEFT JOIN and silently shrink pages. SQL-level innerJoin
+    // keeps offset pagination honest.
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    const updateIds: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const update = await adminCaller.posts.createPost({
+        content: `Update ${i}.`,
+        profileId: instance.profileId,
+      });
+      updateIds.push(update.id);
+      await memberCaller.posts.createPost({
+        content: `Comment ${i}.a`,
+        parentPostId: update.id,
+      });
+      await memberCaller.posts.createPost({
+        content: `Comment ${i}.b`,
+        parentPostId: update.id,
+      });
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+
+    const collected: string[] = [];
+    const limit = 2;
+    let offset = 0;
+    let pages = 0;
+    while (true) {
+      const page = await memberCaller.posts.getPosts({
+        profileId: instance.profileId,
+        parentPostId: null,
+        limit,
+        offset,
+        includeChildren: false,
+      });
+      if (page.length === 0) {
+        break;
+      }
+      page.forEach((post) => {
+        expect(post.parentPostId).toBeNull();
+        collected.push(post.id);
+      });
+      offset += limit;
+      pages += 1;
+      if (pages > 5) {
+        throw new Error('Pagination did not terminate');
+      }
+    }
+
+    expect(collected).toHaveLength(3);
+    expect(new Set(collected)).toEqual(new Set(updateIds));
+  });
+});
