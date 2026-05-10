@@ -4,23 +4,19 @@ import {
   decisionProcessResultSelections,
   decisionProcessResults,
   decisionsVoteSubmissions,
+  processInstances,
   proposals,
 } from '@op/db/schema';
 
 import { CommonError } from '../../utils';
 import { getProposalsForPhase } from './getProposalsForPhase';
-import type { DecisionInstanceData } from './schemas/instanceData';
-import {
-  aggregateProposalMetrics,
-  defaultSelectionPipeline,
-  executeSelectionPipeline,
-} from './selectionPipeline';
-import type {
-  ExecutionContext,
-  SelectionPipeline,
-} from './selectionPipeline/types';
 
-/** Execute the selection pipeline and store winning proposals. */
+/**
+ * Record the proposals that advanced into the current (final) phase as the
+ * decision's selections. Selection itself happens upstream — the prior phase's
+ * pipeline (or admin manual selection) decides what advances; we just persist
+ * that set so the Results screen can read it.
+ */
 export async function processResults({
   processInstanceId,
 }: {
@@ -32,71 +28,29 @@ export async function processResults({
   error?: string;
 }> {
   try {
-    const processInstance = await db.query.processInstances.findFirst({
-      where: { id: processInstanceId },
-      with: {
-        process: true,
-      },
-    });
+    const [instance] = await db
+      .select({ id: processInstances.id })
+      .from(processInstances)
+      .where(eq(processInstances.id, processInstanceId))
+      .limit(1);
 
-    if (!processInstance) {
+    if (!instance) {
       throw new CommonError(`Process instance not found: ${processInstanceId}`);
     }
-
-    if (!processInstance.process) {
-      throw new CommonError(
-        `Process not found for instance: ${processInstanceId}`,
-      );
-    }
-
-    const instanceData = processInstance.instanceData as DecisionInstanceData;
-    const currentPhaseId = processInstance.currentStateId;
 
     const processProposals = await getProposalsForPhase({
       instanceId: processInstanceId,
     });
-
-    const currentPhase = instanceData.phases?.find(
-      (p) => p.phaseId === currentPhaseId,
-    );
-    const pipeline =
-      currentPhase?.selectionPipeline ?? defaultSelectionPipeline;
-
-    let selectedProposalIds: string[] = [];
-    let error: string | undefined;
-    let success = false;
-
-    try {
-      const proposalMetrics = await aggregateProposalMetrics(processProposals);
-      const context: ExecutionContext = {
-        proposals: processProposals,
-        voteData: proposalMetrics,
-        variables: {},
-        outputs: {},
-      };
-
-      const selectedProposals = await executeSelectionPipeline(
-        pipeline,
-        context,
-      );
-      selectedProposalIds = selectedProposals.map((p) => p.id);
-      success = true;
-    } catch (err) {
-      console.error('Error executing selection pipeline:', err);
-      error = err instanceof Error ? err.message : 'Unknown error';
-    }
+    const selectedProposalIds = processProposals.map((p) => p.id);
 
     const voterCount = await fetchVoterCount(processInstanceId);
 
-    const result = await db.transaction(async (tx) => {
+    return await db.transaction(async (tx) => {
       const { resultId } = await upsertResultRecord({
         tx,
         processInstanceId,
-        success,
-        errorMessage: error,
         selectedProposalIds,
         voterCount,
-        pipelineConfig: pipeline === defaultSelectionPipeline ? null : pipeline,
       });
 
       if (selectedProposalIds.length > 0) {
@@ -107,14 +61,11 @@ export async function processResults({
       }
 
       return {
-        success,
+        success: true,
         resultId,
         selectedProposalIds,
-        error,
       };
     });
-
-    return result;
   } catch (error) {
     console.error('Error processing results:', error);
     const errorMessage =
@@ -156,45 +107,38 @@ async function fetchVoterCount(processInstanceId: string): Promise<number> {
 
 /**
  * Atomic upsert keyed on processInstanceId (UNIQUE in the DB). Replaces
- * selections to match the new run. Used after a real pipeline execution —
- * success or pipeline-level failure — where the empty selection set is the
- * authoritative current state.
+ * selections to match the current set of proposals advancing into the final
+ * phase.
  */
 async function upsertResultRecord({
   tx,
   processInstanceId,
-  success,
-  errorMessage,
   selectedProposalIds,
   voterCount,
-  pipelineConfig,
 }: {
   tx: DbClient;
   processInstanceId: string;
-  success: boolean;
-  errorMessage: string | undefined;
   selectedProposalIds: string[];
   voterCount: number;
-  pipelineConfig: SelectionPipeline | null;
 }): Promise<{ resultId: string }> {
   const [row] = await tx
     .insert(decisionProcessResults)
     .values({
       processInstanceId,
-      success,
-      errorMessage,
+      success: true,
+      errorMessage: null,
       selectedCount: selectedProposalIds.length,
       voterCount,
-      pipelineConfig,
+      pipelineConfig: null,
     })
     .onConflictDoUpdate({
       target: decisionProcessResults.processInstanceId,
       set: {
-        success,
-        errorMessage: errorMessage ?? null,
+        success: true,
+        errorMessage: null,
         selectedCount: selectedProposalIds.length,
         voterCount,
-        pipelineConfig,
+        pipelineConfig: null,
         executedAt: new Date().toISOString(),
       },
     })
@@ -223,11 +167,11 @@ async function upsertResultRecord({
 }
 
 /**
- * Outer-catch fallback: an unexpected error happened (DB read, etc) before
- * the pipeline ran. Stamp the failure on the result row but preserve any
- * existing selections / pipelineConfig / selectedCount — we don't have a new
- * authoritative state to replace them with, so destroying the prior run's
- * data on a transient infra failure would lose information from the user.
+ * Outer-catch fallback: an unexpected error happened before the selection set
+ * could be persisted (DB read failure, instance lookup, etc). Stamp the
+ * failure on the result row but preserve any existing selections — we don't
+ * have a new authoritative state to replace them with, so destroying the
+ * prior run's data on a transient infra failure would lose information.
  */
 async function recordUnexpectedFailure({
   tx,
