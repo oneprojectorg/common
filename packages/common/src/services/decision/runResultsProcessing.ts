@@ -7,16 +7,7 @@ export async function runResultsProcessing({
   instanceId: string;
 }): Promise<void> {
   try {
-    const processingResult = await processResults({
-      processInstanceId: instanceId,
-    });
-
-    if (!processingResult.success) {
-      console.error(
-        `Results processing failed for process instance ${instanceId}:`,
-        processingResult.error,
-      );
-    }
+    await processResults({ processInstanceId: instanceId });
   } catch (error) {
     console.error(
       `Error processing results for process instance ${instanceId}:`,

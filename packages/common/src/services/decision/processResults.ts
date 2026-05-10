@@ -21,12 +21,7 @@ export async function processResults({
   processInstanceId,
 }: {
   processInstanceId: string;
-}): Promise<{
-  success: boolean;
-  resultId: string;
-  selectedProposalIds: string[];
-  error?: string;
-}> {
+}): Promise<void> {
   try {
     const [instance] = await db
       .select({ id: processInstances.id })
@@ -45,8 +40,8 @@ export async function processResults({
 
     const voterCount = await fetchVoterCount(processInstanceId);
 
-    return await db.transaction(async (tx) => {
-      const { resultId } = await upsertResultRecord({
+    await db.transaction(async (tx) => {
+      await upsertResultRecord({
         tx,
         processInstanceId,
         selectedProposalIds,
@@ -59,12 +54,6 @@ export async function processResults({
           .set({ status: ProposalStatus.SELECTED })
           .where(inArray(proposals.id, selectedProposalIds));
       }
-
-      return {
-        success: true,
-        resultId,
-        selectedProposalIds,
-      };
     });
   } catch (error) {
     console.error('Error processing results:', error);
@@ -74,7 +63,7 @@ export async function processResults({
     try {
       const voterCount = await fetchVoterCount(processInstanceId);
 
-      const { resultId } = await db.transaction(async (tx) =>
+      await db.transaction(async (tx) =>
         recordUnexpectedFailure({
           tx,
           processInstanceId,
@@ -82,13 +71,6 @@ export async function processResults({
           voterCount,
         }),
       );
-
-      return {
-        success: false,
-        resultId,
-        selectedProposalIds: [],
-        error: errorMessage,
-      };
     } catch (insertError) {
       console.error('Failed to store error in database:', insertError);
     }
@@ -120,7 +102,7 @@ async function upsertResultRecord({
   processInstanceId: string;
   selectedProposalIds: string[];
   voterCount: number;
-}): Promise<{ resultId: string }> {
+}): Promise<void> {
   const [row] = await tx
     .insert(decisionProcessResults)
     .values({
@@ -162,8 +144,6 @@ async function upsertResultRecord({
       })),
     );
   }
-
-  return { resultId };
 }
 
 /**
@@ -183,7 +163,7 @@ async function recordUnexpectedFailure({
   processInstanceId: string;
   errorMessage: string;
   voterCount: number;
-}): Promise<{ resultId: string }> {
+}): Promise<void> {
   const [row] = await tx
     .insert(decisionProcessResults)
     .values({
@@ -207,5 +187,4 @@ async function recordUnexpectedFailure({
   if (!row) {
     throw new CommonError('Failed to record processing failure');
   }
-  return { resultId: row.id };
 }
