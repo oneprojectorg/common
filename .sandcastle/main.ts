@@ -194,7 +194,9 @@ async function requeueTaskToBacklog(
       data: { task: taskId },
     });
     await asanaPost(`/tasks/${taskId}/stories`, {
-      data: { text: `sandcastle: requeued to Backlog after failure — ${reason}` },
+      data: {
+        text: `sandcastle: requeued to Backlog after failure — ${reason}`,
+      },
     });
     console.log(`  ↺ ${taskId} moved back to Backlog (${reason}).`);
   } catch (err) {

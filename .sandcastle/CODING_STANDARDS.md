@@ -72,11 +72,9 @@ execute it.
 
 ## Branching & Git
 
-- **NEVER branch off of `main`.** All new branches must be created off of `dev` or an existing feature branch.
-- **NEVER push to `main` under any circumstances.** `main` is updated only via the release process.
-- **NEVER push to `dev` under any circumstances.** Changes reach `dev` exclusively through reviewed pull requests.
-- Do not force-push (`--force` / `--force-with-lease`) to `main` or `dev` ever, even if explicitly asked.
-- Do not delete or rename `main` or `dev`, locally or remotely.
+See @.claude/skills/branch-and-pr.md for the full branch/PR workflow.
+Pre-tool hooks in `.claude/hooks/` enforce the protected-branch rules
+at the tool layer; this section just adds the merging policy below.
 
 ## Merging
 
