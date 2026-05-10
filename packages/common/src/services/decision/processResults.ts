@@ -1,4 +1,12 @@
-import { type DbClient, and, count, db, eq, inArray, notInArray } from '@op/db/client';
+import {
+  type DbClient,
+  and,
+  count,
+  db,
+  eq,
+  inArray,
+  notInArray,
+} from '@op/db/client';
 import {
   ProposalStatus,
   decisionProcessResultSelections,
