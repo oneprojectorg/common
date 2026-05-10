@@ -47,6 +47,13 @@ are still red.
    [How agents use Fallow](https://github.com/fallow-rs/fallow#how-agents-use-fallow)
    for the broader workflow (`fallow --format json`,
    `fallow fix --dry-run --format json`).
+4. `pnpm e2e` — the playwright e2e suite must pass. The `pnpm test` gate
+   above does NOT run e2e (root `package.json` `test` script delegates
+   to turbo, which only invokes packages that define a `test` script;
+   `tests/e2e/` only defines `e2e`). Skip with an explicit one-line note
+   in the commit message only when the diff has no UI / route / API
+   surface (e.g. "internal-only utility change, no e2e impact"). The
+   reviewer re-runs this gate from scratch.
 
 If any check fails, fix and re-run before continuing.
 

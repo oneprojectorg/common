@@ -22,6 +22,7 @@
 //   "scripts": { "sandcastle": "npx tsx .sandcastle/main.ts" }
 
 import * as sandcastle from '@ai-hero/sandcastle';
+import { hostSessionStore } from '@ai-hero/sandcastle';
 import { docker } from '@ai-hero/sandcastle/sandboxes/docker';
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -89,6 +90,116 @@ async function asanaGet<T>(path: string): Promise<T> {
     );
   }
   return (await res.json()) as T;
+}
+
+async function asanaPost<T>(path: string, body: unknown): Promise<T> {
+  const token = process.env.ASANA_PERSONAL_ACCESS_TOKEN;
+  if (!token) {
+    throw new Error('ASANA_PERSONAL_ACCESS_TOKEN is not set');
+  }
+  const res = await fetch(`https://app.asana.com/api/1.0${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new Error(
+      `Asana POST ${path} failed: ${res.status} ${await res.text()}`,
+    );
+  }
+  return (await res.json()) as T;
+}
+
+// Replace the `Claimed by: <...>` last line of a task's notes with
+// `Claimed by: session:<sessionId>`. The planner stamps a random UUID
+// as the initial claim (race-protection during the planner's claim+move
+// window); after the implementer finishes its first run, we overwrite
+// that with the actual Claude Code session ID so the next pickup of
+// this task — whether after success-but-reviewer-failure, or just
+// later cycles — can pass `resumeSession` to the implementer and
+// continue Claude's prior context. The session JSONL lives at
+// `~/.claude/projects/<encoded-cwd>/<sessionId>.jsonl` and is
+// preserved by sandcastle on the host. Best-effort: errors are
+// logged, never thrown.
+async function stampSessionClaim(
+  taskId: string,
+  sessionId: string,
+): Promise<void> {
+  try {
+    const task = await asanaGet<{ data: { notes?: string } }>(
+      `/tasks/${taskId}?opt_fields=notes`,
+    );
+    const notes = task.data.notes ?? '';
+    // Drop a trailing "Claimed by: ..." line if present, then append
+    // the session-prefixed claim. Mirrors the shell `claim` command
+    // (Dockerfile) — keep behaviour aligned with `verify-claim` /
+    // `get-claim` which read the LAST non-empty line.
+    const lines = notes.split('\n');
+    while (lines.length > 0 && lines[lines.length - 1]!.trim() === '') {
+      lines.pop();
+    }
+    if (
+      lines.length > 0 &&
+      lines[lines.length - 1]!.startsWith('Claimed by: ')
+    ) {
+      lines.pop();
+    }
+    while (lines.length > 0 && lines[lines.length - 1]!.trim() === '') {
+      lines.pop();
+    }
+    const newClaim = `Claimed by: session:${sessionId}`;
+    const newNotes =
+      lines.length === 0 ? newClaim : lines.join('\n') + '\n\n' + newClaim;
+    await fetch(`https://app.asana.com/api/1.0/tasks/${taskId}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${process.env.ASANA_PERSONAL_ACCESS_TOKEN}`,
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ data: { notes: newNotes } }),
+    }).then((res) => {
+      if (!res.ok) {
+        throw new Error(`Asana PUT /tasks/${taskId} ${res.status}`);
+      }
+    });
+    console.log(`  ◆ ${taskId} claim updated to session:${sessionId}`);
+  } catch (err) {
+    console.error(`  ! failed to stamp session claim on ${taskId}:`, err);
+  }
+}
+
+// Move a stranded task back to Backlog so the next planner iteration can
+// re-pick it. Used when the issue pipeline rejects (AgentIdleTimeoutError,
+// network blip, sandbox crash, etc.) — without this, the task sits in
+// In-Progress forever because the planner only queries the Backlog
+// section. Best-effort: a failure here is logged but does not bubble.
+async function requeueTaskToBacklog(
+  taskId: string,
+  reason: string,
+): Promise<void> {
+  const backlogId = process.env.ASANA_BACKLOG_SECTION_ID;
+  if (!backlogId) {
+    console.warn(
+      `requeueTaskToBacklog(${taskId}): ASANA_BACKLOG_SECTION_ID not set; leaving task in In-Progress.`,
+    );
+    return;
+  }
+  try {
+    await asanaPost(`/sections/${backlogId}/addTask`, {
+      data: { task: taskId },
+    });
+    await asanaPost(`/tasks/${taskId}/stories`, {
+      data: { text: `sandcastle: requeued to Backlog after failure — ${reason}` },
+    });
+    console.log(`  ↺ ${taskId} moved back to Backlog (${reason}).`);
+  } catch (err) {
+    console.error(`  ! failed to requeue ${taskId}:`, err);
+  }
 }
 
 async function countMatchingBacklogTasks(): Promise<number> {
@@ -177,39 +288,43 @@ const writeSettingsLocal = {
     `printf '%s\\n' '${SANDBOX_MCP_JSON}' > .mcp.json`,
 };
 
-// Symlink the vendored gstack into ~/.claude/skills/gstack so the gstack
-// skills' hardcoded `~/.claude/skills/gstack/bin/...` preamble paths resolve
-// inside the sandbox. The container has no host home, so this just points
-// at the vendored copy on the worktree.
-const linkGstack = {
+// Configure the codex CLI to route through OpenRouter so gstack /review's
+// Step 5.7 adversarial pass uses our team's gateway (and billing) rather
+// than calling OpenAI directly. Codex's default `auth.json` flow only
+// covers OpenAI; for any other OpenAI-compatible endpoint we register a
+// `model_provider` in ~/.codex/config.toml that names an env var holding
+// the API key. Codex reads OPENAI_API_KEY at request time — no
+// `codex login` step is involved.
+//
+// We reuse the OPENAI_API_KEY name even though the endpoint is OpenRouter:
+// the variable's value is the OpenRouter key, the codex provider config
+// just points the wire to https://openrouter.ai/api/v1.
+//
+// The default model is overridable via OPENROUTER_CODEX_MODEL on the host
+// (forwarded into the sandbox env). Pick a non-Claude model — the whole
+// point of the codex pass is cross-family coverage that complements
+// Claude's adversarial subagent.
+//
+// No-op when OPENAI_API_KEY isn't forwarded; /review then reports
+// "Codex CLI not authed" and continues with Claude-only adversarial
+// coverage.
+const configureCodex = {
   command:
-    'mkdir -p ~/.claude/skills && ' +
-    'ln -sfn "$PWD/.claude/skills/gstack" ~/.claude/skills/gstack',
-};
-
-// Build the gstack bun-compiled binaries (browse, design, make-pdf,
-// gstack-global-discover) for linux/amd64. The host-side binaries are macOS
-// arm64 and excluded from the vendored copy (see scripts/sync-gstack.sh),
-// so the first sandbox start has to rebuild them. The conditional makes
-// subsequent runs a no-op once the binaries are cached on the worktree.
-const buildGstack = {
-  command:
-    'if [ ! -x .claude/skills/gstack/browse/dist/browse ]; then ' +
-    '(cd .claude/skills/gstack && bun install && bun run build); ' +
-    'fi',
-  timeoutMs: 5 * 60 * 1000,
-};
-
-// Register the OpenAI API key with the codex CLI so gstack /review's Step 5.7
-// adversarial pass can call `codex exec` non-interactively. The CLI does NOT
-// auto-pickup OPENAI_API_KEY from env — it requires credentials at
-// ~/.codex/auth.json, which `--with-api-key` writes from stdin. No-op when
-// the key isn't forwarded; /review then reports "Codex CLI not authed" and
-// continues with Claude-only adversarial coverage.
-const loginCodex = {
-  command:
-    'if [ -n "${OPENAI_API_KEY:-}" ] && [ ! -f ~/.codex/auth.json ]; then ' +
-    'printenv OPENAI_API_KEY | codex login --with-api-key; ' +
+    'if [ -n "${OPENAI_API_KEY:-}" ]; then ' +
+    'mkdir -p ~/.codex && ' +
+    'cat > ~/.codex/config.toml <<EOF\n' +
+    'model_provider = "openrouter"\n' +
+    'model = "${OPENROUTER_CODEX_MODEL:-openai/gpt-5-codex}"\n' +
+    '\n' +
+    '[model_providers.openrouter]\n' +
+    'name = "OpenRouter"\n' +
+    'base_url = "https://openrouter.ai/api/v1"\n' +
+    'env_key = "OPENAI_API_KEY"\n' +
+    'wire_api = "chat"\n' +
+    'EOF\n' +
+    'echo "configureCodex: wrote ~/.codex/config.toml (model=${OPENROUTER_CODEX_MODEL:-openai/gpt-5-codex})"; ' +
+    'else ' +
+    'echo "configureCodex: OPENAI_API_KEY not set in sandbox env — codex adversarial pass will be skipped"; ' +
     'fi',
 };
 
@@ -227,7 +342,7 @@ const loginCodex = {
 // re-add the install hook for platform-specific binaries.
 const planHooks = {
   sandbox: {
-    onSandboxReady: [writeSettingsLocal, linkGstack],
+    onSandboxReady: [writeSettingsLocal],
   },
 };
 
@@ -240,10 +355,18 @@ const issueHooks = {
   sandbox: {
     onSandboxReady: [
       writeSettingsLocal,
-      linkGstack,
-      buildGstack,
-      loginCodex,
-      { command: 'pnpm install' },
+      configureCodex,
+      // `--force` is load-bearing: copyToWorktree below seeds the sandbox
+      // with the host's macOS-arm64 node_modules, but the container is
+      // linux-x64. Plain `pnpm install` sees the lockfile as satisfied
+      // (`@turbo/cli-darwin-arm64` is present) and won't replace
+      // platform-specific binaries — `pnpm typecheck`/`pnpm test` then
+      // fail with "Turbo binary issue", and the agent has historically
+      // rationalised that as an environment limitation and shipped the PR
+      // anyway. `--force` reinstalls every package so the linux-x64
+      // binaries land. 5-min ceiling because the first install on a fresh
+      // store can take a couple minutes; subsequent runs are fast.
+      { command: 'pnpm install --force', timeoutMs: 5 * 60 * 1000 },
       // The dind sidecar starts cold every sandbox, but its /var/lib/docker
       // is bind-mounted to a shared named volume (see startDindSidecar
       // below) so supabase image layers persist across runs. First time
@@ -386,6 +509,10 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     // One iteration is enough: the planner just needs to read and reason,
     // not write code.
     maxIterations: 1,
+    // sandcastle defaults idleTimeoutSeconds=600 (10m). The planner
+    // mostly reads + reasons, but a sandcastle-asana fetch over a slow
+    // link or an opus reasoning stretch can blow past that. Bump to 15m.
+    idleTimeoutSeconds: 15 * 60,
     // Opus for planning: dependency analysis benefits from deeper reasoning.
     agent: sandcastle.claudeCode('claude-opus-4-6'),
     promptFile: './.sandcastle/plan-prompt.md',
@@ -402,9 +529,19 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     );
   }
 
-  // The plan JSON contains an array of issues, each with id, title, branch.
+  // The plan JSON contains an array of issues. Each issue carries
+  // id/title/branch, and optionally `resumeSession` — a Claude Code
+  // session ID stamped on the task by a previous run that the planner
+  // detected via `sandcastle-asana get-claim`. Plumbed into the
+  // implementer's `run()` so Claude continues from its prior session
+  // instead of starting fresh.
   const { issues } = JSON.parse(planMatch[1]!) as {
-    issues: { id: string; title: string; branch: string }[];
+    issues: {
+      id: string;
+      title: string;
+      branch: string;
+      resumeSession?: string;
+    }[];
   };
 
   if (issues.length === 0) {
@@ -460,10 +597,20 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
               // interactive) session so they auto-pick recommended options
               // instead of deadlocking on AskUserQuestion gates.
               OPENCLAW_SESSION: '1',
-              // Forward the OpenAI key so the reviewer's /codex skill can
-              // auth. If unset on the host, /codex degrades gracefully.
+              // Forward the OpenRouter key (named OPENAI_API_KEY for
+              // compatibility) so the reviewer's adversarial codex pass
+              // (gstack /review Step 5.7) can authenticate. The
+              // configureCodex hook reads this env var and writes
+              // ~/.codex/config.toml so codex CLI hits OpenRouter rather
+              // than OpenAI. OPENROUTER_CODEX_MODEL optionally overrides
+              // the default model. If unset, the codex pass degrades
+              // gracefully and /review continues with the Claude-only
+              // adversarial subagent.
               ...(process.env.OPENAI_API_KEY
                 ? { OPENAI_API_KEY: process.env.OPENAI_API_KEY }
+                : {}),
+              ...(process.env.OPENROUTER_CODEX_MODEL
+                ? { OPENROUTER_CODEX_MODEL: process.env.OPENROUTER_CODEX_MODEL }
                 : {}),
             },
           }),
@@ -476,10 +623,50 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
       }
 
       try {
+        // Resolve `resumeSession` carefully. Sandcastle requires both
+        // (a) the session JSONL to exist on the host, and (b)
+        // `maxIterations === 1` when resuming (run.js:124). We honor (a)
+        // by checking the file via hostSessionStore — if the task was
+        // worked on a different host, the file is missing and we silently
+        // fall back to a fresh run rather than throwing. We honor (b)
+        // by setting maxIterations: 1 ONLY in the resume branch; fresh
+        // runs keep the 100-iteration ceiling.
+        let resumeSession: string | undefined;
+        if (issue.resumeSession) {
+          const sessionPath = hostSessionStore(process.cwd()).sessionFilePath(
+            issue.resumeSession,
+          );
+          if (existsSync(sessionPath)) {
+            resumeSession = issue.resumeSession;
+            console.log(
+              `  ↻ ${issue.id}: resuming session ${issue.resumeSession}`,
+            );
+          } else {
+            console.warn(
+              `  ! ${issue.id}: session ${issue.resumeSession} not found on host (${sessionPath}); starting fresh`,
+            );
+          }
+        }
+
         // Run the implementer
         const implement = await sandbox.run({
           name: 'implementer',
-          maxIterations: 100,
+          // Resume runs are single-iteration (sandcastle constraint —
+          // multi-iteration resume semantics aren't supported); fresh
+          // runs keep the 100-iteration RGR loop.
+          maxIterations: resumeSession ? 1 : 100,
+          // Default idleTimeoutSeconds is 600s. The implementer routinely
+          // goes silent for longer than that during legitimate work:
+          // writing large translation dictionaries (1k+ lines via Write),
+          // `pnpm install --force` on a cold pnpm-store, `pnpm e2e`
+          // (playwright + supabase stack), `/investigate` and `/autoplan`
+          // skill runs that spawn their own subagents. A 10-minute idle
+          // bound silently kills these mid-flight (see
+          // .sandcastle/logs/issue-add-somali-translation-implementer.log
+          // for the canonical case — agent timed out writing the Somali
+          // dictionary). 30m gives every legitimate long-op room to
+          // finish while still catching genuinely-stuck agents.
+          idleTimeoutSeconds: 30 * 60,
           agent: sandcastle.claudeCode('claude-opus-4-6'),
           promptFile: './.sandcastle/implement-prompt.md',
           promptArgs: {
@@ -487,7 +674,20 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
             ISSUE_TITLE: issue.title,
             BRANCH: issue.branch,
           },
+          ...(resumeSession ? { resumeSession } : {}),
         });
+
+        // Stamp the most-recent iteration's session ID onto the task
+        // notes so a later pickup can resume. The orchestrator captures
+        // session IDs per-iteration; we want the last successful one
+        // (most recent agent context). Skipped on fresh-but-zero-iter
+        // runs and in non-Claude providers (sessionId would be undefined).
+        const lastSessionId = [...implement.iterations]
+          .reverse()
+          .find((it) => it.sessionId !== undefined)?.sessionId;
+        if (lastSessionId) {
+          await stampSessionClaim(issue.id, lastSessionId);
+        }
 
         // Nothing to review or ship if the implementer made no commits.
         if (implement.commits.length === 0) {
@@ -498,6 +698,12 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
         const review = await sandbox.run({
           name: 'reviewer',
           maxIterations: 1,
+          // Same reasoning as implementer above — re-runs the full gate
+          // suite (typecheck, test, e2e, fallow audit), spawns a
+          // code-reviewer Task subagent (silent for minutes), runs /qa,
+          // /cso, /review (which itself spawns adversarial subagents +
+          // codex). 30m matches the implementer.
+          idleTimeoutSeconds: 30 * 60,
           agent: sandcastle.claudeCode('claude-opus-4-6'),
           promptFile: './.sandcastle/review-prompt.md',
           promptArgs: {
@@ -511,6 +717,9 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
         const ship = await sandbox.run({
           name: 'ship',
           maxIterations: 1,
+          // Ship is short (push + gh pr create + asana update) but the
+          // /ship gstack skill can wait on CI checks. 15m is comfortable.
+          idleTimeoutSeconds: 15 * 60,
           agent: sandcastle.claudeCode('claude-opus-4-6'),
           promptFile: './.sandcastle/ship-prompt.md',
           promptArgs: {
@@ -536,12 +745,21 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     }),
   );
 
-  // Log any agents that threw (network error, sandbox crash, etc.).
+  // Log any agents that threw (network error, sandbox crash, etc.) and
+  // move the task back to Backlog so the next planner iteration can
+  // re-pick it. Without the requeue, AgentIdleTimeoutError or any other
+  // mid-flight failure strands the task in In-Progress forever — the
+  // planner only queries the Backlog section.
   for (const [i, outcome] of settled.entries()) {
     if (outcome.status === 'rejected') {
+      const reasonStr =
+        outcome.reason instanceof Error
+          ? outcome.reason.message
+          : String(outcome.reason);
       console.error(
-        `  ✗ ${issues[i]!.id} (${issues[i]!.branch}) failed: ${outcome.reason}`,
+        `  ✗ ${issues[i]!.id} (${issues[i]!.branch}) failed: ${reasonStr}`,
       );
+      await requeueTaskToBacklog(issues[i]!.id, reasonStr.slice(0, 200));
     }
   }
 
@@ -595,6 +813,10 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     branchStrategy: { type: 'merge-to-head' },
     name: 'merger',
     maxIterations: 1,
+    // Merger runs `pnpm test` post-merge and may resolve conflicts
+    // across multiple branches. 20m covers the test run plus moderate
+    // conflict resolution.
+    idleTimeoutSeconds: 20 * 60,
     agent: sandcastle.claudeCode('claude-opus-4-6'),
     promptFile: './.sandcastle/merge-prompt.md',
     promptArgs: {

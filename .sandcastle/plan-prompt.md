@@ -8,31 +8,26 @@ Here are the open issues in the repo:
 
 </issues-json>
 
-# VERIFICATION GATE
+# VERIFICATION
 
-Before any further analysis, every issue MUST specify how to verify it is
-complete — beyond the standard checks (`pnpm typecheck`, `pnpm test`,
-`npx fallow audit`). Look in the issue's `notes` (description) and
-`comments` for explicit verification steps: manual QA flows, specific
-URLs/screens to check, behaviors to observe, data to inspect, etc.
+Look at each issue's `notes` (description) and `comments` for explicit
+verification steps: manual QA flows, specific URLs/screens to check,
+behaviors to observe, data to inspect, etc. The verification doesn't
+need a specific format — a heading like `## Verification`, a comment
+starting with "Verify by:", an "Acceptance criteria" list, or any
+clearly demarcated set of concrete steps all qualify.
 
-The verification doesn't need a specific format — a heading like
-`## Verification`, a comment starting with "Verify by:", an
-"Acceptance criteria" list, or any clearly demarcated set of concrete
-steps all qualify. Vague text like "make sure it works" or a bare ticket
-title does NOT qualify.
+An issue is eligible to proceed if **any** of these is true:
 
-For every issue WITHOUT acceptable verification steps, run:
+- It has acceptable verification steps.
+- It has no verification steps at all.
+- The verification notes explicitly say to skip verification (e.g.
+  "skip verification", "no verification needed").
 
-```
-sandcastle-asana move <id> --section "$ASANA_ON_HOLD_SECTION_ID" \
-  --comment "Moved to On Hold: missing verification criteria. Add a section to the description (or post a comment) describing how to verify this task is complete — manual QA steps, URLs to check, behaviors to confirm, etc. Then move it back to Backlog."
-```
-
-Then **exclude that issue from the dependency graph and selection
-below.** Only issues that pass this gate are eligible.
-
-If no issues remain after the gate, emit an empty plan (see OUTPUT).
+In other words: do NOT gate on missing verification anymore. The
+implementer and reviewer fall back to the standard checks
+(`pnpm typecheck`, `pnpm test`, `npx fallow audit`) when task-specific
+verification is absent or marked to skip.
 
 # TASK
 
@@ -46,7 +41,31 @@ An issue B is **blocked by** issue A if:
 
 An issue is **unblocked** if it has zero blocking dependencies on other open issues.
 
-For each unblocked issue, assign a branch name using the format `issue-{id}-{slug}`.
+For each unblocked issue, assign a branch name using the format
+`issue-{slug}` (no Asana ID — it pushes Vercel preview hostnames past
+the 63-char DNS label limit, and the implementer/reviewer/ship phases
+receive the task ID as a separate prompt arg, so the branch doesn't
+need to encode it).
+
+The `{slug}` is a tight kebab-case summary of the task — **do NOT
+just slugify the title.** Distill the task down to its essence first,
+then pick the words. Hard rules:
+
+- **Exactly 3 words** in the slug, in normal cases. Two is fine if
+  the task is genuinely that simple; never more than three. Pick the
+  highest-signal nouns/verbs and drop everything else (articles,
+  prepositions, qualifiers, adjectives that don't disambiguate).
+- Lowercase ASCII letters, digits, and hyphens only. No trailing
+  periods.
+- Examples (note how each strips the title down to three load-bearing
+  words):
+  - "Fix 'Content could not be loaded' flash across proposal flows" → `proposal-content-flash`
+  - "Add rate limiting to public API endpoints" → `rate-limit-api`
+  - "Refactor user-profile page to use suspense queries" → `profile-suspense-queries`
+  - "Update the onboarding checklist to include SSO setup" → `onboarding-sso-checklist`
+- If two open issues collapse to the same 3-word slug, swap one of
+  the words for a disambiguator (e.g. `-edit` vs `-view`) — never
+  append the Asana ID.
 
 # SELECT
 
@@ -65,13 +84,32 @@ issues sequentially: fully claim+move+verify one before starting the next.
 
 For each selected issue:
 
-1. Generate a fresh UUID for this issue:
+1. **Check for a resumable session.** If a previous run already worked
+   on this task and was requeued (timeout, sandbox crash, reviewer
+   failure, etc.), it leaves a session marker on the task notes. Read
+   it:
+
+   ```
+   PRIOR=$(sandcastle-asana get-claim <id>)
+   ```
+
+   If `$PRIOR` is non-empty AND starts with the literal prefix
+   `session:`, capture the trailing session ID for the JSON output
+   below — the orchestrator will pass it to the implementer as a
+   resume handle. Example: `session:0a3f-...` → resume id is
+   `0a3f-...`. If `$PRIOR` is empty or does not start with
+   `session:`, this task has no resumable session.
+
+2. Generate a fresh UUID for this issue (race-protection token —
+   the implementer overwrites this post-run with the real session
+   ID, but during the planner's claim+move window we need a token
+   so two parallel planners can't both stamp the same task):
 
    ```
    AGENT_ID=$(cat /proc/sys/kernel/random/uuid)
    ```
 
-2. Stamp the claim onto the task description, then immediately move it
+3. Stamp the claim onto the task description, then immediately move it
    into the In-Progress section:
 
    ```
@@ -79,7 +117,7 @@ For each selected issue:
    sandcastle-asana move <id> --section "$ASANA_IN_PROGRESS_SECTION_ID"
    ```
 
-3. Verify our claim still holds after the move:
+4. Verify our claim still holds after the move:
 
    ```
    sandcastle-asana verify-claim <id> --agent-id "$AGENT_ID"
@@ -94,12 +132,13 @@ For each selected issue:
 
 Output your plan as a JSON object wrapped in `<plan>` tags. Include **at
 most {{MAX_PARALLEL_ISSUES}}** issues — only those that passed the
-claim+move+verify steps:
+claim+move+verify steps. Include `resumeSession` ONLY when step 1
+captured a `session:<id>` marker; omit the field otherwise:
 
 <plan>
 {"issues": [
-  {"id": "42", "title": "Fix auth bug", "branch": "issue-42-fix-auth-bug"},
-  {"id": "43", "title": "Add rate limiting", "branch": "issue-43-add-rate-limiting"}
+  {"id": "42", "title": "Fix auth bug", "branch": "issue-auth-bug"},
+  {"id": "43", "title": "Resume translation", "branch": "issue-somali-dict", "resumeSession": "0a3f-..."}
 ]}
 </plan>
 

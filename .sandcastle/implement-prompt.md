@@ -86,6 +86,13 @@ If you ran `/investigate` here, skip the next section (PLAN REVIEW) and
 go straight to EXPLORATION + EXECUTION — the investigation already
 captured the design context the plan review would surface.
 
+Every code change you keep after `/investigate` must be tied to the
+reported symptom. If `/investigate` flags adjacent suspicious code that
+doesn't reproduce the reported bug, leave it alone — open a separate
+Asana follow-up via `sandcastle-asana comment` if it's worth tracking.
+Do NOT bundle speculative fixes into a bug-fix PR; scope creep gets
+the PR rejected and burns a revision cycle.
+
 For non-bug tasks (features, refactors, docs), skip this section and
 continue to PLAN REVIEW.
 
@@ -143,6 +150,17 @@ Explore the repo and fill your context window with relevant information that wil
 
 Pay extra attention to test files that touch the relevant parts of the code.
 
+**Downstream test scan.** Before changing any user-visible string,
+error fallback, render branch, or exported component, grep the repo
+(especially `tests/` and `**/*.spec.ts`, `**/*.test.ts`) for
+assertions that reference it. Examples: a literal UI string about to
+be removed, a component name about to be inlined, an error message
+about to change. If matches exist, your change must either keep the
+assertion green or update it in this commit with a one-line note
+in the commit message explaining why. Silently breaking a
+previously-green assertion (especially in `tests/e2e/`) is the most
+common way these PRs regress real behavior.
+
 # EXECUTION
 
 If applicable, use RGR to complete the task.
@@ -164,15 +182,58 @@ Before signaling the task complete:
 
 - `pnpm typecheck`
 - `pnpm test`
+- `pnpm e2e` — playwright e2e suite. `pnpm test` does NOT include
+  this. Skip only when the diff has no UI / route / API surface
+  (note the reason in the commit message); the reviewer re-runs it
+  either way.
 - `npx fallow audit --format json` (verdict must be `pass`)
 - **Task-specific verification** — walk through every verification step
   named in the Asana task's description and comments (from the
   `sandcastle-asana view` output above). For each step, execute it (run
   the URL, walk the flow, inspect the data, etc.) and confirm the
   observed behavior matches what's expected. The reviewer will re-run
-  these independently — don't sign off if any are failing.
+  these independently — don't sign off if any are failing. If the task
+  has no task-specific verification steps, or its notes explicitly say
+  to skip verification, skip this bullet and rely on the standard gates
+  above.
 
-If any check fails, fix and re-run before continuing.
+## Gate failures are NEVER acceptable to ship past
+
+A failing or unrun gate is a STOP signal. The reviewer's CI re-runs
+every gate from a clean checkout — shipping a PR with skipped or
+hand-waved gates is the single most expensive failure mode in this
+pipeline.
+
+You MUST NOT emit `<promise>COMPLETE</promise>` if any gate failed,
+errored, or did not run — including failures attributed to:
+
+- "Infrastructure", "environment", "sandbox limitation", "platform
+  binary missing", "missing native binaries", "turbo binary issue",
+  "tsgo not available".
+- "Pre-existing errors", "errors in files I didn't touch", "module
+  resolution issues unrelated to my change".
+- "I'll let CI verify" or "the reviewer will re-run".
+
+These excuses indicate a recoverable problem the agent must address
+on this branch. Specifically:
+
+- **Turbo / native binary failure** → run `pnpm install --force` to
+  reinstall platform-specific deps for the linux container, then
+  re-run the gate. The sandbox already runs `pnpm install --force`
+  at startup; if it failed mid-flight, run it again yourself.
+- **Module resolution / TS2307 / "Cannot find module"** → run
+  `pnpm install --force` then re-run typecheck. If the errors
+  reproduce on `dev` HEAD, comment on Asana with a repro and abort.
+  Do NOT ship past it.
+- **Test runner can't find vitest** → run `pnpm install --force`,
+  then re-run the workspace test from its directory.
+
+If after `pnpm install --force` and a clean re-run the gate still
+fails for reasons genuinely outside the diff, post a comment on the
+Asana task via `sandcastle-asana comment {{TASK_ID}} ...` describing
+what failed and why the diff is correct, and **stop without emitting
+`<promise>COMPLETE</promise>`**. A human will move the task back to
+Backlog or unblock the environment.
 
 # COMMIT
 

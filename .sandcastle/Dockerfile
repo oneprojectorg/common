@@ -46,13 +46,16 @@ RUN apt-get update && apt-get install -y \
 # (packageManager field) at runtime — always the correct version.
 RUN corepack enable
 
-# Install bun. Required by the vendored gstack at .claude/skills/gstack/ —
-# the linux/amd64 versions of the bun-compiled binaries (browse, design,
-# find-browse, gstack-global-discover) are rebuilt the first time a sandbox
-# starts (see .sandcastle/main.ts → issueHooks → bun-build hook).
-RUN curl -fsSL https://bun.sh/install | bash \
-  && ln -s /root/.bun/bin/bun /usr/local/bin/bun \
-  && chmod -R a+rX /root/.bun
+# Install bun system-wide (under /usr/local) so the non-root `agent` user
+# can execute it. Required by the gstack install below to compile the
+# linux/amd64 versions of bun-compiled binaries (browse, design,
+# find-browse, gstack-global-discover) into the image. We set
+# `BUN_INSTALL=/usr/local` so the installer puts the binary at
+# /usr/local/bin/bun and shared libs under /usr/local/lib — both
+# world-readable. Installing into /root/.bun (the default) leaves the
+# binary unreachable to the agent user because /root is mode 0700.
+RUN curl -fsSL https://bun.sh/install | env BUN_INSTALL=/usr/local bash \
+  && chmod a+rx /usr/local/bin/bun
 
 # Install the OpenAI codex CLI. Required by gstack's /codex skill, which
 # is invoked from the reviewer prompt for an independent second opinion.
@@ -227,6 +230,19 @@ Claimed by: ${agent_id}"
     echo "  expected:  ${expected}"  >&2
     exit 1
     ;;
+  get-claim)
+    # Print the value stamped after `Claimed by: ` on the task notes, or
+    # the empty string if none. Used by the planner to detect whether a
+    # task carries a resumable session ID (stamped post-implementer by
+    # main.ts as `Claimed by: session:<id>`).
+    gid="${1:-}"
+    [[ -z "$gid" ]] && { echo "sandcastle-asana get-claim: <task_gid> required" >&2; exit 2; }
+    current_notes=$(call GET "/tasks/${gid}?opt_fields=notes" | jq -r '.data.notes // ""')
+    last_line=$(printf '%s\n' "$current_notes" | awk 'NF{p=$0} END{print p}')
+    if [[ "$last_line" == Claimed\ by:\ * ]]; then
+      printf '%s\n' "${last_line#Claimed by: }"
+    fi
+    ;;
   move)
     gid="${1:-}"; shift || true
     section=""; comment=""
@@ -271,6 +287,7 @@ Usage:
   sandcastle-asana view  <task_gid>
   sandcastle-asana claim <task_gid> --agent-id <uuid>
   sandcastle-asana verify-claim <task_gid> --agent-id <uuid>
+  sandcastle-asana get-claim <task_gid>
   sandcastle-asana move  <task_gid> --section <section_gid> [--comment "..."]
   sandcastle-asana close <task_gid> [--comment "..."]
 USAGE
@@ -324,6 +341,30 @@ WORKDIR /home/agent
 # chrome-for-testing build distributed by the same `@playwright/mcp` package.
 # Pre-installing avoids a 200MB+ download on first agent invocation.
 RUN npx --yes @playwright/mcp@latest install-browser chrome-for-testing
+
+# Install gstack (Claude Code skills + browse/design/make-pdf binaries) into
+# the agent's home directory. Skills like /review, /qa, /cso, /investigate,
+# /codex, etc. are loaded from ~/.claude/skills/<name>/SKILL.md — Claude Code
+# does NOT recurse, so we create a per-skill symlink for every directory in
+# the cloned gstack that ships a SKILL.md.
+#
+# Cloned at image build (not vendored into the repo, not synced from the
+# host) so:
+#   - the gstack install lives in $HOME, not the bind-mounted worktree;
+#   - the linux/amd64 bun binaries are baked in — no per-sandbox rebuild;
+#   - upgrading gstack is a Docker image rebuild with a new GSTACK_REF.
+ARG GSTACK_REF=main
+RUN git clone --depth 1 --branch "$GSTACK_REF" \
+      https://github.com/garrytan/gstack.git \
+      /home/agent/.claude/skills/gstack \
+  && cd /home/agent/.claude/skills/gstack \
+  && bun install \
+  && bun run build \
+  && for d in /home/agent/.claude/skills/gstack/*/; do \
+       name="$(basename "$d")"; \
+       [ -f "$d/SKILL.md" ] || continue; \
+       ln -sfn "gstack/$name" "/home/agent/.claude/skills/$name"; \
+     done
 
 # In worktree sandbox mode, Sandcastle bind-mounts the git worktree at /home/agent/workspace
 # and overrides the working directory to /home/agent/workspace at container start.
