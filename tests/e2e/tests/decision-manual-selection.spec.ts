@@ -8,7 +8,7 @@ import {
   proposals as proposalsTable,
   stateTransitionHistory,
 } from '@op/db/schema';
-import { db, eq, inArray } from '@op/db/test';
+import { db, desc, eq, inArray } from '@op/db/test';
 import {
   createDecisionInstance,
   createOrganization,
@@ -163,9 +163,9 @@ async function seedAwaitingInstance(org: SeedOrg, titles: string[]) {
   return { instance, proposals, transition };
 }
 
-/** Like {@link seedAwaitingInstance} but lands in the *last* phase (`final`).
- *  Proposals seed as APPROVED so the default pipeline carries them through. */
-async function seedAwaitingInstanceInLastPhase(org: SeedOrg, titles: string[]) {
+/** Lands an instance on `submission` with N published proposals — the
+ *  starting state for driving the real submission→final advance via the UI. */
+async function seedSubmissionPhaseInstance(org: SeedOrg, titles: string[]) {
   const template = await getSeededTemplate();
   const instance = await createDecisionInstance({
     processId: template.id,
@@ -175,8 +175,8 @@ async function seedAwaitingInstanceInLastPhase(org: SeedOrg, titles: string[]) {
     schema: lastPhaseZeroSelectingSchema,
   });
 
-  // INSERT-as-DRAFT then UPDATE so the proposal_history AFTER UPDATE trigger
-  // fires; final status is APPROVED so the default pipeline accepts each.
+  // INSERT-as-DRAFT then UPDATE to SUBMITTED so the proposal_history AFTER
+  // UPDATE trigger fires; submitManualSelection joins against those snapshots.
   const proposals = await Promise.all(
     titles.map((title) =>
       createProposal({
@@ -192,7 +192,7 @@ async function seedAwaitingInstanceInLastPhase(org: SeedOrg, titles: string[]) {
 
   await db
     .update(proposalsTable)
-    .set({ status: ProposalStatus.APPROVED })
+    .set({ status: ProposalStatus.SUBMITTED })
     .where(
       inArray(
         proposalsTable.id,
@@ -200,25 +200,7 @@ async function seedAwaitingInstanceInLastPhase(org: SeedOrg, titles: string[]) {
       ),
     );
 
-  await db
-    .update(processInstances)
-    .set({ currentStateId: 'final' })
-    .where(eq(processInstances.id, instance.instance.id));
-
-  const [transition] = await db
-    .insert(stateTransitionHistory)
-    .values({
-      processInstanceId: instance.instance.id,
-      fromStateId: 'submission',
-      toStateId: 'final',
-      transitionData: {},
-    })
-    .returning();
-  if (!transition) {
-    throw new Error('Failed to seed awaiting transition row');
-  }
-
-  return { instance, proposals, transition };
+  return { instance, proposals };
 }
 
 test.describe('Decision Manual Selection — full flow', () => {
@@ -299,7 +281,7 @@ test.describe('Decision Manual Selection — full flow', () => {
     authenticatedPage,
     org,
   }) => {
-    const { instance, proposals } = await seedAwaitingInstanceInLastPhase(org, [
+    const { instance, proposals } = await seedSubmissionPhaseInstance(org, [
       'Proposal Alpha',
       'Proposal Beta',
       'Proposal Gamma',
@@ -312,6 +294,18 @@ test.describe('Decision Manual Selection — full flow', () => {
     await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
       waitUntil: 'networkidle',
     });
+
+    // Drive submission → final via the stepper. The limit:0 pipeline strands
+    // every proposal, so onPhaseAdvanced writes an initial result row
+    // (selectedCount=0) before the manual-selection UI mounts.
+    await authenticatedPage
+      .getByRole('button', { name: 'Start Final' })
+      .first()
+      .click();
+    const advanceDialog = authenticatedPage.getByRole('dialog');
+    await expect(advanceDialog).toBeVisible();
+    await expect(advanceDialog.getByText('Advance to Final?')).toBeVisible();
+    await advanceDialog.getByRole('button', { name: 'Advance Phase' }).click();
 
     const confirmButton = authenticatedPage.getByRole('button', {
       name: 'Confirm decisions',
@@ -339,24 +333,26 @@ test.describe('Decision Manual Selection — full flow', () => {
     await dialog.getByRole('button', { name: 'Publish' }).click();
     await expect(dialog).not.toBeVisible({ timeout: 15_000 });
 
+    // Append-only: post-advance hook writes the initial row (selectedCount=0);
+    // submitManualSelection writes a second row (selectedCount=2) inline.
     const resultRows = await db
       .select()
       .from(decisionProcessResults)
-      .where(
-        eq(decisionProcessResults.processInstanceId, instance.instance.id),
-      );
-    expect(resultRows).toHaveLength(1);
-    const resultRow = resultRows[0];
-    if (!resultRow) {
-      throw new Error('Expected a decision_process_results row');
+      .where(eq(decisionProcessResults.processInstanceId, instance.instance.id))
+      .orderBy(desc(decisionProcessResults.executedAt));
+    expect(resultRows).toHaveLength(2);
+    const [latestRow, earliestRow] = resultRows;
+    if (!latestRow || !earliestRow) {
+      throw new Error('Expected two decision_process_results rows');
     }
-    expect(resultRow.selectedCount).toBe(2);
-    expect(resultRow.success).toBe(true);
+    expect(earliestRow.selectedCount).toBe(0);
+    expect(latestRow.selectedCount).toBe(2);
+    expect(latestRow.success).toBe(true);
 
     const selections = await db
       .select({ proposalId: decisionProcessResultSelections.proposalId })
       .from(decisionProcessResultSelections)
-      .where(eq(decisionProcessResultSelections.processResultId, resultRow.id));
+      .where(eq(decisionProcessResultSelections.processResultId, latestRow.id));
     expect(new Set(selections.map((s) => s.proposalId))).toEqual(
       new Set([alpha.id, beta.id]),
     );
