@@ -4,8 +4,7 @@ How to get a local Claude Code agent fully wired up against this repo. Works sta
 
 ## What you get
 
-- Claude Code with the curated `.claude/skills/` (op-ui conventions, i18n, Drizzle, workspace shortcuts, branch/PR rules, Asana REST, Vercel React/Next.js performance, etc.).
-- Pre-tool hooks that block `git`/`gh` against `main` or `dev`, force-push, destructive ops, and commits while on a protected branch.
+- Claude Code with the [`common-toolkit` plugin](https://github.com/oneprojectorg/common-agent-toolkit) — bundles all our skills (op-ui conventions, i18n, Drizzle, workspace shortcuts, branch/PR rules, Asana REST, release flow, etc.), a vendored copy of Vercel's React/Next.js performance skill, and the protected-branch hooks.
 - MCPs: Figma (design hand-off) and Playwright (browser testing).
 - Asana access via plain REST + a Personal Access Token.
 - The standard `docker:dev` stack on its usual ports (3100/3300). If a teammate or another agent already has those bound, pick a free `PORT_PREFIX` and run with it — see "Parallel agent stacks" below.
@@ -16,11 +15,28 @@ How to get a local Claude Code agent fully wired up against this repo. Works sta
 
 Follow the install at https://docs.claude.com/claude-code. Run `claude --version` to confirm; log in once with `claude auth`.
 
-### 2. (Optional) Install your orchestration platform's CLI / daemon
+### 2. Install the `common-toolkit` plugin
+
+The plugin lives in the private repo [`oneprojectorg/common-agent-toolkit`](https://github.com/oneprojectorg/common-agent-toolkit). Make sure `gh auth status` is healthy (the repo is private), then inside Claude Code run:
+
+```text
+/plugin marketplace add git@github.com:oneprojectorg/common-agent-toolkit.git
+/plugin install common-toolkit@common-agent-toolkit
+```
+
+That single install gives you all the skills, the protected-branch hooks, and the `/release` flow. Pull future updates with:
+
+```text
+/plugin marketplace update common-agent-toolkit
+```
+
+Confirm by asking Claude "list your skills" — you should see 11 in-house skills plus `vercel-react-best-practices`.
+
+### 3. (Optional) Install your orchestration platform's CLI / daemon
 
 If you're driving Claude Code through an external orchestration platform (task board, scheduler, etc.), install its CLI and point it at your team's server per that tool's docs. The platform should auto-detect `claude` on your `PATH` and register it as a runtime. Skip this step if you're running Claude Code directly.
 
-### 3. Create `.env.local`
+### 4. Create `.env.local`
 
 ```bash
 cp .env.local.example .env.local
@@ -33,11 +49,11 @@ Fill in at minimum:
 - `ASANA_BACKLOG_SECTION_ID`, `ASANA_IN_PROGRESS_SECTION_ID`, `ASANA_IN_REVIEW_SECTION_ID`, `ASANA_BLOCKED_SECTION_ID` — section gids inside `ASANA_PROJECT_ID`. Used by the `pickup-task` skill for the claim+move+verify flow and the failure path. Look them up once via `GET /projects/<gid>/sections`.
 - The other values from the example file as needed for local dev.
 
-### 4. Open Figma desktop (for the Figma MCP)
+### 5. Open Figma desktop (for the Figma MCP)
 
 The Figma MCP listens at `http://127.0.0.1:3845/sse`. It's served by the Figma desktop app's Dev Mode. If Figma isn't open, the MCP fails silently — the agent will report it as unavailable.
 
-### 5. Install dependencies + bring up the dev stack
+### 6. Install dependencies + bring up the dev stack
 
 ```bash
 pnpm install
@@ -85,24 +101,24 @@ Pick the smallest free 2-digit prefix you need — don't randomize, so stacks ar
 
 Run these once to confirm everything is wired:
 
-1. **Skills load:** `claude` → ask "list your skills". You should see all 10 in `.claude/skills/`.
-2. **Branch hook:** ask Claude Code to run `git push origin dev`. It should be blocked. (`git push --force origin <feature-branch>` is allowed — needed after rebases.)
+1. **Plugin loaded:** `claude` → ask "list your skills". You should see the 11 in-house skills plus `vercel-react-best-practices` from the `common-toolkit` plugin.
+2. **Branch hook:** ask Claude Code to run `git push origin dev`. It should be blocked. (`git push --force origin <feature-branch>` is allowed — needed after rebases.) If it isn't blocked, the plugin's hooks aren't active — re-run `/plugin install common-toolkit@common-agent-toolkit`.
 3. **Asana REST:** with `ASANA_API_KEY` + `ASANA_PROJECT_ID` set, ask Claude Code to list open tasks in our project. JSON should come back, not 401.
 4. **Playwright MCP:** with `pnpm docker:dev` up, ask Claude Code to open `http://localhost:3100` in Playwright. The page should load.
 5. **Parallel stack (only if needed):** in a separate worktree, `PORT_PREFIX=55 COMPOSE_PROJECT_NAME=common-55 pnpm docker:dev`, then visit `http://localhost:5500` — the app should be up independently of any other stack.
 
-If a smoke test fails, check `.claude/settings.json` (permissions/sandbox), `.mcp.json` (Figma/Playwright wiring), or the hook scripts in `.claude/hooks/`.
+If a smoke test fails, check `.claude/settings.json` (permissions/sandbox), `.mcp.json` (Figma/Playwright wiring), or re-run the plugin install (`/plugin install common-toolkit@common-agent-toolkit`).
 
 ## Where things live
 
 | Path | Purpose |
 |---|---|
-| `.claude/skills/` | Curated repo-aware skills the agent loads automatically |
+| `.claude/skills/` | Installed by the `common-toolkit` plugin — see step 2. Empty in git. |
 | `.claude/agents/` | Specialist subagents (database-optimizer, frontend-developer) |
-| `.claude/commands/` | Slash commands (`/plan`, `/fix-task`, `/release`, …) |
-| `.claude/hooks/` | Pre-tool guardrails |
-| `.claude/settings.json` | Permission allow/deny + sandbox + hook wiring |
+| `.claude/commands/` | Slash commands (`/plan`, `/fix-task`, …). `/release` is provided by the plugin. |
+| `.claude/settings.json` | Permission allow/deny + sandbox config. Hooks now live in the plugin. |
 | `.mcp.json` | MCP server registry (Figma, Playwright) |
+| `~/.claude/plugins/cache/common-agent-toolkit/` | Cloned marketplace; updated via `/plugin marketplace update`. |
 | `docs/agents/SETUP.md` | This file |
 
 ## Known gaps

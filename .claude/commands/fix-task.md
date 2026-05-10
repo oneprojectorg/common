@@ -4,7 +4,7 @@ argument-hint: [optional: asana-task-url]
 allowed-tools: Task, Bash, Gh
 ---
 
-Fetch the Asana task via the REST API (not an MCP), then ultrathink a plan to implement it. See `.claude/skills/asana-api.md` for full endpoint reference.
+Fetch the Asana task via the REST API (not an MCP), then ultrathink a plan to implement it. See the `asana-api` skill for full endpoint reference.
 
 1. If `$ARGUMENTS` is empty, list open tasks in `$ASANA_PROJECT_ID` and ask the user which to pick up:
    ```bash
@@ -24,6 +24,6 @@ Fetch the Asana task via the REST API (not an MCP), then ultrathink a plan to im
      "https://app.asana.com/api/1.0/tasks/<task_gid>/stories?opt_fields=text,created_by.name"
    ```
 5. Read the task's `name` and `notes`. If anything is ambiguous, ask clarifying questions before planning.
-6. Produce a step-by-step implementation plan grounded in this repo's conventions (see `.claude/skills/`).
+6. Produce a step-by-step implementation plan grounded in this repo's conventions (see the installed agent skills).
 
 Arguments: $ARGUMENTS
