@@ -9,6 +9,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -48,9 +49,11 @@ export const decisionProcessResults = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
-    index('process_results_instance_date_idx')
-      .on(table.processInstanceId, table.executedAt)
-      .concurrently(),
+    // One live result row per instance — `processResults` upserts on this key
+    // so concurrent callers don't race-insert duplicates.
+    uniqueIndex('process_results_instance_unique_idx').on(
+      table.processInstanceId,
+    ),
     index('process_results_success_date_idx')
       .on(table.success, table.executedAt)
       .concurrently(),
