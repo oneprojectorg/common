@@ -1,8 +1,8 @@
 import { Events, event } from '@op/events';
 
 import type { AdvancePhaseResult } from './advancePhase';
+import { processResults } from './processResults';
 import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
-import { runResultsProcessing } from './runResultsProcessing';
 import { type PhaseInstanceData, isLastPhase } from './schemas/instanceData';
 
 export interface OnPhaseAdvancedInput {
@@ -50,6 +50,17 @@ export async function onPhaseAdvanced(
   }
 
   if (isLastPhase(input.toPhaseId, input.phases)) {
-    await runResultsProcessing({ instanceId: input.instanceId });
+    // Auto-advance side-effect: failures are logged, not thrown, so a
+    // results-processing failure doesn't abort the post-advance flow or
+    // surface as an API error after a successful phase transition.
+    // processResults already records a failure row for the Results screen.
+    try {
+      await processResults({ processInstanceId: input.instanceId });
+    } catch (error) {
+      console.error(
+        `Error processing results for process instance ${input.instanceId}:`,
+        error,
+      );
+    }
   }
 }

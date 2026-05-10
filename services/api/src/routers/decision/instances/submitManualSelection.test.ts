@@ -533,8 +533,9 @@ describe.concurrent('submitManualSelection', () => {
     // to the inbound transition for 'review'.
     await caller.decision.transitionFromPhase({ instanceId });
     // review → final: zero-limit pipeline at review, so nothing attaches to
-    // 'final'. Hitting the last phase fires runResultsProcessing, writing an
-    // initial decision_process_results row with selectedCount = 0.
+    // 'final'. Hitting the last phase fires processResults via the
+    // post-advance hook, writing an initial decision_process_results row
+    // with selectedCount = 0.
     await caller.decision.transitionFromPhase({ instanceId });
 
     const initialResults = await db

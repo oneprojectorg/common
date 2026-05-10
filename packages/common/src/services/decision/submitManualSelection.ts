@@ -20,7 +20,7 @@ import { getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
-import { runResultsProcessing } from './runResultsProcessing';
+import { processResults } from './processResults';
 import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
 import type {
   ManualSelectionAudit,
@@ -96,7 +96,7 @@ export async function submitManualSelection({
   const now = new Date().toISOString();
   const byProfileId = dbUser.profileId;
 
-  const isFinalPhase = await db.transaction(async (tx) => {
+  await db.transaction(async (tx) => {
     // Lock the instance row so a concurrent advancePhase can't move the
     // phase out from under us, then re-verify state inside the lock.
     const [lockedInstance] = await tx
@@ -254,15 +254,16 @@ export async function submitManualSelection({
       })),
     );
 
-    return isLastPhase(currentStateId, lockedPhases ?? []);
+    // Mirror the auto-advance side-effect: when manual selection lands on the
+    // final phase, fold results processing into the same transaction so the
+    // decision_process_results row reflects the manually selected proposals
+    // atomically with the attachment write. processResults upserts on
+    // process_instance_id, updating the row written when the instance
+    // auto-advanced into the last phase. Errors here roll back the manual
+    // selection — the caller must retry rather than land in an inconsistent
+    // half-committed state.
+    if (isLastPhase(currentStateId, lockedPhases ?? [])) {
+      await processResults({ processInstanceId, tx });
+    }
   });
-
-  // Mirror the auto-advance side-effect: when manual selection lands on the
-  // final phase, run results processing so the manually selected proposals are
-  // reflected in decision_process_results. processResults upserts, so this
-  // updates the row written when the instance auto-advanced into the last
-  // phase rather than inserting a duplicate. Failures are logged, not thrown.
-  if (isFinalPhase) {
-    await runResultsProcessing({ instanceId: processInstanceId });
-  }
 }

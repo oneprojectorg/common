@@ -181,7 +181,7 @@ async function seedAwaitingInstance(org: SeedOrg, titles: string[]) {
 /**
  * Variant of {@link seedAwaitingInstance} that lands the instance in the
  * *last* phase (`final`) rather than the middle (`review`). This is the path
- * the post-commit `runResultsProcessing` hook in `submitManualSelection`
+ * the in-transaction `processResults` call in `submitManualSelection`
  * exists to handle: when the admin confirms a selection on the final phase,
  * the same call must also produce / update the `decision_process_results`
  * row that the Results screen reads. Proposals are seeded as APPROVED so
