@@ -69,12 +69,20 @@ export async function DecisionHeader({
     };
   });
 
-  const isResultsPhase = isLastPhase(instance.currentStateId, instancePhases);
+  // Only the confirmed results view gets the redPurple gradient. Legacy
+  // instances always render results. New-format instances on the last
+  // phase only count once an admin has confirmed selections — until then
+  // we show the final-phase manual-selection view on a light background.
+  const isResultsView =
+    useLegacy ||
+    (isLastPhase(instance.currentStateId, instancePhases) &&
+      (instance as { selectionsAreConfirmed?: boolean })
+        .selectionsAreConfirmed === true);
 
   return (
     <div
       className={cn(
-        isResultsPhase
+        isResultsView
           ? 'bg-redPurple text-neutral-offWhite'
           : 'bg-neutral-offWhite text-gray-700',
       )}
