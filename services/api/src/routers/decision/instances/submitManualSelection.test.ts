@@ -1,5 +1,5 @@
 import { getProposalsForPhase } from '@op/common';
-import { db, eq, inArray } from '@op/db/client';
+import { db, desc, eq, inArray } from '@op/db/client';
 import {
   ProcessStatus,
   ProposalStatus,
@@ -484,7 +484,7 @@ describe.concurrent('submitManualSelection', () => {
     }
   });
 
-  it('updates the existing decision_process_results row when manual selection lands on the final phase', async ({
+  it('appends a new decision_process_results row when manual selection lands on the final phase', async ({
     task,
     onTestFinished,
   }) => {
@@ -555,24 +555,31 @@ describe.concurrent('submitManualSelection', () => {
       proposalIds: [p1.id, p2.id],
     });
 
-    const updatedResults = await db
+    // Append-only: manual selection inserts a new result row rather than
+    // overwriting the initial one. Both runs stay in the table as an audit
+    // trail; the read side picks the latest by executedAt.
+    const allResults = await db
       .select()
       .from(decisionProcessResults)
-      .where(eq(decisionProcessResults.processInstanceId, instanceId));
-    expect(updatedResults).toHaveLength(1);
-    const updatedResult = updatedResults[0];
-    if (!updatedResult) {
-      throw new Error('Expected the decision_process_results row to remain');
+      .where(eq(decisionProcessResults.processInstanceId, instanceId))
+      .orderBy(desc(decisionProcessResults.executedAt));
+    expect(allResults).toHaveLength(2);
+    const latestResult = allResults[0];
+    const earlierResult = allResults[1];
+    if (!latestResult || !earlierResult) {
+      throw new Error('Expected two decision_process_results rows');
     }
-    expect(updatedResult.id).toBe(initialResult.id);
-    expect(updatedResult.selectedCount).toBe(2);
-    expect(updatedResult.success).toBe(true);
+    expect(earlierResult.id).toBe(initialResult.id);
+    expect(earlierResult.selectedCount).toBe(0);
+    expect(latestResult.id).not.toBe(initialResult.id);
+    expect(latestResult.selectedCount).toBe(2);
+    expect(latestResult.success).toBe(true);
 
     const selections = await db
       .select({ proposalId: decisionProcessResultSelections.proposalId })
       .from(decisionProcessResultSelections)
       .where(
-        eq(decisionProcessResultSelections.processResultId, initialResult.id),
+        eq(decisionProcessResultSelections.processResultId, latestResult.id),
       );
     expect(new Set(selections.map((s) => s.proposalId))).toEqual(
       new Set([p1.id, p2.id]),

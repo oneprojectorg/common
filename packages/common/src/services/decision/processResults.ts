@@ -16,13 +16,13 @@ import { getProposalsForPhase } from './getProposalsForPhase';
  * that set as `decision_process_result_selections` so the Results screen can
  * read it.
  *
- * The result is stamped into a separate table (rather than read live from the
- * per-phase selections) so it is sealed against later edits to the process
- * schema. Adding or removing phases after results land would otherwise shift
- * which transition counts as "final" and silently change the displayed
- * outcome; the dedicated row pins it. `proposals.status` is intentionally
- * left alone here: pre-existing proposals carry historical status values,
- * and writing new values from this code path would conflate "selected as a
+ * Append-only: every run inserts a new `decision_process_results` row with its
+ * own `executedAt`. Read sites pick the latest. This preserves an audit trail
+ * across re-runs and across schema edits that shift which phase is "final" —
+ * the prior outcome stays in the table even when a new phase is added after
+ * results were already processed. `proposals.status` is intentionally left
+ * alone here: pre-existing proposals carry historical status values, and
+ * writing new values from this code path would conflate "selected as a
  * result" with the broader evaluation lifecycle.
  *
  * Pass `tx` to run inline in a caller's transaction (atomic with whatever
@@ -93,7 +93,7 @@ async function runProcessResults(
 
   const voterCount = await fetchVoterCount(tx, processInstanceId);
 
-  await upsertResultRecord({
+  await insertResultRecord({
     tx,
     processInstanceId,
     selectedProposalIds,
@@ -113,11 +113,11 @@ async function fetchVoterCount(
 }
 
 /**
- * Atomic upsert keyed on processInstanceId (UNIQUE in the DB). Replaces
- * selections to match the current set of proposals advancing into the final
- * phase.
+ * Insert a new result row plus its selections. We never update an existing
+ * row — each run is a fresh snapshot, and the read side picks the latest by
+ * `executedAt`.
  */
-async function upsertResultRecord({
+async function insertResultRecord({
   tx,
   processInstanceId,
   selectedProposalIds,
@@ -138,27 +138,12 @@ async function upsertResultRecord({
       voterCount,
       pipelineConfig: null,
     })
-    .onConflictDoUpdate({
-      target: decisionProcessResults.processInstanceId,
-      set: {
-        success: true,
-        errorMessage: null,
-        selectedCount: selectedProposalIds.length,
-        voterCount,
-        pipelineConfig: null,
-        executedAt: new Date().toISOString(),
-      },
-    })
     .returning({ id: decisionProcessResults.id });
 
   if (!row) {
-    throw new CommonError('Failed to upsert process result record');
+    throw new CommonError('Failed to insert process result record');
   }
   const resultId = row.id;
-
-  await tx
-    .delete(decisionProcessResultSelections)
-    .where(eq(decisionProcessResultSelections.processResultId, resultId));
 
   if (selectedProposalIds.length > 0) {
     await tx.insert(decisionProcessResultSelections).values(
@@ -173,10 +158,9 @@ async function upsertResultRecord({
 
 /**
  * Outer-catch fallback: an unexpected error happened before the selection set
- * could be persisted (DB read failure, instance lookup, etc). Stamp the
- * failure on the result row but preserve any existing selections — we don't
- * have a new authoritative state to replace them with, so destroying the
- * prior run's data on a transient infra failure would lose information.
+ * could be persisted (DB read failure, instance lookup, etc). Insert a failure
+ * row so the Results screen can surface that the latest run failed; prior
+ * successful rows stay in the table as part of the audit trail.
  */
 async function recordUnexpectedFailure({
   tx,
@@ -198,14 +182,6 @@ async function recordUnexpectedFailure({
       selectedCount: 0,
       voterCount,
       pipelineConfig: null,
-    })
-    .onConflictDoUpdate({
-      target: decisionProcessResults.processInstanceId,
-      set: {
-        success: false,
-        errorMessage,
-        executedAt: new Date().toISOString(),
-      },
     })
     .returning({ id: decisionProcessResults.id });
 
