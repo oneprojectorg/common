@@ -1,19 +1,9 @@
+import { type DbClient, count, db, eq } from '@op/db/client';
 import {
-  type DbClient,
-  and,
-  count,
-  db,
-  eq,
-  inArray,
-  notInArray,
-} from '@op/db/client';
-import {
-  ProposalStatus,
   decisionProcessResultSelections,
   decisionProcessResults,
   decisionsVoteSubmissions,
   processInstances,
-  proposals,
 } from '@op/db/schema';
 
 import { CommonError } from '../../utils';
@@ -23,7 +13,11 @@ import { getProposalsForPhase } from './getProposalsForPhase';
  * Record the proposals that advanced into the current (final) phase as the
  * decision's selections. Selection itself happens upstream — the prior phase's
  * pipeline (or admin manual selection) decides what advances; we just persist
- * that set so the Results screen can read it.
+ * that set as `decision_process_result_selections` so the Results screen can
+ * read it. `proposals.status` is intentionally left alone here: pre-existing
+ * proposals carry historical status values, and writing new values from this
+ * code path would conflate "selected as a result" with the broader evaluation
+ * lifecycle.
  *
  * Pass `tx` to run inline in a caller's transaction (atomic with whatever
  * upstream write produced the inbound attachments — e.g. submitManualSelection).
@@ -99,33 +93,6 @@ async function runProcessResults(
     selectedProposalIds,
     voterCount,
   });
-
-  // Reset only the diff: any proposal previously marked SELECTED for this
-  // instance that's no longer in the current selection set gets reverted to
-  // APPROVED so proposals.status stays in sync with decision_process_result_selections.
-  const staleSelectedCondition =
-    selectedProposalIds.length > 0
-      ? and(
-          eq(proposals.processInstanceId, processInstanceId),
-          eq(proposals.status, ProposalStatus.SELECTED),
-          notInArray(proposals.id, selectedProposalIds),
-        )
-      : and(
-          eq(proposals.processInstanceId, processInstanceId),
-          eq(proposals.status, ProposalStatus.SELECTED),
-        );
-
-  await tx
-    .update(proposals)
-    .set({ status: ProposalStatus.APPROVED })
-    .where(staleSelectedCondition);
-
-  if (selectedProposalIds.length > 0) {
-    await tx
-      .update(proposals)
-      .set({ status: ProposalStatus.SELECTED })
-      .where(inArray(proposals.id, selectedProposalIds));
-  }
 }
 
 async function fetchVoterCount(
