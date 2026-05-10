@@ -14,10 +14,16 @@ import { getProposalsForPhase } from './getProposalsForPhase';
  * decision's selections. Selection itself happens upstream — the prior phase's
  * pipeline (or admin manual selection) decides what advances; we just persist
  * that set as `decision_process_result_selections` so the Results screen can
- * read it. `proposals.status` is intentionally left alone here: pre-existing
- * proposals carry historical status values, and writing new values from this
- * code path would conflate "selected as a result" with the broader evaluation
- * lifecycle.
+ * read it.
+ *
+ * The result is stamped into a separate table (rather than read live from the
+ * per-phase selections) so it is sealed against later edits to the process
+ * schema. Adding or removing phases after results land would otherwise shift
+ * which transition counts as "final" and silently change the displayed
+ * outcome; the dedicated row pins it. `proposals.status` is intentionally
+ * left alone here: pre-existing proposals carry historical status values,
+ * and writing new values from this code path would conflate "selected as a
+ * result" with the broader evaluation lifecycle.
  *
  * Pass `tx` to run inline in a caller's transaction (atomic with whatever
  * upstream write produced the inbound attachments — e.g. submitManualSelection).
