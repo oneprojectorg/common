@@ -1,11 +1,12 @@
 import { getProposalsForPhase } from '@op/common';
-import { db, eq } from '@op/db/client';
+import { db, eq, inArray } from '@op/db/client';
 import {
   ProcessStatus,
   ProposalStatus,
   decisionProcessResultSelections,
   decisionProcessResults,
   decisionTransitionProposals,
+  proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
@@ -576,5 +577,20 @@ describe.concurrent('submitManualSelection', () => {
     expect(new Set(selections.map((s) => s.proposalId))).toEqual(
       new Set([p1.id, p2.id]),
     );
+
+    // processResults must not mutate proposals.status. Both proposals were
+    // created APPROVED above; after running through both the standalone-tx
+    // path (post-advance hook on the final-phase transition) and the
+    // inline-tx path (submitManualSelection), they should still be APPROVED.
+    // The selections table is the source of truth for which proposals
+    // advanced — proposals.status is left to other lifecycle code paths.
+    const proposalRows = await db
+      .select({ id: proposals.id, status: proposals.status })
+      .from(proposals)
+      .where(inArray(proposals.id, [p1.id, p2.id]));
+    expect(proposalRows).toHaveLength(2);
+    for (const row of proposalRows) {
+      expect(row.status).toBe(ProposalStatus.APPROVED);
+    }
   });
 });
