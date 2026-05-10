@@ -21,10 +21,7 @@ import { assertUserByAuthId } from '../assert';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import { runResultsProcessing } from './runResultsProcessing';
-import {
-  type DecisionInstanceData,
-  isLastPhase,
-} from './schemas/instanceData';
+import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
 import type {
   ManualSelectionAudit,
   TransitionData,

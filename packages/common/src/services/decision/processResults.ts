@@ -96,8 +96,7 @@ export async function processResults({
         errorMessage: error,
         selectedProposalIds,
         voterCount,
-        pipelineConfig:
-          pipeline === defaultSelectionPipeline ? null : pipeline,
+        pipelineConfig: pipeline === defaultSelectionPipeline ? null : pipeline,
       });
 
       if (selectedProposalIds.length > 0) {

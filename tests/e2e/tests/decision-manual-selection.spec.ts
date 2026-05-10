@@ -1,6 +1,8 @@
 import type { DecisionSchemaDefinition } from '@op/common';
 import {
   ProposalStatus,
+  decisionProcessResultSelections,
+  decisionProcessResults,
   decisionTransitionProposals,
   processInstances,
   proposals as proposalsTable,
@@ -54,6 +56,45 @@ const zeroSelectingSchema: DecisionSchemaDefinition = {
         proposals: { submit: false },
         voting: { submit: false },
         advancement: { method: 'manual' },
+      },
+    },
+    {
+      id: 'final',
+      name: 'Final',
+      rules: {
+        proposals: { submit: false },
+        voting: { submit: false },
+        advancement: { method: 'manual' },
+      },
+    },
+  ],
+};
+
+/**
+ * Two-phase schema whose submission→final pipeline always selects zero, and
+ * whose `final` phase IS the last phase. Lands the instance in `final` with an
+ * empty inbound transition — the exact state where the admin manual-selection
+ * UI must produce a `decision_process_results` row that the Results screen
+ * then reads.
+ */
+const lastPhaseZeroSelectingSchema: DecisionSchemaDefinition = {
+  id: 'test-last-phase-manual-selection',
+  version: '1.0.0',
+  name: 'Last-phase Manual Selection Test Schema',
+  description:
+    'Pipeline limits submission → final to zero proposals; final is last.',
+  phases: [
+    {
+      id: 'submission',
+      name: 'Submission',
+      rules: {
+        proposals: { submit: true },
+        voting: { submit: false },
+        advancement: { method: 'manual' },
+      },
+      selectionPipeline: {
+        version: '1.0.0',
+        blocks: [{ id: 'zero', type: 'limit', count: 0 }],
       },
     },
     {
@@ -127,6 +168,74 @@ async function seedAwaitingInstance(org: SeedOrg, titles: string[]) {
       processInstanceId: instance.instance.id,
       fromStateId: 'submission',
       toStateId: 'review',
+      transitionData: {},
+    })
+    .returning();
+  if (!transition) {
+    throw new Error('Failed to seed awaiting transition row');
+  }
+
+  return { instance, proposals, transition };
+}
+
+/**
+ * Variant of {@link seedAwaitingInstance} that lands the instance in the
+ * *last* phase (`final`) rather than the middle (`review`). This is the path
+ * the post-commit `runResultsProcessing` hook in `submitManualSelection`
+ * exists to handle: when the admin confirms a selection on the final phase,
+ * the same call must also produce / update the `decision_process_results`
+ * row that the Results screen reads. Proposals are seeded as APPROVED so
+ * the default selection pipeline (`status === 'approved'` filter) carries
+ * them through.
+ */
+async function seedAwaitingInstanceInLastPhase(org: SeedOrg, titles: string[]) {
+  const template = await getSeededTemplate();
+  const instance = await createDecisionInstance({
+    processId: template.id,
+    ownerProfileId: org.organizationProfile.id,
+    authUserId: org.adminUser.authUserId,
+    email: org.adminUser.email,
+    schema: lastPhaseZeroSelectingSchema,
+  });
+
+  // INSERT-as-DRAFT then UPDATE-to-APPROVED so the proposal_history trigger
+  // (AFTER UPDATE only) writes the snapshot rows that submitManualSelection
+  // joins against, while still landing each proposal in APPROVED so the
+  // default selection pipeline accepts it.
+  const proposals = await Promise.all(
+    titles.map((title) =>
+      createProposal({
+        processInstanceId: instance.instance.id,
+        submittedByProfileId: org.organizationProfile.id,
+        authUserId: org.adminUser.authUserId,
+        email: org.adminUser.email,
+        proposalData: { title },
+        status: ProposalStatus.DRAFT,
+      }),
+    ),
+  );
+
+  await db
+    .update(proposalsTable)
+    .set({ status: ProposalStatus.APPROVED })
+    .where(
+      inArray(
+        proposalsTable.id,
+        proposals.map((p) => p.id),
+      ),
+    );
+
+  await db
+    .update(processInstances)
+    .set({ currentStateId: 'final' })
+    .where(eq(processInstances.id, instance.instance.id));
+
+  const [transition] = await db
+    .insert(stateTransitionHistory)
+    .values({
+      processInstanceId: instance.instance.id,
+      fromStateId: 'submission',
+      toStateId: 'final',
       transitionData: {},
     })
     .returning();
@@ -221,6 +330,90 @@ test.describe('Decision Manual Selection — full flow', () => {
     await expect(
       authenticatedPage.getByRole('button', { name: 'Confirm decisions' }),
     ).not.toBeVisible();
+  });
+
+  test('last phase: subset selection produces a Results screen with only that subset', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const { instance, proposals } = await seedAwaitingInstanceInLastPhase(org, [
+      'Proposal Alpha',
+      'Proposal Beta',
+      'Proposal Gamma',
+    ]);
+    const [alpha, beta, gamma] = proposals;
+    if (!alpha || !beta || !gamma) {
+      throw new Error('Expected three seeded proposals');
+    }
+
+    await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
+      waitUntil: 'networkidle',
+    });
+
+    const confirmButton = authenticatedPage.getByRole('button', {
+      name: 'Confirm decisions',
+    });
+    await expect(confirmButton).toBeVisible({ timeout: 15_000 });
+    await expect(confirmButton).toBeDisabled();
+
+    // Select a strict subset — Alpha + Beta — leaving Gamma unselected.
+    await authenticatedPage
+      .getByRole('button', { name: 'Advance Proposal Alpha' })
+      .click();
+    await authenticatedPage
+      .getByRole('button', { name: 'Advance Proposal Beta' })
+      .click();
+
+    await expect(
+      authenticatedPage.getByText('2 proposals advancing'),
+    ).toBeVisible();
+    await expect(confirmButton).toBeEnabled();
+
+    await confirmButton.click();
+    const dialog = authenticatedPage.getByRole('dialog', {
+      name: 'Confirm advancing proposals',
+    });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: 'Publish' }).click();
+    await expect(dialog).not.toBeVisible({ timeout: 15_000 });
+
+    // submitManualSelection's post-commit hook must have written exactly one
+    // decision_process_results row for the instance, with selectedCount = 2
+    // and selections pointing at Alpha + Beta only.
+    const resultRows = await db
+      .select()
+      .from(decisionProcessResults)
+      .where(
+        eq(decisionProcessResults.processInstanceId, instance.instance.id),
+      );
+    expect(resultRows).toHaveLength(1);
+    const resultRow = resultRows[0];
+    if (!resultRow) {
+      throw new Error('Expected a decision_process_results row');
+    }
+    expect(resultRow.selectedCount).toBe(2);
+    expect(resultRow.success).toBe(true);
+
+    const selections = await db
+      .select({ proposalId: decisionProcessResultSelections.proposalId })
+      .from(decisionProcessResultSelections)
+      .where(eq(decisionProcessResultSelections.processResultId, resultRow.id));
+    expect(new Set(selections.map((s) => s.proposalId))).toEqual(
+      new Set([alpha.id, beta.id]),
+    );
+
+    // Re-render: selectionsAreConfirmed flips true and the router falls
+    // through to ResultsPage. Funded Proposals must list exactly the subset.
+    await authenticatedPage.reload({ waitUntil: 'networkidle' });
+
+    const fundedHeading = authenticatedPage.getByRole('heading', {
+      name: 'Funded Proposals',
+    });
+    await expect(fundedHeading).toBeVisible({ timeout: 15_000 });
+
+    await expect(authenticatedPage.getByText('Proposal Alpha')).toBeVisible();
+    await expect(authenticatedPage.getByText('Proposal Beta')).toBeVisible();
+    await expect(authenticatedPage.getByText('Proposal Gamma')).toHaveCount(0);
   });
 
   test('non-admin does not see the admin manual-selection UI', async ({
