@@ -20,11 +20,17 @@ description: Branching and pull-request workflow. Use whenever about to commit o
 ## What hooks block
 
 The pre-tool hooks in `.claude/hooks/` will refuse:
-- `git`/`gh` commands referencing `main` or `dev` as a target (this still catches `git push --force origin dev`).
-- `git reset --hard`, `git clean -f`, `git branch -D`.
-- Commits while currently on `main` or `dev`.
+- Pushing to `main` or `dev` (incl. `--force` / `--force-with-lease`).
+- Destructive ops: `git reset --hard`, `git clean -f`, `git branch -D`, `git checkout -- <path>`.
+- Switching HEAD onto `main`/`dev` (`git checkout dev`, `git switch main`).
+- `gh pr create --base main` outside the `/release` flow.
+- Anything else that names `main`/`dev` and isn't on the read-only/sync allowlist (`gh api .../branches/dev/...`, etc.).
+- Commits while currently on `main` or `dev` (separate hook).
 
-`git push --force` and `--force-with-lease` to feature branches are allowed — you'll need them after a rebase.
+What's **allowed** without any marker:
+- Read-only and local-sync git verbs against protected refs: `git fetch origin dev`, `git rebase origin/dev`, `git merge origin/dev`, `git pull origin dev`, `git diff origin/main..HEAD`, `git log main..feature`, `git show origin/dev:path`. The standard "keep my feature branch in sync with dev" flow just works.
+- `git push --force` / `--force-with-lease` to **feature** branches — needed after a rebase.
+- `gh pr create --base dev` — the normal feature → dev PR.
 
 ## The one exception: `/release`
 

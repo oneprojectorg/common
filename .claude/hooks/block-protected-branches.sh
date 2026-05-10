@@ -41,6 +41,15 @@ DESTRUCTIVE_CLEAN='git\s+clean\s+(-[a-zA-Z]*f|--force)'
 DESTRUCTIVE_BRANCH_D='git\s+branch\s+(-[a-zA-Z]*D)'
 DESTRUCTIVE_CHECKOUT='git\s+checkout\s+(--|\.[[:space:]]|\.[[:space:]]*$)'
 
+# Read-only / local-sync git verbs. These don't write to the remote protected
+# branch — they read it, or pull it down into the current (feature) branch.
+# Allowing these means `git fetch origin dev`, `git rebase origin/dev`, and
+# `git diff origin/main..HEAD` work without the /release marker. Pushes and
+# destructive ops are still caught by the explicit checks above this.
+# Verbs that switch HEAD (checkout/switch/restore) are intentionally NOT
+# included — the agent shouldn't move onto main/dev.
+SAFE_GIT_VERBS='git\s+(fetch|pull|rebase|merge|diff|log|show|status|rev-parse|ls-remote|remote|blame|describe|shortlog|whatchanged|cat-file|for-each-ref|reflog|range-diff)\b'
+
 # Destructive ops are never allowed, even under /release.
 if echo "$COMMAND" | grep -qE "$DESTRUCTIVE_RESET|$DESTRUCTIVE_CLEAN|$DESTRUCTIVE_BRANCH_D|$DESTRUCTIVE_CHECKOUT"; then
   echo "BLOCKED: destructive git operation (reset --hard, clean -f, branch -D, checkout --). Ask the user before running this." >&2
@@ -69,8 +78,16 @@ if echo "$COMMAND" | grep -qE "$GH_PR_CREATE_BASE_DEV"; then
   exit 0
 fi
 
-# Generic protected-branch reference block (catches `git fetch origin dev`,
-# `git log main..feature`, etc.), with /release exception.
+# Read-only / local-sync ops referencing main/dev are allowed without the
+# /release marker. `git push` was already filtered out above, so this only
+# catches things like `git fetch origin dev`, `git rebase origin/dev`,
+# `git merge origin/dev`, `git pull origin dev`, `git diff origin/main..HEAD`.
+if echo "$COMMAND" | grep -qE "$SAFE_GIT_VERBS"; then
+  exit 0
+fi
+
+# Generic protected-branch reference block (catches anything else that names
+# main/dev — e.g. `gh api repos/.../branches/dev`), with /release exception.
 if echo "$COMMAND" | grep -qE "$INVOKES_GIT_GH" && echo "$COMMAND" | grep -qE "$REFERENCES_PROTECTED"; then
   if echo "$COMMAND" | grep -qE "$RELEASE_MARKER"; then
     exit 0
