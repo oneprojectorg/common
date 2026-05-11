@@ -38,6 +38,22 @@ const createOutsiderCaller = async (testData: TestDecisionsDataManager) => {
   return createAuthenticatedCaller(outsider.email);
 };
 
+const fetchPostRoots = async (postId: string) => {
+  const [row] = await db
+    .select({
+      id: posts.id,
+      rootProfileId: posts.rootProfileId,
+      rootPostId: posts.rootPostId,
+    })
+    .from(posts)
+    .where(eq(posts.id, postId))
+    .limit(1);
+  if (!row) {
+    throw new Error(`Post ${postId} not found`);
+  }
+  return row;
+};
+
 describe.concurrent('decision-profile post authorization', () => {
   it('allows a decision admin to create an update on the decision profile', async ({
     task,
@@ -367,6 +383,46 @@ describe.concurrent('decision-profile post authorization', () => {
       .select({ postId: postReactions.postId })
       .from(postReactions)
       .where(eq(postReactions.postId, adminPost.id));
+
+    expect(reactions).toHaveLength(1);
+  });
+
+  it('allows a member to react to a comment (gate inherited via rootProfileId)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const adminPost = await adminCaller.posts.createPost({
+      content: 'Admin update.',
+      profileId: instance.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const comment = await memberCaller.posts.createPost({
+      content: 'Member comment.',
+      parentPostId: adminPost.id,
+    });
+
+    await memberCaller.organization.toggleReaction({
+      postId: comment.id,
+      reactionType: 'like',
+    });
+
+    const reactions = await db
+      .select({ postId: postReactions.postId })
+      .from(postReactions)
+      .where(eq(postReactions.postId, comment.id));
 
     expect(reactions).toHaveLength(1);
   });
@@ -792,6 +848,121 @@ describe.concurrent('proposal post authorization', () => {
 
     expect(comment.parentPostId).toBe(proposalPost.id);
     expect(comment.content).toBe('Member comment on proposal post.');
+  });
+});
+
+// Pin the schema contract introduced by resolvePostRoots: every new post must
+// have rootProfileId / rootPostId set per the integration's rules. Behavioral
+// tests above only verify auth pass/fail, which would still pass if the
+// columns silently went to null. These tests SELECT the actual columns so a
+// regression in resolvePostRoots can't slip past.
+describe.concurrent('rootProfileId / rootPostId column writes', () => {
+  it('writes rootProfileId=instance and rootPostId=null on a top-level decision post', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const post = await caller.posts.createPost({
+      content: 'Top-level update.',
+      profileId: instance.profileId,
+    });
+
+    const row = await fetchPostRoots(post.id);
+    expect(row.rootProfileId).toBe(instance.profileId);
+    expect(row.rootPostId).toBeNull();
+  });
+
+  it('pins rootProfileId to the parent decision on proposal posts and their comments', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Proposal D', description: 'desc' },
+    });
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const proposalPost = await adminCaller.posts.createPost({
+      content: 'Admin update on proposal.',
+      profileId: proposal.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const comment = await memberCaller.posts.createPost({
+      content: 'Member comment on proposal post.',
+      parentPostId: proposalPost.id,
+    });
+
+    const topRow = await fetchPostRoots(proposalPost.id);
+    expect(topRow.rootProfileId).toBe(instance.profileId);
+    expect(topRow.rootProfileId).not.toBe(proposal.profileId);
+    expect(topRow.rootPostId).toBeNull();
+
+    const commentRow = await fetchPostRoots(comment.id);
+    expect(commentRow.rootProfileId).toBe(instance.profileId);
+    expect(commentRow.rootPostId).toBe(proposalPost.id);
+  });
+
+  it('propagates rootPostId through a 3-deep reply chain', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const topLevel = await adminCaller.posts.createPost({
+      content: 'Top-level.',
+      profileId: instance.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    const replyA = await memberCaller.posts.createPost({
+      content: 'Reply A.',
+      parentPostId: topLevel.id,
+    });
+    const replyA1 = await memberCaller.posts.createPost({
+      content: 'Reply A.1.',
+      parentPostId: replyA.id,
+    });
+
+    const topRow = await fetchPostRoots(topLevel.id);
+    expect(topRow.rootPostId).toBeNull();
+
+    const aRow = await fetchPostRoots(replyA.id);
+    expect(aRow.rootPostId).toBe(topLevel.id);
+    expect(aRow.rootProfileId).toBe(instance.profileId);
+
+    const a1Row = await fetchPostRoots(replyA1.id);
+    expect(a1Row.rootPostId).toBe(topLevel.id);
+    expect(a1Row.rootProfileId).toBe(instance.profileId);
   });
 });
 
