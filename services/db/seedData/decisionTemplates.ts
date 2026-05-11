@@ -52,6 +52,11 @@ export const simpleVoting = {
         voting: { submit: false },
         advancement: { method: 'date', endDate: '2026-01-01' },
       },
+      // Pass-all: every submitted proposal advances into review.
+      selectionPipeline: {
+        version: '1.0.0',
+        blocks: [],
+      },
       settings: {
         type: 'object',
         properties: {
@@ -85,7 +90,7 @@ export const simpleVoting = {
       rules: {
         proposals: { submit: false },
         voting: { submit: false },
-        advancement: { method: 'date', endDate: '2026-01-02' },
+        advancement: { method: 'manual', endDate: '2026-01-02' },
       },
       settings: {
         type: 'object',
@@ -109,7 +114,7 @@ export const simpleVoting = {
       rules: {
         proposals: { submit: false },
         voting: { submit: true },
-        advancement: { method: 'date', endDate: '2026-01-03' },
+        advancement: { method: 'manual', endDate: '2026-01-03' },
       },
       settings: {
         type: 'object',
@@ -162,7 +167,7 @@ export const simpleVoting = {
       rules: {
         proposals: { submit: false },
         voting: { submit: false },
-        advancement: { method: 'date', endDate: '2026-01-04' },
+        advancement: { method: 'manual', endDate: '2026-01-04' },
       },
       settings: {
         type: 'object',

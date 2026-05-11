@@ -38,6 +38,9 @@ const decisionSchemaWithReview = {
         proposals: { submit: true },
         advancement: { method: 'manual' as const },
       },
+      // Pass-all: every submitted proposal advances into review so the
+      // assignment generator has proposals to fan out to reviewers.
+      selectionPipeline: { version: '1.0.0', blocks: [] },
     },
     {
       id: 'review',
