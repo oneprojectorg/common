@@ -105,7 +105,7 @@ export function VotingPage({
                 instanceId={instanceId}
                 decisionSlug={decisionSlug}
                 permissions={instance.access}
-                isVotingPhase
+                currentPhase={currentPhase}
               />
             </Suspense>
           </div>

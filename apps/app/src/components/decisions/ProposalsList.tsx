@@ -4,6 +4,7 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import {
   type DecisionAccess,
+  type InstancePhaseData,
   ProposalFilter,
   ProposalStatus,
 } from '@op/api/encoders';
@@ -164,7 +165,10 @@ interface ProposalsProps {
   permissions?: DecisionAccess | null;
   votedProposalIds?: string[];
   hasFilter: boolean;
-  /** When true, the current phase has voting enabled — always show voting UI */
+  /**
+   * When true, the current phase has voting enabled — always show voting UI.
+   * Derived from `currentPhase.rules.voting.submit` upstream.
+   */
   isVotingPhase?: boolean;
   /** When true, new proposals are hidden by default in the current phase. */
   proposalsHidden?: boolean;
@@ -556,8 +560,7 @@ export const ProposalsList = ({
   permissions,
   initialFilter,
   phase,
-  isVotingPhase,
-  isReviewPhase,
+  currentPhase,
   proposalsHidden,
 }: {
   slug: string;
@@ -572,17 +575,18 @@ export const ProposalsList = ({
   initialFilter?: ProposalFilter;
   /** When set to 'results', all proposals are returned as non-editable */
   phase?: 'results';
-  /** When true, the current phase has voting enabled — always show voting UI */
-  isVotingPhase?: boolean;
   /**
-   * When true, the current phase has review enabled. Gates a non-blocking
-   * fetch of the viewer's pending revision requests so the author sees a
-   * "Revision requested" chip and a "Revise proposal" CTA on their cards.
+   * The current phase of the decision instance. Used to derive
+   * capability-driven UI: voting cards in voting phases, the
+   * "Revision requested" chip + "Revise proposal" CTA in review
+   * phases. Omit in phases that have neither (e.g. results).
    */
-  isReviewPhase?: boolean;
+  currentPhase?: InstancePhaseData;
   /** When true, new proposals are hidden by default in the current phase. */
   proposalsHidden?: boolean;
 }) => {
+  const isReviewPhase = currentPhase?.rules?.proposals?.review === true;
+  const isVotingPhase = currentPhase?.rules?.voting?.submit === true;
   const t = useTranslations();
   const { user } = useUser();
   const router = useRouter();
