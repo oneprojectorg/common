@@ -582,7 +582,6 @@ test.describe('Proposal View', () => {
       email: org.adminUser.email,
       proposalData: {
         title: 'Commentable Proposal',
-        collaborationDocId: MOCK_DOC_ID,
       },
     });
 
