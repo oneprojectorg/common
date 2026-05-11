@@ -2,6 +2,7 @@ import { db, eq } from '@op/db/client';
 import {
   EntityType,
   ProposalStatus,
+  Visibility,
   processInstances,
   profileUserToAccessRoles,
   profileUsers,
@@ -29,6 +30,7 @@ import {
   parseProposalData,
 } from './proposalDataSchema';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import { assertInstancePhase } from './utils/instance';
 import { checkProposalsAllowed } from './utils/proposal';
 
 export interface CreateProposalInput {
@@ -95,6 +97,17 @@ export const createProposal = async ({
         `Proposals are not allowed in the ${phaseName} phase`,
       );
     }
+
+    // Capture the phase's `defaults.hidden` rule at creation time. The flag
+    // sticks with the proposal through submission, so a draft authored under
+    // a hidden-by-default phase remains hidden even if the rule is edited
+    // before submit.
+    const currentPhase = assertInstancePhase({
+      instance: { instanceData },
+      phaseId: currentPhaseId,
+    });
+    const defaultHidden =
+      currentPhase.rules?.proposals?.defaults?.hidden === true;
 
     const parsedProposalData = parseProposalData(data.proposalData);
 
@@ -208,6 +221,7 @@ export const createProposal = async ({
           submittedByProfileId: profileId,
           profileId: proposalProfile.id,
           status: ProposalStatus.DRAFT,
+          ...(defaultHidden ? { visibility: Visibility.HIDDEN } : {}),
         })
         .returning();
 

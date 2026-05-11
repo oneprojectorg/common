@@ -345,6 +345,30 @@ function PhaseDetailForm({
             size="small"
           />
         </ToggleRow>
+        {phase.rules?.proposals?.submit && (
+          <ToggleRow
+            label={t('Hide proposals by default')}
+            description={t(
+              'New proposals are hidden from other participants until an admin makes them visible.',
+            )}
+          >
+            <ToggleButton
+              isSelected={phase.rules?.proposals?.defaults?.hidden ?? false}
+              onChange={(val) =>
+                updateRules({
+                  proposals: {
+                    ...phase.rules?.proposals,
+                    defaults: {
+                      ...phase.rules?.proposals?.defaults,
+                      hidden: val,
+                    },
+                  },
+                })
+              }
+              size="small"
+            />
+          </ToggleRow>
+        )}
         <ToggleRow
           label={t('Proposal editing')}
           description={t('Authors can edit their proposals after submitting')}

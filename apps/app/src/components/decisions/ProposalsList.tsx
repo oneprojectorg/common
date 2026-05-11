@@ -124,6 +124,7 @@ export const ProposalListSkeleton = () => {
 
 const NoProposalsFound = ({ hasFilter }: { hasFilter: boolean }) => {
   const t = useTranslations();
+
   return (
     <EmptyState icon={<LuLeaf className="size-6" />}>
       <Header3 className="font-serif !text-title-base font-light text-neutral-black">
@@ -140,6 +141,18 @@ const NoProposalsFound = ({ hasFilter }: { hasFilter: boolean }) => {
   );
 };
 
+const HiddenProposalsEmptyState = () => {
+  const t = useTranslations();
+
+  return (
+    <EmptyState icon={<LuLeaf className="size-6" />}>
+      <p className="text-base text-neutral-charcoal">
+        {t("You'll see your proposal here once you submit.")}
+      </p>
+    </EmptyState>
+  );
+};
+
 interface ProposalsProps {
   proposals?: Proposal[];
   instanceId: string;
@@ -151,6 +164,8 @@ interface ProposalsProps {
   hasFilter: boolean;
   /** When true, the current phase has voting enabled — always show voting UI */
   isVotingPhase?: boolean;
+  /** When true, new proposals are hidden by default in the current phase. */
+  proposalsHidden?: boolean;
 }
 
 const VotingProposalsList = ({
@@ -160,6 +175,7 @@ const VotingProposalsList = ({
   permissions,
   votedProposalIds = [],
   hasFilter,
+  proposalsHidden,
 }: ProposalsProps) => {
   const canVote = permissions?.vote ?? false;
   const canManageProposals = permissions?.admin ?? false;
@@ -217,6 +233,9 @@ const VotingProposalsList = ({
   };
 
   if (!proposals || proposals.length === 0) {
+    if (proposalsHidden && !hasFilter) {
+      return <HiddenProposalsEmptyState />;
+    }
     return <NoProposalsFound hasFilter={hasFilter} />;
   }
 
@@ -409,9 +428,13 @@ const ViewProposalsList = ({
   decisionSlug,
   permissions,
   hasFilter,
+  proposalsHidden,
 }: ProposalsProps) => {
   const canManageProposals = permissions?.admin ?? false;
   if (!proposals || proposals.length === 0) {
+    if (proposalsHidden && !hasFilter) {
+      return <HiddenProposalsEmptyState />;
+    }
     return <NoProposalsFound hasFilter={hasFilter} />;
   }
 
@@ -508,6 +531,7 @@ export const ProposalsList = ({
   initialFilter,
   phase,
   isVotingPhase,
+  proposalsHidden,
 }: {
   slug: string;
   instanceId: string;
@@ -523,6 +547,8 @@ export const ProposalsList = ({
   phase?: 'results';
   /** When true, the current phase has voting enabled — always show voting UI */
   isVotingPhase?: boolean;
+  /** When true, new proposals are hidden by default in the current phase. */
+  proposalsHidden?: boolean;
 }) => {
   const t = useTranslations();
   const { user } = useUser();
@@ -759,106 +785,116 @@ export const ProposalsList = ({
     );
   };
 
+  const hideFilters = proposalsHidden && !canManageProposals;
+
   return (
     <div className="flex flex-col gap-6 pb-12">
       {/* Filters Bar */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           <span className="font-serif text-title-base text-neutral-black">
-            {proposalFilter === ProposalFilter.MY_BALLOT
-              ? t('My ballot')
-              : proposalFilter === ProposalFilter.MY_PROPOSALS
-                ? t('My proposals')
-                : proposalFilter === ProposalFilter.SHORTLISTED
-                  ? t('Shortlisted proposals')
-                  : t('All proposals')}{' '}
-            <Bullet /> {proposals?.length ?? 0}
+            {hideFilters ? (
+              t('My proposals')
+            ) : (
+              <>
+                {proposalFilter === ProposalFilter.MY_BALLOT
+                  ? t('My ballot')
+                  : proposalFilter === ProposalFilter.MY_PROPOSALS
+                    ? t('My proposals')
+                    : proposalFilter === ProposalFilter.SHORTLISTED
+                      ? t('Shortlisted proposals')
+                      : t('All proposals')}{' '}
+                <Bullet /> {proposals?.length ?? 0}
+              </>
+            )}
           </span>
         </div>
-        <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
-          <ResponsiveSelect
-            selectedKey={proposalFilter}
-            onSelectionChange={(key) => {
-              // If selecting "My proposals" but no current profile, ignore
-              if (key === ProposalFilter.MY_PROPOSALS && !currentProfileId) {
-                return;
-              }
-              setProposalFilter(key);
-            }}
-            aria-label={t('Filter proposals')}
-            items={[
-              { id: ProposalFilter.ALL, label: t('All proposals') },
-              {
-                id: ProposalFilter.MY_PROPOSALS,
-                label: t('My proposals'),
-                isDisabled: !currentProfileId,
-              },
-              {
-                id: ProposalFilter.SHORTLISTED,
-                label: t('Shortlisted proposals'),
-              },
-              ...(hasVoted
-                ? [
-                    {
-                      id: ProposalFilter.MY_BALLOT,
-                      label: t('My ballot'),
-                    },
-                  ]
-                : []),
-            ]}
-          />
-          <ResponsiveSelect
-            selectedKey={selectedCategory}
-            onSelectionChange={(category) => {
-              setSelectedCategory(category);
-              updateURLParams({ category });
-            }}
-            aria-label={t('Filter proposals by category')}
-            items={[
-              { id: 'all-categories', label: t('All categories') },
-              ...categories.map((category) => ({
-                id: category.id,
-                label: category.name,
-              })),
-            ]}
-          />
-          <ResponsiveSelect
-            selectedKey={sortOrder}
-            onSelectionChange={(sort) => {
-              setSortOrder(sort);
-              updateURLParams({ sort });
-            }}
-            aria-label={t('Sort proposals')}
-            className="min-w-32"
-            items={[
-              { id: 'newest', label: t('Newest First') },
-              { id: 'oldest', label: t('Oldest First') },
-            ]}
-          />
-          {canManageProposals ? (
-            isDownloadReady && downloadUrl ? (
-              <ButtonLink
-                href={downloadUrl}
-                download={downloadFileName}
-                color="secondary"
-                size="small"
-              >
-                <LuArrowDownToLine className="size-4" />
-                {t('Click to download')}
-              </ButtonLink>
-            ) : (
-              <Button
-                onPress={handleExport}
-                isDisabled={isExporting}
-                color="secondary"
-                size="small"
-              >
-                <LuArrowDownToLine className="size-4" />
-                {isExporting ? t('Exporting...') : t('Export')}
-              </Button>
-            )
-          ) : null}
-        </div>
+        {!hideFilters && (
+          <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
+            <ResponsiveSelect
+              selectedKey={proposalFilter}
+              onSelectionChange={(key) => {
+                // If selecting "My proposals" but no current profile, ignore
+                if (key === ProposalFilter.MY_PROPOSALS && !currentProfileId) {
+                  return;
+                }
+                setProposalFilter(key);
+              }}
+              aria-label={t('Filter proposals')}
+              items={[
+                { id: ProposalFilter.ALL, label: t('All proposals') },
+                {
+                  id: ProposalFilter.MY_PROPOSALS,
+                  label: t('My proposals'),
+                  isDisabled: !currentProfileId,
+                },
+                {
+                  id: ProposalFilter.SHORTLISTED,
+                  label: t('Shortlisted proposals'),
+                },
+                ...(hasVoted
+                  ? [
+                      {
+                        id: ProposalFilter.MY_BALLOT,
+                        label: t('My ballot'),
+                      },
+                    ]
+                  : []),
+              ]}
+            />
+            <ResponsiveSelect
+              selectedKey={selectedCategory}
+              onSelectionChange={(category) => {
+                setSelectedCategory(category);
+                updateURLParams({ category });
+              }}
+              aria-label={t('Filter proposals by category')}
+              items={[
+                { id: 'all-categories', label: t('All categories') },
+                ...categories.map((category) => ({
+                  id: category.id,
+                  label: category.name,
+                })),
+              ]}
+            />
+            <ResponsiveSelect
+              selectedKey={sortOrder}
+              onSelectionChange={(sort) => {
+                setSortOrder(sort);
+                updateURLParams({ sort });
+              }}
+              aria-label={t('Sort proposals')}
+              className="min-w-32"
+              items={[
+                { id: 'newest', label: t('Newest First') },
+                { id: 'oldest', label: t('Oldest First') },
+              ]}
+            />
+            {canManageProposals ? (
+              isDownloadReady && downloadUrl ? (
+                <ButtonLink
+                  href={downloadUrl}
+                  download={downloadFileName}
+                  color="secondary"
+                  size="small"
+                >
+                  <LuArrowDownToLine className="size-4" />
+                  {t('Click to download')}
+                </ButtonLink>
+              ) : (
+                <Button
+                  onPress={handleExport}
+                  isDisabled={isExporting}
+                  color="secondary"
+                  size="small"
+                >
+                  <LuArrowDownToLine className="size-4" />
+                  {isExporting ? t('Exporting...') : t('Export')}
+                </Button>
+              )
+            ) : null}
+          </div>
+        )}
       </div>
 
       {/* Translation attribution */}
@@ -884,6 +920,7 @@ export const ProposalsList = ({
           votedProposalIds={selectedProposalIds}
           hasFilter={selectedCategory !== 'all-categories'}
           isVotingPhase={isVotingPhase}
+          proposalsHidden={proposalsHidden}
         />
       </ProposalTranslationProvider>
 

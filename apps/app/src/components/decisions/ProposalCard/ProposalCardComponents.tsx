@@ -304,7 +304,21 @@ export function ProposalCardStatus({
   const t = useTranslations();
   const { status, visibility } = proposal;
 
-  // Show hidden status first if proposal is hidden
+  // DRAFT wins over HIDDEN: a draft created in a hidden-by-default phase
+  // should still read as "Draft" to its author, not "Hidden".
+  if (status === ProposalStatus.DRAFT) {
+    return (
+      <>
+        <Bullet />
+        <span
+          className={cn('text-sm text-nowrap text-neutral-charcoal', className)}
+        >
+          {t('Draft')}
+        </span>
+      </>
+    );
+  }
+
   if (visibility === Visibility.HIDDEN) {
     return (
       <>
@@ -319,16 +333,6 @@ export function ProposalCardStatus({
   }
 
   return match(status, {
-    [ProposalStatus.DRAFT]: (
-      <>
-        <Bullet />
-        <span
-          className={cn('text-sm text-nowrap text-neutral-charcoal', className)}
-        >
-          {t('Draft')}
-        </span>
-      </>
-    ),
     [ProposalStatus.APPROVED]: (
       <>
         <Bullet />

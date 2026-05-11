@@ -6,9 +6,12 @@ import {
   Visibility,
   decisionProcesses,
   processInstances,
+  profileUserToAccessRoles,
+  profileUsers,
   proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
+import { ROLES } from '@op/db/seedData/accessControl';
 import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -363,6 +366,86 @@ describe.concurrent('listProposals', () => {
     // Owner should still see their hidden proposal
     const submitterCaller = await createAuthenticatedCaller(submitter.email);
     const result = await submitterCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.proposals).toHaveLength(1);
+    expect(result.proposals[0]?.id).toBe(proposal.id);
+    expect(result.proposals[0]?.visibility).toBe(Visibility.HIDDEN);
+  });
+
+  it('should show hidden proposals to invited collaborators on the proposal profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const [submitter, collaborator, adminCaller] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    const proposal = await testData.createProposal({
+      userEmail: submitter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Co-authored Hidden Proposal' },
+    });
+
+    // Add the collaborator as a profileUser on the proposal's profile —
+    // mirrors what acceptProposalInvite does in production.
+    const [collaboratorProfileUser] = await db
+      .insert(profileUsers)
+      .values({
+        profileId: proposal.profileId,
+        authUserId: collaborator.authUserId,
+        email: collaborator.email,
+      })
+      .returning();
+
+    if (!collaboratorProfileUser) {
+      throw new Error('Failed to create collaborator profileUser');
+    }
+
+    await db.insert(profileUserToAccessRoles).values({
+      profileUserId: collaboratorProfileUser.id,
+      accessRoleId: ROLES.MEMBER.id,
+    });
+
+    // Submit the proposal so it transitions out of DRAFT — the hidden-
+    // visibility filter only applies to non-draft proposals; drafts have
+    // their own collaborator-aware filter path.
+    const submitterCaller = await createAuthenticatedCaller(submitter.email);
+    await submitterCaller.decision.submitProposal({ proposalId: proposal.id });
+
+    // Admin hides the now-submitted proposal
+    await adminCaller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { visibility: Visibility.HIDDEN },
+    });
+
+    // Collaborator (not the submitter, not an admin) should still see the
+    // hidden proposal in the list.
+    const collaboratorCaller = await createAuthenticatedCaller(
+      collaborator.email,
+    );
+    const result = await collaboratorCaller.decision.listProposals({
       processInstanceId: instance.instance.id,
     });
 

@@ -16,6 +16,9 @@ export interface PhaseRules {
     submit?: boolean;
     edit?: boolean;
     review?: boolean;
+    defaults?: {
+      hidden?: boolean;
+    };
   };
   voting?: {
     submit?: boolean;

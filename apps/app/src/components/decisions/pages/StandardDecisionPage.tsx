@@ -2,7 +2,6 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import { type InstancePhaseData } from '@op/api/encoders';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { Suspense } from 'react';
@@ -13,6 +12,7 @@ import { useTranslations } from '@/lib/i18n/routing';
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
+import { HiddenProposalsBanner } from '../HiddenProposalsBanner';
 import { ManualSelectionList } from '../ManualSelectionList';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
 import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
@@ -40,10 +40,16 @@ export function StandardDecisionPage({
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;
-  const currentPhase = phases.find(
-    (phase): phase is InstancePhaseData => phase.phaseId === currentPhaseId,
+  const currentPhaseIndex = phases.findIndex(
+    (phase) => phase.phaseId === currentPhaseId,
   );
+  const currentPhase =
+    currentPhaseIndex >= 0 ? phases[currentPhaseIndex] : undefined;
+  const nextPhase =
+    currentPhaseIndex >= 0 ? phases[currentPhaseIndex + 1] : undefined;
   const allowProposals = currentPhase?.rules?.proposals?.submit === true;
+  const proposalsHidden =
+    currentPhase?.rules?.proposals?.defaults?.hidden === true;
   const description =
     instance.description ?? instance.instanceData?.templateDescription;
   const canSubmitProposal = instance.access?.submitProposals ?? false;
@@ -77,7 +83,13 @@ export function StandardDecisionPage({
         />
       </div>
 
-      <div className="mt-8 flex w-full justify-center border-t bg-white">
+      <div className="mt-8 flex w-full flex-col items-center border-t bg-white">
+        {proposalsHidden && (
+          <HiddenProposalsBanner
+            nextPhaseName={nextPhase?.name}
+            currentPhaseEndDate={currentPhase?.endDate}
+          />
+        )}
         <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
           <div className="flex flex-col gap-6 lg:col-span-3">
             {!instance.selectionsAreConfirmed &&
@@ -126,6 +138,7 @@ export function StandardDecisionPage({
                     decisionSlug={decisionSlug}
                     decisionProfileId={decisionProfileId}
                     permissions={instance.access}
+                    proposalsHidden={proposalsHidden}
                   />
                 </Suspense>
               </APIErrorBoundary>

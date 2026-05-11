@@ -5,8 +5,11 @@ import {
   Visibility,
   decisionProcesses,
   processInstances,
+  profileUserToAccessRoles,
+  profileUsers,
   proposals,
 } from '@op/db/schema';
+import { ROLES } from '@op/db/seedData/accessControl';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -295,6 +298,129 @@ describe.concurrent('getProposal', () => {
     // Owner should still be able to get their hidden proposal
     const submitterCaller = await createAuthenticatedCaller(submitter.email);
     const result = await submitterCaller.decision.getProposal({
+      profileId: proposal.profileId,
+    });
+
+    expect(result.id).toBe(proposal.id);
+    expect(result.visibility).toBe(Visibility.HIDDEN);
+  });
+
+  it('should hide proposal with HIDDEN visibility from non-admin, non-owner members', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Submitter creates the proposal; another member tries to fetch it once hidden
+    const [submitter, otherMember, adminCaller] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    const proposal = await testData.createProposal({
+      userEmail: submitter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Secret Proposal', description: 'Hidden idea' },
+    });
+
+    // Admin hides the proposal
+    await adminCaller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { visibility: Visibility.HIDDEN },
+    });
+
+    // Another member (read access, but not admin or owner) should get NotFound
+    const otherCaller = await createAuthenticatedCaller(otherMember.email);
+    await expect(
+      otherCaller.decision.getProposal({
+        profileId: proposal.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+  });
+
+  it('should return hidden proposal to invited collaborators on the proposal profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Submitter, a separate collaborator, and the org admin caller
+    const [submitter, collaborator, adminCaller] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    const proposal = await testData.createProposal({
+      userEmail: submitter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Co-authored Hidden Proposal' },
+    });
+
+    // Add the collaborator as a profileUser on the proposal's profile —
+    // mirrors what acceptProposalInvite does in production.
+    const [collaboratorProfileUser] = await db
+      .insert(profileUsers)
+      .values({
+        profileId: proposal.profileId,
+        authUserId: collaborator.authUserId,
+        email: collaborator.email,
+      })
+      .returning();
+
+    if (!collaboratorProfileUser) {
+      throw new Error('Failed to create collaborator profileUser');
+    }
+
+    await db.insert(profileUserToAccessRoles).values({
+      profileUserId: collaboratorProfileUser.id,
+      accessRoleId: ROLES.MEMBER.id,
+    });
+
+    // Admin hides the proposal
+    await adminCaller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { visibility: Visibility.HIDDEN },
+    });
+
+    // Collaborator (not the submitter, not an admin) should still see the hidden proposal
+    const collaboratorCaller = await createAuthenticatedCaller(
+      collaborator.email,
+    );
+    const result = await collaboratorCaller.decision.getProposal({
       profileId: proposal.profileId,
     });
 

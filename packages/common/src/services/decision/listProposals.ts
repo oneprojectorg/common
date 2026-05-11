@@ -20,6 +20,7 @@ import {
   postsToProfiles,
   processInstances,
   profileRelationships,
+  profileUsers,
   proposalCategories,
   proposals,
 } from '@op/db/schema';
@@ -368,14 +369,23 @@ export const listProposals = async ({
         : sql`false`;
 
     // Non-draft proposals: phase-scoped, plus the HIDDEN visibility filter for
-    // non-admins (admins and the owning profile still see hidden proposals).
+    // non-admins. Hidden proposals stay visible to the creator and any invited
+    // collaborators on the proposal's profile — same pattern the draft filter
+    // uses, so a collaborator's view of a co-authored proposal doesn't change
+    // the moment it's submitted with HIDDEN visibility.
     const nonDraftVisibilityFilter = canManageProposals
       ? phaseScopedNonDraftIdFilter
       : and(
           phaseScopedNonDraftIdFilter,
           or(
             eq(proposals.visibility, Visibility.VISIBLE),
-            eq(proposals.submittedByProfileId, currentProfileId),
+            inArray(
+              proposals.profileId,
+              db
+                .select({ profileId: profileUsers.profileId })
+                .from(profileUsers)
+                .where(eq(profileUsers.authUserId, input.authUserId)),
+            ),
           ),
         );
 
