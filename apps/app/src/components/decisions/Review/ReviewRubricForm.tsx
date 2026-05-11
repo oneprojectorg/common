@@ -74,7 +74,7 @@ export function ReviewRubricForm() {
               {t('Reviewing is paused until author submits a revision.')}{' '}
               <button
                 type="button"
-                className="underline"
+                className="cursor-pointer underline"
                 onClick={() => setIsViewModalOpen(true)}
               >
                 {t('View feedback')}
