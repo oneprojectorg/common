@@ -1,4 +1,7 @@
-import { processDecisionsTransitions, simpleVoting } from '@op/common';
+import {
+  type DecisionSchemaDefinition,
+  processDecisionsTransitions,
+} from '@op/common';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
@@ -29,8 +32,54 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
+// Four-phase schema for transition-monitor tests: every phase uses
+// date-based advancement so the monitor schedules transitions, and every
+// phase carries a pass-all selectionPipeline so proposals flow forward.
+const monitorTestSchema: DecisionSchemaDefinition = {
+  id: 'monitor-test',
+  version: '1.0.0',
+  name: 'Monitor Test Schema',
+  description: 'Date-based pass-all schema used for transition monitor tests.',
+  phases: [
+    {
+      id: 'submission',
+      name: 'Submission',
+      rules: {
+        proposals: { submit: true },
+        advancement: { method: 'date' },
+      },
+      selectionPipeline: { version: '1.0.0', blocks: [] },
+    },
+    {
+      id: 'review',
+      name: 'Review',
+      rules: {
+        advancement: { method: 'date' },
+      },
+      selectionPipeline: { version: '1.0.0', blocks: [] },
+    },
+    {
+      id: 'voting',
+      name: 'Voting',
+      rules: {
+        voting: { submit: true },
+        advancement: { method: 'date' },
+      },
+      selectionPipeline: { version: '1.0.0', blocks: [] },
+    },
+    {
+      id: 'results',
+      name: 'Results',
+      rules: {
+        advancement: { method: 'date' },
+      },
+    },
+  ],
+};
+
 /**
- * Helper to create a template using the simpleVoting schema (4 phases, date-based advancement).
+ * Helper to create a template using the monitor test schema (4 phases,
+ * date-based advancement, pass-all selection pipelines).
  * Returns the template ID and user email.
  */
 async function createSimpleTemplate(
@@ -52,8 +101,8 @@ async function createSimpleTemplate(
     .insert(decisionProcesses)
     .values({
       name: `Simple Template ${taskId}`,
-      description: simpleVoting.description,
-      processSchema: simpleVoting,
+      description: monitorTestSchema.description,
+      processSchema: monitorTestSchema,
       createdByProfileId: userRecord.profileId,
     })
     .returning();
