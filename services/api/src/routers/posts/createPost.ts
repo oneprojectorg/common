@@ -1,4 +1,4 @@
-import { createPost as createPostService } from '@op/common';
+import { Channels, createPost as createPostService } from '@op/common';
 import { createPostSchema } from '@op/types';
 import { waitUntil } from '@vercel/functions';
 
@@ -17,6 +17,12 @@ export const createPost = router({
         ...input,
         authUserId: ctx.user.id,
       });
+
+      if (input.parentPostId) {
+        ctx.registerMutationChannels([
+          Channels.postComments(input.parentPostId),
+        ]);
+      }
 
       if (input.proposalId && input.processInstanceId) {
         waitUntil(

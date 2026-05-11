@@ -40,6 +40,9 @@ export const Channels = {
 
   reviewAssignments: (instanceId: string) =>
     `reviewAssignments:${instanceId}` as const,
+
+  postComments: (parentPostId: string) =>
+    `postComments:${parentPostId}` as const,
 } as const;
 
 export type GlobalChannel = ReturnType<typeof Channels.global>;
@@ -66,6 +69,7 @@ export type ReviewAssignmentChannel = ReturnType<
 export type ReviewAssignmentsChannel = ReturnType<
   typeof Channels.reviewAssignments
 >;
+export type PostCommentsChannel = ReturnType<typeof Channels.postComments>;
 
 /**
  * Union of all valid channel types
@@ -80,4 +84,5 @@ export type ChannelName =
   | DecisionProposalsChannel
   | DecisionProposalChannel
   | ReviewAssignmentChannel
-  | ReviewAssignmentsChannel;
+  | ReviewAssignmentsChannel
+  | PostCommentsChannel;

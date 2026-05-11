@@ -1,4 +1,4 @@
-import { deletePostById } from '@op/common';
+import { Channels, deletePostById } from '@op/common';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -13,9 +13,13 @@ export const deletePost = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      await deletePostById({
+      const { parentPostId } = await deletePostById({
         postId: input.id,
         user: ctx.user,
       });
+
+      if (parentPostId) {
+        ctx.registerMutationChannels([Channels.postComments(parentPostId)]);
+      }
     }),
 });

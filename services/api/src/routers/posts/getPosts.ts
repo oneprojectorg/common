@@ -1,4 +1,4 @@
-import { getPosts as getPostsService } from '@op/common';
+import { Channels, getPosts as getPostsService } from '@op/common';
 import { getPostsSchema } from '@op/types';
 import { z } from 'zod';
 
@@ -16,6 +16,11 @@ export const getPosts = router({
         ...input,
         authUserId: ctx.user.id,
       });
+
+      if (input.parentPostId) {
+        ctx.registerQueryChannels([Channels.postComments(input.parentPostId)]);
+      }
+
       return outputSchema.parse(posts);
     }),
 });

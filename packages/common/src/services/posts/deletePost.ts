@@ -48,7 +48,7 @@ export const deletePostById = async (options: DeletePostByIdOptions) => {
     targetPost.profileId === callerIndividualProfileId
   ) {
     await db.delete(posts).where(eq(posts.id, postId));
-    return;
+    return { parentPostId: targetPost.parentPostId };
   }
 
   // Comments inherit their parent's org/profile associations only via
@@ -70,7 +70,7 @@ export const deletePostById = async (options: DeletePostByIdOptions) => {
       checkPermission({ admin: permission.DELETE }, orgUser.roles)
     ) {
       await db.delete(posts).where(eq(posts.id, postId));
-      return;
+      return { parentPostId: targetPost.parentPostId };
     }
   }
 
@@ -113,7 +113,7 @@ export const deletePostById = async (options: DeletePostByIdOptions) => {
             orgFallbackPermissions: [{ decisions: permission.ADMIN }],
           });
           await db.delete(posts).where(eq(posts.id, postId));
-          return;
+          return { parentPostId: targetPost.parentPostId };
         } catch {
           // Try the next process instance.
         }
