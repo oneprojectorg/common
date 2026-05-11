@@ -133,4 +133,64 @@ describe.concurrent('deletePost', () => {
     expect(deletedParent).toHaveLength(0);
     expect(deletedComment).toHaveLength(0);
   });
+
+  it('should reject deleting a comment whose parent belongs to a different organization', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testDataA = new TestDecisionsDataManager(
+      `${task.id}-orgA`,
+      onTestFinished,
+    );
+    const testDataB = new TestDecisionsDataManager(
+      `${task.id}-orgB`,
+      onTestFinished,
+    );
+    const setupA = await testDataA.createDecisionSetup({
+      instanceCount: 0,
+      grantAccess: false,
+    });
+    const setupB = await testDataB.createDecisionSetup({
+      instanceCount: 0,
+      grantAccess: false,
+    });
+
+    const { result: parentPost } = await createPostInOrganization({
+      id: setupA.organization.id,
+      content: 'Parent post in org A',
+      user: setupA.user,
+    });
+
+    const userA = await db.query.users.findFirst({
+      where: { authUserId: setupA.user.id },
+    });
+
+    const [comment] = await db
+      .insert(posts)
+      .values({
+        content: 'Comment under org A',
+        parentPostId: parentPost.id,
+        profileId: userA!.profileId!,
+      })
+      .returning();
+
+    if (!comment) {
+      throw new Error('Failed to create comment');
+    }
+
+    const callerB = await createAuthenticatedCaller(setupB.userEmail);
+
+    await expect(
+      callerB.organization.deletePost({
+        id: comment.id,
+        profileId: setupB.organization.profileId,
+      }),
+    ).rejects.toThrow();
+
+    const stillThere = await db
+      .select()
+      .from(posts)
+      .where(eq(posts.id, comment.id));
+    expect(stillThere).toHaveLength(1);
+  });
 });
