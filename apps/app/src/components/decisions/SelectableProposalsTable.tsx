@@ -1,6 +1,5 @@
 'use client';
 
-import { formatCurrency } from '@/utils/formatting';
 import type { Proposal } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
@@ -15,10 +14,10 @@ import {
 
 import { Link, useTranslations } from '@/lib/i18n';
 
-import { resolveProposalSystemFields } from './proposalContentUtils';
 import { AdvanceToggleButton } from './selection/AdvanceToggleButton';
 import { SelectionCard } from './selection/SelectionCard';
 import { SelectionCategoryChips } from './selection/SelectionCategoryChips';
+import { resolvePresentationFields } from './selection/proposalPresentation';
 
 interface SelectableProposalsTableProps {
   proposals: Proposal[];
@@ -197,30 +196,4 @@ const SelectableProposalCard = ({
       />
     </SelectionCard>
   );
-};
-
-const resolvePresentationFields = ({
-  proposal,
-  defaultTitle,
-}: {
-  proposal: Proposal;
-  defaultTitle: string;
-}) => {
-  const {
-    title: resolvedTitle,
-    budget,
-    category: categories = [],
-  } = resolveProposalSystemFields(proposal);
-  const title = resolvedTitle || proposal.profile.name || defaultTitle;
-  const submitterName = proposal.submittedBy?.name;
-  const formattedBudget = budget?.amount
-    ? formatCurrency(budget.amount, undefined, budget.currency)
-    : null;
-
-  return {
-    title,
-    submitterName,
-    budget: formattedBudget,
-    categories,
-  };
 };

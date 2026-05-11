@@ -124,7 +124,10 @@ export async function listSelectionCandidates({
       .from(decisionsVoteProposals)
       .innerJoin(
         decisionsVoteSubmissions,
-        eq(decisionsVoteProposals.voteSubmissionId, decisionsVoteSubmissions.id),
+        eq(
+          decisionsVoteProposals.voteSubmissionId,
+          decisionsVoteSubmissions.id,
+        ),
       )
       .where(
         and(

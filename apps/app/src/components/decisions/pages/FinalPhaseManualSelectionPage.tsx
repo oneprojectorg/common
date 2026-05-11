@@ -61,7 +61,6 @@ export function FinalPhaseManualSelectionPage({
                 <ManualSelectionList
                   instanceId={instanceId}
                   decisionSlug={decisionSlug}
-                  confirmButtonLabel={t('Confirm winning proposals')}
                   confirmVariant="finalPhase"
                 />
               </Suspense>
