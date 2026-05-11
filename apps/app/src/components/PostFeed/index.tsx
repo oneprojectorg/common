@@ -204,29 +204,23 @@ const PostMenu = ({
 
   return (
     <OptionMenu className="absolute top-0 right-0">
-      <PostMenuContent
-        post={post}
-        profileId={user?.currentProfileId || ''}
-        canDelete={canShowMenu}
-      />
+      <PostMenuContent post={post} canDelete={canShowMenu} />
     </OptionMenu>
   );
 };
 
 const PostMenuContent = ({
   post,
-  profileId,
   canDelete,
 }: {
   post: Post;
-  profileId: string;
   canDelete: boolean;
 }) => {
   if (!canDelete) {
     return null;
   }
 
-  return <DeletePost post={post} profileId={profileId} />;
+  return <DeletePost post={post} />;
 };
 
 export const EmptyPostsState = () => {
