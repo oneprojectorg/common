@@ -224,15 +224,10 @@ export function ProposalCardRevisionRequestedChip({
   return (
     <>
       <Bullet />
-      <span
-        className={cn(
-          'inline-flex items-center gap-1 rounded-md bg-primary-orange2/10 p-1 text-xs text-neutral-charcoal',
-          className,
-        )}
-      >
+      <Chip className={cn('inline-flex gap-1 bg-primary-orange2/10', className)}>
         <LuMail className="size-3 text-primary-orange2" />
         {t('Revision requested')}
-      </span>
+      </Chip>
     </>
   );
 }
