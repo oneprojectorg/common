@@ -1,4 +1,4 @@
-import { assertProfileTypeAccess } from '@op/common';
+import { ValidationError, assertProfileTypeAccess } from '@op/common';
 import { db } from '@op/db/client';
 import { EntityType } from '@op/db/schema';
 import { permission } from 'access-zones';
@@ -26,7 +26,7 @@ describe.concurrent('assertProfileTypeAccess', () => {
           profileIds: [randomUUID()],
           policies: { [EntityType.ORG]: { decisions: permission.ADMIN } },
         }),
-      ).rejects.toThrow(/do not exist/);
+      ).rejects.toThrow(ValidationError);
     });
 
     it('treats a profile type not present in policies as a no-op', async ({
