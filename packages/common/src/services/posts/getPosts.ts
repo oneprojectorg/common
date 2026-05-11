@@ -52,15 +52,29 @@ export const getPosts = async (input: GetPostsInput) => {
   const effectiveParentPostId =
     profileId && parentPostId === undefined ? null : parentPostId;
 
+  // Prefer the parent's pinned rootProfileId gate when present. Legacy posts
+  // written before the gate was added fall back to postsToProfiles so the
+  // pre-migration corpus keeps working until a backfill lands.
   const profileIdsToAuthorize = profileId
     ? [profileId]
     : parentPostId
-      ? (
-          await db
+      ? await (async () => {
+          const [parent] = await db
+            .select({ rootProfileId: postsTable.rootProfileId })
+            .from(postsTable)
+            .where(eq(postsTable.id, parentPostId))
+            .limit(1);
+
+          if (parent?.rootProfileId) {
+            return [parent.rootProfileId];
+          }
+
+          const rows = await db
             .select({ profileId: postsToProfiles.profileId })
             .from(postsToProfiles)
-            .where(eq(postsToProfiles.postId, parentPostId))
-        ).map((p) => p.profileId)
+            .where(eq(postsToProfiles.postId, parentPostId));
+          return rows.map((p) => p.profileId);
+        })()
       : [];
 
   await assertProfileTypeAccess({

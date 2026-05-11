@@ -19,6 +19,7 @@ import { CommonError } from '../../utils';
 import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
 import { decisionPermission } from '../decision/permissions';
 import { sendCommentNotificationEmail } from '../email';
+import { resolvePostRoots } from './resolvePostRoots';
 
 interface CreatePostServiceInput extends CreatePostInput {
   authUserId: string;
@@ -238,10 +239,33 @@ export const createPost = async (input: CreatePostServiceInput) => {
 
   const profileId = await getCurrentProfileId(authUserId);
 
-  // Resolve which profiles to authorize against:
-  //   - top-level post on a profile     → [targetProfileId]
-  //   - reply (parentPostId, no target) → inherit parent's postsToProfiles rows
-  // The parent lookup is reused below to inherit associations onto the new post.
+  // Pin the access gate (rootProfileId) and thread root (rootPostId) at
+  // write time. resolvePostRoots handles the proposal → parent-decision
+  // lookup, so rootProfileId is always the correct gate even when the
+  // target is a proposal profile (which carries no permissions of its own).
+  const { rootProfileId, rootPostId } = await resolvePostRoots({
+    targetProfileId,
+    parentPostId,
+  });
+
+  // Decision profiles get a decision-permission gate. Top-level posts
+  // (targetProfileId set) require ADMIN; comments (parentPostId only)
+  // require SUBMIT_PROPOSALS. Org/individual profile types fall through
+  // (no policy = lenient — callers on those paths layer their own
+  // membership checks).
+  await assertProfileTypeAccess({
+    user: { id: authUserId },
+    profileIds: rootProfileId ? [rootProfileId] : [],
+    policies: {
+      [EntityType.DECISION]: targetProfileId
+        ? { decisions: permission.ADMIN }
+        : { decisions: decisionPermission.SUBMIT_PROPOSALS },
+    },
+  });
+
+  // postsToProfiles inheritance for comments is purely a feed/discovery
+  // index now — auth is pinned on rootProfileId above. We still pre-read
+  // parent associations to inherit them onto the comment.
   const parentProfiles =
     !targetProfileId && parentPostId
       ? await db
@@ -249,28 +273,6 @@ export const createPost = async (input: CreatePostServiceInput) => {
           .from(postsToProfiles)
           .where(eq(postsToProfiles.postId, parentPostId))
       : [];
-
-  const profileIdsToAuthorize = targetProfileId
-    ? [targetProfileId]
-    : parentProfiles.map((p) => p.profileId);
-
-  // Decision profiles get a decision-permission gate. Top-level posts
-  // (targetProfileId set) require ADMIN; comments (parentPostId only)
-  // only require SUBMIT_PROPOSALS. Proposal/org/individual profile
-  // types fall through unchanged here — proposals don't carry their
-  // own permissions (they inherit from the parent decision), and the
-  // org/individual paths layer their own membership checks at the
-  // caller. The follow-up `root_profile_id` column will resolve the
-  // proposal-gate question correctly at write time.
-  await assertProfileTypeAccess({
-    user: { id: authUserId },
-    profileIds: profileIdsToAuthorize,
-    policies: {
-      [EntityType.DECISION]: targetProfileId
-        ? { decisions: permission.ADMIN }
-        : { decisions: decisionPermission.SUBMIT_PROPOSALS },
-    },
-  });
 
   const newPost = await db.transaction(async (tx) => {
     const allStorageObjects =
@@ -298,6 +300,8 @@ export const createPost = async (input: CreatePostServiceInput) => {
         content,
         parentPostId: parentPostId || null,
         profileId,
+        rootProfileId,
+        rootPostId,
       })
       .returning();
 
@@ -311,26 +315,11 @@ export const createPost = async (input: CreatePostServiceInput) => {
         profileId: targetProfileId,
       });
     } else if (parentPostId) {
-      // Re-read parent associations inside the tx and intersect with the
-      // auth-time snapshot. If new associations were added between the auth
-      // check and this insert, we must NOT inherit them — the user wasn't
-      // authorized against those profiles. If associations were removed,
-      // we drop them too.
-      const currentParentProfiles = await tx
-        .select({ profileId: postsToProfiles.profileId })
-        .from(postsToProfiles)
-        .where(eq(postsToProfiles.postId, parentPostId));
-
-      const authorizedProfileIds = new Set(
-        parentProfiles.map((p) => p.profileId),
-      );
-      const profileIdsToInherit = currentParentProfiles
-        .map((p) => p.profileId)
-        .filter((id) => authorizedProfileIds.has(id));
-
-      if (profileIdsToInherit.length > 0) {
+      // Auth is pinned on rootProfileId above, so postsToProfiles is now a
+      // pure feed/discovery index. Inherit every parent association.
+      if (parentProfiles.length > 0) {
         await tx.insert(postsToProfiles).values(
-          profileIdsToInherit.map((profileId) => ({
+          parentProfiles.map(({ profileId }) => ({
             postId: newPost.id,
             profileId,
           })),

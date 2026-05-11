@@ -25,9 +25,15 @@ export const toggleReaction = async ({
 }: ToggleReactionOptions): Promise<ToggleReactionResult> => {
   const context = await loadPostContext(postId);
 
+  // Prefer the pinned rootProfileId gate; fall back to associations for
+  // legacy posts that predate the rootProfileId column.
+  const profileIdsToAuthorize = context.rootProfileId
+    ? [context.rootProfileId]
+    : context.associatedProfileIds;
+
   await assertProfileTypeAccess({
     user,
-    profileIds: context.associatedProfileIds,
+    profileIds: profileIdsToAuthorize,
     policies: {
       [EntityType.DECISION]: {
         decisions: decisionPermission.SUBMIT_PROPOSALS,

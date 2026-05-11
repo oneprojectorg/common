@@ -694,6 +694,107 @@ describe.concurrent('listProfilePosts authorization and pagination', () => {
   });
 });
 
+// Proposal profiles carry no permissions of their own — resolvePostRoots
+// walks up to the parent decision profile to pin the auth gate. These tests
+// pin that contract so the rootProfileId-based dispatch can't regress to a
+// lenient pass-through that lets outsiders write on a proposal profile just
+// because the proposal profile itself has no policy.
+describe.concurrent('proposal post authorization', () => {
+  it('rejects an outsider from creating a top-level update on a proposal profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Proposal A', description: 'desc' },
+    });
+
+    const outsiderCaller = await createOutsiderCaller(testData);
+
+    await expect(
+      outsiderCaller.posts.createPost({
+        content: 'Outsider top-level on proposal — should fail.',
+        profileId: proposal.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+  });
+
+  it('rejects an outsider from commenting on a proposal post', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Proposal B', description: 'desc' },
+    });
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const proposalPost = await adminCaller.posts.createPost({
+      content: 'Admin update on proposal.',
+      profileId: proposal.profileId,
+    });
+
+    const outsiderCaller = await createOutsiderCaller(testData);
+
+    await expect(
+      outsiderCaller.posts.createPost({
+        content: 'Outsider comment on proposal post — should fail.',
+        parentPostId: proposalPost.id,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+  });
+
+  it('allows a decision member to comment on a proposal post (gate flows through parent decision)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Proposal C', description: 'desc' },
+    });
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const proposalPost = await adminCaller.posts.createPost({
+      content: 'Admin update on proposal.',
+      profileId: proposal.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const comment = await memberCaller.posts.createPost({
+      content: 'Member comment on proposal post.',
+      parentPostId: proposalPost.id,
+    });
+
+    expect(comment.parentPostId).toBe(proposalPost.id);
+    expect(comment.content).toBe('Member comment on proposal post.');
+  });
+});
+
 describe.concurrent('getPosts pagination', () => {
   it('paginates correctly when comments inherit profile associations from updates', async ({
     task,

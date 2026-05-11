@@ -8,6 +8,7 @@ import { Channels } from '../../realtime/channels/channels';
 export type PostContext = {
   associatedProfileIds: string[];
   parentPostId: string | null;
+  rootProfileId: string | null;
 };
 
 export const loadPostContext = async (postId: string): Promise<PostContext> => {
@@ -17,7 +18,10 @@ export const loadPostContext = async (postId: string): Promise<PostContext> => {
       .from(postsToProfiles)
       .where(eq(postsToProfiles.postId, postId)),
     db
-      .select({ parentPostId: postsTable.parentPostId })
+      .select({
+        parentPostId: postsTable.parentPostId,
+        rootProfileId: postsTable.rootProfileId,
+      })
       .from(postsTable)
       .where(eq(postsTable.id, postId))
       .limit(1),
@@ -25,6 +29,7 @@ export const loadPostContext = async (postId: string): Promise<PostContext> => {
   return {
     associatedProfileIds: associations.map((a) => a.profileId),
     parentPostId: post[0]?.parentPostId ?? null,
+    rootProfileId: post[0]?.rootProfileId ?? null,
   };
 };
 

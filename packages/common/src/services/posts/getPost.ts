@@ -23,66 +23,74 @@ export const getPost = async ({
     maxDepth = 2;
   }
 
-  const [post, actorProfileId, associations] = await Promise.all([
-    db.query.posts.findFirst({
-      where: { id: postId },
-      with: {
-        profile: {
-          with: {
-            avatarImage: true,
-          },
+  const post = await db.query.posts.findFirst({
+    where: { id: postId },
+    with: {
+      profile: {
+        with: {
+          avatarImage: true,
         },
-        attachments: {
-          with: {
-            storageObject: true,
-          },
+      },
+      attachments: {
+        with: {
+          storageObject: true,
         },
-        reactions: {
-          with: {
-            profile: true,
-          },
+      },
+      reactions: {
+        with: {
+          profile: true,
         },
-        ...(includeChildren && maxDepth > 0
-          ? {
-              childPosts: {
-                limit: 50,
-                orderBy: { createdAt: 'desc' as const },
-                with: {
-                  profile: {
-                    with: {
-                      avatarImage: true,
-                    },
+      },
+      ...(includeChildren && maxDepth > 0
+        ? {
+            childPosts: {
+              limit: 50,
+              orderBy: { createdAt: 'desc' as const },
+              with: {
+                profile: {
+                  with: {
+                    avatarImage: true,
                   },
-                  attachments: {
-                    with: {
-                      storageObject: true,
-                    },
+                },
+                attachments: {
+                  with: {
+                    storageObject: true,
                   },
-                  reactions: {
-                    with: {
-                      profile: true,
-                    },
+                },
+                reactions: {
+                  with: {
+                    profile: true,
                   },
                 },
               },
-            }
-          : {}),
-      },
-    }),
-    getCurrentProfileId(authUserId),
-    db
-      .select({ profileId: postsToProfiles.profileId })
-      .from(postsToProfiles)
-      .where(eq(postsToProfiles.postId, postId)),
-  ]);
+            },
+          }
+        : {}),
+    },
+  });
 
   if (!post) {
     return null;
   }
 
+  // Prefer the pinned rootProfileId gate when present. Legacy posts written
+  // before the gate was added fall back to the postsToProfiles index — those
+  // rows still carry their original associations, so this preserves access
+  // for the pre-migration corpus until a backfill lands.
+  const profileIdsToAuthorize = post.rootProfileId
+    ? [post.rootProfileId]
+    : (
+        await db
+          .select({ profileId: postsToProfiles.profileId })
+          .from(postsToProfiles)
+          .where(eq(postsToProfiles.postId, postId))
+      ).map((a) => a.profileId);
+
+  const actorProfileId = await getCurrentProfileId(authUserId);
+
   await assertProfileTypeAccess({
     user: { id: authUserId },
-    profileIds: associations.map((a) => a.profileId),
+    profileIds: profileIdsToAuthorize,
     policies: {
       [EntityType.DECISION]: { decisions: permission.READ },
     },
