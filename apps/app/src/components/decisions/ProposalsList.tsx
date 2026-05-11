@@ -10,6 +10,7 @@ import {
 import {
   type Proposal,
   type ProposalTranslation,
+  ProposalReviewRequestState,
   SUPPORTED_LOCALES,
   type SupportedLocale,
   isVotingEligible,
@@ -44,6 +45,7 @@ import {
   ProposalCardMetrics,
   ProposalCardOwnerActions,
   ProposalCardPreview,
+  ProposalCardReviseAction,
 } from './ProposalCard';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import { ResponsiveSelect } from './ResponsiveSelect';
@@ -166,6 +168,11 @@ interface ProposalsProps {
   isVotingPhase?: boolean;
   /** When true, new proposals are hidden by default in the current phase. */
   proposalsHidden?: boolean;
+  /**
+   * Proposal IDs for which the current user has a pending revision request.
+   * Empty in non-review phases.
+   */
+  revisionRequestedProposalIds?: Set<string>;
 }
 
 const VotingProposalsList = ({
@@ -440,6 +447,7 @@ const ViewProposalsList = ({
   permissions,
   hasFilter,
   proposalsHidden,
+  revisionRequestedProposalIds,
 }: ProposalsProps) => {
   const canManageProposals = permissions?.admin ?? false;
   if (!proposals || proposals.length === 0) {
@@ -455,6 +463,8 @@ const ViewProposalsList = ({
         const isDraft = proposal.status === ProposalStatus.DRAFT;
         const isEditable = Boolean(proposal.isEditable);
         const showMenu = canManageProposals;
+        const hasRevisionRequest =
+          revisionRequestedProposalIds?.has(proposal.id) ?? false;
         // Use new route structure if decisionSlug is provided, otherwise fallback to legacy route
         const editHref = decisionSlug
           ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}/edit`
@@ -479,13 +489,18 @@ const ViewProposalsList = ({
                     )
                   }
                 />
-                <ProposalCardMeta proposal={proposal} />
+                <ProposalCardMeta
+                  proposal={proposal}
+                  revisionRequested={hasRevisionRequest}
+                />
                 <ProposalCardPreview proposal={proposal} />
               </ProposalCardContent>
             </div>
             <ProposalCardContent>
               <ProposalCardFooter>
-                {isDraft ? (
+                {hasRevisionRequest ? (
+                  <ProposalCardReviseAction editHref={editHref} />
+                ) : isDraft ? (
                   <ProposalCardOwnerActions
                     proposal={proposal}
                     editHref={editHref}
@@ -542,6 +557,7 @@ export const ProposalsList = ({
   initialFilter,
   phase,
   isVotingPhase,
+  isReviewPhase,
   proposalsHidden,
 }: {
   slug: string;
@@ -558,6 +574,12 @@ export const ProposalsList = ({
   phase?: 'results';
   /** When true, the current phase has voting enabled — always show voting UI */
   isVotingPhase?: boolean;
+  /**
+   * When true, the current phase has review enabled. Gates a non-blocking
+   * fetch of the viewer's pending revision requests so the author sees a
+   * "Revision requested" chip and a "Revise proposal" CTA on their cards.
+   */
+  isReviewPhase?: boolean;
   /** When true, new proposals are hidden by default in the current phase. */
   proposalsHidden?: boolean;
 }) => {
@@ -652,6 +674,27 @@ export const ProposalsList = ({
 
   const { proposals: allProposals } = proposalsData ?? {};
   const canManageProposals = permissions?.admin ?? false;
+
+  // Non-blocking lookup of the viewer's pending revision requests. Only
+  // fires in review phase — voting/results/standard phases don't render
+  // the chip or "Revise proposal" CTA, so the fetch is wasted otherwise.
+  // The endpoint is scoped server-side to the caller's own proposals.
+  const { data: revisionRequestsData } =
+    trpc.decision.listProposalsRevisionRequests.useQuery(
+      { states: [ProposalReviewRequestState.REQUESTED] },
+      { enabled: !!isReviewPhase },
+    );
+
+  const revisionRequestedProposalIds = useMemo(() => {
+    if (!revisionRequestsData) {
+      return new Set<string>();
+    }
+    return new Set(
+      revisionRequestsData.revisionRequests
+        .filter(({ proposal }) => proposal.processInstanceId === instanceId)
+        .map(({ proposal }) => proposal.id),
+    );
+  }, [revisionRequestsData, instanceId]);
 
   // --- Translation state ---
   const locale = useLocale();
@@ -932,6 +975,7 @@ export const ProposalsList = ({
           hasFilter={selectedCategory !== 'all-categories'}
           isVotingPhase={isVotingPhase}
           proposalsHidden={proposalsHidden}
+          revisionRequestedProposalIds={revisionRequestedProposalIds}
         />
       </ProposalTranslationProvider>
 

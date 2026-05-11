@@ -16,7 +16,7 @@ import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import type { HTMLAttributes, ReactNode } from 'react';
-import { LuBookmark, LuHeart, LuMessageCircle } from 'react-icons/lu';
+import { LuBookmark, LuHeart, LuMail, LuMessageCircle } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
@@ -195,8 +195,10 @@ export function ProposalCardBudget({
 export function ProposalCardMeta({
   proposal,
   withLink = true,
+  revisionRequested = false,
   className,
 }: BaseProposalCardProps & {
+  revisionRequested?: boolean;
   className?: string;
 }) {
   return (
@@ -204,7 +206,34 @@ export function ProposalCardMeta({
       <ProposalCardAuthor proposal={proposal} withLink={withLink} />
       <ProposalCardCategory proposal={proposal} />
       <ProposalCardStatus proposal={proposal} />
+      {revisionRequested ? <ProposalCardRevisionRequestedChip /> : null}
     </div>
+  );
+}
+
+/**
+ * Chip shown to the proposal author when a reviewer has requested revisions
+ * on their proposal. Sits alongside category/status in the meta row.
+ */
+export function ProposalCardRevisionRequestedChip({
+  className,
+}: {
+  className?: string;
+}) {
+  const t = useTranslations();
+  return (
+    <>
+      <Bullet />
+      <span
+        className={cn(
+          'inline-flex items-center gap-1 rounded-md bg-primary-orange2/10 p-1 text-xs text-neutral-charcoal',
+          className,
+        )}
+      >
+        <LuMail className="size-3 text-primary-orange2" />
+        {t('Revision requested')}
+      </span>
+    </>
   );
 }
 
