@@ -30,6 +30,7 @@ import {
   parseProposalData,
 } from './proposalDataSchema';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import { assertInstancePhase } from './utils/instance';
 import { checkProposalsAllowed } from './utils/proposal';
 
 export interface CreateProposalInput {
@@ -101,11 +102,12 @@ export const createProposal = async ({
     // sticks with the proposal through submission, so a draft authored under
     // a hidden-by-default phase remains hidden even if the rule is edited
     // before submit.
-    const currentPhase = instanceData.phases.find(
-      (p) => p.phaseId === currentPhaseId,
-    );
+    const currentPhase = assertInstancePhase({
+      instance: { instanceData },
+      phaseId: currentPhaseId,
+    });
     const defaultHidden =
-      currentPhase?.rules?.proposals?.defaults?.hidden === true;
+      currentPhase.rules?.proposals?.defaults?.hidden === true;
 
     const parsedProposalData = parseProposalData(data.proposalData);
 
