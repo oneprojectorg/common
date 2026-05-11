@@ -15,12 +15,10 @@ import { VoteReviewStep } from './VoteReviewStep';
 export const VoteSubmissionModal = ({
   selectedProposals,
   instanceId,
-  maxVotes,
   onSuccess,
 }: {
   selectedProposals: Proposal[];
   instanceId: string;
-  maxVotes: number;
   onSuccess: () => void;
 }) => {
   const t = useTranslations();
@@ -53,7 +51,7 @@ export const VoteSubmissionModal = ({
     <>
       <ModalHeader>{t('Review your votes')}</ModalHeader>
       <ModalBody>
-        <VoteReviewStep proposals={selectedProposals} maxVotes={maxVotes} />
+        <VoteReviewStep proposals={selectedProposals} />
       </ModalBody>
       <ModalFooter>
         <Button

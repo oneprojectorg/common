@@ -23,6 +23,8 @@ export interface PhaseRules {
   voting?: {
     submit?: boolean;
     edit?: boolean;
+    /** Undefined = no limit (distinct from 0, which would block all voting). */
+    maxVotesPerMember?: number;
   };
   advancement?: {
     method: 'date' | 'manual';

@@ -13,7 +13,6 @@ import {
 
 interface VoteReviewStepProps {
   proposals: Proposal[];
-  maxVotes: number;
 }
 
 export const VoteReviewStep = ({ proposals }: VoteReviewStepProps) => {

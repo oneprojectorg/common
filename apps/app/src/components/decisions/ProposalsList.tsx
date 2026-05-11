@@ -195,24 +195,19 @@ const VotingProposalsList = ({
   // Determine voting state
   const hasVoted = voteStatus?.hasVoted || false;
   const isReadOnly = hasVoted || !canVote;
-  const maxVotesPerMember =
-    voteStatus?.votingConfiguration?.maxVotesPerMember || 0;
+  const maxVotesPerMember = voteStatus?.votingConfiguration?.maxVotesPerMember;
 
-  // Handle proposal selection
   const toggleProposal = (proposalId: string) => {
     setSelectedProposalIds((prev) => {
       const isSelected = prev.includes(proposalId);
 
       if (isSelected) {
-        // Remove from selection
         return prev.filter((id) => id !== proposalId);
-      } else {
-        // Add to selection if under limit
-        if (prev.length < maxVotesPerMember) {
-          return [...prev, proposalId];
-        }
-        return prev;
       }
+      if (maxVotesPerMember === undefined || prev.length < maxVotesPerMember) {
+        return [...prev, proposalId];
+      }
+      return prev;
     });
   };
 
@@ -385,9 +380,26 @@ const VotingProposalsList = ({
         <FooterBar position="fixed" className="bg-neutral-offWhite/95">
           <FooterBar.Start>
             <span className="text-base text-neutral-black">
-              <span className="text-primary-teal">{numSelected}</span> of{' '}
-              {maxVotesPerMember}{' '}
-              {maxVotesPerMember === 1 ? 'proposal' : 'proposals'} selected
+              {maxVotesPerMember !== undefined
+                ? t.rich(
+                    '<highlight>{numSelected}</highlight> of {max, plural, one {# proposal} other {# proposals}} selected',
+                    {
+                      numSelected,
+                      max: maxVotesPerMember,
+                      highlight: (chunks: React.ReactNode) => (
+                        <span className="text-primary-teal">{chunks}</span>
+                      ),
+                    },
+                  )
+                : t.rich(
+                    '<highlight>{numSelected, plural, one {# proposal} other {# proposals}}</highlight> selected',
+                    {
+                      numSelected,
+                      highlight: (chunks: React.ReactNode) => (
+                        <span className="text-primary-teal">{chunks}</span>
+                      ),
+                    },
+                  )}
             </span>
           </FooterBar.Start>
           <FooterBar.Center />
@@ -402,7 +414,6 @@ const VotingProposalsList = ({
                   <VoteSubmissionModal
                     selectedProposals={selectedProposals}
                     instanceId={instanceId}
-                    maxVotes={maxVotesPerMember}
                     onSuccess={handleVoteSuccess}
                   />
                 </Dialog>

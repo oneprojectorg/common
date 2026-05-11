@@ -5,7 +5,7 @@ export interface DecisionProcessSchema {
   allowProposals: boolean;
   allowDecisions: boolean;
   instanceData: {
-    maxVotesPerMember: number;
+    maxVotesPerMember?: number;
     [key: string]: unknown;
   };
   [key: string]: unknown;
@@ -17,7 +17,7 @@ export const DecisionProcessSchemaBase = z
     allowDecisions: z.boolean(),
     instanceData: z
       .object({
-        maxVotesPerMember: z.int().min(0),
+        maxVotesPerMember: z.int().positive().optional(),
       })
       .and(z.record(z.string(), z.unknown())),
   })
@@ -26,7 +26,7 @@ export const DecisionProcessSchemaBase = z
 export interface VotingConfig {
   allowProposals: boolean;
   allowDecisions: boolean;
-  maxVotesPerMember: number;
+  maxVotesPerMember?: number;
   schemaType: string;
   additionalConfig?: Record<string, unknown>;
 }
