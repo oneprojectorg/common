@@ -17,7 +17,7 @@ export function ReviewProposalPane() {
   const responseComment = respondedAt ? revisionRequest?.responseComment : null;
 
   return (
-    <>
+    <div className="flex flex-col gap-8">
       <ProposalPreview
         proposal={assignment.proposal}
         submissionMetaSuffix={
@@ -31,6 +31,6 @@ export function ReviewProposalPane() {
       />
 
       <ProposalComments proposal={assignment.proposal} readOnly />
-    </>
+    </div>
   );
 }
