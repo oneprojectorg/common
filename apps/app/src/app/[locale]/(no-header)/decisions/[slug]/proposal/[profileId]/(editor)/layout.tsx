@@ -16,7 +16,7 @@ import { Button } from '@op/ui/Button';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { notFound, useParams } from 'next/navigation';
 import { useQueryStates } from 'nuqs';
-import { useMemo } from 'react';
+import { Suspense, useMemo } from 'react';
 import { LuHistory, LuStickyNote } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -49,6 +49,24 @@ import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor
  * panel is opened or closed.
  */
 export default function ProposalEditorLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // The data-fetching lives in `ProposalEditorLayoutInner`, wrapped here in a
+  // Suspense boundary with the editor skeleton. Next.js positions a route-level
+  // `loading.tsx` *inside* the layout (around `page.tsx`), not around the
+  // layout itself — so without this boundary, the layout's `useSuspenseQueries`
+  // suspension would bubble all the way up to `[slug]/loading.tsx` and the user
+  // would see the decisions stepper skeleton flash before the editor skeleton.
+  return (
+    <Suspense fallback={<ProposalEditorSkeleton />}>
+      <ProposalEditorLayoutInner>{children}</ProposalEditorLayoutInner>
+    </Suspense>
+  );
+}
+
+function ProposalEditorLayoutInner({
   children: _children,
 }: {
   children: React.ReactNode;
