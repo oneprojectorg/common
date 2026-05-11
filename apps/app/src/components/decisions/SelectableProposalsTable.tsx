@@ -25,6 +25,8 @@ interface SelectableProposalsTableProps {
   selectedIds: string[];
   onToggle: (proposalId: string) => void;
   getProposalHref?: (proposal: Proposal) => string;
+  /** Show the per-proposal vote count column. Only used by the final-phase view. */
+  showVotes?: boolean;
 }
 
 export const SelectableProposalsTable = ({
@@ -32,6 +34,7 @@ export const SelectableProposalsTable = ({
   selectedIds,
   onToggle,
   getProposalHref,
+  showVotes = false,
 }: SelectableProposalsTableProps) => {
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
@@ -47,6 +50,7 @@ export const SelectableProposalsTable = ({
               isSelected={selectedSet.has(proposal.id)}
               onToggle={onToggle}
               href={getProposalHref?.(proposal)}
+              showVotes={showVotes}
             />
           </li>
         ))}
@@ -62,6 +66,7 @@ export const SelectableProposalsTable = ({
         </TableColumn>
         <TableColumn id="budget">{t('Budget')}</TableColumn>
         <TableColumn id="category">{t('Category')}</TableColumn>
+        {showVotes ? <TableColumn id="votes">{t('Votes')}</TableColumn> : null}
         <TableColumn id="select" className="w-32 text-right">
           <span className="sr-only">{t('Select proposal')}</span>
         </TableColumn>
@@ -110,6 +115,13 @@ export const SelectableProposalsTable = ({
               <TableCell>
                 <SelectionCategoryChips labels={fields.categories} />
               </TableCell>
+              {showVotes ? (
+                <TableCell>
+                  <span className="text-base text-neutral-black">
+                    {t('{count} votes', { count: proposal.voteCount ?? 0 })}
+                  </span>
+                </TableCell>
+              ) : null}
               <TableCell className="text-right">
                 <AdvanceToggleButton
                   isSelected={isSelected}
@@ -131,11 +143,13 @@ const SelectableProposalCard = ({
   isSelected,
   onToggle,
   href,
+  showVotes,
 }: {
   proposal: Proposal;
   isSelected: boolean;
   onToggle: (proposalId: string) => void;
   href?: string;
+  showVotes: boolean;
 }) => {
   const t = useTranslations();
   const fields = resolvePresentationFields({
@@ -168,6 +182,11 @@ const SelectableProposalCard = ({
           <span className="text-base text-neutral-black">{fields.budget}</span>
         ) : null}
         <SelectionCategoryChips labels={fields.categories} />
+        {showVotes ? (
+          <span className="text-sm text-neutral-charcoal">
+            {t('{count} votes', { count: proposal.voteCount ?? 0 })}
+          </span>
+        ) : null}
       </div>
 
       <AdvanceToggleButton

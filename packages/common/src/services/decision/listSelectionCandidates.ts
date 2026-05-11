@@ -1,7 +1,18 @@
-import { type DbClient, db as defaultDb, eq } from '@op/db/client';
-import { proposalCategories } from '@op/db/schema';
+import {
+  and,
+  type DbClient,
+  db as defaultDb,
+  eq,
+  inArray,
+} from '@op/db/client';
+import {
+  decisionsVoteProposals,
+  decisionsVoteSubmissions,
+  proposalCategories,
+} from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
+import { count as countFn } from 'drizzle-orm';
 
 import { CommonError, NotFoundError } from '../../utils';
 import { getProfileAccessUser } from '../access';
@@ -20,7 +31,12 @@ interface ListSelectionCandidatesInput {
   user: User;
   /** Filter via the canonical `proposalCategories` join, not `proposalData.category`. */
   categoryId?: string;
-  sortOrder?: 'newest' | 'oldest';
+  /**
+   * `votes` is the default for the final-phase manual selection so admins see
+   * highest-voted proposals first. `newest`/`oldest` retain the prior behavior
+   * for callers that still want a createdAt sort.
+   */
+  sortOrder?: 'votes' | 'newest' | 'oldest';
   db?: DbClient;
 }
 
@@ -33,7 +49,7 @@ export async function listSelectionCandidates({
   processInstanceId,
   user,
   categoryId,
-  sortOrder = 'newest',
+  sortOrder = 'votes',
   db = defaultDb,
 }: ListSelectionCandidatesInput): Promise<SelectionCandidates> {
   const instance = await db.query.processInstances.findFirst({
@@ -88,19 +104,55 @@ export async function listSelectionCandidates({
     return { proposals: [] };
   }
 
-  const { proposals: enriched } = await listProposals({
-    input: {
-      processInstanceId,
-      proposalIds: candidateIds,
-      authUserId: user.id,
-      limit: candidateIds.length,
-      orderBy: 'createdAt',
-      dir: sortOrder === 'oldest' ? 'asc' : 'desc',
-    },
-    user,
-  });
+  const [{ proposals: enriched }, voteRows] = await Promise.all([
+    listProposals({
+      input: {
+        processInstanceId,
+        proposalIds: candidateIds,
+        authUserId: user.id,
+        limit: candidateIds.length,
+        orderBy: 'createdAt',
+        dir: sortOrder === 'oldest' ? 'asc' : 'desc',
+      },
+      user,
+    }),
+    db
+      .select({
+        proposalId: decisionsVoteProposals.proposalId,
+        count: countFn(),
+      })
+      .from(decisionsVoteProposals)
+      .innerJoin(
+        decisionsVoteSubmissions,
+        eq(decisionsVoteProposals.voteSubmissionId, decisionsVoteSubmissions.id),
+      )
+      .where(
+        and(
+          inArray(decisionsVoteProposals.proposalId, candidateIds),
+          eq(decisionsVoteSubmissions.processInstanceId, processInstanceId),
+        ),
+      )
+      .groupBy(decisionsVoteProposals.proposalId),
+  ]);
 
-  return { proposals: enriched };
+  const voteCountByProposalId = new Map(
+    voteRows.map((row) => [row.proposalId, Number(row.count)]),
+  );
+
+  const withVotes: Proposal[] = enriched.map((p) => ({
+    ...p,
+    voteCount: voteCountByProposalId.get(p.id) ?? 0,
+  }));
+
+  // The DB returned createdAt order (newest/oldest); for `votes`, re-sort here
+  // — vote counts aren't a DB column on `proposals`, so adding a sort to the
+  // candidate query would require a join. Sorting a bounded result set in JS
+  // keeps the query simple.
+  if (sortOrder === 'votes') {
+    withVotes.sort((a, b) => (b.voteCount ?? 0) - (a.voteCount ?? 0));
+  }
+
+  return { proposals: withVotes };
 }
 
 function resolvePreviousPhaseId(instance: {

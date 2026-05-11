@@ -20,8 +20,8 @@ interface ManualSelectionToolbarProps {
   setProposalFilter: (key: ProposalFilter) => void;
   selectedCategory: string;
   setSelectedCategory: (category: string) => void;
-  sortOrder: 'newest' | 'oldest';
-  setSortOrder: (order: 'newest' | 'oldest') => void;
+  sortOrder: 'votes' | 'newest' | 'oldest';
+  setSortOrder: (order: 'votes' | 'newest' | 'oldest') => void;
 }
 
 export const ManualSelectionToolbar = ({
@@ -82,6 +82,7 @@ export const ManualSelectionToolbar = ({
           onSelectionChange={setSortOrder}
           aria-label={t('Sort proposals')}
           items={[
+            { id: 'votes', label: t('Most votes') },
             { id: 'newest', label: t('Newest First') },
             { id: 'oldest', label: t('Oldest First') },
           ]}

@@ -6,11 +6,14 @@ export function DecisionHero({
   title,
   description,
   variant = 'standard',
+  gradient,
   children,
 }: {
   title: string | ReactNode;
   description?: string | ReactNode;
   variant?: 'standard' | 'results';
+  /** Override the default teal/green gradient on the gradient-style header. */
+  gradient?: string;
   children?: ReactNode;
 }) {
   return (
@@ -20,7 +23,10 @@ export function DecisionHero({
           {title}
         </Header2>
       ) : (
-        <GradientHeader className="items-center align-middle uppercase">
+        <GradientHeader
+          className="items-center align-middle uppercase"
+          gradient={gradient}
+        >
           {title}
         </GradientHeader>
       )}

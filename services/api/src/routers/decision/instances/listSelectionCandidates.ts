@@ -7,7 +7,7 @@ import { commonAuthedProcedure, router } from '../../../trpcFactory';
 const listSelectionCandidatesInputSchema = z.object({
   processInstanceId: z.uuid(),
   categoryId: z.uuid().optional(),
-  sortOrder: z.enum(['newest', 'oldest']).default('newest'),
+  sortOrder: z.enum(['votes', 'newest', 'oldest']).default('votes'),
 });
 
 const listSelectionCandidatesOutputSchema = z.object({
