@@ -561,6 +561,65 @@ test.describe('Proposal View', () => {
     ).toBeVisible();
   });
 
+  test('allows posting a comment on the proposal view', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const template = await getSeededTemplate();
+
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: template.processSchema,
+    });
+
+    const proposal = await createProposal({
+      processInstanceId: instance.instance.id,
+      submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      proposalData: {
+        title: 'Commentable Proposal',
+        collaborationDocId: MOCK_DOC_ID,
+      },
+    });
+
+    await authenticatedPage.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`,
+    );
+
+    await expect(
+      authenticatedPage.getByRole('heading', { name: 'Commentable Proposal' }),
+    ).toBeVisible({ timeout: 30_000 });
+
+    // Comments section starts empty with the write-mode empty state.
+    await expect(
+      authenticatedPage.getByRole('heading', { name: 'Comments (0)' }),
+    ).toBeVisible();
+    await expect(
+      authenticatedPage.getByText('Be the first to comment').first(),
+    ).toBeVisible();
+
+    const commentText = 'This is a great proposal — looking forward to it!';
+    const commentBox = authenticatedPage.getByPlaceholder(/^Comment/);
+    await expect(commentBox).toBeVisible();
+    await commentBox.fill(commentText);
+
+    await authenticatedPage
+      .getByRole('button', { name: 'Comment', exact: true })
+      .click();
+
+    // After post the comment appears in the feed and the counter increments.
+    await expect(authenticatedPage.getByText(commentText)).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(
+      authenticatedPage.getByRole('heading', { name: 'Comments (1)' }),
+    ).toBeVisible();
+  });
+
   test('handles missing document gracefully', async ({
     authenticatedPage,
     org,

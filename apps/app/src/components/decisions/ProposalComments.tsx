@@ -12,7 +12,13 @@ import { useTranslations } from '@/lib/i18n';
 import { PostFeed, PostItem, usePostFeedActions } from '../PostFeed';
 import { PostUpdate } from '../PostUpdate';
 
-export function ProposalComments({ proposal }: { proposal: Proposal }) {
+export function ProposalComments({
+  proposal,
+  readOnly = false,
+}: {
+  proposal: Proposal;
+  readOnly?: boolean;
+}) {
   const t = useTranslations();
   const { user } = useUser();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -46,18 +52,20 @@ export function ProposalComments({ proposal }: { proposal: Proposal }) {
           {t('Comments')} ({comments.length})
         </Header3>
 
-        <div className="mb-8">
-          <Surface className="border-0 p-0 sm:border sm:p-4">
-            <PostUpdate
-              profileId={proposal.profileId || undefined}
-              placeholder={`${t('Comment')}${user.currentProfile?.name ? ` as ${user.currentProfile?.name}` : ''}...`}
-              label={t('Comment')}
-              onSuccess={scrollToComments}
-              proposalId={proposal.id}
-              processInstanceId={proposal.processInstanceId}
-            />
-          </Surface>
-        </div>
+        {!readOnly && (
+          <div className="mb-8">
+            <Surface className="border-0 p-0 sm:border sm:p-4">
+              <PostUpdate
+                profileId={proposal.profileId || undefined}
+                placeholder={`${t('Comment')}${user.currentProfile?.name ? ` as ${user.currentProfile?.name}` : ''}...`}
+                label={t('Comment')}
+                onSuccess={scrollToComments}
+                proposalId={proposal.id}
+                processInstanceId={proposal.processInstanceId}
+              />
+            </Surface>
+          </div>
+        )}
 
         {commentsLoading ? (
           <div
@@ -91,7 +99,9 @@ export function ProposalComments({ proposal }: { proposal: Proposal }) {
             role="status"
             aria-label={t('No comments')}
           >
-            {t('No comments yet. Be the first to comment!')}
+            {readOnly
+              ? t('No comments yet.')
+              : t('No comments yet. Be the first to comment!')}
           </div>
         )}
       </div>

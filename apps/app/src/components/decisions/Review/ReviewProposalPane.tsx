@@ -30,7 +30,7 @@ export function ReviewProposalPane() {
         }
       />
 
-      <ProposalComments proposal={assignment.proposal} />
+      <ProposalComments proposal={assignment.proposal} readOnly />
     </>
   );
 }
