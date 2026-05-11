@@ -1224,7 +1224,7 @@
   "Votes": "Votes",
   "{count} votes": "{count, plural, one {# vote} other {# votes}}",
   "Most votes": "Most votes",
-  "Notify participants": "Notify participants",
+  "Publish results": "Publish results",
   "Results pending": "Results pending",
   "Results for this process haven't been processed yet.": "Results for this process haven't been processed yet.",
   "These {numProposals} proposals will be funded and results will be shared with all participants.": "{numProposals, plural, one {This # proposal will be funded and results will be shared with all participants.} other {These # proposals will be funded and results will be shared with all participants.}}",

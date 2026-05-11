@@ -1185,7 +1185,7 @@
   "Votes": "Votes",
   "{count} votes": "{count, plural, one {# vote} other {# votes}}",
   "Most votes": "Plus de votes",
-  "Notify participants": "Notifier les participants",
+  "Publish results": "Publier les résultats",
   "Results pending": "Résultats en attente",
   "Results for this process haven't been processed yet.": "Les résultats de ce processus n'ont pas encore été traités.",
   "These {numProposals} proposals will be funded and results will be shared with all participants.": "{numProposals, plural, one {Cette # proposition sera financée et les résultats seront partagés avec tous les participants.} other {Ces # propositions seront financées et les résultats seront partagés avec tous les participants.}}",

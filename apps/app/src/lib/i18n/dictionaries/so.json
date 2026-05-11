@@ -1156,7 +1156,7 @@
   "Votes": "Codad",
   "{count} votes": "{count, plural, one {# cod} other {# codad}}",
   "Most votes": "Codadka ugu badan",
-  "Notify participants": "Ogeysii ka qaybgalayaasha",
+  "Publish results": "Daabac natiijooyinka",
   "Results pending": "Natiijooyinka sugaya",
   "Results for this process haven't been processed yet.": "Natiijooyinka habkan weli lama habayn.",
   "These {numProposals} proposals will be funded and results will be shared with all participants.": "{numProposals, plural, one {Soo jeedinta # waa la maalgelin doonaa oo natiijada waxaa la wadaagi doonaa dhammaan ka qaybgalayaasha.} other {Soo jeedimaha # waa la maalgelin doonaa oo natiijada waxaa la wadaagi doonaa dhammaan ka qaybgalayaasha.}}",

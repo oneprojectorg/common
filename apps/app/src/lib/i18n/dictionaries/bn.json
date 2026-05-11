@@ -1186,7 +1186,7 @@
   "Votes": "ভোট",
   "{count} votes": "{count, plural, other {# ভোট}}",
   "Most votes": "সর্বাধিক ভোট",
-  "Notify participants": "অংশগ্রহণকারীদের জানান",
+  "Publish results": "ফলাফল প্রকাশ করুন",
   "Results pending": "ফলাফল অপেক্ষমাণ",
   "Results for this process haven't been processed yet.": "এই প্রক্রিয়ার ফলাফল এখনও প্রক্রিয়া করা হয়নি।",
   "These {numProposals} proposals will be funded and results will be shared with all participants.": "{numProposals, plural, other {এই # প্রস্তাবগুলিতে অর্থায়ন করা হবে এবং ফলাফল সকল অংশগ্রহণকারীর সাথে ভাগ করা হবে।}}",

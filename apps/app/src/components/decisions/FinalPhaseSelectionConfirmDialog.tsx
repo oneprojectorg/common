@@ -41,7 +41,7 @@ export const FinalPhaseSelectionConfirmDialog = ({
       triggerDisabled={triggerDisabled}
       triggerLabel={t('Confirm winning proposals')}
       headerLabel={t('Confirm winning proposals')}
-      confirmLabel={t('Notify participants')}
+      confirmLabel={t('Publish results')}
       isSubmitting={isSubmitting}
       onConfirm={onConfirm}
     >
