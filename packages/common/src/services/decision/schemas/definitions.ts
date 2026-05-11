@@ -51,7 +51,14 @@ export const simpleVoting: DecisionSchemaDefinition = {
       rules: {
         proposals: { submit: true },
         voting: { submit: false },
-        advancement: { method: 'manual', endDate: '2026-01-01' },
+        advancement: { method: 'date', endDate: '2026-01-01' },
+      },
+      // Pass-all: every submitted proposal advances into review.
+      // Expressed as an empty pipeline (no blocks) which short-circuits to
+      // returning the full input set.
+      selectionPipeline: {
+        version: '1.0.0',
+        blocks: [],
       },
       // User-configurable settings, available as variables in selectionPipeline
       settings: {

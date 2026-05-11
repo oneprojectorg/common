@@ -50,7 +50,12 @@ export const simpleVoting = {
       rules: {
         proposals: { submit: true },
         voting: { submit: false },
-        advancement: { method: 'manual', endDate: '2026-01-01' },
+        advancement: { method: 'date', endDate: '2026-01-01' },
+      },
+      // Pass-all: every submitted proposal advances into review.
+      selectionPipeline: {
+        version: '1.0.0',
+        blocks: [],
       },
       settings: {
         type: 'object',
