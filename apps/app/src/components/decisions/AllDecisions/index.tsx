@@ -17,95 +17,19 @@ import { TranslatedText } from '@/components/TranslatedText';
 
 import { DecisionListItem } from '../DecisionListItem';
 
-const DecisionListItemSkeleton = () => (
-  <div className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1">
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <Skeleton className="h-5 w-48" />
-        <Skeleton className="h-5 w-16 rounded" />
-      </div>
-      <div className="flex items-center gap-1">
-        <Skeleton className="size-4 rounded" />
-        <Skeleton className="h-3.5 w-24" />
-      </div>
-    </div>
-    <div className="flex items-center gap-12">
-      <div className="flex flex-col items-center gap-1">
-        <Skeleton className="h-5 w-6" />
-        <Skeleton className="h-3.5 w-16" />
-      </div>
-      <div className="flex flex-col items-center gap-1">
-        <Skeleton className="h-5 w-6" />
-        <Skeleton className="h-3.5 w-14" />
-      </div>
-    </div>
-  </div>
-);
-
-const DecisionsListSkeleton = () => (
-  <div className="flex flex-col gap-4 sm:gap-0">
-    {Array.from({ length: 3 }).map((_, i) => (
-      <DecisionListItemSkeleton key={i} />
-    ))}
-  </div>
-);
-
-const DecisionsListSuspense = ({
-  status,
-  ownerProfileId,
-}: {
-  status: ProcessStatus[];
-  ownerProfileId?: string;
-}) => {
-  const t = useTranslations();
-  const {
-    data: paginatedData,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = trpc.decision.listDecisionProfiles.useInfiniteQuery(
-    {
-      limit: 20,
-      status,
-      ownerProfileId,
-    },
-    {
-      getNextPageParam: (lastPage) => lastPage.next,
-    },
-  );
-
-  const { ref, shouldShowTrigger } = useInfiniteScroll(fetchNextPage, {
-    hasNextPage,
-    isFetchingNextPage,
-    threshold: 0.1,
-    rootMargin: '100px',
-  });
-
-  const paginatedItems =
-    paginatedData?.pages.flatMap((page) => page.items) || [];
-
-  if (paginatedItems.length === 0) {
-    return (
-      <div className="py-8 text-center text-neutral-gray4">
-        {t('No processes found')}
-      </div>
-    );
-  }
+export const AllDecisions = () => {
+  const { user } = useUser();
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-0">
-      {paginatedItems.map((item) => (
-        <DecisionListItem key={item.id} item={item} />
-      ))}
-      {shouldShowTrigger && (
-        <div
-          ref={ref as React.RefObject<HTMLDivElement>}
-          className="flex justify-center py-4"
-        >
-          {isFetchingNextPage ? <DecisionListItemSkeleton /> : null}
+    <ErrorBoundary
+      fallback={
+        <div>
+          <TranslatedText text="Could not load decisions" />
         </div>
-      )}
-    </div>
+      }
+    >
+      <AllDecisionsTabs key={user.currentProfile?.id} />
+    </ErrorBoundary>
   );
 };
 
@@ -115,13 +39,17 @@ const AllDecisionsTabs = () => {
   const [tab, setTab] = useQueryState('tab');
   const ownerProfileId = user.currentProfile?.id;
 
-  const [draftsCheck] = trpc.decision.listDecisionProfiles.useSuspenseQuery({
+  // Drafts existence check is a small read used only to decide whether the
+  // "Your drafts" tab is visible. Keep it non-suspending so the tabs UI
+  // renders immediately — the drafts tab will appear once the check resolves.
+  // This avoids an outer skeleton flash that would hide the tab bar.
+  const { data: draftsCheck } = trpc.decision.listDecisionProfiles.useQuery({
     limit: 1,
     status: [ProcessStatus.DRAFT],
     ownerProfileId,
   });
 
-  const hasDrafts = draftsCheck.items.length > 0;
+  const hasDrafts = (draftsCheck?.items.length ?? 0) > 0;
   const selectedTab = match(tab, {
     drafts: () => (hasDrafts ? 'drafts' : 'active'),
     other: 'other',
@@ -172,20 +100,89 @@ const AllDecisionsTabs = () => {
   );
 };
 
-export const AllDecisions = () => {
-  const { user } = useUser();
+const DecisionsListSuspense = ({
+  status,
+  ownerProfileId,
+}: {
+  status: ProcessStatus[];
+  ownerProfileId?: string;
+}) => {
+  const t = useTranslations();
+  const [paginatedData, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
+    trpc.decision.listDecisionProfiles.useSuspenseInfiniteQuery(
+      {
+        limit: 20,
+        status,
+        ownerProfileId,
+      },
+      {
+        getNextPageParam: (lastPage) => lastPage.next,
+      },
+    );
+
+  const { ref, shouldShowTrigger } = useInfiniteScroll(fetchNextPage, {
+    hasNextPage,
+    isFetchingNextPage,
+    threshold: 0.1,
+    rootMargin: '100px',
+  });
+
+  const paginatedItems = paginatedData.pages.flatMap((page) => page.items);
+
+  if (paginatedItems.length === 0) {
+    return (
+      <div className="py-8 text-center text-neutral-gray4">
+        {t('No processes found')}
+      </div>
+    );
+  }
 
   return (
-    <ErrorBoundary
-      fallback={
-        <div>
-          <TranslatedText text="Could not load decisions" />
+    <div className="flex flex-col gap-4 sm:gap-0">
+      {paginatedItems.map((item) => (
+        <DecisionListItem key={item.id} item={item} />
+      ))}
+      {shouldShowTrigger && (
+        <div
+          ref={ref as React.RefObject<HTMLDivElement>}
+          className="flex justify-center py-4"
+        >
+          {isFetchingNextPage ? <DecisionListItemSkeleton /> : null}
         </div>
-      }
-    >
-      <Suspense fallback={<DecisionsListSkeleton />}>
-        <AllDecisionsTabs key={user.currentProfile?.id} />
-      </Suspense>
-    </ErrorBoundary>
+      )}
+    </div>
   );
 };
+
+const DecisionsListSkeleton = () => (
+  <div className="flex flex-col gap-4 sm:gap-0">
+    {Array.from({ length: 3 }).map((_, i) => (
+      <DecisionListItemSkeleton key={i} />
+    ))}
+  </div>
+);
+
+const DecisionListItemSkeleton = () => (
+  <div className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between sm:rounded-none sm:border-0 sm:border-b sm:border-b-neutral-gray1">
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-5 w-48" />
+        <Skeleton className="h-5 w-16 rounded" />
+      </div>
+      <div className="flex items-center gap-1">
+        <Skeleton className="size-4 rounded" />
+        <Skeleton className="h-3.5 w-24" />
+      </div>
+    </div>
+    <div className="flex items-center gap-12">
+      <div className="flex flex-col items-center gap-1">
+        <Skeleton className="h-5 w-6" />
+        <Skeleton className="h-3.5 w-16" />
+      </div>
+      <div className="flex flex-col items-center gap-1">
+        <Skeleton className="h-5 w-6" />
+        <Skeleton className="h-3.5 w-14" />
+      </div>
+    </div>
+  </div>
+);

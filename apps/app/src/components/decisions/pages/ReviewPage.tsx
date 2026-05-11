@@ -8,9 +8,10 @@ import { Suspense } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
 import { TranslatedText } from '@/components/TranslatedText';
+import { ProposalListSkeleton } from '@/components/skeletons/ProposalSkeleton';
 
 import { DecisionHero } from '../DecisionHero';
-import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
+import { ProposalsList } from '../ProposalsList';
 import { ReviewProgressStats } from '../Review/ReviewProgressStats';
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
 

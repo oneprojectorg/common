@@ -10,6 +10,35 @@ import { ReviewSelectionPage } from './pages/ReviewSelectionPage';
 import { StandardDecisionPage } from './pages/StandardDecisionPage';
 import { VotingPage } from './pages/VotingPage';
 
+export function DecisionStateRouter({
+  instanceId,
+  slug,
+  decisionSlug,
+  decisionProfileId,
+  useLegacy = false,
+}: {
+  instanceId: string;
+  slug: string;
+  /** Decision profile slug for building proposal links */
+  decisionSlug?: string;
+  /** Decision profile ID for translating the decision content */
+  decisionProfileId?: string | null;
+  /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
+  useLegacy?: boolean;
+}) {
+  if (useLegacy) {
+    return <DecisionStateRouterLegacy instanceId={instanceId} slug={slug} />;
+  }
+  return (
+    <DecisionStateRouterNew
+      instanceId={instanceId}
+      slug={slug}
+      decisionSlug={decisionSlug}
+      decisionProfileId={decisionProfileId}
+    />
+  );
+}
+
 function DecisionStateRouterLegacy({
   instanceId,
   slug,
@@ -60,6 +89,7 @@ function DecisionStateRouterNew({
     }
     return (
       <StandardDecisionPage
+        instance={instance}
         instanceId={instanceId}
         slug={slug}
         decisionSlug={decisionSlug}
@@ -106,35 +136,7 @@ function DecisionStateRouterNew({
 
   return (
     <StandardDecisionPage
-      instanceId={instanceId}
-      slug={slug}
-      decisionSlug={decisionSlug}
-      decisionProfileId={decisionProfileId}
-    />
-  );
-}
-
-export function DecisionStateRouter({
-  instanceId,
-  slug,
-  decisionSlug,
-  decisionProfileId,
-  useLegacy = false,
-}: {
-  instanceId: string;
-  slug: string;
-  /** Decision profile slug for building proposal links */
-  decisionSlug?: string;
-  /** Decision profile ID for translating the decision content */
-  decisionProfileId?: string | null;
-  /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
-  useLegacy?: boolean;
-}) {
-  if (useLegacy) {
-    return <DecisionStateRouterLegacy instanceId={instanceId} slug={slug} />;
-  }
-  return (
-    <DecisionStateRouterNew
+      instance={instance}
       instanceId={instanceId}
       slug={slug}
       decisionSlug={decisionSlug}

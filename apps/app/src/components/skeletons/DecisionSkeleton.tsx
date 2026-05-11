@@ -1,5 +1,7 @@
 import { Skeleton } from '@op/ui/Skeleton';
 
+import { ProposalListSkeleton } from './ProposalSkeleton';
+
 /**
  * Skeleton for decision page headers.
  * Matches the DecisionHeader + stepper layout.
@@ -67,14 +69,11 @@ export const DecisionPageSkeleton = () => {
           </div>
         </div>
 
-        {/* Proposals section skeleton */}
+        {/* Proposals section skeleton — match the in-page Suspense fallback so
+            there's no visual flash when the route-level skeleton hands off. */}
         <div className="mt-8 flex w-full justify-center border-t bg-white">
           <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
-            <div className="flex flex-col gap-4">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-32 w-full rounded-lg" />
-              ))}
-            </div>
+            <ProposalListSkeleton />
           </div>
         </div>
       </div>
