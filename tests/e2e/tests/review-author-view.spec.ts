@@ -155,6 +155,17 @@ test.describe('Non-reviewer review-phase view', () => {
       memberPage.getByRole('button', { name: 'Follow' }),
     ).toHaveCount(1);
 
+    // Hero CTA: "About the process" button opens description modal
+    const aboutButton = memberPage.getByRole('button', {
+      name: 'About the process',
+    });
+    await expect(aboutButton).toBeVisible();
+    await aboutButton.click();
+    await expect(memberPage.getByRole('dialog')).toBeVisible();
+    await expect(
+      memberPage.getByRole('heading', { name: 'About the process' }),
+    ).toBeVisible();
+
     await memberContext.close();
   });
 
