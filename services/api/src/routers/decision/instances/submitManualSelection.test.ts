@@ -516,6 +516,13 @@ describe.concurrent('submitManualSelection', () => {
       schemaWithZeroSelectingReview,
     );
 
+    // Advance to 'review' first, then create proposals during the review
+    // window. This makes the candidate set come from the review phase window
+    // (createdAt between sub→review and rev→final) rather than from the
+    // submission phase's attachment snapshot — which made the test fragile
+    // to the order in which two concurrent createProposal updates commit.
+    await caller.decision.transitionFromPhase({ instanceId });
+
     const [p1, p2] = await Promise.all([
       testData.createProposal({
         userEmail,
@@ -531,7 +538,6 @@ describe.concurrent('submitManualSelection', () => {
       }),
     ]);
 
-    await caller.decision.transitionFromPhase({ instanceId });
     // review → final fires processResults via the post-advance hook, writing
     // an initial row with selectedCount = 0.
     await caller.decision.transitionFromPhase({ instanceId });
