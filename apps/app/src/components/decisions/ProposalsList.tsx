@@ -445,10 +445,6 @@ const ViewProposalsList = ({
   proposalsHidden,
   revisionRequestedProposalIds,
 }: ProposalsProps & {
-  /**
-   * Proposal IDs for which the current user has a pending revision request.
-   * Only computed in review phases; empty otherwise.
-   */
   revisionRequestedProposalIds?: Set<string>;
 }) => {
   const canManageProposals = permissions?.admin ?? false;
@@ -549,7 +545,6 @@ const Proposals = ({
     isVotingPhase || !!voteStatus?.votingConfiguration?.allowDecisions;
 
   if (isVotingEnabled) {
-    // Revisions are review-phase-only — never forward into the voting list.
     return <VotingProposalsList {...props} />;
   }
 
@@ -584,12 +579,7 @@ export const ProposalsList = ({
   initialFilter?: ProposalFilter;
   /** When set to 'results', all proposals are returned as non-editable */
   phase?: 'results';
-  /**
-   * The current phase of the decision instance. Used to derive
-   * capability-driven UI: voting cards in voting phases, the
-   * "Revision requested" chip + "Revise proposal" CTA in review
-   * phases. Omit in phases that have neither (e.g. results).
-   */
+  /** Current phase; capability flags are derived from `rules`. */
   currentPhase?: InstancePhaseData;
   /** When true, new proposals are hidden by default in the current phase. */
   proposalsHidden?: boolean;
@@ -688,10 +678,6 @@ export const ProposalsList = ({
   const { proposals: allProposals } = proposalsData ?? {};
   const canManageProposals = permissions?.admin ?? false;
 
-  // Non-blocking lookup of the viewer's pending revision requests. Only
-  // fires in review phase — voting/results/standard phases don't render
-  // the chip or "Revise proposal" CTA, so the fetch is wasted otherwise.
-  // The endpoint is scoped server-side to the caller's own proposals.
   const { data: revisionRequestsData } =
     trpc.decision.listProposalsRevisionRequests.useQuery(
       { states: [ProposalReviewRequestState.REQUESTED] },

@@ -216,10 +216,6 @@ export function ProposalCardMeta({
   );
 }
 
-/**
- * Chip shown to the proposal author when a reviewer has requested revisions
- * on their proposal. Sits alongside category/status in the meta row.
- */
 export function ProposalCardRevisionRequestedChip({
   className,
 }: {

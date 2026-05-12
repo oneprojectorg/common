@@ -74,11 +74,6 @@ export function ProposalCardActions({
   );
 }
 
-/**
- * Primary CTA shown on the author's card when a reviewer has requested
- * revisions. Replaces the standard like/follow or edit actions so the
- * author can jump straight into the editor.
- */
 export function ProposalCardReviseAction({
   editHref,
   className,
