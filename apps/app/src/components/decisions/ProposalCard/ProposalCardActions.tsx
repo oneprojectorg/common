@@ -82,6 +82,7 @@ export function ProposalCardReviseAction({
   className?: string;
 }) {
   const t = useTranslations();
+  const [navigating, setNavigating] = useState(false);
 
   return (
     <ButtonLink
@@ -89,6 +90,8 @@ export function ProposalCardReviseAction({
       color="primary"
       size="small"
       className={`w-full${className ? ` ${className}` : ''}`}
+      onPress={() => setNavigating(true)}
+      isLoading={navigating}
     >
       {t('Revise proposal')}
     </ButtonLink>
