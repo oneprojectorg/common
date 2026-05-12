@@ -52,7 +52,7 @@ export function ProcessBuilderContent({
   }
 
   return (
-    <div ref={wrapperRef}>
+    <div ref={wrapperRef} className="contents">
       <ContentComponent
         decisionProfileId={decisionProfileId}
         instanceId={instanceId}
