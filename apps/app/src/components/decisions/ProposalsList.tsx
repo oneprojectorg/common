@@ -689,21 +689,11 @@ export const ProposalsList = ({
       { enabled: !!isReviewPhase },
     );
 
-  const revisionRequestIdByProposalId = useMemo(() => {
-    const map = new Map<string, string>();
-    if (!revisionRequestsData) {
-      return map;
-    }
-    for (const {
-      revisionRequest,
-      proposal,
-    } of revisionRequestsData.revisionRequests) {
-      if (proposal.processInstanceId === instanceId && !map.has(proposal.id)) {
-        map.set(proposal.id, revisionRequest.id);
-      }
-    }
-    return map;
-  }, [revisionRequestsData, instanceId]);
+  const revisionRequestIdByProposalId = new Map<string, string>(
+    revisionRequestsData?.revisionRequests.map(
+      ({ proposal, revisionRequest }) => [proposal.id, revisionRequest.id],
+    ),
+  );
 
   // --- Translation state ---
   const locale = useLocale();
