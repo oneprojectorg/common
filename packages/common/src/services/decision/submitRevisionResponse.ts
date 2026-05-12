@@ -155,11 +155,14 @@ export async function submitRevisionResponse({
       throw new CommonError('Failed to update revision request');
     }
 
-    // 3. Update assignment status → READY_FOR_RE_REVIEW
+    // 3. Update assignment: status → READY_FOR_RE_REVIEW, and re-anchor
+    // assignedProposalHistoryId to the new snapshot so reviewers see the
+    // revised proposal instead of the pre-revision one.
     await tx
       .update(proposalReviewAssignments)
       .set({
         status: ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
+        assignedProposalHistoryId: historyRecord.historyId,
       })
       .where(eq(proposalReviewAssignments.id, request.assignmentId));
 
