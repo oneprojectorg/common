@@ -308,7 +308,7 @@ test.describe('Decision Manual Selection — full flow', () => {
     await advanceDialog.getByRole('button', { name: 'Advance Phase' }).click();
 
     const confirmButton = authenticatedPage.getByRole('button', {
-      name: 'Confirm decisions',
+      name: 'Confirm winning proposals',
     });
     await expect(confirmButton).toBeVisible({ timeout: 15_000 });
     await expect(confirmButton).toBeDisabled();
@@ -327,10 +327,10 @@ test.describe('Decision Manual Selection — full flow', () => {
 
     await confirmButton.click();
     const dialog = authenticatedPage.getByRole('dialog', {
-      name: 'Confirm advancing proposals',
+      name: 'Confirm winning proposals',
     });
     await expect(dialog).toBeVisible();
-    await dialog.getByRole('button', { name: 'Publish' }).click();
+    await dialog.getByRole('button', { name: 'Publish results' }).click();
     await expect(dialog).not.toBeVisible({ timeout: 15_000 });
 
     // Append-only: post-advance hook writes the initial row (selectedCount=0);
