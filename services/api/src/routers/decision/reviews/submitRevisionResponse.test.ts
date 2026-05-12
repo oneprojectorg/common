@@ -107,6 +107,71 @@ describe.concurrent('submitRevisionResponse', () => {
     });
   });
 
+  it("updates the assignment's assignedProposalHistoryId to the new snapshot so reviewers see the revised proposal", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const created = await testData.createReviewAssignment({
+      title: 'Stale Assignment Snapshot',
+      status: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+    });
+
+    const assignmentBefore = await db.query.proposalReviewAssignments.findFirst(
+      {
+        where: { id: created.assignment.id },
+      },
+    );
+    const originalHistoryId = assignmentBefore?.assignedProposalHistoryId;
+    expect(originalHistoryId).toBeTruthy();
+
+    const revisionRequest = await createRevisionRequest({
+      assignmentId: created.assignment.id,
+      requestComment: 'Please add budget details.',
+    });
+
+    const authorCaller = await createAuthenticatedCaller(created.author.email);
+    await authorCaller.decision.submitRevisionResponse({
+      revisionRequestId: revisionRequest.id,
+      resubmitComment: 'Added detailed budget breakdown.',
+    });
+
+    const updatedRequest = await db.query.proposalReviewRequests.findFirst({
+      where: { id: revisionRequest.id },
+    });
+    const newHistoryId = updatedRequest?.respondedProposalHistoryId;
+    expect(newHistoryId).toBeTruthy();
+    expect(newHistoryId).not.toBe(originalHistoryId);
+
+    const assignmentAfter = await db.query.proposalReviewAssignments.findFirst({
+      where: { id: created.assignment.id },
+      with: {
+        assignedProposalHistory: true,
+      },
+    });
+
+    // The assignment must point to the post-revision snapshot, not the
+    // pre-revision one — otherwise the reviewer keeps seeing the stale
+    // proposal in their UI.
+    expect(assignmentAfter?.assignedProposalHistoryId).toBe(newHistoryId);
+
+    const assignedSnapshotVersion = (
+      assignmentAfter?.assignedProposalHistory?.proposalData as Record<
+        string,
+        unknown
+      > | null
+    )?.collaborationDocVersionId;
+
+    const liveProposal = await db.query.proposals.findFirst({
+      where: { id: created.proposal.id },
+    });
+    const liveVersion = (
+      liveProposal?.proposalData as Record<string, unknown> | null
+    )?.collaborationDocVersionId;
+
+    expect(assignedSnapshotVersion).toBe(liveVersion);
+  });
+
   it('rejects when the assignment is not awaiting author revision', async ({
     task,
     onTestFinished,
