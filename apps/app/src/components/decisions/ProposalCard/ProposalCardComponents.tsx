@@ -16,7 +16,7 @@ import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import type { HTMLAttributes, ReactNode } from 'react';
-import { LuBookmark, LuHeart, LuMail, LuMessageCircle } from 'react-icons/lu';
+import { LuBookmark, LuHeart, LuMessageCircle } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
@@ -24,6 +24,7 @@ import { Link } from '@/lib/i18n/routing';
 import { Bullet } from '../../Bullet';
 import { DocumentNotAvailable } from '../DocumentNotAvailable';
 import { useCardTranslation } from '../ProposalTranslationContext';
+import { RevisionRequestChip } from '../RevisionRequestChip';
 import {
   getProposalContentPreview,
   resolveProposalSystemFields,
@@ -205,7 +206,10 @@ export function ProposalCardMeta({
     <div className={cn('flex flex-wrap items-center gap-2', className)}>
       <ProposalCardAuthor proposal={proposal} withLink={withLink} />
       {revisionRequested ? (
-        <ProposalCardRevisionRequestedChip />
+        <>
+          <Bullet />
+          <RevisionRequestChip />
+        </>
       ) : (
         <>
           <ProposalCardCategory proposal={proposal} />
@@ -213,25 +217,6 @@ export function ProposalCardMeta({
         </>
       )}
     </div>
-  );
-}
-
-export function ProposalCardRevisionRequestedChip({
-  className,
-}: {
-  className?: string;
-}) {
-  const t = useTranslations();
-  return (
-    <>
-      <Bullet />
-      <Chip
-        className={cn('inline-flex gap-1 bg-primary-orange2/10', className)}
-      >
-        <LuMail className="size-3 text-primary-orange2" />
-        {t('Revision requested')}
-      </Chip>
-    </>
   );
 }
 
