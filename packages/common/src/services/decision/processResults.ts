@@ -6,7 +6,7 @@ import {
   processInstances,
 } from '@op/db/schema';
 
-import { CommonError } from '../../utils';
+import { CommonError, NotFoundError } from '../../utils';
 import {
   type PhaseScopedInstance,
   getProposalIdsForPhase,
@@ -83,10 +83,12 @@ async function runProcessResults({
     preloadedInstance ??
     (await loadPhaseScopedInstance({ db: tx, processInstanceId }));
 
+  if (!resolvedInstance) {
+    throw new NotFoundError('Process instance', processInstanceId);
+  }
+
   const [selectedProposalIds, voterCount] = await Promise.all([
-    resolvedInstance
-      ? getProposalIdsForPhase({ instance: resolvedInstance, db: tx })
-      : Promise.resolve<string[]>([]),
+    getProposalIdsForPhase({ instance: resolvedInstance, db: tx }),
     fetchVoterCount({ db: tx, processInstanceId }),
   ]);
 
