@@ -204,9 +204,14 @@ export function ProposalCardMeta({
   return (
     <div className={cn('flex flex-wrap items-center gap-2', className)}>
       <ProposalCardAuthor proposal={proposal} withLink={withLink} />
-      <ProposalCardCategory proposal={proposal} />
-      <ProposalCardStatus proposal={proposal} />
-      {revisionRequested ? <ProposalCardRevisionRequestedChip /> : null}
+      {revisionRequested ? (
+        <ProposalCardRevisionRequestedChip />
+      ) : (
+        <>
+          <ProposalCardCategory proposal={proposal} />
+          <ProposalCardStatus proposal={proposal} />
+        </>
+      )}
     </div>
   );
 }
