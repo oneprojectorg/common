@@ -443,9 +443,9 @@ const ViewProposalsList = ({
   permissions,
   hasFilter,
   proposalsHidden,
-  revisionRequestedProposalIds,
+  revisionRequestIdByProposalId,
 }: ProposalsProps & {
-  revisionRequestedProposalIds?: Set<string>;
+  revisionRequestIdByProposalId?: Map<string, string>;
 }) => {
   const canManageProposals = permissions?.admin ?? false;
   if (!proposals || proposals.length === 0) {
@@ -461,12 +461,17 @@ const ViewProposalsList = ({
         const isDraft = proposal.status === ProposalStatus.DRAFT;
         const isEditable = Boolean(proposal.isEditable);
         const showMenu = canManageProposals;
-        const hasRevisionRequest =
-          revisionRequestedProposalIds?.has(proposal.id) ?? false;
+        const revisionRequestId = revisionRequestIdByProposalId?.get(
+          proposal.id,
+        );
+        const hasRevisionRequest = revisionRequestId !== undefined;
         // Use new route structure if decisionSlug is provided, otherwise fallback to legacy route
         const editHref = decisionSlug
           ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}/edit`
           : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}/edit`;
+        const reviseHref = revisionRequestId
+          ? `${editHref}?reviewRevision=${revisionRequestId}`
+          : editHref;
         const viewHref = decisionSlug
           ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
           : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
@@ -497,7 +502,7 @@ const ViewProposalsList = ({
             <ProposalCardContent>
               <ProposalCardFooter>
                 {hasRevisionRequest ? (
-                  <ProposalCardReviseAction editHref={editHref} />
+                  <ProposalCardReviseAction editHref={reviseHref} />
                 ) : isDraft ? (
                   <ProposalCardOwnerActions
                     proposal={proposal}
@@ -527,10 +532,10 @@ const ViewProposalsList = ({
 };
 
 const Proposals = ({
-  revisionRequestedProposalIds,
+  revisionRequestIdByProposalId,
   ...props
 }: ProposalsProps & {
-  revisionRequestedProposalIds?: Set<string>;
+  revisionRequestIdByProposalId?: Map<string, string>;
 }) => {
   const { instanceId, isVotingPhase } = props;
 
@@ -551,7 +556,7 @@ const Proposals = ({
   return (
     <ViewProposalsList
       {...props}
-      revisionRequestedProposalIds={revisionRequestedProposalIds}
+      revisionRequestIdByProposalId={revisionRequestIdByProposalId}
     />
   );
 };
@@ -684,15 +689,20 @@ export const ProposalsList = ({
       { enabled: !!isReviewPhase },
     );
 
-  const revisionRequestedProposalIds = useMemo(() => {
+  const revisionRequestIdByProposalId = useMemo(() => {
+    const map = new Map<string, string>();
     if (!revisionRequestsData) {
-      return new Set<string>();
+      return map;
     }
-    return new Set(
-      revisionRequestsData.revisionRequests
-        .filter(({ proposal }) => proposal.processInstanceId === instanceId)
-        .map(({ proposal }) => proposal.id),
-    );
+    for (const {
+      revisionRequest,
+      proposal,
+    } of revisionRequestsData.revisionRequests) {
+      if (proposal.processInstanceId === instanceId && !map.has(proposal.id)) {
+        map.set(proposal.id, revisionRequest.id);
+      }
+    }
+    return map;
   }, [revisionRequestsData, instanceId]);
 
   // --- Translation state ---
@@ -974,7 +984,7 @@ export const ProposalsList = ({
           hasFilter={selectedCategory !== 'all-categories'}
           isVotingPhase={isVotingPhase}
           proposalsHidden={proposalsHidden}
-          revisionRequestedProposalIds={revisionRequestedProposalIds}
+          revisionRequestIdByProposalId={revisionRequestIdByProposalId}
         />
       </ProposalTranslationProvider>
 
