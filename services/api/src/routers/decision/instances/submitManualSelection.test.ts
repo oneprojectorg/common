@@ -10,8 +10,10 @@ import {
   stateTransitionHistory,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
+import type { z } from 'zod';
 
 import { appRouter } from '../..';
+import type { decisionSchemaDefinitionEncoder } from '../../../encoders/decision';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 import {
@@ -19,6 +21,8 @@ import {
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
+
+type DecisionSchemaDefinition = z.infer<typeof decisionSchemaDefinitionEncoder>;
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -29,7 +33,7 @@ async function createAuthenticatedCaller(email: string) {
 
 async function seedInstance(
   testData: TestDecisionsDataManager,
-  processSchema: typeof schemaWithoutPipeline = schemaWithoutPipeline,
+  processSchema: DecisionSchemaDefinition = schemaWithoutPipeline,
 ) {
   const setup = await testData.createDecisionSetup({
     processSchema,
