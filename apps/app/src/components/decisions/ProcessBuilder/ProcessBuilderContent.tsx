@@ -1,6 +1,7 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
+import { useEffect, useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -25,6 +26,19 @@ export function ProcessBuilderContent({
   const access = useUser();
   const isAdmin = access.getPermissionsForProfile(decisionProfileId).admin;
 
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let el: HTMLElement | null = wrapperRef.current;
+    while (el) {
+      const { overflowY } = getComputedStyle(el);
+      if (overflowY === 'auto' || overflowY === 'scroll') {
+        el.scrollTo({ top: 0 });
+      }
+      el = el.parentElement;
+    }
+  }, [currentSection?.id]);
+
   if (!isAdmin) {
     throw new Error('UNAUTHORIZED');
   }
@@ -38,10 +52,12 @@ export function ProcessBuilderContent({
   }
 
   return (
-    <ContentComponent
-      decisionProfileId={decisionProfileId}
-      instanceId={instanceId}
-      decisionName={decisionName}
-    />
+    <div ref={wrapperRef}>
+      <ContentComponent
+        decisionProfileId={decisionProfileId}
+        instanceId={instanceId}
+        decisionName={decisionName}
+      />
+    </div>
   );
 }
