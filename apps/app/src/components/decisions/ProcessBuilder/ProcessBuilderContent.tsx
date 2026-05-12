@@ -33,7 +33,10 @@ export function ProcessBuilderContent({
     while (el) {
       const { overflowY } = getComputedStyle(el);
       if (overflowY === 'auto' || overflowY === 'scroll') {
-        el.scrollTo({ top: 0 });
+        if (el.scrollTop !== 0) {
+          el.scrollTo({ top: 0 });
+        }
+        break;
       }
       el = el.parentElement;
     }
@@ -52,6 +55,9 @@ export function ProcessBuilderContent({
   }
 
   return (
+    // `contents` keeps the wrapper layout-neutral so children's `h-full`
+    // still cascades from the outer `<main>`. The ref exists solely to
+    // anchor the scroll-reset effect above.
     <div ref={wrapperRef} className="contents">
       <ContentComponent
         decisionProfileId={decisionProfileId}
