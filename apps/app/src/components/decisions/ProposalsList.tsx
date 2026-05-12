@@ -165,18 +165,10 @@ interface ProposalsProps {
   permissions?: DecisionAccess | null;
   votedProposalIds?: string[];
   hasFilter: boolean;
-  /**
-   * When true, the current phase has voting enabled — always show voting UI.
-   * Derived from `currentPhase.rules.voting.submit` upstream.
-   */
+  /** When true, the current phase has voting enabled — always show voting UI */
   isVotingPhase?: boolean;
   /** When true, new proposals are hidden by default in the current phase. */
   proposalsHidden?: boolean;
-  /**
-   * Proposal IDs for which the current user has a pending revision request.
-   * Empty in non-review phases.
-   */
-  revisionRequestedProposalIds?: Set<string>;
 }
 
 const VotingProposalsList = ({
@@ -452,7 +444,13 @@ const ViewProposalsList = ({
   hasFilter,
   proposalsHidden,
   revisionRequestedProposalIds,
-}: ProposalsProps) => {
+}: ProposalsProps & {
+  /**
+   * Proposal IDs for which the current user has a pending revision request.
+   * Only computed in review phases; empty otherwise.
+   */
+  revisionRequestedProposalIds?: Set<string>;
+}) => {
   const canManageProposals = permissions?.admin ?? false;
   if (!proposals || proposals.length === 0) {
     if (proposalsHidden && !hasFilter) {
@@ -532,7 +530,12 @@ const ViewProposalsList = ({
   );
 };
 
-const Proposals = (props: ProposalsProps) => {
+const Proposals = ({
+  revisionRequestedProposalIds,
+  ...props
+}: ProposalsProps & {
+  revisionRequestedProposalIds?: Set<string>;
+}) => {
   const { instanceId, isVotingPhase } = props;
 
   // Get voting status for this user and process
@@ -546,10 +549,16 @@ const Proposals = (props: ProposalsProps) => {
     isVotingPhase || !!voteStatus?.votingConfiguration?.allowDecisions;
 
   if (isVotingEnabled) {
+    // Revisions are review-phase-only — never forward into the voting list.
     return <VotingProposalsList {...props} />;
   }
 
-  return <ViewProposalsList {...props} />;
+  return (
+    <ViewProposalsList
+      {...props}
+      revisionRequestedProposalIds={revisionRequestedProposalIds}
+    />
+  );
 };
 
 export const ProposalsList = ({
