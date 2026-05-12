@@ -1,7 +1,8 @@
+'use client';
+
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import type { RouterOutput } from '@op/api';
 import { type InstancePhaseData } from '@op/api/encoders';
-import { ButtonLink } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { Suspense } from 'react';
@@ -9,7 +10,9 @@ import { LuLeaf } from 'react-icons/lu';
 
 import { TranslatedText } from '@/components/TranslatedText';
 
+import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
+import { useDecisionTranslation } from '../DecisionTranslationContext';
 import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 import { ReviewProgressStats } from '../Review/ReviewProgressStats';
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
@@ -40,6 +43,15 @@ export function ReviewPage({
   const canReview = Boolean(instance.access?.review);
   const isAdmin = Boolean(instance.access?.admin);
 
+  const translation = useDecisionTranslation();
+  const description =
+    instance.description ?? instance.instanceData?.templateDescription;
+  const actionBarDescription =
+    translation?.additionalInfo ??
+    currentPhase.additionalInfo ??
+    translation?.description ??
+    description;
+
   return (
     <div className="min-h-full">
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 py-8">
@@ -66,11 +78,12 @@ export function ReviewPage({
               phaseId={currentPhase.phaseId}
             />
           ) : (
-            <div className="flex justify-center pt-2">
-              <ButtonLink color="secondary" size="medium" href="#">
-                <TranslatedText text="Learn more" />
-              </ButtonLink>
-            </div>
+            <DecisionActionBar
+              instanceId={instance.id}
+              description={actionBarDescription}
+              markup={!!translation?.additionalInfo}
+              showSubmitButton={false}
+            />
           )}
         </DecisionHero>
       </div>
