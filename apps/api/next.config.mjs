@@ -34,7 +34,8 @@ const config = {
       ...(process.env.E2E === 'true'
         ? {
             '@op/collab': '../../services/collab/__mocks__/index.ts',
-            '@op/analytics': '../../packages/analytics/src/testing.ts',
+            '@op/analytics/client':
+              '../../packages/analytics/src/client.testing.ts',
           }
         : {}),
     },

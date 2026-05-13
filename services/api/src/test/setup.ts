@@ -2,7 +2,13 @@ import { type SupabaseClient, createClient } from '@supabase/supabase-js';
 import { beforeAll, beforeEach, vi } from 'vitest';
 
 vi.mock('@op/common/src/services/profile/utils');
-vi.mock('@op/analytics', async () => import('@op/analytics/testing'));
+vi.mock('@op/analytics/client', () => ({
+  default: () => ({
+    capture() {},
+    identify() {},
+    async shutdown() {},
+  }),
+}));
 vi.mock('@op/collab', async () => import('@op/collab/testing'));
 
 // Mock server-only modules before any other imports

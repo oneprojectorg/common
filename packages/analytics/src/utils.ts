@@ -1,4 +1,4 @@
-import PostHogClient from './client';
+import PostHogClient from '@op/analytics/client';
 
 const posthog = PostHogClient();
 
