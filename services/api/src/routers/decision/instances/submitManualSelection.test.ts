@@ -1,14 +1,19 @@
 import { getProposalsForPhase } from '@op/common';
-import { db, eq } from '@op/db/client';
+import { db, desc, eq, inArray } from '@op/db/client';
 import {
   ProcessStatus,
   ProposalStatus,
+  decisionProcessResultSelections,
+  decisionProcessResults,
   decisionTransitionProposals,
+  proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
+import type { z } from 'zod';
 
 import { appRouter } from '../..';
+import type { decisionSchemaDefinitionEncoder } from '../../../encoders/decision';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 import {
@@ -16,6 +21,8 @@ import {
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
+
+type DecisionSchemaDefinition = z.infer<typeof decisionSchemaDefinitionEncoder>;
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -26,7 +33,7 @@ async function createAuthenticatedCaller(email: string) {
 
 async function seedInstance(
   testData: TestDecisionsDataManager,
-  processSchema: typeof schemaWithoutPipeline = schemaWithoutPipeline,
+  processSchema: DecisionSchemaDefinition = schemaWithoutPipeline,
 ) {
   const setup = await testData.createDecisionSetup({
     processSchema,
@@ -478,6 +485,122 @@ describe.concurrent('submitManualSelection', () => {
         },
       });
       expect(advanceResult.status).toBe('fulfilled');
+    }
+  });
+
+  it('appends a new decision_process_results row when manual selection lands on the final phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    // submission carries an explicit pass-all pipeline so every submitted
+    // proposal flows into review's inbound attachment snapshot. review's
+    // zero-limit pipeline then strands all proposals, leaving 'final'
+    // awaiting manual selection.
+    const schemaWithZeroSelectingReview = {
+      ...schemaWithoutPipeline,
+      phases: [
+        {
+          id: 'submission',
+          name: 'Submission',
+          rules: {},
+          selectionPipeline: { version: '1.0.0', blocks: [] },
+        },
+        {
+          id: 'review',
+          name: 'Review',
+          rules: {},
+          selectionPipeline: {
+            version: '1.0.0',
+            blocks: [{ id: 'zero', type: 'limit', count: 0 }],
+          },
+        },
+        { id: 'final', name: 'Final', rules: {} },
+      ],
+    };
+    const { instanceId, userEmail, caller } = await seedInstance(
+      testData,
+      schemaWithZeroSelectingReview,
+    );
+
+    // Submit proposals sequentially, mirroring real users (one at a time).
+    // Concurrent Promise.all here was racy in CI: the helper's INSERT(DRAFT)
+    // and UPDATE(APPROVED) run in separate transactions, and overlapping
+    // checkouts could leave the sub→review pass-all read seeing only one.
+    const p1 = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Proposal 1 ${task.id}` },
+      status: ProposalStatus.APPROVED,
+    });
+    const p2 = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Proposal 2 ${task.id}` },
+      status: ProposalStatus.APPROVED,
+    });
+
+    // sub → review: the submission phase's pass-all pipeline attaches both
+    // proposals to the inbound transition snapshot.
+    await caller.decision.transitionFromPhase({ instanceId });
+
+    // review → final: review's limit:0 pipeline strands every proposal,
+    // leaving final awaiting manual selection. processResults fires via the
+    // post-advance hook, writing an initial row with selectedCount = 0.
+    await caller.decision.transitionFromPhase({ instanceId });
+
+    const initialResults = await db
+      .select()
+      .from(decisionProcessResults)
+      .where(eq(decisionProcessResults.processInstanceId, instanceId));
+    expect(initialResults).toHaveLength(1);
+    const initialResult = initialResults[0];
+    if (!initialResult) {
+      throw new Error('Expected an initial decision_process_results row');
+    }
+    expect(initialResult.selectedCount).toBe(0);
+
+    await caller.decision.submitManualSelection({
+      processInstanceId: instanceId,
+      proposalIds: [p1.id, p2.id],
+    });
+
+    const allResults = await db
+      .select()
+      .from(decisionProcessResults)
+      .where(eq(decisionProcessResults.processInstanceId, instanceId))
+      .orderBy(desc(decisionProcessResults.executedAt));
+    expect(allResults).toHaveLength(2);
+    const latestResult = allResults[0];
+    const earlierResult = allResults[1];
+    if (!latestResult || !earlierResult) {
+      throw new Error('Expected two decision_process_results rows');
+    }
+    expect(earlierResult.id).toBe(initialResult.id);
+    expect(earlierResult.selectedCount).toBe(0);
+    expect(latestResult.id).not.toBe(initialResult.id);
+    expect(latestResult.selectedCount).toBe(2);
+    expect(latestResult.success).toBe(true);
+
+    const selections = await db
+      .select({ proposalId: decisionProcessResultSelections.proposalId })
+      .from(decisionProcessResultSelections)
+      .where(
+        eq(decisionProcessResultSelections.processResultId, latestResult.id),
+      );
+    expect(new Set(selections.map((s) => s.proposalId))).toEqual(
+      new Set([p1.id, p2.id]),
+    );
+
+    // Regression: processResults must not mutate proposals.status — the
+    // selections table is the source of truth for advancement.
+    const proposalRows = await db
+      .select({ id: proposals.id, status: proposals.status })
+      .from(proposals)
+      .where(inArray(proposals.id, [p1.id, p2.id]));
+    expect(proposalRows).toHaveLength(2);
+    for (const row of proposalRows) {
+      expect(row.status).toBe(ProposalStatus.APPROVED);
     }
   });
 });

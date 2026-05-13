@@ -1,8 +1,8 @@
 import { Events, event } from '@op/events';
 
 import type { AdvancePhaseResult } from './advancePhase';
+import { processResults } from './processResults';
 import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
-import { runResultsProcessing } from './runResultsProcessing';
 import { type PhaseInstanceData, isLastPhase } from './schemas/instanceData';
 
 export interface OnPhaseAdvancedInput {
@@ -14,14 +14,8 @@ export interface OnPhaseAdvancedInput {
 }
 
 /**
- * Post-advance hook that runs after a successful phase transition commits.
- *
- * Centralises side-effects that should happen whenever a decision instance
- * moves to a new phase — regardless of whether the advance was manual or
- * cron-triggered — so callers of `advancePhase` don't duplicate logic.
- *
- * Runs outside the advance transaction on purpose: a failure here must not
- * roll back the phase transition itself.
+ * Side-effects after a phase transition commits. Runs outside the advance
+ * transaction so failures here don't roll back the transition itself.
  */
 export async function onPhaseAdvanced(
   input: OnPhaseAdvancedInput,
@@ -50,6 +44,14 @@ export async function onPhaseAdvanced(
   }
 
   if (isLastPhase(input.toPhaseId, input.phases)) {
-    await runResultsProcessing(input);
+    // Best-effort: processResults stamps its own failure row; don't abort the post-advance flow.
+    try {
+      await processResults({ processInstanceId: input.instanceId });
+    } catch (error) {
+      console.error(
+        `Error processing results for process instance ${input.instanceId}:`,
+        error,
+      );
+    }
   }
 }

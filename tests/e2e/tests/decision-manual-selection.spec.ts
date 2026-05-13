@@ -1,12 +1,14 @@
 import type { DecisionSchemaDefinition } from '@op/common';
 import {
   ProposalStatus,
+  decisionProcessResultSelections,
+  decisionProcessResults,
   decisionTransitionProposals,
   processInstances,
   proposals as proposalsTable,
   stateTransitionHistory,
 } from '@op/db/schema';
-import { db, eq, inArray } from '@op/db/test';
+import { db, desc, eq, inArray } from '@op/db/test';
 import {
   createDecisionInstance,
   createOrganization,
@@ -22,12 +24,8 @@ import {
   test,
 } from '../fixtures/index.js';
 
-/**
- * Three-phase schema whose submission→review pipeline always selects zero.
- * Running advancePhase(submission → review) on this schema reproduces the real
- * "pipeline produced nothing" state that the admin manual selection screen
- * exists to recover from.
- */
+/** submission→review pipeline selects zero — reproduces the "pipeline
+ *  produced nothing" state the admin manual selection screen recovers from. */
 const zeroSelectingSchema: DecisionSchemaDefinition = {
   id: 'test-manual-selection',
   version: '1.0.0',
@@ -68,18 +66,47 @@ const zeroSelectingSchema: DecisionSchemaDefinition = {
   ],
 };
 
+/** submission→final pipeline selects zero, and `final` is last —
+ *  exercises the in-transaction processResults call in submitManualSelection. */
+const lastPhaseZeroSelectingSchema: DecisionSchemaDefinition = {
+  id: 'test-last-phase-manual-selection',
+  version: '1.0.0',
+  name: 'Last-phase Manual Selection Test Schema',
+  description:
+    'Pipeline limits submission → final to zero proposals; final is last.',
+  phases: [
+    {
+      id: 'submission',
+      name: 'Submission',
+      rules: {
+        proposals: { submit: true },
+        voting: { submit: false },
+        advancement: { method: 'manual' },
+      },
+      selectionPipeline: {
+        version: '1.0.0',
+        blocks: [{ id: 'zero', type: 'limit', count: 0 }],
+      },
+    },
+    {
+      id: 'final',
+      name: 'Final',
+      rules: {
+        proposals: { submit: false },
+        voting: { submit: false },
+        advancement: { method: 'manual' },
+      },
+    },
+  ],
+};
+
 type SeedOrg = {
   organizationProfile: { id: string };
   adminUser: { authUserId: string; email: string };
 };
 
-/**
- * Seeds a decision instance with N proposals and lands it in the review phase
- * with an empty inbound transition — the exact DB state `advancePhase` would
- * produce when the submission→review pipeline selects zero proposals. The real
- * pipeline path is covered by backend unit tests; this shortcut avoids the
- * server-side import Playwright's runtime can't resolve.
- */
+/** Lands an instance in `review` with an empty inbound transition — the DB
+ *  state advancePhase produces when submission→review selects zero. */
 async function seedAwaitingInstance(org: SeedOrg, titles: string[]) {
   const template = await getSeededTemplate();
   const instance = await createDecisionInstance({
@@ -90,9 +117,8 @@ async function seedAwaitingInstance(org: SeedOrg, titles: string[]) {
     schema: zeroSelectingSchema,
   });
 
-  // Insert as DRAFT then update to SUBMITTED so the proposal_history trigger
-  // (AFTER UPDATE only) fires and writes the snapshot rows that
-  // submitManualSelection joins against.
+  // INSERT-as-DRAFT then UPDATE so the proposal_history AFTER UPDATE trigger
+  // fires; submitManualSelection joins against those snapshot rows.
   const proposals = await Promise.all(
     titles.map((title) =>
       createProposal({
@@ -137,6 +163,46 @@ async function seedAwaitingInstance(org: SeedOrg, titles: string[]) {
   return { instance, proposals, transition };
 }
 
+/** Lands an instance on `submission` with N published proposals — the
+ *  starting state for driving the real submission→final advance via the UI. */
+async function seedSubmissionPhaseInstance(org: SeedOrg, titles: string[]) {
+  const template = await getSeededTemplate();
+  const instance = await createDecisionInstance({
+    processId: template.id,
+    ownerProfileId: org.organizationProfile.id,
+    authUserId: org.adminUser.authUserId,
+    email: org.adminUser.email,
+    schema: lastPhaseZeroSelectingSchema,
+  });
+
+  // INSERT-as-DRAFT then UPDATE to SUBMITTED so the proposal_history AFTER
+  // UPDATE trigger fires; submitManualSelection joins against those snapshots.
+  const proposals = await Promise.all(
+    titles.map((title) =>
+      createProposal({
+        processInstanceId: instance.instance.id,
+        submittedByProfileId: org.organizationProfile.id,
+        authUserId: org.adminUser.authUserId,
+        email: org.adminUser.email,
+        proposalData: { title },
+        status: ProposalStatus.DRAFT,
+      }),
+    ),
+  );
+
+  await db
+    .update(proposalsTable)
+    .set({ status: ProposalStatus.SUBMITTED })
+    .where(
+      inArray(
+        proposalsTable.id,
+        proposals.map((p) => p.id),
+      ),
+    );
+
+  return { instance, proposals };
+}
+
 test.describe('Decision Manual Selection — full flow', () => {
   test('pipeline selects zero → admin manually selects → proposals advance', async ({
     authenticatedPage,
@@ -152,23 +218,16 @@ test.describe('Decision Manual Selection — full flow', () => {
       waitUntil: 'networkidle',
     });
 
-    // Wait for the admin UI to mount — the Confirm button is unique to
-    // this branch and is present as soon as ManualSelectionList renders.
     const confirmButton = authenticatedPage.getByRole('button', {
       name: 'Confirm decisions',
     });
     await expect(confirmButton).toBeVisible({ timeout: 15_000 });
     await expect(confirmButton).toBeDisabled();
 
-    // And the first row's toggle button should be present before we try
-    // to click it.
     await expect(
       authenticatedPage.getByRole('button', { name: 'Advance Proposal Alpha' }),
     ).toBeVisible();
 
-    // Each row's toggle button carries an aria-label of
-    // `Advance <title>` while unselected and `Stop advancing <title>`
-    // while selected.
     await authenticatedPage
       .getByRole('button', { name: 'Advance Proposal Alpha' })
       .click();
@@ -188,8 +247,6 @@ test.describe('Decision Manual Selection — full flow', () => {
     await expect(dialog).toBeVisible();
     await dialog.getByRole('button', { name: 'Publish' }).click();
 
-    // After publish, the mutation awaits invalidation and then closes the
-    // modal — no separate success dialog is shown.
     await expect(dialog).not.toBeVisible({ timeout: 15_000 });
 
     const joinRows = await db
@@ -215,12 +272,101 @@ test.describe('Decision Manual Selection — full flow', () => {
     expect(manualSelection?.at).toBeTruthy();
 
     await authenticatedPage.reload({ waitUntil: 'networkidle' });
-    // After confirming, selectionsAreConfirmed flips true and the admin UI
-    // should no longer render — the Confirm decisions trigger is the
-    // cleanest signal of that branch being mounted.
     await expect(
       authenticatedPage.getByRole('button', { name: 'Confirm decisions' }),
     ).not.toBeVisible();
+  });
+
+  test('last phase: subset selection produces a Results screen with only that subset', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const { instance, proposals } = await seedSubmissionPhaseInstance(org, [
+      'Proposal Alpha',
+      'Proposal Beta',
+      'Proposal Gamma',
+    ]);
+    const [alpha, beta, gamma] = proposals;
+    if (!alpha || !beta || !gamma) {
+      throw new Error('Expected three seeded proposals');
+    }
+
+    await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
+      waitUntil: 'networkidle',
+    });
+
+    // Drive submission → final via the stepper. The limit:0 pipeline strands
+    // every proposal, so onPhaseAdvanced writes an initial result row
+    // (selectedCount=0) before the manual-selection UI mounts.
+    await authenticatedPage
+      .getByRole('button', { name: 'Start Final' })
+      .first()
+      .click();
+    const advanceDialog = authenticatedPage.getByRole('dialog');
+    await expect(advanceDialog).toBeVisible();
+    await expect(advanceDialog.getByText('Advance to Final?')).toBeVisible();
+    await advanceDialog.getByRole('button', { name: 'Advance Phase' }).click();
+
+    const confirmButton = authenticatedPage.getByRole('button', {
+      name: 'Confirm decisions',
+    });
+    await expect(confirmButton).toBeVisible({ timeout: 15_000 });
+    await expect(confirmButton).toBeDisabled();
+
+    await authenticatedPage
+      .getByRole('button', { name: 'Advance Proposal Alpha' })
+      .click();
+    await authenticatedPage
+      .getByRole('button', { name: 'Advance Proposal Beta' })
+      .click();
+
+    await expect(
+      authenticatedPage.getByText('2 proposals advancing'),
+    ).toBeVisible();
+    await expect(confirmButton).toBeEnabled();
+
+    await confirmButton.click();
+    const dialog = authenticatedPage.getByRole('dialog', {
+      name: 'Confirm advancing proposals',
+    });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: 'Publish' }).click();
+    await expect(dialog).not.toBeVisible({ timeout: 15_000 });
+
+    // Append-only: post-advance hook writes the initial row (selectedCount=0);
+    // submitManualSelection writes a second row (selectedCount=2) inline.
+    const resultRows = await db
+      .select()
+      .from(decisionProcessResults)
+      .where(eq(decisionProcessResults.processInstanceId, instance.instance.id))
+      .orderBy(desc(decisionProcessResults.executedAt));
+    expect(resultRows).toHaveLength(2);
+    const [latestRow, earliestRow] = resultRows;
+    if (!latestRow || !earliestRow) {
+      throw new Error('Expected two decision_process_results rows');
+    }
+    expect(earliestRow.selectedCount).toBe(0);
+    expect(latestRow.selectedCount).toBe(2);
+    expect(latestRow.success).toBe(true);
+
+    const selections = await db
+      .select({ proposalId: decisionProcessResultSelections.proposalId })
+      .from(decisionProcessResultSelections)
+      .where(eq(decisionProcessResultSelections.processResultId, latestRow.id));
+    expect(new Set(selections.map((s) => s.proposalId))).toEqual(
+      new Set([alpha.id, beta.id]),
+    );
+
+    await authenticatedPage.reload({ waitUntil: 'networkidle' });
+
+    const fundedHeading = authenticatedPage.getByRole('heading', {
+      name: 'Funded Proposals',
+    });
+    await expect(fundedHeading).toBeVisible({ timeout: 15_000 });
+
+    await expect(authenticatedPage.getByText('Proposal Alpha')).toBeVisible();
+    await expect(authenticatedPage.getByText('Proposal Beta')).toBeVisible();
+    await expect(authenticatedPage.getByText('Proposal Gamma')).toHaveCount(0);
   });
 
   test('non-admin does not see the admin manual-selection UI', async ({
@@ -252,9 +398,6 @@ test.describe('Decision Manual Selection — full flow', () => {
       waitUntil: 'networkidle',
     });
 
-    // Non-admin falls through to ProposalsList (no special "awaiting
-    // admin" state). The Confirm decisions trigger is unique to the
-    // admin branch, so it's the cleanest negative assertion.
     await expect(
       memberPage.getByRole('button', { name: 'Confirm decisions' }),
     ).not.toBeVisible();

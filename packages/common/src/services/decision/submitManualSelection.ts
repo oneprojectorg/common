@@ -20,7 +20,8 @@ import { getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
-import type { DecisionInstanceData } from './schemas/instanceData';
+import { processResults } from './processResults';
+import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
 import type {
   ManualSelectionAudit,
   TransitionData,
@@ -95,7 +96,7 @@ export async function submitManualSelection({
   const now = new Date().toISOString();
   const byProfileId = dbUser.profileId;
 
-  return db.transaction(async (tx) => {
+  await db.transaction(async (tx) => {
     // Lock the instance row so a concurrent advancePhase can't move the
     // phase out from under us, then re-verify state inside the lock.
     const [lockedInstance] = await tx
@@ -252,5 +253,19 @@ export async function submitManualSelection({
         proposalHistoryId: historyId,
       })),
     );
+
+    // On the final phase, fold results processing into this transaction so
+    // the new result row is atomic with the attachment write.
+    if (isLastPhase(currentStateId, lockedPhases ?? [])) {
+      await processResults({
+        processInstanceId,
+        tx,
+        instance: {
+          id: processInstanceId,
+          instanceData: lockedInstance.instanceData,
+          currentStateId: lockedInstance.currentStateId,
+        },
+      });
+    }
   });
 }
