@@ -7,7 +7,7 @@ import {
   type SubmittedReviewItem,
   parseSchemaOptions,
 } from '@op/common/client';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { Header3 } from '@op/ui/Header';
 import { StatusDot } from '@op/ui/StatusDot';
 import { useMemo } from 'react';

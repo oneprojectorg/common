@@ -3,9 +3,8 @@
 
 import { tv } from 'tailwind-variants';
 
-import { cn } from '@/lib/utils';
-
-import { Spinner } from '@/components/ui/spinner';
+import { cn } from '../lib/utils';
+import { Spinner } from './ui/spinner';
 
 const spinnerVariants = tv({
   base: 'aspect-square h-full w-auto animate-spin',

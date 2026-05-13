@@ -2,7 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import type { ProposalCategory } from '@op/common';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2, Header3 } from '@op/ui/Header';
 import { TextField } from '@op/ui/TextField';

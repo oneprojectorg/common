@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Button } from '@op/ui-next/Button';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 
 import { useTranslations } from '@/lib/i18n';

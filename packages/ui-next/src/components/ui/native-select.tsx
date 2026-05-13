@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { LuChevronDown } from 'react-icons/lu';
 
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils';
 
 type NativeSelectProps = Omit<React.ComponentProps<'select'>, 'size'> & {
   size?: 'sm' | 'default';

@@ -3,9 +3,9 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { JoinProfileRequestStatus, type Organization } from '@op/api/encoders';
-import { Button, ButtonTooltip } from '@op/ui/Button';
+import { Button, ButtonTooltip } from '@op/ui-next/Button';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';

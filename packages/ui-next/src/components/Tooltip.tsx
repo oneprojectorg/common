@@ -21,7 +21,7 @@ import {
   TooltipContent as ShadcnTooltipContent,
   TooltipProvider as ShadcnTooltipProvider,
   TooltipTrigger as ShadcnTooltipTrigger,
-} from '@/components/ui/tooltip';
+} from './ui/tooltip';
 
 export interface TooltipProps {
   children?: React.ReactNode;
@@ -46,12 +46,14 @@ export interface TooltipTriggerProps {
   children: React.ReactNode;
   delay?: number;
   closeDelay?: number;
+  isDisabled?: boolean;
 }
 
 export function TooltipTrigger({
   children,
   delay = 500,
   closeDelay = 0,
+  isDisabled,
 }: TooltipTriggerProps) {
   const arr = React.Children.toArray(children);
   const tooltipChild = arr.find(
@@ -59,6 +61,10 @@ export function TooltipTrigger({
       React.isValidElement(child) && child.type === Tooltip,
   );
   const triggerChildren = arr.filter((child) => child !== tooltipChild);
+
+  if (isDisabled) {
+    return <>{triggerChildren}</>;
+  }
 
   const triggerNode =
     triggerChildren.length === 1 && React.isValidElement(triggerChildren[0])

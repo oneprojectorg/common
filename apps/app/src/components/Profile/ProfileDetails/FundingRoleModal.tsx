@@ -1,5 +1,5 @@
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Button } from '@op/ui-next/Button';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Dialog } from '@op/ui/RAC';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';

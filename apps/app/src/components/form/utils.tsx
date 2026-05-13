@@ -1,5 +1,5 @@
-import { Button } from '@op/ui/Button';
-import type { ButtonProps } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
+import type { ButtonProps } from '@op/ui-next/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
 import { Select } from '@op/ui/Select';

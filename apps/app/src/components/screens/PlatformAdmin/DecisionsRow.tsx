@@ -2,10 +2,10 @@
 
 import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
 import type { AdminDecisionInstance } from '@op/common/client';
+import { Tooltip, TooltipTrigger } from '@op/ui-next/Tooltip';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { TableCell } from '@op/ui/ui/table';
 import { useFormatter } from 'next-intl';
 import { useState } from 'react';

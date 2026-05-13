@@ -2,9 +2,9 @@
 
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { Header1 } from '@op/ui/Header';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import { ReactNode, Suspense, useEffect, useState } from 'react';

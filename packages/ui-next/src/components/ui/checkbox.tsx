@@ -3,7 +3,7 @@
 import { Checkbox as CheckboxPrimitive } from '@base-ui/react/checkbox';
 import { LuCheck } from 'react-icons/lu';
 
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils';
 
 function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
   return (

@@ -6,8 +6,8 @@ import {
   isOverallRecommendationField,
   parseSchemaOptions,
 } from '@op/common/client';
+import { Button } from '@op/ui-next/Button';
 import { AlertBanner } from '@op/ui/AlertBanner';
-import { Button } from '@op/ui/Button';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';

@@ -2,7 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import type { DecisionProfile } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { Checkbox, CheckboxGroup } from '@op/ui/Checkbox';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';

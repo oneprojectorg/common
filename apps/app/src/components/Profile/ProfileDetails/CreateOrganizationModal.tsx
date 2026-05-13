@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { Modal, ModalHeader } from '@op/ui/Modal';
 import { DialogTrigger } from '@op/ui/RAC';
 import { useSearchParams } from 'next/navigation';

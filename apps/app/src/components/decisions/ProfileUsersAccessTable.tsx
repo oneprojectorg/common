@@ -2,7 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import type { ProfileInvite, ProfileUser } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';

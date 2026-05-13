@@ -1,9 +1,9 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { RichTextViewer } from '@op/ui/RichTextEditor';
 import { toast } from '@op/ui/Toast';

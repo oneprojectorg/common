@@ -2,7 +2,7 @@
 
 import { Toaster as Sonner, type ToasterProps } from 'sonner';
 
-import { IconPlaceholder } from '@/components/ui/icon-placeholder';
+import { IconPlaceholder } from './icon-placeholder';
 
 const Toaster = ({ ...props }: ToasterProps) => {
   return (

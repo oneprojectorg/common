@@ -3,7 +3,7 @@
 import { parseAbsoluteToLocal, toCalendarDate } from '@internationalized/date';
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition, PhaseRules } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { DatePicker } from '@op/ui/DatePicker';
 import { Header2 } from '@op/ui/Header';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';

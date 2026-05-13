@@ -1,4 +1,4 @@
-import { ButtonLink } from '@op/ui/Button';
+import { ButtonLink } from '@op/ui-next/Button';
 import { Header2 } from '@op/ui/Header';
 
 import { TranslatedText } from '@/components/TranslatedText';

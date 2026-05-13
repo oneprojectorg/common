@@ -2,7 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import type { Profile } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { Modal, ModalHeader } from '@op/ui/Modal';
 import { DialogTrigger } from '@op/ui/RAC';
 import { useRef, useState } from 'react';

@@ -16,7 +16,7 @@ import {
   type SupportedLocale,
   isVotingEligible,
 } from '@op/common/client';
-import { Button, ButtonLink } from '@op/ui/Button';
+import { Button, ButtonLink } from '@op/ui-next/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';

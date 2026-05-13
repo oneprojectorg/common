@@ -1,6 +1,6 @@
 import { LuLoaderCircle } from 'react-icons/lu';
 
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils';
 
 function Spinner({ className, ...props }: React.ComponentProps<'svg'>) {
   return (

@@ -2,7 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { DecisionProfile, ProcessStatus } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';

@@ -2,8 +2,8 @@
 
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
-import { IconButton } from '@op/ui/IconButton';
+import { Button } from '@op/ui-next/Button';
+import { IconButton } from '@op/ui-next/IconButton';
 import { Select, SelectItem } from '@op/ui/Select';
 import { cn } from '@op/ui/utils';
 import { useParams } from 'next/navigation';

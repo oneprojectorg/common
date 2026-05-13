@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { ReactNode, Suspense } from 'react';
 
 import ErrorBoundary from '../ErrorBoundary';

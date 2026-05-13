@@ -2,7 +2,7 @@
 
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';

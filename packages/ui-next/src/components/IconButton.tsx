@@ -3,9 +3,8 @@
 
 import * as React from 'react';
 
-import { cn } from '@/lib/utils';
-
-import { Button as ShadcnButton } from '@/components/ui/button';
+import { cn } from '../lib/utils';
+import { Button as ShadcnButton } from './ui/button';
 
 type LegacySize = 'small' | 'medium' | 'large';
 type LegacyVariant = 'ghost' | 'solid' | 'outline';

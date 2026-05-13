@@ -1,6 +1,6 @@
 'use client';
 
-import { ButtonLink } from '@op/ui/Button';
+import { ButtonLink } from '@op/ui-next/Button';
 import { Header2, Header3 } from '@op/ui/Header';
 import { LogoLoop } from '@op/ui/LogoLoop';
 import { cn } from '@op/ui/utils';

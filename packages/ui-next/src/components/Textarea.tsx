@@ -1,9 +1,8 @@
 import * as React from 'react';
 import { tv, type VariantProps } from 'tailwind-variants';
 
-import { cn } from '@/lib/utils';
-
-import { Textarea as ShadcnTextarea } from '@/components/ui/textarea';
+import { cn } from '../lib/utils';
+import { Textarea as ShadcnTextarea } from './ui/textarea';
 
 const textareaVariants = tv({
   variants: {

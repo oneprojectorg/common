@@ -1,7 +1,7 @@
 import { trpc } from '@op/api/client';
 import type { Relationship } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Button } from '@op/ui-next/Button';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Dialog } from '@op/ui/RAC';
 import { toast } from '@op/ui/Toast';

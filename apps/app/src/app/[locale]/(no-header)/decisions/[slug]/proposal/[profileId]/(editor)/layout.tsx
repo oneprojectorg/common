@@ -12,8 +12,8 @@ import {
 } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
+import { Button } from '@op/ui-next/Button';
+import { Tooltip, TooltipTrigger } from '@op/ui-next/Tooltip';
 import { notFound, useParams } from 'next/navigation';
 import { useQueryStates } from 'nuqs';
 import { useMemo } from 'react';

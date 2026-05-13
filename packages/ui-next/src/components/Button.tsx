@@ -32,11 +32,9 @@
 
 import * as React from 'react';
 
-import { cn } from '@/lib/utils';
-
-import { Button as ShadcnButton, buttonVariants } from '@/components/ui/button';
-
+import { cn } from '../lib/utils';
 import { LoadingSpinner } from './LoadingSpinner';
+import { Button as ShadcnButton, buttonVariants } from './ui/button';
 
 type ShadcnVariant = NonNullable<
   Parameters<typeof buttonVariants>[0]
@@ -73,6 +71,8 @@ export interface ButtonProps extends Omit<
   scaleOnPress?: boolean;
   insetShadow?: boolean;
   backglow?: boolean;
+  excludeFromTabOrder?: boolean;
+  ref?: React.Ref<HTMLButtonElement>;
 }
 
 function mapVariant({
@@ -165,11 +165,15 @@ export function Button(props: ButtonProps) {
     scaleOnPress: _scale,
     insetShadow: _inset,
     backglow: _back,
+    excludeFromTabOrder,
     className,
     disabled,
     children,
+    tabIndex,
     ...rest
   } = props;
+
+  const resolvedTabIndex = excludeFromTabOrder ? -1 : tabIndex;
 
   const loading = !!(isLoading || isPending);
   const isDisabledFinal = disabled || isDisabled || loading;
@@ -181,6 +185,7 @@ export function Button(props: ButtonProps) {
         data-slot="button"
         disabled={isDisabledFinal}
         onClick={onClick ?? onPress}
+        tabIndex={resolvedTabIndex}
         className={className}
         {...rest}
       >
@@ -202,6 +207,7 @@ export function Button(props: ButtonProps) {
       size={shadcnSize}
       disabled={isDisabledFinal}
       onClick={onClick ?? onPress}
+      tabIndex={resolvedTabIndex}
       className={cn(variantExtra, sizeExtra, loading && 'relative', className)}
       {...rest}
     >
@@ -238,6 +244,7 @@ export interface ButtonLinkProps extends Omit<
   isDisabled?: boolean;
   isLoading?: boolean;
   isPending?: boolean;
+  onPress?: React.MouseEventHandler<HTMLAnchorElement>;
 }
 
 export function ButtonLink(props: ButtonLinkProps) {
@@ -255,8 +262,12 @@ export function ButtonLink(props: ButtonLinkProps) {
     isDisabled,
     isLoading,
     isPending,
+    onPress,
+    onClick,
     ...rest
   } = props;
+
+  const handleClick = onClick ?? onPress;
 
   const loading = !!(isLoading || isPending);
 
@@ -267,6 +278,7 @@ export function ButtonLink(props: ButtonLinkProps) {
         target={target}
         rel={rel}
         aria-disabled={isDisabled || loading || undefined}
+        onClick={handleClick}
         className={className}
         {...rest}
       >
@@ -288,6 +300,7 @@ export function ButtonLink(props: ButtonLinkProps) {
       target={target}
       rel={rel}
       aria-disabled={isDisabled || loading || undefined}
+      onClick={handleClick}
       className={cn(
         buttonVariants({ variant: shadcnVariant, size: shadcnSize }),
         variantExtra,

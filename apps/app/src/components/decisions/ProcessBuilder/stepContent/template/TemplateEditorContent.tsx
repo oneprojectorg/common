@@ -8,7 +8,7 @@ import type {
 } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { CollapsibleConfigCard } from '@op/ui/CollapsibleConfigCard';
 import { Header2 } from '@op/ui/Header';
 import { SidebarProvider } from '@op/ui/Sidebar';

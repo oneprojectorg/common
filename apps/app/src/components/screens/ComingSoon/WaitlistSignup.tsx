@@ -1,8 +1,8 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { IconButton } from '@op/ui/IconButton';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Button } from '@op/ui-next/Button';
+import { IconButton } from '@op/ui-next/IconButton';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import {

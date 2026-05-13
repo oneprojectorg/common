@@ -4,9 +4,9 @@ import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { getTextPreview } from '@op/core';
+import { Button } from '@op/ui-next/Button';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { Avatar } from '@op/ui/Avatar';
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import {
   NotificationPanel,
   NotificationPanelActions,

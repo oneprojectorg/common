@@ -1,4 +1,4 @@
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { Dialog, DialogTrigger } from '@op/ui/RAC';
 

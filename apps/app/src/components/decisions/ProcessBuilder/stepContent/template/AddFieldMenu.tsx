@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { Menu, MenuItem, MenuSeparator, MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
 import { Fragment } from 'react';

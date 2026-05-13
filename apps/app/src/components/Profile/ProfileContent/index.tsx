@@ -4,7 +4,7 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { type Organization, ProcessStatus } from '@op/api/encoders';
 import { formatToUrl } from '@op/common/validation';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { Header2, Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Tab, TabList, TabPanel } from '@op/ui/Tabs';

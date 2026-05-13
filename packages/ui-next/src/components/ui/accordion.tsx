@@ -1,7 +1,7 @@
 import { Accordion as AccordionPrimitive } from '@base-ui/react/accordion';
 import { LuChevronDown, LuChevronUp } from 'react-icons/lu';
 
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils';
 
 function Accordion({ className, ...props }: AccordionPrimitive.Root.Props) {
   return (

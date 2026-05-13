@@ -1,9 +1,8 @@
 import * as React from 'react';
 
-import { cn } from '@/lib/utils';
-
-import { Button } from '@/components/ui/button';
-import { IconPlaceholder } from '@/components/ui/icon-placeholder';
+import { cn } from '../../lib/utils';
+import { Button } from './button';
+import { IconPlaceholder } from './icon-placeholder';
 
 function Pagination({ className, ...props }: React.ComponentProps<'nav'>) {
   return (

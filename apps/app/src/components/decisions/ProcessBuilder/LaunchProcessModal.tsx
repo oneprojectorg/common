@@ -2,8 +2,8 @@
 
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
+import { Button } from '@op/ui-next/Button';
 import { AlertBanner } from '@op/ui/AlertBanner';
-import { Button } from '@op/ui/Button';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';

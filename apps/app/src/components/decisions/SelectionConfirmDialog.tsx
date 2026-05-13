@@ -1,7 +1,7 @@
 'use client';
 
 import type { Proposal } from '@op/common/client';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 

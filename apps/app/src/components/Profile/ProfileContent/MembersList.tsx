@@ -2,7 +2,7 @@
 
 import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
-import { IconButton } from '@op/ui/IconButton';
+import { IconButton } from '@op/ui-next/IconButton';
 import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';

@@ -2,7 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import type { RubricTemplateSchema } from '@op/common/client';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2 } from '@op/ui/Header';
 import { Sortable } from '@op/ui/Sortable';

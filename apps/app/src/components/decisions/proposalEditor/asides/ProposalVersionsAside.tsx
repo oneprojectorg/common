@@ -2,7 +2,7 @@
 
 import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
 import { useRelativeTime } from '@op/hooks';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { cn } from '@op/ui/utils';
 import type { THistoryVersion } from '@tiptap-pro/provider';
 import { useLocale } from 'next-intl';

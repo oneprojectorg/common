@@ -1,4 +1,4 @@
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 
 import { useTranslations } from '@/lib/i18n';

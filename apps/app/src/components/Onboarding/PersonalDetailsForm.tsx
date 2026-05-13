@@ -1,9 +1,9 @@
 import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { trpc } from '@op/api/client';
 import { zodUrl } from '@op/common/validation';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { SelectItem } from '@op/ui/Select';
 import { Skeleton } from '@op/ui/Skeleton';
 import { toast } from '@op/ui/Toast';

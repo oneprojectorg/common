@@ -1,8 +1,8 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { Checkbox } from '@op/ui/Checkbox';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { Dialog, DialogTrigger } from '@op/ui/RAC';
 import { ReactNode, useState } from 'react';

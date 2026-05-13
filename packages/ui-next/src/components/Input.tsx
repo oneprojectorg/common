@@ -2,9 +2,8 @@ import type { ReactNode } from 'react';
 import * as React from 'react';
 import { tv, type VariantProps } from 'tailwind-variants';
 
-import { cn } from '@/lib/utils';
-
-import { Input as ShadcnInput } from '@/components/ui/input';
+import { cn } from '../lib/utils';
+import { Input as ShadcnInput } from './ui/input';
 
 const inputVariants = tv({
   variants: {

@@ -2,9 +2,9 @@
 
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
+import { IconButton } from '@op/ui-next/IconButton';
 import { Header2 } from '@op/ui/Header';
-import { IconButton } from '@op/ui/IconButton';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
 import { cn } from '@op/ui/utils';

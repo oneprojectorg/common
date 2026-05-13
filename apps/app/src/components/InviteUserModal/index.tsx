@@ -3,7 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';

@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { cn } from '@op/ui/utils';
 import { LuCheck } from 'react-icons/lu';
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { CheckIcon } from '@op/ui/CheckIcon';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { Header1, Header3 } from '@op/ui/Header';

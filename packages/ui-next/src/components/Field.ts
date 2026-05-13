@@ -17,10 +17,10 @@ export {
   FieldSet,
   FieldContent,
   FieldTitle,
-} from '@/components/ui/field';
+} from './ui/field';
 
-export { Label } from '@/components/ui/label';
-export { Separator } from '@/components/ui/separator';
+export { Label } from './ui/label';
+export { Separator } from './ui/separator';
 
 export {
   InputGroup,
@@ -29,7 +29,7 @@ export {
   InputGroupText,
   InputGroupInput,
   InputGroupTextarea,
-} from '@/components/ui/input-group';
+} from './ui/input-group';
 
 export { Input, inputVariants } from './Input';
 export type { InputProps, InputVariantsProps } from './Input';

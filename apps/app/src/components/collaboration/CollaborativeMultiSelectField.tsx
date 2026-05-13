@@ -2,7 +2,7 @@
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import { parseCategoryFragmentValue } from '@op/common/client';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { ListBox } from '@op/ui/ListBox';
 import { Popover } from '@op/ui/Popover';

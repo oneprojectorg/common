@@ -4,7 +4,7 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { FooterBar } from '@op/ui/FooterBar';
 import { Header3 } from '@op/ui/Header';

@@ -3,9 +3,9 @@
 import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalFooter } from '@op/ui/Modal';
 import type { Option } from '@op/ui/MultiSelectComboBox';
 import { SelectItem } from '@op/ui/Select';

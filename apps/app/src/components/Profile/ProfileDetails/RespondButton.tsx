@@ -3,8 +3,8 @@
 import { useUser } from '@/utils/UserProvider';
 import { skipBatch, trpc } from '@op/api/client';
 import { Organization } from '@op/api/encoders';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { DropDownButton } from '@op/ui/DropDownButton';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { toast } from '@op/ui/Toast';
 import { Suspense } from 'react';
 import { LuCheck, LuUserPlus, LuX } from 'react-icons/lu';

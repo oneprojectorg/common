@@ -2,8 +2,8 @@
 
 import { trpc } from '@op/api/client';
 import { JoinProfileRequestStatus } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Button } from '@op/ui-next/Button';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import {
   NotificationPanel,
   NotificationPanelActions,

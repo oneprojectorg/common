@@ -3,8 +3,8 @@
 import { trpc } from '@op/api/client';
 import type { Organization, OrganizationSearchResult } from '@op/api/encoders';
 import { useDebounce } from '@op/hooks';
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Button } from '@op/ui-next/Button';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { ProfileItem } from '@op/ui/ProfileItem';
 import { TextField } from '@op/ui/TextField';
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';

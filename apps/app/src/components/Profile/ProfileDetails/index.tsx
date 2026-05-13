@@ -4,9 +4,9 @@ import { useUser } from '@/utils/UserProvider';
 import type { Organization } from '@op/api/encoders';
 import { EntityType } from '@op/api/encoders';
 import { formatToUrl } from '@op/common/validation';
-import { ButtonLink } from '@op/ui/Button';
+import { ButtonLink } from '@op/ui-next/Button';
+import { Tooltip, TooltipTrigger } from '@op/ui-next/Tooltip';
 import { SkeletonLine } from '@op/ui/Skeleton';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { LuHandCoins, LuInfo } from 'react-icons/lu';
 
 import { ProfileSummary } from '../ProfileSummary';

@@ -8,10 +8,9 @@ import {
   type Locale,
 } from 'react-day-picker';
 
-import { cn } from '@/lib/utils';
-
-import { Button, buttonVariants } from '@/components/ui/button';
-import { IconPlaceholder } from '@/components/ui/icon-placeholder';
+import { cn } from '../../lib/utils';
+import { Button, buttonVariants } from './button';
+import { IconPlaceholder } from './icon-placeholder';
 
 function Calendar({
   className,

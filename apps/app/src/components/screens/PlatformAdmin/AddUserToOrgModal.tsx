@@ -2,11 +2,11 @@
 
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
+import { Button } from '@op/ui-next/Button';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { Avatar } from '@op/ui/Avatar';
-import { Button } from '@op/ui/Button';
 import { Chip } from '@op/ui/Chip';
 import { ComboBox, ComboBoxItem } from '@op/ui/ComboBox';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { ProfileItem } from '@op/ui/ProfileItem';
 import { Skeleton } from '@op/ui/Skeleton';

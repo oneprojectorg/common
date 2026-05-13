@@ -5,9 +5,9 @@ import {
   RELATIONSHIP_OPTIONS,
   RelationshipType,
 } from '@op/types/relationships';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { Checkbox } from '@op/ui/Checkbox';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Dialog } from '@op/ui/RAC';
 import { toast } from '@op/ui/Toast';

@@ -3,7 +3,7 @@
 import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
-import { Button, ButtonLink } from '@op/ui/Button';
+import { Button, ButtonLink } from '@op/ui-next/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';

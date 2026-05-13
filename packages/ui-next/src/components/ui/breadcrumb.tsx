@@ -3,7 +3,7 @@ import { useRender } from '@base-ui/react/use-render';
 import * as React from 'react';
 import { LuChevronRight, LuEllipsis } from 'react-icons/lu';
 
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils';
 
 function Breadcrumb({ className, ...props }: React.ComponentProps<'nav'>) {
   return (
