@@ -312,6 +312,29 @@ export function ButtonLink(props: ButtonLinkProps) {
   );
 }
 
-// ButtonTooltip composite is exported from ./ButtonTooltip to avoid circular
-// imports between Button and Tooltip.
+// ButtonTooltip: Button + Tooltip composite. Mirrors @op/ui's API:
+//   <ButtonTooltip triggerProps={{ delay: 500 }} tooltipProps={{ children: 'Hint' }} {...buttonProps} />
+import {
+  Tooltip,
+  TooltipTrigger,
+  type TooltipProps,
+  type TooltipTriggerProps,
+} from './Tooltip';
+
+export interface ButtonTooltipProps extends ButtonProps {
+  triggerProps?: Omit<TooltipTriggerProps, 'children'>;
+  tooltipProps: TooltipProps;
+}
+
+export function ButtonTooltip(props: ButtonTooltipProps) {
+  const { triggerProps, tooltipProps, ...buttonProps } = props;
+
+  return (
+    <TooltipTrigger {...triggerProps}>
+      <Button {...buttonProps} />
+      <Tooltip {...tooltipProps} />
+    </TooltipTrigger>
+  );
+}
+
 export { buttonVariants };
