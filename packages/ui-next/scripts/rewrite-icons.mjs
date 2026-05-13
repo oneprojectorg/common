@@ -37,8 +37,10 @@ function lucideToLu(name) {
   return `Lu${stripped}`;
 }
 
+// Match only horizontal whitespace around the import so the trailing newline
+// after `from "lucide-react"` stays intact.
 const importRe =
-  /import\s*\{\s*([^}]+)\s*\}\s*from\s*['"]lucide-react['"]\s*;?/g;
+  /import[ \t]*\{[ \t\n]*([^}]+?)[ \t\n]*\}[ \t]*from[ \t]*['"]lucide-react['"][ \t]*;?/g;
 
 async function rewriteFile(file) {
   const src = await readFile(file, 'utf8');
