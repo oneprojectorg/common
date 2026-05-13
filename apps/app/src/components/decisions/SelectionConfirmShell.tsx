@@ -11,7 +11,7 @@ interface SelectionConfirmShellProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   triggerDisabled: boolean;
-  triggerLabel: string;
+  triggerLabel: ReactNode;
   headerLabel: string;
   confirmLabel: string;
   isSubmitting: boolean;

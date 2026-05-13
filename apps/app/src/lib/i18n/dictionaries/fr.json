@@ -1182,6 +1182,7 @@
   "Advancing proposal": "Proposition en cours",
   "Confirm decisions": "Confirmer les décisions",
   "Confirm winning proposals": "Confirmer les propositions gagnantes",
+  "Confirm": "Confirmer",
   "Votes": "Votes",
   "{count} votes": "{count, plural, one {# vote} other {# votes}}",
   "Most votes": "Plus de votes",

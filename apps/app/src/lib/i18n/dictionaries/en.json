@@ -1221,6 +1221,7 @@
   "Advancing proposal": "Advancing proposal",
   "Confirm decisions": "Confirm decisions",
   "Confirm winning proposals": "Confirm winning proposals",
+  "Confirm": "Confirm",
   "Votes": "Votes",
   "{count} votes": "{count, plural, one {# vote} other {# votes}}",
   "Most votes": "Most votes",

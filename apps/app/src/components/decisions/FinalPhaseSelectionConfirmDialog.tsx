@@ -39,7 +39,14 @@ export const FinalPhaseSelectionConfirmDialog = ({
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       triggerDisabled={triggerDisabled}
-      triggerLabel={t('Confirm winning proposals')}
+      triggerLabel={
+        <>
+          <span className="sm:hidden">{t('Confirm')}</span>
+          <span className="hidden sm:inline">
+            {t('Confirm winning proposals')}
+          </span>
+        </>
+      }
       headerLabel={t('Confirm winning proposals')}
       confirmLabel={t('Publish results')}
       isSubmitting={isSubmitting}
