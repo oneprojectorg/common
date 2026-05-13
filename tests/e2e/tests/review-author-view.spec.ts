@@ -161,7 +161,9 @@ test.describe('Non-reviewer review-phase view', () => {
     });
     await expect(aboutButton).toBeVisible();
     await aboutButton.click();
-    await expect(memberPage.getByRole('dialog')).toBeVisible();
+    await expect(
+      memberPage.getByRole('dialog', { name: 'About the process' }).first(),
+    ).toBeVisible();
     await expect(
       memberPage.getByRole('heading', { name: 'About the process' }),
     ).toBeVisible();
