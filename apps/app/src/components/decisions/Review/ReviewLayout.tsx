@@ -33,7 +33,7 @@ export async function ReviewLayout({
   try {
     [decisionProfile] = await Promise.all([
       client.decision.getDecisionBySlug({ slug: decisionSlug }),
-      utils.decision.getReviewAssignment.prefetch({ assignmentId }),
+      utils.decision.getReviewAssignment.fetch({ assignmentId }),
     ]);
   } catch (error) {
     const cause = error instanceof Error ? error.cause : null;
