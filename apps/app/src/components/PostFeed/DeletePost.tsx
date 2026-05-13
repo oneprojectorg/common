@@ -3,7 +3,7 @@
 import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { trpc } from '@op/api/client';
 import type { Post } from '@op/api/encoders';
-import { Menu, MenuItem } from '@op/ui/Menu';
+import { MenuItem } from '@op/ui/Menu';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
 
@@ -61,20 +61,16 @@ export const DeletePost = ({ post }: { post: Post }) => {
   };
 
   return (
-    <Menu
+    <MenuItem
+      key="delete"
+      className="px-3 py-1 text-functional-red"
       onAction={() => {
         if (post.id) {
           handleDeletePost(post);
         }
       }}
-      className="min-w-28 p-2"
     >
-      <MenuItem
-        key="delete"
-        className="!bg-transparent px-3 py-1 ps-3 pe-3 text-functional-red"
-      >
-        {t('Delete')}
-      </MenuItem>
-    </Menu>
+      {t('Delete')}
+    </MenuItem>
   );
 };
