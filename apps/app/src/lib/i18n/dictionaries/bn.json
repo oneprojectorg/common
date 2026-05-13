@@ -1218,5 +1218,8 @@
   "Submitted Reviews": "জমা দেওয়া পর্যালোচনা",
   "Back to all reviewers": "সমস্ত পর্যালোচকের কাছে ফিরে যান",
   "{submitted} out of {total} reviewers submitted a review for this proposal": "{total} জন পর্যালোচকের মধ্যে {submitted} জন এই প্রস্তাবের জন্য একটি পর্যালোচনা জমা দিয়েছেন",
-  "View review by {name}": "{name} এর পর্যালোচনা দেখুন"
+  "View review by {name}": "{name} এর পর্যালোচনা দেখুন",
+  "Results are live!": "ফলাফল প্রকাশিত হয়েছে!",
+  "All participants have been notified and can now view the winning proposals.": "সকল অংশগ্রহণকারীকে অবহিত করা হয়েছে এবং তারা এখন বিজয়ী প্রস্তাবগুলি দেখতে পারবেন।",
+  "View public results page": "পাবলিক ফলাফল পৃষ্ঠা দেখুন"
 }

@@ -1170,5 +1170,8 @@
   "+{count} More": "+{count} Wax badan",
   "Confirm advancing proposals": "Xaqiiji soo jeedimaha horey u socda",
   "These {numProposals} proposals will move on to the {phaseName} phase": "{numProposals, plural, one {# soo jeedintaan waxay u gudbi doontaa marxaladda {phaseName}} other {# soo jeedimahaan waxay u gudbi doonaan marxaladda {phaseName}}}",
-  "PROPOSALS TO ADVANCE": "SOO JEEDIMAHA HOREY LOO QAADAYO"
+  "PROPOSALS TO ADVANCE": "SOO JEEDIMAHA HOREY LOO QAADAYO",
+  "Results are live!": "Natiijooyinka ayaa la daabacay!",
+  "All participants have been notified and can now view the winning proposals.": "Dhammaan ka-qaybgalayaasha waa la ogeysiiyay, hadda waxay arki karaan soo jeedimaha guuleystay.",
+  "View public results page": "Eeg bogga natiijooyinka guud"
 }

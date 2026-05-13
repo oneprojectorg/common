@@ -15,6 +15,7 @@ import { LuLeaf, LuTriangleAlert } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { FinalPhaseSelectionFooter } from './FinalPhaseSelectionFooter';
+import { FinalPhaseSubmissionSuccessDialog } from './FinalPhaseSubmissionSuccessDialog';
 import { ManualSelectionToolbar } from './ManualSelectionToolbar';
 import { SelectableProposalsTable } from './SelectableProposalsTable';
 import { StandardSelectionFooter } from './StandardSelectionFooter';
@@ -77,6 +78,7 @@ export const ManualSelectionList = ({
     instance.currentStateId,
   );
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
 
   // Resolve selected ids → proposals via a cache that accumulates across
   // refetches, so picks survive filter/sort changes that exclude them.
@@ -111,11 +113,14 @@ export const ManualSelectionList = ({
 
   const submitMutation = trpc.decision.submitManualSelection.useMutation({
     onSuccess: () => {
-      // Channel-based invalidation refreshes the client query; DecisionStateRouter
-      // watches selectionsAreConfirmed/currentStateId and calls router.refresh()
-      // so the SSR DecisionHeader re-renders for both submitter and observers.
+      // Channel-based invalidation flips selectionsAreConfirmed in the client
+      // tRPC cache, which both the (client) DecisionHeader and DecisionStateRouter
+      // observe via useSuspenseQuery — no router.refresh() needed.
       setSelectedIds([]);
       setIsConfirmOpen(false);
+      if (isFinalPhase) {
+        setSuccessModalOpen(true);
+      }
     },
     onError: (error) => {
       setIsConfirmOpen(false);
@@ -258,6 +263,13 @@ export const ManualSelectionList = ({
           isSubmitting={submitMutation.isPending}
         />
       )}
+
+      {isFinalPhase ? (
+        <FinalPhaseSubmissionSuccessDialog
+          isOpen={successModalOpen}
+          onOpenChange={setSuccessModalOpen}
+        />
+      ) : null}
     </div>
   );
 };

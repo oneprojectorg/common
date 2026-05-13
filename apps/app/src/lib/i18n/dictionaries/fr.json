@@ -1217,5 +1217,8 @@
   "Submitted Reviews": "Révisions soumises",
   "Back to all reviewers": "Retour à tous les évaluateurs",
   "{submitted} out of {total} reviewers submitted a review for this proposal": "{submitted} évaluateurs sur {total} ont soumis une révision pour cette proposition",
-  "View review by {name}": "Voir la révision de {name}"
+  "View review by {name}": "Voir la révision de {name}",
+  "Results are live!": "Les résultats sont publiés !",
+  "All participants have been notified and can now view the winning proposals.": "Tous les participants ont été notifiés et peuvent maintenant consulter les propositions gagnantes.",
+  "View public results page": "Voir la page publique des résultats"
 }

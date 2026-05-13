@@ -1,10 +1,11 @@
-import { type ProcessPhase } from '@op/api/encoders';
-import { createClient } from '@op/api/serverClient';
-import type { DecisionInstanceData } from '@op/common';
-import { notFound } from 'next/navigation';
-import { ReactNode } from 'react';
+'use client';
 
-import { DecisionHeaderShell } from '@/components/decisions/DecisionHeaderShell';
+import { trpc } from '@op/api/client';
+import { type ProcessPhase } from '@op/api/encoders';
+import { isLastPhase } from '@op/common/client';
+import { cn } from '@op/ui/utils';
+import { type ReactNode } from 'react';
+
 import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
 import { DecisionProcessStepper } from '@/components/decisions/DecisionProcessStepper';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
@@ -24,43 +25,34 @@ interface DecisionHeaderProps {
   profileName?: string;
 }
 
-export async function DecisionHeader({
+export function DecisionHeader(props: DecisionHeaderProps) {
+  if (props.useLegacy) {
+    return <LegacyDecisionHeaderContent {...props} />;
+  }
+  return <NewDecisionHeaderContent {...props} />;
+}
+
+function NewDecisionHeaderContent({
   instanceId,
   children,
   decisionSlug,
   isAdmin,
-  useLegacy = false,
-  slug,
   profileName,
 }: DecisionHeaderProps) {
-  const client = await createClient();
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
 
-  const instance = useLegacy
-    ? await client.decision.getLegacyInstance({ instanceId })
-    : await client.decision.getInstance({ instanceId });
-
-  if (!instance) {
-    notFound();
-  }
-
-  const instanceData = instance.instanceData as DecisionInstanceData;
-  const instancePhases = instanceData.phases ?? [];
-
-  // For legacy instances, fall back to process.processSchema states/phases for names.
-  const processSchema = (instance as any).process?.processSchema;
-  const templateStates = processSchema?.states || processSchema?.phases || [];
+  const instancePhases = instance.instanceData?.phases ?? [];
+  const templateStates = instance.process?.processSchema?.phases ?? [];
 
   const phases: ProcessPhase[] = instancePhases.map((p) => {
-    const templateState = templateStates.find((s: any) => s.id === p.phaseId);
+    const templateState = templateStates.find((s) => s.id === p.phaseId);
     return {
       id: p.phaseId,
-      name: p.name || templateState?.name,
+      name: p.name || templateState?.name || '',
       description: p.description || templateState?.description,
-      type: templateState?.type,
-      config: templateState?.config,
-      phase: templateState?.phase || {
-        startDate: p.startDate,
-        endDate: p.endDate,
+      phase: {
+        startDate: p.startDate ?? templateState?.startDate,
+        endDate: p.endDate ?? templateState?.endDate,
       },
       advancementMethod:
         p.rules?.advancement?.method ??
@@ -68,22 +60,26 @@ export async function DecisionHeader({
     };
   });
 
-  // The gradient depends on selectionsAreConfirmed, which flips via channel
-  // invalidation. Delegate the conditional className to the client shell so
-  // it derives from the live tRPC cache (deduped with DecisionStateRouter's
-  // suspense query) instead of needing a router.refresh() round-trip.
+  const isResultsView =
+    isLastPhase(instance.currentStateId, instancePhases) &&
+    instance.selectionsAreConfirmed === true;
+
   return (
-    <DecisionHeaderShell instanceId={instanceId} useLegacy={useLegacy}>
+    <div
+      className={cn(
+        isResultsView
+          ? 'bg-redPurple text-neutral-offWhite'
+          : 'bg-neutral-offWhite text-gray-700',
+      )}
+    >
       <DecisionInstanceHeader
-        backTo={{
-          href:
-            useLegacy && slug ? `/profile/${slug}?tab=decisions` : '/decisions',
-        }}
+        backTo={{ href: '/decisions' }}
         title={
           profileName ||
           instance.name ||
-          instanceData.templateName ||
-          (instance as any).process?.name
+          instance.instanceData?.templateName ||
+          instance.process?.name ||
+          ''
         }
         decisionSlug={decisionSlug}
         isAdmin={isAdmin}
@@ -103,6 +99,65 @@ export async function DecisionHeader({
 
         {children}
       </DecisionTranslationProvider>
-    </DecisionHeaderShell>
+    </div>
+  );
+}
+
+function LegacyDecisionHeaderContent({
+  instanceId,
+  children,
+  decisionSlug,
+  isAdmin,
+  slug,
+  profileName,
+}: DecisionHeaderProps) {
+  const [instance] = trpc.decision.getLegacyInstance.useSuspenseQuery({
+    instanceId,
+  });
+
+  const instancePhases = instance.instanceData?.phases ?? [];
+  const processSchema = instance.process?.processSchema;
+  const templateStates = processSchema?.states ?? [];
+
+  const phases: ProcessPhase[] = instancePhases.map((p) => {
+    const templateState = templateStates.find((s) => s.id === p.phaseId);
+    return {
+      id: p.phaseId,
+      name: templateState?.name ?? '',
+      description: templateState?.description,
+      type: templateState?.type,
+      phase: templateState?.phase || {
+        startDate: p.startDate,
+        endDate: p.endDate,
+      },
+    };
+  });
+
+  return (
+    <div className="bg-redPurple text-neutral-offWhite">
+      <DecisionInstanceHeader
+        backTo={{
+          href: slug ? `/profile/${slug}?tab=decisions` : '/decisions',
+        }}
+        title={profileName || instance.name || instance.process?.name || ''}
+        decisionSlug={decisionSlug}
+        isAdmin={isAdmin}
+      />
+      <DecisionTranslationProvider>
+        <div className="flex flex-col overflow-x-auto sm:items-center">
+          <div className="w-fit rounded-b border border-t-0 bg-white px-12 py-4 sm:px-32">
+            <DecisionProcessStepper
+              phases={phases}
+              currentStateId={instance.currentStateId || ''}
+              instanceId={instanceId}
+              isAdmin={isAdmin}
+              className="mx-auto"
+            />
+          </div>
+        </div>
+
+        {children}
+      </DecisionTranslationProvider>
+    </div>
   );
 }

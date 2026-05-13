@@ -1,3 +1,8 @@
+import {
+  HydrationBoundary,
+  createServerUtils,
+  dehydrate,
+} from '@op/api/server';
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
 import { Skeleton } from '@op/ui/Skeleton';
@@ -9,7 +14,10 @@ import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter'
 import { DecisionHeaderSkeleton } from '@/components/skeletons/DecisionSkeleton';
 
 const DecisionPageContent = async ({ slug }: { slug: string }) => {
-  const client = await createClient();
+  const [client, { utils, queryClient }] = await Promise.all([
+    createClient(),
+    createServerUtils(),
+  ]);
 
   let decisionProfile;
   try {
@@ -38,24 +46,31 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
     notFound();
   }
 
+  // Prefetch the instance so the client-side useSuspenseQuery in
+  // DecisionHeader and DecisionStateRouter resolves synchronously on hydration
+  // (no skeleton flicker) — the two suspense reads share this cached entry.
+  await utils.decision.getInstance.prefetch({ instanceId });
+
   return (
-    <Suspense fallback={<DecisionHeaderSkeleton />}>
-      <DecisionHeader
-        instanceId={instanceId}
-        decisionSlug={slug}
-        isAdmin={decisionProfile.processInstance.access?.admin}
-        profileName={decisionProfile.name}
-      >
-        <Suspense fallback={<Skeleton className="h-96" />}>
-          <DecisionStateRouter
-            instanceId={instanceId}
-            slug={ownerSlug}
-            decisionSlug={slug}
-            decisionProfileId={decisionProfile.id}
-          />
-        </Suspense>
-      </DecisionHeader>
-    </Suspense>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <Suspense fallback={<DecisionHeaderSkeleton />}>
+        <DecisionHeader
+          instanceId={instanceId}
+          decisionSlug={slug}
+          isAdmin={decisionProfile.processInstance.access?.admin}
+          profileName={decisionProfile.name}
+        >
+          <Suspense fallback={<Skeleton className="h-96" />}>
+            <DecisionStateRouter
+              instanceId={instanceId}
+              slug={ownerSlug}
+              decisionSlug={slug}
+              decisionProfileId={decisionProfile.id}
+            />
+          </Suspense>
+        </DecisionHeader>
+      </Suspense>
+    </HydrationBoundary>
   );
 };
 
