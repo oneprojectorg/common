@@ -8,6 +8,7 @@ import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { toast } from '@op/ui/Toast';
+import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LuLeaf, LuTriangleAlert } from 'react-icons/lu';
@@ -15,7 +16,6 @@ import { LuLeaf, LuTriangleAlert } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { FinalPhaseSelectionFooter } from './FinalPhaseSelectionFooter';
-import { FinalPhaseSubmissionSuccessDialog } from './FinalPhaseSubmissionSuccessDialog';
 import { ManualSelectionToolbar } from './ManualSelectionToolbar';
 import { SelectableProposalsTable } from './SelectableProposalsTable';
 import { StandardSelectionFooter } from './StandardSelectionFooter';
@@ -44,6 +44,7 @@ export const ManualSelectionList = ({
   const t = useTranslations();
   const { user } = useUser();
   const posthog = usePostHog();
+  const router = useRouter();
   const isFinalPhase = confirmVariant === 'finalPhase';
 
   const [selectedCategory, setSelectedCategory] = useState('all-categories');
@@ -78,7 +79,6 @@ export const ManualSelectionList = ({
     instance.currentStateId,
   );
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [successModalOpen, setSuccessModalOpen] = useState(false);
 
   // Resolve selected ids → proposals via a cache that accumulates across
   // refetches, so picks survive filter/sort changes that exclude them.
@@ -115,11 +115,15 @@ export const ManualSelectionList = ({
     onSuccess: () => {
       // Channel-based invalidation flips selectionsAreConfirmed in the client
       // tRPC cache, which both the (client) DecisionHeader and DecisionStateRouter
-      // observe via useSuspenseQuery — no router.refresh() needed.
+      // observe via useSuspenseQuery — DecisionStateRouter then swaps to
+      // ResultsPage. Add the resultsLive flag to the URL so the dialog mounted
+      // on ResultsPage opens on this admin's machine only.
       setSelectedIds([]);
       setIsConfirmOpen(false);
       if (isFinalPhase) {
-        setSuccessModalOpen(true);
+        const params = new URLSearchParams(window.location.search);
+        params.set('resultsLive', '1');
+        router.replace(`${window.location.pathname}?${params.toString()}`);
       }
     },
     onError: (error) => {
@@ -264,12 +268,6 @@ export const ManualSelectionList = ({
         />
       )}
 
-      {isFinalPhase ? (
-        <FinalPhaseSubmissionSuccessDialog
-          isOpen={successModalOpen}
-          onOpenChange={setSuccessModalOpen}
-        />
-      ) : null}
     </div>
   );
 };
