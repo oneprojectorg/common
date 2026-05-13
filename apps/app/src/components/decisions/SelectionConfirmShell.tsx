@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@op/ui/Button';
-import { Dialog, DialogTrigger } from '@op/ui/Dialog';
+import { DialogTrigger } from '@op/ui/Dialog';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import type { ReactNode } from 'react';
 
@@ -44,20 +44,18 @@ export const SelectionConfirmShell = ({
       </Button>
 
       <Modal isDismissable>
-        <Dialog className="h-full">
-          <ModalHeader>{headerLabel}</ModalHeader>
-          <ModalBody>{children}</ModalBody>
-          <ModalFooter>
-            <Button
-              className="w-full"
-              color="primary"
-              onPress={onConfirm}
-              isDisabled={isSubmitting}
-            >
-              {isSubmitting ? t('Submitting...') : confirmLabel}
-            </Button>
-          </ModalFooter>
-        </Dialog>
+        <ModalHeader>{headerLabel}</ModalHeader>
+        <ModalBody>{children}</ModalBody>
+        <ModalFooter>
+          <Button
+            className="w-full"
+            color="primary"
+            onPress={onConfirm}
+            isDisabled={isSubmitting}
+          >
+            {isSubmitting ? t('Submitting...') : confirmLabel}
+          </Button>
+        </ModalFooter>
       </Modal>
     </DialogTrigger>
   );
