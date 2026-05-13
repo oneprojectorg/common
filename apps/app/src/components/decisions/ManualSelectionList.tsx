@@ -8,7 +8,6 @@ import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { toast } from '@op/ui/Toast';
-import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LuLeaf, LuTriangleAlert } from 'react-icons/lu';
@@ -44,7 +43,6 @@ export const ManualSelectionList = ({
   const t = useTranslations();
   const { user } = useUser();
   const posthog = usePostHog();
-  const router = useRouter();
   const isFinalPhase = confirmVariant === 'finalPhase';
 
   const [selectedCategory, setSelectedCategory] = useState('all-categories');
@@ -113,10 +111,9 @@ export const ManualSelectionList = ({
 
   const submitMutation = trpc.decision.submitManualSelection.useMutation({
     onSuccess: () => {
-      // Channel-based invalidation (Channels.decisionInstance) handles the
-      // client query; router.refresh re-renders the SSR DecisionHeader so
-      // its gradient/background picks up the new selectionsAreConfirmed.
-      router.refresh();
+      // Channel-based invalidation refreshes the client query; DecisionStateRouter
+      // watches selectionsAreConfirmed/currentStateId and calls router.refresh()
+      // so the SSR DecisionHeader re-renders for both submitter and observers.
       setSelectedIds([]);
       setIsConfirmOpen(false);
     },

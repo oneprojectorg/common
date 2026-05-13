@@ -1,11 +1,10 @@
 import { type ProcessPhase } from '@op/api/encoders';
 import { createClient } from '@op/api/serverClient';
 import type { DecisionInstanceData } from '@op/common';
-import { isLastPhase } from '@op/common/client';
-import { cn } from '@op/ui/utils';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
 
+import { DecisionHeaderShell } from '@/components/decisions/DecisionHeaderShell';
 import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
 import { DecisionProcessStepper } from '@/components/decisions/DecisionProcessStepper';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
@@ -69,24 +68,12 @@ export async function DecisionHeader({
     };
   });
 
-  // Only the confirmed results view gets the redPurple gradient. Legacy
-  // instances always render results. New-format instances on the last
-  // phase only count once an admin has confirmed selections — until then
-  // we show the final-phase manual-selection view on a light background.
-  const isResultsView =
-    useLegacy ||
-    (isLastPhase(instance.currentStateId, instancePhases) &&
-      (instance as { selectionsAreConfirmed?: boolean })
-        .selectionsAreConfirmed === true);
-
+  // The gradient depends on selectionsAreConfirmed, which flips via channel
+  // invalidation. Delegate the conditional className to the client shell so
+  // it derives from the live tRPC cache (deduped with DecisionStateRouter's
+  // suspense query) instead of needing a router.refresh() round-trip.
   return (
-    <div
-      className={cn(
-        isResultsView
-          ? 'bg-redPurple text-neutral-offWhite'
-          : 'bg-neutral-offWhite text-gray-700',
-      )}
-    >
+    <DecisionHeaderShell instanceId={instanceId} useLegacy={useLegacy}>
       <DecisionInstanceHeader
         backTo={{
           href:
@@ -116,6 +103,6 @@ export async function DecisionHeader({
 
         {children}
       </DecisionTranslationProvider>
-    </div>
+    </DecisionHeaderShell>
   );
 }
