@@ -8,6 +8,8 @@ import { Header3 } from '@op/ui/Header';
 import { Suspense } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
+import { useTranslations } from '@/lib/i18n/routing';
+
 import { TranslatedText } from '@/components/TranslatedText';
 
 import { DecisionActionBar } from '../DecisionActionBar';
@@ -43,14 +45,17 @@ export function ReviewPage({
   const canReview = Boolean(instance.access?.review);
   const isAdmin = Boolean(instance.access?.admin);
 
+  const t = useTranslations();
   const translation = useDecisionTranslation();
   const description =
     instance.description ?? instance.instanceData?.templateDescription;
+  const phaseAdditionalInfo =
+    translation?.additionalInfo ?? currentPhase.additionalInfo;
   const actionBarDescription =
-    translation?.additionalInfo ??
-    currentPhase.additionalInfo ??
-    translation?.description ??
-    description;
+    phaseAdditionalInfo ?? translation?.description ?? description;
+  const actionBarLabel = phaseAdditionalInfo
+    ? t('About this phase')
+    : t('About the process');
 
   return (
     <div className="min-h-full">
@@ -81,6 +86,7 @@ export function ReviewPage({
             <DecisionActionBar
               instanceId={instance.id}
               description={actionBarDescription}
+              label={actionBarLabel}
               markup={!!translation?.additionalInfo}
               showSubmitButton={false}
             />
