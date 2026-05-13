@@ -321,7 +321,7 @@ test.describe('Decision Manual Selection — full flow', () => {
       .click();
 
     await expect(
-      authenticatedPage.getByText('2 proposals advancing'),
+      authenticatedPage.getByText('2 winning proposals selected'),
     ).toBeVisible();
     await expect(confirmButton).toBeEnabled();
 
