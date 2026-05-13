@@ -237,7 +237,9 @@ export class SchemaValidator {
     schema?: JSONSchema7,
   ): string {
     const fieldPath = this.getFieldPath(error.instancePath, error.keyword);
-    const fieldName = fieldPath.split('.').pop() || '';
+    // Use the outermost segment for display — the user sees "Budget", not
+    // "Amount", even when the constraint that failed lives on `budget.amount`.
+    const fieldName = fieldPath.split('.')[0] || '';
     const friendlyName = this.getFieldDisplayName(fieldName, schema);
 
     switch (error.keyword) {

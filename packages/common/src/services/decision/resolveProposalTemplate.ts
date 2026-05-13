@@ -1,5 +1,6 @@
 import { db } from '@op/db/client';
 
+import { normalizeProposalTemplate } from './normalizeProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import type { ProposalTemplateSchema } from './types';
 
@@ -21,7 +22,7 @@ export async function resolveProposalTemplate(
     (instanceData?.proposalTemplate as ProposalTemplateSchema) ?? null;
 
   if (fromInstance) {
-    return fromInstance;
+    return normalizeProposalTemplate(fromInstance);
   }
 
   const process = await db.query.decisionProcesses.findFirst({
@@ -34,5 +35,8 @@ export async function resolveProposalTemplate(
     unknown
   > | null;
 
-  return (processSchema?.proposalTemplate as ProposalTemplateSchema) ?? null;
+  const fromProcess =
+    (processSchema?.proposalTemplate as ProposalTemplateSchema) ?? null;
+
+  return fromProcess ? normalizeProposalTemplate(fromProcess) : null;
 }
