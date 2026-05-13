@@ -9,7 +9,11 @@
     "./lib/utils": "./src/lib/utils.ts",
     "./Field": "./src/components/Field.ts",
     "./Input": "./src/components/Input.tsx",
-    "./Textarea": "./src/components/Textarea.tsx"
+    "./Textarea": "./src/components/Textarea.tsx",
+    "./Button": "./src/components/Button.tsx",
+    "./IconButton": "./src/components/IconButton.tsx",
+    "./LoadingSpinner": "./src/components/LoadingSpinner.tsx",
+    "./Tooltip": "./src/components/Tooltip.tsx"
   },
   "scripts": {
     "build": "pnpm build:styles && storybook build",
