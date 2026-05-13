@@ -1,12 +1,21 @@
 import type { DecisionSchemaDefinition } from '@op/common';
-import { ProposalStatus, processInstances, proposals } from '@op/db/schema';
+import {
+  ProposalReviewAssignmentStatus,
+  ProposalReviewRequestState,
+  ProposalStatus,
+  processInstances,
+  proposals,
+} from '@op/db/schema';
 import { db, eq } from '@op/db/test';
 import {
   createDecisionInstance,
+  createInstanceMember,
   createOrganization,
   createProposal,
+  createReviewScenario,
   getSeededTemplate,
   grantDecisionProfileAccess,
+  grantInstanceReviewerRole,
 } from '@op/test';
 
 import {
@@ -175,5 +184,94 @@ test.describe('Non-reviewer review-phase view', () => {
     await expect(
       authenticatedPage.getByText('Proposals to review'),
     ).toBeVisible({ timeout: 36_000 });
+  });
+
+  test('author with a pending revision request sees the chip and Revise proposal CTA', async ({
+    browser,
+    org,
+    supabaseAdmin,
+  }, testInfo) => {
+    const testId = `review-author-revision-${testInfo.workerIndex}-${Date.now()}`;
+    const template = await getSeededTemplate();
+
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: REVIEW_SCHEMA,
+    });
+
+    await db
+      .update(processInstances)
+      .set({ currentStateId: 'review' })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    const { user: author } = await createInstanceMember({
+      supabaseAdmin,
+      testId: `${testId}-author`,
+      instanceProfileId: instance.profileId,
+    });
+    const { user: reviewer } = await createInstanceMember({
+      supabaseAdmin,
+      testId: `${testId}-reviewer`,
+      instanceProfileId: instance.profileId,
+    });
+
+    await grantInstanceReviewerRole({
+      instanceProfileId: instance.profileId,
+      authUserId: reviewer.authUserId,
+      email: reviewer.email,
+      roleName: `Reviewer-${testId}`,
+    });
+
+    await createReviewScenario({
+      instance: { id: instance.instance.id },
+      author,
+      reviewer: { profileId: reviewer.profileId },
+      proposalData: {
+        title: PROPOSAL_TITLE,
+        collaborationDocId: 'test-proposal-view-doc',
+      },
+      assignmentStatus: ProposalReviewAssignmentStatus.AWAITING_AUTHOR_REVISION,
+      revisionRequest: {
+        state: ProposalReviewRequestState.REQUESTED,
+        requestComment: 'Please add a detailed budget breakdown.',
+      },
+    });
+
+    const authorContext = await browser.newContext();
+    const authorPage = await authorContext.newPage();
+    await authenticateAsUser(authorPage, {
+      email: author.email,
+      password: TEST_USER_DEFAULT_PASSWORD,
+    });
+
+    await authorPage.goto(`/en/decisions/${instance.slug}`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    // Author lands on the participant grid (not the reviewer assignments list)
+    await expect(
+      authorPage.getByRole('link', { name: PROPOSAL_TITLE }).first(),
+    ).toBeVisible({ timeout: 36_000 });
+    await expect(authorPage.getByText('Proposals to review')).toHaveCount(0);
+
+    // The chip + CTA replace the standard Like/Follow footer on the
+    // author's own card while a revision request is pending.
+    await expect(
+      authorPage.getByText('Revision requested').first(),
+    ).toBeVisible();
+    await expect(
+      authorPage.getByRole('link', { name: 'Revise proposal' }),
+    ).toBeVisible();
+    await expect(authorPage.getByRole('button', { name: 'Like' })).toHaveCount(
+      0,
+    );
+    await expect(
+      authorPage.getByRole('button', { name: 'Follow' }),
+    ).toHaveCount(0);
+
+    await authorContext.close();
   });
 });

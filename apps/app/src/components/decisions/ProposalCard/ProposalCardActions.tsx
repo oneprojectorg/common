@@ -74,6 +74,30 @@ export function ProposalCardActions({
   );
 }
 
+export function ProposalCardReviseAction({
+  editHref,
+  className,
+}: {
+  editHref: string;
+  className?: string;
+}) {
+  const t = useTranslations();
+  const [navigating, setNavigating] = useState(false);
+
+  return (
+    <ButtonLink
+      href={editHref}
+      color="primary"
+      size="small"
+      className={`w-full${className ? ` ${className}` : ''}`}
+      onPress={() => setNavigating(true)}
+      isLoading={navigating}
+    >
+      {t('Revise proposal')}
+    </ButtonLink>
+  );
+}
+
 /**
  * Edit/Delete actions for the proposal owner
  */

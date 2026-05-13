@@ -24,6 +24,7 @@ import { Link } from '@/lib/i18n/routing';
 import { Bullet } from '../../Bullet';
 import { DocumentNotAvailable } from '../DocumentNotAvailable';
 import { useCardTranslation } from '../ProposalTranslationContext';
+import { RevisionRequestChip } from '../RevisionRequestChip';
 import {
   getProposalContentPreview,
   resolveProposalSystemFields,
@@ -195,15 +196,26 @@ export function ProposalCardBudget({
 export function ProposalCardMeta({
   proposal,
   withLink = true,
+  revisionRequested = false,
   className,
 }: BaseProposalCardProps & {
+  revisionRequested?: boolean;
   className?: string;
 }) {
   return (
     <div className={cn('flex flex-wrap items-center gap-2', className)}>
       <ProposalCardAuthor proposal={proposal} withLink={withLink} />
-      <ProposalCardCategory proposal={proposal} />
-      <ProposalCardStatus proposal={proposal} />
+      {revisionRequested ? (
+        <>
+          <Bullet />
+          <RevisionRequestChip />
+        </>
+      ) : (
+        <>
+          <ProposalCardCategory proposal={proposal} />
+          <ProposalCardStatus proposal={proposal} />
+        </>
+      )}
     </div>
   );
 }

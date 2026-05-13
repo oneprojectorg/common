@@ -4,12 +4,14 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import {
   type DecisionAccess,
+  type InstancePhaseData,
   ProposalFilter,
   ProposalStatus,
 } from '@op/api/encoders';
 import {
   type Proposal,
   type ProposalTranslation,
+  ProposalReviewRequestState,
   SUPPORTED_LOCALES,
   type SupportedLocale,
   isVotingEligible,
@@ -44,6 +46,7 @@ import {
   ProposalCardMetrics,
   ProposalCardOwnerActions,
   ProposalCardPreview,
+  ProposalCardReviseAction,
 } from './ProposalCard';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import { ResponsiveSelect } from './ResponsiveSelect';
@@ -440,7 +443,10 @@ const ViewProposalsList = ({
   permissions,
   hasFilter,
   proposalsHidden,
-}: ProposalsProps) => {
+  revisionRequestIdByProposalId,
+}: ProposalsProps & {
+  revisionRequestIdByProposalId?: Map<string, string>;
+}) => {
   const canManageProposals = permissions?.admin ?? false;
   if (!proposals || proposals.length === 0) {
     if (proposalsHidden && !hasFilter) {
@@ -455,10 +461,17 @@ const ViewProposalsList = ({
         const isDraft = proposal.status === ProposalStatus.DRAFT;
         const isEditable = Boolean(proposal.isEditable);
         const showMenu = canManageProposals;
+        const revisionRequestId = revisionRequestIdByProposalId?.get(
+          proposal.id,
+        );
+        const hasRevisionRequest = revisionRequestId !== undefined;
         // Use new route structure if decisionSlug is provided, otherwise fallback to legacy route
         const editHref = decisionSlug
           ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}/edit`
           : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}/edit`;
+        const reviseHref = revisionRequestId
+          ? `${editHref}?reviewRevision=${revisionRequestId}`
+          : editHref;
         const viewHref = decisionSlug
           ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
           : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
@@ -479,13 +492,21 @@ const ViewProposalsList = ({
                     )
                   }
                 />
-                <ProposalCardMeta proposal={proposal} />
+                <ProposalCardMeta
+                  proposal={proposal}
+                  revisionRequested={hasRevisionRequest}
+                />
                 <ProposalCardPreview proposal={proposal} />
               </ProposalCardContent>
             </div>
             <ProposalCardContent>
               <ProposalCardFooter>
-                {isDraft ? (
+                {hasRevisionRequest ? (
+                  <>
+                    <ProposalCardMetrics proposal={proposal} />
+                    <ProposalCardReviseAction editHref={reviseHref} />
+                  </>
+                ) : isDraft ? (
                   <ProposalCardOwnerActions
                     proposal={proposal}
                     editHref={editHref}
@@ -513,7 +534,12 @@ const ViewProposalsList = ({
   );
 };
 
-const Proposals = (props: ProposalsProps) => {
+const Proposals = ({
+  revisionRequestIdByProposalId,
+  ...props
+}: ProposalsProps & {
+  revisionRequestIdByProposalId?: Map<string, string>;
+}) => {
   const { instanceId, isVotingPhase } = props;
 
   // Get voting status for this user and process
@@ -530,7 +556,12 @@ const Proposals = (props: ProposalsProps) => {
     return <VotingProposalsList {...props} />;
   }
 
-  return <ViewProposalsList {...props} />;
+  return (
+    <ViewProposalsList
+      {...props}
+      revisionRequestIdByProposalId={revisionRequestIdByProposalId}
+    />
+  );
 };
 
 export const ProposalsList = ({
@@ -541,7 +572,7 @@ export const ProposalsList = ({
   permissions,
   initialFilter,
   phase,
-  isVotingPhase,
+  currentPhase,
   proposalsHidden,
 }: {
   slug: string;
@@ -556,11 +587,13 @@ export const ProposalsList = ({
   initialFilter?: ProposalFilter;
   /** When set to 'results', all proposals are returned as non-editable */
   phase?: 'results';
-  /** When true, the current phase has voting enabled — always show voting UI */
-  isVotingPhase?: boolean;
+  /** Current phase; capability flags are derived from `rules`. */
+  currentPhase?: InstancePhaseData;
   /** When true, new proposals are hidden by default in the current phase. */
   proposalsHidden?: boolean;
 }) => {
+  const isReviewPhase = currentPhase?.rules?.proposals?.review === true;
+  const isVotingPhase = currentPhase?.rules?.voting?.submit === true;
   const t = useTranslations();
   const { user } = useUser();
   const router = useRouter();
@@ -652,6 +685,18 @@ export const ProposalsList = ({
 
   const { proposals: allProposals } = proposalsData ?? {};
   const canManageProposals = permissions?.admin ?? false;
+
+  const { data: revisionRequestsData } =
+    trpc.decision.listProposalsRevisionRequests.useQuery(
+      { states: [ProposalReviewRequestState.REQUESTED] },
+      { enabled: !!isReviewPhase },
+    );
+
+  const revisionRequestIdByProposalId = new Map<string, string>(
+    revisionRequestsData?.revisionRequests.map(
+      ({ proposal, revisionRequest }) => [proposal.id, revisionRequest.id],
+    ),
+  );
 
   // --- Translation state ---
   const locale = useLocale();
@@ -932,6 +977,7 @@ export const ProposalsList = ({
           hasFilter={selectedCategory !== 'all-categories'}
           isVotingPhase={isVotingPhase}
           proposalsHidden={proposalsHidden}
+          revisionRequestIdByProposalId={revisionRequestIdByProposalId}
         />
       </ProposalTranslationProvider>
 

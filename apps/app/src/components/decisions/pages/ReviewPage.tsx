@@ -105,6 +105,7 @@ export function ReviewPage({
                   decisionSlug={decisionSlug}
                   decisionProfileId={decisionProfileId}
                   permissions={instance.access}
+                  currentPhase={currentPhase}
                 />
               )}
             </Suspense>
