@@ -6,7 +6,6 @@ import { ProposalFilter } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
-import { FooterBar } from '@op/ui/FooterBar';
 import { Header3 } from '@op/ui/Header';
 import { toast } from '@op/ui/Toast';
 import { useRouter } from 'next/navigation';
@@ -16,10 +15,10 @@ import { LuLeaf, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { FinalPhaseSelectionConfirmDialog } from './FinalPhaseSelectionConfirmDialog';
+import { FinalPhaseSelectionFooter } from './FinalPhaseSelectionFooter';
 import { ManualSelectionToolbar } from './ManualSelectionToolbar';
 import { SelectableProposalsTable } from './SelectableProposalsTable';
-import { SelectionConfirmDialog } from './SelectionConfirmDialog';
+import { StandardSelectionFooter } from './StandardSelectionFooter';
 import { useManualSelection } from './useManualSelection';
 import { useProposalFilters } from './useProposalFilters';
 
@@ -242,38 +241,26 @@ export const ManualSelectionList = ({
         />
       )}
 
-      <FooterBar position="fixed" className="bg-neutral-offWhite/95">
-        <FooterBar.Start>
-          <span className="text-base text-neutral-black">
-            {t('{count} proposals advancing', { count: numSelected })}
-          </span>
-        </FooterBar.Start>
-        <FooterBar.Center />
-        <FooterBar.End>
-          {isFinalPhase ? (
-            <FinalPhaseSelectionConfirmDialog
-              isOpen={isConfirmOpen}
-              onOpenChange={handleConfirmDialogOpenChange}
-              proposals={selectedProposals}
-              count={numSelected}
-              triggerDisabled={numSelected === 0}
-              isSubmitting={submitMutation.isPending}
-              onConfirm={handleConfirmSelection}
-            />
-          ) : (
-            <SelectionConfirmDialog
-              isOpen={isConfirmOpen}
-              onOpenChange={handleConfirmDialogOpenChange}
-              proposals={selectedProposals}
-              count={numSelected}
-              phaseName={currentPhaseName}
-              triggerDisabled={numSelected === 0}
-              isSubmitting={submitMutation.isPending}
-              onConfirm={handleConfirmSelection}
-            />
-          )}
-        </FooterBar.End>
-      </FooterBar>
+      {isFinalPhase ? (
+        <FinalPhaseSelectionFooter
+          selectedProposals={selectedProposals}
+          numSelected={numSelected}
+          isConfirmOpen={isConfirmOpen}
+          onConfirmOpenChange={handleConfirmDialogOpenChange}
+          onConfirm={handleConfirmSelection}
+          isSubmitting={submitMutation.isPending}
+        />
+      ) : (
+        <StandardSelectionFooter
+          selectedProposals={selectedProposals}
+          numSelected={numSelected}
+          phaseName={currentPhaseName}
+          isConfirmOpen={isConfirmOpen}
+          onConfirmOpenChange={handleConfirmDialogOpenChange}
+          onConfirm={handleConfirmSelection}
+          isSubmitting={submitMutation.isPending}
+        />
+      )}
     </div>
   );
 };

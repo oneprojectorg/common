@@ -1230,6 +1230,7 @@
   "Results for this process haven't been processed yet.": "Results for this process haven't been processed yet.",
   "These {numProposals} proposals will be funded and results will be shared with all participants.": "{numProposals, plural, one {This # proposal will be funded and results will be shared with all participants.} other {These # proposals will be funded and results will be shared with all participants.}}",
   "{count} proposals advancing": "{count, plural, one {# proposal advancing} other {# proposals advancing}}",
+  "{count} winning proposals selected": "{count, plural, one {# winning proposal selected} other {# winning proposals selected}}",
   "Eligible proposals": "Eligible proposals",
   "Proposal": "Proposal",
   "Budget": "Budget",

@@ -1191,6 +1191,7 @@
   "Results for this process haven't been processed yet.": "Os resultados deste processo ainda não foram processados.",
   "These {numProposals} proposals will be funded and results will be shared with all participants.": "{numProposals, plural, one {Esta # proposta será financiada e os resultados serão compartilhados com todos os participantes.} other {Estas # propostas serão financiadas e os resultados serão compartilhados com todos os participantes.}}",
   "{count} proposals advancing": "{count, plural, one {# proposta avançando} other {# propostas avançando}}",
+  "{count} winning proposals selected": "{count, plural, one {# proposta vencedora selecionada} other {# propostas vencedoras selecionadas}}",
   "Eligible proposals": "Propostas elegíveis",
   "Proposal": "Proposta",
   "Budget": "Orçamento",
