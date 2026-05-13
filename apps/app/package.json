@@ -33,6 +33,7 @@
     "@op/supabase": "workspace:*",
     "@op/types": "workspace:*",
     "@op/ui": "workspace:*",
+    "@op/ui-next": "workspace:*",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/api-logs": "^0.208.0",
     "@opentelemetry/auto-instrumentations-web": "^0.56.0",

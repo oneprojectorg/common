@@ -43,6 +43,7 @@
     "w:supabase": "pnpm -C ./services/supabase",
     "w:translation": "pnpm -C ./services/translation",
     "w:ui": "pnpm -C ./packages/ui",
+    "w:ui-next": "pnpm -C ./packages/ui-next",
     "w:workflows": "pnpm -C ./services/workflows"
   },
   "dependencies": {},
