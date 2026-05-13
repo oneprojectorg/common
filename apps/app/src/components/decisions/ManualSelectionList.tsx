@@ -267,7 +267,6 @@ export const ManualSelectionList = ({
           isSubmitting={submitMutation.isPending}
         />
       )}
-
     </div>
   );
 };

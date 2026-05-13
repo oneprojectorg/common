@@ -1219,6 +1219,6 @@
   "{submitted} out of {total} reviewers submitted a review for this proposal": "{submitted} de {total} avaliadores enviaram uma avaliação para esta proposta",
   "View review by {name}": "Ver avaliação de {name}",
   "Results are live!": "Os resultados estão disponíveis!",
-  "All participants have been notified and can now view the winning proposals.": "Todos os participantes foram notificados e agora podem ver as propostas vencedoras.",
+  "All participants can now view the winning proposals.": "Todos os participantes já podem ver as propostas vencedoras.",
   "View public results page": "Ver página pública de resultados"
 }
