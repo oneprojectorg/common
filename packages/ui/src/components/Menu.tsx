@@ -22,12 +22,19 @@ import type { PopoverProps } from './Popover';
 
 export { AriaMenuTrigger as MenuTrigger };
 
-const menuListClasses =
-  'max-h-[inherit] overflow-auto rounded-md border bg-white p-2 text-neutral-charcoal shadow-light outline outline-0';
-
+/**
+ * Bare menu list. Use inside an existing popover container (`OptionMenu`,
+ * `Modal`, etc.). For a standalone trigger-and-popover combo use `Menu`.
+ */
 export const MenuList = <T extends object>(props: AriaMenuProps<T>) => {
   return (
-    <AriaMenu {...props} className={cn(menuListClasses, props.className)} />
+    <AriaMenu
+      {...props}
+      className={cn(
+        'max-h-[inherit] overflow-auto rounded-md border bg-white p-2 text-neutral-charcoal shadow-light outline outline-0',
+        props.className,
+      )}
+    />
   );
 };
 
@@ -38,6 +45,11 @@ interface MenuProps<T> extends AriaMenuProps<T> {
   popoverClassName?: PopoverProps['className'];
 }
 
+/**
+ * Trigger-target menu. Renders a `Popover` wrapping a `MenuList`, so consumers
+ * should NOT add their own `<Popover>` around it. For use inside a parent
+ * popover (e.g. `OptionMenu` body) use `MenuList` directly.
+ */
 export const Menu = <T extends object>({
   placement,
   showArrow,

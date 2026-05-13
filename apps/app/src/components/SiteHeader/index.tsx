@@ -11,9 +11,14 @@ import { screens } from '@op/styles/constants';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Chip } from '@op/ui/Chip';
-import { Menu, MenuItem, MenuItemSimple, MenuSeparator } from '@op/ui/Menu';
+import {
+  Menu,
+  MenuItem,
+  MenuItemSimple,
+  MenuSeparator,
+  MenuTrigger,
+} from '@op/ui/Menu';
 import { Modal, ModalBody } from '@op/ui/Modal';
-import { MenuTrigger } from '@op/ui/RAC';
 import { SidebarTrigger } from '@op/ui/Sidebar';
 import { Skeleton } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';

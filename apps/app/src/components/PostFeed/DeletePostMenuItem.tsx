@@ -9,24 +9,20 @@ import { useRouter } from 'next/navigation';
 
 import { useTranslations } from '@/lib/i18n';
 
-export const DeletePost = ({ post }: { post: Post }) => {
+export const DeletePostMenuItem = ({ post }: { post: Post }) => {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const router = useRouter();
 
   const deletePost = trpc.organization.deletePost.useMutation({
     onMutate: async () => {
-      // If this is a comment (has parentPostId), update the comments cache optimistically
       if (post.parentPostId) {
         const queryKey = createCommentsQueryKey(post.parentPostId);
 
-        // Cancel any outgoing refetches for comments
         await utils.posts.getPosts.cancel(queryKey);
 
-        // Snapshot previous comments
         const previousComments = utils.posts.getPosts.getData(queryKey);
 
-        // Optimistically remove the comment
         utils.posts.getPosts.setData(queryKey, (old) => {
           if (!old) return old;
           return old.filter((comment) => comment.id !== post.id);
@@ -44,7 +40,6 @@ export const DeletePost = ({ post }: { post: Post }) => {
       toast.success({ message: t('Post deleted') });
     },
     onError: (error, _variables, context) => {
-      // Rollback optimistic update for comments on error
       if (post.parentPostId && context?.previousComments) {
         const queryKey = createCommentsQueryKey(post.parentPostId);
         utils.posts.getPosts.setData(queryKey, context.previousComments);
@@ -54,19 +49,12 @@ export const DeletePost = ({ post }: { post: Post }) => {
     },
   });
 
-  const handleDeletePost = (post: Post) => {
-    deletePost.mutate({
-      id: post.id,
-    });
-  };
-
   return (
     <MenuItem
-      key="delete"
       className="px-3 py-1 text-functional-red"
       onAction={() => {
         if (post.id) {
-          handleDeletePost(post);
+          deletePost.mutate({ id: post.id });
         }
       }}
     >
