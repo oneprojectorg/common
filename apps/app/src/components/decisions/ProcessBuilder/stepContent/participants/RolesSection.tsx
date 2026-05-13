@@ -11,7 +11,7 @@ import { DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2, Header3 } from '@op/ui/Header';
 import { IconButton } from '@op/ui/IconButton';
-import { Menu, MenuItem } from '@op/ui/Menu';
+import { MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { TextField } from '@op/ui/TextField';
@@ -295,20 +295,18 @@ function RoleRow({
             className="ml-auto rounded bg-white shadow-light"
             size="medium"
           >
-            <Menu className="min-w-28 p-2">
-              <MenuItem key="edit" onAction={() => setIsEditing(true)}>
-                <LuPencil className="size-4" />
-                {t('Edit')}
-              </MenuItem>
-              <MenuItem
-                key="delete"
-                onAction={() => onDelete(role)}
-                className="text-functional-red"
-              >
-                <LuTrash2 className="size-4" />
-                {t('Delete')}
-              </MenuItem>
-            </Menu>
+            <MenuItem key="edit" onAction={() => setIsEditing(true)}>
+              <LuPencil className="size-4" />
+              {t('Edit')}
+            </MenuItem>
+            <MenuItem
+              key="delete"
+              onAction={() => onDelete(role)}
+              className="text-functional-red"
+            >
+              <LuTrash2 className="size-4" />
+              {t('Delete')}
+            </MenuItem>
           </OptionMenu>
         )}
       </TableCell>
@@ -582,24 +580,22 @@ function MobileRoleCard({
             variant="outline"
             className="rounded-lg"
           >
-            <Menu className="min-w-28 p-2">
-              {onEdit && (
-                <MenuItem key="edit" onAction={() => onEdit(role)}>
-                  <LuPencil className="size-4" />
-                  {t('Edit')}
-                </MenuItem>
-              )}
-              {onDelete && (
-                <MenuItem
-                  key="delete"
-                  onAction={() => onDelete(role)}
-                  className="text-functional-red"
-                >
-                  <LuTrash2 className="size-4" />
-                  {t('Delete')}
-                </MenuItem>
-              )}
-            </Menu>
+            {onEdit && (
+              <MenuItem key="edit" onAction={() => onEdit(role)}>
+                <LuPencil className="size-4" />
+                {t('Edit')}
+              </MenuItem>
+            )}
+            {onDelete && (
+              <MenuItem
+                key="delete"
+                onAction={() => onDelete(role)}
+                className="text-functional-red"
+              >
+                <LuTrash2 className="size-4" />
+                {t('Delete')}
+              </MenuItem>
+            )}
           </OptionMenu>
         )}
       </div>

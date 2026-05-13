@@ -2,7 +2,7 @@
 
 import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
 import type { AdminDecisionInstance } from '@op/common/client';
-import { Menu, MenuItem } from '@op/ui/Menu';
+import { MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
@@ -106,16 +106,15 @@ export const DecisionsRowCells = ({
             aria-label={t('Decision options')}
             variant="outline"
             size="medium"
+            menuClassName="min-w-48 p-2"
           >
-            <Menu className="min-w-48 p-2">
-              <MenuItem
-                key="view-instance-data"
-                onAction={() => setIsDataModalOpen(true)}
-                className="px-3 py-1"
-              >
-                {t('View instance data')}
-              </MenuItem>
-            </Menu>
+            <MenuItem
+              key="view-instance-data"
+              onAction={() => setIsDataModalOpen(true)}
+              className="px-3 py-1"
+            >
+              {t('View instance data')}
+            </MenuItem>
           </OptionMenu>
         </div>
         <InstanceDataModal

@@ -2,7 +2,7 @@
 
 import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
 import type { AdminOrg } from '@op/api/encoders';
-import { Menu, MenuItem } from '@op/ui/Menu';
+import { MenuItem } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { TableCell } from '@op/ui/ui/table';
@@ -52,16 +52,15 @@ export const OrgsRowCells = ({ org }: { org: AdminOrg }) => {
             aria-label={t('Organization options')}
             variant="outline"
             size="medium"
+            menuClassName="min-w-48 p-2"
           >
-            <Menu className="min-w-48 p-2">
-              <MenuItem
-                key="view-members"
-                onAction={() => setIsMembersModalOpen(true)}
-                className="px-3 py-1"
-              >
-                {t('View members')}
-              </MenuItem>
-            </Menu>
+            <MenuItem
+              key="view-members"
+              onAction={() => setIsMembersModalOpen(true)}
+              className="px-3 py-1"
+            >
+              {t('View members')}
+            </MenuItem>
           </OptionMenu>
         </div>
         <OrgMembersModal

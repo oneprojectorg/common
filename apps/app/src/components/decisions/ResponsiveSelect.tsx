@@ -3,7 +3,7 @@
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
-import { Menu, MenuItem } from '@op/ui/Menu';
+import { MenuItem, MenuList } from '@op/ui/Menu';
 import { Modal, ModalBody } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
 import { type ReactNode, useState } from 'react';
@@ -79,7 +79,7 @@ export function ResponsiveSelect<T extends string>({
           className={BOTTOM_SHEET_CLASS}
         >
           <ModalBody className="pb-safe p-0">
-            <Menu className="flex min-w-full flex-col border-0 p-0 shadow-none">
+            <MenuList className="flex min-w-full flex-col border-0 p-0 shadow-none">
               {items.map((item, index) => (
                 <MenuItem
                   key={item.id}
@@ -95,7 +95,7 @@ export function ResponsiveSelect<T extends string>({
                   {item.label}
                 </MenuItem>
               ))}
-            </Menu>
+            </MenuList>
           </ModalBody>
         </Modal>
       </>

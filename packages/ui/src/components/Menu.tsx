@@ -17,23 +17,43 @@ import { LuCheck, LuChevronRight } from 'react-icons/lu';
 import { VariantProps, cn, tv } from '../lib/utils';
 import { DropdownSection, dropdownItemStyles } from './ListBox';
 import type { DropdownSectionProps } from './ListBox';
+import { Popover } from './Popover';
 import type { PopoverProps } from './Popover';
 
 export { AriaMenuTrigger as MenuTrigger };
 
+const menuListClasses =
+  'max-h-[inherit] overflow-auto rounded-md border bg-white p-2 text-neutral-charcoal shadow-light outline outline-0';
+
+export const MenuList = <T extends object>(props: AriaMenuProps<T>) => {
+  return (
+    <AriaMenu {...props} className={cn(menuListClasses, props.className)} />
+  );
+};
+
 interface MenuProps<T> extends AriaMenuProps<T> {
   placement?: PopoverProps['placement'];
+  showArrow?: PopoverProps['showArrow'];
+  offset?: PopoverProps['offset'];
+  popoverClassName?: PopoverProps['className'];
 }
 
-export const Menu = <T extends object>(props: MenuProps<T>) => {
+export const Menu = <T extends object>({
+  placement,
+  showArrow,
+  offset,
+  popoverClassName,
+  ...menuProps
+}: MenuProps<T>) => {
   return (
-    <AriaMenu
-      {...props}
-      className={cn(
-        'max-h-[inherit] overflow-auto rounded-md border bg-white p-2 text-neutral-charcoal shadow-light outline outline-0',
-        props.className,
-      )}
-    />
+    <Popover
+      placement={placement}
+      showArrow={showArrow}
+      offset={offset}
+      className={popoverClassName}
+    >
+      <MenuList {...menuProps} />
+    </Popover>
   );
 };
 
@@ -41,28 +61,22 @@ export const menuItemStyles = tv({
   base: 'group flex cursor-pointer items-center gap-4 rounded-md px-4 py-2 text-neutral-charcoal outline outline-0 -outline-offset-1 forced-color-adjust-none select-none',
   variants: {
     unstyled: {
-      true: 'group flex cursor-pointer items-center px-0 py-0 pt-0 pr-0 pb-0 pl-0 text-neutral-charcoal outline outline-0 -outline-offset-1 forced-color-adjust-none select-none',
-      false: '',
+      true: 'px-0 py-0',
     },
     selected: {
       true: 'bg-primary-tealWhite outline-1 outline-primary-teal',
-      false: '',
     },
     isDisabled: {
       false: 'text-neutral-black',
       true: 'text-neutral-gray2',
     },
-    isFocused: {
-      true: 'bg-neutral-offWhite outline-1 outline-neutral-gray1',
+    isHovered: {
+      true: 'bg-neutral-offWhite',
+    },
+    isFocusVisible: {
+      true: 'outline-2 outline-primary-teal',
     },
   },
-  compoundVariants: [
-    {
-      isFocused: false,
-      isOpen: true,
-      className: 'bg-neutral-gray1',
-    },
-  ],
 });
 type MenuItemVariants = VariantProps<typeof menuItemStyles>;
 

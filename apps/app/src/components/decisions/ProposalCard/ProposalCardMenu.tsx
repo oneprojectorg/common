@@ -11,7 +11,6 @@ import { DialogTrigger } from '@op/ui/Dialog';
 import { IconButton } from '@op/ui/IconButton';
 import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Popover } from '@op/ui/Popover';
 import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
@@ -312,9 +311,9 @@ export function ProposalCardMenu({
       ) : (
         <MenuTrigger>
           {menuTriggerButton}
-          <Popover placement="bottom end">
-            <Menu className="p-2">{renderMenuItems(false)}</Menu>
-          </Popover>
+          <Menu className="p-2" placement="bottom end">
+            {renderMenuItems(false)}
+          </Menu>
         </MenuTrigger>
       )}
       {proposal.isEditable && (

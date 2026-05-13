@@ -9,7 +9,6 @@ import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Menu, MenuItem, MenuSeparator, MenuTrigger } from '@op/ui/Menu';
-import { Popover } from '@op/ui/Popover';
 import { toast } from '@op/ui/Toast';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -72,41 +71,39 @@ export const CreateMenu = () => {
           <LuPlus className="size-4" />
           <span className="hidden sm:block">{t('Create')}</span>
         </Button>
-        <Popover>
-          <Menu>
+        <Menu>
+          <MenuItem
+            id="create-org"
+            onAction={() => setIsCreateOrganizationModalOpen(true)}
+          >
+            <LuUsers className="size-4" /> {t('Organization')}
+          </MenuItem>
+          {createDecisionEnabled && (
             <MenuItem
-              id="create-org"
-              onAction={() => setIsCreateOrganizationModalOpen(true)}
+              id="create-decision"
+              isDisabled={isCreatingDecision}
+              onAction={() => createDecisionMutation.mutate()}
             >
-              <LuUsers className="size-4" /> {t('Organization')}
+              {isCreatingDecision ? (
+                <LoadingSpinner className="size-4" />
+              ) : (
+                <LuMessageCircle className="size-4" />
+              )}{' '}
+              {t('Decision-making process')}
             </MenuItem>
-            {createDecisionEnabled && (
+          )}
+          {isOrg && (
+            <>
+              <MenuSeparator />
               <MenuItem
-                id="create-decision"
-                isDisabled={isCreatingDecision}
-                onAction={() => createDecisionMutation.mutate()}
+                id="invite-member"
+                onAction={() => setIsInviteModalOpen(true)}
               >
-                {isCreatingDecision ? (
-                  <LoadingSpinner className="size-4" />
-                ) : (
-                  <LuMessageCircle className="size-4" />
-                )}{' '}
-                {t('Decision-making process')}
+                <LuUserPlus className="size-4" /> {t('Invite member')}
               </MenuItem>
-            )}
-            {isOrg && (
-              <>
-                <MenuSeparator />
-                <MenuItem
-                  id="invite-member"
-                  onAction={() => setIsInviteModalOpen(true)}
-                >
-                  <LuUserPlus className="size-4" /> {t('Invite member')}
-                </MenuItem>
-              </>
-            )}
-          </Menu>
-        </Popover>
+            </>
+          )}
+        </Menu>
       </MenuTrigger>
       <CreateOrganizationModal
         isOpen={isCreateOrganizationModalOpen}
