@@ -502,7 +502,10 @@ const ViewProposalsList = ({
             <ProposalCardContent>
               <ProposalCardFooter>
                 {hasRevisionRequest ? (
-                  <ProposalCardReviseAction editHref={reviseHref} />
+                  <>
+                    <ProposalCardMetrics proposal={proposal} />
+                    <ProposalCardReviseAction editHref={reviseHref} />
+                  </>
                 ) : isDraft ? (
                   <ProposalCardOwnerActions
                     proposal={proposal}

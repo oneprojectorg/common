@@ -1,14 +1,14 @@
 import { Chip } from '@op/ui/Chip';
 import { cn } from '@op/ui/utils';
-import { LuMail } from 'react-icons/lu';
+import { LuCircleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 export function RevisionRequestChip({ className }: { className?: string }) {
   const t = useTranslations();
   return (
-    <Chip className={cn('inline-flex gap-1 bg-primary-orange2/10', className)}>
-      <LuMail className="size-3 text-primary-orange2" />
+    <Chip className={cn('inline-flex gap-1 bg-primary-orange2/5', className)}>
+      <LuCircleAlert className="size-3 text-primary-orange2" />
       {t('Revision requested')}
     </Chip>
   );
