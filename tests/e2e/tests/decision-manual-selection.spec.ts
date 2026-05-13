@@ -372,7 +372,7 @@ test.describe('Decision Manual Selection — full flow', () => {
     await authenticatedPage.reload({ waitUntil: 'networkidle' });
 
     const fundedHeading = authenticatedPage.getByRole('heading', {
-      name: 'Funded Proposals',
+      name: 'Selected Proposals',
     });
     await expect(fundedHeading).toBeVisible({ timeout: 15_000 });
 
