@@ -6,7 +6,10 @@
   "type": "module",
   "exports": {
     "./styles.css": "./dist/styles.css",
-    "./lib/utils": "./src/lib/utils.ts"
+    "./lib/utils": "./src/lib/utils.ts",
+    "./Field": "./src/components/Field.ts",
+    "./Input": "./src/components/Input.tsx",
+    "./Textarea": "./src/components/Textarea.tsx"
   },
   "scripts": {
     "build": "pnpm build:styles && storybook build",
