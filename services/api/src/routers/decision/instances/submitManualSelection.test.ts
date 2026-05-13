@@ -533,14 +533,52 @@ describe.concurrent('submitManualSelection', () => {
       status: ProposalStatus.APPROVED,
     });
 
+    // DIAGNOSTIC: status of proposals just before sub→review
+    const preTransitionProposals = await db
+      .select({ id: proposals.id, status: proposals.status, createdAt: proposals.createdAt })
+      .from(proposals)
+      .where(inArray(proposals.id, [p1.id, p2.id]));
+    console.log('[DIAG] pre-sub→review proposals:', JSON.stringify(preTransitionProposals));
+
     // sub → review: pass-all default attaches both proposals to the inbound
     // transition snapshot — the typical product flow.
     await caller.decision.transitionFromPhase({ instanceId });
+
+    // DIAGNOSTIC: what got attached during sub→review
+    const subReviewRow = await db
+      .select({ id: stateTransitionHistory.id, fromStateId: stateTransitionHistory.fromStateId, toStateId: stateTransitionHistory.toStateId, transitionedAt: stateTransitionHistory.transitionedAt })
+      .from(stateTransitionHistory)
+      .where(eq(stateTransitionHistory.processInstanceId, instanceId));
+    console.log('[DIAG] stateTransitionHistory after sub→review:', JSON.stringify(subReviewRow));
+    const subReviewAttached = await db
+      .select({ proposalId: decisionTransitionProposals.proposalId, transitionHistoryId: decisionTransitionProposals.transitionHistoryId })
+      .from(decisionTransitionProposals)
+      .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+    console.log('[DIAG] decisionTransitionProposals after sub→review:', JSON.stringify(subReviewAttached));
 
     // review → final: review's limit:0 pipeline strands every proposal,
     // leaving final awaiting manual selection. processResults fires via the
     // post-advance hook, writing an initial row with selectedCount = 0.
     await caller.decision.transitionFromPhase({ instanceId });
+
+    // DIAGNOSTIC: state after rev→final
+    const allTransitions = await db
+      .select({ id: stateTransitionHistory.id, fromStateId: stateTransitionHistory.fromStateId, toStateId: stateTransitionHistory.toStateId, transitionedAt: stateTransitionHistory.transitionedAt })
+      .from(stateTransitionHistory)
+      .where(eq(stateTransitionHistory.processInstanceId, instanceId))
+      .orderBy(stateTransitionHistory.transitionedAt);
+    console.log('[DIAG] all transitions after rev→final:', JSON.stringify(allTransitions));
+    const finalAttached = await db
+      .select({ proposalId: decisionTransitionProposals.proposalId, transitionHistoryId: decisionTransitionProposals.transitionHistoryId })
+      .from(decisionTransitionProposals)
+      .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+    console.log('[DIAG] decisionTransitionProposals after rev→final:', JSON.stringify(finalAttached));
+    const postTransitionProposals = await db
+      .select({ id: proposals.id, status: proposals.status, createdAt: proposals.createdAt })
+      .from(proposals)
+      .where(inArray(proposals.id, [p1.id, p2.id]));
+    console.log('[DIAG] post-rev→final proposals:', JSON.stringify(postTransitionProposals));
+    console.log('[DIAG] expecting candidates: p1=', p1.id, 'p2=', p2.id);
 
     const initialResults = await db
       .select()
