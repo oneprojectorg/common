@@ -1,4 +1,7 @@
-import type { DecisionSchemaDefinition } from '@op/common';
+import type {
+  DecisionInstanceData,
+  DecisionSchemaDefinition,
+} from '@op/common';
 import {
   ProposalReviewAssignmentStatus,
   ProposalReviewRequestState,
@@ -68,6 +71,8 @@ const REVIEW_SCHEMA = {
     },
   ],
 } satisfies DecisionSchemaDefinition;
+
+const PHASE_ADDITIONAL_INFO = 'Phase-specific reviewer guidance.';
 
 // The card title is resolved from the collab doc fragment mock, which returns
 // 'Community Solar Initiative' for any proposal using `test-proposal-view-doc`.
@@ -167,6 +172,82 @@ test.describe('Non-reviewer review-phase view', () => {
     await expect(
       memberPage.getByRole('heading', { name: 'About the process' }),
     ).toBeVisible();
+
+    await memberContext.close();
+  });
+
+  test('non-reviewer member sees "About this phase" CTA when phase has additionalInfo', async ({
+    browser,
+    org,
+    supabaseAdmin,
+  }) => {
+    const template = await getSeededTemplate();
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: REVIEW_SCHEMA,
+    });
+
+    // `additionalInfo` lives on instance phase data (not the schema), so we
+    // inject it directly after instance creation — matching how
+    // `updateDecisionInstance` writes it in production.
+    const instanceData = instance.instance.instanceData as DecisionInstanceData;
+    const patchedInstanceData: DecisionInstanceData = {
+      ...instanceData,
+      phases: instanceData.phases.map((phase) =>
+        phase.phaseId === 'review'
+          ? { ...phase, additionalInfo: PHASE_ADDITIONAL_INFO }
+          : phase,
+      ),
+    };
+    await db
+      .update(processInstances)
+      .set({ currentStateId: 'review', instanceData: patchedInstanceData })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    const memberOrg = await createOrganization({
+      testId: `review-author-phase-${Date.now()}`,
+      supabaseAdmin,
+      users: { admin: 1, member: 0 },
+    });
+    const memberUser = memberOrg.adminUser;
+
+    await grantDecisionProfileAccess({
+      profileId: instance.profileId,
+      authUserId: memberUser.authUserId,
+      email: memberUser.email,
+      isAdmin: false,
+    });
+
+    const memberContext = await browser.newContext();
+    const memberPage = await memberContext.newPage();
+    await authenticateAsUser(memberPage, {
+      email: memberUser.email,
+      password: TEST_USER_DEFAULT_PASSWORD,
+    });
+
+    await memberPage.goto(`/en/decisions/${instance.slug}`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    const aboutButton = memberPage.getByRole('button', {
+      name: 'About this phase',
+    });
+    await expect(aboutButton).toBeVisible({ timeout: 36_000 });
+    await expect(
+      memberPage.getByRole('button', { name: 'About the process' }),
+    ).toHaveCount(0);
+
+    await aboutButton.click();
+    await expect(
+      memberPage.getByRole('dialog', { name: 'About this phase' }).first(),
+    ).toBeVisible();
+    await expect(
+      memberPage.getByRole('heading', { name: 'About this phase' }),
+    ).toBeVisible();
+    await expect(memberPage.getByText(PHASE_ADDITIONAL_INFO)).toBeVisible();
 
     await memberContext.close();
   });
