@@ -516,30 +516,30 @@ describe.concurrent('submitManualSelection', () => {
       schemaWithZeroSelectingReview,
     );
 
-    // Advance to 'review' first, then create proposals during the review
-    // window. This makes the candidate set come from the review phase window
-    // (createdAt between sub→review and rev→final) rather than from the
-    // submission phase's attachment snapshot — which made the test fragile
-    // to the order in which two concurrent createProposal updates commit.
+    // Submit proposals sequentially, mirroring real users (one at a time).
+    // Concurrent Promise.all here was racy in CI: the helper's INSERT(DRAFT)
+    // and UPDATE(APPROVED) run in separate transactions, and overlapping
+    // checkouts could leave the sub→review pass-all read seeing only one.
+    const p1 = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Proposal 1 ${task.id}` },
+      status: ProposalStatus.APPROVED,
+    });
+    const p2 = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Proposal 2 ${task.id}` },
+      status: ProposalStatus.APPROVED,
+    });
+
+    // sub → review: pass-all default attaches both proposals to the inbound
+    // transition snapshot — the typical product flow.
     await caller.decision.transitionFromPhase({ instanceId });
 
-    const [p1, p2] = await Promise.all([
-      testData.createProposal({
-        userEmail,
-        processInstanceId: instanceId,
-        proposalData: { title: `Proposal 1 ${task.id}` },
-        status: ProposalStatus.APPROVED,
-      }),
-      testData.createProposal({
-        userEmail,
-        processInstanceId: instanceId,
-        proposalData: { title: `Proposal 2 ${task.id}` },
-        status: ProposalStatus.APPROVED,
-      }),
-    ]);
-
-    // review → final fires processResults via the post-advance hook, writing
-    // an initial row with selectedCount = 0.
+    // review → final: review's limit:0 pipeline strands every proposal,
+    // leaving final awaiting manual selection. processResults fires via the
+    // post-advance hook, writing an initial row with selectedCount = 0.
     await caller.decision.transitionFromPhase({ instanceId });
 
     const initialResults = await db
