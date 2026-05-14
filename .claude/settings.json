@@ -16,23 +16,6 @@
     ],
     "ask": []
   },
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/block-protected-branches.sh"
-          },
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/require-feature-branch.sh"
-          }
-        ]
-      }
-    ]
-  },
   "sandbox": {
     "enabled": false,
     "autoAllowBashIfSandboxed": true,
