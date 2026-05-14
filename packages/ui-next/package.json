@@ -21,7 +21,11 @@
     "./StatusDot": "./src/components/StatusDot.tsx",
     "./Header": "./src/components/Header.tsx",
     "./Link": "./src/components/Link.tsx",
-    "./Separator": "./src/components/Separator.tsx"
+    "./Separator": "./src/components/Separator.tsx",
+    "./TextField": "./src/components/TextField.tsx",
+    "./NumberField": "./src/components/NumberField.tsx",
+    "./SearchField": "./src/components/SearchField.tsx",
+    "./Select": "./src/components/Select.tsx"
   },
   "scripts": {
     "build": "pnpm build:styles && storybook build",
