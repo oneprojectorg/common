@@ -63,8 +63,9 @@ section by the planner. Begin work directly.
 
 # IMPLEMENT
 
-Run the `implement-task` skill (in `.claude/skills/`). Pass
-`TASK_ID={{TASK_ID}}`. The skill owns:
+Run the `implement-task` skill (shipped by the common-agent-toolkit
+plugin; resolves via `~/.claude/skills/implement-task/SKILL.md`).
+Pass `TASK_ID={{TASK_ID}}`. The skill owns:
 
 - Reading the task body and parent PRD.
 - BUG MODE (`/investigate` for bug-fix tasks).

@@ -34,7 +34,7 @@
     ]
   },
   "sandbox": {
-    "enabled": true,
+    "enabled": false,
     "autoAllowBashIfSandboxed": true,
     "filesystem": {
       "allowWrite": ["."],
