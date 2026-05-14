@@ -6,7 +6,9 @@ import {
   eq,
   ilike,
   inArray,
+  isNull,
   ne,
+  notInArray,
   or,
   sql,
 } from '@op/db/client';
@@ -48,7 +50,12 @@ export interface ListProposalsInput {
   status?: ProposalStatus;
   search?: string;
   categoryId?: string;
-  /** Scope results to a specific phase. Defaults to the current phase when omitted. */
+  /**
+   * Scope results to a specific phase. Defaults to the current phase when
+   * omitted. Only meaningful with `scope: 'phase'`; must be undefined when
+   * `scope: 'all'`. The tRPC encoder enforces this; internal callers should
+   * respect the same contract.
+   */
   phaseId?: string;
   /**
    * Restrict results to proposals voted on by this profile. Bypasses phase
@@ -63,6 +70,14 @@ export interface ListProposalsInput {
    */
   proposalIds?: string[];
   phase?: 'results';
+  /**
+   * Controls which proposals are eligible:
+   * - `'phase'` (default): standard phase-scoped visibility.
+   * - `'all'`: bypass phase scoping and return every non-draft,
+   *   non-rejected, non-duplicate, non-deleted proposal on the instance.
+   *   Visibility (HIDDEN) and soft-delete filters still apply.
+   */
+  scope?: 'phase' | 'all';
   limit?: number;
   offset?: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'status';
@@ -197,6 +212,8 @@ export const listProposals = async ({
   }
   const instanceProfileId = instance.profileId;
 
+  const isAllScope = input.scope === 'all';
+
   // Resolve phase-scoped IDs for non-drafts and drafts. Drafts are phase-scoped
   // via a `createdAt` window since they're never attached to transition
   // snapshots. The combined resolver shares a single instance-context lookup
@@ -207,6 +224,12 @@ export const listProposals = async ({
     phaseProposalIds: string[];
     phaseDraftIds: string[];
   }> = (async () => {
+    if (isAllScope) {
+      // `all` bypasses phase scoping entirely; the WHERE clause below
+      // derives membership from status + visibility + deletedAt instead of
+      // pre-resolved ID sets.
+      return { phaseProposalIds: [], phaseDraftIds: [] };
+    }
     if (explicitScopeIds !== undefined) {
       // Caller specified the exact ID set (proposalIds or votedByProfileId).
       // Drafts can't appear in either: proposalIds is internal and
@@ -277,7 +300,8 @@ export const listProposals = async ({
   // For authenticated callers, drafts have their own phase-scoped ID set
   // (`phaseDraftIds`) which may surface results even when `phaseProposalIds` is
   // empty, so we cannot early-return here.
-  if (skipAccessCheck && phaseProposalIds.length === 0) {
+  // `all` doesn't use phase IDs at all, so this short-circuit must skip it.
+  if (skipAccessCheck && !isAllScope && phaseProposalIds.length === 0) {
     return {
       proposals: [],
       total: 0,
@@ -335,64 +359,95 @@ export const listProposals = async ({
       : categoryFilter;
   }
 
-  // Phase scoping applies separately to non-drafts and drafts. Non-drafts are
-  // resolved via transition snapshots + a strict `createdAt` window; drafts use
-  // a half-open `createdAt` window only (they're never attached to a snapshot).
-  // When the relevant ID set is empty (e.g. instance has no submitted proposals
-  // yet), each branch must short-circuit to false rather than emit an empty IN ().
-  const phaseScopedNonDraftIdFilter =
-    phaseProposalIds.length > 0
-      ? and(
-          ne(proposals.status, ProposalStatus.DRAFT),
-          inArray(proposals.id, phaseProposalIds),
-        )
-      : sql`false`;
+  if (isAllScope) {
+    // Valid = non-draft, non-rejected, non-duplicate, non-deleted. Visibility
+    // (HIDDEN) still hides proposals from non-admin, non-owner callers.
+    const validStatusFilter = notInArray(proposals.status, [
+      ProposalStatus.DRAFT,
+      ProposalStatus.REJECTED,
+      ProposalStatus.DUPLICATE,
+    ]);
+    const deletedAtFilter = isNull(proposals.deletedAt);
 
-  if (skipAccessCheck) {
-    // Trusted contexts get all phase-scoped non-draft proposals.
-    whereClause = whereClause
-      ? and(whereClause, phaseScopedNonDraftIdFilter)
-      : phaseScopedNonDraftIdFilter;
+    const validFilter =
+      skipAccessCheck || canManageProposals
+        ? and(validStatusFilter, deletedAtFilter)
+        : and(
+            validStatusFilter,
+            deletedAtFilter,
+            or(
+              eq(proposals.visibility, Visibility.VISIBLE),
+              inArray(
+                proposals.profileId,
+                db
+                  .select({ profileId: profileUsers.profileId })
+                  .from(profileUsers)
+                  .where(eq(profileUsers.authUserId, input.authUserId)),
+              ),
+            ),
+          );
+
+    whereClause = whereClause ? and(whereClause, validFilter) : validFilter;
   } else {
-    // Draft proposals are phase-scoped to their `createdAt` window: a draft made
-    // in Phase 1 is only visible when viewing Phase 1, even after the instance
-    // advances. Ownership scoping (creator + invited collaborators via
-    // `profileUsers`) is applied inside `getPhaseProposalAndDraftIds` via a
-    // subquery, so `phaseDraftIds` is already access-filtered — no further
-    // ownership filter is needed here.
-    const draftFilter =
-      phaseDraftIds.length > 0
+    // Phase scoping applies separately to non-drafts and drafts. Non-drafts are
+    // resolved via transition snapshots + a strict `createdAt` window; drafts use
+    // a half-open `createdAt` window only (they're never attached to a snapshot).
+    // When the relevant ID set is empty (e.g. instance has no submitted proposals
+    // yet), each branch must short-circuit to false rather than emit an empty IN ().
+    const phaseScopedNonDraftIdFilter =
+      phaseProposalIds.length > 0
         ? and(
-            eq(proposals.status, ProposalStatus.DRAFT),
-            inArray(proposals.id, phaseDraftIds),
+            ne(proposals.status, ProposalStatus.DRAFT),
+            inArray(proposals.id, phaseProposalIds),
           )
         : sql`false`;
 
-    // Non-draft proposals: phase-scoped, plus the HIDDEN visibility filter for
-    // non-admins. Hidden proposals stay visible to the creator and any invited
-    // collaborators on the proposal's profile — same pattern the draft filter
-    // uses, so a collaborator's view of a co-authored proposal doesn't change
-    // the moment it's submitted with HIDDEN visibility.
-    const nonDraftVisibilityFilter = canManageProposals
-      ? phaseScopedNonDraftIdFilter
-      : and(
-          phaseScopedNonDraftIdFilter,
-          or(
-            eq(proposals.visibility, Visibility.VISIBLE),
-            inArray(
-              proposals.profileId,
-              db
-                .select({ profileId: profileUsers.profileId })
-                .from(profileUsers)
-                .where(eq(profileUsers.authUserId, input.authUserId)),
-            ),
-          ),
-        );
+    if (skipAccessCheck) {
+      // Trusted contexts get all phase-scoped non-draft proposals.
+      whereClause = whereClause
+        ? and(whereClause, phaseScopedNonDraftIdFilter)
+        : phaseScopedNonDraftIdFilter;
+    } else {
+      // Draft proposals are phase-scoped to their `createdAt` window: a draft made
+      // in Phase 1 is only visible when viewing Phase 1, even after the instance
+      // advances. Ownership scoping (creator + invited collaborators via
+      // `profileUsers`) is applied inside `getPhaseProposalAndDraftIds` via a
+      // subquery, so `phaseDraftIds` is already access-filtered — no further
+      // ownership filter is needed here.
+      const draftFilter =
+        phaseDraftIds.length > 0
+          ? and(
+              eq(proposals.status, ProposalStatus.DRAFT),
+              inArray(proposals.id, phaseDraftIds),
+            )
+          : sql`false`;
 
-    const permissionFilter = or(draftFilter, nonDraftVisibilityFilter);
-    whereClause = whereClause
-      ? and(whereClause, permissionFilter)
-      : permissionFilter;
+      // Non-draft proposals: phase-scoped, plus the HIDDEN visibility filter for
+      // non-admins. Hidden proposals stay visible to the creator and any invited
+      // collaborators on the proposal's profile — same pattern the draft filter
+      // uses, so a collaborator's view of a co-authored proposal doesn't change
+      // the moment it's submitted with HIDDEN visibility.
+      const nonDraftVisibilityFilter = canManageProposals
+        ? phaseScopedNonDraftIdFilter
+        : and(
+            phaseScopedNonDraftIdFilter,
+            or(
+              eq(proposals.visibility, Visibility.VISIBLE),
+              inArray(
+                proposals.profileId,
+                db
+                  .select({ profileId: profileUsers.profileId })
+                  .from(profileUsers)
+                  .where(eq(profileUsers.authUserId, input.authUserId)),
+              ),
+            ),
+          );
+
+      const permissionFilter = or(draftFilter, nonDraftVisibilityFilter);
+      whereClause = whereClause
+        ? and(whereClause, permissionFilter)
+        : permissionFilter;
+    }
   }
 
   // Get proposals with optimized ordering

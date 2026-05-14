@@ -665,11 +665,16 @@ export const ProposalsList = ({
       dir: 'asc' | 'desc';
       limit: number;
       phase?: 'results';
+      scope?: 'phase' | 'all';
     } = {
       processInstanceId: instanceId,
       dir: sortOrder === 'newest' ? 'desc' : 'asc',
       limit: 50,
       phase,
+      // Results-page "All proposals" tab shows every valid (non-draft,
+      // non-rejected, non-duplicate, non-deleted) proposal on the instance,
+      // not just the funded ones carried into the results phase.
+      ...(phase === 'results' ? { scope: 'all' as const } : {}),
     };
 
     // Only include categoryId if it's not "all-categories"
