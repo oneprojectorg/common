@@ -12,7 +12,6 @@ import {
   NotFoundError,
   UnauthorizedError,
 } from '../../utils/error';
-import { assertGlobalRole } from '../assert';
 
 /**
  * Accept a proposal invite and ensure the user is also added as a Member
@@ -56,14 +55,11 @@ export const acceptProposalInvite = async ({
     throw new CommonError('You are already a member of this profile');
   }
 
-  // Find the proposal (and its process instance) and the Member role in parallel
-  const [proposal, memberRole] = await Promise.all([
-    db.query.proposals.findFirst({
-      where: { profileId: invite.profileId },
-      with: { processInstance: true },
-    }),
-    assertGlobalRole('Member'),
-  ]);
+  // Find the proposal (and its process instance) to locate the parent decision
+  const proposal = await db.query.proposals.findFirst({
+    where: { profileId: invite.profileId },
+    with: { processInstance: true },
+  });
 
   // Check if we need to add the user to the parent decision process
   let decisionProfileIdToAdd: string | null = null;
@@ -88,6 +84,17 @@ export const acceptProposalInvite = async ({
             acceptedOn: { isNull: true },
           },
         })) ?? null;
+
+      // Without an explicit pending decision invite we have no role to assign
+      // on the parent decision profile. Fail rather than silently granting a
+      // global Member role (which produced process members with no role-
+      // specific assignment).
+      if (!pendingDecisionInvite) {
+        throw new NotFoundError(
+          'Pending decision invite',
+          decisionProfileIdToAdd,
+        );
+      }
     }
   }
 
@@ -139,21 +146,24 @@ export const acceptProposalInvite = async ({
     ];
 
     if (decisionProfileUser) {
+      // Guard ensured above: if we created a decision profile user, there is a
+      // pending decision invite whose role we use for the assignment.
+      if (!pendingDecisionInvite) {
+        throw new CommonError(
+          'Missing pending decision invite for decision membership',
+        );
+      }
+
       followUpWrites.push(
         tx.insert(profileUserToAccessRoles).values({
           profileUserId: decisionProfileUser.id,
-          accessRoleId: pendingDecisionInvite?.accessRoleId ?? memberRole.id,
+          accessRoleId: pendingDecisionInvite.accessRoleId,
         }),
+        tx
+          .update(profileInvites)
+          .set({ acceptedOn: now })
+          .where(eq(profileInvites.id, pendingDecisionInvite.id)),
       );
-
-      if (pendingDecisionInvite) {
-        followUpWrites.push(
-          tx
-            .update(profileInvites)
-            .set({ acceptedOn: now })
-            .where(eq(profileInvites.id, pendingDecisionInvite.id)),
-        );
-      }
     }
 
     await Promise.all(followUpWrites);

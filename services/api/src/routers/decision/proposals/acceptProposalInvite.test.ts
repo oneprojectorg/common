@@ -20,7 +20,7 @@ async function createAuthenticatedCaller(email: string) {
 }
 
 describe.concurrent('decision.acceptProposalInvite', () => {
-  it('should add user as Member of the decision process when accepting a proposal invite', async ({
+  it('should fail when no pending decision invite exists for a non-member of the parent process', async ({
     task,
     onTestFinished,
   }) => {
@@ -63,45 +63,38 @@ describe.concurrent('decision.acceptProposalInvite', () => {
     profileData.trackProfileInvite(invitee.email, proposal.profileId);
 
     const caller = await createAuthenticatedCaller(invitee.email);
-    await caller.decision.acceptProposalInvite({
-      profileId: proposal.profileId,
+
+    await expect(
+      caller.decision.acceptProposalInvite({
+        profileId: proposal.profileId,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'NotFoundError' },
     });
 
-    // Assert: user is a profileUser of the proposal profile
+    // Assert: no proposal profileUser was created
     const proposalProfileUser = await db.query.profileUsers.findFirst({
       where: {
         profileId: proposal.profileId,
         authUserId: invitee.authUserId,
       },
     });
-    expect(proposalProfileUser).toBeDefined();
-    expect(proposalProfileUser?.profileId).toBe(proposal.profileId);
-    expect(proposalProfileUser?.authUserId).toBe(invitee.authUserId);
+    expect(proposalProfileUser).toBeUndefined();
 
-    // Assert: proposal invite was marked as accepted
-    const updatedInvite = await db.query.profileInvites.findFirst({
+    // Assert: proposal invite was NOT marked accepted
+    const unchangedInvite = await db.query.profileInvites.findFirst({
       where: { id: invite.id },
     });
-    expect(updatedInvite?.acceptedOn).not.toBeNull();
+    expect(unchangedInvite?.acceptedOn).toBeNull();
 
-    // Assert: user is a profileUser of the decision process profile with Member role
+    // Assert: no decision profileUser was created
     const decisionProfileUser = await db.query.profileUsers.findFirst({
       where: {
         profileId: instance.profileId,
         authUserId: invitee.authUserId,
       },
-      with: {
-        roles: {
-          with: {
-            accessRole: true,
-          },
-        },
-      },
     });
-
-    expect(decisionProfileUser).toBeDefined();
-    expect(decisionProfileUser?.roles).toHaveLength(1);
-    expect(decisionProfileUser?.roles[0]?.accessRole.id).toBe(ROLES.MEMBER.id);
+    expect(decisionProfileUser).toBeUndefined();
   });
 
   it('should skip decision membership if user is already a member', async ({
