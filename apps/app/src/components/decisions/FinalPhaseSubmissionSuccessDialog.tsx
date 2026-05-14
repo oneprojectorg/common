@@ -2,7 +2,6 @@
 
 import { Button } from '@op/ui/Button';
 import { CheckIcon } from '@op/ui/CheckIcon';
-import { Dialog } from '@op/ui/Dialog';
 import { Modal } from '@op/ui/Modal';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -38,25 +37,24 @@ export const FinalPhaseSubmissionSuccessDialog = () => {
       isOpen={isOpen}
       onOpenChange={handleOpenChange}
       confetti
+      className="flex flex-col items-center gap-6 p-12 text-center"
     >
-      <Dialog className="flex flex-col items-center gap-6 p-12 text-center">
-        <CheckIcon />
-        <div className="flex flex-col gap-3">
-          <h2 className="font-serif text-title-lg text-neutral-black">
-            {t('Results are live!')}
-          </h2>
-          <p className="max-w-sm text-base text-neutral-charcoal">
-            {t('All participants can now view the winning proposals.')}
-          </p>
-        </div>
-        <Button
-          color="primary"
-          className="w-full"
-          onPress={() => handleOpenChange(false)}
-        >
-          {t('View public results page')}
-        </Button>
-      </Dialog>
+      <CheckIcon />
+      <div className="flex flex-col gap-3">
+        <h2 className="font-serif text-title-lg text-neutral-black">
+          {t('Results are live!')}
+        </h2>
+        <p className="max-w-sm text-base text-neutral-charcoal">
+          {t('All participants can now view the winning proposals.')}
+        </p>
+      </div>
+      <Button
+        color="primary"
+        className="w-full"
+        onPress={() => handleOpenChange(false)}
+      >
+        {t('View public results page')}
+      </Button>
     </Modal>
   );
 };
