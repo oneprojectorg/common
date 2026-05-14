@@ -123,3 +123,38 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Gradient utilities used by Avatar fallbacks. Self-contained so ui-next
+ * doesn't depend on @op/styles for these. */
+@utility bg-gradient {
+  background-image: radial-gradient(
+    154% 99.31% at 0% 0%,
+    #3ec300 0%,
+    #0396a6 51.56%
+  );
+}
+
+@utility bg-redTeal {
+  background-image: radial-gradient(
+    96.92% 140.1% at 72.02% 100%,
+    #0396a6 0%,
+    #ff613d 92.19%,
+    #fffbfa 99.99%
+  );
+}
+
+@utility bg-blueGreen {
+  background-image: radial-gradient(
+    91.78% 91.78% at 89.17% 4.38%,
+    #3ec300 0%,
+    #0046c2 100%
+  );
+}
+
+@utility bg-orangePurple {
+  background-image: radial-gradient(
+    70.56% 70.56% at 72.75% 33.21%,
+    #6200c3 0%,
+    #ff613d 100%
+  );
+}

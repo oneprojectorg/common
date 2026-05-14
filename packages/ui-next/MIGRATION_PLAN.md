@@ -304,6 +304,7 @@ Then one final merge `shadcn-full-install` → `dev`.
 
 1. **Visual regression automation review.** Skipped during migration (target style intentionally different). Post-Tier 10b, design is stable — evaluate Playwright screenshot diffs or Chromatic for ongoing protection.
 2. **Prod bundle audit.** Skipped during migration. Measure `pnpm w:app build` First Load JS per route after Tier 10b vs current baseline. Investigate any regression > 10%.
+3. **Legacy-prop API cleanup.** Tier 1 wrappers (Button/IconButton/LoadingSpinner/Tooltip) preserve `@op/ui` prop names (`color`, `size`, `isDisabled`, `onPress`, `isLoading`, sibling-Tooltip pattern, etc.) for codemod simplicity. After all tiers land, run a cleanup pass that rewrites call sites to pure shadcn API (`variant`, `disabled`, `onClick`, manual loading state, nested Tooltip JSX). Mechanical but tedious; defer until post-Tier 10b.
 
 ## Risk register
 

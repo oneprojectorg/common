@@ -41,7 +41,17 @@ type ShadcnVariant = NonNullable<
 >['variant'];
 type ShadcnSize = NonNullable<Parameters<typeof buttonVariants>[0]>['size'];
 
-type LegacyVariant = 'primary' | 'icon' | 'pill' | 'link';
+type LegacyVariant =
+  | 'primary'
+  | 'icon'
+  | 'pill'
+  | 'link'
+  // shadcn-native variant names passed through unchanged
+  | 'default'
+  | 'outline'
+  | 'secondary'
+  | 'ghost'
+  | 'destructive';
 type LegacyColor =
   | 'primary'
   | 'secondary'
@@ -86,6 +96,17 @@ function mapVariant({
 }): { variant: ShadcnVariant; extra: string } {
   if (surface === 'outline') return { variant: 'outline', extra: '' };
   if (surface === 'ghost') return { variant: 'ghost', extra: '' };
+
+  // Pass-through for shadcn-native variant names.
+  if (
+    variant === 'default' ||
+    variant === 'outline' ||
+    variant === 'secondary' ||
+    variant === 'ghost' ||
+    variant === 'destructive'
+  ) {
+    return { variant, extra: '' };
+  }
 
   if (variant === 'link') return { variant: 'link', extra: '' };
   if (variant === 'pill') {

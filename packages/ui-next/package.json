@@ -13,7 +13,15 @@
     "./Button": "./src/components/Button.tsx",
     "./IconButton": "./src/components/IconButton.tsx",
     "./LoadingSpinner": "./src/components/LoadingSpinner.tsx",
-    "./Tooltip": "./src/components/Tooltip.tsx"
+    "./Tooltip": "./src/components/Tooltip.tsx",
+    "./Surface": "./src/components/Surface.tsx",
+    "./Avatar": "./src/components/Avatar.tsx",
+    "./Skeleton": "./src/components/Skeleton.tsx",
+    "./Chip": "./src/components/Chip.tsx",
+    "./StatusDot": "./src/components/StatusDot.tsx",
+    "./Header": "./src/components/Header.tsx",
+    "./Link": "./src/components/Link.tsx",
+    "./Separator": "./src/components/Separator.tsx"
   },
   "scripts": {
     "build": "pnpm build:styles && storybook build",
