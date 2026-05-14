@@ -4,6 +4,7 @@ import { Button } from '@op/ui/Button';
 import { CheckIcon } from '@op/ui/CheckIcon';
 import { Modal } from '@op/ui/Modal';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -19,12 +20,14 @@ export const FinalPhaseSubmissionSuccessDialog = () => {
   const t = useTranslations();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const isOpen = searchParams.get(QUERY_PARAM) === '1';
+  // Local dismissal flips synchronously so pressing the button closes the
+  // modal immediately — router.replace is async and useSearchParams may not
+  // re-read in time to flip isOpen on the next render.
+  const [isDismissed, setIsDismissed] = useState(false);
+  const isOpen = !isDismissed && searchParams.get(QUERY_PARAM) === '1';
 
-  const handleOpenChange = (open: boolean) => {
-    if (open || !isOpen) {
-      return;
-    }
+  const handleClose = () => {
+    setIsDismissed(true);
     const params = new URLSearchParams(window.location.search);
     params.delete(QUERY_PARAM);
     const next = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
@@ -35,7 +38,11 @@ export const FinalPhaseSubmissionSuccessDialog = () => {
     <Modal
       isDismissable
       isOpen={isOpen}
-      onOpenChange={handleOpenChange}
+      onOpenChange={(open) => {
+        if (!open) {
+          handleClose();
+        }
+      }}
       confetti
       className="flex flex-col items-center gap-6 p-12 text-center"
     >
@@ -48,11 +55,7 @@ export const FinalPhaseSubmissionSuccessDialog = () => {
           {t('All participants can now view the winning proposals.')}
         </p>
       </div>
-      <Button
-        color="primary"
-        className="w-full"
-        onPress={() => handleOpenChange(false)}
-      >
+      <Button color="primary" className="w-full" onPress={handleClose}>
         {t('View public results page')}
       </Button>
     </Modal>
