@@ -204,10 +204,7 @@ const PostMenu = ({
   }
 
   return (
-    <OptionMenu
-      aria-label={t('Post options')}
-      className="absolute end-0 top-0"
-    >
+    <OptionMenu aria-label={t('Post options')} className="absolute end-0 top-0">
       <PostMenuContent
         post={post}
         profileId={user?.currentProfileId || ''}
