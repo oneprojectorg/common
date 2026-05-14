@@ -181,8 +181,10 @@ test.describe('Non-reviewer review-phase view', () => {
     });
 
     // Profile admin has review=true via ALL_TRUE_ACCESS → assignments list
+    // .first() guards against transient React-18 streaming-SSR duplicate while
+    // the `<div hidden id="S:N">` placeholder is awaiting `$RC` swap.
     await expect(
-      authenticatedPage.getByText('Proposals to review'),
+      authenticatedPage.getByText('Proposals to review').first(),
     ).toBeVisible({ timeout: 36_000 });
   });
 

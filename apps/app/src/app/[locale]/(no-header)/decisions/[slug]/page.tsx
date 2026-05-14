@@ -5,7 +5,6 @@ import {
 } from '@op/api/server';
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
-import { Skeleton } from '@op/ui/Skeleton';
 import { forbidden, notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -60,14 +59,12 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
           isAdmin={decisionProfile.processInstance.access?.admin}
           profileName={decisionProfile.name}
         >
-          <Suspense fallback={<Skeleton className="h-96" />}>
-            <DecisionStateRouter
-              instanceId={instanceId}
-              slug={ownerSlug}
-              decisionSlug={slug}
-              decisionProfileId={decisionProfile.id}
-            />
-          </Suspense>
+          <DecisionStateRouter
+            instanceId={instanceId}
+            slug={ownerSlug}
+            decisionSlug={slug}
+            decisionProfileId={decisionProfile.id}
+          />
         </DecisionHeader>
       </Suspense>
     </HydrationBoundary>
