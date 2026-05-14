@@ -16,7 +16,10 @@ import { LuLeaf, LuTriangleAlert } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { FinalPhaseSelectionFooter } from './FinalPhaseSelectionFooter';
-import { ManualSelectionToolbar } from './ManualSelectionToolbar';
+import {
+  ManualSelectionToolbar,
+  type SelectionFilters,
+} from './ManualSelectionToolbar';
 import { SelectableProposalsTable } from './SelectableProposalsTable';
 import { StandardSelectionFooter } from './StandardSelectionFooter';
 import { useManualSelection } from './useManualSelection';
@@ -48,9 +51,8 @@ export const ManualSelectionList = ({
   const isFinalPhase = confirmVariant === 'finalPhase';
 
   const [selectedCategory, setSelectedCategory] = useState('all-categories');
-  const [sortOrder, setSortOrder] = useState<'votes' | 'newest' | 'oldest'>(
-    'votes',
-  );
+  const [sortOrder, setSortOrder] =
+    useState<SelectionFilters['sortOrder']>('votes');
 
   const categoryId =
     selectedCategory === 'all-categories' ? undefined : selectedCategory;
@@ -152,6 +154,26 @@ export const ManualSelectionList = ({
     [instanceId, selectedIds.length, submitMutation.status, posthog],
   );
 
+  const toolbarFilters = useMemo<SelectionFilters>(
+    () => ({ proposalFilter, selectedCategory, sortOrder }),
+    [proposalFilter, selectedCategory, sortOrder],
+  );
+
+  const handleToolbarChange = useCallback(
+    (patch: Partial<SelectionFilters>) => {
+      if (patch.proposalFilter !== undefined) {
+        setProposalFilter(patch.proposalFilter);
+      }
+      if (patch.selectedCategory !== undefined) {
+        setSelectedCategory(patch.selectedCategory);
+      }
+      if (patch.sortOrder !== undefined) {
+        setSortOrder(patch.sortOrder);
+      }
+    },
+    [setProposalFilter],
+  );
+
   const handleConfirmSelection = useCallback(() => {
     posthog.capture('manual_selection_dialog_confirmed', {
       process_instance_id: instanceId,
@@ -221,12 +243,8 @@ export const ManualSelectionList = ({
         count={proposals.length}
         currentProfileId={user.currentProfile?.id}
         categories={categoriesData.categories}
-        proposalFilter={proposalFilter}
-        setProposalFilter={setProposalFilter}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-        sortOrder={sortOrder}
-        setSortOrder={setSortOrder}
+        filters={toolbarFilters}
+        onChange={handleToolbarChange}
       />
 
       {proposals.length === 0 ? (

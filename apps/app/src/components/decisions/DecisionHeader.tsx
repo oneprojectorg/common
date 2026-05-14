@@ -6,6 +6,8 @@ import { isLastPhase } from '@op/common/client';
 import { cn } from '@op/ui/utils';
 import { type ReactNode } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
 import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
 import { DecisionProcessStepper } from '@/components/decisions/DecisionProcessStepper';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
@@ -29,36 +31,31 @@ export function DecisionHeader(props: DecisionHeaderProps) {
   if (props.useLegacy) {
     return <LegacyDecisionHeaderContent {...props} />;
   }
-  return <NewDecisionHeaderContent {...props} />;
+  return <DecisionHeaderContent {...props} />;
 }
 
-function NewDecisionHeaderContent({
+function DecisionHeaderContent({
   instanceId,
   children,
   decisionSlug,
   isAdmin,
   profileName,
 }: DecisionHeaderProps) {
+  const t = useTranslations();
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
 
   const instancePhases = instance.instanceData?.phases ?? [];
-  const templateStates = instance.process?.processSchema?.phases ?? [];
 
-  const phases: ProcessPhase[] = instancePhases.map((p) => {
-    const templateState = templateStates.find((s) => s.id === p.phaseId);
-    return {
-      id: p.phaseId,
-      name: p.name || templateState?.name || '',
-      description: p.description || templateState?.description,
-      phase: {
-        startDate: p.startDate ?? templateState?.startDate,
-        endDate: p.endDate ?? templateState?.endDate,
-      },
-      advancementMethod:
-        p.rules?.advancement?.method ??
-        templateState?.rules?.advancement?.method,
-    };
-  });
+  const phases: ProcessPhase[] = instancePhases.map((p) => ({
+    id: p.phaseId,
+    name: p.name || '',
+    description: p.description,
+    phase: {
+      startDate: p.startDate,
+      endDate: p.endDate,
+    },
+    advancementMethod: p.rules?.advancement?.method,
+  }));
 
   const isResultsView =
     isLastPhase(instance.currentStateId, instancePhases) &&
@@ -79,7 +76,7 @@ function NewDecisionHeaderContent({
           instance.name ||
           instance.instanceData?.templateName ||
           instance.process?.name ||
-          ''
+          t('Untitled')
         }
         decisionSlug={decisionSlug}
         isAdmin={isAdmin}

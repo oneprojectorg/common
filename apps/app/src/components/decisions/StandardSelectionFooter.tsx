@@ -5,7 +5,13 @@ import { FooterBar } from '@op/ui/FooterBar';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { SelectionConfirmDialog } from './SelectionConfirmDialog';
+import {
+  ProposalCard,
+  ProposalCardCategory,
+  ProposalCardContent,
+  ProposalCardHeader,
+} from './ProposalCard';
+import { SelectionConfirmShell } from './SelectionConfirmShell';
 
 interface StandardSelectionFooterProps {
   selectedProposals: Proposal[];
@@ -37,16 +43,51 @@ export const StandardSelectionFooter = ({
       </FooterBar.Start>
       <FooterBar.Center />
       <FooterBar.End>
-        <SelectionConfirmDialog
+        <SelectionConfirmShell
           isOpen={isConfirmOpen}
           onOpenChange={onConfirmOpenChange}
-          proposals={selectedProposals}
-          count={numSelected}
-          phaseName={phaseName}
           triggerDisabled={numSelected === 0}
+          triggerLabel={t('Confirm decisions')}
+          headerLabel={t('Confirm advancing proposals')}
+          confirmLabel={t('Publish')}
           isSubmitting={isSubmitting}
           onConfirm={onConfirm}
-        />
+        >
+          <div className="space-y-4">
+            <p className="text-base text-neutral-charcoal">
+              {t(
+                'These {numProposals} proposals will move on to the {phaseName} phase',
+                { numProposals: numSelected, phaseName },
+              )}
+            </p>
+
+            <div className="space-y-2">
+              <div className="text-sm tracking-wider text-neutral-gray4 uppercase">
+                {t('PROPOSALS TO ADVANCE')}
+              </div>
+
+              {selectedProposals.map((proposal) => (
+                <ProposalCard
+                  className="bg-neutral-offWhite p-3"
+                  key={proposal.id}
+                >
+                  <ProposalCardContent>
+                    <ProposalCardHeader
+                      className="flex-row flex-wrap justify-between"
+                      proposal={proposal}
+                    />
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-neutral-charcoal">
+                        {proposal.submittedBy?.name}
+                      </span>
+                      <ProposalCardCategory proposal={proposal} />
+                    </div>
+                  </ProposalCardContent>
+                </ProposalCard>
+              ))}
+            </div>
+          </div>
+        </SelectionConfirmShell>
       </FooterBar.End>
     </FooterBar>
   );

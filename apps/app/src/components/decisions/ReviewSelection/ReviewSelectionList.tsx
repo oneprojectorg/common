@@ -4,7 +4,6 @@ import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
 import { getRubricScoringInfo } from '@op/common/client';
 import { EmptyState } from '@op/ui/EmptyState';
-import { FooterBar } from '@op/ui/FooterBar';
 import { Header3 } from '@op/ui/Header';
 import { toast } from '@op/ui/Toast';
 import { notFound } from 'next/navigation';
@@ -15,7 +14,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '@/components/Bullet';
 
-import { SelectionConfirmDialog } from '../SelectionConfirmDialog';
+import { StandardSelectionFooter } from '../StandardSelectionFooter';
 import { useManualSelection } from '../useManualSelection';
 import {
   ReviewSelectionTable,
@@ -127,33 +126,20 @@ export function ReviewSelectionList({
         />
       )}
 
-      <FooterBar position="fixed" className="bg-neutral-offWhite/95">
-        <FooterBar.Start>
-          <span className="text-base text-neutral-black">
-            {t('{count} proposals advancing', {
-              count: advancingIds.length,
-            })}
-          </span>
-        </FooterBar.Start>
-        <FooterBar.Center />
-        <FooterBar.End>
-          <SelectionConfirmDialog
-            isOpen={isConfirmOpen}
-            onOpenChange={setIsConfirmOpen}
-            proposals={selectedProposals}
-            count={advancingIds.length}
-            phaseName={currentPhaseName}
-            triggerDisabled={advancingIds.length === 0}
-            isSubmitting={submitMutation.isPending}
-            onConfirm={() =>
-              submitMutation.mutate({
-                processInstanceId,
-                proposalIds: advancingIds,
-              })
-            }
-          />
-        </FooterBar.End>
-      </FooterBar>
+      <StandardSelectionFooter
+        selectedProposals={selectedProposals}
+        numSelected={advancingIds.length}
+        phaseName={currentPhaseName}
+        isConfirmOpen={isConfirmOpen}
+        onConfirmOpenChange={setIsConfirmOpen}
+        onConfirm={() =>
+          submitMutation.mutate({
+            processInstanceId,
+            proposalIds: advancingIds,
+          })
+        }
+        isSubmitting={submitMutation.isPending}
+      />
     </div>
   );
 }
