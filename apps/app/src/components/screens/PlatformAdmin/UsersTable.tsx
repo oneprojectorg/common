@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
 import { Header2 } from '@op/ui/Header';
-import { Menu, MenuItem } from '@op/ui/Menu';
+import { MenuItem } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Pagination } from '@op/ui/Pagination';
 import { SearchField } from '@op/ui/SearchField';
@@ -110,15 +110,10 @@ export const UsersTable = () => {
             size="medium"
             className="mr-1"
           >
-            <Menu>
-              <MenuItem
-                onAction={handleExportAllUsers}
-                isDisabled={isExporting}
-              >
-                <LuDownload className="size-4" />
-                {t('Export all users')}
-              </MenuItem>
-            </Menu>
+            <MenuItem onAction={handleExportAllUsers} isDisabled={isExporting}>
+              <LuDownload className="size-4" />
+              {t('Export all users')}
+            </MenuItem>
           </OptionMenu>
         </div>
       </div>

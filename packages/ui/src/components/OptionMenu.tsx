@@ -1,28 +1,37 @@
 'use client';
 
 import { ReactNode } from 'react';
+import type { MenuProps as AriaMenuProps } from 'react-aria-components';
 import { LuEllipsis } from 'react-icons/lu';
 
 import { RequireAccessibleName } from '../lib/a11y';
 import { cn } from '../lib/utils';
 import { IconButton, IconButtonProps } from './IconButton';
-import { MenuTrigger } from './Menu';
-import { Popover } from './Popover';
+import { Menu, MenuTrigger } from './Menu';
+import type { PopoverProps } from './Popover';
 
-type OptionMenuProps = RequireAccessibleName<{
+type OptionMenuProps<T extends object> = RequireAccessibleName<{
   children: ReactNode;
   className?: string;
   variant?: IconButtonProps['variant'];
   size?: IconButtonProps['size'];
+  placement?: PopoverProps['placement'];
+  popoverClassName?: PopoverProps['className'];
+  menuClassName?: string;
+  onAction?: AriaMenuProps<T>['onAction'];
 }>;
 
-export const OptionMenu = ({
+export const OptionMenu = <T extends object>({
   children,
   className,
   variant = 'ghost',
   size = 'small',
+  placement = 'bottom end',
+  popoverClassName,
+  menuClassName,
+  onAction,
   ...rest
-}: OptionMenuProps) => {
+}: OptionMenuProps<T>) => {
   return (
     <MenuTrigger>
       <IconButton
@@ -36,7 +45,14 @@ export const OptionMenu = ({
       >
         <LuEllipsis className="size-4" />
       </IconButton>
-      <Popover placement="bottom end">{children}</Popover>
+      <Menu
+        placement={placement}
+        popoverClassName={popoverClassName}
+        className={cn('min-w-28 p-2', menuClassName)}
+        onAction={onAction}
+      >
+        {children}
+      </Menu>
     </MenuTrigger>
   );
 };

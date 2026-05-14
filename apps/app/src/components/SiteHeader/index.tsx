@@ -11,10 +11,14 @@ import { screens } from '@op/styles/constants';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Chip } from '@op/ui/Chip';
-import { Menu, MenuItem, MenuItemSimple, MenuSeparator } from '@op/ui/Menu';
+import {
+  Menu,
+  MenuItem,
+  MenuItemSimple,
+  MenuSeparator,
+  MenuTrigger,
+} from '@op/ui/Menu';
 import { Modal, ModalBody } from '@op/ui/Modal';
-import { Popover } from '@op/ui/Popover';
-import { MenuTrigger } from '@op/ui/RAC';
 import { SidebarTrigger } from '@op/ui/Sidebar';
 import { Skeleton } from '@op/ui/Skeleton';
 import { cn } from '@op/ui/utils';
@@ -432,16 +436,18 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
     <>
       <MenuTrigger>
         {avatarButton}
-        <Popover className="min-w-[150px]" placement="bottom end">
-          <Menu className="flex min-w-72 flex-col p-4 pb-6">
-            <AvatarMenuContent
-              setIsProfileOpen={setIsProfileOpen}
-              setIsOrgDeletionOpen={setIsOrgDeletionOpen}
-              onClose={() => setIsProfileOpen(false)}
-              onProfileSwitch={handleProfileSwitch}
-            />
-          </Menu>
-        </Popover>
+        <Menu
+          className="flex min-w-72 flex-col p-4 pb-6"
+          popoverClassName="min-w-[150px]"
+          placement="bottom end"
+        >
+          <AvatarMenuContent
+            setIsProfileOpen={setIsProfileOpen}
+            setIsOrgDeletionOpen={setIsOrgDeletionOpen}
+            onClose={() => setIsProfileOpen(false)}
+            onProfileSwitch={handleProfileSwitch}
+          />
+        </Menu>
       </MenuTrigger>
       <UpdateProfileModal isOpen={isProfileOpen} setIsOpen={setIsProfileOpen} />
       <ProfileSwitchingModal

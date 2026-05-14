@@ -26,7 +26,7 @@ import { DiscussionModal } from '../DiscussionModal';
 import { FeedContent, FeedHeader, FeedItem, FeedMain } from '../Feed';
 import { LinkPreview } from '../LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
-import { DeletePost } from './DeletePost';
+import { DeletePostMenuItem } from './DeletePostMenuItem';
 
 const PostDisplayName = ({
   displayName,
@@ -230,7 +230,7 @@ const PostMenuContent = ({
     return null;
   }
 
-  return <DeletePost post={post} profileId={profileId} />;
+  return <DeletePostMenuItem post={post} profileId={profileId} />;
 };
 
 export const EmptyPostsState = () => {

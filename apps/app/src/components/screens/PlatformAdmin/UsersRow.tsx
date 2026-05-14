@@ -5,7 +5,7 @@ import { getAnalyticsUserUrl } from '@op/analytics/client-utils';
 import type { RouterOutput } from '@op/api/client';
 import { trpc } from '@op/api/client';
 import { useRelativeTime } from '@op/hooks';
-import { Menu, MenuItem, MenuSeparator } from '@op/ui/Menu';
+import { MenuItem, MenuSeparator } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
@@ -85,49 +85,48 @@ export const UsersRowCells = ({ user }: { user: User }) => {
             aria-label={t('User options')}
             variant="outline"
             size="medium"
+            menuClassName="min-w-48 p-2"
           >
-            <Menu className="min-w-48 p-2">
-              <MenuItem
-                key="view-analytics"
-                onAction={() => {
-                  window.open(getAnalyticsUserUrl(user.authUserId), '_blank');
-                }}
-                className="px-3 py-1"
-              >
-                {t('View analytics')}
-              </MenuItem>
-              <MenuItem
-                key="edit-profile"
-                onAction={() => {
-                  if (user.profile) {
-                    setIsEditModalOpen(true);
-                  }
-                }}
-                className="px-3 py-1"
-                isDisabled={!user.profile}
-              >
-                {t('Edit profile')}
-              </MenuItem>
-              <MenuItem
-                key="add-to-org"
-                onAction={() => {
-                  setIsAddToOrgModalOpen(true);
-                }}
-                className="px-3 py-1"
-              >
-                Add to Organization
-              </MenuItem>
-              <MenuSeparator />
-              <MenuItem
-                key="remove-user"
-                onAction={() => {
-                  alert('coming soon');
-                }}
-                className="px-3 py-1"
-              >
-                <span className="text-functional-red">{t('Remove user')}</span>
-              </MenuItem>
-            </Menu>
+            <MenuItem
+              key="view-analytics"
+              onAction={() => {
+                window.open(getAnalyticsUserUrl(user.authUserId), '_blank');
+              }}
+              className="px-3 py-1"
+            >
+              {t('View analytics')}
+            </MenuItem>
+            <MenuItem
+              key="edit-profile"
+              onAction={() => {
+                if (user.profile) {
+                  setIsEditModalOpen(true);
+                }
+              }}
+              className="px-3 py-1"
+              isDisabled={!user.profile}
+            >
+              {t('Edit profile')}
+            </MenuItem>
+            <MenuItem
+              key="add-to-org"
+              onAction={() => {
+                setIsAddToOrgModalOpen(true);
+              }}
+              className="px-3 py-1"
+            >
+              Add to Organization
+            </MenuItem>
+            <MenuSeparator />
+            <MenuItem
+              key="remove-user"
+              onAction={() => {
+                alert('coming soon');
+              }}
+              className="px-3 py-1"
+            >
+              <span className="text-functional-red">{t('Remove user')}</span>
+            </MenuItem>
           </OptionMenu>
         </div>
         {user.profile ? (
