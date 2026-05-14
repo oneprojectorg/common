@@ -275,9 +275,7 @@ test.describe('Review Summary page', () => {
 
     await expect(
       page
-        .getByText(
-          '3 out of 4 reviewers submitted a review for this proposal',
-        )
+        .getByText('3 out of 4 reviewers submitted a review for this proposal')
         .first(),
     ).toBeVisible();
 
