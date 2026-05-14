@@ -6,10 +6,10 @@ import type { DecisionRolePermissions } from '@op/common';
 import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui-next/Button';
+import { Checkbox } from '@op/ui-next/Checkbox';
 import { Header2, Header3 } from '@op/ui-next/Header';
 import { IconButton } from '@op/ui-next/IconButton';
 import { TextField } from '@op/ui-next/TextField';
-import { Checkbox } from '@op/ui/Checkbox';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Menu, MenuItem } from '@op/ui/Menu';
@@ -367,15 +367,15 @@ function AddRoleDialog({
           />
           <div className="flex flex-col gap-2 pt-2">
             {PERMISSION_COLUMNS.map(({ key, label }) => (
-              <Checkbox
-                key={key}
-                size="small"
-                isSelected={permissions[key]}
-                onChange={() => togglePermission(key)}
-                aria-label={`${label} permission`}
-              >
+              <label key={key} className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  className="size-4"
+                  checked={permissions[key]}
+                  onCheckedChange={() => togglePermission(key)}
+                  aria-label={`${label} permission`}
+                />
                 {t(label)}
-              </Checkbox>
+              </label>
             ))}
           </div>
         </ModalBody>
@@ -519,9 +519,9 @@ function DecisionRoleCheckboxes({
     <TableCell key={key} className="text-center">
       <div className="flex justify-center">
         <Checkbox
-          size="small"
-          isSelected={optimisticPermissions?.[key] ?? false}
-          onChange={() => togglePermission(key)}
+          className="size-4"
+          checked={optimisticPermissions?.[key] ?? false}
+          onCheckedChange={() => togglePermission(key)}
           aria-label={`${label} permission`}
         />
       </div>
@@ -545,15 +545,15 @@ function MobileDecisionRoles({
   return (
     <div className="flex flex-col gap-2">
       {PERMISSION_COLUMNS.map(({ key, label }) => (
-        <Checkbox
-          key={key}
-          size="small"
-          isSelected={optimisticPermissions?.[key] ?? false}
-          onChange={() => togglePermission(key)}
-          aria-label={`${label} permission`}
-        >
+        <label key={key} className="flex items-center gap-2 text-sm">
+          <Checkbox
+            className="size-4"
+            checked={optimisticPermissions?.[key] ?? false}
+            onCheckedChange={() => togglePermission(key)}
+            aria-label={`${label} permission`}
+          />
           {t(label)}
-        </Checkbox>
+        </label>
       ))}
     </div>
   );
@@ -724,9 +724,9 @@ function AddRoleRow({
         <TableCell key={key} className="text-center">
           <div className="flex justify-center">
             <Checkbox
-              size="small"
-              isSelected={permissions[key]}
-              onChange={() => togglePermission(key)}
+              className="size-4"
+              checked={permissions[key]}
+              onCheckedChange={() => togglePermission(key)}
               aria-label={`${label} permission`}
             />
           </div>

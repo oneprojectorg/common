@@ -97,11 +97,31 @@ export function Select<T extends { id: string | number }>({
       : children;
 
   // Pass items to base-ui Select.Root so SelectValue can resolve the
-  // selected item's display label from its `value`.
-  const baseUiItems = itemsArray?.map((i) => ({
-    value: String(i.id),
-    label: (i as { label?: React.ReactNode }).label,
-  }));
+  // selected item's display label from its `value`. Works for both
+  // function-rendered items and static <SelectItem> children.
+  const baseUiItems = React.useMemo(() => {
+    if (itemsArray) {
+      return itemsArray.map((i) => ({
+        value: String(i.id),
+        label: (i as { label?: React.ReactNode }).label,
+      }));
+    }
+    // Introspect static children to extract value → label mapping.
+    const items: Array<{ value: string; label: React.ReactNode }> = [];
+    React.Children.forEach(renderedItems, (child) => {
+      if (!React.isValidElement(child)) return;
+      const props = child.props as {
+        value?: string;
+        id?: string | number;
+        children?: React.ReactNode;
+      };
+      const value = props.value ?? (props.id != null ? String(props.id) : null);
+      if (value != null) {
+        items.push({ value, label: props.children });
+      }
+    });
+    return items.length ? items : undefined;
+  }, [itemsArray, renderedItems]);
 
   return (
     <Field data-invalid={isInvalid} className={cn('gap-1', className)}>
@@ -118,6 +138,7 @@ export function Select<T extends { id: string | number }>({
         disabled={isDisabled}
         name={name}
         items={baseUiItems}
+        modal={false}
       >
         {customTrigger ?? (
           <SelectTrigger

@@ -6,8 +6,8 @@ import {
   RelationshipType,
 } from '@op/types/relationships';
 import { Button } from '@op/ui-next/Button';
+import { Checkbox } from '@op/ui-next/Checkbox';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
-import { Checkbox } from '@op/ui/Checkbox';
 import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Dialog } from '@op/ui/RAC';
 import { toast } from '@op/ui/Toast';
@@ -138,11 +138,11 @@ export const AddRelationshipForm = ({ profile }: { profile: Organization }) => {
                     {filteredRelationshipOptions.map((option) => (
                       <li key={option.key} className="flex gap-3 py-2">
                         <Checkbox
-                          isSelected={Array.from(selectedRelations).includes(
+                          checked={Array.from(selectedRelations).includes(
                             option.key as RelationshipType,
                           )}
-                          onChange={(checked) => {
-                            if (checked) {
+                          onCheckedChange={(checked) => {
+                            if (checked === true) {
                               const newSet = new Set(selectedRelations);
                               newSet.add(option.key);
                               setSelectedRelations(Array.from(newSet));
@@ -154,7 +154,6 @@ export const AddRelationshipForm = ({ profile }: { profile: Organization }) => {
                               );
                             }
                           }}
-                          value={option.key}
                         />
 
                         <div className="flex flex-col text-neutral-charcoal">

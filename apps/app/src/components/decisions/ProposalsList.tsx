@@ -17,11 +17,11 @@ import {
   isVotingEligible,
 } from '@op/common/client';
 import { Button, ButtonLink } from '@op/ui-next/Button';
+import { Checkbox } from '@op/ui-next/Checkbox';
 import { Header3 } from '@op/ui-next/Header';
 import { Link } from '@op/ui-next/Link';
 import { Skeleton } from '@op/ui-next/Skeleton';
 import { Surface } from '@op/ui-next/Surface';
-import { Checkbox } from '@op/ui/Checkbox';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
 import { FooterBar } from '@op/ui/FooterBar';
@@ -264,12 +264,10 @@ const VotingProposalsList = ({
                     menu={
                       isVotedFor ? (
                         <Checkbox
-                          isSelected={true}
-                          shape="circle"
-                          borderColor="light"
-                          className="[&[data-disabled]_svg]:!text-white"
+                          checked
+                          disabled
                           aria-label={t('Selected proposal')}
-                          isDisabled
+                          className="rounded-full [&[data-disabled]_svg]:!text-white"
                         />
                       ) : undefined
                     }
@@ -310,17 +308,16 @@ const VotingProposalsList = ({
                           {showCheckbox && (
                             <div onClick={(e) => e.stopPropagation()}>
                               <Checkbox
-                                isSelected={isSelected}
-                                onChange={() => {
+                                checked={isSelected}
+                                onCheckedChange={() => {
                                   toggleProposal(proposal.id);
                                 }}
-                                shape="circle"
-                                borderColor="light"
                                 aria-label={
                                   isSelected
                                     ? t('Deselect proposal')
                                     : t('Select proposal')
                                 }
+                                className="rounded-full"
                               />
                             </div>
                           )}
