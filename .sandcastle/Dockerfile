@@ -366,70 +366,22 @@ RUN git clone --depth 1 --branch "$GSTACK_REF" \
        ln -sfn "gstack/$name" "/home/agent/.claude/skills/$name"; \
      done
 
-# Install the common-agent-toolkit `devtools` plugin as a real Claude Code
-# plugin (not just a skill drop-in). This activates:
-#   - skills (implement-task, pickup-task, asana-api, branch-and-pr, …)
-#   - the PreToolUse hooks (block-protected-branches, require-feature-branch)
-#     via hooks.json, which uses ${CLAUDE_PLUGIN_ROOT} and only resolves
-#     under a proper plugin install
-#   - any commands the plugin ships
+# Install the common-agent-toolkit `devtools` plugin via Claude Code's own
+# CLI. This activates skills (implement-task, pickup-task, asana-api,
+# branch-and-pr, …), the PreToolUse hooks (block-protected-branches,
+# require-feature-branch) via the plugin's hooks.json + ${CLAUDE_PLUGIN_ROOT},
+# and any commands the plugin ships.
 #
-# A real install seeds four artifacts:
-#   1. marketplace clone at ~/.claude/plugins/marketplaces/<marketplace>/
-#   2. plugin cache at  ~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/
-#   3. installed_plugins.json + known_marketplaces.json registering both
-#   4. enabledPlugins[<plugin>@<marketplace>] = true in the user settings
+# The CLI handles all the bookkeeping for us — marketplace clone, plugin
+# cache copy, installed_plugins.json, known_marketplaces.json, and
+# enabledPlugins in the user settings.json — and records a real gitCommitSha
+# so we're forward-compatible if Claude Code adds fields to the install
+# record. `install` auto-enables on first install.
 #
-# Public repo — no auth needed. Upgrading is a Docker image rebuild with a
-# new TOOLKIT_REF; bump TOOLKIT_VERSION to match the plugin.json version
-# in the new ref.
-ARG TOOLKIT_REF=main
-ARG TOOLKIT_VERSION=0.3.0
-RUN set -eux; \
-    MARKET_DIR=/home/agent/.claude/plugins/marketplaces/common-agent-toolkit; \
-    CACHE_DIR=/home/agent/.claude/plugins/cache/common-agent-toolkit/devtools/${TOOLKIT_VERSION}; \
-    mkdir -p "$(dirname "$MARKET_DIR")" "$(dirname "$CACHE_DIR")"; \
-    git clone --depth 1 --branch "$TOOLKIT_REF" \
+# Public repo — no auth needed. Upgrading is a Docker image rebuild.
+RUN claude plugin marketplace add \
       https://github.com/oneprojectorg/common-agent-toolkit.git \
-      "$MARKET_DIR"; \
-    mkdir -p "$CACHE_DIR"; \
-    cp -R "$MARKET_DIR/plugins/devtools/." "$CACHE_DIR/"; \
-    NOW=$(date -u +%FT%TZ); \
-    printf '%s\n' \
-      '{' \
-      '  "version": 2,' \
-      '  "plugins": {' \
-      '    "devtools@common-agent-toolkit": [' \
-      '      {' \
-      '        "scope": "user",' \
-      "        \"installPath\": \"$CACHE_DIR\"," \
-      "        \"version\": \"${TOOLKIT_VERSION}\"," \
-      "        \"installedAt\": \"$NOW\"," \
-      "        \"lastUpdated\": \"$NOW\"" \
-      '      }' \
-      '    ]' \
-      '  }' \
-      '}' \
-      > /home/agent/.claude/plugins/installed_plugins.json; \
-    printf '%s\n' \
-      '{' \
-      '  "common-agent-toolkit": {' \
-      '    "source": {' \
-      '      "source": "git",' \
-      '      "url": "https://github.com/oneprojectorg/common-agent-toolkit.git"' \
-      '    },' \
-      "    \"installLocation\": \"$MARKET_DIR\"," \
-      "    \"lastUpdated\": \"$NOW\"" \
-      '  }' \
-      '}' \
-      > /home/agent/.claude/plugins/known_marketplaces.json; \
-    printf '%s\n' \
-      '{' \
-      '  "enabledPlugins": {' \
-      '    "devtools@common-agent-toolkit": true' \
-      '  }' \
-      '}' \
-      > /home/agent/.claude/settings.json
+  && claude plugin install devtools@common-agent-toolkit
 
 # In worktree sandbox mode, Sandcastle bind-mounts the git worktree at /home/agent/workspace
 # and overrides the working directory to /home/agent/workspace at container start.
