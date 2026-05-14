@@ -7,11 +7,13 @@ import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
+import { ProposalListSkeleton } from '@/components/skeletons/ProposalSkeleton';
+
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
-import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
+import { ProposalsList } from '../ProposalsList';
 
 export function VotingPage({
   instanceId,

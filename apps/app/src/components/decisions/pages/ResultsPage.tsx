@@ -12,6 +12,8 @@ import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
+import { ProposalListSkeleton } from '@/components/skeletons/ProposalSkeleton';
+
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
 import {
@@ -19,7 +21,7 @@ import {
   DecisionResultsTabs,
 } from '../DecisionResultsTabs';
 import { MyBallot, NoVoteFound } from '../MyBallot';
-import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
+import { ProposalsList } from '../ProposalsList';
 import { ResultsList } from '../ResultsList';
 import { ResultsStats } from '../ResultsStats';
 
@@ -30,25 +32,6 @@ interface ResultsPageInstance {
   process?: {
     description: string | null;
   } | null;
-}
-
-function ResultsPageLegacy({
-  instanceId,
-  profileSlug,
-}: {
-  instanceId: string;
-  profileSlug: string;
-}) {
-  const [instance] = trpc.decision.getLegacyInstance.useSuspenseQuery({
-    instanceId,
-  });
-  return (
-    <ResultsPageContent
-      instanceId={instanceId}
-      profileSlug={profileSlug}
-      instance={instance}
-    />
-  );
 }
 
 export function ResultsPage({
@@ -76,6 +59,25 @@ export function ResultsPage({
       instanceId={instanceId}
       profileSlug={profileSlug}
       decisionSlug={decisionSlug}
+      instance={instance}
+    />
+  );
+}
+
+function ResultsPageLegacy({
+  instanceId,
+  profileSlug,
+}: {
+  instanceId: string;
+  profileSlug: string;
+}) {
+  const [instance] = trpc.decision.getLegacyInstance.useSuspenseQuery({
+    instanceId,
+  });
+  return (
+    <ResultsPageContent
+      instanceId={instanceId}
+      profileSlug={profileSlug}
       instance={instance}
     />
   );

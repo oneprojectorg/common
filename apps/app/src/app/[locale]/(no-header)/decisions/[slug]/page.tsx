@@ -1,12 +1,14 @@
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
-import { Skeleton } from '@op/ui/Skeleton';
 import { forbidden, notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
-import { DecisionHeaderSkeleton } from '@/components/skeletons/DecisionSkeleton';
+import {
+  DecisionBodySkeleton,
+  DecisionPageSkeleton,
+} from '@/components/skeletons/DecisionSkeleton';
 
 const DecisionPageContent = async ({ slug }: { slug: string }) => {
   const client = await createClient();
@@ -38,15 +40,19 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
     notFound();
   }
 
+  // Outer fallback matches `loading.tsx` exactly so the streamed page swap
+  // doesn't flash a smaller skeleton while `DecisionHeader` awaits `getInstance`
+  // server-side. Once the header resolves, the inner fallback keeps the body
+  // shape stable while `DecisionStateRouter` resolves on the client.
   return (
-    <Suspense fallback={<DecisionHeaderSkeleton />}>
+    <Suspense fallback={<DecisionPageSkeleton />}>
       <DecisionHeader
         instanceId={instanceId}
         decisionSlug={slug}
         isAdmin={decisionProfile.processInstance.access?.admin}
         profileName={decisionProfile.name}
       >
-        <Suspense fallback={<Skeleton className="h-96" />}>
+        <Suspense fallback={<DecisionBodySkeleton />}>
           <DecisionStateRouter
             instanceId={instanceId}
             slug={ownerSlug}

@@ -1,6 +1,7 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
+import type { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
@@ -9,20 +10,28 @@ import { LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
+import { ProposalListSkeleton } from '@/components/skeletons/ProposalSkeleton';
+
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
 import { HiddenProposalsBanner } from '../HiddenProposalsBanner';
 import { ManualSelectionList } from '../ManualSelectionList';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
-import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
+import { ProposalsList } from '../ProposalsList';
+
+type Instance = RouterOutput['decision']['getInstance'];
 
 export function StandardDecisionPage({
+  instance,
   instanceId,
   slug,
   decisionSlug,
   decisionProfileId,
 }: {
+  /** Already-fetched instance — DecisionStateRouter resolves this and passes it
+   *  down so we don't double-fetch with a second useSuspenseQuery here. */
+  instance: Instance;
   instanceId: string;
   slug: string;
   /** Decision profile slug for building proposal links */
@@ -33,10 +42,10 @@ export function StandardDecisionPage({
   const t = useTranslations();
   const translation = useDecisionTranslation();
 
-  const [[instance, { submitters }]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getInstance({ instanceId }),
-    t.decision.listProposalSubmitters({ processInstanceId: instanceId }),
-  ]);
+  const [{ submitters }] =
+    trpc.decision.listProposalSubmitters.useSuspenseQuery({
+      processInstanceId: instanceId,
+    });
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;
