@@ -8,13 +8,13 @@ import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui-next/Button';
 import { Header2, Header3 } from '@op/ui-next/Header';
 import { IconButton } from '@op/ui-next/IconButton';
+import { TextField } from '@op/ui-next/TextField';
 import { Checkbox } from '@op/ui/Checkbox';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { OptionMenu } from '@op/ui/OptionMenu';
-import { TextField } from '@op/ui/TextField';
 import { toast } from '@op/ui/Toast';
 import {
   EditableCell,

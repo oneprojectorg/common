@@ -8,11 +8,11 @@ import { Avatar } from '@op/ui-next/Avatar';
 import { Button } from '@op/ui-next/Button';
 import { IconButton } from '@op/ui-next/IconButton';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import { SearchField } from '@op/ui-next/SearchField';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { ProfileItem } from '@op/ui/ProfileItem';
 import { ListBox, ListBoxItem } from '@op/ui/RAC';
-import { SearchField } from '@op/ui/SearchField';
 import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
 import {

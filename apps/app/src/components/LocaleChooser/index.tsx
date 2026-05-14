@@ -4,7 +4,7 @@ import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui-next/Button';
 import { IconButton } from '@op/ui-next/IconButton';
-import { Select, SelectItem } from '@op/ui/Select';
+import { Select, SelectItem } from '@op/ui-next/Select';
 import { cn } from '@op/ui/utils';
 import { useParams } from 'next/navigation';
 import { LuGlobe } from 'react-icons/lu';

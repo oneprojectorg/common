@@ -3,7 +3,7 @@ import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { useDebounce } from '@op/hooks';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
-import { TextField } from '@op/ui/TextField';
+import { TextField } from '@op/ui-next/TextField';
 import { cn } from '@op/ui/utils';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
@@ -171,7 +171,7 @@ export const SearchInput = ({ onBlur }: { onBlur?: () => void } = {}) => {
         inputProps={{
           placeholder: t('Search'),
           color: 'muted',
-          size: 'small',
+          size: 'sm',
           icon: isSearching ? (
             <LoadingSpinner className="size-4 text-neutral-gray4" />
           ) : (

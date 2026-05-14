@@ -1,14 +1,14 @@
 'use client';
 
 import { Button } from '@op/ui-next/Button';
+import { NumberField } from '@op/ui-next/NumberField';
+import { TextField } from '@op/ui-next/TextField';
 import {
   CollapsibleConfigCard,
   CollapsibleConfigCardDragPreview,
 } from '@op/ui/CollapsibleConfigCard';
-import { NumberField } from '@op/ui/NumberField';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import type { SortableItemControls } from '@op/ui/Sortable';
-import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
 import { useRef, useState } from 'react';

@@ -7,10 +7,10 @@ import {
   parseSchemaOptions,
 } from '@op/common/client';
 import { Button } from '@op/ui-next/Button';
+import { Select, SelectItem } from '@op/ui-next/Select';
+import { TextField } from '@op/ui-next/TextField';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
-import { Select, SelectItem } from '@op/ui/Select';
-import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import type { Key } from 'react';
 import { useState } from 'react';

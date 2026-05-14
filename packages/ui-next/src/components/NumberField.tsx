@@ -32,6 +32,11 @@ export interface NumberFieldProps {
   children?: React.ReactNode;
   name?: string;
   id?: string;
+  ref?: React.Ref<HTMLInputElement>;
+  onBlur?: React.FocusEventHandler<HTMLInputElement>;
+  autoFocus?: boolean;
+  placeholder?: string;
+  'aria-label'?: string;
 }
 
 const filterNumeric = (v: string) =>
@@ -81,6 +86,11 @@ export function NumberField({
   children,
   name,
   id,
+  ref,
+  onBlur,
+  autoFocus,
+  placeholder,
+  'aria-label': ariaLabel,
 }: NumberFieldProps) {
   const generatedId = React.useId();
   const fieldId = id ?? generatedId;
@@ -130,6 +140,7 @@ export function NumberField({
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const n = parseNumeric(displayValue);
     setBoundsError(checkBounds(n, minValue, maxValue));
+    onBlur?.(e);
     inputProps?.onBlur?.(e);
   };
 
@@ -156,12 +167,16 @@ export function NumberField({
         <Input
           id={fieldId}
           name={name}
+          ref={ref}
           type="text"
           value={displayValue}
           onChange={handleChange}
           onInput={handleInput}
           onBlur={handleBlur}
           aria-invalid={isInvalid || undefined}
+          aria-label={ariaLabel}
+          autoFocus={autoFocus}
+          placeholder={placeholder}
           disabled={isDisabled}
           required={isRequired}
           style={{ paddingLeft: prefixText ? `${prefixWidth}px` : undefined }}

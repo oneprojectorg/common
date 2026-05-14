@@ -37,10 +37,18 @@ export interface SelectProps<T extends { id: string | number }> {
   isDisabled?: boolean;
   value?: string;
   defaultValue?: string;
+  /** Legacy alias for `value` (RAC naming). */
+  selectedKey?: string | null;
+  /** Legacy alias for `defaultValue` (RAC naming). */
+  defaultSelectedKey?: string | null;
   onSelectionChange?: (value: string | null) => void;
   customTrigger?: React.ReactNode;
   name?: string;
   id?: string;
+  'aria-label'?: string;
+  onBlur?: React.FocusEventHandler<HTMLElement>;
+  /** Legacy popover overrides (RAC). Accepted for source-compat; ignored. */
+  popoverProps?: { className?: string; [key: string]: unknown };
 }
 
 export function Select<T extends { id: string | number }>({
@@ -61,11 +69,18 @@ export function Select<T extends { id: string | number }>({
   isDisabled,
   value,
   defaultValue,
+  selectedKey,
+  defaultSelectedKey,
   onSelectionChange,
   customTrigger,
   name,
   id,
+  'aria-label': ariaLabel,
+  onBlur: _onBlur,
+  popoverProps: _popoverProps,
 }: SelectProps<T>) {
+  const resolvedValue = value ?? selectedKey ?? undefined;
+  const resolvedDefault = defaultValue ?? defaultSelectedKey ?? undefined;
   const generatedId = React.useId();
   const fieldId = id ?? generatedId;
   const isInvalid = !!errorMessage;
@@ -97,8 +112,8 @@ export function Select<T extends { id: string | number }>({
         </FieldLabel>
       )}
       <ShadcnSelect
-        value={value}
-        defaultValue={defaultValue}
+        value={resolvedValue ?? undefined}
+        defaultValue={resolvedDefault ?? undefined}
         onValueChange={onSelectionChange}
         disabled={isDisabled}
         name={name}
@@ -108,6 +123,7 @@ export function Select<T extends { id: string | number }>({
           <SelectTrigger
             id={fieldId}
             size={size === 'small' ? 'sm' : 'default'}
+            aria-label={ariaLabel}
             className={cn(
               variant === 'pill' &&
                 'border-0 bg-primary/10 text-primary hover:bg-primary/15',
@@ -135,14 +151,33 @@ export function Select<T extends { id: string | number }>({
   );
 }
 
-export interface SelectItemProps extends React.ComponentProps<
-  typeof ShadcnSelectItem
+export interface SelectItemProps extends Omit<
+  React.ComponentProps<typeof ShadcnSelectItem>,
+  'value'
 > {
   id?: string;
+  value?: string;
+  /** Legacy alias for `disabled` (RAC naming). */
+  isDisabled?: boolean;
+  /** Accessible text representation of the item (RAC ListBox naming). */
+  textValue?: string;
 }
 
-export function SelectItem({ id, value, ...props }: SelectItemProps) {
-  return <ShadcnSelectItem value={value ?? id ?? ''} {...props} />;
+export function SelectItem({
+  id,
+  value,
+  isDisabled,
+  disabled,
+  textValue: _textValue,
+  ...props
+}: SelectItemProps) {
+  return (
+    <ShadcnSelectItem
+      value={value ?? id ?? ''}
+      disabled={disabled ?? isDisabled}
+      {...props}
+    />
+  );
 }
 
 export { SelectGroup, SelectLabel, SelectSeparator } from './ui/select';

@@ -3,11 +3,11 @@
 import { trpc } from '@op/api/client';
 import type { ProfileInvite, ProfileUser } from '@op/api/encoders';
 import { Button } from '@op/ui-next/Button';
+import { Select, SelectItem } from '@op/ui-next/Select';
 import { Skeleton } from '@op/ui-next/Skeleton';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Select, SelectItem } from '@op/ui/Select';
 import { toast } from '@op/ui/Toast';
 import {
   Table,

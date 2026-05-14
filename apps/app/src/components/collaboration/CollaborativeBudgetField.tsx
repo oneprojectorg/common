@@ -3,7 +3,7 @@
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import type { BudgetData } from '@op/common/client';
 import { Button } from '@op/ui-next/Button';
-import { NumberField } from '@op/ui/NumberField';
+import { NumberField } from '@op/ui-next/NumberField';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

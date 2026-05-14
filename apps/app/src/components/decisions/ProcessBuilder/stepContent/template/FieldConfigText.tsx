@@ -1,6 +1,6 @@
 'use client';
 
-import { NumberField } from '@op/ui/NumberField';
+import { NumberField } from '@op/ui-next/NumberField';
 
 import { useTranslations } from '@/lib/i18n';
 

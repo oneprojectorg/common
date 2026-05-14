@@ -2,9 +2,9 @@
 
 import { Button } from '@op/ui-next/Button';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import { TextField } from '@op/ui-next/TextField';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { TextField } from '@op/ui/TextField';
 import { useState } from 'react';
 import { LuCircleAlert } from 'react-icons/lu';
 

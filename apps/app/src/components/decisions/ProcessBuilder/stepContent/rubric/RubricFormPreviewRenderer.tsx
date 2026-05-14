@@ -5,8 +5,8 @@ import {
   isOverallRecommendationField,
   parseSchemaOptions,
 } from '@op/common/client';
+import { Select } from '@op/ui-next/Select';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
-import { Select } from '@op/ui/Select';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { LuPlus } from 'react-icons/lu';
 

@@ -3,11 +3,11 @@
 import { trpc } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
 import { Header2 } from '@op/ui-next/Header';
+import { SearchField } from '@op/ui-next/SearchField';
 import { Skeleton } from '@op/ui-next/Skeleton';
 import { Menu, MenuItem } from '@op/ui/Menu';
 import { OptionMenu } from '@op/ui/OptionMenu';
 import { Pagination } from '@op/ui/Pagination';
-import { SearchField } from '@op/ui/SearchField';
 import { toast } from '@op/ui/Toast';
 import {
   Table,

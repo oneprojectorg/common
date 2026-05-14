@@ -2,7 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { Header2 } from '@op/ui-next/Header';
-import { SelectItem } from '@op/ui/Select';
+import { SelectItem } from '@op/ui-next/Select';
 import { useEffect, useRef } from 'react';
 import { z } from 'zod';
 

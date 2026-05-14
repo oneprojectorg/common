@@ -1,9 +1,9 @@
 import { Button } from '@op/ui-next/Button';
 import type { ButtonProps } from '@op/ui-next/Button';
+import { Select } from '@op/ui-next/Select';
+import { TextField } from '@op/ui-next/TextField';
 import { Checkbox } from '@op/ui/Checkbox';
 import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
-import { Select } from '@op/ui/Select';
-import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
 import {
