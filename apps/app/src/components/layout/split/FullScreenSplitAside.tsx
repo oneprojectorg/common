@@ -1,6 +1,6 @@
 'use client';
 
-import { Header2 } from '@op/ui/Header';
+import { Header2 } from '@op/ui-next/Header';
 
 import { useTranslations } from '@/lib/i18n';
 

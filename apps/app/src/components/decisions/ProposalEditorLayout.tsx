@@ -2,8 +2,8 @@
 
 import type { ProposalReviewRequest } from '@op/common/client';
 import { Button } from '@op/ui-next/Button';
+import { Header4 } from '@op/ui-next/Header';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
-import { Header4 } from '@op/ui/Header';
 import { type ReactNode, useState } from 'react';
 import { LuArrowLeft, LuCheck, LuShare2 } from 'react-icons/lu';
 

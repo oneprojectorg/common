@@ -1,8 +1,8 @@
 'use client';
 
 import { Button } from '@op/ui-next/Button';
+import { Header1 } from '@op/ui-next/Header';
 import { CheckIcon } from '@op/ui/CheckIcon';
-import { Header1 } from '@op/ui/Header';
 import { Modal, ModalBody } from '@op/ui/Modal';
 
 interface InviteSuccessModalProps {

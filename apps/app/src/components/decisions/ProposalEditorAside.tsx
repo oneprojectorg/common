@@ -2,7 +2,7 @@
 
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
-import { Header2 } from '@op/ui/Header';
+import { Header2 } from '@op/ui-next/Header';
 import { Sheet, SheetBody } from '@op/ui/Sheet';
 import { cn } from '@op/ui/utils';
 import type { ReactNode } from 'react';

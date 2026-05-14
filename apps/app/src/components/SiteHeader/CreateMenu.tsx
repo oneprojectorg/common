@@ -66,7 +66,7 @@ export const CreateMenu = () => {
         onOpenChange={setIsMenuOpen}
       >
         <Button
-          className="h-8 rounded-md px-2 sm:px-3"
+          className="h-8 px-2 sm:px-3"
           color={isMobile ? 'secondary' : 'primary'}
         >
           <LuPlus className="size-4" />

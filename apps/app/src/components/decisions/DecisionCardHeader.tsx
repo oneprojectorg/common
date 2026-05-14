@@ -1,7 +1,7 @@
 import { getPublicUrl } from '@/utils';
-import { Avatar } from '@op/ui/Avatar';
-import { Chip } from '@op/ui/Chip';
-import { Header3 } from '@op/ui/Header';
+import { Avatar } from '@op/ui-next/Avatar';
+import { Chip } from '@op/ui-next/Chip';
+import { Header3 } from '@op/ui-next/Header';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 

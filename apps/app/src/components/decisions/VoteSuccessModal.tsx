@@ -2,11 +2,11 @@
 
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui-next/Button';
+import { Header1, Header3 } from '@op/ui-next/Header';
+import { Skeleton } from '@op/ui-next/Skeleton';
 import { CheckIcon } from '@op/ui/CheckIcon';
 import { DialogTrigger } from '@op/ui/Dialog';
-import { Header1, Header3 } from '@op/ui/Header';
 import { Modal } from '@op/ui/Modal';
-import { Skeleton } from '@op/ui/Skeleton';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

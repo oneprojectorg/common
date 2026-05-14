@@ -1,7 +1,7 @@
 import { getPublicUrl } from '@/utils';
 import { EntityType, ProfileSearchResult } from '@op/api/encoders';
 import { match } from '@op/core';
-import { Avatar } from '@op/ui/Avatar';
+import { Avatar } from '@op/ui-next/Avatar';
 import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';

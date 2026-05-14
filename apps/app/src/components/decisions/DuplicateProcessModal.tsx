@@ -3,10 +3,10 @@
 import { trpc } from '@op/api/client';
 import type { DecisionProfile } from '@op/api/encoders';
 import { Button } from '@op/ui-next/Button';
+import { Skeleton } from '@op/ui-next/Skeleton';
 import { Checkbox, CheckboxGroup } from '@op/ui/Checkbox';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Select, SelectItem } from '@op/ui/Select';
-import { Skeleton } from '@op/ui/Skeleton';
 import { TextField } from '@op/ui/TextField';
 import { toast } from '@op/ui/Toast';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';

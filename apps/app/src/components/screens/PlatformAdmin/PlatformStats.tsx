@@ -1,8 +1,8 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Skeleton } from '@op/ui/Skeleton';
-import { Surface } from '@op/ui/Surface';
+import { Skeleton } from '@op/ui-next/Skeleton';
+import { Surface } from '@op/ui-next/Surface';
 import { cn } from '@op/ui/utils';
 import { Suspense } from 'react';
 

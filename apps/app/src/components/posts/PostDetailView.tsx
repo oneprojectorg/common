@@ -2,7 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { Surface } from '@op/ui/Surface';
+import { Surface } from '@op/ui-next/Surface';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import React from 'react';

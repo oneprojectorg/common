@@ -1,4 +1,4 @@
-import { GradientHeader, Header2 } from '@op/ui/Header';
+import { GradientHeader, Header2 } from '@op/ui-next/Header';
 import { cn } from '@op/ui/utils';
 import { ReactNode } from 'react';
 

@@ -2,9 +2,9 @@
 
 import { trpc } from '@op/api/client';
 import { DecisionProcess } from '@op/api/encoders';
-import { Avatar } from '@op/ui/Avatar';
-import { Header1, Header2 } from '@op/ui/Header';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Avatar } from '@op/ui-next/Avatar';
+import { Header1, Header2 } from '@op/ui-next/Header';
+import { Skeleton } from '@op/ui-next/Skeleton';
 import { Suspense } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';

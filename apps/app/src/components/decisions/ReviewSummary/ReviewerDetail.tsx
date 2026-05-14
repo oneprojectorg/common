@@ -7,8 +7,8 @@ import {
   findSchemaOption,
 } from '@op/common/client';
 import { Button } from '@op/ui-next/Button';
-import { Header3 } from '@op/ui/Header';
-import { StatusDot } from '@op/ui/StatusDot';
+import { Header3 } from '@op/ui-next/Header';
+import { StatusDot } from '@op/ui-next/StatusDot';
 import { LuArrowLeft } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';

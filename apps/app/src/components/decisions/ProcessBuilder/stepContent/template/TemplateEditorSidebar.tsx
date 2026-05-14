@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@op/ui-next/Button';
-import { Header4 } from '@op/ui/Header';
+import { Header4 } from '@op/ui-next/Header';
 import { Sidebar, useSidebar } from '@op/ui/Sidebar';
 import type { IconType } from 'react-icons';
 import { LuAlignJustify } from 'react-icons/lu';

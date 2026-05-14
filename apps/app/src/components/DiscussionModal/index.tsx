@@ -3,8 +3,8 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Organization, Post } from '@op/api/encoders';
+import { Surface } from '@op/ui-next/Surface';
 import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Surface } from '@op/ui/Surface';
 import { useCallback, useRef } from 'react';
 import React from 'react';
 

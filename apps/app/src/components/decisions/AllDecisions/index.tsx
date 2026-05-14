@@ -5,7 +5,7 @@ import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { match } from '@op/core';
 import { useInfiniteScroll } from '@op/hooks';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/ui-next/Skeleton';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { useQueryState } from 'nuqs';
 import { Suspense } from 'react';

@@ -2,8 +2,8 @@
 
 import { trpc } from '@op/api/client';
 import type { ReviewsPolicy } from '@op/common';
-import { Chip } from '@op/ui/Chip';
-import { Header2, Header3 } from '@op/ui/Header';
+import { Chip } from '@op/ui-next/Chip';
+import { Header2, Header3 } from '@op/ui-next/Header';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { useState } from 'react';

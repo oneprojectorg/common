@@ -8,9 +8,9 @@ import {
   normalizeProposalCategories,
   parseTranslatedMeta,
 } from '@op/common/client';
+import { Header1, Header3 } from '@op/ui-next/Header';
+import { Link } from '@op/ui-next/Link';
 import { AlertBanner } from '@op/ui/AlertBanner';
-import { Header1, Header3 } from '@op/ui/Header';
-import { Link } from '@op/ui/Link';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import type { ReactNode } from 'react';
 import { LuBookmark, LuHeart, LuMessageCircle } from 'react-icons/lu';

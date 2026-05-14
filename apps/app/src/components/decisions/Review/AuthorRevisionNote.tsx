@@ -1,7 +1,7 @@
 'use client';
 
 import { formatDate } from '@/utils/formatting';
-import { Link } from '@op/ui/Link';
+import { Link } from '@op/ui-next/Link';
 import { useState } from 'react';
 import { LuRefreshCw } from 'react-icons/lu';
 

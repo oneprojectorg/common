@@ -1,7 +1,7 @@
 'use client';
 
 import type { RubricTemplateSchema } from '@op/common/client';
-import { Header2 } from '@op/ui/Header';
+import { Header2 } from '@op/ui-next/Header';
 import { useMemo } from 'react';
 import { LuEye } from 'react-icons/lu';
 

@@ -1,4 +1,4 @@
-import { Header3 } from '@op/ui/Header';
+import { Header3 } from '@op/ui-next/Header';
 
 import { FormalSection } from '../FormalSection';
 

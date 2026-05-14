@@ -2,7 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui-next/Button';
-import { Header2 } from '@op/ui/Header';
+import { Header2 } from '@op/ui-next/Header';
 import { useQueryState } from 'nuqs';
 import React from 'react';
 

@@ -1,4 +1,4 @@
-import { Header1 } from '@op/ui/Header';
+import { Header1 } from '@op/ui-next/Header';
 import { cn } from '@op/ui/utils';
 import type { ReactNode } from 'react';
 

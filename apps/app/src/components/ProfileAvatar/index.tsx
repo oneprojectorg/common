@@ -1,5 +1,5 @@
 import { getPublicUrl } from '@/utils';
-import { Avatar, AvatarSkeleton } from '@op/ui/Avatar';
+import { Avatar, AvatarSkeleton } from '@op/ui-next/Avatar';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 

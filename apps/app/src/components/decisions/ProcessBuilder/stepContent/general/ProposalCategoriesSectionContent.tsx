@@ -3,8 +3,8 @@
 import { trpc } from '@op/api/client';
 import type { ProposalCategory } from '@op/common';
 import { Button } from '@op/ui-next/Button';
+import { Header2, Header3 } from '@op/ui-next/Header';
 import { EmptyState } from '@op/ui/EmptyState';
-import { Header2, Header3 } from '@op/ui/Header';
 import { TextField } from '@op/ui/TextField';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { useState } from 'react';

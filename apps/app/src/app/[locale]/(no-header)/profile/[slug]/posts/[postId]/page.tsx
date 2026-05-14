@@ -1,6 +1,6 @@
 'use client';
 
-import { Skeleton } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/ui-next/Skeleton';
 import { useParams } from 'next/navigation';
 import { Suspense } from 'react';
 

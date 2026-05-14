@@ -1,7 +1,7 @@
 'use client';
 
 import { ButtonLink } from '@op/ui-next/Button';
-import { Header2, Header3 } from '@op/ui/Header';
+import { Header2, Header3 } from '@op/ui-next/Header';
 import { LogoLoop } from '@op/ui/LogoLoop';
 import { cn } from '@op/ui/utils';
 import type { Variants } from 'motion/react';

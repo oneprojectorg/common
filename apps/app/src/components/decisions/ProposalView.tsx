@@ -9,9 +9,9 @@ import {
   type ProposalTranslation,
   type SupportedLocale,
 } from '@op/common/client';
-import { Header3 } from '@op/ui/Header';
+import { Header3 } from '@op/ui-next/Header';
+import { Surface } from '@op/ui-next/Surface';
 import { SplitPane } from '@op/ui/SplitPane';
-import { Surface } from '@op/ui/Surface';
 import { useLocale } from 'next-intl';
 import { useQueryStates } from 'nuqs';
 import { type ReactNode, useCallback, useRef, useState } from 'react';

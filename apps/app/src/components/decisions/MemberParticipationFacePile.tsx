@@ -1,6 +1,6 @@
 import { getPublicUrl } from '@/utils';
 import { pluralize } from '@/utils/pluralize';
-import { Avatar } from '@op/ui/Avatar';
+import { Avatar } from '@op/ui-next/Avatar';
 import { GrowingFacePile } from '@op/ui/GrowingFacePile';
 import Image from 'next/image';
 

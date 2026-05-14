@@ -9,10 +9,10 @@ import {
   normalizeProposalCategories,
 } from '@op/common/client';
 import { isNullish, match } from '@op/core';
-import { Avatar } from '@op/ui/Avatar';
-import { Chip } from '@op/ui/Chip';
-import { Header3 } from '@op/ui/Header';
-import { Surface } from '@op/ui/Surface';
+import { Avatar } from '@op/ui-next/Avatar';
+import { Chip } from '@op/ui-next/Chip';
+import { Header3 } from '@op/ui-next/Header';
+import { Surface } from '@op/ui-next/Surface';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import type { HTMLAttributes, ReactNode } from 'react';
@@ -51,9 +51,9 @@ export function ProposalCard({
 
   return (
     <Surface
-      variant={isDraft ? 'filled' : 'empty'}
       className={cn(
         'relative flex w-full min-w-80 flex-col justify-between gap-3 p-4',
+        isDraft && 'bg-muted',
         className,
       )}
       {...props}

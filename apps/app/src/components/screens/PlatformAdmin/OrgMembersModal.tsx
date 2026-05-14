@@ -1,11 +1,11 @@
 'use client';
 
 import type { AdminOrg } from '@op/api/encoders';
-import { Avatar } from '@op/ui/Avatar';
-import { Chip } from '@op/ui/Chip';
+import { Avatar } from '@op/ui-next/Avatar';
+import { Chip } from '@op/ui-next/Chip';
+import { Surface } from '@op/ui-next/Surface';
 import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { ProfileItem } from '@op/ui/ProfileItem';
-import { Surface } from '@op/ui/Surface';
 import { LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';

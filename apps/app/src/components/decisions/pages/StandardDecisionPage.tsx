@@ -2,8 +2,8 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
+import { Header3 } from '@op/ui-next/Header';
 import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
 import { Suspense } from 'react';
 import { LuTriangleAlert } from 'react-icons/lu';
 

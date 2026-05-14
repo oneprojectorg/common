@@ -3,9 +3,9 @@
 import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
 import { getRubricScoringInfo } from '@op/common/client';
+import { Header3 } from '@op/ui-next/Header';
 import { EmptyState } from '@op/ui/EmptyState';
 import { FooterBar } from '@op/ui/FooterBar';
-import { Header3 } from '@op/ui/Header';
 import { toast } from '@op/ui/Toast';
 import { notFound } from 'next/navigation';
 import { useMemo, useState } from 'react';

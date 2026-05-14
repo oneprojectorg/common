@@ -1,4 +1,4 @@
-import { Chip } from '@op/ui/Chip';
+import { Chip } from '@op/ui-next/Chip';
 import { cn } from '@op/ui/utils';
 import { LuCircleAlert } from 'react-icons/lu';
 

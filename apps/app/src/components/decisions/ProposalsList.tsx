@@ -17,15 +17,15 @@ import {
   isVotingEligible,
 } from '@op/common/client';
 import { Button, ButtonLink } from '@op/ui-next/Button';
+import { Header3 } from '@op/ui-next/Header';
+import { Link } from '@op/ui-next/Link';
+import { Skeleton } from '@op/ui-next/Skeleton';
+import { Surface } from '@op/ui-next/Surface';
 import { Checkbox } from '@op/ui/Checkbox';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
 import { FooterBar } from '@op/ui/FooterBar';
-import { Header3 } from '@op/ui/Header';
-import { Link } from '@op/ui/Link';
 import { Modal } from '@op/ui/Modal';
-import { Skeleton } from '@op/ui/Skeleton';
-import { Surface } from '@op/ui/Surface';
 import { toast } from '@op/ui/Toast';
 import { useLocale } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';

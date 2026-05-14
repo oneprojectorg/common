@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/ui-next/Skeleton';
 import { Tab, TabList, Tabs } from '@op/ui/Tabs';
 import { Key, useEffect, useMemo, useRef } from 'react';
 

@@ -2,10 +2,10 @@
 
 import { getPublicUrl } from '@/utils';
 import { Organization } from '@op/api/encoders';
-import { Avatar } from '@op/ui/Avatar';
+import { Avatar } from '@op/ui-next/Avatar';
+import { Skeleton, SkeletonLine } from '@op/ui-next/Skeleton';
+import { Surface } from '@op/ui-next/Surface';
 import { HorizontalList, HorizontalListItem } from '@op/ui/HorizontalList';
-import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
-import { Surface } from '@op/ui/Surface';
 import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
 
@@ -68,7 +68,7 @@ export const OrganizationList = ({
                   className="flex size-48"
                   href={`/org/${org.profile.slug}`}
                 >
-                  <Surface className="flex size-full flex-col gap-3">
+                  <Surface className="flex size-full flex-col gap-3 pt-0">
                     <ImageHeader
                       headerImage={
                         headerUrl ? (

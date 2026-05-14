@@ -1,4 +1,4 @@
-import { Header4 } from '@op/ui/Header';
+import { Header4 } from '@op/ui-next/Header';
 
 /** Renders title + description header for a form field. */
 export function FieldHeader({

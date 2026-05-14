@@ -3,9 +3,9 @@
 import { getPublicUrl } from '@/utils';
 import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
-import { Avatar } from '@op/ui/Avatar';
+import { Avatar } from '@op/ui-next/Avatar';
+import { Surface } from '@op/ui-next/Surface';
 import { FacePile } from '@op/ui/FacePile';
-import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';

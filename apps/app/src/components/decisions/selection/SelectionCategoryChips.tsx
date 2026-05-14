@@ -1,6 +1,6 @@
 'use client';
 
-import { Chip } from '@op/ui/Chip';
+import { Chip } from '@op/ui-next/Chip';
 
 import { useTranslations } from '@/lib/i18n';
 
