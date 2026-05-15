@@ -59,7 +59,7 @@ export const DecisionActionBar = ({
         {description ? (
           <DialogTrigger>
             <Button color="secondary" className="w-full">
-              {t('About the process')}
+              {t('Learn more')}
             </Button>
 
             <Modal isDismissable>
