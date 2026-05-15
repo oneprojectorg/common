@@ -315,6 +315,8 @@ Then one final merge `shadcn-full-install` → `dev`.
 
 4. **Surface → Card composition migration.** Tier 2b kept Surface call sites as plain-children. shadcn Card primitive ships `CardHeader`/`CardContent`/`CardFooter`/`CardTitle`/`CardDescription`/`CardAction` slot composition. Migrate Surface consumers to use the slots for cleaner spacing semantics. JSX restructure per site, not codemod-mechanical. When done, restore shadcn's default `py-4` on Card plus the slot-aware padding resets (`has-data-[slot=card-footer]:pb-0`, `has-[>img:first-child]:pt-0`) — currently dropped because consumers pad manually.
 
+9. **AddRelationshipForm refactor.** `apps/app/src/components/Profile/ProfileDetails/AddRelationshipForm.tsx` renders raw checkbox + plain `<div>`/`<span>` rows instead of `<Field>` + `<FieldLabel>` + `<FieldDescription>` composition. No `<label htmlFor>` association between Checkbox and its visible text — clicking the option text doesn't toggle. Rewrite using `@op/ui-next/Field` + `<label>` wrappers so each row is keyboard/screen-reader accessible.
+
 ## Risk register
 
 | # | Risk | Mitigation |

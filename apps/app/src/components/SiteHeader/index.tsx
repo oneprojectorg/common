@@ -429,7 +429,7 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
         <DropdownMenuTrigger render={avatarButton} />
         <DropdownMenuContent
           align="end"
-          className="flex min-w-72 flex-col p-4 pb-6"
+          className="flex w-72 flex-col p-4 pb-6"
         >
           <AvatarMenuContent
             setIsProfileOpen={setIsProfileOpen}
