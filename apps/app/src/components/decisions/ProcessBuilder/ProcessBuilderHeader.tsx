@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Sheet, SheetBody } from '@op/ui/Sheet';
+import { Sheet, SheetBody } from '@op/ui-next/Sheet';
 import { useSidebar } from '@op/ui/Sidebar';
 import { LuChevronRight, LuHouse, LuList } from 'react-icons/lu';
 
