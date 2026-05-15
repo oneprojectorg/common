@@ -3,9 +3,9 @@
 import { trpc } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
 import { Header2 } from '@op/ui-next/Header';
+import { Pagination } from '@op/ui-next/Pagination';
 import { SearchField } from '@op/ui-next/SearchField';
 import { Skeleton } from '@op/ui-next/Skeleton';
-import { Pagination } from '@op/ui/Pagination';
 import {
   Table,
   TableBody,

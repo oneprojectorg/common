@@ -2,7 +2,10 @@
 
 import { trpc } from '@op/api/client';
 import type { TermWithChildren } from '@op/common';
-import { MultiSelectComboBox, type Option } from '@op/ui/MultiSelectComboBox';
+import {
+  MultiSelectComboBox,
+  type Option,
+} from '@op/ui-next/MultiSelectComboBox';
 import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

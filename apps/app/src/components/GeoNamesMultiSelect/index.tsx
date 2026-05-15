@@ -1,8 +1,8 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
-import type { Option } from '@op/ui/MultiSelectComboBox';
+import { MultiSelectComboBox } from '@op/ui-next/MultiSelectComboBox';
+import type { Option } from '@op/ui-next/MultiSelectComboBox';
 import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

@@ -2,7 +2,7 @@
 
 import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
-import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
+import { Breadcrumb, Breadcrumbs } from '@op/ui-next/Breadcrumbs';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import { type ReactNode, Suspense } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';

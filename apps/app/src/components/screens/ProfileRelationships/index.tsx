@@ -3,8 +3,8 @@
 import { pluralize } from '@/utils/pluralize';
 import { skipBatch, trpc } from '@op/api/client';
 import { RELATIONSHIP_OPTIONS, relationshipMap } from '@op/types/relationships';
+import { Breadcrumb, Breadcrumbs } from '@op/ui-next/Breadcrumbs';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui-next/Tabs';
-import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import React, { Suspense, useMemo, useState } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';

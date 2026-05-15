@@ -5,10 +5,10 @@ import { useCursorPagination, useDebounce } from '@op/hooks';
 import { Header2 } from '@op/ui-next/Header';
 import { DropdownMenuItem } from '@op/ui-next/Menu';
 import { OptionMenu } from '@op/ui-next/OptionMenu';
+import { Pagination } from '@op/ui-next/Pagination';
 import { SearchField } from '@op/ui-next/SearchField';
 import { Skeleton } from '@op/ui-next/Skeleton';
 import { toast } from '@op/ui-next/Toast';
-import { Pagination } from '@op/ui/Pagination';
 import {
   Table,
   TableBody,

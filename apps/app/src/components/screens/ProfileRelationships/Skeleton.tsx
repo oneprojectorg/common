@@ -1,5 +1,5 @@
+import { Breadcrumb, Breadcrumbs } from '@op/ui-next/Breadcrumbs';
 import { Skeleton, SkeletonLine } from '@op/ui-next/Skeleton';
-import { Breadcrumb, Breadcrumbs } from '@op/ui/Breadcrumbs';
 import React from 'react';
 
 import { OrganizationCardListSkeleton } from '@/components/OrganizationList';
