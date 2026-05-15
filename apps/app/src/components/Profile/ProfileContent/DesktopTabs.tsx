@@ -1,6 +1,6 @@
 'use client';
 
-import { Tab } from '@op/ui/Tabs';
+import { Tab } from '@op/ui-next/Tabs';
 
 import { useTranslations } from '@/lib/i18n';
 

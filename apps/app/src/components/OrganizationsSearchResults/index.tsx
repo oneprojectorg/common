@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import { EntityType, SearchProfilesResult } from '@op/api/encoders';
 import { match } from '@op/core';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { Tab, TabList, TabPanel, Tabs } from '@op/ui-next/Tabs';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

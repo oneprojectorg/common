@@ -1,6 +1,6 @@
 'use client';
 
-import { Tabs } from '@op/ui/Tabs';
+import { Tabs } from '@op/ui-next/Tabs';
 import { useSearchParams } from 'next/navigation';
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import type { Key } from 'react-aria-components';

@@ -7,7 +7,7 @@ import { formatToUrl } from '@op/common/validation';
 import { Button } from '@op/ui-next/Button';
 import { Header2, Header3 } from '@op/ui-next/Header';
 import { Skeleton } from '@op/ui-next/Skeleton';
-import { Tab, TabList, TabPanel } from '@op/ui/Tabs';
+import { Tab, TabList, TabPanel } from '@op/ui-next/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';

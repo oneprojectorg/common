@@ -30,7 +30,8 @@
     "./RadioGroup": "./src/components/RadioGroup.ts",
     "./Menu": "./src/components/Menu.ts",
     "./Modal": "./src/components/Modal.tsx",
-    "./OptionMenu": "./src/components/OptionMenu.tsx"
+    "./OptionMenu": "./src/components/OptionMenu.tsx",
+    "./Tabs": "./src/components/Tabs.tsx"
   },
   "scripts": {
     "build": "pnpm build:styles && storybook build",

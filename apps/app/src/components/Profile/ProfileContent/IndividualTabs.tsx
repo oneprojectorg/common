@@ -1,6 +1,6 @@
 'use client';
 
-import { Tab, TabPanel } from '@op/ui/Tabs';
+import { Tab, TabPanel } from '@op/ui-next/Tabs';
 import { cn } from '@op/ui/utils';
 import { ReactNode } from 'react';
 

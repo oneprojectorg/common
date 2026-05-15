@@ -4,7 +4,7 @@ import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
 import { DropdownMenuItem } from '@op/ui-next/Menu';
 import { OptionMenu } from '@op/ui-next/OptionMenu';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { Tab, TabList, TabPanel, Tabs } from '@op/ui-next/Tabs';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
 import React, { useMemo } from 'react';
