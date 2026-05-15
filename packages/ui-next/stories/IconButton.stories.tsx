@@ -27,6 +27,7 @@ export const Sizes: Story = {
       </IconButton>
     </div>
   ),
+  tags: ['autodocs'],
 };
 
 export const Variants: Story = {

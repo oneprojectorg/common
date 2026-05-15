@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 const meta: Meta = {
   title: 'shadcn/Field',
   parameters: { layout: 'padded' },
+  tags: ['autodocs'],
 };
 
 export default meta;

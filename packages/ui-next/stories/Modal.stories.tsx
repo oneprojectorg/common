@@ -13,6 +13,7 @@ import {
 const meta: Meta = {
   title: 'shadcn/Modal',
   parameters: { layout: 'centered' },
+  tags: ['autodocs'],
 };
 
 export default meta;
@@ -55,7 +56,10 @@ export const FlatSurface: Story = {
         >
           <ModalHeader className="pl-6 text-left">Delete draft?</ModalHeader>
           <ModalBody>
-            <p>This draft will be permanently deleted and can&apos;t be recovered.</p>
+            <p>
+              This draft will be permanently deleted and can&apos;t be
+              recovered.
+            </p>
           </ModalBody>
           <ModalFooter>
             <Button color="secondary" onPress={() => setOpen(false)}>

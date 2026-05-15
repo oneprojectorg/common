@@ -11,6 +11,7 @@ import {
 const meta: Meta = {
   title: 'shadcn/Header',
   parameters: { layout: 'padded' },
+  tags: ['autodocs'],
 };
 
 export default meta;

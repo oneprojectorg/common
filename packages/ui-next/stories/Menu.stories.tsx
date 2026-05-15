@@ -24,6 +24,7 @@ import {
 const meta: Meta = {
   title: 'shadcn/Menu',
   parameters: { layout: 'centered' },
+  tags: ['autodocs'],
 };
 
 export default meta;
@@ -147,9 +148,13 @@ export const WithRadioGroup: Story = {
         <DropdownMenuContent>
           <DropdownMenuLabel>Sort by</DropdownMenuLabel>
           <DropdownMenuRadioGroup value={sort} onValueChange={setSort}>
-            <DropdownMenuRadioItem value="recent">Most recent</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="recent">
+              Most recent
+            </DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="oldest">Oldest</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="alpha">Alphabetical</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="alpha">
+              Alphabetical
+            </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>

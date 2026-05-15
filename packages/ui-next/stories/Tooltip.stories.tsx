@@ -6,6 +6,7 @@ import { Tooltip, TooltipTrigger } from '@/components/Tooltip';
 const meta: Meta = {
   title: 'shadcn/Tooltip',
   parameters: { layout: 'centered' },
+  tags: ['autodocs'],
 };
 
 export default meta;

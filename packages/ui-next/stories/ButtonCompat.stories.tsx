@@ -24,6 +24,7 @@ export const LegacyColors: Story = {
       <Button color="verified">Verified</Button>
     </div>
   ),
+  tags: ['autodocs'],
 };
 
 export const LegacySizes: Story = {

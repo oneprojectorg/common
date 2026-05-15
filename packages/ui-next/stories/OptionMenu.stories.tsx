@@ -1,14 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import {
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from '@/components/Menu';
+import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/Menu';
 import { OptionMenu } from '@/components/OptionMenu';
 
 const meta: Meta = {
   title: 'shadcn/OptionMenu',
   parameters: { layout: 'centered' },
+  tags: ['autodocs'],
 };
 
 export default meta;
