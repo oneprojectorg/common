@@ -3,15 +3,10 @@
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui-next/Button';
-import { Modal, ModalBody } from '@op/ui-next/Modal';
 import { Select, SelectItem } from '@op/ui-next/Select';
+import { Sheet, SheetBody } from '@op/ui-next/Sheet';
 import { type ReactNode, useState } from 'react';
-import { LuChevronDown } from 'react-icons/lu';
-
-const BOTTOM_SHEET_OVERLAY_CLASS =
-  'p-0 items-end justify-center animate-in fade-in-0 duration-300';
-const BOTTOM_SHEET_CLASS =
-  'm-0 h-auto w-screen max-w-none animate-in rounded-t-2xl rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full';
+import { LuCheck, LuChevronDown } from 'react-icons/lu';
 
 interface SelectOption<T extends string> {
   id: T;
@@ -69,39 +64,41 @@ export function ResponsiveSelect<T extends string>({
           {displayLabel}
           <LuChevronDown className="size-4" />
         </Button>
-        <Modal
+        <Sheet
           isOpen={isOpen}
           onOpenChange={setIsOpen}
-          isDismissable={true}
-          isKeyboardDismissDisabled={false}
-          overlayClassName={BOTTOM_SHEET_OVERLAY_CLASS}
-          className={BOTTOM_SHEET_CLASS}
+          side="bottom"
+          className="rounded-t-2xl"
         >
-          <ModalBody className="pb-safe p-0">
+          <SheetBody className="pb-safe">
             <div
               role="listbox"
               aria-label={ariaLabel}
-              className="flex min-w-full flex-col"
+              className="flex flex-col"
             >
-              {items.map((item, index) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  role="option"
-                  aria-selected={selectedKey === item.id}
-                  disabled={item.isDisabled}
-                  className={`px-6 py-4 text-left text-sm outline-none hover:bg-neutral-offWhite focus-visible:bg-neutral-offWhite disabled:cursor-not-allowed disabled:opacity-50 aria-selected:font-medium ${index < items.length - 1 ? 'border-b border-neutral-gray1' : ''}`}
-                  onClick={() => {
-                    onSelectionChange(item.id);
-                    setIsOpen(false);
-                  }}
-                >
-                  {item.label}
-                </button>
-              ))}
+              {items.map((item, index) => {
+                const isSelected = selectedKey === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    disabled={item.isDisabled}
+                    className={`hover:bg-accent focus-visible:bg-accent aria-selected:bg-accent/50 flex items-center justify-between px-6 py-4 text-left text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-selected:font-medium ${index < items.length - 1 ? 'border-b border-border' : ''}`}
+                    onClick={() => {
+                      onSelectionChange(item.id);
+                      setIsOpen(false);
+                    }}
+                  >
+                    <span>{item.label}</span>
+                    {isSelected && <LuCheck className="size-4" />}
+                  </button>
+                );
+              })}
             </div>
-          </ModalBody>
-        </Modal>
+          </SheetBody>
+        </Sheet>
       </>
     );
   }
