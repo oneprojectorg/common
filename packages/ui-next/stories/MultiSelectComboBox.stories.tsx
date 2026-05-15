@@ -81,10 +81,25 @@ export const WithError: Story = {
 const TERMS: Option[] = [
   { id: 'fruit', label: 'Fruit', level: 0, hasChildren: true },
   { id: 'apple', label: 'Apple', level: 1, definition: 'A red or green fruit' },
-  { id: 'banana', label: 'Banana', level: 1, definition: 'A yellow tropical fruit' },
+  {
+    id: 'banana',
+    label: 'Banana',
+    level: 1,
+    definition: 'A yellow tropical fruit',
+  },
   { id: 'veg', label: 'Vegetable', level: 0, hasChildren: true },
-  { id: 'carrot', label: 'Carrot', level: 1, definition: 'An orange root vegetable' },
-  { id: 'broccoli', label: 'Broccoli', level: 1, definition: 'A green tree-like vegetable' },
+  {
+    id: 'carrot',
+    label: 'Carrot',
+    level: 1,
+    definition: 'An orange root vegetable',
+  },
+  {
+    id: 'broccoli',
+    label: 'Broccoli',
+    level: 1,
+    definition: 'A green tree-like vegetable',
+  },
 ];
 
 export const WithTreeAndDefinitions: Story = {
@@ -149,6 +164,7 @@ export const Disabled: Story = {
         value={value}
         onChange={setValue}
         placeholder="Locked"
+        isDisabled
       />
     );
   },

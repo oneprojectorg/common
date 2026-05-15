@@ -53,6 +53,7 @@ export type MultiSelectComboBoxProps = {
   disableParentSelection?: boolean;
   enableLocalSearch?: boolean;
   isLoading?: boolean;
+  isDisabled?: boolean;
 };
 
 export const MultiSelectComboBox = ({
@@ -69,6 +70,7 @@ export const MultiSelectComboBox = ({
   disableParentSelection = true,
   enableLocalSearch = true,
   isLoading = false,
+  isDisabled = false,
 }: MultiSelectComboBoxProps) => {
   const [inputValue, setInputValue] = React.useState('');
   const selectedOptions = value ?? [];
@@ -116,6 +118,7 @@ export const MultiSelectComboBox = ({
         inputValue={inputValue}
         onInputValueChange={handleInputValueChange}
         filter={enableLocalSearch ? undefined : () => true}
+        disabled={isDisabled}
       >
         <ComboboxChips
           className={cn(
