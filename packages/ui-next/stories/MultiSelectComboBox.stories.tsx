@@ -152,6 +152,44 @@ export const Loading: Story = {
   },
 };
 
+const FOCUS_AREAS: Option[] = [
+  { id: 'food', label: 'Food Sovereignty' },
+  { id: 'climate', label: 'Climate Resilience' },
+  { id: 'housing', label: 'Affordable Housing' },
+  { id: 'health', label: 'Public Health Equity' },
+  { id: 'edu', label: 'Education Access' },
+  { id: 'arts', label: 'Arts and Culture' },
+  { id: 'tech', label: 'Civic Technology' },
+  { id: 'labor', label: 'Worker Power' },
+  { id: 'land', label: 'Land Trusts' },
+  { id: 'finance', label: 'Community Finance' },
+  { id: 'demo', label: 'Participatory Democracy' },
+  { id: 'youth', label: 'Youth Leadership' },
+  { id: 'elders', label: 'Elder Care Networks' },
+  { id: 'transport', label: 'Public Transit Advocacy' },
+  { id: 'water', label: 'Watershed Stewardship' },
+  { id: 'food-rescue', label: 'Food Rescue Programs' },
+  { id: 'maker', label: 'Maker Spaces' },
+  { id: 'lang', label: 'Language Justice' },
+  { id: 'data', label: 'Data Sovereignty' },
+  { id: 'energy', label: 'Energy Cooperatives' },
+];
+
+export const ManyMultiWordOptions: Story = {
+  render: () => {
+    const [value, setValue] = useState<Option[]>([]);
+    return (
+      <MultiSelectComboBox
+        label="Focus Areas"
+        placeholder="Select all that apply"
+        items={FOCUS_AREAS}
+        value={value}
+        onChange={setValue}
+      />
+    );
+  },
+};
+
 export const Disabled: Story = {
   render: () => {
     const [value, setValue] = useState<Option[]>([
