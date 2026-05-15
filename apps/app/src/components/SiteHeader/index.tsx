@@ -11,11 +11,13 @@ import { screens } from '@op/styles/constants';
 import { Avatar } from '@op/ui-next/Avatar';
 import { Button } from '@op/ui-next/Button';
 import { Chip } from '@op/ui-next/Chip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@op/ui-next/Menu';
 import { Skeleton } from '@op/ui-next/Skeleton';
-import { Menu, MenuItem, MenuItemSimple, MenuSeparator } from '@op/ui/Menu';
 import { Modal, ModalBody } from '@op/ui/Modal';
-import { Popover } from '@op/ui/Popover';
-import { MenuTrigger } from '@op/ui/RAC';
 import { SidebarTrigger } from '@op/ui/Sidebar';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
@@ -41,7 +43,10 @@ import { SearchInput } from '../SearchInput';
 import { ToSModal } from '../ToSModal';
 import { CreateMenu } from './CreateMenu';
 
-const ProfileMenuItem = ({
+const menuRowClass =
+  'flex w-full items-center gap-2 rounded-md p-2 text-left text-sm hover:bg-neutral-offWhite focus-visible:bg-neutral-offWhite outline-none';
+
+const ProfileMenuRow = ({
   profile,
   onClose,
   onProfileSwitch,
@@ -61,19 +66,17 @@ const ProfileMenuItem = ({
   const switchProfile = trpc.account.switchProfile.useMutation({
     onSuccess: () => {
       utils.invalidate();
-      // TODO: something is happening when switching so trying this out to see if it helps to continue debugging
       utils.organization.listAllPosts.refetch();
-      // Reset all SSR fetches as well
       router.refresh();
     },
   });
+  const isActive = user.currentProfile?.id === profile.id;
   return (
-    <MenuItem
-      key={profile.id}
-      className="min-h-[60px] w-72"
-      selected={user.currentProfile?.id === profile.id}
-      onAction={() => {
-        if (user.currentProfile?.id === profile.id) {
+    <button
+      type="button"
+      className={cn(menuRowClass, 'min-h-[60px]')}
+      onClick={() => {
+        if (isActive) {
           const profilePath =
             profile.type === EntityType.INDIVIDUAL
               ? `/profile/${profile.slug}`
@@ -105,7 +108,7 @@ const ProfileMenuItem = ({
         ) : null}
       </Avatar>
       {children}
-    </MenuItem>
+    </button>
   );
 };
 
@@ -141,7 +144,6 @@ const AvatarMenuContent = ({
         }
 
         if (profile.type === EntityType.INDIVIDUAL) {
-          // TODO: typing here needs to be fixed. Will be easier with new profile types
           acc.userProfiles.push(profile as Profile);
         } else {
           acc.orgProfiles.push(profile as Profile);
@@ -161,10 +163,7 @@ const AvatarMenuContent = ({
 
   return (
     <>
-      <MenuItemSimple
-        isDisabled
-        className="flex cursor-default items-center gap-2 p-0 px-0 pb-4 text-neutral-charcoal hover:bg-transparent"
-      >
+      <div className="flex items-center gap-2 p-0 px-0 pb-4 text-neutral-charcoal">
         <Avatar className="size-6" placeholder={user.name ?? ''}>
           {avatarUrl ? (
             <Image
@@ -201,10 +200,10 @@ const AvatarMenuContent = ({
             )}
           </span>
         </div>
-      </MenuItemSimple>
+      </div>
 
       {userProfiles?.map((profile) => (
-        <ProfileMenuItem
+        <ProfileMenuRow
           key={profile.id}
           profile={profile}
           onClose={onClose}
@@ -221,12 +220,14 @@ const AvatarMenuContent = ({
               {profile.bio}
             </div>
           </div>
-        </ProfileMenuItem>
+        </ProfileMenuRow>
       ))}
 
-      {orgProfiles?.length ? <MenuSeparator className="pt-4" /> : null}
+      {orgProfiles?.length ? (
+        <hr className="my-2 border-t border-neutral-gray1" />
+      ) : null}
       {orgProfiles?.map((profile) => (
-        <ProfileMenuItem
+        <ProfileMenuRow
           key={profile.id}
           profile={profile}
           onClose={onClose}
@@ -243,13 +244,13 @@ const AvatarMenuContent = ({
               {t('Organization')}
             </div>
           </div>
-        </ProfileMenuItem>
+        </ProfileMenuRow>
       ))}
-      <MenuSeparator className="pt-4" />
-      <MenuItem
-        id="help"
-        className="px-0 py-2 text-neutral-charcoal hover:bg-neutral-offWhite focus-visible:bg-neutral-offWhite"
-        onAction={() => {
+      <hr className="my-2 border-t border-neutral-gray1" />
+      <button
+        type="button"
+        className={cn(menuRowClass, 'px-0 py-2 text-neutral-charcoal')}
+        onClick={() => {
           window.open(
             'https://harmonious-peridot-9d5.notion.site/Common-Platform-Feature-Requests-Bug-Submissions-21fa0d01a6d981f48c9cd48a4a63267e',
             '_blank',
@@ -261,22 +262,19 @@ const AvatarMenuContent = ({
       >
         <LuCircleHelp className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
         {t('Feature Requests & Support')}
-      </MenuItem>
-      <MenuItem
-        id="logout"
-        className="px-0 py-2 text-neutral-charcoal hover:bg-neutral-offWhite focus-visible:bg-neutral-offWhite"
-        onAction={() => {
+      </button>
+      <button
+        type="button"
+        className={cn(menuRowClass, 'px-0 py-2 text-neutral-charcoal')}
+        onClick={() => {
           void logout.refetch().finally(() => router.push('/'));
           onClose?.();
         }}
       >
         <LuLogOut className="size-8 rounded-full bg-neutral-offWhite p-2" />{' '}
         {t('Log out')}
-      </MenuItem>
-      <MenuItemSimple
-        isDisabled
-        className="flex flex-col items-start justify-start gap-2 px-0 pt-4 text-neutral-gray4 hover:bg-transparent sm:text-sm"
-      >
+      </button>
+      <div className="flex flex-col items-start justify-start gap-2 px-0 pt-4 text-neutral-gray4 sm:text-sm">
         <div>
           <PrivacyPolicyModal />
           {' • '}
@@ -284,11 +282,8 @@ const AvatarMenuContent = ({
           {' • '}
           <CoCModal />
         </div>
-      </MenuItemSimple>
-      <MenuItemSimple
-        isDisabled
-        className="flex flex-col items-start justify-start gap-2 px-0 text-sm text-neutral-gray4 hover:bg-transparent"
-      >
+      </div>
+      <div className="flex flex-col items-start justify-start gap-2 px-0 text-sm text-neutral-gray4">
         <div className="text-xs">
           <span
             className="pointer text-primary-teal hover:underline"
@@ -321,7 +316,7 @@ const AvatarMenuContent = ({
             </>
           )}
         </div>
-      </MenuItemSimple>
+      </div>
     </>
   );
 };
@@ -398,14 +393,14 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
           className="m-0 h-auto w-screen max-w-none animate-in rounded-t rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full"
         >
           <ModalBody className="pb-safe p-0">
-            <Menu className="flex min-w-full flex-col border-t-0 p-4 pb-8">
+            <div className="flex min-w-full flex-col p-4 pb-8">
               <AvatarMenuContent
                 setIsProfileOpen={setIsProfileOpen}
                 setIsOrgDeletionOpen={setIsOrgDeletionOpen}
                 onClose={() => setIsDrawerOpen(false)}
                 onProfileSwitch={handleProfileSwitch}
               />
-            </Menu>
+            </div>
           </ModalBody>
         </Modal>
         <UpdateProfileModal
@@ -430,19 +425,20 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
 
   return (
     <>
-      <MenuTrigger>
-        {avatarButton}
-        <Popover className="min-w-[150px]" placement="bottom end">
-          <Menu className="flex min-w-72 flex-col p-4 pb-6">
-            <AvatarMenuContent
-              setIsProfileOpen={setIsProfileOpen}
-              setIsOrgDeletionOpen={setIsOrgDeletionOpen}
-              onClose={() => setIsProfileOpen(false)}
-              onProfileSwitch={handleProfileSwitch}
-            />
-          </Menu>
-        </Popover>
-      </MenuTrigger>
+      <DropdownMenu>
+        <DropdownMenuTrigger render={avatarButton} />
+        <DropdownMenuContent
+          align="end"
+          className="flex min-w-72 flex-col p-4 pb-6"
+        >
+          <AvatarMenuContent
+            setIsProfileOpen={setIsProfileOpen}
+            setIsOrgDeletionOpen={setIsOrgDeletionOpen}
+            onClose={() => setIsProfileOpen(false)}
+            onProfileSwitch={handleProfileSwitch}
+          />
+        </DropdownMenuContent>
+      </DropdownMenu>
       <UpdateProfileModal isOpen={isProfileOpen} setIsOpen={setIsProfileOpen} />
       <ProfileSwitchingModal
         isOpen={isSwitchingProfile}

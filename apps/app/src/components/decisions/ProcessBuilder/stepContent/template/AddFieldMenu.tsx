@@ -4,6 +4,7 @@ import { Button } from '@op/ui-next/Button';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -46,23 +47,25 @@ export function AddFieldMenu({ onAddField }: AddFieldMenuProps) {
         {FIELD_CATEGORIES.map((category, categoryIndex) => (
           <Fragment key={category.id}>
             {categoryIndex > 0 && <DropdownMenuSeparator />}
-            <DropdownMenuLabel className="px-4 py-1 text-xs font-medium text-neutral-gray4">
-              {t(category.labelKey)}
-            </DropdownMenuLabel>
-            {category.types.map((type) => {
-              const config = FIELD_TYPE_REGISTRY[type];
-              const Icon = config.icon;
-              return (
-                <DropdownMenuItem
-                  key={type}
-                  onClick={() => onAddField(type)}
-                  className="gap-2"
-                >
-                  <Icon className="size-4 text-neutral-gray4" />
-                  {t(config.labelKey)}
-                </DropdownMenuItem>
-              );
-            })}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="px-4 py-1 text-xs font-medium text-neutral-gray4">
+                {t(category.labelKey)}
+              </DropdownMenuLabel>
+              {category.types.map((type) => {
+                const config = FIELD_TYPE_REGISTRY[type];
+                const Icon = config.icon;
+                return (
+                  <DropdownMenuItem
+                    key={type}
+                    onClick={() => onAddField(type)}
+                    className="gap-2"
+                  >
+                    <Icon className="size-4 text-neutral-gray4" />
+                    {t(config.labelKey)}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuGroup>
           </Fragment>
         ))}
       </DropdownMenuContent>

@@ -2,9 +2,9 @@
 
 import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
 import type { AdminOrg } from '@op/api/encoders';
+import { DropdownMenuItem } from '@op/ui-next/Menu';
+import { OptionMenu } from '@op/ui-next/OptionMenu';
 import { Tooltip, TooltipTrigger } from '@op/ui-next/Tooltip';
-import { Menu, MenuItem } from '@op/ui/Menu';
-import { OptionMenu } from '@op/ui/OptionMenu';
 import { TableCell } from '@op/ui/ui/table';
 import { useFormatter } from 'next-intl';
 import { useState } from 'react';
@@ -53,15 +53,9 @@ export const OrgsRowCells = ({ org }: { org: AdminOrg }) => {
             variant="outline"
             size="medium"
           >
-            <Menu className="min-w-48 p-2">
-              <MenuItem
-                key="view-members"
-                onAction={() => setIsMembersModalOpen(true)}
-                className="px-3 py-1"
-              >
-                {t('View members')}
-              </MenuItem>
-            </Menu>
+            <DropdownMenuItem onClick={() => setIsMembersModalOpen(true)}>
+              {t('View members')}
+            </DropdownMenuItem>
           </OptionMenu>
         </div>
         <OrgMembersModal

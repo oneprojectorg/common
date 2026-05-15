@@ -1,8 +1,5 @@
 'use client';
 
-import { useMediaQuery } from '@op/hooks';
-import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui-next/Button';
 import { IconButton } from '@op/ui-next/IconButton';
 import { Select, SelectItem } from '@op/ui-next/Select';
 import { cn } from '@op/ui/utils';
@@ -28,7 +25,6 @@ const localeDisplayNames: Record<string, string> = {
 
 export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
   const t = useTranslations();
-  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
   const i18nRouter = useI18nRouter();
   const pathname = usePathname();
   const params = useParams();
@@ -51,26 +47,14 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
       onSelectionChange={handleSelectionChange}
       aria-label={t('Select language')}
       customTrigger={
-        <>
-          <IconButton
-            aria-label={t('Select language')}
-            variant="outline"
-            size="medium"
-            className="hidden text-primary-teal sm:flex"
-          >
-            <LuGlobe className="size-4" />
-          </IconButton>
-          {isMobile ? (
-            <Button
-              color="neutral"
-              unstyled
-              variant="icon"
-              className="flex size-8 items-center justify-center rounded-full bg-neutral-offWhite sm:hidden"
-            >
-              <LuGlobe className="size-4" />
-            </Button>
-          ) : null}
-        </>
+        <IconButton
+          aria-label={t('Select language')}
+          variant="outline"
+          size="medium"
+          className="border-0 bg-neutral-offWhite text-primary-teal sm:border sm:bg-transparent"
+        >
+          <LuGlobe className="size-4" />
+        </IconButton>
       }
     >
       {i18nConfig.locales.map((locale) => (

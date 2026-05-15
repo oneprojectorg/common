@@ -8,10 +8,14 @@ import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui-next/Button';
 import { IconButton } from '@op/ui-next/IconButton';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@op/ui-next/Menu';
 import { DialogTrigger } from '@op/ui/Dialog';
-import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Popover } from '@op/ui/Popover';
 import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
@@ -252,28 +256,30 @@ export function ProposalCardMenu({
 
     if (forMobile) {
       return items.map((item, index) => (
-        <MenuItem
+        <button
           key={item.key}
-          onAction={item.onAction}
-          className={`rounded-none px-6 py-4 ${item.isDestructive ? 'text-functional-red' : ''} ${index < items.length - 1 ? 'border-b border-neutral-gray1' : ''}`}
-          isDisabled={item.isDisabled}
+          type="button"
+          onClick={item.onAction}
+          disabled={item.isDisabled}
+          className={`flex items-center gap-2 px-6 py-4 text-left outline-none hover:bg-neutral-offWhite disabled:cursor-not-allowed disabled:opacity-50 ${item.isDestructive ? 'text-functional-red' : ''} ${index < items.length - 1 ? 'border-b border-neutral-gray1' : ''}`}
         >
           {item.icon}
           {item.label}
-        </MenuItem>
+        </button>
       ));
     }
 
     return items.map((item) => (
-      <MenuItem
+      <DropdownMenuItem
         key={item.key}
-        onAction={item.onAction}
-        className={`min-w-48 py-2 ${item.isDestructive ? 'text-functional-red' : ''}`}
-        isDisabled={item.isDisabled}
+        onClick={item.onAction}
+        variant={item.isDestructive ? 'destructive' : 'default'}
+        disabled={item.isDisabled}
+        className="min-w-48 py-2"
       >
         {item.icon}
         {item.label}
-      </MenuItem>
+      </DropdownMenuItem>
     ));
   };
 
@@ -303,19 +309,19 @@ export function ProposalCardMenu({
             className="m-0 h-auto w-screen max-w-none animate-in rounded-t-2xl rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full"
           >
             <ModalBody className="pb-safe p-0">
-              <Menu className="flex min-w-full flex-col border-0 p-0 shadow-none">
+              <div role="menu" className="flex min-w-full flex-col">
                 {renderMenuItems(true)}
-              </Menu>
+              </div>
             </ModalBody>
           </Modal>
         </>
       ) : (
-        <MenuTrigger>
-          {menuTriggerButton}
-          <Popover placement="bottom end">
-            <Menu className="p-2">{renderMenuItems(false)}</Menu>
-          </Popover>
-        </MenuTrigger>
+        <DropdownMenu>
+          <DropdownMenuTrigger render={menuTriggerButton} />
+          <DropdownMenuContent align="end">
+            {renderMenuItems(false)}
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
       {proposal.isEditable && (
         <DialogTrigger

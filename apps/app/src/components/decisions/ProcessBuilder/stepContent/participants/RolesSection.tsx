@@ -9,12 +9,12 @@ import { Button } from '@op/ui-next/Button';
 import { Checkbox } from '@op/ui-next/Checkbox';
 import { Header2, Header3 } from '@op/ui-next/Header';
 import { IconButton } from '@op/ui-next/IconButton';
+import { DropdownMenuItem } from '@op/ui-next/Menu';
+import { OptionMenu } from '@op/ui-next/OptionMenu';
 import { TextField } from '@op/ui-next/TextField';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
-import { Menu, MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { OptionMenu } from '@op/ui/OptionMenu';
 import { toast } from '@op/ui/Toast';
 import {
   EditableCell,
@@ -295,20 +295,17 @@ function RoleRow({
             className="ml-auto rounded bg-white shadow-light"
             size="medium"
           >
-            <Menu className="min-w-28 p-2">
-              <MenuItem key="edit" onAction={() => setIsEditing(true)}>
-                <LuPencil className="size-4" />
-                {t('Edit')}
-              </MenuItem>
-              <MenuItem
-                key="delete"
-                onAction={() => onDelete(role)}
-                className="text-functional-red"
-              >
-                <LuTrash2 className="size-4" />
-                {t('Delete')}
-              </MenuItem>
-            </Menu>
+            <DropdownMenuItem onClick={() => setIsEditing(true)}>
+              <LuPencil className="size-4" />
+              {t('Edit')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onDelete(role)}
+              variant="destructive"
+            >
+              <LuTrash2 className="size-4" />
+              {t('Delete')}
+            </DropdownMenuItem>
           </OptionMenu>
         )}
       </TableCell>
@@ -582,24 +579,21 @@ function MobileRoleCard({
             variant="outline"
             className="rounded-lg"
           >
-            <Menu className="min-w-28 p-2">
-              {onEdit && (
-                <MenuItem key="edit" onAction={() => onEdit(role)}>
-                  <LuPencil className="size-4" />
-                  {t('Edit')}
-                </MenuItem>
-              )}
-              {onDelete && (
-                <MenuItem
-                  key="delete"
-                  onAction={() => onDelete(role)}
-                  className="text-functional-red"
-                >
-                  <LuTrash2 className="size-4" />
-                  {t('Delete')}
-                </MenuItem>
-              )}
-            </Menu>
+            {onEdit && (
+              <DropdownMenuItem onClick={() => onEdit(role)}>
+                <LuPencil className="size-4" />
+                {t('Edit')}
+              </DropdownMenuItem>
+            )}
+            {onDelete && (
+              <DropdownMenuItem
+                onClick={() => onDelete(role)}
+                variant="destructive"
+              >
+                <LuTrash2 className="size-4" />
+                {t('Delete')}
+              </DropdownMenuItem>
+            )}
           </OptionMenu>
         )}
       </div>

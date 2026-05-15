@@ -4,7 +4,6 @@ import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui-next/Button';
 import { Select, SelectItem } from '@op/ui-next/Select';
-import { Menu, MenuItem } from '@op/ui/Menu';
 import { Modal, ModalBody } from '@op/ui/Modal';
 import { type ReactNode, useState } from 'react';
 import { LuChevronDown } from 'react-icons/lu';
@@ -79,23 +78,28 @@ export function ResponsiveSelect<T extends string>({
           className={BOTTOM_SHEET_CLASS}
         >
           <ModalBody className="pb-safe p-0">
-            <Menu className="flex min-w-full flex-col border-0 p-0 shadow-none">
+            <div
+              role="listbox"
+              aria-label={ariaLabel}
+              className="flex min-w-full flex-col"
+            >
               {items.map((item, index) => (
-                <MenuItem
+                <button
                   key={item.id}
-                  id={item.id}
-                  selected={selectedKey === item.id}
-                  isDisabled={item.isDisabled}
-                  className={`rounded-none px-6 py-4 ${index < items.length - 1 ? 'border-b border-neutral-gray1' : ''}`}
-                  onAction={() => {
+                  type="button"
+                  role="option"
+                  aria-selected={selectedKey === item.id}
+                  disabled={item.isDisabled}
+                  className={`px-6 py-4 text-left text-sm outline-none hover:bg-neutral-offWhite focus-visible:bg-neutral-offWhite disabled:cursor-not-allowed disabled:opacity-50 aria-selected:font-medium ${index < items.length - 1 ? 'border-b border-neutral-gray1' : ''}`}
+                  onClick={() => {
                     onSelectionChange(item.id);
                     setIsOpen(false);
                   }}
                 >
                   {item.label}
-                </MenuItem>
+                </button>
               ))}
-            </Menu>
+            </div>
           </ModalBody>
         </Modal>
       </>

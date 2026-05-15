@@ -3,10 +3,10 @@
 import { trpc } from '@op/api/client';
 import { useCursorPagination, useDebounce } from '@op/hooks';
 import { Header2 } from '@op/ui-next/Header';
+import { DropdownMenuItem } from '@op/ui-next/Menu';
+import { OptionMenu } from '@op/ui-next/OptionMenu';
 import { SearchField } from '@op/ui-next/SearchField';
 import { Skeleton } from '@op/ui-next/Skeleton';
-import { Menu, MenuItem } from '@op/ui/Menu';
-import { OptionMenu } from '@op/ui/OptionMenu';
 import { Pagination } from '@op/ui/Pagination';
 import { toast } from '@op/ui/Toast';
 import {
@@ -110,15 +110,13 @@ export const UsersTable = () => {
             size="medium"
             className="mr-1"
           >
-            <Menu>
-              <MenuItem
-                onAction={handleExportAllUsers}
-                isDisabled={isExporting}
-              >
-                <LuDownload className="size-4" />
-                {t('Export all users')}
-              </MenuItem>
-            </Menu>
+            <DropdownMenuItem
+              onClick={handleExportAllUsers}
+              disabled={isExporting}
+            >
+              <LuDownload className="size-4" />
+              {t('Export all users')}
+            </DropdownMenuItem>
           </OptionMenu>
         </div>
       </div>
