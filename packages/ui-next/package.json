@@ -42,7 +42,8 @@
     "./Tabs": "./src/components/Tabs.tsx",
     "./TagGroup": "./src/components/TagGroup.tsx",
     "./Toast": "./src/components/Toast.tsx",
-    "./ToggleButton": "./src/components/ToggleButton.tsx"
+    "./ToggleButton": "./src/components/ToggleButton.tsx",
+    "./Comparison": "./src/comparison/Comparison.tsx"
   },
   "scripts": {
     "build": "pnpm build:styles && storybook build",

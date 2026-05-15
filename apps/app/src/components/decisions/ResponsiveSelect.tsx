@@ -5,7 +5,7 @@ import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui-next/Button';
 import { Select, SelectItem } from '@op/ui-next/Select';
 import { Sheet, SheetBody, SheetHeader } from '@op/ui-next/Sheet';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useId, useState } from 'react';
 import { LuCheck, LuChevronDown } from 'react-icons/lu';
 
 interface SelectOption<T extends string> {
@@ -49,6 +49,7 @@ export function ResponsiveSelect<T extends string>({
 }: ResponsiveSelectProps<T>) {
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
   const [isOpen, setIsOpen] = useState(false);
+  const labelId = useId();
 
   const selectedItem = items.find((item) => item.id === selectedKey);
   const displayLabel = renderSelectedLabel
@@ -73,9 +74,13 @@ export function ResponsiveSelect<T extends string>({
           side="bottom"
           className="rounded-t-2xl"
         >
-          <SheetHeader>{label}</SheetHeader>
+          <SheetHeader titleId={labelId}>{label}</SheetHeader>
           <SheetBody className="pb-safe">
-            <div role="listbox" aria-label={label} className="flex flex-col">
+            <div
+              role="listbox"
+              aria-labelledby={labelId}
+              className="flex flex-col"
+            >
               {items.map((item, index) => {
                 const isSelected = selectedKey === item.id;
                 return (

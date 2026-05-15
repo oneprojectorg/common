@@ -89,15 +89,18 @@ export const SheetTrigger = ShadcnSheetTrigger;
 export const SheetHeader = ({
   children,
   className,
+  titleId,
   onClose: _onClose,
 }: {
   children?: ReactNode;
   className?: string;
+  /** Optional id forwarded to the SheetTitle for aria-labelledby referencing. */
+  titleId?: string;
   onClose?: () => void;
 }) => {
   return (
     <ShadcnSheetHeader className={className}>
-      {children && <ShadcnSheetTitle>{children}</ShadcnSheetTitle>}
+      {children && <ShadcnSheetTitle id={titleId}>{children}</ShadcnSheetTitle>}
     </ShadcnSheetHeader>
   );
 };
