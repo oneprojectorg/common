@@ -7,28 +7,19 @@
     "wcag21aa"
   ],
   "totals": {
-    "critical": 3,
-    "serious": 41,
-    "moderate": 16,
+    "critical": 0,
+    "serious": 6,
+    "moderate": 3,
     "minor": 0
   },
-  "totalViolations": 60,
+  "totalViolations": 9,
   "routesScanned": 16,
   "ruleTotals": [
     {
-      "id": "button-name",
-      "impact": "critical",
-      "occurrences": 3,
-      "routes": 1,
-      "wcagCriteria": [
-        "4.1.2"
-      ]
-    },
-    {
       "id": "color-contrast",
       "impact": "serious",
-      "occurrences": 29,
-      "routes": 14,
+      "occurrences": 3,
+      "routes": 1,
       "wcagCriteria": [
         "1.4.3"
       ]
@@ -36,8 +27,8 @@
     {
       "id": "link-name",
       "impact": "serious",
-      "occurrences": 11,
-      "routes": 11,
+      "occurrences": 2,
+      "routes": 2,
       "wcagCriteria": [
         "2.4.4",
         "4.1.2"
@@ -56,8 +47,8 @@
     {
       "id": "meta-viewport",
       "impact": "moderate",
-      "occurrences": 16,
-      "routes": 16,
+      "occurrences": 3,
+      "routes": 3,
       "wcagCriteria": [
         "1.4.4"
       ]
@@ -104,159 +95,172 @@
       "url": "/en/",
       "label": "Home",
       "auth": "authenticated",
-      "status": "ok",
+      "status": "error",
       "counts": {
         "critical": 0,
-        "serious": 3,
-        "moderate": 1,
+        "serious": 0,
+        "moderate": 0,
         "minor": 0
-      }
+      },
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4100/en/\", waiting until \"domcontentloaded\"\u001b[22m\n"
     },
     {
       "url": "/en/decisions",
       "label": "Decisions index",
       "auth": "authenticated",
-      "status": "ok",
+      "status": "error",
       "counts": {
         "critical": 0,
-        "serious": 3,
-        "moderate": 1,
+        "serious": 0,
+        "moderate": 0,
         "minor": 0
-      }
+      },
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4100/en/decisions\", waiting until \"domcontentloaded\"\u001b[22m\n"
     },
     {
       "url": "/en/profile",
       "label": "Profile index",
       "auth": "authenticated",
-      "status": "ok",
+      "status": "error",
       "counts": {
         "critical": 0,
-        "serious": 2,
-        "moderate": 1,
+        "serious": 0,
+        "moderate": 0,
         "minor": 0
-      }
+      },
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4100/en/profile\", waiting until \"domcontentloaded\"\u001b[22m\n"
     },
     {
       "url": "/en/search",
       "label": "Search",
       "auth": "authenticated",
-      "status": "ok",
+      "status": "error",
       "counts": {
         "critical": 0,
-        "serious": 2,
-        "moderate": 1,
+        "serious": 0,
+        "moderate": 0,
         "minor": 0
-      }
+      },
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4100/en/search\", waiting until \"domcontentloaded\"\u001b[22m\n"
     },
     {
       "url": "/en/org",
       "label": "Org index",
       "auth": "authenticated",
-      "status": "ok",
+      "status": "error",
       "counts": {
         "critical": 0,
-        "serious": 2,
-        "moderate": 1,
+        "serious": 0,
+        "moderate": 0,
         "minor": 0
-      }
+      },
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4100/en/org\", waiting until \"domcontentloaded\"\u001b[22m\n"
     },
     {
       "url": "/en/does-not-exist",
       "label": "Not found (404)",
       "auth": "authenticated",
-      "status": "ok",
+      "status": "error",
       "counts": {
         "critical": 0,
-        "serious": 3,
-        "moderate": 1,
+        "serious": 0,
+        "moderate": 0,
         "minor": 0
-      }
+      },
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4100/en/does-not-exist\", waiting until \"domcontentloaded\"\u001b[22m\n"
     },
     {
       "url": "/en/org/{slug}",
       "label": "Organization page",
       "auth": "authenticated",
-      "status": "ok",
+      "status": "error",
       "counts": {
         "critical": 0,
-        "serious": 4,
-        "moderate": 1,
+        "serious": 0,
+        "moderate": 0,
         "minor": 0
-      }
+      },
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4100/en/org/test-org-w54-45fa4301-698d-4df3-b075-3d15faf54647\", waiting until \"domcontentloaded\"\u001b[22m\n"
     },
     {
       "url": "/en/org/{slug}/relationships",
       "label": "Org relationships",
       "auth": "authenticated",
-      "status": "ok",
+      "status": "error",
       "counts": {
         "critical": 0,
-        "serious": 3,
-        "moderate": 1,
+        "serious": 0,
+        "moderate": 0,
         "minor": 0
-      }
+      },
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4100/en/org/test-org-w54-45fa4301-698d-4df3-b075-3d15faf54647/relationships\", waiting until \"domcontentloaded\"\u001b[22m\n"
     },
     {
       "url": "/en/profile/{slug}",
       "label": "User profile",
       "auth": "authenticated",
-      "status": "ok",
+      "status": "error",
       "counts": {
         "critical": 0,
-        "serious": 3,
-        "moderate": 1,
+        "serious": 0,
+        "moderate": 0,
         "minor": 0
-      }
+      },
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4100/en/profile/w54-admin-8fb428\", waiting until \"domcontentloaded\"\u001b[22m\n"
     },
     {
       "url": "/en/decisions/{slug}",
       "label": "Decision detail",
       "auth": "authenticated",
-      "status": "ok",
+      "status": "error",
       "counts": {
         "critical": 0,
-        "serious": 2,
-        "moderate": 1,
+        "serious": 0,
+        "moderate": 0,
         "minor": 0
-      }
+      },
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4100/en/decisions/test-instance-17ad467e-532c-4eee-a15d-fbd20333977f\", waiting until \"domcontentloaded\"\u001b[22m\n"
     },
     {
       "url": "/en/decisions/{slug}/edit",
       "label": "Decision editor",
       "auth": "authenticated",
-      "status": "ok",
+      "status": "error",
       "counts": {
-        "critical": 3,
-        "serious": 3,
-        "moderate": 1,
+        "critical": 0,
+        "serious": 0,
+        "moderate": 0,
         "minor": 0
-      }
+      },
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4100/en/decisions/test-instance-17ad467e-532c-4eee-a15d-fbd20333977f/edit\", waiting until \"domcontentloaded\"\u001b[22m\n"
     },
     {
       "url": "/en/decisions/{slug}/proposal/{profileId}",
       "label": "Proposal view",
       "auth": "authenticated",
-      "status": "ok",
+      "status": "error",
       "counts": {
         "critical": 0,
-        "serious": 1,
-        "moderate": 1,
+        "serious": 0,
+        "moderate": 0,
         "minor": 0
-      }
+      },
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4100/en/decisions/test-instance-17ad467e-532c-4eee-a15d-fbd20333977f/proposal/a7572b96-4b0c-4b09-8aa4-5117aac508fb\", waiting until \"domcontentloaded\"\u001b[22m\n"
     },
     {
       "url": "/en/decisions/{slug}/proposal/{profileId}/edit",
       "label": "Proposal editor",
       "auth": "authenticated",
-      "status": "ok",
+      "status": "error",
       "counts": {
         "critical": 0,
-        "serious": 4,
-        "moderate": 1,
+        "serious": 0,
+        "moderate": 0,
         "minor": 0
-      }
+      },
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:4100/en/decisions/test-instance-17ad467e-532c-4eee-a15d-fbd20333977f/proposal/a7572b96-4b0c-4b09-8aa4-5117aac508fb/edit\", waiting until \"domcontentloaded\"\u001b[22m\n"
     }
   ],
-  "screenshotsAttempted": 60,
-  "screenshotsCaptured": 44
+  "screenshotsAttempted": 9,
+  "screenshotsCaptured": 6
 }
