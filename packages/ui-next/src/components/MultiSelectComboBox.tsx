@@ -28,6 +28,7 @@ import {
   ComboboxEmpty,
   ComboboxItem,
   ComboboxList,
+  useComboboxAnchor,
 } from './ui/combobox';
 
 export interface Option {
@@ -74,6 +75,7 @@ export const MultiSelectComboBox = ({
 }: MultiSelectComboBoxProps) => {
   const [inputValue, setInputValue] = React.useState('');
   const selectedOptions = value ?? [];
+  const anchorRef = useComboboxAnchor();
 
   const handleValueChange = (next: unknown) => {
     onChange?.(next as Option[]);
@@ -121,6 +123,7 @@ export const MultiSelectComboBox = ({
         disabled={isDisabled}
       >
         <ComboboxChips
+          ref={anchorRef}
           className={cn(
             errorMessage && 'border-destructive ring-destructive/20',
           )}
@@ -139,7 +142,7 @@ export const MultiSelectComboBox = ({
           {isLoading && <LoadingSpinner className="size-4" color="gray" />}
           {!isLoading && <LuSearch className="text-muted-foreground size-4" />}
         </ComboboxChips>
-        <ComboboxContent>
+        <ComboboxContent anchor={anchorRef}>
           <ComboboxEmpty>No options</ComboboxEmpty>
           <ComboboxList>
             {(item: Option) => {

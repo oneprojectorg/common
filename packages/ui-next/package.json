@@ -56,6 +56,7 @@
   "dependencies": {
     "@base-ui/react": "^1.4.1",
     "@op/styles": "workspace:*",
+    "@op/ui": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
