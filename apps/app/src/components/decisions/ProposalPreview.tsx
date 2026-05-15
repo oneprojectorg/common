@@ -10,8 +10,8 @@ import {
 } from '@op/common/client';
 import { Header1, Header3 } from '@op/ui-next/Header';
 import { Link } from '@op/ui-next/Link';
+import { Tag, TagGroup } from '@op/ui-next/TagGroup';
 import { AlertBanner } from '@op/ui/AlertBanner';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
 import type { ReactNode } from 'react';
 import { LuBookmark, LuHeart, LuMessageCircle } from 'react-icons/lu';
 

@@ -34,6 +34,7 @@
     "./OptionMenu": "./src/components/OptionMenu.tsx",
     "./Sheet": "./src/components/Sheet.tsx",
     "./Tabs": "./src/components/Tabs.tsx",
+    "./TagGroup": "./src/components/TagGroup.tsx",
     "./ToggleButton": "./src/components/ToggleButton.tsx"
   },
   "scripts": {

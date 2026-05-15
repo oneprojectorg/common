@@ -3,7 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Select, SelectItem } from '@op/ui-next/Select';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
+import { Tag, TagGroup } from '@op/ui-next/TagGroup';
 import { toast } from '@op/ui/Toast';
 import React from 'react';
 import { LuX } from 'react-icons/lu';

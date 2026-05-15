@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
+import { Tag, TagGroup } from '@op/ui-next/TagGroup';
 import { toast } from '@op/ui/Toast';
 import { LuX } from 'react-icons/lu';
 

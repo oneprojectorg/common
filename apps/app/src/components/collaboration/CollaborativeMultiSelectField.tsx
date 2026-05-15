@@ -3,10 +3,10 @@
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import { parseCategoryFragmentValue } from '@op/common/client';
 import { Button } from '@op/ui-next/Button';
+import { Tag, TagGroup } from '@op/ui-next/TagGroup';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { ListBox } from '@op/ui/ListBox';
 import { Popover } from '@op/ui/Popover';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { useEffect, useMemo, useRef } from 'react';
 import type { Key } from 'react';
 import { Dialog, ListBoxItem } from 'react-aria-components';
