@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@op/ui-next/Button';
-import { FooterBar } from '@op/ui/FooterBar';
+import { FooterBar } from '@op/ui-next/FooterBar';
 import { LuCheck } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';

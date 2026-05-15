@@ -2,10 +2,10 @@
 
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui-next/Button';
+import { CheckIcon } from '@op/ui-next/CheckIcon';
 import { Header1, Header3 } from '@op/ui-next/Header';
 import { Modal } from '@op/ui-next/Modal';
 import { Skeleton } from '@op/ui-next/Skeleton';
-import { CheckIcon } from '@op/ui/CheckIcon';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

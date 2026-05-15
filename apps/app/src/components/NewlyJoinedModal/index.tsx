@@ -1,9 +1,9 @@
 'use client';
 
 import { Button } from '@op/ui-next/Button';
+import { CheckIcon } from '@op/ui-next/CheckIcon';
 import { Header1 } from '@op/ui-next/Header';
 import { Modal } from '@op/ui-next/Modal';
-import { CheckIcon } from '@op/ui/CheckIcon';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
