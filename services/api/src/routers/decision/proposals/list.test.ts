@@ -752,7 +752,7 @@ describe.concurrent('listProposals', () => {
     });
   });
 
-  it('should return undefined documentContent when TipTap fetch fails', async ({
+  it('should throw when TipTap fetch fails so the client can suspend/retry', async ({
     task,
     onTestFinished,
   }) => {
@@ -770,7 +770,7 @@ describe.concurrent('listProposals', () => {
 
     // Mock returns 404 by default for unknown docIds (no explicit setup needed)
 
-    const [proposal, caller] = await Promise.all([
+    const [, caller] = await Promise.all([
       testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
@@ -781,13 +781,13 @@ describe.concurrent('listProposals', () => {
       createAuthenticatedCaller(setup.userEmail),
     ]);
 
-    const result = await caller.decision.listProposals({
-      processInstanceId: instance.instance.id,
-    });
-
-    const foundProposal = result.proposals.find((p) => p.id === proposal.id);
-    // When TipTap fetch fails, documentContent should be undefined
-    expect(foundProposal?.documentContent).toBeUndefined();
+    // TipTap fetch failures propagate so callers can suspend (retry) and
+    // fall back to ErrorBoundary instead of rendering a flashed error inline.
+    await expect(
+      caller.decision.listProposals({
+        processInstanceId: instance.instance.id,
+      }),
+    ).rejects.toThrow();
   });
 
   it('should fetch multiple TipTap documents in parallel', async ({

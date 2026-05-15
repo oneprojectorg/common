@@ -485,7 +485,7 @@ describe.concurrent('getProposal', () => {
     });
   });
 
-  it('should return undefined documentContent when TipTap returns 404', async ({
+  it('should throw when TipTap returns 404 so the client can suspend/retry', async ({
     task,
     onTestFinished,
   }) => {
@@ -512,16 +512,11 @@ describe.concurrent('getProposal', () => {
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
-    const result = await caller.decision.getProposal({
-      profileId: proposal.profileId,
-    });
-
-    expect(result.proposalData).toMatchObject({
-      title: 'Missing Doc Proposal',
-      collaborationDocId: expect.any(String),
-    });
-    // When TipTap fetch fails, documentContent is undefined (UI handles error state)
-    expect(result.documentContent).toBeUndefined();
+    // TipTap fetch failures propagate so callers can suspend (retry) and
+    // fall back to ErrorBoundary instead of rendering a flashed error inline.
+    await expect(
+      caller.decision.getProposal({ profileId: proposal.profileId }),
+    ).rejects.toThrow();
   });
 
   it('should fetch the saved collaboration version for non-draft proposals', async ({
