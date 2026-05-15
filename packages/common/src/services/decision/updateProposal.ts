@@ -158,19 +158,23 @@ export const updateProposal = async ({
         orgFallbackPermissions: [{ decisions: permission.ADMIN }],
       });
     }
+  }
 
-    // Honor the per-phase "Proposal editing" admin toggle for authors of
-    // submitted proposals. Drafts and instance admins bypass the rule.
-    if (existingProposal.status !== ProposalStatus.DRAFT) {
-      const canEdit = await canEditSubmittedProposalInPhase({
-        user: { id: user.id },
-        processInstance,
-      });
-      if (!canEdit) {
-        throw new ValidationError(
-          'Editing this proposal is disabled in the current phase',
-        );
-      }
+  // Honor the per-phase "Proposal editing" admin toggle whenever content is
+  // changing (title or proposalData). Status- and visibility-only updates by
+  // instance admins are unaffected. `canEditSubmittedProposalInPhase` returns
+  // true for instance admins, so they continue to bypass the rule.
+  const isContentChange =
+    data.title !== undefined || data.proposalData !== undefined;
+  if (isContentChange && existingProposal.status !== ProposalStatus.DRAFT) {
+    const canEdit = await canEditSubmittedProposalInPhase({
+      user: { id: user.id },
+      processInstance,
+    });
+    if (!canEdit) {
+      throw new ValidationError(
+        'Editing this proposal is disabled in the current phase',
+      );
     }
   }
 

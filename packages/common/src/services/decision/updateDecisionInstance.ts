@@ -1,3 +1,4 @@
+import { invalidateMultiple } from '@op/cache';
 import { OPURLConfig } from '@op/core';
 import { db, eq } from '@op/db/client';
 import {
@@ -5,6 +6,7 @@ import {
   decisionProcessTransitions,
   processInstances,
   profiles,
+  proposals,
 } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
@@ -320,6 +322,23 @@ export const updateDecisionInstance = async ({
 
   if (!profile) {
     throw new CommonError('Failed to fetch updated decision profile');
+  }
+
+  // Per-phase rules (proposals.edit, submit, review) feed into cached proposal
+  // permissions. Invalidate every proposal on this instance so the next read
+  // recomputes `isEditable` against the new phase configuration.
+  if (hasPhaseUpdates) {
+    const affectedProposals = await db
+      .select({ profileId: proposals.profileId })
+      .from(proposals)
+      .where(eq(proposals.processInstanceId, instanceId));
+
+    if (affectedProposals.length > 0) {
+      await invalidateMultiple({
+        type: 'profile',
+        paramsList: affectedProposals.map((p) => [p.profileId]),
+      });
+    }
   }
 
   // When publishing a draft, send queued invite emails for this process instance's profile

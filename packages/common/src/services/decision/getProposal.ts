@@ -17,7 +17,7 @@ import type { User } from '@op/supabase/lib';
 import { createSBServiceClient } from '@op/supabase/server';
 import { checkPermission, permission } from 'access-zones';
 
-import { NotFoundError, UnauthorizedError } from '../../utils';
+import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess, getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { generateProposalHtml } from './generateProposalHtml';
@@ -289,11 +289,20 @@ export const getPermissionsOnProposal = async ({
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  // Fetch the user's roles on the proposal's profile
-  const profileUser = await getProfileAccessUser({
-    user,
-    profileId: proposal.profileId,
-  });
+  // Fetch the user's roles on the proposal's profile AND on the instance
+  // profile in parallel. Instance-profile admins can manage every proposal on
+  // the instance, so they need update access even when they aren't on the
+  // proposal's own profile.
+  const instanceProfileId = proposal.processInstance.profileId;
+  if (!instanceProfileId) {
+    throw new CommonError(
+      `Process instance ${proposal.processInstance.id} is missing a profileId`,
+    );
+  }
+  const [profileUser, instanceProfileUser] = await Promise.all([
+    getProfileAccessUser({ user, profileId: proposal.profileId }),
+    getProfileAccessUser({ user, profileId: instanceProfileId }),
+  ]);
 
   const roles = profileUser?.roles ?? [];
 
@@ -310,10 +319,19 @@ export const getPermissionsOnProposal = async ({
     access.admin = true;
   }
 
-  // Honor the per-phase "Proposal editing" admin toggle. `access.admin` above
-  // reflects admin rights on the proposal's own profile (which authors hold by
-  // default), so the helper re-checks admin status against the instance profile
-  // to identify the instance admins who configure the toggle.
+  // Instance admins can update any proposal on their instance, regardless of
+  // whether they have roles on the proposal's own profile.
+  const isInstanceAdmin = checkPermission(
+    { profile: permission.ADMIN },
+    instanceProfileUser?.roles ?? [],
+  );
+  if (isInstanceAdmin) {
+    access.update = true;
+  }
+
+  // Honor the per-phase "Proposal editing" admin toggle. The helper returns
+  // true for instance admins, so they bypass the phase gate; only authors get
+  // locked out when the current phase disables proposal editing.
   if (access.update && proposal.status !== ProposalStatus.DRAFT) {
     const canEdit = await canEditSubmittedProposalInPhase({
       user,
