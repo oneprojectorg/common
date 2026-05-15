@@ -6,12 +6,12 @@ import {
   isOverallRecommendationField,
   parseSchemaOptions,
 } from '@op/common/client';
+import { AlertBanner } from '@op/ui-next/AlertBanner';
 import { Button } from '@op/ui-next/Button';
 import { RadioGroup, RadioGroupItem } from '@op/ui-next/RadioGroup';
 import { Select, SelectItem } from '@op/ui-next/Select';
 import { TextField } from '@op/ui-next/TextField';
 import { ToggleButton } from '@op/ui-next/ToggleButton';
-import { AlertBanner } from '@op/ui/AlertBanner';
 import type { Key } from 'react';
 import { useState } from 'react';
 import { LuCircleAlert, LuPlus } from 'react-icons/lu';

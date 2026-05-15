@@ -15,6 +15,7 @@
     "./LoadingSpinner": "./src/components/LoadingSpinner.tsx",
     "./Tooltip": "./src/components/Tooltip.tsx",
     "./Surface": "./src/components/Surface.tsx",
+    "./AlertBanner": "./src/components/AlertBanner.tsx",
     "./Avatar": "./src/components/Avatar.tsx",
     "./Skeleton": "./src/components/Skeleton.tsx",
     "./Chip": "./src/components/Chip.tsx",

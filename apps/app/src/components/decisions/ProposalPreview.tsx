@@ -8,10 +8,10 @@ import {
   normalizeProposalCategories,
   parseTranslatedMeta,
 } from '@op/common/client';
+import { AlertBanner } from '@op/ui-next/AlertBanner';
 import { Header1, Header3 } from '@op/ui-next/Header';
 import { Link } from '@op/ui-next/Link';
 import { Tag, TagGroup } from '@op/ui-next/TagGroup';
-import { AlertBanner } from '@op/ui/AlertBanner';
 import type { ReactNode } from 'react';
 import { LuBookmark, LuHeart, LuMessageCircle } from 'react-icons/lu';
 
