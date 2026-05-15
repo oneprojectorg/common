@@ -9,10 +9,6 @@
       "command": "npx",
       "args": ["@playwright/mcp@latest"],
       "env": {}
-    },
-    "asana": {
-      "type": "sse",
-      "url": "https://mcp.asana.com/sse"
     }
   }
 }

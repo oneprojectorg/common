@@ -50,8 +50,8 @@ This file provides guidance to Claude Code (claude.ai/code) and other AI agents 
 
 - Database schema managed with Drizzle ORM in `services/db/schema/`
 - tRPC API provides type-safe client-server communication
-- After schema changes: run `pnpm w:db generate` to generate migrations 
-- **NEVER RUN `pnpm w:db migrate`** (migrations are applied by CI/CD, not locally)
+- After schema changes: run `pnpm w:db generate` to create the migration SQL file
+- **NEVER RUN `pnpm w:db migrate`** — migrations are applied by CI/CD and by the docker stack on startup, not by hand
 
 ### Workspace Commands
 
