@@ -315,8 +315,6 @@ Then one final merge `shadcn-full-install` → `dev`.
 
 4. **Surface → Card composition migration.** Tier 2b kept Surface call sites as plain-children. shadcn Card primitive ships `CardHeader`/`CardContent`/`CardFooter`/`CardTitle`/`CardDescription`/`CardAction` slot composition. Migrate Surface consumers to use the slots for cleaner spacing semantics. JSX restructure per site, not codemod-mechanical. When done, restore shadcn's default `py-4` on Card plus the slot-aware padding resets (`has-data-[slot=card-footer]:pb-0`, `has-[>img:first-child]:pt-0`) — currently dropped because consumers pad manually.
 
-10. **MultiSelectComboBox: rebuild on base-ui Combobox primitive.** Current Tier 3.5 port (`packages/ui-next/src/components/MultiSelectComboBox.tsx`) uses a custom absolute-positioned popover + plain `<button role="option">` rows instead of composing `ui/combobox.tsx`. Functionally complete but doesn't get base-ui's a11y/keyboard nav for free. Rewrite on `Combobox.Root`/`Combobox.Items`/`Combobox.Item` once we figure out how to map `allowAdditions` (creatable values), `level`/`hasChildren` (tree indent), `showDefinitions` (sub-label rendering), and `enableLocalSearch` toggle onto the primitive's API.
-
 9. **AddRelationshipForm refactor.** `apps/app/src/components/Profile/ProfileDetails/AddRelationshipForm.tsx` renders raw checkbox + plain `<div>`/`<span>` rows instead of `<Field>` + `<FieldLabel>` + `<FieldDescription>` composition. No `<label htmlFor>` association between Checkbox and its visible text — clicking the option text doesn't toggle. Rewrite using `@op/ui-next/Field` + `<label>` wrappers so each row is keyboard/screen-reader accessible.
 
 ## Risk register
