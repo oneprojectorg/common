@@ -1,15 +1,4 @@
-import {
-  and,
-  asc,
-  db,
-  desc,
-  eq,
-  ilike,
-  inArray,
-  ne,
-  or,
-  sql,
-} from '@op/db/client';
+import { SQL, and, db, eq, ilike, inArray, ne, or, sql } from '@op/db/client';
 import {
   ProfileRelationshipType,
   ProposalStatus,
@@ -65,10 +54,16 @@ export interface ListProposalsInput {
   phase?: 'results';
   limit?: number;
   offset?: number;
-  orderBy?: 'createdAt' | 'updatedAt' | 'status';
+  orderBy?: 'createdAt' | 'updatedAt' | 'status' | 'votes';
   dir?: 'asc' | 'desc';
   authUserId: string;
   skipAccessCheck?: boolean; // For trusted contexts like background jobs
+  /**
+   * When true, each returned proposal carries a `voteCount` aggregated from
+   * vote submissions on `processInstanceId`. Pair with `orderBy: 'votes'` to
+   * have the database drive the sort (descending count, createdAt tiebreak).
+   */
+  includeVoteCounts?: boolean;
 }
 
 /**
@@ -129,28 +124,35 @@ const resolveExplicitScope = async ({
   return votedRows.map((r) => r.proposalId);
 };
 
-// Shared function to build WHERE conditions for both count and data queries
-const buildWhereConditions = (input: ListProposalsInput) => {
+// Shared function to build WHERE conditions for both count and data queries.
+// Parameterized on the table reference so callers can pass either the schema
+// table (for plain `db.select(...).from(proposals).where(...)`) or the
+// relationally-aliased table from a v2 `RAW` callback. Both forms yield SQL
+// that resolves to the right alias in their respective query contexts.
+const buildBaseConditions = (
+  t: typeof proposals,
+  input: ListProposalsInput,
+): SQL => {
   const { processInstanceId, submittedByProfileId, status, search } = input;
 
-  const conditions = [];
-
-  conditions.push(eq(proposals.processInstanceId, processInstanceId));
+  // processInstanceId is always present, so the array is non-empty and the
+  // final `and(...)` is guaranteed to return a SQL value.
+  const conditions: SQL[] = [eq(t.processInstanceId, processInstanceId)];
 
   if (submittedByProfileId) {
-    conditions.push(eq(proposals.submittedByProfileId, submittedByProfileId));
+    conditions.push(eq(t.submittedByProfileId, submittedByProfileId));
   }
 
   if (status) {
-    conditions.push(eq(proposals.status, status));
+    conditions.push(eq(t.status, status));
   }
 
   if (search) {
     // Search in proposal data (JSONB) - convert to text for searching
-    conditions.push(ilike(sql`${proposals.proposalData}::text`, `%${search}%`));
+    conditions.push(ilike(sql`${t.proposalData}::text`, `%${search}%`));
   }
 
-  return conditions.length > 0 ? and(...conditions) : undefined;
+  return and(...conditions)!;
 };
 
 export const listProposals = async ({
@@ -288,29 +290,12 @@ export const listProposals = async ({
 
   const { limit = 20, offset = 0, orderBy = 'createdAt', dir = 'desc' } = input;
 
-  // Build shared WHERE clause using the extracted function
-  const baseWhereClause = buildWhereConditions(input);
-
-  // When the caller provided an explicit scope (proposalIds or votedByProfileId),
-  // constrain the entire query to that ID set. This prevents the draft branch
-  // (below) from independently surfacing drafts the user owns but didn't ask for.
-  let whereClause = baseWhereClause;
-  if (explicitScopeIds !== undefined) {
-    const explicitScopeFilter =
-      explicitScopeIds.length > 0
-        ? inArray(proposals.id, explicitScopeIds)
-        : sql`false`;
-    whereClause = whereClause
-      ? and(whereClause, explicitScopeFilter)
-      : explicitScopeFilter;
-  }
-
-  // Handle category filtering separately to avoid table reference issues
+  // Resolve category-scoped proposal IDs up front so the same ID set is
+  // available to both the count and data queries when assembling conditions.
   const { categoryId } = input;
   let categoryProposalIds: string[] = [];
 
   if (categoryId) {
-    // First get proposal IDs that belong to the category
     const proposalIdsInCategory = await db
       .select({ proposalId: proposalCategories.proposalId })
       .from(proposalCategories)
@@ -327,82 +312,104 @@ export const listProposals = async ({
         canManageProposals,
       };
     }
-
-    // Add category filter to WHERE clause (composed with any earlier filters)
-    const categoryFilter = inArray(proposals.id, categoryProposalIds);
-    whereClause = whereClause
-      ? and(whereClause, categoryFilter)
-      : categoryFilter;
   }
 
-  // Phase scoping applies separately to non-drafts and drafts. Non-drafts are
-  // resolved via transition snapshots + a strict `createdAt` window; drafts use
-  // a half-open `createdAt` window only (they're never attached to a snapshot).
-  // When the relevant ID set is empty (e.g. instance has no submitted proposals
-  // yet), each branch must short-circuit to false rather than emit an empty IN ().
-  const phaseScopedNonDraftIdFilter =
-    phaseProposalIds.length > 0
-      ? and(
-          ne(proposals.status, ProposalStatus.DRAFT),
-          inArray(proposals.id, phaseProposalIds),
-        )
-      : sql`false`;
+  // Assemble the full WHERE clause. Parameterized on the table reference so
+  // the same builder can be used for the v2 relational findMany (where Drizzle
+  // passes an aliased `table`) and the plain count query (which passes the
+  // schema table). See `buildBaseConditions` above for the same pattern.
+  const buildWhereClause = (t: typeof proposals): SQL => {
+    let clause: SQL = buildBaseConditions(t, input);
 
-  if (skipAccessCheck) {
-    // Trusted contexts get all phase-scoped non-draft proposals.
-    whereClause = whereClause
-      ? and(whereClause, phaseScopedNonDraftIdFilter)
-      : phaseScopedNonDraftIdFilter;
-  } else {
-    // Draft proposals are phase-scoped to their `createdAt` window: a draft made
-    // in Phase 1 is only visible when viewing Phase 1, even after the instance
-    // advances. Ownership scoping (creator + invited collaborators via
-    // `profileUsers`) is applied inside `getPhaseProposalAndDraftIds` via a
-    // subquery, so `phaseDraftIds` is already access-filtered — no further
+    // Explicit scope (proposalIds or votedByProfileId): constrain the entire
+    // query to that ID set so the draft branch can't independently surface
+    // drafts the user owns but didn't ask for.
+    if (explicitScopeIds !== undefined) {
+      const explicitScopeFilter =
+        explicitScopeIds.length > 0
+          ? inArray(t.id, explicitScopeIds)
+          : sql`false`;
+      clause = and(clause, explicitScopeFilter)!;
+    }
+
+    if (categoryProposalIds.length > 0) {
+      clause = and(clause, inArray(t.id, categoryProposalIds))!;
+    }
+
+    // Phase scoping applies separately to non-drafts and drafts. Non-drafts
+    // are resolved via transition snapshots + a strict `createdAt` window;
+    // drafts use a half-open `createdAt` window only (they're never attached
+    // to a snapshot). When the relevant ID set is empty (e.g. instance has no
+    // submitted proposals yet), each branch must short-circuit to false rather
+    // than emit an empty `IN ()`.
+    const phaseScopedNonDraftIdFilter =
+      phaseProposalIds.length > 0
+        ? and(
+            ne(t.status, ProposalStatus.DRAFT),
+            inArray(t.id, phaseProposalIds),
+          )!
+        : sql`false`;
+
+    if (skipAccessCheck) {
+      // Trusted contexts get all phase-scoped non-draft proposals.
+      return and(clause, phaseScopedNonDraftIdFilter)!;
+    }
+
+    // Draft proposals are phase-scoped to their `createdAt` window: a draft
+    // made in Phase 1 is only visible when viewing Phase 1, even after the
+    // instance advances. Ownership scoping (creator + invited collaborators
+    // via `profileUsers`) is applied inside `getPhaseProposalAndDraftIds` via
+    // a subquery, so `phaseDraftIds` is already access-filtered — no further
     // ownership filter is needed here.
     const draftFilter =
       phaseDraftIds.length > 0
-        ? and(
-            eq(proposals.status, ProposalStatus.DRAFT),
-            inArray(proposals.id, phaseDraftIds),
-          )
+        ? and(eq(t.status, ProposalStatus.DRAFT), inArray(t.id, phaseDraftIds))!
         : sql`false`;
 
-    // Non-draft proposals: phase-scoped, plus the HIDDEN visibility filter for
-    // non-admins. Hidden proposals stay visible to the creator and any invited
-    // collaborators on the proposal's profile — same pattern the draft filter
-    // uses, so a collaborator's view of a co-authored proposal doesn't change
-    // the moment it's submitted with HIDDEN visibility.
+    // Non-draft proposals: phase-scoped, plus the HIDDEN visibility filter
+    // for non-admins. Hidden proposals stay visible to the creator and any
+    // invited collaborators on the proposal's profile — same pattern the
+    // draft filter uses, so a collaborator's view of a co-authored proposal
+    // doesn't change the moment it's submitted with HIDDEN visibility.
     const nonDraftVisibilityFilter = canManageProposals
       ? phaseScopedNonDraftIdFilter
       : and(
           phaseScopedNonDraftIdFilter,
           or(
-            eq(proposals.visibility, Visibility.VISIBLE),
+            eq(t.visibility, Visibility.VISIBLE),
             inArray(
-              proposals.profileId,
+              t.profileId,
               db
                 .select({ profileId: profileUsers.profileId })
                 .from(profileUsers)
                 .where(eq(profileUsers.authUserId, input.authUserId)),
             ),
-          ),
-        );
+          )!,
+        )!;
 
-    const permissionFilter = or(draftFilter, nonDraftVisibilityFilter);
-    whereClause = whereClause
-      ? and(whereClause, permissionFilter)
-      : permissionFilter;
-  }
+    return and(clause, or(draftFilter, nonDraftVisibilityFilter)!)!;
+  };
 
-  // Get proposals with optimized ordering
-  const orderColumn = proposals[orderBy] ?? proposals.createdAt;
+  const { includeVoteCounts = false } = input;
 
-  const orderFn = dir === 'asc' ? asc : desc;
+  // Vote-count correlated subquery factory. Called by both the `extras`
+  // callback and the `orderBy` callback so each receives the v2-aliased
+  // `table` and embeds the correct outer-column reference.
+  //
+  // Scoping the join to `processInstanceId` ensures cross-instance ballots
+  // can't inflate counts.
+  const voteCountExpr = (t: typeof proposals) =>
+    sql<number>`(
+      SELECT COUNT(*)::int FROM ${decisionsVoteSubmissions}
+      INNER JOIN ${decisionsVoteProposals}
+        ON ${decisionsVoteProposals.voteSubmissionId} = ${decisionsVoteSubmissions.id}
+      WHERE ${decisionsVoteProposals.proposalId} = ${t.id}
+      AND ${decisionsVoteSubmissions.processInstanceId} = ${input.processInstanceId}
+    )`;
 
   const [proposalList, countResult] = await Promise.all([
-    db._query.proposals.findMany({
-      where: whereClause,
+    db.query.proposals.findMany({
+      where: { RAW: (table) => buildWhereClause(table)! },
       with: {
         submittedBy: {
           with: {
@@ -413,10 +420,23 @@ export const listProposals = async ({
       },
       limit,
       offset,
-      orderBy: orderFn(orderColumn),
+      ...(includeVoteCounts && {
+        extras: {
+          voteCount: (table, { sql: sqlOp }) =>
+            sqlOp<number>`${voteCountExpr(table)}`.as('vote_count'),
+        },
+      }),
+      orderBy: (table, { asc: ascOp, desc: descOp }) =>
+        orderBy === 'votes'
+          ? [descOp(voteCountExpr(table)), descOp(table.createdAt)]
+          : (dir === 'asc' ? ascOp : descOp)(table[orderBy] ?? table.createdAt),
     }),
-    // Get count using Drizzle's count function instead of raw SQL
-    db.select({ count: countFn() }).from(proposals).where(whereClause),
+    // Count uses the same builder against the schema table, producing
+    // unaliased SQL that matches the FROM clause here.
+    db
+      .select({ count: countFn() })
+      .from(proposals)
+      .where(buildWhereClause(proposals)),
   ]);
 
   const count = countResult[0]?.count || 0;
@@ -595,6 +615,12 @@ export const listProposals = async ({
       isEditable,
       documentContent: documentContentMap.get(proposal.id),
       proposalTemplate,
+      ...(includeVoteCounts && {
+        voteCount: Number(
+          (proposal as ProposalListItem & { voteCount?: number | string })
+            .voteCount ?? 0,
+        ),
+      }),
     };
   });
 

@@ -18,7 +18,7 @@ export const DecisionResultsTabs = ({
   return (
     <Tabs className={cn('gap-6', className)} defaultSelectedKey="funded">
       <TabList className="flex gap-6">
-        <Tab id="funded">{t('Funded Proposals')}</Tab>
+        <Tab id="funded">{t('Selected Proposals')}</Tab>
         <Tab id="all-proposals">{t('All proposals')}</Tab>
         <Tab id="ballot">{t('My Ballot')}</Tab>
       </TabList>

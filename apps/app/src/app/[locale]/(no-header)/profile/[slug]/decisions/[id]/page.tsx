@@ -1,3 +1,8 @@
+import {
+  HydrationBoundary,
+  createServerUtils,
+  dehydrate,
+} from '@op/api/server';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Suspense } from 'react';
 
@@ -32,21 +37,30 @@ function DecisionHeaderSkeleton() {
   );
 }
 
-const DecisionInstancePageContent = ({
+const DecisionInstancePageContent = async ({
   instanceId,
   slug,
 }: {
   instanceId: string;
   slug: string;
 }) => {
+  const { utils, queryClient } = await createServerUtils();
+  await utils.decision.getLegacyInstance.prefetch({ instanceId });
+
   return (
-    <Suspense fallback={<DecisionHeaderSkeleton />}>
-      <DecisionHeader instanceId={instanceId} slug={slug} useLegacy>
-        <Suspense fallback={<Skeleton className="h-96" />}>
-          <DecisionStateRouter instanceId={instanceId} slug={slug} useLegacy />
-        </Suspense>
-      </DecisionHeader>
-    </Suspense>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <Suspense fallback={<DecisionHeaderSkeleton />}>
+        <DecisionHeader instanceId={instanceId} slug={slug} useLegacy>
+          <Suspense fallback={<Skeleton className="h-96" />}>
+            <DecisionStateRouter
+              instanceId={instanceId}
+              slug={slug}
+              useLegacy
+            />
+          </Suspense>
+        </DecisionHeader>
+      </Suspense>
+    </HydrationBoundary>
   );
 };
 

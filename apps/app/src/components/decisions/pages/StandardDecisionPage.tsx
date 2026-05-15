@@ -2,10 +2,11 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
+import { isLastPhase } from '@op/common/client';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { Suspense } from 'react';
-import { LuTriangleAlert } from 'react-icons/lu';
+import { LuClock, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n/routing';
 
@@ -53,6 +54,13 @@ export function StandardDecisionPage({
   const description =
     instance.description ?? instance.instanceData?.templateDescription;
   const canSubmitProposal = instance.access?.submitProposals ?? false;
+  const isAdmin = Boolean(instance.access?.admin);
+  // Non-admin landing on the last phase before the admin has confirmed
+  // winners: show a results-pending notice instead of the open proposal list.
+  const isAwaitingFinalResults =
+    !instance.selectionsAreConfirmed &&
+    !isAdmin &&
+    isLastPhase(currentPhaseId, phases);
 
   const heroTitle =
     translation?.headline ?? currentPhase?.headline ?? t('SHARE YOUR IDEAS.');
@@ -92,9 +100,16 @@ export function StandardDecisionPage({
         )}
         <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
           <div className="flex flex-col gap-6 lg:col-span-3">
-            {!instance.selectionsAreConfirmed &&
-            instance.access?.admin &&
-            decisionSlug ? (
+            {isAwaitingFinalResults ? (
+              <EmptyState icon={<LuClock className="size-6" />}>
+                <Header3 className="font-serif font-light">
+                  {t('Results pending')}
+                </Header3>
+                <p className="text-base text-neutral-charcoal">
+                  {t("Results for this process haven't been processed yet.")}
+                </p>
+              </EmptyState>
+            ) : !instance.selectionsAreConfirmed && isAdmin && decisionSlug ? (
               <APIErrorBoundary
                 fallbacks={{
                   default: () => (

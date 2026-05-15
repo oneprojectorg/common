@@ -12,30 +12,31 @@ interface Category {
   name: string;
 }
 
+export type SortOrder = 'votes' | 'newest' | 'oldest';
+
+export interface SelectionFilters {
+  proposalFilter: ProposalFilter;
+  selectedCategory: string;
+  sortOrder: SortOrder;
+}
+
 interface ManualSelectionToolbarProps {
   count: number;
   currentProfileId: string | undefined;
   categories: Category[];
-  proposalFilter: ProposalFilter;
-  setProposalFilter: (key: ProposalFilter) => void;
-  selectedCategory: string;
-  setSelectedCategory: (category: string) => void;
-  sortOrder: 'newest' | 'oldest';
-  setSortOrder: (order: 'newest' | 'oldest') => void;
+  filters: SelectionFilters;
+  onChange: (patch: Partial<SelectionFilters>) => void;
 }
 
 export const ManualSelectionToolbar = ({
   count,
   currentProfileId,
   categories,
-  proposalFilter,
-  setProposalFilter,
-  selectedCategory,
-  setSelectedCategory,
-  sortOrder,
-  setSortOrder,
+  filters,
+  onChange,
 }: ManualSelectionToolbarProps) => {
   const t = useTranslations();
+  const { proposalFilter, selectedCategory, sortOrder } = filters;
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
@@ -49,7 +50,7 @@ export const ManualSelectionToolbar = ({
             if (key === ProposalFilter.MY_PROPOSALS && !currentProfileId) {
               return;
             }
-            setProposalFilter(key);
+            onChange({ proposalFilter: key });
           }}
           aria-label={t('Filter proposals')}
           items={[
@@ -67,7 +68,7 @@ export const ManualSelectionToolbar = ({
         />
         <ResponsiveSelect
           selectedKey={selectedCategory}
-          onSelectionChange={setSelectedCategory}
+          onSelectionChange={(key) => onChange({ selectedCategory: key })}
           aria-label={t('Filter proposals by category')}
           items={[
             { id: 'all-categories', label: t('All categories') },
@@ -79,9 +80,10 @@ export const ManualSelectionToolbar = ({
         />
         <ResponsiveSelect
           selectedKey={sortOrder}
-          onSelectionChange={setSortOrder}
+          onSelectionChange={(key) => onChange({ sortOrder: key })}
           aria-label={t('Sort proposals')}
           items={[
+            { id: 'votes', label: t('Most votes') },
             { id: 'newest', label: t('Newest First') },
             { id: 'oldest', label: t('Oldest First') },
           ]}

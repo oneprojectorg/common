@@ -96,6 +96,7 @@ Use `pnpm w:<workspace>` shortcuts:
 - Always prefer suspense queries over a query with useEffect
 - When using Suspense Queries, always add proper error boundaries
 - **Component file structure**: Types and interfaces at the top, then the main exported component, then private sub-components and helper functions below. The primary export should be easy to find near the top of the file — don't bury it under utilities.
+- **Never sort result sets in JavaScript when the database can `ORDER BY`.** Sorting in JS after a paginated fetch only orders the current page, so pagination silently breaks. If sort order depends on an aggregate (e.g. vote count), do the aggregate + `ORDER BY` in SQL — usually via a `LEFT JOIN` with `GROUP BY` — and have the caller follow the DB's order. JS-side sorts are only acceptable for fully in-memory, never-paginated data.
 
 ### Internationalization (i18n)
 

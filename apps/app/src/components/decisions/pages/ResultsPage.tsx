@@ -18,6 +18,7 @@ import {
   DecisionResultsTabPanel,
   DecisionResultsTabs,
 } from '../DecisionResultsTabs';
+import { FinalPhaseSubmissionSuccessDialog } from '../FinalPhaseSubmissionSuccessDialog';
 import { MyBallot, NoVoteFound } from '../MyBallot';
 import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 import { ResultsList } from '../ResultsList';
@@ -122,6 +123,7 @@ function ResultsPageContent({
 
   return (
     <>
+      <FinalPhaseSubmissionSuccessDialog />
       {/* Hero section - will be inside gradient from DecisionHeader */}
       <div className="px-4 py-8">
         <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4">

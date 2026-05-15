@@ -242,7 +242,7 @@ test.describe('Review Submit', () => {
 
     await page.goto(decisionUrl, { waitUntil: 'domcontentloaded' });
 
-    await expect(page.getByText('Proposals to review')).toBeVisible({
+    await expect(page.getByText('Proposals to review').first()).toBeVisible({
       timeout: 36_000,
     });
     await expect(page.getByText(PROPOSAL_TITLE).first()).toBeVisible();
@@ -284,7 +284,7 @@ test.describe('Review Submit', () => {
     await page.getByText('Back to proposals').click();
     await expect(page).toHaveURL(new RegExp(decisionUrl), { timeout: 10_000 });
 
-    await expect(page.getByText('Proposals to review')).toBeVisible({
+    await expect(page.getByText('Proposals to review').first()).toBeVisible({
       timeout: 10_000,
     });
     await expect(statusBadge).toHaveText('Revision Requested');
@@ -327,7 +327,7 @@ test.describe('Review Submit', () => {
     await page.getByText('Back to proposals').click();
     await expect(page).toHaveURL(new RegExp(decisionUrl), { timeout: 10_000 });
 
-    await expect(page.getByText('Proposals to review')).toBeVisible({
+    await expect(page.getByText('Proposals to review').first()).toBeVisible({
       timeout: 10_000,
     });
     await expect(statusBadge).toHaveText('In Progress');
@@ -426,7 +426,7 @@ test.describe('Review Submit', () => {
       timeout: 10_000,
     });
 
-    await expect(page.getByText('Proposals to review')).toBeVisible({
+    await expect(page.getByText('Proposals to review').first()).toBeVisible({
       timeout: 10_000,
     });
     await expect(page.getByText(PROPOSAL_TITLE)).toBeVisible();
@@ -489,7 +489,7 @@ test.describe('Review Submit', () => {
 
     await page.goto(decisionUrl, { waitUntil: 'domcontentloaded' });
 
-    await expect(page.getByText('Proposals to review')).toBeVisible({
+    await expect(page.getByText('Proposals to review').first()).toBeVisible({
       timeout: 36_000,
     });
     await page.getByText(PROPOSAL_TITLE).first().click();

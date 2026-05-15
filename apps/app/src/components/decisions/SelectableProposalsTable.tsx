@@ -1,6 +1,5 @@
 'use client';
 
-import { formatCurrency } from '@/utils/formatting';
 import type { Proposal } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
@@ -15,16 +14,18 @@ import {
 
 import { Link, useTranslations } from '@/lib/i18n';
 
-import { resolveProposalSystemFields } from './proposalContentUtils';
 import { AdvanceToggleButton } from './selection/AdvanceToggleButton';
 import { SelectionCard } from './selection/SelectionCard';
 import { SelectionCategoryChips } from './selection/SelectionCategoryChips';
+import { resolvePresentationFields } from './selection/proposalPresentation';
 
 interface SelectableProposalsTableProps {
   proposals: Proposal[];
   selectedIds: string[];
   onToggle: (proposalId: string) => void;
   getProposalHref?: (proposal: Proposal) => string;
+  /** Show the per-proposal vote count column. Only used by the final-phase view. */
+  showVotes?: boolean;
 }
 
 export const SelectableProposalsTable = ({
@@ -32,6 +33,7 @@ export const SelectableProposalsTable = ({
   selectedIds,
   onToggle,
   getProposalHref,
+  showVotes = false,
 }: SelectableProposalsTableProps) => {
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
@@ -47,6 +49,7 @@ export const SelectableProposalsTable = ({
               isSelected={selectedSet.has(proposal.id)}
               onToggle={onToggle}
               href={getProposalHref?.(proposal)}
+              showVotes={showVotes}
             />
           </li>
         ))}
@@ -62,6 +65,7 @@ export const SelectableProposalsTable = ({
         </TableColumn>
         <TableColumn id="budget">{t('Budget')}</TableColumn>
         <TableColumn id="category">{t('Category')}</TableColumn>
+        {showVotes ? <TableColumn id="votes">{t('Votes')}</TableColumn> : null}
         <TableColumn id="select" className="w-32 text-right">
           <span className="sr-only">{t('Select proposal')}</span>
         </TableColumn>
@@ -110,6 +114,13 @@ export const SelectableProposalsTable = ({
               <TableCell>
                 <SelectionCategoryChips labels={fields.categories} />
               </TableCell>
+              {showVotes ? (
+                <TableCell>
+                  <span className="text-base text-neutral-black">
+                    {t('{count} votes', { count: proposal.voteCount ?? 0 })}
+                  </span>
+                </TableCell>
+              ) : null}
               <TableCell className="text-right">
                 <AdvanceToggleButton
                   isSelected={isSelected}
@@ -131,11 +142,13 @@ const SelectableProposalCard = ({
   isSelected,
   onToggle,
   href,
+  showVotes,
 }: {
   proposal: Proposal;
   isSelected: boolean;
   onToggle: (proposalId: string) => void;
   href?: string;
+  showVotes: boolean;
 }) => {
   const t = useTranslations();
   const fields = resolvePresentationFields({
@@ -168,6 +181,11 @@ const SelectableProposalCard = ({
           <span className="text-base text-neutral-black">{fields.budget}</span>
         ) : null}
         <SelectionCategoryChips labels={fields.categories} />
+        {showVotes ? (
+          <span className="text-sm text-neutral-charcoal">
+            {t('{count} votes', { count: proposal.voteCount ?? 0 })}
+          </span>
+        ) : null}
       </div>
 
       <AdvanceToggleButton
@@ -178,30 +196,4 @@ const SelectableProposalCard = ({
       />
     </SelectionCard>
   );
-};
-
-const resolvePresentationFields = ({
-  proposal,
-  defaultTitle,
-}: {
-  proposal: Proposal;
-  defaultTitle: string;
-}) => {
-  const {
-    title: resolvedTitle,
-    budget,
-    category: categories = [],
-  } = resolveProposalSystemFields(proposal);
-  const title = resolvedTitle || proposal.profile.name || defaultTitle;
-  const submitterName = proposal.submittedBy?.name;
-  const formattedBudget = budget?.amount
-    ? formatCurrency(budget.amount, undefined, budget.currency)
-    : null;
-
-  return {
-    title,
-    submitterName,
-    budget: formattedBudget,
-    categories,
-  };
 };

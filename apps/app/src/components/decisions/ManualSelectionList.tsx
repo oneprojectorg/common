@@ -6,18 +6,22 @@ import { ProposalFilter } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
-import { FooterBar } from '@op/ui/FooterBar';
 import { Header3 } from '@op/ui/Header';
 import { toast } from '@op/ui/Toast';
 import { usePostHog } from 'posthog-js/react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LuLeaf, LuTriangleAlert } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+import { usePathname, useRouter, useTranslations } from '@/lib/i18n';
 
-import { ManualSelectionToolbar } from './ManualSelectionToolbar';
+import { FinalPhaseSelectionFooter } from './FinalPhaseSelectionFooter';
+import { QUERY_PARAM as RESULTS_LIVE_PARAM } from './FinalPhaseSubmissionSuccessDialog';
+import {
+  ManualSelectionToolbar,
+  type SelectionFilters,
+} from './ManualSelectionToolbar';
 import { SelectableProposalsTable } from './SelectableProposalsTable';
-import { SelectionConfirmDialog } from './SelectionConfirmDialog';
+import { StandardSelectionFooter } from './StandardSelectionFooter';
 import { useManualSelection } from './useManualSelection';
 import { useProposalFilters } from './useProposalFilters';
 
@@ -27,18 +31,29 @@ const EMPTY_VOTED_IDS: string[] = [];
 interface ManualSelectionListProps {
   instanceId: string;
   decisionSlug: string;
+  /**
+   * `'finalPhase'` switches the confirm modal to the funded-results layout
+   * (see Figma 2310-10152) and adds a vote column to the table. Defaults to
+   * the standard advance-to-next-phase layout used for mid-process selection.
+   */
+  confirmVariant?: 'standard' | 'finalPhase';
 }
 
 export const ManualSelectionList = ({
   instanceId,
   decisionSlug,
+  confirmVariant = 'standard',
 }: ManualSelectionListProps) => {
   const t = useTranslations();
   const { user } = useUser();
   const posthog = usePostHog();
+  const router = useRouter();
+  const pathname = usePathname();
+  const isFinalPhase = confirmVariant === 'finalPhase';
 
   const [selectedCategory, setSelectedCategory] = useState('all-categories');
-  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [sortOrder, setSortOrder] =
+    useState<SelectionFilters['sortOrder']>('votes');
 
   const categoryId =
     selectedCategory === 'all-categories' ? undefined : selectedCategory;
@@ -47,7 +62,12 @@ export const ManualSelectionList = ({
     q.decision.getCategories({ processInstanceId: instanceId }),
     q.decision.getInstance({ instanceId }),
   ]);
-  const utils = trpc.useUtils();
+
+  // The selection list is only mounted once a phase exists; throw if it
+  // doesn't so localStorage doesn't bucket unrelated sessions under ''.
+  if (!instance.currentStateId) {
+    throw new Error('ManualSelectionList: instance has no currentStateId');
+  }
 
   // Non-suspense + placeholderData so category/sort changes don't blank
   // the table while the server re-fetches.
@@ -59,10 +79,9 @@ export const ManualSelectionList = ({
 
   const [selectedIds, setSelectedIds] = useManualSelection(
     instanceId,
-    instance.currentStateId ?? '',
+    instance.currentStateId,
   );
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const submissionInitiatedRef = useRef(false);
 
   // Resolve selected ids → proposals via a cache that accumulates across
   // refetches, so picks survive filter/sort changes that exclude them.
@@ -95,14 +114,20 @@ export const ManualSelectionList = ({
       initialFilter: ProposalFilter.ALL,
     });
 
-  const categories = categoriesData.categories;
-  const proposals = filteredProposals;
-
   const submitMutation = trpc.decision.submitManualSelection.useMutation({
     onSuccess: () => {
-      utils.decision.getInstance.invalidate({ instanceId });
+      // Channel-based invalidation flips selectionsAreConfirmed in the client
+      // tRPC cache, which both the (client) DecisionHeader and DecisionStateRouter
+      // observe via useSuspenseQuery — DecisionStateRouter then swaps to
+      // ResultsPage. Add the resultsLive flag to the URL so the dialog mounted
+      // on ResultsPage opens on this admin's machine only.
       setSelectedIds([]);
       setIsConfirmOpen(false);
+      if (isFinalPhase) {
+        const params = new URLSearchParams(window.location.search);
+        params.set(RESULTS_LIVE_PARAM, '1');
+        router.replace(`${pathname}?${params.toString()}`);
+      }
     },
     onError: (error) => {
       setIsConfirmOpen(false);
@@ -113,12 +138,13 @@ export const ManualSelectionList = ({
   const handleConfirmDialogOpenChange = useCallback(
     (open: boolean) => {
       if (open) {
-        submissionInitiatedRef.current = false;
         posthog.capture('manual_selection_dialog_opened', {
           process_instance_id: instanceId,
           proposal_count: selectedIds.length,
         });
-      } else if (!submitMutation.isPending && !submissionInitiatedRef.current) {
+      } else if (submitMutation.status === 'idle') {
+        // Only treat a close as a user-initiated dismiss when no submission
+        // has run. Pending → in-flight close, success → already-submitted.
         posthog.capture('manual_selection_dialog_dismissed', {
           process_instance_id: instanceId,
           proposal_count: selectedIds.length,
@@ -126,11 +152,30 @@ export const ManualSelectionList = ({
       }
       setIsConfirmOpen(open);
     },
-    [instanceId, selectedIds.length, submitMutation.isPending, posthog],
+    [instanceId, selectedIds.length, submitMutation.status, posthog],
+  );
+
+  const toolbarFilters = useMemo<SelectionFilters>(
+    () => ({ proposalFilter, selectedCategory, sortOrder }),
+    [proposalFilter, selectedCategory, sortOrder],
+  );
+
+  const handleToolbarChange = useCallback(
+    (patch: Partial<SelectionFilters>) => {
+      if (patch.proposalFilter !== undefined) {
+        setProposalFilter(patch.proposalFilter);
+      }
+      if (patch.selectedCategory !== undefined) {
+        setSelectedCategory(patch.selectedCategory);
+      }
+      if (patch.sortOrder !== undefined) {
+        setSortOrder(patch.sortOrder);
+      }
+    },
+    [setProposalFilter],
   );
 
   const handleConfirmSelection = useCallback(() => {
-    submissionInitiatedRef.current = true;
     posthog.capture('manual_selection_dialog_confirmed', {
       process_instance_id: instanceId,
       proposal_count: selectedIds.length,
@@ -186,6 +231,7 @@ export const ManualSelectionList = ({
     );
   };
 
+  const proposals = filteredProposals;
   const numSelected = selectedIds.length;
   const currentPhaseName =
     instance.instanceData?.phases?.find(
@@ -197,13 +243,9 @@ export const ManualSelectionList = ({
       <ManualSelectionToolbar
         count={proposals.length}
         currentProfileId={user.currentProfile?.id}
-        categories={categories}
-        proposalFilter={proposalFilter}
-        setProposalFilter={setProposalFilter}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-        sortOrder={sortOrder}
-        setSortOrder={setSortOrder}
+        categories={categoriesData.categories}
+        filters={toolbarFilters}
+        onChange={handleToolbarChange}
       />
 
       {proposals.length === 0 ? (
@@ -220,29 +262,30 @@ export const ManualSelectionList = ({
           getProposalHref={(p) =>
             `/decisions/${decisionSlug}/proposal/${p.profileId}`
           }
+          showVotes={isFinalPhase}
         />
       )}
 
-      <FooterBar position="fixed" className="bg-neutral-offWhite/95">
-        <FooterBar.Start>
-          <span className="text-base text-neutral-black">
-            {t('{count} proposals advancing', { count: numSelected })}
-          </span>
-        </FooterBar.Start>
-        <FooterBar.Center />
-        <FooterBar.End>
-          <SelectionConfirmDialog
-            isOpen={isConfirmOpen}
-            onOpenChange={handleConfirmDialogOpenChange}
-            proposals={selectedProposals}
-            count={numSelected}
-            phaseName={currentPhaseName}
-            triggerDisabled={numSelected === 0}
-            isSubmitting={submitMutation.isPending}
-            onConfirm={handleConfirmSelection}
-          />
-        </FooterBar.End>
-      </FooterBar>
+      {isFinalPhase ? (
+        <FinalPhaseSelectionFooter
+          selectedProposals={selectedProposals}
+          numSelected={numSelected}
+          isConfirmOpen={isConfirmOpen}
+          onConfirmOpenChange={handleConfirmDialogOpenChange}
+          onConfirm={handleConfirmSelection}
+          isSubmitting={submitMutation.isPending}
+        />
+      ) : (
+        <StandardSelectionFooter
+          selectedProposals={selectedProposals}
+          numSelected={numSelected}
+          phaseName={currentPhaseName}
+          isConfirmOpen={isConfirmOpen}
+          onConfirmOpenChange={handleConfirmDialogOpenChange}
+          onConfirm={handleConfirmSelection}
+          isSubmitting={submitMutation.isPending}
+        />
+      )}
     </div>
   );
 };

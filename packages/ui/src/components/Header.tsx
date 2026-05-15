@@ -61,15 +61,19 @@ export const Header4 = ({
 export const GradientHeader = ({
   children,
   className,
+  gradient = 'bg-gradient',
 }: {
   children?: React.ReactNode;
   className?: string;
+  /** Background gradient utility class (e.g. `bg-coralCoral`). Defaults to the teal/green `bg-gradient`. */
+  gradient?: string;
 }) => {
   return (
     <div className="flex w-full items-center justify-center text-transparent">
       <div
         className={cn(
-          'flex items-center bg-gradient bg-clip-text font-serif text-title-xxl',
+          'flex items-center bg-clip-text font-serif text-title-xxl',
+          gradient,
           className,
         )}
       >

@@ -274,13 +274,14 @@ test.describe('Review Summary page', () => {
     ).toBeVisible({ timeout: 36_000 });
 
     await expect(
-      page.getByText(
-        '3 out of 4 reviewers submitted a review for this proposal',
-      ),
+      page
+        .getByText('3 out of 4 reviewers submitted a review for this proposal')
+        .first(),
     ).toBeVisible();
 
     const averageScoreSection = page
       .getByText('Average Score', { exact: true })
+      .first()
       .locator('..');
     await expect(averageScoreSection).toContainText('6.3');
     await expect(averageScoreSection).toContainText('/8pts');
@@ -289,8 +290,8 @@ test.describe('Review Summary page', () => {
     // Step 2: Recommendation groups — Yes (2), Maybe (1); No is filtered out
     // ====================================================================
 
-    await expect(page.getByText('Yes (2)')).toBeVisible();
-    await expect(page.getByText('Maybe (1)')).toBeVisible();
+    await expect(page.getByText('Yes (2)').first()).toBeVisible();
+    await expect(page.getByText('Maybe (1)').first()).toBeVisible();
     await expect(page.getByText(/^No \(\d+\)$/)).toHaveCount(0);
 
     // Submitted-only — the unsubmitted assignment must not surface as a row.

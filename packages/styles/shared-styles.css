@@ -358,6 +358,15 @@
   );
 }
 
+@utility bg-coralCoral {
+  background-image: radial-gradient(
+    96.92% 140.1% at 72.02% 100%,
+    #df5787 0%,
+    #e17242 92.19%,
+    #fff0da 99.99%
+  );
+}
+
 /* ============================================
  * Dark Mode Configuration
  * Tailwind v4 uses @variant for custom dark mode selectors

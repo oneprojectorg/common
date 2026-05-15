@@ -308,7 +308,7 @@ test.describe('Decision Manual Selection — full flow', () => {
     await advanceDialog.getByRole('button', { name: 'Advance Phase' }).click();
 
     const confirmButton = authenticatedPage.getByRole('button', {
-      name: 'Confirm decisions',
+      name: 'Confirm winning proposals',
     });
     await expect(confirmButton).toBeVisible({ timeout: 15_000 });
     await expect(confirmButton).toBeDisabled();
@@ -321,17 +321,29 @@ test.describe('Decision Manual Selection — full flow', () => {
       .click();
 
     await expect(
-      authenticatedPage.getByText('2 proposals advancing'),
+      authenticatedPage.getByText('2 winning proposals selected'),
     ).toBeVisible();
     await expect(confirmButton).toBeEnabled();
 
     await confirmButton.click();
     const dialog = authenticatedPage.getByRole('dialog', {
-      name: 'Confirm advancing proposals',
+      name: 'Confirm winning proposals',
     });
     await expect(dialog).toBeVisible();
-    await dialog.getByRole('button', { name: 'Publish' }).click();
+    await dialog.getByRole('button', { name: 'Publish results' }).click();
     await expect(dialog).not.toBeVisible({ timeout: 15_000 });
+
+    // Channel invalidation swaps to ResultsPage and `?resultsLive=1` opens the
+    // post-publish success modal on the submitter's machine. Dismissing it
+    // strips the query param so the subsequent reload lands on a clean URL.
+    const successDialog = authenticatedPage
+      .getByRole('dialog')
+      .filter({ hasText: 'Results are live!' });
+    await expect(successDialog).toBeVisible({ timeout: 15_000 });
+    await successDialog
+      .getByRole('button', { name: 'View public results page' })
+      .click();
+    await expect(successDialog).not.toBeVisible({ timeout: 15_000 });
 
     // Append-only: post-advance hook writes the initial row (selectedCount=0);
     // submitManualSelection writes a second row (selectedCount=2) inline.
@@ -360,7 +372,7 @@ test.describe('Decision Manual Selection — full flow', () => {
     await authenticatedPage.reload({ waitUntil: 'networkidle' });
 
     const fundedHeading = authenticatedPage.getByRole('heading', {
-      name: 'Funded Proposals',
+      name: 'Selected Proposals',
     });
     await expect(fundedHeading).toBeVisible({ timeout: 15_000 });
 

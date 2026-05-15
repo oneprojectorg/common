@@ -20,7 +20,12 @@ interface ListSelectionCandidatesInput {
   user: User;
   /** Filter via the canonical `proposalCategories` join, not `proposalData.category`. */
   categoryId?: string;
-  sortOrder?: 'newest' | 'oldest';
+  /**
+   * `votes` is the default for the final-phase manual selection so admins see
+   * highest-voted proposals first. `newest`/`oldest` retain the prior behavior
+   * for callers that still want a createdAt sort.
+   */
+  sortOrder?: 'votes' | 'newest' | 'oldest';
   db?: DbClient;
 }
 
@@ -33,7 +38,7 @@ export async function listSelectionCandidates({
   processInstanceId,
   user,
   categoryId,
-  sortOrder = 'newest',
+  sortOrder = 'votes',
   db = defaultDb,
 }: ListSelectionCandidatesInput): Promise<SelectionCandidates> {
   const instance = await db.query.processInstances.findFirst({
@@ -88,19 +93,22 @@ export async function listSelectionCandidates({
     return { proposals: [] };
   }
 
-  const { proposals: enriched } = await listProposals({
+  // Single relational query: `listProposals` joins the vote-count subquery via
+  // `includeVoteCounts` and lets the DB drive ordering when `orderBy: 'votes'`.
+  const { proposals } = await listProposals({
     input: {
       processInstanceId,
       proposalIds: candidateIds,
       authUserId: user.id,
       limit: candidateIds.length,
-      orderBy: 'createdAt',
+      orderBy: sortOrder === 'votes' ? 'votes' : 'createdAt',
       dir: sortOrder === 'oldest' ? 'asc' : 'desc',
+      includeVoteCounts: true,
     },
     user,
   });
 
-  return { proposals: enriched };
+  return { proposals };
 }
 
 function resolvePreviousPhaseId(instance: {

@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import { isLastPhase } from '@op/common/client';
 import { notFound } from 'next/navigation';
 
+import { FinalPhaseManualSelectionPage } from './pages/FinalPhaseManualSelectionPage';
 import { ResultsPage } from './pages/ResultsPage';
 import { ReviewPage } from './pages/ReviewPage';
 import { ReviewSelectionPage } from './pages/ReviewSelectionPage';
@@ -55,6 +56,16 @@ function DecisionStateRouterNew({
         <ReviewSelectionPage
           instance={instance}
           previousPhaseId={previousPhase.phaseId}
+        />
+      );
+    }
+    // Last-phase manual selection: admin is confirming the final winners.
+    // Uses a Figma-specific hero but keeps the generic selection table below.
+    if (isLastPhase(currentStateId, phases) && isAdmin && decisionSlug) {
+      return (
+        <FinalPhaseManualSelectionPage
+          instanceId={instanceId}
+          decisionSlug={decisionSlug}
         />
       );
     }
