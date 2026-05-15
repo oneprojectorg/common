@@ -1,34 +1,35 @@
-// Compat wrapper for @op/ui's Modal. Maps the legacy RAC Modal+ModalHeader+
-// ModalBody+ModalFooter+ModalStepper API onto shadcn's base-ui Dialog
-// primitive. Visual styling matches @op/ui Modal so the 52 consumer sites
-// can swap import paths without JSX restructure.
+// Compat wrapper for @op/ui's Modal. Pure API translation onto vanilla shadcn
+// Dialog primitive (no style overrides beyond layout shims needed to bridge the
+// legacy ModalHeader/ModalBody/ModalFooter slot API).
 //
-// Consumers that wrapped Modal inside RAC `<DialogTrigger>` must migrate to
-// controlled state (isOpen + onOpenChange + useState) — no compat for that.
+// API map:
+//   isOpen/onOpenChange  -> open/onOpenChange
+//   isDismissable        -> showCloseButton + reason-filtered onOpenChange
+//   isKeyboardDismissDisabled -> reason filter for escape-key
+//   surface              -> accepted, ignored (no vanilla shadcn equivalent)
+//   confetti             -> accepted, ignored
+//   className            -> forwarded to DialogContent (Popup)
+//   overlayClassName     -> forwarded to DialogOverlay (Backdrop)
+//   wrapperClassName     -> accepted, ignored (vanilla shadcn has no wrapper)
+//
+//   ModalHeader  -> DialogHeader + DialogTitle
+//   ModalBody    -> <div data-slot="modal-body">
+//   ModalFooter  -> DialogFooter
+//   ModalStepper -> custom (no shadcn equivalent)
 
 'use client';
 
-import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
-import {
-  type ReactNode,
-  createContext,
-  memo,
-  useCallback,
-  useContext,
-} from 'react';
-import { LuX } from 'react-icons/lu';
+import { type ReactNode, memo, useCallback } from 'react';
 
-import { Button } from './Button';
 import { cn } from '../lib/utils';
-
-type Surface = 'default' | 'flat';
-
-type ModalContextValue = {
-  isDismissable?: boolean;
-  surface?: Surface;
-};
-
-const ModalContext = createContext<ModalContextValue>({});
+import { Button } from './Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
 
 export interface ModalProps {
   isOpen?: boolean;
@@ -36,7 +37,7 @@ export interface ModalProps {
   onOpenChange?: (isOpen: boolean) => void;
   isDismissable?: boolean;
   isKeyboardDismissDisabled?: boolean;
-  surface?: Surface;
+  surface?: 'default' | 'flat';
   className?: string;
   overlayClassName?: string;
   wrapperClassName?: string;
@@ -50,10 +51,10 @@ export const Modal = ({
   onOpenChange,
   isDismissable,
   isKeyboardDismissDisabled,
-  surface = 'default',
+  surface: _surface,
   className,
-  overlayClassName,
-  wrapperClassName,
+  overlayClassName: _overlayClassName,
+  wrapperClassName: _wrapperClassName,
   confetti: _confetti,
   children,
 }: ModalProps) => {
@@ -63,7 +64,10 @@ export const Modal = ({
   ) => {
     if (!open) {
       const reason = details?.reason;
-      if (isDismissable === false && (reason === 'outside-press' || reason === 'escape-key')) {
+      if (
+        isDismissable === false &&
+        (reason === 'outside-press' || reason === 'escape-key')
+      ) {
         return;
       }
       if (isKeyboardDismissDisabled && reason === 'escape-key') {
@@ -74,43 +78,18 @@ export const Modal = ({
   };
 
   return (
-    <ModalContext.Provider value={{ isDismissable, surface }}>
-      <DialogPrimitive.Root
-        open={isOpen}
-        defaultOpen={defaultOpen}
-        onOpenChange={handleOpenChange}
-        disablePointerDismissal={isDismissable === false}
+    <Dialog
+      open={isOpen}
+      defaultOpen={defaultOpen}
+      onOpenChange={handleOpenChange}
+    >
+      <DialogContent
+        className={className}
+        showCloseButton={isDismissable !== false}
       >
-        <DialogPrimitive.Portal>
-          <DialogPrimitive.Backdrop
-            data-slot="dialog-overlay"
-            className={cn(
-              'fixed inset-0 z-[99999] flex items-center justify-center bg-neutral-black/15 p-4 text-center backdrop-blur-sm duration-200 ease-out data-closed:animate-out data-closed:fade-out-0 data-open:animate-in data-open:fade-in-0',
-              overlayClassName,
-            )}
-          />
-          <div
-            className={cn(
-              'fixed inset-0 z-[999999] flex items-center justify-center p-4',
-              wrapperClassName,
-            )}
-          >
-            <DialogPrimitive.Popup
-              data-slot="dialog-content"
-              {...(isKeyboardDismissDisabled
-                ? { closeOnEscape: false }
-                : {})}
-              className={cn(
-                'isolate h-svh max-h-svh w-screen max-w-md overflow-hidden overflow-y-auto rounded-none border bg-white bg-clip-padding outline-none duration-200 ease-out data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 sm:h-auto sm:max-h-[calc(100svh-2rem)] sm:max-w-[32rem] sm:rounded-lg',
-                className,
-              )}
-            >
-              {children}
-            </DialogPrimitive.Popup>
-          </div>
-        </DialogPrimitive.Portal>
-      </DialogPrimitive.Root>
-    </ModalContext.Provider>
+        {children}
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -121,42 +100,10 @@ export const ModalHeader = ({
   className?: string;
   children: ReactNode;
 }) => {
-  const { isDismissable, surface } = useContext(ModalContext);
-
   return (
-    <div
-      className={cn(
-        'z-30 flex w-full items-center bg-white',
-        surface === 'flat'
-          ? 'pt-6'
-          : 'sticky top-0 min-h-16 border-b',
-      )}
-    >
-      <div className="relative flex w-full items-center justify-center">
-        {isDismissable && (
-          <DialogPrimitive.Close
-            aria-label="Close modal"
-            className={cn(
-              'absolute right-6 flex h-6 w-6',
-              'items-center justify-center',
-              'cursor-pointer rounded-md outline-none hover:bg-neutral-gray1 focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2',
-              'text-neutral-charcoal',
-            )}
-          >
-            <LuX className="h-6 w-6" aria-hidden="true" />
-          </DialogPrimitive.Close>
-        )}
-        <DialogPrimitive.Title
-          className={cn(
-            'w-full text-center font-serif sm:text-title-sm',
-            isDismissable && 'px-14',
-            className,
-          )}
-        >
-          {children}
-        </DialogPrimitive.Title>
-      </div>
-    </div>
+    <DialogHeader className={className}>
+      <DialogTitle>{children}</DialogTitle>
+    </DialogHeader>
   );
 };
 
@@ -168,12 +115,7 @@ export const ModalBody = ({
   children: ReactNode;
 }) => {
   return (
-    <div
-      className={cn(
-        'flex w-full flex-col gap-2 p-6 text-left focus-visible:outline-0',
-        className,
-      )}
-    >
+    <div data-slot="modal-body" className={className}>
       {children}
     </div>
   );
@@ -186,21 +128,7 @@ export const ModalFooter = ({
   className?: string;
   children: ReactNode;
 }) => {
-  const { surface } = useContext(ModalContext);
-
-  return (
-    <div
-      className={cn(
-        'flex w-full flex-col-reverse justify-end gap-4 bg-white px-6 py-3 sm:flex-row',
-        surface === 'flat'
-          ? ''
-          : 'absolute bottom-0 border-t sm:sticky',
-        className,
-      )}
-    >
-      {children}
-    </div>
-  );
+  return <DialogFooter className={className}>{children}</DialogFooter>;
 };
 
 export const ModalStepper = memo(
@@ -235,14 +163,7 @@ export const ModalStepper = memo(
     }, [currentStep, onPrevious]);
 
     return (
-      <footer
-        className={cn(
-          'sticky bottom-0',
-          'flex w-full items-center justify-between',
-          'px-6 py-3',
-          'border-t bg-white',
-        )}
-      >
+      <DialogFooter className={cn('items-center sm:justify-between')}>
         <span className="flex-1">
           {!isFirstStep && (
             <Button color="secondary" onPress={handlePrevious}>
@@ -250,7 +171,7 @@ export const ModalStepper = memo(
             </Button>
           )}
         </span>
-        <span className="flex-1 text-center text-sm text-neutral-gray4">
+        <span className="text-muted-foreground flex-1 text-center text-sm">
           Step {currentStep} of {totalSteps}
         </span>
         <div className="flex flex-1 justify-end">
@@ -258,11 +179,9 @@ export const ModalStepper = memo(
             {isLastStep ? 'Finish' : 'Next'}
           </Button>
         </div>
-      </footer>
+      </DialogFooter>
     );
   },
 );
 
 ModalStepper.displayName = 'ModalStepper';
-
-export { ModalContext };

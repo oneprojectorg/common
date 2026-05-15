@@ -13,14 +13,10 @@
 import type { ReactNode } from 'react';
 import { LuEllipsis } from 'react-icons/lu';
 
+import { cn } from '../lib/utils';
 import { IconButton } from './IconButton';
 import type { IconButtonProps } from './IconButton';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from './Menu';
-import { cn } from '../lib/utils';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from './Menu';
 
 export interface OptionMenuProps {
   children: ReactNode;
@@ -45,10 +41,7 @@ export function OptionMenu({
             aria-label={ariaLabel}
             variant={variant}
             size={size}
-            className={cn(
-              'aspect-square aria-expanded:bg-neutral-gray1',
-              className,
-            )}
+            className={cn('aria-expanded:bg-accent', className)}
           >
             <LuEllipsis className="size-4" />
           </IconButton>

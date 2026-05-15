@@ -1,5 +1,14 @@
-// Compat wrapper for @op/ui's Tabs. Maps legacy RAC API
-// (selectedKey/onSelectionChange/id/variant=pill) onto shadcn base-ui Tabs.
+// Compat wrapper for @op/ui's Tabs. Pure API translation onto vanilla shadcn
+// Tabs primitives (no style overrides).
+//
+// API map:
+//   selectedKey/onSelectionChange -> value/onValueChange
+//   id (on Tab/TabPanel)          -> value
+//   variant=pill                  -> shadcn TabsList variant=default
+//   variant=default               -> shadcn TabsList variant=line
+//
+// Variant is only meaningful on TabList; the per-Tab variant prop in the legacy
+// API is accepted for source-compat and ignored.
 
 'use client';
 
@@ -11,10 +20,9 @@ import {
   TabsTrigger as ShadcnTabsTrigger,
   TabsContent as ShadcnTabsContent,
 } from './ui/tabs';
-import { cn } from '../lib/utils';
 
 type Orientation = 'horizontal' | 'vertical';
-type TabVariant = 'default' | 'pill';
+type LegacyVariant = 'default' | 'pill';
 
 export interface TabsProps {
   children: React.ReactNode;
@@ -44,7 +52,7 @@ export const Tabs = ({
       onValueChange={onSelectionChange}
       orientation={orientation}
       aria-label={ariaLabel}
-      className={cn('flex gap-4', className)}
+      className={className}
     >
       {children}
     </ShadcnTabs>
@@ -54,7 +62,7 @@ export const Tabs = ({
 export interface TabListProps {
   children: React.ReactNode;
   className?: string;
-  variant?: TabVariant;
+  variant?: LegacyVariant;
   orientation?: Orientation;
   'aria-label'?: string;
 }
@@ -69,13 +77,7 @@ export const TabList = ({
     <ShadcnTabsList
       aria-label={ariaLabel}
       variant={variant === 'pill' ? 'default' : 'line'}
-      className={cn(
-        'h-auto w-fit gap-4 overflow-x-auto rounded-none bg-transparent p-0',
-        variant === 'default' &&
-          'border-b border-offWhite group-data-vertical/tabs:flex-col group-data-vertical/tabs:border-b-0',
-        variant === 'pill' && 'gap-2 rounded-lg border-none bg-transparent p-1',
-        className,
-      )}
+      className={className}
     >
       {children}
     </ShadcnTabsList>
@@ -86,44 +88,14 @@ export interface TabProps {
   id: string;
   children: React.ReactNode;
   className?: string;
-  variant?: TabVariant;
+  variant?: LegacyVariant;
   isDisabled?: boolean;
   unstyled?: boolean;
 }
 
-export const Tab = ({
-  id,
-  children,
-  className,
-  variant = 'default',
-  isDisabled,
-  unstyled,
-}: TabProps) => {
-  if (unstyled) {
-    return (
-      <ShadcnTabsTrigger
-        value={id}
-        disabled={isDisabled}
-        className={className}
-      >
-        {children}
-      </ShadcnTabsTrigger>
-    );
-  }
+export const Tab = ({ id, children, className, isDisabled }: TabProps) => {
   return (
-    <ShadcnTabsTrigger
-      value={id}
-      disabled={isDisabled}
-      className={cn(
-        'flex h-8 cursor-default items-center px-2 py-3 text-base font-normal whitespace-nowrap text-neutral-gray4 outline-none transition focus-visible:bg-neutral-offWhite sm:h-auto sm:bg-transparent',
-        variant === 'default' &&
-          'rounded-none border-b border-transparent data-active:border-charcoal data-active:text-charcoal data-active:shadow-none data-active:bg-transparent',
-        variant === 'pill' &&
-          'rounded-md border-none bg-neutral-offWhite p-3 sm:py-2 data-active:bg-neutral-gray1 data-active:text-neutral-charcoal data-active:shadow-none',
-        isDisabled && 'text-lightGray',
-        className,
-      )}
-    >
+    <ShadcnTabsTrigger value={id} disabled={isDisabled} className={className}>
       {children}
     </ShadcnTabsTrigger>
   );
@@ -137,10 +109,7 @@ export interface TabPanelProps {
 
 export const TabPanel = ({ id, children, className }: TabPanelProps) => {
   return (
-    <ShadcnTabsContent
-      value={id}
-      className={cn('flex-1 text-base sm:p-4', className)}
-    >
+    <ShadcnTabsContent value={id} className={className}>
       {children}
     </ShadcnTabsContent>
   );
