@@ -6,7 +6,7 @@ import { DropdownMenuItem } from '@op/ui-next/Menu';
 import { OptionMenu } from '@op/ui-next/OptionMenu';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui-next/Tabs';
 import { Tag, TagGroup } from '@op/ui-next/TagGroup';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import React, { useMemo } from 'react';
 import { LuUsers } from 'react-icons/lu';
 

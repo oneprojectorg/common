@@ -13,7 +13,7 @@ import {
   schemaValidator,
 } from '@op/common/client';
 import { useDebouncedCallback } from '@op/hooks';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import { notFound } from 'next/navigation';
 import {
   type ReactNode,

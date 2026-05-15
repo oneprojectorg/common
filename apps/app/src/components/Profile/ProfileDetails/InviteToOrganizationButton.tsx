@@ -5,7 +5,7 @@ import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui-next/Button';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import { useState } from 'react';
 import { LuCheck, LuUserPlus } from 'react-icons/lu';
 

@@ -5,7 +5,7 @@ import { Button } from '@op/ui-next/Button';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { TextField } from '@op/ui-next/TextField';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import { useState } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';

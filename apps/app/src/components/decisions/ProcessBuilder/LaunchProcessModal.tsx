@@ -6,7 +6,7 @@ import { AlertBanner } from '@op/ui-next/AlertBanner';
 import { Button } from '@op/ui-next/Button';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { Skeleton } from '@op/ui-next/Skeleton';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 

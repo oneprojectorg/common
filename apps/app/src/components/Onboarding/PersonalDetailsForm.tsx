@@ -4,9 +4,9 @@ import { zodUrl } from '@op/common/validation';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { SelectItem } from '@op/ui-next/Select';
 import { Skeleton } from '@op/ui-next/Skeleton';
+import { toast } from '@op/ui-next/Toast';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
-import { toast } from '@op/ui/Toast';
 import { ReactNode, Suspense, useState } from 'react';
 import { z } from 'zod';
 

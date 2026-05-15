@@ -36,6 +36,7 @@
     "./Sheet": "./src/components/Sheet.tsx",
     "./Tabs": "./src/components/Tabs.tsx",
     "./TagGroup": "./src/components/TagGroup.tsx",
+    "./Toast": "./src/components/Toast.tsx",
     "./ToggleButton": "./src/components/ToggleButton.tsx"
   },
   "scripts": {

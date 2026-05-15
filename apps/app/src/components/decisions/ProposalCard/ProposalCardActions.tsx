@@ -5,7 +5,7 @@ import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
 import { Button, ButtonLink } from '@op/ui-next/Button';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import { useState } from 'react';
 import { LuBookmark, LuHeart, LuPencil, LuTrash2 } from 'react-icons/lu';
 

@@ -3,7 +3,7 @@ import type { Relationship } from '@op/api/encoders';
 import { Button } from '@op/ui-next/Button';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import { FormEvent, useTransition } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

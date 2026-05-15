@@ -3,7 +3,7 @@
 import { Button } from '@op/ui-next/Button';
 import { IconButton } from '@op/ui-next/IconButton';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import { useState } from 'react';
 import {
   Dialog,

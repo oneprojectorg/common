@@ -9,7 +9,7 @@ import { Button } from '@op/ui-next/Button';
 import { Checkbox } from '@op/ui-next/Checkbox';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import { FormEvent, useState, useTransition } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

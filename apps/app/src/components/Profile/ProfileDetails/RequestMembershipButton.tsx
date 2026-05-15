@@ -7,7 +7,7 @@ import { Button, ButtonTooltip } from '@op/ui-next/Button';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { Skeleton } from '@op/ui-next/Skeleton';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import { Suspense, useState, useTransition } from 'react';
 import { LuClock, LuUserPlus } from 'react-icons/lu';
 

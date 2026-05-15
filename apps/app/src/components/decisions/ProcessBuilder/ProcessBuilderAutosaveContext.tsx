@@ -2,7 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { useDebouncedCallback } from '@op/hooks';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import {
   createContext,
   useCallback,

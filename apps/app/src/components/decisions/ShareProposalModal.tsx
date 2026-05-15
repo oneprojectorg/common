@@ -11,9 +11,9 @@ import { IconButton } from '@op/ui-next/IconButton';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { SearchField } from '@op/ui-next/SearchField';
+import { toast } from '@op/ui-next/Toast';
 import { ProfileItem } from '@op/ui/ProfileItem';
 import { ListBox, ListBoxItem } from '@op/ui/RAC';
-import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
 import {
   Suspense,

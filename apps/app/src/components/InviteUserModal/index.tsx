@@ -6,7 +6,7 @@ import { trpc } from '@op/api/client';
 import { Button } from '@op/ui-next/Button';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui-next/Tabs';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { Suspense, useEffect, useState } from 'react';
 import { LuUserPlus } from 'react-icons/lu';

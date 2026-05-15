@@ -4,7 +4,7 @@ import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
 import { Button } from '@op/ui-next/Button';
 import { ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import { useContext } from 'react';
 import { OverlayTriggerStateContext } from 'react-aria-components';
 

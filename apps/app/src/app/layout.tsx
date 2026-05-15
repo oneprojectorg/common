@@ -4,7 +4,7 @@ import { APP_NAME, printNFO } from '@op/core';
 
 import '@op/ui-next/styles.css';
 import '@op/styles';
-import { Toast } from '@op/ui/Toast';
+import { Toast } from '@op/ui-next/Toast';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { Metadata, Viewport } from 'next';
 import { getLocale, getMessages } from 'next-intl/server';

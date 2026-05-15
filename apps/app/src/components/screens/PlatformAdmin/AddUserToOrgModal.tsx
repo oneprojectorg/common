@@ -9,9 +9,9 @@ import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { Skeleton } from '@op/ui-next/Skeleton';
 import { Surface } from '@op/ui-next/Surface';
+import { toast } from '@op/ui-next/Toast';
 import { ComboBox, ComboBoxItem } from '@op/ui/ComboBox';
 import { ProfileItem } from '@op/ui/ProfileItem';
-import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
 import {
   FormEvent,

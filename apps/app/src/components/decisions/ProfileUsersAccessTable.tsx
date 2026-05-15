@@ -7,7 +7,7 @@ import { EmptyState } from '@op/ui-next/EmptyState';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { Select, SelectItem } from '@op/ui-next/Select';
 import { Skeleton } from '@op/ui-next/Skeleton';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import {
   Table,
   TableBody,

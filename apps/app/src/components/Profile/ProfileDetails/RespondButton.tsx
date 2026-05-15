@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@op/ui-next/Menu';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import { Suspense } from 'react';
 import { LuCheck, LuUserPlus, LuX } from 'react-icons/lu';
 

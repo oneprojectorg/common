@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@op/ui-next/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import { useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
 import { LuCheck, LuEllipsis, LuEye, LuEyeOff, LuX } from 'react-icons/lu';

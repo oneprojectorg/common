@@ -14,7 +14,7 @@ import { DropdownMenuItem } from '@op/ui-next/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { OptionMenu } from '@op/ui-next/OptionMenu';
 import { TextField } from '@op/ui-next/TextField';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import {
   EditableCell,
   Table,

@@ -7,8 +7,8 @@ import { DropdownMenuItem } from '@op/ui-next/Menu';
 import { OptionMenu } from '@op/ui-next/OptionMenu';
 import { SearchField } from '@op/ui-next/SearchField';
 import { Skeleton } from '@op/ui-next/Skeleton';
+import { toast } from '@op/ui-next/Toast';
 import { Pagination } from '@op/ui/Pagination';
-import { toast } from '@op/ui/Toast';
 import {
   Table,
   TableBody,

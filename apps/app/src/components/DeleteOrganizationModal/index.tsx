@@ -10,7 +10,7 @@ import { Avatar } from '@op/ui-next/Avatar';
 import { Button } from '@op/ui-next/Button';
 import { Modal, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { RadioGroup, RadioGroupItem } from '@op/ui-next/RadioGroup';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
