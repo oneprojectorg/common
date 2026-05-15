@@ -124,6 +124,25 @@
   }
 }
 
+/* shadcn primitives assume a 16px root font; OP app currently runs at 14px.
+ * Until the global root bump, scope absolute font-size tokens to shadcn
+ * primitives via [data-slot]. Cascades through portaled popups (they also
+ * carry data-slot). Remove this block when root font-size is bumped to 16px. */
+[data-slot] {
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 16px;
+  --text-base--line-height: 24px;
+  --text-lg: 18px;
+  --text-lg--line-height: 28px;
+  --text-xl: 20px;
+  --text-xl--line-height: 28px;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 32px;
+}
+
 /* Gradient utilities used by Avatar fallbacks. Self-contained so ui-next
  * doesn't depend on @op/styles for these. */
 @utility bg-gradient {

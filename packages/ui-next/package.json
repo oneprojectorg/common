@@ -28,7 +28,8 @@
     "./Select": "./src/components/Select.tsx",
     "./Checkbox": "./src/components/Checkbox.ts",
     "./RadioGroup": "./src/components/RadioGroup.ts",
-    "./Menu": "./src/components/Menu.ts"
+    "./Menu": "./src/components/Menu.ts",
+    "./OptionMenu": "./src/components/OptionMenu.tsx"
   },
   "scripts": {
     "build": "pnpm build:styles && storybook build",

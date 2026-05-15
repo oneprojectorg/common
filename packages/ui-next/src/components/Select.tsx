@@ -7,6 +7,7 @@
 
 'use client';
 
+import { Select as SelectPrimitive } from '@base-ui/react/select';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
@@ -140,7 +141,13 @@ export function Select<T extends { id: string | number }>({
         items={baseUiItems}
         modal={false}
       >
-        {customTrigger ?? (
+        {customTrigger ? (
+          <SelectPrimitive.Trigger
+            id={fieldId}
+            aria-label={ariaLabel}
+            render={customTrigger as React.ReactElement}
+          />
+        ) : (
           <SelectTrigger
             id={fieldId}
             size={size === 'small' ? 'sm' : 'default'}
