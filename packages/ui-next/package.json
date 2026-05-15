@@ -18,6 +18,7 @@
     "./Avatar": "./src/components/Avatar.tsx",
     "./Skeleton": "./src/components/Skeleton.tsx",
     "./Chip": "./src/components/Chip.tsx",
+    "./EmptyState": "./src/components/EmptyState.tsx",
     "./StatusDot": "./src/components/StatusDot.tsx",
     "./Header": "./src/components/Header.tsx",
     "./Link": "./src/components/Link.tsx",

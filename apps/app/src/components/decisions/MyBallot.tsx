@@ -3,8 +3,8 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Checkbox } from '@op/ui-next/Checkbox';
+import { EmptyState } from '@op/ui-next/EmptyState';
 import { Header3 } from '@op/ui-next/Header';
-import { EmptyState } from '@op/ui/EmptyState';
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';

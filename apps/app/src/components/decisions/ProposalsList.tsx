@@ -18,12 +18,12 @@ import {
 } from '@op/common/client';
 import { Button, ButtonLink } from '@op/ui-next/Button';
 import { Checkbox } from '@op/ui-next/Checkbox';
+import { EmptyState } from '@op/ui-next/EmptyState';
 import { Header3 } from '@op/ui-next/Header';
 import { Link } from '@op/ui-next/Link';
 import { Modal } from '@op/ui-next/Modal';
 import { Skeleton } from '@op/ui-next/Skeleton';
 import { Surface } from '@op/ui-next/Surface';
-import { EmptyState } from '@op/ui/EmptyState';
 import { FooterBar } from '@op/ui/FooterBar';
 import { toast } from '@op/ui/Toast';
 import { useLocale } from 'next-intl';

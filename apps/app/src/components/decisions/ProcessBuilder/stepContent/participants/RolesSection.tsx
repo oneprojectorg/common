@@ -7,13 +7,13 @@ import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui-next/Button';
 import { Checkbox } from '@op/ui-next/Checkbox';
+import { EmptyState } from '@op/ui-next/EmptyState';
 import { Header2, Header3 } from '@op/ui-next/Header';
 import { IconButton } from '@op/ui-next/IconButton';
 import { DropdownMenuItem } from '@op/ui-next/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { OptionMenu } from '@op/ui-next/OptionMenu';
 import { TextField } from '@op/ui-next/TextField';
-import { EmptyState } from '@op/ui/EmptyState';
 import { toast } from '@op/ui/Toast';
 import {
   EditableCell,

@@ -1,7 +1,7 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { type InstancePhaseData, type ProcessInstance } from '@op/api/encoders';
+import { EmptyState } from '@op/ui-next/EmptyState';
 import { Header3 } from '@op/ui-next/Header';
-import { EmptyState } from '@op/ui/EmptyState';
 import { Suspense } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
