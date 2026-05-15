@@ -880,7 +880,7 @@ export const ProposalsList = ({
                 }
                 setProposalFilter(key);
               }}
-              aria-label={t('Filter proposals')}
+              label={t('Filter proposals')}
               items={[
                 { id: ProposalFilter.ALL, label: t('All proposals') },
                 {
@@ -908,7 +908,7 @@ export const ProposalsList = ({
                 setSelectedCategory(category);
                 updateURLParams({ category });
               }}
-              aria-label={t('Filter proposals by category')}
+              label={t('Filter proposals by category')}
               items={[
                 { id: 'all-categories', label: t('All categories') },
                 ...categories.map((category) => ({
@@ -923,7 +923,7 @@ export const ProposalsList = ({
                 setSortOrder(sort);
                 updateURLParams({ sort });
               }}
-              aria-label={t('Sort proposals')}
+              label={t('Sort proposals')}
               className="min-w-32"
               items={[
                 { id: 'newest', label: t('Newest First') },

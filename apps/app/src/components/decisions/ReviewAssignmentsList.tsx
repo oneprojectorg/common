@@ -83,7 +83,7 @@ export function ReviewAssignmentsList({
             onSelectionChange={(key) =>
               setStatusFilter(key === 'all' ? null : key)
             }
-            aria-label={t('Filter by status')}
+            label={t('Filter by status')}
             items={[
               { id: 'all', label: t('All statuses') },
               { id: 'pending', label: t('Not Started') },
@@ -101,7 +101,7 @@ export function ReviewAssignmentsList({
             onSelectionChange={(key) =>
               setDir(key === 'oldest' ? 'asc' : 'desc')
             }
-            aria-label={t('Sort order')}
+            label={t('Sort order')}
             items={[
               { id: 'newest', label: t('Newest First') },
               { id: 'oldest', label: t('Oldest First') },

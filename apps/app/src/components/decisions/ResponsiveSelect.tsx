@@ -4,7 +4,7 @@ import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui-next/Button';
 import { Select, SelectItem } from '@op/ui-next/Select';
-import { Sheet, SheetBody } from '@op/ui-next/Sheet';
+import { Sheet, SheetBody, SheetHeader } from '@op/ui-next/Sheet';
 import { type ReactNode, useState } from 'react';
 import { LuCheck, LuChevronDown } from 'react-icons/lu';
 
@@ -21,8 +21,11 @@ interface ResponsiveSelectProps<T extends string> {
   onSelectionChange: (key: T) => void;
   /** Available options */
   items: SelectOption<T>[];
-  /** Accessible label for the select */
-  'aria-label'?: string;
+  /**
+   * Required label. Shown in the SheetHeader on mobile; used as aria-label on
+   * the desktop Select trigger.
+   */
+  label: string;
   /** Additional class for the trigger button/select */
   className?: string;
   /** Size variant */
@@ -39,7 +42,7 @@ export function ResponsiveSelect<T extends string>({
   selectedKey,
   onSelectionChange,
   items,
-  'aria-label': ariaLabel,
+  label,
   className = 'min-w-36',
   size = 'small',
   renderSelectedLabel,
@@ -70,12 +73,9 @@ export function ResponsiveSelect<T extends string>({
           side="bottom"
           className="rounded-t-2xl"
         >
+          <SheetHeader>{label}</SheetHeader>
           <SheetBody className="pb-safe">
-            <div
-              role="listbox"
-              aria-label={ariaLabel}
-              className="flex flex-col"
-            >
+            <div role="listbox" aria-label={label} className="flex flex-col">
               {items.map((item, index) => {
                 const isSelected = selectedKey === item.id;
                 return (
@@ -109,7 +109,7 @@ export function ResponsiveSelect<T extends string>({
       size={size}
       className={className}
       onSelectionChange={(key) => onSelectionChange(key as T)}
-      aria-label={ariaLabel}
+      aria-label={label}
     >
       {items.map((item) => (
         <SelectItem key={item.id} id={item.id} isDisabled={item.isDisabled}>

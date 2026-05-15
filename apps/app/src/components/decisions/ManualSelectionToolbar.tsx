@@ -51,7 +51,7 @@ export const ManualSelectionToolbar = ({
             }
             setProposalFilter(key);
           }}
-          aria-label={t('Filter proposals')}
+          label={t('Filter proposals')}
           items={[
             { id: ProposalFilter.ALL, label: t('All proposals') },
             {
@@ -68,7 +68,7 @@ export const ManualSelectionToolbar = ({
         <ResponsiveSelect
           selectedKey={selectedCategory}
           onSelectionChange={setSelectedCategory}
-          aria-label={t('Filter proposals by category')}
+          label={t('Filter proposals by category')}
           items={[
             { id: 'all-categories', label: t('All categories') },
             ...categories.map((category) => ({
@@ -80,7 +80,7 @@ export const ManualSelectionToolbar = ({
         <ResponsiveSelect
           selectedKey={sortOrder}
           onSelectionChange={setSortOrder}
-          aria-label={t('Sort proposals')}
+          label={t('Sort proposals')}
           items={[
             { id: 'newest', label: t('Newest First') },
             { id: 'oldest', label: t('Oldest First') },
