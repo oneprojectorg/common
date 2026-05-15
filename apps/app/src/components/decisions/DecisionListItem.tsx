@@ -2,12 +2,12 @@
 
 import { trpc } from '@op/api/client';
 import { DecisionProfile, ProcessStatus } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
-import { Menu, MenuItem } from '@op/ui/Menu';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { OptionMenu } from '@op/ui/OptionMenu';
-import { toast } from '@op/ui/Toast';
-import { cn } from '@op/ui/utils';
+import { Button } from '@op/ui-next/Button';
+import { DropdownMenuItem } from '@op/ui-next/Menu';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
+import { OptionMenu } from '@op/ui-next/OptionMenu';
+import { toast } from '@op/ui-next/Toast';
+import { cn } from '@op/ui-next/lib/utils';
 import { useLocale } from 'next-intl';
 import { useState } from 'react';
 import { LuCalendar } from 'react-icons/lu';
@@ -118,33 +118,26 @@ export const DecisionListItem = ({ item }: { item: DecisionProfile }) => {
               className="rounded bg-white shadow-light"
               size="medium"
             >
-              <Menu className="min-w-28 p-2">
-                {canManage && (
-                  <MenuItem
-                    key="settings"
-                    href={`/decisions/${item.slug}/edit`}
-                  >
-                    {t('Settings')}
-                  </MenuItem>
-                )}
-                {canManage && (
-                  <MenuItem
-                    key="duplicate"
-                    onAction={() => setShowDuplicateModal(true)}
-                  >
-                    {t('Duplicate')}
-                  </MenuItem>
-                )}
-                {canDelete && (
-                  <MenuItem
-                    key="delete"
-                    onAction={() => setShowDeleteModal(true)}
-                    className="text-functional-red"
-                  >
-                    {t('Delete')}
-                  </MenuItem>
-                )}
-              </Menu>
+              {canManage && (
+                <DropdownMenuItem
+                  render={<Link href={`/decisions/${item.slug}/edit`} />}
+                >
+                  {t('Settings')}
+                </DropdownMenuItem>
+              )}
+              {canManage && (
+                <DropdownMenuItem onClick={() => setShowDuplicateModal(true)}>
+                  {t('Duplicate')}
+                </DropdownMenuItem>
+              )}
+              {canDelete && (
+                <DropdownMenuItem
+                  onClick={() => setShowDeleteModal(true)}
+                  variant="destructive"
+                >
+                  {t('Delete')}
+                </DropdownMenuItem>
+              )}
             </OptionMenu>
           </div>
         )}

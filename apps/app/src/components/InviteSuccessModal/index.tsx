@@ -1,9 +1,9 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { CheckIcon } from '@op/ui/CheckIcon';
-import { Header1 } from '@op/ui/Header';
-import { Modal, ModalBody } from '@op/ui/Modal';
+import { Button } from '@op/ui-next/Button';
+import { CheckIcon } from '@op/ui-next/CheckIcon';
+import { Header1 } from '@op/ui-next/Header';
+import { Modal, ModalBody } from '@op/ui-next/Modal';
 
 interface InviteSuccessModalProps {
   isOpen: boolean;

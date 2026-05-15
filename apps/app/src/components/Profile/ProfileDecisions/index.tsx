@@ -3,7 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { VISIBLE_DECISION_STATUSES } from '@op/api/encoders';
-import { Header2 } from '@op/ui/Header';
+import { Header2 } from '@op/ui-next/Header';
 import { useParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { LuLeaf } from 'react-icons/lu';

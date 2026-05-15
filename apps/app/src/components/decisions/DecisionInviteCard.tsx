@@ -1,10 +1,10 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
-import { Avatar } from '@op/ui/Avatar';
-import { Button } from '@op/ui/Button';
-import { Header2 } from '@op/ui/Header';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Avatar } from '@op/ui-next/Avatar';
+import { Button } from '@op/ui-next/Button';
+import { Header2 } from '@op/ui-next/Header';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { ProfileItem } from '@op/ui/ProfileItem';
 import Image from 'next/image';
 

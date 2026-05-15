@@ -5,7 +5,7 @@ import { createOptimisticUpdater } from '@/utils/optimisticUpdates';
 import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { trpc } from '@op/api/client';
 import { REACTION_OPTIONS } from '@op/types';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 
 import { useTranslations } from '@/lib/i18n';
 

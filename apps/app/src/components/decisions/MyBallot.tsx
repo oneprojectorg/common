@@ -2,9 +2,9 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { Checkbox } from '@op/ui/Checkbox';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
+import { Checkbox } from '@op/ui-next/Checkbox';
+import { EmptyState } from '@op/ui-next/EmptyState';
+import { Header3 } from '@op/ui-next/Header';
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -94,11 +94,10 @@ const MyBallotProposals = ({
                 viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
                 menu={
                   <Checkbox
-                    isSelected={true}
-                    shape="circle"
-                    borderColor="light"
+                    checked
+                    disabled
                     aria-label={t('Selected proposal')}
-                    isDisabled={true}
+                    className="rounded-full"
                   />
                 }
               />

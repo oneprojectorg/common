@@ -1,12 +1,11 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Button } from '@op/ui/Button';
-import { Dialog, DialogTrigger } from '@op/ui/Dialog';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
+import { Button } from '@op/ui-next/Button';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import { Modal, ModalBody, ModalHeader } from '@op/ui-next/Modal';
+import { toast } from '@op/ui-next/Toast';
 import { RichTextViewer } from '@op/ui/RichTextEditor';
-import { toast } from '@op/ui/Toast';
 import he from 'he';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
@@ -30,6 +29,7 @@ export const DecisionActionBar = ({
   const { slug } = useParams();
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
 
   const createProposalMutation = trpc.decision.createProposal.useMutation({
     onSuccess: (proposal) => {
@@ -57,33 +57,39 @@ export const DecisionActionBar = ({
     <div className="flex w-full justify-center">
       <div className="flex w-full max-w-[12rem] flex-col items-center justify-center gap-4 sm:flex-row">
         {description ? (
-          <DialogTrigger>
-            <Button color="secondary" className="w-full">
+          <>
+            <Button
+              color="secondary"
+              className="w-full"
+              onPress={() => setIsAboutOpen(true)}
+            >
               {t('About the process')}
             </Button>
 
-            <Modal isDismissable>
-              <Dialog>
-                <ModalHeader>{t('About the process')}</ModalHeader>
-                <ModalBody>
-                  {markup && description ? (
-                    <div
-                      className="prose max-w-none prose-gray"
-                      dangerouslySetInnerHTML={{
-                        __html: he.decode(description),
-                      }}
-                    />
-                  ) : (
-                    <RichTextViewer
-                      extensions={getViewerExtensions()}
-                      content={description}
-                      editorClassName="prose prose-base max-w-none [&_p]:text-base"
-                    />
-                  )}
-                </ModalBody>
-              </Dialog>
+            <Modal
+              isOpen={isAboutOpen}
+              onOpenChange={setIsAboutOpen}
+              isDismissable
+            >
+              <ModalHeader>{t('About the process')}</ModalHeader>
+              <ModalBody>
+                {markup && description ? (
+                  <div
+                    className="prose max-w-none prose-gray"
+                    dangerouslySetInnerHTML={{
+                      __html: he.decode(description),
+                    }}
+                  />
+                ) : (
+                  <RichTextViewer
+                    extensions={getViewerExtensions()}
+                    content={description}
+                    editorClassName="prose prose-base max-w-none [&_p]:text-base"
+                  />
+                )}
+              </ModalBody>
             </Modal>
-          </DialogTrigger>
+          </>
         ) : null}
 
         {showSubmitButton && (

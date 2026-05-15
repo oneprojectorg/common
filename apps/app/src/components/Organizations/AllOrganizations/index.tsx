@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
-import { SkeletonLine } from '@op/ui/Skeleton';
+import { SkeletonLine } from '@op/ui-next/Skeleton';
 import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';

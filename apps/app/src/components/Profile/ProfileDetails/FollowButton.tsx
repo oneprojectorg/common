@@ -3,9 +3,9 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Organization, ProfileRelationshipType } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { toast } from '@op/ui/Toast';
+import { Button } from '@op/ui-next/Button';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import { toast } from '@op/ui-next/Toast';
 import { Suspense, useTransition } from 'react';
 import { LuCheck, LuPlus } from 'react-icons/lu';
 

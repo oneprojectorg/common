@@ -1,4 +1,4 @@
-import { Skeleton } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/ui-next/Skeleton';
 
 const Loading = () => {
   return (

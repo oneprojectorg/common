@@ -2,8 +2,8 @@
 
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
-import { AvatarSkeleton } from '@op/ui/Avatar';
-import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
+import { AvatarSkeleton } from '@op/ui-next/Avatar';
+import { Skeleton, SkeletonLine } from '@op/ui-next/Skeleton';
 
 import { useTranslations } from '@/lib/i18n';
 

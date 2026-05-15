@@ -1,6 +1,6 @@
 import { trpc } from '@op/api/client';
 import type { ProposalFilter } from '@op/api/encoders';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import { useEffect, useState } from 'react';
 
 export const useProposalExport = () => {

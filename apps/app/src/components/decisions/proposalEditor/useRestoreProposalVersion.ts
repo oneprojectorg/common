@@ -6,7 +6,7 @@ import {
   parseProposalData,
 } from '@op/common/client';
 import type { ProposalData } from '@op/common/client';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import type { JSONContent } from '@tiptap/react';
 
 import { useTranslations } from '@/lib/i18n';

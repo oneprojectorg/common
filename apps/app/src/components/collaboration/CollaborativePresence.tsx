@@ -1,7 +1,7 @@
 'use client';
 
 import { useAwarenessUsers } from '@/hooks/useAwarenessUsers';
-import { Avatar } from '@op/ui/Avatar';
+import { Avatar } from '@op/ui-next/Avatar';
 import { FacePile } from '@op/ui/FacePile';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';

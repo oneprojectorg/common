@@ -1,6 +1,6 @@
 import { trpc } from '@op/api/client';
 import { ProfileRelationshipType } from '@op/api/encoders';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import { useCallback } from 'react';
 
 interface UseRelationshipMutationsOptions {

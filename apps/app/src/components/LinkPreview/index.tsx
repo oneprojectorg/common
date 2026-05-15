@@ -2,9 +2,9 @@
 
 import { trpc } from '@op/api/client';
 import { sanitizeUrl } from '@op/core/utils';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Surface } from '@op/ui/Surface';
-import { cn } from '@op/ui/utils';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import { Surface } from '@op/ui-next/Surface';
+import { cn } from '@op/ui-next/lib/utils';
 import { memo, useEffect, useMemo } from 'react';
 import { LuGlobe, LuX } from 'react-icons/lu';
 

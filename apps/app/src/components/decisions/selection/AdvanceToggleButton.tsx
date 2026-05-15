@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { cn } from '@op/ui/utils';
+import { Button } from '@op/ui-next/Button';
+import { cn } from '@op/ui-next/lib/utils';
 import { LuCheck } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';

@@ -2,10 +2,11 @@
 
 import { trpc } from '@op/api/client';
 import type { ReviewsPolicy } from '@op/common';
-import { Chip } from '@op/ui/Chip';
-import { Header2, Header3 } from '@op/ui/Header';
-import { Radio, RadioGroup } from '@op/ui/RadioGroup';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { Chip } from '@op/ui-next/Chip';
+import { Field, FieldLabel } from '@op/ui-next/Field';
+import { Header2, Header3 } from '@op/ui-next/Header';
+import { RadioGroup, RadioGroupItem } from '@op/ui-next/RadioGroup';
+import { ToggleButton } from '@op/ui-next/ToggleButton';
 import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -67,49 +68,78 @@ export function ReviewSettingsContent({
       {/* Coverage */}
       <section className="space-y-4">
         <Header3 className="font-serif text-title-sm">{t('Coverage')}</Header3>
-        <RadioGroup
-          value={settings.reviewsPolicy}
-          onChange={(value) =>
-            updateSettings({ reviewsPolicy: value as ReviewsPolicy })
-          }
-          aria-label={t('Coverage')}
-          label={t('How should proposals get distributed to reviewers?')}
-          labelClassName="text-sm font-normal text-neutral-gray4"
-          orientation="vertical"
-        >
-          <Radio value="full_coverage">
-            <div className="flex flex-col">
-              <span className="text-base text-neutral-charcoal">
-                {t('Full coverage')}
-              </span>
-              <span className="text-sm text-neutral-gray4">
-                {t('Every reviewer scores every proposal')}
-              </span>
-            </div>
-          </Radio>
-          <Radio value="self_selection" isDisabled className="opacity-50">
-            <div className="flex flex-col">
-              <span className="flex items-center gap-2 text-base text-neutral-charcoal">
-                {t('Self-selection')}
-                <Chip className="opacity-100">{t('Coming soon')}</Chip>
-              </span>
-              <span className="text-sm text-neutral-gray4">
-                {t('Reviewers choose what proposals to review')}
-              </span>
-            </div>
-          </Radio>
-          <Radio value="random_assignment" isDisabled className="opacity-50">
-            <div className="flex flex-col">
-              <span className="flex items-center gap-2 text-base text-neutral-charcoal">
-                {t('Random assignment')}
-                <Chip className="opacity-100">{t('Coming soon')}</Chip>
-              </span>
-              <span className="text-sm text-neutral-gray4">
-                {t('Proposals are randomly distributed among reviewers')}
-              </span>
-            </div>
-          </Radio>
-        </RadioGroup>
+        <Field>
+          <FieldLabel className="text-sm font-normal text-neutral-gray4">
+            {t('How should proposals get distributed to reviewers?')}
+          </FieldLabel>
+          <RadioGroup
+            value={settings.reviewsPolicy}
+            onValueChange={(value) =>
+              updateSettings({ reviewsPolicy: value as ReviewsPolicy })
+            }
+            aria-label={t('Coverage')}
+            className="flex flex-col gap-2"
+          >
+            <label
+              htmlFor="reviews-full"
+              className="flex items-start gap-2 py-2"
+            >
+              <RadioGroupItem
+                id="reviews-full"
+                value="full_coverage"
+                className="mt-1"
+              />
+              <div className="flex flex-col">
+                <span className="text-base text-neutral-charcoal">
+                  {t('Full coverage')}
+                </span>
+                <span className="text-sm text-neutral-gray4">
+                  {t('Every reviewer scores every proposal')}
+                </span>
+              </div>
+            </label>
+            <label
+              htmlFor="reviews-self"
+              className="flex items-start gap-2 py-2 opacity-50"
+            >
+              <RadioGroupItem
+                id="reviews-self"
+                value="self_selection"
+                disabled
+                className="mt-1"
+              />
+              <div className="flex flex-col">
+                <span className="flex items-center gap-2 text-base text-neutral-charcoal">
+                  {t('Self-selection')}
+                  <Chip className="opacity-100">{t('Coming soon')}</Chip>
+                </span>
+                <span className="text-sm text-neutral-gray4">
+                  {t('Reviewers choose what proposals to review')}
+                </span>
+              </div>
+            </label>
+            <label
+              htmlFor="reviews-random"
+              className="flex items-start gap-2 py-2 opacity-50"
+            >
+              <RadioGroupItem
+                id="reviews-random"
+                value="random_assignment"
+                disabled
+                className="mt-1"
+              />
+              <div className="flex flex-col">
+                <span className="flex items-center gap-2 text-base text-neutral-charcoal">
+                  {t('Random assignment')}
+                  <Chip className="opacity-100">{t('Coming soon')}</Chip>
+                </span>
+                <span className="text-sm text-neutral-gray4">
+                  {t('Proposals are randomly distributed among reviewers')}
+                </span>
+              </div>
+            </label>
+          </RadioGroup>
+        </Field>
       </section>
 
       <hr className="border-neutral-gray1" />

@@ -1,8 +1,8 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
-import { cn, getGradientForString } from '@op/ui/utils';
+import { Tag, TagGroup } from '@op/ui-next/TagGroup';
+import { cn, getGradientForString } from '@op/ui-next/lib/utils';
 import Image from 'next/image';
 import React from 'react';
 

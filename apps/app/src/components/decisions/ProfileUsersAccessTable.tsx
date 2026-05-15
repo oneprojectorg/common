@@ -2,13 +2,12 @@
 
 import { trpc } from '@op/api/client';
 import type { ProfileInvite, ProfileUser } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
-import { DialogTrigger } from '@op/ui/Dialog';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Select, SelectItem } from '@op/ui/Select';
-import { Skeleton } from '@op/ui/Skeleton';
-import { toast } from '@op/ui/Toast';
+import { Button } from '@op/ui-next/Button';
+import { EmptyState } from '@op/ui-next/EmptyState';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
+import { Select, SelectItem } from '@op/ui-next/Select';
+import { Skeleton } from '@op/ui-next/Skeleton';
+import { toast } from '@op/ui-next/Toast';
 import {
   Table,
   TableBody,
@@ -198,44 +197,43 @@ const ProfileUserRoleSelect = ({
         )}
       </Select>
       {!isOwner && (
-        <DialogTrigger
+        <Modal
           isOpen={isRemoveModalOpen}
           onOpenChange={setIsRemoveModalOpen}
+          isDismissable
         >
-          <Modal isDismissable>
-            <ModalHeader>{t('Remove {name}', { name: userName })}</ModalHeader>
-            <ModalBody>
-              <p>
-                {processName
-                  ? t(
-                      'Are you sure you want to remove {name} from "{processName}"?',
-                      { name: userName, processName },
-                    )
-                  : t(
-                      'Are you sure you want to remove {name} from this process?',
-                      { name: userName },
-                    )}
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button
-                color="secondary"
-                className="w-full sm:w-fit"
-                onPress={() => setIsRemoveModalOpen(false)}
-              >
-                {t('Cancel')}
-              </Button>
-              <Button
-                color="destructive"
-                className="w-full sm:w-fit"
-                onPress={() => removeUser.mutate({ profileUserId })}
-                isDisabled={removeUser.isPending}
-              >
-                {removeUser.isPending ? t('Removing...') : t('Remove')}
-              </Button>
-            </ModalFooter>
-          </Modal>
-        </DialogTrigger>
+          <ModalHeader>{t('Remove {name}', { name: userName })}</ModalHeader>
+          <ModalBody>
+            <p>
+              {processName
+                ? t(
+                    'Are you sure you want to remove {name} from "{processName}"?',
+                    { name: userName, processName },
+                  )
+                : t(
+                    'Are you sure you want to remove {name} from this process?',
+                    { name: userName },
+                  )}
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              color="secondary"
+              className="w-full sm:w-fit"
+              onPress={() => setIsRemoveModalOpen(false)}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button
+              color="destructive"
+              className="w-full sm:w-fit"
+              onPress={() => removeUser.mutate({ profileUserId })}
+              isDisabled={removeUser.isPending}
+            >
+              {removeUser.isPending ? t('Removing...') : t('Remove')}
+            </Button>
+          </ModalFooter>
+        </Modal>
       )}
     </>
   );
@@ -324,44 +322,42 @@ const InviteRoleSelect = ({
           {t('Remove from process')}
         </SelectItem>
       </Select>
-      <DialogTrigger
+      <Modal
         isOpen={isRemoveModalOpen}
         onOpenChange={setIsRemoveModalOpen}
+        isDismissable
       >
-        <Modal isDismissable>
-          <ModalHeader>{t('Remove {name}', { name: inviteeName })}</ModalHeader>
-          <ModalBody>
-            <p>
-              {processName
-                ? t(
-                    'Are you sure you want to remove {name} from "{processName}"?',
-                    { name: inviteeName, processName },
-                  )
-                : t(
-                    'Are you sure you want to remove {name} from this process?',
-                    { name: inviteeName },
-                  )}
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              color="secondary"
-              className="w-full sm:w-fit"
-              onPress={() => setIsRemoveModalOpen(false)}
-            >
-              {t('Cancel')}
-            </Button>
-            <Button
-              color="destructive"
-              className="w-full sm:w-fit"
-              onPress={() => deleteInvite.mutate({ inviteId })}
-              isDisabled={deleteInvite.isPending}
-            >
-              {deleteInvite.isPending ? t('Removing...') : t('Remove')}
-            </Button>
-          </ModalFooter>
-        </Modal>
-      </DialogTrigger>
+        <ModalHeader>{t('Remove {name}', { name: inviteeName })}</ModalHeader>
+        <ModalBody>
+          <p>
+            {processName
+              ? t(
+                  'Are you sure you want to remove {name} from "{processName}"?',
+                  { name: inviteeName, processName },
+                )
+              : t('Are you sure you want to remove {name} from this process?', {
+                  name: inviteeName,
+                })}
+          </p>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            color="secondary"
+            className="w-full sm:w-fit"
+            onPress={() => setIsRemoveModalOpen(false)}
+          >
+            {t('Cancel')}
+          </Button>
+          <Button
+            color="destructive"
+            className="w-full sm:w-fit"
+            onPress={() => deleteInvite.mutate({ inviteId })}
+            isDisabled={deleteInvite.isPending}
+          >
+            {deleteInvite.isPending ? t('Removing...') : t('Remove')}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </>
   );
 };

@@ -1,10 +1,10 @@
 import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { trpc } from '@op/api/client';
+import { SelectItem } from '@op/ui-next/Select';
+import { toast } from '@op/ui-next/Toast';
 import { AvatarUploader } from '@op/ui/AvatarUploader';
 import { BannerUploader } from '@op/ui/BannerUploader';
 import type { Option } from '@op/ui/MultiSelectComboBox';
-import { SelectItem } from '@op/ui/Select';
-import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 

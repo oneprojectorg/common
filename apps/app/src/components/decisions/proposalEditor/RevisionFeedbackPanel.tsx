@@ -1,7 +1,7 @@
 'use client';
 
 import type { ProposalReviewRequest } from '@op/common/client';
-import { Header3 } from '@op/ui/Header';
+import { Header3 } from '@op/ui-next/Header';
 
 import { useTranslations } from '@/lib/i18n';
 

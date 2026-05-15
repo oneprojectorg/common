@@ -3,11 +3,10 @@
 import { useUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
-import { Button } from '@op/ui/Button';
-import { DialogTrigger } from '@op/ui/Dialog';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
-import { toast } from '@op/ui/Toast';
+import { Button } from '@op/ui-next/Button';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
+import { Tab, TabList, TabPanel, Tabs } from '@op/ui-next/Tabs';
+import { toast } from '@op/ui-next/Toast';
 import { useFeatureFlagEnabled } from 'posthog-js/react';
 import { Suspense, useEffect, useState } from 'react';
 import { LuUserPlus } from 'react-icons/lu';
@@ -225,75 +224,71 @@ export const InviteUserModal = ({
 
   return (
     <>
-      <DialogTrigger isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
-        {controlledIsOpen === undefined ? triggerButton : null}
-        <Modal isDismissable isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
-          <ModalHeader>{t('Invite others to Common')}</ModalHeader>
-          <ErrorBoundary>
-            <ModalBody className="h-auto gap-6 p-6">
-              <Tabs
-                selectedKey={activeTab}
-                onSelectionChange={(key) => setActiveTab(key as string)}
-              >
-                <TabList aria-label={t('Invite options')}>
-                  <Tab id="existing">{t('Add to my organization')}</Tab>
-                  {inviteUserEnabled ? (
-                    <Tab id="new">{t('Invite a new organization')}</Tab>
-                  ) : null}
-                </TabList>
-
-                <TabPanel id="existing" className="sm:p-0">
-                  <Suspense
-                    fallback={
-                      <div className="animate-pulse">
-                        {t('Loading roles...')}
-                      </div>
-                    }
-                  >
-                    <InviteToExistingOrganization
-                      emails={emails}
-                      setEmails={setEmails}
-                      emailBadges={emailBadges}
-                      setEmailBadges={setEmailBadges}
-                      selectedRole={selectedRole}
-                      setSelectedRole={setSelectedRole}
-                      setSelectedRoleId={setSelectedRoleId}
-                      selectedOrganization={selectedOrganization}
-                      setSelectedOrganization={setSelectedOrganization}
-                    />
-                  </Suspense>
-                </TabPanel>
-
+      {controlledIsOpen === undefined ? triggerButton : null}
+      <Modal isDismissable isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
+        <ModalHeader>{t('Invite others to Common')}</ModalHeader>
+        <ErrorBoundary>
+          <ModalBody className="h-auto gap-6 p-6">
+            <Tabs
+              selectedKey={activeTab}
+              onSelectionChange={(key) => setActiveTab(key as string)}
+            >
+              <TabList aria-label={t('Invite options')}>
+                <Tab id="existing">{t('Add to my organization')}</Tab>
                 {inviteUserEnabled ? (
-                  <TabPanel id="new" className="sm:p-0">
-                    <InviteNewOrganization
-                      emails={emails}
-                      setEmails={setEmails}
-                      emailBadges={emailBadges}
-                      setEmailBadges={setEmailBadges}
-                      personalMessage={personalMessage}
-                      setPersonalMessage={setPersonalMessage}
-                    />
-                  </TabPanel>
+                  <Tab id="new">{t('Invite a new organization')}</Tab>
                 ) : null}
-              </Tabs>
-            </ModalBody>
-            <ModalFooter>
-              <Button
-                color="primary"
-                className="w-full sm:w-fit"
-                onPress={handleSendInvite}
-                isDisabled={
-                  (!emails.trim() && emailBadges.length === 0) ||
-                  inviteUser.isPending
-                }
-              >
-                {inviteUser.isPending ? t('Sending...') : t('Send')}
-              </Button>
-            </ModalFooter>
-          </ErrorBoundary>
-        </Modal>
-      </DialogTrigger>
+              </TabList>
+
+              <TabPanel id="existing" className="sm:p-0">
+                <Suspense
+                  fallback={
+                    <div className="animate-pulse">{t('Loading roles...')}</div>
+                  }
+                >
+                  <InviteToExistingOrganization
+                    emails={emails}
+                    setEmails={setEmails}
+                    emailBadges={emailBadges}
+                    setEmailBadges={setEmailBadges}
+                    selectedRole={selectedRole}
+                    setSelectedRole={setSelectedRole}
+                    setSelectedRoleId={setSelectedRoleId}
+                    selectedOrganization={selectedOrganization}
+                    setSelectedOrganization={setSelectedOrganization}
+                  />
+                </Suspense>
+              </TabPanel>
+
+              {inviteUserEnabled ? (
+                <TabPanel id="new" className="sm:p-0">
+                  <InviteNewOrganization
+                    emails={emails}
+                    setEmails={setEmails}
+                    emailBadges={emailBadges}
+                    setEmailBadges={setEmailBadges}
+                    personalMessage={personalMessage}
+                    setPersonalMessage={setPersonalMessage}
+                  />
+                </TabPanel>
+              ) : null}
+            </Tabs>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              color="primary"
+              className="w-full sm:w-fit"
+              onPress={handleSendInvite}
+              isDisabled={
+                (!emails.trim() && emailBadges.length === 0) ||
+                inviteUser.isPending
+              }
+            >
+              {inviteUser.isPending ? t('Sending...') : t('Send')}
+            </Button>
+          </ModalFooter>
+        </ErrorBoundary>
+      </Modal>
 
       <InviteSuccessModal
         isOpen={isSuccessModalOpen}

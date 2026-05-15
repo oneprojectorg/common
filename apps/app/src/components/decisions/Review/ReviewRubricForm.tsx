@@ -6,12 +6,12 @@ import {
   isOverallRecommendationField,
   parseSchemaOptions,
 } from '@op/common/client';
-import { AlertBanner } from '@op/ui/AlertBanner';
-import { Button } from '@op/ui/Button';
-import { Radio, RadioGroup } from '@op/ui/RadioGroup';
-import { Select, SelectItem } from '@op/ui/Select';
-import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { AlertBanner } from '@op/ui-next/AlertBanner';
+import { Button } from '@op/ui-next/Button';
+import { RadioGroup, RadioGroupItem } from '@op/ui-next/RadioGroup';
+import { Select, SelectItem } from '@op/ui-next/Select';
+import { TextField } from '@op/ui-next/TextField';
+import { ToggleButton } from '@op/ui-next/ToggleButton';
 import type { Key } from 'react';
 import { useState } from 'react';
 import { LuCircleAlert, LuPlus } from 'react-icons/lu';
@@ -295,15 +295,22 @@ function RubricFieldInput({
           <RadioGroup
             aria-label={field.schema.title}
             value={typeof value === 'string' ? value : undefined}
-            onChange={onChange}
-            orientation="horizontal"
-            className="gap-0"
+            onValueChange={onChange}
+            className="flex flex-row gap-4"
           >
-            {recOptions.map((option) => (
-              <Radio key={String(option.value)} value={String(option.value)}>
-                {option.title || String(option.value)}
-              </Radio>
-            ))}
+            {recOptions.map((option) => {
+              const id = `rec-${String(option.value)}`;
+              return (
+                <label
+                  key={String(option.value)}
+                  htmlFor={id}
+                  className="flex items-center gap-2 py-2"
+                >
+                  <RadioGroupItem id={id} value={String(option.value)} />
+                  {option.title || String(option.value)}
+                </label>
+              );
+            })}
           </RadioGroup>
         );
       }

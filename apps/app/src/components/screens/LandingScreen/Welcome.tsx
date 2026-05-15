@@ -1,7 +1,7 @@
 'use client';
 
 import { RouterOutput } from '@op/api/client';
-import { Header1 } from '@op/ui/Header';
+import { Header1 } from '@op/ui-next/Header';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';

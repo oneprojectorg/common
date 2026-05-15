@@ -4,9 +4,9 @@ import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
 import { match } from '@op/core';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
-import { Skeleton } from '@op/ui/Skeleton';
+import { EmptyState } from '@op/ui-next/EmptyState';
+import { Header3 } from '@op/ui-next/Header';
+import { Skeleton } from '@op/ui-next/Skeleton';
 import { Suspense } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 

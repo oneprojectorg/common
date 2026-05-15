@@ -1,8 +1,8 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { Skeleton } from '@op/ui/Skeleton';
-import { Tab, TabList, Tabs } from '@op/ui/Tabs';
+import { Skeleton } from '@op/ui-next/Skeleton';
+import { Tab, TabList, Tabs } from '@op/ui-next/Tabs';
 import { Key, useEffect, useMemo, useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

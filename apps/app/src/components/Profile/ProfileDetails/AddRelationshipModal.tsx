@@ -4,14 +4,18 @@ import { useUser } from '@/utils/UserProvider';
 import { skipBatch, trpc } from '@op/api/client';
 import { Organization } from '@op/api/encoders';
 import { relationshipMap } from '@op/types';
-import { Button } from '@op/ui/Button';
-import { DropDownButton } from '@op/ui/DropDownButton';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Dialog, DialogTrigger } from '@op/ui/RAC';
-import { toast } from '@op/ui/Toast';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
-import { cn } from '@op/ui/utils';
+import { Button } from '@op/ui-next/Button';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@op/ui-next/Menu';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
+import { toast } from '@op/ui-next/Toast';
+import { Tooltip, TooltipTrigger } from '@op/ui-next/Tooltip';
+import { cn } from '@op/ui-next/lib/utils';
 import { FormEvent, Suspense, useState, useTransition } from 'react';
 import { LuCheck, LuChevronDown, LuClock, LuPlus } from 'react-icons/lu';
 
@@ -104,8 +108,11 @@ export const AddRelationshipModalSuspense = ({
   const [selectedRelationshipId, setSelectedRelationshipId] = useState<
     string | null
   >(null);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [removeRelationshipId, setRemoveRelationshipId] = useState<
+    string | null
+  >(null);
 
-  // checking for our relationships TOWARDS the profile
   const [{ relationships }] =
     trpc.organization.listDirectedRelationships.useSuspenseQuery(
       {
@@ -120,61 +127,45 @@ export const AddRelationshipModalSuspense = ({
     (r) => r.id === selectedRelationshipId,
   );
 
-  const dropdownItems = relationships.map((relationship) => ({
-    id: relationship.id,
-    label:
-      relationshipMap[relationship.relationshipType]?.label ??
-      relationship.relationshipType,
-    icon: relationship.pending ? (
-      <LuClock className="size-4" />
-    ) : (
-      <LuCheck className="size-4" />
-    ),
-    onAction: () => setSelectedRelationshipId(relationship.id),
-  }));
-
   return (
     <>
       <RespondButton profile={profile} />
       {relationships.length > 1 ? (
-        <DropDownButton
-          label={
-            <>
-              {relationships.length === 1
-                ? t('{count} relationship', { count: relationships.length })
-                : t('{count} relationships', {
-                    count: relationships.length,
-                  })}{' '}
-              {user.currentProfile ? (
-                <>
-                  {t('with')}
-                  <OrganizationAvatar
-                    profile={user.currentProfile}
-                    className="size-6"
-                  />
-                </>
-              ) : null}
-            </>
-          }
-          items={dropdownItems}
-          chevronIcon={<LuChevronDown className="size-4" />}
-          className={cn(
-            'min-w-full sm:min-w-fit',
-            relationships.some((r) => r.pending)
-              ? 'bg-transparent'
-              : 'bg-primary-tealWhite',
-          )}
-        />
-      ) : relationships.length === 1 ? (
-        relationships.map((relationship) => (
-          <TooltipTrigger
-            key={relationship.id}
-            isDisabled={!relationship.pending}
-          >
-            <DialogTrigger>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
               <Button
-                className="w-full sm:w-auto"
-                color={relationship.pending ? 'unverified' : 'verified'}
+                color="secondary"
+                className={cn(
+                  'min-w-full sm:min-w-fit',
+                  relationships.some((r) => r.pending)
+                    ? 'bg-transparent'
+                    : 'bg-primary-tealWhite',
+                )}
+              >
+                {relationships.length === 1
+                  ? t('{count} relationship', { count: relationships.length })
+                  : t('{count} relationships', {
+                      count: relationships.length,
+                    })}{' '}
+                {user.currentProfile ? (
+                  <>
+                    {t('with')}
+                    <OrganizationAvatar
+                      profile={user.currentProfile}
+                      className="size-6"
+                    />
+                  </>
+                ) : null}
+                <LuChevronDown className="size-4" />
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="start">
+            {relationships.map((relationship) => (
+              <DropdownMenuItem
+                key={relationship.id}
+                onClick={() => setSelectedRelationshipId(relationship.id)}
               >
                 {relationship.pending ? (
                   <LuClock className="size-4" />
@@ -183,28 +174,65 @@ export const AddRelationshipModalSuspense = ({
                 )}
                 {relationshipMap[relationship.relationshipType]?.label ??
                   relationship.relationshipType}
-              </Button>
-              {relationship.pending && (
-                <Tooltip>
-                  {t('Pending confirmation from {name}', {
-                    name: profile.profile.name,
-                  })}
-                </Tooltip>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : relationships.length === 1 ? (
+        relationships.map((relationship) => (
+          <TooltipTrigger
+            key={relationship.id}
+            isDisabled={!relationship.pending}
+          >
+            <Button
+              className="w-full sm:w-auto"
+              color={relationship.pending ? 'unverified' : 'verified'}
+              onPress={() => setRemoveRelationshipId(relationship.id)}
+            >
+              {relationship.pending ? (
+                <LuClock className="size-4" />
+              ) : (
+                <LuCheck className="size-4" />
               )}
-              <RemoveRelationshipModal relationship={relationship} />
-            </DialogTrigger>
+              {relationshipMap[relationship.relationshipType]?.label ??
+                relationship.relationshipType}
+            </Button>
+            {relationship.pending && (
+              <Tooltip>
+                {t('Pending confirmation from {name}', {
+                  name: profile.profile.name,
+                })}
+              </Tooltip>
+            )}
+            <RemoveRelationshipModal
+              relationship={relationship}
+              isOpen={removeRelationshipId === relationship.id}
+              onOpenChange={(open) =>
+                setRemoveRelationshipId(open ? relationship.id : null)
+              }
+            />
           </TooltipTrigger>
         ))
       ) : (
-        <DialogTrigger>
-          <Button className="min-w-full text-nowrap sm:min-w-fit">
+        <>
+          <Button
+            className="min-w-full text-nowrap sm:min-w-fit"
+            onPress={() => setIsAddOpen(true)}
+          >
             <LuPlus className="size-4" />
             {t('Add relationship')}
           </Button>
-          <Modal className="sm:min-w-[29rem]">
-            <AddRelationshipForm profile={profile} />
+          <Modal
+            isOpen={isAddOpen}
+            onOpenChange={setIsAddOpen}
+            className="sm:min-w-[29rem]"
+          >
+            <AddRelationshipForm
+              profile={profile}
+              onClose={() => setIsAddOpen(false)}
+            />
           </Modal>
-        </DialogTrigger>
+        </>
       )}
 
       {selectedRelationship && (
@@ -213,19 +241,12 @@ export const AddRelationshipModalSuspense = ({
           onOpenChange={() => setSelectedRelationshipId(null)}
           className="sm:min-w-[29rem]"
         >
-          <Dialog>
-            {({ close }) => (
-              <RemoveRelationshipModalContent
-                relationship={selectedRelationship}
-                utils={utils}
-                profileId={profile.id}
-                onClose={() => {
-                  setSelectedRelationshipId(null);
-                  close();
-                }}
-              />
-            )}
-          </Dialog>
+          <RemoveRelationshipModalContent
+            relationship={selectedRelationship}
+            utils={utils}
+            profileId={profile.id}
+            onClose={() => setSelectedRelationshipId(null)}
+          />
         </Modal>
       )}
     </>

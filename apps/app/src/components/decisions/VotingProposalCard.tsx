@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/ui-next/lib/utils';
 import { ReactNode } from 'react';
 
 import { ProposalCard } from './ProposalCard';

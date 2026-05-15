@@ -2,7 +2,7 @@
 
 import { formatCurrency } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/ui-next/lib/utils';
 import { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

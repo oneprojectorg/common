@@ -1,5 +1,5 @@
-import { Header1 } from '@op/ui/Header';
-import { cn } from '@op/ui/utils';
+import { Header1 } from '@op/ui-next/Header';
+import { cn } from '@op/ui-next/lib/utils';
 import type { ReactNode } from 'react';
 
 export const FormHeader = ({

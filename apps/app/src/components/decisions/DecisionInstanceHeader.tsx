@@ -1,7 +1,7 @@
 'use client';
 
-import { ButtonLink } from '@op/ui/Button';
-import { Header1 } from '@op/ui/Header';
+import { ButtonLink } from '@op/ui-next/Button';
+import { Header1 } from '@op/ui-next/Header';
 import { LuArrowLeft, LuSettings } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';

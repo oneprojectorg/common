@@ -1,4 +1,4 @@
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 
 import type { TranslateFn } from '@/lib/i18n';
 

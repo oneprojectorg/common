@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
+import { Button } from '@op/ui-next/Button';
+import { Tooltip, TooltipTrigger } from '@op/ui-next/Tooltip';
 import { ReactNode } from 'react';
 import {
   LuArrowLeft,

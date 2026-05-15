@@ -1,11 +1,10 @@
-import { Button } from '@op/ui/Button';
-import type { ButtonProps } from '@op/ui/Button';
-import { Checkbox } from '@op/ui/Checkbox';
+import { Button } from '@op/ui-next/Button';
+import type { ButtonProps } from '@op/ui-next/Button';
+import { Select } from '@op/ui-next/Select';
+import { TextField } from '@op/ui-next/TextField';
+import { ToggleButton } from '@op/ui-next/ToggleButton';
+import { cn } from '@op/ui-next/lib/utils';
 import { MultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
-import { Select } from '@op/ui/Select';
-import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
-import { cn } from '@op/ui/utils';
 import {
   AnyFieldApi,
   createFormHook,
@@ -20,7 +19,6 @@ export const { useAppForm } = createFormHook({
     Select,
     MultiSelectComboBox,
     ToggleButton,
-    Checkbox,
   },
   formComponents: {
     Button: ({ className, ...props }: ButtonProps) => (

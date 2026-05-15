@@ -5,10 +5,10 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
-import { Header1, Header3 } from '@op/ui/Header';
-import { Skeleton, SkeletonLine } from '@op/ui/Skeleton';
-import { Surface } from '@op/ui/Surface';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { Header1, Header3 } from '@op/ui-next/Header';
+import { Skeleton, SkeletonLine } from '@op/ui-next/Skeleton';
+import { Surface } from '@op/ui-next/Surface';
+import { Tab, TabList, TabPanel, Tabs } from '@op/ui-next/Tabs';
 import { Suspense } from 'react';
 
 import { ActiveDecisionsNotifications } from '@/components/ActiveDecisionsNotifications';

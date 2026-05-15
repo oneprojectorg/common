@@ -1,9 +1,9 @@
 'use client';
 
-import { ButtonLink } from '@op/ui/Button';
-import { Header2, Header3 } from '@op/ui/Header';
+import { ButtonLink } from '@op/ui-next/Button';
+import { Header2, Header3 } from '@op/ui-next/Header';
+import { cn } from '@op/ui-next/lib/utils';
 import { LogoLoop } from '@op/ui/LogoLoop';
-import { cn } from '@op/ui/utils';
 import type { Variants } from 'motion/react';
 import * as motion from 'motion/react-client';
 import Image from 'next/image';

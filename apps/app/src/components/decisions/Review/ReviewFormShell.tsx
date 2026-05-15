@@ -1,6 +1,6 @@
 import type { RubricReviewData, RubricTemplateSchema } from '@op/common/client';
-import { Header3 } from '@op/ui/Header';
-import { Surface } from '@op/ui/Surface';
+import { Header3 } from '@op/ui-next/Header';
+import { Surface } from '@op/ui-next/Surface';
 import type { ReactNode } from 'react';
 
 import { TranslatedText } from '@/components/TranslatedText';
@@ -40,10 +40,7 @@ export function TotalScoreCard({
   }, null);
 
   return (
-    <Surface
-      variant="filled"
-      className="flex items-start justify-between rounded-lg border-neutral-gray1 p-4"
-    >
+    <Surface className="flex items-start justify-between rounded-lg border-neutral-gray1 bg-muted p-4">
       <span className="text-base text-neutral-charcoal">
         <TranslatedText text="Total Score" />
       </span>

@@ -1,7 +1,7 @@
 'use client';
 
 import { formatDate } from '@/utils/formatting';
-import { AlertBanner } from '@op/ui/AlertBanner';
+import { AlertBanner } from '@op/ui-next/AlertBanner';
 import { useLocale } from 'next-intl';
 import { LuLock } from 'react-icons/lu';
 

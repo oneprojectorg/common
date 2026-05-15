@@ -2,9 +2,8 @@
 
 import { useUser } from '@/utils/UserProvider';
 import type { Profile } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
-import { Modal, ModalHeader } from '@op/ui/Modal';
-import { DialogTrigger } from '@op/ui/RAC';
+import { Button } from '@op/ui-next/Button';
+import { Modal, ModalHeader } from '@op/ui-next/Modal';
 import { useRef, useState } from 'react';
 import { LuPencil } from 'react-icons/lu';
 
@@ -32,7 +31,7 @@ export const UpdateUserProfileModal = ({
   }
 
   return (
-    <DialogTrigger>
+    <>
       <Button
         onPress={() => setIsOpen(true)}
         color="primary"
@@ -53,6 +52,6 @@ export const UpdateUserProfileModal = ({
           />
         )}
       </Modal>
-    </DialogTrigger>
+    </>
   );
 };

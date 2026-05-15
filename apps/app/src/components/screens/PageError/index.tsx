@@ -2,8 +2,8 @@
 
 import { ClientOnly } from '@/utils/ClientOnly';
 import { match } from '@op/core';
-import { Button } from '@op/ui/Button';
-import { Header2 } from '@op/ui/Header';
+import { Button } from '@op/ui-next/Button';
+import { Header2 } from '@op/ui-next/Header';
 import posthog from 'posthog-js';
 import { useEffect } from 'react';
 

@@ -5,17 +5,16 @@ import type { Role } from '@op/api/encoders';
 import type { DecisionRolePermissions } from '@op/common';
 import { useDebouncedCallback, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
-import { Checkbox } from '@op/ui/Checkbox';
-import { DialogTrigger } from '@op/ui/Dialog';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header2, Header3 } from '@op/ui/Header';
-import { IconButton } from '@op/ui/IconButton';
-import { Menu, MenuItem } from '@op/ui/Menu';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { OptionMenu } from '@op/ui/OptionMenu';
-import { TextField } from '@op/ui/TextField';
-import { toast } from '@op/ui/Toast';
+import { Button } from '@op/ui-next/Button';
+import { Checkbox } from '@op/ui-next/Checkbox';
+import { EmptyState } from '@op/ui-next/EmptyState';
+import { Header2, Header3 } from '@op/ui-next/Header';
+import { IconButton } from '@op/ui-next/IconButton';
+import { DropdownMenuItem } from '@op/ui-next/Menu';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
+import { OptionMenu } from '@op/ui-next/OptionMenu';
+import { TextField } from '@op/ui-next/TextField';
+import { toast } from '@op/ui-next/Toast';
 import {
   EditableCell,
   Table,
@@ -295,20 +294,17 @@ function RoleRow({
             className="ml-auto rounded bg-white shadow-light"
             size="medium"
           >
-            <Menu className="min-w-28 p-2">
-              <MenuItem key="edit" onAction={() => setIsEditing(true)}>
-                <LuPencil className="size-4" />
-                {t('Edit')}
-              </MenuItem>
-              <MenuItem
-                key="delete"
-                onAction={() => onDelete(role)}
-                className="text-functional-red"
-              >
-                <LuTrash2 className="size-4" />
-                {t('Delete')}
-              </MenuItem>
-            </Menu>
+            <DropdownMenuItem onClick={() => setIsEditing(true)}>
+              <LuPencil className="size-4" />
+              {t('Edit')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onDelete(role)}
+              variant="destructive"
+            >
+              <LuTrash2 className="size-4" />
+              {t('Delete')}
+            </DropdownMenuItem>
           </OptionMenu>
         )}
       </TableCell>
@@ -346,52 +342,50 @@ function AddRoleDialog({
   };
 
   return (
-    <DialogTrigger isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <Modal
-        isDismissable
-        isOpen={isOpen}
-        onOpenChange={(open) => !open && onClose()}
-      >
-        <ModalHeader>{t('Add role')}</ModalHeader>
-        <ModalBody>
-          <TextField
-            label={t('Role name')}
-            value={roleName}
-            onChange={setRoleName}
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleSubmit();
-              }
-            }}
-          />
-          <div className="flex flex-col gap-2 pt-2">
-            {PERMISSION_COLUMNS.map(({ key, label }) => (
+    <Modal
+      isDismissable
+      isOpen={isOpen}
+      onOpenChange={(open) => !open && onClose()}
+    >
+      <ModalHeader>{t('Add role')}</ModalHeader>
+      <ModalBody>
+        <TextField
+          label={t('Role name')}
+          value={roleName}
+          onChange={setRoleName}
+          autoFocus
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleSubmit();
+            }
+          }}
+        />
+        <div className="flex flex-col gap-2 pt-2">
+          {PERMISSION_COLUMNS.map(({ key, label }) => (
+            <label key={key} className="flex items-center gap-2 text-sm">
               <Checkbox
-                key={key}
-                size="small"
-                isSelected={permissions[key]}
-                onChange={() => togglePermission(key)}
+                className="size-4"
+                checked={permissions[key]}
+                onCheckedChange={() => togglePermission(key)}
                 aria-label={`${label} permission`}
-              >
-                {t(label)}
-              </Checkbox>
-            ))}
-          </div>
-        </ModalBody>
-        <ModalFooter>
-          <Button color="secondary" onPress={onClose}>
-            {t('Cancel')}
-          </Button>
-          <Button
-            onPress={handleSubmit}
-            isDisabled={!roleName.trim() || isPending}
-          >
-            {t('Save')}
-          </Button>
-        </ModalFooter>
-      </Modal>
-    </DialogTrigger>
+              />
+              {t(label)}
+            </label>
+          ))}
+        </div>
+      </ModalBody>
+      <ModalFooter>
+        <Button color="secondary" onPress={onClose}>
+          {t('Cancel')}
+        </Button>
+        <Button
+          onPress={handleSubmit}
+          isDisabled={!roleName.trim() || isPending}
+        >
+          {t('Save')}
+        </Button>
+      </ModalFooter>
+    </Modal>
   );
 }
 
@@ -519,9 +513,9 @@ function DecisionRoleCheckboxes({
     <TableCell key={key} className="text-center">
       <div className="flex justify-center">
         <Checkbox
-          size="small"
-          isSelected={optimisticPermissions?.[key] ?? false}
-          onChange={() => togglePermission(key)}
+          className="size-4"
+          checked={optimisticPermissions?.[key] ?? false}
+          onCheckedChange={() => togglePermission(key)}
           aria-label={`${label} permission`}
         />
       </div>
@@ -545,15 +539,15 @@ function MobileDecisionRoles({
   return (
     <div className="flex flex-col gap-2">
       {PERMISSION_COLUMNS.map(({ key, label }) => (
-        <Checkbox
-          key={key}
-          size="small"
-          isSelected={optimisticPermissions?.[key] ?? false}
-          onChange={() => togglePermission(key)}
-          aria-label={`${label} permission`}
-        >
+        <label key={key} className="flex items-center gap-2 text-sm">
+          <Checkbox
+            className="size-4"
+            checked={optimisticPermissions?.[key] ?? false}
+            onCheckedChange={() => togglePermission(key)}
+            aria-label={`${label} permission`}
+          />
           {t(label)}
-        </Checkbox>
+        </label>
       ))}
     </div>
   );
@@ -582,24 +576,21 @@ function MobileRoleCard({
             variant="outline"
             className="rounded-lg"
           >
-            <Menu className="min-w-28 p-2">
-              {onEdit && (
-                <MenuItem key="edit" onAction={() => onEdit(role)}>
-                  <LuPencil className="size-4" />
-                  {t('Edit')}
-                </MenuItem>
-              )}
-              {onDelete && (
-                <MenuItem
-                  key="delete"
-                  onAction={() => onDelete(role)}
-                  className="text-functional-red"
-                >
-                  <LuTrash2 className="size-4" />
-                  {t('Delete')}
-                </MenuItem>
-              )}
-            </Menu>
+            {onEdit && (
+              <DropdownMenuItem onClick={() => onEdit(role)}>
+                <LuPencil className="size-4" />
+                {t('Edit')}
+              </DropdownMenuItem>
+            )}
+            {onDelete && (
+              <DropdownMenuItem
+                onClick={() => onDelete(role)}
+                variant="destructive"
+              >
+                <LuTrash2 className="size-4" />
+                {t('Delete')}
+              </DropdownMenuItem>
+            )}
           </OptionMenu>
         )}
       </div>
@@ -724,9 +715,9 @@ function AddRoleRow({
         <TableCell key={key} className="text-center">
           <div className="flex justify-center">
             <Checkbox
-              size="small"
-              isSelected={permissions[key]}
-              onChange={() => togglePermission(key)}
+              className="size-4"
+              checked={permissions[key]}
+              onCheckedChange={() => togglePermission(key)}
               aria-label={`${label} permission`}
             />
           </div>
@@ -858,43 +849,38 @@ function RolesTable({
         </div>
       )}
 
-      <DialogTrigger
+      <Modal
+        isDismissable
         isOpen={roleToDelete !== null}
         onOpenChange={(open) => !open && setRoleToDelete(null)}
       >
-        <Modal
-          isDismissable
-          isOpen={roleToDelete !== null}
-          onOpenChange={(open) => !open && setRoleToDelete(null)}
-        >
-          <ModalHeader>
-            {t('Remove {name}', { name: roleToDelete?.name ?? '' })}
-          </ModalHeader>
-          <ModalBody>
-            <p>
-              {t(
-                'Are you sure you want to remove {roleName} from "{processName}"?',
-                {
-                  roleName: roleToDelete?.name ?? '',
-                  processName: decisionName,
-                },
-              )}
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button color="secondary" onPress={() => setRoleToDelete(null)}>
-              {t('Cancel')}
-            </Button>
-            <Button
-              color="destructive"
-              onPress={handleDeleteConfirm}
-              isDisabled={deleteRoleMutation.isPending}
-            >
-              {deleteRoleMutation.isPending ? t('Removing...') : t('Remove')}
-            </Button>
-          </ModalFooter>
-        </Modal>
-      </DialogTrigger>
+        <ModalHeader>
+          {t('Remove {name}', { name: roleToDelete?.name ?? '' })}
+        </ModalHeader>
+        <ModalBody>
+          <p>
+            {t(
+              'Are you sure you want to remove {roleName} from "{processName}"?',
+              {
+                roleName: roleToDelete?.name ?? '',
+                processName: decisionName,
+              },
+            )}
+          </p>
+        </ModalBody>
+        <ModalFooter>
+          <Button color="secondary" onPress={() => setRoleToDelete(null)}>
+            {t('Cancel')}
+          </Button>
+          <Button
+            color="destructive"
+            onPress={handleDeleteConfirm}
+            isDisabled={deleteRoleMutation.isPending}
+          >
+            {deleteRoleMutation.isPending ? t('Removing...') : t('Remove')}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </>
   );
 }

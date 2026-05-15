@@ -1,6 +1,6 @@
 import { zodUrl } from '@op/common/validation';
+import { ToggleButton } from '@op/ui-next/ToggleButton';
 import type { Option } from '@op/ui/MultiSelectComboBox';
-import { ToggleButton } from '@op/ui/ToggleButton';
 import { LuLink } from 'react-icons/lu';
 import { z } from 'zod';
 

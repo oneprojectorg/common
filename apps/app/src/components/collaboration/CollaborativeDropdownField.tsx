@@ -1,7 +1,7 @@
 'use client';
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
-import { Select, SelectItem } from '@op/ui/Select';
+import { Select, SelectItem } from '@op/ui-next/Select';
 import { useEffect, useRef, type Key } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

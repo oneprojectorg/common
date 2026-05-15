@@ -2,10 +2,10 @@
 
 import { trpc } from '@op/api/client';
 import { ProposalReviewAssignmentStatus } from '@op/common/client';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
-import { Skeleton } from '@op/ui/Skeleton';
-import { Surface } from '@op/ui/Surface';
+import { EmptyState } from '@op/ui-next/EmptyState';
+import { Header3 } from '@op/ui-next/Header';
+import { Skeleton } from '@op/ui-next/Skeleton';
+import { Surface } from '@op/ui-next/Surface';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { LuLeaf } from 'react-icons/lu';
 

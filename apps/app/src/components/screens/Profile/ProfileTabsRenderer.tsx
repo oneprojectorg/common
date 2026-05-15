@@ -3,7 +3,7 @@
 import type { Organization, Profile } from '@op/api/encoders';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
-import { TabPanel } from '@op/ui/Tabs';
+import { TabPanel } from '@op/ui-next/Tabs';
 
 import {
   OrganizationProfileGrid,

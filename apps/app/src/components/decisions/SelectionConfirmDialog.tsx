@@ -1,9 +1,8 @@
 'use client';
 
 import type { Proposal } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { Dialog, DialogTrigger } from '@op/ui/Dialog';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Button } from '@op/ui-next/Button';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -38,34 +37,36 @@ export const SelectionConfirmDialog = ({
   const t = useTranslations();
 
   return (
-    <DialogTrigger isOpen={isOpen} onOpenChange={onOpenChange}>
-      <Button isDisabled={triggerDisabled} variant="primary">
+    <>
+      <Button
+        isDisabled={triggerDisabled}
+        variant="primary"
+        onPress={() => onOpenChange(true)}
+      >
         {t('Confirm decisions')}
       </Button>
 
-      <Modal isDismissable>
-        <Dialog className="h-full">
-          <ModalHeader>{t('Confirm advancing proposals')}</ModalHeader>
-          <ModalBody>
-            <SelectedProposalsReview
-              proposals={proposals}
-              count={count}
-              phaseName={phaseName}
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              className="w-full"
-              color="primary"
-              onPress={onConfirm}
-              isDisabled={isSubmitting}
-            >
-              {isSubmitting ? t('Submitting...') : t('Publish')}
-            </Button>
-          </ModalFooter>
-        </Dialog>
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
+        <ModalHeader>{t('Confirm advancing proposals')}</ModalHeader>
+        <ModalBody>
+          <SelectedProposalsReview
+            proposals={proposals}
+            count={count}
+            phaseName={phaseName}
+          />
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            className="w-full"
+            color="primary"
+            onPress={onConfirm}
+            isDisabled={isSubmitting}
+          >
+            {isSubmitting ? t('Submitting...') : t('Publish')}
+          </Button>
+        </ModalFooter>
       </Modal>
-    </DialogTrigger>
+    </>
   );
 };
 

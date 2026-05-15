@@ -2,16 +2,16 @@
 
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
-import { Avatar } from '@op/ui/Avatar';
-import { Button } from '@op/ui/Button';
-import { Chip } from '@op/ui/Chip';
+import { Avatar } from '@op/ui-next/Avatar';
+import { Button } from '@op/ui-next/Button';
+import { Chip } from '@op/ui-next/Chip';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
+import { Skeleton } from '@op/ui-next/Skeleton';
+import { Surface } from '@op/ui-next/Surface';
+import { toast } from '@op/ui-next/Toast';
 import { ComboBox, ComboBoxItem } from '@op/ui/ComboBox';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { ProfileItem } from '@op/ui/ProfileItem';
-import { Skeleton } from '@op/ui/Skeleton';
-import { Surface } from '@op/ui/Surface';
-import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
 import {
   FormEvent,

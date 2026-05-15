@@ -2,11 +2,11 @@
 
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
-import { AlertBanner } from '@op/ui/AlertBanner';
-import { Button } from '@op/ui/Button';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Skeleton } from '@op/ui/Skeleton';
-import { toast } from '@op/ui/Toast';
+import { AlertBanner } from '@op/ui-next/AlertBanner';
+import { Button } from '@op/ui-next/Button';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
+import { Skeleton } from '@op/ui-next/Skeleton';
+import { toast } from '@op/ui-next/Toast';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 

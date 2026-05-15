@@ -2,10 +2,10 @@
 
 import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
 import type { AdminDecisionInstance } from '@op/common/client';
-import { Menu, MenuItem } from '@op/ui/Menu';
-import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
-import { OptionMenu } from '@op/ui/OptionMenu';
-import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
+import { DropdownMenuItem } from '@op/ui-next/Menu';
+import { Modal, ModalBody, ModalHeader } from '@op/ui-next/Modal';
+import { OptionMenu } from '@op/ui-next/OptionMenu';
+import { Tooltip, TooltipTrigger } from '@op/ui-next/Tooltip';
 import { TableCell } from '@op/ui/ui/table';
 import { useFormatter } from 'next-intl';
 import { useState } from 'react';
@@ -107,15 +107,9 @@ export const DecisionsRowCells = ({
             variant="outline"
             size="medium"
           >
-            <Menu className="min-w-48 p-2">
-              <MenuItem
-                key="view-instance-data"
-                onAction={() => setIsDataModalOpen(true)}
-                className="px-3 py-1"
-              >
-                {t('View instance data')}
-              </MenuItem>
-            </Menu>
+            <DropdownMenuItem onClick={() => setIsDataModalOpen(true)}>
+              {t('View instance data')}
+            </DropdownMenuItem>
           </OptionMenu>
         </div>
         <InstanceDataModal

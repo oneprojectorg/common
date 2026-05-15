@@ -1,6 +1,6 @@
 import { getPublicUrl } from '@/utils';
 import { createClient } from '@op/api/serverClient';
-import { cn, getGradientForString } from '@op/ui/utils';
+import { cn, getGradientForString } from '@op/ui-next/lib/utils';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { LuArrowLeft } from 'react-icons/lu';

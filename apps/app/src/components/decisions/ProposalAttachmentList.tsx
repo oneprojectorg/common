@@ -1,8 +1,8 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { Skeleton } from '@op/ui/Skeleton';
-import { formatFileSize } from '@op/ui/utils';
+import { Button } from '@op/ui-next/Button';
+import { Skeleton } from '@op/ui-next/Skeleton';
+import { formatFileSize } from '@op/ui-next/lib/utils';
 import { LuFileText, LuX } from 'react-icons/lu';
 
 export interface AttachmentListItem {

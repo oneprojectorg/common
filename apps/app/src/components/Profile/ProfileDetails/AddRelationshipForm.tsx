@@ -5,19 +5,24 @@ import {
   RELATIONSHIP_OPTIONS,
   RelationshipType,
 } from '@op/types/relationships';
-import { Button } from '@op/ui/Button';
-import { Checkbox } from '@op/ui/Checkbox';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Dialog } from '@op/ui/RAC';
-import { toast } from '@op/ui/Toast';
+import { Button } from '@op/ui-next/Button';
+import { Checkbox } from '@op/ui-next/Checkbox';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import { ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
+import { toast } from '@op/ui-next/Toast';
 import { FormEvent, useState, useTransition } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { FundingRole, FundingRoleModal } from './FundingRoleModal';
 
-export const AddRelationshipForm = ({ profile }: { profile: Organization }) => {
+export const AddRelationshipForm = ({
+  profile,
+  onClose,
+}: {
+  profile: Organization;
+  onClose: () => void;
+}) => {
   const t = useTranslations();
   const addRelationship = trpc.organization.addRelationship.useMutation();
 
@@ -26,29 +31,22 @@ export const AddRelationshipForm = ({ profile }: { profile: Organization }) => {
   const [showFundingRoleModal, setShowFundingRoleModal] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<{
     relationships: string[];
-    closeModal: () => void;
   } | null>(null);
   const isOnline = useConnectionStatus();
 
-  const handleSubmit = (e: FormEvent, close: () => void) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
 
-    // Check if funding is selected
     if (selectedRelations.includes('funding')) {
-      // Store the form data and show funding role modal
-      setPendingFormData({
-        relationships: selectedRelations,
-        closeModal: close,
-      });
+      setPendingFormData({ relationships: selectedRelations });
       setShowFundingRoleModal(true);
       return;
     }
 
-    // If no funding selected, proceed with normal submission
-    submitRelationships(selectedRelations, close);
+    submitRelationships(selectedRelations);
   };
 
-  const submitRelationships = (relationships: string[], close: () => void) => {
+  const submitRelationships = (relationships: string[]) => {
     if (!isOnline) {
       toast.error({
         title: 'No connection',
@@ -67,7 +65,7 @@ export const AddRelationshipForm = ({ profile }: { profile: Organization }) => {
         toast.success({
           message: 'Relationship requested',
         });
-        close();
+        onClose();
       } catch (e) {
         const errorInfo = analyzeError(e);
 
@@ -89,8 +87,6 @@ export const AddRelationshipForm = ({ profile }: { profile: Organization }) => {
   const handleFundingRoleSave = async (role: FundingRole) => {
     if (!pendingFormData) return;
 
-    // we process the funding relationship to determine which relationships need to be added
-
     const filteredRelationships = new Set(pendingFormData.relationships);
     if (role === 'funder') {
       filteredRelationships.add('funding');
@@ -102,12 +98,8 @@ export const AddRelationshipForm = ({ profile }: { profile: Organization }) => {
       filteredRelationships.add('fundedBy');
     }
 
-    submitRelationships(
-      Array.from(filteredRelationships),
-      pendingFormData.closeModal,
-    );
+    submitRelationships(Array.from(filteredRelationships));
 
-    // Clean up state
     setPendingFormData(null);
     setShowFundingRoleModal(false);
   };
@@ -126,69 +118,64 @@ export const AddRelationshipForm = ({ profile }: { profile: Organization }) => {
   return (
     <>
       {!showFundingRoleModal ? (
-        <Dialog>
-          {({ close }) => (
-            <form onSubmit={(e) => handleSubmit(e, close)} className="contents">
-              <ModalHeader>{t('Add relationship')}</ModalHeader>
-              <ModalBody>
-                <div>
-                  {t("Choose how you're in relationship with")}{' '}
-                  <span className="font-semibold">{profile.profile.name}:</span>
-                  <ul>
-                    {filteredRelationshipOptions.map((option) => (
-                      <li key={option.key} className="flex gap-3 py-2">
-                        <Checkbox
-                          isSelected={Array.from(selectedRelations).includes(
-                            option.key as RelationshipType,
-                          )}
-                          onChange={(checked) => {
-                            if (checked) {
-                              const newSet = new Set(selectedRelations);
-                              newSet.add(option.key);
-                              setSelectedRelations(Array.from(newSet));
-                            } else {
-                              setSelectedRelations(
-                                selectedRelations.filter(
-                                  (relationship) => relationship !== option.key,
-                                ),
-                              );
-                            }
-                          }}
-                          value={option.key}
-                        />
+        <form onSubmit={handleSubmit} className="contents">
+          <ModalHeader>{t('Add relationship')}</ModalHeader>
+          <ModalBody>
+            <div>
+              {t("Choose how you're in relationship with")}{' '}
+              <span className="font-semibold">{profile.profile.name}:</span>
+              <ul>
+                {filteredRelationshipOptions.map((option) => (
+                  <li key={option.key} className="flex gap-3 py-2">
+                    <Checkbox
+                      checked={Array.from(selectedRelations).includes(
+                        option.key as RelationshipType,
+                      )}
+                      onCheckedChange={(checked) => {
+                        if (checked === true) {
+                          const newSet = new Set(selectedRelations);
+                          newSet.add(option.key);
+                          setSelectedRelations(Array.from(newSet));
+                        } else {
+                          setSelectedRelations(
+                            selectedRelations.filter(
+                              (relationship) => relationship !== option.key,
+                            ),
+                          );
+                        }
+                      }}
+                    />
 
-                        <div className="flex flex-col text-neutral-charcoal">
-                          <span>{option.label}</span>
-                          <span className="text-sm text-neutral-gray4">
-                            {option.description(profile.profile.name)}
-                          </span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button
-                  onPress={close}
-                  className="w-full sm:w-fit"
-                  color="secondary"
-                  type="button"
-                >
-                  {t('Cancel')}
-                </Button>
-                <Button
-                  color="primary"
-                  type="submit"
-                  className="w-full sm:w-fit"
-                  isPending={isSubmitting}
-                >
-                  {isSubmitting ? <LoadingSpinner /> : t('Add')}
-                </Button>
-              </ModalFooter>
-            </form>
-          )}
-        </Dialog>
+                    <div className="flex flex-col text-neutral-charcoal">
+                      <span>{option.label}</span>
+                      <span className="text-sm text-neutral-gray4">
+                        {option.description(profile.profile.name)}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              onPress={onClose}
+              className="w-full sm:w-fit"
+              color="secondary"
+              type="button"
+            >
+              {t('Cancel')}
+            </Button>
+            <Button
+              color="primary"
+              type="submit"
+              className="w-full sm:w-fit"
+              isPending={isSubmitting}
+            >
+              {isSubmitting ? <LoadingSpinner /> : t('Add')}
+            </Button>
+          </ModalFooter>
+        </form>
       ) : null}
 
       {showFundingRoleModal && (

@@ -1,6 +1,6 @@
 'use client';
 
-import { getAvatarColorForString } from '@op/ui/utils';
+import { getAvatarColorForString } from '@op/ui-next/lib/utils';
 import { TiptapCollabProvider } from '@tiptap-pro/provider';
 import { useEffect, useMemo, useState } from 'react';
 import * as Y from 'yjs';

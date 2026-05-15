@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/ui-next/lib/utils';
 import Placeholder from '@tiptap/extension-placeholder';
 import type { Editor } from '@tiptap/react';
 import { useCallback, useMemo, useRef, useState } from 'react';

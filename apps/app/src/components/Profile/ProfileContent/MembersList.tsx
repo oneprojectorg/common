@@ -2,14 +2,13 @@
 
 import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
-import { IconButton } from '@op/ui/IconButton';
-import { Menu, MenuItem, MenuTrigger } from '@op/ui/Menu';
-import { Popover } from '@op/ui/Popover';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
-import { Tag, TagGroup } from '@op/ui/TagGroup';
-import { toast } from '@op/ui/Toast';
+import { DropdownMenuItem } from '@op/ui-next/Menu';
+import { OptionMenu } from '@op/ui-next/OptionMenu';
+import { Tab, TabList, TabPanel, Tabs } from '@op/ui-next/Tabs';
+import { Tag, TagGroup } from '@op/ui-next/TagGroup';
+import { toast } from '@op/ui-next/Toast';
 import React, { useMemo } from 'react';
-import { LuEllipsis, LuUsers } from 'react-icons/lu';
+import { LuUsers } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -155,34 +154,17 @@ const MemberMenu = ({
   };
 
   return (
-    <MenuTrigger>
-      <IconButton
-        aria-label={t('Member options')}
-        variant="ghost"
-        size="small"
-        className="aria-expanded:bg-neutral-gray1"
+    <OptionMenu aria-label={t('Member options')}>
+      <DropdownMenuItem onClick={handleRoleToggle}>
+        {isCurrentlyAdmin ? t('Change to Member') : t('Change to Admin')}
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        variant="destructive"
+        onClick={handleRemoveFromOrganization}
       >
-        <LuEllipsis className="size-4" />
-      </IconButton>
-      <Popover placement="bottom end">
-        <Menu className="min-w-48 p-2">
-          <MenuItem
-            key="toggle-role"
-            onAction={handleRoleToggle}
-            className="px-3 py-1"
-          >
-            {isCurrentlyAdmin ? t('Change to Member') : t('Change to Admin')}
-          </MenuItem>
-          <MenuItem
-            key="remove-from-org"
-            onAction={handleRemoveFromOrganization}
-            className="px-3 py-1 text-functional-red"
-          >
-            {t('Remove from organization')}
-          </MenuItem>
-        </Menu>
-      </Popover>
-    </MenuTrigger>
+        {t('Remove from organization')}
+      </DropdownMenuItem>
+    </OptionMenu>
   );
 };
 

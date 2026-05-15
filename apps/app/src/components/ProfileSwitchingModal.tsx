@@ -1,9 +1,9 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
-import { Avatar } from '@op/ui/Avatar';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal } from '@op/ui/Modal';
+import { Avatar } from '@op/ui-next/Avatar';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import { Modal } from '@op/ui-next/Modal';
 import Image from 'next/image';
 import { ReactNode } from 'react';
 

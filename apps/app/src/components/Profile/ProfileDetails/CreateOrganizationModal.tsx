@@ -1,8 +1,7 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { Modal, ModalHeader } from '@op/ui/Modal';
-import { DialogTrigger } from '@op/ui/RAC';
+import { Button } from '@op/ui-next/Button';
+import { Modal, ModalHeader } from '@op/ui-next/Modal';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { LuPlus } from 'react-icons/lu';
@@ -71,15 +70,18 @@ export const CreateOrganizationModal = ({
 
 export const CreateOrganizationModalTrigger = () => {
   const t = useTranslations();
+  const [isOpen, setIsOpen] = useState(false);
   return (
     <>
-      <DialogTrigger>
-        <Button color="primary" className="min-w-full sm:min-w-fit">
-          <LuPlus className="size-4" />
-          {t('Create Organization')}
-        </Button>
-        <CreateOrganizationModal />
-      </DialogTrigger>
+      <Button
+        color="primary"
+        className="min-w-full sm:min-w-fit"
+        onPress={() => setIsOpen(true)}
+      >
+        <LuPlus className="size-4" />
+        {t('Create Organization')}
+      </Button>
+      <CreateOrganizationModal isOpen={isOpen} onOpenChange={setIsOpen} />
     </>
   );
 };

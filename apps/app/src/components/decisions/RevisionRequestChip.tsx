@@ -1,5 +1,5 @@
-import { Chip } from '@op/ui/Chip';
-import { cn } from '@op/ui/utils';
+import { Chip } from '@op/ui-next/Chip';
+import { cn } from '@op/ui-next/lib/utils';
 import { LuCircleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';

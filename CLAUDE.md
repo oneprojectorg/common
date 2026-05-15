@@ -61,6 +61,7 @@ Use `pnpm w:<workspace>` shortcuts:
 - `pnpm w:api` - apps/api
 - `pnpm w:db` - services/db
 - `pnpm w:ui` - packages/ui
+- `pnpm w:ui-next` - packages/ui-next (shadcn base-nova migration target)
 - `pnpm w:emails` - services/emails
 - `pnpm w:supabase` - services/supabase
 - `pnpm w:cache` - services/cache

@@ -7,7 +7,7 @@ import {
   type ProposalRevisionRequestItem,
 } from '@op/common/client';
 import { getTextPreview } from '@op/core';
-import { Button, ButtonLink } from '@op/ui/Button';
+import { Button, ButtonLink } from '@op/ui-next/Button';
 import {
   NotificationPanel,
   NotificationPanelActions,

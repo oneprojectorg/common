@@ -16,17 +16,16 @@ import {
   type SupportedLocale,
   isVotingEligible,
 } from '@op/common/client';
-import { Button, ButtonLink } from '@op/ui/Button';
-import { Checkbox } from '@op/ui/Checkbox';
-import { Dialog, DialogTrigger } from '@op/ui/Dialog';
-import { EmptyState } from '@op/ui/EmptyState';
-import { FooterBar } from '@op/ui/FooterBar';
-import { Header3 } from '@op/ui/Header';
-import { Link } from '@op/ui/Link';
-import { Modal } from '@op/ui/Modal';
-import { Skeleton } from '@op/ui/Skeleton';
-import { Surface } from '@op/ui/Surface';
-import { toast } from '@op/ui/Toast';
+import { Button, ButtonLink } from '@op/ui-next/Button';
+import { Checkbox } from '@op/ui-next/Checkbox';
+import { EmptyState } from '@op/ui-next/EmptyState';
+import { FooterBar } from '@op/ui-next/FooterBar';
+import { Header3 } from '@op/ui-next/Header';
+import { Link } from '@op/ui-next/Link';
+import { Modal } from '@op/ui-next/Modal';
+import { Skeleton } from '@op/ui-next/Skeleton';
+import { Surface } from '@op/ui-next/Surface';
+import { toast } from '@op/ui-next/Toast';
 import { useLocale } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuArrowDownToLine, LuLeaf } from 'react-icons/lu';
@@ -184,6 +183,7 @@ const VotingProposalsList = ({
   const canManageProposals = permissions?.admin ?? false;
   const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
   const t = useTranslations();
 
   const numSelected = selectedProposalIds.length;
@@ -264,12 +264,10 @@ const VotingProposalsList = ({
                     menu={
                       isVotedFor ? (
                         <Checkbox
-                          isSelected={true}
-                          shape="circle"
-                          borderColor="light"
-                          className="[&[data-disabled]_svg]:!text-white"
+                          checked
+                          disabled
                           aria-label={t('Selected proposal')}
-                          isDisabled
+                          className="rounded-full [&[data-disabled]_svg]:!text-white"
                         />
                       ) : undefined
                     }
@@ -310,17 +308,16 @@ const VotingProposalsList = ({
                           {showCheckbox && (
                             <div onClick={(e) => e.stopPropagation()}>
                               <Checkbox
-                                isSelected={isSelected}
-                                onChange={() => {
+                                checked={isSelected}
+                                onCheckedChange={() => {
                                   toggleProposal(proposal.id);
                                 }}
-                                shape="circle"
-                                borderColor="light"
                                 aria-label={
                                   isSelected
                                     ? t('Deselect proposal')
                                     : t('Select proposal')
                                 }
+                                className="rounded-full"
                               />
                             </div>
                           )}
@@ -407,21 +404,28 @@ const VotingProposalsList = ({
           </FooterBar.Start>
           <FooterBar.Center />
           <FooterBar.End>
-            <DialogTrigger>
-              <Button isDisabled={numSelected === 0} variant="primary">
-                {t('Submit my votes')}
-              </Button>
+            <Button
+              isDisabled={numSelected === 0}
+              variant="primary"
+              onPress={() => setIsVoteModalOpen(true)}
+            >
+              {t('Submit my votes')}
+            </Button>
 
-              <Modal isDismissable>
-                <Dialog className="h-full">
-                  <VoteSubmissionModal
-                    selectedProposals={selectedProposals}
-                    instanceId={instanceId}
-                    onSuccess={handleVoteSuccess}
-                  />
-                </Dialog>
-              </Modal>
-            </DialogTrigger>
+            <Modal
+              isOpen={isVoteModalOpen}
+              onOpenChange={setIsVoteModalOpen}
+              isDismissable
+            >
+              <VoteSubmissionModal
+                selectedProposals={selectedProposals}
+                instanceId={instanceId}
+                onSuccess={() => {
+                  setIsVoteModalOpen(false);
+                  handleVoteSuccess();
+                }}
+              />
+            </Modal>
           </FooterBar.End>
         </FooterBar>
       )}

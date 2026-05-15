@@ -1,7 +1,7 @@
 'use client';
 
 import { ClientOnly } from '@/utils/ClientOnly';
-import { Skeleton } from '@op/ui/Skeleton';
+import { Skeleton } from '@op/ui-next/Skeleton';
 import { Suspense } from 'react';
 import { LuArrowLeft } from 'react-icons/lu';
 

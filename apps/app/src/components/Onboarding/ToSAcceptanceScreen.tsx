@@ -1,11 +1,10 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { Checkbox } from '@op/ui/Checkbox';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
-import { Dialog, DialogTrigger } from '@op/ui/RAC';
-import { ReactNode, useState } from 'react';
+import { Button } from '@op/ui-next/Button';
+import { Checkbox } from '@op/ui-next/Checkbox';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import { Modal, ModalBody, ModalHeader } from '@op/ui-next/Modal';
+import { ReactNode, useId, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -91,26 +90,35 @@ function PolicyCheckbox({
   modalContent: ReactNode;
 }) {
   const t = useTranslations();
+  const id = useId();
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div className="flex items-center gap-1">
-      <Checkbox size="small" value={'' + checked} onChange={onChange}>
+      <Checkbox
+        id={id}
+        checked={checked}
+        onCheckedChange={(v) => onChange(v === true)}
+      />
+      <label htmlFor={id} className="text-sm">
         {t('I accept the')}{' '}
-      </Checkbox>
-      <DialogTrigger>
-        <Button unstyled className="text-sm text-primary-teal hover:underline">
-          {label}
-        </Button>
-        <Modal
-          className="h-screen max-h-none w-screen max-w-none overflow-y-auto sm:h-auto sm:max-h-[75vh] sm:w-[36rem] sm:max-w-[36rem]"
-          isDismissable
-        >
-          <Dialog>
-            <ModalHeader>{modalTitle}</ModalHeader>
-            <ModalBody>{modalContent}</ModalBody>
-          </Dialog>
-        </Modal>
-      </DialogTrigger>
+      </label>
+      <Button
+        unstyled
+        className="text-sm text-primary-teal hover:underline"
+        onPress={() => setIsOpen(true)}
+      >
+        {label}
+      </Button>
+      <Modal
+        isOpen={isOpen}
+        onOpenChange={setIsOpen}
+        className="h-screen max-h-none w-screen max-w-none overflow-y-auto sm:h-auto sm:max-h-[75vh] sm:w-[36rem] sm:max-w-[36rem]"
+        isDismissable
+      >
+        <ModalHeader>{modalTitle}</ModalHeader>
+        <ModalBody>{modalContent}</ModalBody>
+      </Modal>
     </div>
   );
 }

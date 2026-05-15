@@ -6,11 +6,16 @@ import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Menu, MenuItem, MenuSeparator, MenuTrigger } from '@op/ui/Menu';
-import { Popover } from '@op/ui/Popover';
-import { toast } from '@op/ui/Toast';
+import { Button } from '@op/ui-next/Button';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@op/ui-next/Menu';
+import { toast } from '@op/ui-next/Toast';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { LuMessageCircle, LuPlus, LuUserPlus, LuUsers } from 'react-icons/lu';
@@ -61,53 +66,50 @@ export const CreateMenu = () => {
 
   return (
     <>
-      <MenuTrigger
-        isOpen={isMenuOpen || isCreatingDecision}
+      <DropdownMenu
+        open={isMenuOpen || isCreatingDecision}
         onOpenChange={setIsMenuOpen}
       >
-        <Button
-          className="h-8 rounded-md px-2 sm:px-3"
-          color={isMobile ? 'secondary' : 'primary'}
-        >
-          <LuPlus className="size-4" />
-          <span className="hidden sm:block">{t('Create')}</span>
-        </Button>
-        <Popover>
-          <Menu>
-            <MenuItem
-              id="create-org"
-              onAction={() => setIsCreateOrganizationModalOpen(true)}
+        <DropdownMenuTrigger
+          render={
+            <Button
+              className="h-8 px-2 sm:px-3"
+              color={isMobile ? 'secondary' : 'primary'}
             >
-              <LuUsers className="size-4" /> {t('Organization')}
-            </MenuItem>
-            {createDecisionEnabled && (
-              <MenuItem
-                id="create-decision"
-                isDisabled={isCreatingDecision}
-                onAction={() => createDecisionMutation.mutate()}
-              >
-                {isCreatingDecision ? (
-                  <LoadingSpinner className="size-4" />
-                ) : (
-                  <LuMessageCircle className="size-4" />
-                )}{' '}
-                {t('Decision-making process')}
-              </MenuItem>
-            )}
-            {isOrg && (
-              <>
-                <MenuSeparator />
-                <MenuItem
-                  id="invite-member"
-                  onAction={() => setIsInviteModalOpen(true)}
-                >
-                  <LuUserPlus className="size-4" /> {t('Invite member')}
-                </MenuItem>
-              </>
-            )}
-          </Menu>
-        </Popover>
-      </MenuTrigger>
+              <LuPlus className="size-4" />
+              <span className="hidden sm:block">{t('Create')}</span>
+            </Button>
+          }
+        />
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            onClick={() => setIsCreateOrganizationModalOpen(true)}
+          >
+            <LuUsers className="size-4" /> {t('Organization')}
+          </DropdownMenuItem>
+          {createDecisionEnabled && (
+            <DropdownMenuItem
+              disabled={isCreatingDecision}
+              onClick={() => createDecisionMutation.mutate()}
+            >
+              {isCreatingDecision ? (
+                <LoadingSpinner className="size-4" />
+              ) : (
+                <LuMessageCircle className="size-4" />
+              )}{' '}
+              {t('Decision-making process')}
+            </DropdownMenuItem>
+          )}
+          {isOrg && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setIsInviteModalOpen(true)}>
+                <LuUserPlus className="size-4" /> {t('Invite member')}
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
       <CreateOrganizationModal
         isOpen={isCreateOrganizationModalOpen}
         onOpenChange={setIsCreateOrganizationModalOpen}

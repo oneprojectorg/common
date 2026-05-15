@@ -8,9 +8,9 @@ import {
 } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
-import { Link } from '@op/ui/Link';
-import { Skeleton } from '@op/ui/Skeleton';
-import { StatusDot, type StatusDotIntent } from '@op/ui/StatusDot';
+import { Link } from '@op/ui-next/Link';
+import { Skeleton } from '@op/ui-next/Skeleton';
+import { StatusDot, type StatusDotIntent } from '@op/ui-next/StatusDot';
 import {
   Table,
   TableBody,

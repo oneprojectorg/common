@@ -4,16 +4,16 @@ import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { useDebounce } from '@op/hooks';
-import { AlertBanner } from '@op/ui/AlertBanner';
-import { Avatar } from '@op/ui/Avatar';
-import { Button } from '@op/ui/Button';
-import { EmptyState } from '@op/ui/EmptyState';
-import { IconButton } from '@op/ui/IconButton';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { AlertBanner } from '@op/ui-next/AlertBanner';
+import { Avatar } from '@op/ui-next/Avatar';
+import { Button } from '@op/ui-next/Button';
+import { EmptyState } from '@op/ui-next/EmptyState';
+import { IconButton } from '@op/ui-next/IconButton';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
+import { SearchField } from '@op/ui-next/SearchField';
+import { toast } from '@op/ui-next/Toast';
 import { ProfileItem } from '@op/ui/ProfileItem';
-import { SearchField } from '@op/ui/SearchField';
-import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
 import {
   Key,

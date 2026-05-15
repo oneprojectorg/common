@@ -3,9 +3,15 @@
 import { useUser } from '@/utils/UserProvider';
 import { skipBatch, trpc } from '@op/api/client';
 import { Organization } from '@op/api/encoders';
-import { DropDownButton } from '@op/ui/DropDownButton';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { toast } from '@op/ui/Toast';
+import { Button } from '@op/ui-next/Button';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@op/ui-next/Menu';
+import { toast } from '@op/ui-next/Toast';
 import { Suspense } from 'react';
 import { LuCheck, LuUserPlus, LuX } from 'react-icons/lu';
 
@@ -87,40 +93,39 @@ const RespondButtonSuspense = ({ profile }: { profile: Organization }) => {
     });
   };
 
-  const dropdownItems = [
-    {
-      id: 'accept',
-      label: 'Accept',
-      icon: <LuCheck className="size-4" />,
-      onAction: handleApprove,
-    },
-    {
-      id: 'decline',
-      label: 'Decline',
-      icon: <LuX className="size-4 text-functional-red" />,
-      onAction: handleDecline,
-    },
-  ];
-
   const isPending = approve.isPending || decline.isPending;
 
   return (
-    <DropDownButton
-      color="primary"
-      label={
-        isPending ? (
-          <LoadingSpinner />
-        ) : (
-          <>
-            <LuUserPlus className="size-4" />
-            Respond
-          </>
-        )
-      }
-      items={dropdownItems}
-      className="min-w-full bg-primary-teal text-neutral-offWhite sm:min-w-fit"
-      isDisabled={isPending}
-    />
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            color="primary"
+            className="min-w-full sm:min-w-fit"
+            isDisabled={isPending}
+          >
+            {isPending ? (
+              <LoadingSpinner />
+            ) : (
+              <>
+                <LuUserPlus className="size-4" />
+                Respond
+              </>
+            )}
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="start">
+        <DropdownMenuItem onClick={handleApprove}>
+          <LuCheck className="size-4" />
+          Accept
+        </DropdownMenuItem>
+        <DropdownMenuItem variant="destructive" onClick={handleDecline}>
+          <LuX className="size-4" />
+          Decline
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 

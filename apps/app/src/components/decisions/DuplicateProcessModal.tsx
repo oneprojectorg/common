@@ -2,13 +2,14 @@
 
 import { trpc } from '@op/api/client';
 import type { DecisionProfile } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
-import { Checkbox, CheckboxGroup } from '@op/ui/Checkbox';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Select, SelectItem } from '@op/ui/Select';
-import { Skeleton } from '@op/ui/Skeleton';
-import { TextField } from '@op/ui/TextField';
-import { toast } from '@op/ui/Toast';
+import { Button } from '@op/ui-next/Button';
+import { Checkbox } from '@op/ui-next/Checkbox';
+import { Field, FieldLabel } from '@op/ui-next/Field';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
+import { Select, SelectItem } from '@op/ui-next/Select';
+import { Skeleton } from '@op/ui-next/Skeleton';
+import { TextField } from '@op/ui-next/TextField';
+import { toast } from '@op/ui-next/Toast';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
@@ -127,19 +128,40 @@ const DuplicateFormContent = ({
           </div>
         </div>
 
-        <CheckboxGroup
-          label={t('Include')}
-          labelClassName="font-serif text-title-sm12"
-          className="gap-4"
-          value={selectedIncludes}
-          onChange={setSelectedIncludes}
-        >
-          {includeOptions.map((option) => (
-            <Checkbox key={option.key} value={option.key} size="small">
-              {option.label}
-            </Checkbox>
-          ))}
-        </CheckboxGroup>
+        <Field className="gap-4">
+          <FieldLabel className="font-serif text-title-sm12">
+            {t('Include')}
+          </FieldLabel>
+          <div className="flex flex-col gap-2" role="group">
+            {includeOptions.map((option) => {
+              const id = `include-${option.key}`;
+              const checked = selectedIncludes.includes(option.key);
+              return (
+                <label
+                  key={option.key}
+                  htmlFor={id}
+                  className="flex items-center gap-2 text-sm"
+                >
+                  <Checkbox
+                    id={id}
+                    className="size-4"
+                    checked={checked}
+                    onCheckedChange={(v) => {
+                      if (v === true) {
+                        setSelectedIncludes([...selectedIncludes, option.key]);
+                      } else {
+                        setSelectedIncludes(
+                          selectedIncludes.filter((k) => k !== option.key),
+                        );
+                      }
+                    }}
+                  />
+                  {option.label}
+                </label>
+              );
+            })}
+          </div>
+        </Field>
       </ModalBody>
       <ModalFooter>
         <Button

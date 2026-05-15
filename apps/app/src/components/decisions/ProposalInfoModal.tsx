@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@op/ui/Button';
-import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
+import { Button } from '@op/ui-next/Button';
+import { Modal, ModalBody, ModalHeader } from '@op/ui-next/Modal';
 import he from 'he';
 import { DialogTrigger } from 'react-aria-components';
 

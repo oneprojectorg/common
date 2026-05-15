@@ -1,4 +1,4 @@
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/ui-next/lib/utils';
 
 export const ContactLink = ({
   className,

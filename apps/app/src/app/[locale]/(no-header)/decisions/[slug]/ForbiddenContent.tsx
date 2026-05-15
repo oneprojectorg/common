@@ -2,10 +2,10 @@
 
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
-import { Button, ButtonLink } from '@op/ui/Button';
-import { Header1, Header2 } from '@op/ui/Header';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { toast } from '@op/ui/Toast';
+import { Button, ButtonLink } from '@op/ui-next/Button';
+import { Header1, Header2 } from '@op/ui-next/Header';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import { toast } from '@op/ui-next/Toast';
 import { useParams } from 'next/navigation';
 import { Suspense } from 'react';
 

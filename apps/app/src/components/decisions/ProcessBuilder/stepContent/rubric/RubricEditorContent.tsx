@@ -2,11 +2,11 @@
 
 import { trpc } from '@op/api/client';
 import type { RubricTemplateSchema } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header2 } from '@op/ui/Header';
+import { Button } from '@op/ui-next/Button';
+import { EmptyState } from '@op/ui-next/EmptyState';
+import { Header2 } from '@op/ui-next/Header';
+import { ToggleButton } from '@op/ui-next/ToggleButton';
 import { Sortable } from '@op/ui/Sortable';
-import { ToggleButton } from '@op/ui/ToggleButton';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuLeaf, LuPlus } from 'react-icons/lu';
 

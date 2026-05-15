@@ -1,16 +1,16 @@
 'use client';
 
 import type { XFormatPropertySchema } from '@op/common/client';
-import { Button } from '@op/ui/Button';
+import { Button } from '@op/ui-next/Button';
+import { Select, SelectItem } from '@op/ui-next/Select';
+import { TextField } from '@op/ui-next/TextField';
+import { ToggleButton } from '@op/ui-next/ToggleButton';
+import { cn } from '@op/ui-next/lib/utils';
 import {
   CollapsibleConfigCard,
   CollapsibleConfigCardDragPreview,
 } from '@op/ui/CollapsibleConfigCard';
-import { Select, SelectItem } from '@op/ui/Select';
 import type { SortableItemControls } from '@op/ui/Sortable';
-import { TextField } from '@op/ui/TextField';
-import { ToggleButton } from '@op/ui/ToggleButton';
-import { cn } from '@op/ui/utils';
 import type { Key } from 'react';
 import { useEffect, useRef } from 'react';
 import { LuTrash2 } from 'react-icons/lu';

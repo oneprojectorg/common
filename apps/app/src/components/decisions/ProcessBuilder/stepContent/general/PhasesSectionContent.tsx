@@ -2,12 +2,12 @@
 
 import { trpc } from '@op/api/client';
 import type { PhaseDefinition } from '@op/api/encoders';
-import { Button } from '@op/ui/Button';
-import { Header2 } from '@op/ui/Header';
-import { IconButton } from '@op/ui/IconButton';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Button } from '@op/ui-next/Button';
+import { Header2 } from '@op/ui-next/Header';
+import { IconButton } from '@op/ui-next/IconButton';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
+import { cn } from '@op/ui-next/lib/utils';
 import { DragHandle, Sortable } from '@op/ui/Sortable';
-import { cn } from '@op/ui/utils';
 import { useQueryState } from 'nuqs';
 import { useState } from 'react';
 import { LuCheck, LuPlus, LuTrash2 } from 'react-icons/lu';

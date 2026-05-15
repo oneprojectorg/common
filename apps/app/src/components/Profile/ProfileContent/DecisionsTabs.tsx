@@ -3,8 +3,8 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProcessStatus, VISIBLE_DECISION_STATUSES } from '@op/api/encoders';
-import { Tab, TabPanel } from '@op/ui/Tabs';
-import { cn } from '@op/ui/utils';
+import { Tab, TabPanel } from '@op/ui-next/Tabs';
+import { cn } from '@op/ui-next/lib/utils';
 import { ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

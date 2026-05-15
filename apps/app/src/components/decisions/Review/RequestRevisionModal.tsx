@@ -1,10 +1,10 @@
 'use client';
 
-import { AlertBanner } from '@op/ui/AlertBanner';
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { TextField } from '@op/ui/TextField';
+import { AlertBanner } from '@op/ui-next/AlertBanner';
+import { Button } from '@op/ui-next/Button';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
+import { TextField } from '@op/ui-next/TextField';
 import { useState } from 'react';
 import { LuCircleAlert } from 'react-icons/lu';
 

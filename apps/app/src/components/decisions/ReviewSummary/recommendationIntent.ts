@@ -1,5 +1,5 @@
 import { RECOMMENDATION_OPTION } from '@op/common/client';
-import type { StatusDotIntent } from '@op/ui/StatusDot';
+import type { StatusDotIntent } from '@op/ui-next/StatusDot';
 
 export function recommendationIntent(
   value: string | null | undefined,

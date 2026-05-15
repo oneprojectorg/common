@@ -1,9 +1,9 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import type { RouterOutput } from '@op/api';
 import { type InstancePhaseData } from '@op/api/encoders';
-import { ButtonLink } from '@op/ui/Button';
-import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
+import { ButtonLink } from '@op/ui-next/Button';
+import { EmptyState } from '@op/ui-next/EmptyState';
+import { Header3 } from '@op/ui-next/Header';
 import { Suspense } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 

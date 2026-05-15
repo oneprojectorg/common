@@ -1,8 +1,8 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { toast } from '@op/ui-next/Toast';
 import { FileDropZone } from '@op/ui/FileDropZone';
-import { toast } from '@op/ui/Toast';
 import { type ReactNode, startTransition, useOptimistic } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

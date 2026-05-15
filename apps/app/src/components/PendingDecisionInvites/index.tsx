@@ -4,9 +4,10 @@ import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { getTextPreview } from '@op/core';
-import { Avatar } from '@op/ui/Avatar';
-import { Button } from '@op/ui/Button';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { Avatar } from '@op/ui-next/Avatar';
+import { Button } from '@op/ui-next/Button';
+import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import { toast } from '@op/ui-next/Toast';
 import {
   NotificationPanel,
   NotificationPanelActions,
@@ -15,7 +16,6 @@ import {
   NotificationPanelList,
 } from '@op/ui/NotificationPanel';
 import { ProfileItem } from '@op/ui/ProfileItem';
-import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';

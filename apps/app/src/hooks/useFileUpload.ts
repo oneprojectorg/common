@@ -1,5 +1,5 @@
 import { trpc } from '@op/api/client';
-import { toast } from '@op/ui/Toast';
+import { toast } from '@op/ui-next/Toast';
 import { useCallback, useState } from 'react';
 
 export interface FilePreview {

@@ -1,7 +1,7 @@
 import { getPublicUrl } from '@/utils';
 import { Profile } from '@op/api/encoders';
-import { Avatar, AvatarSkeleton } from '@op/ui/Avatar';
-import { cn } from '@op/ui/utils';
+import { Avatar, AvatarSkeleton } from '@op/ui-next/Avatar';
+import { cn } from '@op/ui-next/lib/utils';
 import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';

@@ -1,8 +1,8 @@
 'use client';
 
 import { posthogUIHost } from '@op/core';
-import { Button } from '@op/ui/Button';
-import { Header1 } from '@op/ui/Header';
+import { Button } from '@op/ui-next/Button';
+import { Header1 } from '@op/ui-next/Header';
 import { LuArrowUpRight } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
