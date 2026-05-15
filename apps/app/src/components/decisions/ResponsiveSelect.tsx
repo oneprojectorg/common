@@ -43,7 +43,7 @@ export function ResponsiveSelect<T extends string>({
   onSelectionChange,
   items,
   label,
-  className = 'min-w-36',
+  className,
   size = 'small',
   renderSelectedLabel,
 }: ResponsiveSelectProps<T>) {
