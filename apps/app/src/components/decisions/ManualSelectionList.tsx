@@ -8,14 +8,14 @@ import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { toast } from '@op/ui/Toast';
-import { useRouter } from 'next/navigation';
 import { usePostHog } from 'posthog-js/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LuLeaf, LuTriangleAlert } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+import { usePathname, useRouter, useTranslations } from '@/lib/i18n';
 
 import { FinalPhaseSelectionFooter } from './FinalPhaseSelectionFooter';
+import { QUERY_PARAM as RESULTS_LIVE_PARAM } from './FinalPhaseSubmissionSuccessDialog';
 import {
   ManualSelectionToolbar,
   type SelectionFilters,
@@ -48,6 +48,7 @@ export const ManualSelectionList = ({
   const { user } = useUser();
   const posthog = usePostHog();
   const router = useRouter();
+  const pathname = usePathname();
   const isFinalPhase = confirmVariant === 'finalPhase';
 
   const [selectedCategory, setSelectedCategory] = useState('all-categories');
@@ -124,8 +125,8 @@ export const ManualSelectionList = ({
       setIsConfirmOpen(false);
       if (isFinalPhase) {
         const params = new URLSearchParams(window.location.search);
-        params.set('resultsLive', '1');
-        router.replace(`${window.location.pathname}?${params.toString()}`);
+        params.set(RESULTS_LIVE_PARAM, '1');
+        router.replace(`${pathname}?${params.toString()}`);
       }
     },
     onError: (error) => {

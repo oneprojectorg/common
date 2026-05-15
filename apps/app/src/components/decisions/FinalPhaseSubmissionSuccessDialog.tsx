@@ -8,7 +8,7 @@ import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-const QUERY_PARAM = 'resultsLive';
+export const QUERY_PARAM = 'resultsLive';
 
 /**
  * One-shot celebration shown to the submitting admin after final-phase

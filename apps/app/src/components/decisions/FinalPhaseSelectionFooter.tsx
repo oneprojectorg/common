@@ -82,7 +82,7 @@ const FinalPhaseProposalCard = ({ proposal }: { proposal: Proposal }) => {
       proposal,
       defaultTitle: t('Untitled Proposal'),
     });
-  const categoryLabel = categories[0];
+  const hasCategories = categories.length > 0;
   const voteCount = proposal.voteCount ?? 0;
 
   return (
@@ -99,9 +99,11 @@ const FinalPhaseProposalCard = ({ proposal }: { proposal: Proposal }) => {
       </div>
       <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-charcoal">
         {submitterName ? <span>{submitterName}</span> : null}
-        {submitterName && categoryLabel ? <Bullet /> : null}
-        {categoryLabel ? <Chip>{categoryLabel}</Chip> : null}
-        {(submitterName || categoryLabel) && <Bullet />}
+        {submitterName && hasCategories ? <Bullet /> : null}
+        {categories.map((category) => (
+          <Chip key={category}>{category}</Chip>
+        ))}
+        {(submitterName || hasCategories) && <Bullet />}
         <span>{t('{count} votes', { count: voteCount })}</span>
       </div>
     </div>
