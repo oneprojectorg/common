@@ -2,7 +2,7 @@
 
 import { IconButton } from '@op/ui-next/IconButton';
 import { Select, SelectItem } from '@op/ui-next/Select';
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/ui-next/lib/utils';
 import { useParams } from 'next/navigation';
 import { LuGlobe } from 'react-icons/lu';
 

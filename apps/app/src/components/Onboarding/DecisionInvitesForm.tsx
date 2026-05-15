@@ -5,8 +5,8 @@ import { EntityType } from '@op/api/encoders';
 import { Button } from '@op/ui-next/Button';
 import { Header1 } from '@op/ui-next/Header';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import { cn } from '@op/ui-next/lib/utils';
 import { toast } from '@op/ui/Toast';
-import { cn } from '@op/ui/utils';
 import { ReactNode, Suspense, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

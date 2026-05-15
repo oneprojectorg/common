@@ -2,7 +2,7 @@ import { getPublicUrl } from '@/utils';
 import { Avatar } from '@op/ui-next/Avatar';
 import { Chip } from '@op/ui-next/Chip';
 import { Header3 } from '@op/ui-next/Header';
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/ui-next/lib/utils';
 import Image from 'next/image';
 
 import type { TranslationKey } from '@/lib/i18n';

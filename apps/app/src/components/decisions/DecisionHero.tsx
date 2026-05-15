@@ -1,5 +1,5 @@
 import { GradientHeader, Header2 } from '@op/ui-next/Header';
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/ui-next/lib/utils';
 import { ReactNode } from 'react';
 
 export function DecisionHero({

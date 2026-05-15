@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import { Skeleton } from '@op/ui-next/Skeleton';
 import { Surface } from '@op/ui-next/Surface';
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/ui-next/lib/utils';
 import { Suspense } from 'react';
 
 import { Link, usePathname, useTranslations } from '@/lib/i18n';

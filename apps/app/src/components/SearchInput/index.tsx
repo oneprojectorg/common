@@ -4,7 +4,7 @@ import { EntityType } from '@op/api/encoders';
 import { useDebounce } from '@op/hooks';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { TextField } from '@op/ui-next/TextField';
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/ui-next/lib/utils';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { LuSearch } from 'react-icons/lu';

@@ -1,5 +1,5 @@
 import type { RouterOutput } from '@op/api';
-import { formatFileSize } from '@op/ui/utils';
+import { formatFileSize } from '@op/ui-next/lib/utils';
 import { LuDownload, LuFileText } from 'react-icons/lu';
 
 type ProposalAttachment = NonNullable<

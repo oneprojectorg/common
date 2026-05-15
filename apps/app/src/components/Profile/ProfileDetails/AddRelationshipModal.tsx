@@ -14,8 +14,8 @@ import {
 } from '@op/ui-next/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { Tooltip, TooltipTrigger } from '@op/ui-next/Tooltip';
+import { cn } from '@op/ui-next/lib/utils';
 import { toast } from '@op/ui/Toast';
-import { cn } from '@op/ui/utils';
 import { FormEvent, Suspense, useState, useTransition } from 'react';
 import { LuCheck, LuChevronDown, LuClock, LuPlus } from 'react-icons/lu';
 

@@ -6,7 +6,7 @@ import {
   parseSchemaOptions,
   schemaAllowsMultipleSelection,
 } from '@op/common/client';
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/ui-next/lib/utils';
 import type { Editor, JSONContent } from '@tiptap/react';
 
 import { useTranslations } from '@/lib/i18n';

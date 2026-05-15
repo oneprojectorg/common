@@ -8,9 +8,9 @@ import { Button } from '@op/ui-next/Button';
 import { Header2, Header3 } from '@op/ui-next/Header';
 import { Skeleton } from '@op/ui-next/Skeleton';
 import { Tab, TabList, TabPanel } from '@op/ui-next/Tabs';
+import { cn } from '@op/ui-next/lib/utils';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
-import { cn } from '@op/ui/utils';
 import { Fragment, ReactNode, Suspense } from 'react';
 import { LuCopy, LuGlobe, LuMail } from 'react-icons/lu';
 

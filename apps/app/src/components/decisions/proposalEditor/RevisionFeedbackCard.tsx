@@ -1,7 +1,7 @@
 'use client';
 
 import { useRelativeTime } from '@op/hooks';
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/ui-next/lib/utils';
 
 import { useTranslations } from '@/lib/i18n';
 

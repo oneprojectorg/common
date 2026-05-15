@@ -18,8 +18,8 @@ import {
 } from '@op/ui-next/Menu';
 import { Modal, ModalBody } from '@op/ui-next/Modal';
 import { Skeleton } from '@op/ui-next/Skeleton';
+import { cn } from '@op/ui-next/lib/utils';
 import { SidebarTrigger } from '@op/ui/Sidebar';
-import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import {

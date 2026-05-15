@@ -4,7 +4,7 @@ import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Header2 } from '@op/ui-next/Header';
 import { Sheet, SheetBody } from '@op/ui-next/Sheet';
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/ui-next/lib/utils';
 import type { ReactNode } from 'react';
 import { LuX } from 'react-icons/lu';
 

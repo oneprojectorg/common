@@ -1,7 +1,7 @@
 'use client';
 
 import { useFileUpload } from '@/hooks/useFileUpload';
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/ui-next/lib/utils';
 import type { Editor } from '@tiptap/react';
 import { useCallback, useRef } from 'react';
 import {

@@ -5,8 +5,8 @@ import { Organization } from '@op/api/encoders';
 import { Avatar } from '@op/ui-next/Avatar';
 import { Skeleton, SkeletonLine } from '@op/ui-next/Skeleton';
 import { Surface } from '@op/ui-next/Surface';
+import { cn, getGradientForString } from '@op/ui-next/lib/utils';
 import { HorizontalList, HorizontalListItem } from '@op/ui/HorizontalList';
-import { cn, getGradientForString } from '@op/ui/utils';
 import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';

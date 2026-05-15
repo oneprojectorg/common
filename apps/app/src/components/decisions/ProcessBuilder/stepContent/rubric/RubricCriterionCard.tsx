@@ -6,12 +6,12 @@ import { NumberField } from '@op/ui-next/NumberField';
 import { RadioGroup, RadioGroupItem } from '@op/ui-next/RadioGroup';
 import { TextField } from '@op/ui-next/TextField';
 import { ToggleButton } from '@op/ui-next/ToggleButton';
+import { cn } from '@op/ui-next/lib/utils';
 import {
   CollapsibleConfigCard,
   CollapsibleConfigCardDragPreview,
 } from '@op/ui/CollapsibleConfigCard';
 import type { SortableItemControls } from '@op/ui/Sortable';
-import { cn } from '@op/ui/utils';
 import { useRef, useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
 

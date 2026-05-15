@@ -5,7 +5,7 @@ import {
   type ReviewAssignmentExtended,
 } from '@op/common/client';
 import { Tooltip, TooltipTrigger } from '@op/ui-next/Tooltip';
-import { cn } from '@op/ui/utils';
+import { cn } from '@op/ui-next/lib/utils';
 import { useRef } from 'react';
 import { useFocusable } from 'react-aria';
 import {
