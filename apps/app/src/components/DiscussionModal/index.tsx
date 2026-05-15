@@ -77,7 +77,7 @@ export function DiscussionModal({
       isOpen={isOpen}
       onOpenChange={onClose}
       isDismissable
-      className="h-svh text-left"
+      className="text-left"
     >
       <ModalHeader>{t("{authorName}'s Post", { authorName })}</ModalHeader>
 
