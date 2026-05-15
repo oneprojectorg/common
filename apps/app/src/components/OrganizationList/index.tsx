@@ -3,10 +3,10 @@
 import { getPublicUrl } from '@/utils';
 import { Organization } from '@op/api/encoders';
 import { Avatar } from '@op/ui-next/Avatar';
+import { HorizontalList, HorizontalListItem } from '@op/ui-next/HorizontalList';
 import { Skeleton, SkeletonLine } from '@op/ui-next/Skeleton';
 import { Surface } from '@op/ui-next/Surface';
 import { cn, getGradientForString } from '@op/ui-next/lib/utils';
-import { HorizontalList, HorizontalListItem } from '@op/ui/HorizontalList';
 import Image from 'next/image';
 
 import { Link } from '@/lib/i18n';

@@ -14,8 +14,8 @@ import {
   NotificationPanelHeader,
   NotificationPanelItem,
   NotificationPanelList,
-} from '@op/ui/NotificationPanel';
-import { ProfileItem } from '@op/ui/ProfileItem';
+} from '@op/ui-next/NotificationPanel';
+import { ProfileItem } from '@op/ui-next/ProfileItem';
 import { Suspense, useState } from 'react';
 import { LuPenLine } from 'react-icons/lu';
 

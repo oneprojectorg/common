@@ -4,8 +4,8 @@ import type { AdminOrg } from '@op/api/encoders';
 import { Avatar } from '@op/ui-next/Avatar';
 import { Chip } from '@op/ui-next/Chip';
 import { Modal, ModalBody, ModalHeader } from '@op/ui-next/Modal';
+import { ProfileItem } from '@op/ui-next/ProfileItem';
 import { Surface } from '@op/ui-next/Surface';
-import { ProfileItem } from '@op/ui/ProfileItem';
 import { LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';

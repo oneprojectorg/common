@@ -7,11 +7,11 @@ import { Button } from '@op/ui-next/Button';
 import { Chip } from '@op/ui-next/Chip';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
+import { ProfileItem } from '@op/ui-next/ProfileItem';
 import { Skeleton } from '@op/ui-next/Skeleton';
 import { Surface } from '@op/ui-next/Surface';
 import { toast } from '@op/ui-next/Toast';
 import { ComboBox, ComboBoxItem } from '@op/ui/ComboBox';
-import { ProfileItem } from '@op/ui/ProfileItem';
 import Image from 'next/image';
 import {
   FormEvent,

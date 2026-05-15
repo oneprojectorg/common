@@ -4,7 +4,7 @@
 import {
   formatDate as formatDateCore,
   formatDateRange as formatDateRangeCore,
-} from '@op/ui/utils/formatting';
+} from '@op/ui-next/utils/formatting';
 
 /**
  * Format currency amount using locale-aware formatting

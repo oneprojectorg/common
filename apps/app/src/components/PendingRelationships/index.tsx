@@ -10,7 +10,7 @@ import {
   NotificationPanelHeader,
   NotificationPanelItem,
   NotificationPanelList,
-} from '@op/ui/NotificationPanel';
+} from '@op/ui-next/NotificationPanel';
 import { Suspense, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

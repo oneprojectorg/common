@@ -10,9 +10,9 @@ import { EmptyState } from '@op/ui-next/EmptyState';
 import { IconButton } from '@op/ui-next/IconButton';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
+import { ProfileItem } from '@op/ui-next/ProfileItem';
 import { SearchField } from '@op/ui-next/SearchField';
 import { toast } from '@op/ui-next/Toast';
-import { ProfileItem } from '@op/ui/ProfileItem';
 import { ListBox, ListBoxItem } from '@op/ui/RAC';
 import Image from 'next/image';
 import {

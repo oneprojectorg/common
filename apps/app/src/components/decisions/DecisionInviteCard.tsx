@@ -5,7 +5,7 @@ import { Avatar } from '@op/ui-next/Avatar';
 import { Button } from '@op/ui-next/Button';
 import { Header2 } from '@op/ui-next/Header';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
-import { ProfileItem } from '@op/ui/ProfileItem';
+import { ProfileItem } from '@op/ui-next/ProfileItem';
 import Image from 'next/image';
 
 import { useTranslations } from '@/lib/i18n';

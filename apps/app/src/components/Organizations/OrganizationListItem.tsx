@@ -1,7 +1,7 @@
 import { getPublicUrl } from '@/utils';
 import type { Organization } from '@op/api/encoders';
 import { Avatar } from '@op/ui-next/Avatar';
-import { ProfileItem } from '@op/ui/ProfileItem';
+import { ProfileItem } from '@op/ui-next/ProfileItem';
 import Image from 'next/image';
 import { ReactNode } from 'react';
 

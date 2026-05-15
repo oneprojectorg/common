@@ -1,6 +1,6 @@
 'use client';
 
-import { TranslateBanner as UITranslateBanner } from '@op/ui/TranslateBanner';
+import { TranslateBanner as UITranslateBanner } from '@op/ui-next/TranslateBanner';
 
 import { useTranslations } from '@/lib/i18n';
 

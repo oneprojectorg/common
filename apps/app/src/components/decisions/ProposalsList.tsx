@@ -924,7 +924,6 @@ export const ProposalsList = ({
                 updateURLParams({ sort });
               }}
               label={t('Sort proposals')}
-              className="min-w-32"
               items={[
                 { id: 'newest', label: t('Newest First') },
                 { id: 'oldest', label: t('Oldest First') },

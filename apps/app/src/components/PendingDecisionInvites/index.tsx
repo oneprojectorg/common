@@ -7,15 +7,15 @@ import { getTextPreview } from '@op/core';
 import { Avatar } from '@op/ui-next/Avatar';
 import { Button } from '@op/ui-next/Button';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
-import { toast } from '@op/ui-next/Toast';
 import {
   NotificationPanel,
   NotificationPanelActions,
   NotificationPanelHeader,
   NotificationPanelItem,
   NotificationPanelList,
-} from '@op/ui/NotificationPanel';
-import { ProfileItem } from '@op/ui/ProfileItem';
+} from '@op/ui-next/NotificationPanel';
+import { ProfileItem } from '@op/ui-next/ProfileItem';
+import { toast } from '@op/ui-next/Toast';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';

@@ -5,9 +5,9 @@ import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Organization, Post, PostToOrganization } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
+import { HorizontalList, HorizontalListItem } from '@op/ui-next/HorizontalList';
 import { SkeletonLine } from '@op/ui-next/Skeleton';
 import { cn } from '@op/ui-next/lib/utils';
-import { HorizontalList, HorizontalListItem } from '@op/ui/HorizontalList';
 import { Fragment, type RefObject, useCallback } from 'react';
 
 import {

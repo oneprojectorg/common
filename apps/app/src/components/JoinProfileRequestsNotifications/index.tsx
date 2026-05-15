@@ -4,15 +4,15 @@ import { trpc } from '@op/api/client';
 import { JoinProfileRequestStatus } from '@op/api/encoders';
 import { Button } from '@op/ui-next/Button';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
-import { toast } from '@op/ui-next/Toast';
 import {
   NotificationPanel,
   NotificationPanelActions,
   NotificationPanelHeader,
   NotificationPanelItem,
   NotificationPanelList,
-} from '@op/ui/NotificationPanel';
-import { ProfileItem } from '@op/ui/ProfileItem';
+} from '@op/ui-next/NotificationPanel';
+import { ProfileItem } from '@op/ui-next/ProfileItem';
+import { toast } from '@op/ui-next/Toast';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

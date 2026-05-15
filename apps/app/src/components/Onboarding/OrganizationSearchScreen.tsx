@@ -5,8 +5,8 @@ import type { Organization, OrganizationSearchResult } from '@op/api/encoders';
 import { useDebounce } from '@op/hooks';
 import { Button } from '@op/ui-next/Button';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import { ProfileItem } from '@op/ui-next/ProfileItem';
 import { TextField } from '@op/ui-next/TextField';
-import { ProfileItem } from '@op/ui/ProfileItem';
 import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { LuPlus, LuSearch, LuX } from 'react-icons/lu';
 
