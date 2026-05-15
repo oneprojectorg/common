@@ -124,6 +124,50 @@ export function Select<T extends { id: string | number }>({
     return items.length ? items : undefined;
   }, [itemsArray, renderedItems]);
 
+  const needsField = !!label || !!description || !!errorMessage;
+  const selectRoot = (
+    <ShadcnSelect
+      value={resolvedValue ?? undefined}
+      defaultValue={resolvedDefault ?? undefined}
+      onValueChange={onSelectionChange}
+      disabled={isDisabled}
+      name={name}
+      items={baseUiItems}
+      modal={false}
+    >
+      {customTrigger ? (
+        <SelectPrimitive.Trigger
+          id={fieldId}
+          aria-label={ariaLabel}
+          render={customTrigger as React.ReactElement}
+        />
+      ) : (
+        <SelectTrigger
+          id={fieldId}
+          size={size === 'small' ? 'sm' : 'default'}
+          aria-label={ariaLabel}
+          className={cn(
+            variant === 'pill' &&
+              'border-0 bg-primary/10 text-primary hover:bg-primary/15',
+            buttonClassName,
+          )}
+        >
+          <SelectValue
+            placeholder={placeholder}
+            className={selectValueClassName}
+          />
+        </SelectTrigger>
+      )}
+      <SelectContent alignItemWithTrigger={false} className={listBoxClassName}>
+        {renderedItems}
+      </SelectContent>
+    </ShadcnSelect>
+  );
+
+  if (!needsField) {
+    return <div className={cn('w-fit', className)}>{selectRoot}</div>;
+  }
+
   return (
     <Field data-invalid={isInvalid} className={cn('gap-1', className)}>
       {label && (
@@ -132,45 +176,7 @@ export function Select<T extends { id: string | number }>({
           {isRequired && <span className="text-destructive"> *</span>}
         </FieldLabel>
       )}
-      <ShadcnSelect
-        value={resolvedValue ?? undefined}
-        defaultValue={resolvedDefault ?? undefined}
-        onValueChange={onSelectionChange}
-        disabled={isDisabled}
-        name={name}
-        items={baseUiItems}
-        modal={false}
-      >
-        {customTrigger ? (
-          <SelectPrimitive.Trigger
-            id={fieldId}
-            aria-label={ariaLabel}
-            render={customTrigger as React.ReactElement}
-          />
-        ) : (
-          <SelectTrigger
-            id={fieldId}
-            size={size === 'small' ? 'sm' : 'default'}
-            aria-label={ariaLabel}
-            className={cn(
-              variant === 'pill' &&
-                'border-0 bg-primary/10 text-primary hover:bg-primary/15',
-              buttonClassName,
-            )}
-          >
-            <SelectValue
-              placeholder={placeholder}
-              className={selectValueClassName}
-            />
-          </SelectTrigger>
-        )}
-        <SelectContent
-          alignItemWithTrigger={false}
-          className={listBoxClassName}
-        >
-          {renderedItems}
-        </SelectContent>
-      </ShadcnSelect>
+      {selectRoot}
       {description && !errorMessage && (
         <FieldDescription>{description}</FieldDescription>
       )}
