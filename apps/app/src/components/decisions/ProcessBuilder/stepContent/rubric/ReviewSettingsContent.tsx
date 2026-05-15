@@ -6,7 +6,7 @@ import { Chip } from '@op/ui-next/Chip';
 import { Field, FieldLabel } from '@op/ui-next/Field';
 import { Header2, Header3 } from '@op/ui-next/Header';
 import { RadioGroup, RadioGroupItem } from '@op/ui-next/RadioGroup';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { ToggleButton } from '@op/ui-next/ToggleButton';
 import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';

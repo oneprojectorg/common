@@ -6,9 +6,14 @@ import { Organization } from '@op/api/encoders';
 import { relationshipMap } from '@op/types';
 import { Button } from '@op/ui-next/Button';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@op/ui-next/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { Tooltip, TooltipTrigger } from '@op/ui-next/Tooltip';
-import { DropDownButton } from '@op/ui/DropDownButton';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import { FormEvent, Suspense, useState, useTransition } from 'react';
@@ -122,51 +127,57 @@ export const AddRelationshipModalSuspense = ({
     (r) => r.id === selectedRelationshipId,
   );
 
-  const dropdownItems = relationships.map((relationship) => ({
-    id: relationship.id,
-    label:
-      relationshipMap[relationship.relationshipType]?.label ??
-      relationship.relationshipType,
-    icon: relationship.pending ? (
-      <LuClock className="size-4" />
-    ) : (
-      <LuCheck className="size-4" />
-    ),
-    onAction: () => setSelectedRelationshipId(relationship.id),
-  }));
-
   return (
     <>
       <RespondButton profile={profile} />
       {relationships.length > 1 ? (
-        <DropDownButton
-          label={
-            <>
-              {relationships.length === 1
-                ? t('{count} relationship', { count: relationships.length })
-                : t('{count} relationships', {
-                    count: relationships.length,
-                  })}{' '}
-              {user.currentProfile ? (
-                <>
-                  {t('with')}
-                  <OrganizationAvatar
-                    profile={user.currentProfile}
-                    className="size-6"
-                  />
-                </>
-              ) : null}
-            </>
-          }
-          items={dropdownItems}
-          chevronIcon={<LuChevronDown className="size-4" />}
-          className={cn(
-            'min-w-full sm:min-w-fit',
-            relationships.some((r) => r.pending)
-              ? 'bg-transparent'
-              : 'bg-primary-tealWhite',
-          )}
-        />
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                color="secondary"
+                className={cn(
+                  'min-w-full sm:min-w-fit',
+                  relationships.some((r) => r.pending)
+                    ? 'bg-transparent'
+                    : 'bg-primary-tealWhite',
+                )}
+              >
+                {relationships.length === 1
+                  ? t('{count} relationship', { count: relationships.length })
+                  : t('{count} relationships', {
+                      count: relationships.length,
+                    })}{' '}
+                {user.currentProfile ? (
+                  <>
+                    {t('with')}
+                    <OrganizationAvatar
+                      profile={user.currentProfile}
+                      className="size-6"
+                    />
+                  </>
+                ) : null}
+                <LuChevronDown className="size-4" />
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="start">
+            {relationships.map((relationship) => (
+              <DropdownMenuItem
+                key={relationship.id}
+                onClick={() => setSelectedRelationshipId(relationship.id)}
+              >
+                {relationship.pending ? (
+                  <LuClock className="size-4" />
+                ) : (
+                  <LuCheck className="size-4" />
+                )}
+                {relationshipMap[relationship.relationshipType]?.label ??
+                  relationship.relationshipType}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       ) : relationships.length === 1 ? (
         relationships.map((relationship) => (
           <TooltipTrigger

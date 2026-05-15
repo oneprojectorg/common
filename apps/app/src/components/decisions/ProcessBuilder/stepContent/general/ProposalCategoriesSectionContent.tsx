@@ -5,8 +5,8 @@ import type { ProposalCategory } from '@op/common';
 import { Button } from '@op/ui-next/Button';
 import { Header2, Header3 } from '@op/ui-next/Header';
 import { TextField } from '@op/ui-next/TextField';
+import { ToggleButton } from '@op/ui-next/ToggleButton';
 import { EmptyState } from '@op/ui/EmptyState';
-import { ToggleButton } from '@op/ui/ToggleButton';
 import { useState } from 'react';
 import { LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 

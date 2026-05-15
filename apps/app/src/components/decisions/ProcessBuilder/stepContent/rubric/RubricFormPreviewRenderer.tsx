@@ -7,7 +7,7 @@ import {
 } from '@op/common/client';
 import { RadioGroup, RadioGroupItem } from '@op/ui-next/RadioGroup';
 import { Select } from '@op/ui-next/Select';
-import { ToggleButton } from '@op/ui/ToggleButton';
+import { ToggleButton } from '@op/ui-next/ToggleButton';
 import { LuPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';

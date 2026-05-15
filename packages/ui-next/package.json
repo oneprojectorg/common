@@ -32,7 +32,8 @@
     "./Modal": "./src/components/Modal.tsx",
     "./OptionMenu": "./src/components/OptionMenu.tsx",
     "./Sheet": "./src/components/Sheet.tsx",
-    "./Tabs": "./src/components/Tabs.tsx"
+    "./Tabs": "./src/components/Tabs.tsx",
+    "./ToggleButton": "./src/components/ToggleButton.tsx"
   },
   "scripts": {
     "build": "pnpm build:styles && storybook build",
