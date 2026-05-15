@@ -122,26 +122,34 @@ export const MultiSelectComboBox = ({
         filter={enableLocalSearch ? undefined : () => true}
         disabled={isDisabled}
       >
-        <ComboboxChips
-          ref={anchorRef}
-          className={cn(
-            errorMessage && 'border-destructive ring-destructive/20',
-          )}
-        >
-          {selectedOptions.map((option) => (
-            <ComboboxChip
-              key={option.isNewValue ? `new-${option.label}` : option.id}
-            >
-              {option.label}
-            </ComboboxChip>
-          ))}
-          <ComboboxChipsInput
-            placeholder={placeholder}
-            onKeyDown={handleInputKeyDown}
-          />
-          {isLoading && <LoadingSpinner className="size-4" color="gray" />}
-          {!isLoading && <LuSearch className="text-muted-foreground size-4" />}
-        </ComboboxChips>
+        <div className="relative">
+          <ComboboxChips
+            ref={anchorRef}
+            className={cn(
+              'pr-8',
+              errorMessage && 'border-destructive ring-destructive/20',
+            )}
+          >
+            {selectedOptions.map((option) => (
+              <ComboboxChip
+                key={option.isNewValue ? `new-${option.label}` : option.id}
+              >
+                {option.label}
+              </ComboboxChip>
+            ))}
+            <ComboboxChipsInput
+              placeholder={placeholder}
+              onKeyDown={handleInputKeyDown}
+            />
+          </ComboboxChips>
+          <span className="text-muted-foreground pointer-events-none absolute top-2 right-2.5 flex size-4 items-center justify-center">
+            {isLoading ? (
+              <LoadingSpinner className="size-4" color="gray" />
+            ) : (
+              <LuSearch className="size-4" />
+            )}
+          </span>
+        </div>
         <ComboboxContent anchor={anchorRef}>
           <ComboboxEmpty>No options</ComboboxEmpty>
           <ComboboxList>
