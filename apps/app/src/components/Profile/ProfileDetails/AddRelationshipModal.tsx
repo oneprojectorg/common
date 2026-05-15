@@ -6,10 +6,9 @@ import { Organization } from '@op/api/encoders';
 import { relationshipMap } from '@op/types';
 import { Button } from '@op/ui-next/Button';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { Tooltip, TooltipTrigger } from '@op/ui-next/Tooltip';
 import { DropDownButton } from '@op/ui/DropDownButton';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Dialog, DialogTrigger } from '@op/ui/RAC';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import { FormEvent, Suspense, useState, useTransition } from 'react';
@@ -104,8 +103,11 @@ export const AddRelationshipModalSuspense = ({
   const [selectedRelationshipId, setSelectedRelationshipId] = useState<
     string | null
   >(null);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [removeRelationshipId, setRemoveRelationshipId] = useState<
+    string | null
+  >(null);
 
-  // checking for our relationships TOWARDS the profile
   const [{ relationships }] =
     trpc.organization.listDirectedRelationships.useSuspenseQuery(
       {
@@ -171,40 +173,55 @@ export const AddRelationshipModalSuspense = ({
             key={relationship.id}
             isDisabled={!relationship.pending}
           >
-            <DialogTrigger>
-              <Button
-                className="w-full sm:w-auto"
-                color={relationship.pending ? 'unverified' : 'verified'}
-              >
-                {relationship.pending ? (
-                  <LuClock className="size-4" />
-                ) : (
-                  <LuCheck className="size-4" />
-                )}
-                {relationshipMap[relationship.relationshipType]?.label ??
-                  relationship.relationshipType}
-              </Button>
-              {relationship.pending && (
-                <Tooltip>
-                  {t('Pending confirmation from {name}', {
-                    name: profile.profile.name,
-                  })}
-                </Tooltip>
+            <Button
+              className="w-full sm:w-auto"
+              color={relationship.pending ? 'unverified' : 'verified'}
+              onPress={() => setRemoveRelationshipId(relationship.id)}
+            >
+              {relationship.pending ? (
+                <LuClock className="size-4" />
+              ) : (
+                <LuCheck className="size-4" />
               )}
-              <RemoveRelationshipModal relationship={relationship} />
-            </DialogTrigger>
+              {relationshipMap[relationship.relationshipType]?.label ??
+                relationship.relationshipType}
+            </Button>
+            {relationship.pending && (
+              <Tooltip>
+                {t('Pending confirmation from {name}', {
+                  name: profile.profile.name,
+                })}
+              </Tooltip>
+            )}
+            <RemoveRelationshipModal
+              relationship={relationship}
+              isOpen={removeRelationshipId === relationship.id}
+              onOpenChange={(open) =>
+                setRemoveRelationshipId(open ? relationship.id : null)
+              }
+            />
           </TooltipTrigger>
         ))
       ) : (
-        <DialogTrigger>
-          <Button className="min-w-full text-nowrap sm:min-w-fit">
+        <>
+          <Button
+            className="min-w-full text-nowrap sm:min-w-fit"
+            onPress={() => setIsAddOpen(true)}
+          >
             <LuPlus className="size-4" />
             {t('Add relationship')}
           </Button>
-          <Modal className="sm:min-w-[29rem]">
-            <AddRelationshipForm profile={profile} />
+          <Modal
+            isOpen={isAddOpen}
+            onOpenChange={setIsAddOpen}
+            className="sm:min-w-[29rem]"
+          >
+            <AddRelationshipForm
+              profile={profile}
+              onClose={() => setIsAddOpen(false)}
+            />
           </Modal>
-        </DialogTrigger>
+        </>
       )}
 
       {selectedRelationship && (
@@ -213,19 +230,12 @@ export const AddRelationshipModalSuspense = ({
           onOpenChange={() => setSelectedRelationshipId(null)}
           className="sm:min-w-[29rem]"
         >
-          <Dialog>
-            {({ close }) => (
-              <RemoveRelationshipModalContent
-                relationship={selectedRelationship}
-                utils={utils}
-                profileId={profile.id}
-                onClose={() => {
-                  setSelectedRelationshipId(null);
-                  close();
-                }}
-              />
-            )}
-          </Dialog>
+          <RemoveRelationshipModalContent
+            relationship={selectedRelationship}
+            utils={utils}
+            profileId={profile.id}
+            onClose={() => setSelectedRelationshipId(null)}
+          />
         </Modal>
       )}
     </>

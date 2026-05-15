@@ -10,11 +10,10 @@ import { Checkbox } from '@op/ui-next/Checkbox';
 import { Header2, Header3 } from '@op/ui-next/Header';
 import { IconButton } from '@op/ui-next/IconButton';
 import { DropdownMenuItem } from '@op/ui-next/Menu';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { OptionMenu } from '@op/ui-next/OptionMenu';
 import { TextField } from '@op/ui-next/TextField';
-import { DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
 import {
   EditableCell,
@@ -343,52 +342,50 @@ function AddRoleDialog({
   };
 
   return (
-    <DialogTrigger isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <Modal
-        isDismissable
-        isOpen={isOpen}
-        onOpenChange={(open) => !open && onClose()}
-      >
-        <ModalHeader>{t('Add role')}</ModalHeader>
-        <ModalBody>
-          <TextField
-            label={t('Role name')}
-            value={roleName}
-            onChange={setRoleName}
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleSubmit();
-              }
-            }}
-          />
-          <div className="flex flex-col gap-2 pt-2">
-            {PERMISSION_COLUMNS.map(({ key, label }) => (
-              <label key={key} className="flex items-center gap-2 text-sm">
-                <Checkbox
-                  className="size-4"
-                  checked={permissions[key]}
-                  onCheckedChange={() => togglePermission(key)}
-                  aria-label={`${label} permission`}
-                />
-                {t(label)}
-              </label>
-            ))}
-          </div>
-        </ModalBody>
-        <ModalFooter>
-          <Button color="secondary" onPress={onClose}>
-            {t('Cancel')}
-          </Button>
-          <Button
-            onPress={handleSubmit}
-            isDisabled={!roleName.trim() || isPending}
-          >
-            {t('Save')}
-          </Button>
-        </ModalFooter>
-      </Modal>
-    </DialogTrigger>
+    <Modal
+      isDismissable
+      isOpen={isOpen}
+      onOpenChange={(open) => !open && onClose()}
+    >
+      <ModalHeader>{t('Add role')}</ModalHeader>
+      <ModalBody>
+        <TextField
+          label={t('Role name')}
+          value={roleName}
+          onChange={setRoleName}
+          autoFocus
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleSubmit();
+            }
+          }}
+        />
+        <div className="flex flex-col gap-2 pt-2">
+          {PERMISSION_COLUMNS.map(({ key, label }) => (
+            <label key={key} className="flex items-center gap-2 text-sm">
+              <Checkbox
+                className="size-4"
+                checked={permissions[key]}
+                onCheckedChange={() => togglePermission(key)}
+                aria-label={`${label} permission`}
+              />
+              {t(label)}
+            </label>
+          ))}
+        </div>
+      </ModalBody>
+      <ModalFooter>
+        <Button color="secondary" onPress={onClose}>
+          {t('Cancel')}
+        </Button>
+        <Button
+          onPress={handleSubmit}
+          isDisabled={!roleName.trim() || isPending}
+        >
+          {t('Save')}
+        </Button>
+      </ModalFooter>
+    </Modal>
   );
 }
 
@@ -852,43 +849,38 @@ function RolesTable({
         </div>
       )}
 
-      <DialogTrigger
+      <Modal
+        isDismissable
         isOpen={roleToDelete !== null}
         onOpenChange={(open) => !open && setRoleToDelete(null)}
       >
-        <Modal
-          isDismissable
-          isOpen={roleToDelete !== null}
-          onOpenChange={(open) => !open && setRoleToDelete(null)}
-        >
-          <ModalHeader>
-            {t('Remove {name}', { name: roleToDelete?.name ?? '' })}
-          </ModalHeader>
-          <ModalBody>
-            <p>
-              {t(
-                'Are you sure you want to remove {roleName} from "{processName}"?',
-                {
-                  roleName: roleToDelete?.name ?? '',
-                  processName: decisionName,
-                },
-              )}
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button color="secondary" onPress={() => setRoleToDelete(null)}>
-              {t('Cancel')}
-            </Button>
-            <Button
-              color="destructive"
-              onPress={handleDeleteConfirm}
-              isDisabled={deleteRoleMutation.isPending}
-            >
-              {deleteRoleMutation.isPending ? t('Removing...') : t('Remove')}
-            </Button>
-          </ModalFooter>
-        </Modal>
-      </DialogTrigger>
+        <ModalHeader>
+          {t('Remove {name}', { name: roleToDelete?.name ?? '' })}
+        </ModalHeader>
+        <ModalBody>
+          <p>
+            {t(
+              'Are you sure you want to remove {roleName} from "{processName}"?',
+              {
+                roleName: roleToDelete?.name ?? '',
+                processName: decisionName,
+              },
+            )}
+          </p>
+        </ModalBody>
+        <ModalFooter>
+          <Button color="secondary" onPress={() => setRoleToDelete(null)}>
+            {t('Cancel')}
+          </Button>
+          <Button
+            color="destructive"
+            onPress={handleDeleteConfirm}
+            isDisabled={deleteRoleMutation.isPending}
+          >
+            {deleteRoleMutation.isPending ? t('Removing...') : t('Remove')}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </>
   );
 }

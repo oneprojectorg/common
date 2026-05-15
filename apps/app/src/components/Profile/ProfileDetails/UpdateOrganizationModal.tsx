@@ -3,8 +3,7 @@
 import { useUser } from '@/utils/UserProvider';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui-next/Button';
-import { Modal, ModalHeader } from '@op/ui/Modal';
-import { DialogTrigger } from '@op/ui/RAC';
+import { Modal, ModalHeader } from '@op/ui-next/Modal';
 import { useEffect, useRef, useState } from 'react';
 import { LuPencil } from 'react-icons/lu';
 
@@ -49,7 +48,7 @@ export const UpdateOrganizationModal = ({
   }
 
   return (
-    <DialogTrigger>
+    <>
       <Button
         onPress={() => setIsOpen(true)}
         color="primary"
@@ -67,6 +66,6 @@ export const UpdateOrganizationModal = ({
           className="p-6"
         />
       </Modal>
-    </DialogTrigger>
+    </>
   );
 };

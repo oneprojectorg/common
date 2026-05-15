@@ -3,9 +3,9 @@
 import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
 import type { AdminDecisionInstance } from '@op/common/client';
 import { DropdownMenuItem } from '@op/ui-next/Menu';
+import { Modal, ModalBody, ModalHeader } from '@op/ui-next/Modal';
 import { OptionMenu } from '@op/ui-next/OptionMenu';
 import { Tooltip, TooltipTrigger } from '@op/ui-next/Tooltip';
-import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { TableCell } from '@op/ui/ui/table';
 import { useFormatter } from 'next-intl';
 import { useState } from 'react';

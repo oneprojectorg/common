@@ -16,8 +16,8 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@op/ui-next/Menu';
+import { Modal, ModalBody } from '@op/ui-next/Modal';
 import { Skeleton } from '@op/ui-next/Skeleton';
-import { Modal, ModalBody } from '@op/ui/Modal';
 import { SidebarTrigger } from '@op/ui/Sidebar';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';

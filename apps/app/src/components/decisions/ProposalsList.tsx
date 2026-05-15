@@ -20,12 +20,11 @@ import { Button, ButtonLink } from '@op/ui-next/Button';
 import { Checkbox } from '@op/ui-next/Checkbox';
 import { Header3 } from '@op/ui-next/Header';
 import { Link } from '@op/ui-next/Link';
+import { Modal } from '@op/ui-next/Modal';
 import { Skeleton } from '@op/ui-next/Skeleton';
 import { Surface } from '@op/ui-next/Surface';
-import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';
 import { FooterBar } from '@op/ui/FooterBar';
-import { Modal } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
 import { useLocale } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -184,6 +183,7 @@ const VotingProposalsList = ({
   const canManageProposals = permissions?.admin ?? false;
   const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
   const t = useTranslations();
 
   const numSelected = selectedProposalIds.length;
@@ -404,21 +404,28 @@ const VotingProposalsList = ({
           </FooterBar.Start>
           <FooterBar.Center />
           <FooterBar.End>
-            <DialogTrigger>
-              <Button isDisabled={numSelected === 0} variant="primary">
-                {t('Submit my votes')}
-              </Button>
+            <Button
+              isDisabled={numSelected === 0}
+              variant="primary"
+              onPress={() => setIsVoteModalOpen(true)}
+            >
+              {t('Submit my votes')}
+            </Button>
 
-              <Modal isDismissable>
-                <Dialog className="h-full">
-                  <VoteSubmissionModal
-                    selectedProposals={selectedProposals}
-                    instanceId={instanceId}
-                    onSuccess={handleVoteSuccess}
-                  />
-                </Dialog>
-              </Modal>
-            </DialogTrigger>
+            <Modal
+              isOpen={isVoteModalOpen}
+              onOpenChange={setIsVoteModalOpen}
+              isDismissable
+            >
+              <VoteSubmissionModal
+                selectedProposals={selectedProposals}
+                instanceId={instanceId}
+                onSuccess={() => {
+                  setIsVoteModalOpen(false);
+                  handleVoteSuccess();
+                }}
+              />
+            </Modal>
           </FooterBar.End>
         </FooterBar>
       )}

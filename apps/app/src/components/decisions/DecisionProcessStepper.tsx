@@ -5,7 +5,7 @@ import { type ProcessPhase } from '@op/api/encoders';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui-next/Button';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { type Phase, PhaseStepper } from '@op/ui/PhaseStepper';
 import { Sheet, SheetBody } from '@op/ui/Sheet';
 import { toast } from '@op/ui/Toast';

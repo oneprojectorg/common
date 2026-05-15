@@ -14,8 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@op/ui-next/Menu';
-import { DialogTrigger } from '@op/ui/Dialog';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
@@ -324,44 +323,39 @@ export function ProposalCardMenu({
         </DropdownMenu>
       )}
       {proposal.isEditable && (
-        <DialogTrigger
+        <Modal
+          isDismissable
           isOpen={isDeleteModalOpen}
           onOpenChange={setIsDeleteModalOpen}
         >
-          <Modal
-            isDismissable
-            isOpen={isDeleteModalOpen}
-            onOpenChange={setIsDeleteModalOpen}
-          >
-            <ModalHeader>{t('Delete Proposal')}</ModalHeader>
-            <ModalBody>
-              <p>
-                {t(
-                  'Are you sure you want to delete this proposal? This action cannot be undone.',
-                )}
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button
-                color="secondary"
-                className="w-full sm:w-fit"
-                onPress={() => setIsDeleteModalOpen(false)}
-              >
-                {t('Cancel')}
-              </Button>
-              <Button
-                color="destructive"
-                onPress={handleDeleteConfirm}
-                className="w-full sm:w-fit"
-                isDisabled={deleteProposalMutation.isPending}
-              >
-                {deleteProposalMutation.isPending
-                  ? t('Deleting...')
-                  : t('Delete')}
-              </Button>
-            </ModalFooter>
-          </Modal>
-        </DialogTrigger>
+          <ModalHeader>{t('Delete Proposal')}</ModalHeader>
+          <ModalBody>
+            <p>
+              {t(
+                'Are you sure you want to delete this proposal? This action cannot be undone.',
+              )}
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              color="secondary"
+              className="w-full sm:w-fit"
+              onPress={() => setIsDeleteModalOpen(false)}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button
+              color="destructive"
+              onPress={handleDeleteConfirm}
+              className="w-full sm:w-fit"
+              isDisabled={deleteProposalMutation.isPending}
+            >
+              {deleteProposalMutation.isPending
+                ? t('Deleting...')
+                : t('Delete')}
+            </Button>
+          </ModalFooter>
+        </Modal>
       )}
     </>
   );

@@ -5,10 +5,10 @@ import type { DecisionProfile } from '@op/api/encoders';
 import { Button } from '@op/ui-next/Button';
 import { Checkbox } from '@op/ui-next/Checkbox';
 import { Field, FieldLabel } from '@op/ui-next/Field';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { Select, SelectItem } from '@op/ui-next/Select';
 import { Skeleton } from '@op/ui-next/Skeleton';
 import { TextField } from '@op/ui-next/TextField';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 

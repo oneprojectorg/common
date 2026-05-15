@@ -3,8 +3,8 @@
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui-next/Button';
+import { Modal, ModalBody } from '@op/ui-next/Modal';
 import { Select, SelectItem } from '@op/ui-next/Select';
-import { Modal, ModalBody } from '@op/ui/Modal';
 import { type ReactNode, useState } from 'react';
 import { LuChevronDown } from 'react-icons/lu';
 

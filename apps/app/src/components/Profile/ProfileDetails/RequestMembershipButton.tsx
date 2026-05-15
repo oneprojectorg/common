@@ -5,11 +5,10 @@ import { trpc } from '@op/api/client';
 import { JoinProfileRequestStatus, type Organization } from '@op/api/encoders';
 import { Button, ButtonTooltip } from '@op/ui-next/Button';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { Skeleton } from '@op/ui-next/Skeleton';
-import { Dialog, DialogTrigger } from '@op/ui/Dialog';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
-import { Suspense, useTransition } from 'react';
+import { Suspense, useState, useTransition } from 'react';
 import { LuClock, LuUserPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -45,6 +44,7 @@ const RequestMembershipButtonSuspense = ({
   const t = useTranslations();
   const { user } = useUser();
   const [isPending, startTransition] = useTransition();
+  const [isCancelOpen, setIsCancelOpen] = useState(false);
 
   const currentProfileId = user.currentProfile?.id;
 
@@ -88,7 +88,7 @@ const RequestMembershipButtonSuspense = ({
     });
   };
 
-  const handleCancelRequest = (close: () => void) => {
+  const handleCancelRequest = () => {
     if (!existingRequest?.id) {
       return;
     }
@@ -108,58 +108,53 @@ const RequestMembershipButtonSuspense = ({
         });
       }
 
-      close();
+      setIsCancelOpen(false);
     });
   };
 
   if (hasPendingRequest) {
     return (
-      <DialogTrigger>
+      <>
         <ButtonTooltip
           color="secondary"
           className="min-w-full sm:min-w-fit"
           tooltipProps={{
             children: t('Your membership request is pending approval'),
           }}
+          onPress={() => setIsCancelOpen(true)}
         >
           <LuClock className="size-4" />
           {t('Requested')}
         </ButtonTooltip>
-        <Modal>
-          <Dialog>
-            {({ close }) => (
-              <>
-                <ModalHeader>{t('Cancel membership request')}</ModalHeader>
-                <ModalBody>
-                  <p>
-                    {t(
-                      'Are you sure you want to cancel your membership request to {orgName}?',
-                      { orgName: profile.profile.name },
-                    )}
-                  </p>
-                </ModalBody>
-                <ModalFooter>
-                  <Button
-                    onPress={close}
-                    color="neutral"
-                    className="w-full sm:w-fit"
-                  >
-                    {t('Keep request')}
-                  </Button>
-                  <Button
-                    color="destructive"
-                    onPress={() => handleCancelRequest(close)}
-                    isPending={isPending}
-                    className="w-full sm:w-fit"
-                  >
-                    {isPending ? <LoadingSpinner /> : t('Cancel request')}
-                  </Button>
-                </ModalFooter>
-              </>
-            )}
-          </Dialog>
+        <Modal isOpen={isCancelOpen} onOpenChange={setIsCancelOpen}>
+          <ModalHeader>{t('Cancel membership request')}</ModalHeader>
+          <ModalBody>
+            <p>
+              {t(
+                'Are you sure you want to cancel your membership request to {orgName}?',
+                { orgName: profile.profile.name },
+              )}
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              onPress={() => setIsCancelOpen(false)}
+              color="neutral"
+              className="w-full sm:w-fit"
+            >
+              {t('Keep request')}
+            </Button>
+            <Button
+              color="destructive"
+              onPress={handleCancelRequest}
+              isPending={isPending}
+              className="w-full sm:w-fit"
+            >
+              {isPending ? <LoadingSpinner /> : t('Cancel request')}
+            </Button>
+          </ModalFooter>
         </Modal>
-      </DialogTrigger>
+      </>
     );
   }
 

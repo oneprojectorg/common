@@ -1,6 +1,5 @@
 import { Button } from '@op/ui-next/Button';
-import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
-import { Dialog, DialogTrigger } from '@op/ui/RAC';
+import { Modal, ModalBody, ModalHeader } from '@op/ui-next/Modal';
 import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -12,7 +11,7 @@ export const PrivacyPolicyModal = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <DialogTrigger>
+    <>
       <Button
         unstyled
         onPress={() => setIsOpen(true)}
@@ -27,13 +26,11 @@ export const PrivacyPolicyModal = () => {
         isDismissable
         isOpen={isOpen}
       >
-        <Dialog>
-          <ModalHeader>{t('Privacy Policy')}</ModalHeader>
-          <ModalBody>
-            <PrivacyPolicyContent />
-          </ModalBody>
-        </Dialog>
+        <ModalHeader>{t('Privacy Policy')}</ModalHeader>
+        <ModalBody>
+          <PrivacyPolicyContent />
+        </ModalBody>
       </Modal>
-    </DialogTrigger>
+    </>
   );
 };

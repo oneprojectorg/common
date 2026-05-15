@@ -1,7 +1,7 @@
 'use client';
 
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
-import { Modal, ModalBody } from '@op/ui/Modal';
+import { Modal, ModalBody } from '@op/ui-next/Modal';
 
 import { useTranslations } from '@/lib/i18n';
 

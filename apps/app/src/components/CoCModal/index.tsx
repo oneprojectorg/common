@@ -1,6 +1,5 @@
 import { Button } from '@op/ui-next/Button';
-import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
-import { Dialog, DialogTrigger } from '@op/ui/RAC';
+import { Modal, ModalBody, ModalHeader } from '@op/ui-next/Modal';
 import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -12,7 +11,7 @@ export const CoCModal = () => {
   const [isToSOpen, setIsToSOpen] = useState(false);
 
   return (
-    <DialogTrigger>
+    <>
       <Button
         unstyled
         onPress={() => setIsToSOpen(true)}
@@ -22,13 +21,11 @@ export const CoCModal = () => {
       </Button>
 
       <Modal onOpenChange={setIsToSOpen} isDismissable isOpen={isToSOpen}>
-        <Dialog>
-          <ModalHeader>{t('Code of Conduct')}</ModalHeader>
-          <ModalBody>
-            <CoCContent />
-          </ModalBody>
-        </Dialog>
+        <ModalHeader>{t('Code of Conduct')}</ModalHeader>
+        <ModalBody>
+          <CoCContent />
+        </ModalBody>
       </Modal>
-    </DialogTrigger>
+    </>
   );
 };

@@ -1,7 +1,5 @@
 import { useUser } from '@/utils/UserProvider';
-import { Dialog } from '@op/ui/Dialog';
-import { Modal, ModalHeader } from '@op/ui/Modal';
-import { DialogTrigger } from '@op/ui/RAC';
+import { Modal, ModalHeader } from '@op/ui-next/Modal';
 import { useEffect, useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -41,20 +39,16 @@ export const UpdateProfileModal = ({
   }
 
   return (
-    <DialogTrigger>
-      <Modal isOpen={isOpen} onOpenChange={setIsOpen} isDismissable>
-        <Dialog>
-          <ModalHeader>{t('Edit Profile')}</ModalHeader>
-          {user.profile && (
-            <UpdateProfileForm
-              ref={formRef}
-              profile={user.profile}
-              onSuccess={() => setIsOpen(false)}
-              className="p-6"
-            />
-          )}
-        </Dialog>
-      </Modal>
-    </DialogTrigger>
+    <Modal isOpen={isOpen} onOpenChange={setIsOpen} isDismissable>
+      <ModalHeader>{t('Edit Profile')}</ModalHeader>
+      {user.profile && (
+        <UpdateProfileForm
+          ref={formRef}
+          profile={user.profile}
+          onSuccess={() => setIsOpen(false)}
+          className="p-6"
+        />
+      )}
+    </Modal>
   );
 };

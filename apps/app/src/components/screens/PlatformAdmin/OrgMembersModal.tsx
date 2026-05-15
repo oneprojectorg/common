@@ -3,8 +3,8 @@
 import type { AdminOrg } from '@op/api/encoders';
 import { Avatar } from '@op/ui-next/Avatar';
 import { Chip } from '@op/ui-next/Chip';
+import { Modal, ModalBody, ModalHeader } from '@op/ui-next/Modal';
 import { Surface } from '@op/ui-next/Surface';
-import { Modal, ModalBody, ModalHeader } from '@op/ui/Modal';
 import { ProfileItem } from '@op/ui/ProfileItem';
 import { LuUsers } from 'react-icons/lu';
 

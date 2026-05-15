@@ -3,10 +3,9 @@
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui-next/Button';
 import { Header1, Header3 } from '@op/ui-next/Header';
+import { Modal } from '@op/ui-next/Modal';
 import { Skeleton } from '@op/ui-next/Skeleton';
 import { CheckIcon } from '@op/ui/CheckIcon';
-import { DialogTrigger } from '@op/ui/Dialog';
-import { Modal } from '@op/ui/Modal';
 import { Suspense } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -38,56 +37,58 @@ const VoteSuccessModalSuspense = ({
   const processTitle = processInstance.name;
 
   return (
-    <DialogTrigger isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <Modal isDismissable confetti>
-        <div className="z-10 p-12 text-center">
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-col items-center gap-4">
-              <div className="flex size-16 flex-col items-center justify-center gap-4">
-                <CheckIcon />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Header1 className="font-serif text-2xl font-light">
-                  {t('Your ballot is in!')}
-                </Header1>
-
-                <p className="text-base text-neutral-charcoal">
-                  {processTitle
-                    ? t(
-                        'Thank you for participating in {title}. Your voice helps shape how we invest in our community.',
-                        {
-                          title: processTitle,
-                        },
-                      )
-                    : t(
-                        'Thank you for participating in the 2025 Community Vote. Your voice helps shape how we invest in our community.',
-                      )}
-                </p>
-              </div>
-
-              {nextSteps.length > 0 && (
-                <div className="flex w-full flex-col gap-6 text-left text-base text-neutral-charcoal">
-                  <Header3>{t("Here's what will happen next:")}</Header3>
-                  <ul className="flex flex-col gap-4 pl-4">
-                    {nextSteps.map((step) => (
-                      <li key={step.id} className="flex items-start gap-2">
-                        <span>•</span>
-                        <span>{formatStepForDisplay(step)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+    <Modal
+      isOpen={isOpen}
+      onOpenChange={(open) => !open && onClose()}
+      isDismissable
+    >
+      <div className="z-10 p-12 text-center">
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex size-16 flex-col items-center justify-center gap-4">
+              <CheckIcon />
             </div>
 
-            <Button onPress={onClose} color="primary" className="w-full">
-              {t('View all proposals')}
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Header1 className="font-serif text-2xl font-light">
+                {t('Your ballot is in!')}
+              </Header1>
+
+              <p className="text-base text-neutral-charcoal">
+                {processTitle
+                  ? t(
+                      'Thank you for participating in {title}. Your voice helps shape how we invest in our community.',
+                      {
+                        title: processTitle,
+                      },
+                    )
+                  : t(
+                      'Thank you for participating in the 2025 Community Vote. Your voice helps shape how we invest in our community.',
+                    )}
+              </p>
+            </div>
+
+            {nextSteps.length > 0 && (
+              <div className="flex w-full flex-col gap-6 text-left text-base text-neutral-charcoal">
+                <Header3>{t("Here's what will happen next:")}</Header3>
+                <ul className="flex flex-col gap-4 pl-4">
+                  {nextSteps.map((step) => (
+                    <li key={step.id} className="flex items-start gap-2">
+                      <span>•</span>
+                      <span>{formatStepForDisplay(step)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
+
+          <Button onPress={onClose} color="primary" className="w-full">
+            {t('View all proposals')}
+          </Button>
         </div>
-      </Modal>
-    </DialogTrigger>
+      </div>
+    </Modal>
   );
 };
 

@@ -2,8 +2,8 @@
 
 import { Button } from '@op/ui-next/Button';
 import { Header1 } from '@op/ui-next/Header';
+import { Modal } from '@op/ui-next/Modal';
 import { CheckIcon } from '@op/ui/CheckIcon';
-import { Modal } from '@op/ui/Modal';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 

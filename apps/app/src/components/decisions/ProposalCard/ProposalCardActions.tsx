@@ -4,8 +4,7 @@ import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
 import { Button, ButtonLink } from '@op/ui-next/Button';
-import { DialogTrigger } from '@op/ui/Dialog';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuBookmark, LuHeart, LuPencil, LuTrash2 } from 'react-icons/lu';
@@ -139,50 +138,49 @@ export function ProposalCardOwnerActions({
           <LuPencil className="size-4" />
           {t('Edit')}
         </ButtonLink>
-        <DialogTrigger
+        <Button
+          onPress={() => setIsDeleteModalOpen(true)}
+          color="secondary"
+          size="small"
+          className="w-full"
+          isDisabled={deleteProposalMutation.isPending}
+        >
+          <LuTrash2 className="size-4" />
+          {t('Delete')}
+        </Button>
+        <Modal
           isOpen={isDeleteModalOpen}
           onOpenChange={setIsDeleteModalOpen}
+          isDismissable
         >
-          <Button
-            onPress={() => setIsDeleteModalOpen(true)}
-            color="secondary"
-            size="small"
-            className="w-full"
-            isDisabled={deleteProposalMutation.isPending}
-          >
-            <LuTrash2 className="size-4" />
-            {t('Delete')}
-          </Button>
-          <Modal isDismissable>
-            <ModalHeader>{t('Delete Proposal')}</ModalHeader>
-            <ModalBody>
-              <p>
-                {t(
-                  'Are you sure you want to delete this proposal? This action cannot be undone.',
-                )}
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button
-                color="secondary"
-                className="w-full sm:w-fit"
-                onPress={() => setIsDeleteModalOpen(false)}
-              >
-                {t('Cancel')}
-              </Button>
-              <Button
-                color="destructive"
-                onPress={handleDelete}
-                className="w-full sm:w-fit"
-                isDisabled={deleteProposalMutation.isPending}
-              >
-                {deleteProposalMutation.isPending
-                  ? t('Deleting...')
-                  : t('Delete')}
-              </Button>
-            </ModalFooter>
-          </Modal>
-        </DialogTrigger>
+          <ModalHeader>{t('Delete Proposal')}</ModalHeader>
+          <ModalBody>
+            <p>
+              {t(
+                'Are you sure you want to delete this proposal? This action cannot be undone.',
+              )}
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              color="secondary"
+              className="w-full sm:w-fit"
+              onPress={() => setIsDeleteModalOpen(false)}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button
+              color="destructive"
+              onPress={handleDelete}
+              className="w-full sm:w-fit"
+              isDisabled={deleteProposalMutation.isPending}
+            >
+              {deleteProposalMutation.isPending
+                ? t('Deleting...')
+                : t('Delete')}
+            </Button>
+          </ModalFooter>
+        </Modal>
       </div>
     </>
   );

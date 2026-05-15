@@ -3,9 +3,9 @@
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { Button } from '@op/ui-next/Button';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { Skeleton } from '@op/ui-next/Skeleton';
 import { AlertBanner } from '@op/ui/AlertBanner';
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { toast } from '@op/ui/Toast';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
