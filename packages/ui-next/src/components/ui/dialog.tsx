@@ -2,10 +2,10 @@
 
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import * as React from 'react';
+import { LuX } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
 import { Button } from './button';
-import { IconPlaceholder } from './icon-placeholder';
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -70,13 +70,7 @@ function DialogContent({
               />
             }
           >
-            <IconPlaceholder
-              lucide="XIcon"
-              tabler="IconX"
-              hugeicons="Cancel01Icon"
-              phosphor="XIcon"
-              remixicon="RiCloseLine"
-            />
+            <LuX className="size-4" />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}

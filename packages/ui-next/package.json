@@ -29,6 +29,7 @@
     "./Checkbox": "./src/components/Checkbox.ts",
     "./RadioGroup": "./src/components/RadioGroup.ts",
     "./Menu": "./src/components/Menu.ts",
+    "./Modal": "./src/components/Modal.tsx",
     "./OptionMenu": "./src/components/OptionMenu.tsx"
   },
   "scripts": {
