@@ -41,18 +41,7 @@ import {
 } from '@/components/decisions/proposalEditor/proposalEditorAsideParams';
 import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor/useRestoreProposalVersion';
 
-/**
- * Shared layout for the proposal editor route.
- *
- * Persists across query string updates so the collaborative editor,
- * Yjs connection, and draft state are never remounted while the aside
- * panel is opened or closed.
- */
-export default function ProposalEditorLayout({
-  children: _children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function ProposalEditorPage() {
   const { profileId, slug } = useParams<{
     profileId: string;
     slug: string;
@@ -221,13 +210,6 @@ export default function ProposalEditorLayout({
   );
 }
 
-/**
- * Inner content rendered within the collaborative document providers.
- *
- * Separated from the layout so hooks that depend on `CollaborativeDocProvider`
- * and `VersionPreviewProvider` (like `useRestoreProposalVersion`) can safely
- * access those contexts.
- */
 function ProposalEditorContent({
   proposal,
   instance,
