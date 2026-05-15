@@ -26,7 +26,8 @@
     "./NumberField": "./src/components/NumberField.tsx",
     "./SearchField": "./src/components/SearchField.tsx",
     "./Select": "./src/components/Select.tsx",
-    "./Checkbox": "./src/components/Checkbox.ts"
+    "./Checkbox": "./src/components/Checkbox.ts",
+    "./RadioGroup": "./src/components/RadioGroup.ts"
   },
   "scripts": {
     "build": "pnpm build:styles && storybook build",

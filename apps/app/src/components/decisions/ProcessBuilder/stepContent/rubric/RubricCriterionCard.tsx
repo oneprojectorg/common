@@ -1,13 +1,14 @@
 'use client';
 
 import { Button } from '@op/ui-next/Button';
+import { Field, FieldLabel } from '@op/ui-next/Field';
 import { NumberField } from '@op/ui-next/NumberField';
+import { RadioGroup, RadioGroupItem } from '@op/ui-next/RadioGroup';
 import { TextField } from '@op/ui-next/TextField';
 import {
   CollapsibleConfigCard,
   CollapsibleConfigCardDragPreview,
 } from '@op/ui/CollapsibleConfigCard';
-import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import type { SortableItemControls } from '@op/ui/Sortable';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { cn } from '@op/ui/utils';
@@ -231,31 +232,36 @@ function CriterionTypeSelector({
   const t = useTranslations();
 
   return (
-    <RadioGroup
-      label={t('How should reviewers score this?')}
-      value={value}
-      onChange={(newValue) => onChange(newValue as RubricCriterionType)}
-      orientation="vertical"
-      labelClassName="text-base"
-    >
-      {CRITERION_TYPES.map((type) => {
-        const entry = CRITERION_TYPE_REGISTRY[type];
-        return (
-          <Radio
-            key={type}
-            value={type}
-            className="group flex items-start gap-2 py-2"
-          >
-            <div className="relative -top-0.5">
-              <span>{t(entry.labelKey)}</span>
-              <p className="text-sm text-neutral-gray4">
-                {t(entry.descriptionKey)}
-              </p>
-            </div>
-          </Radio>
-        );
-      })}
-    </RadioGroup>
+    <Field>
+      <FieldLabel className="text-base">
+        {t('How should reviewers score this?')}
+      </FieldLabel>
+      <RadioGroup
+        value={value}
+        onValueChange={(newValue) => onChange(newValue as RubricCriterionType)}
+        className="flex flex-col gap-2"
+      >
+        {CRITERION_TYPES.map((type) => {
+          const entry = CRITERION_TYPE_REGISTRY[type];
+          const id = `criterion-${type}`;
+          return (
+            <label
+              key={type}
+              htmlFor={id}
+              className="group flex items-start gap-2 py-2"
+            >
+              <RadioGroupItem id={id} value={type} className="mt-1" />
+              <div className="relative -top-0.5">
+                <span>{t(entry.labelKey)}</span>
+                <p className="text-sm text-neutral-gray4">
+                  {t(entry.descriptionKey)}
+                </p>
+              </div>
+            </label>
+          );
+        })}
+      </RadioGroup>
+    </Field>
   );
 }
 

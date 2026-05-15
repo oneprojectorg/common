@@ -311,6 +311,8 @@ Then one final merge `shadcn-full-install` → `dev`.
 
 7. **Known: shadcn Select inside @op/ui Modal does not work.** RAC Modal sets `inert` on body-sibling subtrees while open. shadcn Select uses Portal to render its content under `document.body` — that subtree becomes inert when the Modal is open, so dropdown items cannot receive hover/click. Resolves automatically in Tier 4 once Modal migrates to shadcn Dialog (no cross-portal conflict). Until then, any Select rendered inside a Modal is non-interactive. Workaround: defer such forms to a non-modal page, or fast-forward those specific Modal sites to shadcn Dialog ahead of Tier 4.
 
+8. **Known: RAC MenuTrigger + shadcn Button child does not open menu.** RAC `MenuTrigger` reads clicks via RAC's `Pressable` system (`onPress`). After Tier 1b migrated Button to shadcn (native `onClick`), any `<MenuTrigger><Button .../>... </MenuTrigger>` pattern stops opening the menu. Affects header avatar menu, header create menu, and other `@op/ui/Menu`-driven dropdowns. Resolves automatically in Tier 5 once `@op/ui/Menu` migrates to shadcn DropdownMenu (trigger wired via `DropdownMenuTrigger asChild`). No app-level fix needed until then.
+
 4. **Surface → Card composition migration.** Tier 2b kept Surface call sites as plain-children. shadcn Card primitive ships `CardHeader`/`CardContent`/`CardFooter`/`CardTitle`/`CardDescription`/`CardAction` slot composition. Migrate Surface consumers to use the slots for cleaner spacing semantics. JSX restructure per site, not codemod-mechanical. When done, restore shadcn's default `py-4` on Card plus the slot-aware padding resets (`has-data-[slot=card-footer]:pb-0`, `has-[>img:first-child]:pt-0`) — currently dropped because consumers pad manually.
 
 ## Risk register

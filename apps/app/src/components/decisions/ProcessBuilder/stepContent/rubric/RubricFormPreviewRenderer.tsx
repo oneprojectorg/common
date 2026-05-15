@@ -5,8 +5,8 @@ import {
   isOverallRecommendationField,
   parseSchemaOptions,
 } from '@op/common/client';
+import { RadioGroup, RadioGroupItem } from '@op/ui-next/RadioGroup';
 import { Select } from '@op/ui-next/Select';
-import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { ToggleButton } from '@op/ui/ToggleButton';
 import { LuPlus } from 'react-icons/lu';
 
@@ -61,16 +61,20 @@ function RubricField({ field }: { field: FieldDescriptor }) {
     return (
       <div className="flex flex-col gap-3">
         <FieldHeader title={schema.title} />
-        <RadioGroup
-          className="gap-0"
-          aria-label={schema.title}
-          orientation="horizontal"
-        >
-          {recOptions.map((option) => (
-            <Radio key={String(option.value)} value={String(option.value)}>
-              {option.title || String(option.value)}
-            </Radio>
-          ))}
+        <RadioGroup aria-label={schema.title} className="flex flex-row gap-4">
+          {recOptions.map((option) => {
+            const id = `rec-preview-${String(option.value)}`;
+            return (
+              <label
+                key={String(option.value)}
+                htmlFor={id}
+                className="flex items-center gap-2 py-2"
+              >
+                <RadioGroupItem id={id} value={String(option.value)} />
+                {option.title || String(option.value)}
+              </label>
+            );
+          })}
         </RadioGroup>
       </div>
     );

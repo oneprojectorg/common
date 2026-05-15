@@ -1,8 +1,9 @@
 import { Button } from '@op/ui-next/Button';
+import { Field, FieldLabel } from '@op/ui-next/Field';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
+import { RadioGroup, RadioGroupItem } from '@op/ui-next/RadioGroup';
 import { ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Dialog } from '@op/ui/RAC';
-import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { useState, useTransition } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -44,55 +45,83 @@ export const FundingRoleModal = ({
           <ModalHeader>{t('Specify your funding relationship')}</ModalHeader>
           <ModalBody>
             <div>
-              <RadioGroup
-                label={t('How do your organizations support each other?')}
-                value={selectedRole || ''}
-                onChange={(value: string) =>
-                  setSelectedRole(value as FundingRole)
-                }
-                orientation="vertical"
-              >
-                <Radio value="funder">
-                  <div className="flex flex-col">
-                    <div>
-                      {t('Your organization funds {organizationName}', {
-                        organizationName,
-                      })}
+              <Field>
+                <FieldLabel>
+                  {t('How do your organizations support each other?')}
+                </FieldLabel>
+                <RadioGroup
+                  value={selectedRole || ''}
+                  onValueChange={(value: string) =>
+                    setSelectedRole(value as FundingRole)
+                  }
+                  className="flex flex-col gap-2"
+                >
+                  <label
+                    htmlFor="funding-funder"
+                    className="flex items-start gap-2 py-2"
+                  >
+                    <RadioGroupItem
+                      id="funding-funder"
+                      value="funder"
+                      className="mt-1"
+                    />
+                    <div className="flex flex-col">
+                      <div>
+                        {t('Your organization funds {organizationName}', {
+                          organizationName,
+                        })}
+                      </div>
+                      <div className="text-sm text-neutral-gray4">
+                        {t(
+                          'Your organization provides financial support to {organizationName}.',
+                          { organizationName },
+                        )}
+                      </div>
                     </div>
-                    <div className="text-sm text-neutral-gray4">
-                      {t(
-                        'Your organization provides financial support to {organizationName}.',
-                        { organizationName },
-                      )}
+                  </label>
+                  <label
+                    htmlFor="funding-fundee"
+                    className="flex items-start gap-2 py-2"
+                  >
+                    <RadioGroupItem
+                      id="funding-fundee"
+                      value="fundee"
+                      className="mt-1"
+                    />
+                    <div className="flex flex-col">
+                      <div>
+                        {t('{organizationName} funds your organization', {
+                          organizationName,
+                        })}
+                      </div>
+                      <div className="text-sm text-neutral-gray4">
+                        {t(
+                          '{organizationName} provides financial support to your organization.',
+                          { organizationName },
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </Radio>
-                <Radio value="fundee">
-                  <div className="flex flex-col">
-                    <div>
-                      {t('{organizationName} funds your organization', {
-                        organizationName,
-                      })}
+                  </label>
+                  <label
+                    htmlFor="funding-both"
+                    className="flex items-start gap-2 py-2"
+                  >
+                    <RadioGroupItem
+                      id="funding-both"
+                      value="funderAndFundee"
+                      className="mt-1"
+                    />
+                    <div className="flex flex-col">
+                      <div>{t('Mutual funding')}</div>
+                      <div className="text-sm text-neutral-gray4">
+                        {t(
+                          'Both organizations provide financial support to each other.',
+                        )}
+                      </div>
                     </div>
-                    <div className="text-sm text-neutral-gray4">
-                      {t(
-                        '{organizationName} provides financial support to your organization.',
-                        { organizationName },
-                      )}
-                    </div>
-                  </div>
-                </Radio>
-                <Radio value="funderAndFundee">
-                  <div className="flex flex-col">
-                    <div>{t('Mutual funding')}</div>
-                    <div className="text-sm text-neutral-gray4">
-                      {t(
-                        'Both organizations provide financial support to each other.',
-                      )}
-                    </div>
-                  </div>
-                </Radio>
-              </RadioGroup>
+                  </label>
+                </RadioGroup>
+              </Field>
             </div>
           </ModalBody>
           <ModalFooter>

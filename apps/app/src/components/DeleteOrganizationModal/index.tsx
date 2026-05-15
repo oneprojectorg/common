@@ -8,8 +8,8 @@ import { EntityType } from '@op/api/encoders';
 import { match } from '@op/core';
 import { Avatar } from '@op/ui-next/Avatar';
 import { Button } from '@op/ui-next/Button';
+import { RadioGroup, RadioGroupItem } from '@op/ui-next/RadioGroup';
 import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
-import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { toast } from '@op/ui/Toast';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -167,7 +167,8 @@ const SelectProfileStep = ({
         <RadioGroup
           aria-labelledby="select-accounts-label"
           value={selectedProfile}
-          onChange={setSelectedProfile}
+          onValueChange={setSelectedProfile}
+          className="flex flex-col gap-2"
         >
           {allProfiles.map((profile) => {
             const profileType = match(profile.type, {
@@ -175,18 +176,23 @@ const SelectProfileStep = ({
               individual: t('Individual'),
             });
             return (
-              <Radio
+              <label
                 key={profile.id}
-                className="items-start py-2"
-                value={profile.id}
+                htmlFor={`profile-${profile.id}`}
+                className="flex items-start gap-2 py-2"
               >
+                <RadioGroupItem
+                  id={`profile-${profile.id}`}
+                  value={profile.id}
+                  className="mt-1"
+                />
                 <div className="flex flex-col gap-0.5">
                   <span className="text-base leading-[1.05] text-neutral-charcoal">
                     {profile.name}
                   </span>
                   <p className="text-neutral-gray4">{profileType}</p>
                 </div>
-              </Radio>
+              </label>
             );
           })}
         </RadioGroup>
