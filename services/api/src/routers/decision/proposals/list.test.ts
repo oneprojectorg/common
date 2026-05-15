@@ -2227,3 +2227,170 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     expect(reviewResult.proposals.map((p) => p.id)).toContain(draft.id);
   });
 });
+
+describe.concurrent('listProposals phase edit rule', () => {
+  it('should not mark a proposal as editable when editing is disabled on the current phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const submitter = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const proposal = await testData.createProposal({
+      userEmail: submitter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Locked Proposal' },
+    });
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
+
+    await testData.setPhaseProposalRules(instance.instance.id, 'initial', {
+      edit: false,
+    });
+
+    const submitterCaller = await createAuthenticatedCaller(submitter.email);
+    const result = await submitterCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    const mine = result.proposals.find((p) => p.id === proposal.id);
+    expect(mine?.isEditable).toBe(false);
+  });
+
+  it('should mark a proposal as editable when editing is enabled on the current phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const submitter = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const proposal = await testData.createProposal({
+      userEmail: submitter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Editable Proposal' },
+    });
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
+
+    await testData.setPhaseProposalRules(instance.instance.id, 'initial', {
+      edit: true,
+    });
+
+    const submitterCaller = await createAuthenticatedCaller(submitter.email);
+    const result = await submitterCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    const mine = result.proposals.find((p) => p.id === proposal.id);
+    expect(mine?.isEditable).toBe(true);
+  });
+
+  it('should mark a draft proposal as editable regardless of the phase edit setting', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const submitter = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const proposal = await testData.createProposal({
+      userEmail: submitter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Draft Proposal' },
+    });
+
+    await testData.setPhaseProposalRules(instance.instance.id, 'initial', {
+      edit: false,
+    });
+
+    const submitterCaller = await createAuthenticatedCaller(submitter.email);
+    const result = await submitterCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    const mine = result.proposals.find((p) => p.id === proposal.id);
+    expect(mine?.status).toBe(ProposalStatus.DRAFT);
+    expect(mine?.isEditable).toBe(true);
+  });
+
+  it('should mark a proposal as editable for an instance admin when editing is disabled on the current phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Admin creates and owns the proposal; isEditable reflects access.update
+    // on the proposal's own profile, which the admin only has when they are
+    // also a member of that profile (which is the case for self-authored
+    // proposals).
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Admin-authored' },
+    });
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
+
+    await testData.setPhaseProposalRules(instance.instance.id, 'initial', {
+      edit: false,
+    });
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await adminCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    const adminProposal = result.proposals.find((p) => p.id === proposal.id);
+    expect(adminProposal?.isEditable).toBe(true);
+  });
+});

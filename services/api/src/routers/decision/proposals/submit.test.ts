@@ -1054,8 +1054,8 @@ describe.concurrent('submitProposal', () => {
     }
 
     // Create the proposal first (while currentStateId is still valid), then
-    // corrupt the instance to point at a phase that doesn't exist. We expect
-    // the upstream phase-allow check to reject submission.
+    // corrupt the instance to point at a phase that doesn't exist. The phase
+    // resolver throws a NotFoundError before the phase-allow check runs.
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
@@ -1071,6 +1071,6 @@ describe.concurrent('submitProposal', () => {
 
     await expect(
       caller.decision.submitProposal({ proposalId: proposal.id }),
-    ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
 });

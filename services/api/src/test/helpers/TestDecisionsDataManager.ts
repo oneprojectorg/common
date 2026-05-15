@@ -1,5 +1,6 @@
 import {
   type DecisionInstanceData,
+  type PhaseInstanceData,
   advancePhase,
   createDecisionInstance,
   createInstanceDataFromTemplate,
@@ -455,6 +456,42 @@ export class TestDecisionsDataManager {
       profileUserId: profileUser.id,
       accessRoleId: roleId,
     });
+  }
+
+  /**
+   * Merges `rules.proposals` overrides into a specific phase of an instance.
+   * Useful for toggling per-phase capabilities (submit/edit/review/defaults)
+   * mid-test without re-creating the instance.
+   */
+  async setPhaseProposalRules(
+    processInstanceId: string,
+    phaseId: string,
+    rules: Partial<
+      NonNullable<NonNullable<PhaseInstanceData['rules']>['proposals']>
+    >,
+  ): Promise<void> {
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: { id: processInstanceId },
+    });
+    if (!instanceRecord) {
+      throw new Error(`Instance not found: ${processInstanceId}`);
+    }
+    const instanceData = instanceRecord.instanceData as DecisionInstanceData;
+    const updatedPhases = instanceData.phases.map((phase) =>
+      phase.phaseId === phaseId
+        ? {
+            ...phase,
+            rules: {
+              ...phase.rules,
+              proposals: { ...phase.rules?.proposals, ...rules },
+            },
+          }
+        : phase,
+    );
+    await db
+      .update(processInstances)
+      .set({ instanceData: { ...instanceData, phases: updatedPhases } })
+      .where(eq(processInstances.id, processInstanceId));
   }
 
   /**

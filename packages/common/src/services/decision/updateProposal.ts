@@ -27,6 +27,7 @@ import type {
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
+import { canEditSubmittedProposalInPhase } from './utils/canEditSubmittedProposal';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
 async function updateProposalCategoryLink(
@@ -120,11 +121,10 @@ export const updateProposal = async ({
   }
 
   const processInstance = existingProposal.processInstance;
+  const instanceData = processInstance.instanceData as DecisionInstanceData;
 
   // Reject updates when the instance is in the final (results) phase
-  const instancePhases =
-    (processInstance.instanceData as DecisionInstanceData | null)?.phases ?? [];
-  if (isLastPhase(processInstance.currentStateId, instancePhases)) {
+  if (isLastPhase(processInstance.currentStateId, instanceData.phases)) {
     throw new ValidationError(
       'Proposals cannot be edited during the results phase',
     );
@@ -158,14 +158,25 @@ export const updateProposal = async ({
         orgFallbackPermissions: [{ decisions: permission.ADMIN }],
       });
     }
+
+    // Honor the per-phase "Proposal editing" admin toggle for authors of
+    // submitted proposals. Drafts and instance admins bypass the rule.
+    if (existingProposal.status !== ProposalStatus.DRAFT) {
+      const canEdit = await canEditSubmittedProposalInPhase({
+        user: { id: user.id },
+        processInstance,
+      });
+      if (!canEdit) {
+        throw new ValidationError(
+          'Editing this proposal is disabled in the current phase',
+        );
+      }
+    }
   }
 
   // Validate proposal data against template schema when updating non-draft proposals.
   // Drafts are inherently incomplete — validation is enforced on submission.
   if (data.proposalData && existingProposal.status !== ProposalStatus.DRAFT) {
-    const instanceData =
-      processInstance.instanceData as DecisionInstanceData | null;
-
     const proposalTemplate = await resolveProposalTemplate(
       instanceData,
       processInstance.processId,

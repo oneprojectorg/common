@@ -1,5 +1,6 @@
 import { mockCollab } from '@op/collab/testing';
-import { ProposalStatus, Visibility } from '@op/db/schema';
+import { ProposalStatus, Visibility, proposals } from '@op/db/schema';
+import { db, eq } from '@op/db/test';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -722,5 +723,178 @@ describe.concurrent('updateProposal checkpointVersion', () => {
       (result.proposalData as Record<string, unknown>)
         .collaborationDocVersionId,
     ).toBeUndefined();
+  });
+});
+
+describe.concurrent('updateProposal phase edit rule', () => {
+  it('should not allow editing a proposal when editing is disabled on the current phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Author creates a proposal and submits it
+    const submitter = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const proposal = await testData.createProposal({
+      userEmail: submitter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'My Proposal' },
+    });
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
+
+    // Admin disables post-submission editing on the current phase
+    await testData.setPhaseProposalRules(instance.instance.id, 'initial', {
+      edit: false,
+    });
+
+    const submitterCaller = await createAuthenticatedCaller(submitter.email);
+
+    await expect(
+      submitterCaller.decision.updateProposal({
+        proposalId: proposal.id,
+        data: { proposalData: { title: 'Sneaky update' } },
+      }),
+    ).rejects.toMatchObject({ cause: { statusCode: 400 } });
+  });
+
+  it('should allow editing a draft proposal regardless of the phase edit setting', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const submitter = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const proposal = await testData.createProposal({
+      userEmail: submitter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Draft' },
+    });
+
+    await testData.setPhaseProposalRules(instance.instance.id, 'initial', {
+      edit: false,
+    });
+
+    const submitterCaller = await createAuthenticatedCaller(submitter.email);
+
+    const result = await submitterCaller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { proposalData: { title: 'Updated Draft' } },
+    });
+
+    expect(result.proposalData).toMatchObject({ title: 'Updated Draft' });
+  });
+
+  it('should allow an instance admin to edit a proposal when editing is disabled on the current phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Author is a regular member; admin (setup.userEmail) is a distinct user
+    const author = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const proposal = await testData.createProposal({
+      userEmail: author.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Member-owned' },
+    });
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
+
+    await testData.setPhaseProposalRules(instance.instance.id, 'initial', {
+      edit: false,
+    });
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await adminCaller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { proposalData: { title: 'Admin override' } },
+    });
+
+    expect(result.proposalData).toMatchObject({ title: 'Admin override' });
+  });
+
+  it('should allow editing a proposal when editing is enabled on the current phase', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const submitter = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const proposal = await testData.createProposal({
+      userEmail: submitter.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'My Proposal' },
+    });
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
+
+    await testData.setPhaseProposalRules(instance.instance.id, 'initial', {
+      edit: true,
+    });
+
+    const submitterCaller = await createAuthenticatedCaller(submitter.email);
+
+    const result = await submitterCaller.decision.updateProposal({
+      proposalId: proposal.id,
+      data: { proposalData: { title: 'Now allowed' } },
+    });
+
+    expect(result.proposalData).toMatchObject({ title: 'Now allowed' });
   });
 });

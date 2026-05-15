@@ -32,6 +32,7 @@ import {
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { ProposalTemplateSchema } from './types';
+import { canEditSubmittedProposalInPhase } from './utils/canEditSubmittedProposal';
 
 /** Attachment with signed URL for accessing the file */
 type AttachmentWithUrl = {
@@ -307,6 +308,20 @@ export const getPermissionsOnProposal = async ({
   const isProfileAdmin = checkPermission({ profile: permission.ADMIN }, roles);
   if (isProfileAdmin) {
     access.admin = true;
+  }
+
+  // Honor the per-phase "Proposal editing" admin toggle. `access.admin` above
+  // reflects admin rights on the proposal's own profile (which authors hold by
+  // default), so the helper re-checks admin status against the instance profile
+  // to identify the instance admins who configure the toggle.
+  if (access.update && proposal.status !== ProposalStatus.DRAFT) {
+    const canEdit = await canEditSubmittedProposalInPhase({
+      user,
+      processInstance: proposal.processInstance,
+    });
+    if (!canEdit) {
+      access.update = false;
+    }
   }
 
   return { access };

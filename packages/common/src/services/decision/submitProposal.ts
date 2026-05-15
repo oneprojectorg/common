@@ -9,7 +9,8 @@ import { decisionPermission } from './permissions';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
-import { checkProposalsAllowed } from './utils/proposal';
+import { assertInstancePhase } from './utils/instance';
+import { getPhaseProposalCapabilities } from './utils/phaseCapabilities';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
 export interface SubmitProposalInput {
@@ -67,21 +68,19 @@ export const submitProposal = async ({
   );
 
   const instanceData = instance.instanceData as DecisionInstanceData;
-  const currentPhaseId = instance.currentStateId;
 
-  if (!currentPhaseId) {
+  if (!instance.currentStateId) {
     throw new ValidationError('Invalid phase in process instance');
   }
 
-  // Check if proposals are allowed in current phase
-  const { allowed, phaseName } = checkProposalsAllowed(
-    instanceData.phases,
-    currentPhaseId,
-  );
+  const currentPhase = assertInstancePhase({
+    instance: { instanceData },
+    phaseId: instance.currentStateId,
+  });
 
-  if (!allowed) {
+  if (!getPhaseProposalCapabilities(currentPhase).canSubmit) {
     throw new ValidationError(
-      `Proposals are not allowed in the ${phaseName} phase`,
+      `Proposals are not allowed in the ${currentPhase.name ?? 'Unknown'} phase`,
     );
   }
 

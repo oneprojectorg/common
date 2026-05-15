@@ -28,7 +28,7 @@ import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
-import { UnauthorizedError } from '../../utils';
+import { CommonError, UnauthorizedError } from '../../utils';
 import {
   assertInstanceProfileAccess,
   getCurrentProfileId,
@@ -41,6 +41,9 @@ import {
 } from './getProposalsForPhase';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
+import type { DecisionInstanceData } from './schemas/instanceData';
+import { assertInstancePhase } from './utils/instance';
+import { getPhaseProposalCapabilities } from './utils/phaseCapabilities';
 
 export interface ListProposalsInput {
   processInstanceId: string;
@@ -235,12 +238,9 @@ export const listProposals = async ({
   // Run access checks in parallel with the phase-IDs resolution. Both depend
   // only on the instance row (already fetched), so there's no ordering
   // dependency — the auth check still throws on failure, just slightly later.
-  const accessPromise: Promise<{
-    profileUser: Awaited<ReturnType<typeof getProfileAccessUser>>;
-    canManageProposals: boolean;
-  }> = (async () => {
+  const accessPromise: Promise<{ canManageProposals: boolean }> = (async () => {
     if (skipAccessCheck) {
-      return { profileUser: undefined, canManageProposals: false };
+      return { canManageProposals: false };
     }
     const profileUser = await getProfileAccessUser({
       user,
@@ -259,7 +259,6 @@ export const listProposals = async ({
       ],
     });
     return {
-      profileUser,
       canManageProposals: checkPermission(
         { profile: permission.ADMIN },
         profileUser?.roles ?? [],
@@ -267,10 +266,8 @@ export const listProposals = async ({
     };
   })();
 
-  const [
-    { phaseProposalIds, phaseDraftIds },
-    { profileUser, canManageProposals },
-  ] = await Promise.all([phaseIdsPromise, accessPromise]);
+  const [{ phaseProposalIds, phaseDraftIds }, { canManageProposals }] =
+    await Promise.all([phaseIdsPromise, accessPromise]);
 
   // For trusted contexts (skipAccessCheck), drafts are never returned and phase
   // scoping is the only proposal-id filter — so an empty phase set means no results.
@@ -427,6 +424,21 @@ export const listProposals = async ({
     instance.processId,
   );
 
+  // Hoisted out of the per-row loop: every proposal in the list shares the
+  // same current phase, so this only needs to be resolved once per request.
+  if (!instance.currentStateId) {
+    throw new CommonError(
+      `Process instance ${instance.id} is missing a currentStateId`,
+    );
+  }
+  const instanceData = instance.instanceData as DecisionInstanceData;
+  const currentPhase = assertInstancePhase({
+    instance: { instanceData },
+    phaseId: instance.currentStateId,
+  });
+  const editingAllowedInCurrentPhase =
+    getPhaseProposalCapabilities(currentPhase).canEdit;
+
   type ProposalListItem = (typeof proposalList)[number];
 
   // Get relationship data for all proposal profiles using optimized Drizzle queries
@@ -566,15 +578,16 @@ export const listProposals = async ({
       ? relationshipData.get(proposal.profileId)
       : null;
 
-    // In results phase, proposals are never editable
-    // Check if proposal is editable by current user
+    // In results phase, proposals are never editable. Otherwise, instance
+    // admins can always edit; authors of submitted proposals additionally
+    // need the current phase's `proposals.edit` rule to be enabled.
     const isOwner = proposal.submittedByProfileId === currentProfileId;
-    const hasAdminPermission = checkPermission(
-      { profile: permission.ADMIN },
-      profileUser?.roles ?? [],
-    );
+    const ownerCanEdit =
+      isOwner &&
+      (proposal.status === ProposalStatus.DRAFT ||
+        editingAllowedInCurrentPhase);
     const isEditable =
-      input.phase === 'results' ? false : isOwner || hasAdminPermission;
+      input.phase === 'results' ? false : canManageProposals || ownerCanEdit;
 
     return {
       id: proposal.id,
