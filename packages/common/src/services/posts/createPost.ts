@@ -19,6 +19,7 @@ import { CommonError } from '../../utils';
 import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
 import { decisionPermission } from '../decision/permissions';
 import { sendCommentNotificationEmail } from '../email';
+import { buildProposalCommentUrl } from './commentNotificationUrls';
 import { resolvePostRoots } from './resolvePostRoots';
 
 interface CreatePostServiceInput extends CreatePostInput {
@@ -137,7 +138,11 @@ const sendProposalCommentNotification = async (
       where: { id: proposalId },
       with: {
         profile: true,
-        processInstance: true,
+        processInstance: {
+          with: {
+            profile: true,
+          },
+        },
       },
     });
 
@@ -167,15 +172,15 @@ const sendProposalCommentNotification = async (
 
           const baseUrl = OPURLConfig('APP').ENV_URL;
 
-          // Get processInstanceId for the URL
-          const processInstanceId = proposal.processInstance
-            ? (proposal.processInstance as any).id
-            : 'unknown';
+          const contentUrl = buildProposalCommentUrl({
+            baseUrl,
+            decisionSlug: proposal.processInstance?.profile?.slug,
+            proposalProfileId: proposal.profileId,
+          });
 
-          // Get profile slug for the URL
-          const profileSlug = proposal.profile.slug || 'unknown';
-
-          const contentUrl = `${baseUrl}/profile/${profileSlug}/decisions/${processInstanceId}/proposal/${proposal.profileId}`;
+          if (!contentUrl) {
+            return;
+          }
 
           // Extract proposal content from proposalData
           const proposalContent =
