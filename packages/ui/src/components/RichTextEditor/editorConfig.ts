@@ -20,7 +20,7 @@ export const viewerProseStyles = [
   '[&_a:hover]:underline [&_a]:text-teal [&_a]:no-underline',
   '[&_li_p]:my-0',
   '[&_blockquote]:font-normal',
-  '[&_:is(h1,h2)]:my-4 [&_:is(h1,h2)]:font-serif',
+  '[&_:is(h1,h2,h3)]:my-4 [&_:is(h1,h2,h3)]:font-serif [&_:is(h1,h2,h3)]:text-neutral-black',
   '[&_h1]:text-title-lg [&_h2]:text-title-md [&_h3]:text-title-base',
   'leading-5 max-w-none break-words overflow-wrap-anywhere',
 ].join(' ');
