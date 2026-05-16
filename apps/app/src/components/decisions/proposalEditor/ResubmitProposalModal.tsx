@@ -30,13 +30,13 @@ export function ResubmitProposalModal({
   const submitRevisionResponse =
     trpc.decision.submitRevisionResponse.useMutation({
       onSuccess: () => {
-        toast.success({ title: t('Proposal resubmitted') });
+        toast.success({ message: t('Proposal resubmitted') });
         onOpenChange(false);
         setComment('');
         router.push(backHref);
       },
       onError: () => {
-        toast.error({ title: t('Failed to resubmit proposal') });
+        toast.error({ message: t('Failed to resubmit proposal') });
       },
     });
 
