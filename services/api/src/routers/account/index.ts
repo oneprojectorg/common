@@ -1,5 +1,6 @@
 import { mergeRouters } from '../../trpcFactory';
 import { completeOnboarding } from './completeOnboarding';
+import { deleteAccountRouter } from './deleteAccount';
 import { getMyAccount } from './getMyAccount';
 import { getUserProfiles } from './getUserProfiles';
 import { listUserInvitesRouter } from './listUserInvites';
@@ -15,6 +16,7 @@ const accountRouter = mergeRouters(
   login,
   getMyAccount,
   completeOnboarding,
+  deleteAccountRouter,
   getUserProfiles,
   listUserInvitesRouter,
   updateUserProfile,
