@@ -62,8 +62,8 @@ export const DecisionContentSkeleton = () => {
           </div>
         </div>
       </div>
-      <div className="border-t bg-white py-12">
-        <div className="mx-auto bg-white sm:max-w-6xl">
+      <div className="border-t bg-white">
+        <div className="mx-auto bg-white p-4 sm:max-w-6xl sm:p-8">
           <ProposalListSkeleton />
         </div>
       </div>
