@@ -54,8 +54,8 @@ const checkboxStyles = tv({
   base: 'group flex items-center gap-2 text-sm transition',
   variants: {
     isDisabled: {
-      false: 'text-neutral-800',
-      true: 'text-neutral-gray2',
+      false: 'cursor-pointer text-neutral-800',
+      true: 'cursor-not-allowed text-neutral-gray2',
     },
   },
 });
@@ -65,14 +65,14 @@ const boxStyles = tv({
   base: 'flex size-6 shrink-0 items-center justify-center rounded-md border border-neutral-gray2 transition',
   variants: {
     isSelected: {
-      false: '',
-      true: 'border-none bg-teal text-neutral-offWhite',
+      false: 'group-hover:border-neutral-gray3',
+      true: 'border-none bg-teal text-neutral-offWhite group-hover:bg-primary-tealBlack',
     },
     isInvalid: {
       true: '[--color:var(--color-red-600)] group-pressed:[--color:var(--color-red-700)]',
     },
     isDisabled: {
-      true: '[--color:var(--color-neutral-700)]',
+      true: '[--color:var(--color-neutral-700)] group-hover:border-neutral-gray2',
     },
     size: {
       small: 'size-4',
