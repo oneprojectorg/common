@@ -13,30 +13,38 @@ type ProfileAvatarProps = {
   } | null;
   withLink?: boolean;
   className?: string;
+  /** Fallback seed for the placeholder avatar when no profile exists (e.g. pending invite). */
+  placeholder?: string;
 };
 
 export const ProfileAvatar = ({
   profile,
   withLink = true,
   className,
+  placeholder,
 }: ProfileAvatarProps) => {
-  if (!profile) {
+  if (!profile && !placeholder) {
     return null;
   }
 
-  const name = profile.name ?? '';
-  const avatarImage = profile.avatarImage;
-  const slug = profile.slug;
+  const name = profile?.name ?? '';
+  const avatarImage = profile?.avatarImage;
+  const slug = profile?.slug;
+  const placeholderSeed = name || placeholder || '';
 
   const avatar = (
     <Avatar
-      className={cn('size-6', withLink && 'hover:opacity-80', className)}
-      placeholder={name ?? ''}
+      className={cn(
+        'size-6',
+        withLink && slug && 'hover:opacity-80',
+        className,
+      )}
+      placeholder={placeholderSeed}
     >
       {avatarImage?.name ? (
         <Image
           src={getPublicUrl(avatarImage?.name) ?? ''}
-          alt={name ?? ''}
+          alt={name}
           fill
           className="object-cover"
         />
