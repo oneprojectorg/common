@@ -86,7 +86,7 @@ export function CollaborativeDropdownField({
       selectedKey={selectedValue}
       onSelectionChange={handleSelectionChange}
       selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
-      className="w-auto max-w-36 overflow-hidden sm:max-w-96"
+      className="w-fit max-w-full"
       popoverProps={{ className: 'sm:min-w-fit sm:max-w-2xl' }}
     >
       {allowEmpty && (
