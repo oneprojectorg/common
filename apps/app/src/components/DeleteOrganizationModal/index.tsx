@@ -6,6 +6,7 @@ import { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { match } from '@op/core';
+import { useAuthLogout } from '@op/hooks';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalFooter, ModalHeader } from '@op/ui/Modal';
@@ -39,16 +40,13 @@ export const DeleteOrganizationModal = ({
   const utils = trpc.useUtils();
   const { user } = useUser();
   const deleteProfile = trpc.organization.deleteOrganization.useMutation();
+  const deleteAccount = trpc.account.deleteAccount.useMutation();
   const switchProfile = trpc.account.switchProfile.useMutation();
+  const logout = useAuthLogout();
 
   const router = useRouter();
 
-  const userProfiles =
-    profiles?.filter(
-      (profile) =>
-        // Filter out everything that's not an ORG profile
-        profile && profile?.type === EntityType.ORG,
-    ) ?? [];
+  const userProfiles = profiles ?? [];
 
   const closeModal = () => {
     onOpenChange?.(false);
@@ -57,17 +55,23 @@ export const DeleteOrganizationModal = ({
   };
 
   const handleSubmit = () => {
-    if (!selectedProfileId) {
-      throw new Error('handleSubmit called without selectedProfileId');
+    if (!selectedProfileId || !profileToDelete) {
+      throw new Error('handleSubmit called without a selected profile');
     }
+    const isIndividual = profileToDelete.type === EntityType.INDIVIDUAL;
     startTransition(async () => {
       try {
+        if (isIndividual) {
+          await deleteAccount.mutateAsync();
+          await logout.refetch();
+          router.push('/');
+          return;
+        }
+
         await deleteProfile.mutateAsync({
           organizationProfileId: selectedProfileId,
         });
 
-        // Check if the deletedProfile is the user's current profile
-        // if so, switch to the user's individual profile
         if (user.currentProfile?.id === selectedProfileId) {
           const personalProfile = profiles?.find(
             (profile) => profile.type === EntityType.INDIVIDUAL,
