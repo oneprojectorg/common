@@ -6,6 +6,16 @@ import z from 'zod';
 
 type RenderParameter = Parameters<typeof render>;
 
+// Reject CR/LF before passing addresses to nodemailer/Resend — prevents
+// SMTP header injection (extra Bcc:, Subject:, etc.) since z.string().email()
+// alone does not strip control chars from every accepted shape.
+const safeEmailSchema = z
+  .string()
+  .email()
+  .refine((value) => !/[\r\n]/.test(value), {
+    message: 'Email must not contain CR or LF characters',
+  });
+
 export const OPNodemailer = async ({
   to,
   from,
@@ -21,7 +31,7 @@ export const OPNodemailer = async ({
   };
   renderOptions?: RenderParameter[1];
 }) => {
-  const safeEmail = z.string().email().parse(to);
+  const safeEmail = safeEmailSchema.parse(to);
 
   const { RESEND_PASSWORD } = process.env;
 
@@ -85,7 +95,7 @@ export const OPBatchSend = async (emails: BatchEmailItem[]) => {
     try {
       const batchPayload = batch.map(({ to, subject, from, component }) => ({
         from: `${from ?? APP_NAME} <${genericEmail}>`,
-        to: z.string().email().parse(to),
+        to: safeEmailSchema.parse(to),
         subject,
         react: component(),
       }));
