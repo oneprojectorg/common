@@ -1,6 +1,6 @@
 import { UserProvider } from '@/utils/UserProvider';
 import { getUser } from '@/utils/getUser';
-import { SidebarProvider } from '@op/ui/Sidebar';
+import { SidebarProvider } from '@op/ui-next/Sidebar';
 
 import { SiteHeader } from '@/components/SiteHeader';
 import PageError from '@/components/screens/PageError';

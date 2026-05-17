@@ -11,7 +11,7 @@ import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui-next/Button';
 import { Header2 } from '@op/ui-next/Header';
 import { CollapsibleConfigCard } from '@op/ui/CollapsibleConfigCard';
-import { SidebarProvider } from '@op/ui/Sidebar';
+import { SidebarProvider } from '@op/ui-next/Sidebar';
 import { Sortable } from '@op/ui/Sortable';
 import { useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';

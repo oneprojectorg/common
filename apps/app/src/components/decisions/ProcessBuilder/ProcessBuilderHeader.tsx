@@ -2,7 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { Sheet, SheetBody } from '@op/ui-next/Sheet';
-import { useSidebar } from '@op/ui/Sidebar';
+import { useSidebar } from '@op/ui-next/Sidebar';
 import { LuChevronRight, LuHouse, LuList } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';

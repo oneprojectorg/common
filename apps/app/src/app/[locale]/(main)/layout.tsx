@@ -1,6 +1,6 @@
 import { UserProvider } from '@/utils/UserProvider';
 import { getUser } from '@/utils/getUser';
-import { SidebarLayout, SidebarProvider } from '@op/ui/Sidebar';
+import { SidebarLayout, SidebarProvider } from '@op/ui-next/Sidebar';
 import { redirect } from 'next/navigation';
 import Script from 'next/script';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { SidebarProvider } from '@op/ui/Sidebar';
+import { SidebarProvider } from '@op/ui-next/Sidebar';
 
 export function ProcessBuilderShell({
   children,

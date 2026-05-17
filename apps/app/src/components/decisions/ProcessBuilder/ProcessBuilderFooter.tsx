@@ -4,7 +4,7 @@ import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { Button } from '@op/ui-next/Button';
 import { toast } from '@op/ui-next/Toast';
-import { SidebarTrigger } from '@op/ui/Sidebar';
+import { SidebarTrigger } from '@op/ui-next/Sidebar';
 import { useState } from 'react';
 import { LuLogOut } from 'react-icons/lu';
 
