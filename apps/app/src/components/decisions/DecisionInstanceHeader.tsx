@@ -12,7 +12,7 @@ import { Link } from '@/lib/i18n/routing';
 
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
-import { panelStateParser } from './DecisionSidePanel';
+import { panelStateParser } from './panelState';
 
 export const DecisionInstanceHeader = ({
   backTo,

@@ -12,8 +12,9 @@ import { IconButton } from '@op/ui/IconButton';
 import { Surface } from '@op/ui/Surface';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
-import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import { Fragment, Suspense, useCallback, useEffect } from 'react';
+import { useQueryState } from 'nuqs';
+import { Fragment, Suspense, useCallback, useEffect, useMemo } from 'react';
+import type { Key } from 'react-aria-components';
 import { LuMegaphone, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -27,13 +28,12 @@ import {
   usePostFeedActions,
 } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
-
-const PANEL_TABS = ['updates', 'meetings', 'resources'] as const;
-type PanelTab = (typeof PANEL_TABS)[number];
-
-export const panelStateParser = parseAsStringLiteral(PANEL_TABS);
+import { PANEL_TABS, type PanelTab, panelStateParser } from './panelState';
 
 const UPDATES_PAGE_SIZE = 20;
+
+const isPanelTab = (key: Key): key is PanelTab =>
+  typeof key === 'string' && (PANEL_TABS as readonly string[]).includes(key);
 
 export const DecisionSidePanel = ({
   decisionProfileId,
@@ -67,10 +67,9 @@ export const DecisionSidePanel = ({
     if (!isOpen || !isMobile) {
       return;
     }
-    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = previousOverflow;
+      document.body.style.overflow = '';
     };
   }, [isOpen, isMobile]);
 
@@ -94,15 +93,19 @@ export const DecisionSidePanel = ({
       <aside
         role="dialog"
         aria-label={t('Decision updates panel')}
-        aria-hidden={!isOpen}
+        inert={!isOpen}
         className={cn(
-          'fixed top-0 right-0 bottom-0 z-40 flex w-full max-w-full flex-col border-t border-l border-neutral-gray1 bg-white shadow-xl transition-transform duration-300 ease-out sm:top-14 sm:w-[22.5rem]',
+          'fixed top-0 right-0 bottom-0 z-40 flex w-full max-w-full flex-col border-t border-l border-neutral-gray1 bg-white text-neutral-charcoal shadow-xl transition-transform duration-300 ease-out sm:top-14 sm:w-[22.5rem]',
           isOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full',
         )}
       >
         <Tabs
           selectedKey={activeTab}
-          onSelectionChange={(key) => setPanel(key as PanelTab)}
+          onSelectionChange={(key) => {
+            if (isPanelTab(key)) {
+              void setPanel(key);
+            }
+          }}
           className="min-h-0 flex-1 gap-0"
         >
           <div className="flex shrink-0 items-center justify-between gap-2 border-b border-neutral-gray1 pr-4 sm:pt-4 sm:pr-0">
@@ -232,7 +235,10 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
       },
     );
 
-  const posts = paginatedData.pages.flatMap((page) => page.items);
+  const posts = useMemo(
+    () => paginatedData.pages.flatMap((page) => page.items),
+    [paginatedData.pages],
+  );
 
   const { ref, shouldShowTrigger } = useInfiniteScroll<HTMLDivElement>(
     fetchNextPage,

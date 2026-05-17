@@ -62,26 +62,26 @@ function DecisionHeaderContent({
     instance.selectionsAreConfirmed === true;
 
   return (
-    <DecisionTranslationProvider>
-      <div
-        className={cn(
-          isResultsView
-            ? 'bg-redPurple text-neutral-offWhite'
-            : 'bg-neutral-offWhite text-gray-700',
-        )}
-      >
-        <DecisionInstanceHeader
-          backTo={{ href: '/decisions' }}
-          title={
-            profileName ||
-            instance.name ||
-            instance.instanceData?.templateName ||
-            instance.process?.name ||
-            t('Untitled')
-          }
-          decisionSlug={decisionSlug}
-          isAdmin={isAdmin}
-        />
+    <div
+      className={cn(
+        isResultsView
+          ? 'bg-redPurple text-neutral-offWhite'
+          : 'bg-neutral-offWhite text-gray-700',
+      )}
+    >
+      <DecisionInstanceHeader
+        backTo={{ href: '/decisions' }}
+        title={
+          profileName ||
+          instance.name ||
+          instance.instanceData?.templateName ||
+          instance.process?.name ||
+          t('Untitled')
+        }
+        decisionSlug={decisionSlug}
+        isAdmin={isAdmin}
+      />
+      <DecisionTranslationProvider>
         <div className="flex flex-col overflow-x-auto sm:items-center">
           <div className="w-fit rounded-b border border-t-0 bg-white px-12 py-4 sm:px-32">
             <DecisionProcessStepper
@@ -93,9 +93,10 @@ function DecisionHeaderContent({
             />
           </div>
         </div>
-      </div>
-      {children}
-    </DecisionTranslationProvider>
+
+        {children}
+      </DecisionTranslationProvider>
+    </div>
   );
 }
 
@@ -130,16 +131,16 @@ function LegacyDecisionHeaderContent({
   });
 
   return (
-    <DecisionTranslationProvider>
-      <div className="bg-redPurple text-neutral-offWhite">
-        <DecisionInstanceHeader
-          backTo={{
-            href: slug ? `/profile/${slug}?tab=decisions` : '/decisions',
-          }}
-          title={profileName || instance.name || instance.process?.name || ''}
-          decisionSlug={decisionSlug}
-          isAdmin={isAdmin}
-        />
+    <div className="bg-redPurple text-neutral-offWhite">
+      <DecisionInstanceHeader
+        backTo={{
+          href: slug ? `/profile/${slug}?tab=decisions` : '/decisions',
+        }}
+        title={profileName || instance.name || instance.process?.name || ''}
+        decisionSlug={decisionSlug}
+        isAdmin={isAdmin}
+      />
+      <DecisionTranslationProvider>
         <div className="flex flex-col overflow-x-auto sm:items-center">
           <div className="w-fit rounded-b border border-t-0 bg-white px-12 py-4 sm:px-32">
             <DecisionProcessStepper
@@ -151,8 +152,9 @@ function LegacyDecisionHeaderContent({
             />
           </div>
         </div>
-      </div>
-      {children}
-    </DecisionTranslationProvider>
+
+        {children}
+      </DecisionTranslationProvider>
+    </div>
   );
 }
