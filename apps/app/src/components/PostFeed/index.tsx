@@ -526,6 +526,7 @@ export const usePostFeedActions = () => {
       void utils.organization.listPosts.invalidate();
       void utils.organization.listAllPosts.invalidate();
       void utils.posts.getPosts.invalidate();
+      void utils.posts.listProfilePosts.invalidate();
     },
     onError: (err) => {
       toast.error({ message: err.message || t('Failed to update reaction') });

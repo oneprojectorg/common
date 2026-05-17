@@ -30,13 +30,21 @@ export const addReaction = async (options: AddReactionOptions) => {
     });
   });
 
-  // sending this only on transaction success
-  await event.send({
-    name: Events.postReactionAdded.name,
-    data: {
-      sourceProfileId: profileId,
-      postId,
-      reactionType,
-    },
-  });
+  // sending this only on transaction success; notification failures should not
+  // surface as user-visible 500s since the reaction itself is already persisted
+  try {
+    await event.send({
+      name: Events.postReactionAdded.name,
+      data: {
+        sourceProfileId: profileId,
+        postId,
+        reactionType,
+      },
+    });
+  } catch (error) {
+    console.error(
+      '[addReaction] Failed to emit postReactionAdded event',
+      error,
+    );
+  }
 };
