@@ -14,7 +14,7 @@ import { Skeleton } from '@op/ui-next/Skeleton';
 import { toast } from '@op/ui-next/Toast';
 import { cn } from '@op/ui-next/lib/utils';
 import { TextArea } from '@op/ui/Field';
-import { Form } from '@op/ui/Form';
+import { Form } from '@op/ui-next/Form';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode, RefObject } from 'react';

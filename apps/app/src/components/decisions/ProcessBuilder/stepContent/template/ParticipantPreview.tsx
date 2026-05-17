@@ -1,7 +1,7 @@
 'use client';
 
 import type { ProposalTemplateSchema } from '@op/common/client';
-import { FileDropZone } from '@op/ui/FileDropZone';
+import { FileDropZone } from '@op/ui-next/FileDropZone';
 import { useMemo } from 'react';
 import { LuEye } from 'react-icons/lu';
 

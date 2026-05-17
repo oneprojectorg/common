@@ -12,7 +12,7 @@ import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { SocialLinks } from '@op/ui-next/SocialLinks';
 import { TextField } from '@op/ui-next/TextField';
 import { cn } from '@op/ui-next/lib/utils';
-import { Form } from '@op/ui/Form';
+import { Form } from '@op/ui-next/Form';
 import { useSearchParams } from 'next/navigation';
 import React, { useCallback } from 'react';
 import { FcGoogle as GoogleIcon } from 'react-icons/fc';

@@ -11,7 +11,7 @@ import { ProfileItem } from '@op/ui-next/ProfileItem';
 import { Skeleton } from '@op/ui-next/Skeleton';
 import { Surface } from '@op/ui-next/Surface';
 import { toast } from '@op/ui-next/Toast';
-import { ComboBox, ComboBoxItem } from '@op/ui/ComboBox';
+import { ComboBox, ComboBoxItem } from '@op/ui-next/ComboBox';
 import Image from 'next/image';
 import {
   FormEvent,
