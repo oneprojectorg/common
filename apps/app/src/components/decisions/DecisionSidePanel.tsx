@@ -181,7 +181,9 @@ const UpdatesTabContent = ({
 
   return (
     <div className="flex flex-col px-4 pt-4 pb-8 sm:px-6">
-      <Header2 className="font-serif text-title-base">{t('Updates')}</Header2>
+      <Header2 className="font-serif text-title-base! text-neutral-black">
+        {t('Updates')}
+      </Header2>
       <div className="mt-4 flex flex-col gap-6">
         {canPostUpdate ? (
           <Surface className="rounded-lg p-4 pt-5">
@@ -213,7 +215,9 @@ const ComingSoonContent = ({ title }: { title: string }) => {
   const t = useTranslations();
   return (
     <div className="flex flex-col px-4 pt-6 pb-8 sm:px-6">
-      <Header2 className="font-serif text-title-base">{title}</Header2>
+      <Header2 className="font-serif text-title-base! text-neutral-black">
+        {title}
+      </Header2>
       <p className="mt-4 text-sm text-neutral-gray4">{t('Coming soon')}</p>
     </div>
   );
