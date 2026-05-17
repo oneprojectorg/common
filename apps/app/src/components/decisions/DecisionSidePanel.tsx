@@ -96,7 +96,7 @@ export const DecisionSidePanel = ({
         aria-label={t('Decision updates panel')}
         aria-hidden={!isOpen}
         className={cn(
-          'fixed top-0 right-0 bottom-0 z-40 flex w-full max-w-full flex-col border-l border-neutral-gray1 bg-white shadow-xl transition-transform duration-300 ease-out sm:top-14 sm:w-80',
+          'fixed top-0 right-0 bottom-0 z-40 flex w-full max-w-full flex-col border-l border-neutral-gray1 bg-white shadow-xl transition-transform duration-300 ease-out sm:top-14 sm:w-[22.5rem]',
           isOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full',
         )}
       >
@@ -105,7 +105,7 @@ export const DecisionSidePanel = ({
           onSelectionChange={(key) => setPanel(key as PanelTab)}
           className="min-h-0 flex-1 gap-0"
         >
-          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-neutral-gray1 pr-4 sm:pr-0">
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-neutral-gray1 pr-4 sm:pt-4 sm:pr-0">
             <TabList
               aria-label={t('Decision side panel tabs')}
               className="grow border-b-0 px-4 sm:px-6"
@@ -184,7 +184,7 @@ const UpdatesTabContent = ({
       <Header2 className="font-serif text-title-base">{t('Updates')}</Header2>
       <div className="mt-4 flex flex-col gap-6">
         {canPostUpdate ? (
-          <Surface className="p-4">
+          <Surface className="rounded-lg p-4 pt-5">
             <PostUpdate
               profileId={decisionProfileId}
               placeholder={t('Share an update with participants…')}
