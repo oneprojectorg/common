@@ -11,7 +11,7 @@ import {
 } from '@op/common/client';
 import { Header3 } from '@op/ui-next/Header';
 import { Surface } from '@op/ui-next/Surface';
-import { SplitPane } from '@op/ui/SplitPane';
+import { SplitPane } from '@op/ui-next/SplitPane';
 import { useLocale } from 'next-intl';
 import { useQueryStates } from 'nuqs';
 import { type ReactNode, useCallback, useRef, useState } from 'react';

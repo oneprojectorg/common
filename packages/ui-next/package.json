@@ -52,6 +52,7 @@
     "./FacePile": "./src/components/FacePile.tsx",
     "./FileDropZone": "./src/components/FileDropZone.tsx",
     "./Form": "./src/components/Form.tsx",
+    "./SplitPane": "./src/components/SplitPane.tsx",
     "./GrowingFacePile": "./src/components/GrowingFacePile.tsx",
     "./HorizontalList": "./src/components/HorizontalList/index.tsx",
     "./LogoLoop": "./src/components/LogoLoop.tsx",

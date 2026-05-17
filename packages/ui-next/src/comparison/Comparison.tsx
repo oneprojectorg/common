@@ -173,11 +173,13 @@ import {
 import { Checkbox as RawCheckbox } from '../components/ui/checkbox';
 import {
   Combobox as RawCombobox,
+  ComboboxChip as RawComboboxChip,
+  ComboboxChips as RawComboboxChips,
+  ComboboxChipsInput as RawComboboxChipsInput,
   ComboboxContent as RawComboboxContent,
   ComboboxEmpty as RawComboboxEmpty,
   ComboboxItem as RawComboboxItem,
   ComboboxList as RawComboboxList,
-  ComboboxTrigger as RawComboboxTrigger,
 } from '../components/ui/combobox';
 import {
   Dialog as RawDialog,
@@ -936,19 +938,24 @@ function WrapMultiSample() {
 }
 
 function RawMultiSample() {
-  const [value, setValue] = useState<string[]>([]);
+  const [value, setValue] = useState<typeof MULTI_OPTIONS>([]);
   return (
     <RawCombobox
       items={MULTI_OPTIONS}
       multiple
       value={value}
-      onValueChange={(v: unknown) => setValue(v as string[])}
+      onValueChange={(v: unknown) => setValue(v as typeof MULTI_OPTIONS)}
     >
-      <RawComboboxTrigger className="w-40">Pick</RawComboboxTrigger>
+      <RawComboboxChips className="w-40">
+        {value.map((opt) => (
+          <RawComboboxChip key={opt.id}>{opt.label}</RawComboboxChip>
+        ))}
+        <RawComboboxChipsInput placeholder="Pick" />
+      </RawComboboxChips>
       <RawComboboxContent>
         <RawComboboxList>
           {MULTI_OPTIONS.map((opt) => (
-            <RawComboboxItem key={opt.id} value={opt.id}>
+            <RawComboboxItem key={opt.id} value={opt}>
               {opt.label}
             </RawComboboxItem>
           ))}

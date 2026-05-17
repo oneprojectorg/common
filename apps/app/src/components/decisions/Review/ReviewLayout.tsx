@@ -5,7 +5,7 @@ import {
 } from '@op/api/server';
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
-import { SplitPane } from '@op/ui/SplitPane';
+import { SplitPane } from '@op/ui-next/SplitPane';
 import { forbidden, notFound } from 'next/navigation';
 
 import { TranslatedText } from '@/components/TranslatedText';
