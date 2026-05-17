@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
+import { uploadTestAttachmentToStorage } from '../../test/helpers/uploadTestAttachment';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -45,10 +46,17 @@ describe.concurrent('uploadProposalAttachment', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const result = await caller.decision.uploadProposalAttachment({
-      file: VALID_PNG_BASE64,
+    const { path, fileSize } = await uploadTestAttachmentToStorage({
+      base64: VALID_PNG_BASE64,
       fileName: 'test-image.png',
       mimeType: 'image/png',
+    });
+
+    const result = await caller.decision.uploadProposalAttachment({
+      path,
+      fileName: 'test-image.png',
+      mimeType: 'image/png',
+      fileSize,
       proposalId: proposal.id,
     });
 
@@ -105,11 +113,18 @@ describe.concurrent('uploadProposalAttachment', () => {
 
     const memberCaller = await createAuthenticatedCaller(member.email);
 
-    // Non-owner member WITH proposal permissions should be able to upload
-    const result = await memberCaller.decision.uploadProposalAttachment({
-      file: VALID_PNG_BASE64,
+    const { path, fileSize } = await uploadTestAttachmentToStorage({
+      base64: VALID_PNG_BASE64,
       fileName: 'member-upload.png',
       mimeType: 'image/png',
+    });
+
+    // Non-owner member WITH proposal permissions should be able to upload
+    const result = await memberCaller.decision.uploadProposalAttachment({
+      path,
+      fileName: 'member-upload.png',
+      mimeType: 'image/png',
+      fileSize,
       proposalId: proposal.id,
     });
 
@@ -161,12 +176,19 @@ describe.concurrent('uploadProposalAttachment', () => {
 
     const nonOwnerCaller = await createAuthenticatedCaller(setupB.userEmail);
 
+    const { path, fileSize } = await uploadTestAttachmentToStorage({
+      base64: VALID_PNG_BASE64,
+      fileName: 'malicious.png',
+      mimeType: 'image/png',
+    });
+
     // User without proposal permissions should NOT be able to upload
     await expect(
       nonOwnerCaller.decision.uploadProposalAttachment({
-        file: VALID_PNG_BASE64,
+        path,
         fileName: 'malicious.png',
         mimeType: 'image/png',
+        fileSize,
         proposalId: proposal.id,
       }),
     ).rejects.toMatchObject({

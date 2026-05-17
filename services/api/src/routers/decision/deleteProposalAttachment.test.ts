@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
+import { uploadTestAttachmentToStorage } from '../../test/helpers/uploadTestAttachment';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -45,11 +46,18 @@ describe.concurrent('deleteProposalAttachment', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    // Upload an attachment
-    const uploadResult = await caller.decision.uploadProposalAttachment({
-      file: VALID_PNG_BASE64,
+    const { path, fileSize } = await uploadTestAttachmentToStorage({
+      base64: VALID_PNG_BASE64,
       fileName: 'to-delete.png',
       mimeType: 'image/png',
+    });
+
+    // Upload an attachment
+    const uploadResult = await caller.decision.uploadProposalAttachment({
+      path,
+      fileName: 'to-delete.png',
+      mimeType: 'image/png',
+      fileSize,
       proposalId: proposal.id,
     });
 
@@ -102,11 +110,18 @@ describe.concurrent('deleteProposalAttachment', () => {
 
     const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
 
-    // Owner uploads an attachment
-    const uploadResult = await ownerCaller.decision.uploadProposalAttachment({
-      file: VALID_PNG_BASE64,
+    const ownerUpload = await uploadTestAttachmentToStorage({
+      base64: VALID_PNG_BASE64,
       fileName: 'owner-file.png',
       mimeType: 'image/png',
+    });
+
+    // Owner uploads an attachment
+    const uploadResult = await ownerCaller.decision.uploadProposalAttachment({
+      path: ownerUpload.path,
+      fileName: 'owner-file.png',
+      mimeType: 'image/png',
+      fileSize: ownerUpload.fileSize,
       proposalId: proposal.id,
     });
 
@@ -172,11 +187,18 @@ describe.concurrent('deleteProposalAttachment', () => {
 
     const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
 
-    // Owner uploads an attachment
-    const uploadResult = await ownerCaller.decision.uploadProposalAttachment({
-      file: VALID_PNG_BASE64,
+    const ownerUpload = await uploadTestAttachmentToStorage({
+      base64: VALID_PNG_BASE64,
       fileName: 'owner-file.png',
       mimeType: 'image/png',
+    });
+
+    // Owner uploads an attachment
+    const uploadResult = await ownerCaller.decision.uploadProposalAttachment({
+      path: ownerUpload.path,
+      fileName: 'owner-file.png',
+      mimeType: 'image/png',
+      fileSize: ownerUpload.fileSize,
       proposalId: proposal.id,
     });
 
