@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { createSBBrowserClient } from '@op/supabase/client';
 import { FileDropZone } from '@op/ui/FileDropZone';
 import { toast } from '@op/ui/Toast';
 import { type ReactNode, startTransition, useOptimistic } from 'react';
@@ -9,6 +10,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { ProposalAttachmentList } from './ProposalAttachmentList';
 
+const STORAGE_BUCKET = 'assets';
 const MAX_FILES = 5;
 const MAX_SIZE_MB = 25;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
@@ -79,6 +81,9 @@ export function ProposalAttachments({
     attachmentsReducer,
   );
 
+  const createUploadUrlMutation =
+    trpc.decision.createProposalAttachmentUploadUrl.useMutation();
+
   const uploadMutation = trpc.decision.uploadProposalAttachment.useMutation({
     onSuccess: onMutate,
     onError: (err) => {
@@ -127,19 +132,38 @@ export function ProposalAttachments({
           },
         });
 
-        const reader = new FileReader();
-        const base64 = await new Promise<string>((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = () => reject(new Error('Failed to read file'));
-          reader.readAsDataURL(file);
-        });
+        try {
+          const { token, path } = await createUploadUrlMutation.mutateAsync({
+            proposalId,
+            fileName: file.name,
+            mimeType: file.type,
+            fileSize: file.size,
+          });
 
-        await uploadMutation.mutateAsync({
-          file: base64,
-          fileName: file.name,
-          mimeType: file.type,
-          proposalId,
-        });
+          const supabase = createSBBrowserClient();
+          const { error: uploadError } = await supabase.storage
+            .from(STORAGE_BUCKET)
+            .uploadToSignedUrl(path, token, file, {
+              contentType: file.type,
+            });
+
+          if (uploadError) {
+            throw new Error(uploadError.message);
+          }
+
+          await uploadMutation.mutateAsync({
+            proposalId,
+            path,
+            fileName: file.name,
+            mimeType: file.type,
+            fileSize: file.size,
+          });
+        } catch (err) {
+          toast.error({
+            message: err instanceof Error ? err.message : 'Upload failed',
+          });
+          onMutate();
+        }
       });
     }
   };
