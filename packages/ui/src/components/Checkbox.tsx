@@ -65,14 +65,14 @@ const boxStyles = tv({
   base: 'flex size-6 shrink-0 items-center justify-center rounded-md border border-neutral-gray2 transition',
   variants: {
     isSelected: {
-      false: 'group-hover:border-neutral-gray3',
-      true: 'border-none bg-teal text-neutral-offWhite group-hover:bg-primary-tealBlack',
+      false: '',
+      true: 'border-none bg-teal text-neutral-offWhite',
     },
     isInvalid: {
       true: '[--color:var(--color-red-600)] group-pressed:[--color:var(--color-red-700)]',
     },
     isDisabled: {
-      true: '[--color:var(--color-neutral-700)] group-hover:border-neutral-gray2',
+      true: '[--color:var(--color-neutral-700)]',
     },
     size: {
       small: 'size-4',
