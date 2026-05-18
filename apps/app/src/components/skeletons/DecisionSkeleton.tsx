@@ -46,7 +46,7 @@ export const DecisionHeaderSkeleton = () => {
  */
 export const DecisionContentSkeleton = () => {
   return (
-    <div className="flex min-h-full flex-col gap-8 bg-neutral-offWhite py-8">
+    <div className="flex min-h-full flex-col gap-8 bg-neutral-offWhite pt-8">
       <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4">
         {/* Hero skeleton */}
         <div className="flex flex-col items-center gap-2 text-center">
@@ -81,18 +81,6 @@ export const DecisionPageSkeleton = () => {
       <DecisionHeaderSkeleton />
       <div className="-mt-36 bg-neutral-offWhite">
         <DecisionContentSkeleton />
-
-        {/* Proposals section skeleton */}
-        <div className="mt-8 flex w-full justify-center border-t bg-white">
-          <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
-            <div className="grid grid-cols-3 gap-4">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="aspect-square rounded-lg" />
-              ))}
-              <ProposalListSkeleton />
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
