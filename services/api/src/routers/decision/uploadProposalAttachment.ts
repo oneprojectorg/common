@@ -98,7 +98,6 @@ export const uploadProposalAttachment = router({
     .output(
       z.object({
         signedUrl: z.string(),
-        token: z.string(),
         path: z.string(),
       }),
     )
@@ -124,7 +123,6 @@ export const uploadProposalAttachment = router({
 
       return {
         signedUrl: data.signedUrl,
-        token: data.token,
         path: data.path,
       };
     }),
