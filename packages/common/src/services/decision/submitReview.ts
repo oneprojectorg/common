@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { and, db, eq, ne } from '@op/db/client';
 import {
   type ProposalReview,
   ProposalReviewAssignmentStatus,
@@ -7,7 +7,7 @@ import {
   proposalReviews,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { eq } from 'drizzle-orm';
+import { count } from 'drizzle-orm';
 
 import { CommonError, ValidationError } from '../../utils';
 import { assertReviewAssignmentContext } from './reviewHelpers';
@@ -25,7 +25,12 @@ export async function submitReview({
   reviewData: RubricReviewData;
   overallComment?: string | null;
   user: User;
-}): Promise<{ review: ProposalReview; processInstanceId: string }> {
+}): Promise<{
+  review: ProposalReview;
+  processInstanceId: string;
+  proposalId: string;
+  isLastReview: boolean;
+}> {
   const context = await assertReviewAssignmentContext({
     assignmentId,
     user,
@@ -46,7 +51,7 @@ export async function submitReview({
 
   const submittedAt = new Date().toISOString();
 
-  const review = await db.transaction(async (tx) => {
+  const { review, remainingCount } = await db.transaction(async (tx) => {
     const [submittedReview] = await tx
       .insert(proposalReviews)
       .values({
@@ -79,11 +84,33 @@ export async function submitReview({
       })
       .where(eq(proposalReviewAssignments.id, assignmentId));
 
-    return submittedReview;
+    const [remaining] = await tx
+      .select({ value: count() })
+      .from(proposalReviewAssignments)
+      .where(
+        and(
+          eq(
+            proposalReviewAssignments.processInstanceId,
+            context.assignment.processInstanceId,
+          ),
+          eq(
+            proposalReviewAssignments.reviewerProfileId,
+            context.assignment.reviewerProfileId,
+          ),
+          ne(
+            proposalReviewAssignments.status,
+            ProposalReviewAssignmentStatus.COMPLETED,
+          ),
+        ),
+      );
+
+    return { review: submittedReview, remainingCount: remaining?.value ?? 0 };
   });
 
   return {
     review,
     processInstanceId: context.assignment.processInstanceId,
+    proposalId: context.assignment.proposalId,
+    isLastReview: remainingCount === 0,
   };
 }

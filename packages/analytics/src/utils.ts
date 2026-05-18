@@ -402,6 +402,114 @@ export async function trackUserVoted(
 }
 
 /**
+ * Track when a reviewer submits a review for one proposal
+ */
+export async function trackProposalReviewed(
+  userId: string,
+  processId: string,
+  proposalId: string,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEventWithContext(
+    userId,
+    'user_reviewed_proposal',
+    getDecisionCommonProperties(processId, proposalId, additionalProps),
+  );
+}
+
+/**
+ * Track when a reviewer finishes their entire review assignment list for a process
+ */
+export async function trackReviewListFinished(
+  userId: string,
+  processId: string,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEventWithContext(
+    userId,
+    'user_finished_review',
+    getDecisionCommonProperties(processId, undefined, additionalProps),
+  );
+}
+
+/**
+ * Track when an admin publishes a decision process (DRAFT -> PUBLISHED)
+ */
+export async function trackAdminSetProcess(
+  userId: string,
+  processId: string,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEventWithContext(
+    userId,
+    'admin_set_process',
+    getDecisionCommonProperties(processId, undefined, additionalProps),
+  );
+}
+
+/**
+ * Track when an admin invites participants to a profile (e.g. a decision process)
+ */
+export async function trackAdminInvitedParticipants(
+  userId: string,
+  profileId: string,
+  invitationCount: number,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEventWithContext(userId, 'admin_invited_participants', {
+    profile_id: profileId,
+    invitation_count: invitationCount,
+    timestamp: new Date().toISOString(),
+    ...additionalProps,
+  });
+}
+
+/**
+ * Track when an admin assigns decision permissions to a role
+ */
+export async function trackAdminGaveRoles(
+  userId: string,
+  roleId: string,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEventWithContext(userId, 'admin_gave_roles', {
+    role_id: roleId,
+    timestamp: new Date().toISOString(),
+    ...additionalProps,
+  });
+}
+
+/**
+ * Track when an admin saves a review rubric for a decision process
+ */
+export async function trackAdminSetRubric(
+  userId: string,
+  processId: string,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEventWithContext(
+    userId,
+    'admin_set_rubric',
+    getDecisionCommonProperties(processId, undefined, additionalProps),
+  );
+}
+
+/**
+ * Track when a user invites others to the platform / organization
+ */
+export async function trackUserInvited(
+  userId: string,
+  inviteCount: number,
+  additionalProps?: Record<string, any>,
+): Promise<void> {
+  await trackEventWithContext(userId, 'user_invited', {
+    invite_count: inviteCount,
+    timestamp: new Date().toISOString(),
+    ...additionalProps,
+  });
+}
+
+/**
  * Manual transition analytics
  */
 

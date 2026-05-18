@@ -4,6 +4,7 @@ import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { trackUserVoted } from '../../utils/analytics';
 
 // Input Schemas based on our contracts
 const customDataSchema = z.record(z.string(), z.unknown()).optional();
@@ -43,6 +44,22 @@ export const votingRouter = router({
           },
         }),
       );
+
+      const firstProposalId = input.selectedProposalIds[0];
+      if (firstProposalId) {
+        waitUntil(
+          trackUserVoted(
+            ctx,
+            result.processInstanceId,
+            firstProposalId,
+            undefined,
+            {
+              selected_proposal_count: input.selectedProposalIds.length,
+              schema_version: input.schemaVersion,
+            },
+          ),
+        );
+      }
 
       return result;
     }),

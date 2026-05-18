@@ -241,7 +241,11 @@ export const updateDecisionInstance = async ({
       throw new CommonError('Failed to fetch decision profile');
     }
 
-    return { profile, phaseEndDateChanges };
+    return {
+      profile,
+      phaseEndDateChanges,
+      isBeingPublished: false,
+    };
   }
 
   const isBeingPublished =
@@ -351,7 +355,11 @@ export const updateDecisionInstance = async ({
       // Use the first invite's inviter as the sender
       const firstInvite = queuedInvites[0];
       if (!firstInvite) {
-        return { profile, phaseEndDateChanges };
+        return {
+          profile,
+          phaseEndDateChanges,
+          isBeingPublished,
+        };
       }
       const senderProfileId = firstInvite.invitedBy;
 
@@ -367,5 +375,9 @@ export const updateDecisionInstance = async ({
     }
   }
 
-  return { profile, phaseEndDateChanges };
+  return {
+    profile,
+    phaseEndDateChanges,
+    isBeingPublished,
+  };
 };
