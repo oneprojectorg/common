@@ -752,6 +752,9 @@ importers:
       '@op/events':
         specifier: workspace:*
         version: link:../../services/events
+      '@op/styles':
+        specifier: workspace:*
+        version: link:../styles
       '@op/translation':
         specifier: workspace:*
         version: link:../../services/translation

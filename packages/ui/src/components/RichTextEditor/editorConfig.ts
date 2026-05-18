@@ -1,3 +1,5 @@
+import { headingClasses } from '@op/styles/constants';
+import { mergeAttributes } from '@tiptap/core';
 import Blockquote from '@tiptap/extension-blockquote';
 import Heading from '@tiptap/extension-heading';
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
@@ -12,18 +14,39 @@ import StarterKit from '@tiptap/starter-kit';
  * Prose typography styles shared between the TipTap editor/viewer and the
  * static HTML proposal viewer (`ProposalHtmlContent`).
  *
- * Covers link colors, list spacing, blockquote weight, heading typography,
- * and general text layout. Does NOT include focus or placeholder styles.
+ * Covers link colors, list spacing, blockquote weight, prose-context heading
+ * margins, and general text layout. Heading typography itself is applied on
+ * the heading tags via `StyledHeading` so it stays in sync with the
+ * `Header*` design-system components.
  */
 export const viewerProseStyles = [
   'prose prose-lg !text-base text-neutral-black',
   '[&_a:hover]:underline [&_a]:text-teal [&_a]:no-underline',
   '[&_li_p]:my-0',
   '[&_blockquote]:font-normal',
-  '[&_:is(h1,h2)]:my-4 [&_:is(h1,h2)]:font-serif',
-  '[&_h1]:text-title-lg [&_h2]:text-title-md [&_h3]:text-title-base',
+  '[&_:is(h1,h2,h3)]:my-4',
   'leading-5 max-w-none break-words overflow-wrap-anywhere',
 ].join(' ');
+
+/**
+ * TipTap heading extension that bakes the design-system `headingClasses` onto
+ * each rendered `<h1>/<h2>/<h3>` tag, keeping editor output visually identical
+ * to the `Header1/2/3` components in `@op/ui`.
+ */
+export const StyledHeading = Heading.extend({
+  renderHTML({ node, HTMLAttributes }) {
+    const level = node.attrs.level as 1 | 2 | 3;
+    const className =
+      headingClasses[`h${level}` as keyof typeof headingClasses];
+    return [
+      `h${level}`,
+      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
+        class: className,
+      }),
+      0,
+    ];
+  },
+});
 
 /**
  * Styles applied to the editor element
@@ -42,7 +65,7 @@ const baseExtensions = [
     inline: true,
     allowBase64: true,
   }),
-  Heading.configure({
+  StyledHeading.configure({
     levels: [1, 2, 3],
   }),
   Underline,
