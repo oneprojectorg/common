@@ -137,7 +137,11 @@ const sendProposalCommentNotification = async (
       where: { id: proposalId },
       with: {
         profile: true,
-        processInstance: true,
+        processInstance: {
+          with: {
+            profile: true,
+          },
+        },
       },
     });
 
@@ -166,16 +170,15 @@ const sendProposalCommentNotification = async (
           const contentType = 'proposal';
 
           const baseUrl = OPURLConfig('APP').ENV_URL;
+          const decisionSlug = proposal.processInstance?.profile?.slug;
 
-          // Get processInstanceId for the URL
-          const processInstanceId = proposal.processInstance
-            ? (proposal.processInstance as any).id
-            : 'unknown';
+          if (!decisionSlug) {
+            throw new CommonError(
+              `Cannot build proposal comment URL: proposal ${proposalId} has no process instance or decision profile`,
+            );
+          }
 
-          // Get profile slug for the URL
-          const profileSlug = proposal.profile.slug || 'unknown';
-
-          const contentUrl = `${baseUrl}/profile/${profileSlug}/decisions/${processInstanceId}/proposal/${proposal.profileId}`;
+          const contentUrl = `${baseUrl}/decisions/${decisionSlug}/proposal/${proposal.profileId}`;
 
           // Extract proposal content from proposalData
           const proposalContent =
