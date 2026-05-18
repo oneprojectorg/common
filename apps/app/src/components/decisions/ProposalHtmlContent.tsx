@@ -1,6 +1,6 @@
 'use client';
 
-import { viewerProseStyles } from '@op/ui/RichTextEditor';
+import { viewerProseStyles } from '@op/ui-next/RichTextEditor';
 import { useMemo } from 'react';
 
 import { LinkPreview } from '../LinkPreview';

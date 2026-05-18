@@ -5,7 +5,7 @@ import { Button } from '@op/ui-next/Button';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { Modal, ModalBody, ModalHeader } from '@op/ui-next/Modal';
 import { toast } from '@op/ui-next/Toast';
-import { RichTextViewer } from '@op/ui/RichTextEditor';
+import { RichTextViewer } from '@op/ui-next/RichTextEditor';
 import he from 'he';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';

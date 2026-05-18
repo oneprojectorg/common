@@ -4,7 +4,7 @@ import { ProposalTemplateSchema } from '@op/common';
 import { NumberField } from '@op/ui-next/NumberField';
 import { Select, SelectItem } from '@op/ui-next/Select';
 import { ToggleButton } from '@op/ui-next/ToggleButton';
-import { CollapsibleConfigCard } from '@op/ui/CollapsibleConfigCard';
+import { CollapsibleConfigCard } from '@op/ui-next/CollapsibleConfigCard';
 import type { Key } from 'react';
 import { useCallback } from 'react';
 import { LuHash } from 'react-icons/lu';

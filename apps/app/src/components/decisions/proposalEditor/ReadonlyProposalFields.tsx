@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@op/ui-next/Button';
-import { RichTextViewer } from '@op/ui/RichTextEditor';
+import { RichTextViewer } from '@op/ui-next/RichTextEditor';
 import type { JSONContent } from '@tiptap/react';
 import { useMemo } from 'react';
 

@@ -10,8 +10,8 @@ import { cn } from '@op/ui-next/lib/utils';
 import {
   CollapsibleConfigCard,
   CollapsibleConfigCardDragPreview,
-} from '@op/ui/CollapsibleConfigCard';
-import type { SortableItemControls } from '@op/ui/Sortable';
+} from '@op/ui-next/CollapsibleConfigCard';
+import type { SortableItemControls } from '@op/ui-next/Sortable';
 import { useRef, useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
 

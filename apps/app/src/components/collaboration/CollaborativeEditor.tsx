@@ -5,7 +5,7 @@ import {
   RichTextEditorSkeleton,
   StyledRichTextContent,
   useRichTextEditor,
-} from '@op/ui/RichTextEditor';
+} from '@op/ui-next/RichTextEditor';
 import Snapshot from '@tiptap-pro/extension-snapshot';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';

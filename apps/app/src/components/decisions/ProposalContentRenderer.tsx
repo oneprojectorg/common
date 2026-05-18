@@ -1,7 +1,7 @@
 'use client';
 
 import type { ProposalTemplateSchema } from '@op/common/client';
-import { viewerProseStyles } from '@op/ui/RichTextEditor';
+import { viewerProseStyles } from '@op/ui-next/RichTextEditor';
 import { useMemo } from 'react';
 
 import { ProposalHtmlContent } from './ProposalHtmlContent';

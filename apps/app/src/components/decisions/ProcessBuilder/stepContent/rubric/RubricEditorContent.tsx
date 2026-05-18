@@ -6,7 +6,7 @@ import { Button } from '@op/ui-next/Button';
 import { EmptyState } from '@op/ui-next/EmptyState';
 import { Header2 } from '@op/ui-next/Header';
 import { ToggleButton } from '@op/ui-next/ToggleButton';
-import { Sortable } from '@op/ui/Sortable';
+import { Sortable } from '@op/ui-next/Sortable';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuLeaf, LuPlus } from 'react-icons/lu';
 
