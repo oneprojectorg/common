@@ -1,44 +1,72 @@
-import { and, db, eq } from '@op/db/client';
-import { organizations, posts, postsToOrganizations } from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import { posts, postsToOrganizations, postsToProfiles } from '@op/db/schema';
+import type { User } from '@supabase/supabase-js';
+import { checkPermission, permission } from 'access-zones';
+
+import { NotFoundError, UnauthorizedError } from '../../utils';
+import {
+  getCurrentProfileId,
+  getOrgAccessUser,
+  getProfileAccessUser,
+} from '../access';
 
 export interface DeletePostByIdOptions {
   postId: string;
-  profileId?: string;
-  organizationId?: string;
+  user: User;
 }
 
 export const deletePostById = async (options: DeletePostByIdOptions) => {
-  const { postId, profileId, organizationId } = options;
+  const { postId, user } = options;
 
-  if (!profileId && !organizationId) {
-    throw new Error('Either profileId or organizationId must be provided');
-  }
-
-  let query = db
-    .select({ postId: posts.id })
+  const [post] = await db
+    .select({ id: posts.id, profileId: posts.profileId })
     .from(posts)
-    .innerJoin(postsToOrganizations, eq(posts.id, postsToOrganizations.postId));
+    .where(eq(posts.id, postId))
+    .limit(1);
 
-  let whereConditions = [eq(posts.id, postId)];
-
-  if (organizationId) {
-    whereConditions.push(
-      eq(postsToOrganizations.organizationId, organizationId),
-    );
-  } else if (profileId) {
-    query = query.innerJoin(
-      organizations,
-      eq(postsToOrganizations.organizationId, organizations.id),
-    );
-    whereConditions.push(eq(organizations.profileId, profileId));
+  if (!post) {
+    throw new NotFoundError('Post', postId);
   }
 
-  const postExists = await query.where(and(...whereConditions)).limit(1);
+  const currentProfileId = await getCurrentProfileId(user.id);
 
-  if (!postExists.length) {
-    throw new Error(
-      'Post not found or does not belong to the specified organization',
-    );
+  let authorized =
+    post.profileId !== null && post.profileId === currentProfileId;
+
+  if (!authorized) {
+    const profileLinks = await db
+      .select({ profileId: postsToProfiles.profileId })
+      .from(postsToProfiles)
+      .where(eq(postsToProfiles.postId, postId));
+
+    for (const { profileId } of profileLinks) {
+      const profileUser = await getProfileAccessUser({ user, profileId });
+      if (
+        checkPermission({ profile: permission.ADMIN }, profileUser?.roles ?? [])
+      ) {
+        authorized = true;
+        break;
+      }
+    }
+  }
+
+  if (!authorized) {
+    const orgLinks = await db
+      .select({ organizationId: postsToOrganizations.organizationId })
+      .from(postsToOrganizations)
+      .where(eq(postsToOrganizations.postId, postId));
+
+    for (const { organizationId } of orgLinks) {
+      const orgUser = await getOrgAccessUser({ organizationId, user });
+      if (orgUser) {
+        authorized = true;
+        break;
+      }
+    }
+  }
+
+  if (!authorized) {
+    throw new UnauthorizedError();
   }
 
   await db.delete(posts).where(eq(posts.id, postId));
