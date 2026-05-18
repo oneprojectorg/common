@@ -1,4 +1,6 @@
 import { db } from '@op/db/client';
+import { createServerClient } from '@op/supabase/lib';
+import { Buffer } from 'node:buffer';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
@@ -16,9 +18,36 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-// Small valid PNG as base64 (1x1 pixel)
-const VALID_PNG_BASE64 =
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+// Small valid PNG (1x1 pixel)
+const VALID_PNG_BUFFER = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+function createStorageAdmin() {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE!,
+    {
+      cookieOptions: {},
+      cookies: {
+        getAll: async () => [],
+        setAll: async () => {},
+      },
+    },
+  );
+}
+
+async function uploadFixtureToPath(path: string, mimeType: string) {
+  const supabase = createStorageAdmin();
+  const { error } = await supabase.storage
+    .from('assets')
+    .upload(path, VALID_PNG_BUFFER, { contentType: mimeType, upsert: true });
+
+  if (error) {
+    throw error;
+  }
+}
 
 describe.concurrent('uploadProposalAttachment', () => {
   it('should allow user with decisions:UPDATE permission to upload attachment to proposal', async ({
@@ -45,11 +74,21 @@ describe.concurrent('uploadProposalAttachment', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    const result = await caller.decision.uploadProposalAttachment({
-      file: VALID_PNG_BASE64,
+    const { path } = await caller.decision.createProposalAttachmentUploadUrl({
+      proposalId: proposal.id,
       fileName: 'test-image.png',
       mimeType: 'image/png',
+      fileSize: VALID_PNG_BUFFER.length,
+    });
+
+    await uploadFixtureToPath(path, 'image/png');
+
+    const result = await caller.decision.uploadProposalAttachment({
       proposalId: proposal.id,
+      path,
+      fileName: 'test-image.png',
+      mimeType: 'image/png',
+      fileSize: VALID_PNG_BUFFER.length,
     });
 
     expect(result).toMatchObject({
@@ -59,7 +98,6 @@ describe.concurrent('uploadProposalAttachment', () => {
     expect(result.id).toBeDefined();
     expect(result.fileSize).toBeGreaterThan(0);
 
-    // Verify attachment was linked to proposal
     const link = await db.query.proposalAttachments.findFirst({
       where: {
         proposalId: proposal.id,
@@ -75,7 +113,6 @@ describe.concurrent('uploadProposalAttachment', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    // Create setup for user A who owns the proposal
     const setupA = await testData.createDecisionSetup({
       instanceCount: 1,
       grantAccess: true,
@@ -92,7 +129,6 @@ describe.concurrent('uploadProposalAttachment', () => {
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
 
-    // Create a user and grant them access to the proposal profile (simulating an invite)
     const member = await testData.createMemberUser({
       organization: setupA.organization,
     });
@@ -105,12 +141,22 @@ describe.concurrent('uploadProposalAttachment', () => {
 
     const memberCaller = await createAuthenticatedCaller(member.email);
 
-    // Non-owner member WITH proposal permissions should be able to upload
+    const { path } =
+      await memberCaller.decision.createProposalAttachmentUploadUrl({
+        proposalId: proposal.id,
+        fileName: 'member-upload.png',
+        mimeType: 'image/png',
+        fileSize: VALID_PNG_BUFFER.length,
+      });
+
+    await uploadFixtureToPath(path, 'image/png');
+
     const result = await memberCaller.decision.uploadProposalAttachment({
-      file: VALID_PNG_BASE64,
+      proposalId: proposal.id,
+      path,
       fileName: 'member-upload.png',
       mimeType: 'image/png',
-      proposalId: proposal.id,
+      fileSize: VALID_PNG_BUFFER.length,
     });
 
     expect(result).toMatchObject({
@@ -120,7 +166,6 @@ describe.concurrent('uploadProposalAttachment', () => {
     expect(result.id).toBeDefined();
     expect(result.fileSize).toBeGreaterThan(0);
 
-    // Verify attachment was linked to proposal
     const link = await db.query.proposalAttachments.findFirst({
       where: {
         proposalId: proposal.id,
@@ -130,13 +175,12 @@ describe.concurrent('uploadProposalAttachment', () => {
     expect(link).toBeDefined();
   });
 
-  it('should reject upload from user without proposal permissions', async ({
+  it('should reject upload-url creation from user without proposal permissions', async ({
     task,
     onTestFinished,
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    // Create setup for user A who owns the proposal
     const setupA = await testData.createDecisionSetup({
       instanceCount: 1,
       grantAccess: true,
@@ -153,7 +197,6 @@ describe.concurrent('uploadProposalAttachment', () => {
       proposalData: { title: 'Test Proposal', description: 'A test' },
     });
 
-    // Create a different user with NO access to the instance
     const setupB = await testData.createDecisionSetup({
       instanceCount: 0,
       grantAccess: false,
@@ -161,13 +204,49 @@ describe.concurrent('uploadProposalAttachment', () => {
 
     const nonOwnerCaller = await createAuthenticatedCaller(setupB.userEmail);
 
-    // User without proposal permissions should NOT be able to upload
     await expect(
-      nonOwnerCaller.decision.uploadProposalAttachment({
-        file: VALID_PNG_BASE64,
+      nonOwnerCaller.decision.createProposalAttachmentUploadUrl({
+        proposalId: proposal.id,
         fileName: 'malicious.png',
         mimeType: 'image/png',
+        fileSize: VALID_PNG_BUFFER.length,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
+  });
+
+  it('should reject record call with path that does not belong to caller', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Test Proposal', description: 'A test' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.uploadProposalAttachment({
         proposalId: proposal.id,
+        path: 'profile/some-other-profile/proposals/other/file.png',
+        fileName: 'spoofed.png',
+        mimeType: 'image/png',
+        fileSize: VALID_PNG_BUFFER.length,
       }),
     ).rejects.toMatchObject({
       cause: { name: 'UnauthorizedError' },
