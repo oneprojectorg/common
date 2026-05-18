@@ -1,3 +1,5 @@
+import { headingClasses } from '@op/styles/constants';
+
 import { cn } from '../lib/utils';
 
 export const Header1 = ({
@@ -7,11 +9,7 @@ export const Header1 = ({
   children: React.ReactNode;
   className?: string;
 }) => {
-  return (
-    <h1 className={cn('font-serif text-title-sm sm:text-title-lg', className)}>
-      {children}
-    </h1>
-  );
+  return <h1 className={cn(headingClasses.h1, className)}>{children}</h1>;
 };
 
 export const Header2 = ({
@@ -21,11 +19,7 @@ export const Header2 = ({
   children: React.ReactNode;
   className?: string;
 }) => {
-  return (
-    <h2 className={cn('text-title-lg text-neutral-black', className)}>
-      {children}
-    </h2>
-  );
+  return <h2 className={cn(headingClasses.h2, className)}>{children}</h2>;
 };
 
 export const Header3 = ({
@@ -35,11 +29,7 @@ export const Header3 = ({
   children: React.ReactNode;
   className?: string;
 }) => {
-  return (
-    <h3 className={cn('text-title-base text-neutral-black', className)}>
-      {children}
-    </h3>
-  );
+  return <h3 className={cn(headingClasses.h3, className)}>{children}</h3>;
 };
 
 export const Header4 = ({

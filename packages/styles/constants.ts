@@ -7,3 +7,15 @@ export const screens = {
   xl: '1280px', // 80rem
   xxl: '1536px', // 96rem
 };
+
+/**
+ * Canonical heading class strings shared between the `Header1/2/3` components
+ * in `@op/ui` and the TipTap rich text editor's `StyledHeading` extension.
+ * Keeping these as literal Tailwind class strings ensures the build-time
+ * scanner picks them up.
+ */
+export const headingClasses = {
+  h1: 'font-serif text-title-sm sm:text-title-lg',
+  h2: 'text-title-lg text-neutral-black',
+  h3: 'text-title-base text-neutral-black',
+} as const;

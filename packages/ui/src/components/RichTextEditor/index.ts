@@ -8,4 +8,5 @@ export {
   viewerProseStyles,
   defaultEditorExtensions,
   defaultViewerExtensions,
+  StyledHeading,
 } from './editorConfig';
