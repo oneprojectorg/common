@@ -394,6 +394,12 @@ describe.concurrent('proposal comment deletion', () => {
       proposalData: { title: 'Proposal under discussion' },
     });
 
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const proposalPost = await adminCaller.posts.createPost({
+      content: 'Discussion thread root.',
+      profileId: proposal.profileId,
+    });
+
     const member = await testData.createMemberUser({
       organization: setup.organization,
       instanceProfileIds: [instance.profileId],
@@ -401,12 +407,13 @@ describe.concurrent('proposal comment deletion', () => {
     const memberCaller = await createAuthenticatedCaller(member.email);
     const comment = await memberCaller.posts.createPost({
       content: 'Looks good.',
-      profileId: proposal.profileId,
+      parentPostId: proposalPost.id,
     });
 
     await memberCaller.organization.deletePost({ id: comment.id });
 
     expect(await postExists(comment.id)).toBe(false);
+    expect(await postExists(proposalPost.id)).toBe(true);
   });
 
   it('rejects an outsider from deleting a proposal comment', async ({
@@ -426,6 +433,12 @@ describe.concurrent('proposal comment deletion', () => {
       proposalData: { title: 'Proposal under discussion' },
     });
 
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const proposalPost = await adminCaller.posts.createPost({
+      content: 'Discussion thread root.',
+      profileId: proposal.profileId,
+    });
+
     const member = await testData.createMemberUser({
       organization: setup.organization,
       instanceProfileIds: [instance.profileId],
@@ -433,7 +446,7 @@ describe.concurrent('proposal comment deletion', () => {
     const memberCaller = await createAuthenticatedCaller(member.email);
     const comment = await memberCaller.posts.createPost({
       content: 'Looks good.',
-      profileId: proposal.profileId,
+      parentPostId: proposalPost.id,
     });
 
     const outsiderCaller = await createOutsiderCaller(testData);
