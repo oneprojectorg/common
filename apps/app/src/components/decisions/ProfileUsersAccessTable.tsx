@@ -442,8 +442,7 @@ const MobileInviteCard = ({
     <div className="flex flex-col gap-4 rounded-lg border border-neutral-gray1 p-4">
       <div className="flex gap-4">
         <ProfileAvatar
-          profile={invite.inviteeProfile}
-          placeholder={invite.email}
+          profile={invite.inviteeProfile ?? { email: invite.email }}
           className="size-10"
         />
         <div className="flex min-w-0 flex-col gap-1">
@@ -568,8 +567,7 @@ const ProfileUsersAccessTableContent = ({
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <ProfileAvatar
-                      profile={invite.inviteeProfile}
-                      placeholder={invite.email}
+                      profile={invite.inviteeProfile ?? { email: invite.email }}
                     />
                     <div className="flex flex-col">
                       <span className="text-base text-neutral-black">

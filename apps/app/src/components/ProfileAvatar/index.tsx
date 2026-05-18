@@ -8,29 +8,29 @@ import { Link } from '@/lib/i18n';
 type ProfileAvatarProps = {
   profile?: {
     name?: string | null;
+    email?: string | null;
     slug?: string | null;
     avatarImage?: { name?: string | null } | null;
   } | null;
   withLink?: boolean;
   className?: string;
-  /** Fallback seed for the placeholder avatar when no profile exists (e.g. pending invite). */
-  placeholder?: string;
 };
 
 export const ProfileAvatar = ({
   profile,
   withLink = true,
   className,
-  placeholder,
 }: ProfileAvatarProps) => {
-  if (!profile && !placeholder) {
+  const name = profile?.name ?? '';
+  const email = profile?.email ?? '';
+  const placeholderSeed = name || email;
+
+  if (!placeholderSeed) {
     return null;
   }
 
-  const name = profile?.name ?? '';
   const avatarImage = profile?.avatarImage;
   const slug = profile?.slug;
-  const placeholderSeed = name || placeholder || '';
 
   const avatar = (
     <Avatar
