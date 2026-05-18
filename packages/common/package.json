@@ -27,6 +27,7 @@
     "@op/db": "workspace:*",
     "@op/emails": "workspace:*",
     "@op/events": "workspace:*",
+    "@op/styles": "workspace:*",
     "@op/translation": "workspace:*",
     "@rjsf/utils": "catalog:",
     "@tiptap/core": "catalog:",
