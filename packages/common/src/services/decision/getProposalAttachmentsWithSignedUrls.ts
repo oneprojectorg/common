@@ -37,7 +37,9 @@ export async function getProposalAttachmentsWithSignedUrls(
       // 4-hour TTL — the review pane re-fetches on each open
       const { data } = await supabase.storage
         .from('assets')
-        .createSignedUrl(storagePath, 60 * 60 * 4);
+        .createSignedUrl(storagePath, 60 * 60 * 4, {
+          download: join.attachment.fileName,
+        });
       return {
         ...join,
         attachment: { ...join.attachment, url: data?.signedUrl },
