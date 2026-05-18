@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
+import { uploadProposalAttachmentFixture } from '../../test/helpers/uploadProposalAttachmentFixture';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -15,10 +16,6 @@ async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
 }
-
-// Small valid PNG as base64 (1x1 pixel)
-const VALID_PNG_BASE64 =
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
 describe.concurrent('deleteProposalAttachment', () => {
   it('should allow proposal owner to delete attachment', async ({
@@ -45,12 +42,9 @@ describe.concurrent('deleteProposalAttachment', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    // Upload an attachment
-    const uploadResult = await caller.decision.uploadProposalAttachment({
-      file: VALID_PNG_BASE64,
-      fileName: 'to-delete.png',
-      mimeType: 'image/png',
+    const uploadResult = await uploadProposalAttachmentFixture(caller, {
       proposalId: proposal.id,
+      fileName: 'to-delete.png',
     });
 
     // Verify it exists
@@ -102,15 +96,11 @@ describe.concurrent('deleteProposalAttachment', () => {
 
     const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
 
-    // Owner uploads an attachment
-    const uploadResult = await ownerCaller.decision.uploadProposalAttachment({
-      file: VALID_PNG_BASE64,
-      fileName: 'owner-file.png',
-      mimeType: 'image/png',
+    const uploadResult = await uploadProposalAttachmentFixture(ownerCaller, {
       proposalId: proposal.id,
+      fileName: 'owner-file.png',
     });
 
-    // Verify attachment exists
     const linkBefore = await db.query.proposalAttachments.findFirst({
       where: {
         proposalId: proposal.id,
@@ -172,12 +162,9 @@ describe.concurrent('deleteProposalAttachment', () => {
 
     const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
 
-    // Owner uploads an attachment
-    const uploadResult = await ownerCaller.decision.uploadProposalAttachment({
-      file: VALID_PNG_BASE64,
-      fileName: 'owner-file.png',
-      mimeType: 'image/png',
+    const uploadResult = await uploadProposalAttachmentFixture(ownerCaller, {
       proposalId: proposal.id,
+      fileName: 'owner-file.png',
     });
 
     // Create a different user with NO access to the instance
