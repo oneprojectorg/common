@@ -1,6 +1,7 @@
 import { and, db, eq } from '@op/db/client';
 import { postReactions } from '@op/db/schema';
 import { Events, event } from '@op/events';
+import { waitUntil } from '@vercel/functions';
 
 export interface AddReactionOptions {
   postId: string;
@@ -30,21 +31,24 @@ export const addReaction = async (options: AddReactionOptions) => {
     });
   });
 
-  // Fire-and-forget: notification failures must not delay or fail the
-  // user-facing mutation. The reaction is already persisted in the DB.
-  void event
-    .send({
-      name: Events.postReactionAdded.name,
-      data: {
-        sourceProfileId: profileId,
-        postId,
-        reactionType,
-      },
-    })
-    .catch((error) => {
-      console.error(
-        '[addReaction] Failed to emit postReactionAdded event',
-        error,
-      );
-    });
+  // Defer to the platform's post-response work queue so notification
+  // dispatch can't delay or fail the user-facing mutation. The reaction
+  // is already persisted above.
+  waitUntil(
+    event
+      .send({
+        name: Events.postReactionAdded.name,
+        data: {
+          sourceProfileId: profileId,
+          postId,
+          reactionType,
+        },
+      })
+      .catch((error) => {
+        console.error(
+          '[addReaction] Failed to emit postReactionAdded event',
+          error,
+        );
+      }),
+  );
 };
