@@ -308,14 +308,23 @@ describe('processDecisionsTransitions', () => {
     const fromStates = historyRows.map((h) => h.fromStateId).sort();
     expect(fromStates).toEqual(['review', 'submission', 'voting']);
 
-    // Verify phase transition events were dispatched for each advance
-    expect(mockSend).toHaveBeenCalledTimes(3);
-    expect(mockSend).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'decision/phase-transitioned',
-        data: expect.objectContaining({ processInstanceId: instanceId }),
-      }),
+    // Phase transition events fire for each advance EXCEPT the one into the
+    // last phase (voting → results) — that email is intentionally suppressed
+    // in onPhaseAdvanced until manual-selection confirmation is wired up.
+    const phaseTransitionCalls = mockSend.mock.calls.filter(
+      (call: unknown[]) =>
+        (call[0] as { name: string; data: { processInstanceId: string } })
+          .name === 'decision/phase-transitioned' &&
+        (call[0] as { data: { processInstanceId: string } }).data
+          .processInstanceId === instanceId,
     );
+    expect(phaseTransitionCalls).toHaveLength(2);
+    const toPhaseIds = phaseTransitionCalls
+      .map(
+        (call) => (call[0] as { data: { toPhaseId: string } }).data.toPhaseId,
+      )
+      .sort();
+    expect(toPhaseIds).toEqual(['review', 'voting']);
   });
 
   it('should NOT process transitions for DRAFT instances', async ({
