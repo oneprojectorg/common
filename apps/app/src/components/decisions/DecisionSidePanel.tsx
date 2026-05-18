@@ -86,8 +86,8 @@ export const DecisionSidePanel = ({
         />
       ) : null}
       <aside
-        role="dialog"
-        aria-label={t('Decision updates panel')}
+        role={isOpen ? 'dialog' : undefined}
+        aria-label={isOpen ? t('Decision updates panel') : undefined}
         inert={!isOpen}
         className={cn(
           'fixed top-0 right-0 bottom-0 z-40 flex w-full max-w-full flex-col border-t border-l border-neutral-gray1 bg-white text-neutral-charcoal shadow-xl transition-transform duration-300 ease-out sm:top-14 sm:w-[22.5rem]',
