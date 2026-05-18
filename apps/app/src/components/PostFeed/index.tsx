@@ -1,7 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
-import { OrganizationUser } from '@/utils/UserProvider';
+import { OrganizationUser, useUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
 import { trpc } from '@op/api/client';
 import type { Organization, Post, PostAttachment } from '@op/api/encoders';
@@ -193,11 +193,18 @@ const PostMenu = ({
   user?: OrganizationUser;
 }) => {
   const t = useTranslations();
-  // We check against whether this is the user's post, or whether the org that it was posted to currently matches the user's context
+  const { getPermissionsForProfile } = useUser();
+
+  // Author, current org context owner, or a profile admin on the post's
+  // root profile (mirrors deletePostById's server-side auth).
+  const isProfileAdmin = post?.rootProfileId
+    ? getPermissionsForProfile(post.rootProfileId).profile.admin
+    : false;
   const canShowMenu =
-    (post?.profileId === user?.currentProfileId ||
-      (organization && organization?.profile.id === user?.currentProfileId)) &&
-    !!post?.id;
+    !!post?.id &&
+    (post.profileId === user?.currentProfileId ||
+      (organization && organization.profile.id === user?.currentProfileId) ||
+      isProfileAdmin);
 
   if (!canShowMenu) {
     return null;
@@ -208,23 +215,9 @@ const PostMenu = ({
       aria-label={t('Post options')}
       className="absolute top-0 right-0"
     >
-      <PostMenuContent post={post} canDelete={canShowMenu} />
+      <DeletePost post={post} />
     </OptionMenu>
   );
-};
-
-const PostMenuContent = ({
-  post,
-  canDelete,
-}: {
-  post: Post;
-  canDelete: boolean;
-}) => {
-  if (!canDelete) {
-    return null;
-  }
-
-  return <DeletePost post={post} />;
 };
 
 export const EmptyPostsState = () => {

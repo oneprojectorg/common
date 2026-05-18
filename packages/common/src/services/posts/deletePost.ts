@@ -19,7 +19,11 @@ export const deletePostById = async (options: DeletePostByIdOptions) => {
   const { postId, user } = options;
 
   const [post] = await db
-    .select({ id: posts.id, profileId: posts.profileId })
+    .select({
+      id: posts.id,
+      profileId: posts.profileId,
+      rootProfileId: posts.rootProfileId,
+    })
     .from(posts)
     .where(eq(posts.id, postId))
     .limit(1);
@@ -30,44 +34,60 @@ export const deletePostById = async (options: DeletePostByIdOptions) => {
 
   const currentProfileId = await getCurrentProfileId(user.id);
 
-  let authorized =
-    post.profileId !== null && post.profileId === currentProfileId;
+  if (post.profileId && post.profileId === currentProfileId) {
+    await db.delete(posts).where(eq(posts.id, postId));
+    return;
+  }
 
-  if (!authorized) {
-    const profileLinks = await db
-      .select({ profileId: postsToProfiles.profileId })
-      .from(postsToProfiles)
-      .where(eq(postsToProfiles.postId, postId));
+  // Prefer the pinned rootProfileId gate (mirrors getPost). Fall back to the
+  // postsToProfiles index for legacy posts written before the gate was added.
+  const profileIdsToCheck = post.rootProfileId
+    ? [post.rootProfileId]
+    : (
+        await db
+          .select({ profileId: postsToProfiles.profileId })
+          .from(postsToProfiles)
+          .where(eq(postsToProfiles.postId, postId))
+      ).map((row) => row.profileId);
 
-    for (const { profileId } of profileLinks) {
-      const profileUser = await getProfileAccessUser({ user, profileId });
-      if (
-        checkPermission({ profile: permission.ADMIN }, profileUser?.roles ?? [])
-      ) {
-        authorized = true;
-        break;
-      }
+  if (profileIdsToCheck.length > 0) {
+    const profileUsers = await Promise.all(
+      profileIdsToCheck.map((profileId) =>
+        getProfileAccessUser({ user, profileId }),
+      ),
+    );
+    const isProfileAdmin = profileUsers.some((profileUser) =>
+      checkPermission({ profile: permission.ADMIN }, profileUser?.roles ?? []),
+    );
+    if (isProfileAdmin) {
+      await db.delete(posts).where(eq(posts.id, postId));
+      return;
     }
   }
 
-  if (!authorized) {
-    const orgLinks = await db
-      .select({ organizationId: postsToOrganizations.organizationId })
-      .from(postsToOrganizations)
-      .where(eq(postsToOrganizations.postId, postId));
+  // Legacy org-linked posts: createPostInOrganization does not set
+  // posts.profileId, so the author check above can't fire for them. Require
+  // org admin (not just membership) to keep the policy symmetric with
+  // profile-linked posts.
+  const orgLinks = await db
+    .select({ organizationId: postsToOrganizations.organizationId })
+    .from(postsToOrganizations)
+    .where(eq(postsToOrganizations.postId, postId));
 
-    for (const { organizationId } of orgLinks) {
-      const orgUser = await getOrgAccessUser({ organizationId, user });
-      if (orgUser) {
-        authorized = true;
-        break;
-      }
+  if (orgLinks.length > 0) {
+    const orgUsers = await Promise.all(
+      orgLinks.map(({ organizationId }) =>
+        getOrgAccessUser({ organizationId, user }),
+      ),
+    );
+    const isOrgAdmin = orgUsers.some((orgUser) =>
+      checkPermission({ profile: permission.ADMIN }, orgUser?.roles ?? []),
+    );
+    if (isOrgAdmin) {
+      await db.delete(posts).where(eq(posts.id, postId));
+      return;
     }
   }
 
-  if (!authorized) {
-    throw new UnauthorizedError();
-  }
-
-  await db.delete(posts).where(eq(posts.id, postId));
+  throw new UnauthorizedError();
 };

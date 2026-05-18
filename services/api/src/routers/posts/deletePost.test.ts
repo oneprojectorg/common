@@ -48,7 +48,7 @@ const postExists = async (postId: string): Promise<boolean> => {
 };
 
 describe.concurrent('organization post deletion (legacy postsToOrganizations)', () => {
-  it('allows an org member to delete a post in their organization', async ({
+  it('allows an org admin to delete a post in their organization', async ({
     task,
     onTestFinished,
   }) => {
@@ -64,6 +64,32 @@ describe.concurrent('organization post deletion (legacy postsToOrganizations)', 
     await ownerCaller.organization.deletePost({ id: orgPost.id });
 
     expect(await postExists(orgPost.id)).toBe(false);
+  });
+
+  it('rejects a non-admin org member from deleting an org post', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
+    const orgPost = await ownerCaller.organization.createPost({
+      id: setup.organization.id,
+      content: 'Org feed post.',
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    await expect(
+      memberCaller.organization.deletePost({ id: orgPost.id }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    expect(await postExists(orgPost.id)).toBe(true);
   });
 
   it('rejects an outsider from deleting an org post', async ({
