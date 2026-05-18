@@ -38,4 +38,5 @@ export {
   updateProfileJoinRequest,
   deleteProfileJoinRequest,
 } from './profile/requests';
+export * from './resources';
 export * from './translation';

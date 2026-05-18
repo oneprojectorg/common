@@ -7,6 +7,7 @@ import { organizationRouter } from './organization';
 import { platformRouter } from './platform';
 import { postsRouter } from './posts';
 import profileRouter from './profile';
+import { resourcesRouter } from './resources';
 import { taxonomyRouter } from './taxonomy';
 import { translationRouter } from './translation';
 
@@ -20,6 +21,7 @@ export const appRouter = router({
   posts: postsRouter,
   decision: decisionRouter,
   platform: platformRouter,
+  resources: resourcesRouter,
   translation: translationRouter,
 });
 
