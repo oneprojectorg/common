@@ -69,8 +69,9 @@ describe('transitionFromPhase', () => {
 
     expect(dbInstance!.currentStateId).toBe('final');
 
-    // Verify phase transition event was dispatched (filter by this instance
-    // to avoid interference from concurrent tests sharing the mock)
+    // The phase transition event is suppressed when advancing into the last
+    // phase (see onPhaseAdvanced) — `final` is the last phase in this schema,
+    // so no event should be dispatched for this instance.
     const transitionCalls = mockSend.mock.calls.filter(
       (call: unknown[]) =>
         (call[0] as { name: string; data: { processInstanceId: string } })
@@ -78,15 +79,7 @@ describe('transitionFromPhase', () => {
         (call[0] as { data: { processInstanceId: string } }).data
           .processInstanceId === instance.instance.id,
     );
-    expect(transitionCalls).toHaveLength(1);
-    expect(transitionCalls[0]![0]).toMatchObject({
-      name: 'decision/phase-transitioned',
-      data: {
-        processInstanceId: instance.instance.id,
-        fromPhaseId: 'initial',
-        toPhaseId: 'final',
-      },
-    });
+    expect(transitionCalls).toHaveLength(0);
   });
 
   it('should record transition in history with manual flag', async ({
