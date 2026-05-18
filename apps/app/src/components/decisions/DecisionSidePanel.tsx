@@ -10,11 +10,9 @@ import { EmptyState } from '@op/ui/EmptyState';
 import { Header2 } from '@op/ui/Header';
 import { IconButton } from '@op/ui/IconButton';
 import { Surface } from '@op/ui/Surface';
-import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
 import { cn } from '@op/ui/utils';
 import { useQueryState } from 'nuqs';
 import { Fragment, Suspense, useCallback, useEffect, useMemo } from 'react';
-import type { Key } from 'react-aria-components';
 import { LuMegaphone, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -28,12 +26,10 @@ import {
   usePostFeedActions,
 } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
-import { PANEL_TABS, type PanelTab, panelStateParser } from './panelState';
+
+import { panelStateParser } from './panelState';
 
 const UPDATES_PAGE_SIZE = 20;
-
-const isPanelTab = (key: Key): key is PanelTab =>
-  typeof key === 'string' && (PANEL_TABS as readonly string[]).includes(key);
 
 export const DecisionSidePanel = ({
   decisionProfileId,
@@ -79,7 +75,6 @@ export const DecisionSidePanel = ({
 
   const canPostUpdate = access?.admin === true;
   const canReadUpdates = canPostUpdate || access?.read === true;
-  const activeTab = panel ?? 'updates';
 
   return (
     <>
@@ -99,66 +94,25 @@ export const DecisionSidePanel = ({
           isOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full',
         )}
       >
-        <Tabs
-          selectedKey={activeTab}
-          onSelectionChange={(key) => {
-            if (isPanelTab(key)) {
-              void setPanel(key);
-            }
-          }}
-          className="min-h-0 flex-1 gap-0"
-        >
-          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-neutral-gray1 pr-4 sm:pt-4 sm:pr-0">
-            <TabList
-              aria-label={t('Decision side panel tabs')}
-              className="grow border-b-0 px-4 sm:px-6"
-            >
-              <Tab id="updates" className="h-auto px-0">
-                {t('Updates')}
-              </Tab>
-              <Tab id="meetings" className="h-auto px-0">
-                {t('Meetings')}
-              </Tab>
-              <Tab id="resources" className="h-auto px-0">
-                {t('Resources')}
-              </Tab>
-            </TabList>
-            <IconButton
-              variant="ghost"
-              size="small"
-              onPress={close}
-              aria-label={t('Close')}
-              className="sm:hidden"
-            >
-              <LuX className="size-5" />
-            </IconButton>
-          </div>
-
-          <TabPanel
-            id="updates"
-            className="flex min-h-0 flex-col overflow-y-auto p-0 sm:p-0"
+        <div className="flex shrink-0 items-center justify-end border-b border-neutral-gray1 px-4 py-2 sm:hidden">
+          <IconButton
+            variant="ghost"
+            size="small"
+            onPress={close}
+            aria-label={t('Close')}
           >
-            {isOpen ? (
-              <UpdatesTabContent
-                decisionProfileId={decisionProfileId}
-                canPostUpdate={canPostUpdate}
-                canReadUpdates={canReadUpdates}
-              />
-            ) : null}
-          </TabPanel>
-          <TabPanel
-            id="meetings"
-            className="flex min-h-0 flex-col overflow-y-auto p-0 sm:p-0"
-          >
-            <ComingSoonContent title={t('Meetings')} />
-          </TabPanel>
-          <TabPanel
-            id="resources"
-            className="flex min-h-0 flex-col overflow-y-auto p-0 sm:p-0"
-          >
-            <ComingSoonContent title={t('Resources')} />
-          </TabPanel>
-        </Tabs>
+            <LuX className="size-5" />
+          </IconButton>
+        </div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          {isOpen ? (
+            <UpdatesTabContent
+              decisionProfileId={decisionProfileId}
+              canPostUpdate={canPostUpdate}
+              canReadUpdates={canReadUpdates}
+            />
+          ) : null}
+        </div>
       </aside>
     </>
   );
@@ -208,16 +162,6 @@ const UpdatesTabContent = ({
           </EmptyState>
         )}
       </div>
-    </div>
-  );
-};
-
-const ComingSoonContent = ({ title }: { title: string }) => {
-  const t = useTranslations();
-  return (
-    <div className="flex flex-col px-4 pt-6 pb-8 sm:px-6">
-      <Header2 className="font-serif text-title-base">{title}</Header2>
-      <p className="mt-4 text-sm text-neutral-gray4">{t('Coming soon')}</p>
     </div>
   );
 };
