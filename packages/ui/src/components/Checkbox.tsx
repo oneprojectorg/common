@@ -54,8 +54,8 @@ const checkboxStyles = tv({
   base: 'group flex items-center gap-2 text-sm transition',
   variants: {
     isDisabled: {
-      false: 'text-neutral-800',
-      true: 'text-neutral-gray2',
+      false: 'cursor-pointer text-neutral-800',
+      true: 'cursor-not-allowed text-neutral-gray2',
     },
   },
 });
