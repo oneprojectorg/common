@@ -19,7 +19,6 @@ import { CommonError } from '../../utils';
 import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
 import { decisionPermission } from '../decision/permissions';
 import { sendCommentNotificationEmail } from '../email';
-import { buildProposalCommentUrl } from './commentNotificationUrls';
 import { resolvePostRoots } from './resolvePostRoots';
 
 interface CreatePostServiceInput extends CreatePostInput {
@@ -171,16 +170,15 @@ const sendProposalCommentNotification = async (
           const contentType = 'proposal';
 
           const baseUrl = OPURLConfig('APP').ENV_URL;
+          const decisionSlug = proposal.processInstance?.profile?.slug;
 
-          const contentUrl = buildProposalCommentUrl({
-            baseUrl,
-            decisionSlug: proposal.processInstance?.profile?.slug,
-            proposalProfileId: proposal.profileId,
-          });
-
-          if (!contentUrl) {
-            return;
+          if (!decisionSlug) {
+            throw new CommonError(
+              `Cannot build proposal comment URL: proposal ${proposalId} has no process instance or decision profile`,
+            );
           }
+
+          const contentUrl = `${baseUrl}/decisions/${decisionSlug}/proposal/${proposal.profileId}`;
 
           // Extract proposal content from proposalData
           const proposalContent =
