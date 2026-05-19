@@ -901,6 +901,7 @@
   "File too large: {name}": "File too large: {name}",
   "Unsupported file type: {name}": "Unsupported file type: {name}",
   "Upload failed": "Upload failed",
+  "Image upload failed": "Image upload failed",
   "Navigation": "Navigation",
   "Log in": "Log in",
   "Helping people decide together how to use their resources": "Helping people decide together how to use their resources",

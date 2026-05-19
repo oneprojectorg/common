@@ -12,6 +12,7 @@ import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
 import type { TranslateFn } from '@/lib/i18n';
+import { uploadFileViaSignedUrl } from '@/lib/uploadViaSignedUrl';
 
 import { StepProps } from '../MultiStepForm';
 import { FocusAreasField } from '../Profile/ProfileDetails/FocusAreasField';
@@ -116,7 +117,10 @@ export const PersonalDetailsForm = ({
   );
   const t = useTranslations();
   const utils = trpc.useUtils();
+  const createAvatarUploadUrl = trpc.account.createImageUploadUrl.useMutation();
   const uploadImage = trpc.account.uploadImage.useMutation();
+  const createBannerUploadUrl =
+    trpc.account.createBannerImageUploadUrl.useMutation();
   const uploadBannerImage = trpc.account.uploadBannerImage.useMutation();
   const updateProfile = trpc.account.updateUserProfile.useMutation();
   // Get current user's profile ID for the focus areas component
@@ -134,63 +138,59 @@ export const PersonalDetailsForm = ({
   const handleImageUpload = async (
     file: File,
     setImageUrl: (url: string | undefined) => void,
-    uploadMutation: typeof uploadBannerImage | typeof uploadImage,
+    target: 'avatar' | 'banner',
   ): Promise<void> => {
-    const reader = new FileReader();
+    if (!acceptedTypes.includes(file.type)) {
+      const types = acceptedTypes.map((type) => type.split('/')[1]).join(', ');
+      toast.error({
+        message: t('That file type is not supported. Accepted types: {types}', {
+          types,
+        }),
+      });
+      return;
+    }
 
-    reader.onload = async (e) => {
-      const base64 = (e.target?.result as string)?.split(',')[1];
+    if (file.size > DEFAULT_MAX_SIZE) {
+      const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
+      toast.error({
+        message: t('File too large. Maximum size: {size}MB', {
+          size: maxSizeMB,
+        }),
+      });
+      return;
+    }
 
-      if (!base64) {
-        return;
-      }
+    const previousUrl = target === 'banner' ? bannerImageUrl : profileImageUrl;
+    const previewUrl = URL.createObjectURL(file);
+    setImageUrl(previewUrl);
 
-      if (!acceptedTypes.includes(file.type)) {
-        const types = acceptedTypes
-          .map((type) => type.split('/')[1])
-          .join(', ');
-        toast.error({
-          message: t(
-            'That file type is not supported. Accepted types: {types}',
-            { types },
-          ),
-        });
-        return;
-      }
+    const createUrl =
+      target === 'banner' ? createBannerUploadUrl : createAvatarUploadUrl;
+    const recordUpload = target === 'banner' ? uploadBannerImage : uploadImage;
 
-      if (file.size > DEFAULT_MAX_SIZE) {
-        const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
-        toast.error({
-          message: t('File too large. Maximum size: {size}MB', {
-            size: maxSizeMB,
-          }),
-        });
-        return;
-      }
-
-      const dataUrl = `data:${file.type};base64,${base64}`;
-      setImageUrl(dataUrl);
-
-      const res = await uploadMutation.mutateAsync(
-        {
-          file: base64,
-          fileName: file.name,
-          mimeType: file.type,
-        },
-        {
-          onSuccess: () => {
-            utils.account.getMyAccount.invalidate();
-            utils.account.getUserProfiles.invalidate();
-          },
-        },
-      );
+    try {
+      const res = await uploadFileViaSignedUrl(file, {
+        createUploadUrl: (args) => createUrl.mutateAsync(args),
+        recordUpload: (args) => recordUpload.mutateAsync(args),
+      });
 
       if (res?.url) {
         setImageUrl(res.url);
       }
-    };
 
-    reader.readAsDataURL(file);
+      utils.account.getMyAccount.invalidate();
+      utils.account.getUserProfiles.invalidate();
+    } catch (err) {
+      setImageUrl(previousUrl);
+      toast.error({
+        message:
+          err instanceof Error && err.message
+            ? err.message
+            : t('Image upload failed'),
+      });
+    } finally {
+      URL.revokeObjectURL(previewUrl);
+    }
   };
 
   // Hydrate form from store if present
@@ -252,7 +252,7 @@ export const PersonalDetailsForm = ({
           <BannerUploader
             value={bannerImageUrl ?? undefined}
             onChange={(file: File) =>
-              handleImageUpload(file, setBannerImageUrl, uploadBannerImage)
+              handleImageUpload(file, setBannerImageUrl, 'banner')
             }
             uploading={uploadBannerImage.isPending}
             error={uploadBannerImage.error?.message || undefined}
@@ -262,7 +262,7 @@ export const PersonalDetailsForm = ({
             className="absolute bottom-0 left-4 aspect-square size-20 sm:size-28"
             value={profileImageUrl ?? undefined}
             onChange={(file: File) =>
-              handleImageUpload(file, setProfileImageUrl, uploadImage)
+              handleImageUpload(file, setProfileImageUrl, 'avatar')
             }
             uploading={uploadImage.isPending}
             error={uploadImage.error?.message || undefined}

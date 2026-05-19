@@ -1,12 +1,20 @@
-import { CommonError, ValidationError } from '@op/common';
-import { createServerClient } from '@op/supabase/lib';
+import { CommonError } from '@op/common';
 import { waitUntil } from '@vercel/functions';
-import { Buffer } from 'buffer';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
-import { MAX_FILE_SIZE, sanitizeS3Filename } from '../../utils';
+import { sanitizeS3Filename } from '../../utils';
 import { trackImageUpload } from '../../utils/analytics';
+import {
+  STORAGE_BUCKET,
+  createSignedUploadUrl,
+  createStorageAdmin,
+  findUploadedStorageObject,
+  scheduleStorageObjectCleanup,
+  validateMimeAndSize,
+  validateStoragePath,
+} from '../../utils/storage';
 
 const ALLOWED_MIME_TYPES = [
   'image/png',
@@ -16,12 +24,39 @@ const ALLOWED_MIME_TYPES = [
 ];
 
 export const uploadAvatarImage = router({
+  createAvatarImageUploadUrl: commonAuthedProcedure()
+    .input(
+      z.object({
+        fileName: z.string().min(1),
+        mimeType: z.string(),
+        fileSize: z.number().positive(),
+      }),
+    )
+    .output(
+      z.object({
+        signedUrl: z.string(),
+        path: z.string(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { fileName, mimeType, fileSize } = input;
+
+      validateMimeAndSize({
+        mimeType,
+        fileSize,
+        allowedMimeTypes: ALLOWED_MIME_TYPES,
+      });
+
+      const sanitized = sanitizeS3Filename(fileName);
+      const path = `${ctx.user.id}/orgAvatar/${randomUUID()}_${sanitized}`;
+
+      return createSignedUploadUrl(path);
+    }),
+
   uploadAvatarImage: commonAuthedProcedure()
     .input(
       z.object({
-        file: z.string(), // base64 encoded
-        fileName: z.string(),
-        mimeType: z.string(),
+        path: z.string(),
       }),
     )
     .output(
@@ -32,94 +67,126 @@ export const uploadAvatarImage = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const { file, fileName, mimeType } = input;
-      // @ts-ignore
-      const { logger } = ctx;
+      const { path } = input;
 
-      const sanitizedFileName = sanitizeS3Filename(fileName);
-      if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
-        throw new ValidationError('Unsupported file type');
-      }
-
-      let buffer: Buffer;
+      validateStoragePath({
+        path,
+        expectedPrefix: `${ctx.user.id}/orgAvatar/`,
+      });
 
       try {
-        // Accept data URLs or plain base64
-        let base64 = file;
-
-        if (file.startsWith('data:')) {
-          const commaIndex = file.indexOf(',');
-
-          if (commaIndex === -1) {
-            throw new Error('Invalid data URL');
-          }
-
-          base64 = file.slice(commaIndex + 1);
-        }
-
-        buffer = Buffer.from(base64, 'base64');
-      } catch (_err) {
-        throw new ValidationError('Invalid base64 encoding');
-      }
-
-      // Check file size
-      if (buffer.length > MAX_FILE_SIZE) {
-        throw new ValidationError(
-          `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
-        );
-      }
-
-      const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE!,
-        {
-          cookieOptions: {},
-          cookies: {
-            getAll: async () => [],
-            setAll: async () => {},
-          },
-        },
-      );
-      const bucket = 'assets';
-      const filePath = `${ctx.user.id}/temp/${Date.now()}_${sanitizedFileName}`;
-
-      logger.info('UPLOADING FILE' + filePath);
-
-      const { error: uploadError, data } = await supabase.storage
-        .from(bucket)
-        .upload(filePath, buffer, {
-          contentType: mimeType,
-          upsert: false,
+        const storageObject = await findUploadedStorageObject({
+          path,
+          allowedMimeTypes: ALLOWED_MIME_TYPES,
         });
 
-      if (uploadError) {
-        throw new CommonError(uploadError.message);
+        waitUntil(trackImageUpload(ctx, 'profile', false));
+
+        const supabase = createStorageAdmin();
+        const { data: signedUrlData, error: signedUrlError } =
+          await supabase.storage
+            .from(STORAGE_BUCKET)
+            .createSignedUrl(path, 60 * 60);
+
+        if (signedUrlError || !signedUrlData) {
+          console.error('createSignedUrl failed', {
+            path,
+            error: signedUrlError,
+          });
+          throw new CommonError('Could not get signed url');
+        }
+
+        return {
+          url: signedUrlData.signedUrl,
+          path,
+          id: storageObject.id,
+        };
+      } catch (err) {
+        scheduleStorageObjectCleanup(path);
+        throw err;
       }
+    }),
 
-      // Get signed URL
-      const { data: signedUrlData, error: signedUrlError } =
-        await supabase.storage.from(bucket).createSignedUrl(filePath, 60 * 60); // 1 hour
+  createBannerImageUploadUrl: commonAuthedProcedure()
+    .input(
+      z.object({
+        fileName: z.string().min(1),
+        mimeType: z.string(),
+        fileSize: z.number().positive(),
+      }),
+    )
+    .output(
+      z.object({
+        signedUrl: z.string(),
+        path: z.string(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { fileName, mimeType, fileSize } = input;
 
-      logger.info('GOT SIGNED URL' + signedUrlData);
+      validateMimeAndSize({
+        mimeType,
+        fileSize,
+        allowedMimeTypes: ALLOWED_MIME_TYPES,
+      });
 
-      if (signedUrlError || !signedUrlData) {
-        throw new CommonError(
-          signedUrlError?.message || 'Could not get signed url',
-        );
+      const sanitized = sanitizeS3Filename(fileName);
+      const path = `${ctx.user.id}/orgBanner/${randomUUID()}_${sanitized}`;
+
+      return createSignedUploadUrl(path);
+    }),
+
+  uploadBannerImage: commonAuthedProcedure()
+    .input(
+      z.object({
+        path: z.string(),
+      }),
+    )
+    .output(
+      z.object({
+        url: z.string(),
+        path: z.string(),
+        id: z.string(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { path } = input;
+
+      validateStoragePath({
+        path,
+        expectedPrefix: `${ctx.user.id}/orgBanner/`,
+      });
+
+      try {
+        const storageObject = await findUploadedStorageObject({
+          path,
+          allowedMimeTypes: ALLOWED_MIME_TYPES,
+        });
+
+        waitUntil(trackImageUpload(ctx, 'banner', false));
+
+        const supabase = createStorageAdmin();
+        const { data: signedUrlData, error: signedUrlError } =
+          await supabase.storage
+            .from(STORAGE_BUCKET)
+            .createSignedUrl(path, 60 * 60);
+
+        if (signedUrlError || !signedUrlData) {
+          console.error('createSignedUrl failed', {
+            path,
+            error: signedUrlError,
+          });
+          throw new CommonError('Could not get signed url');
+        }
+
+        return {
+          url: signedUrlData.signedUrl,
+          path,
+          id: storageObject.id,
+        };
+      } catch (err) {
+        scheduleStorageObjectCleanup(path);
+        throw err;
       }
-
-      logger.info(
-        'RETURNING UPLOAD URL' + signedUrlData.signedUrl + ' - ' + filePath,
-      );
-
-      // Track analytics - for organization uploads, we'll track as new uploads since they're temporary (non-blocking)
-      const imageType = filePath.includes('banner') ? 'banner' : 'profile';
-      waitUntil(trackImageUpload(ctx, imageType, false));
-
-      return {
-        url: signedUrlData.signedUrl,
-        path: filePath,
-        id: data.id,
-      };
     }),
 });

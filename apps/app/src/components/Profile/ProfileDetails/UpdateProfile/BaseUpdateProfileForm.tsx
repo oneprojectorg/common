@@ -16,6 +16,7 @@ import { ReactNode, Suspense, forwardRef, useState } from 'react';
 import { z } from 'zod';
 
 import { useTranslations } from '@/lib/i18n';
+import { uploadFileViaSignedUrl } from '@/lib/uploadViaSignedUrl';
 
 import { FormContainer } from '../../../form/FormContainer';
 import { getFieldErrorMessage, useAppForm } from '../../../form/utils';
@@ -58,7 +59,11 @@ export const BaseUpdateProfileForm = forwardRef<
     const t = useTranslations();
     const router = useRouter();
 
+    const createAvatarUploadUrl =
+      trpc.account.createImageUploadUrl.useMutation();
     const uploadImage = trpc.account.uploadImage.useMutation();
+    const createBannerUploadUrl =
+      trpc.account.createBannerImageUploadUrl.useMutation();
     const uploadBannerImage = trpc.account.uploadBannerImage.useMutation();
 
     const profileId = profile.id;
@@ -107,64 +112,65 @@ export const BaseUpdateProfileForm = forwardRef<
     const handleImageUpload = async (
       file: File,
       setImageUrl: (url: string | undefined) => void,
-      uploadMutation: typeof uploadImage | typeof uploadBannerImage,
+      target: 'avatar' | 'banner',
     ): Promise<void> => {
-      const reader = new FileReader();
-
-      reader.onload = async (e) => {
-        const base64 = (e.target?.result as string)?.split(',')[1];
-
-        if (!base64) {
-          return;
-        }
-
-        if (!acceptedImageTypes.includes(file.type)) {
-          toast.error({
-            message: t(
-              'That file type is not supported. Accepted types: {types}',
-              {
-                types: acceptedImageTypes
-                  .map((type) => type.split('/')[1])
-                  .join(', '),
-              },
-            ),
-          });
-          return;
-        }
-
-        if (file.size > DEFAULT_MAX_SIZE) {
-          const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
-          toast.error({
-            message: t('File too large. Maximum size: {size}MB', {
-              size: maxSizeMB,
-            }),
-          });
-          return;
-        }
-
-        const dataUrl = `data:${file.type};base64,${base64}`;
-        setImageUrl(dataUrl);
-
-        const res = await uploadMutation.mutateAsync(
-          {
-            file: base64,
-            fileName: file.name,
-            mimeType: file.type,
-          },
-          {
-            onSuccess: () => {
-              onImageUploadSuccess?.();
-              router.refresh();
+      if (!acceptedImageTypes.includes(file.type)) {
+        toast.error({
+          message: t(
+            'That file type is not supported. Accepted types: {types}',
+            {
+              types: acceptedImageTypes
+                .map((type) => type.split('/')[1])
+                .join(', '),
             },
-          },
-        );
+          ),
+        });
+        return;
+      }
+
+      if (file.size > DEFAULT_MAX_SIZE) {
+        const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
+        toast.error({
+          message: t('File too large. Maximum size: {size}MB', {
+            size: maxSizeMB,
+          }),
+        });
+        return;
+      }
+
+      const previousUrl =
+        target === 'banner' ? bannerImageUrl : profileImageUrl;
+      const previewUrl = URL.createObjectURL(file);
+      setImageUrl(previewUrl);
+
+      const createUrl =
+        target === 'banner' ? createBannerUploadUrl : createAvatarUploadUrl;
+      const recordUpload =
+        target === 'banner' ? uploadBannerImage : uploadImage;
+
+      try {
+        const res = await uploadFileViaSignedUrl(file, {
+          createUploadUrl: (args) => createUrl.mutateAsync(args),
+          recordUpload: (args) => recordUpload.mutateAsync(args),
+        });
 
         if (res?.url) {
           setImageUrl(res.url);
         }
-      };
 
-      reader.readAsDataURL(file);
+        onImageUploadSuccess?.();
+        router.refresh();
+      } catch (err) {
+        setImageUrl(previousUrl);
+        toast.error({
+          message:
+            err instanceof Error && err.message
+              ? err.message
+              : t('Image upload failed'),
+        });
+      } finally {
+        URL.revokeObjectURL(previewUrl);
+      }
     };
 
     return (
@@ -182,7 +188,7 @@ export const BaseUpdateProfileForm = forwardRef<
             <BannerUploader
               value={bannerImageUrl ?? undefined}
               onChange={(file: File) =>
-                handleImageUpload(file, setBannerImageUrl, uploadBannerImage)
+                handleImageUpload(file, setBannerImageUrl, 'banner')
               }
               uploading={uploadBannerImage.isPending}
               error={uploadBannerImage.error?.message || undefined}
@@ -192,7 +198,7 @@ export const BaseUpdateProfileForm = forwardRef<
               className="absolute bottom-0 left-4 aspect-square size-20 sm:size-28"
               value={profileImageUrl ?? undefined}
               onChange={(file: File) =>
-                handleImageUpload(file, setProfileImageUrl, uploadImage)
+                handleImageUpload(file, setProfileImageUrl, 'avatar')
               }
               uploading={uploadImage.isPending}
               error={uploadImage.error?.message || undefined}

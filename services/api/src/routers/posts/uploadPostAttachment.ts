@@ -1,11 +1,19 @@
 import { CommonError, getCurrentProfileId } from '@op/common';
-import { createServerClient } from '@op/supabase/lib';
-import { Buffer } from 'buffer';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 
 import withDB from '../../middlewares/withDB';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
-import { MAX_FILE_SIZE, sanitizeS3Filename } from '../../utils';
+import { sanitizeS3Filename } from '../../utils';
+import {
+  STORAGE_BUCKET,
+  createSignedUploadUrl,
+  createStorageAdmin,
+  findUploadedStorageObject,
+  scheduleStorageObjectCleanup,
+  validateMimeAndSize,
+  validateStoragePath,
+} from '../../utils/storage';
 
 const ALLOWED_MIME_TYPES = [
   'image/png',
@@ -15,16 +23,53 @@ const ALLOWED_MIME_TYPES = [
   'application/pdf',
 ];
 
+const UNSUPPORTED_MESSAGE =
+  'Unsupported file type. Only images (PNG, JPEG, GIF, WebP) and PDFs are allowed.';
+
 export const uploadPostAttachment = router({
+  createPostAttachmentUploadUrl: commonAuthedProcedure({
+    rateLimit: { windowSize: 10, maxRequests: 20 },
+  })
+    .use(withDB)
+    .input(
+      z.object({
+        fileName: z.string().min(1),
+        mimeType: z.string(),
+        fileSize: z.number().positive(),
+      }),
+    )
+    .output(
+      z.object({
+        signedUrl: z.string(),
+        path: z.string(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { fileName, mimeType, fileSize } = input;
+      const { user } = ctx;
+
+      validateMimeAndSize({
+        mimeType,
+        fileSize,
+        allowedMimeTypes: ALLOWED_MIME_TYPES,
+        unsupportedMessage: UNSUPPORTED_MESSAGE,
+      });
+
+      const profileId = await getCurrentProfileId(user.id);
+      const sanitized = sanitizeS3Filename(fileName);
+      const path = `profile/${profileId}/posts/${randomUUID()}_${sanitized}`;
+
+      return createSignedUploadUrl(path);
+    }),
+
   uploadPostAttachment: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 20 },
   })
     .use(withDB)
     .input(
       z.object({
-        file: z.string(), // base64 encoded
-        fileName: z.string(),
-        mimeType: z.string(),
+        path: z.string(),
+        fileName: z.string().min(1),
       }),
     )
     .output(
@@ -38,93 +83,47 @@ export const uploadPostAttachment = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const { file, fileName, mimeType } = input;
+      const { path, fileName } = input;
       const { user } = ctx;
+
       const profileId = await getCurrentProfileId(user.id);
-
-      const sanitizedFileName = sanitizeS3Filename(fileName);
-
-      if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
-        throw new CommonError(
-          'Unsupported file type. Only images (PNG, JPEG, GIF, WebP) and PDFs are allowed.',
-        );
-      }
-
-      let buffer: Buffer;
+      validateStoragePath({
+        path,
+        expectedPrefix: `profile/${profileId}/posts/`,
+      });
 
       try {
-        // Accept data URLs or plain base64
-        let base64 = file;
-
-        if (file.startsWith('data:')) {
-          const commaIndex = file.indexOf(',');
-
-          if (commaIndex === -1) {
-            throw new Error('Invalid data URL');
-          }
-
-          base64 = file.slice(commaIndex + 1);
-        }
-
-        buffer = Buffer.from(base64, 'base64');
-      } catch (_err) {
-        throw new CommonError('Invalid base64 encoding');
-      }
-
-      // Check file size
-      if (buffer.length > MAX_FILE_SIZE) {
-        throw new CommonError(
-          `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
-        );
-      }
-
-      const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE!,
-        {
-          cookieOptions: {},
-          cookies: {
-            getAll: async () => [],
-            setAll: async () => {},
-          },
-        },
-      );
-
-      const bucket = 'assets';
-      const filePath = `profile/${profileId}/posts/${Date.now()}_${sanitizedFileName}`;
-
-      const { error: uploadError, data } = await supabase.storage
-        .from(bucket)
-        .upload(filePath, buffer, {
-          contentType: mimeType,
-          upsert: false,
+        const storageObject = await findUploadedStorageObject({
+          path,
+          allowedMimeTypes: ALLOWED_MIME_TYPES,
+          unsupportedMessage: UNSUPPORTED_MESSAGE,
         });
 
-      if (uploadError) {
-        throw new CommonError(uploadError.message);
+        const supabase = createStorageAdmin();
+        const { data: signedUrlData, error: signedUrlError } =
+          await supabase.storage
+            .from(STORAGE_BUCKET)
+            .createSignedUrl(path, 60 * 60 * 24);
+
+        if (signedUrlError || !signedUrlData) {
+          console.error('createSignedUrl failed', {
+            path,
+            error: signedUrlError,
+          });
+          throw new CommonError('Could not get signed url');
+        }
+
+        return {
+          url: signedUrlData.signedUrl,
+          path,
+          id: storageObject.id,
+          fileName: sanitizeS3Filename(fileName),
+          mimeType: storageObject.mimetype,
+          fileSize: storageObject.size,
+        };
+      } catch (err) {
+        scheduleStorageObjectCleanup(path);
+        throw err;
       }
-
-      if (!data) {
-        throw new CommonError('Upload failed - no data returned');
-      }
-
-      // Get signed URL
-      const { data: signedUrlData, error: signedUrlError } =
-        await supabase.storage
-          .from(bucket)
-          .createSignedUrl(filePath, 60 * 60 * 24); // 24 hours
-
-      if (signedUrlError || !signedUrlData) {
-        throw new CommonError('Could not get signed url');
-      }
-
-      return {
-        url: signedUrlData.signedUrl,
-        path: filePath,
-        id: data.id,
-        fileName: sanitizedFileName,
-        mimeType,
-        fileSize: buffer.length,
-      };
     }),
 });

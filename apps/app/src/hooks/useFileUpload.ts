@@ -2,6 +2,8 @@ import { trpc } from '@op/api/client';
 import { toast } from '@op/ui/Toast';
 import { useCallback, useState } from 'react';
 
+import { uploadFileViaSignedUrl } from '@/lib/uploadViaSignedUrl';
+
 export interface FilePreview {
   id: string;
   file: File;
@@ -30,6 +32,13 @@ const DEFAULT_ACCEPTED_TYPES = [
 const DEFAULT_MAX_FILES = 10;
 export const DEFAULT_MAX_SIZE = 25 * 1024 * 1024; // 25MB
 
+function errorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Error && err.message) {
+    return err.message;
+  }
+  return fallback;
+}
+
 export const useFileUpload = (options: UseFileUploadOptions) => {
   const {
     acceptedTypes = DEFAULT_ACCEPTED_TYPES,
@@ -40,6 +49,8 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
   const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
 
+  const createUploadUrl =
+    trpc.posts.createPostAttachmentUploadUrl.useMutation();
   const uploadAttachment = trpc.posts.uploadPostAttachment.useMutation();
 
   const validateFile = (file: File): string | null => {
@@ -65,13 +76,12 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
   }> => {
     const validationError = validateFile(file);
     if (validationError) {
-      toast.status({ code: 500, message: validationError });
+      toast.error({ message: validationError });
       throw new Error(validationError);
     }
 
     const previewId = `${Date.now()}-${Math.random()}`;
 
-    // Create initial preview
     const preview: FilePreview = {
       id: previewId,
       file,
@@ -85,26 +95,11 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
     setFilePreviews((prev) => [...prev, preview]);
 
     try {
-      // Convert file to base64
-      const reader = new FileReader();
-      const base64 = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(new Error('Failed to read file'));
-        reader.readAsDataURL(file);
+      const result = await uploadFileViaSignedUrl(file, {
+        createUploadUrl: (args) => createUploadUrl.mutateAsync(args),
+        recordUpload: (args) => uploadAttachment.mutateAsync(args),
       });
 
-      const result = await uploadAttachment
-        .mutateAsync({
-          file: base64,
-          fileName: file.name,
-          mimeType: file.type,
-        })
-        .catch((err) => {
-          toast.status(err);
-          throw err;
-        });
-
-      // Update preview with success
       setFilePreviews((prev) =>
         prev.map((f) =>
           f.id === previewId
@@ -115,16 +110,9 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
 
       return result;
     } catch (error) {
-      // Update preview with error
+      toast.error({ message: errorMessage(error, 'Upload failed') });
       setFilePreviews((prev) =>
-        prev.map((f) =>
-          f.id === previewId
-            ? {
-                ...f,
-                uploading: false,
-              }
-            : f,
-        ),
+        prev.map((f) => (f.id === previewId ? { ...f, uploading: false } : f)),
       );
       throw error;
     }
@@ -152,7 +140,6 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // Only set drag over to false if we're leaving the main container
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setIsDragOver(false);
     }
@@ -166,9 +153,8 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
 
       const files = Array.from(e.dataTransfer.files);
 
-      // Check file limit
       if (filePreviews.length + files.length > maxFiles) {
-        alert(`Maximum ${maxFiles} files allowed`);
+        toast.error({ message: `Maximum ${maxFiles} files allowed` });
         return;
       }
 
@@ -176,14 +162,13 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
         acceptedTypes.includes(file.type),
       );
 
-      if (validFiles.length === 0) {
-        alert(
-          `Please drop only supported file types: ${acceptedTypes.join(', ')}`,
-        );
-        return;
+      const invalidCount = files.length - validFiles.length;
+      if (invalidCount > 0) {
+        toast.error({
+          message: `${invalidCount} file(s) skipped. Supported types: ${acceptedTypes.join(', ')}`,
+        });
       }
 
-      // Upload each valid file
       for (const file of validFiles) {
         try {
           await uploadFile(file);
@@ -208,26 +193,17 @@ export const useFileUpload = (options: UseFileUploadOptions) => {
   };
 
   return {
-    // State
     filePreviews,
     isDragOver,
-
-    // Actions
     uploadFile,
     removeFile,
     clearFiles,
-
-    // Drag and drop handlers
     handleDragOver,
     handleDragLeave,
     handleDrop,
-
-    // Computed values
     getUploadedAttachmentIds,
     hasUploadedFiles,
     isUploading,
-
-    // Configuration
     acceptedTypes,
     maxFiles,
     maxSizePerFile,

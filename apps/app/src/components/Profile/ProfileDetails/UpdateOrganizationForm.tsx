@@ -18,6 +18,7 @@ import { forwardRef, useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+import { uploadFileViaSignedUrl } from '@/lib/uploadViaSignedUrl';
 
 import { GeoNamesMultiSelect } from '../../GeoNamesMultiSelect';
 import { type ImageData } from '../../Onboarding/shared/OrganizationFormFields';
@@ -124,8 +125,12 @@ export const UpdateOrganizationForm = forwardRef<
     : undefined;
 
   const updateOrganization = trpc.organization.update.useMutation();
+  const createAvatarUploadUrl =
+    trpc.organization.createAvatarImageUploadUrl.useMutation();
   const uploadAvatarImage = trpc.organization.uploadAvatarImage.useMutation();
-  const uploadImage = trpc.organization.uploadAvatarImage.useMutation();
+  const createBannerUploadUrl =
+    trpc.organization.createBannerImageUploadUrl.useMutation();
+  const uploadBannerImage = trpc.organization.uploadBannerImage.useMutation();
 
   const [profileImage, setProfileImage] = useState<ImageData | undefined>(
     initialProfileImage,
@@ -196,60 +201,62 @@ export const UpdateOrganizationForm = forwardRef<
   const handleImageUpload = async (
     file: File,
     setImage: (image: ImageData | undefined) => void,
-    uploadMutation: any,
+    target: 'avatar' | 'banner',
   ): Promise<void> => {
-    const reader = new FileReader();
+    const acceptedTypes = [
+      'image/gif',
+      'image/png',
+      'image/jpeg',
+      'image/webp',
+    ];
+    if (!acceptedTypes.includes(file.type)) {
+      toast.error({
+        message: t('That file type is not supported. Accepted types: {types}', {
+          types: acceptedTypes.map((type) => type.split('/')[1]).join(', '),
+        }),
+      });
+      return;
+    }
 
-    reader.onload = async (e) => {
-      const base64 = (e.target?.result as string)?.split(',')[1];
+    if (file.size > DEFAULT_MAX_SIZE) {
+      const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
+      toast.error({
+        message: t('File too large. Maximum size: {size}MB', {
+          size: maxSizeMB,
+        }),
+      });
+      return;
+    }
 
-      if (!base64) {
-        return;
-      }
+    const previousImage = target === 'banner' ? bannerImage : profileImage;
+    const previewUrl = URL.createObjectURL(file);
+    setImage({ url: previewUrl });
 
-      const acceptedTypes = [
-        'image/gif',
-        'image/png',
-        'image/jpeg',
-        'image/webp',
-      ];
-      if (!acceptedTypes.includes(file.type)) {
-        toast.error({
-          message: t(
-            'That file type is not supported. Accepted types: {types}',
-            {
-              types: acceptedTypes.map((type) => type.split('/')[1]).join(', '),
-            },
-          ),
-        });
-        return;
-      }
+    const createUrl =
+      target === 'banner' ? createBannerUploadUrl : createAvatarUploadUrl;
+    const recordUpload =
+      target === 'banner' ? uploadBannerImage : uploadAvatarImage;
 
-      if (file.size > DEFAULT_MAX_SIZE) {
-        const maxSizeMB = (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2);
-        toast.error({
-          message: t('File too large. Maximum size: {size}MB', {
-            size: maxSizeMB,
-          }),
-        });
-        return;
-      }
-
-      const dataUrl = `data:${file.type};base64,${base64}`;
-
-      setImage({ url: dataUrl });
-      const res = await uploadMutation.mutateAsync({
-        file: base64,
-        fileName: file.name,
-        mimeType: file.type,
+    try {
+      const res = await uploadFileViaSignedUrl(file, {
+        createUploadUrl: (args) => createUrl.mutateAsync(args),
+        recordUpload: (args) => recordUpload.mutateAsync(args),
       });
 
       if (res?.url) {
         setImage(res);
       }
-    };
-
-    reader.readAsDataURL(file);
+    } catch (err) {
+      setImage(previousImage);
+      toast.error({
+        message:
+          err instanceof Error && err.message
+            ? err.message
+            : t('Image upload failed'),
+      });
+    } finally {
+      URL.revokeObjectURL(previewUrl);
+    }
   };
 
   return (
@@ -268,16 +275,16 @@ export const UpdateOrganizationForm = forwardRef<
           <BannerUploader
             value={bannerImage?.url ?? undefined}
             onChange={(file: File) =>
-              handleImageUpload(file, setBannerImage, uploadImage)
+              handleImageUpload(file, setBannerImage, 'banner')
             }
-            uploading={uploadImage.isPending}
-            error={uploadImage.error?.message || undefined}
+            uploading={uploadBannerImage.isPending}
+            error={uploadBannerImage.error?.message || undefined}
           />
           <AvatarUploader
             className="absolute bottom-0 left-4 aspect-square size-20 sm:size-28"
             value={profileImage?.url ?? undefined}
             onChange={(file: File) =>
-              handleImageUpload(file, setProfileImage, uploadAvatarImage)
+              handleImageUpload(file, setProfileImage, 'avatar')
             }
             uploading={uploadAvatarImage.isPending}
             error={uploadAvatarImage.error?.message || undefined}
