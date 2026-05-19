@@ -1,6 +1,7 @@
 import { Link } from '@/lib/i18n/routing';
 
 import { CommonLogo } from '@/components/CommonLogo';
+import { TranslatedText } from '@/components/TranslatedText';
 
 export const FullScreenSplitMain = ({
   logo = true,
@@ -18,6 +19,9 @@ export const FullScreenSplitMain = ({
               href="/"
               className="flex items-center gap-2 hover:no-underline"
             >
+              <span className="sr-only">
+                <TranslatedText text="Home" />
+              </span>
               <CommonLogo />
             </Link>
           ) : null}

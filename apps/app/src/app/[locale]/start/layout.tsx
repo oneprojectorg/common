@@ -1,6 +1,7 @@
 import { Link } from '@/lib/i18n/routing';
 
 import { CommonLogo } from '@/components/CommonLogo';
+import { TranslatedText } from '@/components/TranslatedText';
 
 const StartLayout = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -13,6 +14,9 @@ const StartLayout = ({ children }: { children: React.ReactNode }) => {
               href="/"
               className="flex items-center gap-2 hover:no-underline"
             >
+              <span className="sr-only">
+                <TranslatedText text="Home" />
+              </span>
               <CommonLogo />
             </Link>
           </div>
