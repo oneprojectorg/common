@@ -37,7 +37,7 @@
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-neutral-gray1, currentColor);
+    border-color: var(--color-neutral-gray-1, currentColor);
   }
 }
 
@@ -164,90 +164,52 @@
   --spacing-18: 4.5rem;
 
   /* ============================================
-   * Colors - Teal
+   * Colors - Primary (Figma source-of-truth names)
    * ============================================ */
-  --color-teal-50: hsl(var(--op-teal-50));
-  --color-teal-100: hsl(var(--op-teal-100));
-  --color-teal-200: hsl(var(--op-teal-200));
-  --color-teal-300: hsl(var(--op-teal-300));
-  --color-teal: hsl(var(--op-teal-500));
+  --color-primary-50: var(--op-primary-50);
+  --color-primary-100: var(--op-primary-100);
+  --color-primary-500: var(--op-primary-500);
+  --color-primary-700: var(--op-primary-700);
+
+  --color-primary-yellow-500: var(--op-primary-yellow-500);
+  --color-primary-orange-50: var(--op-primary-orange-50);
+  --color-primary-orange-500: var(--op-primary-orange-500);
 
   /* ============================================
-   * Colors - Red
+   * Colors - Neutrals
    * ============================================ */
-  --color-red-100: hsl(var(--op-red-100));
-  --color-red-300: hsl(var(--op-red-300));
-  --color-red-600: hsl(var(--op-red-600));
-  --color-red-700: hsl(var(--op-red-700));
-  --color-red: hsl(var(--op-red-500));
-
-  /* ============================================
-   * Colors - Green
-   * ============================================ */
-  --color-green-500: hsl(var(--op-green-500));
-  --color-green-700: hsl(var(--op-green-700));
-  --color-green: hsl(var(--op-green-500));
-
-  /* ============================================
-   * Colors - Semantic Neutrals
-   * ============================================ */
-  --color-black: hsl(var(--op-neutral-950));
-  --color-charcoal: hsl(var(--op-neutral-900));
-  --color-darkGray: hsl(var(--op-neutral-700));
-  --color-midGray: hsl(var(--op-neutral-500));
-  --color-lightGray: hsl(var(--op-neutral-400));
-  --color-offWhite: hsl(var(--op-neutral-200));
-  --color-whiteish: hsl(var(--op-neutral-50));
-  --color-white: hsl(var(--op-white));
-
-  /* ============================================
-   * Colors - Border
-   * ============================================ */
-  --color-border: hsl(var(--op-offWhite));
-
-  /* ============================================
-   * Colors - Primary
-   * ============================================ */
-  --color-primary: hsl(var(--op-teal-500));
-  --color-primary-teal: hsl(var(--op-teal-500));
-  --color-primary-tealWhite: hsl(var(--op-teal-white));
-  --color-primary-tealBlack: hsl(var(--op-teal-600));
-  --color-primary-yellow: hsl(var(--op-yellow-500));
-  --color-primary-orange1: hsl(var(--op-orange1-500));
-  --color-primary-orange2: hsl(var(--op-orange2-500));
-
-  /* ============================================
-   * Colors - Neutral (semantic aliases)
-   * ============================================ */
-  --color-neutral-offWhite: hsl(var(--op-neutral-50));
-  --color-neutral-gray1: hsl(var(--op-neutral-200));
-  --color-neutral-gray2: hsl(var(--op-neutral-400));
-  --color-neutral-gray3: hsl(var(--op-neutral-500));
-  --color-neutral-gray4: hsl(var(--op-neutral-700));
-  --color-neutral-charcoal: hsl(var(--op-neutral-900));
-  --color-neutral-black: hsl(var(--op-neutral-950));
+  --color-white: var(--op-white);
+  --color-neutral-off-white: var(--op-neutral-off-white);
+  --color-neutral-gray-1: var(--op-neutral-gray-1);
+  --color-neutral-gray-2: var(--op-neutral-gray-2);
+  --color-neutral-gray-3: var(--op-neutral-gray-3);
+  --color-neutral-gray-4: var(--op-neutral-gray-4);
+  --color-neutral-charcoal: var(--op-neutral-charcoal);
+  --color-neutral-black: var(--op-neutral-black);
 
   /* ============================================
    * Colors - Functional
    * ============================================ */
-  --color-functional-red: hsl(var(--op-red-500));
-  --color-functional-redBlack: hsl(var(--op-red-600));
-  --color-functional-redWhite: hsl(var(--op-red-50));
-  --color-functional-green: hsl(var(--op-green-500));
-  --color-functional-greenWhite: hsl(var(--op-green-50));
-  --color-functional-yellowWhite: hsl(var(--op-yellow-50));
-  --color-status-green: hsl(var(--op-status-green));
-  --color-status-greenBg: hsl(var(--op-status-green-bg));
+  --color-functional-red-50: var(--op-functional-red-50);
+  --color-functional-red-100: var(--op-functional-red-100);
+  --color-functional-red-600: var(--op-functional-red-600);
+  --color-functional-red-800: var(--op-functional-red-800);
+  --color-functional-green-100: var(--op-functional-green-100);
+  --color-functional-green-600: var(--op-functional-green-600);
 
   /* ============================================
    * Colors - Data Visualization
    * ============================================ */
-  --color-data-purple: hsl(var(--op-purple-500));
-  --color-data-blue: hsl(var(--op-blue-500));
+  --color-data-purple: var(--op-data-purple);
+  --color-data-blue: var(--op-data-blue);
 
   /* ============================================
-   * Colors - Accent (from tailwindcss/colors.neutral)
-   * These are the default Tailwind neutral palette
+   * Colors - Border
+   * ============================================ */
+  --color-border: var(--color-neutral-gray-2);
+
+  /* ============================================
+   * Colors - Accent (default Tailwind neutral palette)
    * ============================================ */
   --color-accent-50: #fafafa;
   --color-accent-100: #f5f5f5;
@@ -262,13 +224,72 @@
   --color-accent-950: #0a0a0a;
 
   /* ============================================
+   * Legacy color aliases — pre-rename naming.
+   * Kept so existing components (text-primary-teal, bg-neutral-gray1, etc.)
+   * keep rendering during the gradual codemod. Remove once all consumers
+   * use the Figma-aligned names above.
+   *
+   * Notes on Figma↔code gaps:
+   *   - primary-orange1 and primary-orange2 collapse to one orange (hue distinction lost)
+   *   - functional-greenWhite maps to green-100 (Figma has no green-50)
+   *   - functional-yellowWhite borrows the orange-50 tint
+   *   - status-green / status-greenBg share the functional green scale
+   * ============================================ */
+  --color-primary: var(--op-primary-500);
+  --color-primary-teal: var(--color-primary-500);
+  --color-primary-tealBlack: var(--color-primary-700);
+  --color-primary-tealWhite: var(--color-primary-50);
+  --color-teal: var(--color-primary-500);
+  --color-teal-50: var(--color-primary-50);
+  --color-teal-100: var(--color-primary-100);
+  --color-teal-200: var(--color-primary-100);
+  --color-teal-300: var(--color-primary-100);
+
+  --color-primary-yellow: var(--color-primary-yellow-500);
+  --color-primary-orange1: var(--color-primary-orange-500);
+  --color-primary-orange2: var(--color-primary-orange-500);
+
+  --color-neutral-offWhite: var(--color-neutral-off-white);
+  --color-neutral-gray1: var(--color-neutral-gray-1);
+  --color-neutral-gray2: var(--color-neutral-gray-2);
+  --color-neutral-gray3: var(--color-neutral-gray-3);
+  --color-neutral-gray4: var(--color-neutral-gray-4);
+
+  /* Bare neutral aliases (e.g. text-charcoal, bg-offWhite) */
+  --color-black: var(--color-neutral-black);
+  --color-charcoal: var(--color-neutral-charcoal);
+  --color-darkGray: var(--color-neutral-gray-4);
+  --color-midGray: var(--color-neutral-gray-3);
+  --color-lightGray: var(--color-neutral-gray-2);
+  --color-offWhite: var(--color-neutral-gray-1);
+  --color-whiteish: var(--color-neutral-off-white);
+
+  --color-functional-red: var(--color-functional-red-600);
+  --color-functional-redBlack: var(--color-functional-red-800);
+  --color-functional-redWhite: var(--color-functional-red-50);
+  --color-red: var(--color-functional-red-600);
+  --color-red-100: var(--color-functional-red-100);
+  --color-red-300: var(--color-functional-red-100);
+  --color-red-600: var(--color-functional-red-600);
+  --color-red-700: var(--color-functional-red-800);
+
+  --color-functional-green: var(--color-functional-green-600);
+  --color-functional-greenWhite: var(--color-functional-green-100);
+  --color-functional-yellowWhite: var(--color-primary-orange-50);
+  --color-status-green: var(--color-functional-green-600);
+  --color-status-greenBg: var(--color-functional-green-100);
+  --color-green: var(--color-functional-green-600);
+  --color-green-500: var(--color-functional-green-600);
+  --color-green-700: var(--color-functional-green-600);
+
+  /* ============================================
    * Box Shadows
    * ============================================ */
-  --shadow: 0px 0px 48px 0px rgba(20, 35, 38, 0.08);
+  --shadow: 0px 0px 16px 0px rgba(20, 35, 38, 0.08);
   --shadow-light: 0px 0px 16px 0px rgba(20, 35, 38, 0.04);
-  --shadow-md: 0px 0px 48px 0px rgba(20, 35, 38, 0.08);
-  --shadow-green: 0px 0px 48px 0px rgba(193, 255, 173, 0.88);
-  --shadow-orange: 0px 0px 48px 0px rgba(242, 183, 5, 0.64);
+  --shadow-md: var(--shadow);
+  --shadow-green: 0px 0px 16px 0px rgba(193, 255, 173, 0.88);
+  --shadow-orange: 0px 0px 16px 0px rgba(242, 183, 5, 0.64);
 
   /* ============================================
    * Backdrop Blur
@@ -415,11 +436,11 @@
 
   /* Placeholder styles */
   input::placeholder {
-    color: var(--color-neutral-gray3);
+    color: var(--color-neutral-gray-3);
   }
 
   textarea::placeholder {
-    color: var(--color-neutral-gray3);
+    color: var(--color-neutral-gray-3);
   }
 
   /* Hide Google extension bubble */
@@ -435,7 +456,7 @@
   /* Default hr styling - Tailwind v4 reset removes borders */
   hr {
     border-top-width: 1px;
-    border-color: var(--color-neutral-gray1);
+    border-color: var(--color-neutral-gray-1);
   }
 
   /* Only show focus outlines for keyboard navigation, not mouse clicks */
@@ -452,7 +473,7 @@
 @utility better-scrollbar {
   overflow-y: scroll;
   scrollbar-width: thin;
-  scrollbar-color: var(--color-neutral-gray4) transparent;
+  scrollbar-color: var(--color-neutral-gray-4) transparent;
 }
 
 @utility scrollable-hidden-scrollbar {
@@ -500,7 +521,7 @@
 /* Border glow utility */
 @utility border-glow {
   border: 1px solid
-    color-mix(in srgb, var(--color-neutral-gray3) 50%, transparent);
+    color-mix(in srgb, var(--color-neutral-gray-3) 50%, transparent);
   background-clip: padding-box;
   backdrop-filter: blur(40px) contrast(1.5) saturate(3);
   box-shadow:
@@ -562,11 +583,11 @@
 @keyframes border-highlight {
   0%,
   40% {
-    border-color: var(--color-primary-teal);
+    border-color: var(--color-primary-500);
   }
 
   100% {
-    border-color: var(--color-neutral-gray1);
+    border-color: var(--color-neutral-gray-1);
   }
 }
 

@@ -251,10 +251,10 @@ export const LoginPanel = () => {
                         {t('Continue with Google')}
                       </Button>
 
-                      <div className="flex w-full items-center justify-center gap-4 text-midGray">
-                        <div className="h-px grow bg-current" />
+                      <div className="flex w-full items-center justify-center gap-4 text-darkGray">
+                        <div className="h-px grow bg-current opacity-50" />
                         <span>{t('or')}</span>
-                        <div className="h-px grow bg-current" />
+                        <div className="h-px grow bg-current opacity-50" />
                       </div>
                     </>
                   )}
@@ -404,7 +404,7 @@ export const LoginPanel = () => {
               {user?.error?.name === 'AuthRetryableFetchError' ||
               login.isError ||
               !!combinedError ? null : (
-                <div className="flex flex-col items-center justify-center text-center text-xs text-midGray sm:text-sm">
+                <div className="flex flex-col items-center justify-center text-center text-xs text-darkGray sm:text-sm">
                   {isSignup ? (
                     <span>
                       {t(

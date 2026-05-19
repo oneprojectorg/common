@@ -146,7 +146,7 @@ const InstanceDataModal = ({
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} isDismissable>
       <ModalHeader>{t('Instance data for {name}', { name })}</ModalHeader>
       <ModalBody className="pb-6">
-        <pre className="bg-neutral-gray0 max-h-[60vh] overflow-auto rounded-lg p-4 text-xs">
+        <pre className="max-h-[60vh] overflow-auto rounded-lg bg-neutral-gray-1 p-4 text-xs">
           {JSON.stringify(instanceData, null, 2)}
         </pre>
       </ModalBody>

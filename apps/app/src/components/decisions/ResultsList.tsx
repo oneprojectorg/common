@@ -81,7 +81,7 @@ export const ResultsList = ({
             <ProposalCardContent>
               {slug !== 'cowop' && resultStats?.membersVoted ? (
                 <div className="flex flex-col gap-3">
-                  <div className="border-neutral-silver h-0 w-full border-b" />
+                  <div className="h-0 w-full border-b border-neutral-gray-2" />
 
                   {/* Footer - Total Votes */}
                   <ProposalCardFooter>

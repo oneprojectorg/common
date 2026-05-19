@@ -186,7 +186,7 @@ function FieldConfigDropdownOptions({
         color="ghost"
         size="small"
         onPress={handleAddOption}
-        className="hover:text-primary-tealDark gap-1 p-0 text-primary-teal"
+        className="gap-1 p-0 text-primary-teal hover:text-primary-tealBlack"
       >
         <LuPlus className="size-4" />
         <span>{t('Add option')}</span>

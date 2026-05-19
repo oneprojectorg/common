@@ -48,7 +48,7 @@ export const RadioGroup = (props: RadioGroupProps) => {
 
 const styles = tv({
   // extend: focusRing,
-  base: 'bg-neutral-white aspect-square size-4 shrink-0 rounded-full border border-neutral-gray3 transition-all',
+  base: 'aspect-square size-4 shrink-0 rounded-full border border-neutral-gray3 bg-white transition-all',
   variants: {
     isSelected: {
       false:
