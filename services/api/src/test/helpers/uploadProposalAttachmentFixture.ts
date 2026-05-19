@@ -1,7 +1,7 @@
-import { createServerClient } from '@op/supabase/lib';
 import { Buffer } from 'node:buffer';
 
 import type { appRouter } from '../../routers';
+import { STORAGE_BUCKET, createStorageAdmin } from '../../utils/storage';
 
 type Caller = ReturnType<typeof appRouter.createCaller>;
 
@@ -9,20 +9,6 @@ export const VALID_PNG_BUFFER = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
   'base64',
 );
-
-function createStorageAdmin() {
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE!,
-    {
-      cookieOptions: {},
-      cookies: {
-        getAll: async () => [],
-        setAll: async () => {},
-      },
-    },
-  );
-}
 
 export async function uploadProposalAttachmentFixture(
   caller: Caller,
@@ -40,7 +26,7 @@ export async function uploadProposalAttachmentFixture(
 
   const supabase = createStorageAdmin();
   const { error } = await supabase.storage
-    .from('assets')
+    .from(STORAGE_BUCKET)
     .upload(path, VALID_PNG_BUFFER, { contentType: mimeType, upsert: true });
 
   if (error) {
@@ -51,7 +37,5 @@ export async function uploadProposalAttachmentFixture(
     proposalId: args.proposalId,
     path,
     fileName: args.fileName,
-    mimeType,
-    fileSize,
   });
 }
