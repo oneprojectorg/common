@@ -1,4 +1,4 @@
-import { Link } from '@/lib/i18n/routing';
+import { Link, useTranslations } from '@/lib/i18n/routing';
 
 import { CommonLogo } from '@/components/CommonLogo';
 
@@ -9,6 +9,7 @@ export const FullScreenSplitMain = ({
   logo?: boolean;
   children: React.ReactNode;
 }) => {
+  const t = useTranslations();
   return (
     <main className="relative col-span-3 flex size-full flex-col overflow-y-scroll p-4 md:p-8 lg:col-span-2 lg:max-w-[calc(100vw-24rem)]">
       <section className="sticky top-0 hidden lg:block">
@@ -17,6 +18,7 @@ export const FullScreenSplitMain = ({
             <Link
               href="/"
               className="flex items-center gap-2 hover:no-underline"
+              aria-label={t('Home')}
             >
               <CommonLogo />
             </Link>

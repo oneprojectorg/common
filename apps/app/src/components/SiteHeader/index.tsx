@@ -469,7 +469,7 @@ export const SiteHeader = () => {
       <header className="gridCentered hidden h-auto w-full items-center justify-between border-b border-offWhite px-4 py-3 sm:grid">
         <div className="flex items-center gap-3">
           <SidebarTrigger aria-label={t('Open menu')} />
-          <Link href="/" className="flex gap-1">
+          <Link href="/" className="flex gap-1" aria-label={t('Home')}>
             <CommonLogo />
           </Link>
         </div>
