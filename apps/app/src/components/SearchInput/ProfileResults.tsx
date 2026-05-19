@@ -50,7 +50,7 @@ export const ProfileResults = ({
 
         const styledName =
           firstPiece !== undefined ? (
-            <span>
+            <bdi>
               <span className="font-normal">
                 {profile.name.slice(0, firstPiece.length)}
               </span>
@@ -66,9 +66,9 @@ export const ProfileResults = ({
                   profile.name.length,
                 )}
               </span>
-            </span>
+            </bdi>
           ) : (
-            <span>{profile.name}</span>
+            <bdi>{profile.name}</bdi>
           );
 
         return (
@@ -101,7 +101,10 @@ export const ProfileResults = ({
 
               <div className="flex flex-col font-semibold text-neutral-charcoal group-hover/result:underline">
                 {styledName}
-                <span className="text-sm text-neutral-gray4 capitalize">
+                <span
+                  dir="auto"
+                  className="text-sm text-neutral-gray4 capitalize"
+                >
                   {subtitle}
                 </span>
               </div>

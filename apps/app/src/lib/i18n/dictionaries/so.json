@@ -878,7 +878,6 @@
   "Both organizations provide financial support to each other.": "Labada urur waxay siiyaan midba midka kale taageero dhaqaale.",
   "Remove preview": "Ka saar muuqaalka hore",
   "Select language": "Dooro luqad",
-  "{authorName}'s Post": "Qoraalka {authorName}",
   "{count} comments": "{count} faallo",
   "Comment as {name}...": "Ka faallo {name} ahaan...",
   "Comment...": "Faallo...",
@@ -1215,5 +1214,6 @@
   "I could not find help when I had issues": "Ma helin caawimaad markaan dhibaato qabay",
   "It feels like it's built for a different type of organization than mine": "Waxay u muuqataa in loo dhisay nooc ururro ah oo ka duwan kayga",
   "Any specific features we should fix, improve or keep? Any features we should add? We actually read these!": "Astaamo gaar ah oo aan hagaajinno, kor u qaadno ama hayno? Astaamo aan ku darno? Runtii waan akhrinaynaa kuwaan!",
-  "Go to the platform": "Tag goobta"
+  "Go to the platform": "Tag goobta",
+  "<bdi>{authorName}</bdi>'s Post": "Qoraalka <bdi>{authorName}</bdi>"
 }

@@ -869,7 +869,6 @@
   "Both organizations provide financial support to each other.": "تقدم كلتا المؤسستين دعمًا ماليًا لبعضهما البعض.",
   "Remove preview": "إزالة المعاينة",
   "Select language": "اختر اللغة",
-  "{authorName}'s Post": "منشور {authorName}",
   "{count} comments": "{count} تعليقات",
   "Comment as {name}...": "علّق باسم {name}...",
   "Comment...": "علّق...",
@@ -1234,5 +1233,6 @@
   "Untitled": "بلا عنوان",
   "Results are live!": "النتائج مباشرة!",
   "All participants can now view the winning proposals.": "يمكن لجميع المشاركين الآن عرض المقترحات الفائزة.",
-  "View public results page": "عرض صفحة النتائج العامة"
+  "View public results page": "عرض صفحة النتائج العامة",
+  "<bdi>{authorName}</bdi>'s Post": "منشور <bdi>{authorName}</bdi>"
 }

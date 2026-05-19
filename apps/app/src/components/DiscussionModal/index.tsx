@@ -79,7 +79,12 @@ export function DiscussionModal({
       isDismissable
       className="h-svh text-start"
     >
-      <ModalHeader>{t("{authorName}'s Post", { authorName })}</ModalHeader>
+      <ModalHeader>
+        {t.rich("<bdi>{authorName}</bdi>'s Post", {
+          authorName,
+          bdi: (chunks: React.ReactNode) => <bdi>{chunks}</bdi>,
+        })}
+      </ModalHeader>
 
       <div className="flex flex-col gap-4">
         <div

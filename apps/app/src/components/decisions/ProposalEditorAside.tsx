@@ -103,7 +103,9 @@ function ProposalEditorAsideHeader({
 }) {
   return (
     <div className="flex h-editor-topbar shrink-0 items-center justify-between border-b border-neutral-gray1 px-6">
-      <Header2 className="font-serif text-title-sm14">{title}</Header2>
+      <Header2 className="font-serif text-title-sm14">
+        <bdi>{title}</bdi>
+      </Header2>
       <button
         onClick={onClose}
         className="cursor-pointer text-neutral-black hover:text-neutral-charcoal"
