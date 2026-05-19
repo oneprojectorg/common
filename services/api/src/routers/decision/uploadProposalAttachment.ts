@@ -6,16 +6,20 @@ import {
   uploadProposalAttachment as uploadProposalAttachmentService,
 } from '@op/common';
 import { db } from '@op/db/client';
-import { createServerClient } from '@op/supabase/lib';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
-import { MAX_FILE_SIZE, sanitizeS3Filename } from '../../utils';
-
-const BUCKET = 'assets';
+import { sanitizeS3Filename } from '../../utils';
+import {
+  createSignedUploadUrl,
+  findUploadedStorageObject,
+  scheduleStorageObjectCleanup,
+  validateMimeAndSize,
+  validateStoragePath,
+} from '../../utils/storage';
 
 const ALLOWED_MIME_TYPES = [
   'image/png',
@@ -28,22 +32,8 @@ const ALLOWED_MIME_TYPES = [
   'video/mp4',
 ];
 
-function createStorageAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE;
-
-  if (!supabaseUrl || !supabaseServiceRole) {
-    throw new CommonError('Storage configuration missing');
-  }
-
-  return createServerClient(supabaseUrl, supabaseServiceRole, {
-    cookieOptions: {},
-    cookies: {
-      getAll: async () => [],
-      setAll: async () => {},
-    },
-  });
-}
+const UNSUPPORTED_MESSAGE =
+  'Unsupported file type. Allowed: PNG, JPEG, GIF, WebP, MP4, PDF, DOCX, XLSX.';
 
 async function assertCanUpdateProposalAttachments(
   user: User,
@@ -69,20 +59,6 @@ async function assertCanUpdateProposalAttachments(
   assertAccess({ profile: permission.UPDATE }, profileUser.roles);
 }
 
-function validateMimeAndSize(mimeType: string, fileSize: number) {
-  if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
-    throw new CommonError(
-      'Unsupported file type. Allowed: PNG, JPEG, GIF, WebP, MP4, PDF, DOCX, XLSX.',
-    );
-  }
-
-  if (fileSize > MAX_FILE_SIZE) {
-    throw new CommonError(
-      `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
-    );
-  }
-}
-
 export const uploadProposalAttachment = router({
   createProposalAttachmentUploadUrl: commonAuthedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 20 },
@@ -105,26 +81,19 @@ export const uploadProposalAttachment = router({
       const { proposalId, fileName, mimeType, fileSize } = input;
       const { user } = ctx;
 
-      validateMimeAndSize(mimeType, fileSize);
+      validateMimeAndSize({
+        mimeType,
+        fileSize,
+        allowedMimeTypes: ALLOWED_MIME_TYPES,
+        unsupportedMessage: UNSUPPORTED_MESSAGE,
+      });
       await assertCanUpdateProposalAttachments(user, proposalId);
 
       const profileId = await getCurrentProfileId(user.id);
       const sanitized = sanitizeS3Filename(fileName);
       const path = `profile/${profileId}/proposals/${proposalId}/${randomUUID()}_${sanitized}`;
 
-      const supabase = createStorageAdmin();
-      const { data, error } = await supabase.storage
-        .from(BUCKET)
-        .createSignedUploadUrl(path);
-
-      if (error || !data) {
-        throw new CommonError(error?.message ?? 'Failed to create upload URL');
-      }
-
-      return {
-        signedUrl: data.signedUrl,
-        path: data.path,
-      };
+      return createSignedUploadUrl(path);
     }),
 
   uploadProposalAttachment: commonAuthedProcedure({
@@ -135,8 +104,6 @@ export const uploadProposalAttachment = router({
         proposalId: z.string(),
         path: z.string(),
         fileName: z.string().min(1),
-        mimeType: z.string(),
-        fileSize: z.number().positive(),
       }),
     )
     .output(
@@ -148,43 +115,44 @@ export const uploadProposalAttachment = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const { proposalId, path, fileName, mimeType, fileSize } = input;
+      const { proposalId, path, fileName } = input;
       const { user } = ctx;
 
-      validateMimeAndSize(mimeType, fileSize);
       await assertCanUpdateProposalAttachments(user, proposalId);
 
       const profileId = await getCurrentProfileId(user.id);
-      const expectedPrefix = `profile/${profileId}/proposals/${proposalId}/`;
-
-      if (!path.startsWith(expectedPrefix) || path.includes('..')) {
-        throw new UnauthorizedError('Invalid attachment path');
-      }
-
-      const storageObject = await db.query.objectsInStorage.findFirst({
-        where: { bucketId: BUCKET, name: path },
+      validateStoragePath({
+        path,
+        expectedPrefix: `profile/${profileId}/proposals/${proposalId}/`,
       });
 
-      if (!storageObject) {
-        throw new CommonError('Uploaded file not found in storage');
+      try {
+        const storageObject = await findUploadedStorageObject({
+          path,
+          allowedMimeTypes: ALLOWED_MIME_TYPES,
+          unsupportedMessage: UNSUPPORTED_MESSAGE,
+        });
+
+        const result = await uploadProposalAttachmentService({
+          input: {
+            fileName: sanitizeS3Filename(fileName),
+            mimeType: storageObject.mimetype,
+            fileSize: storageObject.size,
+            storageObjectId: storageObject.id,
+            proposalId,
+          },
+          user,
+        });
+
+        return {
+          id: result.id,
+          fileName: result.fileName,
+          mimeType: result.mimeType,
+          fileSize: result.fileSize,
+        };
+      } catch (err) {
+        scheduleStorageObjectCleanup(path);
+        throw err;
       }
-
-      const result = await uploadProposalAttachmentService({
-        input: {
-          fileName: sanitizeS3Filename(fileName),
-          mimeType,
-          fileSize,
-          storageObjectId: storageObject.id,
-          proposalId,
-        },
-        user,
-      });
-
-      return {
-        id: result.id,
-        fileName: result.fileName,
-        mimeType: result.mimeType,
-        fileSize: result.fileSize,
-      };
     }),
 });
