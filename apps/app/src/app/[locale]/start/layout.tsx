@@ -1,9 +1,9 @@
-import { Link, useTranslations } from '@/lib/i18n/routing';
+import { Link } from '@/lib/i18n/routing';
 
 import { CommonLogo } from '@/components/CommonLogo';
+import { TranslatedText } from '@/components/TranslatedText';
 
 const StartLayout = ({ children }: { children: React.ReactNode }) => {
-  const t = useTranslations();
   return (
     <div className="relative flex h-svh w-full flex-col items-center justify-center font-sans">
       <div id="top-slot" className="absolute top-0 w-full" />
@@ -13,8 +13,10 @@ const StartLayout = ({ children }: { children: React.ReactNode }) => {
             <Link
               href="/"
               className="flex items-center gap-2 hover:no-underline"
-              aria-label={t('Home')}
             >
+              <span className="sr-only">
+                <TranslatedText text="Home" />
+              </span>
               <CommonLogo />
             </Link>
           </div>
