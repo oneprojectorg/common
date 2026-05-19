@@ -8,6 +8,7 @@ import { Link } from '@/lib/i18n';
 type ProfileAvatarProps = {
   profile?: {
     name?: string | null;
+    email?: string | null;
     slug?: string | null;
     avatarImage?: { name?: string | null } | null;
   } | null;
@@ -20,23 +21,30 @@ export const ProfileAvatar = ({
   withLink = true,
   className,
 }: ProfileAvatarProps) => {
-  if (!profile) {
+  const name = profile?.name ?? '';
+  const email = profile?.email ?? '';
+  const placeholderSeed = name || email;
+
+  if (!placeholderSeed) {
     return null;
   }
 
-  const name = profile.name ?? '';
-  const avatarImage = profile.avatarImage;
-  const slug = profile.slug;
+  const avatarImage = profile?.avatarImage;
+  const slug = profile?.slug;
 
   const avatar = (
     <Avatar
-      className={cn('size-6', withLink && 'hover:opacity-80', className)}
-      placeholder={name ?? ''}
+      className={cn(
+        'size-6',
+        withLink && slug && 'hover:opacity-80',
+        className,
+      )}
+      placeholder={placeholderSeed}
     >
       {avatarImage?.name ? (
         <Image
           src={getPublicUrl(avatarImage?.name) ?? ''}
-          alt={name ?? ''}
+          alt={name}
           fill
           className="object-cover"
         />
