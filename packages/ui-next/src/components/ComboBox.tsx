@@ -5,7 +5,7 @@
 
 import * as React from 'react';
 
-import { Field, FieldDescription, FieldError, FieldLabel } from './ui/field';
+import { cn } from '../lib/utils';
 import {
   Combobox,
   ComboboxContent,
@@ -14,7 +14,7 @@ import {
   ComboboxItem,
   ComboboxList,
 } from './ui/combobox';
-import { cn } from '../lib/utils';
+import { Field, FieldDescription, FieldError, FieldLabel } from './ui/field';
 
 export interface ComboBoxProps<T extends { id: string | number }> {
   label?: string;
@@ -24,7 +24,6 @@ export interface ComboBoxProps<T extends { id: string | number }> {
   labelClassName?: string;
   inputClassName?: string;
   listBoxClassName?: string;
-  fieldGroupClassName?: string;
   popoverProps?: { className?: string; [key: string]: unknown };
   placeholder?: string;
   items: Iterable<T>;
@@ -58,7 +57,9 @@ export function ComboBox<T extends { id: string | number }>({
 
   const renderedItems =
     typeof children === 'function'
-      ? itemsArray.map((item) => (children as (item: T) => React.ReactNode)(item))
+      ? itemsArray.map((item) =>
+          (children as (item: T) => React.ReactNode)(item),
+        )
       : children;
 
   const baseUiItems = itemsArray.map((i) => ({
@@ -78,9 +79,10 @@ export function ComboBox<T extends { id: string | number }>({
         itemToStringValue={(i) => i.value}
         value={
           selectedKey != null
-            ? baseUiItems.find((i) => i.value === selectedKey) ?? null
+            ? (baseUiItems.find((i) => i.value === selectedKey) ?? null)
             : defaultSelectedKey != null
-              ? baseUiItems.find((i) => i.value === defaultSelectedKey) ?? null
+              ? (baseUiItems.find((i) => i.value === defaultSelectedKey) ??
+                null)
               : null
         }
         onValueChange={(next) => onSelectionChange?.(next?.value ?? null)}

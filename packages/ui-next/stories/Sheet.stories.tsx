@@ -19,7 +19,7 @@ const SheetStory = ({ side }: { side: 'bottom' | 'left' | 'right' }) => {
     <>
       <Button onPress={() => setOpen(true)}>Open {side} sheet</Button>
       <Sheet isOpen={open} onOpenChange={setOpen} side={side}>
-        <SheetHeader onClose={() => setOpen(false)}>{side} sheet</SheetHeader>
+        <SheetHeader>{side} sheet</SheetHeader>
         <SheetBody className="p-4">
           <p className="text-sm">Sheet body content.</p>
         </SheetBody>

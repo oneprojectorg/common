@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@op/ui-next/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
+import { Sheet, SheetBody } from '@op/ui-next/Sheet';
 import { toast } from '@op/ui-next/Toast';
 import { useState } from 'react';
 import { LuTrash2 } from 'react-icons/lu';
@@ -299,20 +300,15 @@ export function ProposalCardMenu({
       {isMobile ? (
         <>
           {menuTriggerButton}
-          <Modal
+          <Sheet
             isOpen={isMenuSheetOpen}
             onOpenChange={setIsMenuSheetOpen}
-            isDismissable={true}
-            isKeyboardDismissDisabled={false}
-            overlayClassName="animate-in items-end justify-center p-0 duration-300 fade-in-0"
-            className="m-0 h-auto w-screen max-w-none animate-in rounded-t-2xl rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full"
+            side="bottom"
           >
-            <ModalBody className="pb-safe p-0">
-              <div role="menu" className="flex min-w-full flex-col">
-                {renderMenuItems(true)}
-              </div>
-            </ModalBody>
-          </Modal>
+            <SheetBody className="pb-safe flex min-w-full flex-col" role="menu">
+              {renderMenuItems(true)}
+            </SheetBody>
+          </Sheet>
         </>
       ) : (
         <DropdownMenu>

@@ -3,14 +3,11 @@
 // legacy ModalHeader/ModalBody/ModalFooter slot API).
 //
 // API map:
-//   isOpen/onOpenChange  -> open/onOpenChange
-//   isDismissable        -> showCloseButton + reason-filtered onOpenChange
+//   isOpen/onOpenChange       -> open/onOpenChange
+//   isDismissable             -> showCloseButton + reason-filtered onOpenChange
 //   isKeyboardDismissDisabled -> reason filter for escape-key
-//   surface              -> accepted, ignored (no vanilla shadcn equivalent)
-//   confetti             -> accepted, ignored
-//   className            -> forwarded to DialogContent (Popup)
-//   overlayClassName     -> forwarded to DialogOverlay (Backdrop)
-//   wrapperClassName     -> accepted, ignored (vanilla shadcn has no wrapper)
+//   confetti                  -> renders <Confetti /> overlay when open
+//   className                 -> forwarded to DialogContent (Popup)
 //
 //   ModalHeader  -> DialogHeader + DialogTitle
 //   ModalBody    -> <div data-slot="modal-body">
@@ -23,6 +20,7 @@ import { type ReactNode, memo, useCallback } from 'react';
 
 import { cn } from '../lib/utils';
 import { Button } from './Button';
+import { Confetti } from './Confetti';
 import {
   Dialog,
   DialogContent,
@@ -37,10 +35,7 @@ export interface ModalProps {
   onOpenChange?: (isOpen: boolean) => void;
   isDismissable?: boolean;
   isKeyboardDismissDisabled?: boolean;
-  surface?: 'default' | 'flat';
   className?: string;
-  overlayClassName?: string;
-  wrapperClassName?: string;
   confetti?: boolean;
   children: ReactNode;
 }
@@ -51,11 +46,8 @@ export const Modal = ({
   onOpenChange,
   isDismissable,
   isKeyboardDismissDisabled,
-  surface: _surface,
   className,
-  overlayClassName: _overlayClassName,
-  wrapperClassName: _wrapperClassName,
-  confetti: _confetti,
+  confetti,
   children,
 }: ModalProps) => {
   const handleOpenChange = (
@@ -87,6 +79,7 @@ export const Modal = ({
         className={className}
         showCloseButton={isDismissable !== false}
       >
+        {confetti ? <Confetti /> : null}
         {children}
       </DialogContent>
     </Dialog>

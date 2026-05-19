@@ -208,7 +208,6 @@ export function DecisionProcessStepper({
           isOpen={showConfirmModal}
           onOpenChange={handleDismiss}
           isDismissable={false}
-          surface="flat"
         >
           <ModalHeader className="px-6 pb-6 text-left">{title}</ModalHeader>
           <ModalBody className="px-6 py-6">

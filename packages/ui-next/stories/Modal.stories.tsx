@@ -42,32 +42,19 @@ export const Default: Story = {
   },
 };
 
-export const FlatSurface: Story = {
+export const Confetti: Story = {
   render: () => {
     const [open, setOpen] = useState(false);
     return (
       <>
-        <Button onPress={() => setOpen(true)}>Open flat modal</Button>
-        <Modal
-          isOpen={open}
-          onOpenChange={setOpen}
-          isDismissable
-          surface="flat"
-        >
-          <ModalHeader className="pl-6 text-left">Delete draft?</ModalHeader>
+        <Button onPress={() => setOpen(true)}>Open with confetti</Button>
+        <Modal isOpen={open} onOpenChange={setOpen} isDismissable confetti>
+          <ModalHeader>You&apos;re all set!</ModalHeader>
           <ModalBody>
-            <p>
-              This draft will be permanently deleted and can&apos;t be
-              recovered.
-            </p>
+            <p>Animated emoji confetti renders behind this modal.</p>
           </ModalBody>
           <ModalFooter>
-            <Button color="secondary" onPress={() => setOpen(false)}>
-              Keep draft
-            </Button>
-            <Button color="destructive" onPress={() => setOpen(false)}>
-              Delete draft
-            </Button>
+            <Button onPress={() => setOpen(false)}>Done</Button>
           </ModalFooter>
         </Modal>
       </>

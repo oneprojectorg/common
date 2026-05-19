@@ -52,6 +52,7 @@
     "./FacePile": "./src/components/FacePile.tsx",
     "./FileDropZone": "./src/components/FileDropZone.tsx",
     "./CollapsibleConfigCard": "./src/components/CollapsibleConfigCard.tsx",
+    "./Confetti": "./src/components/Confetti.tsx",
     "./DataTable": "./src/components/DataTable.tsx",
     "./DatePicker": "./src/components/DatePicker.tsx",
     "./Form": "./src/components/Form.tsx",

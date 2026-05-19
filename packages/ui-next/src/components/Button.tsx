@@ -26,9 +26,8 @@
 //   onPress                         onClick
 //   className                       className (merged after computed variants)
 //
-// Props that no longer apply (scaleOnPress, insetShadow, backglow, unstyled) are
-// accepted for source compatibility but only `unstyled` has an effect (it skips
-// variant class application entirely).
+// `unstyled` skips variant class application entirely so callers can render
+// a plain <button> wearing only the className they pass.
 
 import * as React from 'react';
 
@@ -78,9 +77,6 @@ export interface ButtonProps extends Omit<
   isPending?: boolean;
   onPress?: React.MouseEventHandler<HTMLButtonElement>;
   unstyled?: boolean;
-  scaleOnPress?: boolean;
-  insetShadow?: boolean;
-  backglow?: boolean;
   excludeFromTabOrder?: boolean;
   ref?: React.Ref<HTMLButtonElement>;
 }
@@ -183,9 +179,6 @@ export function Button(props: ButtonProps) {
     onPress,
     onClick,
     unstyled,
-    scaleOnPress: _scale,
-    insetShadow: _inset,
-    backglow: _back,
     excludeFromTabOrder,
     className,
     disabled,

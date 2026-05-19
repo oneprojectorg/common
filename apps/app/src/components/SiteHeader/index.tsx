@@ -16,10 +16,10 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@op/ui-next/Menu';
-import { Modal, ModalBody } from '@op/ui-next/Modal';
+import { Sheet, SheetBody } from '@op/ui-next/Sheet';
+import { SidebarTrigger } from '@op/ui-next/Sidebar';
 import { Skeleton } from '@op/ui-next/Skeleton';
 import { cn } from '@op/ui-next/lib/utils';
-import { SidebarTrigger } from '@op/ui-next/Sidebar';
 import Image from 'next/image';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import {
@@ -384,25 +384,20 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
     return (
       <>
         {avatarButton}
-        <Modal
+        <Sheet
           isOpen={isDrawerOpen}
           onOpenChange={setIsDrawerOpen}
-          isDismissable={true}
-          isKeyboardDismissDisabled={false}
-          overlayClassName="animate-in items-end justify-center p-0 duration-300 fade-in-0"
-          className="m-0 h-auto w-screen max-w-none animate-in rounded-t rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full"
+          side="bottom"
         >
-          <ModalBody className="pb-safe p-0">
-            <div className="flex min-w-full flex-col p-4 pb-8">
-              <AvatarMenuContent
-                setIsProfileOpen={setIsProfileOpen}
-                setIsOrgDeletionOpen={setIsOrgDeletionOpen}
-                onClose={() => setIsDrawerOpen(false)}
-                onProfileSwitch={handleProfileSwitch}
-              />
-            </div>
-          </ModalBody>
-        </Modal>
+          <SheetBody className="pb-safe flex min-w-full flex-col p-4 pb-8">
+            <AvatarMenuContent
+              setIsProfileOpen={setIsProfileOpen}
+              setIsOrgDeletionOpen={setIsOrgDeletionOpen}
+              onClose={() => setIsDrawerOpen(false)}
+              onProfileSwitch={handleProfileSwitch}
+            />
+          </SheetBody>
+        </Sheet>
         <UpdateProfileModal
           isOpen={isProfileOpen}
           setIsOpen={setIsProfileOpen}

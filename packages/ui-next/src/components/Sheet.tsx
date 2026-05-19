@@ -7,12 +7,13 @@
 //   isKeyboardDismissDisabled -> reason filter for escape-key
 //   side                 -> SheetContent.side
 //
-//   SheetHeader  -> shadcn SheetHeader + SheetTitle. onClose accepted, ignored
-//                   (vanilla SheetContent already auto-renders close X)
+//   SheetHeader  -> shadcn SheetHeader + SheetTitle (vanilla SheetContent
+//                   already auto-renders the close X)
 //   SheetBody    -> <div data-slot="sheet-body">
 
 'use client';
 
+import * as React from 'react';
 import type { ReactNode } from 'react';
 
 import {
@@ -33,7 +34,6 @@ export interface SheetProps {
   isKeyboardDismissDisabled?: boolean;
   side?: SheetSide;
   className?: string;
-  overlayClassName?: string;
   children: ReactNode;
 }
 
@@ -45,7 +45,6 @@ export const Sheet = ({
   isKeyboardDismissDisabled,
   side = 'bottom',
   className,
-  overlayClassName: _overlayClassName,
   children,
 }: SheetProps) => {
   const handleOpenChange = (
@@ -90,13 +89,11 @@ export const SheetHeader = ({
   children,
   className,
   titleId,
-  onClose: _onClose,
 }: {
   children?: ReactNode;
   className?: string;
   /** Optional id forwarded to the SheetTitle for aria-labelledby referencing. */
   titleId?: string;
-  onClose?: () => void;
 }) => {
   return (
     <ShadcnSheetHeader className={className}>
@@ -108,12 +105,10 @@ export const SheetHeader = ({
 export const SheetBody = ({
   children,
   className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) => {
+  ...rest
+}: React.HTMLAttributes<HTMLDivElement>) => {
   return (
-    <div data-slot="sheet-body" className={className}>
+    <div data-slot="sheet-body" className={className} {...rest}>
       {children}
     </div>
   );
