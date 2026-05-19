@@ -6,7 +6,8 @@ import {
   eq,
   ilike,
   inArray,
-  ne,
+  isNull,
+  notInArray,
   or,
   sql,
 } from '@op/db/client';
@@ -35,31 +36,24 @@ import {
   getProfileAccessUser,
 } from '../access';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
-import {
-  getPhaseProposalAndDraftIds,
-  getProposalIdsForPhase,
-} from './getProposalsForPhase';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 
-export interface ListProposalsInput {
+export interface ListAllProposalsInput {
   processInstanceId: string;
   submittedByProfileId?: string;
   status?: ProposalStatus;
   search?: string;
   categoryId?: string;
-  /** Scope results to a specific phase. Defaults to the current phase when omitted. */
-  phaseId?: string;
   /**
-   * Restrict results to proposals voted on by this profile. Bypasses phase
-   * resolution so a ballot remains accessible after the process advances past
-   * the voting phase.
+   * Restrict results to proposals voted on by this profile. A caller can only
+   * request their own ballot (self-only auth check, skipped for trusted
+   * contexts).
    */
   votedByProfileId?: string;
   /**
-   * Internal override: skip phase resolution and use this exact set of IDs.
-   * Not exposed on the tRPC schema — public callers should use phaseId or
-   * votedByProfileId.
+   * Internal override: use this exact set of IDs. Not exposed on the tRPC
+   * schema — public callers should use votedByProfileId.
    */
   proposalIds?: string[];
   phase?: 'results';
@@ -71,28 +65,12 @@ export interface ListProposalsInput {
   skipAccessCheck?: boolean; // For trusted contexts like background jobs
 }
 
-/**
- * Resolves a caller-provided "explicit scope" for the listProposals query.
- *
- * Explicit scope means the caller knows the exact set of proposal IDs they
- * want, so we bypass phase resolution entirely. There are two ways to trigger
- * it:
- *
- * 1. `proposalIds` (internal-only) — used by trusted callers that already
- *    have the IDs in hand.
- * 2. `votedByProfileId` (public) — surfaces a user's ballot regardless of
- *    the current phase. Subject to a self-only auth check: a caller can only
- *    request their own ballot. The check is skipped for trusted contexts.
- *
- * Returns `undefined` when no explicit scope was requested (caller will fall
- * back to phase scoping).
- */
 const resolveExplicitScope = async ({
   input,
   currentProfileId,
   skipAccessCheck,
 }: {
-  input: ListProposalsInput;
+  input: ListAllProposalsInput;
   currentProfileId: string | undefined;
   skipAccessCheck: boolean;
 }): Promise<string[] | undefined> => {
@@ -104,7 +82,6 @@ const resolveExplicitScope = async ({
     return undefined;
   }
 
-  // Ballots are private: a caller can only request their own ballot.
   if (!skipAccessCheck && currentProfileId !== input.votedByProfileId) {
     throw new UnauthorizedError('You can only view your own ballot');
   }
@@ -129,13 +106,10 @@ const resolveExplicitScope = async ({
   return votedRows.map((r) => r.proposalId);
 };
 
-// Shared function to build WHERE conditions for both count and data queries
-const buildWhereConditions = (input: ListProposalsInput) => {
+const buildBaseWhereConditions = (input: ListAllProposalsInput) => {
   const { processInstanceId, submittedByProfileId, status, search } = input;
 
-  const conditions = [];
-
-  conditions.push(eq(proposals.processInstanceId, processInstanceId));
+  const conditions = [eq(proposals.processInstanceId, processInstanceId)];
 
   if (submittedByProfileId) {
     conditions.push(eq(proposals.submittedByProfileId, submittedByProfileId));
@@ -146,35 +120,34 @@ const buildWhereConditions = (input: ListProposalsInput) => {
   }
 
   if (search) {
-    // Search in proposal data (JSONB) - convert to text for searching
     conditions.push(ilike(sql`${proposals.proposalData}::text`, `%${search}%`));
   }
 
-  return conditions.length > 0 ? and(...conditions) : undefined;
+  return and(...conditions);
 };
 
-export const listProposals = async ({
+/**
+ * Returns every valid (non-draft, non-rejected, non-duplicate, non-deleted)
+ * proposal on the instance, regardless of phase scoping. HIDDEN visibility
+ * is still applied for non-admin callers. Used by the "All proposals" tab on
+ * the results page so reviewers can browse the full submission set after a
+ * limiting pipeline has narrowed the phase.
+ */
+export const listAllProposals = async ({
   input,
   user,
 }: {
-  input: ListProposalsInput;
+  input: ListAllProposalsInput;
   user: User;
 }) => {
   const { processInstanceId, skipAccessCheck = false } = input;
 
-  // Skip authentication check if this is a trusted context (e.g., background job)
   if (!skipAccessCheck && !user) {
     throw new UnauthorizedError('User must be authenticated');
   }
 
-  // Resolve the caller's profile once; it's reused for ballot auth, the
-  // HIDDEN visibility filter, and owner/editable checks further down.
   const currentProfileId = await getCurrentProfileId(input.authUserId);
 
-  // Fetch the instance row up front and resolve the explicit ID scope in
-  // parallel. The row is reused for the phase-resolution context (instead of
-  // re-reading inside getInstanceContext), the access checks, and template
-  // resolution.
   const [instanceRows, explicitScopeIds] = await Promise.all([
     db
       .select({
@@ -197,52 +170,16 @@ export const listProposals = async ({
   }
   const instanceProfileId = instance.profileId;
 
-  // Resolve phase-scoped IDs for non-drafts and drafts. Drafts are phase-scoped
-  // via a `createdAt` window since they're never attached to transition
-  // snapshots. The combined resolver shares a single instance-context lookup
-  // and window resolution across both queries; we only fall back to it for
-  // authenticated callers that need both sets. These are IDs only — the
-  // findMany below hydrates full rows using them as filter input.
-  const phaseIdsPromise: Promise<{
-    phaseProposalIds: string[];
-    phaseDraftIds: string[];
-  }> = (async () => {
-    if (explicitScopeIds !== undefined) {
-      // Caller specified the exact ID set (proposalIds or votedByProfileId).
-      // Drafts can't appear in either: proposalIds is internal and
-      // votedByProfileId only matches submitted proposals on a ballot.
-      return { phaseProposalIds: explicitScopeIds, phaseDraftIds: [] };
-    }
+  const { profileUser, canManageProposals } = await (async () => {
     if (skipAccessCheck) {
-      // Trusted contexts (background jobs) never surface drafts, so only
-      // resolve the non-draft phase set. Legacy instances and instances
-      // without a current phase fall back to all active non-drafts inside
-      // `getProposalIdsForPhase`.
-      const ids = await getProposalIdsForPhase({
-        instance,
-        phaseId: input.phaseId,
-      });
-      return { phaseProposalIds: ids, phaseDraftIds: [] };
+      return {
+        profileUser: undefined as
+          | Awaited<ReturnType<typeof getProfileAccessUser>>
+          | undefined,
+        canManageProposals: false,
+      };
     }
-    const ids = await getPhaseProposalAndDraftIds({
-      instance,
-      phaseId: input.phaseId,
-      authUserId: input.authUserId,
-    });
-    return { phaseProposalIds: ids.nonDraftIds, phaseDraftIds: ids.draftIds };
-  })();
-
-  // Run access checks in parallel with the phase-IDs resolution. Both depend
-  // only on the instance row (already fetched), so there's no ordering
-  // dependency — the auth check still throws on failure, just slightly later.
-  const accessPromise: Promise<{
-    profileUser: Awaited<ReturnType<typeof getProfileAccessUser>>;
-    canManageProposals: boolean;
-  }> = (async () => {
-    if (skipAccessCheck) {
-      return { profileUser: undefined, canManageProposals: false };
-    }
-    const profileUser = await getProfileAccessUser({
+    const profileUserResolved = await getProfileAccessUser({
       user,
       profileId: instanceProfileId,
     });
@@ -259,145 +196,76 @@ export const listProposals = async ({
       ],
     });
     return {
-      profileUser,
+      profileUser: profileUserResolved,
       canManageProposals: checkPermission(
         { profile: permission.ADMIN },
-        profileUser?.roles ?? [],
+        profileUserResolved?.roles ?? [],
       ),
     };
   })();
 
-  const [
-    { phaseProposalIds, phaseDraftIds },
-    { profileUser, canManageProposals },
-  ] = await Promise.all([phaseIdsPromise, accessPromise]);
-
-  // For trusted contexts (skipAccessCheck), drafts are never returned and phase
-  // scoping is the only proposal-id filter — so an empty phase set means no results.
-  // For authenticated callers, drafts have their own phase-scoped ID set
-  // (`phaseDraftIds`) which may surface results even when `phaseProposalIds` is
-  // empty, so we cannot early-return here.
-  if (skipAccessCheck && phaseProposalIds.length === 0) {
-    return {
-      proposals: [],
-      total: 0,
-      hasMore: false,
-      canManageProposals: false,
-    };
-  }
-
   const { limit = 20, offset = 0, orderBy = 'createdAt', dir = 'desc' } = input;
 
-  // Build shared WHERE clause using the extracted function
-  const baseWhereClause = buildWhereConditions(input);
+  let whereClause = buildBaseWhereConditions(input);
 
-  // When the caller provided an explicit scope (proposalIds or votedByProfileId),
-  // constrain the entire query to that ID set. This prevents the draft branch
-  // (below) from independently surfacing drafts the user owns but didn't ask for.
-  let whereClause = baseWhereClause;
   if (explicitScopeIds !== undefined) {
     const explicitScopeFilter =
       explicitScopeIds.length > 0
         ? inArray(proposals.id, explicitScopeIds)
         : sql`false`;
-    whereClause = whereClause
-      ? and(whereClause, explicitScopeFilter)
-      : explicitScopeFilter;
+    whereClause = and(whereClause, explicitScopeFilter);
   }
 
-  // Handle category filtering separately to avoid table reference issues
   const { categoryId } = input;
-  let categoryProposalIds: string[] = [];
-
   if (categoryId) {
-    // First get proposal IDs that belong to the category
     const proposalIdsInCategory = await db
       .select({ proposalId: proposalCategories.proposalId })
       .from(proposalCategories)
       .where(eq(proposalCategories.taxonomyTermId, categoryId));
 
-    categoryProposalIds = proposalIdsInCategory.map((p) => p.proposalId);
-
-    if (categoryProposalIds.length === 0) {
-      // No proposals in this category, return empty result early
-      return {
-        proposals: [],
-        total: 0,
-        hasMore: false,
-        canManageProposals,
-      };
+    if (proposalIdsInCategory.length === 0) {
+      return { proposals: [], total: 0, hasMore: false, canManageProposals };
     }
 
-    // Add category filter to WHERE clause (composed with any earlier filters)
-    const categoryFilter = inArray(proposals.id, categoryProposalIds);
-    whereClause = whereClause
-      ? and(whereClause, categoryFilter)
-      : categoryFilter;
+    whereClause = and(
+      whereClause,
+      inArray(
+        proposals.id,
+        proposalIdsInCategory.map((p) => p.proposalId),
+      ),
+    );
   }
 
-  // Phase scoping applies separately to non-drafts and drafts. Non-drafts are
-  // resolved via transition snapshots + a strict `createdAt` window; drafts use
-  // a half-open `createdAt` window only (they're never attached to a snapshot).
-  // When the relevant ID set is empty (e.g. instance has no submitted proposals
-  // yet), each branch must short-circuit to false rather than emit an empty IN ().
-  const phaseScopedNonDraftIdFilter =
-    phaseProposalIds.length > 0
-      ? and(
-          ne(proposals.status, ProposalStatus.DRAFT),
-          inArray(proposals.id, phaseProposalIds),
-        )
-      : sql`false`;
+  // Valid = non-draft, non-rejected, non-duplicate, non-deleted. Visibility
+  // (HIDDEN) still hides proposals from non-admin, non-owner callers.
+  const validStatusFilter = notInArray(proposals.status, [
+    ProposalStatus.DRAFT,
+    ProposalStatus.REJECTED,
+    ProposalStatus.DUPLICATE,
+  ]);
+  const deletedAtFilter = isNull(proposals.deletedAt);
+  const canBypassVisibility = skipAccessCheck || canManageProposals;
 
-  if (skipAccessCheck) {
-    // Trusted contexts get all phase-scoped non-draft proposals.
-    whereClause = whereClause
-      ? and(whereClause, phaseScopedNonDraftIdFilter)
-      : phaseScopedNonDraftIdFilter;
-  } else {
-    // Draft proposals are phase-scoped to their `createdAt` window: a draft made
-    // in Phase 1 is only visible when viewing Phase 1, even after the instance
-    // advances. Ownership scoping (creator + invited collaborators via
-    // `profileUsers`) is applied inside `getPhaseProposalAndDraftIds` via a
-    // subquery, so `phaseDraftIds` is already access-filtered — no further
-    // ownership filter is needed here.
-    const draftFilter =
-      phaseDraftIds.length > 0
-        ? and(
-            eq(proposals.status, ProposalStatus.DRAFT),
-            inArray(proposals.id, phaseDraftIds),
-          )
-        : sql`false`;
-
-    // Non-draft proposals: phase-scoped, plus the HIDDEN visibility filter for
-    // non-admins. Hidden proposals stay visible to the creator and any invited
-    // collaborators on the proposal's profile — same pattern the draft filter
-    // uses, so a collaborator's view of a co-authored proposal doesn't change
-    // the moment it's submitted with HIDDEN visibility.
-    const nonDraftVisibilityFilter = canManageProposals
-      ? phaseScopedNonDraftIdFilter
-      : and(
-          phaseScopedNonDraftIdFilter,
-          or(
-            eq(proposals.visibility, Visibility.VISIBLE),
-            inArray(
-              proposals.profileId,
-              db
-                .select({ profileId: profileUsers.profileId })
-                .from(profileUsers)
-                .where(eq(profileUsers.authUserId, input.authUserId)),
-            ),
+  const validFilter = canBypassVisibility
+    ? and(validStatusFilter, deletedAtFilter)
+    : and(
+        validStatusFilter,
+        deletedAtFilter,
+        or(
+          eq(proposals.visibility, Visibility.VISIBLE),
+          inArray(
+            proposals.profileId,
+            db
+              .select({ profileId: profileUsers.profileId })
+              .from(profileUsers)
+              .where(eq(profileUsers.authUserId, input.authUserId)),
           ),
-        );
+        ),
+      );
 
-    const permissionFilter = or(draftFilter, nonDraftVisibilityFilter);
-    whereClause = whereClause
-      ? and(whereClause, permissionFilter)
-      : permissionFilter;
-  }
+  whereClause = and(whereClause, validFilter);
 
-  // Get proposals with optimized ordering
   const orderColumn = proposals[orderBy] ?? proposals.createdAt;
-
   const orderFn = dir === 'asc' ? asc : desc;
 
   const [proposalList, countResult] = await Promise.all([
@@ -415,13 +283,11 @@ export const listProposals = async ({
       offset,
       orderBy: orderFn(orderColumn),
     }),
-    // Get count using Drizzle's count function instead of raw SQL
     db.select({ count: countFn() }).from(proposals).where(whereClause),
   ]);
 
   const count = countResult[0]?.count || 0;
 
-  // Resolve proposalTemplate from instanceData, falling back to processSchema
   const proposalTemplate = await resolveProposalTemplate(
     instance.instanceData as Record<string, unknown> | null,
     instance.processId,
@@ -429,7 +295,6 @@ export const listProposals = async ({
 
   type ProposalListItem = (typeof proposalList)[number];
 
-  // Get relationship data for all proposal profiles using optimized Drizzle queries
   const profileIds = proposalList
     .map((proposal) => proposal.profileId)
     .filter((id): id is string => Boolean(id));
@@ -445,12 +310,9 @@ export const listProposals = async ({
     }
   >();
 
-  // Fetch relationship data and document contents in parallel
   const [relationshipResults, documentContentMap] = await Promise.all([
-    // Get relationship data if there are profile IDs
     profileIds.length > 0
       ? Promise.all([
-          // Get relationship counts for all profile IDs (likes and follows)
           db
             .select({
               targetProfileId: profileRelationships.targetProfileId,
@@ -464,7 +326,6 @@ export const listProposals = async ({
               profileRelationships.relationshipType,
             ),
 
-          // Get user's relationships to these profiles
           db
             .select({
               targetProfileId: profileRelationships.targetProfileId,
@@ -478,7 +339,6 @@ export const listProposals = async ({
               ),
             ),
 
-          // Get comment counts for all profile IDs
           db
             .select({
               profileId: postsToProfiles.profileId,
@@ -491,7 +351,6 @@ export const listProposals = async ({
         ])
       : Promise.resolve(null),
 
-    // Get document contents for all proposals, pinned to the submitted version
     getProposalDocumentsContent(
       proposalList.map((proposal) => {
         const parsed = parseProposalData(proposal.proposalData);
@@ -508,7 +367,6 @@ export const listProposals = async ({
     ),
   ]);
 
-  // Build the relationship data map if we have results
   if (relationshipResults) {
     const [relationshipCounts, userRelationships, commentCounts] =
       relationshipResults;
@@ -553,8 +411,6 @@ export const listProposals = async ({
     }
   }
 
-  // Transform the results to match the expected structure and add decision counts, likes count, and user relationship status
-  // TODO: improve this with more streamlined types
   const proposalsWithCounts = proposalList.map((proposal: ProposalListItem) => {
     const submittedBy = Array.isArray(proposal.submittedBy)
       ? proposal.submittedBy[0]
@@ -566,8 +422,6 @@ export const listProposals = async ({
       ? relationshipData.get(proposal.profileId)
       : null;
 
-    // In results phase, proposals are never editable
-    // Check if proposal is editable by current user
     const isOwner = proposal.submittedByProfileId === currentProfileId;
     const hasAdminPermission = checkPermission(
       { profile: permission.ADMIN },
