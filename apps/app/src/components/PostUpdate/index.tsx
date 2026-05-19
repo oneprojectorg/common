@@ -76,9 +76,6 @@ const PostUpdateWithUser = ({
     content: string;
     attachmentIds: string[];
   } | null>(null);
-  const [optimisticCommentId, setOptimisticCommentId] = useState<string | null>(
-    null,
-  );
   const optimisticCommentRef = useRef<string | null>(null);
   const t = useTranslations();
   const utils = trpc.useUtils();
@@ -142,7 +139,6 @@ const PostUpdateWithUser = ({
     onMutate: async (variables) => {
       const tempId = `optimistic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       optimisticCommentRef.current = tempId;
-      setOptimisticCommentId(tempId);
 
       // For comments (posts with parentPostId)
       if (variables.parentPostId) {
@@ -269,7 +265,6 @@ const PostUpdateWithUser = ({
 
         // Clear the optimistic comment ID
         optimisticCommentRef.current = null;
-        setOptimisticCommentId(null);
       }
 
       if (errorInfo.isConnectionError) {
@@ -288,17 +283,16 @@ const PostUpdateWithUser = ({
 
       console.log('ERROR', err);
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (data, variables, context) => {
       // Clear form and failed post on success
       setContent('');
       setDetectedUrls([]);
       fileUpload.clearFiles();
       setLastFailedPost(null);
 
-      if (data && optimisticCommentRef.current) {
+      if (data && context?.tempId) {
         // Clear the optimistic comment ID since we have real data
         optimisticCommentRef.current = null;
-        setOptimisticCommentId(null);
 
         // Enhance server data with user profile if not present
         const enhancedData = {
@@ -314,19 +308,13 @@ const PostUpdateWithUser = ({
           );
           utils.posts.getPosts.setData(queryKey, (old) => {
             if (!old) return [enhancedData];
-            // Replace optimistic comment with real data, or add if not found
-            if (optimisticCommentId) {
-              const index = old.findIndex(
-                (comment) => comment.id === optimisticCommentId,
-              );
-              if (index >= 0) {
-                const newComments = [...old];
-                newComments[index] = enhancedData;
-                return newComments;
-              }
+            // Drop our optimistic placeholder; if a realtime refetch already
+            // inserted the real comment, return without re-prepending.
+            const filtered = old.filter((c) => c.id !== context.tempId);
+            if (filtered.some((c) => c.id === enhancedData.id)) {
+              return filtered;
             }
-            // Add the new comment to the beginning if no optimistic comment to replace
-            return [enhancedData, ...old];
+            return [enhancedData, ...filtered];
           });
 
           // Update parent post's comment count in main feed caches
@@ -381,19 +369,13 @@ const PostUpdateWithUser = ({
           };
           utils.posts.getPosts.setData(queryKey, (old) => {
             if (!old) return [enhancedData];
-            // Replace optimistic post with real data, or add if not found
-            if (optimisticCommentId) {
-              const index = old.findIndex(
-                (post) => post.id === optimisticCommentId,
-              );
-              if (index >= 0) {
-                const newPosts = [...old];
-                newPosts[index] = enhancedData;
-                return newPosts;
-              }
+            // Drop our optimistic placeholder; if a realtime refetch already
+            // inserted the real post, return without re-prepending.
+            const filtered = old.filter((p) => p.id !== context.tempId);
+            if (filtered.some((p) => p.id === enhancedData.id)) {
+              return filtered;
             }
-            // Add the new post to the beginning if no optimistic post to replace
-            return [enhancedData, ...old];
+            return [enhancedData, ...filtered];
           });
 
           // If this is a proposal comment, invalidate proposal queries to refresh comment counts
