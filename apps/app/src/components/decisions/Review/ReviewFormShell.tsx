@@ -42,7 +42,7 @@ export function TotalScoreCard({
   }, null);
 
   const scoreText = totalScore === null ? '–' : String(totalScore);
-  const display = totalPoints > 0 ? `${scoreText}/${totalPoints}` : scoreText;
+  const display = totalPoints > 0 ? `${scoreText}/${totalPoints}` : '–';
 
   return (
     <Surface
