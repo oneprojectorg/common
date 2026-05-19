@@ -12,7 +12,8 @@ import { Sidebar, SidebarProvider, useSidebar } from '@op/ui/Sidebar';
 import { Surface } from '@op/ui/Surface';
 import { useQueryState } from 'nuqs';
 import { Fragment, Suspense, useCallback, useEffect, useMemo } from 'react';
-import { LuMegaphone, LuX } from 'react-icons/lu';
+import { GoMegaphone } from 'react-icons/go';
+import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -175,7 +176,7 @@ const UpdatesTabContent = ({
             </Suspense>
           </ErrorBoundary>
         ) : (
-          <EmptyState icon={<LuMegaphone />}>
+          <EmptyState icon={<GoMegaphone />}>
             {t("You don't have access to updates for this decision.")}
           </EmptyState>
         )}
@@ -221,7 +222,7 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
 
   if (posts.length === 0) {
     return (
-      <EmptyState icon={<LuMegaphone />}>{t('No updates yet')}</EmptyState>
+      <EmptyState icon={<GoMegaphone />}>{t('No updates yet')}</EmptyState>
     );
   }
 

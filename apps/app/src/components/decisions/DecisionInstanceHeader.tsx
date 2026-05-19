@@ -5,7 +5,8 @@ import { ButtonLink } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
 import { IconButton } from '@op/ui/IconButton';
 import { useQueryState } from 'nuqs';
-import { LuArrowLeft, LuMegaphone, LuSettings } from 'react-icons/lu';
+import { GoMegaphone } from 'react-icons/go';
+import { LuArrowLeft, LuSettings } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
@@ -64,7 +65,6 @@ export const DecisionInstanceHeader = ({
             size="small"
           >
             <LuSettings className="size-4" />
-            <span className="hidden md:inline">{t('Settings')}</span>
           </ButtonLink>
         )}
         <LocaleChooser />
@@ -100,12 +100,10 @@ const DecisionUpdatesToggle = ({
       aria-label={ariaLabel}
       aria-pressed={isOpen}
       className={
-        isOpen
-          ? 'border-primary-teal bg-primary-tealWhite text-primary-teal'
-          : 'text-primary-teal'
+        isOpen ? 'bg-primary-tealWhite text-primary-teal' : 'text-neutral-black'
       }
     >
-      <LuMegaphone className="size-4" />
+      <GoMegaphone className="size-4" />
     </IconButton>
   );
 };
