@@ -55,7 +55,7 @@ export const DecisionInstanceHeader = ({
 
       <div className="flex items-center justify-end gap-2 md:gap-4">
         <DecisionUpdatesToggle
-          ariaLabel={t('Open updates panel')}
+          ariaLabel={t('Toggle updates panel')}
           canReadUpdates={canReadUpdates}
         />
         {isAdmin && decisionSlug && (
