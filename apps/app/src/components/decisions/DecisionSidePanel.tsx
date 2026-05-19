@@ -12,7 +12,6 @@ import { Sidebar, SidebarProvider, useSidebar } from '@op/ui/Sidebar';
 import { Surface } from '@op/ui/Surface';
 import { useQueryState } from 'nuqs';
 import { Fragment, Suspense, useCallback, useEffect, useMemo } from 'react';
-import { GoMegaphone } from 'react-icons/go';
 import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -27,6 +26,7 @@ import {
 } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
 
+import { MegaphoneIcon } from './MegaphoneIcon';
 import { panelStateParser } from './panelState';
 
 const UPDATES_PAGE_SIZE = 20;
@@ -176,7 +176,7 @@ const UpdatesTabContent = ({
             </Suspense>
           </ErrorBoundary>
         ) : (
-          <EmptyState icon={<GoMegaphone />}>
+          <EmptyState icon={<MegaphoneIcon />}>
             {t("You don't have access to updates for this decision.")}
           </EmptyState>
         )}
@@ -222,7 +222,7 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
 
   if (posts.length === 0) {
     return (
-      <EmptyState icon={<GoMegaphone />}>{t('No updates yet')}</EmptyState>
+      <EmptyState icon={<MegaphoneIcon />}>{t('No updates yet')}</EmptyState>
     );
   }
 

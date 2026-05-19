@@ -5,7 +5,6 @@ import { ButtonLink } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
 import { IconButton } from '@op/ui/IconButton';
 import { useQueryState } from 'nuqs';
-import { GoMegaphone } from 'react-icons/go';
 import { LuArrowLeft, LuSettings } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -13,6 +12,7 @@ import { Link } from '@/lib/i18n/routing';
 
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
+import { MegaphoneIcon } from './MegaphoneIcon';
 import { panelStateParser } from './panelState';
 
 export const DecisionInstanceHeader = ({
@@ -63,6 +63,7 @@ export const DecisionInstanceHeader = ({
             href={`/decisions/${decisionSlug}/edit`}
             color="secondary"
             size="small"
+            className="p-2"
           >
             <LuSettings className="size-4" />
           </ButtonLink>
@@ -103,7 +104,7 @@ const DecisionUpdatesToggle = ({
         isOpen ? 'bg-primary-tealWhite text-primary-teal' : 'text-neutral-black'
       }
     >
-      <GoMegaphone className="size-4" />
+      <MegaphoneIcon className="size-4" />
     </IconButton>
   );
 };
