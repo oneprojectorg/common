@@ -3,10 +3,9 @@ import { createClient } from '@op/api/serverClient';
 import { forbidden, notFound } from 'next/navigation';
 
 import { ProcessBuilderAutosaveProvider } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
-import { ProcessBuilderContent } from '@/components/decisions/ProcessBuilder/ProcessBuilderContent';
+import { ProcessBuilderEditArea } from '@/components/decisions/ProcessBuilder/ProcessBuilderEditArea';
 import { ProcessBuilderFooter } from '@/components/decisions/ProcessBuilder/ProcessBuilderFooter';
 import { ProcessBuilderHeader } from '@/components/decisions/ProcessBuilder/ProcessBuilderHeader';
-import { ProcessBuilderSidebar } from '@/components/decisions/ProcessBuilder/ProcessBuilderSectionNav';
 import { ProcessBuilderShell } from '@/components/decisions/ProcessBuilder/ProcessBuilderShell';
 import { ProcessBuilderStoreInitializer } from '@/components/decisions/ProcessBuilder/ProcessBuilderStoreInitializer';
 import type { ProcessBuilderInstanceData } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
@@ -64,19 +63,11 @@ const EditDecisionPage = async ({
             isDraft={isDraft}
           />
           <ProcessBuilderHeader instanceId={instanceId} slug={slug} />
-          <div className="flex min-h-0 grow flex-col overflow-y-auto md:flex-row md:overflow-y-hidden">
-            <ProcessBuilderSidebar
-              instanceId={instanceId}
-              decisionProfileId={decisionProfile.id}
-            />
-            <main className="h-full grow overflow-y-auto">
-              <ProcessBuilderContent
-                decisionProfileId={decisionProfile.id}
-                instanceId={instanceId}
-                decisionName={decisionProfile.name}
-              />
-            </main>
-          </div>
+          <ProcessBuilderEditArea
+            decisionProfileId={decisionProfile.id}
+            instanceId={instanceId}
+            decisionName={decisionProfile.name}
+          />
           <ProcessBuilderFooter
             instanceId={instanceId}
             slug={slug}
