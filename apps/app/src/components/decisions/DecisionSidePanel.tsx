@@ -4,15 +4,20 @@ import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { DecisionAccess } from '@op/api/encoders';
-import { useInfiniteScroll, useMediaQuery } from '@op/hooks';
-import { screens } from '@op/styles/constants';
+import { useInfiniteScroll } from '@op/hooks';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2 } from '@op/ui/Header';
 import { IconButton } from '@op/ui/IconButton';
+import { Sidebar, SidebarProvider, useSidebar } from '@op/ui/Sidebar';
 import { Surface } from '@op/ui/Surface';
-import { cn } from '@op/ui/utils';
 import { useQueryState } from 'nuqs';
-import { Fragment, Suspense, useCallback, useEffect, useMemo } from 'react';
+import {
+  Fragment,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+} from 'react';
 import { LuMegaphone, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -41,11 +46,22 @@ export const DecisionSidePanel = ({
   const t = useTranslations();
   const [panel, setPanel] = useQueryState('panel', panelStateParser);
   const decisionUpdatesEnabled = useFeatureFlag('decision_updates');
-  const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
 
   const isOpen = panel !== null;
   const close = useCallback(() => setPanel(null), [setPanel]);
 
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open) {
+        close();
+      }
+    },
+    [close],
+  );
+
+  // Sidebar's mobile branch (React Aria Modal) handles Escape + scroll lock
+  // for small screens; the desktop overlay branch is just a fixed div, so
+  // wire Escape ourselves for that case.
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -59,16 +75,6 @@ export const DecisionSidePanel = ({
     return () => window.removeEventListener('keydown', onKey);
   }, [isOpen, close]);
 
-  useEffect(() => {
-    if (!isOpen || !isMobile) {
-      return;
-    }
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen, isMobile]);
-
   if (!decisionUpdatesEnabled) {
     return null;
   }
@@ -77,43 +83,59 @@ export const DecisionSidePanel = ({
   const canReadUpdates = canPostUpdate || access?.read === true;
 
   return (
-    <>
-      {isOpen ? (
-        <div
-          aria-hidden="true"
-          onClick={close}
-          className="fixed inset-0 z-30 bg-neutral-black/30 sm:hidden"
-        />
-      ) : null}
-      <aside
-        role={isOpen ? 'dialog' : undefined}
-        aria-label={isOpen ? t('Decision updates panel') : undefined}
-        inert={!isOpen}
-        className={cn(
-          'fixed top-0 right-0 bottom-0 z-40 flex w-full max-w-full flex-col border-t border-l border-neutral-gray1 bg-white text-neutral-charcoal shadow-xl transition-transform duration-300 ease-out sm:top-14 sm:w-[22.5rem]',
-          isOpen ? 'translate-x-0' : 'pointer-events-none translate-x-full',
-        )}
+    <SidebarProvider isOpen={isOpen} onOpenChange={handleOpenChange}>
+      <Sidebar
+        side="right"
+        variant="overlay"
+        label={t('Decision updates panel')}
+        className="w-full max-w-full border-t border-l border-neutral-gray1 text-neutral-charcoal shadow-xl sm:top-14 sm:w-[22.5rem]"
       >
-        <div className="flex shrink-0 items-center justify-end border-b border-neutral-gray1 px-4 py-2 sm:hidden">
-          <IconButton
-            variant="ghost"
-            size="small"
-            onPress={close}
-            aria-label={t('Close')}
-          >
-            <LuX className="size-5" />
-          </IconButton>
-        </div>
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          {isOpen ? (
-            <UpdatesTabContent
-              decisionProfileId={decisionProfileId}
-              canPostUpdate={canPostUpdate}
-              canReadUpdates={canReadUpdates}
-            />
-          ) : null}
-        </div>
-      </aside>
+        <PanelContents
+          isOpen={isOpen}
+          decisionProfileId={decisionProfileId}
+          canPostUpdate={canPostUpdate}
+          canReadUpdates={canReadUpdates}
+        />
+      </Sidebar>
+    </SidebarProvider>
+  );
+};
+
+const PanelContents = ({
+  isOpen,
+  decisionProfileId,
+  canPostUpdate,
+  canReadUpdates,
+}: {
+  isOpen: boolean;
+  decisionProfileId: string;
+  canPostUpdate: boolean;
+  canReadUpdates: boolean;
+}) => {
+  const t = useTranslations();
+  const { setOpen } = useSidebar();
+
+  return (
+    <>
+      <div className="flex shrink-0 items-center justify-end border-b border-neutral-gray1 px-4 py-2 sm:hidden">
+        <IconButton
+          variant="ghost"
+          size="small"
+          onPress={() => setOpen(false)}
+          aria-label={t('Close')}
+        >
+          <LuX className="size-5" />
+        </IconButton>
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        {isOpen ? (
+          <UpdatesTabContent
+            decisionProfileId={decisionProfileId}
+            canPostUpdate={canPostUpdate}
+            canReadUpdates={canReadUpdates}
+          />
+        ) : null}
+      </div>
     </>
   );
 };

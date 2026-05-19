@@ -130,6 +130,7 @@ const Sidebar = ({
               className={cn(
                 'fixed top-0 h-full w-64 bg-white',
                 isRight ? 'right-0' : 'left-0',
+                className,
               )}
               initial={{ x: isRight ? '100%' : '-100%' }}
               animate={{ x: 0 }}
