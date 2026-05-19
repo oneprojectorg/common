@@ -8,13 +8,13 @@ import { createCommentsQueryKey } from '@/utils/queryKeys';
 import { trpc } from '@op/api/client';
 import type { Organization, Post } from '@op/api/encoders';
 import { Button } from '@op/ui-next/Button';
+import { Form } from '@op/ui-next/Form';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { MediaDisplay } from '@op/ui-next/MediaDisplay';
 import { Skeleton } from '@op/ui-next/Skeleton';
+import { Textarea } from '@op/ui-next/Textarea';
 import { toast } from '@op/ui-next/Toast';
 import { cn } from '@op/ui-next/lib/utils';
-import { TextArea } from '@op/ui/Field';
-import { Form } from '@op/ui-next/Form';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode, RefObject } from 'react';
@@ -621,7 +621,7 @@ const PostUpdateWithUser = ({
         )}
         <FeedMain className="relative">
           <Form onSubmit={handleSubmit} className="flex w-full flex-col gap-2">
-            <TextArea
+            <Textarea
               className="size-full h-6 overflow-y-hidden"
               variant="borderless"
               ref={textareaRef as RefObject<HTMLTextAreaElement>}

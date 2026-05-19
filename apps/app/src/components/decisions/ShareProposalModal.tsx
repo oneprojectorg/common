@@ -13,7 +13,6 @@ import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { ProfileItem } from '@op/ui-next/ProfileItem';
 import { SearchField } from '@op/ui-next/SearchField';
 import { toast } from '@op/ui-next/Toast';
-import { ListBox, ListBoxItem } from '@op/ui/RAC';
 import Image from 'next/image';
 import {
   Suspense,
@@ -385,37 +384,28 @@ function ShareProposalModalContent({
                   <LoadingSpinner className="size-4" />
                 </div>
               ) : filteredResults.length > 0 || canAddEmail ? (
-                <ListBox
-                  aria-label={t('Search results')}
-                  onAction={(key) => {
-                    if (key === 'add-email') {
-                      handleAddEmail(debouncedQuery);
-                    } else {
-                      const result = filteredResults.find((r) => r.id === key);
-                      if (result) {
-                        handleSelectItem(result);
-                      }
-                    }
-                  }}
-                  className="border-0 p-0 outline-none"
-                >
+                <div role="listbox" aria-label={t('Search results')}>
                   {canAddEmail && (
-                    <ListBoxItem
-                      id="add-email"
-                      textValue={debouncedQuery}
-                      className="hover:bg-neutral-gray0 focus-visible:bg-neutral-gray0 cursor-pointer px-4 py-3 outline-none"
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected="false"
+                      onClick={() => handleAddEmail(debouncedQuery)}
+                      className="hover:bg-neutral-gray0 focus-visible:bg-neutral-gray0 w-full cursor-pointer px-4 py-3 text-left outline-none"
                     >
                       <div className="text-sm">
                         {t('Invite {email}', { email: debouncedQuery })}
                       </div>
-                    </ListBoxItem>
+                    </button>
                   )}
                   {filteredResults.map((result) => (
-                    <ListBoxItem
+                    <button
                       key={result.id}
-                      id={result.id}
-                      textValue={result.name}
-                      className="hover:bg-neutral-gray0 focus-visible:bg-neutral-gray0 cursor-pointer px-4 py-3 outline-none"
+                      type="button"
+                      role="option"
+                      aria-selected="false"
+                      onClick={() => handleSelectItem(result)}
+                      className="hover:bg-neutral-gray0 focus-visible:bg-neutral-gray0 w-full cursor-pointer px-4 py-3 text-left outline-none"
                     >
                       <ProfileItem
                         size="small"
@@ -438,9 +428,9 @@ function ShareProposalModalContent({
                         }
                         title={result.name}
                       />
-                    </ListBoxItem>
+                    </button>
                   ))}
-                </ListBox>
+                </div>
               ) : (
                 <div className="p-4 text-center text-sm text-neutral-gray4">
                   {t('No results')}

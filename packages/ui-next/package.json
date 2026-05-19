@@ -53,6 +53,7 @@
     "./FileDropZone": "./src/components/FileDropZone.tsx",
     "./CollapsibleConfigCard": "./src/components/CollapsibleConfigCard.tsx",
     "./DataTable": "./src/components/DataTable.tsx",
+    "./DatePicker": "./src/components/DatePicker.tsx",
     "./Form": "./src/components/Form.tsx",
     "./Table": "./src/components/ui/table.tsx",
     "./RichTextEditor": "./src/components/RichTextEditor/index.ts",
