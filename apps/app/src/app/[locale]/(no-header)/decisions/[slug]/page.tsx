@@ -11,7 +11,7 @@ import { Suspense } from 'react';
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionSidePanel } from '@/components/decisions/DecisionSidePanel';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
-import { DecisionHeaderSkeleton } from '@/components/skeletons/DecisionSkeleton';
+import { DecisionContentSkeleton } from '@/components/skeletons/DecisionSkeleton';
 
 const DecisionPageContent = async ({ slug }: { slug: string }) => {
   const [client, { utils, queryClient }] = await Promise.all([
@@ -53,29 +53,29 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <Suspense fallback={<DecisionHeaderSkeleton />}>
-        <DecisionHeader
-          instanceId={instanceId}
-          decisionSlug={slug}
-          isAdmin={decisionProfile.processInstance.access?.admin}
-          canReadUpdates={
-            decisionProfile.processInstance.access?.admin === true ||
-            decisionProfile.processInstance.access?.read === true
-          }
-          profileName={decisionProfile.name}
-        >
+      <DecisionHeader
+        instanceId={instanceId}
+        decisionSlug={slug}
+        isAdmin={decisionProfile.processInstance.access?.admin}
+        canReadUpdates={
+          decisionProfile.processInstance.access?.admin === true ||
+          decisionProfile.processInstance.access?.read === true
+        }
+        profileName={decisionProfile.name}
+      >
+        <Suspense fallback={<DecisionContentSkeleton />}>
           <DecisionStateRouter
             instanceId={instanceId}
             slug={ownerSlug}
             decisionSlug={slug}
             decisionProfileId={decisionProfile.id}
           />
-          <DecisionSidePanel
-            decisionProfileId={decisionProfile.id}
-            access={decisionProfile.processInstance.access}
-          />
-        </DecisionHeader>
-      </Suspense>
+        </Suspense>
+        <DecisionSidePanel
+          decisionProfileId={decisionProfile.id}
+          access={decisionProfile.processInstance.access}
+        />
+      </DecisionHeader>
     </HydrationBoundary>
   );
 };
