@@ -310,11 +310,18 @@ export const submitVote = async ({
       };
     });
 
-    waitUntil(
-      trackUserVoted(authUserId, result.voteSubmission.processInstanceId).catch(
-        (err) => console.error('Failed to track user_voted', err),
-      ),
-    );
+    try {
+      waitUntil(
+        trackUserVoted(
+          authUserId,
+          result.voteSubmission.processInstanceId,
+        ).catch((err) => console.error('Failed to track user_voted', err)),
+      );
+    } catch (err) {
+      // waitUntil can throw synchronously off-Vercel (no request context).
+      // Swallow here so analytics never causes "Failed to submit vote".
+      console.error('Failed to schedule user_voted tracking', err);
+    }
 
     return {
       id: result.voteSubmission.id,
