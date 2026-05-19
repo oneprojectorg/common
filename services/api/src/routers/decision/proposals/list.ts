@@ -1,4 +1,4 @@
-import { Channels, listProposals } from '@op/common';
+import { Channels, listAllProposals, listProposals } from '@op/common';
 import { proposalListSchema } from '@op/common/client';
 
 import { proposalFilterSchema } from '../../../encoders/decision';
@@ -10,11 +10,13 @@ export const listProposalsRouter = router({
     .output(proposalListSchema)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
+      const { scope, phaseId, ...base } = input;
+      const baseInput = { ...base, authUserId: user.id };
 
-      const result = await listProposals({
-        input: { ...input, authUserId: user.id },
-        user,
-      });
+      const result =
+        scope === 'all'
+          ? await listAllProposals({ input: baseInput, user })
+          : await listProposals({ input: { ...baseInput, phaseId }, user });
 
       ctx.registerQueryChannels([
         Channels.decisionProposals(input.processInstanceId),

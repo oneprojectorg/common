@@ -45,40 +45,25 @@ import {
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 
-export interface ListProposalsInput {
+/** Fields shared by both phase-scoped and all-scoped proposal listings. */
+interface BaseListInput {
   processInstanceId: string;
   submittedByProfileId?: string;
   status?: ProposalStatus;
   search?: string;
   categoryId?: string;
   /**
-   * Scope results to a specific phase. Defaults to the current phase when
-   * omitted. Only meaningful with `scope: 'phase'`; must be undefined when
-   * `scope: 'all'`. The tRPC encoder enforces this; internal callers should
-   * respect the same contract.
-   */
-  phaseId?: string;
-  /**
-   * Restrict results to proposals voted on by this profile. Bypasses phase
-   * resolution so a ballot remains accessible after the process advances past
-   * the voting phase.
+   * Restrict results to proposals voted on by this profile. Used by both
+   * scopes so a user's ballot remains accessible regardless of the current
+   * phase.
    */
   votedByProfileId?: string;
   /**
-   * Internal override: skip phase resolution and use this exact set of IDs.
-   * Not exposed on the tRPC schema — public callers should use phaseId or
-   * votedByProfileId.
+   * Internal override: use this exact set of IDs. Not exposed on the tRPC
+   * schema — public callers should use phaseId (phase) or votedByProfileId.
    */
   proposalIds?: string[];
   phase?: 'results';
-  /**
-   * Controls which proposals are eligible:
-   * - `'phase'` (default): standard phase-scoped visibility.
-   * - `'all'`: bypass phase scoping and return every non-draft,
-   *   non-rejected, non-duplicate, non-deleted proposal on the instance.
-   *   Visibility (HIDDEN) and soft-delete filters still apply.
-   */
-  scope?: 'phase' | 'all';
   limit?: number;
   offset?: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'status';
@@ -86,6 +71,17 @@ export interface ListProposalsInput {
   authUserId: string;
   skipAccessCheck?: boolean; // For trusted contexts like background jobs
 }
+
+export interface ListProposalsInput extends BaseListInput {
+  /**
+   * Phase to scope results to. Defaults to the instance's current phase when
+   * omitted.
+   */
+  phaseId?: string;
+}
+
+/** Input for `listAllProposals` — no `phaseId` since phase scoping doesn't apply. */
+export type ListAllProposalsInput = BaseListInput;
 
 type Instance = {
   id: string;
@@ -122,7 +118,7 @@ const resolveExplicitScope = async ({
   currentProfileId,
   skipAccessCheck,
 }: {
-  input: ListProposalsInput;
+  input: BaseListInput;
   currentProfileId: string | undefined;
   skipAccessCheck: boolean;
 }): Promise<string[] | undefined> => {
@@ -160,7 +156,7 @@ const resolveExplicitScope = async ({
 };
 
 // Shared function to build WHERE conditions for both count and data queries
-const buildWhereConditions = (input: ListProposalsInput) => {
+const buildWhereConditions = (input: BaseListInput) => {
   const { processInstanceId, submittedByProfileId, status, search } = input;
 
   const conditions = [];
@@ -221,6 +217,14 @@ const buildAllScopeFilter = ({
   );
 };
 
+type ListContext = {
+  instance: Instance;
+  currentProfileId: string;
+  explicitScopeIds: string[] | undefined;
+  profileUser: AccessResult['profileUser'];
+  canManageProposals: boolean;
+};
+
 const runAccessCheck = async ({
   user,
   instance,
@@ -258,6 +262,57 @@ const runAccessCheck = async ({
       { profile: permission.ADMIN },
       profileUser?.roles ?? [],
     ),
+  };
+};
+
+// Shared setup for both list paths: validate auth, fetch the instance, resolve
+// the caller's profile, then run explicit-scope resolution and the access check
+// in parallel.
+const resolveListContext = async ({
+  input,
+  user,
+}: {
+  input: BaseListInput;
+  user: User;
+}): Promise<ListContext> => {
+  const { processInstanceId, skipAccessCheck = false } = input;
+
+  if (!skipAccessCheck && !user) {
+    throw new UnauthorizedError('User must be authenticated');
+  }
+
+  const [instanceRows, currentProfileId] = await Promise.all([
+    db
+      .select({
+        id: processInstances.id,
+        profileId: processInstances.profileId,
+        ownerProfileId: processInstances.ownerProfileId,
+        instanceData: processInstances.instanceData,
+        processId: processInstances.processId,
+        currentStateId: processInstances.currentStateId,
+      })
+      .from(processInstances)
+      .where(eq(processInstances.id, processInstanceId))
+      .limit(1),
+    getCurrentProfileId(input.authUserId),
+  ]);
+
+  const instance = instanceRows[0];
+  if (!instance?.profileId) {
+    throw new UnauthorizedError('User does not have access to this process');
+  }
+
+  const [explicitScopeIds, access] = await Promise.all([
+    resolveExplicitScope({ input, currentProfileId, skipAccessCheck }),
+    runAccessCheck({ user, instance, skipAccessCheck }),
+  ]);
+
+  return {
+    instance,
+    currentProfileId,
+    explicitScopeIds,
+    profileUser: access.profileUser,
+    canManageProposals: access.canManageProposals,
   };
 };
 
@@ -525,24 +580,27 @@ const applyCategoryFilter = async (
   return whereClause ? and(whereClause, filter) : filter;
 };
 
-// Handles `scope: 'all'`: every valid (non-draft, non-rejected, non-duplicate,
-// non-deleted) proposal on the instance, with HIDDEN visibility still applied
-// for non-admin callers. No phase resolution or draft handling.
-const listAllScopeProposals = async ({
+/**
+ * Returns every valid (non-draft, non-rejected, non-duplicate, non-deleted)
+ * proposal on the instance, ignoring phase scoping. HIDDEN visibility is still
+ * applied for non-admin callers. Used by the "All proposals" tab on the
+ * results page.
+ */
+export const listAllProposals = async ({
   input,
-  instance,
-  currentProfileId,
-  explicitScopeIds,
-  profileUser,
-  canManageProposals,
+  user,
 }: {
-  input: ListProposalsInput;
-  instance: Instance;
-  currentProfileId: string;
-  explicitScopeIds: string[] | undefined;
-  profileUser: AccessResult['profileUser'];
-  canManageProposals: boolean;
+  input: ListAllProposalsInput;
+  user: User;
 }) => {
+  const {
+    instance,
+    currentProfileId,
+    explicitScopeIds,
+    profileUser,
+    canManageProposals,
+  } = await resolveListContext({ input, user });
+
   const {
     skipAccessCheck = false,
     limit = 20,
@@ -597,6 +655,12 @@ const listAllScopeProposals = async ({
   });
 };
 
+/**
+ * Returns proposals visible in the given phase (defaults to the instance's
+ * current phase). Drafts are phase-scoped to their `createdAt` window and
+ * filtered to the caller and their collaborators; non-drafts have the HIDDEN
+ * visibility filter applied for non-admin callers.
+ */
 export const listProposals = async ({
   input,
   user,
@@ -604,56 +668,16 @@ export const listProposals = async ({
   input: ListProposalsInput;
   user: User;
 }) => {
-  const { processInstanceId, skipAccessCheck = false } = input;
+  const { skipAccessCheck = false } = input;
 
-  // Skip authentication check if this is a trusted context (e.g., background job)
-  if (!skipAccessCheck && !user) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
+  const {
+    instance,
+    currentProfileId,
+    explicitScopeIds,
+    profileUser,
+    canManageProposals,
+  } = await resolveListContext({ input, user });
 
-  // Instance fetch + caller's profile id in parallel (independent).
-  const [instanceRows, currentProfileId] = await Promise.all([
-    db
-      .select({
-        id: processInstances.id,
-        profileId: processInstances.profileId,
-        ownerProfileId: processInstances.ownerProfileId,
-        instanceData: processInstances.instanceData,
-        processId: processInstances.processId,
-        currentStateId: processInstances.currentStateId,
-      })
-      .from(processInstances)
-      .where(eq(processInstances.id, processInstanceId))
-      .limit(1),
-    getCurrentProfileId(input.authUserId),
-  ]);
-
-  const instance = instanceRows[0];
-  if (!instance?.profileId) {
-    throw new UnauthorizedError('User does not have access to this process');
-  }
-
-  // Explicit-scope resolution + access check in parallel — both only need the
-  // instance row (already fetched).
-  const [explicitScopeIds, access] = await Promise.all([
-    resolveExplicitScope({ input, currentProfileId, skipAccessCheck }),
-    runAccessCheck({ user, instance, skipAccessCheck }),
-  ]);
-  const { profileUser, canManageProposals } = access;
-
-  // Branch on scope. `'all'` doesn't touch phase resolution at all.
-  if (input.scope === 'all') {
-    return listAllScopeProposals({
-      input,
-      instance,
-      currentProfileId,
-      explicitScopeIds,
-      profileUser,
-      canManageProposals,
-    });
-  }
-
-  // ── Phase-scope path ──────────────────────────────────────────────────────
   // Resolve phase-scoped IDs for non-drafts and drafts. Drafts are phase-scoped
   // via a `createdAt` window since they're never attached to transition
   // snapshots. The combined resolver shares a single instance-context lookup
