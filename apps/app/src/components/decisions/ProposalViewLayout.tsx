@@ -83,7 +83,7 @@ export function ProposalViewLayout({
             </Button>
           )}
           <Button
-            surface={isLiked ? undefined : 'outline'}
+            surface="outline"
             color={isLiked ? 'verified' : 'secondary'}
             size="small"
             onPress={onLike}
@@ -93,7 +93,7 @@ export function ProposalViewLayout({
             {isLiked ? t('Liked') : t('Like')}
           </Button>
           <Button
-            surface={isFollowing ? undefined : 'outline'}
+            surface="outline"
             color={isFollowing ? 'verified' : 'secondary'}
             size="small"
             onPress={onFollow}
