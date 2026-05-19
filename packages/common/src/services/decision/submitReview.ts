@@ -81,6 +81,10 @@ export async function submitReview({
       })
       .where(eq(proposalReviewAssignments.id, assignmentId));
 
+    // Under READ COMMITTED, a parallel reviewer finishing concurrently can
+    // observe a stale count here, which means review_list_finished may fire
+    // twice or not at all for the same reviewer on a busy process. Acceptable:
+    // PostHog can dedupe downstream and the race is low-frequency in practice.
     const [remaining] = await tx
       .select({ value: count() })
       .from(proposalReviewAssignments)
@@ -101,7 +105,9 @@ export async function submitReview({
         ),
       );
 
-    return { review: submittedReview, remainingCount: remaining?.value ?? 0 };
+    // Default to 1 (not 0) on a missing row so a count failure cannot
+    // falsely trigger review_list_finished.
+    return { review: submittedReview, remainingCount: remaining?.value ?? 1 };
   });
 
   const processInstanceId = context.assignment.processInstanceId;
@@ -111,11 +117,17 @@ export async function submitReview({
       user.id,
       processInstanceId,
       context.assignment.proposalId,
+    ).catch((err) =>
+      console.error('Failed to track user_reviewed_proposal', err),
     ),
   );
 
   if (remainingCount === 0) {
-    waitUntil(trackReviewListFinished(user.id, processInstanceId));
+    waitUntil(
+      trackReviewListFinished(user.id, processInstanceId).catch((err) =>
+        console.error('Failed to track review_list_finished', err),
+      ),
+    );
   }
 
   return {

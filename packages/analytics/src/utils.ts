@@ -382,23 +382,22 @@ export async function trackProposalFollowed(
 }
 
 /**
- * Track when a user votes on a proposal
+ * Track when a user submits a vote.
+ *
+ * Voting is private: we only record that the user voted in a given process.
+ * Do NOT pass the proposalId(s), selection counts, schema details, or any
+ * other field that could expose what they voted for. The userId + processId
+ * pair is the maximum we are willing to send.
  */
 export async function trackUserVoted(
   userId: string,
   processId: string,
-  proposalId: string,
-  voteData?: Record<string, any>,
-  additionalProps?: Record<string, any>,
 ): Promise<void> {
-  await trackEvent({
-    distinctId: userId,
-    event: 'user_voted',
-    properties: getDecisionCommonProperties(processId, proposalId, {
-      ...voteData,
-      ...additionalProps,
-    }),
-  });
+  await trackEventWithContext(
+    userId,
+    'user_voted',
+    getDecisionCommonProperties(processId),
+  );
 }
 
 /**

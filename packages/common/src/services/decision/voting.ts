@@ -310,21 +310,11 @@ export const submitVote = async ({
       };
     });
 
-    const firstProposalId = result.selectedProposalIds[0];
-    if (firstProposalId) {
-      waitUntil(
-        trackUserVoted(
-          authUserId,
-          result.voteSubmission.processInstanceId,
-          firstProposalId,
-          undefined,
-          {
-            selected_proposal_count: result.selectedProposalIds.length,
-            schema_version: voteData.schemaVersion,
-          },
-        ),
-      );
-    }
+    waitUntil(
+      trackUserVoted(authUserId, result.voteSubmission.processInstanceId).catch(
+        (err) => console.error('Failed to track user_voted', err),
+      ),
+    );
 
     return {
       id: result.voteSubmission.id,

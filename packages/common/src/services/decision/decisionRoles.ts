@@ -284,7 +284,7 @@ export async function updateDecisionRoles({
   waitUntil(
     trackAdminGaveRoles(user.id, roleId, {
       decision_permissions: decisionPermissions,
-    }),
+    }).catch((err) => console.error('Failed to track admin_gave_roles', err)),
   );
 
   return { roleId, decisionPermissions };

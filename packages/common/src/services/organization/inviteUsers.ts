@@ -248,7 +248,7 @@ export const inviteUsersToOrganization = async (
     waitUntil(
       trackUserInvited(user.id, successCount, {
         organization_id: organizationId,
-      }),
+      }).catch((err) => console.error('Failed to track user_invited', err)),
     );
   }
 
@@ -387,7 +387,11 @@ export const inviteNewUsers = async (input: InviteNewUsersInput) => {
   const message = generateInviteResultMessage(successCount, totalEmails);
 
   if (successCount > 0) {
-    waitUntil(trackUserInvited(user.id, successCount));
+    waitUntil(
+      trackUserInvited(user.id, successCount).catch((err) =>
+        console.error('Failed to track user_invited', err),
+      ),
+    );
   }
 
   return {

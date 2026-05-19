@@ -387,6 +387,8 @@ export const inviteUsersToProfile = async ({
         user.id,
         profileId,
         results.successful.length,
+      ).catch((err) =>
+        console.error('Failed to track admin_invited_participants', err),
       ),
     );
   }
