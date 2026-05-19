@@ -64,6 +64,7 @@ export const DecisionInstanceHeader = ({
             color="secondary"
             size="small"
             className="p-2"
+            aria-label={t('Settings')}
           >
             <LuSettings className="size-4" />
           </ButtonLink>
