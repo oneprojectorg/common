@@ -508,7 +508,7 @@ export const SiteHeader = () => {
               className="p-1"
               size="small"
             />
-            <Link href="/" className="flex gap-1">
+            <Link href="/" className="flex gap-1" aria-label={t('Home')}>
               <CommonLogo />
             </Link>
           </div>
