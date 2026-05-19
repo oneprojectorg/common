@@ -8,17 +8,11 @@ import {
 } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
+import { type ColumnDef, DataTable } from '@op/ui-next/DataTable';
 import { Link } from '@op/ui-next/Link';
 import { Skeleton } from '@op/ui-next/Skeleton';
 import { StatusDot, type StatusDotIntent } from '@op/ui-next/StatusDot';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableColumn,
-  TableHeader,
-  TableRow,
-} from '@op/ui/ui/table';
+import { useMemo } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -50,6 +44,98 @@ export function ReviewSelectionTable({
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
 
+  const columns = useMemo<ColumnDef<ProposalWithAggregates, unknown>[]>(
+    () => [
+      {
+        id: 'proposal',
+        header: t('Proposal'),
+        cell: ({ row }) => {
+          const item = row.original;
+          const title = item.proposal.profile.name;
+          const submitterName = item.proposal.submittedBy?.name ?? null;
+          return (
+            <div className="flex flex-col">
+              <Link
+                href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}
+                variant="neutral"
+                className="line-clamp-1 text-base text-neutral-black hover:underline"
+              >
+                {title}
+              </Link>
+              {submitterName && (
+                <span className="line-clamp-1 text-sm text-neutral-gray4">
+                  {submitterName}
+                </span>
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        id: 'budget',
+        header: t('Budget'),
+        cell: ({ row }) => {
+          const budget = row.original.proposal.proposalData.budget;
+          return (
+            <span className="text-base text-neutral-black">
+              {budget
+                ? formatCurrency(budget.amount, undefined, budget.currency)
+                : '—'}
+            </span>
+          );
+        },
+      },
+      {
+        id: 'category',
+        header: t('Category'),
+        cell: ({ row }) => (
+          <SelectionCategoryChips
+            labels={row.original.categories.map((c) => c.label)}
+          />
+        ),
+      },
+      {
+        id: 'recommendation',
+        header: t('Overall recommendation'),
+        cell: ({ row }) => (
+          <RecommendationCounts
+            counts={row.original.aggregates.overallRecommendationCount}
+          />
+        ),
+      },
+      {
+        id: 'score',
+        header: () => (
+          <span className="underline decoration-dotted">
+            {t('Score ({pts}pts)', { pts: totalPoints })}
+          </span>
+        ),
+        cell: ({ row }) => (
+          <span className="text-base text-neutral-black">
+            <ScoreText value={row.original.aggregates.averageScore} />
+          </span>
+        ),
+      },
+      {
+        id: 'action',
+        header: () => <span className="sr-only">{t('Advance')}</span>,
+        cell: ({ row }) => {
+          const advancing = advancingIds.has(row.original.proposal.id);
+          const title = row.original.proposal.profile.name;
+          return (
+            <AdvanceToggleButton
+              isSelected={advancing}
+              onPress={() => onAdvance(row.original.proposal.id)}
+              title={title}
+              className="w-28 justify-center"
+            />
+          );
+        },
+      },
+    ],
+    [t, decisionSlug, totalPoints, onAdvance, advancingIds],
+  );
+
   if (isMobile) {
     return (
       <ul className="flex flex-col gap-3" aria-label={t('All proposals')}>
@@ -71,85 +157,12 @@ export function ReviewSelectionTable({
   }
 
   return (
-    <Table aria-label={t('All proposals')} bleed>
-      <TableHeader>
-        <TableColumn id="proposal" isRowHeader className="w-56">
-          {t('Proposal')}
-        </TableColumn>
-        <TableColumn id="budget">{t('Budget')}</TableColumn>
-        <TableColumn id="category">{t('Category')}</TableColumn>
-        <TableColumn id="recommendation">
-          {t('Overall recommendation')}
-        </TableColumn>
-        <TableColumn id="score">
-          <span className="underline decoration-dotted">
-            {t('Score ({pts}pts)', { pts: totalPoints })}
-          </span>
-        </TableColumn>
-        <TableColumn id="action" className="w-28">
-          <span className="sr-only">{t('Advance')}</span>
-        </TableColumn>
-      </TableHeader>
-      <TableBody>
-        {items.map((item) => {
-          const advancing = advancingIds.has(item.proposal.id);
-          const title = item.proposal.profile.name;
-          const submitterName = item.proposal.submittedBy?.name ?? null;
-          const budget = item.proposal.proposalData.budget;
-
-          return (
-            <TableRow key={item.proposal.id} id={item.proposal.id}>
-              <TableCell>
-                <div className="flex flex-col">
-                  <Link
-                    href={`/decisions/${decisionSlug}/proposal/${item.proposal.profileId}/reviews`}
-                    variant="neutral"
-                    className="line-clamp-1 text-base text-neutral-black hover:underline"
-                  >
-                    {title}
-                  </Link>
-                  {submitterName && (
-                    <span className="line-clamp-1 text-sm text-neutral-gray4">
-                      {submitterName}
-                    </span>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>
-                <span className="text-base text-neutral-black">
-                  {budget
-                    ? formatCurrency(budget.amount, undefined, budget.currency)
-                    : '—'}
-                </span>
-              </TableCell>
-              <TableCell>
-                <SelectionCategoryChips
-                  labels={item.categories.map((c) => c.label)}
-                />
-              </TableCell>
-              <TableCell>
-                <RecommendationCounts
-                  counts={item.aggregates.overallRecommendationCount}
-                />
-              </TableCell>
-              <TableCell>
-                <span className="text-base text-neutral-black">
-                  <ScoreText value={item.aggregates.averageScore} />
-                </span>
-              </TableCell>
-              <TableCell>
-                <AdvanceToggleButton
-                  isSelected={advancing}
-                  onPress={() => onAdvance(item.proposal.id)}
-                  title={title}
-                  className="w-28 justify-center"
-                />
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+    <DataTable
+      aria-label={t('All proposals')}
+      columns={columns}
+      data={items}
+      getRowId={(item) => item.proposal.id}
+    />
   );
 }
 
@@ -283,8 +296,6 @@ function CountLabel({
 
 function ScoreText({ value }: { value: number }) {
   const t = useTranslations();
-  // Render with at most one decimal — most rubrics produce integers but
-  // averageScore-derived values can drift; keep the column compact.
   const display = Number.isInteger(value) ? value.toString() : value.toFixed(1);
   return <>{t('{pts} pts', { pts: display })}</>;
 }

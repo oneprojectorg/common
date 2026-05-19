@@ -1,38 +1,47 @@
 'use client';
 
-import { trpc } from '@op/api/client';
-import { useCursorPagination, useDebounce } from '@op/hooks';
+import { DATE_TIME_UTC_FORMAT } from '@/utils/formatting';
+import { getAnalyticsUserUrl } from '@op/analytics/client-utils';
+import { type RouterOutput, trpc } from '@op/api/client';
+import { useCursorPagination, useDebounce, useRelativeTime } from '@op/hooks';
+import { type ColumnDef, DataTable } from '@op/ui-next/DataTable';
 import { Header2 } from '@op/ui-next/Header';
-import { DropdownMenuItem } from '@op/ui-next/Menu';
+import { DropdownMenuItem, DropdownMenuSeparator } from '@op/ui-next/Menu';
 import { OptionMenu } from '@op/ui-next/OptionMenu';
 import { Pagination } from '@op/ui-next/Pagination';
 import { SearchField } from '@op/ui-next/SearchField';
+import { Select, SelectItem } from '@op/ui-next/Select';
 import { Skeleton } from '@op/ui-next/Skeleton';
-import { toast } from '@op/ui-next/Toast';
 import {
   Table,
   TableBody,
   TableCell,
-  TableColumn,
+  TableHead,
   TableHeader,
   TableRow,
-} from '@op/ui/ui/table';
+} from '@op/ui-next/Table';
+import { toast } from '@op/ui-next/Toast';
+import { Tooltip, TooltipTrigger } from '@op/ui-next/Tooltip';
+import { useFormatter } from 'next-intl';
 import {
   Suspense,
   useCallback,
   useEffect,
+  useMemo,
   useState,
   useTransition,
 } from 'react';
+import { Button } from 'react-aria-components';
 import { LuDownload } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { UsersRowCells } from './UsersRow';
+import { AddUserToOrgModal } from './AddUserToOrgModal';
+import { UpdateProfileModal } from './UpdateProfile';
 
-/**
- * Exports user data to CSV and triggers download
- */
+type ListAllUsersOutput = RouterOutput['platform']['admin']['listAllUsers'];
+type User = ListAllUsersOutput['items'][number];
+
 const exportUsersToCSV = (
   users: Array<{ name: string | null; email: string }>,
 ) => {
@@ -57,7 +66,6 @@ const exportUsersToCSV = (
   URL.revokeObjectURL(url);
 };
 
-/** Main users table component with suspense boundary */
 export const UsersTable = () => {
   const t = useTranslations();
   const utils = trpc.useUtils();
@@ -68,7 +76,6 @@ export const UsersTable = () => {
   const handleExportAllUsers = useCallback(() => {
     startExportTransition(async () => {
       try {
-        // Fetch all users without limit
         const result = await utils.platform.admin.listAllUsers.fetch({});
 
         if (result.items.length === 0) {
@@ -127,7 +134,6 @@ export const UsersTable = () => {
   );
 };
 
-/** Renders users table with live data */
 const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
   const t = useTranslations();
   const {
@@ -140,18 +146,15 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
     reset,
   } = useCursorPagination(5);
 
-  // Reset pagination when search query changes
   useEffect(() => {
     reset();
   }, [searchQuery]);
 
-  const queryInput = {
+  const [data] = trpc.platform.admin.listAllUsers.useSuspenseQuery({
     cursor,
     limit,
     query: searchQuery || undefined,
-  };
-
-  const [data] = trpc.platform.admin.listAllUsers.useSuspenseQuery(queryInput);
+  });
 
   const { items: users, next, total } = data;
 
@@ -161,29 +164,92 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
     }
   };
 
+  const [selectedOrgUserByUser, setSelectedOrgUserByUser] = useState<
+    Record<string, string>
+  >({});
+
+  const getSelectedOrgUserId = (user: User) => {
+    const fromState = selectedOrgUserByUser[user.id];
+    if (fromState) {
+      return fromState;
+    }
+    return user.organizationUsers?.[0]?.id;
+  };
+
+  const setSelectedOrgUserId = (userId: string, orgUserId: string) => {
+    setSelectedOrgUserByUser((prev) => ({ ...prev, [userId]: orgUserId }));
+  };
+
+  const columns = useMemo<ColumnDef<User, unknown>[]>(
+    () => [
+      {
+        id: 'name',
+        header: t('Name'),
+        cell: ({ row }) => (
+          <span className="text-sm font-normal text-neutral-black">
+            {row.original.profile?.name ?? row.original.name ?? '—'}
+          </span>
+        ),
+      },
+      {
+        id: 'email',
+        header: t('Email'),
+        cell: ({ row }) => (
+          <span className="text-sm font-normal text-neutral-black">
+            {row.original.email}
+          </span>
+        ),
+      },
+      {
+        id: 'role',
+        header: t('Role'),
+        cell: ({ row }) => (
+          <RoleCell
+            user={row.original}
+            selectedOrgUserId={getSelectedOrgUserId(row.original)}
+          />
+        ),
+      },
+      {
+        id: 'organization',
+        header: t('Organization'),
+        cell: ({ row }) => (
+          <OrganizationCell
+            user={row.original}
+            selectedOrgUserId={getSelectedOrgUserId(row.original)}
+            onChange={(orgUserId) =>
+              setSelectedOrgUserId(row.original.id, orgUserId)
+            }
+          />
+        ),
+      },
+      {
+        id: 'created',
+        header: t('Created'),
+        cell: ({ row }) => <CreatedCell user={row.original} />,
+      },
+      {
+        id: 'lastSignIn',
+        header: t('Last sign in'),
+        cell: ({ row }) => <LastSignInCell user={row.original} />,
+      },
+      {
+        id: 'actions',
+        header: () => <span className="block text-right">{t('Actions')}</span>,
+        cell: ({ row }) => <UserActionsCell user={row.original} />,
+      },
+    ],
+    [t, selectedOrgUserByUser],
+  );
+
   return (
     <>
-      <Table
+      <DataTable
         aria-label={t('platformAdmin_allUsers')}
-        key={users.map((u) => u.id).join(',')}
-      >
-        <TableHeader>
-          <TableColumn isRowHeader>{t('Name')}</TableColumn>
-          <TableColumn>{t('Email')}</TableColumn>
-          <TableColumn>{t('Role')}</TableColumn>
-          <TableColumn>{t('Organization')}</TableColumn>
-          <TableColumn>{t('Created')}</TableColumn>
-          <TableColumn>{t('Last sign in')}</TableColumn>
-          <TableColumn className="text-right">{t('Actions')}</TableColumn>
-        </TableHeader>
-        <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.id} id={user.id}>
-              <UsersRowCells user={user} />
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+        columns={columns}
+        data={users}
+        getRowId={(user) => user.id}
+      />
       <div className="mt-4">
         <Pagination
           range={{
@@ -200,36 +266,173 @@ const UsersTableContent = ({ searchQuery }: { searchQuery: string }) => {
   );
 };
 
-/** Loading skeleton */
+const RoleCell = ({
+  user,
+  selectedOrgUserId,
+}: {
+  user: User;
+  selectedOrgUserId?: string;
+}) => {
+  const orgUsers = user.organizationUsers ?? [];
+  if (orgUsers.length === 0) {
+    return <span className="text-sm text-neutral-charcoal">-</span>;
+  }
+  const selected = orgUsers.find((ou) => ou.id === selectedOrgUserId);
+  if (!selected) {
+    return <span className="text-sm text-neutral-charcoal">—</span>;
+  }
+  const roles = selected.roles;
+  const roleNames =
+    roles && roles.length > 0
+      ? roles.map((r) => r.accessRole.name).join(', ')
+      : 'No roles';
+  return (
+    <span className="text-sm font-normal text-neutral-black">{roleNames}</span>
+  );
+};
+
+const OrganizationCell = ({
+  user,
+  selectedOrgUserId,
+  onChange,
+}: {
+  user: User;
+  selectedOrgUserId?: string;
+  onChange: (orgUserId: string) => void;
+}) => {
+  const orgUsers = user.organizationUsers ?? [];
+  if (orgUsers.length === 0) {
+    return <span className="text-sm text-neutral-charcoal">-</span>;
+  }
+  return (
+    <Select
+      className="w-full"
+      selectedKey={selectedOrgUserId}
+      onSelectionChange={(key) => onChange(String(key))}
+    >
+      {orgUsers.map(({ id: orgUserId, organization }) => (
+        <SelectItem key={orgUserId} id={orgUserId}>
+          {organization?.profile?.name ?? 'Unknown Organization'}
+        </SelectItem>
+      ))}
+    </Select>
+  );
+};
+
+const CreatedCell = ({ user }: { user: User }) => {
+  const format = useFormatter();
+  const createdAt = user.createdAt ? new Date(user.createdAt) : null;
+  const relativeCreatedAt = useRelativeTime(createdAt ?? new Date());
+  if (!createdAt) {
+    return <span className="text-sm font-normal text-neutral-charcoal">—</span>;
+  }
+  return (
+    <TooltipTrigger>
+      <Button className="cursor-default text-sm font-normal text-neutral-charcoal underline decoration-dotted underline-offset-2 outline-hidden">
+        {relativeCreatedAt}
+      </Button>
+      <Tooltip>{format.dateTime(createdAt, DATE_TIME_UTC_FORMAT)}</Tooltip>
+    </TooltipTrigger>
+  );
+};
+
+const LastSignInCell = ({ user }: { user: User }) => {
+  const format = useFormatter();
+  const lastSignInAt = user.authUser?.lastSignInAt
+    ? new Date(user.authUser.lastSignInAt)
+    : null;
+  const relative = useRelativeTime(lastSignInAt ?? new Date());
+  if (!lastSignInAt) {
+    return <span className="text-sm font-normal text-neutral-charcoal">—</span>;
+  }
+  return (
+    <TooltipTrigger>
+      <Button className="cursor-default text-sm font-normal text-neutral-charcoal underline decoration-dotted underline-offset-2 outline-hidden">
+        {relative}
+      </Button>
+      <Tooltip>{format.dateTime(lastSignInAt, DATE_TIME_UTC_FORMAT)}</Tooltip>
+    </TooltipTrigger>
+  );
+};
+
+const UserActionsCell = ({ user }: { user: User }) => {
+  const t = useTranslations();
+  const utils = trpc.useUtils();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAddToOrgModalOpen, setIsAddToOrgModalOpen] = useState(false);
+
+  return (
+    <div className="flex justify-end">
+      <OptionMenu
+        aria-label={t('User options')}
+        variant="outline"
+        size="medium"
+      >
+        <DropdownMenuItem
+          onClick={() => {
+            window.open(getAnalyticsUserUrl(user.authUserId), '_blank');
+          }}
+        >
+          {t('View analytics')}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => {
+            if (user.profile) {
+              setIsEditModalOpen(true);
+            }
+          }}
+          disabled={!user.profile}
+        >
+          {t('Edit profile')}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setIsAddToOrgModalOpen(true)}>
+          Add to Organization
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="destructive"
+          onClick={() => {
+            alert('coming soon');
+          }}
+        >
+          {t('Remove user')}
+        </DropdownMenuItem>
+      </OptionMenu>
+      {user.profile ? (
+        <UpdateProfileModal
+          authUserId={user.authUserId}
+          profile={user.profile}
+          isOpen={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          onSuccess={() => {
+            utils.platform.admin.listAllUsers.invalidate();
+          }}
+        />
+      ) : null}
+      <AddUserToOrgModal
+        user={user}
+        isOpen={isAddToOrgModalOpen}
+        onOpenChange={setIsAddToOrgModalOpen}
+      />
+    </div>
+  );
+};
+
 const UsersTableSkeleton = () => {
   return (
     <Table aria-label="Loading users">
       <TableHeader>
-        <TableColumn isRowHeader>
-          <Skeleton className="h-4 w-16" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-16" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-12" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-20" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-14" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-14" />
-        </TableColumn>
-        <TableColumn>
-          <Skeleton className="h-4 w-14" />
-        </TableColumn>
+        <TableRow>
+          {[...Array(7)].map((_, i) => (
+            <TableHead key={i}>
+              <Skeleton className="h-4 w-14" />
+            </TableHead>
+          ))}
+        </TableRow>
       </TableHeader>
       <TableBody>
         {[...Array(5)].map((_, i) => (
-          <TableRow key={i} id={`skeleton-${i}`}>
+          <TableRow key={i}>
             {[...Array(7)].map((_, j) => (
               <TableCell key={j}>
                 <Skeleton className="h-4 w-full" />

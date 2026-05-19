@@ -4,14 +4,8 @@ import { formatCurrency } from '@/utils/formatting';
 import type { Proposal } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableColumn,
-  TableHeader,
-  TableRow,
-} from '@op/ui/ui/table';
+import { type ColumnDef, DataTable } from '@op/ui-next/DataTable';
+import { useMemo } from 'react';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -27,6 +21,15 @@ interface SelectableProposalsTableProps {
   getProposalHref?: (proposal: Proposal) => string;
 }
 
+interface ProposalRow {
+  proposal: Proposal;
+  title: string;
+  submitterName?: string;
+  budget: string | null;
+  categories: string[];
+  href?: string;
+}
+
 export const SelectableProposalsTable = ({
   proposals,
   selectedIds,
@@ -35,18 +38,103 @@ export const SelectableProposalsTable = ({
 }: SelectableProposalsTableProps) => {
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
-  const selectedSet = new Set(selectedIds);
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+
+  const rows = useMemo<ProposalRow[]>(
+    () =>
+      proposals.map((proposal) => {
+        const fields = resolvePresentationFields({
+          proposal,
+          defaultTitle: t('Untitled Proposal'),
+        });
+        return {
+          proposal,
+          ...fields,
+          href: getProposalHref?.(proposal),
+        };
+      }),
+    [proposals, t, getProposalHref],
+  );
+
+  const columns = useMemo<ColumnDef<ProposalRow, unknown>[]>(
+    () => [
+      {
+        id: 'proposal',
+        header: t('Proposal'),
+        cell: ({ row }) => {
+          const { title, submitterName, href } = row.original;
+          return (
+            <div className="flex flex-col">
+              {href ? (
+                <Link
+                  href={href}
+                  className="text-base text-neutral-black hover:underline"
+                >
+                  {title}
+                </Link>
+              ) : (
+                <span className="text-base text-neutral-black">{title}</span>
+              )}
+              {submitterName ? (
+                <span className="text-sm text-neutral-gray4">
+                  {submitterName}
+                </span>
+              ) : null}
+            </div>
+          );
+        },
+      },
+      {
+        id: 'budget',
+        header: t('Budget'),
+        cell: ({ row }) =>
+          row.original.budget ? (
+            <span className="text-base text-neutral-black">
+              {row.original.budget}
+            </span>
+          ) : (
+            <span className="text-sm text-neutral-gray4">—</span>
+          ),
+      },
+      {
+        id: 'category',
+        header: t('Category'),
+        cell: ({ row }) => (
+          <SelectionCategoryChips labels={row.original.categories} />
+        ),
+      },
+      {
+        id: 'select',
+        header: () => <span className="sr-only">{t('Select proposal')}</span>,
+        cell: ({ row }) => {
+          const { proposal, title } = row.original;
+          const isSelected = selectedSet.has(proposal.id);
+          return (
+            <div className="flex justify-end">
+              <AdvanceToggleButton
+                isSelected={isSelected}
+                title={title}
+                onPress={() => onToggle(proposal.id)}
+                className="ml-auto"
+              />
+            </div>
+          );
+        },
+      },
+    ],
+    [t, onToggle, selectedSet],
+  );
 
   if (isMobile) {
     return (
       <ul className="flex flex-col gap-3" aria-label={t('Eligible proposals')}>
-        {proposals.map((proposal) => (
-          <li key={proposal.id}>
+        {rows.map((row) => (
+          <li key={row.proposal.id}>
             <SelectableProposalCard
-              proposal={proposal}
-              isSelected={selectedSet.has(proposal.id)}
+              proposal={row.proposal}
+              isSelected={selectedSet.has(row.proposal.id)}
               onToggle={onToggle}
-              href={getProposalHref?.(proposal)}
+              href={row.href}
             />
           </li>
         ))}
@@ -55,74 +143,12 @@ export const SelectableProposalsTable = ({
   }
 
   return (
-    <Table aria-label={t('Eligible proposals')} bleed>
-      <TableHeader>
-        <TableColumn id="proposal" isRowHeader>
-          {t('Proposal')}
-        </TableColumn>
-        <TableColumn id="budget">{t('Budget')}</TableColumn>
-        <TableColumn id="category">{t('Category')}</TableColumn>
-        <TableColumn id="select" className="w-32 text-right">
-          <span className="sr-only">{t('Select proposal')}</span>
-        </TableColumn>
-      </TableHeader>
-      <TableBody>
-        {proposals.map((proposal) => {
-          const isSelected = selectedSet.has(proposal.id);
-          const fields = resolvePresentationFields({
-            proposal,
-            defaultTitle: t('Untitled Proposal'),
-          });
-          const href = getProposalHref?.(proposal);
-
-          return (
-            <TableRow key={proposal.id} id={proposal.id}>
-              <TableCell>
-                <div className="flex flex-col">
-                  {href ? (
-                    <Link
-                      href={href}
-                      className="text-base text-neutral-black hover:underline"
-                    >
-                      {fields.title}
-                    </Link>
-                  ) : (
-                    <span className="text-base text-neutral-black">
-                      {fields.title}
-                    </span>
-                  )}
-                  {fields.submitterName ? (
-                    <span className="text-sm text-neutral-gray4">
-                      {fields.submitterName}
-                    </span>
-                  ) : null}
-                </div>
-              </TableCell>
-              <TableCell>
-                {fields.budget ? (
-                  <span className="text-base text-neutral-black">
-                    {fields.budget}
-                  </span>
-                ) : (
-                  <span className="text-sm text-neutral-gray4">—</span>
-                )}
-              </TableCell>
-              <TableCell>
-                <SelectionCategoryChips labels={fields.categories} />
-              </TableCell>
-              <TableCell className="text-right">
-                <AdvanceToggleButton
-                  isSelected={isSelected}
-                  title={fields.title}
-                  onPress={() => onToggle(proposal.id)}
-                  className="ml-auto"
-                />
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+    <DataTable
+      aria-label={t('Eligible proposals')}
+      columns={columns}
+      data={rows}
+      getRowId={(row) => row.proposal.id}
+    />
   );
 };
 

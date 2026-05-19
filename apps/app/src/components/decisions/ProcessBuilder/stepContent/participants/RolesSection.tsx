@@ -13,17 +13,16 @@ import { IconButton } from '@op/ui-next/IconButton';
 import { DropdownMenuItem } from '@op/ui-next/Menu';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { OptionMenu } from '@op/ui-next/OptionMenu';
-import { TextField } from '@op/ui-next/TextField';
-import { toast } from '@op/ui-next/Toast';
 import {
-  EditableCell,
   Table,
   TableBody,
   TableCell,
-  TableColumn,
+  TableHead,
   TableHeader,
   TableRow,
-} from '@op/ui/ui/table';
+} from '@op/ui-next/Table';
+import { TextField } from '@op/ui-next/TextField';
+import { toast } from '@op/ui-next/Toast';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { LuCheck, LuLeaf, LuPencil, LuPlus, LuTrash2 } from 'react-icons/lu';
 
@@ -245,25 +244,18 @@ function RoleRow({
 
   return (
     <TableRow>
-      <EditableCell
-        className="w-36 text-base"
-        isEditing={isEditing}
-        onEditChange={(editing) => {
-          if (!editing) {
-            handleCancel();
-          }
-        }}
-        renderEditing={() => (
+      <TableCell className="w-36 text-base">
+        {isEditing ? (
           <RoleNameForm
             roleName={roleName}
             onRoleNameChange={setRoleName}
             onSave={handleSave}
             onCancel={handleCancel}
           />
+        ) : (
+          role.name
         )}
-      >
-        {role.name}
-      </EditableCell>
+      </TableCell>
       <DecisionRoleCheckboxes roleId={role.id} profileId={profileId} />
       <TableCell className="w-22">
         {isEditing ? (
@@ -697,20 +689,14 @@ function AddRoleRow({
 
   return (
     <TableRow>
-      <EditableCell
-        className="w-36 text-base"
-        isEditing
-        renderEditing={() => (
-          <RoleNameForm
-            roleName={roleName}
-            onRoleNameChange={setRoleName}
-            onSave={handleSave}
-            onCancel={onComplete}
-          />
-        )}
-      >
-        {null}
-      </EditableCell>
+      <TableCell className="w-36 text-base">
+        <RoleNameForm
+          roleName={roleName}
+          onRoleNameChange={setRoleName}
+          onSave={handleSave}
+          onCancel={onComplete}
+        />
+      </TableCell>
       {PERMISSION_COLUMNS.map(({ key, label }) => (
         <TableCell key={key} className="text-center">
           <div className="flex justify-center">
@@ -821,13 +807,15 @@ function RolesTable({
         <div className="flex flex-col gap-4">
           <Table aria-label={t('Roles & permissions')}>
             <TableHeader>
-              <TableColumn isRowHeader>{t('Role')}</TableColumn>
-              {PERMISSION_COLUMNS.map(({ key, label }) => (
-                <TableColumn key={key} className="text-center">
-                  {t(label)}
-                </TableColumn>
-              ))}
-              <TableColumn className="w-12" />
+              <TableRow>
+                <TableHead>{t('Role')}</TableHead>
+                {PERMISSION_COLUMNS.map(({ key, label }) => (
+                  <TableHead key={key} className="text-center">
+                    {t(label)}
+                  </TableHead>
+                ))}
+                <TableHead className="w-12" />
+              </TableRow>
             </TableHeader>
             <TableBody>
               {roles.map((role) => (

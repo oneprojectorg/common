@@ -3,20 +3,17 @@
 import { trpc } from '@op/api/client';
 import type { ProfileInvite, ProfileUser } from '@op/api/encoders';
 import { Button } from '@op/ui-next/Button';
+import {
+  type ColumnDef,
+  DataTable,
+  type SortingState,
+} from '@op/ui-next/DataTable';
 import { EmptyState } from '@op/ui-next/EmptyState';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { Select, SelectItem } from '@op/ui-next/Select';
 import { Skeleton } from '@op/ui-next/Skeleton';
 import { toast } from '@op/ui-next/Toast';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableColumn,
-  TableHeader,
-  TableRow,
-} from '@op/ui/ui/table';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { SortDescriptor } from 'react-aria-components';
 import { LuUsers } from 'react-icons/lu';
 
@@ -24,7 +21,15 @@ import { Link, useTranslations } from '@/lib/i18n';
 
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 
-// Exported component with loading and error states
+interface AccessRow {
+  kind: 'invite' | 'user';
+  id: string;
+  name: string;
+  email: string;
+  invite?: ProfileInvite;
+  profileUser?: ProfileUser;
+}
+
 export const ProfileUsersAccessTable = ({
   profileUsers,
   profileId,
@@ -104,8 +109,6 @@ const InviteStatusLabel = ({ notifiedAt }: { notifiedAt: string | null }) => {
 };
 
 const getProfileUserStatus = (): string => {
-  // TODO: We need this logic in the backend
-  // Default to "Active" for existing profile users
   return 'Active';
 };
 
@@ -505,7 +508,12 @@ const MobileProfileUsersContent = ({
   );
 };
 
-// Desktop table content component
+const SORT_COLUMN_BY_KEY: Record<string, string> = {
+  name: 'name',
+  email: 'email',
+  role: 'role',
+};
+
 const ProfileUsersAccessTableContent = ({
   profileUsers,
   profileId,
@@ -527,6 +535,159 @@ const ProfileUsersAccessTableContent = ({
 }) => {
   const t = useTranslations();
 
+  const rows = useMemo<AccessRow[]>(
+    () => [
+      ...invites.map((invite) => ({
+        kind: 'invite' as const,
+        id: `invite-${invite.id}`,
+        name: invite.inviteeProfile?.name ?? invite.email,
+        email: invite.email,
+        invite,
+      })),
+      ...profileUsers.map((profileUser) => ({
+        kind: 'user' as const,
+        id: profileUser.id,
+        name:
+          profileUser.profile?.name ||
+          profileUser.name ||
+          (profileUser.email?.split('@')?.[0] ?? 'Unknown'),
+        email: profileUser.email ?? '',
+        profileUser,
+      })),
+    ],
+    [invites, profileUsers],
+  );
+
+  const sorting: SortingState = useMemo(() => {
+    const columnId =
+      SORT_COLUMN_BY_KEY[String(sortDescriptor.column ?? '')] ?? 'name';
+    return [{ id: columnId, desc: sortDescriptor.direction === 'descending' }];
+  }, [sortDescriptor]);
+
+  const handleSortingChange = (next: SortingState) => {
+    if (next.length === 0) {
+      onSortChange({ column: 'name', direction: 'ascending' });
+      return;
+    }
+    const [first] = next;
+    if (!first) {
+      return;
+    }
+    onSortChange({
+      column: first.id,
+      direction: first.desc ? 'descending' : 'ascending',
+    });
+  };
+
+  const columns = useMemo<ColumnDef<AccessRow, unknown>[]>(
+    () => [
+      {
+        id: 'name',
+        header: t('Name'),
+        accessorFn: (row) => row.name.toLowerCase(),
+        enableSorting: true,
+        cell: ({ row }) => {
+          const r = row.original;
+          if (r.kind === 'invite' && r.invite) {
+            return (
+              <div className="flex items-center gap-2">
+                <ProfileAvatar profile={r.invite.inviteeProfile} />
+                <div className="flex flex-col">
+                  <span className="text-base text-neutral-black">{r.name}</span>
+                  <InviteStatusLabel notifiedAt={r.invite.notifiedAt} />
+                </div>
+              </div>
+            );
+          }
+          if (r.kind === 'user' && r.profileUser) {
+            const profileSlug = r.profileUser.profile?.slug;
+            const status = getProfileUserStatus();
+            return (
+              <div className="flex items-center gap-2">
+                <ProfileAvatar profile={r.profileUser.profile} />
+                <div className="flex flex-col">
+                  {profileSlug ? (
+                    <Link
+                      href={`/profile/${profileSlug}`}
+                      className="text-base text-neutral-black hover:underline"
+                    >
+                      {r.name}
+                    </Link>
+                  ) : (
+                    <span className="text-base text-neutral-black">
+                      {r.name}
+                    </span>
+                  )}
+                  <span className="text-sm text-neutral-gray4">{status}</span>
+                </div>
+              </div>
+            );
+          }
+          return null;
+        },
+      },
+      {
+        id: 'email',
+        header: t('Email'),
+        accessorFn: (row) => row.email.toLowerCase(),
+        enableSorting: true,
+        cell: ({ row }) => (
+          <span className="text-base text-neutral-black">
+            {row.original.email}
+          </span>
+        ),
+      },
+      {
+        id: 'role',
+        header: t('Role'),
+        accessorFn: (row) => {
+          if (row.kind === 'invite' && row.invite) {
+            return row.invite.accessRoleId;
+          }
+          if (row.kind === 'user' && row.profileUser) {
+            return row.profileUser.roles[0]?.id ?? '';
+          }
+          return '';
+        },
+        enableSorting: true,
+        cell: ({ row }) => {
+          const r = row.original;
+          if (r.kind === 'invite' && r.invite) {
+            return (
+              <div className="text-right">
+                <InviteRoleSelect
+                  inviteId={r.invite.id}
+                  currentRoleId={r.invite.accessRoleId}
+                  profileId={profileId}
+                  roles={roles}
+                  inviteeName={r.name}
+                  processName={processName}
+                />
+              </div>
+            );
+          }
+          if (r.kind === 'user' && r.profileUser) {
+            return (
+              <div className="text-right">
+                <ProfileUserRoleSelect
+                  profileUserId={r.profileUser.id}
+                  currentRoleId={r.profileUser.roles[0]?.id}
+                  profileId={profileId}
+                  roles={roles}
+                  userName={r.name}
+                  processName={processName}
+                  isOwner={r.profileUser.isOwner}
+                />
+              </div>
+            );
+          }
+          return null;
+        },
+      },
+    ],
+    [t, profileId, roles, processName],
+  );
+
   return (
     <div className="relative">
       {isLoading && (
@@ -534,112 +695,15 @@ const ProfileUsersAccessTableContent = ({
           <Skeleton className="h-8 w-full" />
         </div>
       )}
-      <Table
+      <DataTable
         aria-label={t('Participants list')}
         className="w-full table-fixed"
-        sortDescriptor={sortDescriptor}
-        onSortChange={onSortChange}
-      >
-        <TableHeader>
-          <TableColumn isRowHeader id="name" allowsSorting className="sm:w-52">
-            {t('Name')}
-          </TableColumn>
-          <TableColumn id="email" allowsSorting className="w-auto">
-            {t('Email')}
-          </TableColumn>
-          <TableColumn id="role" allowsSorting className="sm:w-36">
-            {t('Role')}
-          </TableColumn>
-        </TableHeader>
-        <TableBody>
-          {invites.map((invite) => {
-            const displayName = invite.inviteeProfile?.name ?? invite.email;
-
-            return (
-              <TableRow key={`invite-${invite.id}`} id={`invite-${invite.id}`}>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <ProfileAvatar profile={invite.inviteeProfile} />
-                    <div className="flex flex-col">
-                      <span className="text-base text-neutral-black">
-                        {displayName}
-                      </span>
-                      <InviteStatusLabel notifiedAt={invite.notifiedAt} />
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <span className="text-base text-neutral-black">
-                    {invite.email}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right">
-                  <InviteRoleSelect
-                    inviteId={invite.id}
-                    currentRoleId={invite.accessRoleId}
-                    profileId={profileId}
-                    roles={roles}
-                    inviteeName={displayName}
-                    processName={processName}
-                  />
-                </TableCell>
-              </TableRow>
-            );
-          })}
-          {profileUsers.map((profileUser) => {
-            const displayName =
-              profileUser.profile?.name ||
-              profileUser.name ||
-              (profileUser.email?.split('@')?.[0] ?? 'Unknown');
-            const currentRole = profileUser.roles[0];
-            const status = getProfileUserStatus();
-            const profileSlug = profileUser.profile?.slug;
-
-            return (
-              <TableRow key={profileUser.id} id={profileUser.id}>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <ProfileAvatar profile={profileUser.profile} />
-                    <div className="flex flex-col">
-                      {profileSlug ? (
-                        <Link
-                          href={`/profile/${profileSlug}`}
-                          className="text-base text-neutral-black hover:underline"
-                        >
-                          {displayName}
-                        </Link>
-                      ) : (
-                        <span className="text-base text-neutral-black">
-                          {displayName}
-                        </span>
-                      )}
-                      <span className="text-sm text-neutral-gray4">
-                        {status}
-                      </span>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <span className="text-base text-neutral-black">
-                    {profileUser.email}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right">
-                  <ProfileUserRoleSelect
-                    profileUserId={profileUser.id}
-                    currentRoleId={currentRole?.id}
-                    profileId={profileId}
-                    roles={roles}
-                    userName={displayName}
-                    processName={processName}
-                    isOwner={profileUser.isOwner}
-                  />
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+        columns={columns}
+        data={rows}
+        sorting={sorting}
+        onSortingChange={handleSortingChange}
+        getRowId={(row) => row.id}
+      />
     </div>
   );
 };
