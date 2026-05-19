@@ -3,7 +3,7 @@ import { posts, postsToOrganizations, postsToProfiles } from '@op/db/schema';
 import type { User } from '@supabase/supabase-js';
 import { checkPermission, permission } from 'access-zones';
 
-import { NotFoundError, UnauthorizedError } from '../../utils';
+import { UnauthorizedError } from '../../utils';
 import {
   getCurrentProfileId,
   getOrgAccessUser,
@@ -32,12 +32,28 @@ export const deletePostById = async (options: DeletePostByIdOptions) => {
   ]);
 
   if (!post) {
-    throw new NotFoundError('Post', postId);
+    // Mirror the unauthorized branch to avoid leaking post existence to
+    // outsiders who guess IDs.
+    throw new UnauthorizedError();
   }
 
+  // Author fast-path: the actor's current profile matches the post's
+  // recorded profileId. The currentProfileId match alone is NOT sufficient —
+  // `account.switchOrganization` only requires org membership, so any member
+  // can land on `currentProfileId = orgProfileId`. We additionally require a
+  // `profileUsers` row on that profile, which org members never have (orgs
+  // grant access via `organizationUsers`). Individual profiles and decision
+  // instance profiles do issue `profileUsers` rows to their authors, so this
+  // preserves the legitimate self-delete path.
   if (post.profileId && post.profileId === currentProfileId) {
-    await db.delete(posts).where(eq(posts.id, postId));
-    return;
+    const profileUser = await getProfileAccessUser({
+      user,
+      profileId: post.profileId,
+    });
+    if (profileUser) {
+      await db.delete(posts).where(eq(posts.id, postId));
+      return;
+    }
   }
 
   const [isProfileAdmin, isOrgAdmin] = await Promise.all([
@@ -90,10 +106,13 @@ const checkProfileAdmin = async ({
   );
 };
 
-// Legacy org-linked posts: createPostInOrganization does not set
-// posts.profileId, so the author check above can't fire for them. Require
-// org admin (not just membership) to keep the policy symmetric with
-// profile-linked posts.
+// Legacy org-linked posts: only `createPostInOrganization` writes
+// `postsToOrganizations` rows, and it never sets `posts.profileId`, so the
+// fast-path above can't fire for them. (Posts created via `createPost` —
+// including comments under those legacy posts — always have `profileId` set
+// and never get a `postsToOrganizations` row, so they fall through to
+// `checkProfileAdmin` instead.) Require org admin, not just membership, to
+// stay symmetric with the profile-linked path.
 const checkOrgAdmin = async ({
   user,
   postId,

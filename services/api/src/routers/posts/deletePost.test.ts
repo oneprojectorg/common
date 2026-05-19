@@ -458,3 +458,137 @@ describe.concurrent('proposal comment deletion', () => {
     expect(await postExists(comment.id)).toBe(true);
   });
 });
+
+describe.concurrent('regression: account.switchOrganization spoof', () => {
+  // `account.switchOrganization` only requires membership — anyone in the
+  // org can land on `currentProfileId = orgProfileId`. The author fast-path
+  // must therefore require a `profileUsers` row on `post.profileId`, since
+  // org members never get one for org profiles (they hold organizationUsers
+  // rows instead). Without that check, any member could delete any post
+  // whose `posts.profileId` equals the org's profile id.
+  it('rejects a non-admin org member who switched into the org from deleting an admin-authored org-profile post', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    await adminCaller.account.switchOrganization({
+      organizationId: setup.organization.id,
+    });
+    // posts.createPost stamps posts.profileId from currentProfileId, so the
+    // resulting post has profileId = orgProfileId — the exact shape an
+    // attacker needs to exploit the fast-path.
+    const adminPost = await adminCaller.posts.createPost({
+      content: 'Org-profile post via posts.createPost.',
+      profileId: setup.organization.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    await memberCaller.account.switchOrganization({
+      organizationId: setup.organization.id,
+    });
+
+    await expect(
+      memberCaller.organization.deletePost({ id: adminPost.id }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    expect(await postExists(adminPost.id)).toBe(true);
+  });
+});
+
+describe.concurrent('regression: legacy org post moderation gap', () => {
+  // Legacy `organization.createPost` writes a postsToOrganizations row but
+  // no posts.profileId / no postsToProfiles / no rootProfileId. Comments
+  // added via the new `posts.createPost` inherit the legacy post's null
+  // rootProfileId and (because parent has no postsToProfiles) get no
+  // postsToProfiles either. The comment itself has no postsToOrganizations
+  // link, so checkOrgAdmin never fires. This test pins that gap — flip it
+  // to `resolves.toBeUndefined()` if moderation gets wired up.
+  it('does NOT let an org admin delete a comment under a legacy postsToOrganizations post', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
+    const legacyPost = await ownerCaller.organization.createPost({
+      id: setup.organization.id,
+      content: 'Legacy org feed post.',
+    });
+    // Legacy posts have profileId=NULL with no rootProfileId, so the
+    // TestDecisionsDataManager profile-cascade cleanup can't reach them.
+    // Tear it down manually to keep the suite-wide leftover-row check happy.
+    onTestFinished(async () => {
+      await db.delete(posts).where(eq(posts.id, legacyPost.id));
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const comment = await memberCaller.posts.createPost({
+      content: 'Member comment under legacy post.',
+      parentPostId: legacyPost.id,
+    });
+
+    await expect(
+      ownerCaller.organization.deletePost({ id: comment.id }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    expect(await postExists(comment.id)).toBe(true);
+  });
+});
+
+describe.concurrent('regression: orphan author post', () => {
+  // Direct-DB-insert simulates a post whose only linkage is posts.profileId
+  // (no rootProfileId, no postsToProfiles, no postsToOrganizations). The
+  // fast-path must still permit the author (who holds a profileUsers row on
+  // their own individual profile via the signup trigger) and reject anyone
+  // else.
+  it('lets the author delete an orphan post linked only by posts.profileId', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    // Use a fresh org member: joinOrganization doesn't touch currentProfileId
+    // (only `account.switchOrganization` does), so the member's
+    // currentProfileId stays pinned to their individual profile — the same
+    // profile that posts.profileId points at and that the signup trigger
+    // gave a profileUsers row on. That's exactly the fast-path shape we
+    // need to exercise.
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const author = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+    });
+
+    const [orphan] = await db
+      .insert(posts)
+      .values({
+        content: 'Orphan author post.',
+        profileId: author.profileId,
+      })
+      .returning();
+    if (!orphan) {
+      throw new Error('Failed to insert orphan post');
+    }
+
+    const outsiderCaller = await createOutsiderCaller(testData);
+    await expect(
+      outsiderCaller.organization.deletePost({ id: orphan.id }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    expect(await postExists(orphan.id)).toBe(true);
+
+    const authorCaller = await createAuthenticatedCaller(author.email);
+    await authorCaller.organization.deletePost({ id: orphan.id });
+    expect(await postExists(orphan.id)).toBe(false);
+  });
+});
