@@ -2,10 +2,10 @@
 
 import { trpc } from '@op/api/client';
 import { ProposalReviewAssignmentStatus } from '@op/common/client';
+import { Card } from '@op/ui-next/Card';
 import { EmptyState } from '@op/ui-next/EmptyState';
 import { Header3 } from '@op/ui-next/Header';
 import { Skeleton } from '@op/ui-next/Skeleton';
-import { Surface } from '@op/ui-next/Surface';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { LuLeaf } from 'react-icons/lu';
 
@@ -147,7 +147,7 @@ export function ReviewAssignmentsList({
 }
 
 const ReviewAssignmentCardSkeleton = () => (
-  <Surface className="relative w-full min-w-80 space-y-3 p-4 pb-4">
+  <Card className="relative w-full min-w-80 space-y-3 p-4 pb-4">
     {/* Title */}
     <Skeleton className="h-6 w-3/4" />
 
@@ -167,7 +167,7 @@ const ReviewAssignmentCardSkeleton = () => (
 
     {/* Status badge */}
     <Skeleton className="h-8 w-28 rounded-lg" />
-  </Surface>
+  </Card>
 );
 
 const ReviewAssignmentListSkeletonGrid = () => (

@@ -1,8 +1,8 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { Card } from '@op/ui-next/Card';
 import { Skeleton } from '@op/ui-next/Skeleton';
-import { Surface } from '@op/ui-next/Surface';
 import { cn } from '@op/ui-next/lib/utils';
 import { Suspense } from 'react';
 
@@ -72,7 +72,7 @@ const StatCard = ({
   const isActive = href ? pathname.startsWith(href) : false;
 
   const content = (
-    <Surface
+    <Card
       className={cn(
         'p-8',
         isActive && 'border-primary-teal ring-1 ring-primary-teal',
@@ -84,7 +84,7 @@ const StatCard = ({
           {value}
         </div>
       </div>
-    </Surface>
+    </Card>
   );
 
   if (href) {
@@ -106,9 +106,9 @@ const PlatformStatsSkeleton = () => {
   return (
     <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-3">
       {[...Array(3)].map((_, i) => (
-        <Surface key={i} className="p-8">
+        <Card key={i} className="p-8">
           <Skeleton className="h-24 w-40" />
-        </Surface>
+        </Card>
       ))}
     </div>
   );

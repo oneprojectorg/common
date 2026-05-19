@@ -3,8 +3,8 @@
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Organization, Post } from '@op/api/encoders';
+import { Card } from '@op/ui-next/Card';
 import { Modal, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
-import { Surface } from '@op/ui-next/Surface';
 import { useCallback, useRef } from 'react';
 import React from 'react';
 
@@ -143,7 +143,7 @@ export function DiscussionModal({
 
         {/* Comment Input using PostUpdate */}
         <ModalFooter className="sticky">
-          <Surface className="w-full border-0 p-0 pt-5 sm:border sm:p-4">
+          <Card className="w-full border-0 p-0 pt-5 sm:border sm:p-4">
             <PostUpdate
               parentPostId={post.id}
               placeholder={
@@ -156,7 +156,7 @@ export function DiscussionModal({
               label={t('Comment')}
               onSuccess={scrollToOriginalPost}
             />
-          </Surface>
+          </Card>
         </ModalFooter>
       </div>
     </Modal>

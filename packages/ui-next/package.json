@@ -15,7 +15,7 @@
     "./IconButton": "./src/components/IconButton.tsx",
     "./LoadingSpinner": "./src/components/LoadingSpinner.tsx",
     "./Tooltip": "./src/components/Tooltip.tsx",
-    "./Surface": "./src/components/Surface.tsx",
+    "./Card": "./src/components/Card.ts",
     "./AlertBanner": "./src/components/AlertBanner.tsx",
     "./Avatar": "./src/components/Avatar.tsx",
     "./Skeleton": "./src/components/Skeleton.tsx",

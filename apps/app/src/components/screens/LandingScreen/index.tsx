@@ -5,9 +5,9 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
+import { Card } from '@op/ui-next/Card';
 import { Header1, Header3 } from '@op/ui-next/Header';
 import { Skeleton, SkeletonLine } from '@op/ui-next/Skeleton';
-import { Surface } from '@op/ui-next/Surface';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui-next/Tabs';
 import { Suspense } from 'react';
 
@@ -40,9 +40,9 @@ export const LandingScreen = () => {
       <ErrorBoundary fallback={null}>
         <Suspense
           fallback={
-            <Surface>
+            <Card>
               <Skeleton className="h-52 w-full" />
-            </Surface>
+            </Card>
           }
         >
           <PlatformHighlights />
@@ -70,9 +70,9 @@ export const LandingScreenSkeleton: React.FC = async () => {
         </Skeleton>
       </div>
 
-      <Surface>
+      <Card>
         <Skeleton className="h-52 w-full" />
-      </Surface>
+      </Card>
 
       <hr />
 
@@ -82,12 +82,12 @@ export const LandingScreenSkeleton: React.FC = async () => {
         </div>
         <span />
         <div className="col-span-5">
-          <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
+          <Card className="flex flex-col gap-6 border-0 sm:border sm:p-6">
             <Skeleton className="text-title-sm">
               <TranslatedText text="New Organizations" />
             </Skeleton>
             <OrganizationListSkeleton />
-          </Surface>
+          </Card>
         </div>
       </div>
 
@@ -102,12 +102,12 @@ export const LandingScreenSkeleton: React.FC = async () => {
         </TabList>
 
         <TabPanel id="discover" className="p-0">
-          <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
+          <Card className="flex flex-col gap-6 border-0 sm:border sm:p-6">
             <Skeleton className="text-title-sm">
               <TranslatedText text="New Organizations" />
             </Skeleton>
             <SkeletonLine lines={5} />
-          </Surface>
+          </Card>
         </TabPanel>
       </Tabs>
     </div>
@@ -116,12 +116,12 @@ export const LandingScreenSkeleton: React.FC = async () => {
 
 const NewOrganizationsList = () => {
   return (
-    <Surface className="-mx-8 flex flex-col gap-6 border-0 sm:mx-0 sm:border sm:p-6">
+    <Card className="-mx-8 flex flex-col gap-6 border-0 sm:mx-0 sm:border sm:p-6">
       <Header3 className="px-8 font-serif text-title-sm sm:px-0">
         <TranslatedText text="New Organizations" />
       </Header3>
       <NewOrganizations />
-    </Surface>
+    </Card>
   );
 };
 
@@ -144,9 +144,9 @@ const PostFeedSection = async ({
       {showPostUpdate ? (
         <>
           <Suspense fallback={<Skeleton className="h-full w-full" />}>
-            <Surface className="mb-8 border-0 p-0 pt-5 sm:mb-4 sm:border sm:p-4">
+            <Card className="mb-8 border-0 p-0 pt-5 sm:mb-4 sm:border sm:p-4">
               <PostUpdate label={<TranslatedText text="Post" />} />
-            </Surface>
+            </Card>
           </Suspense>
           <hr />
         </>
@@ -282,12 +282,12 @@ const UserContentSkeleton = () => {
         </div>
         <span />
         <div className="col-span-5">
-          <Surface className="flex flex-col gap-6 border-0 sm:border sm:p-6">
+          <Card className="flex flex-col gap-6 border-0 sm:border sm:p-6">
             <Skeleton className="text-title-sm">
               <TranslatedText text="New Organizations" />
             </Skeleton>
             <OrganizationListSkeleton />
-          </Surface>
+          </Card>
         </div>
       </div>
     </>

@@ -3,9 +3,9 @@
 import { getPublicUrl } from '@/utils';
 import { Organization } from '@op/api/encoders';
 import { Avatar } from '@op/ui-next/Avatar';
+import { Card } from '@op/ui-next/Card';
 import { HorizontalList, HorizontalListItem } from '@op/ui-next/HorizontalList';
 import { Skeleton, SkeletonLine } from '@op/ui-next/Skeleton';
-import { Surface } from '@op/ui-next/Surface';
 import { cn, getGradientForString } from '@op/ui-next/lib/utils';
 import Image from 'next/image';
 
@@ -68,7 +68,7 @@ export const OrganizationList = ({
                   className="flex size-48"
                   href={`/org/${org.profile.slug}`}
                 >
-                  <Surface className="flex size-full flex-col gap-3 pt-0">
+                  <Card className="flex size-full flex-col gap-3 pt-0">
                     <ImageHeader
                       headerImage={
                         headerUrl ? (
@@ -100,7 +100,7 @@ export const OrganizationList = ({
                     <div className="flex flex-col p-4 pt-0 text-left">
                       <span>{org.profile.name}</span>
                     </div>
-                  </Surface>
+                  </Card>
                 </Link>
               </HorizontalListItem>
             );

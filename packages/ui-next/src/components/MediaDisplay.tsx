@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import { LuFileText, LuGlobe } from 'react-icons/lu';
 
-import { Header3 } from './Header';
-import { Surface } from './Surface';
 import { cn, formatFileSize } from '../lib/utils';
+import { Card } from './Card';
+import { Header3 } from './Header';
 
 export const MediaDisplay = ({
   className,
@@ -82,13 +82,13 @@ export const MediaDisplay = ({
   }
 
   return (
-    <Surface className={cn('mediaItem', className)}>
+    <Card className={cn('mediaItem', className)}>
       <a href={url} target="_blank" rel="noopener noreferrer" className="block">
         {children}
         {detailComponents.length > 0 && (
           <div className="p-4">{detailComponents}</div>
         )}
       </a>
-    </Surface>
+    </Card>
   );
 };

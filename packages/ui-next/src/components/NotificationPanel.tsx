@@ -1,8 +1,8 @@
 import { ReactNode } from 'react';
 
 import { cn } from '../lib/utils';
+import { Card } from './Card';
 import { Header2 } from './Header';
-import { Surface } from './Surface';
 
 export const NotificationPanelHeader = ({
   title,
@@ -57,5 +57,5 @@ export const NotificationPanelActions = ({
 };
 
 export const NotificationPanel = ({ children }: { children: ReactNode }) => {
-  return <Surface className="flex flex-col gap-0 border-b">{children}</Surface>;
+  return <Card className="flex flex-col gap-0 border-b">{children}</Card>;
 };

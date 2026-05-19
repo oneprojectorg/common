@@ -10,9 +10,9 @@ import {
 } from '@op/common/client';
 import { isNullish, match } from '@op/core';
 import { Avatar } from '@op/ui-next/Avatar';
+import { Card } from '@op/ui-next/Card';
 import { Chip } from '@op/ui-next/Chip';
 import { Header3 } from '@op/ui-next/Header';
-import { Surface } from '@op/ui-next/Surface';
 import { cn } from '@op/ui-next/lib/utils';
 import Image from 'next/image';
 import type { HTMLAttributes, ReactNode } from 'react';
@@ -50,7 +50,7 @@ export function ProposalCard({
   const isDraft = proposal?.status === ProposalStatus.DRAFT;
 
   return (
-    <Surface
+    <Card
       className={cn(
         'relative flex w-full min-w-80 flex-col justify-between gap-3 p-4',
         isDraft && 'bg-muted',
@@ -59,7 +59,7 @@ export function ProposalCard({
       {...props}
     >
       {children}
-    </Surface>
+    </Card>
   );
 }
 

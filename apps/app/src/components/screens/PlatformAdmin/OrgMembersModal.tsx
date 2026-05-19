@@ -2,10 +2,10 @@
 
 import type { AdminOrg } from '@op/api/encoders';
 import { Avatar } from '@op/ui-next/Avatar';
+import { Card } from '@op/ui-next/Card';
 import { Chip } from '@op/ui-next/Chip';
 import { Modal, ModalBody, ModalHeader } from '@op/ui-next/Modal';
 import { ProfileItem } from '@op/ui-next/ProfileItem';
-import { Surface } from '@op/ui-next/Surface';
 import { LuUsers } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -76,7 +76,7 @@ const MemberRow = ({ member }: { member: Member }) => {
       : [t('No roles')];
 
   return (
-    <Surface className="flex items-center gap-3 p-3">
+    <Card className="flex items-center gap-3 p-3">
       <div className="min-w-0 flex-1">
         <ProfileItem
           avatar={
@@ -91,6 +91,6 @@ const MemberRow = ({ member }: { member: Member }) => {
           <Chip key={role}>{role}</Chip>
         ))}
       </div>
-    </Surface>
+    </Card>
   );
 };

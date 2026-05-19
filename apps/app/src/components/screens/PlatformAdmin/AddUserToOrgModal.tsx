@@ -4,14 +4,14 @@ import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { Avatar } from '@op/ui-next/Avatar';
 import { Button } from '@op/ui-next/Button';
+import { Card } from '@op/ui-next/Card';
 import { Chip } from '@op/ui-next/Chip';
+import { ComboBox, ComboBoxItem } from '@op/ui-next/ComboBox';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui-next/Modal';
 import { ProfileItem } from '@op/ui-next/ProfileItem';
 import { Skeleton } from '@op/ui-next/Skeleton';
-import { Surface } from '@op/ui-next/Surface';
 import { toast } from '@op/ui-next/Toast';
-import { ComboBox, ComboBoxItem } from '@op/ui-next/ComboBox';
 import Image from 'next/image';
 import {
   FormEvent,
@@ -164,7 +164,7 @@ const AddUserToOrgModalContent = ({
                       : [t('No roles')];
 
                   return (
-                    <Surface
+                    <Card
                       key={orgUser.organizationId}
                       className="flex flex-col gap-2 p-3"
                     >
@@ -182,7 +182,7 @@ const AddUserToOrgModalContent = ({
                           ))}
                         </div>
                       </OrganizationListItem>
-                    </Surface>
+                    </Card>
                   );
                 })}
               </div>

@@ -2,8 +2,8 @@
 
 import { trpc } from '@op/api/client';
 import { sanitizeUrl } from '@op/core/utils';
+import { Card } from '@op/ui-next/Card';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
-import { Surface } from '@op/ui-next/Surface';
 import { cn } from '@op/ui-next/lib/utils';
 import { memo, useEffect, useMemo } from 'react';
 import { LuGlobe, LuX } from 'react-icons/lu';
@@ -62,21 +62,21 @@ export const LinkPreview = memo(
     // Loading state: show card with spinner and domain
     if (loading) {
       return (
-        <Surface className={cn('rounded-lg', className)}>
+        <Card className={cn('rounded-lg', className)}>
           <div className="flex aspect-video w-full items-center justify-center bg-neutral-gray1">
             <LoadingSpinner className="size-8" />
           </div>
           <div className="border-t border-neutral-gray2 px-4 py-3">
             <span className="text-sm text-neutral-gray4">{domain}</span>
           </div>
-        </Surface>
+        </Card>
       );
     }
 
     // Error/fallback state: show URL as a simple link card
     if (error || !previewData || previewData.error) {
       return (
-        <Surface className={cn('rounded-lg', className)}>
+        <Card className={cn('rounded-lg', className)}>
           <a
             href={safeUrl}
             target="_blank"
@@ -86,14 +86,14 @@ export const LinkPreview = memo(
             <LuGlobe className="size-5 shrink-0 text-neutral-gray4" />
             <span className="truncate text-sm text-neutral-gray4">{url}</span>
           </a>
-        </Surface>
+        </Card>
       );
     }
 
     const title = previewData.meta?.title;
 
     return (
-      <Surface
+      <Card
         className={cn(
           'group bg-neutral-white relative rounded-lg border-neutral-gray1',
           className,
@@ -145,7 +145,7 @@ export const LinkPreview = memo(
             </span>
           </div>
         </a>
-      </Surface>
+      </Card>
     );
   },
 );

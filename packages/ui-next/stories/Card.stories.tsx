@@ -12,18 +12,17 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  Surface,
-} from '@/components/Surface';
+} from '@/components/Card';
 
-const meta: Meta<typeof Surface> = {
-  title: 'shadcn/Surface',
-  component: Surface,
+const meta: Meta<typeof Card> = {
+  title: 'shadcn/Card',
+  component: Card,
   parameters: { layout: 'padded' },
   tags: ['autodocs'],
 };
 
 export default meta;
-type Story = StoryObj<typeof Surface>;
+type Story = StoryObj<typeof Card>;
 
 export const Default: Story = {
   render: () => (

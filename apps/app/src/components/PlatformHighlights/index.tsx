@@ -4,8 +4,8 @@ import { getPublicUrl } from '@/utils';
 import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
 import { Avatar } from '@op/ui-next/Avatar';
+import { Card } from '@op/ui-next/Card';
 import { FacePile } from '@op/ui-next/FacePile';
-import { Surface } from '@op/ui-next/Surface';
 import { cn } from '@op/ui-next/lib/utils';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
@@ -18,7 +18,7 @@ export const PlatformHighlights = () => {
   const t = useTranslations();
 
   return (
-    <Surface className="shadow-light">
+    <Card className="shadow-light">
       <div className="flex flex-col items-center justify-between gap-6 px-10 py-6 sm:flex-row sm:gap-4">
         <Highlight>
           <HighlightNumber className="bg-tealGreen">
@@ -61,7 +61,7 @@ export const PlatformHighlights = () => {
           </div>
         </Suspense>
       </div>
-    </Surface>
+    </Card>
   );
 };
 

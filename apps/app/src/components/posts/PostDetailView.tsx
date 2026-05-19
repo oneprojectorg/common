@@ -2,7 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { Surface } from '@op/ui-next/Surface';
+import { Card } from '@op/ui-next/Card';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import React from 'react';
@@ -54,13 +54,13 @@ export function PostDetail({ postId, slug }: { postId: string; slug: string }) {
 
           {/* Comment Input */}
           <div className="border-y">
-            <Surface className="border-0 px-0 py-4">
+            <Card className="border-0 px-0 py-4">
               <PostUpdate
                 parentPostId={post.id}
                 placeholder={`${t('Comment')}${user.currentProfile?.name ? ` ${t('as')} ${user.currentProfile?.name}` : ''}...`}
                 label={t('Comment')}
               />
-            </Surface>
+            </Card>
           </div>
 
           {/* Comments Section */}

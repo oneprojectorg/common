@@ -92,7 +92,6 @@ export function ProposalEditorLayout({
               {!readOnlyMode && canShare && (
                 <Button
                   color="secondary"
-                  variant="icon"
                   size="small"
                   onPress={() => setIsShareModalOpen(true)}
                 >
@@ -103,7 +102,6 @@ export function ProposalEditorLayout({
               {!readOnlyMode && (
                 <Button
                   color="primary"
-                  variant="icon"
                   size="small"
                   onPress={
                     isRevisionMode
@@ -111,7 +109,6 @@ export function ProposalEditorLayout({
                       : onSubmitProposal
                   }
                   isDisabled={isSubmitting}
-                  className="px-4 py-2"
                 >
                   {isSubmitting ? <LoadingSpinner /> : <LuCheck />}
                   {isRevisionMode ? (

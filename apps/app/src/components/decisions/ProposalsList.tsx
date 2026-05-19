@@ -17,6 +17,7 @@ import {
   isVotingEligible,
 } from '@op/common/client';
 import { Button, ButtonLink } from '@op/ui-next/Button';
+import { Card } from '@op/ui-next/Card';
 import { Checkbox } from '@op/ui-next/Checkbox';
 import { EmptyState } from '@op/ui-next/EmptyState';
 import { FooterBar } from '@op/ui-next/FooterBar';
@@ -24,7 +25,6 @@ import { Header3 } from '@op/ui-next/Header';
 import { Link } from '@op/ui-next/Link';
 import { Modal } from '@op/ui-next/Modal';
 import { Skeleton } from '@op/ui-next/Skeleton';
-import { Surface } from '@op/ui-next/Surface';
 import { toast } from '@op/ui-next/Toast';
 import { useLocale } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -58,7 +58,7 @@ import { useProposalFilters } from './useProposalFilters';
 
 const ProposalCardSkeleton = () => {
   return (
-    <Surface className="relative w-full min-w-80 space-y-3 p-4 pb-4">
+    <Card className="relative w-full min-w-80 space-y-3 p-4 pb-4">
       {/* Header with title and budget skeleton */}
       <div className="flex flex-col gap-2">
         <Skeleton className="h-6 w-3/4" />
@@ -89,7 +89,7 @@ const ProposalCardSkeleton = () => {
         </div>
         <Skeleton className="h-8 w-full" />
       </div>
-    </Surface>
+    </Card>
   );
 };
 

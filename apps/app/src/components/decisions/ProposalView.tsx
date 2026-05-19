@@ -9,8 +9,8 @@ import {
   type ProposalTranslation,
   type SupportedLocale,
 } from '@op/common/client';
+import { Card } from '@op/ui-next/Card';
 import { Header3 } from '@op/ui-next/Header';
-import { Surface } from '@op/ui-next/Surface';
 import { SplitPane } from '@op/ui-next/SplitPane';
 import { useLocale } from 'next-intl';
 import { useQueryStates } from 'nuqs';
@@ -220,7 +220,7 @@ export function ProposalView({
 
           {/* Comment Input */}
           <div className="mb-8">
-            <Surface className="border-0 p-0 sm:border sm:p-4">
+            <Card className="border-0 p-0 sm:border sm:p-4">
               <PostUpdate
                 profileId={currentProposal.profileId || undefined}
                 placeholder={`${t('Comment')}${user.currentProfile?.name ? ` as ${user.currentProfile?.name}` : ''}...`}
@@ -229,7 +229,7 @@ export function ProposalView({
                 proposalId={currentProposal.id}
                 processInstanceId={currentProposal.processInstanceId}
               />
-            </Surface>
+            </Card>
           </div>
 
           {/* Comments Display */}

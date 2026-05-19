@@ -86,6 +86,7 @@ import {
   Breadcrumbs as WrapBreadcrumbs,
 } from '../components/Breadcrumbs';
 import { Button as WrapButton } from '../components/Button';
+import { Card as WrapSurface } from '../components/Card';
 import { Checkbox as WrapCheckbox } from '../components/Checkbox';
 import { Chip as WrapChip } from '../components/Chip';
 import { EmptyState as WrapEmptyState } from '../components/EmptyState';
@@ -133,7 +134,6 @@ import {
 } from '../components/Sheet';
 import { Skeleton as WrapSkeleton } from '../components/Skeleton';
 import { StatusDot as WrapStatusDot } from '../components/StatusDot';
-import { Surface as WrapSurface } from '../components/Surface';
 import { Tabs as WrapTabs } from '../components/Tabs';
 import {
   Tag as WrapTag,
