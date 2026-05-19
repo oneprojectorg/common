@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { createSBBrowserClient } from '@op/supabase/client';
 import { FileDropZone } from '@op/ui/FileDropZone';
 import { toast } from '@op/ui/Toast';
 import { type ReactNode, startTransition, useOptimistic } from 'react';
@@ -47,9 +48,6 @@ function attachmentsReducer(
   }
 }
 
-/**
- * Attachment section for proposals.
- */
 export function ProposalAttachments({
   proposalId,
   attachments,
@@ -66,7 +64,6 @@ export function ProposalAttachments({
 }) {
   const t = useTranslations();
 
-  // Normalize attachments to ensure fileSize is always a number
   const normalizedAttachments: Attachment[] = attachments.map((a) => ({
     id: a.id,
     fileName: a.fileName,
@@ -79,12 +76,10 @@ export function ProposalAttachments({
     attachmentsReducer,
   );
 
+  const createUploadUrlMutation =
+    trpc.decision.createProposalAttachmentUploadUrl.useMutation();
   const uploadMutation = trpc.decision.uploadProposalAttachment.useMutation({
     onSuccess: onMutate,
-    onError: (err) => {
-      toast.error({ message: err.message });
-      onMutate(); // Refetch to clear optimistic state on error
-    },
   });
 
   const deleteMutation = trpc.decision.deleteProposalAttachment.useMutation({
@@ -127,19 +122,38 @@ export function ProposalAttachments({
           },
         });
 
-        const reader = new FileReader();
-        const base64 = await new Promise<string>((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = () => reject(new Error('Failed to read file'));
-          reader.readAsDataURL(file);
-        });
+        try {
+          const { path, token } = await createUploadUrlMutation.mutateAsync({
+            fileName: file.name,
+            mimeType: file.type,
+            proposalId,
+          });
 
-        await uploadMutation.mutateAsync({
-          file: base64,
-          fileName: file.name,
-          mimeType: file.type,
-          proposalId,
-        });
+          const supabase = createSBBrowserClient();
+          const { error: uploadError } = await supabase.storage
+            .from('assets')
+            .uploadToSignedUrl(path, token, file, {
+              contentType: file.type,
+              upsert: false,
+            });
+
+          if (uploadError) {
+            throw new Error(uploadError.message);
+          }
+
+          await uploadMutation.mutateAsync({
+            path,
+            fileName: file.name,
+            mimeType: file.type,
+            fileSize: file.size,
+            proposalId,
+          });
+        } catch (err) {
+          const message =
+            err instanceof Error ? err.message : t('Upload failed');
+          toast.error({ message });
+          onMutate();
+        }
       });
     }
   };

@@ -18,6 +18,7 @@ import { transformFormDataToProcessSchema as cowopSchema } from '../../../../../
 import { transformFormDataToProcessSchema as horizonSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/horizon';
 import { transformFormDataToProcessSchema as simpleSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/simple';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { uploadTestAttachmentToStorage } from '../../../test/helpers/uploadTestAttachment';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -1406,10 +1407,17 @@ describe.concurrent('getProposal', () => {
     const minimalPngBase64 =
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
-    const uploadResult = await caller.decision.uploadProposalAttachment({
-      file: minimalPngBase64,
+    const { path, fileSize } = await uploadTestAttachmentToStorage({
+      base64: minimalPngBase64,
       fileName: 'test-attachment.png',
       mimeType: 'image/png',
+    });
+
+    const uploadResult = await caller.decision.uploadProposalAttachment({
+      path,
+      fileName: 'test-attachment.png',
+      mimeType: 'image/png',
+      fileSize,
       proposalId: proposal.id,
     });
 
