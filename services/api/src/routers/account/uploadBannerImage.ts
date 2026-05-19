@@ -1,15 +1,23 @@
-import { CommonError, NotFoundError, ValidationError } from '@op/common';
+import { CommonError, NotFoundError } from '@op/common';
 import { eq } from '@op/db/client';
 import { profiles, users } from '@op/db/schema';
-import { createServerClient } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
-import { Buffer } from 'buffer';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 
 import withDB from '../../middlewares/withDB';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
-import { MAX_FILE_SIZE, sanitizeS3Filename } from '../../utils';
+import { sanitizeS3Filename } from '../../utils';
 import { trackImageUpload } from '../../utils/analytics';
+import {
+  STORAGE_BUCKET,
+  createSignedUploadUrl,
+  createStorageAdmin,
+  findUploadedStorageObject,
+  scheduleStorageObjectCleanup,
+  validateMimeAndSize,
+  validateStoragePath,
+} from '../../utils/storage';
 
 const ALLOWED_MIME_TYPES = [
   'image/png',
@@ -18,14 +26,45 @@ const ALLOWED_MIME_TYPES = [
   'image/gif',
 ];
 
+const UNSUPPORTED_MESSAGE =
+  'Unsupported file type. Only images (PNG, JPEG, GIF, WebP) are allowed.';
+
 export const uploadBannerImage = router({
+  createBannerImageUploadUrl: commonAuthedProcedure()
+    .input(
+      z.object({
+        fileName: z.string().min(1),
+        mimeType: z.string(),
+        fileSize: z.number().positive(),
+      }),
+    )
+    .output(
+      z.object({
+        signedUrl: z.string(),
+        path: z.string(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { fileName, mimeType, fileSize } = input;
+
+      validateMimeAndSize({
+        mimeType,
+        fileSize,
+        allowedMimeTypes: ALLOWED_MIME_TYPES,
+        unsupportedMessage: UNSUPPORTED_MESSAGE,
+      });
+
+      const sanitized = sanitizeS3Filename(fileName);
+      const path = `${ctx.user.id}/banner/${randomUUID()}_${sanitized}`;
+
+      return createSignedUploadUrl(path);
+    }),
+
   uploadBannerImage: commonAuthedProcedure()
     .use(withDB)
     .input(
       z.object({
-        file: z.string(), // base64 encoded
-        fileName: z.string(),
-        mimeType: z.string(),
+        path: z.string(),
       }),
     )
     .output(
@@ -36,117 +75,66 @@ export const uploadBannerImage = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const { file, fileName, mimeType } = input;
+      const { path } = input;
       const { db } = ctx.database;
 
-      const sanitizedFileName = sanitizeS3Filename(fileName);
-      if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
-        throw new CommonError(
-          'Unsupported file type. Only images (PNG, JPEG, GIF, WebP) are allowed.',
-        );
-      }
-
-      let buffer: Buffer;
+      validateStoragePath({
+        path,
+        expectedPrefix: `${ctx.user.id}/banner/`,
+      });
 
       try {
-        // Accept data URLs or plain base64
-        let base64 = file;
-
-        if (file.startsWith('data:')) {
-          const commaIndex = file.indexOf(',');
-
-          if (commaIndex === -1) {
-            throw new Error('Invalid data URL');
-          }
-
-          base64 = file.slice(commaIndex + 1);
-        }
-
-        buffer = Buffer.from(base64, 'base64');
-      } catch (_err) {
-        throw new ValidationError('Invalid base64 encoding');
-      }
-
-      // Check file size
-      if (buffer.length > MAX_FILE_SIZE) {
-        throw new CommonError(
-          `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
-        );
-      }
-
-      const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE!,
-        {
-          cookieOptions: {},
-          cookies: {
-            getAll: async () => [],
-            setAll: async () => {},
-          },
-        },
-      );
-      const bucket = 'assets';
-      const filePath = `${ctx.user.id}/banner/${Date.now()}_${sanitizedFileName}`;
-
-      const { error: uploadError, data } = await supabase.storage
-        .from(bucket)
-        .upload(filePath, buffer, {
-          contentType: mimeType,
-          upsert: false,
+        const storageObject = await findUploadedStorageObject({
+          path,
+          allowedMimeTypes: ALLOWED_MIME_TYPES,
+          unsupportedMessage: UNSUPPORTED_MESSAGE,
         });
 
-      if (uploadError) {
-        throw new CommonError(uploadError.message);
-      }
-
-      // Update user's personal profile banner image
-      if (data) {
-        // Check if user has a profile and get their profile ID
         const [existingUser] = await db
-          .select({
-            profileId: users.profileId,
-          })
+          .select({ profileId: users.profileId })
           .from(users)
           .where(eq(users.authUserId, ctx.user.id));
 
-        if (existingUser?.profileId) {
-          // Check if profile had previous header image
-          const [existingProfile] = await db
-            .select({ headerImageId: profiles.headerImageId })
-            .from(profiles)
-            .where(eq(profiles.id, existingUser.profileId));
-
-          const hadPreviousImage = existingProfile?.headerImageId;
-
-          // Update personal profile banner
-          await db
-            .update(profiles)
-            .set({
-              headerImageId: data.id,
-            })
-            .where(eq(profiles.id, existingUser.profileId));
-
-          // Track analytics (non-blocking)
-          waitUntil(trackImageUpload(ctx, 'banner', !!hadPreviousImage));
-        } else {
+        if (!existingUser?.profileId) {
           throw new NotFoundError('User profile');
         }
+
+        const [existingProfile] = await db
+          .select({ headerImageId: profiles.headerImageId })
+          .from(profiles)
+          .where(eq(profiles.id, existingUser.profileId));
+
+        const hadPreviousImage = existingProfile?.headerImageId;
+
+        await db
+          .update(profiles)
+          .set({ headerImageId: storageObject.id })
+          .where(eq(profiles.id, existingUser.profileId));
+
+        waitUntil(trackImageUpload(ctx, 'banner', !!hadPreviousImage));
+
+        const supabase = createStorageAdmin();
+        const { data: signedUrlData, error: signedUrlError } =
+          await supabase.storage
+            .from(STORAGE_BUCKET)
+            .createSignedUrl(path, 60 * 60);
+
+        if (signedUrlError || !signedUrlData) {
+          console.error('createSignedUrl failed', {
+            path,
+            error: signedUrlError,
+          });
+          throw new CommonError('Could not get signed url');
+        }
+
+        return {
+          url: signedUrlData.signedUrl,
+          path,
+          id: storageObject.id,
+        };
+      } catch (err) {
+        scheduleStorageObjectCleanup(path);
+        throw err;
       }
-
-      // Get signed URL
-      const { data: signedUrlData, error: signedUrlError } =
-        await supabase.storage.from(bucket).createSignedUrl(filePath, 60 * 60); // 1 hour
-
-      if (signedUrlError || !signedUrlData) {
-        throw new CommonError(
-          signedUrlError?.message || 'Could not get signed url',
-        );
-      }
-
-      return {
-        url: signedUrlData.signedUrl,
-        path: filePath,
-        id: data!.id,
-      };
     }),
 });
