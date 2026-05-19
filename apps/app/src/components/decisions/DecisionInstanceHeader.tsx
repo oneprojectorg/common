@@ -4,6 +4,7 @@ import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { ButtonLink } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
 import { IconButton } from '@op/ui/IconButton';
+import { MegaphoneIcon } from '@op/ui/MegaphoneIcon';
 import { useQueryState } from 'nuqs';
 import { LuArrowLeft, LuSettings } from 'react-icons/lu';
 
@@ -12,7 +13,6 @@ import { Link } from '@/lib/i18n/routing';
 
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
-import { MegaphoneIcon } from './MegaphoneIcon';
 import { panelStateParser } from './panelState';
 
 export const DecisionInstanceHeader = ({

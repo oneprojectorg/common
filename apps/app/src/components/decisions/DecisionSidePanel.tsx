@@ -8,6 +8,7 @@ import { useInfiniteScroll } from '@op/hooks';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2 } from '@op/ui/Header';
 import { IconButton } from '@op/ui/IconButton';
+import { MegaphoneIcon } from '@op/ui/MegaphoneIcon';
 import { Sidebar, SidebarProvider, useSidebar } from '@op/ui/Sidebar';
 import { Surface } from '@op/ui/Surface';
 import { useQueryState } from 'nuqs';
@@ -26,7 +27,6 @@ import {
 } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
 
-import { MegaphoneIcon } from './MegaphoneIcon';
 import { panelStateParser } from './panelState';
 
 const UPDATES_PAGE_SIZE = 20;
