@@ -81,10 +81,6 @@ export function ProposalAttachments({
 
   const uploadMutation = trpc.decision.uploadProposalAttachment.useMutation({
     onSuccess: onMutate,
-    onError: (err) => {
-      toast.error({ message: err.message });
-      onMutate();
-    },
   });
 
   const deleteMutation = trpc.decision.deleteProposalAttachment.useMutation({

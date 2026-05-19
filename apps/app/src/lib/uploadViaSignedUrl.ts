@@ -11,6 +11,8 @@ interface SignedUploadFns<TRecord> {
   recordUpload: (args: { path: string; fileName: string }) => Promise<TRecord>;
 }
 
+const UPLOAD_TIMEOUT_MS = 5 * 60 * 1000;
+
 async function putFileToSignedUrl(file: File, signedUrl: string) {
   const response = await fetch(signedUrl, {
     method: 'PUT',
@@ -19,6 +21,7 @@ async function putFileToSignedUrl(file: File, signedUrl: string) {
       'Content-Type': file.type,
       'x-upsert': 'false',
     },
+    signal: AbortSignal.timeout(UPLOAD_TIMEOUT_MS),
   });
 
   if (!response.ok) {
