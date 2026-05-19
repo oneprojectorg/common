@@ -160,9 +160,10 @@ test.describe('Non-reviewer review-phase view', () => {
       memberPage.getByRole('button', { name: 'Follow' }),
     ).toHaveCount(1);
 
-    // Hero CTA: "About the process" button opens description modal
+    // Hero CTA: "Learn more" button opens description modal whose header
+    // still reads "About the process" (per PR #1163 — only the CTA renamed).
     const aboutButton = memberPage.getByRole('button', {
-      name: 'About the process',
+      name: 'Learn more',
     });
     await expect(aboutButton).toBeVisible();
     await aboutButton.click();
@@ -237,7 +238,7 @@ test.describe('Non-reviewer review-phase view', () => {
     });
     await expect(aboutButton).toBeVisible({ timeout: 36_000 });
     await expect(
-      memberPage.getByRole('button', { name: 'About the process' }),
+      memberPage.getByRole('button', { name: 'Learn more' }),
     ).toHaveCount(0);
 
     await aboutButton.click();
