@@ -116,9 +116,7 @@ export async function findUploadedStorageObject({
   }
 
   if (!row) {
-    throw new CommonError(
-      'Upload could not be confirmed. Please try again.',
-    );
+    throw new CommonError('Upload could not be confirmed. Please try again.');
   }
 
   const metadata = (row.metadata ?? {}) as StorageObjectMetadata;
@@ -127,9 +125,7 @@ export async function findUploadedStorageObject({
     typeof metadata.mimetype === 'string' ? metadata.mimetype : undefined;
 
   if (size === undefined || mimetype === undefined) {
-    throw new CommonError(
-      'Upload could not be confirmed. Please try again.',
-    );
+    throw new CommonError('Upload could not be confirmed. Please try again.');
   }
 
   validateMimeAndSize({
