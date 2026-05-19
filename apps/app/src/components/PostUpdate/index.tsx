@@ -311,7 +311,9 @@ const PostUpdateWithUser = ({
             // Drop our optimistic placeholder; if a realtime refetch already
             // inserted the real comment, return without re-prepending.
             const filtered = old.filter((c) => c.id !== context.tempId);
-            if (filtered.some((c) => c.id === enhancedData.id)) return filtered;
+            if (filtered.some((c) => c.id === enhancedData.id)) {
+              return filtered;
+            }
             return [enhancedData, ...filtered];
           });
 
@@ -370,7 +372,9 @@ const PostUpdateWithUser = ({
             // Drop our optimistic placeholder; if a realtime refetch already
             // inserted the real post, return without re-prepending.
             const filtered = old.filter((p) => p.id !== context.tempId);
-            if (filtered.some((p) => p.id === enhancedData.id)) return filtered;
+            if (filtered.some((p) => p.id === enhancedData.id)) {
+              return filtered;
+            }
             return [enhancedData, ...filtered];
           });
 
