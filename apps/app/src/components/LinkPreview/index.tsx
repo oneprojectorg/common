@@ -95,7 +95,7 @@ export const LinkPreview = memo(
     return (
       <Surface
         className={cn(
-          'group bg-white relative rounded-lg border-neutral-gray1',
+          'group relative rounded-lg border-neutral-gray1 bg-white',
           className,
         )}
       >

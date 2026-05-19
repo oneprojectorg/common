@@ -320,7 +320,7 @@ export const Controlled: Story = {
       <div className="w-[400px]">
         <div className="mb-4 flex gap-2">
           <button
-            className="text-primary-fg rounded-lg bg-primary px-3 py-1 text-sm"
+            className="rounded-lg bg-primary px-3 py-1 text-sm text-primary-fg"
             onClick={() => setExpandedKeys(new Set(['1', '2', '3']))}
           >
             Expand All

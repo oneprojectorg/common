@@ -31,8 +31,7 @@ export const Toast = () => {
           description: 'text-neutral-charcoal',
           actionButton:
             'group-[.toast]:bg-primary group-[.toast]:text-primary-fg',
-          cancelButton:
-            'group-[.toast]:bg-muted group-[.toast]:text-muted-fg',
+          cancelButton: 'group-[.toast]:bg-muted group-[.toast]:text-muted-fg',
           closeButton: '!absolute !right-0 top-0 !cursor-pointer',
         },
       }}

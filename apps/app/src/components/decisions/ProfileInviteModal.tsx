@@ -500,7 +500,7 @@ function ProfileInviteModalContent({
                     <ListBoxItem
                       id="add-email"
                       textValue={debouncedQuery}
-                      className="hover:bg-neutral-gray-1 focus-visible:bg-neutral-gray-1 cursor-pointer px-4 py-3 outline-none"
+                      className="cursor-pointer px-4 py-3 outline-none hover:bg-neutral-gray-1 focus-visible:bg-neutral-gray-1"
                     >
                       <div className="text-sm">
                         {t('Invite {email}', { email: debouncedQuery })}
@@ -512,7 +512,7 @@ function ProfileInviteModalContent({
                       key={result.id}
                       id={result.id}
                       textValue={result.name}
-                      className="hover:bg-neutral-gray-1 focus-visible:bg-neutral-gray-1 cursor-pointer px-4 py-3 outline-none"
+                      className="cursor-pointer px-4 py-3 outline-none hover:bg-neutral-gray-1 focus-visible:bg-neutral-gray-1"
                     >
                       <ProfileItem
                         size="small"

@@ -30,7 +30,7 @@ export const OrgMembersModal = ({
       <ModalHeader>{t('Members of {orgName}', { orgName })}</ModalHeader>
       <ModalBody className="space-y-4 pb-6">
         {/* Organization Info */}
-        <div className="bg-neutral-gray-1 rounded-lg p-4">
+        <div className="rounded-lg bg-neutral-gray-1 p-4">
           <ProfileItem
             avatar={
               <Avatar placeholder={orgName} className="size-10 shrink-0" />
