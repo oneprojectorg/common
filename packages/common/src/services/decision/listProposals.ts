@@ -168,6 +168,44 @@ const buildWhereConditions = (input: ListProposalsInput) => {
   return conditions.length > 0 ? and(...conditions) : undefined;
 };
 
+// Predicate for the `'all'` scope: every non-draft, non-rejected, non-duplicate,
+// non-deleted proposal on the instance. When `canBypassVisibility` is false, the
+// HIDDEN visibility filter is applied — proposals stay visible to members of
+// the owning profile via a `profileUsers` subquery pushed into SQL.
+const buildAllScopeFilter = ({
+  authUserId,
+  canBypassVisibility,
+}: {
+  authUserId: string;
+  canBypassVisibility: boolean;
+}) => {
+  const validStatusFilter = notInArray(proposals.status, [
+    ProposalStatus.DRAFT,
+    ProposalStatus.REJECTED,
+    ProposalStatus.DUPLICATE,
+  ]);
+  const deletedAtFilter = isNull(proposals.deletedAt);
+
+  if (canBypassVisibility) {
+    return and(validStatusFilter, deletedAtFilter);
+  }
+
+  return and(
+    validStatusFilter,
+    deletedAtFilter,
+    or(
+      eq(proposals.visibility, Visibility.VISIBLE),
+      inArray(
+        proposals.profileId,
+        db
+          .select({ profileId: profileUsers.profileId })
+          .from(profileUsers)
+          .where(eq(profileUsers.authUserId, authUserId)),
+      ),
+    ),
+  );
+};
+
 export const listProposals = async ({
   input,
   user,
@@ -360,33 +398,10 @@ export const listProposals = async ({
   }
 
   if (isAllScope) {
-    // Valid = non-draft, non-rejected, non-duplicate, non-deleted. Visibility
-    // (HIDDEN) still hides proposals from non-admin, non-owner callers.
-    const validStatusFilter = notInArray(proposals.status, [
-      ProposalStatus.DRAFT,
-      ProposalStatus.REJECTED,
-      ProposalStatus.DUPLICATE,
-    ]);
-    const deletedAtFilter = isNull(proposals.deletedAt);
-
-    const validFilter =
-      skipAccessCheck || canManageProposals
-        ? and(validStatusFilter, deletedAtFilter)
-        : and(
-            validStatusFilter,
-            deletedAtFilter,
-            or(
-              eq(proposals.visibility, Visibility.VISIBLE),
-              inArray(
-                proposals.profileId,
-                db
-                  .select({ profileId: profileUsers.profileId })
-                  .from(profileUsers)
-                  .where(eq(profileUsers.authUserId, input.authUserId)),
-              ),
-            ),
-          );
-
+    const validFilter = buildAllScopeFilter({
+      authUserId: input.authUserId,
+      canBypassVisibility: skipAccessCheck || canManageProposals,
+    });
     whereClause = whereClause ? and(whereClause, validFilter) : validFilter;
   } else {
     // Phase scoping applies separately to non-drafts and drafts. Non-drafts are
