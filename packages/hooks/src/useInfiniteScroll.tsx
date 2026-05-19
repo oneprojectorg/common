@@ -10,7 +10,7 @@ interface UseInfiniteScrollOptions {
   enabled?: boolean;
 }
 
-export const useInfiniteScroll = (
+export const useInfiniteScroll = <T extends HTMLElement = HTMLElement>(
   fetchNextPage: () => void,
   options: UseInfiniteScrollOptions = {},
 ) => {
@@ -22,7 +22,7 @@ export const useInfiniteScroll = (
     enabled = true,
   } = options;
 
-  const { ref, isIntersecting } = useIntersectionObserver({
+  const { ref, isIntersecting } = useIntersectionObserver<T>({
     threshold,
     rootMargin,
     enabled: enabled && hasNextPage,

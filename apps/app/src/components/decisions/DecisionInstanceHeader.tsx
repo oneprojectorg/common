@@ -1,7 +1,11 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { ButtonLink } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
+import { IconButton } from '@op/ui/IconButton';
+import { MegaphoneIcon } from '@op/ui/MegaphoneIcon';
+import { useQueryState } from 'nuqs';
 import { LuArrowLeft, LuSettings } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -9,12 +13,14 @@ import { Link } from '@/lib/i18n/routing';
 
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
+import { panelStateParser } from './panelState';
 
 export const DecisionInstanceHeader = ({
   backTo,
   title,
   decisionSlug,
   isAdmin,
+  canReadUpdates = false,
 }: {
   backTo: {
     label?: string;
@@ -23,6 +29,7 @@ export const DecisionInstanceHeader = ({
   title: string;
   decisionSlug?: string;
   isAdmin?: boolean;
+  canReadUpdates?: boolean;
 }) => {
   const t = useTranslations();
 
@@ -47,19 +54,58 @@ export const DecisionInstanceHeader = ({
       </div>
 
       <div className="flex items-center justify-end gap-2 md:gap-4">
+        <DecisionUpdatesToggle
+          ariaLabel={t('Toggle updates panel')}
+          canReadUpdates={canReadUpdates}
+        />
         {isAdmin && decisionSlug && (
           <ButtonLink
             href={`/decisions/${decisionSlug}/edit`}
             color="secondary"
             size="small"
+            className="p-2"
+            aria-label={t('Settings')}
           >
             <LuSettings className="size-4" />
-            <span className="hidden md:inline">{t('Settings')}</span>
           </ButtonLink>
         )}
         <LocaleChooser />
         <UserAvatarMenu />
       </div>
     </header>
+  );
+};
+
+const DecisionUpdatesToggle = ({
+  ariaLabel,
+  canReadUpdates,
+}: {
+  ariaLabel: string;
+  canReadUpdates: boolean;
+}) => {
+  const [panel, setPanel] = useQueryState('panel', panelStateParser);
+  const decisionUpdatesEnabled = useFeatureFlag('decision_updates');
+
+  // Show the entry point to anyone who can actually read updates;
+  // the feature flag lets us preview the panel for everyone else.
+  if (!decisionUpdatesEnabled && !canReadUpdates) {
+    return null;
+  }
+
+  const isOpen = panel !== null;
+
+  return (
+    <IconButton
+      variant="outline"
+      size="medium"
+      onPress={() => setPanel(isOpen ? null : 'updates')}
+      aria-label={ariaLabel}
+      aria-pressed={isOpen}
+      className={
+        isOpen ? 'bg-primary-tealWhite text-primary-teal' : 'text-neutral-black'
+      }
+    >
+      <MegaphoneIcon className="size-4" />
+    </IconButton>
   );
 };

@@ -9,6 +9,7 @@ import { forbidden, notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
+import { DecisionSidePanel } from '@/components/decisions/DecisionSidePanel';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
 import { DecisionHeaderSkeleton } from '@/components/skeletons/DecisionSkeleton';
 
@@ -57,6 +58,10 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
           instanceId={instanceId}
           decisionSlug={slug}
           isAdmin={decisionProfile.processInstance.access?.admin}
+          canReadUpdates={
+            decisionProfile.processInstance.access?.admin === true ||
+            decisionProfile.processInstance.access?.read === true
+          }
           profileName={decisionProfile.name}
         >
           <DecisionStateRouter
@@ -64,6 +69,10 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
             slug={ownerSlug}
             decisionSlug={slug}
             decisionProfileId={decisionProfile.id}
+          />
+          <DecisionSidePanel
+            decisionProfileId={decisionProfile.id}
+            access={decisionProfile.processInstance.access}
           />
         </DecisionHeader>
       </Suspense>

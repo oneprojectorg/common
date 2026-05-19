@@ -91,11 +91,13 @@ const SidebarProvider = ({
 const Sidebar = ({
   children,
   side = 'left',
+  variant = 'inline',
   className,
   label,
   mobileOnly = false,
 }: React.ComponentProps<'div'> & {
   side?: 'left' | 'right';
+  variant?: 'inline' | 'overlay';
   label?: string;
   mobileOnly?: boolean;
 }) => {
@@ -128,6 +130,7 @@ const Sidebar = ({
               className={cn(
                 'fixed top-0 h-full w-64 bg-white',
                 isRight ? 'right-0' : 'left-0',
+                className,
               )}
               initial={{ x: isRight ? '100%' : '-100%' }}
               animate={{ x: 0 }}
@@ -145,6 +148,32 @@ const Sidebar = ({
   // Don't render desktop sidebar when mobileOnly is true
   if (mobileOnly) {
     return null;
+  }
+
+  // Floating contextual drawer: lives above content as a fixed-position
+  // panel instead of pushing siblings. The mobile branch above already
+  // handles its own overlay; this only kicks in at sm:.
+  if (variant === 'overlay') {
+    return (
+      <div
+        data-state={state}
+        data-side={side}
+        data-slot="sidebar"
+        inert={!open}
+        className={cn(
+          'fixed inset-y-0 z-40 hidden w-64 flex-col overflow-hidden bg-white transition-transform duration-300 ease-out sm:flex',
+          side === 'right' ? 'right-0' : 'left-0',
+          open
+            ? 'translate-x-0'
+            : side === 'right'
+              ? 'translate-x-full'
+              : '-translate-x-full',
+          className,
+        )}
+      >
+        {children}
+      </div>
+    );
   }
 
   return (

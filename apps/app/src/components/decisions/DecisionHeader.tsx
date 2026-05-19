@@ -19,6 +19,8 @@ interface DecisionHeaderProps {
   decisionSlug?: string;
   /** Whether the current user has admin access to this decision */
   isAdmin?: boolean;
+  /** Whether the current user can read decision updates */
+  canReadUpdates?: boolean;
   /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
   useLegacy?: boolean;
   /** Profile slug for back button — required when useLegacy is true */
@@ -39,6 +41,7 @@ function DecisionHeaderContent({
   children,
   decisionSlug,
   isAdmin,
+  canReadUpdates,
   profileName,
 }: DecisionHeaderProps) {
   const t = useTranslations();
@@ -80,6 +83,7 @@ function DecisionHeaderContent({
         }
         decisionSlug={decisionSlug}
         isAdmin={isAdmin}
+        canReadUpdates={canReadUpdates}
       />
       <DecisionTranslationProvider>
         <div className="flex flex-col overflow-x-auto sm:items-center">

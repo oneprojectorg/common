@@ -17,6 +17,7 @@
     "./CategoryList": "./src/components/CategoryList.tsx",
     "./ComboBox": "./src/components/ComboBox.tsx",
     "./CheckIcon": "./src/components/icons/CheckIcon.tsx",
+    "./MegaphoneIcon": "./src/components/icons/MegaphoneIcon.tsx",
     "./Checkbox": "./src/components/Checkbox.tsx",
     "./Chip": "./src/components/Chip.tsx",
     "./CommentButton": "./src/components/CommentButton.tsx",
