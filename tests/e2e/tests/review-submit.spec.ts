@@ -400,13 +400,14 @@ test.describe('Review Submit', () => {
     await expect(submitButton).toBeEnabled();
 
     // Total score = Innovation (4) + Feasibility (2) = 6. Overall
-    // Recommendation is excluded from scoring.
+    // Recommendation is excluded from scoring. Max = Innovation (5) +
+    // Feasibility (3) = 8.
     const totalScoreContainer = page
       .getByText('Total Score')
       .first()
       .locator('..');
     await expect(
-      totalScoreContainer.locator('span').filter({ hasText: /^6$/ }),
+      totalScoreContainer.locator('span').filter({ hasText: /^6\/8$/ }),
     ).toBeVisible();
 
     await submitButton.click();

@@ -1,4 +1,5 @@
 import type { RubricReviewData, RubricTemplateSchema } from '@op/common/client';
+import { getRubricScoringInfo } from '@op/common/client';
 import { Header3 } from '@op/ui/Header';
 import { Surface } from '@op/ui/Surface';
 import type { ReactNode } from 'react';
@@ -28,6 +29,7 @@ export function TotalScoreCard({
   values: RubricReviewData['answers'];
 }) {
   const criteria = getCriteria(rubricTemplate);
+  const { totalPoints } = getRubricScoringInfo(rubricTemplate);
 
   const totalScore = criteria.reduce<number | null>((total, criterion) => {
     const value = values[criterion.id];
@@ -39,6 +41,9 @@ export function TotalScoreCard({
     return (total ?? 0) + value;
   }, null);
 
+  const scoreText = totalScore === null ? '–' : String(totalScore);
+  const display = totalPoints > 0 ? `${scoreText}/${totalPoints}` : '–';
+
   return (
     <Surface
       variant="filled"
@@ -47,9 +52,7 @@ export function TotalScoreCard({
       <span className="text-base text-neutral-charcoal">
         <TranslatedText text="Total Score" />
       </span>
-      <span className="text-base text-neutral-black">
-        {totalScore === null ? '–' : totalScore}
-      </span>
+      <span className="text-base text-neutral-black">{display}</span>
     </Surface>
   );
 }
