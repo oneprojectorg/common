@@ -206,7 +206,7 @@ function ReviewerRow({
     <Button
       unstyled
       onPress={() => onSelect(item.review.assignmentId)}
-      className="flex h-14 w-full cursor-pointer items-center justify-between rounded-lg border border-neutral-gray1 bg-white px-3 py-2 text-left outline-0 outline-transparent transition-colors duration-200 hover:bg-neutral-offWhite focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue"
+      className="flex h-14 w-full cursor-pointer items-center justify-between rounded-lg border border-neutral-gray1 bg-white px-3 py-2 text-start outline-0 outline-transparent transition-colors duration-200 hover:bg-neutral-offWhite focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue"
       aria-label={t('View review by {name}', {
         name: item.reviewer.name ?? item.reviewer.slug,
       })}
