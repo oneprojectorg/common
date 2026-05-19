@@ -19,6 +19,7 @@ export const DecisionInstanceHeader = ({
   title,
   decisionSlug,
   isAdmin,
+  canReadUpdates = false,
 }: {
   backTo: {
     label?: string;
@@ -27,6 +28,7 @@ export const DecisionInstanceHeader = ({
   title: string;
   decisionSlug?: string;
   isAdmin?: boolean;
+  canReadUpdates?: boolean;
 }) => {
   const t = useTranslations();
 
@@ -51,7 +53,10 @@ export const DecisionInstanceHeader = ({
       </div>
 
       <div className="flex items-center justify-end gap-2 md:gap-4">
-        <DecisionUpdatesToggle ariaLabel={t('Open updates panel')} />
+        <DecisionUpdatesToggle
+          ariaLabel={t('Open updates panel')}
+          canReadUpdates={canReadUpdates}
+        />
         {isAdmin && decisionSlug && (
           <ButtonLink
             href={`/decisions/${decisionSlug}/edit`}
@@ -69,11 +74,19 @@ export const DecisionInstanceHeader = ({
   );
 };
 
-const DecisionUpdatesToggle = ({ ariaLabel }: { ariaLabel: string }) => {
+const DecisionUpdatesToggle = ({
+  ariaLabel,
+  canReadUpdates,
+}: {
+  ariaLabel: string;
+  canReadUpdates: boolean;
+}) => {
   const [panel, setPanel] = useQueryState('panel', panelStateParser);
   const decisionUpdatesEnabled = useFeatureFlag('decision_updates');
 
-  if (!decisionUpdatesEnabled) {
+  // Show the entry point to anyone who can actually read updates;
+  // the feature flag lets us preview the panel for everyone else.
+  if (!decisionUpdatesEnabled && !canReadUpdates) {
     return null;
   }
 

@@ -58,6 +58,10 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
           instanceId={instanceId}
           decisionSlug={slug}
           isAdmin={decisionProfile.processInstance.access?.admin}
+          canReadUpdates={
+            decisionProfile.processInstance.access?.admin === true ||
+            decisionProfile.processInstance.access?.read === true
+          }
           profileName={decisionProfile.name}
         >
           <DecisionStateRouter

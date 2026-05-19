@@ -69,12 +69,14 @@ export const DecisionSidePanel = ({
     return () => window.removeEventListener('keydown', onKey);
   }, [isOpen, close]);
 
-  if (!decisionUpdatesEnabled) {
-    return null;
-  }
-
   const canPostUpdate = access?.admin === true;
   const canReadUpdates = canPostUpdate || access?.read === true;
+
+  // Mirror the toggle in DecisionInstanceHeader: anyone who can actually
+  // read updates sees the panel; the flag opens it up to everyone else.
+  if (!decisionUpdatesEnabled && !canReadUpdates) {
+    return null;
+  }
 
   return (
     <SidebarProvider isOpen={isOpen} onOpenChange={handleOpenChange}>
