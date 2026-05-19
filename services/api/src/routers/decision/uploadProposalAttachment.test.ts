@@ -1,15 +1,15 @@
 import { db } from '@op/db/client';
-import { createServerClient } from '@op/supabase/lib';
-import { Buffer } from 'node:buffer';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
+import { VALID_PNG_BUFFER } from '../../test/helpers/uploadProposalAttachmentFixture';
 import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
+import { STORAGE_BUCKET, createStorageAdmin } from '../../utils/storage';
 
 const createCaller = createCallerFactory(appRouter);
 
@@ -18,30 +18,10 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-// Small valid PNG (1x1 pixel)
-const VALID_PNG_BUFFER = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-  'base64',
-);
-
-function createStorageAdmin() {
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE!,
-    {
-      cookieOptions: {},
-      cookies: {
-        getAll: async () => [],
-        setAll: async () => {},
-      },
-    },
-  );
-}
-
 async function uploadFixtureToPath(path: string, mimeType: string) {
   const supabase = createStorageAdmin();
   const { error } = await supabase.storage
-    .from('assets')
+    .from(STORAGE_BUCKET)
     .upload(path, VALID_PNG_BUFFER, { contentType: mimeType, upsert: true });
 
   if (error) {
@@ -87,8 +67,6 @@ describe.concurrent('uploadProposalAttachment', () => {
       proposalId: proposal.id,
       path,
       fileName: 'test-image.png',
-      mimeType: 'image/png',
-      fileSize: VALID_PNG_BUFFER.length,
     });
 
     expect(result).toMatchObject({
@@ -155,8 +133,6 @@ describe.concurrent('uploadProposalAttachment', () => {
       proposalId: proposal.id,
       path,
       fileName: 'member-upload.png',
-      mimeType: 'image/png',
-      fileSize: VALID_PNG_BUFFER.length,
     });
 
     expect(result).toMatchObject({
@@ -245,11 +221,10 @@ describe.concurrent('uploadProposalAttachment', () => {
         proposalId: proposal.id,
         path: 'profile/some-other-profile/proposals/other/file.png',
         fileName: 'spoofed.png',
-        mimeType: 'image/png',
-        fileSize: VALID_PNG_BUFFER.length,
       }),
     ).rejects.toMatchObject({
       cause: { name: 'UnauthorizedError' },
+      message: 'Invalid attachment path',
     });
   });
 });

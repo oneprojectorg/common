@@ -6,6 +6,7 @@ import { toast } from '@op/ui/Toast';
 import { type ReactNode, startTransition, useOptimistic } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
+import { uploadFileViaSignedUrl } from '@/lib/uploadViaSignedUrl';
 
 import { ProposalAttachmentList } from './ProposalAttachmentList';
 
@@ -47,9 +48,6 @@ function attachmentsReducer(
   }
 }
 
-/**
- * Attachment section for proposals.
- */
 export function ProposalAttachments({
   proposalId,
   attachments,
@@ -66,7 +64,6 @@ export function ProposalAttachments({
 }) {
   const t = useTranslations();
 
-  // Normalize attachments to ensure fileSize is always a number
   const normalizedAttachments: Attachment[] = attachments.map((a) => ({
     id: a.id,
     fileName: a.fileName,
@@ -86,7 +83,7 @@ export function ProposalAttachments({
     onSuccess: onMutate,
     onError: (err) => {
       toast.error({ message: err.message });
-      onMutate(); // Refetch to clear optimistic state on error
+      onMutate();
     },
   });
 
@@ -94,7 +91,7 @@ export function ProposalAttachments({
     onSuccess: onMutate,
     onError: (err) => {
       toast.error({ message: err.message });
-      onMutate(); // Refetch to restore deleted item on error
+      onMutate();
     },
   });
 
@@ -131,38 +128,18 @@ export function ProposalAttachments({
         });
 
         try {
-          const { signedUrl, path } = await createUploadUrlMutation.mutateAsync(
-            {
-              proposalId,
-              fileName: file.name,
-              mimeType: file.type,
-              fileSize: file.size,
-            },
-          );
-
-          const uploadResponse = await fetch(signedUrl, {
-            method: 'PUT',
-            body: file,
-            headers: {
-              'Content-Type': file.type,
-              'x-upsert': 'false',
-            },
-          });
-
-          if (!uploadResponse.ok) {
-            throw new Error(`Upload failed (${uploadResponse.status})`);
-          }
-
-          await uploadMutation.mutateAsync({
-            proposalId,
-            path,
-            fileName: file.name,
-            mimeType: file.type,
-            fileSize: file.size,
+          await uploadFileViaSignedUrl(file, {
+            createUploadUrl: (args) =>
+              createUploadUrlMutation.mutateAsync({ ...args, proposalId }),
+            recordUpload: (args) =>
+              uploadMutation.mutateAsync({ ...args, proposalId }),
           });
         } catch (err) {
           toast.error({
-            message: err instanceof Error ? err.message : 'Upload failed',
+            message:
+              err instanceof Error && err.message
+                ? err.message
+                : t('Upload failed'),
           });
           onMutate();
         }
