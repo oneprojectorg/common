@@ -128,7 +128,7 @@ const AddUserToOrgModalContent = ({
       {/* Body */}
       <ModalBody className="space-y-4">
         {/* User Info */}
-        <div className="bg-neutral-gray0 rounded-lg p-4">
+        <div className="bg-neutral-gray-1 rounded-lg p-4">
           <ProfileItem
             avatar={
               <Avatar

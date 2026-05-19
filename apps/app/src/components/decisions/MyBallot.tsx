@@ -107,7 +107,7 @@ const MyBallotProposals = ({
 
               <ProposalCardPreview proposal={proposal} />
 
-              <div className="border-neutral-silver h-0 w-full border-b" />
+              <div className="border-neutral-gray-2 h-0 w-full border-b" />
 
               <ProposalCardFooter>
                 <div className="flex items-start gap-1 text-base text-neutral-charcoal">

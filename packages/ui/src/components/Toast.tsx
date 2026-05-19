@@ -30,9 +30,9 @@ export const Toast = () => {
             'group relative text-5 toast w-full bg-neutral-offWhite rounded-lg backdrop-blur-md border text-neutral-black p-3 flex gap-3',
           description: 'text-neutral-charcoal',
           actionButton:
-            'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
+            'group-[.toast]:bg-primary group-[.toast]:text-primary-fg',
           cancelButton:
-            'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground',
+            'group-[.toast]:bg-muted group-[.toast]:text-muted-fg',
           closeButton: '!absolute !right-0 top-0 !cursor-pointer',
         },
       }}

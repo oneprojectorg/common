@@ -3,6 +3,8 @@
  * Maps Intent UI CSS variables to @op/styles tokens
  *
  * Note: Border color defaults and radius values are defined in shared-styles.css
+ * Note: Alpha tints use color-mix() against the semantic --color-* tokens since
+ * the raw --op-* layer now stores full hsla() values rather than HSL triplets.
  */
 
 /* Tailwind theme colors that map to Intent UI variables */
@@ -14,6 +16,19 @@
   --color-fg: var(--fg);
   --color-bg: var(--bg);
   --color-ring: var(--ring);
+
+  /* Foreground on primary surfaces */
+  --color-primary-fg: var(--primary-fg);
+
+  /* Semantic subtle pairs (bg + fg) used by AlertBanner et al. */
+  --color-info-subtle: var(--info-subtle);
+  --color-info-subtle-fg: var(--info-subtle-fg);
+  --color-success-subtle: var(--success-subtle);
+  --color-success-subtle-fg: var(--success-subtle-fg);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-warning-subtle-fg: var(--warning-subtle-fg);
+  --color-danger-subtle: var(--danger-subtle);
+  --color-danger-subtle-fg: var(--danger-subtle-fg);
 }
 
 :root {
@@ -24,62 +39,86 @@
   --fg: var(--color-neutral-charcoal);
 
   /* Primary - teal */
-  --primary: var(--color-primary-teal);
+  --primary: var(--color-primary);
   --primary-fg: var(--color-white);
-  --primary-subtle: hsl(var(--op-teal-500) / 0.15);
-  --primary-subtle-fg: var(--color-primary-tealBlack);
+  --primary-subtle: color-mix(
+    in srgb,
+    var(--color-primary-500) 15%,
+    transparent
+  );
+  --primary-subtle-fg: var(--color-primary-700);
 
   /* Secondary - neutral */
-  --secondary: var(--color-neutral-gray1);
+  --secondary: var(--color-neutral-gray-1);
   --secondary-fg: var(--color-neutral-charcoal);
 
   /* Overlay */
-  --overlay: hsl(var(--op-neutral-950) / 0.6);
+  --overlay: color-mix(in srgb, var(--color-neutral-black) 60%, transparent);
   --overlay-fg: var(--color-white);
 
   /* Accent - neutral */
-  --accent: var(--color-neutral-gray1);
+  --accent: var(--color-neutral-gray-1);
   --accent-fg: var(--color-neutral-charcoal);
-  --accent-subtle: hsl(var(--op-neutral-500) / 0.1);
-  --accent-subtle-fg: var(--color-neutral-gray4);
+  --accent-subtle: color-mix(
+    in srgb,
+    var(--color-neutral-gray-3) 10%,
+    transparent
+  );
+  --accent-subtle-fg: var(--color-neutral-gray-4);
 
   /* Muted */
-  --muted: var(--color-neutral-offWhite);
-  --muted-fg: var(--color-neutral-gray4);
+  --muted: var(--color-neutral-off-white);
+  --muted-fg: var(--color-neutral-gray-4);
 
   /* ============================================
    * Semantic Colors
    * ============================================ */
   /* Success - green */
-  --success: var(--color-functional-green);
+  --success: var(--color-functional-green-600);
   --success-fg: var(--color-white);
-  --success-subtle: hsl(var(--op-green-500) / 0.15);
-  --success-subtle-fg: var(--color-green-700);
+  --success-subtle: color-mix(
+    in srgb,
+    var(--color-functional-green-600) 15%,
+    transparent
+  );
+  --success-subtle-fg: var(--color-functional-green-600);
 
   /* Info - teal */
-  --info: hsl(var(--op-teal-400));
+  --info: var(--color-primary-500);
   --info-fg: var(--color-white);
-  --info-subtle: hsl(var(--op-teal-400) / 0.15);
-  --info-subtle-fg: hsl(var(--op-teal-700));
+  --info-subtle: color-mix(
+    in srgb,
+    var(--color-primary-500) 15%,
+    transparent
+  );
+  --info-subtle-fg: var(--color-primary-700);
 
   /* Warning - yellow */
-  --warning: var(--color-primary-yellow);
+  --warning: var(--color-primary-yellow-500);
   --warning-fg: var(--color-neutral-charcoal);
-  --warning-subtle: hsl(var(--op-yellow-500) / 0.2);
-  --warning-subtle-fg: hsl(var(--op-yellow-700));
+  --warning-subtle: color-mix(
+    in srgb,
+    var(--color-primary-yellow-500) 20%,
+    transparent
+  );
+  --warning-subtle-fg: var(--color-neutral-charcoal);
 
   /* Danger - red */
-  --danger: var(--color-functional-red);
+  --danger: var(--color-functional-red-600);
   --danger-fg: var(--color-white);
-  --danger-subtle: hsl(var(--op-red-500) / 0.15);
-  --danger-subtle-fg: var(--color-red-700);
+  --danger-subtle: color-mix(
+    in srgb,
+    var(--color-functional-red-600) 15%,
+    transparent
+  );
+  --danger-subtle-fg: var(--color-functional-red-800);
 
   /* ============================================
    * UI Elements
    * ============================================ */
-  --border: var(--color-neutral-gray1);
-  --input: var(--color-neutral-gray1);
-  --ring: var(--color-primary-teal);
+  --border: var(--color-neutral-gray-1);
+  --input: var(--color-neutral-gray-1);
+  --ring: var(--color-primary-500);
 
   /* ============================================
    * Layout
@@ -87,21 +126,25 @@
   --navbar: var(--color-white);
   --navbar-fg: var(--color-neutral-charcoal);
 
-  --sidebar: var(--color-neutral-offWhite);
+  --sidebar: var(--color-neutral-off-white);
   --sidebar-fg: var(--color-neutral-charcoal);
-  --sidebar-primary: hsl(var(--op-teal-500) / 0.15);
-  --sidebar-primary-fg: var(--color-primary-tealBlack);
-  --sidebar-accent: var(--color-neutral-gray1);
+  --sidebar-primary: color-mix(
+    in srgb,
+    var(--color-primary-500) 15%,
+    transparent
+  );
+  --sidebar-primary-fg: var(--color-primary-700);
+  --sidebar-accent: var(--color-neutral-gray-1);
   --sidebar-accent-fg: var(--color-neutral-charcoal);
-  --sidebar-border: var(--color-neutral-gray1);
-  --sidebar-ring: var(--color-primary-teal);
+  --sidebar-border: var(--color-neutral-gray-1);
+  --sidebar-ring: var(--color-primary-500);
 
   /* ============================================
    * Charts
    * ============================================ */
-  --chart-1: var(--color-primary-teal);
-  --chart-2: var(--color-functional-green);
-  --chart-3: var(--color-primary-yellow);
+  --chart-1: var(--color-primary-500);
+  --chart-2: var(--color-functional-green-600);
+  --chart-3: var(--color-primary-yellow-500);
   --chart-4: var(--color-data-purple);
   --chart-5: var(--color-data-blue);
 }
@@ -110,50 +153,78 @@
 .dark,
 [data-theme='dark'] {
   --bg: var(--color-neutral-black);
-  --fg: var(--color-neutral-offWhite);
+  --fg: var(--color-neutral-off-white);
 
-  --primary: hsl(var(--op-teal-400));
+  --primary: var(--color-primary-500);
   --primary-fg: var(--color-neutral-black);
-  --primary-subtle: hsl(var(--op-teal-400) / 0.1);
-  --primary-subtle-fg: var(--color-teal-200);
+  --primary-subtle: color-mix(
+    in srgb,
+    var(--color-primary-500) 10%,
+    transparent
+  );
+  --primary-subtle-fg: var(--color-primary-100);
 
-  --secondary: var(--color-neutral-gray4);
-  --secondary-fg: var(--color-neutral-offWhite);
+  --secondary: var(--color-neutral-gray-4);
+  --secondary-fg: var(--color-neutral-off-white);
 
   --overlay: var(--color-neutral-charcoal);
-  --overlay-fg: var(--color-neutral-offWhite);
+  --overlay-fg: var(--color-neutral-off-white);
 
-  --accent: var(--color-neutral-gray4);
-  --accent-fg: var(--color-neutral-offWhite);
-  --accent-subtle: hsl(var(--op-neutral-500) / 0.1);
-  --accent-subtle-fg: var(--color-neutral-gray2);
+  --accent: var(--color-neutral-gray-4);
+  --accent-fg: var(--color-neutral-off-white);
+  --accent-subtle: color-mix(
+    in srgb,
+    var(--color-neutral-gray-3) 10%,
+    transparent
+  );
+  --accent-subtle-fg: var(--color-neutral-gray-2);
 
   --muted: var(--color-neutral-charcoal);
-  --muted-fg: var(--color-neutral-gray2);
+  --muted-fg: var(--color-neutral-gray-2);
 
-  --success-subtle: hsl(var(--op-green-500) / 0.1);
-  --success-subtle-fg: hsl(var(--op-green-300));
+  --success-subtle: color-mix(
+    in srgb,
+    var(--color-functional-green-600) 10%,
+    transparent
+  );
+  --success-subtle-fg: var(--color-functional-green-100);
 
-  --info-subtle: hsl(var(--op-teal-400) / 0.1);
-  --info-subtle-fg: var(--color-teal-200);
+  --info-subtle: color-mix(
+    in srgb,
+    var(--color-primary-500) 10%,
+    transparent
+  );
+  --info-subtle-fg: var(--color-primary-100);
 
-  --warning-subtle: hsl(var(--op-yellow-500) / 0.1);
-  --warning-subtle-fg: hsl(var(--op-yellow-400));
+  --warning-subtle: color-mix(
+    in srgb,
+    var(--color-primary-yellow-500) 10%,
+    transparent
+  );
+  --warning-subtle-fg: var(--color-primary-yellow-500);
 
-  --danger-subtle: hsl(var(--op-red-500) / 0.1);
-  --danger-subtle-fg: var(--color-red-300);
+  --danger-subtle: color-mix(
+    in srgb,
+    var(--color-functional-red-600) 10%,
+    transparent
+  );
+  --danger-subtle-fg: var(--color-functional-red-100);
 
-  --border: var(--color-neutral-gray4);
-  --input: var(--color-neutral-gray4);
+  --border: var(--color-neutral-gray-4);
+  --input: var(--color-neutral-gray-4);
 
   --navbar: var(--color-neutral-charcoal);
-  --navbar-fg: var(--color-neutral-offWhite);
+  --navbar-fg: var(--color-neutral-off-white);
 
   --sidebar: var(--color-neutral-charcoal);
-  --sidebar-fg: var(--color-neutral-offWhite);
-  --sidebar-primary: hsl(var(--op-teal-400) / 0.1);
-  --sidebar-primary-fg: var(--color-teal-200);
-  --sidebar-accent: var(--color-neutral-gray4);
-  --sidebar-accent-fg: var(--color-neutral-offWhite);
-  --sidebar-border: var(--color-neutral-gray4);
+  --sidebar-fg: var(--color-neutral-off-white);
+  --sidebar-primary: color-mix(
+    in srgb,
+    var(--color-primary-500) 10%,
+    transparent
+  );
+  --sidebar-primary-fg: var(--color-primary-100);
+  --sidebar-accent: var(--color-neutral-gray-4);
+  --sidebar-accent-fg: var(--color-neutral-off-white);
+  --sidebar-border: var(--color-neutral-gray-4);
 }

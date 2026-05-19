@@ -3,7 +3,7 @@ import type { HTMLAttributes, ReactNode } from 'react';
 import { VariantProps, cn, tv } from '../lib/utils';
 
 const variantStyles = tv({
-  base: 'bg-neutral-white overflow-hidden rounded border',
+  base: 'bg-white overflow-hidden rounded border',
   variants: {
     variant: {
       empty: '',

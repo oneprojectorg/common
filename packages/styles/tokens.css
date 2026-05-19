@@ -1,131 +1,63 @@
 /*
- * OP Brand Design Tokens
- * These CSS custom properties define the core color palette
- * and are referenced by shared-styles.css
+ * OP Brand Design Tokens — Figma source of truth
+ *
+ * Raw palette values from the design-system Figma file. Consumed by
+ * shared-styles.css, which maps these into the Tailwind `@theme` layer
+ * as `--color-*` tokens (plus legacy aliases for the pre-rename naming).
+ *
+ * Naming: --op-<category>[-<role>]-<scale>
+ *
+ * Figma↔code gaps (handled by semantic aliases in shared-styles.css):
+ *   - no green-50  → functional-greenWhite alias uses green-100
+ *   - one orange   → orange1 + orange2 collapse to a single hue
+ *   - no separate status-green → uses functional-green-600 / -100
  */
 
 :root {
   /* ============================================
-   * Base Colors
+   * Primary (teal)
    * ============================================ */
-  --op-white: 0 0% 100%;
+  --op-primary-50: hsla(187, 47.4%, 96.3%, 1); /* #F1F9FA */
+  --op-primary-100: hsla(186, 42.9%, 90.4%, 1); /* #DCEFF1 */
+  --op-primary-500: hsla(191, 39.8%, 36.5%, 1); /* #387582 */
+  --op-primary-700: hsla(192, 36.7%, 31%, 1); /* #32606C */
 
   /* ============================================
-   * Neutral Scale
+   * Primary - Yellow
    * ============================================ */
-  --op-neutral-950: 191 32% 11%; /* black */
-  --op-neutral-900: 191 11% 26%; /* charcoal / gray-5 */
-  --op-neutral-700: 190 6% 40%; /* darkGray / gray-4 */
-  --op-neutral-500: 189 4% 68%; /* midGray / gray-3 */
-  --op-neutral-400: 195 4% 82%; /* lightGray / gray-2 */
-  --op-neutral-200: 180 3% 93%; /* offWhite / gray-1 */
-  --op-neutral-50: 180 11% 98%; /* whiteish */
+  --op-primary-yellow-500: hsla(45, 96%, 48.4%, 1); /* #F2B705 */
 
   /* ============================================
-   * Teal Scale (Primary)
+   * Primary - Orange
    * ============================================ */
-  --op-teal-white: 180 43% 97%;
-  --op-teal-50: 185 48% 86%;
-  --op-teal-100: 185 48% 76%;
-  --op-teal-200: 185 48% 65%;
-  --op-teal-300: 186 48% 55%;
-  --op-teal-400: 186 61% 48%;
-  --op-teal-500: 186 96% 33%;
-  --op-teal-600: 186 93% 28%;
-  --op-teal-700: 186 95% 23%;
-  --op-teal-800: 186 100% 17%;
-  --op-teal-900: 186 94% 12%;
-  --op-teal-950: 186 83% 5%;
+  --op-primary-orange-50: hsla(41, 80%, 96.1%, 1); /* #FDF8ED */
+  --op-primary-orange-500: hsla(31, 71.1%, 51.2%, 1); /* #DB862A */
 
   /* ============================================
-   * Yellow Scale
+   * Neutrals
    * ============================================ */
-  --op-yellow-50: 44 92% 96%;
-  --op-yellow-100: 45 90% 73%;
-  --op-yellow-200: 45 90% 73%;
-  --op-yellow-300: 45 90% 65%;
-  --op-yellow-400: 45 91% 57%;
-  --op-yellow-500: 39 96% 48%;
-  --op-yellow-600: 39 95% 41%;
-  --op-yellow-700: 39 98% 33%;
-  --op-yellow-800: 39 94% 25%;
-  --op-yellow-900: 39 96% 18%;
-  --op-yellow-950: 40 96% 10%;
+  --op-white: #ffffff;
+  --op-neutral-off-white: hsla(180, 11.1%, 98.2%, 1); /* #FAFBFB */
+  --op-neutral-gray-1: hsla(180, 2.9%, 93.1%, 1); /* #EDEEEE */
+  --op-neutral-gray-2: hsla(195, 4.4%, 82.4%, 1); /* #D0D3D4 */
+  --op-neutral-gray-3: hsla(189, 4.3%, 68%, 1); /* #AAB0B1 */
+  --op-neutral-gray-4: hsla(190, 5.9%, 40%, 1); /* #606A6C */
+  --op-neutral-charcoal: hsla(188, 11.5%, 25.7%, 1); /* #3A4749 */
+  --op-neutral-black: hsla(187, 31%, 11.4%, 1); /* #142426 */
 
   /* ============================================
-   * Orange1 Scale
+   * Functional
    * ============================================ */
-  --op-orange1-50: 39 89% 90%;
-  --op-orange1-100: 39 90% 73%;
-  --op-orange1-200: 39 90% 73%;
-  --op-orange1-300: 39 90% 65%;
-  --op-orange1-400: 39 91% 57%;
-  --op-orange1-500: 39 96% 48%;
-  --op-orange1-600: 39 95% 41%;
-  --op-orange1-700: 39 98% 33%;
-  --op-orange1-800: 39 94% 25%;
-  --op-orange1-900: 39 96% 18%;
-  --op-orange1-950: 40 96% 10%;
+  --op-functional-red-50: hsla(6, 71.4%, 97.3%, 1); /* #FDF4F3 */
+  --op-functional-red-100: hsla(5, 80%, 94.1%, 1); /* #FCE6E4 */
+  --op-functional-red-600: hsla(5, 61.3%, 49.6%, 1); /* #CC3D31 */
+  --op-functional-red-800: hsla(5, 58.9%, 35.3%, 1); /* #8F2D25 */
+  --op-functional-green-100: hsla(96, 63.6%, 89.2%, 1); /* #E0F5D2 */
+  --op-functional-green-600: hsla(100, 59.7%, 31.2%, 1); /* #3F7F20 */
 
   /* ============================================
-   * Orange2 Scale
+   * Data Visualization
    * ============================================ */
-  --op-orange2-50: 28 89% 90%;
-  --op-orange2-100: 28 90% 73%;
-  --op-orange2-200: 28 90% 73%;
-  --op-orange2-300: 28 90% 65%;
-  --op-orange2-400: 28 91% 57%;
-  --op-orange2-500: 28 96% 48%;
-  --op-orange2-600: 28 95% 41%;
-  --op-orange2-700: 28 98% 33%;
-  --op-orange2-800: 28 94% 25%;
-  --op-orange2-900: 28 96% 18%;
-  --op-orange2-950: 28 96% 10%;
-
-  /* ============================================
-   * Red Scale
-   * ============================================ */
-  --op-red-50: 16 89% 90%;
-  --op-red-100: 16 90% 73%;
-  --op-red-200: 16 90% 73%;
-  --op-red-300: 16 90% 65%;
-  --op-red-400: 16 91% 57%;
-  --op-red-500: 16 96% 48%;
-  --op-red-600: 16 95% 41%;
-  --op-red-700: 16 98% 33%;
-  --op-red-800: 16 94% 25%;
-  --op-red-900: 16 96% 18%;
-  --op-red-950: 16 96% 10%;
-
-  /* ============================================
-   * Green Scale
-   * ============================================ */
-  --op-green-50: 102 62% 88%;
-  --op-green-100: 101 94% 63%;
-  --op-green-200: 101 94% 63%;
-  --op-green-300: 101 94% 55%;
-  --op-green-400: 101 95% 47%;
-  --op-green-500: 101 100% 38%;
-  --op-green-600: 101 99% 31%;
-  --op-green-700: 101 100% 27%;
-  --op-green-800: 101 98% 15%;
-  --op-green-900: 101 100% 8%;
-  --op-green-950: 101 100% 0%;
-
-  /* ============================================
-   * Status Badge Colors
-   * ============================================ */
-  --op-status-green: 101 100% 33%; /* #35A700 */
-  --op-status-green-bg: 104 100% 97%; /* #F4FFF0 */
-
-  /* ============================================
-   * Data Visualization Colors
-   * ============================================ */
-  --op-purple-500: 270 100% 38%;
-  --op-blue-500: 218 100% 38%;
-
-  /* ============================================
-   * Legacy Aliases (for backwards compatibility)
-   * ============================================ */
-  --op-offWhite: var(--op-neutral-200);
+  --op-data-purple: hsla(302, 24.5%, 51.2%, 1); /* #A1649F */
+  --op-data-blue: hsla(240, 57.1%, 53.3%, 1); /* #4444CC */
 }
