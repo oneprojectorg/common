@@ -27,6 +27,7 @@ export function useProcessNavigation(
 ) {
   const [sectionParam, setSectionParam] = useQueryState('section', {
     history: 'push',
+    scroll: true,
   });
 
   // Legacy params for backward compatibility

@@ -380,7 +380,7 @@ export function TemplateEditorContent({
 
   return (
     <SidebarProvider isOpen={sidebarOpen} onOpenChange={setMobileSidebarOpen}>
-      <div className="flex h-full flex-col md:flex-row">
+      <div className="flex h-full flex-col overflow-hidden md:flex-row">
         <div className="flex items-center justify-between gap-2 p-4 md:hidden">
           <Header2 className="font-serif text-title-sm">
             {t('Proposal template')}
