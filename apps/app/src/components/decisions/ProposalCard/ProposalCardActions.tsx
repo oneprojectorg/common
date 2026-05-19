@@ -53,7 +53,6 @@ export function ProposalCardActions({
       <Button
         onPress={handleLikeClick}
         size="small"
-        surface="outline"
         color={isLikedByUser ? 'verified' : 'secondary'}
         className="w-full text-nowrap"
         isDisabled={isLoading}
@@ -64,7 +63,6 @@ export function ProposalCardActions({
       <Button
         onPress={handleFollowClick}
         size="small"
-        surface="outline"
         color={isFollowedByUser ? 'verified' : 'secondary'}
         className="w-full text-nowrap"
         isDisabled={isLoading}
@@ -135,7 +133,6 @@ export function ProposalCardOwnerActions({
         <ButtonLink
           href={editHref}
           color="secondary"
-          surface="outline"
           size="small"
           className="w-full"
         >
@@ -149,7 +146,6 @@ export function ProposalCardOwnerActions({
           <Button
             onPress={() => setIsDeleteModalOpen(true)}
             color="secondary"
-            surface="outline"
             size="small"
             className="w-full"
             isDisabled={deleteProposalMutation.isPending}
