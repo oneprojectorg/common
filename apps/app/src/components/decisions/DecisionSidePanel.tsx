@@ -11,13 +11,7 @@ import { IconButton } from '@op/ui/IconButton';
 import { Sidebar, SidebarProvider, useSidebar } from '@op/ui/Sidebar';
 import { Surface } from '@op/ui/Surface';
 import { useQueryState } from 'nuqs';
-import {
-  Fragment,
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-} from 'react';
+import { Fragment, Suspense, useCallback, useEffect, useMemo } from 'react';
 import { LuMegaphone, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
