@@ -252,9 +252,9 @@ export const LoginPanel = () => {
                       </Button>
 
                       <div className="flex w-full items-center justify-center gap-4 text-darkGray">
-                        <div className="h-px grow bg-current" />
+                        <div className="h-px grow bg-current opacity-50" />
                         <span>{t('or')}</span>
-                        <div className="h-px grow bg-current" />
+                        <div className="h-px grow bg-current opacity-50" />
                       </div>
                     </>
                   )}
