@@ -1,8 +1,4 @@
 import {
-  trackAdminGaveRoles as trackAdminGaveRolesOriginal,
-  trackAdminInvitedParticipants as trackAdminInvitedParticipantsOriginal,
-  trackAdminSetProcess as trackAdminSetProcessOriginal,
-  trackAdminSetRubric as trackAdminSetRubricOriginal,
   trackEventWithContext,
   trackFundingToggle as trackFundingToggleOriginal,
   trackImageUpload as trackImageUploadOriginal,
@@ -12,15 +8,11 @@ import {
   trackProposalCommented as trackProposalCommentedOriginal,
   trackProposalFollowed as trackProposalFollowedOriginal,
   trackProposalLiked as trackProposalLikedOriginal,
-  trackProposalReviewed as trackProposalReviewedOriginal,
   trackProposalSubmitted as trackProposalSubmittedOriginal,
   trackProposalViewed as trackProposalViewedOriginal,
   trackRelationshipAccepted as trackRelationshipAcceptedOriginal,
   trackRelationshipAdded as trackRelationshipAddedOriginal,
-  trackReviewListFinished as trackReviewListFinishedOriginal,
-  trackUserInvited as trackUserInvitedOriginal,
   trackUserPost as trackUserPostOriginal,
-  trackUserVoted as trackUserVotedOriginal,
 } from '@op/analytics';
 
 import type { TContextWithUser } from '../types';
@@ -208,118 +200,6 @@ export const trackManualTransitionConfirmed = (
     processId,
     additionalProps,
   );
-};
-
-/**
- * Track a user submitting a vote with automatic context injection
- */
-export const trackUserVoted = (
-  ctx: AnalyticsContext,
-  processId: string,
-  proposalId: string,
-  voteData?: Record<string, any>,
-  additionalProps?: Record<string, any>,
-) => {
-  return trackUserVotedOriginal(
-    ctx.user.id,
-    processId,
-    proposalId,
-    voteData,
-    additionalProps,
-  );
-};
-
-/**
- * Track a user submitting a single proposal review with automatic context injection
- */
-export const trackProposalReviewed = (
-  ctx: AnalyticsContext,
-  processId: string,
-  proposalId: string,
-  additionalProps?: Record<string, any>,
-) => {
-  return trackProposalReviewedOriginal(
-    ctx.user.id,
-    processId,
-    proposalId,
-    additionalProps,
-  );
-};
-
-/**
- * Track a user finishing their entire review assignment list for a process
- */
-export const trackReviewListFinished = (
-  ctx: AnalyticsContext,
-  processId: string,
-  additionalProps?: Record<string, any>,
-) => {
-  return trackReviewListFinishedOriginal(
-    ctx.user.id,
-    processId,
-    additionalProps,
-  );
-};
-
-/**
- * Track an admin publishing a decision process with automatic context injection
- */
-export const trackAdminSetProcess = (
-  ctx: AnalyticsContext,
-  processId: string,
-  additionalProps?: Record<string, any>,
-) => {
-  return trackAdminSetProcessOriginal(ctx.user.id, processId, additionalProps);
-};
-
-/**
- * Track an admin inviting participants to a profile with automatic context injection
- */
-export const trackAdminInvitedParticipants = (
-  ctx: AnalyticsContext,
-  profileId: string,
-  invitationCount: number,
-  additionalProps?: Record<string, any>,
-) => {
-  return trackAdminInvitedParticipantsOriginal(
-    ctx.user.id,
-    profileId,
-    invitationCount,
-    additionalProps,
-  );
-};
-
-/**
- * Track an admin assigning decision permissions to a role with automatic context injection
- */
-export const trackAdminGaveRoles = (
-  ctx: AnalyticsContext,
-  roleId: string,
-  additionalProps?: Record<string, any>,
-) => {
-  return trackAdminGaveRolesOriginal(ctx.user.id, roleId, additionalProps);
-};
-
-/**
- * Track an admin saving a review rubric with automatic context injection
- */
-export const trackAdminSetRubric = (
-  ctx: AnalyticsContext,
-  processId: string,
-  additionalProps?: Record<string, any>,
-) => {
-  return trackAdminSetRubricOriginal(ctx.user.id, processId, additionalProps);
-};
-
-/**
- * Track a user invitation with automatic context injection
- */
-export const trackUserInvited = (
-  ctx: AnalyticsContext,
-  inviteCount: number,
-  additionalProps?: Record<string, any>,
-) => {
-  return trackUserInvitedOriginal(ctx.user.id, inviteCount, additionalProps);
 };
 
 /**

@@ -1,3 +1,4 @@
+import { trackUserVoted } from '@op/analytics';
 import { and, db, eq } from '@op/db/client';
 import {
   type VoteData,
@@ -6,6 +7,7 @@ import {
   processInstances,
   proposals,
 } from '@op/db/schema';
+import { waitUntil } from '@vercel/functions';
 import { assertAccess, permission } from 'access-zones';
 
 import {
@@ -307,6 +309,22 @@ export const submitVote = async ({
         selectedProposalIds: data.selectedProposalIds,
       };
     });
+
+    const firstProposalId = result.selectedProposalIds[0];
+    if (firstProposalId) {
+      waitUntil(
+        trackUserVoted(
+          authUserId,
+          result.voteSubmission.processInstanceId,
+          firstProposalId,
+          undefined,
+          {
+            selected_proposal_count: result.selectedProposalIds.length,
+            schema_version: voteData.schemaVersion,
+          },
+        ),
+      );
+    }
 
     return {
       id: result.voteSubmission.id,

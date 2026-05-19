@@ -1,3 +1,4 @@
+import { trackAdminSetProcess, trackAdminSetRubric } from '@op/analytics';
 import { OPURLConfig } from '@op/core';
 import { db, eq } from '@op/db/client';
 import {
@@ -8,6 +9,7 @@ import {
 } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
+import { waitUntil } from '@vercel/functions';
 import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
@@ -241,11 +243,7 @@ export const updateDecisionInstance = async ({
       throw new CommonError('Failed to fetch decision profile');
     }
 
-    return {
-      profile,
-      phaseEndDateChanges,
-      isBeingPublished: false,
-    };
+    return { profile, phaseEndDateChanges };
   }
 
   const isBeingPublished =
@@ -354,30 +352,29 @@ export const updateDecisionInstance = async ({
 
       // Use the first invite's inviter as the sender
       const firstInvite = queuedInvites[0];
-      if (!firstInvite) {
-        return {
-          profile,
-          phaseEndDateChanges,
-          isBeingPublished,
-        };
-      }
-      const senderProfileId = firstInvite.invitedBy;
+      if (firstInvite) {
+        const senderProfileId = firstInvite.invitedBy;
 
-      await event.send({
-        name: Events.profileInviteSent.name,
-        data: {
-          senderProfileId,
-          inviteIds: queuedInvites.map((inv) => inv.id),
-          invitations,
-        },
-      });
-      // notifiedAt is set by the Inngest workflow after successful email delivery
+        await event.send({
+          name: Events.profileInviteSent.name,
+          data: {
+            senderProfileId,
+            inviteIds: queuedInvites.map((inv) => inv.id),
+            invitations,
+          },
+        });
+        // notifiedAt is set by the Inngest workflow after successful email delivery
+      }
     }
   }
 
-  return {
-    profile,
-    phaseEndDateChanges,
-    isBeingPublished,
-  };
+  if (isBeingPublished) {
+    waitUntil(trackAdminSetProcess(user.id, instanceId));
+  }
+
+  if (rubricTemplate !== undefined) {
+    waitUntil(trackAdminSetRubric(user.id, instanceId));
+  }
+
+  return { profile, phaseEndDateChanges };
 };

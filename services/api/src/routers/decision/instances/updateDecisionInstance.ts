@@ -7,10 +7,6 @@ import {
   updateDecisionInstanceInputSchema,
 } from '../../../encoders/decision';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
-import {
-  trackAdminSetProcess,
-  trackAdminSetRubric,
-} from '../../../utils/analytics';
 
 export const updateDecisionInstanceRouter = router({
   updateDecisionInstance: commonAuthedProcedure()
@@ -19,11 +15,10 @@ export const updateDecisionInstanceRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;
 
-      const { profile, phaseEndDateChanges, isBeingPublished } =
-        await updateDecisionInstance({
-          ...input,
-          user,
-        });
+      const { profile, phaseEndDateChanges } = await updateDecisionInstance({
+        ...input,
+        user,
+      });
 
       ctx.registerMutationChannels([
         Channels.decisionInstance(input.instanceId),
@@ -37,14 +32,6 @@ export const updateDecisionInstanceRouter = router({
             new_end_date: change.newEndDate,
           }),
         );
-      }
-
-      if (isBeingPublished) {
-        waitUntil(trackAdminSetProcess(ctx, input.instanceId));
-      }
-
-      if (input.rubricTemplate !== undefined) {
-        waitUntil(trackAdminSetRubric(ctx, input.instanceId));
       }
 
       return decisionProfileWithSchemaEncoder.parse(profile);

@@ -1,3 +1,4 @@
+import { trackProposalReviewed, trackReviewListFinished } from '@op/analytics';
 import { and, db, eq, ne } from '@op/db/client';
 import {
   type ProposalReview,
@@ -7,6 +8,7 @@ import {
   proposalReviews,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { waitUntil } from '@vercel/functions';
 import { count } from 'drizzle-orm';
 
 import { CommonError, ValidationError } from '../../utils';
@@ -25,12 +27,7 @@ export async function submitReview({
   reviewData: RubricReviewData;
   overallComment?: string | null;
   user: User;
-}): Promise<{
-  review: ProposalReview;
-  processInstanceId: string;
-  proposalId: string;
-  isLastReview: boolean;
-}> {
+}): Promise<{ review: ProposalReview; processInstanceId: string }> {
   const context = await assertReviewAssignmentContext({
     assignmentId,
     user,
@@ -107,10 +104,22 @@ export async function submitReview({
     return { review: submittedReview, remainingCount: remaining?.value ?? 0 };
   });
 
+  const processInstanceId = context.assignment.processInstanceId;
+
+  waitUntil(
+    trackProposalReviewed(
+      user.id,
+      processInstanceId,
+      context.assignment.proposalId,
+    ),
+  );
+
+  if (remainingCount === 0) {
+    waitUntil(trackReviewListFinished(user.id, processInstanceId));
+  }
+
   return {
     review,
-    processInstanceId: context.assignment.processInstanceId,
-    proposalId: context.assignment.proposalId,
-    isLastReview: remainingCount === 0,
+    processInstanceId,
   };
 }

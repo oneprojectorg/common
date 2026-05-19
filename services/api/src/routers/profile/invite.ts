@@ -4,7 +4,6 @@ import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
-import { trackAdminInvitedParticipants } from '../../utils/analytics';
 
 const inputSchema = z.object({
   invitations: z
@@ -59,16 +58,6 @@ export const inviteProfileUserRouter = router({
             type: 'user',
             paramsList: result.details.existingUserAuthIds.map((id) => [id]),
           }),
-        );
-      }
-
-      if (result.details.successful.length > 0) {
-        waitUntil(
-          trackAdminInvitedParticipants(
-            ctx,
-            input.profileId,
-            result.details.successful.length,
-          ),
         );
       }
 

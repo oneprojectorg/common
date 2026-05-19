@@ -5,7 +5,6 @@ import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
-import { trackUserInvited } from '../../utils/analytics';
 
 const inputSchema = z
   .object({
@@ -94,27 +93,15 @@ export const inviteUserRouter = router({
               }),
             );
           }
-
-          waitUntil(
-            trackUserInvited(ctx, result.details.successful.length, {
-              organization_id: targetOrganizationId,
-            }),
-          );
         }
 
         return result;
       }
 
-      const result = await inviteNewUsers({
+      return inviteNewUsers({
         emails: emailsToProcess,
         personalMessage,
         user,
       });
-
-      if (result.details?.successful.length) {
-        waitUntil(trackUserInvited(ctx, result.details.successful.length));
-      }
-
-      return result;
     }),
 });
