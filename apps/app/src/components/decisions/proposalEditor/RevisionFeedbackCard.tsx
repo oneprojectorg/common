@@ -29,6 +29,7 @@ export function RevisionFeedbackCard({
       )}
     >
       <p
+        dir="auto"
         className={cn(
           'text-base whitespace-pre-wrap text-neutral-charcoal',
           variant === 'reviewer' && 'italic',

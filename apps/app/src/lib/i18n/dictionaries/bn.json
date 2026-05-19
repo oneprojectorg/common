@@ -901,7 +901,6 @@
   "Both organizations provide financial support to each other.": "উভয় সংস্থা একে অপরকে আর্থিক সহায়তা প্রদান করে।",
   "Remove preview": "প্রিভিউ সরান",
   "Select language": "ভাষা নির্বাচন করুন",
-  "{authorName}'s Post": "{authorName}-এর পোস্ট",
   "{count} comments": "{count}টি মন্তব্য",
   "Comment as {name}...": "{name} হিসেবে মন্তব্য করুন...",
   "Comment...": "মন্তব্য করুন...",
@@ -1144,7 +1143,6 @@
   "All statuses": "সব স্ট্যাটাস",
   "Not Started": "শুরু হয়নি",
   "In Progress": "চলমান",
-  "Completed": "সম্পন্ন",
   "Revision Requested": "সংশোধন অনুরোধ করা হয়েছে",
   "Needs Review": "পর্যালোচনা প্রয়োজন",
   "Revised": "সংশোধিত",
@@ -1200,9 +1198,6 @@
   "{count} proposals advancing": "{count, plural, other {# প্রস্তাব অগ্রসর হচ্ছে}}",
   "{count} winning proposals selected": "{count, plural, other {# বিজয়ী প্রস্তাব নির্বাচিত}}",
   "Eligible proposals": "যোগ্য প্রস্তাব",
-  "Proposal": "প্রস্তাব",
-  "Budget": "বাজেট",
-  "Category": "বিভাগ",
   "Untitled proposal": "নামহীন প্রস্তাব",
   "Advance {title}": "{title} অগ্রসর করুন",
   "Don't advance {title}": "{title} অগ্রসর করবেন না",
@@ -1236,5 +1231,6 @@
   "{count, plural, =1 {active relationship} other {active relationships}}": "{count, plural, =1 {সক্রিয় সম্পর্ক} other {সক্রিয় সম্পর্ক}}",
   "Following {count, plural, =1 {# organization} other {# organizations}}": "{count, plural, =1 {#টি সংস্থা অনুসরণ করছে} other {#টি সংস্থা অনুসরণ করছে}}",
   "Member of {count, plural, =1 {# Organization} other {# Organizations}}": "{count, plural, =1 {#টি সংস্থার সদস্য} other {#টি সংস্থার সদস্য}}",
-  "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}": "{count, plural, =1 {১ জন সদস্য প্রস্তাব জমা দিয়েছেন} other {# জন সদস্য প্রস্তাব জমা দিয়েছেন}}"
+  "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}": "{count, plural, =1 {১ জন সদস্য প্রস্তাব জমা দিয়েছেন} other {# জন সদস্য প্রস্তাব জমা দিয়েছেন}}",
+  "<bdi>{authorName}</bdi>'s Post": "<bdi>{authorName}</bdi>-এর পোস্ট"
 }

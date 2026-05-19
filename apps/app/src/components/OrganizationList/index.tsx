@@ -98,7 +98,9 @@ export const OrganizationList = ({
                       }
                     />
                     <div className="flex flex-col p-4 pt-0 text-start">
-                      <span>{org.profile.name}</span>
+                      <span>
+                        <bdi>{org.profile.name}</bdi>
+                      </span>
                     </div>
                   </Surface>
                 </Link>
@@ -136,11 +138,11 @@ export const OrganizationCardList = ({
                   className="truncate font-semibold text-neutral-black"
                   href={`/org/${relationshipOrg.profile.slug}`}
                 >
-                  {relationshipOrg.profile.name}
+                  <bdi>{relationshipOrg.profile.name}</bdi>
                 </Link>
               </div>
 
-              <div className="line-clamp-3 text-neutral-charcoal">
+              <div dir="auto" className="line-clamp-3 text-neutral-charcoal">
                 {relationshipOrg.profile.bio &&
                 relationshipOrg.profile.bio.length > 200
                   ? `${relationshipOrg.profile.bio.slice(0, 200)}...`
@@ -204,15 +206,20 @@ export const OrganizationSummaryList = ({
                     href={`/org/${org.profile.slug}`}
                     className="leading-base font-semibold"
                   >
-                    {org.profile.name}
+                    <bdi>{org.profile.name}</bdi>
                   </Link>
                   {org.whereWeWork?.length > 0 ? (
-                    <span className="text-sm text-neutral-gray4 sm:text-base">
+                    <span
+                      dir="auto"
+                      className="text-sm text-neutral-gray4 sm:text-base"
+                    >
                       {whereWeWork}
                     </span>
                   ) : null}
                 </div>
-                <span className="text-neutral-charcoal">{trimmedBio}</span>
+                <span dir="auto" className="text-neutral-charcoal">
+                  {trimmedBio}
+                </span>
               </div>
             </div>
           </div>

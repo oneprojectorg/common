@@ -106,11 +106,11 @@ export function ReviewSelectionTable({
                     variant="neutral"
                     className="line-clamp-1 text-base text-neutral-black hover:underline"
                   >
-                    {title}
+                    <bdi>{title}</bdi>
                   </Link>
                   {submitterName && (
                     <span className="line-clamp-1 text-sm text-neutral-gray4">
-                      {submitterName}
+                      <bdi>{submitterName}</bdi>
                     </span>
                   )}
                 </div>

@@ -894,7 +894,6 @@
   "Both organizations provide financial support to each other.": "Ambas as organizações fornecem apoio financeiro mútuo.",
   "Remove preview": "Remover pré-visualização",
   "Select language": "Selecionar idioma",
-  "{authorName}'s Post": "Publicação de {authorName}",
   "{count} comments": "{count} comentários",
   "Comment as {name}...": "Comentar como {name}...",
   "Comment...": "Comentar...",
@@ -1143,7 +1142,6 @@
   "All statuses": "Todos os status",
   "Not Started": "Não iniciado",
   "In Progress": "Em andamento",
-  "Completed": "Concluído",
   "Revision Requested": "Revisão solicitada",
   "Needs Review": "Precisa de revisão",
   "Revised": "Revisado",
@@ -1199,9 +1197,6 @@
   "{count} proposals advancing": "{count, plural, one {# proposta avançando} other {# propostas avançando}}",
   "{count} winning proposals selected": "{count, plural, one {# proposta vencedora selecionada} other {# propostas vencedoras selecionadas}}",
   "Eligible proposals": "Propostas elegíveis",
-  "Proposal": "Proposta",
-  "Budget": "Orçamento",
-  "Category": "Categoria",
   "Untitled proposal": "Proposta sem título",
   "Advance {title}": "Avançar {title}",
   "Don't advance {title}": "Não avançar {title}",
@@ -1235,5 +1230,6 @@
   "{count, plural, =1 {active relationship} other {active relationships}}": "{count, plural, =1 {relacionamento ativo} other {relacionamentos ativos}}",
   "Following {count, plural, =1 {# organization} other {# organizations}}": "Seguindo {count, plural, =1 {# organização} other {# organizações}}",
   "Member of {count, plural, =1 {# Organization} other {# Organizations}}": "Membro de {count, plural, =1 {# Organização} other {# Organizações}}",
-  "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}": "{count, plural, =1 {1 membro enviou propostas} other {# membros enviaram propostas}}"
+  "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}": "{count, plural, =1 {1 membro enviou propostas} other {# membros enviaram propostas}}",
+  "<bdi>{authorName}</bdi>'s Post": "Publicação de <bdi>{authorName}</bdi>"
 }

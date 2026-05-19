@@ -36,7 +36,9 @@ export const DecisionsRowCells = ({
 
   return (
     <>
-      <TableCell>{decision.name}</TableCell>
+      <TableCell>
+        <bdi>{decision.name}</bdi>
+      </TableCell>
       <TableCell className="text-neutral-charcoal">
         {decision.currentPhase ? (
           <div className="flex flex-col">

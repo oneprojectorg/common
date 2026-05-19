@@ -177,7 +177,7 @@ const AvatarMenuContent = ({
         </Avatar>
         <div className="flex flex-col">
           <span className="sm:text-sm">
-            {t('Logged in as')} {user.profile?.name ?? user.name} (
+            {t('Logged in as')} <bdi>{user.profile?.name ?? user.name}</bdi> (
             <Button
               onPress={() => setIsProfileOpen(true)}
               unstyled
@@ -193,8 +193,10 @@ const AvatarMenuContent = ({
             {user.currentOrganization ? (
               <>
                 {t('Admin for')}{' '}
-                {user.currentProfile?.name ??
-                  user.currentOrganization?.profile.name}
+                <bdi>
+                  {user.currentProfile?.name ??
+                    user.currentOrganization?.profile.name}
+                </bdi>
               </>
             ) : (
               (user.currentProfile?.bio ?? '')
@@ -212,12 +214,17 @@ const AvatarMenuContent = ({
         >
           <div className="flex flex-col overflow-hidden">
             <div className="flex items-center gap-1">
-              <span className="truncate overflow-hidden">{profile.name} </span>
+              <span className="truncate overflow-hidden">
+                <bdi>{profile.name}</bdi>{' '}
+              </span>
               {user.currentProfile?.id === profile.id ? (
                 <Chip>Active</Chip>
               ) : null}
             </div>
-            <div className="relative truncate overflow-hidden text-sm text-neutral-gray4">
+            <div
+              dir="auto"
+              className="relative truncate overflow-hidden text-sm text-neutral-gray4"
+            >
               {profile.bio}
             </div>
           </div>
@@ -234,7 +241,9 @@ const AvatarMenuContent = ({
         >
           <div className="flex flex-col overflow-hidden">
             <div className="relative flex items-center gap-1">
-              <span className="truncate overflow-hidden">{profile.name} </span>
+              <span className="truncate overflow-hidden">
+                <bdi>{profile.name}</bdi>{' '}
+              </span>
               {user.currentProfile?.id === profile.id ? (
                 <Chip>Active</Chip>
               ) : null}

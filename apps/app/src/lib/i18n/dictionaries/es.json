@@ -899,7 +899,6 @@
   "Both organizations provide financial support to each other.": "Ambas organizaciones se brindan apoyo financiero mutuamente.",
   "Remove preview": "Eliminar vista previa",
   "Select language": "Seleccionar idioma",
-  "{authorName}'s Post": "Publicación de {authorName}",
   "{count} comments": "{count} comentarios",
   "Comment as {name}...": "Comentar como {name}...",
   "Comment...": "Comentar...",
@@ -1143,7 +1142,6 @@
   "All statuses": "Todos los estados",
   "Not Started": "No iniciado",
   "In Progress": "En progreso",
-  "Completed": "Completado",
   "Revision Requested": "Revisión solicitada",
   "Needs Review": "Necesita revisión",
   "Revised": "Revisado",
@@ -1199,9 +1197,6 @@
   "{count} proposals advancing": "{count, plural, one {# propuesta avanzando} other {# propuestas avanzando}}",
   "{count} winning proposals selected": "{count, plural, one {# propuesta ganadora seleccionada} other {# propuestas ganadoras seleccionadas}}",
   "Eligible proposals": "Propuestas elegibles",
-  "Proposal": "Propuesta",
-  "Budget": "Presupuesto",
-  "Category": "Categoría",
   "Untitled proposal": "Propuesta sin título",
   "Advance {title}": "Avanzar {title}",
   "Don't advance {title}": "No avanzar {title}",
@@ -1235,5 +1230,6 @@
   "{count, plural, =1 {active relationship} other {active relationships}}": "{count, plural, =1 {relación activa} other {relaciones activas}}",
   "Following {count, plural, =1 {# organization} other {# organizations}}": "Siguiendo a {count, plural, =1 {# organización} other {# organizaciones}}",
   "Member of {count, plural, =1 {# Organization} other {# Organizations}}": "Miembro de {count, plural, =1 {# Organización} other {# Organizaciones}}",
-  "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}": "{count, plural, =1 {1 miembro ha enviado propuestas} other {# miembros han enviado propuestas}}"
+  "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}": "{count, plural, =1 {1 miembro ha enviado propuestas} other {# miembros han enviado propuestas}}",
+  "<bdi>{authorName}</bdi>'s Post": "Publicación de <bdi>{authorName}</bdi>"
 }

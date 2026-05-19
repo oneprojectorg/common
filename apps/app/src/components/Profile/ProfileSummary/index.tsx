@@ -41,13 +41,17 @@ export const ProfileSummary = ({ profile }: { profile: Organization }) => {
 
   return (
     <div className="flex flex-col gap-2 py-2">
-      <Header1>{profile.profile.name}</Header1>
+      <Header1>
+        <bdi>{profile.profile.name}</bdi>
+      </Header1>
 
       {whereWeWork.length ? (
-        <div className="text-base text-neutral-gray4">{whereWeWork}</div>
+        <div dir="auto" className="text-base text-neutral-gray4">
+          {whereWeWork}
+        </div>
       ) : null}
 
-      <div className="max-w-xl text-base text-neutral-charcoal">
+      <div dir="auto" className="max-w-xl text-base text-neutral-charcoal">
         {profile.profile.bio}
       </div>
 

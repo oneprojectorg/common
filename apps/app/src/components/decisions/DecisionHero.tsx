@@ -20,14 +20,14 @@ export function DecisionHero({
     <div className="flex flex-col gap-2 text-center">
       {variant === 'results' ? (
         <Header2 className="font-serif text-title-xxl font-light uppercase">
-          {title}
+          <bdi>{title}</bdi>
         </Header2>
       ) : (
         <GradientHeader
           className="items-center align-middle uppercase"
           gradient={gradient}
         >
-          {title}
+          <bdi>{title}</bdi>
         </GradientHeader>
       )}
 
@@ -38,7 +38,11 @@ export function DecisionHero({
             variant !== 'results' && 'text-neutral-charcoal',
           )}
         >
-          {typeof description === 'string' ? <p>{description}</p> : description}
+          {typeof description === 'string' ? (
+            <p dir="auto">{description}</p>
+          ) : (
+            description
+          )}
         </div>
       )}
 

@@ -80,7 +80,7 @@ const RelationshipListContent = ({
                         : `/profile/${profile.slug}`
                     }
                   >
-                    {profile.name}
+                    <bdi>{profile.name}</bdi>
                   </Link>
 
                   {/* Show relationship types if available */}
@@ -114,7 +114,10 @@ const RelationshipListContent = ({
                 </div>
 
                 {profile.bio && (
-                  <div className="line-clamp-3 text-neutral-charcoal">
+                  <div
+                    dir="auto"
+                    className="line-clamp-3 text-neutral-charcoal"
+                  >
                     {profile.bio.length > 200
                       ? `${profile.bio.slice(0, 200)}...`
                       : profile.bio}
