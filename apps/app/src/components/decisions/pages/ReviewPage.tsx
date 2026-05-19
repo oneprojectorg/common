@@ -55,7 +55,7 @@ export function ReviewPage({
     phaseAdditionalInfo ?? translation?.description ?? description;
   const actionBarLabel = phaseAdditionalInfo
     ? t('About this phase')
-    : t('About the process');
+    : undefined;
 
   return (
     <div className="min-h-full">
