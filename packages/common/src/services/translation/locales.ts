@@ -1,5 +1,13 @@
 /** Platform-supported locales matching the i18n dictionaries. */
-export const SUPPORTED_LOCALES = ['en', 'es', 'fr', 'pt', 'bn', 'so', 'ar'] as const;
+export const SUPPORTED_LOCALES = [
+  'en',
+  'es',
+  'fr',
+  'pt',
+  'bn',
+  'so',
+  'ar',
+] as const;
 
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
