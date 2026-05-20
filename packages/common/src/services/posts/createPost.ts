@@ -8,7 +8,6 @@ import {
   posts,
   postsToOrganizations,
   postsToProfiles,
-  processInstances,
   profiles,
 } from '@op/db/schema';
 import { Events, event } from '@op/events';
@@ -138,31 +137,9 @@ const dispatchDecisionUpdatePostedEvent = async ({
   authorProfileId: string;
 }) => {
   try {
-    const [target] = await db
-      .select({
-        profileType: profiles.type,
-        processInstanceId: processInstances.id,
-      })
-      .from(profiles)
-      .leftJoin(processInstances, eq(processInstances.profileId, profiles.id))
-      .where(eq(profiles.id, targetProfileId))
-      .limit(1);
-
-    if (
-      !target ||
-      target.profileType !== EntityType.DECISION ||
-      !target.processInstanceId
-    ) {
-      return;
-    }
-
     await event.send({
       name: Events.decisionUpdatePosted.name,
-      data: {
-        postId,
-        processInstanceId: target.processInstanceId,
-        authorProfileId,
-      },
+      data: { postId, targetProfileId, authorProfileId },
     });
   } catch (error) {
     console.error(

@@ -1,6 +1,12 @@
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import { posts, processInstances, profileUsers, profiles } from '@op/db/schema';
+import {
+  EntityType,
+  posts,
+  processInstances,
+  profileUsers,
+  profiles,
+} from '@op/db/schema';
 import { DecisionUpdateNotificationEmail, OPBatchSend } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { eq } from 'drizzle-orm';
@@ -13,11 +19,11 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
   },
   { event: decisionUpdatePosted.name },
   async ({ event, step }) => {
-    const { postId, processInstanceId } = decisionUpdatePosted.schema.parse(
+    const { postId, targetProfileId } = decisionUpdatePosted.schema.parse(
       event.data,
     );
 
-    const [post, processWithParticipants] = await Promise.all([
+    const [post, target, participants] = await Promise.all([
       step.run('get-post', async () => {
         const [row] = await db
           .select({
@@ -31,63 +37,60 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
           .limit(1);
         return row ?? null;
       }),
-      step.run('get-process-participants', async () => {
-        const [instance] = await db
+      step.run('get-target', async () => {
+        const [row] = await db
           .select({
-            processTitle: processInstances.name,
-            processProfileId: processInstances.profileId,
+            profileType: profiles.type,
             processProfileSlug: profiles.slug,
+            processTitle: processInstances.name,
           })
-          .from(processInstances)
-          .leftJoin(profiles, eq(profiles.id, processInstances.profileId))
-          .where(eq(processInstances.id, processInstanceId))
+          .from(profiles)
+          .leftJoin(
+            processInstances,
+            eq(processInstances.profileId, profiles.id),
+          )
+          .where(eq(profiles.id, targetProfileId))
           .limit(1);
-
-        if (!instance?.processProfileId || !instance.processProfileSlug) {
-          return null;
-        }
-
-        const participants = await db
+        return row ?? null;
+      }),
+      step.run('get-participants', async () => {
+        return db
           .select({ email: profileUsers.email })
           .from(profileUsers)
-          .where(eq(profileUsers.profileId, instance.processProfileId));
-
-        return {
-          processTitle: instance.processTitle,
-          processProfileSlug: instance.processProfileSlug,
-          participants,
-        };
+          .where(eq(profileUsers.profileId, targetProfileId));
       }),
     ]);
+
+    if (target?.profileType !== EntityType.DECISION) {
+      return;
+    }
+
+    const { processProfileSlug, processTitle } = target;
+    if (!processProfileSlug || !processTitle) {
+      return;
+    }
 
     if (!post) {
       console.error('No post found for update notification', {
         postId,
-        processInstanceId,
+        targetProfileId,
       });
       return;
     }
 
-    if (!processWithParticipants) {
-      console.error('Process instance has no associated profile/slug', {
-        processInstanceId,
-      });
-      return;
-    }
-
-    const recipients = processWithParticipants.participants.filter(
+    const recipients = participants.filter(
       ({ email }) => email !== post.authorEmail,
     );
 
     if (recipients.length === 0) {
       console.warn('No participants to notify for decision update', {
         postId,
-        processInstanceId,
+        targetProfileId,
       });
       return;
     }
 
-    const updateUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${processWithParticipants.processProfileSlug}?panel=updates`;
+    const updateUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${processProfileSlug}?panel=updates`;
     const authorName = post.authorName ?? 'A Common user';
 
     const result = await step.run('send-emails', async () => {
@@ -95,12 +98,12 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
         to: email,
         subject: DecisionUpdateNotificationEmail.subject(
           authorName,
-          processWithParticipants.processTitle,
+          processTitle,
         ),
         component: () =>
           DecisionUpdateNotificationEmail({
             authorName,
-            processTitle: processWithParticipants.processTitle,
+            processTitle,
             updateContent: post.postContent,
             updateUrl,
           }),
