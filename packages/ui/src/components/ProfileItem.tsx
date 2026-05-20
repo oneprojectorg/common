@@ -48,10 +48,14 @@ export const ProfileItem = ({
       {avatar}
 
       <div className="min-w-0 flex-1">
-        <div className={titleStyles({ size })}>{title}</div>
+        <div dir="auto" className={titleStyles({ size })}>
+          {title}
+        </div>
 
         {description ? (
-          <div className="mt-2 text-neutral-charcoal">{description}</div>
+          <div dir="auto" className="mt-2 text-neutral-charcoal">
+            {description}
+          </div>
         ) : null}
 
         {children}
