@@ -36,15 +36,9 @@ import {
 
 export type { ProposalTemplateSchema };
 
-export type FieldType = 'short_text' | 'long_text' | 'dropdown';
+export type FieldType = 'text' | 'dropdown';
 
-export const DEFAULT_TEXT_FIELD_MAX_LENGTH: Record<
-  Extract<FieldType, 'short_text' | 'long_text'>,
-  number
-> = {
-  short_text: 500,
-  long_text: 3000,
-};
+export const DEFAULT_TEXT_FIELD_MAX_LENGTH = 3000;
 
 /**
  * Flat read-only view of a single field, derived from a proposal template.
@@ -68,8 +62,9 @@ export interface FieldView {
 // ---------------------------------------------------------------------------
 
 const X_FORMAT_TO_FIELD_TYPE: Record<string, FieldType> = {
-  'short-text': 'short_text',
-  'long-text': 'long_text',
+  'short-text': 'text',
+  'long-text': 'text',
+  text: 'text',
   dropdown: 'dropdown',
 };
 
@@ -86,21 +81,13 @@ function withXFormat(
 
 export function createFieldJsonSchema(type: FieldType): ProposalTemplateSchema {
   switch (type) {
-    case 'short_text':
+    case 'text':
       return withXFormat(
         {
           type: 'string',
-          maxLength: DEFAULT_TEXT_FIELD_MAX_LENGTH.short_text,
+          maxLength: DEFAULT_TEXT_FIELD_MAX_LENGTH,
         },
-        'short-text',
-      );
-    case 'long_text':
-      return withXFormat(
-        {
-          type: 'string',
-          maxLength: DEFAULT_TEXT_FIELD_MAX_LENGTH.long_text,
-        },
-        'long-text',
+        'text',
       );
     case 'dropdown':
       return withXFormat(
@@ -391,7 +378,7 @@ export function createDefaultTemplate(
       title: createLockedFieldSchema('short-text', titleLabel),
     },
   };
-  const withSummary = addField(base, 'summary', 'long_text', summaryLabel);
+  const withSummary = addField(base, 'summary', 'text', summaryLabel);
   return setFieldRequired(withSummary, 'summary', true);
 }
 

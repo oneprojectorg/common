@@ -1,7 +1,7 @@
 import type { XFormatPropertySchema } from '@op/common/client';
 import type { ComponentType } from 'react';
 import type { IconType } from 'react-icons';
-import { LuAlignLeft, LuChevronDown, LuLetterText } from 'react-icons/lu';
+import { LuAlignLeft, LuChevronDown } from 'react-icons/lu';
 
 import type { TranslationKey } from '@/lib/i18n';
 
@@ -32,16 +32,10 @@ interface FieldTypeRegistryEntry {
  * Registry mapping field types to their configuration.
  */
 export const FIELD_TYPE_REGISTRY: Record<FieldType, FieldTypeRegistryEntry> = {
-  short_text: {
+  text: {
     icon: LuAlignLeft,
-    labelKey: 'Short text',
-    placeholderKey: 'Short answer text',
-    ConfigComponent: FieldConfigText,
-  },
-  long_text: {
-    icon: LuLetterText,
-    labelKey: 'Long text',
-    placeholderKey: 'Long answer text',
+    labelKey: 'Text',
+    placeholderKey: 'Answer text',
     ConfigComponent: FieldConfigText,
   },
   dropdown: {
@@ -63,7 +57,7 @@ export const FIELD_CATEGORIES: {
   {
     id: 'text_audio_video',
     labelKey: 'Text, audio and video',
-    types: ['short_text', 'long_text'],
+    types: ['text'],
   },
   {
     id: 'choice',
