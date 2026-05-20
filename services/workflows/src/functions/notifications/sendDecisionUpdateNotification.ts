@@ -11,11 +11,18 @@ import { DecisionUpdateNotificationEmail, OPBatchSend } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { eq } from 'drizzle-orm';
 
+const key =
+  'event.data.authorProfileId + "-" + event.data.targetProfileId';
 const { decisionUpdatePosted } = Events;
 
 export const sendDecisionUpdateNotification = inngest.createFunction(
   {
     id: 'sendDecisionUpdateNotification',
+    debounce: {
+      key,
+      period: '1m',
+      timeout: '5m',
+    },
   },
   { event: decisionUpdatePosted.name },
   async ({ event, step }) => {
