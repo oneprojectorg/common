@@ -1,5 +1,5 @@
 import { invalidate } from '@op/cache';
-import { OPURLConfig } from '@op/core';
+import { OPURLConfig, match } from '@op/core';
 import { db } from '@op/db/client';
 import {
   EntityType,
@@ -123,28 +123,6 @@ const sendPostCommentNotification = async (
     console.error(
       'Failed to send post comment notification email:',
       emailError,
-    );
-  }
-};
-
-const dispatchDecisionUpdatePostedEvent = async ({
-  postId,
-  targetProfileId,
-  authorProfileId,
-}: {
-  postId: string;
-  targetProfileId: string;
-  authorProfileId: string;
-}) => {
-  try {
-    await event.send({
-      name: Events.decisionUpdatePosted.name,
-      data: { postId, targetProfileId, authorProfileId },
-    });
-  } catch (error) {
-    console.error(
-      '[createPost] Failed to emit decisionUpdatePosted event',
-      error,
     );
   }
 };
@@ -376,20 +354,33 @@ export const createPost = async (input: CreatePostServiceInput) => {
     return newPost;
   });
 
+  const postKind = parentPostId
+    ? 'comment'
+    : proposalId && targetProfileId
+      ? 'proposalComment'
+      : targetProfileId
+        ? 'decisionUpdate'
+        : 'none';
+
   waitUntil(
     (async () => {
       try {
-        if (parentPostId) {
-          await sendPostCommentNotification(parentPostId, content, profileId);
-        } else if (targetProfileId && proposalId) {
-          await sendProposalCommentNotification(proposalId, content, profileId);
-        } else if (targetProfileId) {
-          await dispatchDecisionUpdatePostedEvent({
-            postId: newPost.id,
-            targetProfileId,
-            authorProfileId: profileId,
-          });
-        }
+        await match<Promise<unknown>>(postKind, {
+          comment: () =>
+            sendPostCommentNotification(parentPostId!, content, profileId),
+          proposalComment: () =>
+            sendProposalCommentNotification(proposalId!, content, profileId),
+          decisionUpdate: () =>
+            event.send({
+              name: Events.decisionUpdatePosted.name,
+              data: {
+                postId: newPost.id,
+                targetProfileId: targetProfileId!,
+                authorProfileId: profileId,
+              },
+            }),
+          none: () => Promise.resolve(),
+        });
       } catch (error) {
         console.error('Failed to send notification email:', error);
       }
