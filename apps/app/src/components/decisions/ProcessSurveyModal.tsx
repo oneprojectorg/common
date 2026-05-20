@@ -6,6 +6,7 @@ import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { Checkbox, CheckboxGroup } from '@op/ui/Checkbox';
+import { Form } from '@op/ui/Form';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select, SelectItem } from '@op/ui/Select';
@@ -189,7 +190,8 @@ export const ProcessSurveyModal = ({
     return Object.values(next).every((v) => !v);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (!validate()) {
       return;
     }
@@ -226,192 +228,201 @@ export const ProcessSurveyModal = ({
   return (
     <Modal isOpen={isOpen} className="flex flex-col">
       <ModalHeader>{t('Your voice shapes Common.')}</ModalHeader>
-      <ModalBody className="flex-1 gap-6">
-        <p className="text-base text-neutral-charcoal">
-          {t('Take our 1-minute survey. Your responses are always anonymous.')}
-        </p>
-
-        <RadioGroup
-          label={t('Were you an admin during this process?')}
-          isRequired
-          value={wasAdmin}
-          onChange={(value) => {
-            setWasAdmin(value);
-            setErrors((prev) => ({ ...prev, wasAdmin: undefined }));
-          }}
-          errorMessage={errors.wasAdmin}
-          isInvalid={!!errors.wasAdmin}
-          orientation="horizontal"
-        >
-          <Radio value="yes">{t('Yes')}</Radio>
-          <Radio value="no">{t('No')}</Radio>
-        </RadioGroup>
-
-        {isMobile ? (
-          <Select
-            label={t(
-              'On a scale of 0 to 10, how likely are you to recommend Common to other organisations for participatory decisions?',
+      <Form
+        onSubmit={handleSubmit}
+        validationBehavior="aria"
+        className="flex flex-1 flex-col gap-0"
+      >
+        <ModalBody className="flex-1 gap-6">
+          <p className="text-base text-neutral-charcoal">
+            {t(
+              'Take our 1-minute survey. Your responses are always anonymous.',
             )}
-            isRequired
-            selectedKey={npsScore}
-            onSelectionChange={(key) => {
-              setNpsScore(key == null ? null : String(key));
-              setErrors((prev) => ({ ...prev, npsScore: undefined }));
-            }}
-            description={t(
-              '0 ("Not at all likely") to 10 ("Extremely likely")',
-            )}
-            errorMessage={errors.npsScore}
-            placeholder={t('Select a rating')}
-          >
-            {NPS_SCORES.map((score) => (
-              <SelectItem key={score} id={score}>
-                {score}
-              </SelectItem>
-            ))}
-          </Select>
-        ) : (
+          </p>
+
           <RadioGroup
-            label={t(
-              'On a scale of 0 to 10, how likely are you to recommend Common to other organisations for participatory decisions?',
-            )}
+            label={t('Were you an admin during this process?')}
             isRequired
-            value={npsScore}
+            value={wasAdmin}
             onChange={(value) => {
-              setNpsScore(value);
-              setErrors((prev) => ({ ...prev, npsScore: undefined }));
+              setWasAdmin(value);
+              setErrors((prev) => ({ ...prev, wasAdmin: undefined }));
             }}
-            description={t(
-              '0 ("Not at all likely") to 10 ("Extremely likely")',
-            )}
-            errorMessage={errors.npsScore}
-            isInvalid={!!errors.npsScore}
+            errorMessage={errors.wasAdmin}
+            isInvalid={!!errors.wasAdmin}
             orientation="horizontal"
-            className="[&>div]:w-full [&>div]:justify-between [&>div]:gap-0"
           >
-            {NPS_SCORES.map((score) => (
-              <Radio
-                key={score}
-                value={score}
-                labelPosition="bottom"
-                className="flex-1"
-              >
-                {score}
-              </Radio>
-            ))}
+            <Radio value="yes">{t('Yes')}</Radio>
+            <Radio value="no">{t('No')}</Radio>
           </RadioGroup>
-        )}
 
-        {isPromoterCohort && (
-          <CheckboxGroup
-            label={t('What makes Common worth recommending?')}
-            description={t('Select all that apply')}
-            isRequired
-            value={promoterReasons}
-            onChange={(value) => {
-              setPromoterReasons(value);
-              setErrors((prev) => ({ ...prev, promoterReasons: undefined }));
-            }}
-            errorMessage={errors.promoterReasons}
-            isInvalid={!!errors.promoterReasons}
-          >
-            {promoterOrder.map((id) => (
-              <Checkbox key={id} value={id} size="small">
-                {promoterLabels[id]}
-              </Checkbox>
-            ))}
-            <Checkbox value={OTHER_OPTION_ID} size="small">
-              {t('Other')}
-            </Checkbox>
-            {promoterReasons.includes(OTHER_OPTION_ID) && (
-              <TextField
-                aria-label={t('Other')}
-                useTextArea
-                value={promoterReasonsOther}
-                onChange={(value) => {
-                  setPromoterReasonsOther(value);
-                  setErrors((prev) => ({
-                    ...prev,
-                    promoterReasonsOther: undefined,
-                  }));
-                }}
-                errorMessage={errors.promoterReasonsOther}
-                textareaProps={{ rows: 2, placeholder: t('Tell us more') }}
-              />
-            )}
-          </CheckboxGroup>
-        )}
-
-        {isDetractorCohort && (
-          <CheckboxGroup
-            label={t('What prevents you from recommending Common?')}
-            description={t('Select all that apply')}
-            isRequired
-            value={detractorReasons}
-            onChange={(value) => {
-              setDetractorReasons(value);
-              setErrors((prev) => ({ ...prev, detractorReasons: undefined }));
-            }}
-            errorMessage={errors.detractorReasons}
-            isInvalid={!!errors.detractorReasons}
-          >
-            {detractorOrder.map((id) => (
-              <Checkbox key={id} value={id} size="small">
-                {detractorLabels[id]}
-              </Checkbox>
-            ))}
-            <Checkbox value={OTHER_OPTION_ID} size="small">
-              {t('Other')}
-            </Checkbox>
-            {detractorReasons.includes(OTHER_OPTION_ID) && (
-              <TextField
-                aria-label={t('Other')}
-                useTextArea
-                value={detractorReasonsOther}
-                onChange={(value) => {
-                  setDetractorReasonsOther(value);
-                  setErrors((prev) => ({
-                    ...prev,
-                    detractorReasonsOther: undefined,
-                  }));
-                }}
-                errorMessage={errors.detractorReasonsOther}
-                textareaProps={{ rows: 2, placeholder: t('Tell us more') }}
-              />
-            )}
-          </CheckboxGroup>
-        )}
-
-        <TextField
-          label={t(
-            'Any specific features we should fix, improve or keep? Any features we should add? We actually read these!',
+          {isMobile ? (
+            <Select
+              label={t(
+                'On a scale of 0 to 10, how likely are you to recommend Common to other organisations for participatory decisions?',
+              )}
+              isRequired
+              selectedKey={npsScore}
+              onSelectionChange={(key) => {
+                setNpsScore(key == null ? null : String(key));
+                setErrors((prev) => ({ ...prev, npsScore: undefined }));
+              }}
+              description={t(
+                '0 ("Not at all likely") to 10 ("Extremely likely")',
+              )}
+              errorMessage={errors.npsScore}
+              placeholder={t('Select a rating')}
+            >
+              {NPS_SCORES.map((score) => (
+                <SelectItem key={score} id={score}>
+                  {score}
+                </SelectItem>
+              ))}
+            </Select>
+          ) : (
+            <RadioGroup
+              label={t(
+                'On a scale of 0 to 10, how likely are you to recommend Common to other organisations for participatory decisions?',
+              )}
+              isRequired
+              value={npsScore}
+              onChange={(value) => {
+                setNpsScore(value);
+                setErrors((prev) => ({ ...prev, npsScore: undefined }));
+              }}
+              description={t(
+                '0 ("Not at all likely") to 10 ("Extremely likely")',
+              )}
+              errorMessage={errors.npsScore}
+              isInvalid={!!errors.npsScore}
+              orientation="horizontal"
+              className="[&>div]:w-full [&>div]:justify-between [&>div]:gap-0"
+            >
+              {NPS_SCORES.map((score) => (
+                <Radio
+                  key={score}
+                  value={score}
+                  labelPosition="bottom"
+                  className="flex-1"
+                >
+                  {score}
+                </Radio>
+              ))}
+            </RadioGroup>
           )}
-          useTextArea
-          value={additionalFeedback}
-          onChange={setAdditionalFeedback}
-          textareaProps={{ rows: 3 }}
-        />
-      </ModalBody>
-      <ModalFooter className="sticky">
-        <Button
-          variant="link"
-          onPress={onSkip}
-          isDisabled={submitSurvey.isPending}
-          className="w-full sm:w-auto"
-        >
-          {t('Maybe later')}
-        </Button>
-        <Button
-          color="primary"
-          className="w-full sm:w-auto"
-          onPress={handleSubmit}
-          isDisabled={submitSurvey.isPending}
-        >
-          {submitSurvey.isPending
-            ? t('Submitting...')
-            : t('Submit & view results')}
-        </Button>
-      </ModalFooter>
+
+          {isPromoterCohort && (
+            <CheckboxGroup
+              label={t('What makes Common worth recommending?')}
+              description={t('Select all that apply')}
+              isRequired
+              value={promoterReasons}
+              onChange={(value) => {
+                setPromoterReasons(value);
+                setErrors((prev) => ({ ...prev, promoterReasons: undefined }));
+              }}
+              errorMessage={errors.promoterReasons}
+              isInvalid={!!errors.promoterReasons}
+            >
+              {promoterOrder.map((id) => (
+                <Checkbox key={id} value={id} size="small">
+                  {promoterLabels[id]}
+                </Checkbox>
+              ))}
+              <Checkbox value={OTHER_OPTION_ID} size="small">
+                {t('Other')}
+              </Checkbox>
+              {promoterReasons.includes(OTHER_OPTION_ID) && (
+                <TextField
+                  aria-label={t('Other')}
+                  useTextArea
+                  value={promoterReasonsOther}
+                  onChange={(value) => {
+                    setPromoterReasonsOther(value);
+                    setErrors((prev) => ({
+                      ...prev,
+                      promoterReasonsOther: undefined,
+                    }));
+                  }}
+                  errorMessage={errors.promoterReasonsOther}
+                  textareaProps={{ rows: 2, placeholder: t('Tell us more') }}
+                />
+              )}
+            </CheckboxGroup>
+          )}
+
+          {isDetractorCohort && (
+            <CheckboxGroup
+              label={t('What prevents you from recommending Common?')}
+              description={t('Select all that apply')}
+              isRequired
+              value={detractorReasons}
+              onChange={(value) => {
+                setDetractorReasons(value);
+                setErrors((prev) => ({ ...prev, detractorReasons: undefined }));
+              }}
+              errorMessage={errors.detractorReasons}
+              isInvalid={!!errors.detractorReasons}
+            >
+              {detractorOrder.map((id) => (
+                <Checkbox key={id} value={id} size="small">
+                  {detractorLabels[id]}
+                </Checkbox>
+              ))}
+              <Checkbox value={OTHER_OPTION_ID} size="small">
+                {t('Other')}
+              </Checkbox>
+              {detractorReasons.includes(OTHER_OPTION_ID) && (
+                <TextField
+                  aria-label={t('Other')}
+                  useTextArea
+                  value={detractorReasonsOther}
+                  onChange={(value) => {
+                    setDetractorReasonsOther(value);
+                    setErrors((prev) => ({
+                      ...prev,
+                      detractorReasonsOther: undefined,
+                    }));
+                  }}
+                  errorMessage={errors.detractorReasonsOther}
+                  textareaProps={{ rows: 2, placeholder: t('Tell us more') }}
+                />
+              )}
+            </CheckboxGroup>
+          )}
+
+          <TextField
+            label={t(
+              'Any specific features we should fix, improve or keep? Any features we should add? We actually read these!',
+            )}
+            useTextArea
+            value={additionalFeedback}
+            onChange={setAdditionalFeedback}
+            textareaProps={{ rows: 3 }}
+          />
+        </ModalBody>
+        <ModalFooter className="sticky">
+          <Button
+            type="button"
+            variant="link"
+            onPress={onSkip}
+            isDisabled={submitSurvey.isPending}
+            className="w-full sm:w-auto"
+          >
+            {t('Maybe later')}
+          </Button>
+          <Button
+            type="submit"
+            color="primary"
+            className="w-full sm:w-auto"
+            isDisabled={submitSurvey.isPending}
+          >
+            {submitSurvey.isPending
+              ? t('Submitting...')
+              : t('Submit & view results')}
+          </Button>
+        </ModalFooter>
+      </Form>
     </Modal>
   );
 };
