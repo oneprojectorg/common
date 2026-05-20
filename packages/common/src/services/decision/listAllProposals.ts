@@ -1,8 +1,7 @@
-import { and, asc, db, desc, eq, inArray, isNull, notInArray } from '@op/db/client';
+import { and, db, eq, inArray, isNull, notInArray } from '@op/db/client';
 import {
   ProposalStatus,
   Visibility,
-  processInstances,
   proposalCategories,
   proposals,
 } from '@op/db/schema';
@@ -18,7 +17,6 @@ import {
 import { buildProposalListItem } from './buildProposalListItem';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
-import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 
 export interface ListAllProposalsInput {
@@ -31,18 +29,6 @@ export interface ListAllProposalsInput {
   dir?: 'asc' | 'desc';
   authUserId: string;
 }
-
-const buildBaseWhereConditions = (input: ListAllProposalsInput) => {
-  const { processInstanceId, status } = input;
-
-  const conditions = [eq(proposals.processInstanceId, processInstanceId)];
-
-  if (status) {
-    conditions.push(eq(proposals.status, status));
-  }
-
-  return and(...conditions);
-};
 
 /**
  * Returns every valid (non-draft, non-rejected, non-duplicate, non-deleted,
@@ -58,17 +44,14 @@ export const listAllProposals = async ({
   input: ListAllProposalsInput;
   user: User;
 }) => {
-  const { processInstanceId } = input;
+  const { processInstanceId, status } = input;
 
-  if (!user) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
-
-  const currentProfileId = await getCurrentProfileId(input.authUserId);
-
-  const instance = await db._query.processInstances.findFirst({
-    where: eq(processInstances.id, processInstanceId),
-  });
+  const [currentProfileId, instance] = await Promise.all([
+    getCurrentProfileId(input.authUserId),
+    db.query.processInstances.findFirst({
+      where: { id: processInstanceId },
+    }),
+  ]);
 
   if (!instance?.profileId) {
     throw new UnauthorizedError('User does not have access to this process');
@@ -89,46 +72,37 @@ export const listAllProposals = async ({
 
   const { limit = 20, offset = 0, orderBy = 'createdAt', dir = 'desc' } = input;
 
-  let whereClause = buildBaseWhereConditions(input);
-
-  const { categoryId } = input;
-  if (categoryId) {
-    const proposalIdsInCategory = await db
+  let categoryProposalIds: string[] | undefined;
+  if (input.categoryId) {
+    const rows = await db
       .select({ proposalId: proposalCategories.proposalId })
       .from(proposalCategories)
-      .where(eq(proposalCategories.taxonomyTermId, categoryId));
+      .where(eq(proposalCategories.taxonomyTermId, input.categoryId));
 
-    if (proposalIdsInCategory.length === 0) {
+    if (rows.length === 0) {
       return { proposals: [], total: 0, hasMore: false };
     }
 
-    whereClause = and(
-      whereClause,
-      inArray(
-        proposals.id,
-        proposalIdsInCategory.map((p) => p.proposalId),
-      ),
-    );
+    categoryProposalIds = rows.map((r) => r.proposalId);
   }
 
-  const validFilter = and(
-    notInArray(proposals.status, [
-      ProposalStatus.DRAFT,
-      ProposalStatus.REJECTED,
-      ProposalStatus.DUPLICATE,
-    ]),
-    isNull(proposals.deletedAt),
-    eq(proposals.visibility, Visibility.VISIBLE),
-  );
-
-  whereClause = and(whereClause, validFilter);
-
-  const orderColumn = proposals[orderBy] ?? proposals.createdAt;
-  const orderFn = dir === 'asc' ? asc : desc;
+  const buildWhere = (table: typeof proposals) =>
+    and(
+      eq(table.processInstanceId, processInstanceId),
+      status ? eq(table.status, status) : undefined,
+      categoryProposalIds ? inArray(table.id, categoryProposalIds) : undefined,
+      notInArray(table.status, [
+        ProposalStatus.DRAFT,
+        ProposalStatus.REJECTED,
+        ProposalStatus.DUPLICATE,
+      ]),
+      isNull(table.deletedAt),
+      eq(table.visibility, Visibility.VISIBLE),
+    );
 
   const [proposalList, countResult] = await Promise.all([
-    db._query.proposals.findMany({
-      where: whereClause,
+    db.query.proposals.findMany({
+      where: { RAW: (table) => buildWhere(table)! },
       with: {
         submittedBy: {
           with: {
@@ -139,9 +113,15 @@ export const listAllProposals = async ({
       },
       limit,
       offset,
-      orderBy: orderFn(orderColumn),
+      orderBy: (table, { asc, desc }) => {
+        const col = table[orderBy] ?? table.createdAt;
+        return dir === 'asc' ? asc(col) : desc(col);
+      },
     }),
-    db.select({ count: countFn() }).from(proposals).where(whereClause),
+    db
+      .select({ count: countFn() })
+      .from(proposals)
+      .where(buildWhere(proposals)),
   ]);
 
   const count = countResult[0]?.count || 0;
@@ -158,18 +138,11 @@ export const listAllProposals = async ({
   const [relationshipData, documentContentMap] = await Promise.all([
     getProposalRelationshipData({ profileIds, currentProfileId }),
     getProposalDocumentsContent(
-      proposalList.map((proposal) => {
-        const parsed = parseProposalData(proposal.proposalData);
-        return {
-          id: proposal.id,
-          proposalData: proposal.proposalData,
-          proposalTemplate,
-          collaborationDocVersionId:
-            proposal.status === ProposalStatus.DRAFT
-              ? undefined
-              : parsed.collaborationDocVersionId,
-        };
-      }),
+      proposalList.map((proposal) => ({
+        id: proposal.id,
+        proposalData: proposal.proposalData,
+        proposalTemplate,
+      })),
     ),
   ]);
 
