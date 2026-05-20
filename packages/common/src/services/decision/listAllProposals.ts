@@ -4,12 +4,10 @@ import {
   db,
   desc,
   eq,
-  ilike,
   inArray,
   isNull,
   notInArray,
   or,
-  sql,
 } from '@op/db/client';
 import {
   ProfileRelationshipType,
@@ -39,33 +37,22 @@ import { resolveProposalTemplate } from './resolveProposalTemplate';
 
 export interface ListAllProposalsInput {
   processInstanceId: string;
-  submittedByProfileId?: string;
   status?: ProposalStatus;
-  search?: string;
   categoryId?: string;
   limit?: number;
   offset?: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'status';
   dir?: 'asc' | 'desc';
   authUserId: string;
-  skipAccessCheck?: boolean; // For trusted contexts like background jobs
 }
 
 const buildBaseWhereConditions = (input: ListAllProposalsInput) => {
-  const { processInstanceId, submittedByProfileId, status, search } = input;
+  const { processInstanceId, status } = input;
 
   const conditions = [eq(proposals.processInstanceId, processInstanceId)];
 
-  if (submittedByProfileId) {
-    conditions.push(eq(proposals.submittedByProfileId, submittedByProfileId));
-  }
-
   if (status) {
     conditions.push(eq(proposals.status, status));
-  }
-
-  if (search) {
-    conditions.push(ilike(sql`${proposals.proposalData}::text`, `%${search}%`));
   }
 
   return and(...conditions);
@@ -85,9 +72,9 @@ export const listAllProposals = async ({
   input: ListAllProposalsInput;
   user: User;
 }) => {
-  const { processInstanceId, skipAccessCheck = false } = input;
+  const { processInstanceId } = input;
 
-  if (!skipAccessCheck && !user) {
+  if (!user) {
     throw new UnauthorizedError('User must be authenticated');
   }
 
@@ -112,33 +99,26 @@ export const listAllProposals = async ({
   }
   const instanceProfileId = instance.profileId;
 
-  const { canManageProposals } = await (async () => {
-    if (skipAccessCheck) {
-      return { canManageProposals: false };
-    }
-    const profileUserResolved = await getProfileAccessUser({
-      user,
-      profileId: instanceProfileId,
-    });
-    await assertInstanceProfileAccess({
-      user,
-      instance,
-      profilePermissions: [
-        { decisions: permission.ADMIN },
-        { decisions: permission.READ },
-      ],
-      orgFallbackPermissions: [
-        { decisions: permission.ADMIN },
-        { decisions: permission.READ },
-      ],
-    });
-    return {
-      canManageProposals: checkPermission(
-        { profile: permission.ADMIN },
-        profileUserResolved?.roles ?? [],
-      ),
-    };
-  })();
+  const profileUserResolved = await getProfileAccessUser({
+    user,
+    profileId: instanceProfileId,
+  });
+  await assertInstanceProfileAccess({
+    user,
+    instance,
+    profilePermissions: [
+      { decisions: permission.ADMIN },
+      { decisions: permission.READ },
+    ],
+    orgFallbackPermissions: [
+      { decisions: permission.ADMIN },
+      { decisions: permission.READ },
+    ],
+  });
+  const canManageProposals = checkPermission(
+    { profile: permission.ADMIN },
+    profileUserResolved?.roles ?? [],
+  );
 
   const { limit = 20, offset = 0, orderBy = 'createdAt', dir = 'desc' } = input;
 
@@ -172,9 +152,8 @@ export const listAllProposals = async ({
     ProposalStatus.DUPLICATE,
   ]);
   const deletedAtFilter = isNull(proposals.deletedAt);
-  const canBypassVisibility = skipAccessCheck || canManageProposals;
 
-  const validFilter = canBypassVisibility
+  const validFilter = canManageProposals
     ? and(validStatusFilter, deletedAtFilter)
     : and(
         validStatusFilter,

@@ -606,7 +606,6 @@ export const proposalFilterSchema = z
 export const allProposalsFilterSchema = z
   .object({
     processInstanceId: z.uuid(),
-    submittedByProfileId: z.uuid().optional(),
     status: z.enum(ProposalStatus).optional(),
     categoryId: z.string().optional(),
     dir: z.enum(['asc', 'desc']).optional(),
