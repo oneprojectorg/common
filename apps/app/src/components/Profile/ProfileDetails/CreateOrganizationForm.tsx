@@ -231,6 +231,7 @@ export const CreateOrganizationForm = forwardRef<
             <field.TextField
               label={t('Website')}
               isRequired
+              type="url"
               value={field.state.value as string}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
