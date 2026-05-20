@@ -1,15 +1,8 @@
 import { z } from 'zod';
 
-/** Minimal voter profile shape returned to process admins. */
-export const voterSchema = z.object({
-  slug: z.string(),
-  name: z.string().nullable(),
-  avatarImage: z
-    .object({
-      name: z.string(),
-    })
-    .nullable(),
-});
+import { participantProfileSchema } from './participantProfile';
+
+export const voterSchema = participantProfileSchema;
 
 export type Voter = z.infer<typeof voterSchema>;
 
