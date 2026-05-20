@@ -247,7 +247,7 @@ describe.concurrent('listAllProposals', () => {
     expect(result.total).toBe(1);
   });
 
-  it('hides HIDDEN proposals from non-admin, non-owner viewers', async ({
+  it('hides HIDDEN proposals from all viewers, including admins', async ({
     task,
     onTestFinished,
   }) => {
@@ -259,9 +259,6 @@ describe.concurrent('listAllProposals', () => {
     const instance = setup.instances[0]!;
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
 
-    // Admin creates and submits the proposals, so the member viewer is NOT the
-    // owner of either — the visibility filter must be the only thing that
-    // decides what they see.
     const [visible, hidden] = await Promise.all([
       testData.createProposal({
         userEmail: setup.userEmail,
@@ -296,9 +293,7 @@ describe.concurrent('listAllProposals', () => {
     const adminResult = await adminCaller.decision.listAllProposals({
       processInstanceId: instance.instance.id,
     });
-    expect(adminResult.proposals.map((p) => p.id)).toEqual(
-      expect.arrayContaining([visible.id, hidden.id]),
-    );
-    expect(adminResult.total).toBe(2);
+    expect(adminResult.proposals.map((p) => p.id)).toEqual([visible.id]);
+    expect(adminResult.total).toBe(1);
   });
 });

@@ -1,31 +1,19 @@
-import {
-  and,
-  asc,
-  db,
-  desc,
-  eq,
-  inArray,
-  isNull,
-  notInArray,
-  or,
-} from '@op/db/client';
+import { and, asc, db, desc, eq, inArray, isNull, notInArray } from '@op/db/client';
 import {
   ProposalStatus,
   Visibility,
   processInstances,
-  profileUsers,
   proposalCategories,
   proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { checkPermission, permission } from 'access-zones';
+import { permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
 import { UnauthorizedError } from '../../utils';
 import {
   assertInstanceProfileAccess,
   getCurrentProfileId,
-  getProfileAccessUser,
 } from '../access';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
@@ -56,11 +44,11 @@ const buildBaseWhereConditions = (input: ListAllProposalsInput) => {
 };
 
 /**
- * Returns every valid (non-draft, non-rejected, non-duplicate, non-deleted)
- * proposal on the instance, regardless of phase scoping. HIDDEN visibility
- * is still applied for non-admin callers. Used by the "All proposals" tab on
- * the results page so reviewers can browse the full submission set after a
- * limiting pipeline has narrowed the phase.
+ * Returns every valid (non-draft, non-rejected, non-duplicate, non-deleted,
+ * non-hidden) proposal on the instance. All process members see the same set
+ * — no admin-only branching. Used by the "All proposals" tab on the results
+ * page so members can browse the full submission set after a limiting
+ * pipeline has narrowed the phase.
  */
 export const listAllProposals = async ({
   input,
@@ -84,12 +72,7 @@ export const listAllProposals = async ({
   if (!instance?.profileId) {
     throw new UnauthorizedError('User does not have access to this process');
   }
-  const instanceProfileId = instance.profileId;
 
-  const profileUserResolved = await getProfileAccessUser({
-    user,
-    profileId: instanceProfileId,
-  });
   await assertInstanceProfileAccess({
     user,
     instance,
@@ -102,10 +85,6 @@ export const listAllProposals = async ({
       { decisions: permission.READ },
     ],
   });
-  const canManageProposals = checkPermission(
-    { profile: permission.ADMIN },
-    profileUserResolved?.roles ?? [],
-  );
 
   const { limit = 20, offset = 0, orderBy = 'createdAt', dir = 'desc' } = input;
 
@@ -119,7 +98,7 @@ export const listAllProposals = async ({
       .where(eq(proposalCategories.taxonomyTermId, categoryId));
 
     if (proposalIdsInCategory.length === 0) {
-      return { proposals: [], total: 0, hasMore: false, canManageProposals };
+      return { proposals: [], total: 0, hasMore: false };
     }
 
     whereClause = and(
@@ -131,31 +110,15 @@ export const listAllProposals = async ({
     );
   }
 
-  // Valid = non-draft, non-rejected, non-duplicate, non-deleted. Visibility
-  // (HIDDEN) still hides proposals from non-admin, non-owner callers.
-  const validStatusFilter = notInArray(proposals.status, [
-    ProposalStatus.DRAFT,
-    ProposalStatus.REJECTED,
-    ProposalStatus.DUPLICATE,
-  ]);
-  const deletedAtFilter = isNull(proposals.deletedAt);
-
-  const validFilter = canManageProposals
-    ? and(validStatusFilter, deletedAtFilter)
-    : and(
-        validStatusFilter,
-        deletedAtFilter,
-        or(
-          eq(proposals.visibility, Visibility.VISIBLE),
-          inArray(
-            proposals.profileId,
-            db
-              .select({ profileId: profileUsers.profileId })
-              .from(profileUsers)
-              .where(eq(profileUsers.authUserId, input.authUserId)),
-          ),
-        ),
-      );
+  const validFilter = and(
+    notInArray(proposals.status, [
+      ProposalStatus.DRAFT,
+      ProposalStatus.REJECTED,
+      ProposalStatus.DUPLICATE,
+    ]),
+    isNull(proposals.deletedAt),
+    eq(proposals.visibility, Visibility.VISIBLE),
+  );
 
   whereClause = and(whereClause, validFilter);
 
@@ -247,6 +210,5 @@ export const listAllProposals = async ({
     proposals: proposalsWithCounts,
     total: Number(count),
     hasMore: offset + limit < Number(count),
-    canManageProposals,
   };
 };

@@ -161,7 +161,6 @@ export const allProposalsListSchema = z.object({
   proposals: z.array(allProposalsListItemSchema),
   total: z.number(),
   hasMore: z.boolean(),
-  canManageProposals: z.boolean().prefault(false),
 });
 
 export type AllProposalsList = z.infer<typeof allProposalsListSchema>;
