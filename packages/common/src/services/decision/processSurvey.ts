@@ -3,15 +3,13 @@ import {
   decisionProcessSurveyResponses,
   decisionProcessSurveySubmitters,
 } from '@op/db/schema';
-import { permission } from 'access-zones';
+import { assertAccess, collapseRoles, permission } from 'access-zones';
 
-import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
-import {
-  assertInstanceProfileAccess,
-  getIndividualProfileId,
-  getProfileAccessUser,
-} from '../access';
+import { NotFoundError, UnauthorizedError } from '../../utils';
+import { getIndividualProfileId, getProfileAccessUser } from '../access';
 import { fromDecisionBitField } from './permissions';
+
+type ProfileAccessUser = Awaited<ReturnType<typeof getProfileAccessUser>>;
 
 export type SurveyInternalData = Record<string, unknown>;
 
@@ -48,6 +46,7 @@ async function authorizeSurveyAccess({
 }): Promise<{
   profileId: string;
   processInstance: ProcessInstanceForSurvey;
+  profileUser: ProfileAccessUser;
 }> {
   const [profileId, processInstance] = await Promise.all([
     getIndividualProfileId(authUserId),
@@ -67,47 +66,42 @@ async function authorizeSurveyAccess({
     throw new NotFoundError('Process instance', processInstanceId);
   }
 
-  await assertInstanceProfileAccess({
+  if (!processInstance.profileId) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+
+  const profileUser = await getProfileAccessUser({
     user: { id: authUserId },
-    instance: processInstance,
-    profilePermissions: { decisions: permission.READ },
-    orgFallbackPermissions: [{ decisions: permission.READ }],
+    profileId: processInstance.profileId,
   });
 
-  return { profileId, processInstance };
+  assertAccess({ decisions: permission.READ }, profileUser?.roles ?? []);
+
+  return { profileId, processInstance, profileUser };
 }
 
-async function getSurveyMeta({
-  authUserId,
+function getSurveyMeta({
   processInstance,
   submittedByProfileId,
+  profileUser,
   locale,
 }: {
-  authUserId: string;
   processInstance: ProcessInstanceForSurvey;
   submittedByProfileId: string;
+  profileUser: ProfileAccessUser;
   locale: string;
 }) {
-  const profileUser = processInstance.profileId
-    ? await getProfileAccessUser({
-        user: { id: authUserId },
-        profileId: processInstance.profileId,
-      })
-    : null;
-
   const roles = (profileUser?.roles ?? []).map((role) => ({
     id: role.id,
     name: role.name,
   }));
 
-  let decisionsBitfield = 0;
-  for (const role of profileUser?.roles ?? []) {
-    decisionsBitfield |= role.access?.decisions ?? 0;
-  }
+  const decisionsBits =
+    collapseRoles(profileUser?.roles ?? [])['decisions'] ?? 0;
 
   return {
     roles,
-    capabilities: fromDecisionBitField(decisionsBitfield),
+    capabilities: fromDecisionBitField(decisionsBits),
     isOwner: processInstance.ownerProfileId === submittedByProfileId,
     processStatus: processInstance.status,
     phase: processInstance.currentStateId,
@@ -125,57 +119,50 @@ export const submitProcessSurveyResponse = async ({
     throw new UnauthorizedError('User must be authenticated');
   }
 
-  try {
-    const { profileId, processInstance } = await authorizeSurveyAccess({
+  const { profileId, processInstance, profileUser } =
+    await authorizeSurveyAccess({
       authUserId,
       processInstanceId,
     });
 
-    const meta = await getSurveyMeta({
-      authUserId,
-      processInstance,
-      submittedByProfileId: profileId,
-      locale,
-    });
+  const meta = getSurveyMeta({
+    processInstance,
+    submittedByProfileId: profileId,
+    profileUser,
+    locale,
+  });
 
-    const enrichedInternalData: SurveyInternalData = {
-      ...internalData,
-      _meta: meta,
-    };
+  const enrichedInternalData: SurveyInternalData = {
+    ...internalData,
+    _meta: meta,
+  };
 
-    await db.transaction(async (tx) => {
-      const inserted = await tx
-        .insert(decisionProcessSurveySubmitters)
-        .values({
-          processInstanceId,
-          submittedByProfileId: profileId,
-        })
-        .onConflictDoNothing({
-          target: [
-            decisionProcessSurveySubmitters.processInstanceId,
-            decisionProcessSurveySubmitters.submittedByProfileId,
-          ],
-        })
-        .returning({ id: decisionProcessSurveySubmitters.id });
-
-      if (inserted.length === 0) {
-        return;
-      }
-
-      await tx.insert(decisionProcessSurveyResponses).values({
+  await db.transaction(async (tx) => {
+    const inserted = await tx
+      .insert(decisionProcessSurveySubmitters)
+      .values({
         processInstanceId,
-        internalData: enrichedInternalData,
-      });
-    });
+        submittedByProfileId: profileId,
+      })
+      .onConflictDoNothing({
+        target: [
+          decisionProcessSurveySubmitters.processInstanceId,
+          decisionProcessSurveySubmitters.submittedByProfileId,
+        ],
+      })
+      .returning({ id: decisionProcessSurveySubmitters.id });
 
-    return { hasResponded: true };
-  } catch (error) {
-    if (error instanceof CommonError) {
-      throw error;
+    if (inserted.length === 0) {
+      return;
     }
-    console.error('Error submitting survey response:', error);
-    throw new CommonError('Failed to submit survey response');
-  }
+
+    await tx.insert(decisionProcessSurveyResponses).values({
+      processInstanceId,
+      internalData: enrichedInternalData,
+    });
+  });
+
+  return { hasResponded: true };
 };
 
 export const getProcessSurveyResponse = async ({
@@ -188,26 +175,18 @@ export const getProcessSurveyResponse = async ({
     throw new UnauthorizedError('User must be authenticated');
   }
 
-  try {
-    const { profileId } = await authorizeSurveyAccess({
-      authUserId,
+  const { profileId } = await authorizeSurveyAccess({
+    authUserId,
+    processInstanceId,
+  });
+
+  const existing = await db.query.decisionProcessSurveySubmitters.findFirst({
+    where: {
       processInstanceId,
-    });
+      submittedByProfileId: profileId,
+    },
+    columns: { id: true },
+  });
 
-    const existing = await db.query.decisionProcessSurveySubmitters.findFirst({
-      where: {
-        processInstanceId,
-        submittedByProfileId: profileId,
-      },
-      columns: { id: true },
-    });
-
-    return { hasResponded: !!existing };
-  } catch (error) {
-    if (error instanceof CommonError) {
-      throw error;
-    }
-    console.error('Error getting survey response:', error);
-    throw new CommonError('Failed to get survey response');
-  }
+  return { hasResponded: !!existing };
 };
