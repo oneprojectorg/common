@@ -1,5 +1,4 @@
 import { getPublicUrl } from '@/utils';
-import { pluralize } from '@/utils/pluralize';
 import { Avatar } from '@op/ui/Avatar';
 import { GrowingFacePile } from '@op/ui/GrowingFacePile';
 import Image from 'next/image';
@@ -46,14 +45,15 @@ export const MemberParticipationFacePile = ({
                 />
               ) : null}
             </Avatar>
-            <div className="absolute top-0 left-0 h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out hover:opacity-15 active:bg-black" />
+            <div className="absolute start-0 top-0 h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out hover:opacity-15 active:bg-black" />
           </Link>
         ))}
       >
         <span className="w-fit text-sm text-neutral-charcoal">
-          {submitters.length} {pluralize(t('member'), submitters.length)}{' '}
-          {submitters.length > 1 ? t('have') : t('has')}{' '}
-          {t('submitted proposals')}
+          {t(
+            '{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}',
+            { count: submitters.length },
+          )}
         </span>
       </GrowingFacePile>
     </div>

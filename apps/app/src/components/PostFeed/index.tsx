@@ -40,10 +40,14 @@ const PostDisplayName = ({
   if (!displayName) return null;
 
   if (withLinks) {
-    return <Link href={`/org/${displaySlug}`}>{displayName}</Link>;
+    return (
+      <Link href={`/org/${displaySlug}`}>
+        <bdi>{displayName}</bdi>
+      </Link>
+    );
   }
 
-  return <>{displayName}</>;
+  return <bdi>{displayName}</bdi>;
 };
 
 const PostTimestamp = ({ createdAt }: { createdAt: Date | string }) => {
@@ -57,7 +61,11 @@ const PostContent = ({ content }: { content?: string }) => {
     return null;
   }
 
-  return <p className="whitespace-pre-wrap">{linkifyText(content)}</p>;
+  return (
+    <p dir="auto" className="whitespace-pre-wrap">
+      {linkifyText(content)}
+    </p>
+  );
 };
 
 const PostAttachments = ({
@@ -204,10 +212,7 @@ const PostMenu = ({
   }
 
   return (
-    <OptionMenu
-      aria-label={t('Post options')}
-      className="absolute top-0 right-0"
-    >
+    <OptionMenu aria-label={t('Post options')} className="absolute end-0 top-0">
       <PostMenuContent
         post={post}
         profileId={user?.currentProfileId || ''}

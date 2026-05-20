@@ -582,7 +582,7 @@ const ProfileUsersAccessTableContent = ({
                     {invite.email}
                   </span>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-end">
                   <InviteRoleSelect
                     inviteId={invite.id}
                     currentRoleId={invite.accessRoleId}
@@ -633,7 +633,7 @@ const ProfileUsersAccessTableContent = ({
                     {profileUser.email}
                   </span>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-end">
                   <ProfileUserRoleSelect
                     profileUserId={profileUser.id}
                     currentRoleId={currentRole?.id}

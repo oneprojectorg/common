@@ -8,3 +8,8 @@ export const i18nConfig = {
 } as const;
 
 export type Locale = SupportedLocale;
+
+const RTL_LOCALES = new Set<SupportedLocale>(['ar']);
+
+export const getLocaleDirection = (locale: string): 'ltr' | 'rtl' =>
+  RTL_LOCALES.has(locale as SupportedLocale) ? 'rtl' : 'ltr';

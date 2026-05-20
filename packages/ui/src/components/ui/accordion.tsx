@@ -43,7 +43,7 @@ const accordionStyles = tv({
         header: 'flex items-center px-4 py-2',
         trigger: [
           'flex flex-1 items-center gap-3',
-          'cursor-pointer text-left font-medium',
+          'cursor-pointer text-start font-medium',
           'outline-none',
           'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
           'disabled:cursor-not-allowed disabled:opacity-50',

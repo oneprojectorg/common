@@ -134,7 +134,7 @@ export const DeleteOrganizationModal = ({
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       isDismissable
-      className="text-left"
+      className="text-start"
     >
       {steps[currentStep]}
     </Modal>

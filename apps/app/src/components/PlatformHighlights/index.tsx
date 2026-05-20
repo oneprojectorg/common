@@ -1,7 +1,6 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
-import { pluralize } from '@/utils/pluralize';
 import { trpc } from '@op/api/client';
 import { Avatar } from '@op/ui/Avatar';
 import { FacePile } from '@op/ui/FacePile';
@@ -32,7 +31,10 @@ export const PlatformHighlights = () => {
             {stats.totalRelationships}
           </HighlightNumber>
           <HighlightLabel>
-            {t('active')} {pluralize('relationship', stats.totalRelationships)}
+            {t(
+              '{count, plural, =1 {active relationship} other {active relationships}}',
+              { count: stats.totalRelationships },
+            )}
           </HighlightLabel>
         </Highlight>
         <hr className="hidden h-20 w-0.5 border-0 bg-neutral-gray1 sm:block" />
@@ -76,7 +78,7 @@ const HighlightNumber = ({
     <div className="col-span-3 text-transparent xxs:col-span-2">
       <div
         className={cn(
-          'flex items-center justify-end bg-gradient bg-clip-text text-right font-serif text-title-xxl',
+          'flex items-center justify-end bg-gradient bg-clip-text text-end font-serif text-title-xxl',
           className,
         )}
       >
@@ -149,7 +151,7 @@ const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
               />
             ) : null}
           </Avatar>
-          <div className="absolute top-0 left-0 h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out hover:opacity-15 active:bg-black" />
+          <div className="absolute start-0 top-0 h-full w-full cursor-pointer rounded-full bg-white opacity-0 transition-opacity duration-100 ease-in-out hover:opacity-15 active:bg-black" />
         </Link>
       );
     })

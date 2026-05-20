@@ -180,9 +180,13 @@ export function DecisionProcessStepper({
           isDismissable={!transitionMutation.isPending}
           side="bottom"
         >
-          <SheetBody className="flex flex-col gap-4 p-4 text-left">
-            <div className="font-serif text-title-sm">{title}</div>
-            <p className="text-sm text-neutral-charcoal">{body}</p>
+          <SheetBody className="flex flex-col gap-4 p-4 text-start">
+            <div className="font-serif text-title-sm">
+              <bdi>{title}</bdi>
+            </div>
+            <p dir="auto" className="text-sm text-neutral-charcoal">
+              {body}
+            </p>
             <div className="flex flex-col gap-4">
               <Button
                 color="primary"
@@ -210,9 +214,13 @@ export function DecisionProcessStepper({
           isDismissable={false}
           surface="flat"
         >
-          <ModalHeader className="px-6 pb-6 text-left">{title}</ModalHeader>
+          <ModalHeader className="px-6 pb-6 text-start">
+            <bdi>{title}</bdi>
+          </ModalHeader>
           <ModalBody className="px-6 py-6">
-            <p className="text-sm text-neutral-charcoal">{body}</p>
+            <p dir="auto" className="text-sm text-neutral-charcoal">
+              {body}
+            </p>
           </ModalBody>
           <ModalFooter className="px-6 py-6">
             <Button

@@ -66,15 +66,20 @@ export const ProfileSummaryList = ({
                     href={`/profile/${profile.slug}`}
                     className="leading-base font-semibold"
                   >
-                    {profile.name}
+                    <bdi>{profile.name}</bdi>
                   </Link>
                   {whereWeWork?.length > 0 ? (
-                    <span className="text-sm text-neutral-gray4 sm:text-base">
+                    <span
+                      dir="auto"
+                      className="text-sm text-neutral-gray4 sm:text-base"
+                    >
                       {whereWeWork}
                     </span>
                   ) : null}
                 </div>
-                <span className="text-neutral-charcoal">{trimmedBio}</span>
+                <span dir="auto" className="text-neutral-charcoal">
+                  {trimmedBio}
+                </span>
               </div>
             </div>
           </div>

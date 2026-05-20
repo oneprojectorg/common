@@ -7,7 +7,7 @@ export function ReviewSummarySkeleton() {
         <Skeleton className="h-5 w-24" />
       </div>
       <div className="mx-auto hidden min-h-0 w-full max-w-6xl flex-1 sm:flex">
-        <div className="flex-1 border-r p-12">
+        <div className="flex-1 border-e p-12">
           <div className="space-y-4">
             <Skeleton className="h-10 w-3/4" />
             <Skeleton className="h-4 w-1/3" />

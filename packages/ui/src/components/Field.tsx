@@ -42,7 +42,7 @@ export const Description = (props: TextProps) => {
       {...props}
       slot="description"
       className={twMerge(
-        'text-left text-sm text-neutral-gray4',
+        'text-start text-sm text-neutral-gray4',
         props.className,
       )}
     />
@@ -105,7 +105,7 @@ export const inputStyles = tv({
       small: 'h-8 px-4 py-2',
     },
     hasIcon: {
-      true: 'w-full pl-8',
+      true: 'w-full ps-8',
     },
   },
   defaultVariants: {
@@ -117,6 +117,17 @@ export const inputStyles = tv({
 export type InputVariantsProps = VariantProps<typeof inputStyles>;
 export type InputWithVariantsProps = Omit<InputProps, 'size'> &
   InputVariantsProps & { icon?: ReactNode };
+
+const CONSTRAINED_INPUT_TYPES = new Set([
+  'email',
+  'tel',
+  'url',
+  'number',
+  'password',
+]);
+
+const inputDir = (type: string | undefined) =>
+  CONSTRAINED_INPUT_TYPES.has(type ?? '') ? undefined : 'auto';
 
 export const Input = ({
   ref,
@@ -142,6 +153,7 @@ export const Input = ({
 
   return (
     <RACInput
+      dir={inputDir(props.type)}
       ref={ref}
       {...props}
       className={inputStyles({ ...props, size, className })}
@@ -161,6 +173,7 @@ export const InputWithIcon = ({
   return (
     <span className="relative w-full">
       <RACInput
+        dir={inputDir(props.type)}
         ref={ref}
         {...props}
         className={inputStyles({
@@ -170,7 +183,7 @@ export const InputWithIcon = ({
           className,
         })}
       />
-      <span className="absolute top-1/2 left-3 -translate-y-1/2">
+      <span className="absolute start-3 top-1/2 -translate-y-1/2">
         {props.icon}
       </span>
     </span>
@@ -209,6 +222,7 @@ export const TextArea = ({
 } & TextAreaVariantProps) => {
   return (
     <RACTextArea
+      dir="auto"
       ref={ref}
       {...props}
       className={textAreaStyles({ variant, className })}

@@ -89,7 +89,7 @@ const FinalPhaseProposalCard = ({ proposal }: { proposal: Proposal }) => {
     <div className="flex flex-col gap-1 rounded-lg border border-neutral-gray1 bg-neutral-offWhite p-3">
       <div className="flex items-start justify-between gap-2">
         <span className="truncate font-serif text-title-sm14 text-neutral-black">
-          {title}
+          <bdi>{title}</bdi>
         </span>
         {budget ? (
           <span className="font-serif text-title-sm14 text-neutral-charcoal">

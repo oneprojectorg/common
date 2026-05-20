@@ -7,7 +7,7 @@ export function TemplateEditorSkeleton() {
   return (
     <div className="flex h-full flex-col md:flex-row">
       {/* Sidebar skeleton - desktop only */}
-      <div className="hidden w-64 shrink-0 border-r p-4 md:block">
+      <div className="hidden w-64 shrink-0 border-e p-4 md:block">
         <Skeleton className="mb-4 h-10 w-full" />
         <Skeleton className="mb-2 h-4 w-20" />
         <div className="space-y-2">

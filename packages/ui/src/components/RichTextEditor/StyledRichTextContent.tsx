@@ -7,6 +7,7 @@ export const StyledRichTextContent = ({
   ...props
 }: EditorContentProps) => (
   <EditorContent
+    dir="auto"
     {...props}
     className={cn(
       '[&_div:focus-visible]:outline-auto',

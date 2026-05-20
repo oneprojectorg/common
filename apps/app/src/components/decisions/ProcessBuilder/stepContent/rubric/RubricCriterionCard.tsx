@@ -347,7 +347,7 @@ function ScoredCriterionConfig({
             const scoreValue = max - i;
             return (
               <div key={scoreValue} className="flex items-start gap-2">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded bg-neutral-gray1 text-center text-right font-serif text-title-base text-neutral-gray4">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded bg-neutral-gray1 text-center text-end font-serif text-title-base text-neutral-gray4">
                   {scoreValue}
                 </span>
                 <TextField

@@ -39,7 +39,7 @@ export const SearchField = ({
       <FieldGroup className="relative">
         <LuSearch
           aria-hidden
-          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-darkGray"
+          className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-darkGray"
         />
         <Input
           placeholder={placeholder}
@@ -49,7 +49,7 @@ export const SearchField = ({
         <Button
           variant="icon"
           color="ghost"
-          className="absolute top-1/2 right-1 aspect-square w-6 -translate-y-1/2 p-0 group-empty:invisible"
+          className="absolute end-1 top-1/2 aspect-square w-6 -translate-y-1/2 p-0 group-empty:invisible"
         >
           <LuX aria-hidden className="size-4" />
         </Button>

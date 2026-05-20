@@ -12,7 +12,7 @@ export const SidebarNav = () => {
   const t = useTranslations();
   const pathname = usePathname();
   return (
-    <Sidebar className="border-r" label={t('Navigation')}>
+    <Sidebar className="border-e" label={t('Navigation')}>
       <nav className="flex flex-col gap-1 p-4">
         <NavLink href="/" active={pathname === '/'}>
           <LuHouse className="size-4" /> {t('Home')}
