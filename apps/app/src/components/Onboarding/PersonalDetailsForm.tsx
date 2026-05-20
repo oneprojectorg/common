@@ -372,6 +372,7 @@ export const PersonalDetailsForm = ({
               errorMessage={getFieldErrorMessage(field)}
               inputProps={{
                 placeholder: t('Enter your website URL'),
+                type: 'url',
               }}
             />
           )}

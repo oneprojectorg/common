@@ -308,6 +308,7 @@ export const BaseUpdateProfileForm = forwardRef<
                 inputProps={{
                   placeholder:
                     placeholders?.website ?? t('Enter your website URL'),
+                  type: 'url',
                 }}
               />
             )}

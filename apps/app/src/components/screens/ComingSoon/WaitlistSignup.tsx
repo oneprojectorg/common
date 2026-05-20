@@ -183,6 +183,7 @@ const WaitlistSignupForm = ({ onSuccess }: { onSuccess: () => void }) => {
             <field.TextField
               id="email"
               label={t('Email address')}
+              type="email"
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
