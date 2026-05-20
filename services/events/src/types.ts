@@ -78,4 +78,12 @@ export const Events = {
       revisionRequestId: z.string().uuid(),
     }),
   },
+  decisionUpdatePosted: {
+    name: 'decision/update-posted' as const,
+    schema: z.object({
+      postId: z.string().uuid(),
+      targetProfileId: z.string().uuid(),
+      authorProfileId: z.string().uuid(),
+    }),
+  },
 } as const;
