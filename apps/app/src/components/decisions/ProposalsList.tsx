@@ -680,10 +680,25 @@ export const ProposalsList = ({
     return params;
   }, [instanceId, selectedCategory, sortOrder, phase]);
 
-  const [proposalsData] =
-    trpc.decision.listProposals.useSuspenseQuery(queryParams);
+  // Last phase: hit the dedicated listAllProposals procedure so we bypass the
+  // selection-pipeline filter and skip joins we don't need on a read-only view.
+  const [[proposalsData]] = trpc.useSuspenseQueries((t) =>
+    phase === 'results'
+      ? [
+          t.decision.listAllProposals({
+            processInstanceId: queryParams.processInstanceId,
+            dir: queryParams.dir,
+            limit: queryParams.limit,
+            categoryId: queryParams.categoryId,
+          }),
+        ]
+      : [t.decision.listProposals(queryParams)],
+  );
 
-  const { proposals: allProposals } = proposalsData ?? {};
+  const allProposals =
+    proposalsData && 'items' in proposalsData
+      ? proposalsData.items
+      : (proposalsData?.proposals ?? []);
   const canManageProposals = permissions?.admin ?? false;
 
   const { data: revisionRequestsData } =

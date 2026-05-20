@@ -138,6 +138,32 @@ export const proposalListSchema = z.object({
 
 export type ProposalList = z.infer<typeof proposalListSchema>;
 
+/**
+ * Leaner proposal shape returned by `decision.listAllProposals`. The
+ * results-page "All proposals" tab is read-only and never shows vote tallies,
+ * selection rank, allocations, or per-proposal editability, so those fields
+ * are dropped to keep the payload (and the server-side joins behind it) tight.
+ */
+export const allProposalsListItemSchema = proposalSchema.omit({
+  decisionCount: true,
+  isEditable: true,
+  access: true,
+  attachments: true,
+  selectionRank: true,
+  voteCount: true,
+  allocated: true,
+});
+
+export type AllProposalsListItem = z.infer<typeof allProposalsListItemSchema>;
+
+/** Cursor-paginated response from `decision.listAllProposals`. */
+export const allProposalsListSchema = z.object({
+  items: z.array(allProposalsListItemSchema),
+  next: z.string().nullable(),
+});
+
+export type AllProposalsList = z.infer<typeof allProposalsListSchema>;
+
 /** Minimal submitter profile shape used by the face-pile endpoint. */
 export const proposalSubmitterSchema = z.object({
   slug: z.string(),
