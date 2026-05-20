@@ -14,9 +14,9 @@ import {
   assertInstanceProfileAccess,
   getCurrentProfileId,
 } from '../access';
-import { buildProposalListItem } from './buildProposalListItem';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
+import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 
 export interface ListAllProposalsInput {
@@ -146,14 +146,35 @@ export const listAllProposals = async ({
     ),
   ]);
 
-  const proposalsWithCounts = proposalList.map((proposal) =>
-    buildProposalListItem({
-      proposal,
-      relationshipData,
-      documentContentMap,
+  const proposalsWithCounts = proposalList.map((proposal) => {
+    const submittedBy = Array.isArray(proposal.submittedBy)
+      ? proposal.submittedBy[0]
+      : proposal.submittedBy;
+    const profile = Array.isArray(proposal.profile)
+      ? proposal.profile[0]
+      : proposal.profile;
+    const relationshipInfo = relationshipData.get(proposal.profileId);
+
+    return {
+      id: proposal.id,
+      processInstanceId: proposal.processInstanceId,
+      proposalData: parseProposalData(proposal.proposalData),
+      status: proposal.status,
+      visibility: proposal.visibility,
+      createdAt: proposal.createdAt,
+      updatedAt: proposal.updatedAt,
+      profileId: proposal.profileId,
+      submittedBy,
+      profile,
+      likesCount: relationshipInfo?.likesCount || 0,
+      followersCount: relationshipInfo?.followersCount || 0,
+      isLikedByUser: relationshipInfo?.isLikedByUser || false,
+      isFollowedByUser: relationshipInfo?.isFollowedByUser || false,
+      commentsCount: relationshipInfo?.commentsCount || 0,
+      documentContent: documentContentMap.get(proposal.id),
       proposalTemplate,
-    }),
-  );
+    };
+  });
 
   return {
     proposals: proposalsWithCounts,
