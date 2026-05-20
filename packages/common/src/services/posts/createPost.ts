@@ -1,5 +1,5 @@
 import { invalidate } from '@op/cache';
-import { OPURLConfig, match } from '@op/core';
+import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
   EntityType,
@@ -365,12 +365,22 @@ export const createPost = async (input: CreatePostServiceInput) => {
   waitUntil(
     (async () => {
       try {
-        await match<Promise<void>>(postKind, {
-          comment: () =>
-            sendPostCommentNotification(parentPostId!, content, profileId),
-          proposalComment: () =>
-            sendProposalCommentNotification(proposalId!, content, profileId),
-          decisionUpdate: async () => {
+        switch (postKind) {
+          case 'comment':
+            await sendPostCommentNotification(
+              parentPostId!,
+              content,
+              profileId,
+            );
+            break;
+          case 'proposalComment':
+            await sendProposalCommentNotification(
+              proposalId!,
+              content,
+              profileId,
+            );
+            break;
+          case 'decisionUpdate':
             await event.send({
               name: Events.decisionUpdatePosted.name,
               data: {
@@ -379,9 +389,10 @@ export const createPost = async (input: CreatePostServiceInput) => {
                 authorProfileId: profileId,
               },
             });
-          },
-          none: () => Promise.resolve(),
-        });
+            break;
+          case 'none':
+            break;
+        }
       } catch (error) {
         console.error('Failed to send notification email:', error);
       }
