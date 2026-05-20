@@ -51,6 +51,11 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
       selectedKey={currentLocale}
       onSelectionChange={handleSelectionChange}
       aria-label={t('Select language')}
+      listBoxClassName="max-h-none overflow-visible"
+      popoverProps={{
+        className: '!max-h-none overflow-visible',
+        placement: 'bottom end',
+      }}
       customTrigger={
         <>
           <IconButton
