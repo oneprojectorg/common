@@ -118,6 +118,17 @@ export type InputVariantsProps = VariantProps<typeof inputStyles>;
 export type InputWithVariantsProps = Omit<InputProps, 'size'> &
   InputVariantsProps & { icon?: ReactNode };
 
+const CONSTRAINED_INPUT_TYPES = new Set([
+  'email',
+  'tel',
+  'url',
+  'number',
+  'password',
+]);
+
+const inputDir = (type: string | undefined) =>
+  CONSTRAINED_INPUT_TYPES.has(type ?? '') ? undefined : 'auto';
+
 export const Input = ({
   ref,
   icon,
@@ -142,6 +153,7 @@ export const Input = ({
 
   return (
     <RACInput
+      dir={inputDir(props.type)}
       ref={ref}
       {...props}
       className={inputStyles({ ...props, size, className })}
@@ -161,6 +173,7 @@ export const InputWithIcon = ({
   return (
     <span className="relative w-full">
       <RACInput
+        dir={inputDir(props.type)}
         ref={ref}
         {...props}
         className={inputStyles({
@@ -209,6 +222,7 @@ export const TextArea = ({
 } & TextAreaVariantProps) => {
   return (
     <RACTextArea
+      dir="auto"
       ref={ref}
       {...props}
       className={textAreaStyles({ variant, className })}
