@@ -365,20 +365,21 @@ export const createPost = async (input: CreatePostServiceInput) => {
   waitUntil(
     (async () => {
       try {
-        await match<Promise<unknown>>(postKind, {
+        await match<Promise<void>>(postKind, {
           comment: () =>
             sendPostCommentNotification(parentPostId!, content, profileId),
           proposalComment: () =>
             sendProposalCommentNotification(proposalId!, content, profileId),
-          decisionUpdate: () =>
-            event.send({
+          decisionUpdate: async () => {
+            await event.send({
               name: Events.decisionUpdatePosted.name,
               data: {
                 postId: newPost.id,
                 targetProfileId: targetProfileId!,
                 authorProfileId: profileId,
               },
-            }),
+            });
+          },
           none: () => Promise.resolve(),
         });
       } catch (error) {
