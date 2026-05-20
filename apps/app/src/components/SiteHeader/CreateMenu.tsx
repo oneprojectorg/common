@@ -72,7 +72,7 @@ export const CreateMenu = () => {
           <LuPlus className="size-4" />
           <span className="hidden sm:block">{t('Create')}</span>
         </Button>
-        <Popover>
+        <Popover placement="bottom end">
           <Menu>
             <MenuItem
               id="create-org"
