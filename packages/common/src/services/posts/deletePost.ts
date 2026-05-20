@@ -1,4 +1,4 @@
-import { db, eq } from '@op/db/client';
+import { db, eq, sql } from '@op/db/client';
 import {
   organizations,
   posts,
@@ -26,7 +26,11 @@ export const deletePostById = async (options: DeletePostByIdOptions) => {
   // Pull the post plus the linked org's profileId in one round trip. The org
   // profile stands in as the gate for legacy postsToOrganizations posts and
   // is what assertInstanceProfileAccess looks up to resolve the org for the
-  // organizationUsers fallback.
+  // organizationUsers fallback. The join walks up via `rootPostId` so a
+  // comment on a legacy org-feed post inherits its root post's org link —
+  // comments never get their own postsToOrganizations row, and legacy roots
+  // never set rootProfileId, so without this walk org admins can't moderate
+  // replies under legacy posts.
   const [postRows, currentProfileId] = await Promise.all([
     db
       .select({
@@ -36,7 +40,10 @@ export const deletePostById = async (options: DeletePostByIdOptions) => {
         orgProfileId: organizations.profileId,
       })
       .from(posts)
-      .leftJoin(postsToOrganizations, eq(postsToOrganizations.postId, posts.id))
+      .leftJoin(
+        postsToOrganizations,
+        sql`${postsToOrganizations.postId} = coalesce(${posts.rootPostId}, ${posts.id})`,
+      )
       .leftJoin(
         organizations,
         eq(organizations.id, postsToOrganizations.organizationId),

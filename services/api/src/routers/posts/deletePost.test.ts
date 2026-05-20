@@ -1,5 +1,6 @@
 import { db, eq } from '@op/db/client';
 import { posts } from '@op/db/schema';
+import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
@@ -62,6 +63,36 @@ describe.concurrent('organization post deletion (legacy postsToOrganizations)', 
     });
 
     await ownerCaller.organization.deletePost({ id: orgPost.id });
+
+    expect(await postExists(orgPost.id)).toBe(false);
+  });
+
+  it('allows a second org admin (different user) to delete a legacy org post', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const firstAdminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const orgPost = await firstAdminCaller.organization.createPost({
+      id: setup.organization.id,
+      content: 'Org feed post by first admin.',
+    });
+
+    const secondAdmin = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+      orgRoleId: ROLES.ADMIN.id,
+    });
+    const secondAdminCaller = await createAuthenticatedCaller(
+      secondAdmin.email,
+    );
+    await secondAdminCaller.account.switchOrganization({
+      organizationId: setup.organization.id,
+    });
+
+    await secondAdminCaller.organization.deletePost({ id: orgPost.id });
 
     expect(await postExists(orgPost.id)).toBe(false);
   });
@@ -500,17 +531,56 @@ describe.concurrent('regression: account.switchOrganization spoof', () => {
 
     expect(await postExists(adminPost.id)).toBe(true);
   });
+
+  // Counterpart to the spoof test above: an admin (organizationUsers ADMIN)
+  // who switched into the org SHOULD be able to delete an org-profile post
+  // authored by another admin. posts.createPost stamps posts.profileId from
+  // currentProfileId — for a switched-in admin that's the org profile — and
+  // the deleter's fast-path correctly skips (no profileUsers row on the org
+  // profile), falling through to assertInstanceProfileAccess's org fallback.
+  it('lets an org admin delete an admin-authored org-profile post via the org-membership fallback', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const firstAdminCaller = await createAuthenticatedCaller(setup.userEmail);
+    await firstAdminCaller.account.switchOrganization({
+      organizationId: setup.organization.id,
+    });
+    const adminPost = await firstAdminCaller.posts.createPost({
+      content: 'Org-profile post via posts.createPost.',
+      profileId: setup.organization.profileId,
+    });
+
+    const secondAdmin = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+      orgRoleId: ROLES.ADMIN.id,
+    });
+    const secondAdminCaller = await createAuthenticatedCaller(
+      secondAdmin.email,
+    );
+    await secondAdminCaller.account.switchOrganization({
+      organizationId: setup.organization.id,
+    });
+
+    await secondAdminCaller.organization.deletePost({ id: adminPost.id });
+
+    expect(await postExists(adminPost.id)).toBe(false);
+  });
 });
 
-describe.concurrent('regression: legacy org post moderation gap', () => {
+describe.concurrent('regression: legacy org post moderation', () => {
   // Legacy `organization.createPost` writes a postsToOrganizations row but
   // no posts.profileId / no postsToProfiles / no rootProfileId. Comments
   // added via the new `posts.createPost` inherit the legacy post's null
   // rootProfileId and (because parent has no postsToProfiles) get no
   // postsToProfiles either. The comment itself has no postsToOrganizations
-  // link, so checkOrgAdmin never fires. This test pins that gap — flip it
-  // to `resolves.toBeUndefined()` if moderation gets wired up.
-  it('does NOT let an org admin delete a comment under a legacy postsToOrganizations post', async ({
+  // link, so the deletePost query walks up via posts.rootPostId to pick up
+  // the legacy root's org link and run the org-membership ADMIN fallback.
+  it('lets an org admin delete a comment under a legacy postsToOrganizations post', async ({
     task,
     onTestFinished,
   }) => {
@@ -541,6 +611,45 @@ describe.concurrent('regression: legacy org post moderation gap', () => {
 
     await expect(
       ownerCaller.organization.deletePost({ id: comment.id }),
+    ).resolves.toBeUndefined();
+
+    expect(await postExists(comment.id)).toBe(false);
+  });
+
+  it('does NOT let a non-admin org member delete a comment under a legacy postsToOrganizations post', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
+    const legacyPost = await ownerCaller.organization.createPost({
+      id: setup.organization.id,
+      content: 'Legacy org feed post.',
+    });
+    onTestFinished(async () => {
+      await db.delete(posts).where(eq(posts.id, legacyPost.id));
+    });
+
+    const author = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+    });
+    const authorCaller = await createAuthenticatedCaller(author.email);
+    const comment = await authorCaller.posts.createPost({
+      content: 'Member comment under legacy post.',
+      parentPostId: legacyPost.id,
+    });
+
+    const bystander = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+    });
+    const bystanderCaller = await createAuthenticatedCaller(bystander.email);
+
+    await expect(
+      bystanderCaller.organization.deletePost({ id: comment.id }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
 
     expect(await postExists(comment.id)).toBe(true);
