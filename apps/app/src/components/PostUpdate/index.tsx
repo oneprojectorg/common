@@ -305,7 +305,6 @@ const PostUpdateWithUser = ({
     },
     onSuccess: (data, variables, context) => {
       fileUpload.clearFiles();
-      setLastFailedPost(null);
 
       if (data && context?.tempId) {
         // Clear the optimistic comment ID since we have real data
