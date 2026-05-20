@@ -76,7 +76,7 @@ export function sanitizeS3Filename(filename: string) {
     .replace(/_+/g, '_');
 
   // Ensure the key doesn't start with these special characters
-  sanitized = sanitized.replace(/^[!-.* ]/g, '');
+  sanitized = sanitized.replace(/^[!.* \-]/g, '');
 
   // Limit length (optional, modify as needed)
   const maxLength = 1024; // S3 allows up to 1024 bytes for key length
@@ -87,7 +87,7 @@ export function sanitizeS3Filename(filename: string) {
   return sanitizeForS3(sanitized, '-');
 }
 
-export const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
+export { MAX_FILE_SIZE } from './storage';
 
 /** Short, deterministic digest of a search string for cache keys. */
 export function hashSearch(search: string) {

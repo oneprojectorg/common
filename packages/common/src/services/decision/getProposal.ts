@@ -240,7 +240,9 @@ export const getProposal = async ({
 
         const { data } = await supabase.storage
           .from('assets')
-          .createSignedUrl(storagePath, 60 * 60 * 24);
+          .createSignedUrl(storagePath, 60 * 60 * 24, {
+            download: pa.attachment?.fileName,
+          });
 
         return {
           ...pa,

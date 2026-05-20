@@ -18,6 +18,7 @@ import { transformFormDataToProcessSchema as cowopSchema } from '../../../../../
 import { transformFormDataToProcessSchema as horizonSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/horizon';
 import { transformFormDataToProcessSchema as simpleSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/simple';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { uploadProposalAttachmentFixture } from '../../../test/helpers/uploadProposalAttachmentFixture';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -1401,16 +1402,9 @@ describe.concurrent('getProposal', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    // Upload an attachment to the proposal
-    // Using a minimal valid base64 PNG (1x1 transparent pixel)
-    const minimalPngBase64 =
-      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
-
-    const uploadResult = await caller.decision.uploadProposalAttachment({
-      file: minimalPngBase64,
-      fileName: 'test-attachment.png',
-      mimeType: 'image/png',
+    const uploadResult = await uploadProposalAttachmentFixture(caller, {
       proposalId: proposal.id,
+      fileName: 'test-attachment.png',
     });
 
     expect(uploadResult.id).toBeDefined();

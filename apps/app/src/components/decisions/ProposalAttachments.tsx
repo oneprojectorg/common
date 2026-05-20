@@ -6,6 +6,7 @@ import { toast } from '@op/ui/Toast';
 import { type ReactNode, startTransition, useOptimistic } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
+import { uploadFileViaSignedUrl } from '@/lib/uploadViaSignedUrl';
 
 import { ProposalAttachmentList } from './ProposalAttachmentList';
 
@@ -47,9 +48,6 @@ function attachmentsReducer(
   }
 }
 
-/**
- * Attachment section for proposals.
- */
 export function ProposalAttachments({
   proposalId,
   attachments,
@@ -66,7 +64,6 @@ export function ProposalAttachments({
 }) {
   const t = useTranslations();
 
-  // Normalize attachments to ensure fileSize is always a number
   const normalizedAttachments: Attachment[] = attachments.map((a) => ({
     id: a.id,
     fileName: a.fileName,
@@ -79,19 +76,18 @@ export function ProposalAttachments({
     attachmentsReducer,
   );
 
+  const createUploadUrlMutation =
+    trpc.decision.createProposalAttachmentUploadUrl.useMutation();
+
   const uploadMutation = trpc.decision.uploadProposalAttachment.useMutation({
     onSuccess: onMutate,
-    onError: (err) => {
-      toast.error({ message: err.message });
-      onMutate(); // Refetch to clear optimistic state on error
-    },
   });
 
   const deleteMutation = trpc.decision.deleteProposalAttachment.useMutation({
     onSuccess: onMutate,
     onError: (err) => {
       toast.error({ message: err.message });
-      onMutate(); // Refetch to restore deleted item on error
+      onMutate();
     },
   });
 
@@ -127,19 +123,22 @@ export function ProposalAttachments({
           },
         });
 
-        const reader = new FileReader();
-        const base64 = await new Promise<string>((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = () => reject(new Error('Failed to read file'));
-          reader.readAsDataURL(file);
-        });
-
-        await uploadMutation.mutateAsync({
-          file: base64,
-          fileName: file.name,
-          mimeType: file.type,
-          proposalId,
-        });
+        try {
+          await uploadFileViaSignedUrl(file, {
+            createUploadUrl: (args) =>
+              createUploadUrlMutation.mutateAsync({ ...args, proposalId }),
+            recordUpload: (args) =>
+              uploadMutation.mutateAsync({ ...args, proposalId }),
+          });
+        } catch (err) {
+          toast.error({
+            message:
+              err instanceof Error && err.message
+                ? err.message
+                : t('Upload failed'),
+          });
+          onMutate();
+        }
       });
     }
   };
