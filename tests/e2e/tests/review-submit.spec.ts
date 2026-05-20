@@ -442,6 +442,70 @@ test.describe('Review Submit', () => {
     });
   });
 
+  test('shows comments section on the review page in read-only mode', async ({
+    authenticatedPage: page,
+    org,
+  }) => {
+    const template = await getSeededTemplate();
+
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: REVIEW_SCHEMA,
+    });
+
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...(instance.instance.instanceData as Record<string, unknown>),
+          rubricTemplate: RUBRIC_TEMPLATE,
+        },
+        currentStateId: 'review',
+      })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    await createReviewScenario({
+      instance: { id: instance.instance.id },
+      author: {
+        profileId: org.organizationProfile.id,
+        authUserId: org.adminUser.authUserId,
+        email: org.adminUser.email,
+      },
+      reviewer: { profileId: org.adminUser.profileId },
+      proposalData: {
+        title: PROPOSAL_TITLE,
+        collaborationDocId: 'test-proposal-view-doc',
+      },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    await page.goto(`/en/decisions/${instance.slug}`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(page.getByText('Proposals to review')).toBeVisible({
+      timeout: 36_000,
+    });
+    await page.getByText(PROPOSAL_TITLE).first().click();
+    await expect(page).toHaveURL(/\/reviews\//, { timeout: 10_000 });
+    await expect(
+      page.getByText('Review Proposal', { exact: true }).first(),
+    ).toBeVisible({ timeout: 36_000 });
+
+    // The comments section header renders alongside the proposal — reviewers
+    // can read but not post, so the empty-state copy omits the call to action
+    // and no comment textbox is present.
+    await expect(
+      page.getByRole('heading', { name: /^Comments \(\d+\)$/ }),
+    ).toBeVisible();
+    await expect(page.getByText('No comments yet.')).toBeVisible();
+    await expect(page.getByText('Be the first to comment')).toHaveCount(0);
+    await expect(page.getByPlaceholder(/^Comment( as |\.\.\.)/)).toHaveCount(0);
+  });
+
   test('hides Request revision button when reviewsAllowRevisions is false', async ({
     authenticatedPage: page,
     org,
