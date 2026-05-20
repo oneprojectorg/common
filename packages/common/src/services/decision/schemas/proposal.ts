@@ -156,11 +156,10 @@ export const allProposalsListItemSchema = proposalSchema.omit({
 
 export type AllProposalsListItem = z.infer<typeof allProposalsListItemSchema>;
 
-/** Paginated response from `decision.listAllProposals`. */
+/** Cursor-paginated response from `decision.listAllProposals`. */
 export const allProposalsListSchema = z.object({
-  proposals: z.array(allProposalsListItemSchema),
-  total: z.number(),
-  hasMore: z.boolean(),
+  items: z.array(allProposalsListItemSchema),
+  next: z.string().nullable(),
 });
 
 export type AllProposalsList = z.infer<typeof allProposalsListSchema>;

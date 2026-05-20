@@ -695,7 +695,10 @@ export const ProposalsList = ({
       : [t.decision.listProposals(queryParams)],
   );
 
-  const { proposals: allProposals } = proposalsData ?? {};
+  const allProposals =
+    proposalsData && 'items' in proposalsData
+      ? proposalsData.items
+      : (proposalsData?.proposals ?? []);
   const canManageProposals = permissions?.admin ?? false;
 
   const { data: revisionRequestsData } =

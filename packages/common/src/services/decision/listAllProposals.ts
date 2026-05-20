@@ -1,15 +1,18 @@
-import { and, db, eq, inArray, isNull, notInArray } from '@op/db/client';
+import { and, db, eq, exists, isNull, notInArray } from '@op/db/client';
 import {
   ProposalStatus,
   Visibility,
   proposalCategories,
-  proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
-import { count as countFn } from 'drizzle-orm';
 
-import { UnauthorizedError } from '../../utils';
+import {
+  UnauthorizedError,
+  decodeCursor,
+  encodeCursor,
+  getCursorCondition,
+} from '../../utils';
 import {
   assertInstanceProfileAccess,
   getCurrentProfileId,
@@ -23,9 +26,9 @@ export interface ListAllProposalsInput {
   processInstanceId: string;
   status?: ProposalStatus;
   categoryId?: string;
+  cursor?: string | null;
   limit?: number;
-  offset?: number;
-  orderBy?: 'createdAt' | 'updatedAt' | 'status';
+  orderBy?: 'createdAt' | 'updatedAt';
   dir?: 'asc' | 'desc';
   authUserId: string;
 }
@@ -44,7 +47,14 @@ export const listAllProposals = async ({
   input: ListAllProposalsInput;
   user: User;
 }) => {
-  const { processInstanceId, status } = input;
+  const { processInstanceId, status, categoryId } = input;
+  const limit = input.limit ?? 20;
+  const orderBy = input.orderBy ?? 'createdAt';
+  const dir = input.dir ?? 'desc';
+
+  const decodedCursor = input.cursor
+    ? decodeCursor<{ value: string | Date }>(input.cursor)
+    : undefined;
 
   const [currentProfileId, instance] = await Promise.all([
     getCurrentProfileId(input.authUserId),
@@ -70,75 +80,68 @@ export const listAllProposals = async ({
     ],
   });
 
-  const { limit = 20, offset = 0, orderBy = 'createdAt', dir = 'desc' } = input;
-
-  let categoryProposalIds: string[] | undefined;
-  if (input.categoryId) {
-    const rows = await db
-      .select({ proposalId: proposalCategories.proposalId })
-      .from(proposalCategories)
-      .where(eq(proposalCategories.taxonomyTermId, input.categoryId));
-
-    if (rows.length === 0) {
-      return { proposals: [], total: 0, hasMore: false };
-    }
-
-    categoryProposalIds = rows.map((r) => r.proposalId);
-  }
-
-  const buildWhere = (table: typeof proposals) =>
-    and(
-      eq(table.processInstanceId, processInstanceId),
-      status ? eq(table.status, status) : undefined,
-      categoryProposalIds ? inArray(table.id, categoryProposalIds) : undefined,
-      notInArray(table.status, [
-        ProposalStatus.DRAFT,
-        ProposalStatus.REJECTED,
-        ProposalStatus.DUPLICATE,
-      ]),
-      isNull(table.deletedAt),
-      eq(table.visibility, Visibility.VISIBLE),
-    );
-
-  const [proposalList, countResult] = await Promise.all([
-    db.query.proposals.findMany({
-      where: { RAW: (table) => buildWhere(table)! },
-      with: {
-        submittedBy: {
-          with: {
-            avatarImage: true,
-          },
+  const proposalList = await db.query.proposals.findMany({
+    where: {
+      RAW: (table) =>
+        and(
+          eq(table.processInstanceId, processInstanceId),
+          status ? eq(table.status, status) : undefined,
+          categoryId
+            ? exists(
+                db
+                  .select({ id: proposalCategories.proposalId })
+                  .from(proposalCategories)
+                  .where(
+                    and(
+                      eq(proposalCategories.proposalId, table.id),
+                      eq(proposalCategories.taxonomyTermId, categoryId),
+                    ),
+                  ),
+              )
+            : undefined,
+          notInArray(table.status, [
+            ProposalStatus.DRAFT,
+            ProposalStatus.REJECTED,
+            ProposalStatus.DUPLICATE,
+          ]),
+          isNull(table.deletedAt),
+          eq(table.visibility, Visibility.VISIBLE),
+          getCursorCondition({
+            column: table[orderBy],
+            cursor: decodedCursor,
+            direction: dir,
+          }),
+        )!,
+    },
+    with: {
+      submittedBy: {
+        with: {
+          avatarImage: true,
         },
-        profile: true,
       },
-      limit,
-      offset,
-      orderBy: (table, { asc, desc }) => {
-        const col = table[orderBy] ?? table.createdAt;
-        return dir === 'asc' ? asc(col) : desc(col);
-      },
-    }),
-    db
-      .select({ count: countFn() })
-      .from(proposals)
-      .where(buildWhere(proposals)),
-  ]);
+      profile: true,
+    },
+    limit: limit + 1, // Fetch one extra to check whether there's a next page.
+    orderBy: (table, { asc, desc }) =>
+      dir === 'asc' ? asc(table[orderBy]) : desc(table[orderBy]),
+  });
 
-  const count = countResult[0]?.count || 0;
+  const hasMore = proposalList.length > limit;
+  const pageItems = hasMore ? proposalList.slice(0, limit) : proposalList;
 
   const proposalTemplate = await resolveProposalTemplate(
     instance.instanceData as Record<string, unknown> | null,
     instance.processId,
   );
 
-  const profileIds = proposalList
+  const profileIds = pageItems
     .map((proposal) => proposal.profileId)
     .filter((id): id is string => Boolean(id));
 
   const [relationshipData, documentContentMap] = await Promise.all([
     getProposalRelationshipData({ profileIds, currentProfileId }),
     getProposalDocumentsContent(
-      proposalList.map((proposal) => ({
+      pageItems.map((proposal) => ({
         id: proposal.id,
         proposalData: proposal.proposalData,
         proposalTemplate,
@@ -146,7 +149,7 @@ export const listAllProposals = async ({
     ),
   ]);
 
-  const proposalsWithCounts = proposalList.map((proposal) => {
+  const items = pageItems.map((proposal) => {
     const submittedBy = Array.isArray(proposal.submittedBy)
       ? proposal.submittedBy[0]
       : proposal.submittedBy;
@@ -176,9 +179,12 @@ export const listAllProposals = async ({
     };
   });
 
-  return {
-    proposals: proposalsWithCounts,
-    total: Number(count),
-    hasMore: offset + limit < Number(count),
-  };
+  const lastItem = items[items.length - 1];
+  const cursorValue = lastItem ? lastItem[orderBy] : null;
+  const next =
+    hasMore && cursorValue
+      ? encodeCursor<{ value: string | Date }>({ value: cursorValue })
+      : null;
+
+  return { items, next };
 };

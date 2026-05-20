@@ -601,17 +601,18 @@ export const proposalFilterSchema = z
 
 /**
  * Input schema for `decision.listAllProposals`. Returns every valid submission
- * regardless of phase scoping, so there are no phase/voting filters.
+ * regardless of phase scoping, so there are no phase/voting filters. Uses
+ * cursor pagination — pass `cursor` from the previous response's `next`.
  */
-export const allProposalsFilterSchema = z
-  .object({
-    processInstanceId: z.uuid(),
-    status: z.enum(ProposalStatus).optional(),
-    categoryId: z.string().optional(),
-    dir: z.enum(['asc', 'desc']).optional(),
-    orderBy: z.enum(['createdAt', 'updatedAt', 'status']).optional(),
-  })
-  .extend(paginationInputSchema.shape);
+export const allProposalsFilterSchema = z.object({
+  processInstanceId: z.uuid(),
+  status: z.enum(ProposalStatus).optional(),
+  categoryId: z.string().optional(),
+  dir: z.enum(['asc', 'desc']).optional(),
+  orderBy: z.enum(['createdAt', 'updatedAt']).optional(),
+  cursor: z.string().nullish(),
+  limit: z.number().min(1).max(100).prefault(20),
+});
 
 // Decision Profile Encoder (profile with processInstance)
 export const decisionProfileEncoder = baseProfileEncoder.extend({
