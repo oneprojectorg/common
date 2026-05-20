@@ -343,6 +343,44 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.processInstances.id,
       to: r.proposalReviewAssignments.processInstanceId,
     }),
+    surveyResponses: r.many.decisionProcessSurveyResponses({
+      from: r.processInstances.id,
+      to: r.decisionProcessSurveyResponses.processInstanceId,
+    }),
+    surveySubmitters: r.many.decisionProcessSurveySubmitters({
+      from: r.processInstances.id,
+      to: r.decisionProcessSurveySubmitters.processInstanceId,
+    }),
+  },
+
+  /**
+   * Process survey response relations. Intentionally has no submitter
+   * relation so responses cannot be joined back to a profile.
+   */
+  decisionProcessSurveyResponses: {
+    processInstance: r.one.processInstances({
+      from: r.decisionProcessSurveyResponses.processInstanceId,
+      to: r.processInstances.id,
+      optional: false,
+    }),
+  },
+
+  /**
+   * Process survey submitter relations. Tracks who has submitted without
+   * linking to the response data.
+   */
+  decisionProcessSurveySubmitters: {
+    processInstance: r.one.processInstances({
+      from: r.decisionProcessSurveySubmitters.processInstanceId,
+      to: r.processInstances.id,
+      optional: false,
+    }),
+    submittedBy: r.one.profiles({
+      from: r.decisionProcessSurveySubmitters.submittedByProfileId,
+      to: r.profiles.id,
+      alias: 'decisionProcessSurveySubmitter_submittedBy',
+      optional: false,
+    }),
   },
 
   /**

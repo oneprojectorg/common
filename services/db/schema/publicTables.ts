@@ -180,6 +180,15 @@ export {
 export type { DecisionVoteProposal } from './tables/decisions_vote_proposals.sql';
 
 export {
+  decisionProcessSurveyResponses,
+  decisionProcessSurveySubmitters,
+} from './tables/processSurveyResponses.sql';
+export type {
+  DecisionProcessSurveyResponse,
+  DecisionProcessSurveySubmitter,
+} from './tables/processSurveyResponses.sql';
+
+export {
   stateTransitionHistory,
   stateTransitionHistoryRelations,
 } from './tables/stateTransitionHistory.sql';
