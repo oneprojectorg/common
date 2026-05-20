@@ -16,6 +16,9 @@ export const listVotersRouter = router({
         Channels.decisionInstance(input.processInstanceId),
       ]);
 
-      return listVoters({ input, user: ctx.user });
+      return listVoters({
+        processInstanceId: input.processInstanceId,
+        user: ctx.user,
+      });
     }),
 });

@@ -10,23 +10,17 @@ import { assertAccess, permission } from 'access-zones';
 import { CommonError, UnauthorizedError } from '../../utils';
 import { getProfileAccessUser } from '../access';
 
-export interface ListVotersInput {
-  processInstanceId: string;
-}
-
 /**
  * Returns the profiles that have actually submitted a vote in the process.
  * Admin-only: process admins see the participation list, no one else does.
  */
 export const listVoters = async ({
-  input,
+  processInstanceId,
   user,
 }: {
-  input: ListVotersInput;
+  processInstanceId: string;
   user: User;
 }) => {
-  const { processInstanceId } = input;
-
   const instance = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
     columns: { id: true, profileId: true },
