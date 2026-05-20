@@ -140,7 +140,6 @@ const PostUpdateWithUser = ({
       const tempId = `optimistic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       optimisticCommentRef.current = tempId;
 
-      const previousContent = content;
       setContent('');
       setDetectedUrls([]);
       setLastFailedPost(null);
@@ -188,7 +187,6 @@ const PostUpdateWithUser = ({
           previousComments,
           tempId,
           isComment: true,
-          previousContent,
         };
       }
 
@@ -238,19 +236,16 @@ const PostUpdateWithUser = ({
           previousPosts,
           tempId,
           isComment: false,
-          previousContent,
         };
       }
 
-      return { previousContent };
+      return {};
     },
     onError: (err, variables, context) => {
       const errorInfo = analyzeError(err);
 
-      if (context) {
-        setContent(context.previousContent);
-        setDetectedUrls(detectLinks(context.previousContent).urls);
-      }
+      setContent(variables.content);
+      setDetectedUrls(detectLinks(variables.content).urls);
 
       // Rollback optimistic updates on error
       if (context?.tempId && optimisticCommentRef.current === context.tempId) {
@@ -290,7 +285,7 @@ const PostUpdateWithUser = ({
       if (errorInfo.isConnectionError) {
         // Store failed post data for retry
         setLastFailedPost({
-          content: (context?.previousContent ?? '').trim(),
+          content: variables.content,
           attachmentIds: fileUpload.getUploadedAttachmentIds(),
         });
 
