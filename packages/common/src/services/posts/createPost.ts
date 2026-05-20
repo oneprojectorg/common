@@ -399,7 +399,6 @@ export const createPost = async (input: CreatePostServiceInput) => {
     return newPost;
   });
 
-  // TODO: Use the message queue for this and remove @vercel/functions as a dependency in @op/common
   waitUntil(
     (async () => {
       try {

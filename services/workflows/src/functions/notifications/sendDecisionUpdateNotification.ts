@@ -1,16 +1,9 @@
+import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
-import {
-  posts,
-  processInstances,
-  profileUsers,
-  profiles,
-} from '@op/db/schema';
+import { posts, processInstances, profileUsers, profiles } from '@op/db/schema';
 import { DecisionUpdateNotificationEmail, OPBatchSend } from '@op/emails';
 import { Events, inngest } from '@op/events';
-import { and, eq, ne } from 'drizzle-orm';
-import { alias } from 'drizzle-orm/pg-core';
-
-import { buildDecisionUpdateUrl } from './decisionUpdateUrl';
+import { eq } from 'drizzle-orm';
 
 const { decisionUpdatePosted } = Events;
 
@@ -24,64 +17,69 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
       event.data,
     );
 
-    const updateData = await step.run('get-update-data', async () => {
-      const authorProfile = alias(profiles, 'author_profile');
-      const processProfile = alias(profiles, 'process_profile');
+    const [post, processWithParticipants] = await Promise.all([
+      step.run('get-post', async () => {
+        const [row] = await db
+          .select({
+            authorName: profiles.name,
+            authorEmail: profiles.email,
+            postContent: posts.content,
+          })
+          .from(posts)
+          .innerJoin(profiles, eq(profiles.id, posts.profileId))
+          .where(eq(posts.id, postId))
+          .limit(1);
+        return row ?? null;
+      }),
+      step.run('get-process-participants', async () => {
+        const [instance] = await db
+          .select({
+            processTitle: processInstances.name,
+            processProfileId: processInstances.profileId,
+            processProfileSlug: profiles.slug,
+          })
+          .from(processInstances)
+          .leftJoin(profiles, eq(profiles.id, processInstances.profileId))
+          .where(eq(processInstances.id, processInstanceId))
+          .limit(1);
 
-      const [row] = await db
-        .select({
-          processTitle: processInstances.name,
-          processProfileId: processInstances.profileId,
-          processProfileSlug: processProfile.slug,
-          authorName: authorProfile.name,
-          authorEmail: authorProfile.email,
-          postContent: posts.content,
-        })
-        .from(posts)
-        .innerJoin(authorProfile, eq(authorProfile.id, posts.profileId))
-        .innerJoin(
-          processInstances,
-          eq(processInstances.id, processInstanceId),
-        )
-        .leftJoin(
-          processProfile,
-          eq(processProfile.id, processInstances.profileId),
-        )
-        .where(eq(posts.id, postId))
-        .limit(1);
+        if (!instance?.processProfileId || !instance.processProfileSlug) {
+          return null;
+        }
 
-      return row;
-    });
+        const participants = await db
+          .select({ email: profileUsers.email })
+          .from(profileUsers)
+          .where(eq(profileUsers.profileId, instance.processProfileId));
 
-    if (!updateData) {
-      console.error('No post or process found for update notification', {
+        return {
+          processTitle: instance.processTitle,
+          processProfileSlug: instance.processProfileSlug,
+          participants,
+        };
+      }),
+    ]);
+
+    if (!post) {
+      console.error('No post found for update notification', {
         postId,
         processInstanceId,
       });
       return;
     }
 
-    if (!updateData.processProfileId || !updateData.processProfileSlug) {
+    if (!processWithParticipants) {
       console.error('Process instance has no associated profile/slug', {
         processInstanceId,
       });
       return;
     }
 
-    const participants = await step.run('get-participants', async () => {
-      const whereClauses = [
-        eq(profileUsers.profileId, updateData.processProfileId!),
-      ];
-      if (updateData.authorEmail) {
-        whereClauses.push(ne(profileUsers.email, updateData.authorEmail));
-      }
-      return db
-        .select({ email: profileUsers.email })
-        .from(profileUsers)
-        .where(and(...whereClauses));
-    });
+    const recipients = processWithParticipants.participants.filter(
+      ({ email }) => email !== post.authorEmail,
+    );
 
-    if (participants.length === 0) {
+    if (recipients.length === 0) {
       console.warn('No participants to notify for decision update', {
         postId,
         processInstanceId,
@@ -89,21 +87,21 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
       return;
     }
 
-    const updateUrl = buildDecisionUpdateUrl(updateData.processProfileSlug);
-    const authorName = updateData.authorName ?? 'A Common user';
+    const updateUrl = `${OPURLConfig('APP').ENV_URL}/decisions/${processWithParticipants.processProfileSlug}?panel=updates`;
+    const authorName = post.authorName ?? 'A Common user';
 
     const result = await step.run('send-emails', async () => {
-      const emails = participants.map(({ email }) => ({
+      const emails = recipients.map(({ email }) => ({
         to: email,
         subject: DecisionUpdateNotificationEmail.subject(
           authorName,
-          updateData.processTitle,
+          processWithParticipants.processTitle,
         ),
         component: () =>
           DecisionUpdateNotificationEmail({
             authorName,
-            processTitle: updateData.processTitle,
-            updateContent: updateData.postContent,
+            processTitle: processWithParticipants.processTitle,
+            updateContent: post.postContent,
             updateUrl,
           }),
       }));
