@@ -6,3 +6,5 @@ export * from './reviews';
 export * from './proposal';
 export * from './adminDecisionInstance';
 export * from './transitionData';
+export * from './participantProfile';
+export * from './voters';

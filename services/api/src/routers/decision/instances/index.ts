@@ -10,6 +10,7 @@ import { listDecisionProfilesRouter } from './listDecisionProfiles';
 import { listLegacyInstancesRouter } from './listLegacyInstances';
 import { listProposalSubmittersRouter } from './listProposalSubmitters';
 import { listSelectionCandidatesRouter } from './listSelectionCandidates';
+import { listVotersRouter } from './listVoters';
 import { submitManualSelectionRouter } from './submitManualSelection';
 import { transitionFromPhaseRouter } from './transitionFromPhase';
 import { updateDecisionInstanceRouter } from './updateDecisionInstance';
@@ -30,4 +31,5 @@ export const instancesRouter = mergeRouters(
   listDecisionProfilesRouter,
   getDecisionBySlugRouter,
   listProposalSubmittersRouter,
+  listVotersRouter,
 );
