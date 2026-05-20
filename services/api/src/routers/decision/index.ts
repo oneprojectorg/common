@@ -20,3 +20,5 @@ export const decisionRouter = mergeRouters(
   votingRouter,
   surveyRouter,
 );
+
+export type { SurveyInternalData } from './survey';

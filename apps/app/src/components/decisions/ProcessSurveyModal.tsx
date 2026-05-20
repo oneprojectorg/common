@@ -1,5 +1,6 @@
 'use client';
 
+import type { SurveyInternalData } from '@op/api';
 import { trpc } from '@op/api/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
@@ -10,6 +11,7 @@ import { Radio, RadioGroup } from '@op/ui/RadioGroup';
 import { Select, SelectItem } from '@op/ui/Select';
 import { TextField } from '@op/ui/TextField';
 import { toast } from '@op/ui/Toast';
+import { useLocale } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -83,6 +85,7 @@ export const ProcessSurveyModal = ({
   onSkip: () => void;
 }) => {
   const t = useTranslations();
+  const locale = useLocale();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
 
   const [wasAdmin, setWasAdmin] = useState<string | null>(null);
@@ -191,7 +194,7 @@ export const ProcessSurveyModal = ({
       return;
     }
 
-    const internalData: Record<string, unknown> = {
+    const internalData: SurveyInternalData = {
       wasAdmin: wasAdmin === 'yes',
       npsScore: Number(npsScore),
       completedAt: new Date().toISOString(),
@@ -216,6 +219,7 @@ export const ProcessSurveyModal = ({
     submitSurvey.mutate({
       processInstanceId: instanceId,
       internalData,
+      locale,
     });
   };
 
