@@ -1,4 +1,7 @@
-import type { DecisionInstanceData } from '@op/common';
+import {
+  type DecisionInstanceData,
+  resolveManualSelectionStatus,
+} from '@op/common';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import { processInstances, profileUsers, profiles } from '@op/db/schema';
@@ -6,7 +9,7 @@ import { OPBatchSend, PhaseTransitionEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { eq } from 'drizzle-orm';
 
-const { phaseTransitioned } = Events;
+const { phaseTransitioned, selectionsConfirmed } = Events;
 
 export const sendPhaseTransitionNotification = inngest.createFunction(
   {
@@ -17,7 +20,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
       timeout: '3m',
     },
   },
-  { event: phaseTransitioned.name },
+  [{ event: phaseTransitioned.name }, { event: selectionsConfirmed.name }],
   async ({ event, step }) => {
     const { processInstanceId, toPhaseId } = phaseTransitioned.schema.parse(
       event.data,
@@ -29,6 +32,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
           name: processInstances.name,
           profileId: processInstances.profileId,
           instanceData: processInstances.instanceData,
+          currentStateId: processInstances.currentStateId,
           profileSlug: profiles.slug,
         })
         .from(processInstances)
@@ -50,6 +54,29 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
         processInstanceId,
       );
       return;
+    }
+
+    // Hold the email until the inbound transition is settled — when the
+    // departing phase had no selection pipeline (or its pipeline produced
+    // zero picks), participants would otherwise be notified of a phase
+    // they can't act in yet. submitManualSelection re-fires the event when
+    // the admin confirms.
+    const manualSelectionStatus = await step.run(
+      'check-manual-selection',
+      async () =>
+        resolveManualSelectionStatus({
+          instance: {
+            id: processInstanceId,
+            instanceData: processData.instanceData,
+            currentStateId: processData.currentStateId,
+          },
+        }),
+    );
+
+    if (!manualSelectionStatus.selectionsAreConfirmed) {
+      return {
+        message: `Skipped: selections not yet confirmed for instance ${processInstanceId}`,
+      };
     }
 
     // Resolve phase name and position from instance data

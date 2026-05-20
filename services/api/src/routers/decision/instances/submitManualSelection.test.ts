@@ -9,7 +9,8 @@ import {
   proposals,
   stateTransitionHistory,
 } from '@op/db/schema';
-import { describe, expect, it } from 'vitest';
+import { event } from '@op/events';
+import { type MockInstance, describe, expect, it } from 'vitest';
 import type { z } from 'zod';
 
 import { appRouter } from '../..';
@@ -602,5 +603,67 @@ describe.concurrent('submitManualSelection', () => {
     for (const row of proposalRows) {
       expect(row.status).toBe(ProposalStatus.APPROVED);
     }
+  });
+
+  it('dispatches a selectionsConfirmed event after a successful manual selection', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instanceId, userEmail, caller } = await seedInstance(testData);
+
+    const proposal = await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Proposal ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    // Put the instance in the "awaiting manual selection" state: the inbound
+    // transition into `review` exists but has zero attached proposals.
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+    await db
+      .delete(decisionTransitionProposals)
+      .where(eq(decisionTransitionProposals.processInstanceId, instanceId));
+
+    const mockSend = event.send as unknown as MockInstance;
+    mockSend.mockClear();
+
+    await caller.decision.submitManualSelection({
+      processInstanceId: instanceId,
+      proposalIds: [proposal.id],
+    });
+
+    const selectionsCalls = mockSend.mock.calls.filter(
+      (call: unknown[]) =>
+        (call[0] as { name: string; data: { processInstanceId: string } })
+          .name === 'decision/selections-confirmed' &&
+        (call[0] as { data: { processInstanceId: string } }).data
+          .processInstanceId === instanceId,
+    );
+    expect(selectionsCalls).toHaveLength(1);
+    expect(selectionsCalls[0]![0]).toMatchObject({
+      name: 'decision/selections-confirmed',
+      data: {
+        processInstanceId: instanceId,
+        fromPhaseId: 'submission',
+        toPhaseId: 'review',
+      },
+    });
+
+    // submitManualSelection does not re-emit phaseTransitioned — the original
+    // advance already did.
+    const transitionCalls = mockSend.mock.calls.filter(
+      (call: unknown[]) =>
+        (call[0] as { name: string; data: { processInstanceId: string } })
+          .name === 'decision/phase-transitioned' &&
+        (call[0] as { data: { processInstanceId: string } }).data
+          .processInstanceId === instanceId,
+    );
+    expect(transitionCalls).toHaveLength(0);
   });
 });
