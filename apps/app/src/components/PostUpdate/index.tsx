@@ -140,6 +140,11 @@ const PostUpdateWithUser = ({
       const tempId = `optimistic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       optimisticCommentRef.current = tempId;
 
+      const previousContent = content;
+      setContent('');
+      setDetectedUrls([]);
+      setLastFailedPost(null);
+
       // For comments (posts with parentPostId)
       if (variables.parentPostId) {
         // Cancel any outgoing refetches
@@ -179,7 +184,12 @@ const PostUpdateWithUser = ({
           return [optimisticComment, ...old];
         });
 
-        return { previousComments, tempId, isComment: true };
+        return {
+          previousComments,
+          tempId,
+          isComment: true,
+          previousContent,
+        };
       }
 
       // For top-level posts (profile posts like proposal comments)
@@ -224,13 +234,23 @@ const PostUpdateWithUser = ({
           return [optimisticPost, ...old];
         });
 
-        return { previousPosts, tempId, isComment: false };
+        return {
+          previousPosts,
+          tempId,
+          isComment: false,
+          previousContent,
+        };
       }
 
-      return {};
+      return { previousContent };
     },
     onError: (err, variables, context) => {
       const errorInfo = analyzeError(err);
+
+      if (context) {
+        setContent(context.previousContent);
+        setDetectedUrls(detectLinks(context.previousContent).urls);
+      }
 
       // Rollback optimistic updates on error
       if (context?.tempId && optimisticCommentRef.current === context.tempId) {
@@ -270,7 +290,7 @@ const PostUpdateWithUser = ({
       if (errorInfo.isConnectionError) {
         // Store failed post data for retry
         setLastFailedPost({
-          content: content.trim(),
+          content: (context?.previousContent ?? '').trim(),
           attachmentIds: fileUpload.getUploadedAttachmentIds(),
         });
 
@@ -284,9 +304,6 @@ const PostUpdateWithUser = ({
       console.log('ERROR', err);
     },
     onSuccess: (data, variables, context) => {
-      // Clear form and failed post on success
-      setContent('');
-      setDetectedUrls([]);
       fileUpload.clearFiles();
       setLastFailedPost(null);
 
