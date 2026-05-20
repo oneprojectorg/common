@@ -2,14 +2,15 @@ import { invalidate } from '@op/cache';
 import { and, db, eq, inArray } from '@op/db/client';
 import { profileUserToAccessRoles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { assertAccess, checkPermission, permission } from 'access-zones';
 
 import {
   CommonError,
   NotFoundError,
   UnauthorizedError,
+  ValidationError,
 } from '../../utils/error';
-import { getProfileAccessUser } from '../access';
+import { getNormalizedRoles, getProfileAccessUser } from '../access';
 import { getProfileUserWithRelations } from './getProfileUserWithRelations';
 
 /**
@@ -67,6 +68,31 @@ export const updateProfileUserRoles = async ({
   }
 
   assertAccess({ profile: permission.ADMIN }, currentProfileUser.roles ?? []);
+
+  if (targetProfileUser.isOwner) {
+    // Profile owners must always retain admin access on their own profile —
+    // the UI lets an owner switch themselves to a non-admin role and locks
+    // them out, so we enforce it server-side. Load the desired roles with
+    // their zone permissions and verify the union still grants profile ADMIN.
+    const desiredRolesWithPermissions = await db.query.accessRoles.findMany({
+      where: { id: { in: roleIdsDeduped } },
+      with: {
+        zonePermissions: {
+          with: { accessZone: true },
+        },
+      },
+    });
+
+    const normalizedDesired = getNormalizedRoles(
+      desiredRolesWithPermissions.map((accessRole) => ({ accessRole })),
+    );
+
+    if (!checkPermission({ profile: permission.ADMIN }, normalizedDesired)) {
+      throw new ValidationError(
+        'Cannot remove admin access from the owner of a profile',
+      );
+    }
+  }
 
   const existingRoleIds = new Set(
     targetProfileUser.roles.map((r) => r.accessRoleId),
