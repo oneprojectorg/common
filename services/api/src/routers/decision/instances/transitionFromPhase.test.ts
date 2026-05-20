@@ -2,6 +2,7 @@ import { type DecisionInstanceData } from '@op/common';
 import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
+  ProposalStatus,
   decisionProcesses,
   processInstances,
   stateTransitionHistory,
@@ -69,9 +70,10 @@ describe('transitionFromPhase', () => {
 
     expect(dbInstance!.currentStateId).toBe('final');
 
-    // The phase transition event is suppressed when advancing into the last
-    // phase (see onPhaseAdvanced) — `final` is the last phase in this schema,
-    // so no event should be dispatched for this instance.
+    // No proposals were submitted, so initial's pass-all pipeline attaches
+    // zero proposals to the inbound transition into `final`. That leaves the
+    // instance awaiting manual selection — onPhaseAdvanced must defer the
+    // phaseTransitioned event until submitManualSelection confirms.
     const transitionCalls = mockSend.mock.calls.filter(
       (call: unknown[]) =>
         (call[0] as { name: string; data: { processInstanceId: string } })
@@ -80,6 +82,49 @@ describe('transitionFromPhase', () => {
           .processInstanceId === instance.instance.id,
     );
     expect(transitionCalls).toHaveLength(0);
+  });
+
+  it('should dispatch the phase transition event when the inbound transition has attached proposals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance } = await createPublishedInstance(testData);
+
+    // Seed a submitted proposal so the initial phase's pass-all pipeline has
+    // something to attach to the inbound transition into `final` — that path
+    // is `selectionsAreConfirmed: true`, so onPhaseAdvanced should fire.
+    await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: `Proposal ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const mockSend = event.send as unknown as MockInstance;
+
+    await caller.decision.transitionFromPhase({
+      instanceId: instance.instance.id,
+    });
+
+    const transitionCalls = mockSend.mock.calls.filter(
+      (call: unknown[]) =>
+        (call[0] as { name: string; data: { processInstanceId: string } })
+          .name === 'decision/phase-transitioned' &&
+        (call[0] as { data: { processInstanceId: string } }).data
+          .processInstanceId === instance.instance.id,
+    );
+    expect(transitionCalls).toHaveLength(1);
+    expect(transitionCalls[0]![0]).toMatchObject({
+      name: 'decision/phase-transitioned',
+      data: {
+        processInstanceId: instance.instance.id,
+        fromPhaseId: 'initial',
+        toPhaseId: 'final',
+      },
+    });
   });
 
   it('should record transition in history with manual flag', async ({

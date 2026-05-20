@@ -251,10 +251,19 @@ describe('processDecisionsTransitions', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-    const { instanceId } = await createPublishedInstanceWithDueTransitions(
-      testData,
-      task.id,
-    );
+    const { instanceId, userEmail } =
+      await createPublishedInstanceWithDueTransitions(testData, task.id);
+
+    // Seed a submitted proposal so each phase's pass-all pipeline has
+    // something to attach to the inbound transition — otherwise every
+    // advance would be marked "awaiting manual selection" and the email
+    // would be deferred.
+    await testData.createProposal({
+      userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Monitor proposal ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
 
     // Capture updatedAt before processing
     const beforeInstance = await db.query.processInstances.findFirst({
@@ -308,9 +317,10 @@ describe('processDecisionsTransitions', () => {
     const fromStates = historyRows.map((h) => h.fromStateId).sort();
     expect(fromStates).toEqual(['review', 'submission', 'voting']);
 
-    // Phase transition events fire for each advance EXCEPT the one into the
-    // last phase (voting → results) — that email is intentionally suppressed
-    // in onPhaseAdvanced until manual-selection confirmation is wired up.
+    // Every advance lands on an inbound transition with the seeded proposal
+    // attached (selectionsAreConfirmed: true), so onPhaseAdvanced fires the
+    // phase transition event for all three transitions including into the
+    // final `results` phase.
     const phaseTransitionCalls = mockSend.mock.calls.filter(
       (call: unknown[]) =>
         (call[0] as { name: string; data: { processInstanceId: string } })
@@ -318,13 +328,13 @@ describe('processDecisionsTransitions', () => {
         (call[0] as { data: { processInstanceId: string } }).data
           .processInstanceId === instanceId,
     );
-    expect(phaseTransitionCalls).toHaveLength(2);
+    expect(phaseTransitionCalls).toHaveLength(3);
     const toPhaseIds = phaseTransitionCalls
       .map(
         (call) => (call[0] as { data: { toPhaseId: string } }).data.toPhaseId,
       )
       .sort();
-    expect(toPhaseIds).toEqual(['review', 'voting']);
+    expect(toPhaseIds).toEqual(['results', 'review', 'voting']);
   });
 
   it('should NOT process transitions for DRAFT instances', async ({

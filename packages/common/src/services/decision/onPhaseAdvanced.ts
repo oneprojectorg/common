@@ -2,6 +2,7 @@ import { Events, event } from '@op/events';
 
 import type { AdvancePhaseResult } from './advancePhase';
 import { processResults } from './processResults';
+import { resolveManualSelectionStatus } from './resolveManualSelectionStatus';
 import { runGenerateReviewAssignments } from './runGenerateReviewAssignments';
 import { type PhaseInstanceData, isLastPhase } from './schemas/instanceData';
 
@@ -22,12 +23,18 @@ export async function onPhaseAdvanced(
 ): Promise<void> {
   const targetPhase = input.phases.find((p) => p.phaseId === input.toPhaseId);
 
-  // TEMP: suppress the results-phase email until manual-selection confirmation
-  // is wired into the notification trigger — otherwise participants get a
-  // "results are in" email before the admin has confirmed selections. Remove
-  // this guard once the email fires off `selectionsAreConfirmed` instead of
-  // the raw phase transition.
-  if (!isLastPhase(input.toPhaseId, input.phases)) {
+  // Defer the participant notification when the inbound transition is still
+  // awaiting an admin's manual selection — submitManualSelection will fire the
+  // event once selections are confirmed.
+  const manualSelectionStatus = await resolveManualSelectionStatus({
+    instance: {
+      id: input.instanceId,
+      instanceData: { phases: input.phases },
+      currentStateId: input.toPhaseId,
+    },
+  });
+
+  if (manualSelectionStatus.selectionsAreConfirmed) {
     event
       .send({
         name: Events.phaseTransitioned.name,

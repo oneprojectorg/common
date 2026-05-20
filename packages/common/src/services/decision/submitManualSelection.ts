@@ -6,6 +6,7 @@ import {
   proposalHistory,
   stateTransitionHistory,
 } from '@op/db/schema';
+import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
 import { assertAccess, permission } from 'access-zones';
 
@@ -95,6 +96,7 @@ export async function submitManualSelection({
 
   const now = new Date().toISOString();
   const byProfileId = dbUser.profileId;
+  let previousPhaseId: string | null = null;
 
   await db.transaction(async (tx) => {
     // Lock the instance row so a concurrent advancePhase can't move the
@@ -140,7 +142,7 @@ export async function submitManualSelection({
         'Manual selection is not available for this instance',
       );
     }
-    const previousPhaseId = lockedPreviousPhase.phaseId;
+    const lockedPreviousPhaseId = lockedPreviousPhase.phaseId;
 
     const [latestRow] = await tx
       .select({
@@ -192,7 +194,7 @@ export async function submitManualSelection({
           instanceData: lockedInstance.instanceData,
           currentStateId: lockedInstance.currentStateId,
         },
-        phaseId: previousPhaseId,
+        phaseId: lockedPreviousPhaseId,
         db: tx,
       }),
     );
@@ -267,5 +269,25 @@ export async function submitManualSelection({
         },
       });
     }
+
+    previousPhaseId = lockedPreviousPhaseId;
   });
+
+  if (previousPhaseId) {
+    event
+      .send({
+        name: Events.phaseTransitioned.name,
+        data: {
+          processInstanceId,
+          fromPhaseId: previousPhaseId,
+          toPhaseId: currentStateId,
+        },
+      })
+      .catch((err) => {
+        console.error(
+          `Failed to send phase transition event for instance ${processInstanceId}:`,
+          err,
+        );
+      });
+  }
 }
