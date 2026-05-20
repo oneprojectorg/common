@@ -354,13 +354,14 @@ export const createPost = async (input: CreatePostServiceInput) => {
     return newPost;
   });
 
-  const postKind = parentPostId
-    ? 'comment'
-    : proposalId && targetProfileId
-      ? 'proposalComment'
-      : targetProfileId
-        ? 'decisionUpdate'
-        : 'none';
+  let postKind: 'comment' | 'proposalComment' | 'decisionUpdate' | undefined;
+  if (parentPostId) {
+    postKind = 'comment';
+  } else if (proposalId && targetProfileId) {
+    postKind = 'proposalComment';
+  } else if (targetProfileId) {
+    postKind = 'decisionUpdate';
+  }
 
   waitUntil(
     (async () => {
@@ -389,8 +390,6 @@ export const createPost = async (input: CreatePostServiceInput) => {
                 authorProfileId: profileId,
               },
             });
-            break;
-          case 'none':
             break;
         }
       } catch (error) {
