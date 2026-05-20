@@ -15,8 +15,6 @@ import {
   ProfileRelationshipType,
   ProposalStatus,
   Visibility,
-  decisionsVoteProposals,
-  decisionsVoteSubmissions,
   posts,
   postsToProfiles,
   processInstances,
@@ -45,18 +43,6 @@ export interface ListAllProposalsInput {
   status?: ProposalStatus;
   search?: string;
   categoryId?: string;
-  /**
-   * Restrict results to proposals voted on by this profile. A caller can only
-   * request their own ballot (self-only auth check, skipped for trusted
-   * contexts).
-   */
-  votedByProfileId?: string;
-  /**
-   * Internal override: use this exact set of IDs. Not exposed on the tRPC
-   * schema — public callers should use votedByProfileId.
-   */
-  proposalIds?: string[];
-  phase?: 'results';
   limit?: number;
   offset?: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'status';
@@ -64,47 +50,6 @@ export interface ListAllProposalsInput {
   authUserId: string;
   skipAccessCheck?: boolean; // For trusted contexts like background jobs
 }
-
-const resolveExplicitScope = async ({
-  input,
-  currentProfileId,
-  skipAccessCheck,
-}: {
-  input: ListAllProposalsInput;
-  currentProfileId: string | undefined;
-  skipAccessCheck: boolean;
-}): Promise<string[] | undefined> => {
-  if (input.proposalIds !== undefined) {
-    return input.proposalIds;
-  }
-
-  if (!input.votedByProfileId) {
-    return undefined;
-  }
-
-  if (!skipAccessCheck && currentProfileId !== input.votedByProfileId) {
-    throw new UnauthorizedError('You can only view your own ballot');
-  }
-
-  const votedRows = await db
-    .select({ proposalId: decisionsVoteProposals.proposalId })
-    .from(decisionsVoteSubmissions)
-    .innerJoin(
-      decisionsVoteProposals,
-      eq(decisionsVoteSubmissions.id, decisionsVoteProposals.voteSubmissionId),
-    )
-    .where(
-      and(
-        eq(decisionsVoteSubmissions.processInstanceId, input.processInstanceId),
-        eq(
-          decisionsVoteSubmissions.submittedByProfileId,
-          input.votedByProfileId,
-        ),
-      ),
-    );
-
-  return votedRows.map((r) => r.proposalId);
-};
 
 const buildBaseWhereConditions = (input: ListAllProposalsInput) => {
   const { processInstanceId, submittedByProfileId, status, search } = input;
@@ -148,21 +93,18 @@ export const listAllProposals = async ({
 
   const currentProfileId = await getCurrentProfileId(input.authUserId);
 
-  const [instanceRows, explicitScopeIds] = await Promise.all([
-    db
-      .select({
-        id: processInstances.id,
-        profileId: processInstances.profileId,
-        ownerProfileId: processInstances.ownerProfileId,
-        instanceData: processInstances.instanceData,
-        processId: processInstances.processId,
-        currentStateId: processInstances.currentStateId,
-      })
-      .from(processInstances)
-      .where(eq(processInstances.id, processInstanceId))
-      .limit(1),
-    resolveExplicitScope({ input, currentProfileId, skipAccessCheck }),
-  ]);
+  const instanceRows = await db
+    .select({
+      id: processInstances.id,
+      profileId: processInstances.profileId,
+      ownerProfileId: processInstances.ownerProfileId,
+      instanceData: processInstances.instanceData,
+      processId: processInstances.processId,
+      currentStateId: processInstances.currentStateId,
+    })
+    .from(processInstances)
+    .where(eq(processInstances.id, processInstanceId))
+    .limit(1);
 
   const instance = instanceRows[0];
   if (!instance?.profileId) {
@@ -170,14 +112,9 @@ export const listAllProposals = async ({
   }
   const instanceProfileId = instance.profileId;
 
-  const { profileUser, canManageProposals } = await (async () => {
+  const { canManageProposals } = await (async () => {
     if (skipAccessCheck) {
-      return {
-        profileUser: undefined as
-          | Awaited<ReturnType<typeof getProfileAccessUser>>
-          | undefined,
-        canManageProposals: false,
-      };
+      return { canManageProposals: false };
     }
     const profileUserResolved = await getProfileAccessUser({
       user,
@@ -196,7 +133,6 @@ export const listAllProposals = async ({
       ],
     });
     return {
-      profileUser: profileUserResolved,
       canManageProposals: checkPermission(
         { profile: permission.ADMIN },
         profileUserResolved?.roles ?? [],
@@ -207,14 +143,6 @@ export const listAllProposals = async ({
   const { limit = 20, offset = 0, orderBy = 'createdAt', dir = 'desc' } = input;
 
   let whereClause = buildBaseWhereConditions(input);
-
-  if (explicitScopeIds !== undefined) {
-    const explicitScopeFilter =
-      explicitScopeIds.length > 0
-        ? inArray(proposals.id, explicitScopeIds)
-        : sql`false`;
-    whereClause = and(whereClause, explicitScopeFilter);
-  }
 
   const { categoryId } = input;
   if (categoryId) {
@@ -422,14 +350,6 @@ export const listAllProposals = async ({
       ? relationshipData.get(proposal.profileId)
       : null;
 
-    const isOwner = proposal.submittedByProfileId === currentProfileId;
-    const hasAdminPermission = checkPermission(
-      { profile: permission.ADMIN },
-      profileUser?.roles ?? [],
-    );
-    const isEditable =
-      input.phase === 'results' ? false : isOwner || hasAdminPermission;
-
     return {
       id: proposal.id,
       processInstanceId: proposal.processInstanceId,
@@ -446,7 +366,6 @@ export const listAllProposals = async ({
       isLikedByUser: relationshipInfo?.isLikedByUser || false,
       isFollowedByUser: relationshipInfo?.isFollowedByUser || false,
       commentsCount: relationshipInfo?.commentsCount || 0,
-      isEditable,
       documentContent: documentContentMap.get(proposal.id),
       proposalTemplate,
     };

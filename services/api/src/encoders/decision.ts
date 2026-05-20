@@ -586,11 +586,7 @@ export const proposalFilterSchema = z
     status: z.enum(ProposalStatus).optional(),
     categoryId: z.string().optional(),
     dir: z.enum(['asc', 'desc']).optional(),
-    /**
-     * Phase ID to scope proposals to. Defaults to the current phase when
-     * omitted. Only meaningful with `scope: 'phase'` (the default); must be
-     * omitted when `scope: 'all'`.
-     */
+    /** Phase ID to scope proposals to. Defaults to the current phase when omitted. */
     phaseId: z.string().optional(),
     /**
      * Restrict results to proposals voted on by this profile. Bypasses phase
@@ -600,21 +596,23 @@ export const proposalFilterSchema = z
     votedByProfileId: z.uuid().optional(),
     /** When set to 'results', all proposals are returned as non-editable */
     phase: z.enum(['results']).optional(),
-    /**
-     * Scope of the returned proposals:
-     * - `'phase'` (default): proposals visible in the current/specified phase.
-     * - `'all'`: every non-draft, non-rejected, non-duplicate, non-deleted
-     *   proposal on the instance, regardless of phase scoping. Used by the
-     *   "All proposals" tab on the results page so reviewers can browse the
-     *   full submission set after a limiting pipeline has narrowed the phase.
-     */
-    scope: z.enum(['phase', 'all']).optional(),
   })
-  .extend(paginationInputSchema.shape)
-  .refine((data) => !(data.scope === 'all' && data.phaseId !== undefined), {
-    message: '`phaseId` must be omitted when scope is "all"',
-    path: ['phaseId'],
-  });
+  .extend(paginationInputSchema.shape);
+
+/**
+ * Input schema for `decision.listAllProposals`. Returns every valid submission
+ * regardless of phase scoping, so there are no phase/voting filters.
+ */
+export const allProposalsFilterSchema = z
+  .object({
+    processInstanceId: z.uuid(),
+    submittedByProfileId: z.uuid().optional(),
+    status: z.enum(ProposalStatus).optional(),
+    categoryId: z.string().optional(),
+    dir: z.enum(['asc', 'desc']).optional(),
+    orderBy: z.enum(['createdAt', 'updatedAt', 'status']).optional(),
+  })
+  .extend(paginationInputSchema.shape);
 
 // Decision Profile Encoder (profile with processInstance)
 export const decisionProfileEncoder = baseProfileEncoder.extend({

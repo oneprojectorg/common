@@ -665,16 +665,11 @@ export const ProposalsList = ({
       dir: 'asc' | 'desc';
       limit: number;
       phase?: 'results';
-      scope?: 'phase' | 'all';
     } = {
       processInstanceId: instanceId,
       dir: sortOrder === 'newest' ? 'desc' : 'asc',
       limit: 50,
       phase,
-      // Results-page "All proposals" tab shows every valid (non-draft,
-      // non-rejected, non-duplicate, non-deleted) proposal on the instance,
-      // not just the funded ones carried into the results phase.
-      ...(phase === 'results' ? { scope: 'all' as const } : {}),
     };
 
     // Only include categoryId if it's not "all-categories"
@@ -685,8 +680,20 @@ export const ProposalsList = ({
     return params;
   }, [instanceId, selectedCategory, sortOrder, phase]);
 
-  const [proposalsData] =
-    trpc.decision.listProposals.useSuspenseQuery(queryParams);
+  // Last phase: hit the dedicated listAllProposals procedure so we bypass the
+  // selection-pipeline filter and skip joins we don't need on a read-only view.
+  const [[proposalsData]] = trpc.useSuspenseQueries((t) =>
+    phase === 'results'
+      ? [
+          t.decision.listAllProposals({
+            processInstanceId: queryParams.processInstanceId,
+            dir: queryParams.dir,
+            limit: queryParams.limit,
+            categoryId: queryParams.categoryId,
+          }),
+        ]
+      : [t.decision.listProposals(queryParams)],
+  );
 
   const { proposals: allProposals } = proposalsData ?? {};
   const canManageProposals = permissions?.admin ?? false;
