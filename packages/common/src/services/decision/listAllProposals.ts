@@ -15,6 +15,7 @@ import {
   assertInstanceProfileAccess,
   getCurrentProfileId,
 } from '../access';
+import { buildProposalListItem } from './buildProposalListItem';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { parseProposalData } from './proposalDataSchema';
@@ -150,8 +151,6 @@ export const listAllProposals = async ({
     instance.processId,
   );
 
-  type ProposalListItem = (typeof proposalList)[number];
-
   const profileIds = proposalList
     .map((proposal) => proposal.profileId)
     .filter((id): id is string => Boolean(id));
@@ -174,37 +173,14 @@ export const listAllProposals = async ({
     ),
   ]);
 
-  const proposalsWithCounts = proposalList.map((proposal: ProposalListItem) => {
-    const submittedBy = Array.isArray(proposal.submittedBy)
-      ? proposal.submittedBy[0]
-      : proposal.submittedBy;
-    const profile = Array.isArray(proposal.profile)
-      ? proposal.profile[0]
-      : proposal.profile;
-    const relationshipInfo = proposal.profileId
-      ? relationshipData.get(proposal.profileId)
-      : null;
-
-    return {
-      id: proposal.id,
-      processInstanceId: proposal.processInstanceId,
-      proposalData: parseProposalData(proposal.proposalData),
-      status: proposal.status,
-      visibility: proposal.visibility,
-      createdAt: proposal.createdAt,
-      updatedAt: proposal.updatedAt,
-      profileId: proposal.profileId,
-      submittedBy: submittedBy,
-      profile: profile,
-      likesCount: relationshipInfo?.likesCount || 0,
-      followersCount: relationshipInfo?.followersCount || 0,
-      isLikedByUser: relationshipInfo?.isLikedByUser || false,
-      isFollowedByUser: relationshipInfo?.isFollowedByUser || false,
-      commentsCount: relationshipInfo?.commentsCount || 0,
-      documentContent: documentContentMap.get(proposal.id),
+  const proposalsWithCounts = proposalList.map((proposal) =>
+    buildProposalListItem({
+      proposal,
+      relationshipData,
+      documentContentMap,
       proposalTemplate,
-    };
-  });
+    }),
+  );
 
   return {
     proposals: proposalsWithCounts,

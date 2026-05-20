@@ -30,6 +30,7 @@ import {
   getCurrentProfileId,
   getProfileAccessUser,
 } from '../access';
+import { buildProposalListItem } from './buildProposalListItem';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import {
@@ -424,9 +425,6 @@ export const listProposals = async ({
     instance.processId,
   );
 
-  type ProposalListItem = (typeof proposalList)[number];
-
-  // Get relationship data for all proposal profiles using optimized Drizzle queries
   const profileIds = proposalList
     .map((proposal) => proposal.profileId)
     .filter((id): id is string => Boolean(id));
@@ -449,48 +447,25 @@ export const listProposals = async ({
     ),
   ]);
 
-  // Transform the results to match the expected structure and add decision counts, likes count, and user relationship status
-  // TODO: improve this with more streamlined types
-  const proposalsWithCounts = proposalList.map((proposal: ProposalListItem) => {
-    const submittedBy = Array.isArray(proposal.submittedBy)
-      ? proposal.submittedBy[0]
-      : proposal.submittedBy;
-    const profile = Array.isArray(proposal.profile)
-      ? proposal.profile[0]
-      : proposal.profile;
-    const relationshipInfo = proposal.profileId
-      ? relationshipData.get(proposal.profileId)
-      : null;
+  const hasAdminPermission = checkPermission(
+    { profile: permission.ADMIN },
+    profileUser?.roles ?? [],
+  );
 
-    // In results phase, proposals are never editable
-    // Check if proposal is editable by current user
+  const proposalsWithCounts = proposalList.map((proposal) => {
+    // In results phase, proposals are never editable.
     const isOwner = proposal.submittedByProfileId === currentProfileId;
-    const hasAdminPermission = checkPermission(
-      { profile: permission.ADMIN },
-      profileUser?.roles ?? [],
-    );
     const isEditable =
       input.phase === 'results' ? false : isOwner || hasAdminPermission;
 
     return {
-      id: proposal.id,
-      processInstanceId: proposal.processInstanceId,
-      proposalData: parseProposalData(proposal.proposalData),
-      status: proposal.status,
-      visibility: proposal.visibility,
-      createdAt: proposal.createdAt,
-      updatedAt: proposal.updatedAt,
-      profileId: proposal.profileId,
-      submittedBy: submittedBy,
-      profile: profile,
-      likesCount: relationshipInfo?.likesCount || 0,
-      followersCount: relationshipInfo?.followersCount || 0,
-      isLikedByUser: relationshipInfo?.isLikedByUser || false,
-      isFollowedByUser: relationshipInfo?.isFollowedByUser || false,
-      commentsCount: relationshipInfo?.commentsCount || 0,
+      ...buildProposalListItem({
+        proposal,
+        relationshipData,
+        documentContentMap,
+        proposalTemplate,
+      }),
       isEditable,
-      documentContent: documentContentMap.get(proposal.id),
-      proposalTemplate,
     };
   });
 
