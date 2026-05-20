@@ -109,6 +109,11 @@ describe.concurrent('organization post deletion (legacy postsToOrganizations)', 
       id: setup.organization.id,
       content: 'Org feed post.',
     });
+    // Legacy posts have profileId=NULL with no rootProfileId, so the
+    // TestDecisionsDataManager profile-cascade cleanup can't reach them.
+    onTestFinished(async () => {
+      await db.delete(posts).where(eq(posts.id, orgPost.id));
+    });
 
     const member = await testData.createMemberUser({
       organization: setup.organization,
@@ -134,6 +139,9 @@ describe.concurrent('organization post deletion (legacy postsToOrganizations)', 
     const orgPost = await ownerCaller.organization.createPost({
       id: setup.organization.id,
       content: 'Org feed post.',
+    });
+    onTestFinished(async () => {
+      await db.delete(posts).where(eq(posts.id, orgPost.id));
     });
 
     const outsiderCaller = await createOutsiderCaller(testData);
