@@ -140,6 +140,10 @@ const PostUpdateWithUser = ({
       const tempId = `optimistic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       optimisticCommentRef.current = tempId;
 
+      setContent('');
+      setDetectedUrls([]);
+      setLastFailedPost(null);
+
       // For comments (posts with parentPostId)
       if (variables.parentPostId) {
         // Cancel any outgoing refetches
@@ -179,7 +183,11 @@ const PostUpdateWithUser = ({
           return [optimisticComment, ...old];
         });
 
-        return { previousComments, tempId, isComment: true };
+        return {
+          previousComments,
+          tempId,
+          isComment: true,
+        };
       }
 
       // For top-level posts (profile posts like proposal comments)
@@ -224,13 +232,20 @@ const PostUpdateWithUser = ({
           return [optimisticPost, ...old];
         });
 
-        return { previousPosts, tempId, isComment: false };
+        return {
+          previousPosts,
+          tempId,
+          isComment: false,
+        };
       }
 
       return {};
     },
     onError: (err, variables, context) => {
       const errorInfo = analyzeError(err);
+
+      setContent(variables.content);
+      setDetectedUrls(detectLinks(variables.content).urls);
 
       // Rollback optimistic updates on error
       if (context?.tempId && optimisticCommentRef.current === context.tempId) {
@@ -270,7 +285,7 @@ const PostUpdateWithUser = ({
       if (errorInfo.isConnectionError) {
         // Store failed post data for retry
         setLastFailedPost({
-          content: content.trim(),
+          content: variables.content,
           attachmentIds: fileUpload.getUploadedAttachmentIds(),
         });
 
@@ -284,11 +299,7 @@ const PostUpdateWithUser = ({
       console.log('ERROR', err);
     },
     onSuccess: (data, variables, context) => {
-      // Clear form and failed post on success
-      setContent('');
-      setDetectedUrls([]);
       fileUpload.clearFiles();
-      setLastFailedPost(null);
 
       if (data && context?.tempId) {
         // Clear the optimistic comment ID since we have real data
