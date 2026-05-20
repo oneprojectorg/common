@@ -7,7 +7,7 @@ import { match } from '@op/core';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n/routing';
@@ -20,6 +20,11 @@ import {
 } from '../DecisionResultsTabs';
 import { FinalPhaseSubmissionSuccessDialog } from '../FinalPhaseSubmissionSuccessDialog';
 import { MyBallot, NoVoteFound } from '../MyBallot';
+import {
+  ProcessSurveyModal,
+  hasSurveySkipCookie,
+  setSurveySkipCookie,
+} from '../ProcessSurveyModal';
 import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
 import { ResultsList } from '../ResultsList';
 import { ResultsStats } from '../ResultsStats';
@@ -48,6 +53,7 @@ function ResultsPageLegacy({
       instanceId={instanceId}
       profileSlug={profileSlug}
       instance={instance}
+      isLegacy
     />
   );
 }
@@ -87,11 +93,13 @@ function ResultsPageContent({
   profileSlug,
   decisionSlug,
   instance,
+  isLegacy = false,
 }: {
   instanceId: string;
   profileSlug: string;
   decisionSlug?: string;
   instance: ResultsPageInstance;
+  isLegacy?: boolean;
 }) {
   const t = useTranslations();
 
@@ -124,6 +132,7 @@ function ResultsPageContent({
   return (
     <>
       <FinalPhaseSubmissionSuccessDialog />
+      <ProcessSurveyGate instanceId={instanceId} isLegacy={isLegacy} />
       {/* Hero section - will be inside gradient from DecisionHeader */}
       <div className="px-4 py-8">
         <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4">
@@ -209,5 +218,41 @@ function ResultsPageContent({
         </div>
       </div>
     </>
+  );
+}
+
+function ProcessSurveyGate({
+  instanceId,
+  isLegacy,
+}: {
+  instanceId: string;
+  isLegacy?: boolean;
+}) {
+  if (isLegacy) {
+    return null;
+  }
+  return <ProcessSurveyGateInner instanceId={instanceId} />;
+}
+
+function ProcessSurveyGateInner({ instanceId }: { instanceId: string }) {
+  const [skipped, setSkipped] = useState(() => hasSurveySkipCookie(instanceId));
+  const { data } = trpc.decision.getProcessSurveyResponse.useQuery(
+    { processInstanceId: instanceId },
+    { retry: false, staleTime: Infinity, enabled: !skipped },
+  );
+
+  if (skipped) {
+    return null;
+  }
+
+  return (
+    <ProcessSurveyModal
+      instanceId={instanceId}
+      isOpen={data?.hasResponded === false}
+      onSkip={() => {
+        setSurveySkipCookie(instanceId);
+        setSkipped(true);
+      }}
+    />
   );
 }

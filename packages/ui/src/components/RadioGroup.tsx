@@ -33,14 +33,22 @@ export const RadioGroup = (props: RadioGroupProps) => {
         'group flex flex-col gap-2',
       )}
     >
-      <Label className={cn('text-neutral-charcoal', props.labelClassName)}>
-        {props.label}
-        {props.isRequired && <span className="text-functional-red"> *</span>}
+      <Label
+        className={cn(
+          'flex flex-col text-neutral-charcoal',
+          props.labelClassName,
+        )}
+      >
+        <span className="text-black">
+          {props.label}
+          {props.isRequired && <span className="text-functional-red"> *</span>}
+        </span>
+
+        {props.description && <Description>{props.description}</Description>}
       </Label>
       <div className="flex gap-2 group-orientation-horizontal:gap-4 group-orientation-vertical:flex-col">
         {props.children}
       </div>
-      {props.description && <Description>{props.description}</Description>}
       <FieldError>{props.errorMessage}</FieldError>
     </RACRadioGroup>
   );
@@ -93,7 +101,7 @@ export const Radio = ({
         return (
           <>
             <div className={styles(renderProps)} />
-            <span className={isBottomLabel ? 'text-center text-sm' : '-mt-0.5'}>
+            <span className={isBottomLabel ? 'text-center' : '-mt-0.5'}>
               {children}
             </span>
           </>

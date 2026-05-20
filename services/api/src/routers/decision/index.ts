@@ -5,6 +5,7 @@ import { processesRouter } from './processes';
 import { proposalsRouter } from './proposals';
 import { resultsRouter } from './results';
 import { reviewsRouter } from './reviews';
+import { surveyRouter } from './survey';
 import { uploadProposalAttachment } from './uploadProposalAttachment';
 import { votingRouter } from './voting';
 
@@ -17,4 +18,7 @@ export const decisionRouter = mergeRouters(
   uploadProposalAttachment,
   deleteProposalAttachment,
   votingRouter,
+  surveyRouter,
 );
+
+export type { SurveyInternalData } from './survey';
