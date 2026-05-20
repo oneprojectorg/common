@@ -677,6 +677,86 @@ export const relations = defineRelations(schema, (r) => ({
   },
 
   /**
+   * Resource collection relations
+   *
+   * Many-to-many: a collection lives on many profiles via
+   * resourceCollectionProfiles, and contains many resources via
+   * resourceCollectionItems.
+   */
+  resourceCollections: {
+    items: r.many.resourceCollectionItems({
+      from: r.resourceCollections.id,
+      to: r.resourceCollectionItems.collectionId,
+    }),
+    profileLinks: r.many.resourceCollectionProfiles({
+      from: r.resourceCollections.id,
+      to: r.resourceCollectionProfiles.collectionId,
+    }),
+  },
+
+  /**
+   * Resource collection item relations (join row between a collection and a resource).
+   */
+  resourceCollectionItems: {
+    collection: r.one.resourceCollections({
+      from: r.resourceCollectionItems.collectionId,
+      to: r.resourceCollections.id,
+      optional: false,
+    }),
+    resource: r.one.resources({
+      from: r.resourceCollectionItems.resourceId,
+      to: r.resources.id,
+      optional: false,
+    }),
+    addedBy: r.one.profileUsers({
+      from: r.resourceCollectionItems.addedByProfileUserId,
+      to: r.profileUsers.id,
+    }),
+  },
+
+  /**
+   * Resource collection profile relations (join row between a collection and a profile).
+   */
+  resourceCollectionProfiles: {
+    collection: r.one.resourceCollections({
+      from: r.resourceCollectionProfiles.collectionId,
+      to: r.resourceCollections.id,
+      optional: false,
+    }),
+    profile: r.one.profiles({
+      from: r.resourceCollectionProfiles.profileId,
+      to: r.profiles.id,
+      optional: false,
+    }),
+    addedBy: r.one.profileUsers({
+      from: r.resourceCollectionProfiles.addedByProfileUserId,
+      to: r.profileUsers.id,
+    }),
+  },
+
+  /**
+   * Resource relations
+   *
+   * Each row is either a link (linkUrl populated) or a document
+   * (attachmentId populated). Resources are attached to collections via
+   * resourceCollectionItems.
+   */
+  resources: {
+    attachment: r.one.attachments({
+      from: r.resources.attachmentId,
+      to: r.attachments.id,
+    }),
+    addedBy: r.one.profileUsers({
+      from: r.resources.addedByProfileUserId,
+      to: r.profileUsers.id,
+    }),
+    collectionItems: r.many.resourceCollectionItems({
+      from: r.resources.id,
+      to: r.resourceCollectionItems.resourceId,
+    }),
+  },
+
+  /**
    * Taxonomy relations
    *
    * taxonomyTerms has a self-referential parentId which breaks Drizzle inference.
