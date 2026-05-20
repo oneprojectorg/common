@@ -10,13 +10,9 @@ import {
   or,
 } from '@op/db/client';
 import {
-  ProfileRelationshipType,
   ProposalStatus,
   Visibility,
-  posts,
-  postsToProfiles,
   processInstances,
-  profileRelationships,
   profileUsers,
   proposalCategories,
   proposals,
@@ -32,6 +28,7 @@ import {
   getProfileAccessUser,
 } from '../access';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
+import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 
@@ -80,20 +77,10 @@ export const listAllProposals = async ({
 
   const currentProfileId = await getCurrentProfileId(input.authUserId);
 
-  const instanceRows = await db
-    .select({
-      id: processInstances.id,
-      profileId: processInstances.profileId,
-      ownerProfileId: processInstances.ownerProfileId,
-      instanceData: processInstances.instanceData,
-      processId: processInstances.processId,
-      currentStateId: processInstances.currentStateId,
-    })
-    .from(processInstances)
-    .where(eq(processInstances.id, processInstanceId))
-    .limit(1);
+  const instance = await db._query.processInstances.findFirst({
+    where: eq(processInstances.id, processInstanceId),
+  });
 
-  const instance = instanceRows[0];
   if (!instance?.profileId) {
     throw new UnauthorizedError('User does not have access to this process');
   }
@@ -206,58 +193,8 @@ export const listAllProposals = async ({
     .map((proposal) => proposal.profileId)
     .filter((id): id is string => Boolean(id));
 
-  const relationshipData = new Map<
-    string,
-    {
-      likesCount: number;
-      followersCount: number;
-      isLikedByUser: boolean;
-      isFollowedByUser: boolean;
-      commentsCount: number;
-    }
-  >();
-
-  const [relationshipResults, documentContentMap] = await Promise.all([
-    profileIds.length > 0
-      ? Promise.all([
-          db
-            .select({
-              targetProfileId: profileRelationships.targetProfileId,
-              relationshipType: profileRelationships.relationshipType,
-              count: countFn(),
-            })
-            .from(profileRelationships)
-            .where(inArray(profileRelationships.targetProfileId, profileIds))
-            .groupBy(
-              profileRelationships.targetProfileId,
-              profileRelationships.relationshipType,
-            ),
-
-          db
-            .select({
-              targetProfileId: profileRelationships.targetProfileId,
-              relationshipType: profileRelationships.relationshipType,
-            })
-            .from(profileRelationships)
-            .where(
-              and(
-                eq(profileRelationships.sourceProfileId, currentProfileId),
-                inArray(profileRelationships.targetProfileId, profileIds),
-              ),
-            ),
-
-          db
-            .select({
-              profileId: postsToProfiles.profileId,
-              count: countFn(),
-            })
-            .from(posts)
-            .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
-            .where(inArray(postsToProfiles.profileId, profileIds))
-            .groupBy(postsToProfiles.profileId),
-        ])
-      : Promise.resolve(null),
-
+  const [relationshipData, documentContentMap] = await Promise.all([
+    getProposalRelationshipData({ profileIds, currentProfileId }),
     getProposalDocumentsContent(
       proposalList.map((proposal) => {
         const parsed = parseProposalData(proposal.proposalData);
@@ -273,50 +210,6 @@ export const listAllProposals = async ({
       }),
     ),
   ]);
-
-  if (relationshipResults) {
-    const [relationshipCounts, userRelationships, commentCounts] =
-      relationshipResults;
-
-    for (const profileId of profileIds) {
-      const likesCount =
-        relationshipCounts.find(
-          (rc) =>
-            rc.targetProfileId === profileId &&
-            rc.relationshipType === ProfileRelationshipType.LIKES,
-        )?.count || 0;
-
-      const followersCount =
-        relationshipCounts.find(
-          (rc) =>
-            rc.targetProfileId === profileId &&
-            rc.relationshipType === ProfileRelationshipType.FOLLOWING,
-        )?.count || 0;
-
-      const isLikedByUser = userRelationships.some(
-        (ur) =>
-          ur.targetProfileId === profileId &&
-          ur.relationshipType === ProfileRelationshipType.LIKES,
-      );
-
-      const isFollowedByUser = userRelationships.some(
-        (ur) =>
-          ur.targetProfileId === profileId &&
-          ur.relationshipType === ProfileRelationshipType.FOLLOWING,
-      );
-
-      const commentsCount =
-        commentCounts.find((cc) => cc.profileId === profileId)?.count || 0;
-
-      relationshipData.set(profileId, {
-        likesCount: Number(likesCount),
-        followersCount: Number(followersCount),
-        isLikedByUser,
-        isFollowedByUser,
-        commentsCount: Number(commentsCount),
-      });
-    }
-  }
 
   const proposalsWithCounts = proposalList.map((proposal: ProposalListItem) => {
     const submittedBy = Array.isArray(proposal.submittedBy)

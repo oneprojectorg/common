@@ -78,6 +78,7 @@ export * from './getExportStatus';
 export * from './exports';
 export * from './generateProposalHtml';
 export * from './getProposalDocumentsContent';
+export * from './getProposalRelationshipData';
 export * from './getProposalFragmentNames';
 export * from './assembleProposalData';
 export * from './resolveProposalTemplate';
