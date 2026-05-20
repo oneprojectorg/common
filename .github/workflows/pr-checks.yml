@@ -4,8 +4,8 @@ on:
   pull_request:
 
 jobs:
-  typecheck:
-    name: Typecheck
+  checks:
+    name: Typecheck, format, migrations
     runs-on: blacksmith-2vcpu-ubuntu-2204
 
     env:
@@ -48,5 +48,8 @@ jobs:
       - name: Check formatting
         run: pnpm format:check
 
-      - name: Run TypeScript checks - App
+      - name: Check migrations
+        run: pnpm check-migrations
+
+      - name: Run TypeScript checks
         run: pnpm typecheck
