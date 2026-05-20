@@ -488,11 +488,14 @@ export class TestDecisionsDataManager {
     organization,
     instanceProfileIds = [],
     roleIds = {},
+    orgRoleId = ROLES.MEMBER.id,
   }: {
     organization: { id: string };
     instanceProfileIds?: string[];
     /** Map of profileId → roleId to assign after granting profile access. */
     roleIds?: Record<string, string>;
+    /** Org-level role to assign on join. Defaults to MEMBER. */
+    orgRoleId?: string;
   }): Promise<MemberUserOutput> {
     this.ensureCleanupRegistered();
 
@@ -533,7 +536,7 @@ export class TestDecisionsDataManager {
     const orgUser = await joinOrganization({
       user: userRecord,
       organization: orgRecord,
-      roleId: ROLES.MEMBER.id,
+      roleId: orgRoleId,
     });
 
     if (!orgUser) {
