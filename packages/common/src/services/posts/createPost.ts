@@ -8,8 +8,10 @@ import {
   posts,
   postsToOrganizations,
   postsToProfiles,
+  processInstances,
   profiles,
 } from '@op/db/schema';
+import { Events, event } from '@op/events';
 import { CreatePostInput } from '@op/types';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
@@ -122,6 +124,50 @@ const sendPostCommentNotification = async (
     console.error(
       'Failed to send post comment notification email:',
       emailError,
+    );
+  }
+};
+
+const dispatchDecisionUpdatePostedEvent = async ({
+  postId,
+  targetProfileId,
+  authorProfileId,
+}: {
+  postId: string;
+  targetProfileId: string;
+  authorProfileId: string;
+}) => {
+  try {
+    const [target] = await db
+      .select({
+        profileType: profiles.type,
+        processInstanceId: processInstances.id,
+      })
+      .from(profiles)
+      .leftJoin(processInstances, eq(processInstances.profileId, profiles.id))
+      .where(eq(profiles.id, targetProfileId))
+      .limit(1);
+
+    if (
+      !target ||
+      target.profileType !== EntityType.DECISION ||
+      !target.processInstanceId
+    ) {
+      return;
+    }
+
+    await event.send({
+      name: Events.decisionUpdatePosted.name,
+      data: {
+        postId,
+        processInstanceId: target.processInstanceId,
+        authorProfileId,
+      },
+    });
+  } catch (error) {
+    console.error(
+      '[createPost] Failed to emit decisionUpdatePosted event',
+      error,
     );
   }
 };
@@ -361,6 +407,12 @@ export const createPost = async (input: CreatePostServiceInput) => {
           await sendPostCommentNotification(parentPostId, content, profileId);
         } else if (targetProfileId && proposalId) {
           await sendProposalCommentNotification(proposalId, content, profileId);
+        } else if (targetProfileId) {
+          await dispatchDecisionUpdatePostedEvent({
+            postId: newPost.id,
+            targetProfileId,
+            authorProfileId: profileId,
+          });
         }
       } catch (error) {
         console.error('Failed to send notification email:', error);
