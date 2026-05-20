@@ -7,3 +7,4 @@ export * from './proposal';
 export * from './selection';
 export * from './adminDecisionInstance';
 export * from './transitionData';
+export * from './voters';

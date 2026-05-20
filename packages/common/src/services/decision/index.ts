@@ -73,6 +73,7 @@ export * from './backfillReviewAssignments';
 export * from './reconcileReviewAssignments';
 export * from './getEligibleReviewerProfileIds';
 export * from './listProposalSubmitters';
+export * from './listVoters';
 export * from './getReviewAssignment';
 export * from './listReviewAssignments';
 export * from './listCategoryReviewers';
