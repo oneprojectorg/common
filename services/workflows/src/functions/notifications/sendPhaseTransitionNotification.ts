@@ -1,4 +1,7 @@
-import type { DecisionInstanceData } from '@op/common';
+import {
+  type DecisionInstanceData,
+  resolveManualSelectionStatus,
+} from '@op/common';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import { processInstances, profileUsers, profiles } from '@op/db/schema';
@@ -6,20 +9,20 @@ import { OPBatchSend, PhaseTransitionEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { eq } from 'drizzle-orm';
 
-const { selectionsConfirmed } = Events;
+const { phaseTransitioned, selectionsConfirmed } = Events;
 
-export const sendSelectionsConfirmedNotification = inngest.createFunction(
+export const sendPhaseTransitionNotification = inngest.createFunction(
   {
-    id: 'sendSelectionsConfirmedNotification',
+    id: 'sendPhaseTransitionNotification',
     debounce: {
       key: 'event.data.processInstanceId + "-" + event.data.fromPhaseId + "-" + event.data.toPhaseId',
       period: '1m',
       timeout: '3m',
     },
   },
-  { event: selectionsConfirmed.name },
+  [{ event: phaseTransitioned.name }, { event: selectionsConfirmed.name }],
   async ({ event, step }) => {
-    const { processInstanceId, toPhaseId } = selectionsConfirmed.schema.parse(
+    const { processInstanceId, toPhaseId } = phaseTransitioned.schema.parse(
       event.data,
     );
 
@@ -29,6 +32,7 @@ export const sendSelectionsConfirmedNotification = inngest.createFunction(
           name: processInstances.name,
           profileId: processInstances.profileId,
           instanceData: processInstances.instanceData,
+          currentStateId: processInstances.currentStateId,
           profileSlug: profiles.slug,
         })
         .from(processInstances)
@@ -50,6 +54,29 @@ export const sendSelectionsConfirmedNotification = inngest.createFunction(
         processInstanceId,
       );
       return;
+    }
+
+    // Hold the email until the inbound transition is settled — when the
+    // departing phase had no selection pipeline (or its pipeline produced
+    // zero picks), participants would otherwise be notified of a phase
+    // they can't act in yet. submitManualSelection re-fires the event when
+    // the admin confirms.
+    const manualSelectionStatus = await step.run(
+      'check-manual-selection',
+      async () =>
+        resolveManualSelectionStatus({
+          instance: {
+            id: processInstanceId,
+            instanceData: processData.instanceData,
+            currentStateId: processData.currentStateId,
+          },
+        }),
+    );
+
+    if (!manualSelectionStatus.selectionsAreConfirmed) {
+      return {
+        message: `Skipped: selections not yet confirmed for instance ${processInstanceId}`,
+      };
     }
 
     // Resolve phase name and position from instance data
@@ -106,7 +133,7 @@ export const sendSelectionsConfirmedNotification = inngest.createFunction(
           sent: data.length,
         };
       } catch (error) {
-        console.error('Failed to send selections confirmed notifications:', {
+        console.error('Failed to send phase transition notifications:', {
           error,
           processInstanceId,
         });
@@ -115,7 +142,7 @@ export const sendSelectionsConfirmedNotification = inngest.createFunction(
     });
 
     return {
-      message: `${result.sent} selections confirmed notification(s) sent`,
+      message: `${result.sent} phase transition notification(s) sent`,
     };
   },
 );

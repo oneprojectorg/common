@@ -318,7 +318,8 @@ describe('processDecisionsTransitions', () => {
     expect(fromStates).toEqual(['review', 'submission', 'voting']);
 
     // phaseTransitioned fires unconditionally on every advance — three
-    // advances yield three events.
+    // advances yield three events. The notification function gates on
+    // selectionsAreConfirmed at delivery time, not here.
     const phaseTransitionCalls = mockSend.mock.calls.filter(
       (call: unknown[]) =>
         (call[0] as { name: string; data: { processInstanceId: string } })
@@ -333,23 +334,6 @@ describe('processDecisionsTransitions', () => {
       )
       .sort();
     expect(phaseTransitionToIds).toEqual(['results', 'review', 'voting']);
-
-    // selectionsConfirmed mirrors phaseTransitioned here because every advance
-    // lands with the seeded proposal attached.
-    const selectionsCalls = mockSend.mock.calls.filter(
-      (call: unknown[]) =>
-        (call[0] as { name: string; data: { processInstanceId: string } })
-          .name === 'decision/selections-confirmed' &&
-        (call[0] as { data: { processInstanceId: string } }).data
-          .processInstanceId === instanceId,
-    );
-    expect(selectionsCalls).toHaveLength(3);
-    const selectionsToIds = selectionsCalls
-      .map(
-        (call) => (call[0] as { data: { toPhaseId: string } }).data.toPhaseId,
-      )
-      .sort();
-    expect(selectionsToIds).toEqual(['results', 'review', 'voting']);
   });
 
   it('should NOT process transitions for DRAFT instances', async ({
