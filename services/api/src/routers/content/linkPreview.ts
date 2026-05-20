@@ -1,7 +1,16 @@
-// import { cache } from '@op/cache';
+import { getLinkPreview } from '@op/common';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
+
+const isHttpUrl = (raw: string): boolean => {
+  try {
+    const url = new URL(raw);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
 
 const linkPreviewResponseSchema = z.object({
   url: z.string(),
@@ -20,70 +29,20 @@ const linkPreviewResponseSchema = z.object({
   error: z.string().optional(),
 });
 
-const getLinkPreview = async (url: string) => {
-  try {
-    const iframelyKey = process.env.IFRAMELY_KEY;
-
-    if (!iframelyKey) {
-      return {
-        url,
-        error: 'Iframely key not configured',
-      };
-    }
-
-    // TODO: add caching
-    const response = await fetch(
-      `https://iframe.ly/api/iframely?url=${encodeURIComponent(url)}&key=${iframelyKey}`,
-    );
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const data = await response.json();
-
-    return {
-      url,
-      meta: data.meta
-        ? {
-            title: data.meta.title,
-            description: data.meta.description,
-            author: data.meta.author,
-            site: data.meta.site,
-          }
-        : undefined,
-      html: data.html,
-      thumbnail_url: data.thumbnail_url,
-      provider_name: data.provider_name,
-      provider_url: data.provider_url,
-    };
-  } catch (error) {
-    return {
-      url,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
-    };
-  }
-};
-
 export const linkPreview = router({
-  linkPreview: commonAuthedProcedure()
+  linkPreview: commonAuthedProcedure({
+    rateLimit: { windowSize: 60, maxRequests: 30 },
+  })
     .input(
       z.object({
-        url: z.url(),
+        url: z
+          .string()
+          .url()
+          .refine(isHttpUrl, { message: 'Only http(s) URLs are allowed' }),
       }),
     )
     .output(linkPreviewResponseSchema)
     .query(async ({ input }) => {
-      // TODO: disabling caching to find a better cache-key
-      // const result = await cache({
-      // type: 'linkPreview',
-      // params: [input.url],
-      // fetch: () => getLinkPreview(input.url),
-      // options: {
-      // ttl: 30 * 24 * 60 * 60 * 1000,
-      // },
-      // });
-
       const result = await getLinkPreview(input.url);
 
       return linkPreviewResponseSchema.parse(result);
