@@ -1,5 +1,7 @@
+import { trackAdminGaveRoles } from '@op/analytics';
 import { type DbClient, db as defaultDb } from '@op/db/client';
 import { accessRolePermissionsOnAccessZones, accessRoles } from '@op/db/schema';
+import { waitUntil } from '@vercel/functions';
 import { permission, toBitField } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
@@ -278,6 +280,12 @@ export async function updateDecisionRoles({
   }
 
   await invalidateProfileUserCacheForRole(roleId);
+
+  waitUntil(
+    trackAdminGaveRoles(user.id, roleId, {
+      decision_permissions: decisionPermissions,
+    }).catch((err) => console.error('Failed to track admin_gave_roles', err)),
+  );
 
   return { roleId, decisionPermissions };
 }

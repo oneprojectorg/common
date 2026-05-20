@@ -1,8 +1,10 @@
+import { trackAdminInvitedParticipants } from '@op/analytics';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import { ProcessStatus, allowList, profileInvites } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
+import { waitUntil } from '@vercel/functions';
 import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, UnauthorizedError } from '../../utils/error';
@@ -378,6 +380,18 @@ export const inviteUsersToProfile = async ({
     results.successful.length,
     normalizedInvitations.length,
   );
+
+  if (results.successful.length > 0) {
+    waitUntil(
+      trackAdminInvitedParticipants(
+        user.id,
+        profileId,
+        results.successful.length,
+      ).catch((err) =>
+        console.error('Failed to track admin_invited_participants', err),
+      ),
+    );
+  }
 
   return {
     success: results.successful.length > 0,

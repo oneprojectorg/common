@@ -1,3 +1,4 @@
+import { trackAdminSetProcess, trackAdminSetRubric } from '@op/analytics';
 import { OPURLConfig } from '@op/core';
 import { db, eq } from '@op/db/client';
 import {
@@ -8,6 +9,7 @@ import {
 } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
+import { waitUntil } from '@vercel/functions';
 import { assertAccess, permission } from 'access-zones';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
@@ -350,21 +352,36 @@ export const updateDecisionInstance = async ({
 
       // Use the first invite's inviter as the sender
       const firstInvite = queuedInvites[0];
-      if (!firstInvite) {
-        return { profile, phaseEndDateChanges };
-      }
-      const senderProfileId = firstInvite.invitedBy;
+      if (firstInvite) {
+        const senderProfileId = firstInvite.invitedBy;
 
-      await event.send({
-        name: Events.profileInviteSent.name,
-        data: {
-          senderProfileId,
-          inviteIds: queuedInvites.map((inv) => inv.id),
-          invitations,
-        },
-      });
-      // notifiedAt is set by the Inngest workflow after successful email delivery
+        await event.send({
+          name: Events.profileInviteSent.name,
+          data: {
+            senderProfileId,
+            inviteIds: queuedInvites.map((inv) => inv.id),
+            invitations,
+          },
+        });
+        // notifiedAt is set by the Inngest workflow after successful email delivery
+      }
     }
+  }
+
+  if (isBeingPublished) {
+    waitUntil(
+      trackAdminSetProcess(user.id, instanceId).catch((err) =>
+        console.error('Failed to track admin_set_process', err),
+      ),
+    );
+  }
+
+  if (rubricTemplate !== undefined) {
+    waitUntil(
+      trackAdminSetRubric(user.id, instanceId).catch((err) =>
+        console.error('Failed to track admin_set_rubric', err),
+      ),
+    );
   }
 
   return { profile, phaseEndDateChanges };

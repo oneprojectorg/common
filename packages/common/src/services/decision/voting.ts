@@ -1,3 +1,4 @@
+import { trackUserVoted } from '@op/analytics';
 import { and, db, eq } from '@op/db/client';
 import {
   type VoteData,
@@ -6,6 +7,7 @@ import {
   processInstances,
   proposals,
 } from '@op/db/schema';
+import { waitUntil } from '@vercel/functions';
 import { assertAccess, permission } from 'access-zones';
 
 import {
@@ -307,6 +309,19 @@ export const submitVote = async ({
         selectedProposalIds: data.selectedProposalIds,
       };
     });
+
+    try {
+      waitUntil(
+        trackUserVoted(
+          authUserId,
+          result.voteSubmission.processInstanceId,
+        ).catch((err) => console.error('Failed to track user_voted', err)),
+      );
+    } catch (err) {
+      // waitUntil can throw synchronously off-Vercel (no request context).
+      // Swallow here so analytics never causes "Failed to submit vote".
+      console.error('Failed to schedule user_voted tracking', err);
+    }
 
     return {
       id: result.voteSubmission.id,

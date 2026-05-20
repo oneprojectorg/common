@@ -1,3 +1,4 @@
+import { trackUserInvited } from '@op/analytics';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
@@ -9,6 +10,7 @@ import {
   organizationUsers,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
+import { waitUntil } from '@vercel/functions';
 import { assertAccess, permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils/error';
@@ -242,6 +244,14 @@ export const inviteUsersToOrganization = async (
   const successCount = results.successful.length;
   const message = generateInviteResultMessage(successCount, totalEmails);
 
+  if (successCount > 0) {
+    waitUntil(
+      trackUserInvited(user.id, successCount, {
+        organization_id: organizationId,
+      }).catch((err) => console.error('Failed to track user_invited', err)),
+    );
+  }
+
   return {
     success: successCount > 0,
     message,
@@ -375,6 +385,14 @@ export const inviteNewUsers = async (input: InviteNewUsersInput) => {
   const totalEmails = emails.length;
   const successCount = results.successful.length;
   const message = generateInviteResultMessage(successCount, totalEmails);
+
+  if (successCount > 0) {
+    waitUntil(
+      trackUserInvited(user.id, successCount).catch((err) =>
+        console.error('Failed to track user_invited', err),
+      ),
+    );
+  }
 
   return {
     success: successCount > 0,
