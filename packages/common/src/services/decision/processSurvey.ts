@@ -1,7 +1,9 @@
 import { db } from '@op/db/client';
-import { decisionProcessSurveyResponses } from '@op/db/schema';
+import {
+  decisionProcessSurveyResponses,
+  decisionProcessSurveySubmitters,
+} from '@op/db/schema';
 import { permission } from 'access-zones';
-import { sql } from 'drizzle-orm';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import {
@@ -35,7 +37,6 @@ export interface GetProcessSurveyResponseInput {
 
 export interface ProcessSurveyResponseResult {
   hasResponded: boolean;
-  internalData: SurveyInternalData | null;
 }
 
 async function authorizeSurveyAccess({
@@ -142,28 +143,32 @@ export const submitProcessSurveyResponse = async ({
       _meta: meta,
     };
 
-    const [row] = await db
-      .insert(decisionProcessSurveyResponses)
-      .values({
-        processInstanceId,
-        submittedByProfileId: profileId,
-        internalData: enrichedInternalData,
-      })
-      .onConflictDoUpdate({
-        target: [
-          decisionProcessSurveyResponses.processInstanceId,
-          decisionProcessSurveyResponses.submittedByProfileId,
-        ],
-        set: {
-          internalData: sql`excluded.internal_data`,
-        },
-      })
-      .returning();
+    await db.transaction(async (tx) => {
+      const inserted = await tx
+        .insert(decisionProcessSurveySubmitters)
+        .values({
+          processInstanceId,
+          submittedByProfileId: profileId,
+        })
+        .onConflictDoNothing({
+          target: [
+            decisionProcessSurveySubmitters.processInstanceId,
+            decisionProcessSurveySubmitters.submittedByProfileId,
+          ],
+        })
+        .returning({ id: decisionProcessSurveySubmitters.id });
 
-    return {
-      hasResponded: true,
-      internalData: row?.internalData ?? enrichedInternalData,
-    };
+      if (inserted.length === 0) {
+        return;
+      }
+
+      await tx.insert(decisionProcessSurveyResponses).values({
+        processInstanceId,
+        internalData: enrichedInternalData,
+      });
+    });
+
+    return { hasResponded: true };
   } catch (error) {
     if (error instanceof CommonError) {
       throw error;
@@ -189,18 +194,15 @@ export const getProcessSurveyResponse = async ({
       processInstanceId,
     });
 
-    const existing = await db.query.decisionProcessSurveyResponses.findFirst({
+    const existing = await db.query.decisionProcessSurveySubmitters.findFirst({
       where: {
         processInstanceId,
         submittedByProfileId: profileId,
       },
-      columns: { internalData: true },
+      columns: { id: true },
     });
 
-    return {
-      hasResponded: !!existing,
-      internalData: existing?.internalData ?? null,
-    };
+    return { hasResponded: !!existing };
   } catch (error) {
     if (error instanceof CommonError) {
       throw error;
