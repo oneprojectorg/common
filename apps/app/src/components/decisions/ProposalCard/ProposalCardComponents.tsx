@@ -357,7 +357,7 @@ export function ProposalCardStatus({
       <>
         <Bullet />
         <span className={cn('text-sm text-green-700', className)}>
-          {t('Funded')}
+          {t('Selected')}
         </span>
       </>
     ),
