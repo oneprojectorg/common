@@ -605,7 +605,7 @@ describe.concurrent('submitManualSelection', () => {
     }
   });
 
-  it('dispatches a phaseTransitioned event after a successful manual selection', async ({
+  it('dispatches a selectionsConfirmed event after a successful manual selection', async ({
     task,
     onTestFinished,
   }) => {
@@ -638,6 +638,25 @@ describe.concurrent('submitManualSelection', () => {
       proposalIds: [proposal.id],
     });
 
+    const selectionsCalls = mockSend.mock.calls.filter(
+      (call: unknown[]) =>
+        (call[0] as { name: string; data: { processInstanceId: string } })
+          .name === 'decision/selections-confirmed' &&
+        (call[0] as { data: { processInstanceId: string } }).data
+          .processInstanceId === instanceId,
+    );
+    expect(selectionsCalls).toHaveLength(1);
+    expect(selectionsCalls[0]![0]).toMatchObject({
+      name: 'decision/selections-confirmed',
+      data: {
+        processInstanceId: instanceId,
+        fromPhaseId: 'submission',
+        toPhaseId: 'review',
+      },
+    });
+
+    // submitManualSelection does not re-emit phaseTransitioned — the original
+    // advance already did.
     const transitionCalls = mockSend.mock.calls.filter(
       (call: unknown[]) =>
         (call[0] as { name: string; data: { processInstanceId: string } })
@@ -645,14 +664,6 @@ describe.concurrent('submitManualSelection', () => {
         (call[0] as { data: { processInstanceId: string } }).data
           .processInstanceId === instanceId,
     );
-    expect(transitionCalls).toHaveLength(1);
-    expect(transitionCalls[0]![0]).toMatchObject({
-      name: 'decision/phase-transitioned',
-      data: {
-        processInstanceId: instanceId,
-        fromPhaseId: 'submission',
-        toPhaseId: 'review',
-      },
-    });
+    expect(transitionCalls).toHaveLength(0);
   });
 });

@@ -317,10 +317,8 @@ describe('processDecisionsTransitions', () => {
     const fromStates = historyRows.map((h) => h.fromStateId).sort();
     expect(fromStates).toEqual(['review', 'submission', 'voting']);
 
-    // Every advance lands on an inbound transition with the seeded proposal
-    // attached (selectionsAreConfirmed: true), so onPhaseAdvanced fires the
-    // phase transition event for all three transitions including into the
-    // final `results` phase.
+    // phaseTransitioned fires unconditionally on every advance — three
+    // advances yield three events.
     const phaseTransitionCalls = mockSend.mock.calls.filter(
       (call: unknown[]) =>
         (call[0] as { name: string; data: { processInstanceId: string } })
@@ -329,12 +327,29 @@ describe('processDecisionsTransitions', () => {
           .processInstanceId === instanceId,
     );
     expect(phaseTransitionCalls).toHaveLength(3);
-    const toPhaseIds = phaseTransitionCalls
+    const phaseTransitionToIds = phaseTransitionCalls
       .map(
         (call) => (call[0] as { data: { toPhaseId: string } }).data.toPhaseId,
       )
       .sort();
-    expect(toPhaseIds).toEqual(['results', 'review', 'voting']);
+    expect(phaseTransitionToIds).toEqual(['results', 'review', 'voting']);
+
+    // selectionsConfirmed mirrors phaseTransitioned here because every advance
+    // lands with the seeded proposal attached.
+    const selectionsCalls = mockSend.mock.calls.filter(
+      (call: unknown[]) =>
+        (call[0] as { name: string; data: { processInstanceId: string } })
+          .name === 'decision/selections-confirmed' &&
+        (call[0] as { data: { processInstanceId: string } }).data
+          .processInstanceId === instanceId,
+    );
+    expect(selectionsCalls).toHaveLength(3);
+    const selectionsToIds = selectionsCalls
+      .map(
+        (call) => (call[0] as { data: { toPhaseId: string } }).data.toPhaseId,
+      )
+      .sort();
+    expect(selectionsToIds).toEqual(['results', 'review', 'voting']);
   });
 
   it('should NOT process transitions for DRAFT instances', async ({

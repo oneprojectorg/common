@@ -6,20 +6,20 @@ import { OPBatchSend, PhaseTransitionEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { eq } from 'drizzle-orm';
 
-const { phaseTransitioned } = Events;
+const { selectionsConfirmed } = Events;
 
-export const sendPhaseTransitionNotification = inngest.createFunction(
+export const sendSelectionsConfirmedNotification = inngest.createFunction(
   {
-    id: 'sendPhaseTransitionNotification',
+    id: 'sendSelectionsConfirmedNotification',
     debounce: {
       key: 'event.data.processInstanceId + "-" + event.data.fromPhaseId + "-" + event.data.toPhaseId',
       period: '1m',
       timeout: '3m',
     },
   },
-  { event: phaseTransitioned.name },
+  { event: selectionsConfirmed.name },
   async ({ event, step }) => {
-    const { processInstanceId, toPhaseId } = phaseTransitioned.schema.parse(
+    const { processInstanceId, toPhaseId } = selectionsConfirmed.schema.parse(
       event.data,
     );
 
@@ -106,7 +106,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
           sent: data.length,
         };
       } catch (error) {
-        console.error('Failed to send phase transition notifications:', {
+        console.error('Failed to send selections confirmed notifications:', {
           error,
           processInstanceId,
         });
@@ -115,7 +115,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     });
 
     return {
-      message: `${result.sent} phase transition notification(s) sent`,
+      message: `${result.sent} selections confirmed notification(s) sent`,
     };
   },
 );

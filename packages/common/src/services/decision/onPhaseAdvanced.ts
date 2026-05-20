@@ -23,9 +23,28 @@ export async function onPhaseAdvanced(
 ): Promise<void> {
   const targetPhase = input.phases.find((p) => p.phaseId === input.toPhaseId);
 
-  // Defer the participant notification when the inbound transition is still
-  // awaiting an admin's manual selection — submitManualSelection will fire the
-  // event once selections are confirmed.
+  // phaseTransitioned is a pure FSM-moved signal; subscribers that care about
+  // the actual transition (analytics, audit, future webhooks) get it on every
+  // advance.
+  event
+    .send({
+      name: Events.phaseTransitioned.name,
+      data: {
+        processInstanceId: input.instanceId,
+        fromPhaseId: input.fromPhaseId,
+        toPhaseId: input.toPhaseId,
+      },
+    })
+    .catch((err) => {
+      console.error(
+        `Failed to send phase transition event for instance ${input.instanceId}:`,
+        err,
+      );
+    });
+
+  // selectionsConfirmed marks the new phase as "active for participants" —
+  // emitted only when the inbound transition already carries confirmed picks.
+  // Otherwise submitManualSelection will fire it once an admin confirms.
   const manualSelectionStatus = await resolveManualSelectionStatus({
     instance: {
       id: input.instanceId,
@@ -37,7 +56,7 @@ export async function onPhaseAdvanced(
   if (manualSelectionStatus.selectionsAreConfirmed) {
     event
       .send({
-        name: Events.phaseTransitioned.name,
+        name: Events.selectionsConfirmed.name,
         data: {
           processInstanceId: input.instanceId,
           fromPhaseId: input.fromPhaseId,
@@ -46,7 +65,7 @@ export async function onPhaseAdvanced(
       })
       .catch((err) => {
         console.error(
-          `Failed to send phase transition event for instance ${input.instanceId}:`,
+          `Failed to send selections confirmed event for instance ${input.instanceId}:`,
           err,
         );
       });

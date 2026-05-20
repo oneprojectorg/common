@@ -70,10 +70,8 @@ describe('transitionFromPhase', () => {
 
     expect(dbInstance!.currentStateId).toBe('final');
 
-    // No proposals were submitted, so initial's pass-all pipeline attaches
-    // zero proposals to the inbound transition into `final`. That leaves the
-    // instance awaiting manual selection — onPhaseAdvanced must defer the
-    // phaseTransitioned event until submitManualSelection confirms.
+    // phaseTransitioned is a pure FSM-moved signal — it always fires on a
+    // successful advance, regardless of selection state.
     const transitionCalls = mockSend.mock.calls.filter(
       (call: unknown[]) =>
         (call[0] as { name: string; data: { processInstanceId: string } })
@@ -81,10 +79,31 @@ describe('transitionFromPhase', () => {
         (call[0] as { data: { processInstanceId: string } }).data
           .processInstanceId === instance.instance.id,
     );
-    expect(transitionCalls).toHaveLength(0);
+    expect(transitionCalls).toHaveLength(1);
+    expect(transitionCalls[0]![0]).toMatchObject({
+      name: 'decision/phase-transitioned',
+      data: {
+        processInstanceId: instance.instance.id,
+        fromPhaseId: 'initial',
+        toPhaseId: 'final',
+      },
+    });
+
+    // No proposals were submitted, so initial's pass-all pipeline attaches
+    // zero proposals to the inbound transition into `final`. That leaves the
+    // instance awaiting manual selection — selectionsConfirmed must defer
+    // until submitManualSelection runs.
+    const selectionsCalls = mockSend.mock.calls.filter(
+      (call: unknown[]) =>
+        (call[0] as { name: string; data: { processInstanceId: string } })
+          .name === 'decision/selections-confirmed' &&
+        (call[0] as { data: { processInstanceId: string } }).data
+          .processInstanceId === instance.instance.id,
+    );
+    expect(selectionsCalls).toHaveLength(0);
   });
 
-  it('should dispatch the phase transition event when the inbound transition has attached proposals', async ({
+  it('should dispatch selectionsConfirmed when the inbound transition has attached proposals', async ({
     task,
     onTestFinished,
   }) => {
@@ -93,7 +112,8 @@ describe('transitionFromPhase', () => {
 
     // Seed a submitted proposal so the initial phase's pass-all pipeline has
     // something to attach to the inbound transition into `final` — that path
-    // is `selectionsAreConfirmed: true`, so onPhaseAdvanced should fire.
+    // is `selectionsAreConfirmed: true`, so onPhaseAdvanced should fire both
+    // events.
     await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
@@ -117,8 +137,17 @@ describe('transitionFromPhase', () => {
           .processInstanceId === instance.instance.id,
     );
     expect(transitionCalls).toHaveLength(1);
-    expect(transitionCalls[0]![0]).toMatchObject({
-      name: 'decision/phase-transitioned',
+
+    const selectionsCalls = mockSend.mock.calls.filter(
+      (call: unknown[]) =>
+        (call[0] as { name: string; data: { processInstanceId: string } })
+          .name === 'decision/selections-confirmed' &&
+        (call[0] as { data: { processInstanceId: string } }).data
+          .processInstanceId === instance.instance.id,
+    );
+    expect(selectionsCalls).toHaveLength(1);
+    expect(selectionsCalls[0]![0]).toMatchObject({
+      name: 'decision/selections-confirmed',
       data: {
         processInstanceId: instance.instance.id,
         fromPhaseId: 'initial',

@@ -57,6 +57,14 @@ export const Events = {
       toPhaseId: z.string().min(1),
     }),
   },
+  selectionsConfirmed: {
+    name: 'decision/selections-confirmed' as const,
+    schema: z.object({
+      processInstanceId: z.string().uuid(),
+      fromPhaseId: z.string().min(1),
+      toPhaseId: z.string().min(1),
+    }),
+  },
   voteSubmitted: {
     name: 'vote/submitted' as const,
     schema: z.object({
