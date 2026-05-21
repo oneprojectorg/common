@@ -3,9 +3,9 @@
 import { useRef } from 'react';
 import { LuCamera } from 'react-icons/lu';
 
+import { cn } from '../lib/utils';
 import { Header2 } from './Header';
 import { LoadingSpinner } from './LoadingSpinner';
-import { cn } from '../lib/utils';
 
 interface ImageUploaderProps {
   label?: string;
@@ -42,7 +42,7 @@ export const AvatarUploader = ({
       )}
     >
       <div className="size-full">
-        <div className="bg-redPurple relative flex aspect-square size-full items-center justify-center rounded-full border-4 border-white">
+        <div className="relative flex aspect-square size-full items-center justify-center rounded-full border-4 border-white bg-redPurple">
           {value ? (
             <img
               src={value}

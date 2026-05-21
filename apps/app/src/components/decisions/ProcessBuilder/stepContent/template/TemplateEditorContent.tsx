@@ -9,8 +9,8 @@ import type {
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui-next/Button';
-import { Header2 } from '@op/ui-next/Header';
 import { CollapsibleConfigCard } from '@op/ui-next/CollapsibleConfigCard';
+import { Header2 } from '@op/ui-next/Header';
 import { SidebarProvider } from '@op/ui-next/Sidebar';
 import { Sortable } from '@op/ui-next/Sortable';
 import { useQueryState } from 'nuqs';

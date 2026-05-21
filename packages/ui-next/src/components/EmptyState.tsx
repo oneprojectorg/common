@@ -11,7 +11,7 @@ export const EmptyState = ({
   return (
     <div className="flex min-h-40 w-full flex-col items-center justify-center py-6">
       <div className="text-muted-foreground flex flex-col items-center justify-center gap-4">
-        <div className="bg-muted flex size-10 items-center justify-center gap-4 rounded-full">
+        <div className="flex size-10 items-center justify-center gap-4 rounded-full bg-muted">
           {icon ?? <LuCircleAlert />}
         </div>
         {children}

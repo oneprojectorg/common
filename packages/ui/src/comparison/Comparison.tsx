@@ -8,77 +8,6 @@
 
 'use client';
 
-// ---- OLD (@op/ui, RAC) ----
-import { AlertBanner as OldAlertBanner } from '../components/AlertBanner';
-import { Avatar as OldAvatar } from '../components/Avatar';
-import {
-  Breadcrumb as OldBreadcrumb,
-  Breadcrumbs as OldBreadcrumbs,
-} from '../components/Breadcrumbs';
-import { Button as OldButton } from '../components/Button';
-import { Checkbox as OldCheckbox } from '../components/Checkbox';
-import { Chip as OldChip } from '../components/Chip';
-import { EmptyState as OldEmptyState } from '../components/EmptyState';
-import { FacePile as OldFacePile } from '../components/FacePile';
-import {
-  FooterBar as OldFooterBar,
-  FooterBarCenter as OldFooterBarCenter,
-  FooterBarEnd as OldFooterBarEnd,
-  FooterBarStart as OldFooterBarStart,
-} from '../components/FooterBar';
-import { Header1 as OldHeader1, Header2 as OldHeader2 } from '../components/Header';
-import { IconButton as OldIconButton } from '../components/IconButton';
-import { Link as OldLink } from '../components/Link';
-import { DropdownItem as OldDropdownItem } from '../components/ListBox';
-import { LoadingSpinner as OldLoadingSpinner } from '../components/LoadingSpinner';
-import {
-  Menu as OldMenu,
-  MenuItem as OldMenuItem,
-  MenuTrigger as OldMenuTrigger,
-} from '../components/Menu';
-import {
-  Modal as OldModal,
-  ModalBody as OldModalBody,
-  ModalFooter as OldModalFooter,
-  ModalHeader as OldModalHeader,
-} from '../components/Modal';
-import { MultiSelectComboBox as OldMultiSelectComboBox } from '../components/MultiSelectComboBox';
-import { NumberField as OldNumberField } from '../components/NumberField';
-import { OptionMenu as OldOptionMenu } from '../components/OptionMenu';
-import { Pagination as OldPagination } from '../components/Pagination';
-import { Popover as OldPopover } from '../components/Popover';
-import {
-  Radio as OldRadio,
-  RadioGroup as OldRadioGroup,
-} from '../components/RadioGroup';
-import { SearchField as OldSearchField } from '../components/SearchField';
-import { Select as OldSelect } from '../components/Select';
-import {
-  Sheet as OldSheet,
-  SheetBody as OldSheetBody,
-  SheetHeader as OldSheetHeader,
-} from '../components/Sheet';
-import { Skeleton as OldSkeleton } from '../components/Skeleton';
-import { StatusDot as OldStatusDot } from '../components/StatusDot';
-import { Surface as OldSurface } from '../components/Surface';
-import {
-  Tab as OldTab,
-  TabList as OldTabList,
-  TabPanel as OldTabPanel,
-  Tabs as OldTabs,
-} from '../components/Tabs';
-import { Tag as OldTag, TagGroup as OldTagGroup } from '../components/TagGroup';
-import { TextField as OldTextField } from '../components/TextField';
-import { toast as oldToast } from '../components/Toast';
-import { ToggleButton as OldToggleButton } from '../components/ToggleButton';
-import {
-  Tooltip as OldTooltip,
-  TooltipTrigger as OldTooltipTrigger,
-} from '../components/Tooltip';
-import { useId, useState, type ReactNode } from 'react';
-import { LuEllipsis, LuSearch } from 'react-icons/lu';
-import { toast as rawToast } from 'sonner';
-
 // ---- WRAPPER (@op/ui-next compat / re-exports) ----
 import { AlertBanner as WrapAlertBanner } from '@op/ui-next/AlertBanner';
 import { Avatar as WrapAvatar } from '@op/ui-next/Avatar';
@@ -135,10 +64,7 @@ import {
 import { Skeleton as WrapSkeleton } from '@op/ui-next/Skeleton';
 import { StatusDot as WrapStatusDot } from '@op/ui-next/StatusDot';
 import { Tabs as WrapTabs } from '@op/ui-next/Tabs';
-import {
-  Tag as WrapTag,
-  TagGroup as WrapTagGroup,
-} from '@op/ui-next/TagGroup';
+import { Tag as WrapTag, TagGroup as WrapTagGroup } from '@op/ui-next/TagGroup';
 import { Toast as WrapToast, toast as wrapToast } from '@op/ui-next/Toast';
 import { ToggleButton as WrapToggleButton } from '@op/ui-next/ToggleButton';
 import {
@@ -243,6 +169,80 @@ import {
   TooltipProvider as RawTooltipProvider,
   TooltipTrigger as RawTooltipTrigger,
 } from '@op/ui-next/ui/tooltip';
+import { useId, useState, type ReactNode } from 'react';
+import { LuEllipsis, LuSearch } from 'react-icons/lu';
+import { toast as rawToast } from 'sonner';
+
+// ---- OLD (@op/ui, RAC) ----
+import { AlertBanner as OldAlertBanner } from '../components/AlertBanner';
+import { Avatar as OldAvatar } from '../components/Avatar';
+import {
+  Breadcrumb as OldBreadcrumb,
+  Breadcrumbs as OldBreadcrumbs,
+} from '../components/Breadcrumbs';
+import { Button as OldButton } from '../components/Button';
+import { Checkbox as OldCheckbox } from '../components/Checkbox';
+import { Chip as OldChip } from '../components/Chip';
+import { EmptyState as OldEmptyState } from '../components/EmptyState';
+import { FacePile as OldFacePile } from '../components/FacePile';
+import {
+  FooterBar as OldFooterBar,
+  FooterBarCenter as OldFooterBarCenter,
+  FooterBarEnd as OldFooterBarEnd,
+  FooterBarStart as OldFooterBarStart,
+} from '../components/FooterBar';
+import {
+  Header1 as OldHeader1,
+  Header2 as OldHeader2,
+} from '../components/Header';
+import { IconButton as OldIconButton } from '../components/IconButton';
+import { Link as OldLink } from '../components/Link';
+import { DropdownItem as OldDropdownItem } from '../components/ListBox';
+import { LoadingSpinner as OldLoadingSpinner } from '../components/LoadingSpinner';
+import {
+  Menu as OldMenu,
+  MenuItem as OldMenuItem,
+  MenuTrigger as OldMenuTrigger,
+} from '../components/Menu';
+import {
+  Modal as OldModal,
+  ModalBody as OldModalBody,
+  ModalFooter as OldModalFooter,
+  ModalHeader as OldModalHeader,
+} from '../components/Modal';
+import { MultiSelectComboBox as OldMultiSelectComboBox } from '../components/MultiSelectComboBox';
+import { NumberField as OldNumberField } from '../components/NumberField';
+import { OptionMenu as OldOptionMenu } from '../components/OptionMenu';
+import { Pagination as OldPagination } from '../components/Pagination';
+import { Popover as OldPopover } from '../components/Popover';
+import {
+  Radio as OldRadio,
+  RadioGroup as OldRadioGroup,
+} from '../components/RadioGroup';
+import { SearchField as OldSearchField } from '../components/SearchField';
+import { Select as OldSelect } from '../components/Select';
+import {
+  Sheet as OldSheet,
+  SheetBody as OldSheetBody,
+  SheetHeader as OldSheetHeader,
+} from '../components/Sheet';
+import { Skeleton as OldSkeleton } from '../components/Skeleton';
+import { StatusDot as OldStatusDot } from '../components/StatusDot';
+import { Surface as OldSurface } from '../components/Surface';
+import {
+  Tab as OldTab,
+  TabList as OldTabList,
+  TabPanel as OldTabPanel,
+  Tabs as OldTabs,
+} from '../components/Tabs';
+import { Tag as OldTag, TagGroup as OldTagGroup } from '../components/TagGroup';
+import { TextField as OldTextField } from '../components/TextField';
+import { toast as oldToast } from '../components/Toast';
+import { ToggleButton as OldToggleButton } from '../components/ToggleButton';
+import {
+  Tooltip as OldTooltip,
+  TooltipTrigger as OldTooltipTrigger,
+} from '../components/Tooltip';
 
 // ---- layout primitives ----
 

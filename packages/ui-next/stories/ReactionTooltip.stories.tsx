@@ -21,10 +21,7 @@ const users = [
 export const Default: Story = {
   render: () => (
     <ReactionTooltip reactions={[{ emoji: '👍', users }]}>
-      <button
-        type="button"
-        className="bg-muted rounded-full px-3 py-1 text-sm"
-      >
+      <button type="button" className="rounded-full bg-muted px-3 py-1 text-sm">
         👍 3
       </button>
     </ReactionTooltip>
@@ -39,10 +36,7 @@ export const MultipleEmojis: Story = {
         { emoji: '🎉', users: [users[2]!] },
       ]}
     >
-      <button
-        type="button"
-        className="bg-muted rounded-full px-3 py-1 text-sm"
-      >
+      <button type="button" className="rounded-full bg-muted px-3 py-1 text-sm">
         Mixed reactions
       </button>
     </ReactionTooltip>

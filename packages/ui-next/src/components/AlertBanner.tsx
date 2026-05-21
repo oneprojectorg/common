@@ -31,8 +31,7 @@ const TINT_BY_INTENT: Record<Intent, string> = {
   success: 'text-emerald-700 [&_svg]:text-emerald-600',
 };
 
-export interface AlertBannerProps
-  extends React.HtmlHTMLAttributes<HTMLDivElement> {
+export interface AlertBannerProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
   intent?: Intent;
   /** `default` = bordered card; `banner` = no shadow inline notice. */
   variant?: 'default' | 'banner';

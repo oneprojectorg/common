@@ -11,8 +11,8 @@ import {
   type ProposalTemplateSchema,
   parseProposalData,
 } from '@op/common/client';
-import { toast } from '@op/ui-next/Toast';
 import { SplitPane } from '@op/ui-next/SplitPane';
+import { toast } from '@op/ui-next/Toast';
 import type { Editor } from '@tiptap/react';
 import { useLocale } from 'next-intl';
 import {

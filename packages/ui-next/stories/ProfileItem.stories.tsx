@@ -54,10 +54,7 @@ export const WithChildren: Story = {
       title="Long Bio"
       description="Maintainer of OP cooperative tooling"
     >
-      <button
-        type="button"
-        className="text-primary text-sm hover:underline"
-      >
+      <button type="button" className="text-sm text-primary hover:underline">
         View profile
       </button>
     </ProfileItem>

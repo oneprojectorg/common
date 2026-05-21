@@ -32,9 +32,9 @@ function useMediaQuery(query: string): boolean {
   return matches;
 }
 
+import { cn } from '../../lib/utils';
 import { IconButton, type IconButtonProps } from '../IconButton';
 import { Sheet, SheetBody, SheetHeader } from '../Sheet';
-import { cn } from '../../lib/utils';
 
 type SidebarContextProps = {
   state: 'expanded' | 'collapsed';
@@ -141,7 +141,7 @@ const Sidebar = ({
       data-state={state}
       data-side={side}
       data-slot="sidebar"
-      className="group peer sticky top-0 hidden min-w-fit overflow-hidden bg-background sm:block"
+      className="group peer bg-background sticky top-0 hidden min-w-fit overflow-hidden sm:block"
     >
       <div
         data-slot="sidebar-gap"

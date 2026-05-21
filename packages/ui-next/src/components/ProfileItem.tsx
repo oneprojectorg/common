@@ -3,8 +3,14 @@
 
 import type { ReactNode } from 'react';
 
-import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from './ui/item';
 import { cn } from '../lib/utils';
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from './ui/item';
 
 export interface ProfileItemProps {
   avatar: ReactNode;
@@ -36,9 +42,7 @@ export const ProfileItem = ({
         <ItemTitle
           className={cn(
             'line-clamp-none',
-            size === 'small'
-              ? 'font-normal'
-              : 'leading-base font-semibold',
+            size === 'small' ? 'font-normal' : 'leading-base font-semibold',
           )}
         >
           {title}

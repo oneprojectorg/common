@@ -25,7 +25,7 @@ export const Default: Story = {
       {Array.from({ length: 12 }, (_, i) => (
         <div
           key={i}
-          className="bg-muted flex h-32 w-48 shrink-0 items-center justify-center rounded-lg"
+          className="flex h-32 w-48 shrink-0 items-center justify-center rounded-lg bg-muted"
         >
           Item {i + 1}
         </div>

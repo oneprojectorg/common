@@ -3,9 +3,9 @@
 import { useRef } from 'react';
 import { LuCamera } from 'react-icons/lu';
 
+import { cn } from '../lib/utils';
 import { Header2 } from './Header';
 import { LoadingSpinner } from './LoadingSpinner';
-import { cn } from '../lib/utils';
 
 export const BannerUploader = ({
   label,
@@ -31,9 +31,9 @@ export const BannerUploader = ({
   };
 
   return (
-    <div className="bg-offWhite relative flex aspect-[128/55] w-full flex-col items-center justify-center">
+    <div className="relative flex aspect-[128/55] w-full flex-col items-center justify-center bg-offWhite">
       <div className="size-full">
-        <div className="bg-yellowOrange relative flex size-full items-center justify-center bg-center">
+        <div className="relative flex size-full items-center justify-center bg-yellowOrange bg-center">
           {value ? (
             <img
               src={value}

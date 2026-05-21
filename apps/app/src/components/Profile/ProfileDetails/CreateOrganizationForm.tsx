@@ -3,14 +3,14 @@
 import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
+import { AvatarUploader } from '@op/ui-next/AvatarUploader';
+import { BannerUploader } from '@op/ui-next/BannerUploader';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { ModalFooter } from '@op/ui-next/Modal';
 import type { Option } from '@op/ui-next/MultiSelectComboBox';
 import { SelectItem } from '@op/ui-next/Select';
 import { toast } from '@op/ui-next/Toast';
 import { ToggleButton } from '@op/ui-next/ToggleButton';
-import { AvatarUploader } from '@op/ui-next/AvatarUploader';
-import { BannerUploader } from '@op/ui-next/BannerUploader';
 import { useRouter } from 'next/navigation';
 import { forwardRef, useState } from 'react';
 import { LuLink } from 'react-icons/lu';

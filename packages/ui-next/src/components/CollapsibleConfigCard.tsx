@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { LuChevronDown, LuGripVertical, LuLock } from 'react-icons/lu';
 
+import { cn } from '../lib/utils';
 import { Chip } from './Chip';
 import { DragHandle } from './Sortable';
 import type { SortableItemControls } from './Sortable';
@@ -11,7 +12,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from './ui/collapsible';
-import { cn } from '../lib/utils';
 
 export interface CollapsibleConfigCardProps {
   /** Icon component to display in the header. When omitted, label renders as plain text (no pill). */
@@ -147,7 +147,7 @@ export function CollapsibleConfigCard({
           render={
             <button
               type="button"
-              className="focus-visible:ring-ring flex min-w-0 flex-1 cursor-pointer items-center gap-2 pr-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+              className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 pr-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
             />
           }
         >

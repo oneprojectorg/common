@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { LuSmilePlus } from 'react-icons/lu';
 
+import { cn } from '../lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from './Menu';
 import { ReactionTooltip } from './ReactionTooltip';
-import { cn } from '../lib/utils';
 
 type ReactionButtonSize = 'small' | 'icon';
 
@@ -27,8 +27,10 @@ interface ReactionOption {
   label: string;
 }
 
-interface ReactionButtonProps
-  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onClick'> {
+interface ReactionButtonProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'onClick'
+> {
   emoji?: string;
   count?: number;
   className?: string;
@@ -66,7 +68,7 @@ const buttonClass = ({
   className?: string;
 }) =>
   cn(
-    'bg-muted hover:bg-accent focus-visible:outline-ring flex items-center justify-center gap-1 rounded-full border-0 p-1 text-xs leading-6 font-normal outline-none transition-colors duration-200 focus-visible:outline-1 focus-visible:-outline-offset-1',
+    'hover:bg-accent flex items-center justify-center gap-1 rounded-full border-0 bg-muted p-1 text-xs leading-6 font-normal transition-colors duration-200 outline-none focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-ring',
     size === 'small' && 'h-8 min-w-8 px-2',
     size === 'icon' && 'h-8 w-8 p-1',
     active && 'bg-accent',
@@ -77,7 +79,17 @@ export const ReactionButton = React.forwardRef<
   HTMLButtonElement,
   ReactionButtonProps
 >(function ReactionButton(
-  { emoji, count, active = false, size = 'small', className, users, onPress, onClick, ...props },
+  {
+    emoji,
+    count,
+    active = false,
+    size = 'small',
+    className,
+    users,
+    onPress,
+    onClick,
+    ...props
+  },
   ref,
 ) {
   if (size === 'icon') {
@@ -134,7 +146,11 @@ const ReactionPicker = ({
   );
 
   return (
-    <DropdownMenuContent side={side} align="start" className="flex flex-row gap-0 p-1">
+    <DropdownMenuContent
+      side={side}
+      align="start"
+      className="flex flex-row gap-0 p-1"
+    >
       {availableOptions.map((option) => (
         <DropdownMenuItem
           key={option.emoji}

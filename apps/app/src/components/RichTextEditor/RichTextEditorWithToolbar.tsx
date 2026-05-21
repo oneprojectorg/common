@@ -1,6 +1,9 @@
 'use client';
 
-import { RichTextEditor, type RichTextEditorRef } from '@op/ui-next/RichTextEditor';
+import {
+  RichTextEditor,
+  type RichTextEditorRef,
+} from '@op/ui-next/RichTextEditor';
 import type { Editor } from '@tiptap/react';
 import { forwardRef, useMemo, useRef, useState } from 'react';
 

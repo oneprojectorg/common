@@ -32,7 +32,9 @@ export const Error: Story = {
   render: () => (
     <Button
       color="destructive"
-      onPress={() => toast.error({ title: "That didn't work", message: 'Try again.' })}
+      onPress={() =>
+        toast.error({ title: "That didn't work", message: 'Try again.' })
+      }
     >
       Show error
     </Button>

@@ -1,10 +1,10 @@
 import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { trpc } from '@op/api/client';
+import { AvatarUploader } from '@op/ui-next/AvatarUploader';
+import { BannerUploader } from '@op/ui-next/BannerUploader';
 import type { Option } from '@op/ui-next/MultiSelectComboBox';
 import { SelectItem } from '@op/ui-next/Select';
 import { toast } from '@op/ui-next/Toast';
-import { AvatarUploader } from '@op/ui-next/AvatarUploader';
-import { BannerUploader } from '@op/ui-next/BannerUploader';
 import { useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 

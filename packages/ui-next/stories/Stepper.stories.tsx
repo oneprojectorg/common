@@ -26,10 +26,7 @@ export const Default: Story = {
     const [step, setStep] = useState(0);
     return (
       <div className="flex flex-col gap-6">
-        <StepperProgressIndicator
-          numItems={totalSteps}
-          currentStep={step}
-        />
+        <StepperProgressIndicator numItems={totalSteps} currentStep={step} />
         <div className="rounded-lg border p-6">
           <StepItem currentStep={step} itemIndex={0}>
             Step 1 — intro

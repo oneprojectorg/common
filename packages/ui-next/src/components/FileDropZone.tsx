@@ -79,13 +79,13 @@ export function FileDropZone({
         onClick={() => inputRef.current?.click()}
         disabled={isDisabled}
         className={cn(
-          'border-input bg-muted/50 flex flex-1 cursor-pointer flex-col items-center justify-center gap-6 rounded-lg border border-dashed px-12 py-6 transition-colors duration-200 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+          'border-input flex flex-1 cursor-pointer flex-col items-center justify-center gap-6 rounded-lg border border-dashed bg-muted/50 px-12 py-6 transition-colors duration-200 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
           'group-data-[drop-target]/dropzone:border-primary group-data-[drop-target]/dropzone:bg-primary/10',
           isDisabled && 'pointer-events-none cursor-not-allowed opacity-50',
         )}
       >
-        <div className="bg-muted group-data-[drop-target]/dropzone:bg-primary/15 flex size-20 items-center justify-center rounded-full">
-          <LuFilePlus2 className="text-muted-foreground group-data-[drop-target]/dropzone:text-primary size-10" />
+        <div className="flex size-20 items-center justify-center rounded-full bg-muted group-data-[drop-target]/dropzone:bg-primary/15">
+          <LuFilePlus2 className="text-muted-foreground size-10 group-data-[drop-target]/dropzone:text-primary" />
         </div>
         <div className="flex flex-col items-center gap-1">
           <span className="text-foreground text-base">

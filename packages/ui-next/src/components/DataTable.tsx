@@ -19,6 +19,7 @@ import {
 import * as React from 'react';
 import { LuArrowDown, LuArrowUp, LuArrowUpDown } from 'react-icons/lu';
 
+import { cn } from '../lib/utils';
 import {
   Table,
   TableBody,
@@ -27,7 +28,6 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table';
-import { cn } from '../lib/utils';
 
 export interface DataTableProps<TData> {
   columns: ColumnDef<TData, unknown>[];

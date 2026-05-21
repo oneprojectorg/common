@@ -19,7 +19,7 @@ export const InButton: Story = {
   render: () => (
     <button
       type="button"
-      className="bg-primary text-primary-foreground inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm"
+      className="text-primary-foreground inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm"
       disabled
     >
       <LoadingSpinner color="gray" />

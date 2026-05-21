@@ -28,7 +28,7 @@ export const Editor: Story = {
     <RichTextEditor
       content="<p>Edit me</p>"
       extensions={defaultEditorExtensions}
-      editorClassName="min-h-32 prose"
+      editorClassName="prose min-h-32"
     />
   ),
 };

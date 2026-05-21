@@ -122,7 +122,7 @@ export const CustomCells: Story = {
         accessorKey: 'role',
         header: 'Role',
         cell: ({ row }) => (
-          <span className="bg-muted rounded px-2 py-0.5 text-xs">
+          <span className="rounded bg-muted px-2 py-0.5 text-xs">
             {row.original.role}
           </span>
         ),

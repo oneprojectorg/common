@@ -1,9 +1,9 @@
 'use client';
 
 import { Button } from '@op/ui-next/Button';
+import { DragHandle, Sortable } from '@op/ui-next/Sortable';
 import { TextField } from '@op/ui-next/TextField';
 import { Tooltip, TooltipTrigger } from '@op/ui-next/Tooltip';
-import { DragHandle, Sortable } from '@op/ui-next/Sortable';
 import { useEffect, useRef, useState } from 'react';
 import { LuGripVertical, LuPlus, LuX } from 'react-icons/lu';
 

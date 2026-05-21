@@ -1,12 +1,12 @@
 import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
 import { trpc } from '@op/api/client';
 import { zodUrl } from '@op/common/validation';
+import { AvatarUploader } from '@op/ui-next/AvatarUploader';
+import { BannerUploader } from '@op/ui-next/BannerUploader';
 import { LoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import { SelectItem } from '@op/ui-next/Select';
 import { Skeleton } from '@op/ui-next/Skeleton';
 import { toast } from '@op/ui-next/Toast';
-import { AvatarUploader } from '@op/ui-next/AvatarUploader';
-import { BannerUploader } from '@op/ui-next/BannerUploader';
 import { ReactNode, Suspense, useState } from 'react';
 import { z } from 'zod';
 
