@@ -79,7 +79,7 @@ export function assertValidStoragePath({
  * visible to our reader. Returns size + mimetype from the storage row's own
  * metadata so the record step uses storage-truth, not client echo.
  */
-export async function findUploadedStorageObject({
+export async function getUploadedStorageObject({
   path,
   allowedMimeTypes,
   unsupportedMessage,

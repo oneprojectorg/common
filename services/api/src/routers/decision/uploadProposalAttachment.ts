@@ -15,7 +15,7 @@ import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 import { sanitizeS3Filename } from '../../utils';
 import {
   createSignedUploadUrl,
-  findUploadedStorageObject,
+  getUploadedStorageObject,
   scheduleStorageObjectCleanup,
   validateMimeAndSize,
   assertValidStoragePath,
@@ -130,7 +130,7 @@ export const uploadProposalAttachment = router({
       });
 
       try {
-        const storageObject = await findUploadedStorageObject({
+        const storageObject = await getUploadedStorageObject({
           path,
           allowedMimeTypes: ALLOWED_MIME_TYPES,
           unsupportedMessage: UNSUPPORTED_MESSAGE,
