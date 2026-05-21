@@ -1069,6 +1069,9 @@ importers:
       react-stately:
         specifier: 'catalog:'
         version: 3.46.0(react@19.2.1)
+      sonner:
+        specifier: ^1.7.1
+        version: 1.7.4(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       tailwind-merge:
         specifier: 3.4.0
         version: 3.4.0
@@ -1139,9 +1142,6 @@ importers:
       '@op/styles':
         specifier: workspace:*
         version: link:../styles
-      '@op/ui':
-        specifier: workspace:*
-        version: link:../ui
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.2.1(react@19.2.1))(react@19.2.1)

@@ -9,154 +9,154 @@
 'use client';
 
 // ---- OLD (@op/ui, RAC) ----
-import { AlertBanner as OldAlertBanner } from '@op/ui/AlertBanner';
-import { Avatar as OldAvatar } from '@op/ui/Avatar';
+import { AlertBanner as OldAlertBanner } from '../components/AlertBanner';
+import { Avatar as OldAvatar } from '../components/Avatar';
 import {
   Breadcrumb as OldBreadcrumb,
   Breadcrumbs as OldBreadcrumbs,
-} from '@op/ui/Breadcrumbs';
-import { Button as OldButton } from '@op/ui/Button';
-import { Checkbox as OldCheckbox } from '@op/ui/Checkbox';
-import { Chip as OldChip } from '@op/ui/Chip';
-import { EmptyState as OldEmptyState } from '@op/ui/EmptyState';
-import { FacePile as OldFacePile } from '@op/ui/FacePile';
+} from '../components/Breadcrumbs';
+import { Button as OldButton } from '../components/Button';
+import { Checkbox as OldCheckbox } from '../components/Checkbox';
+import { Chip as OldChip } from '../components/Chip';
+import { EmptyState as OldEmptyState } from '../components/EmptyState';
+import { FacePile as OldFacePile } from '../components/FacePile';
 import {
   FooterBar as OldFooterBar,
   FooterBarCenter as OldFooterBarCenter,
   FooterBarEnd as OldFooterBarEnd,
   FooterBarStart as OldFooterBarStart,
-} from '@op/ui/FooterBar';
-import { Header1 as OldHeader1, Header2 as OldHeader2 } from '@op/ui/Header';
-import { IconButton as OldIconButton } from '@op/ui/IconButton';
-import { Link as OldLink } from '@op/ui/Link';
-import { DropdownItem as OldDropdownItem } from '@op/ui/ListBox';
-import { LoadingSpinner as OldLoadingSpinner } from '@op/ui/LoadingSpinner';
+} from '../components/FooterBar';
+import { Header1 as OldHeader1, Header2 as OldHeader2 } from '../components/Header';
+import { IconButton as OldIconButton } from '../components/IconButton';
+import { Link as OldLink } from '../components/Link';
+import { DropdownItem as OldDropdownItem } from '../components/ListBox';
+import { LoadingSpinner as OldLoadingSpinner } from '../components/LoadingSpinner';
 import {
   Menu as OldMenu,
   MenuItem as OldMenuItem,
   MenuTrigger as OldMenuTrigger,
-} from '@op/ui/Menu';
+} from '../components/Menu';
 import {
   Modal as OldModal,
   ModalBody as OldModalBody,
   ModalFooter as OldModalFooter,
   ModalHeader as OldModalHeader,
-} from '@op/ui/Modal';
-import { MultiSelectComboBox as OldMultiSelectComboBox } from '@op/ui/MultiSelectComboBox';
-import { NumberField as OldNumberField } from '@op/ui/NumberField';
-import { OptionMenu as OldOptionMenu } from '@op/ui/OptionMenu';
-import { Pagination as OldPagination } from '@op/ui/Pagination';
-import { Popover as OldPopover } from '@op/ui/Popover';
+} from '../components/Modal';
+import { MultiSelectComboBox as OldMultiSelectComboBox } from '../components/MultiSelectComboBox';
+import { NumberField as OldNumberField } from '../components/NumberField';
+import { OptionMenu as OldOptionMenu } from '../components/OptionMenu';
+import { Pagination as OldPagination } from '../components/Pagination';
+import { Popover as OldPopover } from '../components/Popover';
 import {
   Radio as OldRadio,
   RadioGroup as OldRadioGroup,
-} from '@op/ui/RadioGroup';
-import { SearchField as OldSearchField } from '@op/ui/SearchField';
-import { Select as OldSelect } from '@op/ui/Select';
+} from '../components/RadioGroup';
+import { SearchField as OldSearchField } from '../components/SearchField';
+import { Select as OldSelect } from '../components/Select';
 import {
   Sheet as OldSheet,
   SheetBody as OldSheetBody,
   SheetHeader as OldSheetHeader,
-} from '@op/ui/Sheet';
-import { Skeleton as OldSkeleton } from '@op/ui/Skeleton';
-import { StatusDot as OldStatusDot } from '@op/ui/StatusDot';
-import { Surface as OldSurface } from '@op/ui/Surface';
+} from '../components/Sheet';
+import { Skeleton as OldSkeleton } from '../components/Skeleton';
+import { StatusDot as OldStatusDot } from '../components/StatusDot';
+import { Surface as OldSurface } from '../components/Surface';
 import {
   Tab as OldTab,
   TabList as OldTabList,
   TabPanel as OldTabPanel,
   Tabs as OldTabs,
-} from '@op/ui/Tabs';
-import { Tag as OldTag, TagGroup as OldTagGroup } from '@op/ui/TagGroup';
-import { TextField as OldTextField } from '@op/ui/TextField';
-import { toast as oldToast } from '@op/ui/Toast';
-import { ToggleButton as OldToggleButton } from '@op/ui/ToggleButton';
+} from '../components/Tabs';
+import { Tag as OldTag, TagGroup as OldTagGroup } from '../components/TagGroup';
+import { TextField as OldTextField } from '../components/TextField';
+import { toast as oldToast } from '../components/Toast';
+import { ToggleButton as OldToggleButton } from '../components/ToggleButton';
 import {
   Tooltip as OldTooltip,
   TooltipTrigger as OldTooltipTrigger,
-} from '@op/ui/Tooltip';
+} from '../components/Tooltip';
 import { useId, useState, type ReactNode } from 'react';
 import { LuEllipsis, LuSearch } from 'react-icons/lu';
 import { toast as rawToast } from 'sonner';
 
 // ---- WRAPPER (@op/ui-next compat / re-exports) ----
-import { AlertBanner as WrapAlertBanner } from '../components/AlertBanner';
-import { Avatar as WrapAvatar } from '../components/Avatar';
+import { AlertBanner as WrapAlertBanner } from '@op/ui-next/AlertBanner';
+import { Avatar as WrapAvatar } from '@op/ui-next/Avatar';
 import {
   Breadcrumb as WrapBreadcrumb,
   Breadcrumbs as WrapBreadcrumbs,
-} from '../components/Breadcrumbs';
-import { Button as WrapButton } from '../components/Button';
-import { Card as WrapSurface } from '../components/Card';
-import { Checkbox as WrapCheckbox } from '../components/Checkbox';
-import { Chip as WrapChip } from '../components/Chip';
-import { EmptyState as WrapEmptyState } from '../components/EmptyState';
+} from '@op/ui-next/Breadcrumbs';
+import { Button as WrapButton } from '@op/ui-next/Button';
+import { Card as WrapSurface } from '@op/ui-next/Card';
+import { Checkbox as WrapCheckbox } from '@op/ui-next/Checkbox';
+import { Chip as WrapChip } from '@op/ui-next/Chip';
+import { EmptyState as WrapEmptyState } from '@op/ui-next/EmptyState';
 import {
   FooterBar as WrapFooterBar,
   FooterBarCenter as WrapFooterBarCenter,
   FooterBarEnd as WrapFooterBarEnd,
   FooterBarStart as WrapFooterBarStart,
-} from '../components/FooterBar';
+} from '@op/ui-next/FooterBar';
 import {
   Header1 as WrapHeader1,
   Header2 as WrapHeader2,
-} from '../components/Header';
-import { IconButton as WrapIconButton } from '../components/IconButton';
-import { Input as WrapInput } from '../components/Input';
-import { Link as WrapLink } from '../components/Link';
-import { LoadingSpinner as WrapLoadingSpinner } from '../components/LoadingSpinner';
+} from '@op/ui-next/Header';
+import { IconButton as WrapIconButton } from '@op/ui-next/IconButton';
+import { Input as WrapInput } from '@op/ui-next/Input';
+import { Link as WrapLink } from '@op/ui-next/Link';
+import { LoadingSpinner as WrapLoadingSpinner } from '@op/ui-next/LoadingSpinner';
 import {
   DropdownMenu as WrapDropdownMenu,
   DropdownMenuContent as WrapDropdownMenuContent,
   DropdownMenuItem as WrapDropdownMenuItem,
   DropdownMenuTrigger as WrapDropdownMenuTrigger,
-} from '../components/Menu';
+} from '@op/ui-next/Menu';
 import {
   Modal as WrapModal,
   ModalBody as WrapModalBody,
   ModalFooter as WrapModalFooter,
   ModalHeader as WrapModalHeader,
-} from '../components/Modal';
-import { MultiSelectComboBox as WrapMultiSelectComboBox } from '../components/MultiSelectComboBox';
-import { NumberField as WrapNumberField } from '../components/NumberField';
-import { OptionMenu as WrapOptionMenu } from '../components/OptionMenu';
-import { Pagination as WrapPagination } from '../components/Pagination';
+} from '@op/ui-next/Modal';
+import { MultiSelectComboBox as WrapMultiSelectComboBox } from '@op/ui-next/MultiSelectComboBox';
+import { NumberField as WrapNumberField } from '@op/ui-next/NumberField';
+import { OptionMenu as WrapOptionMenu } from '@op/ui-next/OptionMenu';
+import { Pagination as WrapPagination } from '@op/ui-next/Pagination';
 import {
   RadioGroup as WrapRadioGroup,
   RadioGroupItem as WrapRadioGroupItem,
-} from '../components/RadioGroup';
-import { SearchField as WrapSearchField } from '../components/SearchField';
-import { Select as WrapSelect } from '../components/Select';
+} from '@op/ui-next/RadioGroup';
+import { SearchField as WrapSearchField } from '@op/ui-next/SearchField';
+import { Select as WrapSelect } from '@op/ui-next/Select';
 import {
   Sheet as WrapSheet,
   SheetBody as WrapSheetBody,
   SheetHeader as WrapSheetHeader,
-} from '../components/Sheet';
-import { Skeleton as WrapSkeleton } from '../components/Skeleton';
-import { StatusDot as WrapStatusDot } from '../components/StatusDot';
-import { Tabs as WrapTabs } from '../components/Tabs';
+} from '@op/ui-next/Sheet';
+import { Skeleton as WrapSkeleton } from '@op/ui-next/Skeleton';
+import { StatusDot as WrapStatusDot } from '@op/ui-next/StatusDot';
+import { Tabs as WrapTabs } from '@op/ui-next/Tabs';
 import {
   Tag as WrapTag,
   TagGroup as WrapTagGroup,
-} from '../components/TagGroup';
-import { Toast as WrapToast, toast as wrapToast } from '../components/Toast';
-import { ToggleButton as WrapToggleButton } from '../components/ToggleButton';
+} from '@op/ui-next/TagGroup';
+import { Toast as WrapToast, toast as wrapToast } from '@op/ui-next/Toast';
+import { ToggleButton as WrapToggleButton } from '@op/ui-next/ToggleButton';
 import {
   Tooltip as WrapTooltip,
   TooltipTrigger as WrapTooltipTrigger,
-} from '../components/Tooltip';
+} from '@op/ui-next/Tooltip';
 // ---- RAW (vanilla shadcn primitives) ----
 import {
   Alert as RawAlert,
   AlertTitle as RawAlertTitle,
-} from '../components/ui/alert';
+} from '@op/ui-next/ui/alert';
 import {
   Avatar as RawAvatar,
   AvatarFallback as RawAvatarFallback,
   AvatarGroup as RawAvatarGroup,
   AvatarGroupCount as RawAvatarGroupCount,
-} from '../components/ui/avatar';
-import { Badge as RawBadge } from '../components/ui/badge';
+} from '@op/ui-next/ui/avatar';
+import { Badge as RawBadge } from '@op/ui-next/ui/badge';
 import {
   Breadcrumb as RawBreadcrumb,
   BreadcrumbItem as RawBreadcrumbItem,
@@ -164,15 +164,15 @@ import {
   BreadcrumbList as RawBreadcrumbList,
   BreadcrumbPage as RawBreadcrumbPage,
   BreadcrumbSeparator as RawBreadcrumbSeparator,
-} from '../components/ui/breadcrumb';
-import { Button as RawButton } from '../components/ui/button';
+} from '@op/ui-next/ui/breadcrumb';
+import { Button as RawButton } from '@op/ui-next/ui/button';
 import {
   Card as RawCard,
   CardContent as RawCardContent,
   CardHeader as RawCardHeader,
   CardTitle as RawCardTitle,
-} from '../components/ui/card';
-import { Checkbox as RawCheckbox } from '../components/ui/checkbox';
+} from '@op/ui-next/ui/card';
+import { Checkbox as RawCheckbox } from '@op/ui-next/ui/checkbox';
 import {
   Combobox as RawCombobox,
   ComboboxChip as RawComboboxChip,
@@ -182,7 +182,7 @@ import {
   ComboboxEmpty as RawComboboxEmpty,
   ComboboxItem as RawComboboxItem,
   ComboboxList as RawComboboxList,
-} from '../components/ui/combobox';
+} from '@op/ui-next/ui/combobox';
 import {
   Dialog as RawDialog,
   DialogContent as RawDialogContent,
@@ -190,59 +190,59 @@ import {
   DialogHeader as RawDialogHeader,
   DialogTitle as RawDialogTitle,
   DialogTrigger as RawDialogTrigger,
-} from '../components/ui/dialog';
+} from '@op/ui-next/ui/dialog';
 import {
   DropdownMenu as RawDropdownMenu,
   DropdownMenuContent as RawDropdownMenuContent,
   DropdownMenuItem as RawDropdownMenuItem,
   DropdownMenuTrigger as RawDropdownMenuTrigger,
-} from '../components/ui/dropdown-menu';
-import { Input as RawInput } from '../components/ui/input';
+} from '@op/ui-next/ui/dropdown-menu';
+import { Input as RawInput } from '@op/ui-next/ui/input';
 import {
   InputGroup as RawInputGroup,
   InputGroupAddon as RawInputGroupAddon,
   InputGroupInput as RawInputGroupInput,
-} from '../components/ui/input-group';
+} from '@op/ui-next/ui/input-group';
 import {
   Pagination as RawPagination,
   PaginationContent as RawPaginationContent,
   PaginationItem as RawPaginationItem,
   PaginationNext as RawPaginationNext,
   PaginationPrevious as RawPaginationPrevious,
-} from '../components/ui/pagination';
+} from '@op/ui-next/ui/pagination';
 import {
   RadioGroup as RawRadioGroup,
   RadioGroupItem as RawRadioGroupItem,
-} from '../components/ui/radio-group';
+} from '@op/ui-next/ui/radio-group';
 import {
   Select as RawSelect,
   SelectContent as RawSelectContent,
   SelectItem as RawSelectItem,
   SelectTrigger as RawSelectTrigger,
   SelectValue as RawSelectValue,
-} from '../components/ui/select';
+} from '@op/ui-next/ui/select';
 import {
   Sheet as RawSheet,
   SheetContent as RawSheetContent,
   SheetHeader as RawSheetHeader,
   SheetTitle as RawSheetTitle,
   SheetTrigger as RawSheetTrigger,
-} from '../components/ui/sheet';
-import { Skeleton as RawSkeleton } from '../components/ui/skeleton';
-import { Spinner as RawSpinner } from '../components/ui/spinner';
-import { Switch as RawSwitch } from '../components/ui/switch';
+} from '@op/ui-next/ui/sheet';
+import { Skeleton as RawSkeleton } from '@op/ui-next/ui/skeleton';
+import { Spinner as RawSpinner } from '@op/ui-next/ui/spinner';
+import { Switch as RawSwitch } from '@op/ui-next/ui/switch';
 import {
   Tabs as RawTabs,
   TabsContent as RawTabsContent,
   TabsList as RawTabsList,
   TabsTrigger as RawTabsTrigger,
-} from '../components/ui/tabs';
+} from '@op/ui-next/ui/tabs';
 import {
   Tooltip as RawTooltip,
   TooltipContent as RawTooltipContent,
   TooltipProvider as RawTooltipProvider,
   TooltipTrigger as RawTooltipTrigger,
-} from '../components/ui/tooltip';
+} from '@op/ui-next/ui/tooltip';
 
 // ---- layout primitives ----
 
