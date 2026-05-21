@@ -7,6 +7,7 @@ import { match } from '@op/core';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
+import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
@@ -18,7 +19,10 @@ import {
   DecisionResultsTabPanel,
   DecisionResultsTabs,
 } from '../DecisionResultsTabs';
-import { FinalPhaseSubmissionSuccessDialog } from '../FinalPhaseSubmissionSuccessDialog';
+import {
+  FinalPhaseSubmissionSuccessDialog,
+  QUERY_PARAM as RESULTS_LIVE_QUERY_PARAM,
+} from '../FinalPhaseSubmissionSuccessDialog';
 import { MyBallot, NoVoteFound } from '../MyBallot';
 import {
   ProcessSurveyModal,
@@ -228,7 +232,13 @@ function ProcessSurveyGate({
   instanceId: string;
   isLegacy?: boolean;
 }) {
-  if (isLegacy) {
+  const searchParams = useSearchParams();
+  // The post-publish success modal owns the screen while `?resultsLive=1` is in
+  // the URL. Holding the survey back until that param is stripped prevents the
+  // survey's backdrop from intercepting clicks on the success modal.
+  const isResultsLiveDialogActive =
+    searchParams.get(RESULTS_LIVE_QUERY_PARAM) === '1';
+  if (isLegacy || isResultsLiveDialogActive) {
     return null;
   }
   return <ProcessSurveyGateInner instanceId={instanceId} />;
