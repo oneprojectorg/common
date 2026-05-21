@@ -108,7 +108,8 @@ function mapVariant({
   if (variant === 'pill') {
     return {
       variant: 'secondary',
-      extra: 'rounded-full px-3',
+      extra:
+        'border-0 bg-primary/10 text-primary shadow-none hover:bg-primary/15 active:bg-primary/15',
     };
   }
 
@@ -133,7 +134,11 @@ function mapVariant({
           'bg-gradient-to-r from-primary to-primary/70 text-primary-foreground',
       };
     case 'pill':
-      return { variant: 'secondary', extra: 'rounded-full px-3' };
+      return {
+        variant: 'secondary',
+        extra:
+          'border-0 bg-primary-tealWhite text-primary-teal shadow-none hover:bg-teal-50 hover:text-primary-tealBlack active:bg-teal-50 active:text-primary-tealBlack',
+      };
     case 'primary':
     default:
       return { variant: 'default', extra: '' };

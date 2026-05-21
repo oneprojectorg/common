@@ -3,7 +3,6 @@
 
 import * as React from 'react';
 
-import { cn } from '../lib/utils';
 import { Button as ShadcnButton } from './ui/button';
 
 type LegacySize = 'small' | 'medium' | 'large';
@@ -50,7 +49,7 @@ export function IconButton(props: IconButtonProps) {
       size={sizeMap[size]}
       disabled={disabled || isDisabled}
       onClick={onClick ?? onPress}
-      className={cn('rounded-full', className)}
+      className={className}
       {...rest}
     >
       {children}
