@@ -8,11 +8,11 @@ import {
   Navigation,
   Overlays,
   Structure,
-} from '@/comparison/Comparison';
+} from '@op/ui-next/Comparison';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const meta: Meta = {
-  title: 'Comparison/Old vs New vs Raw',
+  title: 'shadcn Comparison/Old vs New vs Raw',
   parameters: { layout: 'fullscreen' },
 };
 

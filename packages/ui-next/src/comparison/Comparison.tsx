@@ -19,6 +19,7 @@ import { Button as OldButton } from '@op/ui/Button';
 import { Checkbox as OldCheckbox } from '@op/ui/Checkbox';
 import { Chip as OldChip } from '@op/ui/Chip';
 import { EmptyState as OldEmptyState } from '@op/ui/EmptyState';
+import { FacePile as OldFacePile } from '@op/ui/FacePile';
 import {
   FooterBar as OldFooterBar,
   FooterBarCenter as OldFooterBarCenter,
@@ -68,7 +69,7 @@ import {
 } from '@op/ui/Tabs';
 import { Tag as OldTag, TagGroup as OldTagGroup } from '@op/ui/TagGroup';
 import { TextField as OldTextField } from '@op/ui/TextField';
-import { Toast as OldToast, toast as oldToast } from '@op/ui/Toast';
+import { toast as oldToast } from '@op/ui/Toast';
 import { ToggleButton as OldToggleButton } from '@op/ui/ToggleButton';
 import {
   Tooltip as OldTooltip,
@@ -76,7 +77,7 @@ import {
 } from '@op/ui/Tooltip';
 import { useId, useState, type ReactNode } from 'react';
 import { LuEllipsis, LuSearch } from 'react-icons/lu';
-import { toast as rawToast, Toaster as RawToaster } from 'sonner';
+import { toast as rawToast } from 'sonner';
 
 // ---- WRAPPER (@op/ui-next compat / re-exports) ----
 import { AlertBanner as WrapAlertBanner } from '../components/AlertBanner';
@@ -130,7 +131,6 @@ import {
   Sheet as WrapSheet,
   SheetBody as WrapSheetBody,
   SheetHeader as WrapSheetHeader,
-  SheetTrigger as WrapSheetTrigger,
 } from '../components/Sheet';
 import { Skeleton as WrapSkeleton } from '../components/Skeleton';
 import { StatusDot as WrapStatusDot } from '../components/StatusDot';
@@ -153,6 +153,8 @@ import {
 import {
   Avatar as RawAvatar,
   AvatarFallback as RawAvatarFallback,
+  AvatarGroup as RawAvatarGroup,
+  AvatarGroupCount as RawAvatarGroupCount,
 } from '../components/ui/avatar';
 import { Badge as RawBadge } from '../components/ui/badge';
 import {
@@ -542,7 +544,59 @@ export function Media() {
           </RawAvatar>
         }
       />
+      <Pair
+        label="AvatarGroup"
+        old={
+          <OldFacePile
+            items={GROUP_NAMES.map((name) => (
+              <OldAvatar key={name} placeholder={name} />
+            ))}
+          />
+        }
+        wrapped={<WrapAvatarGroupSample />}
+        raw={<RawAvatarGroupSample />}
+      />
     </Section>
+  );
+}
+
+const GROUP_NAMES = [
+  'Nour Malaeb',
+  'Ada Lovelace',
+  'Grace Hopper',
+  'Linus Torvalds',
+  'Alan Turing',
+];
+
+function WrapAvatarGroupSample() {
+  return (
+    <div className="flex -space-x-2">
+      {GROUP_NAMES.slice(0, 3).map((name) => (
+        <WrapAvatar key={name} placeholder={name} />
+      ))}
+      <RawAvatar>
+        <RawAvatarFallback>+{GROUP_NAMES.length - 3}</RawAvatarFallback>
+      </RawAvatar>
+    </div>
+  );
+}
+
+function RawAvatarGroupSample() {
+  return (
+    <RawAvatarGroup>
+      {GROUP_NAMES.slice(0, 3).map((name) => {
+        const initials = name
+          .split(' ')
+          .map((part) => part[0])
+          .join('');
+        return (
+          <RawAvatar key={name}>
+            <RawAvatarFallback>{initials}</RawAvatarFallback>
+          </RawAvatar>
+        );
+      })}
+      <RawAvatarGroupCount>+{GROUP_NAMES.length - 3}</RawAvatarGroupCount>
+    </RawAvatarGroup>
   );
 }
 
@@ -685,6 +739,16 @@ export function Overlays() {
         old={<OldModalSample />}
         wrapped={<WrapModalSample />}
         raw={<RawModalSample />}
+      />
+      <Pair
+        label="Confetti modal"
+        old={<OldConfettiModalSample />}
+        wrapped={<WrapConfettiModalSample />}
+        raw={
+          <span className="text-muted-foreground text-xs">
+            n/a — no shadcn primitive
+          </span>
+        }
       />
       <Pair
         label="Sheet"
@@ -1113,6 +1177,38 @@ function WrapModalSample() {
   );
 }
 
+function OldConfettiModalSample() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <OldButton onPress={() => setOpen(true)}>Celebrate</OldButton>
+      <OldModal isOpen={open} onOpenChange={setOpen} isDismissable confetti>
+        <OldModalHeader>Nice!</OldModalHeader>
+        <OldModalBody>You did the thing.</OldModalBody>
+        <OldModalFooter>
+          <OldButton onPress={() => setOpen(false)}>Close</OldButton>
+        </OldModalFooter>
+      </OldModal>
+    </>
+  );
+}
+
+function WrapConfettiModalSample() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <WrapButton onPress={() => setOpen(true)}>Celebrate</WrapButton>
+      <WrapModal isOpen={open} onOpenChange={setOpen} isDismissable confetti>
+        <WrapModalHeader>Nice!</WrapModalHeader>
+        <WrapModalBody>You did the thing.</WrapModalBody>
+        <WrapModalFooter>
+          <WrapButton onPress={() => setOpen(false)}>Close</WrapButton>
+        </WrapModalFooter>
+      </WrapModal>
+    </>
+  );
+}
+
 function RawModalSample() {
   return (
     <RawDialog>
@@ -1144,12 +1240,15 @@ function OldSheetSample() {
 }
 
 function WrapSheetSample() {
+  const [open, setOpen] = useState(false);
   return (
-    <WrapSheet side="right">
-      <WrapSheetTrigger render={<WrapButton>Open sheet</WrapButton>} />
-      <WrapSheetHeader>Sheet</WrapSheetHeader>
-      <WrapSheetBody>Sheet body</WrapSheetBody>
-    </WrapSheet>
+    <>
+      <WrapButton onPress={() => setOpen(true)}>Open sheet</WrapButton>
+      <WrapSheet isOpen={open} onOpenChange={setOpen} side="right">
+        <WrapSheetHeader>Sheet</WrapSheetHeader>
+        <WrapSheetBody>Sheet body</WrapSheetBody>
+      </WrapSheet>
+    </>
   );
 }
 
@@ -1279,12 +1378,8 @@ function RawTooltipSample() {
 }
 
 function ToastMounts() {
-  // All three columns share the same sonner singleton; mount one Toaster.
-  return (
-    <div className="hidden">
-      <OldToast />
-      <WrapToast />
-      <RawToaster />
-    </div>
-  );
+  // Sonner is a singleton; one Toaster renders all three columns' calls.
+  // Use ui-next's Toaster (carries `toastOptions.classNames.toast` with bg);
+  // a bare <RawToaster /> would render unstyled containers for `toast.custom`.
+  return <WrapToast />;
 }
