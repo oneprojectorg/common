@@ -276,7 +276,7 @@ export async function submitManualSelection({
   if (previousPhaseId) {
     event
       .send({
-        name: Events.selectionsConfirmed.name,
+        name: Events.manualSelectionsConfirmed.name,
         data: {
           processInstanceId,
           fromPhaseId: previousPhaseId,
@@ -285,7 +285,7 @@ export async function submitManualSelection({
       })
       .catch((err) => {
         console.error(
-          `Failed to send selections confirmed event for instance ${processInstanceId}:`,
+          `Failed to send manual selections confirmed event for instance ${processInstanceId}:`,
           err,
         );
       });

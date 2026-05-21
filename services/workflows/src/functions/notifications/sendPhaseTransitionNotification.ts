@@ -9,7 +9,7 @@ import { OPBatchSend, PhaseTransitionEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
 import { eq } from 'drizzle-orm';
 
-const { phaseTransitioned, selectionsConfirmed } = Events;
+const { phaseTransitioned, manualSelectionsConfirmed } = Events;
 
 export const sendPhaseTransitionNotification = inngest.createFunction(
   {
@@ -20,7 +20,10 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
       timeout: '3m',
     },
   },
-  [{ event: phaseTransitioned.name }, { event: selectionsConfirmed.name }],
+  [
+    { event: phaseTransitioned.name },
+    { event: manualSelectionsConfirmed.name },
+  ],
   async ({ event, step }) => {
     const { processInstanceId, toPhaseId } = phaseTransitioned.schema.parse(
       event.data,

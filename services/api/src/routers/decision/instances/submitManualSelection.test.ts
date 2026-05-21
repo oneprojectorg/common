@@ -605,7 +605,7 @@ describe.concurrent('submitManualSelection', () => {
     }
   });
 
-  it('dispatches a selectionsConfirmed event after a successful manual selection', async ({
+  it('dispatches a manualSelectionsConfirmed event after a successful manual selection', async ({
     task,
     onTestFinished,
   }) => {
@@ -641,13 +641,13 @@ describe.concurrent('submitManualSelection', () => {
     const selectionsCalls = mockSend.mock.calls.filter(
       (call: unknown[]) =>
         (call[0] as { name: string; data: { processInstanceId: string } })
-          .name === 'decision/selections-confirmed' &&
+          .name === 'decision/manual-selections-confirmed' &&
         (call[0] as { data: { processInstanceId: string } }).data
           .processInstanceId === instanceId,
     );
     expect(selectionsCalls).toHaveLength(1);
     expect(selectionsCalls[0]![0]).toMatchObject({
-      name: 'decision/selections-confirmed',
+      name: 'decision/manual-selections-confirmed',
       data: {
         processInstanceId: instanceId,
         fromPhaseId: 'submission',
