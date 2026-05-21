@@ -103,10 +103,9 @@ const Highlight = ({ children }: { children?: ReactNode }) => {
 };
 
 const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
-  const [[{ items: organizations }, stats]] = trpc.useSuspenseQueries((t) => [
-    t.organization.list({ limit: 100 }),
-    t.platform.getStats(),
-  ]);
+  const [{ items: organizations }] = trpc.organization.list.useSuspenseQuery({
+    limit: 100,
+  });
   const facePileRef = useRef<HTMLDivElement>(null);
   const [numItems, setNumItems] = useState(20);
 
@@ -137,7 +136,7 @@ const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
         <Link
           key={org.id}
           href={`/org/${org.profile.slug}`}
-          className="hover:no-underline"
+          className="relative hover:no-underline"
         >
           <Avatar placeholder={org.profile.name}>
             {avatarUrl ? (
@@ -155,12 +154,12 @@ const OrganizationFacePile = ({ children }: { children?: ReactNode }) => {
     })
     .slice(0, numItems);
 
-  if (stats.totalOrganizations > numItems) {
+  if (organizations.length > numItems) {
     items.push(
       <Link key="more" href="/org" className="hover:no-underline">
         <Avatar className="bg-neutral-charcoal text-sm text-neutral-offWhite">
           <span className="align-super">+</span>
-          {stats.totalOrganizations - numItems}
+          {organizations.length - numItems}
         </Avatar>
       </Link>,
     );
