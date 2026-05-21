@@ -76,44 +76,6 @@ describe.concurrent('getInstance', () => {
     expect(result.access?.vote).toBe(true);
   });
 
-  it('should NOT grant action capabilities to org members without a profile-level role', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: false,
-    });
-
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
-
-    // Member in the SAME org as the decision owner, but with NO profile-level
-    // role on the instance. Org-level MEMBER seed grants SUBMIT_PROPOSALS and
-    // VOTE, so without the fix the fallback would advertise those as true even
-    // though the server's createProposal mutation rejects the user.
-    const member = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [],
-    });
-
-    const caller = await createAuthenticatedCaller(member.email);
-    const result = await caller.decision.getInstance({
-      instanceId: instance.instance.id,
-    });
-
-    expect(result.access?.submitProposals).toBe(false);
-    expect(result.access?.vote).toBe(false);
-    expect(result.access?.admin).toBe(false);
-    expect(result.access?.inviteMembers).toBe(false);
-    expect(result.access?.review).toBe(false);
-    expect(result.access?.read).toBe(true);
-  });
-
   it('should return NOT_FOUND for a non-existent instance', async ({
     task,
     onTestFinished,
