@@ -7,6 +7,7 @@
 'use client';
 
 import {
+  Fragment,
   forwardRef,
   type ReactNode,
   useEffect,
@@ -64,9 +65,7 @@ export const FacePile = forwardRef<HTMLDivElement, FacePileProps>(
       >
         <AvatarGroup className={className}>
           {renderedItems.map((node, i) => (
-            <span key={i} className="contents">
-              {node}
-            </span>
+            <Fragment key={i}>{node}</Fragment>
           ))}
           {overflow > 0 && <AvatarGroupCount>+{overflow}</AvatarGroupCount>}
         </AvatarGroup>
