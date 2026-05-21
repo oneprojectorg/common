@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 
-import { ComparisonGrid } from '@op/ui-next/Comparison';
+import { ComparisonGrid } from '@op/ui/Comparison';
 
 export const dynamic = 'force-static';
 

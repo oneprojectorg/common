@@ -78,6 +78,7 @@
     "./lib/primitive": "./src/lib/primitive.ts",
     "./hooks/use-media-query": "./src/hooks/use-media-query.ts",
     "./AlertBanner": "./src/components/AlertBanner.tsx",
+    "./Comparison": "./src/comparison/Comparison.tsx",
     "./ui/table": "./src/components/ui/table.tsx"
   },
   "module": "./src/index.ts",
