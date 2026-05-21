@@ -1,4 +1,5 @@
-import { db } from '@op/db/client';
+import { db, eq } from '@op/db/client';
+import { profileUsers } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it } from 'vitest';
 
@@ -126,6 +127,44 @@ describe.concurrent('profile.users.updateUserRoles', () => {
 
     expect(userWithAdminOnly?.roles).toHaveLength(1);
     expect(userWithAdminOnly?.roles[0]?.accessRole.id).toBe(ROLES.ADMIN.id);
+  });
+
+  it('should reject demoting the profile owner from admin', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    // Promote the admin to owner of the profile. The test data manager seeds
+    // the admin role but not isOwner; this models the production case where a
+    // process owner is also its admin.
+    await db
+      .update(profileUsers)
+      .set({ isOwner: true })
+      .where(eq(profileUsers.id, adminUser.profileUserId));
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await expect(
+      caller.updateUserRoles({
+        profileUserId: adminUser.profileUserId,
+        roleIds: [ROLES.MEMBER.id],
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
+
+    // Confirm the role was not changed — the admin role should still be there.
+    const unchanged = await db.query.profileUsers.findFirst({
+      where: { id: adminUser.profileUserId },
+      with: { roles: true },
+    });
+    expect(unchanged?.roles).toHaveLength(1);
+    expect(unchanged?.roles[0]?.accessRoleId).toBe(ROLES.ADMIN.id);
   });
 
   it('should fail when non-admin tries to update roles', async ({

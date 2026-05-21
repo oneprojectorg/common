@@ -182,7 +182,7 @@ const ProfileUserRoleSelect = ({
             handleRoleChange(keyStr);
           }
         }}
-        isDisabled={isPending}
+        isDisabled={isPending || isOwner}
         size="small"
         className={className}
       >
