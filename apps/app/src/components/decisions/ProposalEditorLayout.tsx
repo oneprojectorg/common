@@ -38,6 +38,7 @@ interface ProposalEditorLayoutProps {
   access?: {
     admin: boolean;
     inviteMembers: boolean;
+    submitProposals: boolean;
   };
   /** Active revision request when the editor is in revision mode */
   revisionRequest?: ProposalReviewRequest | null;
@@ -67,6 +68,10 @@ export function ProposalEditorLayout({
 
   const canShare = access?.admin || access?.inviteMembers;
   const isRevisionMode = Boolean(revisionRequest);
+  const isUpdateMode = isEditMode && !isDraft;
+  // Update mode goes through updateProposal (UPDATE perm), not submitProposal,
+  // so it's not gated on SUBMIT_PROPOSALS.
+  const showSubmitButton = isUpdateMode || (access?.submitProposals ?? false);
 
   return (
     <div className="flex min-w-0 flex-1 flex-col bg-white">
@@ -100,7 +105,7 @@ export function ProposalEditorLayout({
                   <span className="hidden sm:inline">{t('Share')}</span>
                 </Button>
               )}
-              {!readOnlyMode && (
+              {!readOnlyMode && showSubmitButton && (
                 <Button
                   color="primary"
                   variant="icon"
@@ -116,7 +121,7 @@ export function ProposalEditorLayout({
                   {isSubmitting ? <LoadingSpinner /> : <LuCheck />}
                   {isRevisionMode ? (
                     t('Resubmit')
-                  ) : isEditMode && !isDraft ? (
+                  ) : isUpdateMode ? (
                     <>
                       <span className="inline lg:hidden">{t('Update')}</span>
                       <span className="hidden lg:inline">

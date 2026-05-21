@@ -2,8 +2,10 @@ import {
   type DecisionSchemaDefinition,
   createDecisionInstance,
   createOrganization,
+  createProposal,
   getSeededTemplate,
   grantDecisionProfileAccess,
+  grantInstanceReadOnlyRole,
 } from '@op/test';
 
 import {
@@ -134,6 +136,112 @@ test.describe('Decision Role Capabilities', () => {
     await expect(
       memberPage.getByRole('button', { name: 'Start a proposal' }),
     ).toBeVisible({ timeout: 5000 });
+  });
+
+  test('submit proposal button is hidden for a user without submitProposals permission in submission phase', async ({
+    browser,
+    org,
+    supabaseAdmin,
+  }) => {
+    const template = await getSeededTemplate();
+
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: submissionPhaseSchema,
+      grantAdminAccess: false,
+    });
+
+    const readerOrg = await createOrganization({
+      testId: `role-caps-reader-${Date.now()}`,
+      supabaseAdmin,
+      users: { admin: 1, member: 0 },
+    });
+    const readerUser = readerOrg.adminUser;
+
+    await grantInstanceReadOnlyRole({
+      instanceProfileId: instance.profileId,
+      authUserId: readerUser.authUserId,
+      email: readerUser.email,
+    });
+
+    const readerContext = await browser.newContext();
+    const readerPage = await readerContext.newPage();
+    await authenticateAsUser(readerPage, {
+      email: readerUser.email,
+      password: TEST_USER_DEFAULT_PASSWORD,
+    });
+
+    await readerPage.goto(`/en/decisions/${instance.slug}`, {
+      waitUntil: 'networkidle',
+    });
+
+    await expect(
+      readerPage.getByRole('heading', { name: instance.name }),
+    ).toBeVisible({ timeout: 15000 });
+
+    await expect(
+      readerPage.getByRole('button', { name: 'Start a proposal' }),
+    ).not.toBeVisible();
+  });
+
+  test('submit proposal button is hidden in the editor for a user without submitProposals permission', async ({
+    browser,
+    org,
+    supabaseAdmin,
+  }) => {
+    const template = await getSeededTemplate();
+
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: submissionPhaseSchema,
+    });
+
+    const proposal = await createProposal({
+      processInstanceId: instance.instance.id,
+      submittedByProfileId: org.organizationProfile.id,
+      proposalData: { title: 'Admin draft' },
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+    });
+
+    const readerOrg = await createOrganization({
+      testId: `role-caps-editor-reader-${Date.now()}`,
+      supabaseAdmin,
+      users: { admin: 1, member: 0 },
+    });
+    const readerUser = readerOrg.adminUser;
+
+    await grantInstanceReadOnlyRole({
+      instanceProfileId: instance.profileId,
+      authUserId: readerUser.authUserId,
+      email: readerUser.email,
+    });
+
+    const readerContext = await browser.newContext();
+    const readerPage = await readerContext.newPage();
+    await authenticateAsUser(readerPage, {
+      email: readerUser.email,
+      password: TEST_USER_DEFAULT_PASSWORD,
+    });
+
+    await readerPage.goto(
+      `/en/decisions/${instance.slug}/proposal/${proposal.profileId}/edit`,
+      { waitUntil: 'networkidle' },
+    );
+
+    await expect(readerPage.getByRole('button', { name: 'Back' })).toBeVisible({
+      timeout: 15000,
+    });
+
+    await expect(
+      readerPage.getByRole('button', { name: /^Submit( Proposal)?$/ }),
+    ).not.toBeVisible();
   });
 
   test('submit proposal button is hidden when phase does not allow proposals', async ({
