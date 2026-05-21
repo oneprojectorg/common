@@ -16,6 +16,7 @@
 import * as React from 'react';
 import type { ReactNode } from 'react';
 
+import { cn } from '../lib/utils';
 import {
   Sheet as ShadcnSheet,
   SheetContent as ShadcnSheetContent,
@@ -108,7 +109,7 @@ export const SheetBody = ({
   ...rest
 }: React.HTMLAttributes<HTMLDivElement>) => {
   return (
-    <div data-slot="sheet-body" className={className} {...rest}>
+    <div data-slot="sheet-body" className={cn('p-4', className)} {...rest}>
       {children}
     </div>
   );
