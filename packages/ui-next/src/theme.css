@@ -1,0 +1,25 @@
+/* Brand overrides for shadcn base tokens. Imported by styles.css after the
+ * shadcn `:root`/`.dark` defaults so these declarations win. Only remaps
+ * tokens with a clear op brand counterpart; everything else inherits the
+ * shadcn grayscale baseline.
+ *
+ * Source of op brand HSL values: `packages/styles/tokens.css` (`--op-*`).
+ * Conventions mirror `packages/styles/intent-ui-theme.css` (used by @op/ui)
+ * so the two libraries render at brand parity.
+ */
+
+@import '@op/styles/tokens';
+
+:root {
+  --primary: hsl(var(--op-teal-500));
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: hsl(var(--op-teal-500));
+  --destructive: hsl(var(--op-red-500));
+}
+
+.dark {
+  --primary: hsl(var(--op-teal-400));
+  --primary-foreground: oklch(0.205 0 0);
+  --ring: hsl(var(--op-teal-400));
+  --destructive: hsl(var(--op-red-400));
+}
