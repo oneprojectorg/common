@@ -1,7 +1,7 @@
 import { getPublicUrl } from '@/utils';
 import { pluralize } from '@/utils/pluralize';
 import { Avatar } from '@op/ui-next/Avatar';
-import { GrowingFacePile } from '@op/ui-next/GrowingFacePile';
+import { FacePile } from '@op/ui-next/FacePile';
 import Image from 'next/image';
 
 import { Link, useTranslations } from '@/lib/i18n/routing';
@@ -27,7 +27,7 @@ export const MemberParticipationFacePile = ({
 
   return (
     <div className="flex items-center justify-center gap-2">
-      <GrowingFacePile
+      <FacePile
         maxItems={20}
         items={submitters.map((submitter) => (
           <Link
@@ -55,7 +55,7 @@ export const MemberParticipationFacePile = ({
           {submitters.length > 1 ? t('have') : t('has')}{' '}
           {t('submitted proposals')}
         </span>
-      </GrowingFacePile>
+      </FacePile>
     </div>
   );
 };

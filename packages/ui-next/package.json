@@ -61,7 +61,6 @@
     "./Sidebar": "./src/components/Sidebar/index.ts",
     "./Sortable": "./src/components/Sortable/index.ts",
     "./SplitPane": "./src/components/SplitPane.tsx",
-    "./GrowingFacePile": "./src/components/GrowingFacePile.tsx",
     "./HorizontalList": "./src/components/HorizontalList/index.tsx",
     "./LogoLoop": "./src/components/LogoLoop.tsx",
     "./MediaDisplay": "./src/components/MediaDisplay.tsx",
