@@ -395,43 +395,25 @@ export async function grantDecisionProfileAccess(
   }
 }
 
-// Access-zones permission bits. Duplicated rather than imported because
-// `access-zones` is not a direct dep of @op/test.
-const READ = 4;
-const REVIEW = 64;
-
 /**
- * Grants the user a fresh custom role on the instance profile with the
- * given decisions-zone permission bitfield (profile zone always gets READ
- * so the user can navigate to it). Reuses an existing profileUsers row if
- * one is present (e.g. created by createInstanceMember).
+ * Grants the user a custom "Reviewer" role on the instance profile with
+ * READ + REVIEW on the decisions zone (plus the implicit profile READ).
+ * Creates the role on the fly and inserts/reuses a profileUser row.
+ *
+ * Mirrors the capabilities surfaced by `createDecisionRole` in @op/common
+ * without importing it (keeps this package free of server-only deps).
  */
-async function grantInstanceCustomRole(opts: {
+export async function grantInstanceReviewerRole(opts: {
   instanceProfileId: string;
   authUserId: string;
   email: string;
-  roleName: string;
-  decisionsPermission: number;
+  roleName?: string;
 }): Promise<void> {
-  const {
-    instanceProfileId,
-    authUserId,
-    email,
-    roleName,
-    decisionsPermission,
-  } = opts;
+  const { instanceProfileId, authUserId, email, roleName = 'Reviewer' } = opts;
 
-  const [decisionsZone, profileZone, existing, [role]] = await Promise.all([
+  const [decisionsZone, profileZone] = await Promise.all([
     db.query.accessZones.findFirst({ where: { name: 'decisions' } }),
     db.query.accessZones.findFirst({ where: { name: 'profile' } }),
-    db.query.profileUsers.findFirst({
-      where: { profileId: instanceProfileId, authUserId },
-      columns: { id: true },
-    }),
-    db
-      .insert(accessRoles)
-      .values({ name: roleName, profileId: instanceProfileId })
-      .returning(),
   ]);
 
   if (!decisionsZone || !profileZone) {
@@ -440,17 +422,25 @@ async function grantInstanceCustomRole(opts: {
     );
   }
 
+  const [role] = await db
+    .insert(accessRoles)
+    .values({ name: roleName, profileId: instanceProfileId })
+    .returning();
+
   if (!role) {
-    throw new Error(
-      `Failed to create ${roleName} role on ${instanceProfileId}`,
-    );
+    throw new Error(`Failed to create Reviewer role on ${instanceProfileId}`);
   }
+
+  // permission.READ = 4 (ACRUD bit 2), decisionPermission.REVIEW = 0b10_00000 = 64.
+  // Duplicated to avoid pulling in access-zones/@op/common at runtime.
+  const READ = 4;
+  const REVIEW = 64;
 
   await db.insert(accessRolePermissionsOnAccessZones).values([
     {
       accessRoleId: role.id,
       accessZoneId: decisionsZone.id,
-      permission: decisionsPermission,
+      permission: READ | REVIEW,
     },
     {
       accessRoleId: role.id,
@@ -458,6 +448,13 @@ async function grantInstanceCustomRole(opts: {
       permission: READ,
     },
   ]);
+
+  // Reuse an existing profileUsers row (e.g. created by createInstanceMember)
+  // or insert a fresh one. Either way, attach the Reviewer role to it.
+  const existing = await db.query.profileUsers.findFirst({
+    where: { profileId: instanceProfileId, authUserId },
+    columns: { id: true },
+  });
 
   let profileUserId: string;
   if (existing) {
@@ -478,40 +475,6 @@ async function grantInstanceCustomRole(opts: {
   await db
     .insert(profileUserToAccessRoles)
     .values({ profileUserId, accessRoleId: role.id });
-}
-
-/**
- * Grants the user a "Read Only" role — READ on the decisions zone only.
- * The user can navigate the decision but cannot submit proposals, vote,
- * or review.
- */
-export async function grantInstanceReadOnlyRole(opts: {
-  instanceProfileId: string;
-  authUserId: string;
-  email: string;
-  roleName?: string;
-}): Promise<void> {
-  await grantInstanceCustomRole({
-    ...opts,
-    roleName: opts.roleName ?? 'Read Only',
-    decisionsPermission: READ,
-  });
-}
-
-/**
- * Grants the user a "Reviewer" role — READ + REVIEW on the decisions zone.
- */
-export async function grantInstanceReviewerRole(opts: {
-  instanceProfileId: string;
-  authUserId: string;
-  email: string;
-  roleName?: string;
-}): Promise<void> {
-  await grantInstanceCustomRole({
-    ...opts,
-    roleName: opts.roleName ?? 'Reviewer',
-    decisionsPermission: READ | REVIEW,
-  });
 }
 
 export interface CreateInstanceMemberOptions {

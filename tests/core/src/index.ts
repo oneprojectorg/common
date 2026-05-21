@@ -18,7 +18,6 @@ export {
   getDecisionInstance,
   getSeededTemplate,
   grantDecisionProfileAccess,
-  grantInstanceReadOnlyRole,
   grantInstanceReviewerRole,
   SEEDED_SIMPLE_VOTING_TEMPLATE_NAME,
   SEEDED_TEMPLATE_PROFILE_SLUG,
