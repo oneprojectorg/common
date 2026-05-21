@@ -9,11 +9,10 @@ import { Switch } from './ui/switch';
 
 type LegacySize = 'default' | 'small';
 
-export interface ToggleButtonProps
-  extends Omit<
-    React.ComponentProps<typeof Switch>,
-    'size' | 'checked' | 'onCheckedChange' | 'defaultChecked'
-  > {
+export interface ToggleButtonProps extends Omit<
+  React.ComponentProps<typeof Switch>,
+  'size' | 'checked' | 'onCheckedChange' | 'defaultChecked'
+> {
   isSelected?: boolean;
   defaultSelected?: boolean;
   onChange?: (isSelected: boolean) => void;

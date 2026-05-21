@@ -3,7 +3,6 @@ import { useId } from 'react';
 import { LuBell, LuCheck } from 'react-icons/lu';
 
 import { Button } from '@/components/Button';
-import { Field, FieldDescription, FieldLabel, Input } from '@/components/Field';
 import {
   Card,
   CardAction,
@@ -13,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/Card';
+import { Field, FieldDescription, FieldLabel, Input } from '@/components/Field';
 
 const meta: Meta<typeof Card> = {
   title: 'shadcn/Card',

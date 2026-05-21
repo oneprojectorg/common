@@ -8,7 +8,5 @@ export const Form = ({
   className,
   ...props
 }: React.FormHTMLAttributes<HTMLFormElement>) => {
-  return (
-    <form {...props} className={cn('flex flex-col gap-4', className)} />
-  );
+  return <form {...props} className={cn('flex flex-col gap-4', className)} />;
 };

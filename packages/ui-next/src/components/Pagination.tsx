@@ -5,6 +5,7 @@
 
 import * as React from 'react';
 
+import { cn } from '../lib/utils';
 import {
   Pagination as ShadcnPagination,
   PaginationContent,
@@ -12,7 +13,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from './ui/pagination';
-import { cn } from '../lib/utils';
 
 export interface PaginationRangeProps {
   label?: string;
@@ -48,9 +48,7 @@ export const Pagination = React.forwardRef<HTMLDivElement, PaginationProps>(
               <PaginationPrevious
                 aria-disabled={!previous}
                 data-disabled={!previous ? '' : undefined}
-                className={cn(
-                  !previous && 'pointer-events-none opacity-50',
-                )}
+                className={cn(!previous && 'pointer-events-none opacity-50')}
                 onClick={async (e) => {
                   e.preventDefault();
                   if (previous) {

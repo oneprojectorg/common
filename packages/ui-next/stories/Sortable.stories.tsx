@@ -30,7 +30,7 @@ export const Default: Story = {
     return (
       <Sortable items={items} onChange={setItems}>
         {(item, controls) => (
-          <div className="bg-muted/40 flex items-center gap-2 rounded border p-2">
+          <div className="flex items-center gap-2 rounded border bg-muted/40 p-2">
             <DragHandle
               {...controls.dragHandleProps}
               aria-label={`Drag ${item.label}`}

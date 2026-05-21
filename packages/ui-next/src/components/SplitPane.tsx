@@ -9,8 +9,8 @@ import {
 } from 'react';
 import { tv } from 'tailwind-variants';
 
-import { Tab, TabList, Tabs } from './Tabs';
 import { cn } from '../lib/utils';
+import { Tab, TabList, Tabs } from './Tabs';
 
 export interface SplitPaneProps {
   /** One or more `SplitPane.Pane` children. */

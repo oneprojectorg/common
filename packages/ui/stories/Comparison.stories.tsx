@@ -1,3 +1,5 @@
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
 import {
   Buttons,
   ComparisonGrid,
@@ -9,7 +11,6 @@ import {
   Overlays,
   Structure,
 } from '../src/comparison/Comparison';
-import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const meta: Meta = {
   title: 'shadcn Comparison/Old vs New vs Raw',

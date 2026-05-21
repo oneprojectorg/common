@@ -1,6 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Sidebar, SidebarLayout, SidebarProvider, SidebarTrigger } from '@/components/Sidebar';
+import {
+  Sidebar,
+  SidebarLayout,
+  SidebarProvider,
+  SidebarTrigger,
+} from '@/components/Sidebar';
 
 const meta: Meta = {
   title: 'shadcn/Sidebar',
@@ -17,13 +22,13 @@ export const Default: Story = {
       <SidebarLayout>
         <Sidebar label="Navigation">
           <nav className="flex flex-col gap-1 p-4">
-            <a href="#" className="hover:bg-muted rounded p-2 text-sm">
+            <a href="#" className="rounded p-2 text-sm hover:bg-muted">
               Home
             </a>
-            <a href="#" className="hover:bg-muted rounded p-2 text-sm">
+            <a href="#" className="rounded p-2 text-sm hover:bg-muted">
               Decisions
             </a>
-            <a href="#" className="hover:bg-muted rounded p-2 text-sm">
+            <a href="#" className="rounded p-2 text-sm hover:bg-muted">
               Profile
             </a>
           </nav>

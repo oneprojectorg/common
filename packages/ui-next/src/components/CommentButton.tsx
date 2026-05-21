@@ -25,8 +25,10 @@ const MessageCircleIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export interface CommentButtonProps
-  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onClick'> {
+export interface CommentButtonProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'onClick'
+> {
   count?: number;
   /** Legacy alias for onClick (RAC naming) */
   onPress?: React.MouseEventHandler<HTMLButtonElement>;
@@ -50,7 +52,7 @@ export const CommentButton = ({
       onClick={onClick ?? onPress}
       disabled={disabled ?? isDisabled}
       className={cn(
-        'text-muted-foreground bg-muted hover:bg-accent hover:text-foreground focus-visible:bg-muted focus-visible:outline-ring focus-visible:outline-1 focus-visible:-outline-offset-1 flex h-8 cursor-pointer items-center justify-center gap-1 rounded-md px-2 py-1 text-sm whitespace-nowrap outline-none transition-colors',
+        'text-muted-foreground hover:bg-accent hover:text-foreground flex h-8 cursor-pointer items-center justify-center gap-1 rounded-md bg-muted px-2 py-1 text-sm whitespace-nowrap transition-colors outline-none focus-visible:bg-muted focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-ring',
         className,
       )}
       {...props}
