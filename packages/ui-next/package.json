@@ -71,7 +71,7 @@
     "./Stepper": "./src/components/Stepper/index.ts",
     "./TranslateBanner": "./src/components/TranslateBanner.tsx",
     "./utils/formatting": "./src/utils/formatting.ts",
-    "./Comparison": "./src/comparison/Comparison.tsx"
+    "./ui/*": "./src/components/ui/*.tsx"
   },
   "scripts": {
     "build": "pnpm build:styles && storybook build",
@@ -88,7 +88,6 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@op/styles": "workspace:*",
-    "@op/ui": "workspace:*",
     "@tanstack/react-table": "^8.21.3",
     "@tiptap/core": "catalog:",
     "@tiptap/extension-blockquote": "catalog:",

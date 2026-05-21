@@ -8,7 +8,7 @@ import {
   Navigation,
   Overlays,
   Structure,
-} from '@op/ui-next/Comparison';
+} from '../src/comparison/Comparison';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const meta: Meta = {
