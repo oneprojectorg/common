@@ -886,6 +886,7 @@
   "File too large. Maximum size: {size}MB": "Faylka aad buu u weyn yahay. Cabbirka ugu badan: {size}MB",
   "File too large: {name}": "Faylka aad buu u weyn yahay: {name}",
   "Unsupported file type: {name}": "Nooca faylka lama taageero: {name}",
+  "Upload failed": "Soo gelinta way fashilantay",
   "Navigation": "Hogaaminta",
   "Log in": "Soo gal",
   "Helping people decide together how to use their resources": "Ka caawinta dadka inay si wadajir ah u go'aansadaan sida loo isticmaalo kheyraadkooda",

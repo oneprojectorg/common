@@ -947,6 +947,7 @@
   "File too large. Maximum size: {size}MB": "ফাইল খুব বড়। সর্বাধিক আকার: {size}MB",
   "File too large: {name}": "ফাইল খুব বড়: {name}",
   "Unsupported file type: {name}": "অসমর্থিত ফাইল টাইপ: {name}",
+  "Upload failed": "আপলোড ব্যর্থ হয়েছে",
   "Navigation": "নেভিগেশন",
   "Log in": "লগ ইন",
   "Helping people decide together how to use their resources": "মানুষকে তাদের সম্পদ কীভাবে ব্যবহার করবে তা একসাথে সিদ্ধান্ত নিতে সাহায্য করা",

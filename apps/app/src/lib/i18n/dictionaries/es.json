@@ -945,6 +945,7 @@
   "File too large. Maximum size: {size}MB": "Archivo demasiado grande. Tamaño máximo: {size}MB",
   "File too large: {name}": "Archivo demasiado grande: {name}",
   "Unsupported file type: {name}": "Tipo de archivo no compatible: {name}",
+  "Upload failed": "Error al cargar el archivo",
   "Navigation": "Navegación",
   "Log in": "Iniciar sesión",
   "Helping people decide together how to use their resources": "Ayudando a las personas a decidir juntas cómo usar sus recursos",
