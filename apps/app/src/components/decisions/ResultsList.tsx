@@ -33,9 +33,12 @@ const NoProposalsFound = () => {
 export const ResultsList = ({
   slug,
   instanceId,
+  decisionSlug,
 }: {
   slug: string;
   instanceId: string;
+  /** Decision profile slug for building proposal links in the new route structure */
+  decisionSlug?: string;
 }) => {
   const t = useTranslations();
 
@@ -63,40 +66,46 @@ export const ResultsList = ({
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {proposals.map((proposal) => (
-          <ProposalCard key={proposal.id}>
-            <div className="flex h-full flex-col justify-between gap-3 space-y-3">
+        {proposals.map((proposal) => {
+          const viewHref = decisionSlug
+            ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
+            : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
+
+          return (
+            <ProposalCard key={proposal.id}>
+              <div className="flex h-full flex-col justify-between gap-3 space-y-3">
+                <ProposalCardContent>
+                  <ProposalCardHeader
+                    proposal={proposal}
+                    viewHref={viewHref}
+                    allocated={proposal.allocated}
+                  />
+
+                  <ProposalCardMeta proposal={proposal} />
+
+                  <ProposalCardPreview proposal={proposal} />
+                </ProposalCardContent>
+              </div>
               <ProposalCardContent>
-                <ProposalCardHeader
-                  proposal={proposal}
-                  viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
-                  allocated={proposal.allocated}
-                />
+                {slug !== 'cowop' && resultStats?.membersVoted ? (
+                  <div className="flex flex-col gap-3">
+                    <div className="h-0 w-full border-b border-neutral-gray-2" />
 
-                <ProposalCardMeta proposal={proposal} />
-
-                <ProposalCardPreview proposal={proposal} />
+                    {/* Footer - Total Votes */}
+                    <ProposalCardFooter>
+                      <div className="flex items-start gap-1 text-base text-neutral-charcoal">
+                        <span className="font-bold">
+                          {proposal.voteCount ?? 0}
+                        </span>
+                        <span>{t('Total Votes')}</span>
+                      </div>
+                    </ProposalCardFooter>
+                  </div>
+                ) : null}
               </ProposalCardContent>
-            </div>
-            <ProposalCardContent>
-              {slug !== 'cowop' && resultStats?.membersVoted ? (
-                <div className="flex flex-col gap-3">
-                  <div className="h-0 w-full border-b border-neutral-gray-2" />
-
-                  {/* Footer - Total Votes */}
-                  <ProposalCardFooter>
-                    <div className="flex items-start gap-1 text-base text-neutral-charcoal">
-                      <span className="font-bold">
-                        {proposal.voteCount ?? 0}
-                      </span>
-                      <span>{t('Total Votes')}</span>
-                    </div>
-                  </ProposalCardFooter>
-                </div>
-              ) : null}
-            </ProposalCardContent>
-          </ProposalCard>
-        ))}
+            </ProposalCard>
+          );
+        })}
       </div>
     </div>
   );

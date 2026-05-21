@@ -185,7 +185,11 @@ function ResultsPageContent({
               >
                 <div className="lg:col-span-3">
                   <Suspense fallback={<ProposalListSkeleton />}>
-                    <ResultsList slug={profileSlug} instanceId={instanceId} />
+                    <ResultsList
+                      slug={profileSlug}
+                      instanceId={instanceId}
+                      decisionSlug={decisionSlug}
+                    />
                   </Suspense>
                 </div>
               </APIErrorBoundary>
