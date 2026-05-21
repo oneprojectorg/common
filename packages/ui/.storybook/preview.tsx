@@ -1,4 +1,5 @@
 import '@op/styles';
+import '@op/ui-next/styles.css';
 import { withThemeByClassName } from '@storybook/addon-themes';
 import type { Preview } from '@storybook/react-vite';
 import { themes } from 'storybook/theming';

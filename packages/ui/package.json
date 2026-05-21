@@ -97,6 +97,7 @@
     "@op/core": "workspace:*",
     "@op/hooks": "workspace:*",
     "@op/styles": "workspace:*",
+    "@op/ui-next": "workspace:*",
     "@tiptap/core": "catalog:",
     "@tiptap/extension-blockquote": "catalog:",
     "@tiptap/extension-bubble-menu": "catalog:",
