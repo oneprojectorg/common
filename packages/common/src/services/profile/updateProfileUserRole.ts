@@ -74,7 +74,7 @@ export const updateProfileUserRoles = async ({
     // the UI lets an owner switch themselves to a non-admin role and locks
     // them out, so we enforce it server-side. Load the desired roles with
     // their zone permissions and verify the union still grants profile ADMIN.
-    const desiredRolesWithPermissions = await db.query.accessRoles.findMany({
+    const requestedRolesWithPermissions = await db.query.accessRoles.findMany({
       where: { id: { in: roleIdsDeduped } },
       with: {
         zonePermissions: {
@@ -84,7 +84,7 @@ export const updateProfileUserRoles = async ({
     });
 
     const normalizedDesired = getNormalizedRoles(
-      desiredRolesWithPermissions.map((accessRole) => ({ accessRole })),
+      requestedRolesWithPermissions.map((accessRole) => ({ accessRole })),
     );
 
     if (!checkPermission({ profile: permission.ADMIN }, normalizedDesired)) {
