@@ -175,6 +175,7 @@ const VotingProposalsList = ({
   proposals,
   instanceId,
   slug,
+  decisionSlug,
   permissions,
   votedProposalIds = [],
   hasFilter,
@@ -246,7 +247,9 @@ const VotingProposalsList = ({
           const isVotedFor = votedProposalIds.includes(proposal.id);
           const showCheckbox = !isReadOnly || isVotedFor;
 
-          const proposalHref = `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
+          const proposalHref = decisionSlug
+            ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
+            : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
 
           // Ballot view: after voting, show a simpler card with clickable title
           if (isEligibleForVote && isReadOnly) {
@@ -365,7 +368,7 @@ const VotingProposalsList = ({
                 <ProposalCardContent>
                   <ProposalCardFooter>
                     <ButtonLink
-                      href={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
+                      href={proposalHref}
                       color="secondary"
                       className="w-full"
                     >
