@@ -32,9 +32,12 @@ export const NoVoteFound = () => {
 export const MyBallot = ({
   slug,
   instanceId,
+  decisionSlug,
 }: {
   slug: string;
   instanceId: string;
+  /** Decision profile slug for building proposal links */
+  decisionSlug?: string;
 }) => {
   const user = useUser();
 
@@ -54,6 +57,7 @@ export const MyBallot = ({
     <MyBallotProposals
       slug={slug}
       instanceId={instanceId}
+      decisionSlug={decisionSlug}
       votedByProfileId={voteStatus.voteSubmission.submittedByProfileId}
     />
   );
@@ -62,10 +66,12 @@ export const MyBallot = ({
 const MyBallotProposals = ({
   slug,
   instanceId,
+  decisionSlug,
   votedByProfileId,
 }: {
   slug: string;
   instanceId: string;
+  decisionSlug?: string;
   votedByProfileId: string;
 }) => {
   const t = useTranslations();
@@ -82,42 +88,47 @@ const MyBallotProposals = ({
       </Header3>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {proposalsData.proposals.map((proposal) => (
-          <VotingProposalCard
-            isSelected={true}
-            proposalId={proposal.id}
-            key={proposal.id}
-          >
-            <ProposalCardContent>
-              <ProposalCardHeader
-                proposal={proposal}
-                viewHref={`/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`}
-                menu={
-                  <Checkbox
-                    isSelected={true}
-                    shape="circle"
-                    borderColor="light"
-                    aria-label={t('Selected proposal')}
-                    isDisabled={true}
-                  />
-                }
-              />
+        {proposalsData.proposals.map((proposal) => {
+          const viewHref = decisionSlug
+            ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
+            : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
+          return (
+            <VotingProposalCard
+              isSelected={true}
+              proposalId={proposal.id}
+              key={proposal.id}
+            >
+              <ProposalCardContent>
+                <ProposalCardHeader
+                  proposal={proposal}
+                  viewHref={viewHref}
+                  menu={
+                    <Checkbox
+                      isSelected={true}
+                      shape="circle"
+                      borderColor="light"
+                      aria-label={t('Selected proposal')}
+                      isDisabled={true}
+                    />
+                  }
+                />
 
-              <ProposalCardMeta proposal={proposal} />
+                <ProposalCardMeta proposal={proposal} />
 
-              <ProposalCardPreview proposal={proposal} />
+                <ProposalCardPreview proposal={proposal} />
 
-              <div className="h-0 w-full border-b border-neutral-gray-2" />
+                <div className="h-0 w-full border-b border-neutral-gray-2" />
 
-              <ProposalCardFooter>
-                <div className="flex items-start gap-1 text-base text-neutral-charcoal">
-                  <span className="font-bold">{proposal.voteCount ?? 0}</span>
-                  <span>{t('Total Votes')}</span>
-                </div>
-              </ProposalCardFooter>
-            </ProposalCardContent>
-          </VotingProposalCard>
-        ))}
+                <ProposalCardFooter>
+                  <div className="flex items-start gap-1 text-base text-neutral-charcoal">
+                    <span className="font-bold">{proposal.voteCount ?? 0}</span>
+                    <span>{t('Total Votes')}</span>
+                  </div>
+                </ProposalCardFooter>
+              </ProposalCardContent>
+            </VotingProposalCard>
+          );
+        })}
       </div>
     </div>
   );
