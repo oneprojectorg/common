@@ -5,6 +5,8 @@ import { createServerClient } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { and, eq } from 'drizzle-orm';
 
+import { retryWithBackoff } from './retry';
+
 export const STORAGE_BUCKET = 'assets';
 export const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
 
@@ -88,32 +90,24 @@ export async function getUploadedStorageObject({
   allowedMimeTypes: readonly string[];
   unsupportedMessage?: string;
 }): Promise<VerifiedStorageObject> {
-  const RETRIES = 3;
-  const BACKOFF_MS = 150;
-
-  let row: { id: string; metadata: unknown } | undefined;
-  for (let attempt = 0; attempt < RETRIES; attempt += 1) {
-    const [found] = await db
-      .select({ id: objectsInStorage.id, metadata: objectsInStorage.metadata })
-      .from(objectsInStorage)
-      .where(
-        and(
-          eq(objectsInStorage.bucketId, STORAGE_BUCKET),
-          eq(objectsInStorage.name, path),
-        ),
-      );
-
-    if (found) {
-      row = found;
-      break;
-    }
-
-    if (attempt < RETRIES - 1) {
-      await new Promise((resolve) =>
-        setTimeout(resolve, BACKOFF_MS * (attempt + 1)),
-      );
-    }
-  }
+  const row = await retryWithBackoff(
+    async () => {
+      const [found] = await db
+        .select({
+          id: objectsInStorage.id,
+          metadata: objectsInStorage.metadata,
+        })
+        .from(objectsInStorage)
+        .where(
+          and(
+            eq(objectsInStorage.bucketId, STORAGE_BUCKET),
+            eq(objectsInStorage.name, path),
+          ),
+        );
+      return found;
+    },
+    { retries: 3, baseMs: 150 },
+  );
 
   if (!row) {
     throw new CommonError('Upload could not be confirmed. Please try again.');
