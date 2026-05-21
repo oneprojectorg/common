@@ -122,6 +122,27 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Tailwind v4 dropped the default `cursor: pointer` on interactive
+   * elements. Restore it so buttons, tags, menu items, tabs, switches,
+   * checkboxes, radios, sliders, and links all feel clickable.
+   * Excludes disabled/aria-disabled. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']):not([data-disabled]),
+  [role='menuitem']:not([aria-disabled='true']):not([data-disabled]),
+  [role='menuitemcheckbox']:not([aria-disabled='true']):not([data-disabled]),
+  [role='menuitemradio']:not([aria-disabled='true']):not([data-disabled]),
+  [role='option']:not([aria-disabled='true']):not([data-disabled]),
+  [role='tab']:not([aria-disabled='true']):not([data-disabled]),
+  [role='switch']:not([aria-disabled='true']):not([data-disabled]),
+  [role='checkbox']:not([aria-disabled='true']):not([data-disabled]),
+  [role='radio']:not([aria-disabled='true']):not([data-disabled]),
+  [role='slider']:not([aria-disabled='true']):not([data-disabled]),
+  [role='link']:not([aria-disabled='true']):not([data-disabled]),
+  a[href],
+  summary {
+    cursor: pointer;
+  }
 }
 
 /* shadcn primitives assume a 16px root font; OP app currently runs at 14px.
