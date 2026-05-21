@@ -991,6 +991,9 @@ importers:
       '@op/styles':
         specifier: workspace:*
         version: link:../styles
+      '@op/ui-next':
+        specifier: workspace:*
+        version: link:../ui-next
       '@tiptap/core':
         specifier: 'catalog:'
         version: 3.17.1(@tiptap/pm@3.17.1)
@@ -1124,9 +1127,66 @@ importers:
       '@base-ui/react':
         specifier: ^1.4.1
         version: 1.4.1(@date-fns/tz@1.4.1)(@types/react@19.0.10)(date-fns@4.1.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@dnd-kit/core':
+        specifier: ^6.3.1
+        version: 6.3.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@dnd-kit/sortable':
+        specifier: ^10.0.0
+        version: 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react@19.2.1)
+      '@dnd-kit/utilities':
+        specifier: ^3.2.2
+        version: 3.2.2(react@19.2.1)
       '@op/styles':
         specifier: workspace:*
         version: link:../styles
+      '@op/ui':
+        specifier: workspace:*
+        version: link:../ui
+      '@tanstack/react-table':
+        specifier: ^8.21.3
+        version: 8.21.3(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@tiptap/core':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/pm@3.17.1)
+      '@tiptap/extension-blockquote':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
+      '@tiptap/extension-bubble-menu':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)
+      '@tiptap/extension-heading':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
+      '@tiptap/extension-horizontal-rule':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)
+      '@tiptap/extension-image':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
+      '@tiptap/extension-link':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)
+      '@tiptap/extension-placeholder':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/extensions@3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1))
+      '@tiptap/extension-strike':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
+      '@tiptap/extension-text-align':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
+      '@tiptap/extension-underline':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
+      '@tiptap/pm':
+        specifier: 'catalog:'
+        version: 3.17.1
+      '@tiptap/react':
+        specifier: 'catalog:'
+        version: 3.17.1(@floating-ui/dom@1.7.6)(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@tiptap/starter-kit':
+        specifier: 'catalog:'
+        version: 3.17.1
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -4515,8 +4575,19 @@ packages:
       react: ^19.0.1
       react-dom: ^19.0.1
 
+  '@tanstack/react-table@8.21.3':
+    resolution: {integrity: sha512-5nNMTSETP4ykGegmVkhjcS8tTLW6Vl4axfEGQN3v0zdHYbK4UfoqfPChclTrJ4EoK9QynqAu9oUf8VEmrpZ5Ww==}
+    engines: {node: '>=12'}
+    peerDependencies:
+      react: ^19.0.1
+      react-dom: ^19.0.1
+
   '@tanstack/store@0.7.0':
     resolution: {integrity: sha512-CNIhdoUsmD2NolYuaIs8VfWM467RK6oIBAW4nPEKZhg1smZ+/CwtCdpURgp7nxSqOaV9oKkzdWD80+bC66F/Jg==}
+
+  '@tanstack/table-core@8.21.3':
+    resolution: {integrity: sha512-ldZXEhOBb8Is7xLs01fR3YEc3DERiz5silj8tnGkFZytt1abEvl/GhUmCE0PMLaMPTa3Jk4HbKmRlHmu+gCftg==}
+    engines: {node: '>=12'}
 
   '@tediousjs/connection-string@0.5.0':
     resolution: {integrity: sha512-7qSgZbincDDDFyRweCIEvZULFAw5iz/DeunhvuxpL31nfntX3P4Yd4HkHBRg9H8CdqY1e5WFN1PZIz/REL9MVQ==}
@@ -11970,7 +12041,15 @@ snapshots:
       react-dom: 19.2.1(react@19.2.1)
       use-sync-external-store: 1.6.0(react@19.2.1)
 
+  '@tanstack/react-table@8.21.3(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
+    dependencies:
+      '@tanstack/table-core': 8.21.3
+      react: 19.2.1
+      react-dom: 19.2.1(react@19.2.1)
+
   '@tanstack/store@0.7.0': {}
+
+  '@tanstack/table-core@8.21.3': {}
 
   '@tediousjs/connection-string@0.5.0': {}
 
