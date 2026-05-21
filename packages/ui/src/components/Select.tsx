@@ -33,7 +33,7 @@ const selectStyles = tv({
     },
     variant: {
       default: '',
-      pill: 'h-auto border-0 bg-primary-tealWhite text-primary-teal hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue active:bg-teal-50 active:text-primary-tealBlack',
+      pill: 'h-auto w-fit border-0 bg-primary-tealWhite text-primary-teal hover:bg-teal-50 hover:text-primary-tealBlack focus-visible:outline-data-blue active:bg-teal-50 active:text-primary-tealBlack',
     },
     size: {
       small: 'h-8 rounded-md p-2 px-3',
@@ -129,7 +129,7 @@ export const Select = <T extends object, M extends SelectionMode = 'single'>({
             >
               {({ defaultChildren, selectedText, isPlaceholder }) => {
                 if (isPlaceholder) {
-                  return variant === 'pill' ? null : defaultChildren;
+                  return defaultChildren;
                 }
                 return selectedText;
               }}

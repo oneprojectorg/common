@@ -115,7 +115,7 @@ function RubricField({ field }: { field: FieldDescriptor }) {
             size="medium"
             placeholder={t('Select option')}
             selectValueClassName="text-primary-teal data-[placeholder]:text-primary-teal"
-            className="w-auto max-w-56 overflow-hidden sm:max-w-96"
+            className="w-fit max-w-full"
           >
             {[]}
           </Select>
