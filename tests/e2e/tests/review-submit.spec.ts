@@ -572,4 +572,71 @@ test.describe('Review Submit', () => {
       page.getByRole('button', { name: 'Request revision' }),
     ).toHaveCount(0);
   });
+
+  test('header stays in viewport after scrolling the review pane', async ({
+    authenticatedPage: page,
+    org,
+  }) => {
+    const template = await getSeededTemplate();
+
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: REVIEW_SCHEMA,
+    });
+
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...(instance.instance.instanceData as Record<string, unknown>),
+          rubricTemplate: RUBRIC_TEMPLATE,
+        },
+        currentStateId: 'review',
+      })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    await createReviewScenario({
+      instance: { id: instance.instance.id },
+      author: {
+        profileId: org.organizationProfile.id,
+        authUserId: org.adminUser.authUserId,
+        email: org.adminUser.email,
+      },
+      reviewer: { profileId: org.adminUser.profileId },
+      proposalData: {
+        title: PROPOSAL_TITLE,
+        collaborationDocId: 'test-proposal-view-doc',
+      },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    await page.goto(`/en/decisions/${instance.slug}`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(page.getByText('Proposals to review').first()).toBeVisible({
+      timeout: 36_000,
+    });
+    await page.getByText(PROPOSAL_TITLE).first().click();
+    await expect(page).toHaveURL(/\/reviews\//, { timeout: 10_000 });
+    await expect(
+      page.getByRole('button', { name: 'Submit review' }),
+    ).toBeVisible({ timeout: 36_000 });
+
+    await page.evaluate(() => {
+      document.querySelectorAll('[role="tabpanel"]').forEach((el) => {
+        (el as HTMLElement).scrollTop = el.scrollHeight;
+      });
+    });
+
+    // Safari could scroll the header off-screen when pane content overflowed
+    await expect(
+      page.getByRole('button', { name: 'Submit review' }),
+    ).toBeInViewport();
+  });
 });

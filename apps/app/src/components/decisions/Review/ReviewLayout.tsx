@@ -57,7 +57,7 @@ export async function ReviewLayout({
         decisionSlug={decisionSlug}
         allowRevisions={allowRevisions}
       >
-        <div className="flex h-dvh flex-col bg-white">
+        <div className="flex h-dvh flex-col overflow-hidden bg-white">
           <ReviewNavbar decisionSlug={decisionSlug} />
 
           <SplitPane className="mx-auto max-w-6xl" defaultMobileTabId="review">
