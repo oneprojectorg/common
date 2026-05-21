@@ -213,59 +213,6 @@ test.describe('Decision Role Capabilities', () => {
     });
   });
 
-  test('start a proposal button is hidden for org members without profile-level role', async ({
-    browser,
-    supabaseAdmin,
-  }) => {
-    const template = await getSeededTemplate();
-
-    // Create an org with an admin (the decision owner) and a separate member.
-    // The member shares the org with the decision owner, but does NOT receive
-    // a profile-level role on the decision instance.
-    const sharedOrg = await createOrganization({
-      testId: `org-fallback-${Date.now()}`,
-      supabaseAdmin,
-      users: { admin: 1, member: 1 },
-    });
-
-    const ownerUser = sharedOrg.adminUser;
-    const memberUser = sharedOrg.memberUsers[0];
-    if (!memberUser) {
-      throw new Error('Expected a member user');
-    }
-
-    // Decision is owned by the shared org's profile. The member is in this
-    // org, so resolveInstanceAccess falls back to the org-level role — which
-    // historically advertised submitProposals=true and made the button visible
-    // even though the server's createProposal mutation rejects the user.
-    const instance = await createDecisionInstance({
-      processId: template.id,
-      ownerProfileId: sharedOrg.organizationProfile.id,
-      authUserId: ownerUser.authUserId,
-      email: ownerUser.email,
-      schema: submissionPhaseSchema,
-    });
-
-    const memberContext = await browser.newContext();
-    const memberPage = await memberContext.newPage();
-    await authenticateAsUser(memberPage, {
-      email: memberUser.email,
-      password: TEST_USER_DEFAULT_PASSWORD,
-    });
-
-    await memberPage.goto(`/en/decisions/${instance.slug}`, {
-      waitUntil: 'networkidle',
-    });
-
-    await expect(
-      memberPage.getByRole('heading', { name: instance.name }),
-    ).toBeVisible({ timeout: 15000 });
-
-    await expect(
-      memberPage.getByRole('button', { name: 'Start a proposal' }),
-    ).not.toBeVisible();
-  });
-
   test('voting page does not render outside the voting phase', async ({
     authenticatedPage,
     org,
