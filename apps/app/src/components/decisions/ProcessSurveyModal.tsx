@@ -59,7 +59,7 @@ const NPS_SCORES = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
 const SKIP_COOKIE_PREFIX = 'survey-skipped-';
 const SKIP_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 
-export const getSurveySkipCookieName = (instanceId: string) =>
+const getSurveySkipCookieName = (instanceId: string) =>
   `${SKIP_COOKIE_PREFIX}${instanceId}`;
 
 export const hasSurveySkipCookie = (instanceId: string): boolean => {
