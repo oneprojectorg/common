@@ -29,7 +29,6 @@ const PROMOTER_OPTION_IDS = [
   'values',
   'support',
   'designed-for-us',
-  'ai',
 ] as const;
 
 const DETRACTOR_OPTION_IDS = [
@@ -42,7 +41,6 @@ const DETRACTOR_OPTION_IDS = [
   'alternatives',
   'no-help',
   'different-org',
-  'dislike-ai',
 ] as const;
 
 function shuffle<T>(items: readonly T[]): T[] {
@@ -110,7 +108,6 @@ export const ProcessSurveyModal = ({
     values: t("It aligns with our community's values"),
     support: t('The support and documentation are helpful'),
     'designed-for-us': t("It's designed for organizations like ours"),
-    ai: t('The AI features are really helpful'),
   };
 
   const detractorLabels: Record<string, string> = {
@@ -131,7 +128,6 @@ export const ProcessSurveyModal = ({
     'different-org': t(
       "It feels like it's built for a different type of organization than mine",
     ),
-    'dislike-ai': t("I don't like the AI features"),
   };
 
   const promoterOrder = useMemo(() => shuffle(PROMOTER_OPTION_IDS), []);
