@@ -486,7 +486,7 @@ test.describe('Review Submit', () => {
     await page.goto(`/en/decisions/${instance.slug}`, {
       waitUntil: 'domcontentloaded',
     });
-    await expect(page.getByText('Proposals to review')).toBeVisible({
+    await expect(page.getByText('Proposals to review').first()).toBeVisible({
       timeout: 36_000,
     });
     await page.getByText(PROPOSAL_TITLE).first().click();

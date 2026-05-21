@@ -22,28 +22,21 @@ export async function onPhaseAdvanced(
 ): Promise<void> {
   const targetPhase = input.phases.find((p) => p.phaseId === input.toPhaseId);
 
-  // TEMP: suppress the results-phase email until manual-selection confirmation
-  // is wired into the notification trigger — otherwise participants get a
-  // "results are in" email before the admin has confirmed selections. Remove
-  // this guard once the email fires off `selectionsAreConfirmed` instead of
-  // the raw phase transition.
-  if (!isLastPhase(input.toPhaseId, input.phases)) {
-    event
-      .send({
-        name: Events.phaseTransitioned.name,
-        data: {
-          processInstanceId: input.instanceId,
-          fromPhaseId: input.fromPhaseId,
-          toPhaseId: input.toPhaseId,
-        },
-      })
-      .catch((err) => {
-        console.error(
-          `Failed to send phase transition event for instance ${input.instanceId}:`,
-          err,
-        );
-      });
-  }
+  event
+    .send({
+      name: Events.phaseTransitioned.name,
+      data: {
+        processInstanceId: input.instanceId,
+        fromPhaseId: input.fromPhaseId,
+        toPhaseId: input.toPhaseId,
+      },
+    })
+    .catch((err) => {
+      console.error(
+        `Failed to send phase transition event for instance ${input.instanceId}:`,
+        err,
+      );
+    });
 
   if (targetPhase?.rules?.proposals?.review) {
     await runGenerateReviewAssignments(input);
