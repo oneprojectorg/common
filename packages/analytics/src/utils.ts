@@ -384,10 +384,6 @@ export async function trackProposalFollowed(
 /**
  * Track when a user submits a vote.
  *
- * Voting is private: we only record that the user voted in a given process.
- * Do NOT pass the proposalId(s), selection counts, schema details, or any
- * other field that could expose what they voted for. The userId + processId
- * pair is the maximum we are willing to send.
  */
 export async function trackUserVoted(
   userId: string,
