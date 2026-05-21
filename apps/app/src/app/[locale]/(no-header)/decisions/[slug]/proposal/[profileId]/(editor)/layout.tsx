@@ -331,7 +331,7 @@ function useProposalEditorAsideHeaderIcons({
           onPress={() => onToggleAside(asideKey)}
           aria-label={definition.label}
           aria-pressed={aside === asideKey}
-          className="size-8 min-w-8 rounded-sm p-0"
+          className="rounded-sm p-0"
         >
           <Icon className="size-4" />
         </Button>
