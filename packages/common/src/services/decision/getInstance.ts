@@ -58,7 +58,22 @@ const resolveInstanceAccess = async (
     if (org?.id) {
       const orgUser = await getOrgAccessUser({ user, organizationId: org.id });
       if (orgUser) {
-        return fromDecisionBitField(getRolesDecisionBits(orgUser.roles));
+        // Org-level roles only grant viewing capabilities. Action capabilities
+        // (submitProposals, vote, review, inviteMembers, admin) require an
+        // explicit profile-level grant on the decision instance — the server
+        // mutations enforce this via getProfileAccessUser, so we must not
+        // advertise these capabilities to the UI based on org membership.
+        const orgAccess = fromDecisionBitField(
+          getRolesDecisionBits(orgUser.roles),
+        );
+        return {
+          ...orgAccess,
+          admin: false,
+          inviteMembers: false,
+          review: false,
+          submitProposals: false,
+          vote: false,
+        };
       }
     }
   }
