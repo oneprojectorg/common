@@ -87,9 +87,11 @@ export const uploadProposalAttachment = router({
         allowedMimeTypes: ALLOWED_MIME_TYPES,
         unsupportedMessage: UNSUPPORTED_MESSAGE,
       });
-      await assertCanUpdateProposalAttachments(user, proposalId);
 
-      const profileId = await getCurrentProfileId(user.id);
+      const [, profileId] = await Promise.all([
+        assertCanUpdateProposalAttachments(user, proposalId),
+        getCurrentProfileId(user.id),
+      ]);
       const sanitized = sanitizeS3Filename(fileName);
       const path = `profile/${profileId}/proposals/${proposalId}/${randomUUID()}_${sanitized}`;
 
@@ -118,9 +120,10 @@ export const uploadProposalAttachment = router({
       const { proposalId, path, fileName } = input;
       const { user } = ctx;
 
-      await assertCanUpdateProposalAttachments(user, proposalId);
-
-      const profileId = await getCurrentProfileId(user.id);
+      const [, profileId] = await Promise.all([
+        assertCanUpdateProposalAttachments(user, proposalId),
+        getCurrentProfileId(user.id),
+      ]);
       validateStoragePath({
         path,
         expectedPrefix: `profile/${profileId}/proposals/${proposalId}/`,
