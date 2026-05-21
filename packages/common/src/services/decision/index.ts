@@ -98,6 +98,9 @@ export * from './utils/instance';
 // Voting management
 export * from './voting';
 
+// Process survey
+export * from './processSurvey';
+
 // Re-export VoteData type from schema for convenience
 export type { VoteData } from '@op/db/schema';
 
