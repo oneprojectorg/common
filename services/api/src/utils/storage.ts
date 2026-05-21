@@ -61,7 +61,7 @@ export function validateMimeAndSize({
  * to claim a path under another caller's namespace is an authz failure, not a
  * server bug.
  */
-export function validateStoragePath({
+export function assertValidStoragePath({
   path,
   expectedPrefix,
 }: {

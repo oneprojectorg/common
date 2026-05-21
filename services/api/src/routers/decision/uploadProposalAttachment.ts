@@ -18,7 +18,7 @@ import {
   findUploadedStorageObject,
   scheduleStorageObjectCleanup,
   validateMimeAndSize,
-  validateStoragePath,
+  assertValidStoragePath,
 } from '../../utils/storage';
 
 const ALLOWED_MIME_TYPES = [
@@ -124,7 +124,7 @@ export const uploadProposalAttachment = router({
         assertCanUpdateProposalAttachments(user, proposalId),
         getCurrentProfileId(user.id),
       ]);
-      validateStoragePath({
+      assertValidStoragePath({
         path,
         expectedPrefix: `profile/${profileId}/proposals/${proposalId}/`,
       });
