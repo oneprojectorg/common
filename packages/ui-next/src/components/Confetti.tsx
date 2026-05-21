@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { createPortal } from 'react-dom';
 
 interface ConfettiParticle {
   sprite: OffscreenCanvas | HTMLCanvasElement;
@@ -171,17 +170,13 @@ export const Confetti: React.FC = () => {
     };
   }, []);
 
-  // Portal to body so the canvas escapes any transformed ancestor (e.g.
-  // shadcn DialogContent's zoom animation), which would otherwise pin
-  // `position: fixed` to the modal box instead of the viewport.
-  if (typeof document === 'undefined') {
-    return null;
-  }
-  return createPortal(
+  // Caller is expected to mount Confetti inside a portal-safe context
+  // (e.g. `@op/ui-next/Modal` injects it inside `DialogPortal`). Rendering
+  // in-place keeps DOM order predictable for z-stacking with siblings.
+  return (
     <canvas
       ref={canvasRef}
       className="pointer-events-none fixed inset-0 z-50"
-    />,
-    document.body,
+    />
   );
 };

@@ -43,13 +43,19 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  behindContent,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean;
+  /** Renders between the overlay and the popup inside the same portal —
+   * used by `@op/ui-next/Modal` to layer a `<Confetti />` overlay behind
+   * the modal panel. Optional. */
+  behindContent?: React.ReactNode;
 }) {
   return (
     <DialogPortal>
       <DialogOverlay />
+      {behindContent}
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(

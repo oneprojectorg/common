@@ -78,8 +78,8 @@ export const Modal = ({
       <DialogContent
         className={className}
         showCloseButton={isDismissable !== false}
+        behindContent={confetti ? <Confetti /> : null}
       >
-        {confetti ? <Confetti /> : null}
         {children}
       </DialogContent>
     </Dialog>
