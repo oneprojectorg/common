@@ -9,13 +9,7 @@ import { useRouter } from 'next/navigation';
 
 import { useTranslations } from '@/lib/i18n';
 
-export const DeletePost = ({
-  post,
-  profileId,
-}: {
-  post: Post;
-  profileId: string;
-}) => {
+export const DeletePost = ({ post }: { post: Post }) => {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const router = useRouter();
@@ -60,18 +54,17 @@ export const DeletePost = ({
     },
   });
 
-  const handleDeletePost = (post: Post, profileId: string) => {
+  const handleDeletePost = (post: Post) => {
     deletePost.mutate({
       id: post.id,
-      profileId: profileId,
     });
   };
 
   return (
     <Menu
       onAction={() => {
-        if (post.id && profileId) {
-          handleDeletePost(post, profileId);
+        if (post.id) {
+          handleDeletePost(post);
         }
       }}
       className="min-w-28 p-2"
