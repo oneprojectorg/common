@@ -197,14 +197,13 @@ const PostMenu = ({
 
   // Author, current org context owner, or a profile admin on the post's
   // root profile (mirrors deletePostById's server-side auth).
-  const isProfileAdmin = post?.rootProfileId
+  const isProfileAdmin = post.rootProfileId
     ? getPermissionsForProfile(post.rootProfileId).profile.admin
     : false;
   const canShowMenu =
-    !!post?.id &&
-    (post.profileId === user?.currentProfileId ||
-      (organization && organization.profile.id === user?.currentProfileId) ||
-      isProfileAdmin);
+    post.profileId === user?.currentProfileId ||
+    (organization && organization.profile.id === user?.currentProfileId) ||
+    isProfileAdmin;
 
   if (!canShowMenu) {
     return null;
