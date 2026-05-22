@@ -33,6 +33,9 @@ export const budgetValueSchema = z
  */
 export type BudgetData = MoneyAmount;
 
+/** Raw budget input accepted by `budgetValueSchema` (canonical or legacy). */
+export type BudgetInput = z.input<typeof budgetValueSchema>;
+
 /**
  * Zod schema for proposal data with known fields.
  * Uses looseObject to allow additional fields from custom proposal templates.
