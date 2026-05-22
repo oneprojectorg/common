@@ -4,5 +4,6 @@ export * from './instance';
 export * from './instanceData';
 export * from './reviews';
 export * from './proposal';
+export * from './selection';
 export * from './adminDecisionInstance';
 export * from './transitionData';

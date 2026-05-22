@@ -1,7 +1,6 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
-import { formatCurrency } from '@/utils/formatting';
 import { ProposalStatus, Visibility } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import {
@@ -22,6 +21,7 @@ import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { Bullet } from '../../Bullet';
+import { BudgetDisplay, formatBudget } from '../BudgetDisplay';
 import { DocumentNotAvailable } from '../DocumentNotAvailable';
 import { useCardTranslation } from '../ProposalTranslationContext';
 import { RevisionRequestChip } from '../RevisionRequestChip';
@@ -144,7 +144,9 @@ export function ProposalCardTitle({
 }
 
 /**
- * Budget display component
+ * Budget display component. When an allocated amount is present, renders it
+ * as the primary value with the original requested budget as a smaller
+ * secondary label ("$3,500 requested").
  */
 export function ProposalCardBudget({
   proposal,
@@ -154,39 +156,35 @@ export function ProposalCardBudget({
   allocated?: string | number | null;
   className?: string;
 }) {
+  const t = useTranslations();
   const { budget } = resolveProposalSystemFields(proposal);
 
-  // Use allocated amount if provided, otherwise fall back to budget
   if (!isNullish(allocated)) {
+    const requestedText = formatBudget(budget);
+
     return (
-      <span
-        className={cn(
-          'font-serif text-title-base text-neutral-charcoal',
-          className,
+      <div className={cn('flex flex-wrap items-end gap-2', className)}>
+        <BudgetDisplay
+          value={allocated}
+          className="font-serif text-title-base text-neutral-charcoal"
+        />
+        {requestedText && (
+          <span className="text-sm text-neutral-gray4">
+            {t('{amount} requested', { amount: requestedText })}
+          </span>
         )}
-      >
-        {formatCurrency(
-          Number(allocated),
-          undefined,
-          budget?.currency ?? 'USD',
-        )}
-      </span>
+      </div>
     );
   }
 
-  if (!budget) {
-    return null;
-  }
-
   return (
-    <span
+    <BudgetDisplay
+      value={budget}
       className={cn(
         'font-serif text-title-base text-neutral-charcoal',
         className,
       )}
-    >
-      {formatCurrency(budget.amount, undefined, budget.currency)}
-    </span>
+    />
   );
 }
 

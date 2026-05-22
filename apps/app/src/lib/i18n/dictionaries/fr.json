@@ -554,6 +554,8 @@
   "Add emails": "Ajouter des courriels",
   "Request": "Demander",
   "Requested": "Demandé",
+  "{amount} requested": "{amount} demandé",
+  "Selected": "Sélectionné",
   "Request to join this organization as a member": "Demander à rejoindre cette organisation en tant que membre",
   "Your membership request is pending approval": "Votre demande d'adhésion est en attente d'approbation",
   "You must be logged in to request membership": "Vous devez être connecté pour demander l'adhésion",

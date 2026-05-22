@@ -5,6 +5,7 @@ import { deleteProposalRouter } from './delete';
 import { exportProposalsRouter } from './export';
 import { getProposalRouter } from './get';
 import { getExportStatusRouter } from './getExportStatus';
+import { getLatestSelectionForProposalRouter } from './getLatestSelection';
 import { getProposalWithReviewAggregatesRouter } from './getProposalWithReviewAggregates';
 import { listProposalsRouter } from './list';
 import { listProposalVersionsRouter } from './listVersions';
@@ -16,6 +17,7 @@ export const proposalsRouter = mergeRouters(
   acceptProposalInviteRouter,
   createProposalRouter,
   getProposalRouter,
+  getLatestSelectionForProposalRouter,
   getProposalWithReviewAggregatesRouter,
   listProposalsRouter,
   listProposalVersionsRouter,

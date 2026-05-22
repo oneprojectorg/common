@@ -5,6 +5,7 @@ import { trpc } from '@op/api/client';
 import {
   type Proposal,
   ProposalReviewRequestState,
+  type ProposalSelection,
   type ProposalTranslation,
   type SupportedLocale,
 } from '@op/common/client';
@@ -27,10 +28,12 @@ export function ProposalView({
   proposal: initialProposal,
   canSeeRevisions,
   backHref,
+  selection,
 }: {
   proposal: Proposal;
   canSeeRevisions: boolean;
   backHref: string;
+  selection: ProposalSelection | null;
 }) {
   const t = useTranslations();
   const locale = useLocale();
@@ -157,6 +160,7 @@ export function ProposalView({
     <>
       <ProposalPreview
         proposal={currentProposal}
+        selection={selection}
         translation={
           translatedHtmlContent
             ? {

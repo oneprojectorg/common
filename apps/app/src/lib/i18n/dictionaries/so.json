@@ -533,6 +533,8 @@
   "Add emails": "Ku dar iimaallad",
   "Request": "Codsi",
   "Requested": "La codsaday",
+  "{amount} requested": "{amount} la codsaday",
+  "Selected": "La doortay",
   "Request to join this organization as a member": "Codso inaad ku biirto ururkan xubin ahaan",
   "Your membership request is pending approval": "Codsigaaga xubinnimada waa la sugayaa ansixinta",
   "You must be logged in to request membership": "Waa inaad soo gashaa si aad u codsato xubinnimo",
