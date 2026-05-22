@@ -1,9 +1,16 @@
 /*
- * OP Brand Design Tokens — Figma source of truth
+ * tokens.css
  *
- * Raw palette values from the design-system Figma file. Consumed by
- * shared-styles.css, which maps these into the Tailwind `@theme` layer
- * as `--color-*` tokens (plus legacy aliases for the pre-rename naming).
+ * OWNS: Raw `--op-*` color palette. Figma source of truth.
+ * Consumed by: shared-styles.css (`--color-*` aliases),
+ * intent-ui-theme.css (Intent UI tokens), shadcn-theme.css (shadcn surface).
+ *
+ * Format: all values are hsla() (or hex for `--op-white`). Use directly as
+ * `var(--op-…)` — no `hsl(...)` wrapping needed.
+ *
+ * Raw palette values from the design-system Figma file. Mapped into the
+ * Tailwind `@theme` layer as `--color-*` tokens by shared-styles.css
+ * (plus legacy aliases for the pre-rename naming).
  *
  * Naming: --op-<category>[-<role>]-<scale>
  *

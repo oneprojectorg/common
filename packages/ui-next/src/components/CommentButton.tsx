@@ -52,7 +52,7 @@ export const CommentButton = ({
       onClick={onClick ?? onPress}
       disabled={disabled ?? isDisabled}
       className={cn(
-        'text-muted-foreground hover:bg-accent hover:text-foreground flex h-8 cursor-pointer items-center justify-center gap-1 rounded-md bg-muted px-2 py-1 text-sm whitespace-nowrap transition-colors outline-none focus-visible:bg-muted focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-ring',
+        'flex h-8 cursor-pointer items-center justify-center gap-1 rounded-md bg-muted px-2 py-1 text-sm whitespace-nowrap text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:bg-muted focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-ring',
         className,
       )}
       {...props}

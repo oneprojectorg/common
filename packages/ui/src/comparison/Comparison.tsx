@@ -668,7 +668,7 @@ export function Structure() {
         old={<OldEmptyState>Nothing here</OldEmptyState>}
         wrapped={<WrapEmptyState>Nothing here</WrapEmptyState>}
         raw={
-          <div className="text-muted-foreground flex min-h-40 w-full flex-col items-center justify-center gap-2 py-6">
+          <div className="flex min-h-40 w-full flex-col items-center justify-center gap-2 py-6 text-muted-foreground">
             <span className="size-10 rounded-full bg-muted" />
             Nothing here
           </div>
@@ -745,7 +745,7 @@ export function Overlays() {
         old={<OldConfettiModalSample />}
         wrapped={<WrapConfettiModalSample />}
         raw={
-          <span className="text-muted-foreground text-xs">
+          <span className="text-xs text-muted-foreground">
             n/a — no shadcn primitive
           </span>
         }

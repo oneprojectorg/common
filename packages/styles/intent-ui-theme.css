@@ -1,10 +1,17 @@
 /*
- * Intent UI Theme
- * Maps Intent UI CSS variables to @op/styles tokens
+ * intent-ui-theme.css
  *
- * Note: Border color defaults and radius values are defined in shared-styles.css
+ * OWNS: Intent UI token surface (`--primary`, `--bg`, `--fg`, `--secondary`,
+ * `--muted`, `--accent`, semantic subtle/info/warning/danger/success pairs)
+ * used by @op/ui. Maps onto `--color-*` aliases from shared-styles.css.
+ *
+ * RETIRES with @op/ui. When the legacy package is removed, this file (and
+ * the legacy class-name aliases in shared-styles.css that point to it)
+ * can be deleted in one pass.
+ *
+ * Note: Border color defaults and radius values are defined in shared-styles.css.
  * Note: Alpha tints use color-mix() against the semantic --color-* tokens since
- * the raw --op-* layer now stores full hsla() values rather than HSL triplets.
+ * the raw --op-* layer stores full hsla() values rather than HSL triplets.
  */
 
 /* Tailwind theme colors that map to Intent UI variables */

@@ -142,7 +142,7 @@ export const MultiSelectComboBox = ({
               onKeyDown={handleInputKeyDown}
             />
           </ComboboxChips>
-          <span className="text-muted-foreground pointer-events-none absolute top-2 right-2.5 flex size-4 items-center justify-center">
+          <span className="pointer-events-none absolute top-2 right-2.5 flex size-4 items-center justify-center text-muted-foreground">
             {isLoading ? (
               <LoadingSpinner className="size-4" color="gray" />
             ) : (
@@ -170,7 +170,7 @@ export const MultiSelectComboBox = ({
                 >
                   <span>{item.label}</span>
                   {showDefinitions && item.definition && !isParent ? (
-                    <span className="text-muted-foreground text-left text-sm text-wrap">
+                    <span className="text-left text-sm text-wrap text-muted-foreground">
                       {item.definition}
                     </span>
                   ) : null}
@@ -182,7 +182,7 @@ export const MultiSelectComboBox = ({
       </Combobox>
 
       {errorMessage && (
-        <p className="text-destructive text-sm">{errorMessage}</p>
+        <p className="text-sm text-destructive">{errorMessage}</p>
       )}
     </div>
   );

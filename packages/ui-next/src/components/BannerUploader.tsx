@@ -69,7 +69,7 @@ export const BannerUploader = ({
 
       <div className="text-center">
         <Header2 className="text-xs">{label}</Header2>
-        {error && <p className="text-destructive mt-2">{error}</p>}
+        {error && <p className="mt-2 text-destructive">{error}</p>}
       </div>
     </div>
   );

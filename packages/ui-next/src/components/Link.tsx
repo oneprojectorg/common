@@ -12,7 +12,7 @@ const styles = tv({
     variant: {
       primary: 'text-primary no-underline hover:underline',
       secondary:
-        'text-muted-foreground decoration-muted-foreground/70 hover:decoration-muted-foreground underline',
+        'text-muted-foreground underline decoration-muted-foreground/70 hover:decoration-muted-foreground',
       neutral: 'text-muted-foreground',
     },
   },

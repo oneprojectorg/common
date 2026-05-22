@@ -180,7 +180,7 @@ export const Empty: Story = {
         <TableRow>
           <TableCell
             colSpan={3}
-            className="text-muted-foreground h-24 text-center"
+            className="h-24 text-center text-muted-foreground"
           >
             No results.
           </TableCell>

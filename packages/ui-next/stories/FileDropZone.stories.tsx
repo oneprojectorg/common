@@ -30,7 +30,7 @@ export const Default: Story = {
           description="Any file, any size"
         />
         {files.length > 0 && (
-          <ul className="text-muted-foreground text-sm">
+          <ul className="text-sm text-muted-foreground">
             {files.map((f) => (
               <li key={f.name}>{f.name}</li>
             ))}

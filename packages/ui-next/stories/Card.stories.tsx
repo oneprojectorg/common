@@ -126,7 +126,7 @@ export const Notifications: Story = {
             <p className="text-sm leading-none font-medium">
               Push notifications
             </p>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Send notifications to device.
             </p>
           </div>
@@ -137,7 +137,7 @@ export const Notifications: Story = {
               <span className="mt-1 size-2 shrink-0 rounded-full bg-primary" />
               <div className="space-y-0.5">
                 <p className="text-sm leading-none font-medium">{n.title}</p>
-                <p className="text-muted-foreground text-sm">{n.description}</p>
+                <p className="text-sm text-muted-foreground">{n.description}</p>
               </div>
             </div>
           ))}

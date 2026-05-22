@@ -1,0 +1,195 @@
+/*
+ * shadcn-theme.css
+ *
+ * OWNS: shadcn token surface for @op/ui-next.
+ *
+ * Defines the FULL shape shadcn primitives expect (`--background`, `--card`,
+ * `--popover`, `--primary`, `--secondary`, `--muted`, `--accent`,
+ * `--destructive`, `--border`, `--input`, `--ring`, `--chart-1..5`,
+ * `--sidebar-*`), the shadcn `--radius` scale, the `[data-slot]` text-size
+ * scope, and the cursor-pointer base layer.
+ *
+ * Self-contained on purpose: every shadcn-facing `--color-*` alias is
+ * (re)declared here even if `shared-styles.css` already declares the same
+ * key. If the @op/styles core palette changes, this file is the canonical
+ * reference for what the shadcn layer still needs.
+ *
+ * Source of brand values: `tokens.css` (`--op-*` hsla() values). Used
+ * directly as `var(--op-…)` — no `hsl(...)` wrapping required.
+ */
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Radius scale (shadcn convention, derived from --radius) */
+  --radius: 0.625rem;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Surfaces */
+  --background: var(--op-white);
+  --foreground: var(--op-neutral-charcoal);
+  --card: var(--op-white);
+  --card-foreground: var(--op-neutral-charcoal);
+  --popover: var(--op-white);
+  --popover-foreground: var(--op-neutral-charcoal);
+
+  /* Brand */
+  --primary: var(--op-primary-500);
+  --primary-foreground: var(--op-white);
+  --secondary: var(--op-neutral-gray-1);
+  --secondary-foreground: var(--op-neutral-charcoal);
+  --muted: var(--op-neutral-off-white);
+  --muted-foreground: var(--op-neutral-gray-4);
+  --accent: var(--op-neutral-gray-1);
+  --accent-foreground: var(--op-neutral-charcoal);
+  --destructive: var(--op-functional-red-600);
+
+  /* Form / UI */
+  --border: var(--op-neutral-gray-1);
+  --input: var(--op-neutral-gray-1);
+  --ring: var(--op-primary-500);
+
+  /* Charts */
+  --chart-1: var(--op-primary-500);
+  --chart-2: var(--op-functional-green-600);
+  --chart-3: var(--op-primary-yellow-500);
+  --chart-4: var(--op-primary-orange-500);
+  --chart-5: var(--op-functional-red-600);
+
+  /* Sidebar */
+  --sidebar: var(--op-neutral-off-white);
+  --sidebar-foreground: var(--op-neutral-charcoal);
+  --sidebar-primary: var(--op-primary-500);
+  --sidebar-primary-foreground: var(--op-white);
+  --sidebar-accent: var(--op-neutral-gray-1);
+  --sidebar-accent-foreground: var(--op-neutral-charcoal);
+  --sidebar-border: var(--op-neutral-gray-1);
+  --sidebar-ring: var(--op-primary-500);
+}
+
+.dark {
+  --background: var(--op-neutral-black);
+  --foreground: var(--op-neutral-off-white);
+  --card: var(--op-neutral-charcoal);
+  --card-foreground: var(--op-neutral-off-white);
+  --popover: var(--op-neutral-charcoal);
+  --popover-foreground: var(--op-neutral-off-white);
+
+  --primary: var(--op-primary-500);
+  --primary-foreground: var(--op-neutral-black);
+  --secondary: var(--op-neutral-gray-4);
+  --secondary-foreground: var(--op-neutral-off-white);
+  --muted: var(--op-neutral-charcoal);
+  --muted-foreground: var(--op-neutral-gray-2);
+  --accent: var(--op-neutral-gray-4);
+  --accent-foreground: var(--op-neutral-off-white);
+  --destructive: var(--op-functional-red-600);
+
+  --border: color-mix(in srgb, var(--op-white) 10%, transparent);
+  --input: color-mix(in srgb, var(--op-white) 15%, transparent);
+  --ring: var(--op-primary-500);
+
+  --chart-1: var(--op-primary-500);
+  --chart-2: var(--op-functional-green-600);
+  --chart-3: var(--op-primary-yellow-500);
+  --chart-4: var(--op-primary-orange-500);
+  --chart-5: var(--op-functional-red-600);
+
+  --sidebar: var(--op-neutral-charcoal);
+  --sidebar-foreground: var(--op-neutral-off-white);
+  --sidebar-primary: var(--op-primary-500);
+  --sidebar-primary-foreground: var(--op-neutral-black);
+  --sidebar-accent: var(--op-neutral-gray-4);
+  --sidebar-accent-foreground: var(--op-neutral-off-white);
+  --sidebar-border: color-mix(in srgb, var(--op-white) 10%, transparent);
+  --sidebar-ring: var(--op-primary-500);
+}
+
+/* Expose the shadcn token surface as Tailwind theme color names so utilities
+ * like `bg-primary`, `text-muted-foreground`, `border-border`, `bg-card`,
+ * `bg-popover`, `bg-destructive`, `bg-secondary`, `bg-accent`, `bg-muted`,
+ * `bg-sidebar-*`, `text-chart-*`, etc. resolve. Declarations here are
+ * intentionally redundant with `shared-styles.css` for any overlapping keys
+ * (e.g. `--color-primary`) so this file alone describes the shadcn contract. */
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* shadcn primitives assume a 16px root font; OP app currently runs at 14px.
+ * Until the global root bump, scope absolute font-size tokens to shadcn
+ * primitives via [data-slot]. Cascades through portaled popups (they also
+ * carry data-slot). Remove this block when root font-size is bumped to 16px. */
+[data-slot] {
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 16px;
+  --text-base--line-height: 24px;
+  --text-lg: 18px;
+  --text-lg--line-height: 28px;
+  --text-xl: 20px;
+  --text-xl--line-height: 28px;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 32px;
+}
+
+/* Tailwind v4 dropped the default `cursor: pointer` on interactive elements.
+ * Restore it so buttons, tags, menu items, tabs, switches, checkboxes,
+ * radios, sliders, and links all feel clickable. Excludes
+ * disabled/aria-disabled. */
+@layer base {
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']):not([data-disabled]),
+  [role='menuitem']:not([aria-disabled='true']):not([data-disabled]),
+  [role='menuitemcheckbox']:not([aria-disabled='true']):not([data-disabled]),
+  [role='menuitemradio']:not([aria-disabled='true']):not([data-disabled]),
+  [role='option']:not([aria-disabled='true']):not([data-disabled]),
+  [role='tab']:not([aria-disabled='true']):not([data-disabled]),
+  [role='switch']:not([aria-disabled='true']):not([data-disabled]),
+  [role='checkbox']:not([aria-disabled='true']):not([data-disabled]),
+  [role='radio']:not([aria-disabled='true']):not([data-disabled]),
+  [role='slider']:not([aria-disabled='true']):not([data-disabled]),
+  [role='link']:not([aria-disabled='true']):not([data-disabled]),
+  a[href],
+  summary {
+    cursor: pointer;
+  }
+}

@@ -28,7 +28,7 @@ const logos = [
   'Wayne Enterprises',
 ].map((label) => ({
   node: (
-    <div className="text-muted-foreground px-6 text-sm font-medium">
+    <div className="px-6 text-sm font-medium text-muted-foreground">
       {label}
     </div>
   ),

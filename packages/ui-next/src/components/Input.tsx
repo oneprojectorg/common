@@ -9,7 +9,7 @@ const inputVariants = tv({
   variants: {
     color: {
       primary: '',
-      muted: 'text-muted-foreground bg-muted',
+      muted: 'bg-muted text-muted-foreground',
       error: 'border-destructive ring-destructive/20',
     },
     size: {
@@ -41,7 +41,7 @@ function Input({ className, color, size, icon, ...props }: InputProps) {
           className={cn(inputVariants({ color, size }), 'pl-8', className)}
           {...props}
         />
-        <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 [&>svg]:size-4">
+        <span className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted-foreground [&>svg]:size-4">
           {icon}
         </span>
       </span>

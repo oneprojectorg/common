@@ -1,11 +1,30 @@
+/*
+ * shared-styles.css
+ *
+ * OWNS: Tailwind v4 entry point. Imports the brand palette and theme files,
+ * declares all `@source` patterns, owns the Tailwind `@theme` block with
+ * `--color-*` semantic aliases (current names + legacy aliases that remap
+ * old @op/ui Tailwind class names like `bg-teal-500` onto the dev palette),
+ * breakpoints, font families, custom text scale, default border-color base
+ * layer, and custom `@utility` blocks (Avatar gradients).
+ *
+ * Cascade contract: theme files imported below (`intent-ui-theme.css`,
+ * `shadcn-theme.css`) layer on top to declare their own surface tokens.
+ * shadcn-theme.css is imported last so it can fully own the shadcn token
+ * surface — even where it duplicates `--color-*` aliases declared here.
+ */
+
 @import 'tailwindcss';
 @import './tokens.css';
 @import './tw-animate.css';
 @import './intent-ui-theme.css';
+@import './shadcn-theme.css';
 
 /* Tell Tailwind where to scan for classes in the UI package */
 @source '../ui/src/**/*.{js,ts,jsx,tsx}';
 @source '../ui/stories/**/*.{js,ts,jsx,tsx}';
+@source '../ui-next/src/**/*.{js,ts,jsx,tsx}';
+@source '../ui-next/stories/**/*.{js,ts,jsx,tsx}';
 @source '../../apps/app/src/**/*.{js,ts,jsx,tsx}';
 
 /* React Aria Components data attribute variants */

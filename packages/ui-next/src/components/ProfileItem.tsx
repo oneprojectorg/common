@@ -48,7 +48,7 @@ export const ProfileItem = ({
           {title}
         </ItemTitle>
         {description && (
-          <ItemDescription className="text-foreground line-clamp-none">
+          <ItemDescription className="line-clamp-none text-foreground">
             {description}
           </ItemDescription>
         )}
