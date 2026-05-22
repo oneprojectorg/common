@@ -159,7 +159,7 @@ export function NumberField({
         {prefixText && (
           <span
             ref={prefixRef}
-            className="text-muted-foreground pointer-events-none absolute top-0 bottom-0 left-0 flex items-center justify-center pr-2 pl-3 select-none"
+            className="pointer-events-none absolute top-0 bottom-0 left-0 flex items-center justify-center pr-2 pl-3 text-muted-foreground select-none"
           >
             {prefixText}
           </span>

@@ -105,7 +105,7 @@ export function TextField({
   const counterEl = maxLength != null && (
     <span
       className={cn(
-        'text-muted-foreground text-sm',
+        'text-sm text-muted-foreground',
         isDisabled && 'opacity-50',
         (charCount === maxLength || isInvalid) && 'text-destructive',
       )}

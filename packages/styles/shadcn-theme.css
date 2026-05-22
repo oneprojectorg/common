@@ -1,0 +1,183 @@
+/*
+ * shadcn token surface for @op/ui-next primitives.
+ *
+ * Maps shadcn's token names (--background, --foreground, --primary, etc.)
+ * onto op brand values from `tokens.css` (`--op-*` HSL triplets, wrap with
+ * `hsl(...)` at the use site). Sibling to `intent-ui-theme.css` (for @op/ui)
+ * so both libraries render at brand parity.
+ *
+ * Token name collisions with intent-ui-theme.css are intentional: shadcn
+ * uses `--background`/`--foreground`, intent-ui uses `--bg`/`--fg`. No
+ * overlap.
+ */
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --radius: 0.625rem;
+
+  /* Surfaces */
+  --background: hsl(var(--op-white));
+  --foreground: hsl(var(--op-neutral-900));
+  --card: hsl(var(--op-white));
+  --card-foreground: hsl(var(--op-neutral-900));
+  --popover: hsl(var(--op-white));
+  --popover-foreground: hsl(var(--op-neutral-900));
+
+  /* Brand */
+  --primary: hsl(var(--op-teal-500));
+  --primary-foreground: hsl(var(--op-white));
+  --secondary: hsl(var(--op-neutral-200));
+  --secondary-foreground: hsl(var(--op-neutral-900));
+  --muted: hsl(var(--op-neutral-50));
+  --muted-foreground: hsl(var(--op-neutral-700));
+  --accent: hsl(var(--op-neutral-200));
+  --accent-foreground: hsl(var(--op-neutral-900));
+  --destructive: hsl(var(--op-red-600));
+
+  /* Form / UI */
+  --border: hsl(var(--op-neutral-200));
+  --input: hsl(var(--op-neutral-200));
+  --ring: hsl(var(--op-teal-500));
+
+  /* Charts */
+  --chart-1: hsl(var(--op-teal-500));
+  --chart-2: hsl(var(--op-green-500));
+  --chart-3: hsl(var(--op-yellow-500));
+  --chart-4: hsl(var(--op-orange1-500));
+  --chart-5: hsl(var(--op-red-500));
+
+  /* Sidebar */
+  --sidebar: hsl(var(--op-neutral-50));
+  --sidebar-foreground: hsl(var(--op-neutral-900));
+  --sidebar-primary: hsl(var(--op-teal-500));
+  --sidebar-primary-foreground: hsl(var(--op-white));
+  --sidebar-accent: hsl(var(--op-neutral-200));
+  --sidebar-accent-foreground: hsl(var(--op-neutral-900));
+  --sidebar-border: hsl(var(--op-neutral-200));
+  --sidebar-ring: hsl(var(--op-teal-500));
+}
+
+.dark {
+  --background: hsl(var(--op-neutral-950));
+  --foreground: hsl(var(--op-neutral-50));
+  --card: hsl(var(--op-neutral-900));
+  --card-foreground: hsl(var(--op-neutral-50));
+  --popover: hsl(var(--op-neutral-900));
+  --popover-foreground: hsl(var(--op-neutral-50));
+
+  --primary: hsl(var(--op-teal-400));
+  --primary-foreground: hsl(var(--op-neutral-950));
+  --secondary: hsl(var(--op-neutral-700));
+  --secondary-foreground: hsl(var(--op-neutral-50));
+  --muted: hsl(var(--op-neutral-900));
+  --muted-foreground: hsl(var(--op-neutral-400));
+  --accent: hsl(var(--op-neutral-700));
+  --accent-foreground: hsl(var(--op-neutral-50));
+  --destructive: hsl(var(--op-red-500));
+
+  --border: color-mix(in srgb, hsl(var(--op-white)) 10%, transparent);
+  --input: color-mix(in srgb, hsl(var(--op-white)) 15%, transparent);
+  --ring: hsl(var(--op-teal-400));
+
+  --chart-1: hsl(var(--op-teal-400));
+  --chart-2: hsl(var(--op-green-500));
+  --chart-3: hsl(var(--op-yellow-500));
+  --chart-4: hsl(var(--op-orange1-500));
+  --chart-5: hsl(var(--op-red-500));
+
+  --sidebar: hsl(var(--op-neutral-900));
+  --sidebar-foreground: hsl(var(--op-neutral-50));
+  --sidebar-primary: hsl(var(--op-teal-400));
+  --sidebar-primary-foreground: hsl(var(--op-neutral-950));
+  --sidebar-accent: hsl(var(--op-neutral-700));
+  --sidebar-accent-foreground: hsl(var(--op-neutral-50));
+  --sidebar-border: color-mix(in srgb, hsl(var(--op-white)) 10%, transparent);
+  --sidebar-ring: hsl(var(--op-teal-400));
+}
+
+/* Expose the shadcn token surface as Tailwind theme color names so utilities
+ * like `bg-primary`, `text-muted-foreground`, `border-border` resolve. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* shadcn primitives assume a 16px root font; OP app currently runs at 14px.
+ * Until the global root bump, scope absolute font-size tokens to shadcn
+ * primitives via [data-slot]. Cascades through portaled popups (they also
+ * carry data-slot). Remove this block when root font-size is bumped to 16px. */
+[data-slot] {
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 16px;
+  --text-base--line-height: 24px;
+  --text-lg: 18px;
+  --text-lg--line-height: 28px;
+  --text-xl: 20px;
+  --text-xl--line-height: 28px;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 32px;
+}
+
+/* Tailwind v4 dropped the default `cursor: pointer` on interactive elements.
+ * Restore it so buttons, tags, menu items, tabs, switches, checkboxes,
+ * radios, sliders, and links all feel clickable. Excludes
+ * disabled/aria-disabled. */
+@layer base {
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']):not([data-disabled]),
+  [role='menuitem']:not([aria-disabled='true']):not([data-disabled]),
+  [role='menuitemcheckbox']:not([aria-disabled='true']):not([data-disabled]),
+  [role='menuitemradio']:not([aria-disabled='true']):not([data-disabled]),
+  [role='option']:not([aria-disabled='true']):not([data-disabled]),
+  [role='tab']:not([aria-disabled='true']):not([data-disabled]),
+  [role='switch']:not([aria-disabled='true']):not([data-disabled]),
+  [role='checkbox']:not([aria-disabled='true']):not([data-disabled]),
+  [role='radio']:not([aria-disabled='true']):not([data-disabled]),
+  [role='slider']:not([aria-disabled='true']):not([data-disabled]),
+  [role='link']:not([aria-disabled='true']):not([data-disabled]),
+  a[href],
+  summary {
+    cursor: pointer;
+  }
+}

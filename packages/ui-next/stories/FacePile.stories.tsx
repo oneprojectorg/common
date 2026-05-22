@@ -32,7 +32,7 @@ export const WithLabel: Story = {
         <Avatar key={n} placeholder={n} size="sm" />
       ))}
     >
-      <span className="text-muted-foreground text-sm">+3 more</span>
+      <span className="text-sm text-muted-foreground">+3 more</span>
     </FacePile>
   ),
 };

@@ -123,7 +123,7 @@ export function DataTable<TData>({
                       ) : sortDir === 'desc' ? (
                         <LuArrowDown className="size-3.5" />
                       ) : (
-                        <LuArrowUpDown className="text-muted-foreground size-3.5" />
+                        <LuArrowUpDown className="size-3.5 text-muted-foreground" />
                       )}
                     </button>
                   ) : (
@@ -143,7 +143,7 @@ export function DataTable<TData>({
           <TableRow>
             <TableCell
               colSpan={columns.length}
-              className="text-muted-foreground h-24 text-center"
+              className="h-24 text-center text-muted-foreground"
             >
               {emptyState ?? 'No results.'}
             </TableCell>

@@ -21,7 +21,7 @@ export const Default: Story = {
         aria-label="Auto sizing input"
         value={value}
         onChange={setValue}
-        className="border-input rounded border bg-transparent px-2 py-1 text-sm outline-none"
+        className="rounded border border-input bg-transparent px-2 py-1 text-sm outline-none"
       />
     );
   },

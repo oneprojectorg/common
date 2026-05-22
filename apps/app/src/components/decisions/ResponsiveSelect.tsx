@@ -90,7 +90,7 @@ export function ResponsiveSelect<T extends string>({
                     role="option"
                     aria-selected={isSelected}
                     disabled={item.isDisabled}
-                    className={`hover:bg-accent focus-visible:bg-accent aria-selected:bg-accent/50 flex items-center justify-between px-6 py-4 text-left text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-selected:font-medium ${index < items.length - 1 ? 'border-b border-border' : ''}`}
+                    className={`flex items-center justify-between px-6 py-4 text-left text-sm outline-none hover:bg-accent focus-visible:bg-accent disabled:cursor-not-allowed disabled:opacity-50 aria-selected:bg-accent/50 aria-selected:font-medium ${index < items.length - 1 ? 'border-b border-border' : ''}`}
                     onClick={() => {
                       onSelectionChange(item.id);
                       setIsOpen(false);

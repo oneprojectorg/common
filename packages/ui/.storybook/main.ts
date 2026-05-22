@@ -25,13 +25,6 @@ const config: StorybookConfig = {
       ...config.resolve.alias,
       '@': resolve(__dirname, '../src'),
     };
-    config.optimizeDeps = config.optimizeDeps || {};
-    config.optimizeDeps.exclude = [
-      ...(config.optimizeDeps.exclude ?? []),
-      '@op/ui-next',
-      '@op/ui',
-      '@op/styles',
-    ];
     return config;
   },
 };

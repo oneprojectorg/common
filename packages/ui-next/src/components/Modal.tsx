@@ -164,7 +164,7 @@ export const ModalStepper = memo(
             </Button>
           )}
         </span>
-        <span className="text-muted-foreground flex-1 text-center text-sm">
+        <span className="flex-1 text-center text-sm text-muted-foreground">
           Step {currentStep} of {totalSteps}
         </span>
         <div className="flex flex-1 justify-end">

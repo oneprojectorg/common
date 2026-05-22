@@ -2,6 +2,11 @@
 @import './tokens.css';
 @import './tw-animate.css';
 @import './intent-ui-theme.css';
+@import './shadcn-theme.css';
+
+/* Pick up @op/ui-next sources so their utility classes compile into dist. */
+@source '../ui-next/src/**/*.{js,ts,jsx,tsx}';
+@source '../ui-next/stories/**/*.{js,ts,jsx,tsx}';
 
 /* Tell Tailwind where to scan for classes in the UI package */
 @source '../ui/src/**/*.{js,ts,jsx,tsx}';

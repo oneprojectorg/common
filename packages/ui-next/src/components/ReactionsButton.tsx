@@ -68,7 +68,7 @@ const buttonClass = ({
   className?: string;
 }) =>
   cn(
-    'hover:bg-accent flex items-center justify-center gap-1 rounded-full border-0 bg-muted p-1 text-xs leading-6 font-normal transition-colors duration-200 outline-none focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-ring',
+    'flex items-center justify-center gap-1 rounded-full border-0 bg-muted p-1 text-xs leading-6 font-normal transition-colors duration-200 outline-none hover:bg-accent focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-ring',
     size === 'small' && 'h-8 min-w-8 px-2',
     size === 'icon' && 'h-8 w-8 p-1',
     active && 'bg-accent',

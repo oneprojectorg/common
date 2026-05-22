@@ -57,7 +57,7 @@ const EditDecisionPage = async ({
         instanceId={instanceId}
         isDraft={isDraft}
       >
-        <div className="bg-background relative flex h-dvh w-full flex-1 flex-col overflow-y-hidden">
+        <div className="relative flex h-dvh w-full flex-1 flex-col overflow-y-hidden bg-background">
           <ProcessBuilderStoreInitializer
             decisionProfileId={decisionProfile.id}
             serverData={serverData}
