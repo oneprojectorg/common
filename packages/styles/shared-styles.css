@@ -207,7 +207,8 @@
   /* ============================================
    * Colors - Primary
    * ============================================ */
-  --color-primary: hsl(var(--op-teal-500));
+  /* `--color-primary` is owned by `shadcn-theme.css` (points at `--primary`
+   * which resolves to the dev brand palette). Legacy alias kept below. */
   --color-primary-teal: hsl(var(--op-teal-500));
   --color-primary-tealWhite: hsl(var(--op-teal-white));
   --color-primary-tealBlack: hsl(var(--op-teal-600));
