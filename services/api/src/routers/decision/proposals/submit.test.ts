@@ -518,6 +518,71 @@ describe.concurrent('submitProposal', () => {
     });
   });
 
+  // Repro for Asana 1214710291141659 ("budget limit not enforced"):
+  // the CreateDecisionProcessModal form generates a proposal template with
+  // `budget: { type: 'number', maximum: budgetCapAmount }` (legacy number
+  // shape), not the object shape used by the test above. Make sure
+  // submission rejection still works in that shape.
+  it('should reject submission when budget exceeds the legacy number-shape template maximum', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        required: ['title', 'budget'],
+        'x-field-order': ['title', 'budget'],
+        properties: {
+          title: { type: 'string', 'x-format': 'short-text' },
+          budget: { type: 'number', maximum: 100000, 'x-format': 'money' },
+        },
+      },
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Over Cap' },
+    });
+
+    const collaborationDocId = `proposal-${proposal.id}`;
+
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          title: 'Over Cap',
+          collaborationDocId,
+          budget: { amount: 1000000, currency: 'USD' },
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    mockCollab.setDocFragments(collaborationDocId, {
+      title: 'Over Cap',
+      budget: JSON.stringify({ amount: 1000000, currency: 'USD' }),
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await expect(
+      caller.decision.submitProposal({
+        proposalId: proposal.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
+  });
+
   it('should reject submission when a required text field is empty in the collaboration document', async ({
     task,
     onTestFinished,
