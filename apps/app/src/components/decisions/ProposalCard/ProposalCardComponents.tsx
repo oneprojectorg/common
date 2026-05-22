@@ -1,7 +1,6 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
-import { formatCurrency } from '@/utils/formatting';
 import { ProposalStatus, Visibility } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import {
@@ -22,6 +21,7 @@ import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { Bullet } from '../../Bullet';
+import { BudgetDisplay, formatBudget } from '../BudgetDisplay';
 import { DocumentNotAvailable } from '../DocumentNotAvailable';
 import { useCardTranslation } from '../ProposalTranslationContext';
 import { RevisionRequestChip } from '../RevisionRequestChip';
@@ -160,20 +160,15 @@ export function ProposalCardBudget({
   const { budget } = resolveProposalSystemFields(proposal);
 
   if (!isNullish(allocated)) {
-    const allocatedText = formatCurrency(
-      Number(allocated),
-      undefined,
-      budget?.currency ?? 'USD',
-    );
-    const requestedText = budget
-      ? formatCurrency(budget.amount, undefined, budget.currency)
-      : null;
+    const requestedText = formatBudget(budget);
 
     return (
       <div className={cn('flex flex-wrap items-baseline gap-2', className)}>
-        <span className="font-serif text-title-base text-neutral-charcoal">
-          {allocatedText}
-        </span>
+        <BudgetDisplay
+          value={allocated}
+          fallbackCurrency={budget?.currency}
+          className="font-serif text-title-base text-neutral-charcoal"
+        />
         {requestedText && (
           <span className="text-sm text-neutral-gray4">
             {t('{amount} requested', { amount: requestedText })}
@@ -183,19 +178,14 @@ export function ProposalCardBudget({
     );
   }
 
-  if (!budget) {
-    return null;
-  }
-
   return (
-    <span
+    <BudgetDisplay
+      value={budget}
       className={cn(
         'font-serif text-title-base text-neutral-charcoal',
         className,
       )}
-    >
-      {formatCurrency(budget.amount, undefined, budget.currency)}
-    </span>
+    />
   );
 }
 

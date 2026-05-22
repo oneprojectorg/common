@@ -1,6 +1,6 @@
 'use client';
 
-import { formatCurrency, formatDate } from '@/utils/formatting';
+import { formatDate } from '@/utils/formatting';
 import { ProposalStatus } from '@op/api/encoders';
 import {
   type Proposal,
@@ -25,6 +25,7 @@ import { useTranslations } from '@/lib/i18n';
 import { Link as NavLink } from '@/lib/i18n/routing';
 
 import { ProfileAvatar } from '../ProfileAvatar';
+import { BudgetDisplay, formatBudget } from './BudgetDisplay';
 import { DocumentNotAvailable } from './DocumentNotAvailable';
 import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { ProposalContentRenderer } from './ProposalContentRenderer';
@@ -135,31 +136,24 @@ export function ProposalPreview({
           <div className="flex flex-wrap gap-4 sm:flex-row sm:items-center">
             {selection?.allocated != null ? (
               <div className="flex flex-wrap items-baseline gap-2">
-                <span className="font-serif text-title-base text-neutral-black">
-                  {formatCurrency(
-                    Number(selection.allocated),
-                    undefined,
-                    budget?.currency ?? 'USD',
-                  )}
-                </span>
+                <BudgetDisplay
+                  value={selection.allocated}
+                  fallbackCurrency={budget?.currency}
+                  className="font-serif text-title-base text-neutral-black"
+                />
                 {budget && (
                   <span className="text-sm text-neutral-gray4">
                     {t('{amount} requested', {
-                      amount: formatCurrency(
-                        budget.amount,
-                        undefined,
-                        budget.currency,
-                      ),
+                      amount: formatBudget(budget) ?? '',
                     })}
                   </span>
                 )}
               </div>
             ) : (
-              budget && (
-                <span className="font-serif text-title-base text-neutral-black">
-                  {formatCurrency(budget.amount, undefined, budget.currency)}
-                </span>
-              )
+              <BudgetDisplay
+                value={budget}
+                className="font-serif text-title-base text-neutral-black"
+              />
             )}
             {categories.length > 0 && (
               <TagGroup className="max-w-full">
