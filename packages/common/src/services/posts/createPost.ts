@@ -10,6 +10,7 @@ import {
   postsToProfiles,
   profiles,
 } from '@op/db/schema';
+import { Events, event } from '@op/events';
 import { CreatePostInput } from '@op/types';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
@@ -353,14 +354,43 @@ export const createPost = async (input: CreatePostServiceInput) => {
     return newPost;
   });
 
-  // TODO: Use the message queue for this and remove @vercel/functions as a dependency in @op/common
+  let postKind: 'comment' | 'proposalComment' | 'decisionUpdate' | undefined;
+  if (parentPostId) {
+    postKind = 'comment';
+  } else if (proposalId && targetProfileId) {
+    postKind = 'proposalComment';
+  } else if (targetProfileId) {
+    postKind = 'decisionUpdate';
+  }
+
   waitUntil(
     (async () => {
       try {
-        if (parentPostId) {
-          await sendPostCommentNotification(parentPostId, content, profileId);
-        } else if (targetProfileId && proposalId) {
-          await sendProposalCommentNotification(proposalId, content, profileId);
+        switch (postKind) {
+          case 'comment':
+            await sendPostCommentNotification(
+              parentPostId!,
+              content,
+              profileId,
+            );
+            break;
+          case 'proposalComment':
+            await sendProposalCommentNotification(
+              proposalId!,
+              content,
+              profileId,
+            );
+            break;
+          case 'decisionUpdate':
+            await event.send({
+              name: Events.decisionUpdatePosted.name,
+              data: {
+                postId: newPost.id,
+                targetProfileId: targetProfileId!,
+                authorProfileId: profileId,
+              },
+            });
+            break;
         }
       } catch (error) {
         console.error('Failed to send notification email:', error);
