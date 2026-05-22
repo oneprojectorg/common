@@ -24,83 +24,83 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 
   /* Surfaces */
-  --background: hsl(var(--op-white));
-  --foreground: hsl(var(--op-neutral-900));
-  --card: hsl(var(--op-white));
-  --card-foreground: hsl(var(--op-neutral-900));
-  --popover: hsl(var(--op-white));
-  --popover-foreground: hsl(var(--op-neutral-900));
+  --background: #ffffff;
+  --foreground: var(--op-neutral-charcoal);
+  --card: #ffffff;
+  --card-foreground: var(--op-neutral-charcoal);
+  --popover: #ffffff;
+  --popover-foreground: var(--op-neutral-charcoal);
 
   /* Brand */
-  --primary: hsl(var(--op-teal-500));
-  --primary-foreground: hsl(var(--op-white));
-  --secondary: hsl(var(--op-neutral-200));
-  --secondary-foreground: hsl(var(--op-neutral-900));
-  --muted: hsl(var(--op-neutral-50));
-  --muted-foreground: hsl(var(--op-neutral-700));
-  --accent: hsl(var(--op-neutral-200));
-  --accent-foreground: hsl(var(--op-neutral-900));
-  --destructive: hsl(var(--op-red-600));
+  --primary: var(--op-primary-500);
+  --primary-foreground: #ffffff;
+  --secondary: var(--op-neutral-gray-1);
+  --secondary-foreground: var(--op-neutral-charcoal);
+  --muted: var(--op-neutral-off-white);
+  --muted-foreground: var(--op-neutral-gray-4);
+  --accent: var(--op-neutral-gray-1);
+  --accent-foreground: var(--op-neutral-charcoal);
+  --destructive: var(--op-functional-red-600);
 
   /* Form / UI */
-  --border: hsl(var(--op-neutral-200));
-  --input: hsl(var(--op-neutral-200));
-  --ring: hsl(var(--op-teal-500));
+  --border: var(--op-neutral-gray-1);
+  --input: var(--op-neutral-gray-1);
+  --ring: var(--op-primary-500);
 
   /* Charts */
-  --chart-1: hsl(var(--op-teal-500));
-  --chart-2: hsl(var(--op-green-500));
-  --chart-3: hsl(var(--op-yellow-500));
-  --chart-4: hsl(var(--op-orange1-500));
-  --chart-5: hsl(var(--op-red-500));
+  --chart-1: var(--op-primary-500);
+  --chart-2: var(--op-functional-green-600);
+  --chart-3: var(--op-primary-yellow-500);
+  --chart-4: var(--op-primary-orange-500);
+  --chart-5: var(--op-functional-red-600);
 
   /* Sidebar */
-  --sidebar: hsl(var(--op-neutral-50));
-  --sidebar-foreground: hsl(var(--op-neutral-900));
-  --sidebar-primary: hsl(var(--op-teal-500));
-  --sidebar-primary-foreground: hsl(var(--op-white));
-  --sidebar-accent: hsl(var(--op-neutral-200));
-  --sidebar-accent-foreground: hsl(var(--op-neutral-900));
-  --sidebar-border: hsl(var(--op-neutral-200));
-  --sidebar-ring: hsl(var(--op-teal-500));
+  --sidebar: var(--op-neutral-off-white);
+  --sidebar-foreground: var(--op-neutral-charcoal);
+  --sidebar-primary: var(--op-primary-500);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--op-neutral-gray-1);
+  --sidebar-accent-foreground: var(--op-neutral-charcoal);
+  --sidebar-border: var(--op-neutral-gray-1);
+  --sidebar-ring: var(--op-primary-500);
 }
 
 .dark {
-  --background: hsl(var(--op-neutral-950));
-  --foreground: hsl(var(--op-neutral-50));
-  --card: hsl(var(--op-neutral-900));
-  --card-foreground: hsl(var(--op-neutral-50));
-  --popover: hsl(var(--op-neutral-900));
-  --popover-foreground: hsl(var(--op-neutral-50));
+  --background: var(--op-neutral-black);
+  --foreground: var(--op-neutral-off-white);
+  --card: var(--op-neutral-charcoal);
+  --card-foreground: var(--op-neutral-off-white);
+  --popover: var(--op-neutral-charcoal);
+  --popover-foreground: var(--op-neutral-off-white);
 
-  --primary: hsl(var(--op-teal-400));
-  --primary-foreground: hsl(var(--op-neutral-950));
-  --secondary: hsl(var(--op-neutral-700));
-  --secondary-foreground: hsl(var(--op-neutral-50));
-  --muted: hsl(var(--op-neutral-900));
-  --muted-foreground: hsl(var(--op-neutral-400));
-  --accent: hsl(var(--op-neutral-700));
-  --accent-foreground: hsl(var(--op-neutral-50));
-  --destructive: hsl(var(--op-red-500));
+  --primary: var(--op-primary-500);
+  --primary-foreground: var(--op-neutral-black);
+  --secondary: var(--op-neutral-gray-4);
+  --secondary-foreground: var(--op-neutral-off-white);
+  --muted: var(--op-neutral-charcoal);
+  --muted-foreground: var(--op-neutral-gray-2);
+  --accent: var(--op-neutral-gray-4);
+  --accent-foreground: var(--op-neutral-off-white);
+  --destructive: var(--op-functional-red-600);
 
-  --border: color-mix(in srgb, hsl(var(--op-white)) 10%, transparent);
-  --input: color-mix(in srgb, hsl(var(--op-white)) 15%, transparent);
-  --ring: hsl(var(--op-teal-400));
+  --border: color-mix(in srgb, #ffffff 10%, transparent);
+  --input: color-mix(in srgb, #ffffff 15%, transparent);
+  --ring: var(--op-primary-500);
 
-  --chart-1: hsl(var(--op-teal-400));
-  --chart-2: hsl(var(--op-green-500));
-  --chart-3: hsl(var(--op-yellow-500));
-  --chart-4: hsl(var(--op-orange1-500));
-  --chart-5: hsl(var(--op-red-500));
+  --chart-1: var(--op-primary-500);
+  --chart-2: var(--op-functional-green-600);
+  --chart-3: var(--op-primary-yellow-500);
+  --chart-4: var(--op-primary-orange-500);
+  --chart-5: var(--op-functional-red-600);
 
-  --sidebar: hsl(var(--op-neutral-900));
-  --sidebar-foreground: hsl(var(--op-neutral-50));
-  --sidebar-primary: hsl(var(--op-teal-400));
-  --sidebar-primary-foreground: hsl(var(--op-neutral-950));
-  --sidebar-accent: hsl(var(--op-neutral-700));
-  --sidebar-accent-foreground: hsl(var(--op-neutral-50));
-  --sidebar-border: color-mix(in srgb, hsl(var(--op-white)) 10%, transparent);
-  --sidebar-ring: hsl(var(--op-teal-400));
+  --sidebar: var(--op-neutral-charcoal);
+  --sidebar-foreground: var(--op-neutral-off-white);
+  --sidebar-primary: var(--op-primary-500);
+  --sidebar-primary-foreground: var(--op-neutral-black);
+  --sidebar-accent: var(--op-neutral-gray-4);
+  --sidebar-accent-foreground: var(--op-neutral-off-white);
+  --sidebar-border: color-mix(in srgb, #ffffff 10%, transparent);
+  --sidebar-ring: var(--op-primary-500);
 }
 
 /* Expose the shadcn token surface as Tailwind theme color names so utilities

@@ -6,8 +6,58 @@
 
 :root {
   /* ============================================
-   * Base Colors
-   * ============================================ */
+   * Dev brand palette (Figma source of truth)
+   * ============================================
+   * Used by `shadcn-theme.css`. Full hsla() values — use directly as
+   * `var(--op-primary-500)` (no `hsl(...)` wrap). The legacy HSL-triplet
+   * scale below (`--op-teal-*`, `--op-neutral-200/400/...`, etc.) stays
+   * for @op/ui consumers until that package retires.
+   *
+   * Figma↔code gaps (handled by semantic aliases in shared-styles.css):
+   *   - no green-50  → functional-greenWhite alias uses green-100
+   *   - one orange   → orange1 + orange2 collapse to a single hue
+   *   - no separate status-green → uses functional-green-600 / -100
+   */
+
+  /* Primary (teal) */
+  --op-primary-50: hsla(187, 47.4%, 96.3%, 1); /* #F1F9FA */
+  --op-primary-100: hsla(186, 42.9%, 90.4%, 1); /* #DCEFF1 */
+  --op-primary-500: hsla(191, 39.8%, 36.5%, 1); /* #387582 */
+  --op-primary-700: hsla(192, 36.7%, 31%, 1); /* #32606C */
+
+  /* Primary — yellow */
+  --op-primary-yellow-500: hsla(45, 96%, 48.4%, 1); /* #F2B705 */
+
+  /* Primary — orange */
+  --op-primary-orange-50: hsla(41, 80%, 96.1%, 1); /* #FDF8ED */
+  --op-primary-orange-500: hsla(31, 71.1%, 51.2%, 1); /* #DB862A */
+
+  /* Neutrals (named) */
+  --op-neutral-off-white: hsla(180, 11.1%, 98.2%, 1); /* #FAFBFB */
+  --op-neutral-gray-1: hsla(180, 2.9%, 93.1%, 1); /* #EDEEEE */
+  --op-neutral-gray-2: hsla(195, 4.4%, 82.4%, 1); /* #D0D3D4 */
+  --op-neutral-gray-3: hsla(189, 4.3%, 68%, 1); /* #AAB0B1 */
+  --op-neutral-gray-4: hsla(190, 5.9%, 40%, 1); /* #606A6C */
+  --op-neutral-charcoal: hsla(188, 11.5%, 25.7%, 1); /* #3A4749 */
+  --op-neutral-black: hsla(187, 31%, 11.4%, 1); /* #142426 */
+
+  /* Functional */
+  --op-functional-red-50: hsla(6, 71.4%, 97.3%, 1); /* #FDF4F3 */
+  --op-functional-red-100: hsla(5, 80%, 94.1%, 1); /* #FCE6E4 */
+  --op-functional-red-600: hsla(5, 61.3%, 49.6%, 1); /* #CC3D31 */
+  --op-functional-red-800: hsla(5, 58.9%, 35.3%, 1); /* #8F2D25 */
+  --op-functional-green-100: hsla(96, 63.6%, 89.2%, 1); /* #E0F5D2 */
+  --op-functional-green-600: hsla(100, 59.7%, 31.2%, 1); /* #3F7F20 */
+
+  /* Data viz */
+  --op-data-purple: hsla(302, 24.5%, 51.2%, 1); /* #A1649F */
+  --op-data-blue: hsla(240, 57.1%, 53.3%, 1); /* #4444CC */
+
+  /* ============================================
+   * Legacy HSL-triplet palette (kept for @op/ui)
+   * ============================================
+   * Values are HSL triplets — must be wrapped with `hsl(...)` at use site.
+   */
   --op-white: 0 0% 100%;
 
   /* ============================================
