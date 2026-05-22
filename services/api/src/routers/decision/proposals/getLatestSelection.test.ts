@@ -568,5 +568,4 @@ describe.concurrent('getLatestSelectionForProposal', () => {
       selectionRank: 1,
     });
   });
-
 });
