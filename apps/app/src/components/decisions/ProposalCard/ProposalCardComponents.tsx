@@ -312,7 +312,7 @@ export function ProposalCardStatus({
   className?: string;
 }) {
   const t = useTranslations();
-  const { status, visibility } = proposal;
+  const { status, visibility, isSelected } = proposal;
 
   // DRAFT wins over HIDDEN: a draft created in a hidden-by-default phase
   // should still read as "Draft" to its author, not "Hidden".
@@ -342,20 +342,24 @@ export function ProposalCardStatus({
     );
   }
 
+  // "Selected" is driven by results selection, not the editable `status`.
+  if (isSelected) {
+    return (
+      <>
+        <Bullet />
+        <span className={cn('text-sm text-green-700', className)}>
+          {t('Selected')}
+        </span>
+      </>
+    );
+  }
+
   return match(status, {
     [ProposalStatus.APPROVED]: (
       <>
         <Bullet />
         <span className={cn('text-sm text-green-700', className)}>
           {t('Shortlisted')}
-        </span>
-      </>
-    ),
-    [ProposalStatus.SELECTED]: (
-      <>
-        <Bullet />
-        <span className={cn('text-sm text-green-700', className)}>
-          {t('Funded')}
         </span>
       </>
     ),

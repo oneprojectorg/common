@@ -218,6 +218,8 @@ const legacyProposalEncoder = createSelectSchema(proposals)
     isFollowedByUser: z.boolean().optional(),
     // User permissions
     isEditable: z.boolean().optional(),
+    // True when this proposal is in the latest results selection set.
+    isSelected: z.boolean().optional(),
     // Attachments
     attachments: z.array(legacyProposalAttachmentEncoder).optional(),
     // Selection rank (for results)
