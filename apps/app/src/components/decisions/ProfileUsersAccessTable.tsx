@@ -38,6 +38,7 @@ export const ProfileUsersAccessTable = ({
   isMobile,
   invites,
   processName,
+  isDraft,
 }: {
   profileUsers: ProfileUser[];
   profileId: string;
@@ -50,6 +51,7 @@ export const ProfileUsersAccessTable = ({
   isMobile: boolean;
   invites: ProfileInvite[];
   processName?: string;
+  isDraft: boolean;
 }) => {
   const t = useTranslations();
 
@@ -80,6 +82,7 @@ export const ProfileUsersAccessTable = ({
       roles={roles}
       invites={invites}
       processName={processName}
+      isDraft={isDraft}
     />
   ) : (
     <ProfileUsersAccessTableContent
@@ -91,15 +94,23 @@ export const ProfileUsersAccessTable = ({
       roles={roles}
       invites={invites}
       processName={processName}
+      isDraft={isDraft}
     />
   );
 };
 
-const InviteStatusLabel = ({ notifiedAt }: { notifiedAt: string | null }) => {
+const InviteStatusLabel = ({
+  notifiedAt,
+  isDraft,
+}: {
+  notifiedAt: string | null;
+  isDraft: boolean;
+}) => {
   const t = useTranslations();
+  const isPendingLaunch = isDraft && !notifiedAt;
   return (
     <span className="text-sm text-neutral-gray4">
-      {notifiedAt ? t('Invited') : t('Pending launch')}
+      {isPendingLaunch ? t('Pending launch') : t('Invited')}
     </span>
   );
 };
@@ -430,11 +441,13 @@ const MobileInviteCard = ({
   profileId,
   roles,
   processName,
+  isDraft,
 }: {
   invite: ProfileInvite;
   profileId: string;
   roles: { id: string; name: string }[];
   processName?: string;
+  isDraft: boolean;
 }) => {
   const displayName = invite.inviteeProfile?.name ?? invite.email;
 
@@ -448,7 +461,10 @@ const MobileInviteCard = ({
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex flex-col">
             <span className="text-base text-neutral-black">{displayName}</span>
-            <InviteStatusLabel notifiedAt={invite.notifiedAt} />
+            <InviteStatusLabel
+              notifiedAt={invite.notifiedAt}
+              isDraft={isDraft}
+            />
           </div>
           <span className="truncate text-base text-neutral-black">
             {invite.email}
@@ -475,6 +491,7 @@ const MobileProfileUsersContent = ({
   roles,
   invites,
   processName,
+  isDraft,
 }: {
   profileUsers: ProfileUser[];
   profileId: string;
@@ -482,6 +499,7 @@ const MobileProfileUsersContent = ({
   roles: { id: string; name: string }[];
   invites: ProfileInvite[];
   processName?: string;
+  isDraft: boolean;
 }) => {
   return (
     <div className="flex flex-col gap-4">
@@ -495,6 +513,7 @@ const MobileProfileUsersContent = ({
               profileId={profileId}
               roles={roles}
               processName={processName}
+              isDraft={isDraft}
             />
           ))}
           {profileUsers.map((profileUser) => (
@@ -522,6 +541,7 @@ const ProfileUsersAccessTableContent = ({
   roles,
   invites,
   processName,
+  isDraft,
 }: {
   profileUsers: ProfileUser[];
   profileId: string;
@@ -531,6 +551,7 @@ const ProfileUsersAccessTableContent = ({
   roles: { id: string; name: string }[];
   invites: ProfileInvite[];
   processName?: string;
+  isDraft: boolean;
 }) => {
   const t = useTranslations();
 
@@ -573,7 +594,10 @@ const ProfileUsersAccessTableContent = ({
                       <span className="text-base text-neutral-black">
                         {displayName}
                       </span>
-                      <InviteStatusLabel notifiedAt={invite.notifiedAt} />
+                      <InviteStatusLabel
+                        notifiedAt={invite.notifiedAt}
+                        isDraft={isDraft}
+                      />
                     </div>
                   </div>
                 </TableCell>
