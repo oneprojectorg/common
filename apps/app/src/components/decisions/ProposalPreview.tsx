@@ -105,7 +105,7 @@ export function ProposalPreview({
 
       <div className="space-y-4">
         {selection && (
-          <div className="flex items-center gap-2 text-sm text-neutral-charcoal">
+          <div className="flex items-center gap-1 text-sm text-functional-green">
             <LuCircleCheck className="size-4" />
             <span>{t('Selected')}</span>
           </div>
@@ -132,10 +132,10 @@ export function ProposalPreview({
         )}
 
         <div className="space-y-6">
-          {/* Metadata Row */}
-          <div className="flex flex-wrap gap-4 sm:flex-row sm:items-center">
+          {/* Budget + Categories — stacked, matching the proposal editor layout */}
+          <div className="flex flex-col items-start gap-4">
             {selection?.allocated != null ? (
-              <div className="flex flex-wrap items-baseline gap-2">
+              <div className="flex flex-wrap items-end gap-2">
                 <BudgetDisplay
                   value={selection.allocated}
                   fallbackCurrency={budget?.currency}
