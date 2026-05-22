@@ -168,6 +168,11 @@ test.describe('Proposal View', () => {
       authenticatedPage.getByText('Renewable Energy').first(),
     ).toBeVisible();
 
+    // Non-last phase + no selection: the page must not surface the
+    // "{amount} requested" secondary label, since there is no allocated value
+    // to compare against.
+    await expect(authenticatedPage.getByText(/requested/i)).toHaveCount(0);
+
     // Dynamic dropdown fields render with their label via ProposalContentRenderer.
     // The field labels should be visible as section headings.
     await expect(
