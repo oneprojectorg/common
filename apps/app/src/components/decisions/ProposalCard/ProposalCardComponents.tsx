@@ -342,7 +342,7 @@ export function ProposalCardStatus({
     );
   }
 
-  // "Funded" is driven by results selection, not the editable `status`.
+  // "Selected" is driven by results selection, not the editable `status`.
   if (isSelected) {
     return (
       <>
