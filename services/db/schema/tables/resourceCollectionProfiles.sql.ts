@@ -3,8 +3,8 @@ import { relations } from 'drizzle-orm/_relations';
 import { index, integer, pgTable, unique, uuid } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
-import { profiles } from './profiles.sql';
 import { profileUsers } from './profileUsers.sql';
+import { profiles } from './profiles.sql';
 import { resourceCollections } from './resourceCollections.sql';
 
 export const resourceCollectionProfiles = pgTable(
