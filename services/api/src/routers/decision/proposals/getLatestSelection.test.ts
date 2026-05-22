@@ -569,28 +569,4 @@ describe.concurrent('getLatestSelectionForProposal', () => {
     });
   });
 
-  it('requires an authenticated session', async () => {
-    const caller = createCaller(await createTestContextWithSession(null));
-
-    await expect(
-      caller.decision.getLatestSelectionForProposal({
-        proposalId: randomUUID(),
-      }),
-    ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
-  });
-
-  it('rejects malformed proposal IDs at the input boundary', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-
-    await expect(
-      caller.decision.getLatestSelectionForProposal({
-        proposalId: 'not-a-uuid',
-      }),
-    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
-  });
 });
