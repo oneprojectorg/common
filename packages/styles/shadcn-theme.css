@@ -15,6 +15,10 @@
 
 :root {
   --radius: 0.625rem;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
 
   /* Surfaces */
   --background: hsl(var(--op-white));
