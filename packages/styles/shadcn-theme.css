@@ -1,19 +1,27 @@
 /*
- * shadcn token surface for @op/ui-next primitives.
+ * shadcn-theme.css
  *
- * Maps shadcn's token names (--background, --foreground, --primary, etc.)
- * onto op brand values from `tokens.css` (`--op-*` HSL triplets, wrap with
- * `hsl(...)` at the use site). Sibling to `intent-ui-theme.css` (for @op/ui)
- * so both libraries render at brand parity.
+ * OWNS: shadcn token surface for @op/ui-next.
  *
- * Token name collisions with intent-ui-theme.css are intentional: shadcn
- * uses `--background`/`--foreground`, intent-ui uses `--bg`/`--fg`. No
- * overlap.
+ * Defines the FULL shape shadcn primitives expect (`--background`, `--card`,
+ * `--popover`, `--primary`, `--secondary`, `--muted`, `--accent`,
+ * `--destructive`, `--border`, `--input`, `--ring`, `--chart-1..5`,
+ * `--sidebar-*`), the shadcn `--radius` scale, the `[data-slot]` text-size
+ * scope, and the cursor-pointer base layer.
+ *
+ * Self-contained on purpose: every shadcn-facing `--color-*` alias is
+ * (re)declared here even if `shared-styles.css` already declares the same
+ * key. If the @op/styles core palette changes, this file is the canonical
+ * reference for what the shadcn layer still needs.
+ *
+ * Source of brand values: `tokens.css` (`--op-*` hsla() values). Used
+ * directly as `var(--op-…)` — no `hsl(...)` wrapping required.
  */
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* Radius scale (shadcn convention, derived from --radius) */
   --radius: 0.625rem;
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -24,16 +32,16 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 
   /* Surfaces */
-  --background: #ffffff;
+  --background: var(--op-white);
   --foreground: var(--op-neutral-charcoal);
-  --card: #ffffff;
+  --card: var(--op-white);
   --card-foreground: var(--op-neutral-charcoal);
-  --popover: #ffffff;
+  --popover: var(--op-white);
   --popover-foreground: var(--op-neutral-charcoal);
 
   /* Brand */
   --primary: var(--op-primary-500);
-  --primary-foreground: #ffffff;
+  --primary-foreground: var(--op-white);
   --secondary: var(--op-neutral-gray-1);
   --secondary-foreground: var(--op-neutral-charcoal);
   --muted: var(--op-neutral-off-white);
@@ -58,7 +66,7 @@
   --sidebar: var(--op-neutral-off-white);
   --sidebar-foreground: var(--op-neutral-charcoal);
   --sidebar-primary: var(--op-primary-500);
-  --sidebar-primary-foreground: #ffffff;
+  --sidebar-primary-foreground: var(--op-white);
   --sidebar-accent: var(--op-neutral-gray-1);
   --sidebar-accent-foreground: var(--op-neutral-charcoal);
   --sidebar-border: var(--op-neutral-gray-1);
@@ -83,8 +91,8 @@
   --accent-foreground: var(--op-neutral-off-white);
   --destructive: var(--op-functional-red-600);
 
-  --border: color-mix(in srgb, #ffffff 10%, transparent);
-  --input: color-mix(in srgb, #ffffff 15%, transparent);
+  --border: color-mix(in srgb, var(--op-white) 10%, transparent);
+  --input: color-mix(in srgb, var(--op-white) 15%, transparent);
   --ring: var(--op-primary-500);
 
   --chart-1: var(--op-primary-500);
@@ -99,12 +107,16 @@
   --sidebar-primary-foreground: var(--op-neutral-black);
   --sidebar-accent: var(--op-neutral-gray-4);
   --sidebar-accent-foreground: var(--op-neutral-off-white);
-  --sidebar-border: color-mix(in srgb, #ffffff 10%, transparent);
+  --sidebar-border: color-mix(in srgb, var(--op-white) 10%, transparent);
   --sidebar-ring: var(--op-primary-500);
 }
 
 /* Expose the shadcn token surface as Tailwind theme color names so utilities
- * like `bg-primary`, `text-muted-foreground`, `border-border` resolve. */
+ * like `bg-primary`, `text-muted-foreground`, `border-border`, `bg-card`,
+ * `bg-popover`, `bg-destructive`, `bg-secondary`, `bg-accent`, `bg-muted`,
+ * `bg-sidebar-*`, `text-chart-*`, etc. resolve. Declarations here are
+ * intentionally redundant with `shared-styles.css` for any overlapping keys
+ * (e.g. `--color-primary`) so this file alone describes the shadcn contract. */
 @theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
