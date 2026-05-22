@@ -1,25 +1,95 @@
-/* Brand overrides for shadcn base tokens. Imported by styles.css after the
- * shadcn `:root`/`.dark` defaults so these declarations win. Only remaps
- * tokens with a clear op brand counterpart; everything else inherits the
- * shadcn grayscale baseline.
+/* shadcn theme for @op/ui-next, expressed in op brand color variables.
  *
- * Source of op brand HSL values: `packages/styles/tokens.css` (`--op-*`).
- * Conventions mirror `packages/styles/intent-ui-theme.css` (used by @op/ui)
- * so the two libraries render at brand parity.
+ * This file owns the canonical `:root` and `.dark` token blocks consumed by
+ * the shadcn primitives under `src/components/ui/`. Imported by `styles.css`
+ * after the Tailwind base layer.
+ *
+ * Source of op brand values: `@op/styles/tokens` (`--op-*`). Light/dark
+ * mappings mirror the conventions in `packages/styles/intent-ui-theme.css`
+ * (used by @op/ui) so both libraries render at brand parity.
  */
 
 @import '@op/styles/tokens';
 
 :root {
-  --primary: hsl(var(--op-teal-500));
-  --primary-foreground: oklch(0.985 0 0);
-  --ring: hsl(var(--op-teal-500));
-  --destructive: hsl(var(--op-red-500));
+  --radius: 0.625rem;
+
+  /* Surfaces */
+  --background: var(--op-white);
+  --foreground: var(--op-neutral-charcoal);
+  --card: var(--op-white);
+  --card-foreground: var(--op-neutral-charcoal);
+  --popover: var(--op-white);
+  --popover-foreground: var(--op-neutral-charcoal);
+
+  /* Brand */
+  --primary: var(--op-primary-500);
+  --primary-foreground: var(--op-white);
+  --secondary: var(--op-neutral-gray-1);
+  --secondary-foreground: var(--op-neutral-charcoal);
+  --muted: var(--op-neutral-off-white);
+  --muted-foreground: var(--op-neutral-gray-4);
+  --accent: var(--op-neutral-gray-1);
+  --accent-foreground: var(--op-neutral-charcoal);
+  --destructive: var(--op-functional-red-600);
+
+  /* Form / UI */
+  --border: var(--op-neutral-gray-1);
+  --input: var(--op-neutral-gray-1);
+  --ring: var(--op-primary-500);
+
+  /* Charts */
+  --chart-1: var(--op-primary-500);
+  --chart-2: var(--op-functional-green-600);
+  --chart-3: var(--op-primary-yellow-500);
+  --chart-4: var(--op-primary-orange-500);
+  --chart-5: var(--op-functional-red-600);
+
+  /* Sidebar */
+  --sidebar: var(--op-neutral-off-white);
+  --sidebar-foreground: var(--op-neutral-charcoal);
+  --sidebar-primary: var(--op-primary-500);
+  --sidebar-primary-foreground: var(--op-white);
+  --sidebar-accent: var(--op-neutral-gray-1);
+  --sidebar-accent-foreground: var(--op-neutral-charcoal);
+  --sidebar-border: var(--op-neutral-gray-1);
+  --sidebar-ring: var(--op-primary-500);
 }
 
 .dark {
-  --primary: hsl(var(--op-teal-400));
-  --primary-foreground: oklch(0.205 0 0);
-  --ring: hsl(var(--op-teal-400));
-  --destructive: hsl(var(--op-red-400));
+  --background: var(--op-neutral-black);
+  --foreground: var(--op-neutral-off-white);
+  --card: var(--op-neutral-charcoal);
+  --card-foreground: var(--op-neutral-off-white);
+  --popover: var(--op-neutral-charcoal);
+  --popover-foreground: var(--op-neutral-off-white);
+
+  --primary: var(--op-primary-500);
+  --primary-foreground: var(--op-neutral-black);
+  --secondary: var(--op-neutral-gray-4);
+  --secondary-foreground: var(--op-neutral-off-white);
+  --muted: var(--op-neutral-charcoal);
+  --muted-foreground: var(--op-neutral-gray-2);
+  --accent: var(--op-neutral-gray-4);
+  --accent-foreground: var(--op-neutral-off-white);
+  --destructive: var(--op-functional-red-600);
+
+  --border: color-mix(in srgb, var(--op-white) 10%, transparent);
+  --input: color-mix(in srgb, var(--op-white) 15%, transparent);
+  --ring: var(--op-primary-500);
+
+  --chart-1: var(--op-primary-500);
+  --chart-2: var(--op-functional-green-600);
+  --chart-3: var(--op-primary-yellow-500);
+  --chart-4: var(--op-primary-orange-500);
+  --chart-5: var(--op-functional-red-600);
+
+  --sidebar: var(--op-neutral-charcoal);
+  --sidebar-foreground: var(--op-neutral-off-white);
+  --sidebar-primary: var(--op-primary-500);
+  --sidebar-primary-foreground: var(--op-neutral-black);
+  --sidebar-accent: var(--op-neutral-gray-4);
+  --sidebar-accent-foreground: var(--op-neutral-off-white);
+  --sidebar-border: color-mix(in srgb, var(--op-white) 10%, transparent);
+  --sidebar-ring: var(--op-primary-500);
 }
