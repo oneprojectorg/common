@@ -426,10 +426,22 @@ export const listProposals = async ({
             sqlOp<number>`${voteCountExpr(table)}`.as('vote_count'),
         },
       }),
-      orderBy: (table, { asc: ascOp, desc: descOp }) =>
-        orderBy === 'votes'
-          ? [descOp(voteCountExpr(table)), descOp(table.createdAt)]
-          : (dir === 'asc' ? ascOp : descOp)(table[orderBy] ?? table.createdAt),
+      orderBy: (table, { asc: ascOp, desc: descOp }) => {
+        // `id` tie-break: without it, rows sharing the primary sort key
+        // return in undefined order and flipping `dir` has no visible effect.
+        const directional = dir === 'asc' ? ascOp : descOp;
+        if (orderBy === 'votes') {
+          return [
+            descOp(voteCountExpr(table)),
+            descOp(table.createdAt),
+            descOp(table.id),
+          ];
+        }
+        return [
+          directional(table[orderBy] ?? table.createdAt),
+          directional(table.id),
+        ];
+      },
     }),
     // Count uses the same builder against the schema table, producing
     // unaliased SQL that matches the FROM clause here.
