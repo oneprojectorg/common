@@ -13,9 +13,15 @@ export {
   proposalListSchema,
   proposalProfileSchema,
   storageItemSchema,
+  allProposalsFilterSchema,
+  allProposalsListItemSchema,
+  allProposalsListSchema,
   type Proposal,
   type ProposalList,
   type ProposalProfile,
+  type AllProposalsFilter,
+  type AllProposalsListItem,
+  type AllProposalsList,
 } from './services/decision/schemas/proposal';
 export {
   adminDecisionInstanceSchema,

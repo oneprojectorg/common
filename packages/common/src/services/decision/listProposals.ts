@@ -1,14 +1,10 @@
 import { SQL, and, db, eq, ilike, inArray, ne, or, sql } from '@op/db/client';
 import {
-  ProfileRelationshipType,
   ProposalStatus,
   Visibility,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
-  posts,
-  postsToProfiles,
   processInstances,
-  profileRelationships,
   profileUsers,
   proposalCategories,
   proposals,
@@ -24,10 +20,12 @@ import {
   getProfileAccessUser,
 } from '../access';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
+import { getProposalRelationshipData } from './getProposalRelationshipData';
 import {
   getPhaseProposalAndDraftIds,
   getProposalIdsForPhase,
 } from './getProposalsForPhase';
+import { getSelectedProposalIds } from './getSelectedProposalIds';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 
@@ -441,140 +439,44 @@ export const listProposals = async ({
 
   const count = countResult[0]?.count || 0;
 
+  type ProposalListItem = (typeof proposalList)[number];
+
   // Resolve proposalTemplate from instanceData, falling back to processSchema
   const proposalTemplate = await resolveProposalTemplate(
     instance.instanceData as Record<string, unknown> | null,
     instance.processId,
   );
 
-  type ProposalListItem = (typeof proposalList)[number];
-
-  // Get relationship data for all proposal profiles using optimized Drizzle queries
   const profileIds = proposalList
     .map((proposal) => proposal.profileId)
     .filter((id): id is string => Boolean(id));
 
-  const relationshipData = new Map<
-    string,
-    {
-      likesCount: number;
-      followersCount: number;
-      isLikedByUser: boolean;
-      isFollowedByUser: boolean;
-      commentsCount: number;
-    }
-  >();
+  const [relationshipData, documentContentMap, selectedIds] = await Promise.all(
+    [
+      getProposalRelationshipData({ profileIds, currentProfileId }),
+      getProposalDocumentsContent(
+        proposalList.map((proposal) => {
+          const parsed = parseProposalData(proposal.proposalData);
+          return {
+            id: proposal.id,
+            proposalData: proposal.proposalData,
+            proposalTemplate,
+            collaborationDocVersionId:
+              proposal.status === ProposalStatus.DRAFT
+                ? undefined
+                : parsed.collaborationDocVersionId,
+          };
+        }),
+      ),
+      getSelectedProposalIds(processInstanceId),
+    ],
+  );
 
-  // Fetch relationship data and document contents in parallel
-  const [relationshipResults, documentContentMap] = await Promise.all([
-    // Get relationship data if there are profile IDs
-    profileIds.length > 0
-      ? Promise.all([
-          // Get relationship counts for all profile IDs (likes and follows)
-          db
-            .select({
-              targetProfileId: profileRelationships.targetProfileId,
-              relationshipType: profileRelationships.relationshipType,
-              count: countFn(),
-            })
-            .from(profileRelationships)
-            .where(inArray(profileRelationships.targetProfileId, profileIds))
-            .groupBy(
-              profileRelationships.targetProfileId,
-              profileRelationships.relationshipType,
-            ),
+  const hasAdminPermission = checkPermission(
+    { profile: permission.ADMIN },
+    profileUser?.roles ?? [],
+  );
 
-          // Get user's relationships to these profiles
-          db
-            .select({
-              targetProfileId: profileRelationships.targetProfileId,
-              relationshipType: profileRelationships.relationshipType,
-            })
-            .from(profileRelationships)
-            .where(
-              and(
-                eq(profileRelationships.sourceProfileId, currentProfileId),
-                inArray(profileRelationships.targetProfileId, profileIds),
-              ),
-            ),
-
-          // Get comment counts for all profile IDs
-          db
-            .select({
-              profileId: postsToProfiles.profileId,
-              count: countFn(),
-            })
-            .from(posts)
-            .innerJoin(postsToProfiles, eq(posts.id, postsToProfiles.postId))
-            .where(inArray(postsToProfiles.profileId, profileIds))
-            .groupBy(postsToProfiles.profileId),
-        ])
-      : Promise.resolve(null),
-
-    // Get document contents for all proposals, pinned to the submitted version
-    getProposalDocumentsContent(
-      proposalList.map((proposal) => {
-        const parsed = parseProposalData(proposal.proposalData);
-        return {
-          id: proposal.id,
-          proposalData: proposal.proposalData,
-          proposalTemplate,
-          collaborationDocVersionId:
-            proposal.status === ProposalStatus.DRAFT
-              ? undefined
-              : parsed.collaborationDocVersionId,
-        };
-      }),
-    ),
-  ]);
-
-  // Build the relationship data map if we have results
-  if (relationshipResults) {
-    const [relationshipCounts, userRelationships, commentCounts] =
-      relationshipResults;
-
-    for (const profileId of profileIds) {
-      const likesCount =
-        relationshipCounts.find(
-          (rc) =>
-            rc.targetProfileId === profileId &&
-            rc.relationshipType === ProfileRelationshipType.LIKES,
-        )?.count || 0;
-
-      const followersCount =
-        relationshipCounts.find(
-          (rc) =>
-            rc.targetProfileId === profileId &&
-            rc.relationshipType === ProfileRelationshipType.FOLLOWING,
-        )?.count || 0;
-
-      const isLikedByUser = userRelationships.some(
-        (ur) =>
-          ur.targetProfileId === profileId &&
-          ur.relationshipType === ProfileRelationshipType.LIKES,
-      );
-
-      const isFollowedByUser = userRelationships.some(
-        (ur) =>
-          ur.targetProfileId === profileId &&
-          ur.relationshipType === ProfileRelationshipType.FOLLOWING,
-      );
-
-      const commentsCount =
-        commentCounts.find((cc) => cc.profileId === profileId)?.count || 0;
-
-      relationshipData.set(profileId, {
-        likesCount: Number(likesCount),
-        followersCount: Number(followersCount),
-        isLikedByUser,
-        isFollowedByUser,
-        commentsCount: Number(commentsCount),
-      });
-    }
-  }
-
-  // Transform the results to match the expected structure and add decision counts, likes count, and user relationship status
-  // TODO: improve this with more streamlined types
   const proposalsWithCounts = proposalList.map((proposal: ProposalListItem) => {
     const submittedBy = Array.isArray(proposal.submittedBy)
       ? proposal.submittedBy[0]
@@ -582,17 +484,10 @@ export const listProposals = async ({
     const profile = Array.isArray(proposal.profile)
       ? proposal.profile[0]
       : proposal.profile;
-    const relationshipInfo = proposal.profileId
-      ? relationshipData.get(proposal.profileId)
-      : null;
+    const relationshipInfo = relationshipData.get(proposal.profileId);
 
-    // In results phase, proposals are never editable
-    // Check if proposal is editable by current user
+    // In results phase, proposals are never editable.
     const isOwner = proposal.submittedByProfileId === currentProfileId;
-    const hasAdminPermission = checkPermission(
-      { profile: permission.ADMIN },
-      profileUser?.roles ?? [],
-    );
     const isEditable =
       input.phase === 'results' ? false : isOwner || hasAdminPermission;
 
@@ -605,14 +500,15 @@ export const listProposals = async ({
       createdAt: proposal.createdAt,
       updatedAt: proposal.updatedAt,
       profileId: proposal.profileId,
-      submittedBy: submittedBy,
-      profile: profile,
+      submittedBy,
+      profile,
       likesCount: relationshipInfo?.likesCount || 0,
       followersCount: relationshipInfo?.followersCount || 0,
       isLikedByUser: relationshipInfo?.isLikedByUser || false,
       isFollowedByUser: relationshipInfo?.isFollowedByUser || false,
       commentsCount: relationshipInfo?.commentsCount || 0,
       isEditable,
+      isSelected: selectedIds.has(proposal.id),
       documentContent: documentContentMap.get(proposal.id),
       proposalTemplate,
       ...(includeVoteCounts && {

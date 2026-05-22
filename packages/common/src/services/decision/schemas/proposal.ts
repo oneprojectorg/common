@@ -1,3 +1,4 @@
+import { ProposalStatus } from '@op/db/schema';
 import { z } from 'zod';
 
 import { proposalDataSchema } from '../proposalDataSchema';
@@ -116,6 +117,8 @@ export const proposalSchema = z.object({
   isLikedByUser: z.boolean().optional(),
   isFollowedByUser: z.boolean().optional(),
   isEditable: z.boolean().optional(),
+  /** True when this proposal is in the latest results selection set. */
+  isSelected: z.boolean().optional(),
   access: proposalAccessSchema.optional(),
   attachments: z.array(proposalAttachmentSchema).optional(),
   selectionRank: z.number().nullable().optional(),
@@ -137,6 +140,44 @@ export const proposalListSchema = z.object({
 });
 
 export type ProposalList = z.infer<typeof proposalListSchema>;
+
+/**
+ * Input schema for `decision.listAllProposals`. Returns every valid submission
+ * regardless of phase scoping, so there are no phase/voting filters. Uses
+ * cursor pagination — pass `cursor` from the previous response's `next`.
+ */
+export const allProposalsFilterSchema = z.object({
+  processInstanceId: z.uuid(),
+  status: z.enum(ProposalStatus).optional(),
+  categoryId: z.string().optional(),
+  dir: z.enum(['asc', 'desc']).optional(),
+  orderBy: z.enum(['createdAt', 'updatedAt']).optional(),
+  cursor: z.string().nullish(),
+  limit: z.number().min(1).max(100).prefault(50),
+});
+
+export type AllProposalsFilter = z.infer<typeof allProposalsFilterSchema>;
+
+/** Leaner proposal shape for the read-only "All proposals" tab. */
+export const allProposalsListItemSchema = proposalSchema.omit({
+  decisionCount: true,
+  isEditable: true,
+  access: true,
+  attachments: true,
+  selectionRank: true,
+  voteCount: true,
+  allocated: true,
+});
+
+export type AllProposalsListItem = z.infer<typeof allProposalsListItemSchema>;
+
+/** Response from `decision.listAllProposals`. */
+export const allProposalsListSchema = z.object({
+  items: z.array(allProposalsListItemSchema),
+  next: z.string().nullable(),
+});
+
+export type AllProposalsList = z.infer<typeof allProposalsListSchema>;
 
 /** Minimal submitter profile shape used by the face-pile endpoint. */
 export const proposalSubmitterSchema = z.object({

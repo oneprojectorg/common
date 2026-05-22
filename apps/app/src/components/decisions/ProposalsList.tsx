@@ -683,10 +683,28 @@ export const ProposalsList = ({
     return params;
   }, [instanceId, selectedCategory, sortOrder, phase]);
 
-  const [proposalsData] =
-    trpc.decision.listProposals.useSuspenseQuery(queryParams);
+  // Split per phase — TS can't unify the two procedures' output shapes
+  // inside one useSuspenseQueries call.
+  const [[resultsProposals]] = trpc.useSuspenseQueries((t) => [
+    ...(phase === 'results'
+      ? [
+          t.decision.listAllProposals({
+            processInstanceId: queryParams.processInstanceId,
+            dir: queryParams.dir,
+            limit: queryParams.limit,
+            categoryId: queryParams.categoryId,
+          }),
+        ]
+      : []),
+  ]);
+  const [[phaseProposals]] = trpc.useSuspenseQueries((t) => [
+    ...(phase === 'results' ? [] : [t.decision.listProposals(queryParams)]),
+  ]);
 
-  const { proposals: allProposals } = proposalsData ?? {};
+  const allProposals =
+    phase === 'results'
+      ? (resultsProposals?.items ?? [])
+      : (phaseProposals?.proposals ?? []);
   const canManageProposals = permissions?.admin ?? false;
 
   const { data: revisionRequestsData } =
