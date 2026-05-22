@@ -1,8 +1,10 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { formatMoney } from '@/utils/formatting';
 import {
   formatProposalCategories,
+  getBudgetCurrency,
   isDistrictCategoryLabel,
   parseCategoryFragmentValue,
   parseSchemaOptions,
@@ -86,6 +88,7 @@ function extractOptions(
 
 function formatPreviewBudget(
   content: JSONContent | null | undefined,
+  currency: string,
 ): string | null {
   const text = getFragmentText(content);
 
@@ -93,18 +96,13 @@ function formatPreviewBudget(
     return null;
   }
 
-  const budget = parsePreviewBudget(content);
+  const budget = parsePreviewBudget(content, currency);
 
   if (!budget) {
     return text;
   }
 
-  return budget.amount.toLocaleString(undefined, {
-    style: 'currency',
-    currency: budget.currency,
-    currencyDisplay: 'narrowSymbol',
-    maximumFractionDigits: 0,
-  });
+  return formatMoney(budget);
 }
 
 function getPreviewText({
@@ -144,25 +142,22 @@ function getPreviewBudgetValue({
   mode,
   draftValue,
   previewContent,
+  currency,
 }: {
   mode: 'preview-version' | 'preview-template';
   draftValue: ProposalDraftFields['budget'] | null | undefined;
   previewContent: JSONContent | null | undefined;
+  currency: string;
 }): string | null {
   if (mode === 'preview-version') {
-    return formatPreviewBudget(previewContent);
+    return formatPreviewBudget(previewContent, currency);
   }
 
   if (!draftValue) {
     return null;
   }
 
-  return draftValue.amount.toLocaleString(undefined, {
-    style: 'currency',
-    currency: draftValue.currency,
-    currencyDisplay: 'narrowSymbol',
-    maximumFractionDigits: 0,
-  });
+  return formatMoney(draftValue);
 }
 
 // ---------------------------------------------------------------------------
@@ -282,6 +277,7 @@ function renderField(
             mode,
             draftValue: draft.budget,
             previewContent,
+            currency: getBudgetCurrency(schema),
           })}
           placeholder={t('Add budget')}
         />
@@ -292,6 +288,7 @@ function renderField(
       <CollaborativeBudgetField
         minAmount={schema.minimum}
         maxAmount={schema.maximum}
+        currency={getBudgetCurrency(schema)}
         initialValue={draft.budget}
         onChange={(value) => onFieldChange('budget', value)}
       />
@@ -344,6 +341,7 @@ function renderField(
               mode,
               draftValue: (draft[key] as ProposalDraftFields['budget']) ?? null,
               previewContent,
+              currency: getBudgetCurrency(schema),
             })}
             title={schema.title}
             description={schema.description}
@@ -356,6 +354,7 @@ function renderField(
         <CollaborativeBudgetField
           minAmount={schema.minimum}
           maxAmount={schema.maximum}
+          currency={getBudgetCurrency(schema)}
           initialValue={null}
           onChange={(value) => onFieldChange(key, value)}
         />

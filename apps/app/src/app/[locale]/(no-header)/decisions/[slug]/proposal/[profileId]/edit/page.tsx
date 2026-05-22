@@ -10,6 +10,7 @@ import {
   type ProposalReviewRequest,
   ProposalReviewRequestState,
   getProposalFragmentNames,
+  getTemplateBudgetCurrency,
   parseProposalData,
 } from '@op/common/client';
 import { APP_NAME } from '@op/core';
@@ -281,6 +282,9 @@ function ProposalEditorContent({
     proposalId: proposal.id,
     proposalData: proposal.proposalData,
     fragmentNames,
+    budgetCurrency: getTemplateBudgetCurrency(
+      instance.instanceData.proposalTemplate,
+    ),
   });
 
   const asideSlot =

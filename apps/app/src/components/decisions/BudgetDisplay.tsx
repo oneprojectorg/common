@@ -1,4 +1,4 @@
-import { formatCurrency } from '@/utils/formatting';
+import { formatMoney } from '@/utils/formatting';
 import { type BudgetInput, normalizeBudget } from '@op/common/client';
 
 export type BudgetDisplayProps = {
@@ -23,5 +23,5 @@ export function formatBudget(value: BudgetInput): string | null {
   if (!budget) {
     return null;
   }
-  return formatCurrency(budget.amount, undefined, budget.currency);
+  return formatMoney(budget);
 }

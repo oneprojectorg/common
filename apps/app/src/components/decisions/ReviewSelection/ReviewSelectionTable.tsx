@@ -1,6 +1,6 @@
 'use client';
 
-import { formatCurrency } from '@/utils/formatting';
+import { formatMoney } from '@/utils/formatting';
 import {
   type ProposalWithAggregates,
   RECOMMENDATION_OPTION,
@@ -38,6 +38,7 @@ export function ReviewSelectionTable({
   onAdvance,
   advancingIds,
   decisionSlug,
+  budgetCurrency,
 }: {
   items: ProposalWithAggregates[];
   /** Maximum possible score from the rubric, e.g. 50 → header reads "Score (50pts)". */
@@ -46,6 +47,15 @@ export function ReviewSelectionTable({
   advancingIds: ReadonlySet<string>;
   /** Decision profile slug used to build per-proposal review summary links. */
   decisionSlug: string;
+  /**
+   * The process's configured currency. This list is fed by
+   * `listProposalsWithReviewAggregates`, which returns raw rows with no
+   * fragment-derived system-field overrides, so `proposalData.budget.currency`
+   * is still the schema's USD default for any legacy currency-less budget.
+   * Rendering with the process currency — the same value the list resolvers
+   * fall back to — keeps this table and the proposal cards in agreement.
+   */
+  budgetCurrency: string;
 }) {
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.md})`);
@@ -62,6 +72,7 @@ export function ReviewSelectionTable({
                 advancing={advancing}
                 onAdvance={() => onAdvance(item.proposal.id)}
                 decisionSlug={decisionSlug}
+                budgetCurrency={budgetCurrency}
               />
             </li>
           );
@@ -118,7 +129,10 @@ export function ReviewSelectionTable({
               <TableCell>
                 <span className="text-base text-neutral-black">
                   {budget
-                    ? formatCurrency(budget.amount, undefined, budget.currency)
+                    ? formatMoney({
+                        amount: budget.amount,
+                        currency: budgetCurrency,
+                      })
                     : '—'}
                 </span>
               </TableCell>
@@ -191,11 +205,13 @@ function ProposalCard({
   advancing,
   onAdvance,
   decisionSlug,
+  budgetCurrency,
 }: {
   item: ProposalWithAggregates;
   advancing: boolean;
   onAdvance: () => void;
   decisionSlug: string;
+  budgetCurrency: string;
 }) {
   const t = useTranslations();
   const title = item.proposal.profile.name || t('Untitled Proposal');
@@ -220,7 +236,7 @@ function ProposalCard({
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         {budget && (
           <span className="text-base text-neutral-black">
-            {formatCurrency(budget.amount, undefined, budget.currency)}
+            {formatMoney({ amount: budget.amount, currency: budgetCurrency })}
           </span>
         )}
         <SelectionCategoryChips labels={item.categories.map((c) => c.label)} />

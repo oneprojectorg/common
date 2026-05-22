@@ -112,6 +112,7 @@ export * from './resolveBoundary';
 export * from './listBoundaryShapes';
 export * from './reverseGeocode';
 export * from './templateLocation';
+export * from './templateBudget';
 export * from './extractProposalText';
 export * from './resolveProposalTemplate';
 export * from './getProposalTemplateFieldOrder';

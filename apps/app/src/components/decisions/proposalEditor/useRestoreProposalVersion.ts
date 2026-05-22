@@ -18,6 +18,12 @@ interface UseRestoreProposalVersionOptions {
   proposalId: string;
   proposalData: unknown;
   fragmentNames: string[];
+  /**
+   * The process's configured budget currency. Restoring writes the extracted
+   * budget straight to `proposalData`, so without it a legacy currency-less
+   * fragment is persisted as USD on a process denominated in something else.
+   */
+  budgetCurrency: string;
 }
 
 /**
@@ -31,6 +37,7 @@ export function useRestoreProposalVersion({
   proposalId,
   proposalData,
   fragmentNames,
+  budgetCurrency,
 }: UseRestoreProposalVersionOptions) {
   const t = useTranslations();
   const { provider } = useCollaborativeDoc();
@@ -60,7 +67,10 @@ export function useRestoreProposalVersion({
     const nextCategory = normalizeProposalCategories(
       getFragmentText(fragmentContents.category),
     );
-    const nextBudget = parsePreviewBudget(fragmentContents.budget);
+    const nextBudget = parsePreviewBudget(
+      fragmentContents.budget,
+      budgetCurrency,
+    );
 
     return {
       title: nextTitle,

@@ -1,4 +1,4 @@
-import { formatCurrency } from '@/utils/formatting';
+import { formatMoney } from '@/utils/formatting';
 import type { Proposal } from '@op/common/client';
 
 import { resolveProposalSystemFields } from '../proposalContentUtils';
@@ -24,9 +24,7 @@ export const resolvePresentationFields = ({
   } = resolveProposalSystemFields(proposal);
   const title = resolvedTitle || proposal.profile.name || defaultTitle;
   const submitterName = proposal.submittedBy?.name;
-  const formattedBudget = budget?.amount
-    ? formatCurrency(budget.amount, undefined, budget.currency)
-    : null;
+  const formattedBudget = budget?.amount ? formatMoney(budget) : null;
 
   return {
     title,

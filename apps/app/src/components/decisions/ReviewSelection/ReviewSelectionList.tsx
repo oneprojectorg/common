@@ -2,7 +2,10 @@
 
 import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
-import { getRubricScoringInfo } from '@op/common/client';
+import {
+  getRubricScoringInfo,
+  getTemplateBudgetCurrency,
+} from '@op/common/client';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { toast } from '@op/ui/Toast';
@@ -122,6 +125,9 @@ export function ReviewSelectionList({
           onAdvance={handleAdvanceToggle}
           advancingIds={advancing}
           decisionSlug={decisionSlug}
+          budgetCurrency={getTemplateBudgetCurrency(
+            instance.instanceData?.proposalTemplate,
+          )}
         />
       )}
 

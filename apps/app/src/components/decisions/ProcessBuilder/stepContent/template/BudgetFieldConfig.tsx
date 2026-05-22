@@ -1,6 +1,14 @@
 'use client';
 
-import { ProposalTemplateSchema } from '@op/common';
+import { getCurrencySymbol } from '@/utils/formatting';
+// `getBudgetCurrency` is a runtime value, so it must come from the client
+// entry point — importing it from the `@op/common` barrel would pull the
+// server service layer (and its `server-only` deps) into this 'use client'
+// component's bundle.
+import {
+  type ProposalTemplateSchema,
+  getBudgetCurrency,
+} from '@op/common/client';
 import { CollapsibleConfigCard } from '@op/ui/CollapsibleConfigCard';
 import { NumberField } from '@op/ui/NumberField';
 import { Select, SelectItem } from '@op/ui/Select';
@@ -17,27 +25,43 @@ import {
   setFieldRequired,
 } from '../../../proposalTemplate';
 
-const CURRENCIES = [
-  { code: 'USD', symbol: '$' },
-  { code: 'EUR', symbol: '€' },
-  { code: 'GBP', symbol: '£' },
-  { code: 'JPY', symbol: '¥' },
-  { code: 'CAD', symbol: 'CA$' },
-  { code: 'AUD', symbol: 'A$' },
-  { code: 'CHF', symbol: 'CHF' },
-  { code: 'CNY', symbol: '¥' },
-  { code: 'INR', symbol: '₹' },
-  { code: 'BRL', symbol: 'R$' },
-  { code: 'KRW', symbol: '₩' },
-  { code: 'SGD', symbol: 'S$' },
-  { code: 'MXN', symbol: 'MX$' },
-  { code: 'AED', symbol: 'د.إ' },
-  { code: 'SAR', symbol: '﷼' },
+/**
+ * Currencies a process can be denominated in. Symbols come from
+ * `getCurrencySymbol` rather than a hand-written map so the picker, this
+ * card's max-budget input, and the proposal editor's budget input can't show
+ * three different symbols for the same code.
+ */
+const CURRENCY_CODES = [
+  'USD',
+  'EUR',
+  'GBP',
+  'JPY',
+  'CAD',
+  'AUD',
+  'CHF',
+  'CNY',
+  'INR',
+  'BRL',
+  'KRW',
+  'SGD',
+  'MXN',
+  'AED',
+  'SAR',
 ] as const;
 
-const CURRENCY_SYMBOL_MAP = new Map<string, string>(
-  CURRENCIES.map((c) => [c.code, c.symbol]),
-);
+/**
+ * Picker entries, built once. Each is the code plus its symbol when there is
+ * one to add — `Intl` returns the code itself for currencies it has no glyph
+ * for, which would otherwise render as "CHF CHF".
+ *
+ * Precomputed at module scope rather than in render: the list is constant, and
+ * `getCurrencySymbol` constructs an `Intl.NumberFormat` per code, which this
+ * card would otherwise redo on every keystroke in the max-budget field.
+ */
+const CURRENCY_OPTIONS = CURRENCY_CODES.map((code) => {
+  const symbol = getCurrencySymbol(code);
+  return { code, label: symbol === code ? code : `${code} ${symbol}` };
+});
 
 export function BudgetFieldConfig({
   template,
@@ -52,10 +76,8 @@ export function BudgetFieldConfig({
 
   const budgetSchema = getFieldSchema(template, 'budget');
   const showBudget = !!budgetSchema;
-  const budgetCurrency =
-    (budgetSchema?.properties?.currency as { default?: string } | undefined)
-      ?.default ?? 'USD';
-  const budgetCurrencySymbol = CURRENCY_SYMBOL_MAP.get(budgetCurrency) ?? '$';
+  const budgetCurrency = getBudgetCurrency(budgetSchema);
+  const budgetCurrencySymbol = getCurrencySymbol(budgetCurrency);
   const budgetMaxAmount = budgetSchema?.maximum as number | undefined;
   const budgetRequired = isFieldRequired(template, 'budget');
 
@@ -181,9 +203,9 @@ export function BudgetFieldConfig({
               onSelectionChange={handleBudgetCurrencyChange}
               buttonClassName="bg-white"
             >
-              {CURRENCIES.map((c) => (
-                <SelectItem key={c.code} id={c.code}>
-                  {c.code} {c.symbol}
+              {CURRENCY_OPTIONS.map(({ code, label }) => (
+                <SelectItem key={code} id={code}>
+                  {label}
                 </SelectItem>
               ))}
             </Select>

@@ -1,7 +1,12 @@
 'use client';
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
-import type { BudgetData } from '@op/common/client';
+import { formatMoney, getCurrencySymbol } from '@/utils/formatting';
+import {
+  type BudgetData,
+  DEFAULT_BUDGET_CURRENCY,
+  parseBudgetFragmentValue,
+} from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -10,23 +15,15 @@ import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
-const DEFAULT_CURRENCY = 'USD';
-
-const getCurrencySymbol = (currency: string) =>
-  (0)
-    .toLocaleString(undefined, {
-      style: 'currency',
-      currency,
-      currencyDisplay: 'narrowSymbol',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    })
-    .replace(/\d/g, '')
-    .trim();
-
 interface CollaborativeBudgetFieldProps {
   minAmount?: number;
   maxAmount?: number;
+  /**
+   * ISO 4217 code the template is configured with, stamped onto what the
+   * author enters. Every renderer reads the currency back off the fragment,
+   * so getting this wrong makes a whole process render the wrong currency.
+   */
+  currency?: string;
   initialValue?: BudgetData | null;
   onChange?: (budget: BudgetData | null) => void;
 }
@@ -43,6 +40,7 @@ interface CollaborativeBudgetFieldProps {
 export function CollaborativeBudgetField({
   minAmount,
   maxAmount,
+  currency: templateCurrency = DEFAULT_BUDGET_CURRENCY,
   initialValue = null,
   onChange,
 }: CollaborativeBudgetFieldProps) {
@@ -61,7 +59,10 @@ export function CollaborativeBudgetField({
     initialBudgetValue ? JSON.stringify(initialBudgetValue) : '',
   );
 
-  const budget = budgetText ? (JSON.parse(budgetText) as BudgetData) : null;
+  // Same parser the cards and detail page read the fragment with, so the
+  // editor can't show "Add budget" for a legacy fragment they render a value
+  // for. `undefined` means present-but-unreadable as well as absent.
+  const budget = parseBudgetFragmentValue(budgetText, templateCurrency);
   const setBudget = (newBudget: BudgetData | null) =>
     setBudgetText(newBudget ? JSON.stringify(newBudget) : '');
 
@@ -74,7 +75,7 @@ export function CollaborativeBudgetField({
 
   const [isEditing, setIsEditing] = useState(false);
   const budgetAmount = budget?.amount ?? null;
-  const currency = budget?.currency ?? DEFAULT_CURRENCY;
+  const currency = budget?.currency ?? templateCurrency;
   const currencySymbol = useMemo(() => getCurrencySymbol(currency), [currency]);
 
   const placeholderText = maxAmount
@@ -126,7 +127,29 @@ export function CollaborativeBudgetField({
   };
 
   useEffect(() => {
-    const emitted = budgetText ? (JSON.parse(budgetText) as BudgetData) : null;
+    // Note the fallback: the *stored* currency, not the template's. A currency
+    // taken from the template is a display default we inferred, not something
+    // the author chose. Emitting it would make `useProposalDraft` see a change
+    // and autosave a new currency onto the proposal just because someone
+    // opened the editor — on a EUR process, every legacy USD budget would
+    // silently become EUR on open. Once the author actually edits the amount,
+    // `handleChange` writes the display currency into the fragment explicitly,
+    // and that emits normally.
+    const emitted = parseBudgetFragmentValue(
+      budgetText,
+      initialValue?.currency ?? templateCurrency,
+    );
+
+    // A fragment we can't read means "unknown", not "cleared". This effect
+    // fires on mount, and `useProposalDraft` treats a `null` budget as the
+    // author emptying the field — so emitting here would autosave the stored
+    // budget away just because someone opened the proposal. Clearing the
+    // field deletes the fragment, which arrives as empty text, not as
+    // unreadable text.
+    if (budgetText && !emitted) {
+      return;
+    }
+
     const key = emitted ? `${emitted.amount}:${emitted.currency}` : null;
 
     if (lastEmittedRef.current === key) {
@@ -134,8 +157,8 @@ export function CollaborativeBudgetField({
     }
 
     lastEmittedRef.current = key ?? undefined;
-    onChangeRef.current?.(emitted);
-  }, [budgetText]);
+    onChangeRef.current?.(emitted ?? null);
+  }, [budgetText, templateCurrency, initialValue?.currency]);
 
   const handleStartEditing = () => {
     setIsEditing(true);
@@ -177,12 +200,7 @@ export function CollaborativeBudgetField({
           className="justify-start text-start"
         >
           {budgetAmount !== null
-            ? budgetAmount.toLocaleString(undefined, {
-                style: 'currency',
-                currency,
-                currencyDisplay: 'narrowSymbol',
-                maximumFractionDigits: 0,
-              })
+            ? formatMoney({ amount: budgetAmount, currency })
             : t('Add budget')}
         </Button>
       )}

@@ -122,7 +122,16 @@ export {
   templateCollectsLocation,
   getLocationFieldMapView,
 } from './services/decision/templateLocation';
-export { assembleProposalData } from './services/decision/assembleProposalData';
+export {
+  DEFAULT_BUDGET_CURRENCY,
+  getBudgetCurrency,
+  getTemplateBudgetCurrency,
+} from './services/decision/templateBudget';
+export {
+  assembleProposalData,
+  resolveSystemFieldOverrides,
+  type ProposalSystemFieldOverrides,
+} from './services/decision/assembleProposalData';
 export { relaxLocationCategoryRequirement } from './services/decision/relaxLocationCategoryRequirement';
 export {
   SchemaValidator,

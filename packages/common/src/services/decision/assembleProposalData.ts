@@ -1,10 +1,18 @@
 import {
+  type BudgetData,
   extractBudgetValue,
   normalizeBudget,
+  parseBudgetFragmentValue,
   parseCategoryFragmentValue,
   schemaAllowsMultipleSelection,
 } from './proposalDataSchema';
 import type { ProposalTemplateSchema } from './types';
+
+/** System field key holding the proposal's requested budget. */
+const BUDGET_FIELD_KEY = 'budget';
+
+/** System field key holding the proposal's title. */
+const TITLE_FIELD_KEY = 'title';
 
 /**
  * Builds the flat data object that the JSON Schema validator expects from
@@ -92,4 +100,71 @@ export function assembleProposalData(
   }
 
   return data;
+}
+
+/**
+ * System field values resolved from a proposal's document fragments, for
+ * display. Each key is present only when the document carries a usable value,
+ * so callers can spread this over `proposalData` to override it.
+ */
+export interface ProposalSystemFieldOverrides {
+  title?: string;
+  budget?: BudgetData;
+}
+
+/**
+ * Resolves the system fields (`title`, `budget`) carried by a proposal's
+ * document fragments — the source of truth for submitted proposals, where
+ * `proposalData` may still hold creation-time values.
+ *
+ * Both are read from the raw fragment text rather than from
+ * {@link assembleProposalData}'s output, which is shaped for the JSON-schema
+ * validator rather than for display: it reduces the money fragment to a bare
+ * number on legacy `{type: 'number'}` templates so AJV can range check it
+ * against `maximum` (dropping the currency), and JSON-parses fields with no
+ * `x-format` (turning an all-digits title into a number). The fragments carry
+ * the author's exact title and a `{amount, currency}` budget for legacy and
+ * canonical templates alike.
+ *
+ * A fragment that holds no usable value leaves the key absent so
+ * `proposalData` stands: an unreadable fragment means we don't know the
+ * author's intent, not that they cleared the field (clearing deletes the
+ * fragment, which also lands here), and the stored value is the last one we
+ * can trust.
+ *
+ * Callers pass the system fragments they extracted plus the template's
+ * configured currency, which fragments that name no currency of their own fall
+ * back to (see {@link parseBudgetFragmentValue}); the fragment set itself is
+ * already gated on the template (see `getProposalFragmentNames`), so no other
+ * template lookup is needed here.
+ *
+ * Shared by the client's `resolveProposalSystemFields` and the server's
+ * `buildProposalListPreview` so a proposal cannot render one budget on a list
+ * card and another on its detail page.
+ */
+export function resolveSystemFieldOverrides(
+  fragmentTexts: Record<string, string>,
+  budgetCurrency?: string,
+): ProposalSystemFieldOverrides {
+  const overrides: ProposalSystemFieldOverrides = {};
+
+  // Straight from the fragment text, not via `assembleProposalData`: a title
+  // on a template with no `x-format` goes through its `JSON.parse` branch, so
+  // an all-digits title becomes a number and re-stringifying it rewrites what
+  // the author typed ("2024.10" → "2024.1", "1e3" → "1000"). The trimmed
+  // fragment text is the exact submitted title for every template shape.
+  const title = (fragmentTexts[TITLE_FIELD_KEY] ?? '').trim();
+  if (title) {
+    overrides.title = title;
+  }
+
+  const budget = parseBudgetFragmentValue(
+    fragmentTexts[BUDGET_FIELD_KEY] ?? '',
+    budgetCurrency,
+  );
+  if (budget) {
+    overrides.budget = budget;
+  }
+
+  return overrides;
 }

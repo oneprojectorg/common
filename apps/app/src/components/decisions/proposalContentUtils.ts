@@ -3,8 +3,9 @@ import {
   type ProposalTemplateSchema,
   SYSTEM_FIELD_KEYS,
   type XFormat,
-  assembleProposalData,
+  getTemplateBudgetCurrency,
   parseProposalData,
+  resolveSystemFieldOverrides,
   serverExtensions,
 } from '@op/common/client';
 import { getTextPreview } from '@op/core';
@@ -124,13 +125,11 @@ export function resolveProposalSystemFields(proposal: Proposal) {
     }
   }
 
-  const resolved = assembleProposalData(template, fragmentTexts);
-
   return {
     ...fallback,
-    ...(resolved.title != null && { title: resolved.title as string }),
-    ...(resolved.budget != null && {
-      budget: resolved.budget as typeof fallback.budget,
-    }),
+    ...resolveSystemFieldOverrides(
+      fragmentTexts,
+      getTemplateBudgetCurrency(template),
+    ),
   };
 }

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { type MoneyAmount, moneyAmountSchema } from '../../money';
+import { DEFAULT_BUDGET_CURRENCY } from './templateBudget';
 import type { XFormatPropertySchema } from './types';
 
 const categoryValueSchema = z
@@ -135,6 +136,51 @@ export function parseCategoryFragmentValue(value: string): string[] {
   } catch {
     return normalizeProposalCategories(value);
   }
+}
+
+/** Matches a parsed fragment that names its own currency. */
+const explicitCurrencySchema = z.object({ currency: z.string().min(1) });
+
+/**
+ * Normalize the raw text of a `budget` document fragment.
+ *
+ * The fragment is written as `{"amount":N,"currency":"..."}`, but legacy and
+ * imported documents hold a bare number or free text, so fall back to
+ * normalizing the raw string. Returns `undefined` when the text carries no
+ * usable amount.
+ *
+ * `fallbackCurrency` is the template's configured currency, used only for
+ * fragments that name no currency of their own. `budgetValueSchema` stamps USD
+ * onto those, and that default must not outrank the process's own setting: a
+ * EUR process holding a legacy bare-number fragment would otherwise render as
+ * USD and — because the editor emits what it parsed — re-persist as USD too.
+ */
+export function parseBudgetFragmentValue(
+  text: string,
+  fallbackCurrency: string = DEFAULT_BUDGET_CURRENCY,
+): BudgetData | undefined {
+  // Whitespace-only is unusable, not zero: `Number('  ')` is `0`, so without
+  // this the fragment normalizes to a real `{amount: 0}` that the editor
+  // autosaves over the stored budget.
+  if (!text.trim()) {
+    return undefined;
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    parsed = text;
+  }
+
+  const budget = normalizeBudget(parsed);
+  if (!budget) {
+    return undefined;
+  }
+
+  return explicitCurrencySchema.safeParse(parsed).success
+    ? budget
+    : { ...budget, currency: fallbackCurrency };
 }
 
 export function formatProposalCategories(

@@ -1,11 +1,14 @@
 import { getTextPreview } from '@op/core';
 import type { JSONContent } from '@tiptap/core';
 
-import { assembleProposalData } from './assembleProposalData';
+import {
+  type ProposalSystemFieldOverrides,
+  resolveSystemFieldOverrides,
+} from './assembleProposalData';
 import { getFragmentTextFromTipTapDoc } from './getFragmentTextFromTipTapDoc';
 import type { ProposalDocumentContent } from './getProposalDocumentsContent';
 import { SYSTEM_FIELD_KEYS } from './getProposalTemplateFieldOrder';
-import { type BudgetData, normalizeBudget } from './proposalDataSchema';
+import { getTemplateBudgetCurrency } from './templateBudget';
 import { tiptapDocToPlainText } from './tiptapDocToPlainText';
 import type { ProposalTemplateSchema, XFormat } from './types';
 
@@ -41,7 +44,7 @@ export interface ProposalListPreview {
    * creation-time values. Merged over `proposalData` on list rows so
    * consumers don't need the fragments.
    */
-  systemFieldOverrides: { title?: string; budget?: BudgetData };
+  systemFieldOverrides: ProposalSystemFieldOverrides;
 }
 
 /**
@@ -130,15 +133,15 @@ export function buildProposalListPreview({
       }
     }
 
-    const resolved = assembleProposalData(proposalTemplate, fragmentTexts);
-    if (typeof resolved.title === 'string') {
-      systemFieldOverrides.title = resolved.title;
-    }
-
-    const budget = normalizeBudget(resolved.budget);
-    if (budget) {
-      systemFieldOverrides.budget = budget;
-    }
+    // Shared with the client's `resolveProposalSystemFields`, so a proposal
+    // never renders one budget on a list card and another on its detail page.
+    Object.assign(
+      systemFieldOverrides,
+      resolveSystemFieldOverrides(
+        fragmentTexts,
+        getTemplateBudgetCurrency(proposalTemplate),
+      ),
+    );
   }
 
   return { previewText, systemFieldOverrides };
