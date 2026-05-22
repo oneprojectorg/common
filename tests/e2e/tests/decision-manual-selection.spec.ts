@@ -163,9 +163,14 @@ async function seedAwaitingInstance(org: SeedOrg, titles: string[]) {
   return { instance, proposals, transition };
 }
 
+type ProposalSpec = { title: string; budget?: number };
+
 /** Lands an instance on `submission` with N published proposals — the
  *  starting state for driving the real submission→final advance via the UI. */
-async function seedSubmissionPhaseInstance(org: SeedOrg, titles: string[]) {
+async function seedSubmissionPhaseInstance(
+  org: SeedOrg,
+  specs: ReadonlyArray<string | ProposalSpec>,
+) {
   const template = await getSeededTemplate();
   const instance = await createDecisionInstance({
     processId: template.id,
@@ -178,16 +183,23 @@ async function seedSubmissionPhaseInstance(org: SeedOrg, titles: string[]) {
   // INSERT-as-DRAFT then UPDATE to SUBMITTED so the proposal_history AFTER
   // UPDATE trigger fires; submitManualSelection joins against those snapshots.
   const proposals = await Promise.all(
-    titles.map((title) =>
-      createProposal({
+    specs.map((spec) => {
+      const { title, budget } =
+        typeof spec === 'string' ? { title: spec, budget: undefined } : spec;
+      return createProposal({
         processInstanceId: instance.instance.id,
         submittedByProfileId: org.organizationProfile.id,
         authUserId: org.adminUser.authUserId,
         email: org.adminUser.email,
-        proposalData: { title },
+        proposalData: {
+          title,
+          ...(budget !== undefined
+            ? { budget: { amount: budget, currency: 'USD' } }
+            : {}),
+        },
         status: ProposalStatus.DRAFT,
-      }),
-    ),
+      });
+    }),
   );
 
   await db
@@ -281,10 +293,12 @@ test.describe('Decision Manual Selection — full flow', () => {
     authenticatedPage,
     org,
   }) => {
+    // Distinct budgets per proposal so the rendered "$X requested" labels can
+    // be unambiguously attributed to the right card during assertions.
     const { instance, proposals } = await seedSubmissionPhaseInstance(org, [
-      'Proposal Alpha',
-      'Proposal Beta',
-      'Proposal Gamma',
+      { title: 'Proposal Alpha', budget: 5000 },
+      { title: 'Proposal Beta', budget: 8000 },
+      { title: 'Proposal Gamma', budget: 7000 },
     ]);
     const [alpha, beta, gamma] = proposals;
     if (!alpha || !beta || !gamma) {
@@ -369,6 +383,21 @@ test.describe('Decision Manual Selection — full flow', () => {
       new Set([alpha.id, beta.id]),
     );
 
+    // submitManualSelection writes selection rows with `allocated = null`.
+    // The "allocated vs requested" UI only kicks in when a numeric allocation
+    // exists, so we set one explicitly here to exercise that code path
+    // end-to-end. Alpha gets a lower allocation than its request ($3k vs $5k);
+    // Beta gets a higher one ($9k vs $8k) — the UI must render whatever the
+    // pipeline produced, including over-allocation.
+    await db
+      .update(decisionProcessResultSelections)
+      .set({ allocated: '3000' })
+      .where(eq(decisionProcessResultSelections.proposalId, alpha.id));
+    await db
+      .update(decisionProcessResultSelections)
+      .set({ allocated: '9000' })
+      .where(eq(decisionProcessResultSelections.proposalId, beta.id));
+
     await authenticatedPage.reload({ waitUntil: 'networkidle' });
 
     const fundedHeading = authenticatedPage.getByRole('heading', {
@@ -379,6 +408,44 @@ test.describe('Decision Manual Selection — full flow', () => {
     await expect(authenticatedPage.getByText('Proposal Alpha')).toBeVisible();
     await expect(authenticatedPage.getByText('Proposal Beta')).toBeVisible();
     await expect(authenticatedPage.getByText('Proposal Gamma')).toHaveCount(0);
+
+    // Results page cards: allocated amount is the primary value, with the
+    // original request rendered as "$X requested" alongside it.
+    await expect(authenticatedPage.getByText('$3,000').first()).toBeVisible();
+    await expect(authenticatedPage.getByText('$5,000 requested')).toBeVisible();
+    await expect(authenticatedPage.getByText('$9,000').first()).toBeVisible();
+    await expect(authenticatedPage.getByText('$8,000 requested')).toBeVisible();
+
+    // Selected proposal — last phase, in selection: view page shows both
+    // the allocated amount and the "$X requested" secondary label.
+    await authenticatedPage.goto(
+      `/en/decisions/${instance.slug}/proposal/${alpha.profileId}`,
+      { waitUntil: 'networkidle' },
+    );
+    await expect(
+      authenticatedPage.getByRole('heading', { name: 'Proposal Alpha' }),
+    ).toBeVisible({ timeout: 15_000 });
+    // The "Selected" badge is only rendered when a selection exists for this
+    // proposal — proves the page consumed getLatestSelectionForProposal.
+    await expect(authenticatedPage.getByText('Selected').first()).toBeVisible();
+    await expect(authenticatedPage.getByText('$3,000').first()).toBeVisible();
+    await expect(authenticatedPage.getByText('$5,000 requested')).toBeVisible();
+
+    // Non-selected proposal — last phase, no selection record: view page
+    // falls back to rendering only the proposal's requested budget. The
+    // "$X requested" secondary label must NOT appear (nothing to compare).
+    await authenticatedPage.goto(
+      `/en/decisions/${instance.slug}/proposal/${gamma.profileId}`,
+      { waitUntil: 'networkidle' },
+    );
+    await expect(
+      authenticatedPage.getByRole('heading', { name: 'Proposal Gamma' }),
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(authenticatedPage.getByText('$7,000').first()).toBeVisible();
+    await expect(authenticatedPage.getByText(/requested/i)).toHaveCount(0);
+    await expect(authenticatedPage.getByText('Selected').first()).toHaveCount(
+      0,
+    );
   });
 
   test('non-admin does not see the admin manual-selection UI', async ({
