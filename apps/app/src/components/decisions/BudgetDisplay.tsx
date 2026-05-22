@@ -1,6 +1,5 @@
 import { formatCurrency } from '@/utils/formatting';
 import { normalizeBudget } from '@op/common/client';
-import { cn } from '@op/ui/utils';
 
 export type BudgetDisplayProps = {
   /**
@@ -31,7 +30,9 @@ export function BudgetDisplay({
   if (formatted === null) {
     return null;
   }
-  return <span className={cn(className)}>{formatted}</span>;
+  // Pass className through verbatim — `cn`/twMerge collapses our custom
+  // `text-title-*` utilities into adjacent `text-*` color classes.
+  return <span className={className}>{formatted}</span>;
 }
 
 /**
