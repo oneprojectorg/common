@@ -60,14 +60,8 @@
    * center: true, padding: 2rem, screens: { '2xl': '1400px' }
    * ============================================ */
 
-  /* ============================================
-   * Border Radius
-   * ============================================ */
-  --radius-sm: 0.125rem;
-  --radius: 0.25rem;
-  --radius-md: 0.25rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
+  /* Border radius scale lives in shadcn-theme.css (`--radius`); other
+   * `--radius-*` tokens fall through to Tailwind defaults. */
 
   /* ============================================
    * Font Families
