@@ -46,6 +46,7 @@ function ProposalViewPageContent({
       proposal={proposal}
       canSeeRevisions={canSeeRevisions}
       backHref={`/decisions/${slug}`}
+      selectionsAreConfirmed={instance.selectionsAreConfirmed ?? false}
     />
   );
 }

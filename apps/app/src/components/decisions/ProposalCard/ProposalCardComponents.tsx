@@ -144,7 +144,9 @@ export function ProposalCardTitle({
 }
 
 /**
- * Budget display component
+ * Budget display component. When an allocated amount is present, renders it
+ * as the primary value with the original requested budget as a smaller
+ * secondary label ("$3,500 requested").
  */
 export function ProposalCardBudget({
   proposal,
@@ -154,23 +156,30 @@ export function ProposalCardBudget({
   allocated?: string | number | null;
   className?: string;
 }) {
+  const t = useTranslations();
   const { budget } = resolveProposalSystemFields(proposal);
 
-  // Use allocated amount if provided, otherwise fall back to budget
   if (!isNullish(allocated)) {
+    const allocatedText = formatCurrency(
+      Number(allocated),
+      undefined,
+      budget?.currency ?? 'USD',
+    );
+    const requestedText = budget
+      ? formatCurrency(budget.amount, undefined, budget.currency)
+      : null;
+
     return (
-      <span
-        className={cn(
-          'font-serif text-title-base text-neutral-charcoal',
-          className,
+      <div className={cn('flex flex-wrap items-baseline gap-2', className)}>
+        <span className="font-serif text-title-base text-neutral-charcoal">
+          {allocatedText}
+        </span>
+        {requestedText && (
+          <span className="text-sm text-neutral-gray4">
+            {t('{amount} requested', { amount: requestedText })}
+          </span>
         )}
-      >
-        {formatCurrency(
-          Number(allocated),
-          undefined,
-          budget?.currency ?? 'USD',
-        )}
-      </span>
+      </div>
     );
   }
 

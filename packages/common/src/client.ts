@@ -21,6 +21,10 @@ export {
   adminDecisionInstanceSchema,
   type AdminDecisionInstance,
 } from './services/decision/schemas/adminDecisionInstance';
+export {
+  proposalSelectionSchema,
+  type ProposalSelection,
+} from './services/decision/schemas/selection';
 export * from './services/decision/types';
 export {
   SYSTEM_FIELD_KEYS,

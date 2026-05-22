@@ -27,10 +27,12 @@ export function ProposalView({
   proposal: initialProposal,
   canSeeRevisions,
   backHref,
+  selectionsAreConfirmed,
 }: {
   proposal: Proposal;
   canSeeRevisions: boolean;
   backHref: string;
+  selectionsAreConfirmed: boolean;
 }) {
   const t = useTranslations();
   const locale = useLocale();
@@ -41,6 +43,15 @@ export function ProposalView({
 
   // Safety check - fallback to initial data if query returns undefined
   const currentProposal = proposal || initialProposal;
+
+  // Only fetch allocation once the instance has confirmed its selections —
+  // before that, the "latest" result row isn't unambiguously canonical.
+  const { data: selection } =
+    trpc.decision.getLatestSelectionForProposal.useQuery(
+      { proposalId: currentProposal.id },
+      { enabled: selectionsAreConfirmed },
+    );
+  const allocated = selection?.allocated ?? null;
 
   // Use relationship mutations hook for like/follow functionality
   const {
@@ -157,6 +168,7 @@ export function ProposalView({
     <>
       <ProposalPreview
         proposal={currentProposal}
+        allocated={allocated}
         translation={
           translatedHtmlContent
             ? {

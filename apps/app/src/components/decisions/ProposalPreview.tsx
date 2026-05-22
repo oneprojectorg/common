@@ -33,6 +33,8 @@ export type ProposalTranslation = {
 
 export type ProposalPreviewProps = {
   proposal: Proposal;
+  /** Allocated amount from the latest confirmed result, if any. */
+  allocated?: string | null;
   /** When set, overrides proposal content with translated HTML and shows attribution */
   translation?: ProposalTranslation;
   /** Rendered inline after the "Submitted on {date}" line, separated by a bullet. */
@@ -43,6 +45,7 @@ export type ProposalPreviewProps = {
 
 export function ProposalPreview({
   proposal,
+  allocated,
   translation,
   submissionMetaSuffix,
   headerBanner,
@@ -117,10 +120,33 @@ export function ProposalPreview({
         <div className="space-y-6">
           {/* Metadata Row */}
           <div className="flex flex-wrap gap-4 sm:flex-row sm:items-center">
-            {budget && (
-              <span className="font-serif text-title-base text-neutral-black">
-                {formatCurrency(budget.amount, undefined, budget.currency)}
-              </span>
+            {allocated != null ? (
+              <div className="flex flex-wrap items-baseline gap-2">
+                <span className="font-serif text-title-base text-neutral-black">
+                  {formatCurrency(
+                    Number(allocated),
+                    undefined,
+                    budget?.currency ?? 'USD',
+                  )}
+                </span>
+                {budget && (
+                  <span className="text-sm text-neutral-gray4">
+                    {t('{amount} requested', {
+                      amount: formatCurrency(
+                        budget.amount,
+                        undefined,
+                        budget.currency,
+                      ),
+                    })}
+                  </span>
+                )}
+              </div>
+            ) : (
+              budget && (
+                <span className="font-serif text-title-base text-neutral-black">
+                  {formatCurrency(budget.amount, undefined, budget.currency)}
+                </span>
+              )
             )}
             {categories.length > 0 && (
               <TagGroup className="max-w-full">
