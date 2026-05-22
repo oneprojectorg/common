@@ -556,6 +556,7 @@
   "Request": "অনুরোধ",
   "Requested": "অনুরোধ করা হয়েছে",
   "{amount} requested": "{amount} অনুরোধ করা হয়েছে",
+  "Selected": "নির্বাচিত",
   "Request to join this organization as a member": "সদস্য হিসেবে এই সংস্থায় যোগদানের অনুরোধ করুন",
   "Your membership request is pending approval": "আপনার সদস্যপদ অনুরোধ অনুমোদনের অপেক্ষায় রয়েছে",
   "You must be logged in to request membership": "সদস্যপদ অনুরোধ করতে আপনাকে লগইন করতে হবে",

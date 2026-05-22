@@ -552,6 +552,7 @@
   "Request": "Request",
   "Requested": "Requested",
   "{amount} requested": "{amount} requested",
+  "Selected": "Selected",
   "Request to join this organization as a member": "Request to join this organization as a member",
   "Your membership request is pending approval": "Your membership request is pending approval",
   "You must be logged in to request membership": "You must be logged in to request membership",

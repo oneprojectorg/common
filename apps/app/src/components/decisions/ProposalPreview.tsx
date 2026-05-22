@@ -4,6 +4,7 @@ import { formatCurrency, formatDate } from '@/utils/formatting';
 import { ProposalStatus } from '@op/api/encoders';
 import {
   type Proposal,
+  type ProposalSelection,
   type ProposalTemplateSchema,
   normalizeProposalCategories,
   parseTranslatedMeta,
@@ -13,7 +14,12 @@ import { Header1, Header3 } from '@op/ui/Header';
 import { Link } from '@op/ui/Link';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import type { ReactNode } from 'react';
-import { LuBookmark, LuHeart, LuMessageCircle } from 'react-icons/lu';
+import {
+  LuBookmark,
+  LuCircleCheck,
+  LuHeart,
+  LuMessageCircle,
+} from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link as NavLink } from '@/lib/i18n/routing';
@@ -33,8 +39,8 @@ export type ProposalTranslation = {
 
 export type ProposalPreviewProps = {
   proposal: Proposal;
-  /** Allocated amount from the latest confirmed result, if any. */
-  allocated?: string | null;
+  /** Selection record from the latest confirmed result, if any. */
+  selection?: ProposalSelection | null;
   /** When set, overrides proposal content with translated HTML and shows attribution */
   translation?: ProposalTranslation;
   /** Rendered inline after the "Submitted on {date}" line, separated by a bullet. */
@@ -45,7 +51,7 @@ export type ProposalPreviewProps = {
 
 export function ProposalPreview({
   proposal,
-  allocated,
+  selection,
   translation,
   submissionMetaSuffix,
   headerBanner,
@@ -97,6 +103,13 @@ export function ProposalPreview({
       )}
 
       <div className="space-y-4">
+        {selection && (
+          <div className="flex items-center gap-2 text-sm text-neutral-charcoal">
+            <LuCircleCheck className="size-4" />
+            <span>{t('Selected')}</span>
+          </div>
+        )}
+
         <Header1 className="font-serif text-title-lg">
           {title || t('Untitled Proposal')}
         </Header1>
@@ -120,11 +133,11 @@ export function ProposalPreview({
         <div className="space-y-6">
           {/* Metadata Row */}
           <div className="flex flex-wrap gap-4 sm:flex-row sm:items-center">
-            {allocated != null ? (
+            {selection?.allocated != null ? (
               <div className="flex flex-wrap items-baseline gap-2">
                 <span className="font-serif text-title-base text-neutral-black">
                   {formatCurrency(
-                    Number(allocated),
+                    Number(selection.allocated),
                     undefined,
                     budget?.currency ?? 'USD',
                   )}

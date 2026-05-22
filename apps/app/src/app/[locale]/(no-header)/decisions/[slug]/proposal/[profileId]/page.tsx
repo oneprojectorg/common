@@ -3,6 +3,7 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import { isLastPhase } from '@op/common/client';
 import { notFound, useParams } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -27,7 +28,8 @@ function ProposalViewPageContent({
   const instance = decisionProfile.processInstance;
   const { user } = useUser();
 
-  const currentPhase = instance.instanceData?.phases?.find(
+  const phases = instance.instanceData?.phases ?? [];
+  const currentPhase = phases.find(
     (phase) => phase.phaseId === instance.currentStateId,
   );
   const isInReviewPhase = currentPhase?.rules?.proposals?.review === true;
@@ -41,12 +43,20 @@ function ProposalViewPageContent({
       instance.access?.admin === true ||
       instance.access?.review === true);
 
+  // Selections only make sense once we've reached the final/results phase.
+  const inLastPhase = isLastPhase(instance.currentStateId, phases);
+  const { data: selection } =
+    trpc.decision.getLatestSelectionForProposal.useQuery(
+      { proposalId: proposal.id },
+      { enabled: inLastPhase },
+    );
+
   return (
     <ProposalView
       proposal={proposal}
       canSeeRevisions={canSeeRevisions}
       backHref={`/decisions/${slug}`}
-      selectionsAreConfirmed={instance.selectionsAreConfirmed ?? false}
+      selection={selection ?? null}
     />
   );
 }

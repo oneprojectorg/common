@@ -32,7 +32,7 @@ function ProposalViewPageContent({
       proposal={proposal}
       canSeeRevisions={false}
       backHref={backHref}
-      selectionsAreConfirmed={false}
+      selection={null}
     />
   );
 }
