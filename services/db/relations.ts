@@ -730,6 +730,10 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.resourceCollections.id,
       to: r.resourceCollectionProfiles.collectionId,
     }),
+    createdBy: r.one.profileUsers({
+      from: r.resourceCollections.createdByProfileUserId,
+      to: r.profileUsers.id,
+    }),
   },
 
   /**

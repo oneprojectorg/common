@@ -18,7 +18,7 @@ export const resources = pgTable(
     description: text(),
 
     attachmentId: uuid().references(() => attachments.id, {
-      onDelete: 'restrict',
+      onDelete: 'cascade',
     }),
 
     linkUrl: text(),
@@ -31,6 +31,7 @@ export const resources = pgTable(
   (table) => [
     ...serviceRolePolicies,
     index().on(table.attachmentId),
+    index().on(table.addedByProfileUserId),
     check(
       'resources_payload_check',
       sql`((${table.attachmentId} IS NOT NULL) <> (${table.linkUrl} IS NOT NULL))`,

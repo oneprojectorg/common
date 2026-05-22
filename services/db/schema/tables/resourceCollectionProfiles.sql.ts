@@ -1,6 +1,12 @@
-import { InferModel } from 'drizzle-orm';
+import { InferModel, sql } from 'drizzle-orm';
 import { relations } from 'drizzle-orm/_relations';
-import { index, integer, pgTable, unique, uuid } from 'drizzle-orm/pg-core';
+import {
+  index,
+  integer,
+  pgTable,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { profileUsers } from './profileUsers.sql';
@@ -29,10 +35,13 @@ export const resourceCollectionProfiles = pgTable(
       table.profileId,
       table.sortOrder,
     ),
-    unique('resource_collection_profiles_unq').on(
-      table.profileId,
-      table.collectionId,
+    index('resource_collection_profiles_collection_idx').on(table.collectionId),
+    index('resource_collection_profiles_added_by_idx').on(
+      table.addedByProfileUserId,
     ),
+    uniqueIndex('resource_collection_profiles_unq')
+      .on(table.profileId, table.collectionId)
+      .where(sql`${table.deletedAt} IS NULL`),
   ],
 );
 

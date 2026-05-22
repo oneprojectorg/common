@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "578df733-d18d-4fb7-a265-bd0ca3824bac",
+  "id": "4ba41288-d638-455f-b568-d338e8177d64",
   "prevIds": [
     "d804e6f0-68a0-44ff-9d93-4da4720bba45"
   ],
@@ -5566,6 +5566,19 @@
       "table": "resource_collections"
     },
     {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "created_by_profile_user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "resource_collections"
+    },
+    {
       "type": "timestamp with time zone",
       "typeSchema": null,
       "notNull": false,
@@ -9827,6 +9840,76 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "resource_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "resource_collection_items_resource_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "resource_collection_items"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "added_by_profile_user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "resource_collection_items_added_by_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "resource_collection_items"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "collection_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "resource_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": "\"deleted_at\" IS NULL",
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "resource_collection_items_unq",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "resource_collection_items"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "profile_id",
           "isExpression": false,
           "asc": true,
@@ -9852,6 +9935,97 @@
       "table": "resource_collection_profiles"
     },
     {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "collection_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "resource_collection_profiles_collection_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "resource_collection_profiles"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "added_by_profile_user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "resource_collection_profiles_added_by_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "resource_collection_profiles"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "profile_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "collection_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": "\"deleted_at\" IS NULL",
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "resource_collection_profiles_unq",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "resource_collection_profiles"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "created_by_profile_user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "resource_collections_created_by_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "resource_collections"
+    },
+    {
       "nameExplicit": false,
       "columns": [
         {
@@ -9868,6 +10042,27 @@
       "method": "btree",
       "concurrently": false,
       "name": "resources_attachment_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "resources"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "added_by_profile_user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "resources_added_by_profile_user_id_index",
       "entityType": "indexes",
       "schema": "public",
       "table": "resources"
@@ -12006,6 +12201,23 @@
     {
       "nameExplicit": false,
       "columns": [
+        "created_by_profile_user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "profile_users",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "resource_collections_saqc2UVfy8wQ_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "resource_collections"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "attachment_id"
       ],
       "schemaTo": "public",
@@ -12014,7 +12226,7 @@
         "id"
       ],
       "onUpdate": "NO ACTION",
-      "onDelete": "RESTRICT",
+      "onDelete": "CASCADE",
       "name": "resources_attachment_id_attachments_id_fkey",
       "entityType": "fks",
       "schema": "public",
@@ -12839,30 +13051,6 @@
       "entityType": "uniques",
       "schema": "public",
       "table": "decision_proposals"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        "collection_id",
-        "resource_id"
-      ],
-      "nullsNotDistinct": false,
-      "name": "resource_collection_items_unq",
-      "entityType": "uniques",
-      "schema": "public",
-      "table": "resource_collection_items"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        "profile_id",
-        "collection_id"
-      ],
-      "nullsNotDistinct": false,
-      "name": "resource_collection_profiles_unq",
-      "entityType": "uniques",
-      "schema": "public",
-      "table": "resource_collection_profiles"
     },
     {
       "nameExplicit": true,
