@@ -162,7 +162,7 @@ const Sidebar = ({
         inert={!open}
         className={cn(
           'fixed inset-y-0 z-40 hidden w-64 flex-col overflow-hidden bg-white transition-transform duration-300 ease-out sm:flex',
-          side === 'right' ? 'right-0' : 'left-0',
+          side === 'right' ? 'end-0' : 'start-0',
           open
             ? 'translate-x-0'
             : side === 'right'
