@@ -8,22 +8,18 @@ import { z } from 'zod';
 import withDB from '../../middlewares/withDB';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
-const allowedMimeSchema = z.enum(
-  ALLOWED_RESOURCE_MIME_TYPES as unknown as [string, ...string[]],
-);
+const allowedMimeSchema = z.enum(ALLOWED_RESOURCE_MIME_TYPES);
 
-const inputSchema = z
-  .object({
-    profileId: z.string().uuid().optional(),
-    collectionId: z.string().uuid().optional(),
-    file: z.string(),
-    fileName: z.string().min(1).max(255),
-    mimeType: allowedMimeSchema,
-  })
-  .refine(
-    (v) => (v.profileId === undefined) !== (v.collectionId === undefined),
-    { message: 'Exactly one of profileId / collectionId is required' },
-  );
+const commonFields = {
+  file: z.string(),
+  fileName: z.string().min(1).max(255),
+  mimeType: allowedMimeSchema,
+};
+
+const inputSchema = z.union([
+  z.object({ profileId: z.string().uuid(), ...commonFields }),
+  z.object({ collectionId: z.string().uuid(), ...commonFields }),
+]);
 
 const outputSchema = z.object({
   storageObjectId: z.string().uuid(),
@@ -42,7 +38,7 @@ export const uploadFile = router({
     .output(outputSchema)
     .mutation(async ({ input, ctx }) => {
       let profileId: string;
-      if (input.collectionId) {
+      if ('collectionId' in input) {
         const resolved = await assertResourceAccess(
           { kind: 'collection', collectionId: input.collectionId },
           ctx.user.id,
@@ -51,11 +47,11 @@ export const uploadFile = router({
         profileId = resolved.profileId;
       } else {
         await assertResourceAccess(
-          { kind: 'profile', profileId: input.profileId as string },
+          { kind: 'profile', profileId: input.profileId },
           ctx.user.id,
           'write',
         );
-        profileId = input.profileId as string;
+        profileId = input.profileId;
       }
 
       const uploaded = await uploadResourceFile({

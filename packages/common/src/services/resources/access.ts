@@ -5,7 +5,7 @@ import {
   resourceCollectionItems,
   resourceCollectionProfiles,
 } from '@op/db/schema';
-import { permission } from 'access-zones';
+import { AccessControlException, permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
 import { UnauthorizedError } from '../../utils/error';
@@ -94,8 +94,11 @@ export const assertResourceAccess = async (
         profileId: candidate.id,
         profileType: candidate.type as EntityType,
       };
-    } catch {
-      // Try next candidate profile.
+    } catch (err) {
+      if (err instanceof AccessControlException) {
+        continue;
+      }
+      throw err;
     }
   }
 

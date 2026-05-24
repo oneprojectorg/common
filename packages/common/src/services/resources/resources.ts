@@ -8,7 +8,7 @@ import {
   type Resource,
   type ResourceType,
 } from '@op/db/schema';
-import { and, asc, count, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 
 import {
   ConflictError,
@@ -125,13 +125,21 @@ const fetchByCollection = async (
     : [];
   const byId = new Map(hydrated.map((row) => [row.id, row]));
 
-  const dtos: ResourceInCollectionDTO[] = [];
-  for (const r of rows) {
-    const loaded = byId.get(r.resource.id);
-    if (!loaded) continue;
-    const base = await toResourceDTO(loaded as LoadedResource);
-    dtos.push({ ...base, collectionId, sortOrder: r.sortOrder });
-  }
+  const dtos = await Promise.all(
+    rows.flatMap((r) => {
+      const loaded = byId.get(r.resource.id);
+      if (!loaded) {
+        return [];
+      }
+      return [
+        toResourceDTO(loaded).then((base) => ({
+          ...base,
+          collectionId,
+          sortOrder: r.sortOrder,
+        })),
+      ];
+    }),
+  );
   return { collectionId, resources: dtos };
 };
 
@@ -426,7 +434,9 @@ export const updateResource = async (
   }
 
   const patchValues: Partial<Resource> = {};
-  if (input.patch.title !== undefined) patchValues.title = input.patch.title;
+  if (input.patch.title !== undefined) {
+    patchValues.title = input.patch.title;
+  }
   if (input.patch.description !== undefined) {
     patchValues.description = input.patch.description;
   }
@@ -636,7 +646,5 @@ export const deleteResource = async (
     await deleteResourceObject(storageObjectName);
   }
 
-  // Silence unused count if no memberships.
-  void count;
   return { ok: true };
 };

@@ -2,6 +2,8 @@ import type { db as dbType } from '@op/db/client';
 import { resourceCollectionItems } from '@op/db/schema';
 import { and, asc, eq, sql } from 'drizzle-orm';
 
+import { NotFoundError, ValidationError } from '../../utils/error';
+
 type Transaction = Parameters<Parameters<typeof dbType.transaction>[0]>[0];
 export type DbOrTx = typeof dbType | Transaction;
 
@@ -39,7 +41,7 @@ export const computeReorder = async (
   afterId: string | undefined,
 ): Promise<{ updates: Array<{ id: string; sortOrder: number }> } | null> => {
   if ((beforeId === undefined) === (afterId === undefined)) {
-    throw new Error('Exactly one of beforeId / afterId is required');
+    throw new ValidationError('Exactly one of beforeId / afterId is required');
   }
   if (itemId === beforeId || itemId === afterId) {
     return null;
@@ -57,7 +59,7 @@ export const computeReorder = async (
 
   const fromIdx = rows.findIndex((r) => r.resourceId === itemId);
   if (fromIdx === -1) {
-    throw new Error('Resource not found in collection');
+    throw new NotFoundError('Resource membership', itemId);
   }
   const moved = rows[fromIdx]!;
   const without = rows.filter((_, i) => i !== fromIdx);
@@ -66,12 +68,12 @@ export const computeReorder = async (
   if (beforeId !== undefined) {
     toIdx = without.findIndex((r) => r.resourceId === beforeId);
     if (toIdx === -1) {
-      throw new Error('Pivot resource not found in collection');
+      throw new NotFoundError('Pivot resource', beforeId);
     }
   } else {
     const afterIdx = without.findIndex((r) => r.resourceId === afterId);
     if (afterIdx === -1) {
-      throw new Error('Pivot resource not found in collection');
+      throw new NotFoundError('Pivot resource', afterId);
     }
     toIdx = afterIdx + 1;
   }

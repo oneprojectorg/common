@@ -166,35 +166,39 @@ export const reorderCollection = async (
       throw new NotFoundError('Collection', id);
     }
     const moved = rows[fromIdx]!;
-    const without = rows.filter((_, i) => i !== fromIdx);
 
-    let toIdx: number;
-    if (beforeId !== undefined) {
-      toIdx = without.findIndex((r) => r.collectionId === beforeId);
-      if (toIdx === -1) {
-        throw new NotFoundError('Pivot collection', beforeId);
+    const isSelfPivot = id === beforeId || id === afterId;
+    if (!isSelfPivot) {
+      const without = rows.filter((_, i) => i !== fromIdx);
+
+      let toIdx: number;
+      if (beforeId !== undefined) {
+        toIdx = without.findIndex((r) => r.collectionId === beforeId);
+        if (toIdx === -1) {
+          throw new NotFoundError('Pivot collection', beforeId);
+        }
+      } else {
+        const afterIdx = without.findIndex((r) => r.collectionId === afterId);
+        if (afterIdx === -1) {
+          throw new NotFoundError('Pivot collection', afterId);
+        }
+        toIdx = afterIdx + 1;
       }
-    } else {
-      const afterIdx = without.findIndex((r) => r.collectionId === afterId);
-      if (afterIdx === -1) {
-        throw new NotFoundError('Pivot collection', afterId as string);
-      }
-      toIdx = afterIdx + 1;
-    }
 
-    const reordered = [
-      ...without.slice(0, toIdx),
-      moved,
-      ...without.slice(toIdx),
-    ];
+      const reordered = [
+        ...without.slice(0, toIdx),
+        moved,
+        ...without.slice(toIdx),
+      ];
 
-    for (let i = 0; i < reordered.length; i++) {
-      const row = reordered[i]!;
-      if (row.sortOrder !== i) {
-        await tx
-          .update(resourceCollectionProfiles)
-          .set({ sortOrder: i })
-          .where(eq(resourceCollectionProfiles.id, row.id));
+      for (let i = 0; i < reordered.length; i++) {
+        const row = reordered[i]!;
+        if (row.sortOrder !== i) {
+          await tx
+            .update(resourceCollectionProfiles)
+            .set({ sortOrder: i })
+            .where(eq(resourceCollectionProfiles.id, row.id));
+        }
       }
     }
 
@@ -236,10 +240,11 @@ export const deleteCollection = async (authUserId: string, id: string) => {
         ),
       );
 
-    const [{ value: remaining = 0 } = { value: 0 }] = await tx
+    const [remainingRow] = await tx
       .select({ value: count() })
       .from(resourceCollectionProfiles)
       .where(eq(resourceCollectionProfiles.collectionId, id));
+    const remaining = remainingRow?.value ?? 0;
 
     if (remaining === 0) {
       await tx

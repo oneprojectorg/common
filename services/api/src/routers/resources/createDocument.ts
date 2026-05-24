@@ -9,9 +9,7 @@ import withDB from '../../middlewares/withDB';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { resourceInCollectionEncoder } from './encoders';
 
-const allowedMimeSchema = z.enum(
-  ALLOWED_RESOURCE_MIME_TYPES as unknown as [string, ...string[]],
-);
+const allowedMimeSchema = z.enum(ALLOWED_RESOURCE_MIME_TYPES);
 
 const inputSchema = z
   .object({

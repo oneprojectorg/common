@@ -15,8 +15,8 @@ const resourceBase = {
   title: z.string(),
   description: z.string().nullable(),
   addedByProfileUserId: z.string().uuid().nullable(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
+  createdAt: z.coerce.date().nullable(),
+  updatedAt: z.coerce.date().nullable(),
   signedUrl: z.string().nullable(),
 };
 
@@ -79,6 +79,6 @@ export const collectionEncoder = z.object({
   name: z.string(),
   sortOrder: z.number(),
   addedByProfileUserId: z.string().uuid().nullable(),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
+  createdAt: z.coerce.date().nullable(),
+  updatedAt: z.coerce.date().nullable(),
 });
