@@ -1,8 +1,9 @@
 'use client';
 
-import { cn } from '@op/ui/utils';
+import { Button } from '@op/ui/Button';
+import { ButtonGroup } from '@op/ui/ButtonGroup';
 import { useState } from 'react';
-import { LuX } from 'react-icons/lu';
+import { LuFile, LuLink, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -34,45 +35,53 @@ export const AddResourcePanel = ({
           <LuX className="size-4" />
         </button>
       </div>
-      <div className="flex shrink-0 gap-2 px-4 pt-4 sm:px-6">
-        <button
-          type="button"
-          onClick={() => setKind('link')}
-          className={cn(
-            'flex-1 cursor-pointer rounded-full border px-4 py-2 text-sm transition-colors',
-            kind === 'link'
-              ? 'border-primary-teal bg-primary-tealWhite text-primary-teal'
-              : 'border-neutral-gray2 text-neutral-charcoal hover:bg-neutral-gray1',
-          )}
-        >
-          {t('Link')}
-        </button>
-        <button
-          type="button"
-          onClick={() => setKind('document')}
-          className={cn(
-            'flex-1 cursor-pointer rounded-full border px-4 py-2 text-sm transition-colors',
-            kind === 'document'
-              ? 'border-primary-teal bg-primary-tealWhite text-primary-teal'
-              : 'border-neutral-gray2 text-neutral-charcoal hover:bg-neutral-gray1',
-          )}
-        >
-          {t('Document')}
-        </button>
+      <div className="shrink-0 px-4 pt-4 sm:px-6">
+        <ButtonGroup className="w-full" aria-label={t('Resource type')}>
+          <Button
+            color="secondary"
+            size="small"
+            aria-pressed={kind === 'link'}
+            onPress={() => setKind('link')}
+            className={
+              kind === 'link'
+                ? 'flex-1 bg-primary-tealWhite text-primary-teal hover:bg-primary-tealWhite'
+                : 'flex-1'
+            }
+          >
+            <LuLink className="size-4" />
+            {t('Link')}
+          </Button>
+          <Button
+            color="secondary"
+            size="small"
+            aria-pressed={kind === 'document'}
+            onPress={() => setKind('document')}
+            className={
+              kind === 'document'
+                ? 'flex-1 bg-primary-tealWhite text-primary-teal hover:bg-primary-tealWhite'
+                : 'flex-1'
+            }
+          >
+            <LuFile className="size-4" />
+            {t('Document')}
+          </Button>
+        </ButtonGroup>
       </div>
-      {kind === 'link' ? (
-        <AddResourceLinkForm
-          profileId={profileId}
-          onSuccess={onClose}
-          onCancel={onClose}
-        />
-      ) : (
-        <AddResourceDocumentForm
-          profileId={profileId}
-          onSuccess={onClose}
-          onCancel={onClose}
-        />
-      )}
+      <div className="flex min-h-0 flex-1 flex-col">
+        {kind === 'link' ? (
+          <AddResourceLinkForm
+            profileId={profileId}
+            onSuccess={onClose}
+            onCancel={onClose}
+          />
+        ) : (
+          <AddResourceDocumentForm
+            profileId={profileId}
+            onSuccess={onClose}
+            onCancel={onClose}
+          />
+        )}
+      </div>
     </div>
   );
 };
