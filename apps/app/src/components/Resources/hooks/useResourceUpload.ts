@@ -1,10 +1,10 @@
 'use client';
 
+import { trpc } from '@op/api/client';
 import {
   ALLOWED_RESOURCE_MIME_TYPES,
   MAX_RESOURCE_FILE_SIZE,
-} from '@op/common';
-import { trpc } from '@op/api/client';
+} from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 

@@ -145,9 +145,6 @@ const PanelContents = ({
           <Tab id="updates" className="h-auto px-0">
             {t('Updates')}
           </Tab>
-          <Tab id="meetings" className="h-auto px-0">
-            {t('Meetings')}
-          </Tab>
           <Tab id="resources" className="h-auto px-0">
             {t('Resources')}
           </Tab>
@@ -174,12 +171,6 @@ const PanelContents = ({
             canReadUpdates={canReadUpdates}
           />
         ) : null}
-      </TabPanel>
-      <TabPanel
-        id="meetings"
-        className="flex min-h-0 flex-col overflow-y-auto p-0 sm:p-0"
-      >
-        <ComingSoonContent title={t('Meetings')} />
       </TabPanel>
       <TabPanel
         id="resources"
@@ -241,16 +232,6 @@ const UpdatesTabContent = ({
           </EmptyState>
         )}
       </div>
-    </div>
-  );
-};
-
-const ComingSoonContent = ({ title }: { title: string }) => {
-  const t = useTranslations();
-  return (
-    <div className="flex flex-col px-4 pt-6 pb-8 sm:px-6">
-      <Header2 className="font-serif text-title-base">{title}</Header2>
-      <p className="mt-4 text-sm text-neutral-gray4">{t('Coming soon')}</p>
     </div>
   );
 };

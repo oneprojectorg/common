@@ -10,7 +10,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
-import { AddResourceSheet } from './AddResourceSheet';
+import { AddResourcePanel } from './AddResourcePanel';
 import { ResourceEmptyState } from './ResourceEmptyState';
 import { ResourcesList } from './ResourcesList';
 import { useResources } from './hooks/useResources';
@@ -47,7 +47,16 @@ export const ResourcesTabContent = ({
   canRead: boolean;
 }) => {
   const t = useTranslations();
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
+
+  if (canManage && adding) {
+    return (
+      <AddResourcePanel
+        profileId={profileId}
+        onClose={() => setAdding(false)}
+      />
+    );
+  }
 
   return (
     <>
@@ -75,24 +84,17 @@ export const ResourcesTabContent = ({
         </div>
       </div>
       {canManage ? (
-        <>
-          <div className="sticky bottom-0 mt-auto shrink-0 border-t border-neutral-gray1 bg-white px-4 py-4 sm:px-6">
-            <Button
-              color="secondary"
-              size="small"
-              onPress={() => setSheetOpen(true)}
-              className="w-full justify-center text-primary-teal"
-            >
-              <LuPlus className="size-4" />
-              {t('Add resource')}
-            </Button>
-          </div>
-          <AddResourceSheet
-            profileId={profileId}
-            isOpen={sheetOpen}
-            onClose={() => setSheetOpen(false)}
-          />
-        </>
+        <div className="sticky bottom-0 mt-auto shrink-0 border-t border-neutral-gray1 bg-white px-4 py-4 sm:px-6">
+          <Button
+            color="secondary"
+            size="small"
+            onPress={() => setAdding(true)}
+            className="w-full justify-center text-primary-teal"
+          >
+            <LuPlus className="size-4" />
+            {t('Add resource')}
+          </Button>
+        </div>
       ) : null}
     </>
   );
