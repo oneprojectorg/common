@@ -12,16 +12,14 @@ export const resourceCollections = pgTable(
   {
     id: autoId().primaryKey(),
     name: text().notNull(),
-    createdByProfileUserId: uuid().references(() => profileUsers.id, {
+    addedByProfileUserId: uuid().references(() => profileUsers.id, {
       onDelete: 'set null',
     }),
     ...timestamps,
   },
   (table) => [
     ...serviceRolePolicies,
-    index('resource_collections_created_by_idx').on(
-      table.createdByProfileUserId,
-    ),
+    index('resource_collections_added_by_idx').on(table.addedByProfileUserId),
   ],
 );
 
@@ -30,8 +28,8 @@ export const resourceCollectionsRelations = relations(
   ({ many, one }) => ({
     items: many(resourceCollectionItems),
     profiles: many(resourceCollectionProfiles),
-    createdBy: one(profileUsers, {
-      fields: [resourceCollections.createdByProfileUserId],
+    addedBy: one(profileUsers, {
+      fields: [resourceCollections.addedByProfileUserId],
       references: [profileUsers.id],
     }),
   }),

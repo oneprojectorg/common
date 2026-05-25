@@ -23,6 +23,12 @@ export const resources = pgTable(
 
     linkUrl: text(),
 
+    type: text()
+      .notNull()
+      .generatedAlwaysAs(
+        sql`CASE WHEN attachment_id IS NOT NULL THEN 'document' ELSE 'link' END`,
+      ),
+
     addedByProfileUserId: uuid().references(() => profileUsers.id, {
       onDelete: 'set null',
     }),

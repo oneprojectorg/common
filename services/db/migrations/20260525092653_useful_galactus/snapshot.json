@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "4ba41288-d638-455f-b568-d338e8177d64",
+  "id": "35425593-a58c-47a1-a4e5-98fbf13c9687",
   "prevIds": [
-    "d804e6f0-68a0-44ff-9d93-4da4720bba45"
+    "d36e36f7-5072-4eb5-a2d3-2072256502ef"
   ],
   "ddl": [
     {
@@ -171,6 +171,18 @@
     {
       "isRlsEnabled": true,
       "name": "decision_process_results",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "decision_process_survey_responses",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": true,
+      "name": "decision_process_survey_submitters",
       "entityType": "tables",
       "schema": "public"
     },
@@ -1307,6 +1319,162 @@
       "entityType": "columns",
       "schema": "public",
       "table": "decision_process_results"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_process_survey_responses"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "process_instance_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_process_survey_responses"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "internal_data",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_process_survey_responses"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "(now() AT TIME ZONE 'utc'::text)",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_process_survey_responses"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "(now() AT TIME ZONE 'utc'::text)",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_process_survey_responses"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deleted_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_process_survey_responses"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_process_survey_submitters"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "process_instance_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_process_survey_submitters"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "submitted_by_profile_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_process_survey_submitters"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "(now() AT TIME ZONE 'utc'::text)",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_process_survey_submitters"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": "(now() AT TIME ZONE 'utc'::text)",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_process_survey_submitters"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deleted_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "decision_process_survey_submitters"
     },
     {
       "type": "uuid",
@@ -5573,7 +5741,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "created_by_profile_user_id",
+      "name": "added_by_profile_user_id",
       "entityType": "columns",
       "schema": "public",
       "table": "resource_collections"
@@ -5678,6 +5846,22 @@
       "generated": null,
       "identity": null,
       "name": "link_url",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "resources"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": {
+        "as": "CASE WHEN attachment_id IS NOT NULL THEN 'document' ELSE 'link' END",
+        "type": "stored"
+      },
+      "identity": null,
+      "name": "type",
       "entityType": "columns",
       "schema": "public",
       "table": "resources"
@@ -6804,6 +6988,48 @@
       "entityType": "indexes",
       "schema": "public",
       "table": "decision_process_results"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "process_instance_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "dpsr_process_instance_id_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "decision_process_survey_responses"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "submitted_by_profile_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "dpss_submitted_by_profile_id_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "decision_process_survey_submitters"
     },
     {
       "nameExplicit": false,
@@ -9826,8 +10052,8 @@
           "opclass": null
         }
       ],
-      "isUnique": false,
-      "where": null,
+      "isUnique": true,
+      "where": "\"deleted_at\" IS NULL",
       "with": "",
       "method": "btree",
       "concurrently": false,
@@ -9924,8 +10150,8 @@
           "opclass": null
         }
       ],
-      "isUnique": false,
-      "where": null,
+      "isUnique": true,
+      "where": "\"deleted_at\" IS NULL",
       "with": "",
       "method": "btree",
       "concurrently": false,
@@ -10008,7 +10234,7 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "created_by_profile_user_id",
+          "value": "added_by_profile_user_id",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -10020,7 +10246,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "resource_collections_created_by_idx",
+      "name": "resource_collections_added_by_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "resource_collections"
@@ -10638,6 +10864,57 @@
       "entityType": "fks",
       "schema": "public",
       "table": "decision_process_results"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "process_instance_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "decision_process_instances",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "decision_process_survey_responses_G7P11fwYgIjC_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "decision_process_survey_responses"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "process_instance_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "decision_process_instances",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "decision_process_survey_submitters_5vk6LcGRGPJS_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "decision_process_survey_submitters"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "submitted_by_profile_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "profiles",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "CASCADE",
+      "onDelete": "CASCADE",
+      "name": "decision_process_survey_submitters_sd5TlDdDSjqZ_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "decision_process_survey_submitters"
     },
     {
       "nameExplicit": false,
@@ -12201,7 +12478,7 @@
     {
       "nameExplicit": false,
       "columns": [
-        "created_by_profile_user_id"
+        "added_by_profile_user_id"
       ],
       "schemaTo": "public",
       "tableTo": "profile_users",
@@ -12210,7 +12487,7 @@
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "SET NULL",
-      "name": "resource_collections_saqc2UVfy8wQ_fkey",
+      "name": "resource_collections_VUNYELhkilWW_fkey",
       "entityType": "fks",
       "schema": "public",
       "table": "resource_collections"
@@ -12619,6 +12896,26 @@
         "id"
       ],
       "nameExplicit": false,
+      "name": "decision_process_survey_responses_pkey",
+      "schema": "public",
+      "table": "decision_process_survey_responses",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "decision_process_survey_submitters_pkey",
+      "schema": "public",
+      "table": "decision_process_survey_submitters",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
       "name": "decision_process_transitions_pkey",
       "schema": "public",
       "table": "decision_process_transitions",
@@ -12967,6 +13264,18 @@
       "table": "access_roles"
     },
     {
+      "nameExplicit": true,
+      "columns": [
+        "process_instance_id",
+        "submitted_by_profile_id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "dpss_instance_profile_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "decision_process_survey_submitters"
+    },
+    {
       "nameExplicit": false,
       "columns": [
         "transition_history_id",
@@ -13263,6 +13572,32 @@
       "entityType": "policies",
       "schema": "public",
       "table": "decision_process_results"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using": null,
+      "withCheck": null,
+      "name": "service-role",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "decision_process_survey_responses"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "ALL",
+      "roles": [
+        "service_role"
+      ],
+      "using": null,
+      "withCheck": null,
+      "name": "service-role",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "decision_process_survey_submitters"
     },
     {
       "as": "PERMISSIVE",

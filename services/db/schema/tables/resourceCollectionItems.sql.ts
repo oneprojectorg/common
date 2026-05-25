@@ -31,10 +31,9 @@ export const resourceCollectionItems = pgTable(
   },
   (table) => [
     ...serviceRolePolicies,
-    index('resource_collection_items_order_idx').on(
-      table.collectionId,
-      table.sortOrder,
-    ),
+    uniqueIndex('resource_collection_items_order_idx')
+      .on(table.collectionId, table.sortOrder)
+      .where(sql`${table.deletedAt} IS NULL`),
     index('resource_collection_items_resource_idx').on(table.resourceId),
     index('resource_collection_items_added_by_idx').on(
       table.addedByProfileUserId,
