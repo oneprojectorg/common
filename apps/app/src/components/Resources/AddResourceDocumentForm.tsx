@@ -111,7 +111,7 @@ export const AddResourceDocumentForm = ({
             className={cn(
               'flex min-h-52 cursor-pointer flex-col items-center justify-center gap-6 rounded-lg border border-dashed bg-neutral-offWhite px-12 py-6 text-center transition-colors',
               isDragging
-                ? 'border-primary-teal bg-primary-teal50'
+                ? 'bg-primary-teal50 border-primary-teal'
                 : 'border-neutral-gray2 hover:border-neutral-gray3',
             )}
           >
