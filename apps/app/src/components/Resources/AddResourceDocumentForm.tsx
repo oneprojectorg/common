@@ -116,36 +116,29 @@ export const AddResourceDocumentForm = ({
           />
           {file ? (
             isImage ? (
-              <div className="flex flex-col gap-3">
-                <div className="relative h-44 w-full overflow-hidden rounded-lg border border-neutral-gray1 bg-neutral-offWhite">
-                  {previewUrl ? (
-                    <img
-                      src={previewUrl}
-                      alt=""
-                      className="size-full object-cover"
-                    />
-                  ) : null}
-                  {uploading ? (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/60 text-sm text-neutral-charcoal">
-                      {t('Uploading...')}
-                    </div>
-                  ) : null}
-                  <Button
-                    color="ghost"
-                    size="small"
-                    onPress={handleRemoveFile}
-                    isDisabled={uploading}
-                    className="absolute top-2 right-2 bg-white/90 shadow-sm hover:bg-white"
-                    aria-label={t('Remove file')}
-                  >
-                    <LuX className="size-5" />
-                  </Button>
-                </div>
-                <FileChipRow
-                  fileName={file.name}
-                  fileSize={file.size}
-                  uploading={uploading}
-                />
+              <div className="relative h-44 w-full overflow-hidden rounded-lg border border-neutral-gray1 bg-neutral-offWhite">
+                {previewUrl ? (
+                  <img
+                    src={previewUrl}
+                    alt=""
+                    className="size-full object-cover"
+                  />
+                ) : null}
+                {uploading ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/60 text-sm text-neutral-charcoal">
+                    {t('Uploading...')}
+                  </div>
+                ) : null}
+                <Button
+                  color="ghost"
+                  size="small"
+                  onPress={handleRemoveFile}
+                  isDisabled={uploading}
+                  className="absolute top-2 right-2 bg-white/90 shadow-sm hover:bg-white"
+                  aria-label={t('Remove file')}
+                >
+                  <LuX className="size-5" />
+                </Button>
               </div>
             ) : (
               <div className="flex items-center gap-4 rounded-lg border border-neutral-gray1 bg-white p-4">
@@ -286,43 +279,8 @@ const getExtension = (name: string): string | null => {
   return name.slice(dot + 1).toUpperCase();
 };
 
-const metaLabel = (name: string, size: number): string => {
-  const ext = getExtension(name);
-  const sizeLabel = formatFileSize(size);
+const fileMetaLabel = (file: File): string => {
+  const ext = getExtension(file.name);
+  const sizeLabel = formatFileSize(file.size);
   return ext ? `${ext} • ${sizeLabel}` : sizeLabel;
 };
-
-const fileMetaLabel = (file: File): string => metaLabel(file.name, file.size);
-
-const FileChipRow = ({
-  fileName,
-  fileSize,
-  uploading,
-}: {
-  fileName: string;
-  fileSize: number;
-  uploading: boolean;
-}) => (
-  <div className="flex items-center gap-4 rounded-lg border border-neutral-gray1 bg-white p-4">
-    <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-tealWhite">
-      <LuFileText className="size-5 text-neutral-gray4" />
-    </div>
-    <div className="flex min-w-0 flex-1 flex-col">
-      {uploading ? (
-        <>
-          <Skeleton className="h-4 w-40" />
-          <Skeleton className="mt-1 h-3 w-20" />
-        </>
-      ) : (
-        <>
-          <span className="truncate text-base font-medium text-neutral-charcoal">
-            {fileName}
-          </span>
-          <span className="text-sm text-neutral-gray4">
-            {metaLabel(fileName, fileSize)}
-          </span>
-        </>
-      )}
-    </div>
-  </div>
-);
