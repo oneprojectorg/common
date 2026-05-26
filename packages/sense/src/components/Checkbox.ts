@@ -4,6 +4,6 @@
 //
 // For grouped checkboxes with a label/description/error, compose with
 // `<Field>` + `<FieldLabel>` + `<FieldDescription>` + `<FieldError>` from
-// `@op/ui-next/Field`.
+// `@op/sense/Field`.
 
 export { Checkbox } from './ui/checkbox';

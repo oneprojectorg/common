@@ -171,7 +171,7 @@ export const Confetti: React.FC = () => {
   }, []);
 
   // Caller is expected to mount Confetti inside a portal-safe context
-  // (e.g. `@op/ui-next/Modal` injects it inside `DialogPortal`). Rendering
+  // (e.g. `@op/sense/Modal` injects it inside `DialogPortal`). Rendering
   // in-place keeps DOM order predictable for z-stacking with siblings.
   return (
     <canvas

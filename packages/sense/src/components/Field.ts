@@ -1,5 +1,5 @@
 // Aggregated re-export of the shadcn `field` family + related primitives.
-// Consumers import composite Field surfaces from `@op/ui-next/Field`.
+// Consumers import composite Field surfaces from `@op/sense/Field`.
 //
 // Notes:
 //   - `FieldGroup` here is shadcn's vertical stacker (NEW).

@@ -8,6 +8,6 @@
 //
 // For label/description/error composition, wrap with `<Field>` +
 // `<FieldLabel>` + `<FieldDescription>` + `<FieldError>` from
-// `@op/ui-next/Field`.
+// `@op/sense/Field`.
 
 export { RadioGroup, RadioGroupItem } from './ui/radio-group';

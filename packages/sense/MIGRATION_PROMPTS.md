@@ -1,15 +1,15 @@
-# `@op/ui` → vanilla shadcn (via `@op/ui-next/ui/*`) migration prompts
+# `@op/ui` → vanilla shadcn (via `@op/sense/ui/*`) migration prompts
 
 Phase-2 migration scripts. Each prompt is self-contained — hand it to a fresh agent to migrate a tier of `@op/ui` consumers to **vanilla shadcn primitives** (no compat wrappers).
 
-**Strategy:** consumers rewrite to vanilla shadcn API in one pass — no halfway state via compat wrappers. The `@op/ui-next` package ships:
+**Strategy:** consumers rewrite to vanilla shadcn API in one pass — no halfway state via compat wrappers. The `@op/sense` package ships:
 
-- `@op/ui-next/ui/*` — vanilla shadcn primitives (button, dialog, sheet, select, tabs, etc.). This is the migration target.
-- A handful of **keeper** composites/customs at `@op/ui-next/<Name>` — these solve op-specific concerns that vanilla shadcn doesn't (DataTable, DatePicker, FacePile, OptionMenu, MultiSelectComboBox, AlertBanner, Avatar with gradient fallback, ProfileItem, Confetti, etc.).
-- A handful of pure re-exports at `@op/ui-next/<Name>` (Card, Checkbox, Menu, RadioGroup, Field, Separator) for stable import paths.
+- `@op/sense/ui/*` — vanilla shadcn primitives (button, dialog, sheet, select, tabs, etc.). This is the migration target.
+- A handful of **keeper** composites/customs at `@op/sense/<Name>` — these solve op-specific concerns that vanilla shadcn doesn't (DataTable, DatePicker, FacePile, OptionMenu, MultiSelectComboBox, AlertBanner, Avatar with gradient fallback, ProfileItem, Confetti, etc.).
+- A handful of pure re-exports at `@op/sense/<Name>` (Card, Checkbox, Menu, RadioGroup, Field, Separator) for stable import paths.
 - **No compat wrappers** for Button/IconButton/Modal/Sheet/Tabs/Select/TextField/NumberField/SearchField/ComboBox/Tooltip/ToggleButton. Consumers go directly to vanilla.
 
-**Prerequisite:** the phase 1 ship of `@op/ui-next` has merged. The package exists side-by-side with `@op/ui`; both work.
+**Prerequisite:** the phase 1 ship of `@op/sense` has merged. The package exists side-by-side with `@op/ui`; both work.
 
 ---
 
@@ -19,10 +19,10 @@ Read this first before any tier prompt.
 
 ### Workflow
 
-1. Read CLAUDE.md in repo root and at `packages/ui-next/`.
+1. Read CLAUDE.md in repo root and at `packages/sense/`.
 2. `grep -rn "from '@op/ui/<Component>'" apps packages services` (exclude `node_modules`, `.next/`, `packages/ui/`) to find every caller.
 3. For each caller: read the file, **rewrite to vanilla shadcn API** per the tier's translation table. Don't just swap import paths.
-4. Run `pnpm w:ui-next typecheck` then `pnpm w:app typecheck` (and any other touched workspace).
+4. Run `pnpm w:sense typecheck` then `pnpm w:app typecheck` (and any other touched workspace).
 5. Run `pnpm format:changes`.
 6. Commit. **Don't push, don't open a PR — those are manual.**
 
@@ -37,54 +37,54 @@ Read this first before any tier prompt.
 
 ### `@op/ui` → vanilla shadcn path map
 
-This is the canonical pair list. Compat wrappers don't exist in ui-next for these — go straight to the vanilla shadcn import path.
+This is the canonical pair list. Compat wrappers don't exist in sense for these — go straight to the vanilla shadcn import path.
 
 ```
-@op/ui/Button         → @op/ui-next/ui/button       (Button)
-@op/ui/IconButton     → @op/ui-next/ui/button       (Button with size="icon" / "icon-sm" / "icon-lg")
-@op/ui/LoadingSpinner → @op/ui-next/LoadingSpinner  (keeper — has op color/size defaults)
-@op/ui/Tooltip        → @op/ui-next/ui/tooltip      (Tooltip, TooltipTrigger, TooltipContent, TooltipProvider)
-@op/ui/Modal          → @op/ui-next/ui/dialog       (Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger)
-@op/ui/Sheet          → @op/ui-next/ui/sheet        (Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger)
-@op/ui/Tabs           → @op/ui-next/ui/tabs         (Tabs, TabsList, TabsTrigger, TabsContent)
-@op/ui/Select         → @op/ui-next/ui/select      (Select, SelectTrigger, SelectValue, SelectContent, SelectItem)
-@op/ui/TextField      → @op/ui-next/ui/input + ui/field   (Input + Field + FieldLabel + FieldError + FieldDescription)
-@op/ui/NumberField    → @op/ui-next/ui/input + ui/field   (Input type="number" + Field + numeric validation inline)
-@op/ui/SearchField    → @op/ui-next/ui/input + ui/input-group   (Input + InputGroup with search icon)
-@op/ui/ComboBox       → @op/ui-next/ui/combobox    (Combobox, ComboboxInput, ComboboxContent, ComboboxList, ComboboxItem, ComboboxEmpty)
-@op/ui/ToggleButton   → @op/ui-next/ui/switch     (Switch, with checked/onCheckedChange)
-@op/ui/Checkbox       → @op/ui-next/Checkbox       (re-export of ui/checkbox)
-@op/ui/RadioGroup     → @op/ui-next/RadioGroup     (re-export of ui/radio-group)
-@op/ui/Menu / ListBox → @op/ui-next/Menu           (re-export of ui/dropdown-menu)
-@op/ui/OptionMenu     → @op/ui-next/OptionMenu     (keeper kebab-menu composite)
-@op/ui/Surface        → @op/ui-next/Card           (keeper re-export of ui/card)
-@op/ui/Card slots     → @op/ui-next/Card           (CardHeader/CardContent/CardFooter/CardTitle/CardDescription/CardAction)
-@op/ui/Avatar         → @op/ui-next/Avatar         (keeper composite: gradient fallback from placeholder)
-@op/ui/Chip           → @op/ui-next/Chip           (keeper, or @op/ui-next/ui/badge directly)
-@op/ui/Skeleton       → @op/ui-next/Skeleton       (keeper, has SkeletonLine variant)
-@op/ui/Separator      → @op/ui-next/Separator     (re-export)
-@op/ui/Field          → @op/ui-next/Field          (re-export aggregation: Field, FieldLabel, FieldError, FieldDescription, FieldGroup, FieldSet, FieldLegend)
-@op/ui/Field (TextArea) → @op/ui-next/Textarea     (Textarea — vanilla shadcn, accepts borderless via className)
-@op/ui/Toast          → @op/ui-next/Toast          (keeper: <Toast /> mount + toast.status helper)
+@op/ui/Button         → @op/sense/ui/button       (Button)
+@op/ui/IconButton     → @op/sense/ui/button       (Button with size="icon" / "icon-sm" / "icon-lg")
+@op/ui/LoadingSpinner → @op/sense/LoadingSpinner  (keeper — has op color/size defaults)
+@op/ui/Tooltip        → @op/sense/ui/tooltip      (Tooltip, TooltipTrigger, TooltipContent, TooltipProvider)
+@op/ui/Modal          → @op/sense/ui/dialog       (Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger)
+@op/ui/Sheet          → @op/sense/ui/sheet        (Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger)
+@op/ui/Tabs           → @op/sense/ui/tabs         (Tabs, TabsList, TabsTrigger, TabsContent)
+@op/ui/Select         → @op/sense/ui/select      (Select, SelectTrigger, SelectValue, SelectContent, SelectItem)
+@op/ui/TextField      → @op/sense/ui/input + ui/field   (Input + Field + FieldLabel + FieldError + FieldDescription)
+@op/ui/NumberField    → @op/sense/ui/input + ui/field   (Input type="number" + Field + numeric validation inline)
+@op/ui/SearchField    → @op/sense/ui/input + ui/input-group   (Input + InputGroup with search icon)
+@op/ui/ComboBox       → @op/sense/ui/combobox    (Combobox, ComboboxInput, ComboboxContent, ComboboxList, ComboboxItem, ComboboxEmpty)
+@op/ui/ToggleButton   → @op/sense/ui/switch     (Switch, with checked/onCheckedChange)
+@op/ui/Checkbox       → @op/sense/Checkbox       (re-export of ui/checkbox)
+@op/ui/RadioGroup     → @op/sense/RadioGroup     (re-export of ui/radio-group)
+@op/ui/Menu / ListBox → @op/sense/Menu           (re-export of ui/dropdown-menu)
+@op/ui/OptionMenu     → @op/sense/OptionMenu     (keeper kebab-menu composite)
+@op/ui/Surface        → @op/sense/Card           (keeper re-export of ui/card)
+@op/ui/Card slots     → @op/sense/Card           (CardHeader/CardContent/CardFooter/CardTitle/CardDescription/CardAction)
+@op/ui/Avatar         → @op/sense/Avatar         (keeper composite: gradient fallback from placeholder)
+@op/ui/Chip           → @op/sense/Chip           (keeper, or @op/sense/ui/badge directly)
+@op/ui/Skeleton       → @op/sense/Skeleton       (keeper, has SkeletonLine variant)
+@op/ui/Separator      → @op/sense/Separator     (re-export)
+@op/ui/Field          → @op/sense/Field          (re-export aggregation: Field, FieldLabel, FieldError, FieldDescription, FieldGroup, FieldSet, FieldLegend)
+@op/ui/Field (TextArea) → @op/sense/Textarea     (Textarea — vanilla shadcn, accepts borderless via className)
+@op/ui/Toast          → @op/sense/Toast          (keeper: <Toast /> mount + toast.status helper)
                           + `import { toast } from 'sonner'` for actual toast calls
-@op/ui/AlertBanner    → @op/ui-next/AlertBanner   (keeper: intent → variant + tint composite over ui/alert)
-@op/ui/Pagination     → @op/ui-next/Pagination    (keeper: callback API + range display)
-@op/ui/Breadcrumbs    → @op/ui-next/Breadcrumbs   (keeper composite)
+@op/ui/AlertBanner    → @op/sense/AlertBanner   (keeper: intent → variant + tint composite over ui/alert)
+@op/ui/Pagination     → @op/sense/Pagination    (keeper: callback API + range display)
+@op/ui/Breadcrumbs    → @op/sense/Breadcrumbs   (keeper composite)
 @op/ui/Header / Link / EmptyState / FooterBar / StatusDot / TagGroup
-                      → @op/ui-next/<Name>         (keeper customs)
-@op/ui/MultiSelectComboBox → @op/ui-next/MultiSelectComboBox  (keeper composite: chips + multiple flag)
-@op/ui/DatePicker     → @op/ui-next/DatePicker     (keeper: Popover + Calendar over native Date)
-@op/ui/Popover        → @op/ui-next/ui/popover    (Popover, PopoverTrigger, PopoverContent)
-@op/ui/Dialog         → @op/ui-next/ui/dialog     (vanilla shadcn Dialog)
+                      → @op/sense/<Name>         (keeper customs)
+@op/ui/MultiSelectComboBox → @op/sense/MultiSelectComboBox  (keeper composite: chips + multiple flag)
+@op/ui/DatePicker     → @op/sense/DatePicker     (keeper: Popover + Calendar over native Date)
+@op/ui/Popover        → @op/sense/ui/popover    (Popover, PopoverTrigger, PopoverContent)
+@op/ui/Dialog         → @op/sense/ui/dialog     (vanilla shadcn Dialog)
 @op/ui/ListBox        → see Tier 5 ListBox special case (no direct primitive)
 @op/ui/RAC ListBox    → see Tier 5 ListBox special case
-@op/ui/RAC Table      → @op/ui-next/DataTable     (TanStack-Table-backed) OR @op/ui-next/Table (raw primitives)
+@op/ui/RAC Table      → @op/sense/DataTable     (TanStack-Table-backed) OR @op/sense/Table (raw primitives)
 @op/ui/Sidebar / RichTextEditor / Sortable / CollapsibleConfigCard / SplitPane / Stepper / PhaseStepper
-                      → @op/ui-next/<Name>         (keeper composites)
+                      → @op/sense/<Name>         (keeper composites)
 @op/ui/ProfileItem / FacePile / MediaDisplay / AutoSizeInput / LogoLoop / NotificationPanel / SocialLinks
 @op/ui/TranslateBanner / ReactionsButton / CommentButton / ReactionTooltip
 @op/ui/HorizontalList / BannerUploader / AvatarUploader / FileDropZone / Confetti / Form
-                      → @op/ui-next/<Name>         (keeper composites / customs)
+                      → @op/sense/<Name>         (keeper composites / customs)
 ```
 
 ### Pitfalls encountered during phase-0 (the consolidation experiment)
@@ -111,9 +111,9 @@ Migrate every `Button`, `IconButton`, `LoadingSpinner`, `Tooltip` caller from `@
 
 ### Import swaps + API translation
 
-| Old (`@op/ui`) | New (vanilla shadcn from `@op/ui-next/ui/button` etc) | Notes |
+| Old (`@op/ui`) | New (vanilla shadcn from `@op/sense/ui/button` etc) | Notes |
 |---|---|---|
-| `import { Button } from '@op/ui/Button'` | `import { Button } from '@op/ui-next/ui/button'` | |
+| `import { Button } from '@op/ui/Button'` | `import { Button } from '@op/sense/ui/button'` | |
 | `<Button color="primary">` | `<Button>` (default variant) | |
 | `<Button color="secondary">` | `<Button variant="outline">` | |
 | `<Button color="destructive">` | `<Button variant="destructive">` | |
@@ -136,15 +136,15 @@ Migrate every `Button`, `IconButton`, `LoadingSpinner`, `Tooltip` caller from `@
 | `<IconButton size="medium">` | `<Button size="icon" variant="ghost">` | |
 | `<IconButton size="large">` | `<Button size="icon-lg" variant="ghost">` | |
 | `<IconButton variant="outline">` | `<Button size="icon" variant="outline">` | |
-| `<ButtonLink href="...">` | `<a href={...} className={cn(buttonVariants({variant, size}), '...')}>...</a>` | shadcn pattern; use `import { buttonVariants } from '@op/ui-next/ui/button'` |
-| `<LoadingSpinner>` | `import { LoadingSpinner } from '@op/ui-next/LoadingSpinner'` | keeper — keep import |
+| `<ButtonLink href="...">` | `<a href={...} className={cn(buttonVariants({variant, size}), '...')}>...</a>` | shadcn pattern; use `import { buttonVariants } from '@op/sense/ui/button'` |
+| `<LoadingSpinner>` | `import { LoadingSpinner } from '@op/sense/LoadingSpinner'` | keeper — keep import |
 | `<TooltipTrigger><Trigger/><Tooltip>...</Tooltip></TooltipTrigger>` (RAC sibling) | `<TooltipProvider><Tooltip><TooltipTrigger render={<Trigger/>} /><TooltipContent>...</TooltipContent></Tooltip></TooltipProvider>` | shadcn nested pattern |
-| Import from `@op/ui/Tooltip` | `import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@op/ui-next/ui/tooltip'` | |
+| Import from `@op/ui/Tooltip` | `import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@op/sense/ui/tooltip'` | |
 
 ### Verification
 
 ```bash
-pnpm w:ui-next typecheck && pnpm w:app typecheck && pnpm format:changes
+pnpm w:sense typecheck && pnpm w:app typecheck && pnpm format:changes
 ```
 
 Visual smoke check: primary/secondary/destructive buttons, icon button with text, loading state, tooltip on hover.
@@ -154,9 +154,9 @@ Visual smoke check: primary/secondary/destructive buttons, icon button with text
 ```
 refactor(app): migrate Tier 1 to vanilla shadcn (Button/IconButton/Spinner/Tooltip)
 
-- @op/ui/Button → @op/ui-next/ui/button (color→variant, size renamed, onPress→onClick, isDisabled→disabled)
-- @op/ui/IconButton → @op/ui-next/ui/button with size="icon-*"
-- @op/ui/Tooltip RAC sibling pattern → @op/ui-next/ui/tooltip nested
+- @op/ui/Button → @op/sense/ui/button (color→variant, size renamed, onPress→onClick, isDisabled→disabled)
+- @op/ui/IconButton → @op/sense/ui/button with size="icon-*"
+- @op/ui/Tooltip RAC sibling pattern → @op/sense/ui/tooltip nested
 - LoadingSpinner unchanged (keeper)
 - Drop variant="icon" on text-bearing buttons (forced square size overflowed)
 ```
@@ -166,29 +166,29 @@ refactor(app): migrate Tier 1 to vanilla shadcn (Button/IconButton/Spinner/Toolt
 ## Tier 2 — Layout & display atoms
 
 ### Goal
-Migrate Header/Link/Surface/Skeleton/Avatar/Chip/Separator/StatusDot/EmptyState/FooterBar/CheckIcon. These are mostly keepers — the migration is a path swap to `@op/ui-next/<Name>`.
+Migrate Header/Link/Surface/Skeleton/Avatar/Chip/Separator/StatusDot/EmptyState/FooterBar/CheckIcon. These are mostly keepers — the migration is a path swap to `@op/sense/<Name>`.
 
 ### Import swaps
 
 ```
-from '@op/ui/Header'      → from '@op/ui-next/Header'
-from '@op/ui/Link'        → from '@op/ui-next/Link'
-from '@op/ui/Surface'     → from '@op/ui-next/Card'    (** symbol renamed Surface→Card **)
-from '@op/ui/Skeleton'    → from '@op/ui-next/Skeleton'
-from '@op/ui/Avatar'      → from '@op/ui-next/Avatar'
-from '@op/ui/Chip'        → from '@op/ui-next/Chip'    (or @op/ui-next/ui/badge directly)
-from '@op/ui/Separator'   → from '@op/ui-next/Separator'
-from '@op/ui/StatusDot'   → from '@op/ui-next/StatusDot'
-from '@op/ui/EmptyState'  → from '@op/ui-next/EmptyState'
-from '@op/ui/FooterBar'   → from '@op/ui-next/FooterBar'
-from '@op/ui/CheckIcon'   → from '@op/ui-next/CheckIcon'
+from '@op/ui/Header'      → from '@op/sense/Header'
+from '@op/ui/Link'        → from '@op/sense/Link'
+from '@op/ui/Surface'     → from '@op/sense/Card'    (** symbol renamed Surface→Card **)
+from '@op/ui/Skeleton'    → from '@op/sense/Skeleton'
+from '@op/ui/Avatar'      → from '@op/sense/Avatar'
+from '@op/ui/Chip'        → from '@op/sense/Chip'    (or @op/sense/ui/badge directly)
+from '@op/ui/Separator'   → from '@op/sense/Separator'
+from '@op/ui/StatusDot'   → from '@op/sense/StatusDot'
+from '@op/ui/EmptyState'  → from '@op/sense/EmptyState'
+from '@op/ui/FooterBar'   → from '@op/sense/FooterBar'
+from '@op/ui/CheckIcon'   → from '@op/sense/CheckIcon'
 ```
 
 ### Codemod for Surface → Card
 
 ```
 - import { Surface } from '@op/ui/Surface';
-+ import { Card } from '@op/ui-next/Card';
++ import { Card } from '@op/sense/Card';
 
 - <Surface className="p-4 ...">...</Surface>
 + <Card className="p-4 ...">...</Card>
@@ -199,7 +199,7 @@ The Card primitive has no built-in padding — keep whatever `p-*` the caller al
 ### Commit message
 
 ```
-refactor(app): migrate Tier 2 to @op/ui-next (layout/display atoms)
+refactor(app): migrate Tier 2 to @op/sense (layout/display atoms)
 
 - Header/Link/Skeleton/Avatar/Chip/Separator/StatusDot/EmptyState/FooterBar/CheckIcon path-swapped
 - Surface → Card (renamed)
@@ -227,8 +227,8 @@ Highest-volume tier. Rewrite every TextField/NumberField/SearchField/Select/Chec
 />
 
 // New
-import { Field, FieldLabel, FieldDescription, FieldError } from '@op/ui-next/ui/field';
-import { Input } from '@op/ui-next/ui/input';
+import { Field, FieldLabel, FieldDescription, FieldError } from '@op/sense/ui/field';
+import { Input } from '@op/sense/ui/input';
 
 <Field data-invalid={!!errors.name}>
   <FieldLabel>
@@ -258,7 +258,7 @@ import { Input } from '@op/ui-next/ui/input';
 <TextField useTextArea value={x} onChange={setX} textareaProps={{ rows: 3 }} />
 
 // New
-import { Textarea } from '@op/ui-next/Textarea';
+import { Textarea } from '@op/sense/Textarea';
 <Textarea value={x} onChange={(e) => setX(e.target.value)} rows={3} />
 ```
 
@@ -269,7 +269,7 @@ import { Textarea } from '@op/ui-next/Textarea';
 <NumberField label="Amount" value={n} onChange={setN} minValue={0} maxValue={100} prefixText="$" />
 
 // New: compose with InputGroup if you need the prefix slot.
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@op/ui-next/ui/input-group';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@op/sense/ui/input-group';
 
 <Field>
   <FieldLabel>Amount</FieldLabel>
@@ -290,7 +290,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@op/ui-next/ui/inp
 
 ```tsx
 import { LuSearch } from 'react-icons/lu';
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@op/ui-next/ui/input-group';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@op/sense/ui/input-group';
 
 <InputGroup>
   <InputGroupAddon align="inline-start">
@@ -313,7 +313,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@op/ui-next/ui/inp
 </Select>
 
 // New
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@op/ui-next/ui/select';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@op/sense/ui/select';
 
 <Field>
   <FieldLabel>Plan</FieldLabel>
@@ -339,7 +339,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 <Checkbox isSelected={b} onChange={setB} aria-label="..." />
 
 // New
-import { Checkbox } from '@op/ui-next/Checkbox';
+import { Checkbox } from '@op/sense/Checkbox';
 <Checkbox checked={b} onCheckedChange={setB} aria-label="..." />
 ```
 
@@ -353,8 +353,8 @@ import { Checkbox } from '@op/ui-next/Checkbox';
 </RadioGroup>
 
 // New
-import { RadioGroup, RadioGroupItem } from '@op/ui-next/RadioGroup';
-import { FieldLabel } from '@op/ui-next/ui/field';
+import { RadioGroup, RadioGroupItem } from '@op/sense/RadioGroup';
+import { FieldLabel } from '@op/sense/ui/field';
 
 <RadioGroup value={v} onValueChange={setV}>
   <FieldLabel><RadioGroupItem value="a" /> A</FieldLabel>
@@ -376,7 +376,7 @@ import { FieldLabel } from '@op/ui-next/ui/field';
 </Tabs>
 
 // New
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@op/ui-next/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@op/sense/ui/tabs';
 
 <Tabs value={k} onValueChange={setK}>
   <TabsList>
@@ -428,8 +428,8 @@ Rewrite every Modal/Sheet/Popover caller to vanilla shadcn Dialog / Sheet / Popo
 </Modal>
 
 // New
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@op/ui-next/ui/dialog';
-import { Button } from '@op/ui-next/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@op/sense/ui/dialog';
+import { Button } from '@op/sense/ui/button';
 
 <Dialog open={open} onOpenChange={setOpen}>
   <DialogContent>
@@ -464,7 +464,7 @@ import { Button } from '@op/ui-next/ui/button';
 </Sheet>
 
 // New
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@op/ui-next/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@op/sense/ui/sheet';
 
 <Sheet open={open} onOpenChange={setOpen}>
   <SheetContent side="bottom">
@@ -492,7 +492,7 @@ If you encounter a `Modal` with `overlayClassName`/`className` containing `slide
 </DialogTrigger>
 
 // New
-import { Popover, PopoverTrigger, PopoverContent } from '@op/ui-next/ui/popover';
+import { Popover, PopoverTrigger, PopoverContent } from '@op/sense/ui/popover';
 
 <Popover>
   <PopoverTrigger render={<Button>Open</Button>} />
@@ -532,7 +532,7 @@ Migrate dropdown menus.
 </MenuTrigger>
 
 // New
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@op/ui-next/Menu';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@op/sense/Menu';
 
 <DropdownMenu>
   <DropdownMenuTrigger render={<Button>Open</Button>} />
@@ -545,7 +545,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 ### OptionMenu keeper
 
 ```
-from '@op/ui/OptionMenu' → from '@op/ui-next/OptionMenu'
+from '@op/ui/OptionMenu' → from '@op/sense/OptionMenu'
 ```
 
 API mostly preserved; one signature change:
@@ -556,13 +556,13 @@ API mostly preserved; one signature change:
 There's no direct ListBox primitive in vanilla shadcn. Three replacement strategies depending on use case:
 
 1. **Search-result dropdown (custom portal):** Use `<div role="listbox">` with `role="option"` buttons. See `ShareProposalModal.tsx` for the pattern.
-2. **Multi-select chip-input:** Use `@op/ui-next/MultiSelectComboBox` (keeper composite).
-3. **In-modal select list:** Use `@op/ui-next/ui/combobox` for typing-driven or `@op/ui-next/ui/select` for picker-style.
+2. **Multi-select chip-input:** Use `@op/sense/MultiSelectComboBox` (keeper composite).
+3. **In-modal select list:** Use `@op/sense/ui/combobox` for typing-driven or `@op/sense/ui/select` for picker-style.
 
 ### Commit message
 
 ```
-refactor(app): migrate Tier 5 to @op/ui-next (menus)
+refactor(app): migrate Tier 5 to @op/sense (menus)
 
 - Menu/MenuItem RAC → DropdownMenu/DropdownMenuItem (Menu re-export of ui/dropdown-menu)
 - ListBox use cases replaced per-site (role=listbox/option divs, MultiSelectComboBox, or Combobox)
@@ -579,10 +579,10 @@ Migrate ProfileItem, FacePile (+GrowingFacePile merge), MediaDisplay, AutoSizeIn
 ### Import swaps (mostly path swaps)
 
 ```
-from '@op/ui/ProfileItem'       → from '@op/ui-next/ProfileItem'
-from '@op/ui/FacePile'          → from '@op/ui-next/FacePile'
-from '@op/ui/GrowingFacePile'   → from '@op/ui-next/FacePile'  (** merged **)
-from '@op/ui/MediaDisplay'      → from '@op/ui-next/MediaDisplay'
+from '@op/ui/ProfileItem'       → from '@op/sense/ProfileItem'
+from '@op/ui/FacePile'          → from '@op/sense/FacePile'
+from '@op/ui/GrowingFacePile'   → from '@op/sense/FacePile'  (** merged **)
+from '@op/ui/MediaDisplay'      → from '@op/sense/MediaDisplay'
 ... (all others one-to-one)
 ```
 
@@ -605,7 +605,7 @@ Don't wrap items in `<span className="contents">` — margins can't apply to dis
 ### Commit message
 
 ```
-refactor(app): migrate Tier 6 to @op/ui-next (display composites)
+refactor(app): migrate Tier 6 to @op/sense (display composites)
 
 - ProfileItem/FacePile/MediaDisplay + 9 smaller path swaps
 - GrowingFacePile → FacePile with maxItems (merged)
@@ -621,13 +621,13 @@ Migrate Form, BannerUploader, AvatarUploader, FileDropZone, ComboBox, MultiSelec
 ### Import swaps
 
 ```
-from '@op/ui/Form'                → from '@op/ui-next/Form'
-from '@op/ui/BannerUploader'      → from '@op/ui-next/BannerUploader'
-from '@op/ui/AvatarUploader'      → from '@op/ui-next/AvatarUploader'
-from '@op/ui/FileDropZone'        → from '@op/ui-next/FileDropZone'
-from '@op/ui/MultiSelectComboBox' → from '@op/ui-next/MultiSelectComboBox'
-from '@op/ui/ComboBox'            → from '@op/ui-next/ui/combobox'   (** vanilla **)
-from '@op/ui/Field' (TextArea)    → from '@op/ui-next/Textarea'
+from '@op/ui/Form'                → from '@op/sense/Form'
+from '@op/ui/BannerUploader'      → from '@op/sense/BannerUploader'
+from '@op/ui/AvatarUploader'      → from '@op/sense/AvatarUploader'
+from '@op/ui/FileDropZone'        → from '@op/sense/FileDropZone'
+from '@op/ui/MultiSelectComboBox' → from '@op/sense/MultiSelectComboBox'
+from '@op/ui/ComboBox'            → from '@op/sense/ui/combobox'   (** vanilla **)
+from '@op/ui/Field' (TextArea)    → from '@op/sense/Textarea'
 ```
 
 ### ComboBox → vanilla shadcn Combobox
@@ -639,7 +639,7 @@ from '@op/ui/Field' (TextArea)    → from '@op/ui-next/Textarea'
 </ComboBox>
 
 // New
-import { Combobox, ComboboxInput, ComboboxContent, ComboboxList, ComboboxItem, ComboboxEmpty } from '@op/ui-next/ui/combobox';
+import { Combobox, ComboboxInput, ComboboxContent, ComboboxList, ComboboxItem, ComboboxEmpty } from '@op/sense/ui/combobox';
 
 <Combobox<{ id: string; label: string }>
   items={items}
@@ -667,7 +667,7 @@ API unchanged: `<MultiSelectComboBox items value onChange placeholder allowAddit
 ### Commit message
 
 ```
-refactor(app): migrate Tier 7 to @op/ui-next (form composites)
+refactor(app): migrate Tier 7 to @op/sense (form composites)
 
 - Form/BannerUploader/AvatarUploader/FileDropZone/MultiSelectComboBox path-swapped
 - ComboBox → vanilla ui/combobox (selectedKey→value via item lookup)
@@ -682,8 +682,8 @@ refactor(app): migrate Tier 7 to @op/ui-next (form composites)
 Migrate `SplitPane` (4 known consumers) and `Sidebar` (9 known consumers). Both keeper composites — straight path swap.
 
 ```
-from '@op/ui/SplitPane' → from '@op/ui-next/SplitPane'
-from '@op/ui/Sidebar'   → from '@op/ui-next/Sidebar'
+from '@op/ui/SplitPane' → from '@op/sense/SplitPane'
+from '@op/ui/Sidebar'   → from '@op/sense/Sidebar'
 ```
 
 ### Pitfall
@@ -693,7 +693,7 @@ from '@op/ui/Sidebar'   → from '@op/ui-next/Sidebar'
 ### Commit message
 
 ```
-refactor(app): migrate Tier 8 to @op/ui-next (SplitPane + Sidebar)
+refactor(app): migrate Tier 8 to @op/sense (SplitPane + Sidebar)
 ```
 
 ---
@@ -706,9 +706,9 @@ Migrate RichTextEditor, Sortable, CollapsibleConfigCard (17 sites).
 ### Import swaps
 
 ```
-from '@op/ui/RichTextEditor'        → from '@op/ui-next/RichTextEditor'
-from '@op/ui/Sortable'              → from '@op/ui-next/Sortable'
-from '@op/ui/CollapsibleConfigCard' → from '@op/ui-next/CollapsibleConfigCard'
+from '@op/ui/RichTextEditor'        → from '@op/sense/RichTextEditor'
+from '@op/ui/Sortable'              → from '@op/sense/Sortable'
+from '@op/ui/CollapsibleConfigCard' → from '@op/sense/CollapsibleConfigCard'
 ```
 
 ### Pitfall
@@ -718,7 +718,7 @@ from '@op/ui/CollapsibleConfigCard' → from '@op/ui-next/CollapsibleConfigCard'
 ### Commit message
 
 ```
-refactor(app): migrate Tier 9 to @op/ui-next (RichTextEditor/Sortable/CollapsibleConfigCard)
+refactor(app): migrate Tier 9 to @op/sense (RichTextEditor/Sortable/CollapsibleConfigCard)
 
 - 17 sites path-swapped
 - CollapsibleConfigCard drops variant="unstyled" (Collapsible primitive replaces Accordion)
@@ -729,7 +729,7 @@ refactor(app): migrate Tier 9 to @op/ui-next (RichTextEditor/Sortable/Collapsibl
 ## Tier 10 — Tables (DataTable + raw Table primitives)
 
 ### Goal
-Migrate 10 known table consumers from RAC `<Table>` to either `@op/ui-next/DataTable` (TanStack-Table-backed) or `@op/ui-next/ui/table` raw primitives.
+Migrate 10 known table consumers from RAC `<Table>` to either `@op/sense/DataTable` (TanStack-Table-backed) or `@op/sense/ui/table` raw primitives.
 
 ### Old imports to remove
 
@@ -740,9 +740,9 @@ import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Editab
 ### New imports
 
 ```
-import { DataTable, type ColumnDef, type SortingState } from '@op/ui-next/DataTable';
+import { DataTable, type ColumnDef, type SortingState } from '@op/sense/DataTable';
 // — OR for custom skeletons / non-tanstack tables:
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@op/ui-next/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@op/sense/ui/table';
 ```
 
 ### Critical patterns
@@ -784,7 +784,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
    </TableCell>
    ```
 
-5. **Skeleton tables** keep using `@op/ui-next/ui/table` raw primitives directly. DataTable is overkill for skeletons.
+5. **Skeleton tables** keep using `@op/sense/ui/table` raw primitives directly. DataTable is overkill for skeletons.
 
 6. **`header` field on ColumnDef accepting JSX:** wrap in function `() => <span/>`, not pass JSX directly — type only allows string or function.
 
@@ -811,7 +811,7 @@ Migrate DatePicker (1 consumer) and the remaining `@op/ui` imports for Popover/D
 ### DatePicker keeper
 
 ```
-from '@op/ui/DatePicker' → from '@op/ui-next/DatePicker'
+from '@op/ui/DatePicker' → from '@op/sense/DatePicker'
 ```
 
 The API uses native `Date` instead of `@internationalized/date`. Replace:
@@ -829,19 +829,19 @@ Comparisons: `start.getTime() < end.getTime()` (not `.compare()`).
 
 ### Tiny ports
 
-- `from '@op/ui/Field' { TextArea }` → `from '@op/ui-next/Textarea' { Textarea }`
-- `from '@op/ui/Popover'` → `from '@op/ui-next/ui/popover'` (see Tier 4)
-- `from '@op/ui/Dialog'` → `from '@op/ui-next/ui/dialog'`
+- `from '@op/ui/Field' { TextArea }` → `from '@op/sense/Textarea' { Textarea }`
+- `from '@op/ui/Popover'` → `from '@op/sense/ui/popover'` (see Tier 4)
+- `from '@op/ui/Dialog'` → `from '@op/sense/ui/dialog'`
 - `from '@op/ui/ListBox' | '@op/ui/RAC'` → see Tier 5 ListBox special case
 
 ### CollaborativeMultiSelectField special case
 
-If you encounter `CollaborativeMultiSelectField` (yjs-synced multi-select), rebuild it on `@op/ui-next/MultiSelectComboBox`. Drop the bespoke `DialogTrigger` + `Popover` + `ListBox` composition.
+If you encounter `CollaborativeMultiSelectField` (yjs-synced multi-select), rebuild it on `@op/sense/MultiSelectComboBox`. Drop the bespoke `DialogTrigger` + `Popover` + `ListBox` composition.
 
 ### Commit message
 
 ```
-refactor(app): migrate Tier 11 to @op/ui-next (DatePicker + tiny ports)
+refactor(app): migrate Tier 11 to @op/sense (DatePicker + tiny ports)
 
 - DatePicker: native Date throughout, drop @internationalized/date
 - TextArea (from @op/ui/Field) → Textarea (vanilla shadcn)
@@ -859,11 +859,11 @@ Wrap up remaining keeper path swaps: TagGroup, Toast, AlertBanner, Pagination, B
 ### Import swaps
 
 ```
-from '@op/ui/TagGroup'     → from '@op/ui-next/TagGroup'
-from '@op/ui/Toast'        → from '@op/ui-next/Toast' (mount) + import { toast } from 'sonner' (calls)
-from '@op/ui/AlertBanner'  → from '@op/ui-next/AlertBanner'
-from '@op/ui/Pagination'   → from '@op/ui-next/Pagination'
-from '@op/ui/Breadcrumbs'  → from '@op/ui-next/Breadcrumbs'
+from '@op/ui/TagGroup'     → from '@op/sense/TagGroup'
+from '@op/ui/Toast'        → from '@op/sense/Toast' (mount) + import { toast } from 'sonner' (calls)
+from '@op/ui/AlertBanner'  → from '@op/sense/AlertBanner'
+from '@op/ui/Pagination'   → from '@op/sense/Pagination'
+from '@op/ui/Breadcrumbs'  → from '@op/sense/Breadcrumbs'
 ```
 
 ### Toast rewrite
@@ -879,14 +879,14 @@ toast.status({ code: 404 });  // status helper preserved
 
 // New
 import { toast } from 'sonner';
-import { toast as opToast } from '@op/ui-next/Toast';  // for status helper only
+import { toast as opToast } from '@op/sense/Toast';  // for status helper only
 
 toast.success('Saved', { description: 'Settings updated.' });
 toast.error('Try again');
 opToast.status({ code: 404 });  // canned-copy status helper unchanged
 ```
 
-`<Toast />` mount component (rendered once in the root layout) stays the same import: `import { Toast } from '@op/ui-next/Toast'`.
+`<Toast />` mount component (rendered once in the root layout) stays the same import: `import { Toast } from '@op/sense/Toast'`.
 
 ### AlertBanner
 
@@ -899,7 +899,7 @@ Path swap. Drop the `onRemove` prop — tags handle their own remove buttons now
 ### Commit message
 
 ```
-refactor(app): migrate Tier 12 to @op/ui-next (Toast/AlertBanner/TagGroup/Pagination/Breadcrumbs)
+refactor(app): migrate Tier 12 to @op/sense (Toast/AlertBanner/TagGroup/Pagination/Breadcrumbs)
 
 - toast.success({title,message}) → sonner native toast.success(title, {description})
 - toast.status helper kept (op-specific HTTP-code → canned-copy)
@@ -912,7 +912,7 @@ refactor(app): migrate Tier 12 to @op/ui-next (Toast/AlertBanner/TagGroup/Pagina
 ## Phase 3 — Cleanup (after all tiers merged)
 
 ### Goal
-Remove `@op/ui` workspace; rename `@op/ui-next` → `@op/ui`.
+Remove `@op/ui` workspace; rename `@op/sense` → `@op/ui`.
 
 ### Procedure
 
@@ -924,17 +924,17 @@ Remove `@op/ui` workspace; rename `@op/ui-next` → `@op/ui`.
 
 2. **Delete `packages/ui/`** workspace entirely.
 
-3. **Rename `packages/ui-next` → `packages/ui`** at the filesystem level.
+3. **Rename `packages/sense` → `packages/ui`** at the filesystem level.
 
-4. **`packages/ui/package.json`:** change `"name": "@op/ui-next"` → `"@op/ui"`.
+4. **`packages/ui/package.json`:** change `"name": "@op/sense"` → `"@op/ui"`.
 
-5. **Codemod every `@op/ui-next/*` import → `@op/ui/*`** across `apps/`, `packages/`, `services/`.
+5. **Codemod every `@op/sense/*` import → `@op/ui/*`** across `apps/`, `packages/`, `services/`.
 
-6. **Root `package.json`:** drop `"w:ui-next"` alias; keep `"w:ui"`.
+6. **Root `package.json`:** drop `"w:sense"` alias; keep `"w:ui"`.
 
-7. **`turbo.json`:** rename ui-next references.
+7. **`turbo.json`:** rename sense references.
 
-8. **`CLAUDE.md`:** drop ui-next-specific guidance; update `pnpm w:ui` workspace docs.
+8. **`CLAUDE.md`:** drop sense-specific guidance; update `pnpm w:ui` workspace docs.
 
 9. **Run `pnpm install`** (workspace topology changed — exception to the no-autonomous-install rule).
 
@@ -947,7 +947,7 @@ Remove `@op/ui` workspace; rename `@op/ui-next` → `@op/ui`.
 ### Commit message
 
 ```
-chore: delete @op/ui, rename @op/ui-next → @op/ui
+chore: delete @op/ui, rename @op/sense → @op/ui
 
 Migration to shadcn base-nova complete. The new package owns the @op/ui
 namespace going forward.
@@ -961,7 +961,7 @@ namespace going forward.
 - [ ] grep'd all callers of the tier's @op/ui imports
 - [ ] rewrote each caller to vanilla shadcn API per tier translation table
 - [ ] handled named special cases listed in pitfalls
-- [ ] pnpm w:ui-next typecheck passes
+- [ ] pnpm w:sense typecheck passes
 - [ ] pnpm w:app typecheck passes
 - [ ] pnpm format:changes ran clean
 - [ ] dev server smoke-tested the migrated screens

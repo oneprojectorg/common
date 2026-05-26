@@ -1,6 +1,6 @@
 // 3-way migration comparison surface. Renders, for each component pair, the
-// legacy RAC component from @op/ui, the @op/ui-next wrapper, and the raw
-// shadcn primitive — side by side. Shared between the ui-next Storybook and
+// legacy RAC component from @op/ui, the @op/sense wrapper, and the raw
+// shadcn primitive — side by side. Shared between the sense Storybook and
 // the dev-only route in apps/app so the content stays in sync.
 //
 // Styling parity across columns is NOT a goal; this view is for behavior +
@@ -8,59 +8,59 @@
 
 'use client';
 
-// ---- WRAPPER (@op/ui-next compat / re-exports) ----
-import { AlertBanner as WrapAlertBanner } from '@op/ui-next/AlertBanner';
-import { Avatar as WrapAvatar } from '@op/ui-next/Avatar';
+// ---- WRAPPER (@op/sense compat / re-exports) ----
+import { AlertBanner as WrapAlertBanner } from '@op/sense/AlertBanner';
+import { Avatar as WrapAvatar } from '@op/sense/Avatar';
 import {
   Breadcrumb as WrapBreadcrumb,
   Breadcrumbs as WrapBreadcrumbs,
-} from '@op/ui-next/Breadcrumbs';
-import { Card as WrapSurface } from '@op/ui-next/Card';
-import { Checkbox as WrapCheckbox } from '@op/ui-next/Checkbox';
-import { Chip as WrapChip } from '@op/ui-next/Chip';
-import { EmptyState as WrapEmptyState } from '@op/ui-next/EmptyState';
+} from '@op/sense/Breadcrumbs';
+import { Card as WrapSurface } from '@op/sense/Card';
+import { Checkbox as WrapCheckbox } from '@op/sense/Checkbox';
+import { Chip as WrapChip } from '@op/sense/Chip';
+import { EmptyState as WrapEmptyState } from '@op/sense/EmptyState';
 import {
   FooterBar as WrapFooterBar,
   FooterBarCenter as WrapFooterBarCenter,
   FooterBarEnd as WrapFooterBarEnd,
   FooterBarStart as WrapFooterBarStart,
-} from '@op/ui-next/FooterBar';
+} from '@op/sense/FooterBar';
 import {
   Header1 as WrapHeader1,
   Header2 as WrapHeader2,
-} from '@op/ui-next/Header';
-import { Input as WrapInput } from '@op/ui-next/Input';
-import { Link as WrapLink } from '@op/ui-next/Link';
-import { LoadingSpinner as WrapLoadingSpinner } from '@op/ui-next/LoadingSpinner';
+} from '@op/sense/Header';
+import { Input as WrapInput } from '@op/sense/Input';
+import { Link as WrapLink } from '@op/sense/Link';
+import { LoadingSpinner as WrapLoadingSpinner } from '@op/sense/LoadingSpinner';
 import {
   DropdownMenu as WrapDropdownMenu,
   DropdownMenuContent as WrapDropdownMenuContent,
   DropdownMenuItem as WrapDropdownMenuItem,
   DropdownMenuTrigger as WrapDropdownMenuTrigger,
-} from '@op/ui-next/Menu';
-import { MultiSelectComboBox as WrapMultiSelectComboBox } from '@op/ui-next/MultiSelectComboBox';
-import { OptionMenu as WrapOptionMenu } from '@op/ui-next/OptionMenu';
-import { Pagination as WrapPagination } from '@op/ui-next/Pagination';
+} from '@op/sense/Menu';
+import { MultiSelectComboBox as WrapMultiSelectComboBox } from '@op/sense/MultiSelectComboBox';
+import { OptionMenu as WrapOptionMenu } from '@op/sense/OptionMenu';
+import { Pagination as WrapPagination } from '@op/sense/Pagination';
 import {
   RadioGroup as WrapRadioGroup,
   RadioGroupItem as WrapRadioGroupItem,
-} from '@op/ui-next/RadioGroup';
-import { Skeleton as WrapSkeleton } from '@op/ui-next/Skeleton';
-import { StatusDot as WrapStatusDot } from '@op/ui-next/StatusDot';
-import { Tag as WrapTag, TagGroup as WrapTagGroup } from '@op/ui-next/TagGroup';
-import { Toast as WrapToast, toast as wrapToast } from '@op/ui-next/Toast';
+} from '@op/sense/RadioGroup';
+import { Skeleton as WrapSkeleton } from '@op/sense/Skeleton';
+import { StatusDot as WrapStatusDot } from '@op/sense/StatusDot';
+import { Tag as WrapTag, TagGroup as WrapTagGroup } from '@op/sense/TagGroup';
+import { Toast as WrapToast, toast as wrapToast } from '@op/sense/Toast';
 // ---- RAW (vanilla shadcn primitives) ----
 import {
   Alert as RawAlert,
   AlertTitle as RawAlertTitle,
-} from '@op/ui-next/ui/alert';
+} from '@op/sense/ui/alert';
 import {
   Avatar as RawAvatar,
   AvatarFallback as RawAvatarFallback,
   AvatarGroup as RawAvatarGroup,
   AvatarGroupCount as RawAvatarGroupCount,
-} from '@op/ui-next/ui/avatar';
-import { Badge as RawBadge } from '@op/ui-next/ui/badge';
+} from '@op/sense/ui/avatar';
+import { Badge as RawBadge } from '@op/sense/ui/badge';
 import {
   Breadcrumb as RawBreadcrumb,
   BreadcrumbItem as RawBreadcrumbItem,
@@ -68,15 +68,15 @@ import {
   BreadcrumbList as RawBreadcrumbList,
   BreadcrumbPage as RawBreadcrumbPage,
   BreadcrumbSeparator as RawBreadcrumbSeparator,
-} from '@op/ui-next/ui/breadcrumb';
-import { Button as RawButton } from '@op/ui-next/ui/button';
+} from '@op/sense/ui/breadcrumb';
+import { Button as RawButton } from '@op/sense/ui/button';
 import {
   Card as RawCard,
   CardContent as RawCardContent,
   CardHeader as RawCardHeader,
   CardTitle as RawCardTitle,
-} from '@op/ui-next/ui/card';
-import { Checkbox as RawCheckbox } from '@op/ui-next/ui/checkbox';
+} from '@op/sense/ui/card';
+import { Checkbox as RawCheckbox } from '@op/sense/ui/checkbox';
 import {
   Combobox as RawCombobox,
   ComboboxChip as RawComboboxChip,
@@ -86,7 +86,7 @@ import {
   ComboboxEmpty as RawComboboxEmpty,
   ComboboxItem as RawComboboxItem,
   ComboboxList as RawComboboxList,
-} from '@op/ui-next/ui/combobox';
+} from '@op/sense/ui/combobox';
 import {
   Dialog as RawDialog,
   DialogContent as RawDialogContent,
@@ -94,59 +94,59 @@ import {
   DialogHeader as RawDialogHeader,
   DialogTitle as RawDialogTitle,
   DialogTrigger as RawDialogTrigger,
-} from '@op/ui-next/ui/dialog';
+} from '@op/sense/ui/dialog';
 import {
   DropdownMenu as RawDropdownMenu,
   DropdownMenuContent as RawDropdownMenuContent,
   DropdownMenuItem as RawDropdownMenuItem,
   DropdownMenuTrigger as RawDropdownMenuTrigger,
-} from '@op/ui-next/ui/dropdown-menu';
-import { Input as RawInput } from '@op/ui-next/ui/input';
+} from '@op/sense/ui/dropdown-menu';
+import { Input as RawInput } from '@op/sense/ui/input';
 import {
   InputGroup as RawInputGroup,
   InputGroupAddon as RawInputGroupAddon,
   InputGroupInput as RawInputGroupInput,
-} from '@op/ui-next/ui/input-group';
+} from '@op/sense/ui/input-group';
 import {
   Pagination as RawPagination,
   PaginationContent as RawPaginationContent,
   PaginationItem as RawPaginationItem,
   PaginationNext as RawPaginationNext,
   PaginationPrevious as RawPaginationPrevious,
-} from '@op/ui-next/ui/pagination';
+} from '@op/sense/ui/pagination';
 import {
   RadioGroup as RawRadioGroup,
   RadioGroupItem as RawRadioGroupItem,
-} from '@op/ui-next/ui/radio-group';
+} from '@op/sense/ui/radio-group';
 import {
   Select as RawSelect,
   SelectContent as RawSelectContent,
   SelectItem as RawSelectItem,
   SelectTrigger as RawSelectTrigger,
   SelectValue as RawSelectValue,
-} from '@op/ui-next/ui/select';
+} from '@op/sense/ui/select';
 import {
   Sheet as RawSheet,
   SheetContent as RawSheetContent,
   SheetHeader as RawSheetHeader,
   SheetTitle as RawSheetTitle,
   SheetTrigger as RawSheetTrigger,
-} from '@op/ui-next/ui/sheet';
-import { Skeleton as RawSkeleton } from '@op/ui-next/ui/skeleton';
-import { Spinner as RawSpinner } from '@op/ui-next/ui/spinner';
-import { Switch as RawSwitch } from '@op/ui-next/ui/switch';
+} from '@op/sense/ui/sheet';
+import { Skeleton as RawSkeleton } from '@op/sense/ui/skeleton';
+import { Spinner as RawSpinner } from '@op/sense/ui/spinner';
+import { Switch as RawSwitch } from '@op/sense/ui/switch';
 import {
   Tabs as RawTabs,
   TabsContent as RawTabsContent,
   TabsList as RawTabsList,
   TabsTrigger as RawTabsTrigger,
-} from '@op/ui-next/ui/tabs';
+} from '@op/sense/ui/tabs';
 import {
   Tooltip as RawTooltip,
   TooltipContent as RawTooltipContent,
   TooltipProvider as RawTooltipProvider,
   TooltipTrigger as RawTooltipTrigger,
-} from '@op/ui-next/ui/tooltip';
+} from '@op/sense/ui/tooltip';
 import { useId, useState, type ReactNode } from 'react';
 import { LuEllipsis, LuSearch } from 'react-icons/lu';
 import { toast as rawToast } from 'sonner';
@@ -224,7 +224,7 @@ import {
 
 // ---- layout primitives ----
 
-const COLUMN_LABELS = ['@op/ui (RAC)', '@op/ui-next', 'raw shadcn'] as const;
+const COLUMN_LABELS = ['@op/ui (RAC)', '@op/sense', 'raw shadcn'] as const;
 
 export function Pair({
   label,
@@ -1235,7 +1235,7 @@ function RawTooltipSample() {
 
 function ToastMounts() {
   // Sonner is a singleton; one Toaster renders all three columns' calls.
-  // Use ui-next's Toaster (carries `toastOptions.classNames.toast` with bg);
+  // Use sense's Toaster (carries `toastOptions.classNames.toast` with bg);
   // a bare <RawToaster /> would render unstyled containers for `toast.custom`.
   return <WrapToast />;
 }

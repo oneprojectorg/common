@@ -48,7 +48,7 @@ function DialogContent({
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean;
   /** Renders between the overlay and the popup inside the same portal —
-   * used by `@op/ui-next/Modal` to layer a `<Confetti />` overlay behind
+   * used by `@op/sense/Modal` to layer a `<Confetti />` overlay behind
    * the modal panel. Optional. */
   behindContent?: React.ReactNode;
 }) {

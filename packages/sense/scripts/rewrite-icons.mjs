@@ -77,7 +77,7 @@ async function rewriteFile(file) {
       .join('\n');
     throw new Error(
       `rewrite-icons: unknown lucide imports.\n${lines}\n\n` +
-        `Add an entry to packages/ui-next/scripts/icon-overrides.json mapping ` +
+        `Add an entry to packages/sense/scripts/icon-overrides.json mapping ` +
         `the lucide name to a real react-icons/lu name, then re-run.`,
     );
   }

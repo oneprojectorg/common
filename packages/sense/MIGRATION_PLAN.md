@@ -1,20 +1,20 @@
-# @op/ui → @op/ui-next (shadcn base-nova) Migration Plan
+# @op/ui → @op/sense (shadcn base-nova) Migration Plan
 
-Migrate `@op/ui` (68 components, react-aria-components + custom) to a new `@op/ui-next` package built on shadcn's `base-nova` registry (Base UI + Tailwind v4). Component-by-component, multi-PR rollout. Delete `@op/ui` at the end.
+Migrate `@op/ui` (68 components, react-aria-components + custom) to a new `@op/sense` package built on shadcn's `base-nova` registry (Base UI + Tailwind v4). Component-by-component, multi-PR rollout. Delete `@op/ui` at the end.
 
 ## Stack decisions (locked)
 
 | Concern | Decision |
 |---|---|
-| New package | `@op/ui-next` at `packages/ui-next/` |
+| New package | `@op/sense` at `packages/sense/` |
 | Primitives | `@base-ui/react/*` only (no Radix) |
 | Registry | `https://ui.shadcn.com/r/styles/base-nova/{name}.json` under `@shadcn-base` namespace in `components.json` |
 | Theme | shadcn base-nova defaults first; re-theme to `--op-*` tokens in Phase 5 |
 | Tailwind | v4 (already on it) |
 | Icons | Keep `react-icons/lu`; rewrite `lucide-react` imports via `scripts/rewrite-icons.mjs` after every `shadcn add` |
 | Forms | Keep `@tanstack/react-form` wrapper at `apps/app/src/components/form/utils.tsx`; swap inner widgets only |
-| Storybook | New Storybook in `@op/ui-next` on port 6007; stories added per-component |
-| Custom components (no shadcn equivalent) | Port to `@op/ui-next`, restyle to shadcn defaults |
+| Storybook | New Storybook in `@op/sense` on port 6007; stories added per-component |
+| Custom components (no shadcn equivalent) | Port to `@op/sense`, restyle to shadcn defaults |
 | Aria wiring | Match shadcn (consumer wires `htmlFor`/`aria-describedby`); our wrappers call `useId()` internally so caller DX is unchanged |
 | Modal | Compat wrapper around shadcn `Dialog` exposing existing `OverlayTriggerStateContext` + render-prop `close`. Do NOT codemod 52 call sites. |
 | `FieldGroup` rename | Adopt shadcn's `input-group` directly; our old `FieldGroup` becomes `InputGroup` |
@@ -23,27 +23,27 @@ Migrate `@op/ui` (68 components, react-aria-components + custom) to a new `@op/u
 | RAC/RAH/RAS passthrough | 15 files import RAC through `@op/ui/RAC|RAH|RAS`. Migrate to direct `react-aria-components` imports in Phase 6. |
 | Branches | Stacked sub-branches off `shadcn-full-install` integration branch (`shadcn/00-foundation`, `shadcn/01-field-tier`, etc.). Only `shadcn-full-install` lands to `dev`. |
 | PR cadence | 2–5 components per PR |
-| Codemod | `rg -l '@op/ui/Foo' apps \| xargs sed -i '' -e 's\|@op/ui/Foo\|@op/ui-next/foo\|g'` per PR + hand-fix prop drift |
-| MIGRATION_PLAN.md | Lives at `packages/ui-next/MIGRATION_PLAN.md`. Updated each PR. |
-| App import of ui-next styles.css | From Phase 0. Base-nova `@theme` block in `@op/ui-next/src/styles.css`; app `globals.css` adds `@import "@op/ui-next/styles.css"` (eng-review #1). |
+| Codemod | `rg -l '@op/ui/Foo' apps \| xargs sed -i '' -e 's\|@op/ui/Foo\|@op/sense/foo\|g'` per PR + hand-fix prop drift |
+| MIGRATION_PLAN.md | Lives at `packages/sense/MIGRATION_PLAN.md`. Updated each PR. |
+| App import of sense styles.css | From Phase 0. Base-nova `@theme` block in `@op/sense/src/styles.css`; app `globals.css` adds `@import "@op/sense/styles.css"` (eng-review #1). |
 | Storybook | v10 (latest), port 6007. Phase 0 cannot merge unless smoke test renders Button (eng-review #7). |
 | Test gates | Playwright E2E smoke suite (golden-path flows) + per-component `@testing-library` render tests per tier (eng-review #8). |
 | Modal | Codemod all 52 consumer sites in Tier 5. No compat wrapper. Freeze Modal-touching files on `dev` during Tier 5 review (eng-review #2). |
 | Forms PR | Tier 3 + Tier 4 merged into one PR: TextField, NumberField, SearchField, Checkbox, RadioGroup, ToggleButton, Select, ComboBox, MultiSelectComboBox + Field + LoadingSpinner + `form/utils.tsx` rewire (eng-review #3). |
 | Cleanup split | Tier 11 splits into 11a (RAC passthrough migration in 15 files) and 11b (delete `@op/ui` + uninstall RAC) (eng-review #4). |
 | Icon rewrite | `scripts/rewrite-icons.mjs` auto-generates lucide → react-icons/lu map from `lucide-react` exports. Manual override file for non-lucide cases (eng-review #5). |
-| ui-next deps | `package.json` declares `@base-ui/react`, `class-variance-authority`, `tailwind-merge`, `tailwind-variants`, `lucide-react`, `sonner` as direct dependencies (eng-review #6). |
+| sense deps | `package.json` declares `@base-ui/react`, `class-variance-authority`, `tailwind-merge`, `tailwind-variants`, `lucide-react`, `sonner` as direct dependencies (eng-review #6). |
 
 ## Phase 0 — Foundation (1 PR)
 
 Branch: `shadcn/00-foundation` off `shadcn-full-install`.
 
-Goal: empty `@op/ui-next` package with shadcn `base-nova` wired, smoke-tested by installing Button, Storybook running. Zero app changes.
+Goal: empty `@op/sense` package with shadcn `base-nova` wired, smoke-tested by installing Button, Storybook running. Zero app changes.
 
 ### Files created
 
 ```
-packages/ui-next/
+packages/sense/
   package.json
   tsconfig.json
   turbo.json
@@ -68,8 +68,8 @@ packages/ui-next/
 ### Files modified
 
 ```
-package.json        # add "w:ui-next": "pnpm --filter @op/ui-next"
-CLAUDE.md           # add ui-next to workspace shortcuts
+package.json        # add "w:sense": "pnpm --filter @op/sense"
+CLAUDE.md           # add sense to workspace shortcuts
 pnpm-workspace.yaml # confirm packages/* glob picks it up (likely no edit)
 ```
 
@@ -89,11 +89,11 @@ pnpm-workspace.yaml # confirm packages/* glob picks it up (likely no edit)
   },
   "iconLibrary": "lucide",
   "aliases": {
-    "components": "@op/ui-next/components",
-    "utils": "@op/ui-next/lib/utils",
-    "ui": "@op/ui-next/components/ui",
-    "lib": "@op/ui-next/lib",
-    "hooks": "@op/ui-next/hooks"
+    "components": "@op/sense/components",
+    "utils": "@op/sense/lib/utils",
+    "ui": "@op/sense/components/ui",
+    "lib": "@op/sense/lib",
+    "hooks": "@op/sense/hooks"
   },
   "registries": {
     "@shadcn-base": "https://ui.shadcn.com/r/styles/base-nova/{name}.json"
@@ -105,7 +105,7 @@ pnpm-workspace.yaml # confirm packages/* glob picks it up (likely no edit)
 
 ```json
 {
-  "name": "@op/ui-next",
+  "name": "@op/sense",
   "private": true,
   "type": "module",
   "exports": {
@@ -120,10 +120,10 @@ Component exports added per-PR in later phases.
 ### Smoke test
 
 ```bash
-pnpm w:ui-next add @shadcn-base/button
-pnpm w:ui-next exec node scripts/rewrite-icons.mjs
-pnpm w:ui-next typecheck
-pnpm w:ui-next storybook   # port 6007
+pnpm w:sense add @shadcn-base/button
+pnpm w:sense exec node scripts/rewrite-icons.mjs
+pnpm w:sense typecheck
+pnpm w:sense storybook   # port 6007
 ```
 
 Expected: `src/components/ui/button.tsx` wraps `@base-ui/react/button`, icons rewritten to `react-icons/lu`, Storybook renders Button story.
@@ -132,7 +132,7 @@ Expected: `src/components/ui/button.tsx` wraps `@base-ui/react/button`, icons re
 
 - `pnpm typecheck` green
 - `pnpm format:check` green
-- `pnpm build` green (Turbo auto-picks up `@op/ui-next`)
+- `pnpm build` green (Turbo auto-picks up `@op/sense`)
 - Storybook starts cleanly on port 6007
 - App build unchanged (`pnpm w:app build` succeeds)
 
@@ -167,7 +167,7 @@ Each tier is one PR (or 1–2 PRs if cluster > 5 components). Branch per tier: `
 ### Tier 0 — Field (1 PR, `shadcn/01-field`)
 
 - `shadcn add @shadcn-base/field @shadcn-base/label @shadcn-base/input @shadcn-base/textarea @shadcn-base/input-group`
-- Compose `@op/ui-next/Field` re-exporting:
+- Compose `@op/sense/Field` re-exporting:
   - `Label = FieldLabel`
   - `Description = FieldDescription`
   - `FieldError` (auto-hides via `if (!content) return null`)
@@ -262,7 +262,7 @@ Cluster: RichTextEditor, Sortable, Sidebar, PhaseStepper, Stepper, SplitPane, Co
 
 ### Tier 9 — Re-theme (1 PR, `shadcn/10-retheme`)
 
-- Map base-nova CSS vars → `--op-*` tokens in `packages/ui-next/src/styles.css` `@theme inline` block (replacing the base-nova defaults that have been live since Phase 0).
+- Map base-nova CSS vars → `--op-*` tokens in `packages/sense/src/styles.css` `@theme inline` block (replacing the base-nova defaults that have been live since Phase 0).
 - Dark mode mapping.
 - Visual sweep via `/browse` on key pages.
 - Playwright E2E baseline refresh (style change is intentional).
@@ -279,7 +279,7 @@ Cluster: RichTextEditor, Sortable, Sidebar, PhaseStepper, Stepper, SplitPane, Co
 - Delete `packages/ui/` directory.
 - Remove `@op/ui` from any `package.json` deps.
 - Uninstall `react-aria-components`, `react-aria`, `react-stately`, `react-aria-tailwind-starter` if no remaining consumers.
-- (Optional follow-up PR) rename `@op/ui-next` → `@op/ui`.
+- (Optional follow-up PR) rename `@op/sense` → `@op/ui`.
 
 ## Total PR count
 
@@ -315,24 +315,24 @@ Then one final merge `shadcn-full-install` → `dev`.
 
 4. **Surface → Card composition migration.** Tier 2b kept Surface call sites as plain-children. shadcn Card primitive ships `CardHeader`/`CardContent`/`CardFooter`/`CardTitle`/`CardDescription`/`CardAction` slot composition. Migrate Surface consumers to use the slots for cleaner spacing semantics. JSX restructure per site, not codemod-mechanical. When done, restore shadcn's default `py-4` on Card plus the slot-aware padding resets (`has-data-[slot=card-footer]:pb-0`, `has-[>img:first-child]:pt-0`) — currently dropped because consumers pad manually.
 
-9. **AddRelationshipForm refactor.** `apps/app/src/components/Profile/ProfileDetails/AddRelationshipForm.tsx` renders raw checkbox + plain `<div>`/`<span>` rows instead of `<Field>` + `<FieldLabel>` + `<FieldDescription>` composition. No `<label htmlFor>` association between Checkbox and its visible text — clicking the option text doesn't toggle. Rewrite using `@op/ui-next/Field` + `<label>` wrappers so each row is keyboard/screen-reader accessible.
+9. **AddRelationshipForm refactor.** `apps/app/src/components/Profile/ProfileDetails/AddRelationshipForm.tsx` renders raw checkbox + plain `<div>`/`<span>` rows instead of `<Field>` + `<FieldLabel>` + `<FieldDescription>` composition. No `<label htmlFor>` association between Checkbox and its visible text — clicking the option text doesn't toggle. Rewrite using `@op/sense/Field` + `<label>` wrappers so each row is keyboard/screen-reader accessible.
 
 ## Risk register
 
 | # | Risk | Mitigation |
 |---|---|---|
 | 1 | shadcn CLI may not target workspace packages cleanly | Verify in Phase 0 smoke test; fail-fast |
-| 2 | Tailwind v4 token bleed between ui-next styles.css and app `@op/styles` | App imports ui-next styles.css from Phase 0. Base-nova CSS vars (`--background`, `--primary`, etc.) coexist with `--op-*` tokens (no name collision). Re-theme in Tier 9 swaps base-nova defaults for `--op-*` mapping. |
+| 2 | Tailwind v4 token bleed between sense styles.css and app `@op/styles` | App imports sense styles.css from Phase 0. Base-nova CSS vars (`--background`, `--primary`, etc.) coexist with `--op-*` tokens (no name collision). Re-theme in Tier 9 swaps base-nova defaults for `--op-*` mapping. |
 | 3 | base-nova components depend on lucide-react; rewrite-icons.mjs missing mappings | Hard-fail on unknown lucide name; manual map maintenance |
 | 4 | Storybook 9 + Tailwind v4 + base-ui combo untested | Validate in Phase 0 before committing rest of plan |
 | 5 | Final `shadcn-full-install` → `dev` merge accumulates conflicts across all 12 PRs | Tier PRs merge into the integration branch only — no contention during migration. Risk concentrates at final merge. Mitigation: rebase `shadcn-full-install` onto `dev` (or merge `dev` in) at minimum after every 3 tiers. Catches conflicts incrementally instead of one big-bang at the end. |
 | 6 | RAC slot wiring loss breaks consumer code | Wrappers (TextField etc.) call `useId()` internally; caller API preserved |
 | 7 | Big-bang merge of `shadcn-full-install` to `dev` is huge diff | Sub-PRs merge incrementally to the integration branch; reviewers see ~5 components at a time |
-| 8 | Long-lived dual `@op/ui` + `@op/ui-next` bundles inflate dev builds | Acceptable for dev; prod ships only after Tier 11 |
+| 8 | Long-lived dual `@op/ui` + `@op/sense` bundles inflate dev builds | Acceptable for dev; prod ships only after Tier 11 |
 | 9 | `apps/app/src/components/form/utils.tsx` field component registrations break mid-migration | Form-bound 5 (TextField/Select/MultiSelectComboBox/ToggleButton/Checkbox) migrate together with `form/utils.tsx` update in same PR |
 | 10 | Functional regressions ship without tests | Phase 0 adds Playwright E2E smoke suite (5–8 golden-path flows: login, view decision, edit profile, create proposal, modal open, multi-select). Each tier PR adds `@testing-library` render tests per migrated component. CI runs both gates. Visual diffs skipped — target style intentionally different from current. |
-| 11 | shadcn add inside workspace package may not resolve aliases / install deps cleanly | Phase 0 smoke test gates the entire PR: `pnpm w:ui-next add @shadcn-base/button` must succeed and write to `packages/ui-next/src/components/ui/button.tsx`. ui-next `package.json` declares all transitive shadcn deps (`@base-ui/react`, `class-variance-authority`, `tailwind-merge`, `tailwind-variants`, `lucide-react`, `sonner`) directly to avoid hoist ambiguity. |
-| 12 | Storybook v10 + Tailwind v4 + base-ui untested locally | Phase 0 cannot merge unless `pnpm w:ui-next storybook` renders Button story. Fallback: if Storybook fails, defer scaffold to follow-up PR and ship rest of Phase 0. |
+| 11 | shadcn add inside workspace package may not resolve aliases / install deps cleanly | Phase 0 smoke test gates the entire PR: `pnpm w:sense add @shadcn-base/button` must succeed and write to `packages/sense/src/components/ui/button.tsx`. sense `package.json` declares all transitive shadcn deps (`@base-ui/react`, `class-variance-authority`, `tailwind-merge`, `tailwind-variants`, `lucide-react`, `sonner`) directly to avoid hoist ambiguity. |
+| 12 | Storybook v10 + Tailwind v4 + base-ui untested locally | Phase 0 cannot merge unless `pnpm w:sense storybook` renders Button story. Fallback: if Storybook fails, defer scaffold to follow-up PR and ship rest of Phase 0. |
 | 13 | `rewrite-icons.mjs` mapping drift as base-nova components evolve | Script auto-generates lucide → react-icons/lu map from `lucide-react` package exports at runtime. Manual override file only for non-lucide cases (e.g., `FcGoogle`, `react-icons/si`). Hard-fail on unknown name with diff guidance. |
 
 ## Out of scope
@@ -341,4 +341,4 @@ Then one final merge `shadcn-full-install` → `dev`.
 - Rewriting `@tanstack/react-form` wrapper architecture
 - Replacing `react-icons` library
 - Introducing new components beyond what `@op/ui` already exposes
-- App-level refactors triggered by ui-next API differences (deferred per-PR)
+- App-level refactors triggered by sense API differences (deferred per-PR)
