@@ -2,10 +2,10 @@
 
 import { Combobox as ComboboxPrimitive } from '@base-ui/react';
 import * as React from 'react';
-import { LuCheck, LuChevronDown, LuX } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
 import { Button } from './button';
+import { IconPlaceholder } from './icon-placeholder';
 import {
   InputGroup,
   InputGroupAddon,
@@ -31,7 +31,14 @@ function ComboboxTrigger({
       {...props}
     >
       {children}
-      <LuChevronDown className="pointer-events-none size-4 text-muted-foreground" />
+      <IconPlaceholder
+        lucide="ChevronDownIcon"
+        tabler="IconChevronDown"
+        hugeicons="ArrowDown01Icon"
+        phosphor="CaretDownIcon"
+        remixicon="RiArrowDownSLine"
+        className="pointer-events-none size-4 text-muted-foreground"
+      />
     </ComboboxPrimitive.Trigger>
   );
 }
@@ -44,7 +51,14 @@ function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
       className={cn(className)}
       {...props}
     >
-      <LuX className="pointer-events-none" />
+      <IconPlaceholder
+        lucide="XIcon"
+        tabler="IconX"
+        hugeicons="Cancel01Icon"
+        phosphor="XIcon"
+        remixicon="RiCloseLine"
+        className="pointer-events-none"
+      />
     </ComboboxPrimitive.Clear>
   );
 }
@@ -154,7 +168,14 @@ function ComboboxItem({
           <span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center" />
         }
       >
-        <LuCheck className="pointer-events-none" />
+        <IconPlaceholder
+          lucide="CheckIcon"
+          tabler="IconCheck"
+          hugeicons="Tick02Icon"
+          phosphor="CheckIcon"
+          remixicon="RiCheckLine"
+          className="pointer-events-none"
+        />
       </ComboboxPrimitive.ItemIndicator>
     </ComboboxPrimitive.Item>
   );
@@ -256,7 +277,14 @@ function ComboboxChip({
           className="-ml-1 opacity-50 hover:opacity-100"
           data-slot="combobox-chip-remove"
         >
-          <LuX className="pointer-events-none" />
+          <IconPlaceholder
+            lucide="XIcon"
+            tabler="IconX"
+            hugeicons="Cancel01Icon"
+            phosphor="XIcon"
+            remixicon="RiCloseLine"
+            className="pointer-events-none"
+          />
         </ComboboxPrimitive.ChipRemove>
       )}
     </ComboboxPrimitive.Chip>

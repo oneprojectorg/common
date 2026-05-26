@@ -9,9 +9,70 @@
 
 'use client';
 
+// New sense composites + primitives used by additional Pair / Gain rows.
+import { AutoSizeInput as RawAutoSizeInput } from '@op/sense/AutoSizeInput';
+import { Avatar as RawSenseAvatar } from '@op/sense/Avatar';
+import { AvatarUploader as RawAvatarUploader } from '@op/sense/AvatarUploader';
+import { BannerUploader as RawBannerUploader } from '@op/sense/BannerUploader';
+import { CollapsibleConfigCard as RawCollapsibleConfigCard } from '@op/sense/CollapsibleConfigCard';
+import { CommentButton as RawCommentButton } from '@op/sense/CommentButton';
+import { DatePicker as RawDatePicker } from '@op/sense/DatePicker';
+import { FacePile as RawFacePile } from '@op/sense/FacePile';
+import { FileDropZone as RawFileDropZone } from '@op/sense/FileDropZone';
+import { Form as RawForm } from '@op/sense/Form';
+import { Header1 as RawHeader1, Header2 as RawHeader2 } from '@op/sense/Header';
+import { HorizontalList as RawHorizontalList } from '@op/sense/HorizontalList';
+import { LogoLoop as RawLogoLoop } from '@op/sense/LogoLoop';
+import { MediaDisplay as RawMediaDisplay } from '@op/sense/MediaDisplay';
+import {
+  NotificationPanel as RawNotificationPanel,
+  NotificationPanelActions as RawNotificationPanelActions,
+  NotificationPanelHeader as RawNotificationPanelHeader,
+  NotificationPanelItem as RawNotificationPanelItem,
+  NotificationPanelList as RawNotificationPanelList,
+} from '@op/sense/NotificationPanel';
+import {
+  PhaseStepper as RawPhaseStepper,
+  type Phase as RawPhase,
+} from '@op/sense/PhaseStepper';
+import { ProfileItem as RawProfileItem } from '@op/sense/ProfileItem';
+import { ReactionsButton as RawReactionsButton } from '@op/sense/ReactionsButton';
+import { RichTextEditor as RawRichTextEditor } from '@op/sense/RichTextEditor';
+import {
+  Sidebar as RawSidebar,
+  SidebarContent as RawSidebarContent,
+  SidebarFooter as RawSidebarFooter,
+  SidebarGroup as RawSidebarGroup,
+  SidebarGroupContent as RawSidebarGroupContent,
+  SidebarGroupLabel as RawSidebarGroupLabel,
+  SidebarHeader as RawSidebarHeader,
+  SidebarInset as RawSidebarInset,
+  SidebarMenu as RawSidebarMenu,
+  SidebarMenuButton as RawSidebarMenuButton,
+  SidebarMenuItem as RawSidebarMenuItem,
+  SidebarProvider as RawSidebarProvider,
+  SidebarTrigger as RawSidebarTrigger,
+} from '@op/sense/Sidebar';
+import { SocialLinks as RawSocialLinks } from '@op/sense/SocialLinks';
+import { Sortable as RawSortable } from '@op/sense/Sortable';
+import { SplitPane as RawSplitPane } from '@op/sense/SplitPane';
+import {
+  StepItem as RawStepItem,
+  StepperProgressIndicator as RawStepperProgressIndicator,
+} from '@op/sense/Stepper';
+import {
+  Table as RawTable,
+  TableBody as RawTableBody,
+  TableCell as RawTableCell,
+  TableHead as RawTableHead,
+  TableHeader as RawTableHeader,
+  TableRow as RawTableRow,
+} from '@op/sense/Table';
+import { Textarea as RawTextarea } from '@op/sense/Textarea';
 // Sonner singleton mount used by Toast pair — the comparison row uses
 // sense's <Toast /> so toast.* calls render through op-themed Toaster.
 import { Toast as WrapToast } from '@op/sense/Toast';
+import { TranslateBanner as RawTranslateBanner } from '@op/sense/TranslateBanner';
 // ---- RAW (vanilla shadcn primitives) ----
 import {
   Accordion as RawAccordion,
@@ -36,8 +97,6 @@ import {
 } from '@op/sense/ui/alert-dialog';
 import { AspectRatio as RawAspectRatio } from '@op/sense/ui/aspect-ratio';
 import {
-  Avatar as RawAvatar,
-  AvatarFallback as RawAvatarFallback,
   AvatarGroup as RawAvatarGroup,
   AvatarGroupCount as RawAvatarGroupCount,
 } from '@op/sense/ui/avatar';
@@ -102,7 +161,23 @@ import {
   InputGroupInput as RawInputGroupInput,
 } from '@op/sense/ui/input-group';
 import { Kbd as RawKbd } from '@op/sense/ui/kbd';
+import {
+  Menubar as RawMenubar,
+  MenubarContent as RawMenubarContent,
+  MenubarItem as RawMenubarItem,
+  MenubarMenu as RawMenubarMenu,
+  MenubarSeparator as RawMenubarSeparator,
+  MenubarTrigger as RawMenubarTrigger,
+} from '@op/sense/ui/menubar';
 import { NativeSelect as RawNativeSelect } from '@op/sense/ui/native-select';
+import {
+  NavigationMenu as RawNavigationMenu,
+  NavigationMenuContent as RawNavigationMenuContent,
+  NavigationMenuItem as RawNavigationMenuItem,
+  NavigationMenuLink as RawNavigationMenuLink,
+  NavigationMenuList as RawNavigationMenuList,
+  NavigationMenuTrigger as RawNavigationMenuTrigger,
+} from '@op/sense/ui/navigation-menu';
 import {
   Pagination as RawPagination,
   PaginationContent as RawPaginationContent,
@@ -110,6 +185,11 @@ import {
   PaginationNext as RawPaginationNext,
   PaginationPrevious as RawPaginationPrevious,
 } from '@op/sense/ui/pagination';
+import {
+  Popover as RawPopover,
+  PopoverContent as RawPopoverContent,
+  PopoverTrigger as RawPopoverTrigger,
+} from '@op/sense/ui/popover';
 import { Progress as RawProgress } from '@op/sense/ui/progress';
 import {
   RadioGroup as RawRadioGroup,
@@ -123,6 +203,7 @@ import {
   SelectTrigger as RawSelectTrigger,
   SelectValue as RawSelectValue,
 } from '@op/sense/ui/select';
+import { Separator as RawSeparator } from '@op/sense/ui/separator';
 import {
   Sheet as RawSheet,
   SheetContent as RawSheetContent,
@@ -151,18 +232,27 @@ import {
   TooltipProvider as RawTooltipProvider,
   TooltipTrigger as RawTooltipTrigger,
 } from '@op/sense/ui/tooltip';
+import * as React from 'react';
 import { useId, useState, type ReactNode } from 'react';
 import {
   LuBold,
+  LuCalendar,
+  LuChevronDown,
   LuEllipsis,
+  LuHouse,
+  LuInbox,
   LuItalic,
   LuSearch,
+  LuSettings,
   LuUnderline,
 } from 'react-icons/lu';
 import { toast as rawToast } from 'sonner';
 
 import { AlertBanner as OldAlertBanner } from '../components/AlertBanner';
+import { AutoSizeInput as OldAutoSizeInput } from '../components/AutoSizeInput';
 import { Avatar as OldAvatar } from '../components/Avatar';
+import { AvatarUploader as OldAvatarUploader } from '../components/AvatarUploader';
+import { BannerUploader as OldBannerUploader } from '../components/BannerUploader';
 import {
   Breadcrumb as OldBreadcrumb,
   Breadcrumbs as OldBreadcrumbs,
@@ -171,22 +261,32 @@ import { Button as OldButton } from '../components/Button';
 import { ButtonGroup as OldButtonGroup } from '../components/ButtonGroup';
 import { Checkbox as OldCheckbox } from '../components/Checkbox';
 import { Chip as OldChip } from '../components/Chip';
+import { CollapsibleConfigCard as OldCollapsibleConfigCard } from '../components/CollapsibleConfigCard';
+import { CommentButton as OldCommentButton } from '../components/CommentButton';
+import { DatePicker as OldDatePicker } from '../components/DatePicker';
+import { Dialog as OldDialog } from '../components/Dialog';
+import { DropDownButton as OldDropDownButton } from '../components/DropDownButton';
 import { EmptyState as OldEmptyState } from '../components/EmptyState';
 import { FacePile as OldFacePile } from '../components/FacePile';
+import { FileDropZone as OldFileDropZone } from '../components/FileDropZone';
 import {
   FooterBar as OldFooterBar,
   FooterBarCenter as OldFooterBarCenter,
   FooterBarEnd as OldFooterBarEnd,
   FooterBarStart as OldFooterBarStart,
 } from '../components/FooterBar';
+import { Form as OldForm } from '../components/Form';
 import {
   Header1 as OldHeader1,
   Header2 as OldHeader2,
 } from '../components/Header';
+import { HorizontalList as OldHorizontalList } from '../components/HorizontalList';
 import { IconButton as OldIconButton } from '../components/IconButton';
 import { Link as OldLink } from '../components/Link';
 import { DropdownItem as OldDropdownItem } from '../components/ListBox';
 import { LoadingSpinner as OldLoadingSpinner } from '../components/LoadingSpinner';
+import { LogoLoop as OldLogoLoop } from '../components/LogoLoop';
+import { MediaDisplay as OldMediaDisplay } from '../components/MediaDisplay';
 import {
   Menu as OldMenu,
   MenuItem as OldMenuItem,
@@ -199,14 +299,28 @@ import {
   ModalHeader as OldModalHeader,
 } from '../components/Modal';
 import { MultiSelectComboBox as OldMultiSelectComboBox } from '../components/MultiSelectComboBox';
+import {
+  NotificationPanel as OldNotificationPanel,
+  NotificationPanelActions as OldNotificationPanelActions,
+  NotificationPanelHeader as OldNotificationPanelHeader,
+  NotificationPanelItem as OldNotificationPanelItem,
+  NotificationPanelList as OldNotificationPanelList,
+} from '../components/NotificationPanel';
 import { NumberField as OldNumberField } from '../components/NumberField';
 import { OptionMenu as OldOptionMenu } from '../components/OptionMenu';
 import { Pagination as OldPagination } from '../components/Pagination';
+import {
+  PhaseStepper as OldPhaseStepper,
+  type Phase as OldPhase,
+} from '../components/PhaseStepper';
 import { Popover as OldPopover } from '../components/Popover';
+import { ProfileItem as OldProfileItem } from '../components/ProfileItem';
 import {
   Radio as OldRadio,
   RadioGroup as OldRadioGroup,
 } from '../components/RadioGroup';
+import { ReactionsButton as OldReactionsButton } from '../components/ReactionsButton';
+import { RichTextEditor as OldRichTextEditor } from '../components/RichTextEditor';
 import { SearchField as OldSearchField } from '../components/SearchField';
 import { Select as OldSelect } from '../components/Select';
 import {
@@ -214,8 +328,21 @@ import {
   SheetBody as OldSheetBody,
   SheetHeader as OldSheetHeader,
 } from '../components/Sheet';
+import {
+  Sidebar as OldSidebar,
+  SidebarLayout as OldSidebarLayout,
+  SidebarProvider as OldSidebarProvider,
+  SidebarTrigger as OldSidebarTrigger,
+} from '../components/Sidebar';
 import { Skeleton as OldSkeleton } from '../components/Skeleton';
+import { SocialLinks as OldSocialLinks } from '../components/SocialLinks';
+import { Sortable as OldSortable } from '../components/Sortable';
+import { SplitPane as OldSplitPane } from '../components/SplitPane';
 import { StatusDot as OldStatusDot } from '../components/StatusDot';
+import {
+  StepItem as OldStepItem,
+  StepperProgressIndicator as OldStepperProgressIndicator,
+} from '../components/Stepper';
 import { Surface as OldSurface } from '../components/Surface';
 import {
   Tab as OldTab,
@@ -231,6 +358,7 @@ import {
   Tooltip as OldTooltip,
   TooltipTrigger as OldTooltipTrigger,
 } from '../components/Tooltip';
+import { TranslateBanner as OldTranslateBanner } from '../components/TranslateBanner';
 // ---- OLD (@op/ui, RAC) ----
 import {
   Accordion as OldAccordion,
@@ -239,6 +367,14 @@ import {
   AccordionItem as OldAccordionItem,
   AccordionTrigger as OldAccordionTrigger,
 } from '../components/ui/accordion';
+import {
+  Table as OldTable,
+  TableBody as OldTableBody,
+  TableCell as OldTableCell,
+  TableColumn as OldTableColumn,
+  TableHeader as OldTableHeader,
+  TableRow as OldTableRow,
+} from '../components/ui/table';
 
 // ---- layout primitives ----
 
@@ -392,6 +528,16 @@ export function Inline() {
           </span>
         }
       />
+      <Pair
+        label="CommentButton"
+        old={<OldCommentButton count={3} />}
+        raw={<RawCommentButton count={3} />}
+      />
+      <Pair
+        label="ReactionsButton"
+        old={<OldReactionsSample />}
+        raw={<RawReactionsSample />}
+      />
     </Section>
   );
 }
@@ -456,6 +602,44 @@ export function Forms() {
         raw={<RawBadge variant="secondary">Tag</RawBadge>}
       />
       <Pair label="TagGroup" old={<OldTagSample />} raw={<RawTagSample />} />
+      <Pair
+        label="Textarea"
+        old={
+          <OldTextField
+            label="Notes"
+            useTextArea
+            textareaProps={{ placeholder: 'Write…', rows: 3 }}
+          />
+        }
+        raw={<RawTextarea placeholder="Write…" rows={3} />}
+      />
+      <Pair
+        label="AutoSizeInput"
+        old={<OldAutoSizeSample />}
+        raw={<RawAutoSizeSample />}
+      />
+      <Pair
+        label="DatePicker"
+        old={<OldDatePickerSample />}
+        raw={<RawDatePickerSample />}
+      />
+      <Pair
+        label="FileDropZone"
+        old={
+          <OldFileDropZone
+            onSelectFiles={() => {}}
+            label="Drop files here"
+            className="w-72"
+          />
+        }
+        raw={
+          <RawFileDropZone
+            onSelectFiles={() => {}}
+            label="Drop files here"
+            className="w-72"
+          />
+        }
+      />
     </Section>
   );
 }
@@ -494,6 +678,28 @@ export function Feedback() {
         old={<OldSkeleton className="h-6 w-40" />}
         raw={<RawSkeleton className="h-6 w-40" />}
       />
+      <Pair
+        label="TranslateBanner"
+        old={
+          <OldTranslateBanner
+            label="Translate to English"
+            onTranslate={() => {}}
+            onDismiss={() => {}}
+          />
+        }
+        raw={
+          <RawTranslateBanner
+            label="Translate to English"
+            onTranslate={() => {}}
+            onDismiss={() => {}}
+          />
+        }
+      />
+      <Pair
+        label="NotificationPanel"
+        old={<OldNotificationPanelSample />}
+        raw={<RawNotificationPanelSample />}
+      />
     </Section>
   );
 }
@@ -504,20 +710,12 @@ export function Media() {
       <Pair
         label="Avatar"
         old={<OldAvatar placeholder="Nour Malaeb" />}
-        raw={
-          <RawAvatar>
-            <RawAvatarFallback>NM</RawAvatarFallback>
-          </RawAvatar>
-        }
+        raw={<RawSenseAvatar placeholder="Nour Malaeb" />}
       />
       <Pair
         label="Avatar (large)"
         old={<OldAvatar placeholder="Nour Malaeb" size="lg" />}
-        raw={
-          <RawAvatar size="lg">
-            <RawAvatarFallback>NM</RawAvatarFallback>
-          </RawAvatar>
-        }
+        raw={<RawSenseAvatar placeholder="Nour Malaeb" size="lg" />}
       />
       <Pair
         label="AvatarGroup"
@@ -529,6 +727,57 @@ export function Media() {
           />
         }
         raw={<RawAvatarGroupSample />}
+      />
+      <Pair
+        label="FacePile (overflow)"
+        old={
+          <OldFacePile
+            items={GROUP_NAMES.map((name) => (
+              <OldAvatar key={name} placeholder={name} />
+            ))}
+          />
+        }
+        raw={
+          <RawFacePile
+            maxItems={3}
+            items={GROUP_NAMES.map((name) => (
+              <RawSenseAvatar key={name} placeholder={name} />
+            ))}
+          />
+        }
+      />
+      <Pair
+        label="AvatarUploader"
+        old={<OldAvatarUploader label="Avatar" />}
+        raw={<RawAvatarUploader label="Avatar" />}
+      />
+      <Pair
+        label="BannerUploader"
+        old={<OldBannerUploader label="Banner" />}
+        raw={<RawBannerUploader label="Banner" />}
+      />
+      <Pair
+        label="MediaDisplay"
+        old={
+          <OldMediaDisplay
+            title="The unreasonable effectiveness of typed forms"
+            description="A long-read on form invariants."
+            url="https://example.com/article"
+            site="example.com"
+          />
+        }
+        raw={
+          <RawMediaDisplay
+            title="The unreasonable effectiveness of typed forms"
+            description="A long-read on form invariants."
+            url="https://example.com/article"
+          />
+        }
+      />
+      <Pair
+        label="LogoLoop"
+        old={<OldLogoLoopSample />}
+        raw={<RawLogoLoopSample />}
       />
     </Section>
   );
@@ -545,17 +794,9 @@ const GROUP_NAMES = [
 function RawAvatarGroupSample() {
   return (
     <RawAvatarGroup>
-      {GROUP_NAMES.slice(0, 3).map((name) => {
-        const initials = name
-          .split(' ')
-          .map((part) => part[0])
-          .join('');
-        return (
-          <RawAvatar key={name}>
-            <RawAvatarFallback>{initials}</RawAvatarFallback>
-          </RawAvatar>
-        );
-      })}
+      {GROUP_NAMES.slice(0, 3).map((name) => (
+        <RawSenseAvatar key={name} placeholder={name} />
+      ))}
       <RawAvatarGroupCount>+{GROUP_NAMES.length - 3}</RawAvatarGroupCount>
     </RawAvatarGroup>
   );
@@ -586,8 +827,8 @@ export function Structure() {
         }
         raw={
           <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-semibold">Header1</h1>
-            <h2 className="text-xl font-semibold">Header2</h2>
+            <RawHeader1>Header1</RawHeader1>
+            <RawHeader2>Header2</RawHeader2>
           </div>
         }
       />
@@ -667,6 +908,66 @@ export function Structure() {
           </RawBreadcrumb>
         }
       />
+      <Pair
+        label="Form (layout)"
+        old={
+          <OldForm className="w-60">
+            <OldTextField
+              label="Email"
+              inputProps={{ placeholder: 'you@example.com' }}
+            />
+            <OldButton>Submit</OldButton>
+          </OldForm>
+        }
+        raw={
+          <RawForm className="w-60">
+            <RawInput placeholder="you@example.com" />
+            <RawButton>Submit</RawButton>
+          </RawForm>
+        }
+      />
+      <Pair
+        label="CollapsibleConfigCard"
+        old={
+          <OldCollapsibleConfigCard label="Settings" defaultExpanded>
+            <div className="text-sm text-neutral-600">A panel of options.</div>
+          </OldCollapsibleConfigCard>
+        }
+        raw={
+          <RawCollapsibleConfigCard label="Settings">
+            <div className="text-sm text-muted-foreground">
+              A panel of options.
+            </div>
+          </RawCollapsibleConfigCard>
+        }
+      />
+      <Pair
+        label="HorizontalList"
+        old={<OldHorizontalListSample />}
+        raw={<RawHorizontalListSample />}
+      />
+      <Pair
+        label="ProfileItem"
+        old={
+          <OldProfileItem
+            avatar={<OldAvatar placeholder="Nour Malaeb" />}
+            title="Nour Malaeb"
+            description="Software engineer"
+          />
+        }
+        raw={
+          <RawProfileItem
+            avatar={<RawSenseAvatar placeholder="Nour Malaeb" />}
+            title="Nour Malaeb"
+            description="Software engineer"
+          />
+        }
+      />
+      <Pair
+        label="SocialLinks"
+        old={<OldSocialLinks />}
+        raw={<RawSocialLinks />}
+      />
     </Section>
   );
 }
@@ -679,6 +980,16 @@ export function Navigation() {
         label="Pagination"
         old={<OldPaginationSample />}
         raw={<RawPaginationSample />}
+      />
+      <Pair
+        label="PhaseStepper"
+        old={<OldPhaseStepperSample />}
+        raw={<RawPhaseStepperSample />}
+      />
+      <Pair
+        label="Stepper"
+        old={<OldStepperSample />}
+        raw={<RawStepperSample />}
       />
     </Section>
   );
@@ -710,6 +1021,21 @@ export function Overlays() {
         raw={<RawTooltipSample />}
       />
       <Pair
+        label="Popover (standalone)"
+        old={<OldPopoverSample />}
+        raw={<RawPopoverSample />}
+      />
+      <Pair
+        label="Dialog (non-modal)"
+        old={<OldDialogSample />}
+        raw={<RawDialogStandaloneSample />}
+      />
+      <Pair
+        label="DropDownButton"
+        old={<OldDropDownButtonSample />}
+        raw={<RawDropDownButtonSample />}
+      />
+      <Pair
         label="Toast"
         old={
           <OldButton
@@ -729,6 +1055,34 @@ export function Overlays() {
         }
       />
       <ToastMounts />
+    </Section>
+  );
+}
+
+export function Heavy() {
+  return (
+    <Section title="Heavy composites">
+      <Pair label="Table" old={<OldTableSample />} raw={<RawTableSample />} />
+      <Pair
+        label="RichTextEditor"
+        old={<OldRichTextSample />}
+        raw={<RawRichTextSample />}
+      />
+      <Pair
+        label="Sidebar"
+        old={<OldSidebarSample />}
+        raw={<RawSidebarSample />}
+      />
+      <Pair
+        label="Sortable"
+        old={<OldSortableSample />}
+        raw={<RawSortableSample />}
+      />
+      <Pair
+        label="SplitPane"
+        old={<OldSplitPaneSample />}
+        raw={<RawSplitPaneSample />}
+      />
     </Section>
   );
 }
@@ -758,6 +1112,18 @@ export function NewInSense() {
       <Gain label="Slider" raw={<SliderSample />} />
       <Gain label="Toggle" raw={<ToggleSample />} />
       <Gain label="ToggleGroup" raw={<ToggleGroupSample />} />
+      <Gain label="Menubar" raw={<MenubarSample />} />
+      <Gain label="NavigationMenu" raw={<NavigationMenuSample />} />
+      <Gain
+        label="Separator"
+        raw={
+          <div className="flex w-48 flex-col gap-2 text-sm">
+            <span>Above</span>
+            <RawSeparator />
+            <span>Below</span>
+          </div>
+        }
+      />
     </Section>
   );
 }
@@ -773,6 +1139,7 @@ export function ComparisonGrid() {
       <Structure />
       <Navigation />
       <Overlays />
+      <Heavy />
       <NewInSense />
     </div>
   );
@@ -1329,4 +1696,588 @@ function ToastMounts() {
   // Use sense's Toaster (carries `toastOptions.classNames.toast` with bg);
   // a bare <RawToaster /> would render unstyled containers for `toast.custom`.
   return <WrapToast />;
+}
+
+// ---------- additional sample helpers (Pair / Heavy) ----------
+
+const REACTIONS = [
+  { emoji: '👍', count: 4, isActive: true },
+  { emoji: '🎉', count: 2 },
+];
+
+function OldReactionsSample() {
+  return <OldReactionsButton reactions={REACTIONS} />;
+}
+
+function RawReactionsSample() {
+  return <RawReactionsButton reactions={REACTIONS} />;
+}
+
+function OldAutoSizeSample() {
+  const [value, setValue] = useState('Type to grow');
+  return (
+    <OldAutoSizeInput
+      value={value}
+      onChange={setValue}
+      aria-label="Auto-size demo"
+    />
+  );
+}
+
+function RawAutoSizeSample() {
+  const [value, setValue] = useState('Type to grow');
+  return (
+    <RawAutoSizeInput
+      value={value}
+      onChange={setValue}
+      aria-label="Auto-size demo"
+    />
+  );
+}
+
+function OldDatePickerSample() {
+  return <OldDatePicker label="Pick a date" />;
+}
+
+function RawDatePickerSample() {
+  return <RawDatePicker label="Pick a date" />;
+}
+
+function OldNotificationPanelSample() {
+  return (
+    <OldNotificationPanel>
+      <OldNotificationPanelHeader title="Notifications" count={2} />
+      <OldNotificationPanelList>
+        <OldNotificationPanelItem>
+          <span>New comment on your post</span>
+          <OldNotificationPanelActions>
+            <OldButton size="small">View</OldButton>
+          </OldNotificationPanelActions>
+        </OldNotificationPanelItem>
+        <OldNotificationPanelItem>
+          <span>Build finished</span>
+          <OldNotificationPanelActions>
+            <OldButton size="small" color="secondary">
+              Dismiss
+            </OldButton>
+          </OldNotificationPanelActions>
+        </OldNotificationPanelItem>
+      </OldNotificationPanelList>
+    </OldNotificationPanel>
+  );
+}
+
+function RawNotificationPanelSample() {
+  return (
+    <RawNotificationPanel>
+      <RawNotificationPanelHeader title="Notifications" count={2} />
+      <RawNotificationPanelList>
+        <RawNotificationPanelItem>
+          <span>New comment on your post</span>
+          <RawNotificationPanelActions>
+            <RawButton size="sm">View</RawButton>
+          </RawNotificationPanelActions>
+        </RawNotificationPanelItem>
+        <RawNotificationPanelItem>
+          <span>Build finished</span>
+          <RawNotificationPanelActions>
+            <RawButton size="sm" variant="outline">
+              Dismiss
+            </RawButton>
+          </RawNotificationPanelActions>
+        </RawNotificationPanelItem>
+      </RawNotificationPanelList>
+    </RawNotificationPanel>
+  );
+}
+
+const LOGO_ITEMS = [
+  { src: 'https://placehold.co/80x40/png', alt: 'Acme' },
+  { src: 'https://placehold.co/80x40/png?text=Foo', alt: 'Foo' },
+  { src: 'https://placehold.co/80x40/png?text=Bar', alt: 'Bar' },
+];
+
+function OldLogoLoopSample() {
+  return <OldLogoLoop logos={LOGO_ITEMS} width={240} gap={24} />;
+}
+
+function RawLogoLoopSample() {
+  return <RawLogoLoop logos={LOGO_ITEMS} width={240} gap={24} />;
+}
+
+const HORIZONTAL_ITEMS = [
+  'Apple',
+  'Banana',
+  'Cherry',
+  'Durian',
+  'Elderberry',
+  'Fig',
+];
+
+function OldHorizontalListSample() {
+  return (
+    <OldHorizontalList className="w-72">
+      {HORIZONTAL_ITEMS.map((label) => (
+        <li
+          key={label}
+          className="shrink-0 snap-start rounded-md border px-3 py-1 text-sm"
+        >
+          {label}
+        </li>
+      ))}
+    </OldHorizontalList>
+  );
+}
+
+function RawHorizontalListSample() {
+  return (
+    <RawHorizontalList className="w-72">
+      {HORIZONTAL_ITEMS.map((label) => (
+        <li
+          key={label}
+          className="shrink-0 snap-start rounded-md border px-3 py-1 text-sm"
+        >
+          {label}
+        </li>
+      ))}
+    </RawHorizontalList>
+  );
+}
+
+const PHASES_OLD: OldPhase[] = [
+  { id: 'plan', name: 'Plan' },
+  { id: 'build', name: 'Build' },
+  { id: 'ship', name: 'Ship' },
+];
+
+const PHASES_RAW: RawPhase[] = [
+  { id: 'plan', name: 'Plan' },
+  { id: 'build', name: 'Build' },
+  { id: 'ship', name: 'Ship' },
+];
+
+function OldPhaseStepperSample() {
+  return <OldPhaseStepper phases={PHASES_OLD} currentPhaseId="build" />;
+}
+
+function RawPhaseStepperSample() {
+  return <RawPhaseStepper phases={PHASES_RAW} currentPhaseId="build" />;
+}
+
+function OldStepperSample() {
+  const [step, setStep] = useState(1);
+  return (
+    <div className="flex w-72 flex-col gap-3">
+      <OldStepperProgressIndicator numItems={3} currentStep={step} />
+      <OldStepItem currentStep={step} itemIndex={0}>
+        Step one
+      </OldStepItem>
+      <OldStepItem currentStep={step} itemIndex={1}>
+        Step two
+      </OldStepItem>
+      <OldStepItem currentStep={step} itemIndex={2}>
+        Step three
+      </OldStepItem>
+      <div className="flex gap-2">
+        <OldButton
+          size="small"
+          color="secondary"
+          onPress={() => setStep((s) => Math.max(0, s - 1))}
+        >
+          Prev
+        </OldButton>
+        <OldButton
+          size="small"
+          onPress={() => setStep((s) => Math.min(2, s + 1))}
+        >
+          Next
+        </OldButton>
+      </div>
+    </div>
+  );
+}
+
+function RawStepperSample() {
+  const [step, setStep] = useState(1);
+  return (
+    <div className="flex w-72 flex-col gap-3">
+      <RawStepperProgressIndicator numItems={3} currentStep={step} />
+      <RawStepItem currentStep={step} itemIndex={0}>
+        Step one
+      </RawStepItem>
+      <RawStepItem currentStep={step} itemIndex={1}>
+        Step two
+      </RawStepItem>
+      <RawStepItem currentStep={step} itemIndex={2}>
+        Step three
+      </RawStepItem>
+      <div className="flex gap-2">
+        <RawButton
+          size="sm"
+          variant="outline"
+          onClick={() => setStep((s) => Math.max(0, s - 1))}
+        >
+          Prev
+        </RawButton>
+        <RawButton size="sm" onClick={() => setStep((s) => Math.min(2, s + 1))}>
+          Next
+        </RawButton>
+      </div>
+    </div>
+  );
+}
+
+function OldPopoverSample() {
+  return (
+    <OldMenuTrigger>
+      <OldButton color="secondary">Open popover</OldButton>
+      <OldPopover>
+        <div className="p-3 text-sm">Popover body</div>
+      </OldPopover>
+    </OldMenuTrigger>
+  );
+}
+
+function RawPopoverSample() {
+  return (
+    <RawPopover>
+      <RawPopoverTrigger render={<RawButton variant="outline" />}>
+        Open popover
+      </RawPopoverTrigger>
+      <RawPopoverContent>
+        <div className="text-sm">Popover body</div>
+      </RawPopoverContent>
+    </RawPopover>
+  );
+}
+
+function OldDialogSample() {
+  return (
+    <OldDialog>
+      <div className="rounded-md border p-3 text-sm">
+        Inline dialog content (RAC primitive, non-modal)
+      </div>
+    </OldDialog>
+  );
+}
+
+function RawDialogStandaloneSample() {
+  return (
+    <RawPopover>
+      <RawPopoverTrigger render={<RawButton variant="outline" />}>
+        Show
+      </RawPopoverTrigger>
+      <RawPopoverContent>
+        <div className="text-sm">Inline content via Popover</div>
+      </RawPopoverContent>
+    </RawPopover>
+  );
+}
+
+const DROPDOWN_ITEMS = [
+  { id: 'edit', label: 'Edit', onAction: () => {} },
+  { id: 'duplicate', label: 'Duplicate', onAction: () => {} },
+  { id: 'delete', label: 'Delete', onAction: () => {} },
+];
+
+function OldDropDownButtonSample() {
+  return (
+    <OldDropDownButton
+      label="Actions"
+      items={DROPDOWN_ITEMS}
+      chevronIcon={<LuChevronDown className="size-4" />}
+    />
+  );
+}
+
+function RawDropDownButtonSample() {
+  return (
+    <RawDropdownMenu>
+      <RawDropdownMenuTrigger
+        render={
+          <RawButton variant="outline">
+            Actions
+            <LuChevronDown className="size-4" />
+          </RawButton>
+        }
+      />
+      <RawDropdownMenuContent>
+        {DROPDOWN_ITEMS.map((item) => (
+          <RawDropdownMenuItem key={item.id}>{item.label}</RawDropdownMenuItem>
+        ))}
+      </RawDropdownMenuContent>
+    </RawDropdownMenu>
+  );
+}
+
+// ---------- heavy composite samples ----------
+
+const TABLE_ROWS = [
+  { id: 1, name: 'Ada Lovelace', role: 'Mathematician' },
+  { id: 2, name: 'Grace Hopper', role: 'Compiler pioneer' },
+  { id: 3, name: 'Alan Turing', role: 'CS founder' },
+];
+
+function OldTableSample() {
+  return (
+    <OldTable aria-label="People" className="w-80">
+      <OldTableHeader>
+        <OldTableColumn isRowHeader>Name</OldTableColumn>
+        <OldTableColumn>Role</OldTableColumn>
+      </OldTableHeader>
+      <OldTableBody>
+        {TABLE_ROWS.map((row) => (
+          <OldTableRow key={row.id}>
+            <OldTableCell>{row.name}</OldTableCell>
+            <OldTableCell>{row.role}</OldTableCell>
+          </OldTableRow>
+        ))}
+      </OldTableBody>
+    </OldTable>
+  );
+}
+
+function RawTableSample() {
+  return (
+    <RawTable className="w-80">
+      <RawTableHeader>
+        <RawTableRow>
+          <RawTableHead>Name</RawTableHead>
+          <RawTableHead>Role</RawTableHead>
+        </RawTableRow>
+      </RawTableHeader>
+      <RawTableBody>
+        {TABLE_ROWS.map((row) => (
+          <RawTableRow key={row.id}>
+            <RawTableCell>{row.name}</RawTableCell>
+            <RawTableCell>{row.role}</RawTableCell>
+          </RawTableRow>
+        ))}
+      </RawTableBody>
+    </RawTable>
+  );
+}
+
+function OldRichTextSample() {
+  return (
+    <div className="w-80">
+      <OldRichTextEditor content="<p>Edit me…</p>" placeholder="Write here…" />
+    </div>
+  );
+}
+
+function RawRichTextSample() {
+  return (
+    <div className="w-80">
+      <RawRichTextEditor content="<p>Edit me…</p>" placeholder="Write here…" />
+    </div>
+  );
+}
+
+function OldSidebarSample() {
+  return (
+    <OldSidebarProvider defaultOpen>
+      <OldSidebarLayout className="h-40 w-80 overflow-hidden rounded-md border">
+        <OldSidebar>
+          <div className="flex flex-col gap-1 p-2 text-sm">
+            <span className="font-medium">Workspace</span>
+            <a className="rounded px-2 py-1 hover:bg-muted">Home</a>
+            <a className="rounded px-2 py-1 hover:bg-muted">Inbox</a>
+          </div>
+        </OldSidebar>
+        <div className="flex flex-1 flex-col">
+          <div className="flex items-center gap-2 border-b p-2 text-sm">
+            <OldSidebarTrigger aria-label="Toggle sidebar" />
+            <span>Main</span>
+          </div>
+          <div className="p-3 text-sm">Body</div>
+        </div>
+      </OldSidebarLayout>
+    </OldSidebarProvider>
+  );
+}
+
+const SIDEBAR_NAV_ITEMS = [
+  { title: 'Home', icon: LuHouse },
+  { title: 'Inbox', icon: LuInbox },
+  { title: 'Calendar', icon: LuCalendar },
+  { title: 'Search', icon: LuSearch },
+  { title: 'Settings', icon: LuSettings },
+] as const;
+
+function RawSidebarSample() {
+  return (
+    // The shadcn Sidebar uses `position: fixed` for the desktop panel
+    // (`md:flex fixed inset-y-0 …`). Fixed children anchor to the nearest
+    // ancestor that establishes a containing block — `transform` does it
+    // (CSS spec), so the panel stays inside this comparison cell instead
+    // of escaping to the viewport edge.
+    <div
+      className="h-72 w-full max-w-2xl overflow-hidden rounded-lg border"
+      style={{ transform: 'translateZ(0)' }}
+    >
+      <RawSidebarProvider
+        className="h-full min-h-0"
+        style={
+          {
+            '--sidebar-width': '12rem',
+            '--sidebar-width-mobile': '12rem',
+          } as React.CSSProperties
+        }
+      >
+        <RawSidebar collapsible="icon">
+          <RawSidebarHeader>
+            <div className="px-2 py-1 text-sm font-semibold">Acme Inc.</div>
+          </RawSidebarHeader>
+          <RawSidebarContent>
+            <RawSidebarGroup>
+              <RawSidebarGroupLabel>Application</RawSidebarGroupLabel>
+              <RawSidebarGroupContent>
+                <RawSidebarMenu>
+                  {SIDEBAR_NAV_ITEMS.map((item) => (
+                    <RawSidebarMenuItem key={item.title}>
+                      <RawSidebarMenuButton render={<a href="#" />}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </RawSidebarMenuButton>
+                    </RawSidebarMenuItem>
+                  ))}
+                </RawSidebarMenu>
+              </RawSidebarGroupContent>
+            </RawSidebarGroup>
+          </RawSidebarContent>
+          <RawSidebarFooter>
+            <div className="px-2 py-1 text-xs text-muted-foreground">v0.1</div>
+          </RawSidebarFooter>
+        </RawSidebar>
+        <RawSidebarInset>
+          <header className="flex h-10 items-center gap-2 border-b px-3">
+            <RawSidebarTrigger />
+            <span className="text-sm font-medium">Dashboard</span>
+          </header>
+          <div className="p-3 text-sm">Main content</div>
+        </RawSidebarInset>
+      </RawSidebarProvider>
+    </div>
+  );
+}
+
+const SORTABLE_INITIAL = [
+  { id: '1', label: 'First' },
+  { id: '2', label: 'Second' },
+  { id: '3', label: 'Third' },
+];
+
+function OldSortableSample() {
+  const [items, setItems] = useState(SORTABLE_INITIAL);
+  return (
+    <div className="w-72">
+      <OldSortable
+        items={items}
+        onChange={setItems}
+        dragTrigger="item"
+        aria-label="Sortable list"
+      >
+        {(item) => (
+          <div className="rounded-md border bg-white px-3 py-2 text-sm">
+            {item.label}
+          </div>
+        )}
+      </OldSortable>
+    </div>
+  );
+}
+
+function RawSortableSample() {
+  const [items, setItems] = useState(SORTABLE_INITIAL);
+  return (
+    <div className="w-72">
+      <RawSortable
+        items={items}
+        onChange={setItems}
+        dragTrigger="item"
+        aria-label="Sortable list"
+      >
+        {(item) => (
+          <div className="rounded-md border bg-white px-3 py-2 text-sm">
+            {item.label}
+          </div>
+        )}
+      </RawSortable>
+    </div>
+  );
+}
+
+function OldSplitPaneSample() {
+  return (
+    <OldSplitPane className="h-40 w-96 overflow-hidden rounded-md border">
+      <OldSplitPane.Pane id="a" label="Left">
+        <div className="text-sm">Left content</div>
+      </OldSplitPane.Pane>
+      <OldSplitPane.Pane id="b" label="Right">
+        <div className="text-sm">Right content</div>
+      </OldSplitPane.Pane>
+    </OldSplitPane>
+  );
+}
+
+function RawSplitPaneSample() {
+  return (
+    <RawSplitPane className="h-40 w-96 overflow-hidden rounded-md border">
+      <RawSplitPane.Pane id="a" label="Left">
+        <div className="text-sm">Left content</div>
+      </RawSplitPane.Pane>
+      <RawSplitPane.Pane id="b" label="Right">
+        <div className="text-sm">Right content</div>
+      </RawSplitPane.Pane>
+    </RawSplitPane>
+  );
+}
+
+// ---------- new gain samples ----------
+
+function MenubarSample() {
+  return (
+    <RawMenubar>
+      <RawMenubarMenu>
+        <RawMenubarTrigger>File</RawMenubarTrigger>
+        <RawMenubarContent>
+          <RawMenubarItem>New</RawMenubarItem>
+          <RawMenubarItem>Open</RawMenubarItem>
+          <RawMenubarSeparator />
+          <RawMenubarItem>Quit</RawMenubarItem>
+        </RawMenubarContent>
+      </RawMenubarMenu>
+      <RawMenubarMenu>
+        <RawMenubarTrigger>Edit</RawMenubarTrigger>
+        <RawMenubarContent>
+          <RawMenubarItem>Undo</RawMenubarItem>
+          <RawMenubarItem>Redo</RawMenubarItem>
+        </RawMenubarContent>
+      </RawMenubarMenu>
+    </RawMenubar>
+  );
+}
+
+function NavigationMenuSample() {
+  return (
+    <RawNavigationMenu>
+      <RawNavigationMenuList>
+        <RawNavigationMenuItem>
+          <RawNavigationMenuTrigger>Products</RawNavigationMenuTrigger>
+          <RawNavigationMenuContent>
+            <div className="grid w-64 gap-2 p-3 text-sm">
+              <RawNavigationMenuLink href="#">Platform</RawNavigationMenuLink>
+              <RawNavigationMenuLink href="#">
+                Integrations
+              </RawNavigationMenuLink>
+            </div>
+          </RawNavigationMenuContent>
+        </RawNavigationMenuItem>
+        <RawNavigationMenuItem>
+          <RawNavigationMenuLink href="#">Pricing</RawNavigationMenuLink>
+        </RawNavigationMenuItem>
+      </RawNavigationMenuList>
+    </RawNavigationMenu>
+  );
 }

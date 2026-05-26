@@ -1,8 +1,8 @@
 import * as React from 'react';
-import { LuChevronLeft, LuChevronRight, LuEllipsis } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
 import { Button } from './button';
+import { IconPlaceholder } from './icon-placeholder';
 
 function Pagination({ className, ...props }: React.ComponentProps<'nav'>) {
   return (
@@ -74,7 +74,15 @@ function PaginationPrevious({
       className={cn('pl-1.5!', className)}
       {...props}
     >
-      <LuChevronLeft data-icon="inline-start" />
+      <IconPlaceholder
+        lucide="ChevronLeftIcon"
+        tabler="IconChevronLeft"
+        hugeicons="ArrowLeft01Icon"
+        phosphor="CaretLeftIcon"
+        remixicon="RiArrowLeftSLine"
+        data-icon="inline-start"
+        className="cn-rtl-flip"
+      />
       <span className="hidden sm:block">{text}</span>
     </PaginationLink>
   );
@@ -93,7 +101,15 @@ function PaginationNext({
       {...props}
     >
       <span className="hidden sm:block">{text}</span>
-      <LuChevronRight data-icon="inline-end" />
+      <IconPlaceholder
+        lucide="ChevronRightIcon"
+        tabler="IconChevronRight"
+        hugeicons="ArrowRight01Icon"
+        phosphor="CaretRightIcon"
+        remixicon="RiArrowRightSLine"
+        data-icon="inline-end"
+        className="cn-rtl-flip"
+      />
     </PaginationLink>
   );
 }
@@ -112,7 +128,13 @@ function PaginationEllipsis({
       )}
       {...props}
     >
-      <LuEllipsis />
+      <IconPlaceholder
+        lucide="MoreHorizontalIcon"
+        tabler="IconDots"
+        hugeicons="MoreHorizontalCircle01Icon"
+        phosphor="DotsThreeIcon"
+        remixicon="RiMoreLine"
+      />
       <span className="sr-only">More pages</span>
     </span>
   );

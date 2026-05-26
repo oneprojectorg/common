@@ -20,6 +20,13 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* shadcn base-nova primitives use `data-horizontal:` / `data-vertical:`
+ * variants (e.g. slider track h-1, scrollbar w-2). base-ui ships these as
+ * `data-orientation="horizontal" | "vertical"`. Map the shadcn convention
+ * to the base-ui attribute so classes like `data-horizontal:h-1` resolve. */
+@custom-variant data-horizontal (&[data-orientation='horizontal']);
+@custom-variant data-vertical (&[data-orientation='vertical']);
+
 :root {
   /* Radius scale (shadcn convention, derived from --radius) */
   --radius: 0.625rem;

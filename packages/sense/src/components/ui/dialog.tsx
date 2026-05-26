@@ -2,10 +2,10 @@
 
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import * as React from 'react';
-import { LuX } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
 import { Button } from './button';
+import { IconPlaceholder } from './icon-placeholder';
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -43,23 +43,17 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
-  behindContent,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean;
-  /** Renders between the overlay and the popup inside the same portal —
-   * used by `@op/sense/Modal` to layer a `<Confetti />` overlay behind
-   * the modal panel. Optional. */
-  behindContent?: React.ReactNode;
 }) {
   return (
     <DialogPortal>
       <DialogOverlay />
-      {behindContent}
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          'fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100svh-2rem)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 sm:max-w-md',
+          'fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 sm:max-w-sm',
           className,
         )}
         {...props}
@@ -76,7 +70,13 @@ function DialogContent({
               />
             }
           >
-            <LuX className="size-4" />
+            <IconPlaceholder
+              lucide="XIcon"
+              tabler="IconX"
+              hugeicons="Cancel01Icon"
+              phosphor="XIcon"
+              remixicon="RiCloseLine"
+            />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}

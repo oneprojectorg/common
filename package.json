@@ -97,7 +97,7 @@
     "react-aria-components": "catalog:",
     "react-dom": "^19.0.1",
     "react-markdown": "^10.0.0",
-    "react-resizable-panels": "^2.1.7",
+    "react-resizable-panels": "^4.0.0",
     "server-only": "^0.0.1",
     "sharp": "^0.33.5",
     "sonner": "^1.7.1",

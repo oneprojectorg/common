@@ -1,8 +1,8 @@
 import { NavigationMenu as NavigationMenuPrimitive } from '@base-ui/react/navigation-menu';
 import { cva } from 'class-variance-authority';
-import { LuChevronDown } from 'react-icons/lu';
 
 import { cn } from '../../lib/utils';
+import { IconPlaceholder } from './icon-placeholder';
 
 function NavigationMenu({
   align = 'start',
@@ -71,7 +71,12 @@ function NavigationMenuTrigger({
       {...props}
     >
       {children}{' '}
-      <LuChevronDown
+      <IconPlaceholder
+        lucide="ChevronDownIcon"
+        tabler="IconChevronDown"
+        hugeicons="ArrowDown01Icon"
+        phosphor="CaretDownIcon"
+        remixicon="RiArrowDownSLine"
         className="relative top-px ml-1 size-3 transition duration-300 group-data-open/navigation-menu-trigger:rotate-180 group-data-popup-open/navigation-menu-trigger:rotate-180"
         aria-hidden="true"
       />
