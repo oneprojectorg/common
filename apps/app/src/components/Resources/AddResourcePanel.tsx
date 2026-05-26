@@ -42,11 +42,7 @@ export const AddResourcePanel = ({
             size="small"
             aria-pressed={kind === 'link'}
             onPress={() => setKind('link')}
-            className={
-              kind === 'link'
-                ? 'flex-1 bg-primary-tealWhite text-primary-teal hover:bg-primary-tealWhite'
-                : 'flex-1'
-            }
+            className="flex-1"
           >
             <LuLink className="size-4" />
             {t('Link')}
@@ -56,11 +52,7 @@ export const AddResourcePanel = ({
             size="small"
             aria-pressed={kind === 'document'}
             onPress={() => setKind('document')}
-            className={
-              kind === 'document'
-                ? 'flex-1 bg-primary-tealWhite text-primary-teal hover:bg-primary-tealWhite'
-                : 'flex-1'
-            }
+            className="flex-1"
           >
             <LuFile className="size-4" />
             {t('Document')}
