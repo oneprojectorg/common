@@ -15,7 +15,6 @@ import {
   Breadcrumb as WrapBreadcrumb,
   Breadcrumbs as WrapBreadcrumbs,
 } from '@op/ui-next/Breadcrumbs';
-import { Button as WrapButton } from '@op/ui-next/Button';
 import { Card as WrapSurface } from '@op/ui-next/Card';
 import { Checkbox as WrapCheckbox } from '@op/ui-next/Checkbox';
 import { Chip as WrapChip } from '@op/ui-next/Chip';
@@ -30,7 +29,6 @@ import {
   Header1 as WrapHeader1,
   Header2 as WrapHeader2,
 } from '@op/ui-next/Header';
-import { IconButton as WrapIconButton } from '@op/ui-next/IconButton';
 import { Input as WrapInput } from '@op/ui-next/Input';
 import { Link as WrapLink } from '@op/ui-next/Link';
 import { LoadingSpinner as WrapLoadingSpinner } from '@op/ui-next/LoadingSpinner';
@@ -40,37 +38,17 @@ import {
   DropdownMenuItem as WrapDropdownMenuItem,
   DropdownMenuTrigger as WrapDropdownMenuTrigger,
 } from '@op/ui-next/Menu';
-import {
-  Modal as WrapModal,
-  ModalBody as WrapModalBody,
-  ModalFooter as WrapModalFooter,
-  ModalHeader as WrapModalHeader,
-} from '@op/ui-next/Modal';
 import { MultiSelectComboBox as WrapMultiSelectComboBox } from '@op/ui-next/MultiSelectComboBox';
-import { NumberField as WrapNumberField } from '@op/ui-next/NumberField';
 import { OptionMenu as WrapOptionMenu } from '@op/ui-next/OptionMenu';
 import { Pagination as WrapPagination } from '@op/ui-next/Pagination';
 import {
   RadioGroup as WrapRadioGroup,
   RadioGroupItem as WrapRadioGroupItem,
 } from '@op/ui-next/RadioGroup';
-import { SearchField as WrapSearchField } from '@op/ui-next/SearchField';
-import { Select as WrapSelect } from '@op/ui-next/Select';
-import {
-  Sheet as WrapSheet,
-  SheetBody as WrapSheetBody,
-  SheetHeader as WrapSheetHeader,
-} from '@op/ui-next/Sheet';
 import { Skeleton as WrapSkeleton } from '@op/ui-next/Skeleton';
 import { StatusDot as WrapStatusDot } from '@op/ui-next/StatusDot';
-import { Tabs as WrapTabs } from '@op/ui-next/Tabs';
 import { Tag as WrapTag, TagGroup as WrapTagGroup } from '@op/ui-next/TagGroup';
 import { Toast as WrapToast, toast as wrapToast } from '@op/ui-next/Toast';
-import { ToggleButton as WrapToggleButton } from '@op/ui-next/ToggleButton';
-import {
-  Tooltip as WrapTooltip,
-  TooltipTrigger as WrapTooltipTrigger,
-} from '@op/ui-next/Tooltip';
 // ---- RAW (vanilla shadcn primitives) ----
 import {
   Alert as RawAlert,
@@ -251,12 +229,12 @@ const COLUMN_LABELS = ['@op/ui (RAC)', '@op/ui-next', 'raw shadcn'] as const;
 export function Pair({
   label,
   old,
-  wrapped,
+  wrapped = null,
   raw,
 }: {
   label: string;
   old: ReactNode;
-  wrapped: ReactNode;
+  wrapped?: ReactNode;
   raw: ReactNode;
 }) {
   return (
@@ -299,43 +277,36 @@ export function Buttons() {
       <Pair
         label="Primary"
         old={<OldButton>Save</OldButton>}
-        wrapped={<WrapButton>Save</WrapButton>}
         raw={<RawButton>Save</RawButton>}
       />
       <Pair
         label="Secondary"
         old={<OldButton color="secondary">Cancel</OldButton>}
-        wrapped={<WrapButton color="secondary">Cancel</WrapButton>}
         raw={<RawButton variant="outline">Cancel</RawButton>}
       />
       <Pair
         label="Destructive"
         old={<OldButton color="destructive">Delete</OldButton>}
-        wrapped={<WrapButton color="destructive">Delete</WrapButton>}
         raw={<RawButton variant="destructive">Delete</RawButton>}
       />
       <Pair
         label="Disabled"
         old={<OldButton isDisabled>Disabled</OldButton>}
-        wrapped={<WrapButton isDisabled>Disabled</WrapButton>}
         raw={<RawButton disabled>Disabled</RawButton>}
       />
       <Pair
         label="Loading"
         old={<OldButton isLoading>Loading</OldButton>}
-        wrapped={<WrapButton isLoading>Loading</WrapButton>}
         raw={<RawButton disabled>Loading…</RawButton>}
       />
       <Pair
         label="Small"
         old={<OldButton size="small">Small</OldButton>}
-        wrapped={<WrapButton size="small">Small</WrapButton>}
         raw={<RawButton size="sm">Small</RawButton>}
       />
       <Pair
         label="Toggle"
         old={<OldToggleSample />}
-        wrapped={<WrapToggleSample />}
         raw={<RawToggleSample />}
       />
     </Section>
@@ -361,11 +332,6 @@ export function Inline() {
           <OldIconButton aria-label="Search">
             <LuSearch className="size-4" />
           </OldIconButton>
-        }
-        wrapped={
-          <WrapIconButton aria-label="Search">
-            <LuSearch className="size-4" />
-          </WrapIconButton>
         }
         raw={
           <RawButton variant="ghost" size="icon" aria-label="Search">
@@ -435,19 +401,16 @@ export function Forms() {
       <Pair
         label="Select"
         old={<OldSelectSample />}
-        wrapped={<WrapSelectSample />}
         raw={<RawSelectSample />}
       />
       <Pair
         label="NumberField"
         old={<OldNumberField label="Amount" defaultValue={42} />}
-        wrapped={<WrapNumberField label="Amount" defaultValue={42} />}
         raw={<RawInput type="number" defaultValue={42} />}
       />
       <Pair
         label="SearchField"
         old={<OldSearchField placeholder="Search" />}
-        wrapped={<WrapSearchField placeholder="Search" />}
         raw={<RawSearchSample />}
       />
       <Pair
@@ -715,12 +678,7 @@ export function Structure() {
 export function Navigation() {
   return (
     <Section title="Navigation">
-      <Pair
-        label="Tabs"
-        old={<OldTabsSample />}
-        wrapped={<WrapTabsSample />}
-        raw={<RawTabsSample />}
-      />
+      <Pair label="Tabs" old={<OldTabsSample />} raw={<RawTabsSample />} />
       <Pair
         label="Pagination"
         old={<OldPaginationSample />}
@@ -734,28 +692,17 @@ export function Navigation() {
 export function Overlays() {
   return (
     <Section title="Overlays">
-      <Pair
-        label="Modal"
-        old={<OldModalSample />}
-        wrapped={<WrapModalSample />}
-        raw={<RawModalSample />}
-      />
+      <Pair label="Modal" old={<OldModalSample />} raw={<RawModalSample />} />
       <Pair
         label="Confetti modal"
         old={<OldConfettiModalSample />}
-        wrapped={<WrapConfettiModalSample />}
         raw={
           <span className="text-xs text-muted-foreground">
             n/a — no shadcn primitive
           </span>
         }
       />
-      <Pair
-        label="Sheet"
-        old={<OldSheetSample />}
-        wrapped={<WrapSheetSample />}
-        raw={<RawSheetSample />}
-      />
+      <Pair label="Sheet" old={<OldSheetSample />} raw={<RawSheetSample />} />
       <Pair
         label="Menu"
         old={<OldMenuSample />}
@@ -771,7 +718,6 @@ export function Overlays() {
       <Pair
         label="Tooltip"
         old={<OldTooltipSample />}
-        wrapped={<WrapTooltipSample />}
         raw={<RawTooltipSample />}
       />
       <Pair
@@ -785,12 +731,12 @@ export function Overlays() {
           </OldButton>
         }
         wrapped={
-          <WrapButton
-            color="secondary"
-            onPress={() => wrapToast.success({ title: 'Saved' })}
+          <RawButton
+            variant="outline"
+            onClick={() => wrapToast.success({ title: 'Saved' })}
           >
             Fire toast
-          </WrapButton>
+          </RawButton>
         }
         raw={
           <RawButton
@@ -829,13 +775,6 @@ function OldToggleSample() {
     <OldToggleButton isSelected={on} onChange={setOn}>
       {on ? 'On' : 'Off'}
     </OldToggleButton>
-  );
-}
-
-function WrapToggleSample() {
-  const [on, setOn] = useState(false);
-  return (
-    <WrapToggleButton isSelected={on} onChange={setOn} aria-label="toggle" />
   );
 }
 
@@ -928,18 +867,6 @@ function OldSelectSample() {
     <OldSelect label="Plan" items={SELECT_ITEMS} placeholder="Pick one">
       {(item) => <OldDropdownItem id={item.id}>{item.label}</OldDropdownItem>}
     </OldSelect>
-  );
-}
-
-function WrapSelectSample() {
-  return (
-    <WrapSelect label="Plan" placeholder="Pick one">
-      {SELECT_ITEMS.map((item) => (
-        <RawSelectItem key={item.id} value={item.id}>
-          {item.label}
-        </RawSelectItem>
-      ))}
-    </WrapSelect>
   );
 }
 
@@ -1074,23 +1001,6 @@ function OldTabsSample() {
   );
 }
 
-function WrapTabsSample() {
-  return (
-    <WrapTabs defaultSelectedKey="a" className="w-full">
-      <RawTabsList>
-        <RawTabsTrigger value="a">Account</RawTabsTrigger>
-        <RawTabsTrigger value="b">Password</RawTabsTrigger>
-      </RawTabsList>
-      <RawTabsContent value="a" className="pt-2 text-sm">
-        Account panel
-      </RawTabsContent>
-      <RawTabsContent value="b" className="pt-2 text-sm">
-        Password panel
-      </RawTabsContent>
-    </WrapTabs>
-  );
-}
-
 function RawTabsSample() {
   return (
     <RawTabs defaultValue="a" className="w-full">
@@ -1161,22 +1071,6 @@ function OldModalSample() {
   );
 }
 
-function WrapModalSample() {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <WrapButton onPress={() => setOpen(true)}>Open modal</WrapButton>
-      <WrapModal isOpen={open} onOpenChange={setOpen} isDismissable>
-        <WrapModalHeader>Modal title</WrapModalHeader>
-        <WrapModalBody>Modal body</WrapModalBody>
-        <WrapModalFooter>
-          <WrapButton onPress={() => setOpen(false)}>Close</WrapButton>
-        </WrapModalFooter>
-      </WrapModal>
-    </>
-  );
-}
-
 function OldConfettiModalSample() {
   const [open, setOpen] = useState(false);
   return (
@@ -1189,22 +1083,6 @@ function OldConfettiModalSample() {
           <OldButton onPress={() => setOpen(false)}>Close</OldButton>
         </OldModalFooter>
       </OldModal>
-    </>
-  );
-}
-
-function WrapConfettiModalSample() {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <WrapButton onPress={() => setOpen(true)}>Celebrate</WrapButton>
-      <WrapModal isOpen={open} onOpenChange={setOpen} isDismissable confetti>
-        <WrapModalHeader>Nice!</WrapModalHeader>
-        <WrapModalBody>You did the thing.</WrapModalBody>
-        <WrapModalFooter>
-          <WrapButton onPress={() => setOpen(false)}>Close</WrapButton>
-        </WrapModalFooter>
-      </WrapModal>
     </>
   );
 }
@@ -1235,19 +1113,6 @@ function OldSheetSample() {
         <OldSheetHeader onClose={() => setOpen(false)}>Sheet</OldSheetHeader>
         <OldSheetBody>Sheet body</OldSheetBody>
       </OldSheet>
-    </>
-  );
-}
-
-function WrapSheetSample() {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <WrapButton onPress={() => setOpen(true)}>Open sheet</WrapButton>
-      <WrapSheet isOpen={open} onOpenChange={setOpen} side="right">
-        <WrapSheetHeader>Sheet</WrapSheetHeader>
-        <WrapSheetBody>Sheet body</WrapSheetBody>
-      </WrapSheet>
     </>
   );
 }
@@ -1284,7 +1149,7 @@ function WrapMenuSample() {
   return (
     <WrapDropdownMenu>
       <WrapDropdownMenuTrigger
-        render={<WrapButton color="secondary">Open menu</WrapButton>}
+        render={<RawButton variant="outline">Open menu</RawButton>}
       />
       <WrapDropdownMenuContent>
         <WrapDropdownMenuItem>Action one</WrapDropdownMenuItem>
@@ -1352,15 +1217,6 @@ function OldTooltipSample() {
       <OldButton color="secondary">Hover me</OldButton>
       <OldTooltip>Tooltip text</OldTooltip>
     </OldTooltipTrigger>
-  );
-}
-
-function WrapTooltipSample() {
-  return (
-    <WrapTooltipTrigger>
-      <WrapButton color="secondary">Hover me</WrapButton>
-      <WrapTooltip>Tooltip text</WrapTooltip>
-    </WrapTooltipTrigger>
   );
 }
 
