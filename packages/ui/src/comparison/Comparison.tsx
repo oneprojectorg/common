@@ -14,6 +14,12 @@
 import { Toast as WrapToast } from '@op/sense/Toast';
 // ---- RAW (vanilla shadcn primitives) ----
 import {
+  Accordion as RawAccordion,
+  AccordionContent as RawAccordionContent,
+  AccordionItem as RawAccordionItem,
+  AccordionTrigger as RawAccordionTrigger,
+} from '@op/sense/ui/accordion';
+import {
   Alert as RawAlert,
   AlertTitle as RawAlertTitle,
 } from '@op/sense/ui/alert';
@@ -45,6 +51,7 @@ import {
   BreadcrumbSeparator as RawBreadcrumbSeparator,
 } from '@op/sense/ui/breadcrumb';
 import { Button as RawButton } from '@op/sense/ui/button';
+import { ButtonGroup as RawButtonGroup } from '@op/sense/ui/button-group';
 import {
   Card as RawCard,
   CardContent as RawCardContent,
@@ -154,7 +161,6 @@ import {
 } from 'react-icons/lu';
 import { toast as rawToast } from 'sonner';
 
-// ---- OLD (@op/ui, RAC) ----
 import { AlertBanner as OldAlertBanner } from '../components/AlertBanner';
 import { Avatar as OldAvatar } from '../components/Avatar';
 import {
@@ -162,6 +168,7 @@ import {
   Breadcrumbs as OldBreadcrumbs,
 } from '../components/Breadcrumbs';
 import { Button as OldButton } from '../components/Button';
+import { ButtonGroup as OldButtonGroup } from '../components/ButtonGroup';
 import { Checkbox as OldCheckbox } from '../components/Checkbox';
 import { Chip as OldChip } from '../components/Chip';
 import { EmptyState as OldEmptyState } from '../components/EmptyState';
@@ -224,6 +231,14 @@ import {
   Tooltip as OldTooltip,
   TooltipTrigger as OldTooltipTrigger,
 } from '../components/Tooltip';
+// ---- OLD (@op/ui, RAC) ----
+import {
+  Accordion as OldAccordion,
+  AccordionContent as OldAccordionContent,
+  AccordionHeader as OldAccordionHeader,
+  AccordionItem as OldAccordionItem,
+  AccordionTrigger as OldAccordionTrigger,
+} from '../components/ui/accordion';
 
 // ---- layout primitives ----
 
@@ -577,6 +592,28 @@ export function Structure() {
         }
       />
       <Pair
+        label="Accordion"
+        old={<OldAccordionSample />}
+        raw={<RawAccordionSample />}
+      />
+      <Pair
+        label="ButtonGroup"
+        old={
+          <OldButtonGroup>
+            <OldButton size="small">One</OldButton>
+            <OldButton size="small">Two</OldButton>
+            <OldButton size="small">Three</OldButton>
+          </OldButtonGroup>
+        }
+        raw={
+          <RawButtonGroup>
+            <RawButton variant="outline">One</RawButton>
+            <RawButton variant="outline">Two</RawButton>
+            <RawButton variant="outline">Three</RawButton>
+          </RawButtonGroup>
+        }
+      />
+      <Pair
         label="FooterBar"
         old={
           <OldFooterBar position="static" className="w-full">
@@ -846,6 +883,44 @@ function ToggleSample() {
     <RawToggle aria-label="Bold">
       <LuBold className="size-4" />
     </RawToggle>
+  );
+}
+
+function OldAccordionSample() {
+  return (
+    <OldAccordion className="w-72">
+      <OldAccordionItem id="a">
+        <OldAccordionHeader>
+          <OldAccordionTrigger>What is @op/ui?</OldAccordionTrigger>
+        </OldAccordionHeader>
+        <OldAccordionContent>RAC-based design system.</OldAccordionContent>
+      </OldAccordionItem>
+      <OldAccordionItem id="b">
+        <OldAccordionHeader>
+          <OldAccordionTrigger>Themable?</OldAccordionTrigger>
+        </OldAccordionHeader>
+        <OldAccordionContent>Via intent-ui-theme.css.</OldAccordionContent>
+      </OldAccordionItem>
+    </OldAccordion>
+  );
+}
+
+function RawAccordionSample() {
+  return (
+    <RawAccordion className="w-72">
+      <RawAccordionItem value="a">
+        <RawAccordionTrigger>What is @op/sense?</RawAccordionTrigger>
+        <RawAccordionContent>
+          Op's shadcn-base-nova design system.
+        </RawAccordionContent>
+      </RawAccordionItem>
+      <RawAccordionItem value="b">
+        <RawAccordionTrigger>Themable?</RawAccordionTrigger>
+        <RawAccordionContent>
+          Via @op/styles shadcn-theme.css.
+        </RawAccordionContent>
+      </RawAccordionItem>
+    </RawAccordion>
   );
 }
 
