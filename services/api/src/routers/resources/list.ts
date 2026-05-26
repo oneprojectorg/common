@@ -1,4 +1,4 @@
-import { listResources } from '@op/common';
+import { Channels, listResources } from '@op/common';
 import { z } from 'zod';
 
 import withDB from '../../middlewares/withDB';
@@ -12,6 +12,7 @@ export const list = router({
     .output(resourceListEncoder)
     .query(async ({ input, ctx }) => {
       const result = await listResources(ctx.user.id, input.profileId);
+      ctx.registerQueryChannels([Channels.profileResources(input.profileId)]);
       return resourceListEncoder.parse(result);
     }),
 });

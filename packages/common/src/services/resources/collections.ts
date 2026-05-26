@@ -2,11 +2,8 @@ import { db } from '@op/db/client';
 import { resourceCollectionProfiles, resourceCollections } from '@op/db/schema';
 import { and, asc, count, eq, sql } from 'drizzle-orm';
 
-import {
-  ConflictError,
-  NotFoundError,
-  ValidationError,
-} from '../../utils/error';
+import { ConflictError, NotFoundError } from '../../utils/error';
+import { reorderByUpperNeighbor } from '../../utils/reorder';
 import { assertResourceAccess } from './access';
 
 const DEFAULT_COLLECTION_NAME = 'Pinned';
@@ -135,13 +132,8 @@ export const renameCollection = async (
 export const reorderCollection = async (
   authUserId: string,
   id: string,
-  beforeId: string | undefined,
-  afterId: string | undefined,
+  upperNeighborId: string | null,
 ) => {
-  if ((beforeId === undefined) === (afterId === undefined)) {
-    throw new ValidationError('Exactly one of beforeId / afterId is required');
-  }
-
   const resolved = await assertResourceAccess(
     { kind: 'collection', collectionId: id },
     authUserId,
@@ -161,36 +153,25 @@ export const reorderCollection = async (
       .where(eq(resourceCollectionProfiles.profileId, resolved.profileId))
       .orderBy(asc(resourceCollectionProfiles.sortOrder));
 
-    const fromIdx = rows.findIndex((r) => r.collectionId === id);
-    if (fromIdx === -1) {
+    const moved = rows.find((r) => r.collectionId === id);
+    if (!moved) {
       throw new NotFoundError('Collection', id);
     }
-    const moved = rows[fromIdx]!;
+    if (
+      upperNeighborId !== null &&
+      id !== upperNeighborId &&
+      !rows.some((r) => r.collectionId === upperNeighborId)
+    ) {
+      throw new NotFoundError('Pivot collection', upperNeighborId);
+    }
 
-    const isSelfPivot = id === beforeId || id === afterId;
-    if (!isSelfPivot) {
-      const without = rows.filter((_, i) => i !== fromIdx);
-
-      let toIdx: number;
-      if (beforeId !== undefined) {
-        toIdx = without.findIndex((r) => r.collectionId === beforeId);
-        if (toIdx === -1) {
-          throw new NotFoundError('Pivot collection', beforeId);
-        }
-      } else {
-        const afterIdx = without.findIndex((r) => r.collectionId === afterId);
-        if (afterIdx === -1) {
-          throw new NotFoundError('Pivot collection', afterId);
-        }
-        toIdx = afterIdx + 1;
-      }
-
-      const reordered = [
-        ...without.slice(0, toIdx),
-        moved,
-        ...without.slice(toIdx),
-      ];
-
+    const reordered = reorderByUpperNeighbor(
+      rows,
+      (r) => r.collectionId,
+      id,
+      upperNeighborId,
+    );
+    if (reordered !== rows) {
       for (let i = 0; i < reordered.length; i++) {
         const row = reordered[i]!;
         if (row.sortOrder !== i) {

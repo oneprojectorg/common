@@ -2,13 +2,10 @@ import { createSBServiceClient } from '@op/supabase/server';
 import { Buffer } from 'buffer';
 
 import { CommonError } from '../../utils/error';
+import { MAX_RESOURCE_FILE_SIZE, isAllowedResourceMimeType } from './constants';
 
 const BUCKET = 'assets';
 const SIGNED_URL_TTL_SECONDS = 60 * 60;
-export const MAX_RESOURCE_FILE_SIZE = 25 * 1024 * 1024;
-
-export const resourcePathPrefix = (profileId: string) =>
-  `profile/${profileId}/resources/`;
 
 let cachedClient: ReturnType<typeof createSBServiceClient> | null = null;
 const supabase = () => {
@@ -17,27 +14,6 @@ const supabase = () => {
   }
   return cachedClient;
 };
-
-export const ALLOWED_RESOURCE_MIME_TYPES = [
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-  'image/gif',
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  'text/csv',
-  'text/plain',
-] as const;
-
-export type AllowedResourceMimeType =
-  (typeof ALLOWED_RESOURCE_MIME_TYPES)[number];
-
-export const isAllowedResourceMimeType = (
-  mimeType: string,
-): mimeType is AllowedResourceMimeType =>
-  (ALLOWED_RESOURCE_MIME_TYPES as readonly string[]).includes(mimeType);
 
 const sanitizeFileName = (raw: string): string => {
   const base = raw.split(/[/\\]/).pop() ?? raw;

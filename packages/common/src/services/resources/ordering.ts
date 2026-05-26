@@ -2,7 +2,8 @@ import type { db as dbType } from '@op/db/client';
 import { resourceCollectionItems } from '@op/db/schema';
 import { and, asc, eq, sql } from 'drizzle-orm';
 
-import { NotFoundError, ValidationError } from '../../utils/error';
+import { NotFoundError } from '../../utils/error';
+import { reorderByUpperNeighbor } from '../../utils/reorder';
 
 type Transaction = Parameters<Parameters<typeof dbType.transaction>[0]>[0];
 export type DbOrTx = typeof dbType | Transaction;
@@ -19,33 +20,37 @@ export const lockCollection = async (
 };
 
 // New items go to the top: shift every existing item's sortOrder up by one
-// and the caller inserts at 0.
+// and the caller inserts at 0. A single `sort_order + 1` UPDATE trips the
+// per-row unique index on (collection_id, sort_order) — row 0 tries to
+// become 1 while row 1 still holds 1. Park values in a negative range
+// first (same trick as applySortOrderUpdates) so the second pass settles
+// into the final positive slots without collisions.
 export const shiftSortOrderForInsertAtTop = async (
   tx: Transaction,
   collectionId: string,
 ): Promise<void> => {
   await tx
     .update(resourceCollectionItems)
-    .set({ sortOrder: sql`${resourceCollectionItems.sortOrder} + 1` })
+    .set({ sortOrder: sql`-1 - ${resourceCollectionItems.sortOrder}` })
+    .where(eq(resourceCollectionItems.collectionId, collectionId));
+
+  await tx
+    .update(resourceCollectionItems)
+    .set({ sortOrder: sql`-${resourceCollectionItems.sortOrder}` })
     .where(eq(resourceCollectionItems.collectionId, collectionId));
 };
 
-// Computes target sortOrders for the moved item plus the slice of items
-// between the moved item's current position and the requested neighbor.
-// Caller writes the values inside a transaction holding lockCollection.
+// Computes target sortOrders for the moved item plus any neighbors that need
+// to shift. Caller writes the values inside a transaction holding
+// lockCollection so concurrent writers serialize and each re-interprets
+// upperNeighborId against the freshly-restriped state.
 export const computeReorder = async (
   tx: Transaction,
   collectionId: string,
   itemId: string,
-  beforeId: string | undefined,
-  afterId: string | undefined,
+  upperNeighborId: string | null,
 ): Promise<{ updates: Array<{ id: string; sortOrder: number }> } | null> => {
-  if ((beforeId === undefined) === (afterId === undefined)) {
-    throw new ValidationError('Exactly one of beforeId / afterId is required');
-  }
-  if (itemId === beforeId || itemId === afterId) {
-    return null;
-  }
+  if (itemId === upperNeighborId) return null;
 
   const rows = await tx
     .select({
@@ -57,32 +62,23 @@ export const computeReorder = async (
     .where(eq(resourceCollectionItems.collectionId, collectionId))
     .orderBy(asc(resourceCollectionItems.sortOrder));
 
-  const fromIdx = rows.findIndex((r) => r.resourceId === itemId);
-  if (fromIdx === -1) {
+  if (!rows.some((r) => r.resourceId === itemId)) {
     throw new NotFoundError('Resource membership', itemId);
   }
-  const moved = rows[fromIdx]!;
-  const without = rows.filter((_, i) => i !== fromIdx);
-
-  let toIdx: number;
-  if (beforeId !== undefined) {
-    toIdx = without.findIndex((r) => r.resourceId === beforeId);
-    if (toIdx === -1) {
-      throw new NotFoundError('Pivot resource', beforeId);
-    }
-  } else {
-    const afterIdx = without.findIndex((r) => r.resourceId === afterId);
-    if (afterIdx === -1) {
-      throw new NotFoundError('Pivot resource', afterId);
-    }
-    toIdx = afterIdx + 1;
+  if (
+    upperNeighborId !== null &&
+    !rows.some((r) => r.resourceId === upperNeighborId)
+  ) {
+    throw new NotFoundError('Pivot resource', upperNeighborId);
   }
 
-  const reordered = [
-    ...without.slice(0, toIdx),
-    moved,
-    ...without.slice(toIdx),
-  ];
+  const reordered = reorderByUpperNeighbor(
+    rows,
+    (r) => r.resourceId,
+    itemId,
+    upperNeighborId,
+  );
+  if (reordered === rows) return null;
 
   const updates: Array<{ id: string; sortOrder: number }> = [];
   for (let i = 0; i < reordered.length; i++) {
@@ -95,6 +91,13 @@ export const computeReorder = async (
 };
 
 // Bulk-apply per-row sortOrder updates without N round trips.
+//
+// PostgreSQL checks the unique index on (collection_id, sort_order) per-row
+// during an UPDATE, so a single CASE-WHEN statement that swaps two rows
+// (e.g. A:0->1, B:1->0) collides at the first row update before the second
+// settles. We dodge that by parking every affected row in a negative range
+// first (uniqueness still holds, no value collides with non-updated rows),
+// then writing the final values in a second pass.
 export const applySortOrderUpdates = async (
   tx: Transaction,
   updates: Array<{ id: string; sortOrder: number }>,
@@ -102,8 +105,18 @@ export const applySortOrderUpdates = async (
   if (updates.length === 0) {
     return;
   }
-  // CASE expression keeps everything to a single UPDATE.
   const ids = updates.map((u) => u.id);
+  const idList = sql.join(
+    ids.map((id) => sql`${id}::uuid`),
+    sql.raw(', '),
+  );
+
+  await tx.execute(sql`
+    UPDATE ${resourceCollectionItems}
+    SET sort_order = -1 - sort_order
+    WHERE id IN (${idList})
+  `);
+
   const caseSql = sql.join(
     [
       sql`CASE`,
@@ -118,10 +131,7 @@ export const applySortOrderUpdates = async (
   await tx.execute(sql`
     UPDATE ${resourceCollectionItems}
     SET sort_order = ${caseSql}
-    WHERE id IN (${sql.join(
-      ids.map((id) => sql`${id}::uuid`),
-      sql.raw(', '),
-    )})
+    WHERE id IN (${idList})
   `);
 };
 

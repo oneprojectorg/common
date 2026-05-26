@@ -20,7 +20,8 @@ export const getLinkPreview = async (
   url: string,
 ): Promise<LinkPreviewResult> => {
   try {
-    const iframelyKey = process.env.IFRAMELY_KEY;
+    const iframelyKey =
+      process.env.IFRAMELY_KEY ?? process.env.IFRAMELY_API_KEY;
     if (!iframelyKey) {
       return { url, error: 'Iframely key not configured' };
     }
@@ -35,6 +36,16 @@ export const getLinkPreview = async (
 
     const data = await response.json();
 
+    // The `/api/iframely` endpoint returns thumbnails under `links.thumbnail[]`
+    // (the oEmbed-shaped top-level `thumbnail_url` is only on `/api/oembed`).
+    // Prefer the first entry; fall back to top-level for forward-compat with
+    // any future shape change.
+    const thumbnailHref = Array.isArray(data.links?.thumbnail)
+      ? data.links.thumbnail.find(
+          (l: { href?: unknown }) => typeof l?.href === 'string',
+        )?.href
+      : undefined;
+
     return {
       url,
       meta: data.meta
@@ -46,9 +57,9 @@ export const getLinkPreview = async (
           }
         : undefined,
       html: data.html,
-      thumbnail_url: data.thumbnail_url,
-      provider_name: data.provider_name,
-      provider_url: data.provider_url,
+      thumbnail_url: thumbnailHref ?? data.thumbnail_url,
+      provider_name: data.provider_name ?? data.meta?.site,
+      provider_url: data.provider_url ?? data.meta?.canonical,
     };
   } catch (error) {
     return {

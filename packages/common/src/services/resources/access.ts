@@ -92,7 +92,7 @@ export const assertResourceAccess = async (
       });
       return {
         profileId: candidate.id,
-        profileType: candidate.type as EntityType,
+        profileType: EntityType.DECISION,
       };
     } catch (err) {
       if (err instanceof AccessControlException) {

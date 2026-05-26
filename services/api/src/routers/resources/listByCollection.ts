@@ -1,4 +1,4 @@
-import { listResourcesByCollection } from '@op/common';
+import { Channels, listResourcesByCollection } from '@op/common';
 import { z } from 'zod';
 
 import withDB from '../../middlewares/withDB';
@@ -15,6 +15,9 @@ export const listByCollection = router({
         ctx.user.id,
         input.collectionId,
       );
+      ctx.registerQueryChannels([
+        Channels.collectionResources(input.collectionId),
+      ]);
       return resourceListEncoder.parse(result);
     }),
 });

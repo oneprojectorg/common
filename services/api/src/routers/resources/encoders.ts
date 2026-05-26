@@ -15,8 +15,11 @@ const resourceBase = {
   title: z.string(),
   description: z.string().nullable(),
   addedByProfileUserId: z.string().uuid().nullable(),
-  createdAt: z.coerce.date().nullable(),
-  updatedAt: z.coerce.date().nullable(),
+  // ISO string from Drizzle (`mode: 'string'`). Don't use `z.coerce.date()`
+  // — tRPC skips `.output()` validation in production builds, so the string
+  // would reach the client unchanged and `.toISOString()` on it blows up.
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
   signedUrl: z.string().nullable(),
 };
 
@@ -79,6 +82,6 @@ export const collectionEncoder = z.object({
   name: z.string(),
   sortOrder: z.number(),
   addedByProfileUserId: z.string().uuid().nullable(),
-  createdAt: z.coerce.date().nullable(),
-  updatedAt: z.coerce.date().nullable(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
 });

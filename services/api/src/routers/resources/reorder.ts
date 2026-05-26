@@ -1,20 +1,19 @@
-import { reorderResource } from '@op/common';
+import {
+  Channels,
+  getProfileIdsForCollection,
+  reorderResource,
+} from '@op/common';
 import { z } from 'zod';
 
 import withDB from '../../middlewares/withDB';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { resourceInCollectionEncoder } from './encoders';
 
-const inputSchema = z
-  .object({
-    id: z.string().uuid(),
-    collectionId: z.string().uuid(),
-    beforeId: z.string().uuid().optional(),
-    afterId: z.string().uuid().optional(),
-  })
-  .refine((v) => (v.beforeId === undefined) !== (v.afterId === undefined), {
-    message: 'Exactly one of beforeId / afterId is required',
-  });
+const inputSchema = z.object({
+  id: z.string().uuid(),
+  collectionId: z.string().uuid(),
+  upperNeighborId: z.string().uuid().nullable(),
+});
 
 export const reorder = router({
   reorder: commonAuthedProcedure()
@@ -26,9 +25,13 @@ export const reorder = router({
         ctx.user.id,
         input.id,
         input.collectionId,
-        input.beforeId,
-        input.afterId,
+        input.upperNeighborId,
       );
+      const profileIds = await getProfileIdsForCollection(input.collectionId);
+      ctx.registerMutationChannels([
+        Channels.collectionResources(input.collectionId),
+        ...profileIds.map((id) => Channels.profileResources(id)),
+      ]);
       return resourceInCollectionEncoder.parse(row);
     }),
 });

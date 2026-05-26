@@ -50,9 +50,32 @@ export const Channels = {
 
   /**
    * Channel for comments under a specific post. Subscribed to by comment-list
-   * queries, broadcast to by comment creation and reactions on comments.
+   * queries, broadcast to by post creation and reactions on comments.
    */
   postComments: (postId: string) => `postComments:${postId}` as const,
+
+  /**
+   * Channel for the list of resources owned by a profile (sourced from the
+   * pinned collection). Subscribed to by resources.list and broadcast to
+   * by any resource mutation affecting the profile.
+   */
+  profileResources: (profileId: string) =>
+    `profileResources:${profileId}` as const,
+
+  /**
+   * Channel for resources inside a specific collection. Subscribed to by
+   * resources.listByCollection and broadcast to by mutations targeting the
+   * collection.
+   */
+  collectionResources: (collectionId: string) =>
+    `collectionResources:${collectionId}` as const,
+
+  /**
+   * Channel for the collections list of a profile. Subscribed to by
+   * collections.list and broadcast to by collection-level mutations.
+   */
+  profileCollections: (profileId: string) =>
+    `profileCollections:${profileId}` as const,
 } as const;
 
 export type GlobalChannel = ReturnType<typeof Channels.global>;
@@ -81,6 +104,15 @@ export type ReviewAssignmentsChannel = ReturnType<
 >;
 export type ProfilePostsChannel = ReturnType<typeof Channels.profilePosts>;
 export type PostCommentsChannel = ReturnType<typeof Channels.postComments>;
+export type ProfileResourcesChannel = ReturnType<
+  typeof Channels.profileResources
+>;
+export type CollectionResourcesChannel = ReturnType<
+  typeof Channels.collectionResources
+>;
+export type ProfileCollectionsChannel = ReturnType<
+  typeof Channels.profileCollections
+>;
 
 /**
  * Union of all valid channel types
@@ -97,4 +129,7 @@ export type ChannelName =
   | ReviewAssignmentChannel
   | ReviewAssignmentsChannel
   | ProfilePostsChannel
-  | PostCommentsChannel;
+  | PostCommentsChannel
+  | ProfileResourcesChannel
+  | CollectionResourcesChannel
+  | ProfileCollectionsChannel;

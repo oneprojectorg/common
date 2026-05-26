@@ -1,7 +1,9 @@
 import {
   ALLOWED_RESOURCE_MIME_TYPES,
+  Channels,
   MAX_RESOURCE_FILE_SIZE,
   createDocumentResource,
+  getProfileIdsForCollection,
 } from '@op/common';
 import { z } from 'zod';
 
@@ -46,6 +48,13 @@ export const createDocument = router({
         mimeType: input.mimeType,
         fileSize: input.fileSize,
       });
+      const profileIds = input.profileId
+        ? [input.profileId]
+        : await getProfileIdsForCollection(row.collectionId);
+      ctx.registerMutationChannels([
+        Channels.collectionResources(row.collectionId),
+        ...profileIds.map((id) => Channels.profileResources(id)),
+      ]);
       return resourceInCollectionEncoder.parse(row);
     }),
 });

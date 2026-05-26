@@ -1,6 +1,8 @@
 import {
+  Channels,
   attachResourceToCollection,
   detachResourceFromCollection,
+  getProfileIdsForCollection,
 } from '@op/common';
 import { z } from 'zod';
 
@@ -24,6 +26,11 @@ export const moveToCollection = router({
         input.id,
         input.collectionId,
       );
+      const profileIds = await getProfileIdsForCollection(input.collectionId);
+      ctx.registerMutationChannels([
+        Channels.collectionResources(input.collectionId),
+        ...profileIds.map((id) => Channels.profileResources(id)),
+      ]);
       return resourceInCollectionEncoder.parse(row);
     }),
 
@@ -37,10 +44,16 @@ export const moveToCollection = router({
     )
     .output(z.object({ ok: z.literal(true) }))
     .mutation(async ({ input, ctx }) => {
-      return detachResourceFromCollection(
+      const profileIds = await getProfileIdsForCollection(input.collectionId);
+      const result = await detachResourceFromCollection(
         ctx.user.id,
         input.id,
         input.collectionId,
       );
+      ctx.registerMutationChannels([
+        Channels.collectionResources(input.collectionId),
+        ...profileIds.map((id) => Channels.profileResources(id)),
+      ]);
+      return result;
     }),
 });

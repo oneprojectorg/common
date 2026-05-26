@@ -17,6 +17,7 @@ import {
 } from '../../utils/error';
 import { assertResourceAccess } from './access';
 import { resolveOrCreatePinnedCollection } from './collections';
+import { resourcePathPrefix } from './constants';
 import {
   applySortOrderUpdates,
   computeReorder,
@@ -24,11 +25,7 @@ import {
   lockCollection,
   shiftSortOrderForInsertAtTop,
 } from './ordering';
-import {
-  deleteResourceObject,
-  getResourceSignedUrl,
-  resourcePathPrefix,
-} from './storage';
+import { deleteResourceObject, getResourceSignedUrl } from './storage';
 
 export type AttachmentSummary = {
   storageObjectId: string;
@@ -91,7 +88,7 @@ const loadResourceDTOById = async (id: string): Promise<ResourceDTO> => {
   if (!row) {
     throw new NotFoundError('Resource', id);
   }
-  return toResourceDTO(row as LoadedResource);
+  return toResourceDTO(row);
 };
 
 const loadResourceInCollectionDTO = async (
@@ -184,30 +181,11 @@ export const listResourcesByCollection = async (
   return fetchByCollection(collectionId);
 };
 
-export const getResource = async (
-  authUserId: string,
-  id: string,
-): Promise<ResourceDTO> => {
-  await assertResourceAccess(
-    { kind: 'resource', resourceId: id },
-    authUserId,
-    'read',
-  );
-
-  return loadResourceDTOById(id);
-};
-
 const resolveTargetCollection = async (
   authUserId: string,
   scope: { profileId?: string; collectionId?: string },
 ): Promise<{ collectionId: string; profileId: string }> => {
-  if ((scope.profileId === undefined) === (scope.collectionId === undefined)) {
-    throw new ValidationError(
-      'Exactly one of profileId / collectionId is required',
-    );
-  }
-
-  if (scope.collectionId) {
+  if (scope.collectionId !== undefined && scope.profileId === undefined) {
     const resolved = await assertResourceAccess(
       { kind: 'collection', collectionId: scope.collectionId },
       authUserId,
@@ -216,17 +194,23 @@ const resolveTargetCollection = async (
     return { collectionId: scope.collectionId, profileId: resolved.profileId };
   }
 
-  const profileId = scope.profileId as string;
-  await assertResourceAccess(
-    { kind: 'profile', profileId },
-    authUserId,
-    'write',
-  );
-  const collection = await resolveOrCreatePinnedCollection(profileId, true);
-  if (!collection) {
-    throw new ConflictError('Failed to resolve collection');
+  if (scope.profileId !== undefined && scope.collectionId === undefined) {
+    const { profileId } = scope;
+    await assertResourceAccess(
+      { kind: 'profile', profileId },
+      authUserId,
+      'write',
+    );
+    const collection = await resolveOrCreatePinnedCollection(profileId, true);
+    if (!collection) {
+      throw new ConflictError('Failed to resolve collection');
+    }
+    return { collectionId: collection.id, profileId };
   }
-  return { collectionId: collection.id, profileId };
+
+  throw new ValidationError(
+    'Exactly one of profileId / collectionId is required',
+  );
 };
 
 const lookupProfileUserId = async (
@@ -466,8 +450,7 @@ export const reorderResource = async (
   authUserId: string,
   resourceId: string,
   collectionId: string,
-  beforeId: string | undefined,
-  afterId: string | undefined,
+  upperNeighborId: string | null,
 ): Promise<ResourceInCollectionDTO> => {
   await Promise.all([
     assertResourceAccess({ kind: 'resource', resourceId }, authUserId, 'write'),
@@ -485,8 +468,7 @@ export const reorderResource = async (
       tx,
       collectionId,
       resourceId,
-      beforeId,
-      afterId,
+      upperNeighborId,
     );
     if (plan) {
       await applySortOrderUpdates(tx, plan.updates);
@@ -599,8 +581,7 @@ export const deleteResource = async (
     throw new NotFoundError('Resource', id);
   }
 
-  const loaded = existing as LoadedResource;
-  const storageObjectName = loaded.attachment?.storageObject?.name ?? null;
+  const storageObjectName = existing.attachment?.storageObject?.name ?? null;
 
   // Collect collections this resource belonged to so we can compact their
   // sortOrders after the cascading delete.
@@ -611,10 +592,10 @@ export const deleteResource = async (
 
   await db.transaction(async (tx) => {
     await tx.delete(resources).where(eq(resources.id, id));
-    if (loaded.attachmentId) {
+    if (existing.attachmentId) {
       await tx
         .delete(attachments)
-        .where(eq(attachments.id, loaded.attachmentId));
+        .where(eq(attachments.id, existing.attachmentId));
     }
   });
 
