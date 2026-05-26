@@ -75,9 +75,6 @@ Use `pnpm w:<workspace>` shortcuts:
 
 ## AI Assistant Guidelines
 
-### Branch Management
-- **NEVER commit or push** - these actions are always manual
-
 ### File Search Scope
 
 - **NEVER search outside the current worktree. Do not exit the current working directory.**
