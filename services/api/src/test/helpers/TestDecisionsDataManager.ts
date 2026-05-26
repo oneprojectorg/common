@@ -32,7 +32,11 @@ import type {
   processInstanceWithSchemaEncoder,
 } from '../../encoders/decision';
 import { processInstanceWithSchemaEncoder as processInstanceEncoder } from '../../encoders/decision';
-import { createTestUser, supabaseTestAdminClient } from '../supabase-utils';
+import {
+  createIsolatedTestClient,
+  createTestUser,
+  supabaseTestAdminClient,
+} from '../supabase-utils';
 
 type DecisionSchemaDefinition = z.infer<typeof decisionSchemaDefinitionEncoder>;
 
@@ -428,6 +432,73 @@ export class TestDecisionsDataManager {
       email,
       isAdmin,
     });
+  }
+
+  /**
+   * Marks an instance as public-participation for COLUMBUS_TECH_DECISIONS §6.
+   * Merges `mode: 'public'` into the row's `instanceData` JSONB.
+   */
+  async setInstancePublic(instanceId: string): Promise<void> {
+    const row = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+    });
+    if (!row) {
+      throw new Error(`Instance ${instanceId} not found`);
+    }
+    const next: DecisionInstanceData = {
+      ...((row.instanceData as DecisionInstanceData) ?? { phases: [] }),
+      mode: 'public',
+    };
+    await db
+      .update(processInstances)
+      .set({ instanceData: next })
+      .where(eq(processInstances.id, instanceId));
+  }
+
+  /**
+   * Creates an anonymous Supabase participant. Returns the session for
+   * building an authenticated tRPC caller, plus the Supabase user and the
+   * participant profileId provisioned by the auth trigger.
+   *
+   * Anonymous participants are NOT granted any instance-profile role here —
+   * per COLUMBUS_TECH_DECISIONS.md §1, public-mode instances accept anon
+   * participants without per-actor access roles, and the procedure layer
+   * propagates `skipAccessCheck` to the service.
+   */
+  async createAnonymousParticipant(_opts?: { instance?: CreatedInstance }) {
+    this.ensureCleanupRegistered();
+
+    const client = createIsolatedTestClient();
+    const { data, error } = await client.auth.signInAnonymously();
+    if (error || !data.session || !data.user) {
+      throw new Error(
+        `Failed to create anonymous session: ${error?.message ?? 'no session'}`,
+      );
+    }
+
+    const authUserId = data.user.id;
+    this.createdAuthUserIds.push(authUserId);
+
+    // The auth trigger provisions public.users + profile + profile_users
+    // rows for anonymous sign-ins. Fetch the resulting profileId for cleanup
+    // tracking.
+    const userRecord = await db.query.users.findFirst({
+      where: { authUserId },
+    });
+    if (!userRecord?.profileId) {
+      throw new Error(
+        `Anonymous user ${authUserId} missing profile after sign-in trigger`,
+      );
+    }
+    this.createdProfileIds.push(userRecord.profileId);
+
+    return {
+      authUserId,
+      session: data.session,
+      user: data.user,
+      profileId: userRecord.profileId,
+      client,
+    };
   }
 
   /**

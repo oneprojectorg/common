@@ -114,6 +114,7 @@ export { schemaValidator } from './schemaValidator';
 export * from './types';
 export type {
   DecisionInstanceData,
+  ParticipationMode,
   PhaseInstanceData,
   PhaseOverride,
 } from './schemas/instanceData';

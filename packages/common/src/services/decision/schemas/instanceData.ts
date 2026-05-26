@@ -47,6 +47,13 @@ export interface PhaseInstanceData {
  * Instance data stored in processInstances table for new DecisionSchemaDefinition-based instances.
  * This structure must match instanceDataNewEncoder in the API encoders.
  */
+/**
+ * Participation mode. `public` opens the instance to anonymous + no-JWT
+ * traffic per COLUMBUS_TECH_DECISIONS.md §6; absent or any other value falls
+ * back to the closed-network gate.
+ */
+export type ParticipationMode = 'public';
+
 export interface DecisionInstanceData {
   config?: ProcessConfig;
   fieldValues?: Record<string, unknown>;
@@ -59,6 +66,8 @@ export interface DecisionInstanceData {
   proposalTemplate?: ProposalTemplateSchema;
   /** Rubric template (JSON Schema defining evaluation criteria) */
   rubricTemplate?: RubricTemplateSchema;
+  /** Participation mode for the instance; see {@link ParticipationMode}. */
+  mode?: ParticipationMode;
 }
 
 export interface PhaseOverride {

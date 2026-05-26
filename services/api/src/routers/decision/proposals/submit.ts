@@ -4,7 +4,7 @@ import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { processInstanceProcedure, router } from '../../../trpcFactory';
 import { trackProposalSubmitted } from '../../../utils/analytics';
 
 const submitProposalInputSchema = z.object({
@@ -12,10 +12,15 @@ const submitProposalInputSchema = z.object({
 });
 
 export const submitProposalRouter = router({
-  submitProposal: commonAuthedProcedure()
+  submitProposal: processInstanceProcedure({ requireUser: true })
     .input(submitProposalInputSchema)
     .output(proposalSchema)
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx: rawCtx, input }) => {
+      // requireUser:true guarantees ctx.user is non-null at runtime; the
+      // current factory return type doesn't narrow that, hence the assertion.
+      const ctx = rawCtx as typeof rawCtx & {
+        user: NonNullable<typeof rawCtx.user>;
+      };
       const { user } = ctx;
 
       const proposal = await submitProposal({

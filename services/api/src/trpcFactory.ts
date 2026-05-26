@@ -13,6 +13,10 @@ import withAnalytics from './middlewares/withAnalytics';
 import withAuthenticated from './middlewares/withAuthenticated';
 import withChannelMeta from './middlewares/withChannelMeta';
 import withLogger from './middlewares/withLogger';
+import {
+  withProcessInstanceAuthOptional,
+  withProcessInstanceAuthRequired,
+} from './middlewares/withProcessInstanceAuth';
 import withRateLimited from './middlewares/withRateLimited';
 import type { TContext } from './types';
 
@@ -88,5 +92,39 @@ export function commonAuthedProcedure(opts?: CommonAuthedProcedureOptions) {
   return commonProcedure
     .use(withRateLimited(rateLimit))
     .use(withAuthenticated)
+    .use(withAnalytics);
+}
+
+interface ProcessInstanceProcedureOptions {
+  /**
+   * If `true`, the request must carry a Supabase JWT (anonymous or full); a
+   * missing session throws `UnauthorizedError`. If `false`, `ctx.user` is
+   * `User | null` and the handler is responsible for the null case.
+   */
+  requireUser: boolean;
+  rateLimit?: {
+    windowSize: number;
+    maxRequests: number;
+  };
+}
+
+/**
+ * Procedure builder for endpoints scoped to a specific process instance.
+ *
+ * Experimental stub for COLUMBUS_TECH_DECISIONS.md §5–6: mode is hardcoded to
+ * `public`, so anonymous and authed JWTs are both accepted, and no-JWT is
+ * allowed when `requireUser` is `false`. Instance-mode lookup and the
+ * invite-mode allowList gate are deferred to the real implementation.
+ */
+export function processInstanceProcedure(
+  opts: ProcessInstanceProcedureOptions,
+) {
+  const rateLimit = opts.rateLimit ?? DEFAULT_RATE_LIMIT;
+  const middleware = opts.requireUser
+    ? withProcessInstanceAuthRequired
+    : withProcessInstanceAuthOptional;
+  return commonProcedure
+    .use(withRateLimited(rateLimit))
+    .use(middleware)
     .use(withAnalytics);
 }

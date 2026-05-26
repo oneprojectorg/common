@@ -13,6 +13,7 @@ import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   createIsolatedSession,
+  createIsolatedTestClient,
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
@@ -22,6 +23,19 @@ const createCaller = createCallerFactory(appRouter);
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+async function createAnonymousCaller() {
+  const client = createIsolatedTestClient();
+  const { data, error } = await client.auth.signInAnonymously();
+  if (error || !data.session) {
+    throw new Error(`Failed to sign in anonymously: ${error?.message}`);
+  }
+  return createCaller(await createTestContextWithSession(data.session));
+}
+
+async function createUnauthenticatedCaller() {
+  return createCaller(await createTestContextWithSession(null));
 }
 
 describe.concurrent('submitProposal', () => {
@@ -1072,5 +1086,73 @@ describe.concurrent('submitProposal', () => {
     await expect(
       caller.decision.submitProposal({ proposalId: proposal.id }),
     ).rejects.toMatchObject({ cause: { name: 'ValidationError' } });
+  });
+
+  // Gating tests for processInstanceProcedure({ requireUser: true }) — see
+  // COLUMBUS_TECH_DECISIONS.md §5–6. The anon-success path lives on
+  // createProposal (see create.test.ts) since submit presupposes an existing
+  // draft; here we only pin the gate-level rejects for submit.
+  describe('processInstanceProcedure gating', () => {
+    it('rejects a no-JWT request on a public instance (requireUser:true)', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+      await testData.setInstancePublic(instance.instance.id);
+
+      const proposal = await testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Should reject no-JWT submit' },
+      });
+
+      const caller = await createUnauthenticatedCaller();
+
+      await expect(
+        caller.decision.submitProposal({ proposalId: proposal.id }),
+      ).rejects.toMatchObject({
+        cause: { name: 'UnauthorizedError' },
+      });
+    });
+
+    it('rejects an anonymous JWT on a non-public instance', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+      // Deliberately NOT calling setInstancePublic — closed-network gate.
+
+      const proposal = await testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Non-public; anon should bounce' },
+      });
+
+      const anonCaller = await createAnonymousCaller();
+
+      await expect(
+        anonCaller.decision.submitProposal({ proposalId: proposal.id }),
+      ).rejects.toMatchObject({
+        cause: { name: 'UnauthorizedError' },
+      });
+    });
   });
 });

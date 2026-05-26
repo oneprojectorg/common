@@ -42,9 +42,18 @@ export interface CreateProposalInput {
 export const createProposal = async ({
   data,
   user,
+  skipAccessCheck = false,
 }: {
   data: CreateProposalInput;
   user: User;
+  /**
+   * When `true`, skip the per-actor profile-access role check. The procedure
+   * layer is expected to have already determined the caller is allowed
+   * (e.g. public-mode anonymous participants on a Columbus instance). See
+   * COLUMBUS_TECH_DECISIONS.md §1 — anonymous users get owner-bounded
+   * capabilities without holding a role on the instance profile.
+   */
+  skipAccessCheck?: boolean;
 }) => {
   const authUserId = user.id;
 
@@ -62,22 +71,24 @@ export const createProposal = async ({
       throw new ValidationError('Process instance has no profile');
     }
 
-    const profileAccessUser = await getProfileAccessUser({
-      user: { id: authUserId },
-      profileId: instance.profileId,
-    });
+    if (!skipAccessCheck) {
+      const profileAccessUser = await getProfileAccessUser({
+        user: { id: authUserId },
+        profileId: instance.profileId,
+      });
 
-    if (!profileAccessUser) {
-      throw new UnauthorizedError('Not authorized');
+      if (!profileAccessUser) {
+        throw new UnauthorizedError('Not authorized');
+      }
+
+      assertAccess(
+        [
+          { profile: permission.ADMIN },
+          { decisions: decisionPermission.SUBMIT_PROPOSALS },
+        ],
+        profileAccessUser.roles,
+      );
     }
-
-    assertAccess(
-      [
-        { profile: permission.ADMIN },
-        { decisions: decisionPermission.SUBMIT_PROPOSALS },
-      ],
-      profileAccessUser.roles,
-    );
 
     const instanceData = instance.instanceData as DecisionInstanceData;
     const currentPhaseId = instance.currentStateId;
