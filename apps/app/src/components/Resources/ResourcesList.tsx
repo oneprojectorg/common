@@ -23,40 +23,32 @@ export const ResourcesList = ({
   const items = data.resources;
 
   const handleReorder = (next: ResourceItem[]) => {
-    // Find the first index where the two arrays diverge — that anchor tells us
-    // which item moved without resorting to a fragile "max-delta" heuristic
-    // (which is non-deterministic for two-element swaps).
-    let from = -1;
-    let to = -1;
+    // Find the first index where the two arrays diverge. In a single-move
+    // reorder, either items[i] moved down (then items[i+1] === next[i]) or
+    // next[i] moved up. Pick the moved id accordingly, then read its new
+    // upper neighbor straight off `next`.
+    let movedId: string | null = null;
+    let movedIdxInNext = -1;
     for (let i = 0; i < next.length; i++) {
       const a = items[i];
       const b = next[i];
       if (!a || !b || a.id === b.id) continue;
       if (items[i + 1]?.id === b.id) {
-        from = i;
-        to = next.findIndex((r) => r.id === a.id);
+        movedId = a.id;
+        movedIdxInNext = next.findIndex((r) => r.id === a.id);
       } else {
-        to = i;
-        from = items.findIndex((r) => r.id === b.id);
+        movedId = b.id;
+        movedIdxInNext = i;
       }
       break;
     }
-    if (from === -1 || to === -1 || from === to) return;
-    const movedId = items[from]?.id;
-    if (!movedId) return;
+    if (!movedId || movedIdxInNext === -1) return;
 
     const collectionId = data.collectionId;
     if (!collectionId) return;
 
-    if (to === 0) {
-      const after = next[1];
-      if (!after) return;
-      reorder.mutate({ id: movedId, collectionId, afterId: after.id });
-      return;
-    }
-    const before = next[to - 1];
-    if (!before) return;
-    reorder.mutate({ id: movedId, collectionId, beforeId: before.id });
+    const upperNeighborId = next[movedIdxInNext - 1]?.id ?? null;
+    reorder.mutate({ id: movedId, collectionId, upperNeighborId });
   };
 
   if (items.length === 0) {
