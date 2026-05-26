@@ -12,11 +12,30 @@
 // Sonner singleton mount used by Toast pair — the comparison row uses
 // sense's <Toast /> so toast.* calls render through op-themed Toaster.
 import { Toast as WrapToast } from '@op/sense/Toast';
+// ---- NEW IN SENSE (no @op/ui equivalent) ----
+import {
+  Accordion as RawAccordion,
+  AccordionContent as RawAccordionContent,
+  AccordionItem as RawAccordionItem,
+  AccordionTrigger as RawAccordionTrigger,
+} from '@op/sense/ui/accordion';
 // ---- RAW (vanilla shadcn primitives) ----
 import {
   Alert as RawAlert,
   AlertTitle as RawAlertTitle,
 } from '@op/sense/ui/alert';
+import {
+  AlertDialog as RawAlertDialog,
+  AlertDialogAction as RawAlertDialogAction,
+  AlertDialogCancel as RawAlertDialogCancel,
+  AlertDialogContent as RawAlertDialogContent,
+  AlertDialogDescription as RawAlertDialogDescription,
+  AlertDialogFooter as RawAlertDialogFooter,
+  AlertDialogHeader as RawAlertDialogHeader,
+  AlertDialogTitle as RawAlertDialogTitle,
+  AlertDialogTrigger as RawAlertDialogTrigger,
+} from '@op/sense/ui/alert-dialog';
+import { AspectRatio as RawAspectRatio } from '@op/sense/ui/aspect-ratio';
 import {
   Avatar as RawAvatar,
   AvatarFallback as RawAvatarFallback,
@@ -33,6 +52,7 @@ import {
   BreadcrumbSeparator as RawBreadcrumbSeparator,
 } from '@op/sense/ui/breadcrumb';
 import { Button as RawButton } from '@op/sense/ui/button';
+import { ButtonGroup as RawButtonGroup } from '@op/sense/ui/button-group';
 import {
   Card as RawCard,
   CardContent as RawCardContent,
@@ -51,6 +71,13 @@ import {
   ComboboxList as RawComboboxList,
 } from '@op/sense/ui/combobox';
 import {
+  ContextMenu as RawContextMenu,
+  ContextMenuContent as RawContextMenuContent,
+  ContextMenuItem as RawContextMenuItem,
+  ContextMenuSeparator as RawContextMenuSeparator,
+  ContextMenuTrigger as RawContextMenuTrigger,
+} from '@op/sense/ui/context-menu';
+import {
   Dialog as RawDialog,
   DialogContent as RawDialogContent,
   DialogFooter as RawDialogFooter,
@@ -64,12 +91,19 @@ import {
   DropdownMenuItem as RawDropdownMenuItem,
   DropdownMenuTrigger as RawDropdownMenuTrigger,
 } from '@op/sense/ui/dropdown-menu';
+import {
+  HoverCard as RawHoverCard,
+  HoverCardContent as RawHoverCardContent,
+  HoverCardTrigger as RawHoverCardTrigger,
+} from '@op/sense/ui/hover-card';
 import { Input as RawInput } from '@op/sense/ui/input';
 import {
   InputGroup as RawInputGroup,
   InputGroupAddon as RawInputGroupAddon,
   InputGroupInput as RawInputGroupInput,
 } from '@op/sense/ui/input-group';
+import { Kbd as RawKbd } from '@op/sense/ui/kbd';
+import { NativeSelect as RawNativeSelect } from '@op/sense/ui/native-select';
 import {
   Pagination as RawPagination,
   PaginationContent as RawPaginationContent,
@@ -77,10 +111,12 @@ import {
   PaginationNext as RawPaginationNext,
   PaginationPrevious as RawPaginationPrevious,
 } from '@op/sense/ui/pagination';
+import { Progress as RawProgress } from '@op/sense/ui/progress';
 import {
   RadioGroup as RawRadioGroup,
   RadioGroupItem as RawRadioGroupItem,
 } from '@op/sense/ui/radio-group';
+import { ScrollArea as RawScrollArea } from '@op/sense/ui/scroll-area';
 import {
   Select as RawSelect,
   SelectContent as RawSelectContent,
@@ -96,6 +132,7 @@ import {
   SheetTrigger as RawSheetTrigger,
 } from '@op/sense/ui/sheet';
 import { Skeleton as RawSkeleton } from '@op/sense/ui/skeleton';
+import { Slider as RawSlider } from '@op/sense/ui/slider';
 import { Spinner as RawSpinner } from '@op/sense/ui/spinner';
 import { Switch as RawSwitch } from '@op/sense/ui/switch';
 import {
@@ -104,6 +141,11 @@ import {
   TabsList as RawTabsList,
   TabsTrigger as RawTabsTrigger,
 } from '@op/sense/ui/tabs';
+import { Toggle as RawToggle } from '@op/sense/ui/toggle';
+import {
+  ToggleGroup as RawToggleGroup,
+  ToggleGroupItem as RawToggleGroupItem,
+} from '@op/sense/ui/toggle-group';
 import {
   Tooltip as RawTooltip,
   TooltipContent as RawTooltipContent,
@@ -111,7 +153,13 @@ import {
   TooltipTrigger as RawTooltipTrigger,
 } from '@op/sense/ui/tooltip';
 import { useId, useState, type ReactNode } from 'react';
-import { LuEllipsis, LuSearch } from 'react-icons/lu';
+import {
+  LuBold,
+  LuEllipsis,
+  LuItalic,
+  LuSearch,
+  LuUnderline,
+} from 'react-icons/lu';
 import { toast as rawToast } from 'sonner';
 
 // ---- OLD (@op/ui, RAC) ----
@@ -209,6 +257,29 @@ export function Pair({
           <div className="flex flex-wrap items-center gap-3">{node}</div>
         </div>
       ))}
+    </div>
+  );
+}
+
+// One-column row used by NewInSense — same grid layout as Pair, but the
+// "before" cell shows "no equivalent" because @op/ui doesn't ship the
+// primitive.
+export function Gain({ label, raw }: { label: string; raw: ReactNode }) {
+  return (
+    <div className="grid grid-cols-[160px_1fr_1fr] items-start gap-4 border-b border-neutral-200 py-4 last:border-b-0">
+      <div className="pt-1 text-sm font-medium text-neutral-700">{label}</div>
+      <div className="min-w-0">
+        <div className="mb-2 text-[10px] tracking-wide text-neutral-500 uppercase">
+          @op/ui (before)
+        </div>
+        <div className="text-sm text-neutral-400 italic">— no equivalent —</div>
+      </div>
+      <div className="min-w-0">
+        <div className="mb-2 text-[10px] tracking-wide text-neutral-500 uppercase">
+          @op/sense (new)
+        </div>
+        <div className="flex flex-wrap items-center gap-3">{raw}</div>
+      </div>
     </div>
   );
 }
@@ -633,6 +704,37 @@ export function Overlays() {
   );
 }
 
+export function NewInSense() {
+  return (
+    <Section title="New in @op/sense (no @op/ui equivalent)">
+      <Gain label="Accordion" raw={<AccordionSample />} />
+      <Gain label="AlertDialog" raw={<AlertDialogSample />} />
+      <Gain label="AspectRatio" raw={<AspectRatioSample />} />
+      <Gain label="ButtonGroup" raw={<ButtonGroupSample />} />
+      <Gain label="ContextMenu" raw={<ContextMenuSample />} />
+      <Gain label="HoverCard" raw={<HoverCardSample />} />
+      <Gain
+        label="Kbd"
+        raw={
+          <span className="flex items-center gap-1 text-sm">
+            Save with <RawKbd>⌘</RawKbd>
+            <RawKbd>S</RawKbd>
+          </span>
+        }
+      />
+      <Gain label="NativeSelect" raw={<NativeSelectSample />} />
+      <Gain
+        label="Progress"
+        raw={<RawProgress value={62} className="w-48" />}
+      />
+      <Gain label="ScrollArea" raw={<ScrollAreaSample />} />
+      <Gain label="Slider" raw={<SliderSample />} />
+      <Gain label="Toggle" raw={<ToggleSample />} />
+      <Gain label="ToggleGroup" raw={<ToggleGroupSample />} />
+    </Section>
+  );
+}
+
 export function ComparisonGrid() {
   return (
     <div className="mx-auto max-w-6xl p-6">
@@ -644,7 +746,161 @@ export function ComparisonGrid() {
       <Structure />
       <Navigation />
       <Overlays />
+      <NewInSense />
     </div>
+  );
+}
+
+// ---------- new-in-sense samples ----------
+
+function AccordionSample() {
+  return (
+    <RawAccordion className="w-72">
+      <RawAccordionItem value="a">
+        <RawAccordionTrigger>What is @op/sense?</RawAccordionTrigger>
+        <RawAccordionContent>
+          Op's shadcn-base-nova design system.
+        </RawAccordionContent>
+      </RawAccordionItem>
+      <RawAccordionItem value="b">
+        <RawAccordionTrigger>Is it themable?</RawAccordionTrigger>
+        <RawAccordionContent>
+          Yes — via @op/styles shadcn-theme.css.
+        </RawAccordionContent>
+      </RawAccordionItem>
+    </RawAccordion>
+  );
+}
+
+function AlertDialogSample() {
+  return (
+    <RawAlertDialog>
+      <RawAlertDialogTrigger
+        render={<RawButton variant="destructive">Delete account</RawButton>}
+      />
+      <RawAlertDialogContent>
+        <RawAlertDialogHeader>
+          <RawAlertDialogTitle>Are you absolutely sure?</RawAlertDialogTitle>
+          <RawAlertDialogDescription>
+            This action cannot be undone.
+          </RawAlertDialogDescription>
+        </RawAlertDialogHeader>
+        <RawAlertDialogFooter>
+          <RawAlertDialogCancel>Cancel</RawAlertDialogCancel>
+          <RawAlertDialogAction>Delete</RawAlertDialogAction>
+        </RawAlertDialogFooter>
+      </RawAlertDialogContent>
+    </RawAlertDialog>
+  );
+}
+
+function AspectRatioSample() {
+  return (
+    <RawAspectRatio ratio={16 / 9} className="w-48 overflow-hidden rounded-md">
+      <div className="flex size-full items-center justify-center bg-gradient-to-br from-primary/30 to-primary/10 text-xs text-neutral-700">
+        16:9
+      </div>
+    </RawAspectRatio>
+  );
+}
+
+function ButtonGroupSample() {
+  return (
+    <RawButtonGroup>
+      <RawButton variant="outline">One</RawButton>
+      <RawButton variant="outline">Two</RawButton>
+      <RawButton variant="outline">Three</RawButton>
+    </RawButtonGroup>
+  );
+}
+
+function ContextMenuSample() {
+  return (
+    <RawContextMenu>
+      <RawContextMenuTrigger
+        render={
+          <div className="flex h-16 w-48 items-center justify-center rounded-md border border-dashed text-xs text-neutral-500">
+            right-click here
+          </div>
+        }
+      />
+      <RawContextMenuContent>
+        <RawContextMenuItem>Back</RawContextMenuItem>
+        <RawContextMenuItem>Forward</RawContextMenuItem>
+        <RawContextMenuSeparator />
+        <RawContextMenuItem>Reload</RawContextMenuItem>
+      </RawContextMenuContent>
+    </RawContextMenu>
+  );
+}
+
+function HoverCardSample() {
+  return (
+    <RawHoverCard>
+      <RawHoverCardTrigger
+        render={<RawButton variant="link">@vercel</RawButton>}
+      />
+      <RawHoverCardContent>
+        <div className="text-sm">The web platform — frontend cloud.</div>
+      </RawHoverCardContent>
+    </RawHoverCard>
+  );
+}
+
+function NativeSelectSample() {
+  return (
+    <RawNativeSelect className="w-40">
+      <option>Apple</option>
+      <option>Banana</option>
+      <option>Cherry</option>
+    </RawNativeSelect>
+  );
+}
+
+function ScrollAreaSample() {
+  return (
+    <RawScrollArea className="h-24 w-48 rounded-md border p-2 text-sm">
+      {Array.from({ length: 30 }, (_, i) => (
+        <div key={i}>Row {i + 1}</div>
+      ))}
+    </RawScrollArea>
+  );
+}
+
+function SliderSample() {
+  const [value, setValue] = useState<number[]>([50]);
+  return (
+    <RawSlider
+      value={value}
+      onValueChange={(v) => setValue(Array.isArray(v) ? [...v] : [v])}
+      max={100}
+      step={1}
+      className="w-48"
+    />
+  );
+}
+
+function ToggleSample() {
+  return (
+    <RawToggle aria-label="Bold">
+      <LuBold className="size-4" />
+    </RawToggle>
+  );
+}
+
+function ToggleGroupSample() {
+  return (
+    <RawToggleGroup>
+      <RawToggleGroupItem value="bold" aria-label="Bold">
+        <LuBold className="size-4" />
+      </RawToggleGroupItem>
+      <RawToggleGroupItem value="italic" aria-label="Italic">
+        <LuItalic className="size-4" />
+      </RawToggleGroupItem>
+      <RawToggleGroupItem value="underline" aria-label="Underline">
+        <LuUnderline className="size-4" />
+      </RawToggleGroupItem>
+    </RawToggleGroup>
   );
 }
 
