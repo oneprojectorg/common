@@ -2,8 +2,6 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { LuCheck, LuChevronRight, LuEllipsis } from 'react-icons/lu';
 
-import { Button } from '@/components/Button';
-import { IconButton } from '@/components/IconButton';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -20,6 +18,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/Menu';
+import { Button } from '@/components/ui/button';
 
 const meta: Meta = {
   title: 'shadcn/Menu',
@@ -61,9 +60,9 @@ export const WithIconButtonTrigger: Story = {
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <IconButton aria-label="Row actions" variant="ghost">
+          <Button aria-label="Row actions" variant="ghost" size="icon">
             <LuEllipsis className="size-4" />
-          </IconButton>
+          </Button>
         }
       />
       <DropdownMenuContent align="end">

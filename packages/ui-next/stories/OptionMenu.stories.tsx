@@ -34,7 +34,7 @@ export const Default: Story = {
 
 export const Outline: Story = {
   render: () => (
-    <OptionMenu aria-label="Outline" variant="outline" size="medium">
+    <OptionMenu aria-label="Outline" variant="outline" size="default">
       <DropdownMenuItem>Action 1</DropdownMenuItem>
       <DropdownMenuItem>Action 2</DropdownMenuItem>
     </OptionMenu>

@@ -2,7 +2,6 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useId } from 'react';
 import { LuBell, LuCheck } from 'react-icons/lu';
 
-import { Button } from '@/components/Button';
 import {
   Card,
   CardAction,
@@ -13,6 +12,7 @@ import {
   CardTitle,
 } from '@/components/Card';
 import { Field, FieldDescription, FieldLabel, Input } from '@/components/Field';
+import { Button } from '@/components/ui/button';
 
 const meta: Meta<typeof Card> = {
   title: 'shadcn/Card',
@@ -33,7 +33,7 @@ export const Default: Story = {
           Enter your email below to create your account.
         </CardDescription>
         <CardAction>
-          <Button variant="link" size="small">
+          <Button variant="link" size="sm">
             Sign in
           </Button>
         </CardAction>
@@ -66,7 +66,7 @@ export const LoginForm: Story = {
             Enter your email below to login to your account.
           </CardDescription>
           <CardAction>
-            <Button variant="link" size="small">
+            <Button variant="link" size="sm">
               Sign up
             </Button>
           </CardAction>

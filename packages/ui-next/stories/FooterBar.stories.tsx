@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Button } from '@/components/Button';
 import { FooterBar } from '@/components/FooterBar';
+import { Button } from '@/components/ui/button';
 
 const meta: Meta<typeof FooterBar> = {
   title: 'shadcn/FooterBar',

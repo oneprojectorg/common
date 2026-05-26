@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Button } from '@/components/Button';
 import { Form } from '@/components/Form';
-import { TextField } from '@/components/TextField';
+import { Button } from '@/components/ui/button';
+import { Field, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 
 const meta: Meta<typeof Form> = {
   title: 'shadcn/Form',
@@ -29,8 +30,14 @@ export const Default: Story = {
         console.log('submitted');
       }}
     >
-      <TextField label="Name" placeholder="Jane Doe" />
-      <TextField label="Email" type="email" placeholder="jane@example.com" />
+      <Field>
+        <FieldLabel>Name</FieldLabel>
+        <Input placeholder="Jane Doe" />
+      </Field>
+      <Field>
+        <FieldLabel>Email</FieldLabel>
+        <Input type="email" placeholder="jane@example.com" />
+      </Field>
       <Button type="submit">Submit</Button>
     </Form>
   ),

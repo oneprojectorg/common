@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { toast } from 'sonner';
 
-import { Button } from '@/components/Button';
-import { Toast, toast } from '@/components/Toast';
+import { Toast, toast as opToast } from '@/components/Toast';
+import { Button } from '@/components/ui/button';
 
 const meta: Meta = {
   title: 'shadcn/Toast',
@@ -22,7 +23,7 @@ type Story = StoryObj;
 
 export const Success: Story = {
   render: () => (
-    <Button onPress={() => toast.success({ message: 'Saved successfully' })}>
+    <Button onClick={() => toast.success('Saved successfully')}>
       Show success
     </Button>
   ),
@@ -31,9 +32,9 @@ export const Success: Story = {
 export const Error: Story = {
   render: () => (
     <Button
-      color="destructive"
-      onPress={() =>
-        toast.error({ title: "That didn't work", message: 'Try again.' })
+      variant="destructive"
+      onClick={() =>
+        toast.error("That didn't work", { description: 'Try again.' })
       }
     >
       Show error
@@ -41,18 +42,32 @@ export const Error: Story = {
   ),
 };
 
-export const Dismissable: Story = {
+export const TitleWithDescription: Story = {
   render: () => (
     <Button
-      onPress={() =>
-        toast.success({
-          title: 'Heads up',
-          message: 'Long-running message with a close button.',
-          dismissable: true,
+      onClick={() =>
+        toast.success('Heads up', {
+          description: 'Long-running message with a close button.',
         })
       }
     >
-      Show dismissable
+      Show with description
     </Button>
+  ),
+};
+
+export const StatusHelper: Story = {
+  render: () => (
+    <div className="flex gap-2">
+      <Button variant="outline" onClick={() => opToast.status({ code: 404 })}>
+        404
+      </Button>
+      <Button variant="outline" onClick={() => opToast.status({ code: 403 })}>
+        403
+      </Button>
+      <Button variant="outline" onClick={() => opToast.status({ code: 500 })}>
+        500
+      </Button>
+    </div>
   ),
 };

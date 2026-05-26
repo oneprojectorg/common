@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 
-import { Button } from '@/components/Button';
 import {
   type ColumnDef,
   DataTable,
   type SortingState,
 } from '@/components/DataTable';
+import { Button } from '@/components/ui/button';
 
 const meta: Meta<typeof DataTable> = {
   title: 'shadcn/DataTable',
@@ -131,7 +131,7 @@ export const CustomCells: Story = {
         id: 'actions',
         header: '',
         cell: () => (
-          <Button color="secondary" size="small">
+          <Button variant="outline" size="sm">
             Edit
           </Button>
         ),

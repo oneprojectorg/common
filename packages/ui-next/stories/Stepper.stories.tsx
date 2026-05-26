@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 
-import { Button } from '@/components/Button';
 import { StepItem, StepperProgressIndicator } from '@/components/Stepper';
+import { Button } from '@/components/ui/button';
 
 const meta: Meta = {
   title: 'shadcn/Stepper',
@@ -43,15 +43,15 @@ export const Default: Story = {
         </div>
         <div className="flex justify-between">
           <Button
-            color="secondary"
-            isDisabled={step === 0}
-            onPress={() => setStep((s) => Math.max(s - 1, 0))}
+            variant="outline"
+            disabled={step === 0}
+            onClick={() => setStep((s) => Math.max(s - 1, 0))}
           >
             Back
           </Button>
           <Button
-            isDisabled={step === totalSteps - 1}
-            onPress={() => setStep((s) => Math.min(s + 1, totalSteps - 1))}
+            disabled={step === totalSteps - 1}
+            onClick={() => setStep((s) => Math.min(s + 1, totalSteps - 1))}
           >
             Next
           </Button>
