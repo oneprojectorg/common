@@ -28,19 +28,25 @@ export const AddResourceLinkForm = ({
   const [description, setDescription] = useState('');
   const [urlError, setUrlError] = useState<string | undefined>();
 
-  const urlValid = httpUrlSchema.safeParse(url).success;
+  // Mirror the profile-edit website field: bare domains like "example.com"
+  // submit as "https://example.com". Validation runs against the normalized
+  // form so the preview query and the API see the same URL.
+  const normalizedUrl = normalizeHttpUrl(url);
+  const urlValid =
+    normalizedUrl !== null && httpUrlSchema.safeParse(normalizedUrl).success;
 
   const previewQuery = trpc.content.linkPreview.useQuery(
-    { url },
+    { url: normalizedUrl ?? '' },
     { enabled: urlValid, retry: false, staleTime: 60 * 1000 },
   );
 
   const previewTitle = previewQuery.data?.meta?.title?.slice(0, 50) ?? '';
-  const title = titleInput ?? previewTitle;
+  const fallbackTitle = urlValid ? hostnameFromUrl(normalizedUrl) : '';
+  const title = titleInput ?? (previewTitle || fallbackTitle);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!urlValid) {
+    if (!urlValid || normalizedUrl === null) {
       setUrlError(t('Enter a valid URL'));
       return;
     }
@@ -50,7 +56,7 @@ export const AddResourceLinkForm = ({
     createLink.mutate(
       {
         profileId,
-        linkUrl: url,
+        linkUrl: normalizedUrl,
         title: title.trim(),
         description: description.trim() ? description.trim() : null,
       },
@@ -120,4 +126,23 @@ export const AddResourceLinkForm = ({
       </div>
     </form>
   );
+};
+
+const normalizeHttpUrl = (raw: string): string | null => {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+};
+
+const hostnameFromUrl = (url: string | null): string => {
+  if (!url) {
+    return '';
+  }
+  try {
+    return new URL(url).hostname.replace(/^www\./i, '').slice(0, 50);
+  } catch {
+    return '';
+  }
 };

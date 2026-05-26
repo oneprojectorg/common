@@ -1,7 +1,7 @@
 'use client';
 
 import { Sortable } from '@op/ui/Sortable';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { DeleteResourceModal } from './DeleteResourceModal';
 import { ResourceCard } from './ResourceCard';
@@ -20,7 +20,15 @@ export const ResourcesList = ({
 }) => {
   const { reorder, remove } = useResourceMutations(profileId);
   const [deleteTarget, setDeleteTarget] = useState<ResourceItem | null>(null);
-  const items = data.resources;
+  // Mirror the server order locally so the drop animation settles into the
+  // new position in the same render batch that ends the drag. Reading
+  // directly from data.resources lets the dnd-kit drag end before the
+  // optimistic cache write propagates, producing a visible snap-back.
+  const [items, setItems] = useState<ResourceItem[]>(data.resources);
+
+  useEffect(() => {
+    setItems(data.resources);
+  }, [data.resources]);
 
   const handleReorder = (next: ResourceItem[]) => {
     // Find the first index where the two arrays diverge. In a single-move
@@ -53,6 +61,7 @@ export const ResourcesList = ({
       return;
     }
 
+    setItems(next);
     const upperNeighborId = next[movedIdxInNext - 1]?.id ?? null;
     reorder.mutate({ id: movedId, collectionId, upperNeighborId });
   };
