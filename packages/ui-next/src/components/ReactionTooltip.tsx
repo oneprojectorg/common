@@ -2,7 +2,14 @@
 
 import { useMemo } from 'react';
 
-import { Tooltip, type TooltipProps, TooltipTrigger } from './Tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './ui/tooltip';
+
+type TooltipProps = React.ComponentProps<typeof TooltipContent>;
 
 export interface ReactionUser {
   id: string;
@@ -102,10 +109,12 @@ const ReactionTooltip = ({
   }
 
   return (
-    <TooltipTrigger>
-      {children}
-      <Tooltip {...props}>{tooltipContent}</Tooltip>
-    </TooltipTrigger>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger render={children as React.ReactElement} />
+        <TooltipContent {...props}>{tooltipContent}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
 

@@ -33,8 +33,8 @@ function useMediaQuery(query: string): boolean {
 }
 
 import { cn } from '../../lib/utils';
-import { IconButton, type IconButtonProps } from '../IconButton';
-import { Sheet, SheetBody, SheetHeader } from '../Sheet';
+import { Button } from '../ui/button';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../ui/sheet';
 
 type SidebarContextProps = {
   state: 'expanded' | 'collapsed';
@@ -120,14 +120,15 @@ const Sidebar = ({
 
   if (isMobile) {
     return (
-      <Sheet
-        isOpen={open}
-        onOpenChange={setOpen}
-        side={side}
-        className={cn('w-64 p-0', className)}
-      >
-        {label && <SheetHeader>{label}</SheetHeader>}
-        <SheetBody>{children}</SheetBody>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side={side} className={cn('w-64 p-0', className)}>
+          {label && (
+            <SheetHeader>
+              <SheetTitle>{label}</SheetTitle>
+            </SheetHeader>
+          )}
+          <div className="p-4">{children}</div>
+        </SheetContent>
       </Sheet>
     );
   }
@@ -183,16 +184,27 @@ const SidebarLayout = ({ className, ...props }: ComponentProps<'div'>) => {
 };
 
 type SidebarTriggerProps = Omit<
-  IconButtonProps,
-  'children' | 'onPress' | 'onClick'
+  ComponentProps<typeof Button>,
+  'children' | 'onClick'
 >;
 
-const SidebarTrigger = ({ className, ...props }: SidebarTriggerProps) => {
+const SidebarTrigger = ({
+  className,
+  variant = 'ghost',
+  size = 'icon-sm',
+  ...props
+}: SidebarTriggerProps) => {
   const { toggleSidebar } = useSidebar();
   return (
-    <IconButton onPress={toggleSidebar} className={className} {...props}>
+    <Button
+      onClick={toggleSidebar}
+      variant={variant}
+      size={size}
+      className={className}
+      {...props}
+    >
       <LuAlignJustify className="size-4" />
-    </IconButton>
+    </Button>
   );
 };
 

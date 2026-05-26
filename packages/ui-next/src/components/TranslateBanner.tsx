@@ -1,8 +1,12 @@
 import { LuLanguages, LuX } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
-import { Button } from './Button';
-import { Tooltip, TooltipTrigger } from './Tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './ui/tooltip';
 
 export interface TranslateBannerProps extends Omit<
   React.ComponentProps<'div'>,
@@ -35,18 +39,18 @@ export const TranslateBanner = ({
   ...props
 }: TranslateBannerProps) => {
   const translateButton = (
-    <Button
-      onPress={onTranslate}
-      isDisabled={isTranslating}
+    <button
+      type="button"
+      onClick={onTranslate}
+      disabled={isTranslating}
       aria-label={translateAriaLabel ?? label}
-      unstyled
       className="group flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-full text-left text-primary-teal outline-hidden transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue disabled:cursor-not-allowed disabled:opacity-60"
     >
       <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-tealWhite">
         <LuLanguages className="size-4" />
       </span>
       <span className="text-sm leading-5 whitespace-nowrap">{label}</span>
-    </Button>
+    </button>
   );
 
   return (
@@ -58,22 +62,24 @@ export const TranslateBanner = ({
       {...props}
     >
       {tooltip ? (
-        <TooltipTrigger>
-          {translateButton}
-          <Tooltip>{tooltip}</Tooltip>
-        </TooltipTrigger>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger render={translateButton} />
+            <TooltipContent>{tooltip}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       ) : (
         translateButton
       )}
 
-      <Button
-        onPress={onDismiss}
+      <button
+        type="button"
+        onClick={onDismiss}
         aria-label={dismissAriaLabel}
-        unstyled
         className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-neutral-gray4 outline-hidden transition-colors hover:bg-neutral-gray1 hover:text-neutral-charcoal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue"
       >
         <LuX className="size-5" />
-      </Button>
+      </button>
     </div>
   );
 };

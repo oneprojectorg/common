@@ -1,28 +1,20 @@
-// Compatibility wrapper for @op/ui's OptionMenu — the standard "kebab menu"
-// (ellipsis icon button + dropdown). Wraps shadcn DropdownMenu.
-//
-// Usage:
-//   <OptionMenu aria-label="Row actions">
-//     <DropdownMenuItem onClick={...}>Edit</DropdownMenuItem>
-//     <DropdownMenuSeparator />
-//     <DropdownMenuItem onClick={...}>Delete</DropdownMenuItem>
-//   </OptionMenu>
+// Kebab-menu composite: ellipsis icon button + dropdown. Built on vanilla
+// shadcn DropdownMenu + Button (icon size, ghost variant).
 
 'use client';
 
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { LuEllipsis } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
-import { IconButton } from './IconButton';
-import type { IconButtonProps } from './IconButton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from './Menu';
+import { Button } from './ui/button';
 
 export interface OptionMenuProps {
   children: ReactNode;
   className?: string;
-  variant?: IconButtonProps['variant'];
-  size?: IconButtonProps['size'];
+  variant?: ComponentProps<typeof Button>['variant'];
+  size?: ComponentProps<typeof Button>['size'];
   'aria-label'?: string;
 }
 
@@ -30,21 +22,21 @@ export function OptionMenu({
   children,
   className,
   variant = 'ghost',
-  size = 'small',
+  size = 'icon-sm',
   'aria-label': ariaLabel,
 }: OptionMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <IconButton
+          <Button
             aria-label={ariaLabel}
             variant={variant}
             size={size}
             className={cn('aria-expanded:bg-accent', className)}
           >
             <LuEllipsis className="size-4" />
-          </IconButton>
+          </Button>
         }
       />
       <DropdownMenuContent align="end">{children}</DropdownMenuContent>

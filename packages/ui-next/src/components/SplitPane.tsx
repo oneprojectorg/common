@@ -10,7 +10,7 @@ import {
 import { tv } from 'tailwind-variants';
 
 import { cn } from '../lib/utils';
-import { Tab, TabList, Tabs } from './Tabs';
+import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 
 export interface SplitPaneProps {
   /** One or more `SplitPane.Pane` children. */
@@ -83,8 +83,6 @@ function SplitPaneImpl({
     return null;
   }
 
-  const handleSelectionChange = (key: string | number) =>
-    setActiveId(String(key));
   const showTabs = panes.length > 1;
 
   return (
@@ -92,16 +90,16 @@ function SplitPaneImpl({
       {showTabs ? (
         <Tabs
           className="gap-0 sm:hidden"
-          selectedKey={activeId}
-          onSelectionChange={handleSelectionChange}
+          value={activeId}
+          onValueChange={setActiveId}
         >
-          <TabList className="mx-6" variant="default">
+          <TabsList className="mx-6">
             {panes.map((pane) => (
-              <Tab key={pane.props.id} id={pane.props.id}>
+              <TabsTrigger key={pane.props.id} value={pane.props.id}>
                 {pane.props.label}
-              </Tab>
+              </TabsTrigger>
             ))}
-          </TabList>
+          </TabsList>
         </Tabs>
       ) : null}
 

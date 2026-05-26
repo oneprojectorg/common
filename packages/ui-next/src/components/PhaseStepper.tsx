@@ -5,8 +5,13 @@ import { LuCheck, LuPlay } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
 import { formatDateRange } from '../utils/formatting';
-import { IconButton } from './IconButton';
-import { Tooltip, TooltipTrigger } from './Tooltip';
+import { Button } from './ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './ui/tooltip';
 
 export interface Phase {
   id: string;
@@ -90,40 +95,39 @@ const StepIndicator = ({
       onMouseLeave={() => setIsHovered(false)}
     >
       <RippleRings visible={isHovered} />
-      {showPlayButton ? (
-        <TooltipTrigger>
-          <IconButton
-            aria-label={label}
-            onPress={() => onTransition?.(phase.id)}
-            size="small"
-            variant="ghost"
-            className={cn(
-              baseStyles,
-              'relative cursor-pointer border-0 bg-primary-teal text-neutral-offWhite hover:bg-primary-teal pressed:bg-primary-teal',
-            )}
-          >
-            {stepState === 'completed' ? (
-              <LuCheck className="size-4" />
-            ) : (
-              <LuPlay className="size-3 fill-current" />
-            )}
-          </IconButton>
-          <Tooltip>{label}</Tooltip>
-        </TooltipTrigger>
-      ) : (
-        <TooltipTrigger>
-          <IconButton
-            aria-label={label}
-            onPress={() => onTransition?.(phase.id)}
-            size="small"
-            variant="ghost"
-            className={baseStyles}
-          >
-            {content}
-          </IconButton>
-          <Tooltip>{label}</Tooltip>
-        </TooltipTrigger>
-      )}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                aria-label={label}
+                onClick={() => onTransition?.(phase.id)}
+                size="icon-sm"
+                variant="ghost"
+                className={
+                  showPlayButton
+                    ? cn(
+                        baseStyles,
+                        'relative cursor-pointer border-0 bg-primary-teal text-neutral-offWhite hover:bg-primary-teal pressed:bg-primary-teal',
+                      )
+                    : baseStyles
+                }
+              >
+                {showPlayButton ? (
+                  stepState === 'completed' ? (
+                    <LuCheck className="size-4" />
+                  ) : (
+                    <LuPlay className="size-3 fill-current" />
+                  )
+                ) : (
+                  content
+                )}
+              </Button>
+            }
+          />
+          <TooltipContent>{label}</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 };
