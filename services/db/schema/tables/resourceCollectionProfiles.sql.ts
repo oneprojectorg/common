@@ -1,5 +1,4 @@
 import { InferModel, sql } from 'drizzle-orm';
-import { relations } from 'drizzle-orm/_relations';
 import {
   index,
   integer,
@@ -42,24 +41,6 @@ export const resourceCollectionProfiles = pgTable(
       .on(table.profileId, table.collectionId)
       .where(sql`${table.deletedAt} IS NULL`),
   ],
-);
-
-export const resourceCollectionProfilesRelations = relations(
-  resourceCollectionProfiles,
-  ({ one }) => ({
-    collection: one(resourceCollections, {
-      fields: [resourceCollectionProfiles.collectionId],
-      references: [resourceCollections.id],
-    }),
-    profile: one(profiles, {
-      fields: [resourceCollectionProfiles.profileId],
-      references: [profiles.id],
-    }),
-    addedBy: one(profileUsers, {
-      fields: [resourceCollectionProfiles.addedByProfileUserId],
-      references: [profileUsers.id],
-    }),
-  }),
 );
 
 export type ResourceCollectionProfile = InferModel<

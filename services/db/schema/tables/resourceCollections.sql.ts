@@ -1,11 +1,8 @@
 import { InferModel } from 'drizzle-orm';
-import { relations } from 'drizzle-orm/_relations';
 import { index, pgTable, text, uuid } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { profileUsers } from './profileUsers.sql';
-import { resourceCollectionItems } from './resourceCollectionItems.sql';
-import { resourceCollectionProfiles } from './resourceCollectionProfiles.sql';
 
 export const resourceCollections = pgTable(
   'resource_collections',
@@ -21,18 +18,6 @@ export const resourceCollections = pgTable(
     ...serviceRolePolicies,
     index('resource_collections_added_by_idx').on(table.addedByProfileUserId),
   ],
-);
-
-export const resourceCollectionsRelations = relations(
-  resourceCollections,
-  ({ many, one }) => ({
-    items: many(resourceCollectionItems),
-    profiles: many(resourceCollectionProfiles),
-    addedBy: one(profileUsers, {
-      fields: [resourceCollections.addedByProfileUserId],
-      references: [profileUsers.id],
-    }),
-  }),
 );
 
 export type ResourceCollection = InferModel<typeof resourceCollections>;
