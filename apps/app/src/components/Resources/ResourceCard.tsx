@@ -71,7 +71,7 @@ export const ResourceCard = ({
             return ext;
           }
           const added = t('Added on {date}', {
-            date: formatDate(resource.createdAt.toISOString()),
+            date: formatDate(resource.createdAt),
           });
           return ext ? `${ext} • ${added}` : added;
         })();
