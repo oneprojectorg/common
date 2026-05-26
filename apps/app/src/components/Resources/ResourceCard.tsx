@@ -1,9 +1,11 @@
 'use client';
 
 import { formatDate } from '@/utils/formatting';
+import { trpc } from '@op/api/client';
 import { sanitizeUrl } from '@op/core/utils';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   LuFile,
@@ -81,7 +83,25 @@ export const ResourceCard = ({
     resource.type === 'document' &&
     attachment?.mimeType.startsWith('image/') === true;
 
-  const previewSrc = isImage ? (signedUrl ?? null) : null;
+  const isLink = resource.type === 'link';
+  const linkUrl = isLink ? resource.linkUrl : null;
+  const { data: linkPreview } = trpc.content.linkPreview.useQuery(
+    { url: linkUrl ?? '' },
+    {
+      enabled: Boolean(linkUrl),
+      retry: false,
+      staleTime: 1000 * 60 * 60,
+    },
+  );
+  const [ogImageFailed, setOgImageFailed] = useState(false);
+  const ogThumbnail =
+    !ogImageFailed && !linkPreview?.error ? linkPreview?.thumbnail_url : null;
+
+  const previewSrc = isImage
+    ? (signedUrl ?? null)
+    : isLink
+      ? (ogThumbnail ?? null)
+      : null;
 
   const subtitle =
     resource.type === 'link'
@@ -103,6 +123,7 @@ export const ResourceCard = ({
         src={previewSrc}
         alt=""
         loading="lazy"
+        onError={isLink ? () => setOgImageFailed(true) : undefined}
         className="size-full object-cover"
       />
     </div>
