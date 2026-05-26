@@ -42,7 +42,7 @@
   /* Brand */
   --primary: var(--op-primary-500);
   --primary-foreground: var(--op-white);
-  --secondary: var(--op-neutral-gray-1);
+  --secondary: var(--op-neutral-gray-2);
   --secondary-foreground: var(--op-neutral-charcoal);
   --muted: var(--op-neutral-off-white);
   --muted-foreground: var(--op-neutral-gray-4);
