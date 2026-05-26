@@ -1,54 +1,18 @@
-// 3-way migration comparison surface. Renders, for each component pair, the
-// legacy RAC component from @op/ui, the @op/sense wrapper, and the raw
-// shadcn primitive — side by side. Shared between the sense Storybook and
-// the dev-only route in apps/app so the content stays in sync.
+// Migration before/after surface. Two columns per row: the legacy RAC
+// component from @op/ui (BEFORE) and the vanilla shadcn primitive from
+// @op/sense (AFTER). Shared between the @op/ui Storybook and the dev-only
+// route in apps/app so the content stays in sync.
 //
 // Styling parity across columns is NOT a goal; this view is for behavior +
-// API coverage during the migration. Each row is one `<Pair>`.
+// API coverage during the phase-2 consumer migration. Each row is one
+// `<Pair>`. (Legacy `wrapped` prop accepted but ignored; was previously a
+// third column for compat-wrapper variants, now removed.)
 
 'use client';
 
-// ---- WRAPPER (@op/sense compat / re-exports) ----
-import { AlertBanner as WrapAlertBanner } from '@op/sense/AlertBanner';
-import { Avatar as WrapAvatar } from '@op/sense/Avatar';
-import {
-  Breadcrumb as WrapBreadcrumb,
-  Breadcrumbs as WrapBreadcrumbs,
-} from '@op/sense/Breadcrumbs';
-import { Card as WrapSurface } from '@op/sense/Card';
-import { Checkbox as WrapCheckbox } from '@op/sense/Checkbox';
-import { Chip as WrapChip } from '@op/sense/Chip';
-import { EmptyState as WrapEmptyState } from '@op/sense/EmptyState';
-import {
-  FooterBar as WrapFooterBar,
-  FooterBarCenter as WrapFooterBarCenter,
-  FooterBarEnd as WrapFooterBarEnd,
-  FooterBarStart as WrapFooterBarStart,
-} from '@op/sense/FooterBar';
-import {
-  Header1 as WrapHeader1,
-  Header2 as WrapHeader2,
-} from '@op/sense/Header';
-import { Input as WrapInput } from '@op/sense/Input';
-import { Link as WrapLink } from '@op/sense/Link';
-import { LoadingSpinner as WrapLoadingSpinner } from '@op/sense/LoadingSpinner';
-import {
-  DropdownMenu as WrapDropdownMenu,
-  DropdownMenuContent as WrapDropdownMenuContent,
-  DropdownMenuItem as WrapDropdownMenuItem,
-  DropdownMenuTrigger as WrapDropdownMenuTrigger,
-} from '@op/sense/Menu';
-import { MultiSelectComboBox as WrapMultiSelectComboBox } from '@op/sense/MultiSelectComboBox';
-import { OptionMenu as WrapOptionMenu } from '@op/sense/OptionMenu';
-import { Pagination as WrapPagination } from '@op/sense/Pagination';
-import {
-  RadioGroup as WrapRadioGroup,
-  RadioGroupItem as WrapRadioGroupItem,
-} from '@op/sense/RadioGroup';
-import { Skeleton as WrapSkeleton } from '@op/sense/Skeleton';
-import { StatusDot as WrapStatusDot } from '@op/sense/StatusDot';
-import { Tag as WrapTag, TagGroup as WrapTagGroup } from '@op/sense/TagGroup';
-import { Toast as WrapToast, toast as wrapToast } from '@op/sense/Toast';
+// Sonner singleton mount used by Toast pair — the comparison row uses
+// sense's <Toast /> so toast.* calls render through op-themed Toaster.
+import { Toast as WrapToast } from '@op/sense/Toast';
 // ---- RAW (vanilla shadcn primitives) ----
 import {
   Alert as RawAlert,
@@ -224,12 +188,13 @@ import {
 
 // ---- layout primitives ----
 
-const COLUMN_LABELS = ['@op/ui (RAC)', '@op/sense', 'raw shadcn'] as const;
+const COLUMN_LABELS = ['@op/ui (before)', '@op/sense (after)'] as const;
 
 export function Pair({
   label,
   old,
-  wrapped = null,
+  // Legacy prop accepted for source-compatibility; ignored.
+  wrapped: _wrapped,
   raw,
 }: {
   label: string;
@@ -238,9 +203,9 @@ export function Pair({
   raw: ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-[160px_1fr_1fr_1fr] items-start gap-4 border-b border-neutral-200 py-4 last:border-b-0">
+    <div className="grid grid-cols-[160px_1fr_1fr] items-start gap-4 border-b border-neutral-200 py-4 last:border-b-0">
       <div className="pt-1 text-sm font-medium text-neutral-700">{label}</div>
-      {[old, wrapped, raw].map((node, i) => (
+      {[old, raw].map((node, i) => (
         <div key={i} className="min-w-0">
           <div className="mb-2 text-[10px] tracking-wide text-neutral-500 uppercase">
             {COLUMN_LABELS[i]}
@@ -319,7 +284,6 @@ export function Inline() {
       <Pair
         label="Link"
         old={<OldLink href="#">Read more</OldLink>}
-        wrapped={<WrapLink href="#">Read more</WrapLink>}
         raw={
           <a href="#" className="text-primary hover:underline">
             Read more
@@ -342,13 +306,11 @@ export function Inline() {
       <Pair
         label="LoadingSpinner"
         old={<OldLoadingSpinner />}
-        wrapped={<WrapLoadingSpinner />}
         raw={<RawSpinner className="size-6 text-primary" />}
       />
       <Pair
         label="StatusDot"
         old={<OldStatusDot intent="success">Online</OldStatusDot>}
-        wrapped={<WrapStatusDot intent="success">Online</WrapStatusDot>}
         raw={
           <span className="flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-emerald-500" aria-hidden />
@@ -371,7 +333,6 @@ export function Forms() {
             inputProps={{ placeholder: 'you@example.com' }}
           />
         }
-        wrapped={<WrapInput placeholder="you@example.com" />}
         raw={<RawInput placeholder="you@example.com" />}
       />
       <Pair
@@ -383,19 +344,16 @@ export function Forms() {
             inputProps={{ placeholder: 'you@example.com' }}
           />
         }
-        wrapped={<WrapInput placeholder="you@example.com" color="error" />}
         raw={<RawInput placeholder="you@example.com" aria-invalid />}
       />
       <Pair
         label="Checkbox"
         old={<OldCheckboxSample />}
-        wrapped={<WrapCheckboxSample />}
         raw={<RawCheckboxSample />}
       />
       <Pair
         label="RadioGroup"
         old={<OldRadioSample />}
-        wrapped={<WrapRadioSample />}
         raw={<RawRadioSample />}
       />
       <Pair
@@ -416,21 +374,14 @@ export function Forms() {
       <Pair
         label="MultiSelect"
         old={<OldMultiSample />}
-        wrapped={<WrapMultiSample />}
         raw={<RawMultiSample />}
       />
       <Pair
         label="Chip / Badge"
         old={<OldChip>Tag</OldChip>}
-        wrapped={<WrapChip>Tag</WrapChip>}
         raw={<RawBadge variant="secondary">Tag</RawBadge>}
       />
-      <Pair
-        label="TagGroup"
-        old={<OldTagSample />}
-        wrapped={<WrapTagSample />}
-        raw={<RawTagSample />}
-      />
+      <Pair label="TagGroup" old={<OldTagSample />} raw={<RawTagSample />} />
     </Section>
   );
 }
@@ -445,11 +396,6 @@ export function Feedback() {
             Heads up — something to know.
           </OldAlertBanner>
         }
-        wrapped={
-          <WrapAlertBanner intent="info" className="w-full">
-            Heads up — something to know.
-          </WrapAlertBanner>
-        }
         raw={
           <RawAlert>
             <RawAlertTitle>Heads up — something to know.</RawAlertTitle>
@@ -463,11 +409,6 @@ export function Feedback() {
             Something broke.
           </OldAlertBanner>
         }
-        wrapped={
-          <WrapAlertBanner intent="danger" className="w-full">
-            Something broke.
-          </WrapAlertBanner>
-        }
         raw={
           <RawAlert variant="destructive">
             <RawAlertTitle>Something broke.</RawAlertTitle>
@@ -477,7 +418,6 @@ export function Feedback() {
       <Pair
         label="Skeleton"
         old={<OldSkeleton className="h-6 w-40" />}
-        wrapped={<WrapSkeleton className="h-6 w-40" />}
         raw={<RawSkeleton className="h-6 w-40" />}
       />
     </Section>
@@ -490,7 +430,6 @@ export function Media() {
       <Pair
         label="Avatar"
         old={<OldAvatar placeholder="Nour Malaeb" />}
-        wrapped={<WrapAvatar placeholder="Nour Malaeb" />}
         raw={
           <RawAvatar>
             <RawAvatarFallback>NM</RawAvatarFallback>
@@ -500,7 +439,6 @@ export function Media() {
       <Pair
         label="Avatar (large)"
         old={<OldAvatar placeholder="Nour Malaeb" size="lg" />}
-        wrapped={<WrapAvatar placeholder="Nour Malaeb" size="lg" />}
         raw={
           <RawAvatar size="lg">
             <RawAvatarFallback>NM</RawAvatarFallback>
@@ -516,7 +454,6 @@ export function Media() {
             ))}
           />
         }
-        wrapped={<WrapAvatarGroupSample />}
         raw={<RawAvatarGroupSample />}
       />
     </Section>
@@ -530,19 +467,6 @@ const GROUP_NAMES = [
   'Linus Torvalds',
   'Alan Turing',
 ];
-
-function WrapAvatarGroupSample() {
-  return (
-    <div className="flex -space-x-2">
-      {GROUP_NAMES.slice(0, 3).map((name) => (
-        <WrapAvatar key={name} placeholder={name} />
-      ))}
-      <RawAvatar>
-        <RawAvatarFallback>+{GROUP_NAMES.length - 3}</RawAvatarFallback>
-      </RawAvatar>
-    </div>
-  );
-}
 
 function RawAvatarGroupSample() {
   return (
@@ -569,9 +493,6 @@ export function Structure() {
       <Pair
         label="Surface / Card"
         old={<OldSurface className="p-3 text-sm">A simple surface</OldSurface>}
-        wrapped={
-          <WrapSurface className="p-3 text-sm">A simple surface</WrapSurface>
-        }
         raw={
           <RawCard>
             <RawCardHeader>
@@ -587,12 +508,6 @@ export function Structure() {
           <div className="flex flex-col gap-1">
             <OldHeader1>Header1</OldHeader1>
             <OldHeader2>Header2</OldHeader2>
-          </div>
-        }
-        wrapped={
-          <div className="flex flex-col gap-1">
-            <WrapHeader1>Header1</WrapHeader1>
-            <WrapHeader2>Header2</WrapHeader2>
           </div>
         }
         raw={
@@ -611,13 +526,6 @@ export function Structure() {
             <OldFooterBarEnd>end</OldFooterBarEnd>
           </OldFooterBar>
         }
-        wrapped={
-          <WrapFooterBar position="static" className="w-full">
-            <WrapFooterBarStart>start</WrapFooterBarStart>
-            <WrapFooterBarCenter>center</WrapFooterBarCenter>
-            <WrapFooterBarEnd>end</WrapFooterBarEnd>
-          </WrapFooterBar>
-        }
         raw={
           <div className="flex w-full items-center gap-4 border-t bg-white px-4 py-2 text-sm">
             <span className="flex-1">start</span>
@@ -629,7 +537,6 @@ export function Structure() {
       <Pair
         label="EmptyState"
         old={<OldEmptyState>Nothing here</OldEmptyState>}
-        wrapped={<WrapEmptyState>Nothing here</WrapEmptyState>}
         raw={
           <div className="flex min-h-40 w-full flex-col items-center justify-center gap-2 py-6 text-muted-foreground">
             <span className="size-10 rounded-full bg-muted" />
@@ -645,13 +552,6 @@ export function Structure() {
             <OldBreadcrumb href="#">Library</OldBreadcrumb>
             <OldBreadcrumb>Data</OldBreadcrumb>
           </OldBreadcrumbs>
-        }
-        wrapped={
-          <WrapBreadcrumbs>
-            <WrapBreadcrumb href="#">Home</WrapBreadcrumb>
-            <WrapBreadcrumb href="#">Library</WrapBreadcrumb>
-            <WrapBreadcrumb>Data</WrapBreadcrumb>
-          </WrapBreadcrumbs>
         }
         raw={
           <RawBreadcrumb>
@@ -682,7 +582,6 @@ export function Navigation() {
       <Pair
         label="Pagination"
         old={<OldPaginationSample />}
-        wrapped={<WrapPaginationSample />}
         raw={<RawPaginationSample />}
       />
     </Section>
@@ -703,16 +602,10 @@ export function Overlays() {
         }
       />
       <Pair label="Sheet" old={<OldSheetSample />} raw={<RawSheetSample />} />
-      <Pair
-        label="Menu"
-        old={<OldMenuSample />}
-        wrapped={<WrapMenuSample />}
-        raw={<RawMenuSample />}
-      />
+      <Pair label="Menu" old={<OldMenuSample />} raw={<RawMenuSample />} />
       <Pair
         label="OptionMenu"
         old={<OldOptionMenuSample />}
-        wrapped={<WrapOptionMenuSample />}
         raw={<RawOptionMenuSample />}
       />
       <Pair
@@ -729,14 +622,6 @@ export function Overlays() {
           >
             Fire toast
           </OldButton>
-        }
-        wrapped={
-          <RawButton
-            variant="outline"
-            onClick={() => wrapToast.status({ code: 500 })}
-          >
-            Fire toast.status(500)
-          </RawButton>
         }
         raw={
           <RawButton
@@ -793,16 +678,6 @@ function OldCheckboxSample() {
   return <OldCheckbox>Accept terms</OldCheckbox>;
 }
 
-function WrapCheckboxSample() {
-  const id = useId();
-  return (
-    <label htmlFor={id} className="flex items-center gap-2 text-sm">
-      <WrapCheckbox id={id} />
-      Accept terms
-    </label>
-  );
-}
-
 function RawCheckboxSample() {
   const id = useId();
   return (
@@ -819,23 +694,6 @@ function OldRadioSample() {
       <OldRadio value="free">Free</OldRadio>
       <OldRadio value="pro">Pro</OldRadio>
     </OldRadioGroup>
-  );
-}
-
-function WrapRadioSample() {
-  const idA = useId();
-  const idB = useId();
-  return (
-    <WrapRadioGroup defaultValue="pro" className="flex flex-col gap-1">
-      <label htmlFor={idA} className="flex items-center gap-2 text-sm">
-        <WrapRadioGroupItem id={idA} value="free" />
-        Free
-      </label>
-      <label htmlFor={idB} className="flex items-center gap-2 text-sm">
-        <WrapRadioGroupItem id={idB} value="pro" />
-        Pro
-      </label>
-    </WrapRadioGroup>
   );
 }
 
@@ -916,18 +774,6 @@ function OldMultiSample() {
   );
 }
 
-function WrapMultiSample() {
-  const [value, setValue] = useState<typeof MULTI_OPTIONS>([]);
-  return (
-    <WrapMultiSelectComboBox
-      label="Fruits"
-      items={MULTI_OPTIONS}
-      value={value}
-      onChange={setValue}
-    />
-  );
-}
-
 function RawMultiSample() {
   const [value, setValue] = useState<typeof MULTI_OPTIONS>([]);
   return (
@@ -963,15 +809,6 @@ function OldTagSample() {
       <OldTag>Bug</OldTag>
       <OldTag>Feature</OldTag>
     </OldTagGroup>
-  );
-}
-
-function WrapTagSample() {
-  return (
-    <WrapTagGroup>
-      <WrapTag>Bug</WrapTag>
-      <WrapTag>Feature</WrapTag>
-    </WrapTagGroup>
   );
 }
 
@@ -1022,17 +859,6 @@ function OldPaginationSample() {
   const [page, setPage] = useState(2);
   return (
     <OldPagination
-      previous={() => setPage((p) => Math.max(1, p - 1))}
-      next={() => setPage((p) => p + 1)}
-      range={{ totalItems: 60, itemsPerPage: 10, page }}
-    />
-  );
-}
-
-function WrapPaginationSample() {
-  const [page, setPage] = useState(2);
-  return (
-    <WrapPagination
       previous={() => setPage((p) => Math.max(1, p - 1))}
       next={() => setPage((p) => p + 1)}
       range={{ totalItems: 60, itemsPerPage: 10, page }}
@@ -1145,20 +971,6 @@ function OldMenuSample() {
   );
 }
 
-function WrapMenuSample() {
-  return (
-    <WrapDropdownMenu>
-      <WrapDropdownMenuTrigger
-        render={<RawButton variant="outline">Open menu</RawButton>}
-      />
-      <WrapDropdownMenuContent>
-        <WrapDropdownMenuItem>Action one</WrapDropdownMenuItem>
-        <WrapDropdownMenuItem>Action two</WrapDropdownMenuItem>
-      </WrapDropdownMenuContent>
-    </WrapDropdownMenu>
-  );
-}
-
 function RawMenuSample() {
   return (
     <RawDropdownMenu>
@@ -1181,15 +993,6 @@ function OldOptionMenuSample() {
         <OldMenuItem>Delete</OldMenuItem>
       </OldMenu>
     </OldOptionMenu>
-  );
-}
-
-function WrapOptionMenuSample() {
-  return (
-    <WrapOptionMenu aria-label="Row actions">
-      <WrapDropdownMenuItem>Edit</WrapDropdownMenuItem>
-      <WrapDropdownMenuItem>Delete</WrapDropdownMenuItem>
-    </WrapOptionMenu>
   );
 }
 
