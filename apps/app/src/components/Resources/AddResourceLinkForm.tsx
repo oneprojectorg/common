@@ -82,7 +82,11 @@ export const AddResourceLinkForm = ({
           }}
           isRequired
           inputProps={{
-            type: 'url',
+            type: 'text',
+            inputMode: 'url',
+            autoCapitalize: 'off',
+            autoCorrect: 'off',
+            spellCheck: false,
             placeholder: 'https://',
             icon: <LuLink className="size-4 text-neutral-gray4" />,
           }}
