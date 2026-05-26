@@ -3,6 +3,7 @@
 import { trpc } from '@op/api/client';
 import {
   ALLOWED_RESOURCE_MIME_TYPES,
+  type AllowedResourceMimeType,
   MAX_RESOURCE_FILE_SIZE,
 } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
@@ -10,9 +11,7 @@ import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-const isAllowedMime = (
-  type: string,
-): type is (typeof ALLOWED_RESOURCE_MIME_TYPES)[number] =>
+const isAllowedMime = (type: string): type is AllowedResourceMimeType =>
   (ALLOWED_RESOURCE_MIME_TYPES as readonly string[]).includes(type);
 
 const MAX_SIZE_MB = MAX_RESOURCE_FILE_SIZE / 1024 / 1024;
@@ -35,7 +34,7 @@ const fileToBase64 = (file: File): Promise<string> =>
 export type UploadedResource = {
   storageObjectId: string;
   fileName: string;
-  mimeType: string;
+  mimeType: AllowedResourceMimeType;
   fileSize: number;
   signedUrl: string;
 };
@@ -67,8 +66,15 @@ export const useResourceUpload = (profileId: string) => {
         fileName: file.name,
         mimeType: file.type,
       });
-      setUploaded(result);
-      return result;
+      if (!isAllowedMime(result.mimeType)) {
+        throw new Error(t('Unsupported file type'));
+      }
+      const uploaded: UploadedResource = {
+        ...result,
+        mimeType: result.mimeType,
+      };
+      setUploaded(uploaded);
+      return uploaded;
     } catch (err) {
       toast.error({
         message:

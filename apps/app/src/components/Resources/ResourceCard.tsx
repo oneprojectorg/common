@@ -88,6 +88,9 @@ export const ResourceCard = ({
       ? getDomain(resource.linkUrl ?? '')
       : (() => {
           const ext = getExtension(attachment?.fileName ?? null);
+          if (!resource.createdAt) {
+            return ext;
+          }
           const added = t('Added on {date}', {
             date: formatDate(resource.createdAt.toISOString()),
           });
