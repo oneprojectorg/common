@@ -928,6 +928,133 @@ importers:
         specifier: 5.7.3
         version: 5.7.3
 
+  packages/sense:
+    dependencies:
+      '@base-ui/react':
+        specifier: ^1.4.1
+        version: 1.5.0(@date-fns/tz@1.5.0)(@types/react@19.0.10)(date-fns@4.2.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@dnd-kit/core':
+        specifier: ^6.3.1
+        version: 6.3.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@dnd-kit/sortable':
+        specifier: ^10.0.0
+        version: 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react@19.2.1)
+      '@dnd-kit/utilities':
+        specifier: ^3.2.2
+        version: 3.2.2(react@19.2.1)
+      '@op/styles':
+        specifier: workspace:*
+        version: link:../styles
+      '@tanstack/react-table':
+        specifier: ^8.21.3
+        version: 8.21.3(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@tiptap/core':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/pm@3.17.1)
+      '@tiptap/extension-blockquote':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
+      '@tiptap/extension-bubble-menu':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)
+      '@tiptap/extension-heading':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
+      '@tiptap/extension-horizontal-rule':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)
+      '@tiptap/extension-image':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
+      '@tiptap/extension-link':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)
+      '@tiptap/extension-placeholder':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/extensions@3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1))
+      '@tiptap/extension-strike':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
+      '@tiptap/extension-text-align':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
+      '@tiptap/extension-underline':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
+      '@tiptap/pm':
+        specifier: 'catalog:'
+        version: 3.17.1
+      '@tiptap/react':
+        specifier: 'catalog:'
+        version: 3.17.1(@floating-ui/dom@1.7.6)(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@tiptap/starter-kit':
+        specifier: 'catalog:'
+        version: 3.17.1
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      date-fns:
+        specifier: ^4.1.0
+        version: 4.2.1
+      lucide-react:
+        specifier: ^0.469.0
+        version: 0.469.0(react@19.2.1)
+      react:
+        specifier: ^19.0.1
+        version: 19.2.1
+      react-day-picker:
+        specifier: ^9.4.4
+        version: 9.14.0(react@19.2.1)
+      react-dom:
+        specifier: ^19.0.1
+        version: 19.2.1(react@19.2.1)
+      react-icons:
+        specifier: ^5.5.0
+        version: 5.5.0(react@19.2.1)
+      sonner:
+        specifier: ^1.7.1
+        version: 1.7.4(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      tailwind-merge:
+        specifier: 3.4.0
+        version: 3.4.0
+      tailwind-variants:
+        specifier: 3.2.2
+        version: 3.2.2(tailwind-merge@3.4.0)(tailwindcss@4.1.18)
+    devDependencies:
+      '@chromatic-com/storybook':
+        specifier: ^4.1.3
+        version: 4.1.3(storybook@10.1.11(@testing-library/dom@10.4.0)(prettier@3.7.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))
+      '@op/typescript-config':
+        specifier: workspace:*
+        version: link:../../configs/typescript-config
+      '@storybook/addon-docs':
+        specifier: ^10.1.11
+        version: 10.1.11(@types/react@19.0.10)(esbuild@0.25.12)(rollup@4.30.1)(storybook@10.1.11(@testing-library/dom@10.4.0)(prettier@3.7.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(vite@6.2.0(@types/node@22.13.14)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
+      '@storybook/addon-themes':
+        specifier: ^10.1.11
+        version: 10.1.11(storybook@10.1.11(@testing-library/dom@10.4.0)(prettier@3.7.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))
+      '@storybook/react':
+        specifier: ^10.1.11
+        version: 10.1.11(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(storybook@10.1.11(@testing-library/dom@10.4.0)(prettier@3.7.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(typescript@5.7.3)
+      '@storybook/react-vite':
+        specifier: ^10.1.11
+        version: 10.1.11(esbuild@0.25.12)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(rollup@4.30.1)(storybook@10.1.11(@testing-library/dom@10.4.0)(prettier@3.7.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(typescript@5.7.3)(vite@6.2.0(@types/node@22.13.14)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
+      '@types/react':
+        specifier: 19.0.10
+        version: 19.0.10
+      storybook:
+        specifier: ^10.1.11
+        version: 10.1.11(@testing-library/dom@10.4.0)(prettier@3.7.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+      vite:
+        specifier: ^6.2.0
+        version: 6.2.0(@types/node@22.13.14)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
+
   packages/styles:
     devDependencies:
       '@tailwindcss/cli':
@@ -985,12 +1112,12 @@ importers:
       '@op/hooks':
         specifier: workspace:*
         version: link:../hooks
+      '@op/sense':
+        specifier: workspace:*
+        version: link:../sense
       '@op/styles':
         specifier: workspace:*
         version: link:../styles
-      '@op/ui-next':
-        specifier: workspace:*
-        version: link:../ui-next
       '@tiptap/core':
         specifier: 'catalog:'
         version: 3.17.1(@tiptap/pm@3.17.1)
@@ -1115,133 +1242,6 @@ importers:
       tailwindcss:
         specifier: 4.1.18
         version: 4.1.18
-      typescript:
-        specifier: 5.7.3
-        version: 5.7.3
-      vite:
-        specifier: ^6.2.0
-        version: 6.2.0(@types/node@22.13.14)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
-
-  packages/ui-next:
-    dependencies:
-      '@base-ui/react':
-        specifier: ^1.4.1
-        version: 1.5.0(@date-fns/tz@1.5.0)(@types/react@19.0.10)(date-fns@4.2.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
-      '@dnd-kit/core':
-        specifier: ^6.3.1
-        version: 6.3.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
-      '@dnd-kit/sortable':
-        specifier: ^10.0.0
-        version: 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react@19.2.1)
-      '@dnd-kit/utilities':
-        specifier: ^3.2.2
-        version: 3.2.2(react@19.2.1)
-      '@op/styles':
-        specifier: workspace:*
-        version: link:../styles
-      '@tanstack/react-table':
-        specifier: ^8.21.3
-        version: 8.21.3(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
-      '@tiptap/core':
-        specifier: 'catalog:'
-        version: 3.17.1(@tiptap/pm@3.17.1)
-      '@tiptap/extension-blockquote':
-        specifier: 'catalog:'
-        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
-      '@tiptap/extension-bubble-menu':
-        specifier: 'catalog:'
-        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)
-      '@tiptap/extension-heading':
-        specifier: 'catalog:'
-        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
-      '@tiptap/extension-horizontal-rule':
-        specifier: 'catalog:'
-        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)
-      '@tiptap/extension-image':
-        specifier: 'catalog:'
-        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
-      '@tiptap/extension-link':
-        specifier: 'catalog:'
-        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)
-      '@tiptap/extension-placeholder':
-        specifier: 'catalog:'
-        version: 3.17.1(@tiptap/extensions@3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1))
-      '@tiptap/extension-strike':
-        specifier: 'catalog:'
-        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
-      '@tiptap/extension-text-align':
-        specifier: 'catalog:'
-        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
-      '@tiptap/extension-underline':
-        specifier: 'catalog:'
-        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
-      '@tiptap/pm':
-        specifier: 'catalog:'
-        version: 3.17.1
-      '@tiptap/react':
-        specifier: 'catalog:'
-        version: 3.17.1(@floating-ui/dom@1.7.6)(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
-      '@tiptap/starter-kit':
-        specifier: 'catalog:'
-        version: 3.17.1
-      class-variance-authority:
-        specifier: ^0.7.1
-        version: 0.7.1
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
-      date-fns:
-        specifier: ^4.1.0
-        version: 4.2.1
-      lucide-react:
-        specifier: ^0.469.0
-        version: 0.469.0(react@19.2.1)
-      react:
-        specifier: ^19.0.1
-        version: 19.2.1
-      react-day-picker:
-        specifier: ^9.4.4
-        version: 9.14.0(react@19.2.1)
-      react-dom:
-        specifier: ^19.0.1
-        version: 19.2.1(react@19.2.1)
-      react-icons:
-        specifier: ^5.5.0
-        version: 5.5.0(react@19.2.1)
-      sonner:
-        specifier: ^1.7.1
-        version: 1.7.4(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
-      tailwind-merge:
-        specifier: 3.4.0
-        version: 3.4.0
-      tailwind-variants:
-        specifier: 3.2.2
-        version: 3.2.2(tailwind-merge@3.4.0)(tailwindcss@4.1.18)
-    devDependencies:
-      '@chromatic-com/storybook':
-        specifier: ^4.1.3
-        version: 4.1.3(storybook@10.1.11(@testing-library/dom@10.4.0)(prettier@3.7.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))
-      '@op/typescript-config':
-        specifier: workspace:*
-        version: link:../../configs/typescript-config
-      '@storybook/addon-docs':
-        specifier: ^10.1.11
-        version: 10.1.11(@types/react@19.0.10)(esbuild@0.25.12)(rollup@4.30.1)(storybook@10.1.11(@testing-library/dom@10.4.0)(prettier@3.7.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(vite@6.2.0(@types/node@22.13.14)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
-      '@storybook/addon-themes':
-        specifier: ^10.1.11
-        version: 10.1.11(storybook@10.1.11(@testing-library/dom@10.4.0)(prettier@3.7.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))
-      '@storybook/react':
-        specifier: ^10.1.11
-        version: 10.1.11(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(storybook@10.1.11(@testing-library/dom@10.4.0)(prettier@3.7.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(typescript@5.7.3)
-      '@storybook/react-vite':
-        specifier: ^10.1.11
-        version: 10.1.11(esbuild@0.25.12)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(rollup@4.30.1)(storybook@10.1.11(@testing-library/dom@10.4.0)(prettier@3.7.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(typescript@5.7.3)(vite@6.2.0(@types/node@22.13.14)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0))
-      '@types/react':
-        specifier: 19.0.10
-        version: 19.0.10
-      storybook:
-        specifier: ^10.1.11
-        version: 10.1.11(@testing-library/dom@10.4.0)(prettier@3.7.4)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       typescript:
         specifier: 5.7.3
         version: 5.7.3
@@ -2357,14 +2357,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@floating-ui/core@1.7.3':
-    resolution: {integrity: sha512-sGnvb5dmrJaKEZ+LDIpguvdX3bDlEllmv4/ClQ9awcmCZrlx5jQyyMWFM5kBI+EyNOCDDiKk8il0zeuX3Zlg/w==}
-
   '@floating-ui/core@1.7.5':
     resolution: {integrity: sha512-1Ih4WTWyw0+lKyFMcBHGbb5U5FtuHJuujoyyr5zTaWS5EYMeT6Jb2AuDeftsCsEuchO+mM2ij5+q9crhydzLhQ==}
-
-  '@floating-ui/dom@1.7.3':
-    resolution: {integrity: sha512-uZA413QEpNuhtb3/iIKoYMSK07keHPYeXF02Zhd6e213j+d1NamLix/mCLxBUDW/Gx52sPH2m+chlUsyaBs/Ag==}
 
   '@floating-ui/dom@1.7.6':
     resolution: {integrity: sha512-9gZSAI5XM36880PPMm//9dfiEngYoC6Am2izES1FF406YFsjvyBMmeJ2g4SAju3xWwtuynNRFL2s9hgxpLI5SQ==}
@@ -2374,9 +2368,6 @@ packages:
     peerDependencies:
       react: ^19.0.1
       react-dom: ^19.0.1
-
-  '@floating-ui/utils@0.2.10':
-    resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
 
   '@floating-ui/utils@0.2.11':
     resolution: {integrity: sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==}
@@ -9947,18 +9938,9 @@ snapshots:
   '@esbuild/win32-x64@0.25.2':
     optional: true
 
-  '@floating-ui/core@1.7.3':
-    dependencies:
-      '@floating-ui/utils': 0.2.10
-
   '@floating-ui/core@1.7.5':
     dependencies:
       '@floating-ui/utils': 0.2.11
-
-  '@floating-ui/dom@1.7.3':
-    dependencies:
-      '@floating-ui/core': 1.7.3
-      '@floating-ui/utils': 0.2.10
 
   '@floating-ui/dom@1.7.6':
     dependencies:
@@ -9970,8 +9952,6 @@ snapshots:
       '@floating-ui/dom': 1.7.6
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
-
-  '@floating-ui/utils@0.2.10': {}
 
   '@floating-ui/utils@0.2.11': {}
 
@@ -12424,7 +12404,7 @@ snapshots:
 
   '@tiptap/extension-bubble-menu@3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)':
     dependencies:
-      '@floating-ui/dom': 1.7.3
+      '@floating-ui/dom': 1.7.6
       '@tiptap/core': 3.17.1(@tiptap/pm@3.17.1)
       '@tiptap/pm': 3.17.1
 
