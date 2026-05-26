@@ -12,13 +12,6 @@
 // Sonner singleton mount used by Toast pair — the comparison row uses
 // sense's <Toast /> so toast.* calls render through op-themed Toaster.
 import { Toast as WrapToast } from '@op/sense/Toast';
-// ---- NEW IN SENSE (no @op/ui equivalent) ----
-import {
-  Accordion as RawAccordion,
-  AccordionContent as RawAccordionContent,
-  AccordionItem as RawAccordionItem,
-  AccordionTrigger as RawAccordionTrigger,
-} from '@op/sense/ui/accordion';
 // ---- RAW (vanilla shadcn primitives) ----
 import {
   Alert as RawAlert,
@@ -52,7 +45,6 @@ import {
   BreadcrumbSeparator as RawBreadcrumbSeparator,
 } from '@op/sense/ui/breadcrumb';
 import { Button as RawButton } from '@op/sense/ui/button';
-import { ButtonGroup as RawButtonGroup } from '@op/sense/ui/button-group';
 import {
   Card as RawCard,
   CardContent as RawCardContent,
@@ -707,10 +699,8 @@ export function Overlays() {
 export function NewInSense() {
   return (
     <Section title="New in @op/sense (no @op/ui equivalent)">
-      <Gain label="Accordion" raw={<AccordionSample />} />
       <Gain label="AlertDialog" raw={<AlertDialogSample />} />
       <Gain label="AspectRatio" raw={<AspectRatioSample />} />
-      <Gain label="ButtonGroup" raw={<ButtonGroupSample />} />
       <Gain label="ContextMenu" raw={<ContextMenuSample />} />
       <Gain label="HoverCard" raw={<HoverCardSample />} />
       <Gain
@@ -753,25 +743,6 @@ export function ComparisonGrid() {
 
 // ---------- new-in-sense samples ----------
 
-function AccordionSample() {
-  return (
-    <RawAccordion className="w-72">
-      <RawAccordionItem value="a">
-        <RawAccordionTrigger>What is @op/sense?</RawAccordionTrigger>
-        <RawAccordionContent>
-          Op's shadcn-base-nova design system.
-        </RawAccordionContent>
-      </RawAccordionItem>
-      <RawAccordionItem value="b">
-        <RawAccordionTrigger>Is it themable?</RawAccordionTrigger>
-        <RawAccordionContent>
-          Yes — via @op/styles shadcn-theme.css.
-        </RawAccordionContent>
-      </RawAccordionItem>
-    </RawAccordion>
-  );
-}
-
 function AlertDialogSample() {
   return (
     <RawAlertDialog>
@@ -801,16 +772,6 @@ function AspectRatioSample() {
         16:9
       </div>
     </RawAspectRatio>
-  );
-}
-
-function ButtonGroupSample() {
-  return (
-    <RawButtonGroup>
-      <RawButton variant="outline">One</RawButton>
-      <RawButton variant="outline">Two</RawButton>
-      <RawButton variant="outline">Three</RawButton>
-    </RawButtonGroup>
   );
 }
 
