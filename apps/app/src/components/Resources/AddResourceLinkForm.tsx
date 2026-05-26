@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { httpUrlSchema } from '@op/common/client';
+import { useDebounce } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { TextField } from '@op/ui/TextField';
 import { useState } from 'react';
@@ -35,9 +36,14 @@ export const AddResourceLinkForm = ({
   const urlValid =
     normalizedUrl !== null && httpUrlSchema.safeParse(normalizedUrl).success;
 
+  // Debounce the preview query so we don't hammer Iframely on every keystroke.
+  const [debouncedUrl] = useDebounce(normalizedUrl, 400);
+  const debouncedValid =
+    debouncedUrl !== null && httpUrlSchema.safeParse(debouncedUrl).success;
+
   const previewQuery = trpc.content.linkPreview.useQuery(
-    { url: normalizedUrl ?? '' },
-    { enabled: urlValid, retry: false, staleTime: 60 * 1000 },
+    { url: debouncedUrl ?? '' },
+    { enabled: debouncedValid, retry: false, staleTime: 60 * 1000 },
   );
 
   const previewTitle = previewQuery.data?.meta?.title?.slice(0, 50) ?? '';

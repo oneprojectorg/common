@@ -19,6 +19,7 @@ import {
 import { useTranslations } from '@/lib/i18n';
 
 import type { ResourceItem } from './types';
+import { getExtension } from './utils';
 
 export const ResourceCard = ({
   resource,
@@ -128,7 +129,7 @@ export const ResourceCard = ({
           target="_blank"
           rel="noopener noreferrer"
           aria-label={resource.title}
-          className="block outline-none"
+          className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2"
         >
           {body}
         </a>
@@ -150,17 +151,6 @@ const getDomain = (url: string): string => {
   } catch {
     return url;
   }
-};
-
-const getExtension = (fileName: string | null): string | null => {
-  if (!fileName) {
-    return null;
-  }
-  const dot = fileName.lastIndexOf('.');
-  if (dot < 0 || dot === fileName.length - 1) {
-    return null;
-  }
-  return fileName.slice(dot + 1).toUpperCase();
 };
 
 const documentIconForMime = (mime: string | null): ReactNode => {

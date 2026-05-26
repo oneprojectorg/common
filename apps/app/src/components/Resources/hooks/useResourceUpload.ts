@@ -7,11 +7,12 @@ import {
   MAX_RESOURCE_FILE_SIZE,
 } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 export type UploadedResource = {
+  profileId: string;
   storageObjectId: string;
   fileName: string;
   mimeType: AllowedResourceMimeType;
@@ -24,6 +25,11 @@ export const useResourceUpload = (profileId: string) => {
   const uploadMutation = trpc.resources.uploadFile.useMutation();
   const [uploading, setUploading] = useState(false);
   const [uploaded, setUploaded] = useState<UploadedResource | null>(null);
+  // Bump on every upload start. If a slower in-flight call resolves after a
+  // newer one was started, its token won't match and we discard the result —
+  // otherwise the form would submit metadata for the new file with a
+  // storageObjectId pointing at the old one.
+  const generation = useRef(0);
 
   const upload = async (file: File): Promise<UploadedResource | null> => {
     if (!isAllowedMime(file.type)) {
@@ -37,6 +43,7 @@ export const useResourceUpload = (profileId: string) => {
       return null;
     }
 
+    const token = ++generation.current;
     setUploading(true);
     try {
       const base64 = await fileToBase64(file);
@@ -46,6 +53,9 @@ export const useResourceUpload = (profileId: string) => {
         fileName: file.name,
         mimeType: file.type,
       });
+      if (token !== generation.current) {
+        return null;
+      }
       if (!isAllowedMime(result.mimeType)) {
         throw new Error(t('Unsupported file type'));
       }
@@ -56,17 +66,26 @@ export const useResourceUpload = (profileId: string) => {
       setUploaded(uploaded);
       return uploaded;
     } catch (err) {
+      if (token !== generation.current) {
+        return null;
+      }
       toast.error({
         message:
           err instanceof Error ? err.message : t('Could not add resource'),
       });
       return null;
     } finally {
-      setUploading(false);
+      if (token === generation.current) {
+        setUploading(false);
+      }
     }
   };
 
-  const reset = () => setUploaded(null);
+  const reset = () => {
+    generation.current++;
+    setUploaded(null);
+    setUploading(false);
+  };
 
   return { upload, uploading, uploaded, reset };
 };

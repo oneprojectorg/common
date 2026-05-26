@@ -5,12 +5,14 @@ import { Skeleton } from '@op/ui/Skeleton';
 import { TextField } from '@op/ui/TextField';
 import { cn, formatFileSize } from '@op/ui/utils';
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { LuFilePlus2, LuFileText, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { useResourceMutations } from './hooks/useResourceMutations';
 import { useResourceUpload } from './hooks/useResourceUpload';
+import { getExtension, stripExt, truncateName } from './utils';
 
 const ACCEPT_ATTR =
   'image/png,image/jpeg,image/webp,image/gif,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/csv,text/plain';
@@ -82,9 +84,12 @@ export const AddResourceDocumentForm = ({
     if (!uploaded || !title.trim()) {
       return;
     }
+    // Use the profileId returned by uploadFile (not the prop), so collection
+    // flows with M:N profile membership submit metadata against the same
+    // profile the storage object is namespaced under.
     createDocument.mutate(
       {
-        profileId,
+        profileId: uploaded.profileId,
         storageObjectId: uploaded.storageObjectId,
         fileName: uploaded.fileName,
         mimeType: uploaded.mimeType,
@@ -203,10 +208,13 @@ export const AddResourceDocumentForm = ({
               </div>
               <div className="flex flex-col gap-2">
                 <p className="text-sm text-neutral-black">
-                  {t('Drag a file here or ')}
-                  <span className="text-primary-teal underline">
-                    {t('browse')}
-                  </span>
+                  {t.rich('Drag a file here or <browse>browse</browse>', {
+                    browse: (chunks: ReactNode) => (
+                      <span className="text-primary-teal underline">
+                        {chunks}
+                      </span>
+                    ),
+                  })}
                 </p>
                 <p className="text-sm text-neutral-gray4">
                   {t('Accepts PDF, DOCX, XLSX, and images up to {size} MB', {
@@ -262,22 +270,6 @@ export const AddResourceDocumentForm = ({
 };
 
 const MAX_SIZE_MB = 25;
-
-const truncateName = (name: string, max = 50): string =>
-  name.length <= max ? name : `${name.slice(0, max - 1)}…`;
-
-const stripExt = (name: string): string => {
-  const dot = name.lastIndexOf('.');
-  return dot > 0 ? name.slice(0, dot) : name;
-};
-
-const getExtension = (name: string): string | null => {
-  const dot = name.lastIndexOf('.');
-  if (dot < 0 || dot === name.length - 1) {
-    return null;
-  }
-  return name.slice(dot + 1).toUpperCase();
-};
 
 const fileMetaLabel = (file: File): string => {
   const ext = getExtension(file.name);
