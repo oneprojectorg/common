@@ -1,7 +1,4 @@
-import { RESOURCE_TYPES } from '@op/db/schema';
 import { z } from 'zod';
-
-export const resourceTypeSchema = z.enum(RESOURCE_TYPES);
 
 export const attachmentSummaryEncoder = z.object({
   storageObjectId: z.string().uuid(),

@@ -1,6 +1,7 @@
 import type { db as dbType } from '@op/db/client';
 import { resourceCollectionItems } from '@op/db/schema';
 import { and, asc, eq, sql } from 'drizzle-orm';
+import type { PgTable } from 'drizzle-orm/pg-core';
 
 import { NotFoundError } from '../../utils/error';
 import { reorderByUpperNeighbor } from '../../utils/reorder';
@@ -50,7 +51,9 @@ export const computeReorder = async (
   itemId: string,
   upperNeighborId: string | null,
 ): Promise<{ updates: Array<{ id: string; sortOrder: number }> } | null> => {
-  if (itemId === upperNeighborId) return null;
+  if (itemId === upperNeighborId) {
+    return null;
+  }
 
   const rows = await tx
     .select({
@@ -78,7 +81,9 @@ export const computeReorder = async (
     itemId,
     upperNeighborId,
   );
-  if (reordered === rows) return null;
+  if (reordered === rows) {
+    return null;
+  }
 
   const updates: Array<{ id: string; sortOrder: number }> = [];
   for (let i = 0; i < reordered.length; i++) {
@@ -100,6 +105,7 @@ export const computeReorder = async (
 // then writing the final values in a second pass.
 export const applySortOrderUpdates = async (
   tx: Transaction,
+  table: PgTable,
   updates: Array<{ id: string; sortOrder: number }>,
 ): Promise<void> => {
   if (updates.length === 0) {
@@ -112,7 +118,7 @@ export const applySortOrderUpdates = async (
   );
 
   await tx.execute(sql`
-    UPDATE ${resourceCollectionItems}
+    UPDATE ${table}
     SET sort_order = -1 - sort_order
     WHERE id IN (${idList})
   `);
@@ -129,7 +135,7 @@ export const applySortOrderUpdates = async (
   );
 
   await tx.execute(sql`
-    UPDATE ${resourceCollectionItems}
+    UPDATE ${table}
     SET sort_order = ${caseSql}
     WHERE id IN (${idList})
   `);

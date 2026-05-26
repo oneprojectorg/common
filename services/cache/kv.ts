@@ -45,6 +45,7 @@ const TypeMap = {
   organization: 'org',
   allowList: 'allowList',
   linkPreview: 'linkPreview',
+  resourceSignedUrl: 'resourceSignedUrl',
   user: 'user',
   orgUser: 'orgUser',
   profileUser: 'profileUser',

@@ -22,6 +22,7 @@ const inputSchema = z.union([
 ]);
 
 const outputSchema = z.object({
+  profileId: z.string().uuid(),
   storageObjectId: z.string().uuid(),
   fileName: z.string(),
   mimeType: z.string(),
@@ -62,6 +63,7 @@ export const uploadFile = router({
       });
 
       return {
+        profileId,
         storageObjectId: uploaded.storageObjectId,
         fileName: uploaded.fileName,
         mimeType: uploaded.mimeType,

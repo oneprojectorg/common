@@ -24,10 +24,9 @@ const inputSchema = z
     mimeType: allowedMimeSchema,
     fileSize: z.number().int().positive().max(MAX_RESOURCE_FILE_SIZE),
   })
-  .refine(
-    (v) => (v.profileId === undefined) !== (v.collectionId === undefined),
-    { message: 'Exactly one of profileId / collectionId is required' },
-  );
+  .refine((v) => v.profileId !== undefined || v.collectionId !== undefined, {
+    message: 'profileId, collectionId, or both are required',
+  });
 
 export const createDocument = router({
   createDocument: commonAuthedProcedure({

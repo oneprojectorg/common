@@ -1,3 +1,5 @@
+import { cache } from '@op/cache';
+
 export type LinkPreviewResult = {
   url: string;
   meta?: {
@@ -13,12 +15,29 @@ export type LinkPreviewResult = {
   error?: string;
 };
 
+// Cache successful previews for an hour — Iframely charges per request and
+// link metadata rarely changes within that window.
+const LINK_PREVIEW_TTL_MS = 60 * 60 * 1000;
+
 // Iframely-backed link metadata fetch. Best-effort: returns an object with
 // `error` set on failure instead of throwing, so callers can persist the
 // resource even when OG snapshotting fails.
 export const getLinkPreview = async (
   url: string,
 ): Promise<LinkPreviewResult> => {
+  return cache({
+    type: 'linkPreview',
+    params: [url],
+    fetch: () => fetchLinkPreview(url),
+    options: {
+      ttl: LINK_PREVIEW_TTL_MS,
+      // Don't poison the cache with transient failures.
+      skipCacheWrite: (result) => result.error !== undefined,
+    },
+  });
+};
+
+const fetchLinkPreview = async (url: string): Promise<LinkPreviewResult> => {
   try {
     const iframelyKey =
       process.env.IFRAMELY_KEY ?? process.env.IFRAMELY_API_KEY;

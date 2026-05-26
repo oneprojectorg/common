@@ -15,8 +15,12 @@ export const resources = pgTable(
     title: text().notNull(),
     description: text(),
 
+    // Direction matters: resources OWN their attachment. Deleting a resource
+    // should leave the attachment cleanup to application code so it can
+    // delete the storage object too. RESTRICT prevents an upstream delete of
+    // the attachment row from silently nuking the resource.
     attachmentId: uuid().references(() => attachments.id, {
-      onDelete: 'cascade',
+      onDelete: 'restrict',
     }),
 
     linkUrl: text(),

@@ -12503,7 +12503,7 @@
         "id"
       ],
       "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
+      "onDelete": "RESTRICT",
       "name": "resources_attachment_id_attachments_id_fkey",
       "entityType": "fks",
       "schema": "public",

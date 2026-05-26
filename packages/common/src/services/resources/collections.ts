@@ -5,6 +5,7 @@ import { and, asc, count, eq, sql } from 'drizzle-orm';
 import { ConflictError, NotFoundError } from '../../utils/error';
 import { reorderByUpperNeighbor } from '../../utils/reorder';
 import { assertResourceAccess } from './access';
+import { applySortOrderUpdates } from './ordering';
 
 const DEFAULT_COLLECTION_NAME = 'Pinned';
 
@@ -26,8 +27,10 @@ const profileLock = async (
   );
 };
 
+type Executor = Parameters<Parameters<typeof db.transaction>[0]>[0] | typeof db;
+
 const collectionsForProfileQuery = (
-  exec: typeof db,
+  exec: Executor,
   profileId: string,
 ): Promise<CollectionForProfile[]> =>
   exec
@@ -46,6 +49,35 @@ const collectionsForProfileQuery = (
     )
     .where(eq(resourceCollectionProfiles.profileId, profileId))
     .orderBy(asc(resourceCollectionProfiles.sortOrder));
+
+const collectionForProfileById = async (
+  exec: Executor,
+  profileId: string,
+  collectionId: string,
+): Promise<CollectionForProfile | null> => {
+  const [row] = await exec
+    .select({
+      id: resourceCollections.id,
+      name: resourceCollections.name,
+      sortOrder: resourceCollectionProfiles.sortOrder,
+      addedByProfileUserId: resourceCollectionProfiles.addedByProfileUserId,
+      createdAt: resourceCollectionProfiles.createdAt,
+      updatedAt: resourceCollectionProfiles.updatedAt,
+    })
+    .from(resourceCollectionProfiles)
+    .innerJoin(
+      resourceCollections,
+      eq(resourceCollections.id, resourceCollectionProfiles.collectionId),
+    )
+    .where(
+      and(
+        eq(resourceCollectionProfiles.profileId, profileId),
+        eq(resourceCollectionProfiles.collectionId, collectionId),
+      ),
+    )
+    .limit(1);
+  return row ?? null;
+};
 
 export const listCollections = async (
   authUserId: string,
@@ -110,19 +142,24 @@ export const renameCollection = async (
   authUserId: string,
   id: string,
   name: string,
-) => {
-  await assertResourceAccess(
+): Promise<CollectionForProfile> => {
+  const resolved = await assertResourceAccess(
     { kind: 'collection', collectionId: id },
     authUserId,
     'write',
   );
 
-  const [row] = await db
+  const [updated] = await db
     .update(resourceCollections)
     .set({ name })
     .where(eq(resourceCollections.id, id))
-    .returning();
+    .returning({ id: resourceCollections.id });
 
+  if (!updated) {
+    throw new NotFoundError('Collection', id);
+  }
+
+  const row = await collectionForProfileById(db, resolved.profileId, id);
   if (!row) {
     throw new NotFoundError('Collection', id);
   }
@@ -133,7 +170,7 @@ export const reorderCollection = async (
   authUserId: string,
   id: string,
   upperNeighborId: string | null,
-) => {
+): Promise<CollectionForProfile> => {
   const resolved = await assertResourceAccess(
     { kind: 'collection', collectionId: id },
     authUserId,
@@ -153,8 +190,7 @@ export const reorderCollection = async (
       .where(eq(resourceCollectionProfiles.profileId, resolved.profileId))
       .orderBy(asc(resourceCollectionProfiles.sortOrder));
 
-    const moved = rows.find((r) => r.collectionId === id);
-    if (!moved) {
+    if (!rows.some((r) => r.collectionId === id)) {
       throw new NotFoundError('Collection', id);
     }
     if (
@@ -172,31 +208,17 @@ export const reorderCollection = async (
       upperNeighborId,
     );
     if (reordered !== rows) {
+      const updates: Array<{ id: string; sortOrder: number }> = [];
       for (let i = 0; i < reordered.length; i++) {
         const row = reordered[i]!;
         if (row.sortOrder !== i) {
-          await tx
-            .update(resourceCollectionProfiles)
-            .set({ sortOrder: i })
-            .where(eq(resourceCollectionProfiles.id, row.id));
+          updates.push({ id: row.id, sortOrder: i });
         }
       }
+      await applySortOrderUpdates(tx, resourceCollectionProfiles, updates);
     }
 
-    const [row] = await tx
-      .select({
-        id: resourceCollections.id,
-        name: resourceCollections.name,
-        sortOrder: resourceCollectionProfiles.sortOrder,
-      })
-      .from(resourceCollectionProfiles)
-      .innerJoin(
-        resourceCollections,
-        eq(resourceCollections.id, resourceCollectionProfiles.collectionId),
-      )
-      .where(eq(resourceCollectionProfiles.id, moved.id))
-      .limit(1);
-
+    const row = await collectionForProfileById(tx, resolved.profileId, id);
     if (!row) {
       throw new NotFoundError('Collection', id);
     }
@@ -212,6 +234,8 @@ export const deleteCollection = async (authUserId: string, id: string) => {
   );
 
   return db.transaction(async (tx) => {
+    await profileLock(tx, resolved.profileId);
+
     await tx
       .delete(resourceCollectionProfiles)
       .where(
@@ -220,6 +244,25 @@ export const deleteCollection = async (authUserId: string, id: string) => {
           eq(resourceCollectionProfiles.profileId, resolved.profileId),
         ),
       );
+
+    // Compact sortOrders on the profile's remaining collections so future
+    // createCollection (which uses count() as the next sortOrder) doesn't
+    // collide with a leftover gap on the partial unique index.
+    const remainingForProfile = await tx
+      .select({
+        id: resourceCollectionProfiles.id,
+        sortOrder: resourceCollectionProfiles.sortOrder,
+      })
+      .from(resourceCollectionProfiles)
+      .where(eq(resourceCollectionProfiles.profileId, resolved.profileId))
+      .orderBy(asc(resourceCollectionProfiles.sortOrder));
+    const compactUpdates: Array<{ id: string; sortOrder: number }> = [];
+    remainingForProfile.forEach((row, idx) => {
+      if (row.sortOrder !== idx) {
+        compactUpdates.push({ id: row.id, sortOrder: idx });
+      }
+    });
+    await applySortOrderUpdates(tx, resourceCollectionProfiles, compactUpdates);
 
     const [remainingRow] = await tx
       .select({ value: count() })

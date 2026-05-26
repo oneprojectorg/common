@@ -4,6 +4,7 @@ import {
   objectsInStorage,
   profileUsers,
   resourceCollectionItems,
+  resourceCollectionProfiles,
   resources,
   type Resource,
   type ResourceType,
@@ -103,38 +104,23 @@ const loadResourceInCollectionDTO = async (
 const fetchByCollection = async (
   collectionId: string,
 ): Promise<ResourceListResult> => {
-  const rows = await db
-    .select({
-      sortOrder: resourceCollectionItems.sortOrder,
-      resource: resources,
-    })
-    .from(resourceCollectionItems)
-    .innerJoin(resources, eq(resources.id, resourceCollectionItems.resourceId))
-    .where(eq(resourceCollectionItems.collectionId, collectionId))
-    .orderBy(asc(resourceCollectionItems.sortOrder));
-
-  const ids = rows.map((r) => r.resource.id);
-  const hydrated = ids.length
-    ? await db.query.resources.findMany({
-        where: { id: { in: ids } },
+  // Single query: relational select grabs items + resource + attachment +
+  // storageObject in one round-trip, ordered by sortOrder. Don't sort in JS
+  // (orderBy is correct for paginated callers too).
+  const items = await db.query.resourceCollectionItems.findMany({
+    where: { collectionId },
+    orderBy: { sortOrder: 'asc' },
+    with: {
+      resource: {
         with: { attachment: { with: { storageObject: true } } },
-      })
-    : [];
-  const byId = new Map(hydrated.map((row) => [row.id, row]));
+      },
+    },
+  });
 
   const dtos = await Promise.all(
-    rows.flatMap((r) => {
-      const loaded = byId.get(r.resource.id);
-      if (!loaded) {
-        return [];
-      }
-      return [
-        toResourceDTO(loaded).then((base) => ({
-          ...base,
-          collectionId,
-          sortOrder: r.sortOrder,
-        })),
-      ];
+    items.map(async (item) => {
+      const base = await toResourceDTO(item.resource);
+      return { ...base, collectionId, sortOrder: item.sortOrder };
     }),
   );
   return { collectionId, resources: dtos };
@@ -185,6 +171,34 @@ const resolveTargetCollection = async (
   authUserId: string,
   scope: { profileId?: string; collectionId?: string },
 ): Promise<{ collectionId: string; profileId: string }> => {
+  // Both supplied: caller (typically the upload→createDocument flow) already
+  // resolved profileId and wants a specific collection. Verify the profile
+  // owns the collection so the auth check still anchors to a single profile
+  // — otherwise a user with access to two profiles sharing the same M:N
+  // collection could pin uploads to the wrong storage prefix.
+  if (scope.profileId !== undefined && scope.collectionId !== undefined) {
+    const { profileId, collectionId } = scope;
+    await assertResourceAccess(
+      { kind: 'profile', profileId },
+      authUserId,
+      'write',
+    );
+    const [link] = await db
+      .select({ id: resourceCollectionProfiles.id })
+      .from(resourceCollectionProfiles)
+      .where(
+        and(
+          eq(resourceCollectionProfiles.profileId, profileId),
+          eq(resourceCollectionProfiles.collectionId, collectionId),
+        ),
+      )
+      .limit(1);
+    if (!link) {
+      throw new NotFoundError('Collection', collectionId);
+    }
+    return { collectionId, profileId };
+  }
+
   if (scope.collectionId !== undefined && scope.profileId === undefined) {
     const resolved = await assertResourceAccess(
       { kind: 'collection', collectionId: scope.collectionId },
@@ -208,9 +222,7 @@ const resolveTargetCollection = async (
     return { collectionId: collection.id, profileId };
   }
 
-  throw new ValidationError(
-    'Exactly one of profileId / collectionId is required',
-  );
+  throw new ValidationError('profileId, collectionId, or both are required');
 };
 
 const lookupProfileUserId = async (
@@ -471,7 +483,7 @@ export const reorderResource = async (
       upperNeighborId,
     );
     if (plan) {
-      await applySortOrderUpdates(tx, plan.updates);
+      await applySortOrderUpdates(tx, resourceCollectionItems, plan.updates);
     }
 
     const link = await findCollectionItem(tx, collectionId, resourceId);
@@ -555,7 +567,7 @@ export const detachResourceFromCollection = async (
         updates.push({ id: row.id, sortOrder: idx });
       }
     });
-    await applySortOrderUpdates(tx, updates);
+    await applySortOrderUpdates(tx, resourceCollectionItems, updates);
   });
 
   return { ok: true };
@@ -583,26 +595,29 @@ export const deleteResource = async (
 
   const storageObjectName = existing.attachment?.storageObject?.name ?? null;
 
-  // Collect collections this resource belonged to so we can compact their
-  // sortOrders after the cascading delete.
-  const memberships = await db
-    .select({ collectionId: resourceCollectionItems.collectionId })
-    .from(resourceCollectionItems)
-    .where(eq(resourceCollectionItems.resourceId, id));
-
   await db.transaction(async (tx) => {
+    // Snapshot memberships before the cascade so we know which collections
+    // need their sort_order compacted. Deterministic lock order on
+    // collectionId prevents deadlocks when two resources from different
+    // collections delete concurrently.
+    const memberships = await tx
+      .select({ collectionId: resourceCollectionItems.collectionId })
+      .from(resourceCollectionItems)
+      .where(eq(resourceCollectionItems.resourceId, id))
+      .orderBy(asc(resourceCollectionItems.collectionId));
+
+    for (const membership of memberships) {
+      await lockCollection(tx, membership.collectionId);
+    }
+
     await tx.delete(resources).where(eq(resources.id, id));
     if (existing.attachmentId) {
       await tx
         .delete(attachments)
         .where(eq(attachments.id, existing.attachmentId));
     }
-  });
 
-  // Best-effort resequence of affected collections.
-  for (const membership of memberships) {
-    await db.transaction(async (tx) => {
-      await lockCollection(tx, membership.collectionId);
+    for (const membership of memberships) {
       const rows = await tx
         .select({
           id: resourceCollectionItems.id,
@@ -619,9 +634,9 @@ export const deleteResource = async (
           updates.push({ id: row.id, sortOrder: idx });
         }
       });
-      await applySortOrderUpdates(tx, updates);
-    });
-  }
+      await applySortOrderUpdates(tx, resourceCollectionItems, updates);
+    }
+  });
 
   if (storageObjectName) {
     await deleteResourceObject(storageObjectName);
