@@ -1,6 +1,15 @@
+// Thin op-specific layer over sonner. Two exports:
+//   - `<Toast />`: configured Toaster mount with op defaults.
+//   - `toast.status({ code, message })`: HTTP-code → canned-copy helper.
+//     Callers do `toast.status({ code: error.status })` to get consistent
+//     "permission needed" / "not found" / "didn't work" messaging.
+//
+// For everything else, import `toast` directly from `sonner`:
+//   import { toast } from 'sonner';
+//   toast.success('Saved', { description: 'Settings updated.' });
+
 'use client';
 
-import * as React from 'react';
 import { toast as sonnerToast } from 'sonner';
 
 import { Toaster } from './ui/sonner';
@@ -17,54 +26,26 @@ export const Toast = () => {
   );
 };
 
-interface ToastInput {
-  title?: React.ReactNode;
-  message?: React.ReactNode;
-  dismissable?: boolean;
-}
-
-type SonnerLevel = 'success' | 'error' | 'info' | 'warning' | 'message';
-
-function fire(level: SonnerLevel) {
-  return ({ title, message, dismissable }: ToastInput = {}) => {
-    const headline = title ?? message ?? '';
-    const description = title && message ? message : undefined;
-    return sonnerToast[level](headline as string, {
-      description,
-      dismissible: dismissable !== false,
-    });
-  };
-}
-
 export const toast = {
-  success: fire('success'),
-  error: fire('error'),
-  info: fire('info'),
-  warning: fire('warning'),
-  message: fire('message'),
-  dismiss: sonnerToast.dismiss,
   status: ({ code, message }: { code: number; message?: string }) => {
     switch (code) {
       case 200:
         return;
       case 404:
-        return toast.error({
-          title: 'Oops! Not found',
-          message:
+        return sonnerToast.error('Oops! Not found', {
+          description:
             message ??
             "We can't seem to find that. It might have been removed.",
         });
       case 403:
-        return toast.error({
-          title: 'Permission needed',
-          message:
+        return sonnerToast.error('Permission needed', {
+          description:
             message ??
             "You'll need additional access to do that. Contact your organization's admin for help.",
         });
       default:
-        return toast.error({
-          title: "That didn't work",
-          message:
+        return sonnerToast.error("That didn't work", {
+          description:
             message ?? 'Something went wrong on our end. Please try again',
         });
     }
