@@ -11,26 +11,6 @@ import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-const isAllowedMime = (type: string): type is AllowedResourceMimeType =>
-  (ALLOWED_RESOURCE_MIME_TYPES as readonly string[]).includes(type);
-
-const MAX_SIZE_MB = MAX_RESOURCE_FILE_SIZE / 1024 / 1024;
-
-const fileToBase64 = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result;
-      if (typeof result !== 'string') {
-        reject(new Error('Unable to read file'));
-        return;
-      }
-      resolve(result);
-    };
-    reader.onerror = () => reject(reader.error ?? new Error('File read error'));
-    reader.readAsDataURL(file);
-  });
-
 export type UploadedResource = {
   storageObjectId: string;
   fileName: string;
@@ -90,3 +70,23 @@ export const useResourceUpload = (profileId: string) => {
 
   return { upload, uploading, uploaded, reset };
 };
+
+const MAX_SIZE_MB = MAX_RESOURCE_FILE_SIZE / 1024 / 1024;
+
+const isAllowedMime = (type: string): type is AllowedResourceMimeType =>
+  (ALLOWED_RESOURCE_MIME_TYPES as readonly string[]).includes(type);
+
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== 'string') {
+        reject(new Error('Unable to read file'));
+        return;
+      }
+      resolve(result);
+    };
+    reader.onerror = () => reject(reader.error ?? new Error('File read error'));
+    reader.readAsDataURL(file);
+  });

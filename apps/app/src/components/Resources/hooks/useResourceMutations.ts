@@ -19,7 +19,9 @@ const moveResource = (
     id,
     upperNeighborId,
   );
-  if (reordered === prev.resources) return prev;
+  if (reordered === prev.resources) {
+    return prev;
+  }
   return { ...prev, resources: [...reordered] };
 };
 
@@ -60,7 +62,9 @@ export const useResourceMutations = (profileId: string) => {
       return { prev };
     },
     onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) utils.resources.list.setData(listKey, ctx.prev);
+      if (ctx?.prev) {
+        utils.resources.list.setData(listKey, ctx.prev);
+      }
       toast.error({ message: t('Could not reorder resource') });
     },
   });

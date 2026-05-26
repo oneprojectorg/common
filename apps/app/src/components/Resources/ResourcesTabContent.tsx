@@ -15,28 +15,6 @@ import { ResourceEmptyState } from './ResourceEmptyState';
 import { ResourcesList } from './ResourcesList';
 import { useResources } from './hooks/useResources';
 
-const ResourcesFeed = ({
-  profileId,
-  canManage,
-}: {
-  profileId: string;
-  canManage: boolean;
-}) => {
-  const [data] = useResources(profileId);
-
-  if (data.resources.length === 0) {
-    return (
-      <ResourceEmptyState
-        variant={canManage ? 'admin-empty' : 'member-empty'}
-      />
-    );
-  }
-
-  return (
-    <ResourcesList profileId={profileId} data={data} canManage={canManage} />
-  );
-};
-
 export const ResourcesTabContent = ({
   profileId,
   canManage,
@@ -97,5 +75,27 @@ export const ResourcesTabContent = ({
         </div>
       ) : null}
     </>
+  );
+};
+
+const ResourcesFeed = ({
+  profileId,
+  canManage,
+}: {
+  profileId: string;
+  canManage: boolean;
+}) => {
+  const [data] = useResources(profileId);
+
+  if (data.resources.length === 0) {
+    return (
+      <ResourceEmptyState
+        variant={canManage ? 'admin-empty' : 'member-empty'}
+      />
+    );
+  }
+
+  return (
+    <ResourcesList profileId={profileId} data={data} canManage={canManage} />
   );
 };

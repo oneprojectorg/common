@@ -32,7 +32,9 @@ export const ResourcesList = ({
     for (let i = 0; i < next.length; i++) {
       const a = items[i];
       const b = next[i];
-      if (!a || !b || a.id === b.id) continue;
+      if (!a || !b || a.id === b.id) {
+        continue;
+      }
       if (items[i + 1]?.id === b.id) {
         movedId = a.id;
         movedIdxInNext = next.findIndex((r) => r.id === a.id);
@@ -42,10 +44,14 @@ export const ResourcesList = ({
       }
       break;
     }
-    if (!movedId || movedIdxInNext === -1) return;
+    if (!movedId || movedIdxInNext === -1) {
+      return;
+    }
 
     const collectionId = data.collectionId;
-    if (!collectionId) return;
+    if (!collectionId) {
+      return;
+    }
 
     const upperNeighborId = next[movedIdxInNext - 1]?.id ?? null;
     reorder.mutate({ id: movedId, collectionId, upperNeighborId });

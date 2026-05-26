@@ -20,47 +20,6 @@ import { useTranslations } from '@/lib/i18n';
 
 import type { ResourceItem } from './types';
 
-const getDomain = (url: string): string => {
-  try {
-    return new URL(url).hostname.replace(/^www\./, '');
-  } catch {
-    return url;
-  }
-};
-
-const getExtension = (fileName: string | null): string | null => {
-  if (!fileName) {
-    return null;
-  }
-  const dot = fileName.lastIndexOf('.');
-  if (dot < 0 || dot === fileName.length - 1) {
-    return null;
-  }
-  return fileName.slice(dot + 1).toUpperCase();
-};
-
-const documentIconForMime = (mime: string | null): ReactNode => {
-  if (!mime) {
-    return <LuFile className="size-10" />;
-  }
-  if (mime.startsWith('image/')) {
-    return <LuImage className="size-10" />;
-  }
-  if (mime === 'application/pdf') {
-    return <LuFileText className="size-10" />;
-  }
-  if (mime.includes('spreadsheet') || mime === 'text/csv') {
-    return <LuFileSpreadsheet className="size-10" />;
-  }
-  if (mime.includes('presentation')) {
-    return <LuPresentation className="size-10" />;
-  }
-  if (mime.includes('wordprocessing') || mime === 'text/plain') {
-    return <LuFileText className="size-10" />;
-  }
-  return <LuFile className="size-10" />;
-};
-
 export const ResourceCard = ({
   resource,
   signedUrl,
@@ -183,4 +142,45 @@ export const ResourceCard = ({
       ) : null}
     </Surface>
   );
+};
+
+const getDomain = (url: string): string => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+};
+
+const getExtension = (fileName: string | null): string | null => {
+  if (!fileName) {
+    return null;
+  }
+  const dot = fileName.lastIndexOf('.');
+  if (dot < 0 || dot === fileName.length - 1) {
+    return null;
+  }
+  return fileName.slice(dot + 1).toUpperCase();
+};
+
+const documentIconForMime = (mime: string | null): ReactNode => {
+  if (!mime) {
+    return <LuFile className="size-10" />;
+  }
+  if (mime.startsWith('image/')) {
+    return <LuImage className="size-10" />;
+  }
+  if (mime === 'application/pdf') {
+    return <LuFileText className="size-10" />;
+  }
+  if (mime.includes('spreadsheet') || mime === 'text/csv') {
+    return <LuFileSpreadsheet className="size-10" />;
+  }
+  if (mime.includes('presentation')) {
+    return <LuPresentation className="size-10" />;
+  }
+  if (mime.includes('wordprocessing') || mime === 'text/plain') {
+    return <LuFileText className="size-10" />;
+  }
+  return <LuFile className="size-10" />;
 };

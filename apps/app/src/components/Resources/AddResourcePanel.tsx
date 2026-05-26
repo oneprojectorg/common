@@ -2,6 +2,7 @@
 
 import { Button } from '@op/ui/Button';
 import { ButtonGroup } from '@op/ui/ButtonGroup';
+import { IconButton } from '@op/ui/IconButton';
 import { useState } from 'react';
 import { LuFile, LuLink, LuX } from 'react-icons/lu';
 
@@ -26,14 +27,14 @@ export const AddResourcePanel = ({
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 items-center justify-between border-b border-neutral-gray1 px-4 py-3 sm:px-6">
         <span className="font-serif text-title-sm">{t('Add Resource')}</span>
-        <button
-          type="button"
+        <IconButton
+          variant="ghost"
+          size="small"
+          onPress={onClose}
           aria-label={t('Close')}
-          onClick={onClose}
-          className="ml-auto flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg outline-none hover:bg-neutral-gray1 focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2"
         >
           <LuX className="size-4" />
-        </button>
+        </IconButton>
       </div>
       <div className="shrink-0 px-4 pt-4 sm:px-6">
         <ButtonGroup className="w-full" aria-label={t('Resource type')}>

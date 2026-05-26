@@ -1,23 +1,15 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { httpUrlSchema } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { TextField } from '@op/ui/TextField';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { useResourceMutations } from './hooks/useResourceMutations';
-
-const isValidUrl = (value: string): boolean => {
-  try {
-    const u = new URL(value);
-    return u.protocol === 'http:' || u.protocol === 'https:';
-  } catch {
-    return false;
-  }
-};
 
 export const AddResourceLinkForm = ({
   profileId,
@@ -32,23 +24,19 @@ export const AddResourceLinkForm = ({
   const { createLink } = useResourceMutations(profileId);
 
   const [url, setUrl] = useState('');
-  const [title, setTitle] = useState('');
+  const [titleInput, setTitleInput] = useState<string | null>(null);
   const [description, setDescription] = useState('');
-  const [touchedTitle, setTouchedTitle] = useState(false);
   const [urlError, setUrlError] = useState<string | undefined>();
 
-  const urlValid = isValidUrl(url);
+  const urlValid = httpUrlSchema.safeParse(url).success;
 
   const previewQuery = trpc.content.linkPreview.useQuery(
     { url },
     { enabled: urlValid, retry: false, staleTime: 60 * 1000 },
   );
 
-  useEffect(() => {
-    if (!touchedTitle && previewQuery.data?.meta?.title) {
-      setTitle(previewQuery.data.meta.title.slice(0, 50));
-    }
-  }, [previewQuery.data, touchedTitle]);
+  const previewTitle = previewQuery.data?.meta?.title?.slice(0, 50) ?? '';
+  const title = titleInput ?? previewTitle;
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -97,10 +85,7 @@ export const AddResourceLinkForm = ({
         <TextField
           label={t('Title')}
           value={title}
-          onChange={(v) => {
-            setTitle(v);
-            setTouchedTitle(true);
-          }}
+          onChange={setTitleInput}
           isRequired
           maxLength={50}
           inputProps={{ placeholder: t('Add a title') }}

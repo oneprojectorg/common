@@ -9,14 +9,6 @@ import { useTranslations } from '@/lib/i18n';
 import { useResourceMutations } from './hooks/useResourceMutations';
 import { useResourceUpload } from './hooks/useResourceUpload';
 
-const truncateName = (name: string, max = 50): string =>
-  name.length <= max ? name : name.slice(0, max);
-
-const stripExt = (name: string): string => {
-  const dot = name.lastIndexOf('.');
-  return dot > 0 ? name.slice(0, dot) : name;
-};
-
 export const AddResourceDocumentForm = ({
   profileId,
   onSuccess,
@@ -143,4 +135,12 @@ export const AddResourceDocumentForm = ({
       </div>
     </form>
   );
+};
+
+const truncateName = (name: string, max = 50): string =>
+  name.length <= max ? name : name.slice(0, max);
+
+const stripExt = (name: string): string => {
+  const dot = name.lastIndexOf('.');
+  return dot > 0 ? name.slice(0, dot) : name;
 };
