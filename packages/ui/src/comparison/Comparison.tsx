@@ -733,9 +733,9 @@ export function Overlays() {
         wrapped={
           <RawButton
             variant="outline"
-            onClick={() => wrapToast.success({ title: 'Saved' })}
+            onClick={() => wrapToast.status({ code: 500 })}
           >
-            Fire toast
+            Fire toast.status(500)
           </RawButton>
         }
         raw={
