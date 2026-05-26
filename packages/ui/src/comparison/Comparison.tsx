@@ -5,8 +5,7 @@
 //
 // Styling parity across columns is NOT a goal; this view is for behavior +
 // API coverage during the phase-2 consumer migration. Each row is one
-// `<Pair>`. (Legacy `wrapped` prop accepted but ignored; was previously a
-// third column for compat-wrapper variants, now removed.)
+// `<Pair>`.
 
 'use client';
 
@@ -193,13 +192,10 @@ const COLUMN_LABELS = ['@op/ui (before)', '@op/sense (after)'] as const;
 export function Pair({
   label,
   old,
-  // Legacy prop accepted for source-compatibility; ignored.
-  wrapped: _wrapped,
   raw,
 }: {
   label: string;
   old: ReactNode;
-  wrapped?: ReactNode;
   raw: ReactNode;
 }) {
   return (
