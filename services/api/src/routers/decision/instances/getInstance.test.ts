@@ -5,6 +5,7 @@ import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   createIsolatedSession,
+  createIsolatedTestClient,
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
@@ -14,6 +15,15 @@ const createCaller = createCallerFactory(appRouter);
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+async function createAnonymousCaller() {
+  const client = createIsolatedTestClient();
+  const { data, error } = await client.auth.signInAnonymously();
+  if (error || !data.session) {
+    throw new Error(`Failed to sign in anonymously: ${error?.message}`);
+  }
+  return createCaller(await createTestContextWithSession(data.session));
 }
 
 describe.concurrent('getInstance', () => {
@@ -173,5 +183,125 @@ describe.concurrent('getInstance', () => {
 
     expect(result.proposalCount).toBe(1);
     expect(result.participantCount).toBe(1);
+  });
+
+  // Public-mode gating: getInstance should admit no-JWT and anon-JWT
+  // callers on instances seeded with the PUBLIC / ANONYMOUS roles, and
+  // reject both on non-public instances. Mirrors gating tests on
+  // getDecisionBySlug / listProposals / createProposal.
+  describe('public-mode gating', () => {
+    it('allows a no-JWT caller to read a public instance', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+      await testData.setInstancePublic(instance.instance.id);
+
+      const noJwtCaller = createCaller(
+        await createTestContextWithSession(null),
+      );
+
+      const result = await noJwtCaller.decision.getInstance({
+        instanceId: instance.instance.id,
+      });
+
+      expect(result.id).toBe(instance.instance.id);
+      // PUBLIC role grants `decisions: READ` only.
+      expect(result.access?.read).toBe(true);
+      expect(result.access?.admin).toBe(false);
+    });
+
+    it('allows an anonymous JWT to read a public instance', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+      await testData.setInstancePublic(instance.instance.id);
+
+      const anonCaller = await createAnonymousCaller();
+
+      const result = await anonCaller.decision.getInstance({
+        instanceId: instance.instance.id,
+      });
+
+      expect(result.id).toBe(instance.instance.id);
+      // ANONYMOUS role grants `decisions: READ | SUBMIT_PROPOSALS`.
+      expect(result.access?.read).toBe(true);
+      expect(result.access?.admin).toBe(false);
+    });
+
+    it('rejects a no-JWT caller on a non-public instance', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+      // Non-public by default — closed-network gate.
+
+      const noJwtCaller = createCaller(
+        await createTestContextWithSession(null),
+      );
+
+      await expect(
+        noJwtCaller.decision.getInstance({
+          instanceId: instance.instance.id,
+        }),
+      ).rejects.toMatchObject({
+        cause: { name: 'UnauthorizedError' },
+      });
+    });
+
+    it('rejects an anonymous JWT on a non-public instance', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+      // Non-public by default — closed-network gate.
+
+      const anonCaller = await createAnonymousCaller();
+
+      await expect(
+        anonCaller.decision.getInstance({
+          instanceId: instance.instance.id,
+        }),
+      ).rejects.toMatchObject({
+        cause: { name: 'UnauthorizedError' },
+      });
+    });
   });
 });

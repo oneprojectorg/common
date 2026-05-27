@@ -48,14 +48,20 @@ type DecisionProfileItem = NonNullable<
 };
 
 export const getDecisionBySlug = async ({
-  user,
+  accessUser,
   slug,
 }: {
-  user: User;
+  user?: User;
+  accessUser: User;
   slug: string;
 }): Promise<DecisionProfileItem> => {
   const [authAndStatsResult, profile] = await Promise.all([
-    // Auth check + aggregations
+    // Auth check + aggregations.
+    // The INNER JOIN on profile_users acts as the gate: a row must exist
+    // for `accessUser`. For real users that's their own row; for no-JWT
+    // / anon callers `accessUser` is the GLOBAL_USER_PUBLIC /
+    // GLOBAL_USER_ANONYMOUS sentinel, so this passes only for instances
+    // whose profile has been seeded with the corresponding role grant.
     db
       .select({
         profileId: profiles.id,
@@ -67,7 +73,7 @@ export const getDecisionBySlug = async ({
         profileUsers,
         and(
           eq(profileUsers.profileId, profiles.id),
-          eq(profileUsers.authUserId, user.id),
+          eq(profileUsers.authUserId, accessUser.id),
         ),
       )
       .innerJoin(processInstances, eq(processInstances.profileId, profiles.id))

@@ -6,6 +6,7 @@ import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import {
   createIsolatedSession,
+  createIsolatedTestClient,
   createTestContextWithSession,
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
@@ -15,6 +16,15 @@ const createCaller = createCallerFactory(appRouter);
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+async function createAnonymousCaller() {
+  const client = createIsolatedTestClient();
+  const { data, error } = await client.auth.signInAnonymously();
+  if (error || !data.session) {
+    throw new Error(`Failed to sign in anonymously: ${error?.message}`);
+  }
+  return createCaller(await createTestContextWithSession(data.session));
 }
 
 /**
@@ -217,5 +227,92 @@ describe.concurrent('getVotingStatus', () => {
     });
 
     expect(status.votingConfiguration.maxVotesPerMember).toBe(3);
+  });
+
+  // Public-mode gating: no-JWT / anon callers don't have personal votes,
+  // but they should still be able to read the voting configuration on a
+  // public instance (so the UI can render the read-only voting summary).
+  describe('public-mode gating', () => {
+    it('allows a no-JWT caller to read voting status on a public instance', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instance } = await setupVotingInstance(testData, {
+        proposalCount: 0,
+      });
+      await testData.setInstancePublic(instance.instance.id);
+
+      const noJwtCaller = createCaller(
+        await createTestContextWithSession(null),
+      );
+
+      const status = await noJwtCaller.decision.getVotingStatus({
+        processInstanceId: instance.instance.id,
+      });
+
+      expect(status.hasVoted).toBe(false);
+      expect(status.voteSubmission).toBeNull();
+      expect(status.votingConfiguration).toBeDefined();
+    });
+
+    it('allows an anonymous JWT to read voting status on a public instance', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instance } = await setupVotingInstance(testData, {
+        proposalCount: 0,
+      });
+      await testData.setInstancePublic(instance.instance.id);
+
+      const anonCaller = await createAnonymousCaller();
+
+      const status = await anonCaller.decision.getVotingStatus({
+        processInstanceId: instance.instance.id,
+      });
+
+      expect(status.hasVoted).toBe(false);
+      expect(status.voteSubmission).toBeNull();
+      expect(status.votingConfiguration).toBeDefined();
+    });
+
+    it('rejects a no-JWT caller on a non-public instance', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instance } = await setupVotingInstance(testData, {
+        proposalCount: 0,
+      });
+
+      const noJwtCaller = createCaller(
+        await createTestContextWithSession(null),
+      );
+
+      await expect(
+        noJwtCaller.decision.getVotingStatus({
+          processInstanceId: instance.instance.id,
+        }),
+      ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    });
+
+    it('rejects an anonymous JWT on a non-public instance', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instance } = await setupVotingInstance(testData, {
+        proposalCount: 0,
+      });
+
+      const anonCaller = await createAnonymousCaller();
+
+      await expect(
+        anonCaller.decision.getVotingStatus({
+          processInstanceId: instance.instance.id,
+        }),
+      ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    });
   });
 });

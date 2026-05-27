@@ -3,7 +3,11 @@ import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import {
+  commonAuthedProcedure,
+  commonOpenProcedure,
+  router,
+} from '../../trpcFactory';
 
 // Input Schemas based on our contracts
 const customDataSchema = z.record(z.string(), z.unknown()).optional();
@@ -47,20 +51,22 @@ export const votingRouter = router({
       return result;
     }),
 
-  // Get user's vote status with schema context
-  getVotingStatus: commonAuthedProcedure()
+  // Get user's vote status with schema context.
+  // Open procedure: anon / no-JWT callers get the voting config with
+  // `hasVoted: false` so the read-only voting summary can render on a
+  // public instance.
+  getVotingStatus: commonOpenProcedure()
     .input(
       z.object({
         processInstanceId: z.uuid(),
       }),
     )
     .query(async ({ input, ctx }) => {
+      const { user, accessUser } = ctx.authContext;
       return await getVotingStatus({
-        data: {
-          processInstanceId: input.processInstanceId,
-          authUserId: ctx.user.id,
-        },
-        authUserId: ctx.user.id,
+        data: { processInstanceId: input.processInstanceId },
+        user,
+        accessUser,
       });
     }),
 });

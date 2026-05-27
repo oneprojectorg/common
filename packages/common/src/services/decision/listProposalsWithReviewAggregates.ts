@@ -69,7 +69,11 @@ export async function listProposalsWithReviewAggregates(
 ): Promise<ProposalsWithReviewAggregatesList> {
   const { user, processInstanceId } = input;
 
-  const instance = await getInstance({ instanceId: processInstanceId, user });
+  const instance = await getInstance({
+    instanceId: processInstanceId,
+    user,
+    accessUser: user,
+  });
 
   if (!instance.access.admin) {
     throw new UnauthorizedError(

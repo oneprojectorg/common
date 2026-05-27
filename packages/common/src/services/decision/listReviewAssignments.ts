@@ -30,7 +30,7 @@ export async function listReviewAssignments({
   user: User;
 }): Promise<ReviewAssignmentList> {
   const [instance, dbUser] = await Promise.all([
-    getInstance({ instanceId: processInstanceId, user }),
+    getInstance({ instanceId: processInstanceId, user, accessUser: user }),
     assertUserByAuthId(user.id),
   ]);
 

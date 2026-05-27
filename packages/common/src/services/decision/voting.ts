@@ -7,6 +7,7 @@ import {
   processInstances,
   proposals,
 } from '@op/db/schema';
+import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { assertAccess, permission } from 'access-zones';
 
@@ -90,7 +91,6 @@ export interface SubmitVoteInput {
 
 export interface GetVotingStatusInput {
   processInstanceId: string;
-  authUserId: string;
 }
 
 export interface ValidateVoteSelectionInput {
@@ -341,17 +341,20 @@ export const submitVote = async ({
 
 export const getVotingStatus = async ({
   data,
-  authUserId,
+  user,
+  accessUser,
 }: {
   data: GetVotingStatusInput;
-  authUserId: string;
+  user?: User;
+  accessUser: User;
 }): Promise<VotingStatusResult> => {
-  if (!authUserId) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
-
   try {
-    const profileId = await getIndividualProfileId(authUserId);
+    // For public / anon callers there's no individual profile to attribute a
+    // vote to — skip the personal lookup and return the voting config only.
+    const isPersonal = Boolean(user) && !user!.is_anonymous;
+    const profileId = isPersonal
+      ? await getIndividualProfileId(user!.id)
+      : null;
 
     // Get process instance and schema
     const processInstance = await db._query.processInstances.findFirst({
@@ -370,7 +373,7 @@ export const getVotingStatus = async ({
     }
 
     await assertInstanceProfileAccess({
-      user: { id: authUserId },
+      user: accessUser,
       instance: processInstance,
       profilePermissions: { decisions: permission.READ },
       orgFallbackPermissions: [{ decisions: permission.READ }],
@@ -385,28 +388,33 @@ export const getVotingStatus = async ({
     const schemaResult = buildVotingSchemaResult(phaseConfig);
     const { votingConfig } = schemaResult;
 
-    // Check if user has voted
-    const voteSubmission = await db._query.decisionsVoteSubmissions.findFirst({
-      where: and(
-        eq(decisionsVoteSubmissions.processInstanceId, data.processInstanceId),
-        eq(decisionsVoteSubmissions.submittedByProfileId, profileId),
-      ),
-      with: {
-        voteProposals: {
+    // Check if user has voted (only meaningful when a personal profile exists)
+    const voteSubmission = profileId
+      ? await db._query.decisionsVoteSubmissions.findFirst({
+          where: and(
+            eq(
+              decisionsVoteSubmissions.processInstanceId,
+              data.processInstanceId,
+            ),
+            eq(decisionsVoteSubmissions.submittedByProfileId, profileId),
+          ),
           with: {
-            proposal: {
+            voteProposals: {
               with: {
-                profile: {
-                  columns: {
-                    name: true,
+                proposal: {
+                  with: {
+                    profile: {
+                      columns: {
+                        name: true,
+                      },
+                    },
                   },
                 },
               },
             },
           },
-        },
-      },
-    });
+        })
+      : null;
 
     let selectedProposals = null;
     let selectedProposalIds: string[] = [];

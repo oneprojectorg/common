@@ -24,7 +24,11 @@ export async function getPhaseReviewProgress(
 ): Promise<PhaseReviewProgress> {
   const { user, processInstanceId, phaseId } = input;
 
-  const instance = await getInstance({ instanceId: processInstanceId, user });
+  const instance = await getInstance({
+    instanceId: processInstanceId,
+    user,
+    accessUser: user,
+  });
 
   if (!instance.access.admin) {
     throw new UnauthorizedError(

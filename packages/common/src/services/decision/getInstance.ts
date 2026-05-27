@@ -17,7 +17,8 @@ import type { DecisionInstanceData } from './schemas/instanceData';
 
 export interface GetInstanceInput {
   instanceId: string;
-  user: User;
+  user?: User;
+  accessUser: User;
 }
 
 const ALL_TRUE_ACCESS: DecisionRolePermissions = {
@@ -68,7 +69,10 @@ const resolveInstanceAccess = async (
   throw new UnauthorizedError("You don't have access to do this");
 };
 
-export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
+export const getInstance = async ({
+  instanceId,
+  accessUser,
+}: GetInstanceInput) => {
   try {
     const instance = await db.query.processInstances.findFirst({
       where: { id: instanceId },
@@ -96,13 +100,18 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
     }
 
     // Fetch profileUser and assert access in parallel — both need the instance
-    // but are independent of each other.
+    // but are independent of each other. Both lookups key on `accessUser`:
+    // the real user for authed callers, or the GLOBAL_USER_PUBLIC /
+    // GLOBAL_USER_ANONYMOUS sentinel for no-JWT / anon-JWT callers.
     const [profileUser] = await Promise.all([
       instance.profileId
-        ? getProfileAccessUser({ user, profileId: instance.profileId })
+        ? getProfileAccessUser({
+            user: accessUser,
+            profileId: instance.profileId,
+          })
         : Promise.resolve(undefined),
       assertInstanceProfileAccess({
-        user,
+        user: accessUser,
         instance,
         profilePermissions: { decisions: permission.READ },
         orgFallbackPermissions: { decisions: permission.READ },
@@ -115,7 +124,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       throw new NotFoundError('Process instance', instanceId);
     }
     const access = await resolveInstanceAccess(
-      user,
+      accessUser,
       {
         profileId: instance.profileId,
         ownerProfileId: instance.ownerProfileId,

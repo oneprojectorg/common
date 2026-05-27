@@ -12,6 +12,7 @@ import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   createIsolatedSession,
+  createIsolatedTestClient,
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
@@ -21,6 +22,15 @@ const createCaller = createCallerFactory(appRouter);
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+async function createAnonymousCaller() {
+  const client = createIsolatedTestClient();
+  const { data, error } = await client.auth.signInAnonymously();
+  if (error || !data.session) {
+    throw new Error(`Failed to sign in anonymously: ${error?.message}`);
+  }
+  return createCaller(await createTestContextWithSession(data.session));
 }
 
 /**
@@ -494,5 +504,99 @@ describe.concurrent('getCategories category matching', () => {
         termUri: expectedTermUri,
       }),
     );
+  });
+
+  // Public-mode gating: same shape as the other read-path procedures.
+  describe('public-mode gating', () => {
+    it('allows a no-JWT caller to read categories on a public instance', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) throw new Error('No instance created');
+      await testData.setInstancePublic(instance.instance.id);
+
+      const noJwtCaller = createCaller(
+        await createTestContextWithSession(null),
+      );
+
+      const result = await noJwtCaller.decision.getCategories({
+        processInstanceId: instance.instance.id,
+      });
+
+      // No categories seeded — just confirms the call doesn't reject.
+      expect(result.categories).toEqual([]);
+    });
+
+    it('allows an anonymous JWT to read categories on a public instance', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) throw new Error('No instance created');
+      await testData.setInstancePublic(instance.instance.id);
+
+      const anonCaller = await createAnonymousCaller();
+
+      const result = await anonCaller.decision.getCategories({
+        processInstanceId: instance.instance.id,
+      });
+
+      expect(result.categories).toEqual([]);
+    });
+
+    it('rejects a no-JWT caller on a non-public instance', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) throw new Error('No instance created');
+
+      const noJwtCaller = createCaller(
+        await createTestContextWithSession(null),
+      );
+
+      await expect(
+        noJwtCaller.decision.getCategories({
+          processInstanceId: instance.instance.id,
+        }),
+      ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    });
+
+    it('rejects an anonymous JWT on a non-public instance', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) throw new Error('No instance created');
+
+      const anonCaller = await createAnonymousCaller();
+
+      await expect(
+        anonCaller.decision.getCategories({
+          processInstanceId: instance.instance.id,
+        }),
+      ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    });
   });
 });

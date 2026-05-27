@@ -9,7 +9,11 @@ import {
   legacyGetInstanceInputSchema,
   legacyProcessInstanceEncoder,
 } from '../../../encoders/legacyDecision';
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import {
+  commonAuthedProcedure,
+  commonOpenProcedure,
+  router,
+} from '../../../trpcFactory';
 import { trackProcessViewed } from '../../../utils/analytics';
 
 /**
@@ -30,6 +34,7 @@ export const getLegacyInstanceRouter = router({
       const instance = await getInstance({
         instanceId: input.instanceId,
         user,
+        accessUser: user,
       });
 
       // Track process viewed event
@@ -63,21 +68,25 @@ export const getLegacyInstanceRouter = router({
  * Only supports new decision-making schemas.
  */
 export const getInstanceRouter = router({
-  getInstance: commonAuthedProcedure({
+  getInstance: commonOpenProcedure({
     rateLimit: { windowSize: 10, maxRequests: 30 },
   })
     .input(getInstanceInputSchema)
     .output(processInstanceWithSchemaEncoder)
     .query(async ({ ctx, input }) => {
-      const { user } = ctx;
+      const { user, accessUser } = ctx.authContext;
 
       const instance = await getInstance({
         instanceId: input.instanceId,
         user,
+        accessUser,
       });
 
-      // Track process viewed event
-      waitUntil(trackProcessViewed(ctx, input.instanceId));
+      // Track process viewed event — only for real users; anon/no-JWT
+      // callers have no stable identity to attribute the view to.
+      if (user) {
+        waitUntil(trackProcessViewed({ ...ctx, user }, input.instanceId));
+      }
 
       ctx.registerQueryChannels([Channels.decisionInstance(input.instanceId)]);
 
