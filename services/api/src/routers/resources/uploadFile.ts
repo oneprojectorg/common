@@ -1,8 +1,13 @@
 import {
   ALLOWED_RESOURCE_MIME_TYPES,
+  UnauthorizedError,
   assertResourceAccess,
+  getCurrentProfileId,
   uploadResourceFile,
 } from '@op/common';
+import { db } from '@op/db/client';
+import { resourceCollectionProfiles } from '@op/db/schema';
+import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { commonAuthedProcedure, router } from '../../trpcFactory';
@@ -40,21 +45,31 @@ export const uploadFile = router({
     .output(outputSchema)
     .mutation(async ({ input, ctx }) => {
       const { target } = input;
-      let profileId: string;
+      const profileId =
+        target.kind === 'profile'
+          ? target.profileId
+          : await getCurrentProfileId(ctx.user.id);
+
+      await assertResourceAccess({
+        profileId,
+        authUserId: ctx.user.id,
+        level: 'write',
+      });
+
       if (target.kind === 'collection') {
-        const resolved = await assertResourceAccess({
-          scope: { kind: 'collection', collectionId: target.collectionId },
-          authUserId: ctx.user.id,
-          level: 'write',
-        });
-        profileId = resolved.profileId;
-      } else {
-        await assertResourceAccess({
-          scope: { kind: 'profile', profileId: target.profileId },
-          authUserId: ctx.user.id,
-          level: 'write',
-        });
-        profileId = target.profileId;
+        const [link] = await db
+          .select({ id: resourceCollectionProfiles.id })
+          .from(resourceCollectionProfiles)
+          .where(
+            and(
+              eq(resourceCollectionProfiles.profileId, profileId),
+              eq(resourceCollectionProfiles.collectionId, target.collectionId),
+            ),
+          )
+          .limit(1);
+        if (!link) {
+          throw new UnauthorizedError("You don't have access to do this");
+        }
       }
 
       const uploaded = await uploadResourceFile({

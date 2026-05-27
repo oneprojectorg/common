@@ -14,8 +14,10 @@ import { and, asc, eq } from 'drizzle-orm';
 import {
   ConflictError,
   NotFoundError,
+  UnauthorizedError,
   ValidationError,
 } from '../../utils/error';
+import { getCurrentProfileId } from '../access';
 import { assertResourceAccess } from './access';
 import { resolveOrCreatePinnedCollection } from './collections';
 import { resourcePathPrefix } from './constants';
@@ -120,6 +122,53 @@ const loadResourceInCollectionDto = async ({
   return { ...base, collectionId, sortOrder };
 };
 
+const profileOwnsCollection = async ({
+  profileId,
+  collectionId,
+}: {
+  profileId: string;
+  collectionId: string;
+}): Promise<boolean> => {
+  const [row] = await db
+    .select({ id: resourceCollectionProfiles.id })
+    .from(resourceCollectionProfiles)
+    .where(
+      and(
+        eq(resourceCollectionProfiles.profileId, profileId),
+        eq(resourceCollectionProfiles.collectionId, collectionId),
+      ),
+    )
+    .limit(1);
+  return row !== undefined;
+};
+
+const profileOwnsResource = async ({
+  profileId,
+  resourceId,
+}: {
+  profileId: string;
+  resourceId: string;
+}): Promise<boolean> => {
+  const [row] = await db
+    .select({ id: resourceCollectionItems.id })
+    .from(resourceCollectionItems)
+    .innerJoin(
+      resourceCollectionProfiles,
+      eq(
+        resourceCollectionProfiles.collectionId,
+        resourceCollectionItems.collectionId,
+      ),
+    )
+    .where(
+      and(
+        eq(resourceCollectionItems.resourceId, resourceId),
+        eq(resourceCollectionProfiles.profileId, profileId),
+      ),
+    )
+    .limit(1);
+  return row !== undefined;
+};
+
 const fetchByCollection = async (
   collectionId: string,
 ): Promise<ResourceListResult> => {
@@ -152,18 +201,10 @@ export const listResources = async ({
   // Try write first so admin callers create the Pinned collection lazily; fall back to read.
   let canWrite = true;
   try {
-    await assertResourceAccess({
-      scope: { kind: 'profile', profileId },
-      authUserId,
-      level: 'write',
-    });
+    await assertResourceAccess({ profileId, authUserId, level: 'write' });
   } catch {
     canWrite = false;
-    await assertResourceAccess({
-      scope: { kind: 'profile', profileId },
-      authUserId,
-      level: 'read',
-    });
+    await assertResourceAccess({ profileId, authUserId, level: 'read' });
   }
 
   const collection = await resolveOrCreatePinnedCollection({
@@ -184,11 +225,11 @@ export const listResourcesByCollection = async ({
   authUserId: string;
   collectionId: string;
 }): Promise<ResourceListResult> => {
-  await assertResourceAccess({
-    scope: { kind: 'collection', collectionId },
-    authUserId,
-    level: 'read',
-  });
+  const profileId = await getCurrentProfileId(authUserId);
+  await assertResourceAccess({ profileId, authUserId, level: 'read' });
+  if (!(await profileOwnsCollection({ profileId, collectionId }))) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
   return fetchByCollection(collectionId);
 };
 
@@ -199,59 +240,24 @@ const resolveTargetCollection = async ({
   authUserId: string;
   scope: { profileId?: string; collectionId?: string };
 }): Promise<{ collectionId: string; profileId: string }> => {
-  // Verify the profile owns the collection — anchoring auth to a single
-  // profile prevents M:N-shared collections from landing uploads under the
-  // wrong storage prefix.
-  if (scope.profileId !== undefined && scope.collectionId !== undefined) {
-    const { profileId, collectionId } = scope;
-    await assertResourceAccess({
-      scope: { kind: 'profile', profileId },
-      authUserId,
-      level: 'write',
-    });
-    const [link] = await db
-      .select({ id: resourceCollectionProfiles.id })
-      .from(resourceCollectionProfiles)
-      .where(
-        and(
-          eq(resourceCollectionProfiles.profileId, profileId),
-          eq(resourceCollectionProfiles.collectionId, collectionId),
-        ),
-      )
-      .limit(1);
-    if (!link) {
-      throw new NotFoundError('Collection', collectionId);
+  const profileId = scope.profileId ?? (await getCurrentProfileId(authUserId));
+  await assertResourceAccess({ profileId, authUserId, level: 'write' });
+
+  if (scope.collectionId !== undefined) {
+    if (!(await profileOwnsCollection({ profileId, collectionId: scope.collectionId }))) {
+      throw new NotFoundError('Collection', scope.collectionId);
     }
-    return { collectionId, profileId };
+    return { collectionId: scope.collectionId, profileId };
   }
 
-  if (scope.collectionId !== undefined && scope.profileId === undefined) {
-    const resolved = await assertResourceAccess({
-      scope: { kind: 'collection', collectionId: scope.collectionId },
-      authUserId,
-      level: 'write',
-    });
-    return { collectionId: scope.collectionId, profileId: resolved.profileId };
+  const collection = await resolveOrCreatePinnedCollection({
+    profileId,
+    createIfMissing: true,
+  });
+  if (!collection) {
+    throw new ConflictError('Failed to resolve collection');
   }
-
-  if (scope.profileId !== undefined && scope.collectionId === undefined) {
-    const { profileId } = scope;
-    await assertResourceAccess({
-      scope: { kind: 'profile', profileId },
-      authUserId,
-      level: 'write',
-    });
-    const collection = await resolveOrCreatePinnedCollection({
-      profileId,
-      createIfMissing: true,
-    });
-    if (!collection) {
-      throw new ConflictError('Failed to resolve collection');
-    }
-    return { collectionId: collection.id, profileId };
-  }
-
-  throw new ValidationError('profileId, collectionId, or both are required');
+  return { collectionId: collection.id, profileId };
 };
 
 const lookupProfileUserId = async ({
@@ -451,11 +457,15 @@ export type UpdateResourceInput = {
 export const updateResource = async (
   input: UpdateResourceInput,
 ): Promise<ResourceDto> => {
+  const profileId = await getCurrentProfileId(input.authUserId);
   await assertResourceAccess({
-    scope: { kind: 'resource', resourceId: input.id },
+    profileId,
     authUserId: input.authUserId,
     level: 'write',
   });
+  if (!(await profileOwnsResource({ profileId, resourceId: input.id }))) {
+    throw new NotFoundError('Resource', input.id);
+  }
 
   const existing = await db.query.resources.findFirst({
     where: { id: input.id },
@@ -504,18 +514,18 @@ export const reorderResource = async ({
   collectionId: string;
   upperNeighborId: string | null;
 }): Promise<ResourceInCollectionDto> => {
-  await Promise.all([
-    assertResourceAccess({
-      scope: { kind: 'resource', resourceId },
-      authUserId,
-      level: 'write',
-    }),
-    assertResourceAccess({
-      scope: { kind: 'collection', collectionId },
-      authUserId,
-      level: 'write',
-    }),
+  const profileId = await getCurrentProfileId(authUserId);
+  await assertResourceAccess({ profileId, authUserId, level: 'write' });
+  const [ownsCollection, ownsResource] = await Promise.all([
+    profileOwnsCollection({ profileId, collectionId }),
+    profileOwnsResource({ profileId, resourceId }),
   ]);
+  if (!ownsCollection) {
+    throw new NotFoundError('Collection', collectionId);
+  }
+  if (!ownsResource) {
+    throw new NotFoundError('Resource', resourceId);
+  }
 
   const finalSortOrder = await db.transaction(async (tx) => {
     await lockCollection({ tx, collectionId });
@@ -557,22 +567,22 @@ export const attachResourceToCollection = async ({
   resourceId: string;
   collectionId: string;
 }): Promise<ResourceInCollectionDto> => {
-  const [resolved] = await Promise.all([
-    assertResourceAccess({
-      scope: { kind: 'collection', collectionId },
-      authUserId,
-      level: 'write',
-    }),
-    assertResourceAccess({
-      scope: { kind: 'resource', resourceId },
-      authUserId,
-      level: 'write',
-    }),
+  const profileId = await getCurrentProfileId(authUserId);
+  await assertResourceAccess({ profileId, authUserId, level: 'write' });
+  const [ownsCollection, ownsResource] = await Promise.all([
+    profileOwnsCollection({ profileId, collectionId }),
+    profileOwnsResource({ profileId, resourceId }),
   ]);
+  if (!ownsCollection) {
+    throw new NotFoundError('Collection', collectionId);
+  }
+  if (!ownsResource) {
+    throw new NotFoundError('Resource', resourceId);
+  }
 
   const addedByProfileUserId = await lookupProfileUserId({
     authUserId,
-    profileId: resolved.profileId,
+    profileId,
   });
 
   const sortOrder = await db.transaction(async (tx) => {
@@ -595,18 +605,18 @@ export const detachResourceFromCollection = async ({
   resourceId: string;
   collectionId: string;
 }): Promise<{ ok: true }> => {
-  await Promise.all([
-    assertResourceAccess({
-      scope: { kind: 'resource', resourceId },
-      authUserId,
-      level: 'write',
-    }),
-    assertResourceAccess({
-      scope: { kind: 'collection', collectionId },
-      authUserId,
-      level: 'write',
-    }),
+  const profileId = await getCurrentProfileId(authUserId);
+  await assertResourceAccess({ profileId, authUserId, level: 'write' });
+  const [ownsCollection, ownsResource] = await Promise.all([
+    profileOwnsCollection({ profileId, collectionId }),
+    profileOwnsResource({ profileId, resourceId }),
   ]);
+  if (!ownsCollection) {
+    throw new NotFoundError('Collection', collectionId);
+  }
+  if (!ownsResource) {
+    throw new NotFoundError('Resource', resourceId);
+  }
 
   await db.transaction(async (tx) => {
     await lockCollection({ tx, collectionId });
@@ -652,11 +662,11 @@ export const deleteResource = async ({
   authUserId: string;
   id: string;
 }): Promise<{ ok: true }> => {
-  await assertResourceAccess({
-    scope: { kind: 'resource', resourceId: id },
-    authUserId,
-    level: 'write',
-  });
+  const profileId = await getCurrentProfileId(authUserId);
+  await assertResourceAccess({ profileId, authUserId, level: 'write' });
+  if (!(await profileOwnsResource({ profileId, resourceId: id }))) {
+    throw new NotFoundError('Resource', id);
+  }
 
   const existing = await db.query.resources.findFirst({
     where: { id },

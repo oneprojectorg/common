@@ -4,6 +4,7 @@ import { and, asc, count, eq, sql } from 'drizzle-orm';
 
 import { ConflictError, NotFoundError } from '../../utils/error';
 import { reorderByUpperNeighbor } from '../../utils/sorting';
+import { getCurrentProfileId } from '../access';
 import { assertResourceAccess } from './access';
 import { applySortOrderUpdates } from './ordering';
 
@@ -96,11 +97,7 @@ export const listCollections = async ({
   authUserId: string;
   profileId: string;
 }): Promise<CollectionForProfile[]> => {
-  await assertResourceAccess({
-    scope: { kind: 'profile', profileId },
-    authUserId,
-    level: 'read',
-  });
+  await assertResourceAccess({ profileId, authUserId, level: 'read' });
   return collectionsForProfileQuery({ exec: db, profileId });
 };
 
@@ -113,11 +110,7 @@ export const createCollection = async ({
   profileId: string;
   name: string;
 }): Promise<CollectionForProfile> => {
-  await assertResourceAccess({
-    scope: { kind: 'profile', profileId },
-    authUserId,
-    level: 'write',
-  });
+  await assertResourceAccess({ profileId, authUserId, level: 'write' });
 
   return db.transaction(async (tx) => {
     await profileLock({ tx, profileId });
@@ -168,11 +161,17 @@ export const updateCollection = async ({
   id: string;
   patch: UpdateCollectionPatch;
 }): Promise<CollectionForProfile> => {
-  const resolved = await assertResourceAccess({
-    scope: { kind: 'collection', collectionId: id },
-    authUserId,
-    level: 'write',
+  const profileId = await getCurrentProfileId(authUserId);
+  await assertResourceAccess({ profileId, authUserId, level: 'write' });
+
+  const existing = await collectionForProfileById({
+    exec: db,
+    profileId,
+    collectionId: id,
   });
+  if (!existing) {
+    throw new NotFoundError('Collection', id);
+  }
 
   const patchValues: Partial<{ name: string }> = {};
   if (patch.name !== undefined) {
@@ -191,7 +190,7 @@ export const updateCollection = async ({
 
   const row = await collectionForProfileById({
     exec: db,
-    profileId: resolved.profileId,
+    profileId,
     collectionId: id,
   });
   if (!row) {
@@ -209,14 +208,11 @@ export const reorderCollection = async ({
   id: string;
   upperNeighborId: string | null;
 }): Promise<CollectionForProfile> => {
-  const resolved = await assertResourceAccess({
-    scope: { kind: 'collection', collectionId: id },
-    authUserId,
-    level: 'write',
-  });
+  const profileId = await getCurrentProfileId(authUserId);
+  await assertResourceAccess({ profileId, authUserId, level: 'write' });
 
   return db.transaction(async (tx) => {
-    await profileLock({ tx, profileId: resolved.profileId });
+    await profileLock({ tx, profileId });
 
     const rows = await tx
       .select({
@@ -225,7 +221,7 @@ export const reorderCollection = async ({
         sortOrder: resourceCollectionProfiles.sortOrder,
       })
       .from(resourceCollectionProfiles)
-      .where(eq(resourceCollectionProfiles.profileId, resolved.profileId))
+      .where(eq(resourceCollectionProfiles.profileId, profileId))
       .orderBy(asc(resourceCollectionProfiles.sortOrder));
 
     if (!rows.some((r) => r.collectionId === id)) {
@@ -262,7 +258,7 @@ export const reorderCollection = async ({
 
     const row = await collectionForProfileById({
       exec: tx,
-      profileId: resolved.profileId,
+      profileId,
       collectionId: id,
     });
     if (!row) {
@@ -279,21 +275,27 @@ export const deleteCollection = async ({
   authUserId: string;
   id: string;
 }) => {
-  const resolved = await assertResourceAccess({
-    scope: { kind: 'collection', collectionId: id },
-    authUserId,
-    level: 'write',
+  const profileId = await getCurrentProfileId(authUserId);
+  await assertResourceAccess({ profileId, authUserId, level: 'write' });
+
+  const existing = await collectionForProfileById({
+    exec: db,
+    profileId,
+    collectionId: id,
   });
+  if (!existing) {
+    throw new NotFoundError('Collection', id);
+  }
 
   return db.transaction(async (tx) => {
-    await profileLock({ tx, profileId: resolved.profileId });
+    await profileLock({ tx, profileId });
 
     await tx
       .delete(resourceCollectionProfiles)
       .where(
         and(
           eq(resourceCollectionProfiles.collectionId, id),
-          eq(resourceCollectionProfiles.profileId, resolved.profileId),
+          eq(resourceCollectionProfiles.profileId, profileId),
         ),
       );
 
@@ -305,7 +307,7 @@ export const deleteCollection = async ({
         sortOrder: resourceCollectionProfiles.sortOrder,
       })
       .from(resourceCollectionProfiles)
-      .where(eq(resourceCollectionProfiles.profileId, resolved.profileId))
+      .where(eq(resourceCollectionProfiles.profileId, profileId))
       .orderBy(asc(resourceCollectionProfiles.sortOrder));
     const compactUpdates: Array<{ id: string; sortOrder: number }> = [];
     remainingForProfile.forEach((row, idx) => {
