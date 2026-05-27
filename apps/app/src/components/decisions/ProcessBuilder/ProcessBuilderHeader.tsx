@@ -47,7 +47,7 @@ const CreateModeHeader = () => {
           <LuHouse className="size-4" />
           {t('Home')}
         </Link>
-        <LuChevronRight className="size-4" />
+        <LuChevronRight className="size-4 rtl:-scale-x-100" />
         <LuList className="size-4 shrink-0" />
         <span>{t('New process')}</span>
       </div>
@@ -90,7 +90,7 @@ const ProcessBuilderHeaderContent = ({
           <LuHouse className="size-4" />
           {t('Home')}
         </Link>
-        <LuChevronRight className="size-4 shrink-0" />
+        <LuChevronRight className="size-4 shrink-0 rtl:-scale-x-100" />
         <LuList className="size-4 shrink-0" />
         <span className="truncate">{displayName}</span>
       </div>

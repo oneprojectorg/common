@@ -229,7 +229,7 @@ function ReviewerRow({
           )}
         </div>
       </div>
-      <LuChevronRight className="size-4 text-neutral-gray4" />
+      <LuChevronRight className="size-4 text-neutral-gray4 rtl:-scale-x-100" />
     </Button>
   );
 }

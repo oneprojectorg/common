@@ -84,7 +84,7 @@ const PaginationNavigation = React.forwardRef<
           }
         }}
       >
-        <LuChevronLeft className="size-4" />
+        <LuChevronLeft className="size-4 rtl:-scale-x-100" />
         Previous
       </Button>
       <Button
@@ -98,7 +98,7 @@ const PaginationNavigation = React.forwardRef<
         }}
       >
         Next
-        <LuChevronRight className="size-4" />
+        <LuChevronRight className="size-4 rtl:-scale-x-100" />
       </Button>
     </nav>
   );

@@ -20,7 +20,7 @@ export function DecisionSubpageHeader({
         href={backHref}
         className="flex items-center gap-2 text-base text-primary-teal"
       >
-        <LuArrowLeft className="size-4" />
+        <LuArrowLeft className="size-4 rtl:-scale-x-100" />
         {backLabel}
       </Link>
       {children}

@@ -31,7 +31,7 @@ const accordionStyles = tv({
     header: '',
     trigger: '',
     indicator:
-      'size-4 shrink-0 transition-transform duration-200 group-data-[expanded]/accordion-item:rotate-90',
+      'size-4 shrink-0 transition-transform duration-200 group-data-[expanded]/accordion-item:rotate-90 rtl:-scale-x-100',
     content:
       'h-[var(--disclosure-panel-height)] overflow-hidden transition-[height] duration-200 ease-out motion-reduce:transition-none [&[hidden]]:![content-visibility:visible]',
     contentInner: '',

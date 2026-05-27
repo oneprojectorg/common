@@ -96,7 +96,10 @@ export const MenuItem = (
               {children}
             </span>
             {hasSubmenu && (
-              <LuChevronRight aria-hidden className="absolute end-2 size-4" />
+              <LuChevronRight
+                aria-hidden
+                className="absolute end-2 size-4 rtl:-scale-x-100"
+              />
             )}
           </>
         ),

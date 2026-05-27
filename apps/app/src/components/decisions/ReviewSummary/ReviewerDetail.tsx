@@ -53,7 +53,7 @@ export function ReviewerDetail({
         onPress={onBack}
         className="inline-flex items-center gap-1 self-start text-base"
       >
-        <LuArrowLeft className="size-4" />
+        <LuArrowLeft className="size-4 rtl:-scale-x-100" />
         {t('Back to all reviewers')}
       </Button>
 
