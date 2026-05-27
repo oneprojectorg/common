@@ -4,7 +4,7 @@ import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { AnimatePresence, motion } from 'motion/react';
 import { createContext, use, useCallback, useMemo, useState } from 'react';
-import { Dialog, Modal, ModalOverlay } from 'react-aria-components';
+import { Dialog, Modal, ModalOverlay, useLocale } from 'react-aria-components';
 import { LuAlignJustify } from 'react-icons/lu';
 
 import { RequireAccessibleName } from '../../lib/a11y';
@@ -102,6 +102,8 @@ const Sidebar = ({
   mobileOnly?: boolean;
 }) => {
   const { isMobile, state, open, setOpen } = useSidebar();
+  const { direction } = useLocale();
+  const isRtl = direction === 'rtl';
 
   const MotionModalOverlay = motion(ModalOverlay);
   const MotionModal = motion(Modal);
@@ -112,6 +114,7 @@ const Sidebar = ({
 
   if (isMobile) {
     const isRight = side === 'right';
+    const offscreenSign = isRight === isRtl ? '-100%' : '100%';
     return (
       <AnimatePresence>
         {open && (
@@ -132,9 +135,9 @@ const Sidebar = ({
                 isRight ? 'end-0' : 'start-0',
                 className,
               )}
-              initial={{ x: isRight ? '100%' : '-100%' }}
+              initial={{ x: offscreenSign }}
               animate={{ x: 0 }}
-              exit={{ x: isRight ? '100%' : '-100%' }}
+              exit={{ x: offscreenSign }}
               transition={transition}
             >
               <Dialog aria-label={label}>{children}</Dialog>
@@ -154,6 +157,8 @@ const Sidebar = ({
   // panel instead of pushing siblings. The mobile branch above already
   // handles its own overlay; this only kicks in at sm:.
   if (variant === 'overlay') {
+    const offscreenTranslate =
+      (side === 'right') === isRtl ? '-translate-x-full' : 'translate-x-full';
     return (
       <div
         data-state={state}
@@ -163,11 +168,7 @@ const Sidebar = ({
         className={cn(
           'fixed inset-y-0 z-40 hidden w-64 flex-col overflow-hidden bg-white transition-transform duration-300 ease-out sm:flex',
           side === 'right' ? 'end-0' : 'start-0',
-          open
-            ? 'translate-x-0'
-            : side === 'right'
-              ? 'translate-x-full'
-              : '-translate-x-full',
+          open ? 'translate-x-0' : offscreenTranslate,
           className,
         )}
       >
