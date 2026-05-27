@@ -22,7 +22,7 @@ const PUBLIC_URL = 'https://example.com/article';
 const SECOND_PUBLIC_URL = 'https://example.org/another';
 
 describe('resources.createLink', () => {
-  it('creates a link on a profile target and lazily creates the Pinned collection', async ({
+  it('creates a link on a profile target and lazily creates the Default collection', async ({
     task,
     onTestFinished,
   }) => {
@@ -141,7 +141,7 @@ describe('resources.createLink', () => {
 });
 
 describe('resources.list / listByCollection', () => {
-  it('list returns resources in the lazily-created Pinned collection', async ({
+  it('list returns resources in the lazily-created Default collection', async ({
     task,
     onTestFinished,
   }) => {
@@ -554,7 +554,7 @@ describe('resources.detachFromCollection (P2 cascade)', () => {
     });
     expect(result).toEqual({ ok: true });
 
-    // Resource is still alive (still in the original Pinned collection).
+    // Resource is still alive (still in the original Default collection).
     expect(await resourceExists(created.id)).toBe(true);
 
     const stillInOriginal = await adminCaller.resources.listByCollection({

@@ -12,7 +12,7 @@ import { computeSortOrderUpdates } from '../../utils/sorting';
 import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
 import { applySortOrderUpdates } from './ordering';
 
-const DEFAULT_COLLECTION_NAME = 'Pinned';
+const DEFAULT_COLLECTION_NAME = 'Default';
 
 export type CollectionForProfile = {
   id: string;
@@ -384,8 +384,8 @@ export const deleteCollection = async ({
 };
 
 // Caller authorizes. Returns the first collection on the profile, or creates
-// a Pinned one (sortOrder=0) when `createIfMissing`.
-export const resolveOrCreatePinnedCollection = async ({
+// a Default one (sortOrder=0) when `createIfMissing`.
+export const resolveOrCreateDefaultCollection = async ({
   profileId,
   createIfMissing,
 }: {
@@ -426,7 +426,7 @@ export const resolveOrCreatePinnedCollection = async ({
       .values({ name: DEFAULT_COLLECTION_NAME })
       .returning();
     if (!collection) {
-      throw new ConflictError('Failed to create Pinned collection');
+      throw new ConflictError('Failed to create Default collection');
     }
 
     const [link] = await tx
@@ -434,7 +434,7 @@ export const resolveOrCreatePinnedCollection = async ({
       .values({ collectionId: collection.id, profileId, sortOrder: 0 })
       .returning();
     if (!link) {
-      throw new ConflictError('Failed to attach Pinned collection to profile');
+      throw new ConflictError('Failed to attach Default collection to profile');
     }
 
     return {

@@ -20,7 +20,7 @@ import {
   ValidationError,
 } from '../../utils/error';
 import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
-import { resolveOrCreatePinnedCollection } from './collections';
+import { resolveOrCreateDefaultCollection } from './collections';
 import { resourcePathPrefix } from './constants';
 import {
   applySortOrderUpdates,
@@ -199,7 +199,7 @@ export const listResources = async ({
   authUserId: string;
   profileId: string;
 }): Promise<ResourceListResult> => {
-  // Try write first so admin callers create the Pinned collection lazily; fall back to read.
+  // Try write first so admin callers create the Default collection lazily; fall back to read.
   let canWrite = true;
   try {
     await assertProfileTypeAccess({
@@ -220,7 +220,7 @@ export const listResources = async ({
     });
   }
 
-  const collection = await resolveOrCreatePinnedCollection({
+  const collection = await resolveOrCreateDefaultCollection({
     profileId,
     createIfMissing: canWrite,
   });
@@ -289,7 +289,7 @@ const resolveTargetCollection = async ({
     },
   });
 
-  const collection = await resolveOrCreatePinnedCollection({
+  const collection = await resolveOrCreateDefaultCollection({
     profileId,
     createIfMissing: true,
   });
