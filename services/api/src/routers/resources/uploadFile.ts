@@ -1,12 +1,13 @@
 import {
   ALLOWED_RESOURCE_MIME_TYPES,
   UnauthorizedError,
-  assertResourceAccess,
+  assertProfileTypeAccess,
   getCurrentProfileId,
   uploadResourceFile,
 } from '@op/common';
 import { db } from '@op/db/client';
-import { resourceCollectionProfiles } from '@op/db/schema';
+import { EntityType, resourceCollectionProfiles } from '@op/db/schema';
+import { permission } from 'access-zones';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -50,10 +51,12 @@ export const uploadFile = router({
           ? target.profileId
           : await getCurrentProfileId(ctx.user.id);
 
-      await assertResourceAccess({
-        profileId,
-        authUserId: ctx.user.id,
-        level: 'write',
+      await assertProfileTypeAccess({
+        user: { id: ctx.user.id },
+        profileIds: [profileId],
+        policies: {
+          [EntityType.DECISION]: { decisions: permission.ADMIN },
+        },
       });
 
       if (target.kind === 'collection') {

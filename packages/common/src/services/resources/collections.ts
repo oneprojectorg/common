@@ -1,11 +1,15 @@
 import { db } from '@op/db/client';
-import { resourceCollectionProfiles, resourceCollections } from '@op/db/schema';
+import {
+  EntityType,
+  resourceCollectionProfiles,
+  resourceCollections,
+} from '@op/db/schema';
+import { permission } from 'access-zones';
 import { and, asc, count, eq, sql } from 'drizzle-orm';
 
 import { ConflictError, NotFoundError } from '../../utils/error';
 import { reorderByUpperNeighbor } from '../../utils/sorting';
-import { getCurrentProfileId } from '../access';
-import { assertResourceAccess } from './access';
+import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
 import { applySortOrderUpdates } from './ordering';
 
 const DEFAULT_COLLECTION_NAME = 'Pinned';
@@ -97,7 +101,13 @@ export const listCollections = async ({
   authUserId: string;
   profileId: string;
 }): Promise<CollectionForProfile[]> => {
-  await assertResourceAccess({ profileId, authUserId, level: 'read' });
+  await assertProfileTypeAccess({
+    user: { id: authUserId },
+    profileIds: [profileId],
+    policies: {
+      [EntityType.DECISION]: { decisions: permission.READ },
+    },
+  });
   return collectionsForProfileQuery({ exec: db, profileId });
 };
 
@@ -110,7 +120,13 @@ export const createCollection = async ({
   profileId: string;
   name: string;
 }): Promise<CollectionForProfile> => {
-  await assertResourceAccess({ profileId, authUserId, level: 'write' });
+  await assertProfileTypeAccess({
+    user: { id: authUserId },
+    profileIds: [profileId],
+    policies: {
+      [EntityType.DECISION]: { decisions: permission.ADMIN },
+    },
+  });
 
   return db.transaction(async (tx) => {
     await profileLock({ tx, profileId });
@@ -162,7 +178,13 @@ export const updateCollection = async ({
   patch: UpdateCollectionPatch;
 }): Promise<CollectionForProfile> => {
   const profileId = await getCurrentProfileId(authUserId);
-  await assertResourceAccess({ profileId, authUserId, level: 'write' });
+  await assertProfileTypeAccess({
+    user: { id: authUserId },
+    profileIds: [profileId],
+    policies: {
+      [EntityType.DECISION]: { decisions: permission.ADMIN },
+    },
+  });
 
   const existing = await collectionForProfileById({
     exec: db,
@@ -209,7 +231,13 @@ export const reorderCollection = async ({
   upperNeighborId: string | null;
 }): Promise<CollectionForProfile> => {
   const profileId = await getCurrentProfileId(authUserId);
-  await assertResourceAccess({ profileId, authUserId, level: 'write' });
+  await assertProfileTypeAccess({
+    user: { id: authUserId },
+    profileIds: [profileId],
+    policies: {
+      [EntityType.DECISION]: { decisions: permission.ADMIN },
+    },
+  });
 
   return db.transaction(async (tx) => {
     await profileLock({ tx, profileId });
@@ -276,7 +304,13 @@ export const deleteCollection = async ({
   id: string;
 }) => {
   const profileId = await getCurrentProfileId(authUserId);
-  await assertResourceAccess({ profileId, authUserId, level: 'write' });
+  await assertProfileTypeAccess({
+    user: { id: authUserId },
+    profileIds: [profileId],
+    policies: {
+      [EntityType.DECISION]: { decisions: permission.ADMIN },
+    },
+  });
 
   const existing = await collectionForProfileById({
     exec: db,

@@ -1,5 +1,6 @@
 import { db } from '@op/db/client';
 import {
+  EntityType,
   attachments,
   objectsInStorage,
   profileUsers,
@@ -9,6 +10,7 @@ import {
   type Resource,
   type ResourceType,
 } from '@op/db/schema';
+import { permission } from 'access-zones';
 import { and, asc, eq } from 'drizzle-orm';
 
 import {
@@ -17,8 +19,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils/error';
-import { getCurrentProfileId } from '../access';
-import { assertResourceAccess } from './access';
+import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
 import { resolveOrCreatePinnedCollection } from './collections';
 import { resourcePathPrefix } from './constants';
 import {
@@ -201,10 +202,22 @@ export const listResources = async ({
   // Try write first so admin callers create the Pinned collection lazily; fall back to read.
   let canWrite = true;
   try {
-    await assertResourceAccess({ profileId, authUserId, level: 'write' });
+    await assertProfileTypeAccess({
+      user: { id: authUserId },
+      profileIds: [profileId],
+      policies: {
+        [EntityType.DECISION]: { decisions: permission.ADMIN },
+      },
+    });
   } catch {
     canWrite = false;
-    await assertResourceAccess({ profileId, authUserId, level: 'read' });
+    await assertProfileTypeAccess({
+      user: { id: authUserId },
+      profileIds: [profileId],
+      policies: {
+        [EntityType.DECISION]: { decisions: permission.READ },
+      },
+    });
   }
 
   const collection = await resolveOrCreatePinnedCollection({
@@ -226,7 +239,13 @@ export const listResourcesByCollection = async ({
   collectionId: string;
 }): Promise<ResourceListResult> => {
   const profileId = await getCurrentProfileId(authUserId);
-  await assertResourceAccess({ profileId, authUserId, level: 'read' });
+  await assertProfileTypeAccess({
+    user: { id: authUserId },
+    profileIds: [profileId],
+    policies: {
+      [EntityType.DECISION]: { decisions: permission.READ },
+    },
+  });
   if (!(await profileOwnsCollection({ profileId, collectionId }))) {
     throw new UnauthorizedError("You don't have access to do this");
   }
@@ -241,7 +260,13 @@ const resolveTargetCollection = async ({
   scope: { profileId?: string; collectionId?: string };
 }): Promise<{ collectionId: string; profileId: string }> => {
   const profileId = scope.profileId ?? (await getCurrentProfileId(authUserId));
-  await assertResourceAccess({ profileId, authUserId, level: 'write' });
+  await assertProfileTypeAccess({
+    user: { id: authUserId },
+    profileIds: [profileId],
+    policies: {
+      [EntityType.DECISION]: { decisions: permission.ADMIN },
+    },
+  });
 
   if (scope.collectionId !== undefined) {
     if (
@@ -463,10 +488,12 @@ export const updateResource = async (
   input: UpdateResourceInput,
 ): Promise<ResourceDTO> => {
   const profileId = await getCurrentProfileId(input.authUserId);
-  await assertResourceAccess({
-    profileId,
-    authUserId: input.authUserId,
-    level: 'write',
+  await assertProfileTypeAccess({
+    user: { id: input.authUserId },
+    profileIds: [profileId],
+    policies: {
+      [EntityType.DECISION]: { decisions: permission.ADMIN },
+    },
   });
   if (!(await profileOwnsResource({ profileId, resourceId: input.id }))) {
     throw new NotFoundError('Resource', input.id);
@@ -520,7 +547,13 @@ export const reorderResource = async ({
   upperNeighborId: string | null;
 }): Promise<ResourceInCollectionDTO> => {
   const profileId = await getCurrentProfileId(authUserId);
-  await assertResourceAccess({ profileId, authUserId, level: 'write' });
+  await assertProfileTypeAccess({
+    user: { id: authUserId },
+    profileIds: [profileId],
+    policies: {
+      [EntityType.DECISION]: { decisions: permission.ADMIN },
+    },
+  });
   const [ownsCollection, ownsResource] = await Promise.all([
     profileOwnsCollection({ profileId, collectionId }),
     profileOwnsResource({ profileId, resourceId }),
@@ -573,7 +606,13 @@ export const attachResourceToCollection = async ({
   collectionId: string;
 }): Promise<ResourceInCollectionDTO> => {
   const profileId = await getCurrentProfileId(authUserId);
-  await assertResourceAccess({ profileId, authUserId, level: 'write' });
+  await assertProfileTypeAccess({
+    user: { id: authUserId },
+    profileIds: [profileId],
+    policies: {
+      [EntityType.DECISION]: { decisions: permission.ADMIN },
+    },
+  });
   const [ownsCollection, ownsResource] = await Promise.all([
     profileOwnsCollection({ profileId, collectionId }),
     profileOwnsResource({ profileId, resourceId }),
@@ -611,7 +650,13 @@ export const detachResourceFromCollection = async ({
   collectionId: string;
 }): Promise<{ ok: true }> => {
   const profileId = await getCurrentProfileId(authUserId);
-  await assertResourceAccess({ profileId, authUserId, level: 'write' });
+  await assertProfileTypeAccess({
+    user: { id: authUserId },
+    profileIds: [profileId],
+    policies: {
+      [EntityType.DECISION]: { decisions: permission.ADMIN },
+    },
+  });
   const [ownsCollection, ownsResource] = await Promise.all([
     profileOwnsCollection({ profileId, collectionId }),
     profileOwnsResource({ profileId, resourceId }),
@@ -668,7 +713,13 @@ export const deleteResource = async ({
   id: string;
 }): Promise<{ ok: true }> => {
   const profileId = await getCurrentProfileId(authUserId);
-  await assertResourceAccess({ profileId, authUserId, level: 'write' });
+  await assertProfileTypeAccess({
+    user: { id: authUserId },
+    profileIds: [profileId],
+    policies: {
+      [EntityType.DECISION]: { decisions: permission.ADMIN },
+    },
+  });
   if (!(await profileOwnsResource({ profileId, resourceId: id }))) {
     throw new NotFoundError('Resource', id);
   }

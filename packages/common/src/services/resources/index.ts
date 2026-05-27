@@ -1,4 +1,3 @@
-export * from './access';
 export * from './channelScope';
 export * from './collections';
 export * from './constants';
