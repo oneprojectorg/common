@@ -54,7 +54,6 @@ export interface ListProposalsInput {
   offset?: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'status' | 'votes';
   dir?: 'asc' | 'desc';
-  authUserId: string;
   skipAccessCheck?: boolean; // For trusted contexts like background jobs
   /**
    * When true, each returned proposal carries a `voteCount` aggregated from
@@ -169,7 +168,7 @@ export const listProposals = async ({
 
   // Resolve the caller's profile once; it's reused for ballot auth, the
   // HIDDEN visibility filter, and owner/editable checks further down.
-  const currentProfileId = await getCurrentProfileId(input.authUserId);
+  const currentProfileId = await getCurrentProfileId(user.id);
 
   // Fetch the instance row up front and resolve the explicit ID scope in
   // parallel. The row is reused for the phase-resolution context (instead of
@@ -227,7 +226,7 @@ export const listProposals = async ({
     const ids = await getPhaseProposalAndDraftIds({
       instance,
       phaseId: input.phaseId,
-      authUserId: input.authUserId,
+      authUserId: user.id,
     });
     return { phaseProposalIds: ids.nonDraftIds, phaseDraftIds: ids.draftIds };
   })();
@@ -380,7 +379,7 @@ export const listProposals = async ({
               db
                 .select({ profileId: profileUsers.profileId })
                 .from(profileUsers)
-                .where(eq(profileUsers.authUserId, input.authUserId)),
+                .where(eq(profileUsers.authUserId, user.id)),
             ),
           )!,
         )!;

@@ -60,7 +60,6 @@ export const exportProposals = inngest.createFunction(
             status: filters.status,
             dir: filters.dir,
             limit: 1000, // High limit for exports
-            authUserId: userId,
             skipAccessCheck: true, // Access already verified when export was created
           },
           user: userRecord as any,

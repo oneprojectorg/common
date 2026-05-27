@@ -160,7 +160,6 @@ export const getLatestResultWithProposals = async ({
     listProposals({
       input: {
         processInstanceId,
-        authUserId: user.id,
         proposalIds: paginatedProposalIds,
         limit: paginatedProposalIds.length,
       },
