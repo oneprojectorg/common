@@ -1,15 +1,13 @@
-import { db, eq, inArray } from '@op/db/client';
-import {
-  resourceCollectionItems,
-  resourceCollectionProfiles,
-  resourceCollections,
-  resources,
-  users,
-} from '@op/db/schema';
+import { and, db, eq } from '@op/db/client';
+import { resourceCollectionItems } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
-import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
-import { createAuthenticatedCaller } from '../../test/supabase-utils';
+import {
+  createMemberCaller,
+  createOutsiderCaller,
+  resourceExists,
+  setupInstance,
+} from '../../test/helpers/resourcesTestUtils';
 
 type ResourceInCollectionDTO = {
   id: string;
@@ -20,92 +18,18 @@ type ResourceInCollectionDTO = {
   linkUrl: string | null;
 };
 
-const requireFirstInstance = <T extends { profileId: string }>(
-  instances: T[],
-): T => {
-  const instance = instances[0];
-  if (!instance) {
-    throw new Error('No instance created');
-  }
-  return instance;
-};
-
-const pinCurrentProfile = async (email: string, profileId: string) => {
-  await db
-    .update(users)
-    .set({ currentProfileId: profileId })
-    .where(eq(users.email, email));
-};
-
-const registerCleanup = (
-  onTestFinished: (fn: () => void | Promise<void>) => void,
-  profileIds: string[],
-) => {
-  onTestFinished(async () => {
-    if (profileIds.length === 0) {
-      return;
-    }
-    // Any resources still alive in our collections need to go before the
-    // collections are deleted — otherwise the resource rows stay behind
-    // (resources don't reference collections, so collection cascade can't
-    // reach them).
-    const collectionRows = await db
-      .select({ id: resourceCollectionProfiles.collectionId })
-      .from(resourceCollectionProfiles)
-      .where(inArray(resourceCollectionProfiles.profileId, profileIds));
-
-    if (collectionRows.length === 0) {
-      return;
-    }
-
-    const collectionIds = collectionRows.map((row) => row.id);
-
-    const items = await db
-      .select({ resourceId: resourceCollectionItems.resourceId })
-      .from(resourceCollectionItems)
-      .where(inArray(resourceCollectionItems.collectionId, collectionIds));
-
-    if (items.length > 0) {
-      await db.delete(resources).where(
-        inArray(
-          resources.id,
-          items.map((row) => row.resourceId),
-        ),
-      );
-    }
-
-    await db
-      .delete(resourceCollections)
-      .where(inArray(resourceCollections.id, collectionIds));
-  });
-};
-
-const resourceExists = async (id: string): Promise<boolean> => {
-  const [row] = await db
-    .select({ id: resources.id })
-    .from(resources)
-    .where(eq(resources.id, id))
-    .limit(1);
-  return Boolean(row);
-};
-
 const PUBLIC_URL = 'https://example.com/article';
-const ANOTHER_URL = 'https://example.org/another';
+const SECOND_PUBLIC_URL = 'https://example.org/another';
 
 describe('resources.createLink', () => {
   it('creates a link on a profile target and lazily creates the Pinned collection', async ({
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
 
     const row = await adminCaller.resources.createLink({
       target: { kind: 'profile', profileId: instance.profileId },
@@ -124,16 +48,11 @@ describe('resources.createLink', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    await pinCurrentProfile(setup.userEmail, instance.profileId);
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const collection = await adminCaller.resources.collections.create({
       profileId: instance.profileId,
       name: 'Articles',
@@ -149,24 +68,25 @@ describe('resources.createLink', () => {
     expect(row.sortOrder).toBe(0);
   });
 
-  it('rejects loopback URLs (SSRF guard)', async ({ task, onTestFinished }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+  it('rejects private-host URLs via the SSRF guard (BAD_REQUEST)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
 
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
-
+    // Both should fail at zod validation with TRPCError BAD_REQUEST — the SSRF
+    // refinement runs before the service layer, so this also confirms the
+    // guard never even attempts the DB write.
     await expect(
       adminCaller.resources.createLink({
         target: { kind: 'profile', profileId: instance.profileId },
         title: 'Loopback',
         linkUrl: 'http://127.0.0.1:8080/internal',
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
 
     await expect(
       adminCaller.resources.createLink({
@@ -174,26 +94,22 @@ describe('resources.createLink', () => {
         title: 'RFC1918',
         linkUrl: 'http://10.0.0.1/secret',
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
 
   it('rejects a non-admin member from creating a link', async ({
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { testData, setup, instance } = await setupInstance({
+      task,
+      onTestFinished,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    const member = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
+    const { caller: memberCaller } = await createMemberCaller({
+      testData,
+      setup,
+      instanceProfileId: instance.profileId,
     });
-    const memberCaller = await createAuthenticatedCaller(member.email);
 
     await expect(
       memberCaller.resources.createLink({
@@ -208,22 +124,11 @@ describe('resources.createLink', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { testData, instance } = await setupInstance({
+      task,
+      onTestFinished,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    const outsiderSetup = await testData.createDecisionSetup({
-      instanceCount: 0,
-    });
-    const outsider = await testData.createMemberUser({
-      organization: outsiderSetup.organization,
-      instanceProfileIds: [],
-    });
-    const outsiderCaller = await createAuthenticatedCaller(outsider.email);
+    const { caller: outsiderCaller } = await createOutsiderCaller(testData);
 
     await expect(
       outsiderCaller.resources.createLink({
@@ -240,15 +145,10 @@ describe('resources.list / listByCollection', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const created = await adminCaller.resources.createLink({
       target: { kind: 'profile', profileId: instance.profileId },
       title: 'Listed',
@@ -264,32 +164,19 @@ describe('resources.list / listByCollection', () => {
     ).toContain(created.id);
   });
 
-  it('listByCollection requires the caller to own the collection', async ({
+  it('listByCollection requires the caller to own the collection (UnauthorizedError, not AccessControlException — intentional service-layer choice)', async ({
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { testData, instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const collection = await adminCaller.resources.collections.create({
       profileId: instance.profileId,
       name: 'Owner-only',
     });
-
-    const outsiderSetup = await testData.createDecisionSetup({
-      instanceCount: 0,
-    });
-    const outsider = await testData.createMemberUser({
-      organization: outsiderSetup.organization,
-      instanceProfileIds: [],
-    });
-    const outsiderCaller = await createAuthenticatedCaller(outsider.email);
+    const { caller: outsiderCaller } = await createOutsiderCaller(testData);
 
     await expect(
       outsiderCaller.resources.listByCollection({
@@ -304,16 +191,11 @@ describe('resources.update', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    await pinCurrentProfile(setup.userEmail, instance.profileId);
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const created = await adminCaller.resources.createLink({
       target: { kind: 'profile', profileId: instance.profileId },
       title: 'Original',
@@ -328,17 +210,15 @@ describe('resources.update', () => {
     expect(updated.type).toBe('link');
   });
 
-  it('rejects an SSRF linkUrl on update', async ({ task, onTestFinished }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+  it('rejects a private-host linkUrl on update (BAD_REQUEST)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    await pinCurrentProfile(setup.userEmail, instance.profileId);
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const created = await adminCaller.resources.createLink({
       target: { kind: 'profile', profileId: instance.profileId },
       title: 'Public',
@@ -350,35 +230,30 @@ describe('resources.update', () => {
         id: created.id,
         patch: { linkUrl: 'http://192.168.0.1/private' },
       }),
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
 
-  it('rejects a non-admin member from updating a resource', async ({
+  it('rejects a pinned non-admin member from updating a resource', async ({
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { testData, setup, instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    await pinCurrentProfile(setup.userEmail, instance.profileId);
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const created = await adminCaller.resources.createLink({
       target: { kind: 'profile', profileId: instance.profileId },
       title: 'Owner-only',
       linkUrl: PUBLIC_URL,
     });
 
-    const member = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
+    const { caller: memberCaller } = await createMemberCaller({
+      testData,
+      setup,
+      instanceProfileId: instance.profileId,
+      pin: true,
     });
-    await pinCurrentProfile(member.email, instance.profileId);
-    const memberCaller = await createAuthenticatedCaller(member.email);
 
     await expect(
       memberCaller.resources.update({
@@ -387,6 +262,59 @@ describe('resources.update', () => {
       }),
     ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
   });
+
+  it('rejects an unpinned member updating a resource (realistic flow → NotFoundError)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, setup, instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
+    });
+    const created = await adminCaller.resources.createLink({
+      target: { kind: 'profile', profileId: instance.profileId },
+      title: 'Owner-only',
+      linkUrl: PUBLIC_URL,
+    });
+
+    const { caller: memberCaller } = await createMemberCaller({
+      testData,
+      setup,
+      instanceProfileId: instance.profileId,
+    });
+
+    await expect(
+      memberCaller.resources.update({
+        id: created.id,
+        patch: { title: 'Hijack' },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+  });
+
+  it('rejects an outsider from updating a resource', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
+    });
+    const created = await adminCaller.resources.createLink({
+      target: { kind: 'profile', profileId: instance.profileId },
+      title: 'Owner-only',
+      linkUrl: PUBLIC_URL,
+    });
+
+    const { caller: outsiderCaller } = await createOutsiderCaller(testData);
+    await expect(
+      outsiderCaller.resources.update({
+        id: created.id,
+        patch: { title: 'Hijack' },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+  });
 });
 
 describe('resources.reorder', () => {
@@ -394,16 +322,11 @@ describe('resources.reorder', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    await pinCurrentProfile(setup.userEmail, instance.profileId);
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
 
     const first = await adminCaller.resources.createLink({
       target: { kind: 'profile', profileId: instance.profileId },
@@ -415,11 +338,10 @@ describe('resources.reorder', () => {
     const second = await adminCaller.resources.createLink({
       target: { kind: 'profile', profileId: instance.profileId },
       title: 'Second',
-      linkUrl: ANOTHER_URL,
+      linkUrl: SECOND_PUBLIC_URL,
     });
     expect(first.collectionId).toBe(second.collectionId);
 
-    // Move `first` to the top (sortOrder=0) by passing a null upper neighbor.
     const moved = await adminCaller.resources.reorder({
       id: first.id,
       collectionId: first.collectionId,
@@ -436,23 +358,48 @@ describe('resources.reorder', () => {
       second.id,
     ]);
   });
-});
 
-describe('resources.attachToCollection', () => {
-  it('attaches a resource to a second collection and is idempotent (P1)', async ({
+  it('rejects a pinned member from reordering resources', async ({
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { testData, setup, instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
+    const created = await adminCaller.resources.createLink({
+      target: { kind: 'profile', profileId: instance.profileId },
+      title: 'A',
+      linkUrl: PUBLIC_URL,
+    });
+    const { caller: memberCaller } = await createMemberCaller({
+      testData,
+      setup,
+      instanceProfileId: instance.profileId,
+      pin: true,
+    });
 
-    await pinCurrentProfile(setup.userEmail, instance.profileId);
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    await expect(
+      memberCaller.resources.reorder({
+        id: created.id,
+        collectionId: created.collectionId,
+        upperNeighborId: null,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+  });
+});
+
+describe('resources.attachToCollection', () => {
+  it('attaches a resource to a second collection (happy path)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
+    });
 
     const created = await adminCaller.resources.createLink({
       target: { kind: 'profile', profileId: instance.profileId },
@@ -470,16 +417,6 @@ describe('resources.attachToCollection', () => {
     });
     expect(attached.collectionId).toBe(secondCollection.id);
     expect(attached.sortOrder).toBe(0);
-
-    // Calling attach again must NOT trip the unique index — it should return
-    // the existing membership. This exercises the P1 race fix where the
-    // existence probe is now inside the lock.
-    const reattached = await adminCaller.resources.attachToCollection({
-      id: created.id,
-      collectionId: secondCollection.id,
-    });
-    expect(reattached.collectionId).toBe(secondCollection.id);
-    expect(reattached.id).toBe(created.id);
 
     // Both collections still hold the resource.
     const inOriginal = await adminCaller.resources.listByCollection({
@@ -499,6 +436,91 @@ describe('resources.attachToCollection', () => {
       ),
     ).toBeTruthy();
   });
+
+  it('concurrent attaches to the same (resource, collection) leave exactly one membership row (P1 race fix)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
+    });
+
+    const created = await adminCaller.resources.createLink({
+      target: { kind: 'profile', profileId: instance.profileId },
+      title: 'Shared',
+      linkUrl: PUBLIC_URL,
+    });
+    const secondCollection = await adminCaller.resources.collections.create({
+      profileId: instance.profileId,
+      name: 'Other',
+    });
+
+    // Fire two attach calls in parallel — both must succeed without tripping
+    // the (collection_id, resource_id) unique index. The service serializes
+    // them via the pg advisory lock on the collection.
+    const [a, b] = await Promise.all([
+      adminCaller.resources.attachToCollection({
+        id: created.id,
+        collectionId: secondCollection.id,
+      }),
+      adminCaller.resources.attachToCollection({
+        id: created.id,
+        collectionId: secondCollection.id,
+      }),
+    ]);
+
+    expect(a.collectionId).toBe(secondCollection.id);
+    expect(b.collectionId).toBe(secondCollection.id);
+    expect(a.sortOrder).toBe(b.sortOrder);
+
+    // Verify the DB really only has one row, not two.
+    const rows = await db
+      .select({ id: resourceCollectionItems.id })
+      .from(resourceCollectionItems)
+      .where(
+        and(
+          eq(resourceCollectionItems.collectionId, secondCollection.id),
+          eq(resourceCollectionItems.resourceId, created.id),
+        ),
+      );
+    expect(rows).toHaveLength(1);
+  });
+
+  it('rejects a pinned member from attaching to a collection', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, setup, instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
+    });
+    const created = await adminCaller.resources.createLink({
+      target: { kind: 'profile', profileId: instance.profileId },
+      title: 'Shared',
+      linkUrl: PUBLIC_URL,
+    });
+    const secondCollection = await adminCaller.resources.collections.create({
+      profileId: instance.profileId,
+      name: 'Other',
+    });
+
+    const { caller: memberCaller } = await createMemberCaller({
+      testData,
+      setup,
+      instanceProfileId: instance.profileId,
+      pin: true,
+    });
+
+    await expect(
+      memberCaller.resources.attachToCollection({
+        id: created.id,
+        collectionId: secondCollection.id,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+  });
 });
 
 describe('resources.detachFromCollection (P2 cascade)', () => {
@@ -506,16 +528,11 @@ describe('resources.detachFromCollection (P2 cascade)', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    await pinCurrentProfile(setup.userEmail, instance.profileId);
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
 
     const created = await adminCaller.resources.createLink({
       target: { kind: 'profile', profileId: instance.profileId },
@@ -554,16 +571,11 @@ describe('resources.detachFromCollection (P2 cascade)', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    await pinCurrentProfile(setup.userEmail, instance.profileId);
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
 
     const created = await adminCaller.resources.createLink({
       target: { kind: 'profile', profileId: instance.profileId },
@@ -580,6 +592,35 @@ describe('resources.detachFromCollection (P2 cascade)', () => {
     // P2: last-detach cascades the resource row itself.
     expect(await resourceExists(created.id)).toBe(false);
   });
+
+  it('rejects a pinned member from detaching from a collection', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, setup, instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
+    });
+    const created = await adminCaller.resources.createLink({
+      target: { kind: 'profile', profileId: instance.profileId },
+      title: 'A',
+      linkUrl: PUBLIC_URL,
+    });
+    const { caller: memberCaller } = await createMemberCaller({
+      testData,
+      setup,
+      instanceProfileId: instance.profileId,
+      pin: true,
+    });
+
+    await expect(
+      memberCaller.resources.detachFromCollection({
+        id: created.id,
+        collectionId: created.collectionId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+  });
 });
 
 describe('resources.delete', () => {
@@ -587,16 +628,11 @@ describe('resources.delete', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    await pinCurrentProfile(setup.userEmail, instance.profileId);
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
 
     const created = await adminCaller.resources.createLink({
       target: { kind: 'profile', profileId: instance.profileId },
@@ -634,32 +670,27 @@ describe('resources.delete', () => {
     ).toBeUndefined();
   });
 
-  it('rejects a non-admin member from deleting a resource', async ({
+  it('rejects a pinned non-admin member from deleting a resource', async ({
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { testData, setup, instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    await pinCurrentProfile(setup.userEmail, instance.profileId);
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const created = await adminCaller.resources.createLink({
       target: { kind: 'profile', profileId: instance.profileId },
       title: 'Owner-only',
       linkUrl: PUBLIC_URL,
     });
 
-    const member = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
+    const { caller: memberCaller } = await createMemberCaller({
+      testData,
+      setup,
+      instanceProfileId: instance.profileId,
+      pin: true,
     });
-    await pinCurrentProfile(member.email, instance.profileId);
-    const memberCaller = await createAuthenticatedCaller(member.email);
 
     await expect(
       memberCaller.resources.delete({ id: created.id }),

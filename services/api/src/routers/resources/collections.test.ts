@@ -1,13 +1,12 @@
-import { db, eq, inArray } from '@op/db/client';
-import {
-  resourceCollectionProfiles,
-  resourceCollections,
-  users,
-} from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import { resourceCollectionProfiles } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
-import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
-import { createAuthenticatedCaller } from '../../test/supabase-utils';
+import {
+  createMemberCaller,
+  createOutsiderCaller,
+  setupInstance,
+} from '../../test/helpers/resourcesTestUtils';
 
 type CollectionDTO = {
   id: string;
@@ -17,66 +16,15 @@ type CollectionDTO = {
   updatedAt: string | null;
 };
 
-const requireFirstInstance = <T extends { profileId: string }>(
-  instances: T[],
-): T => {
-  const instance = instances[0];
-  if (!instance) {
-    throw new Error('No instance created');
-  }
-  return instance;
-};
-
-/**
- * Pins the user's currentProfileId to a decision instance so that
- * `getCurrentProfileId(authUserId)` returns it. switchProfile only allows
- * org/individual profiles, so we hit the row directly for instance profiles.
- */
-const pinCurrentProfile = async (email: string, profileId: string) => {
-  await db
-    .update(users)
-    .set({ currentProfileId: profileId })
-    .where(eq(users.email, email));
-};
-
-const registerCleanup = (
-  onTestFinished: (fn: () => void | Promise<void>) => void,
-  profileIds: string[],
-) => {
-  onTestFinished(async () => {
-    if (profileIds.length === 0) {
-      return;
-    }
-    const collections = await db
-      .select({ id: resourceCollectionProfiles.collectionId })
-      .from(resourceCollectionProfiles)
-      .where(inArray(resourceCollectionProfiles.profileId, profileIds));
-
-    if (collections.length > 0) {
-      await db.delete(resourceCollections).where(
-        inArray(
-          resourceCollections.id,
-          collections.map((row) => row.id),
-        ),
-      );
-    }
-  });
-};
-
 describe('resources.collections.list', () => {
   it('returns an empty list when the instance has no collections', async ({
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
 
     const rows = await adminCaller.resources.collections.list({
       profileId: instance.profileId,
@@ -88,25 +36,20 @@ describe('resources.collections.list', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { testData, setup, instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     await adminCaller.resources.collections.create({
       profileId: instance.profileId,
       name: 'Admin Created',
     });
 
-    const member = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
+    const { caller: memberCaller } = await createMemberCaller({
+      testData,
+      setup,
+      instanceProfileId: instance.profileId,
     });
-    const memberCaller = await createAuthenticatedCaller(member.email);
 
     const rows = await memberCaller.resources.collections.list({
       profileId: instance.profileId,
@@ -118,22 +61,11 @@ describe('resources.collections.list', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { testData, instance } = await setupInstance({
+      task,
+      onTestFinished,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    const outsiderSetup = await testData.createDecisionSetup({
-      instanceCount: 0,
-    });
-    const outsider = await testData.createMemberUser({
-      organization: outsiderSetup.organization,
-      instanceProfileIds: [],
-    });
-    const outsiderCaller = await createAuthenticatedCaller(outsider.email);
+    const { caller: outsiderCaller } = await createOutsiderCaller(testData);
 
     await expect(
       outsiderCaller.resources.collections.list({
@@ -148,15 +80,10 @@ describe('resources.collections.create', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
 
     const first = await adminCaller.resources.collections.create({
       profileId: instance.profileId,
@@ -177,19 +104,15 @@ describe('resources.collections.create', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { testData, setup, instance } = await setupInstance({
+      task,
+      onTestFinished,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    const member = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
+    const { caller: memberCaller } = await createMemberCaller({
+      testData,
+      setup,
+      instanceProfileId: instance.profileId,
     });
-    const memberCaller = await createAuthenticatedCaller(member.email);
 
     await expect(
       memberCaller.resources.collections.create({
@@ -203,22 +126,11 @@ describe('resources.collections.create', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { testData, instance } = await setupInstance({
+      task,
+      onTestFinished,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    const outsiderSetup = await testData.createDecisionSetup({
-      instanceCount: 0,
-    });
-    const outsider = await testData.createMemberUser({
-      organization: outsiderSetup.organization,
-      instanceProfileIds: [],
-    });
-    const outsiderCaller = await createAuthenticatedCaller(outsider.email);
+    const { caller: outsiderCaller } = await createOutsiderCaller(testData);
 
     await expect(
       outsiderCaller.resources.collections.create({
@@ -230,29 +142,30 @@ describe('resources.collections.create', () => {
 });
 
 describe('resources.collections.update', () => {
-  it('renames a collection and bumps updatedAt on the join row (P3a)', async ({
+  it('renames a collection and bumps the join-row updatedAt (P3a)', async ({
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
 
-    // updateCollection reads currentProfileId; pin it to the instance.
-    await pinCurrentProfile(setup.userEmail, instance.profileId);
-
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const created = await adminCaller.resources.collections.create({
       profileId: instance.profileId,
       name: 'Original',
     });
-    // now() resolution is sub-ms but transaction-bound; wait so the bump can
-    // be observed as a strict inequality rather than equality.
-    await new Promise((r) => setTimeout(r, 50));
+
+    const beforeRow = await db
+      .select({ updatedAt: resourceCollectionProfiles.updatedAt })
+      .from(resourceCollectionProfiles)
+      .where(eq(resourceCollectionProfiles.collectionId, created.id))
+      .limit(1);
+    const beforeUpdatedAt = beforeRow[0]?.updatedAt;
+    if (!beforeUpdatedAt) {
+      throw new Error('Failed to read pre-update join-row updatedAt');
+    }
 
     const updated = await adminCaller.resources.collections.update({
       id: created.id,
@@ -262,37 +175,44 @@ describe('resources.collections.update', () => {
     expect(updated.id).toBe(created.id);
     expect(updated.name).toBe('Renamed');
     expect(updated.updatedAt).toBeTruthy();
-    expect(updated.createdAt).toBeTruthy();
-    expect(new Date(updated.updatedAt as string).getTime()).toBeGreaterThan(
-      new Date(updated.createdAt as string).getTime(),
+
+    const afterRow = await db
+      .select({ updatedAt: resourceCollectionProfiles.updatedAt })
+      .from(resourceCollectionProfiles)
+      .where(eq(resourceCollectionProfiles.collectionId, created.id))
+      .limit(1);
+    const afterUpdatedAt = afterRow[0]?.updatedAt;
+    if (!afterUpdatedAt) {
+      throw new Error('Failed to read post-update join-row updatedAt');
+    }
+    // Direct on the join row — no sleep, no DTO timestamp coercion. The
+    // service's `set({ updatedAt: sql\`now()\` })` must produce a strictly
+    // greater timestamp than the initial insert's now().
+    expect(new Date(afterUpdatedAt).getTime()).toBeGreaterThan(
+      new Date(beforeUpdatedAt).getTime(),
     );
   });
 
-  it('rejects updating a collection the caller does not own', async ({
+  it('rejects updating a collection the caller does not own (pinned member → admin policy fails)', async ({
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { testData, setup, instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    await pinCurrentProfile(setup.userEmail, instance.profileId);
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const created = await adminCaller.resources.collections.create({
       profileId: instance.profileId,
       name: 'Owner-only',
     });
 
-    const member = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
+    const { caller: memberCaller } = await createMemberCaller({
+      testData,
+      setup,
+      instanceProfileId: instance.profileId,
+      pin: true,
     });
-    await pinCurrentProfile(member.email, instance.profileId);
-    const memberCaller = await createAuthenticatedCaller(member.email);
 
     await expect(
       memberCaller.resources.collections.update({
@@ -301,6 +221,60 @@ describe('resources.collections.update', () => {
       }),
     ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
   });
+
+  it('rejects an unpinned member updating a collection (realistic flow → NotFoundError on individual profile scope)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, setup, instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
+    });
+    const created = await adminCaller.resources.collections.create({
+      profileId: instance.profileId,
+      name: 'Owner-only',
+    });
+
+    // No pinning: getCurrentProfileId returns the member's individual profile,
+    // which lenient-passes the DECISION policy and then doesn't own the
+    // collection — yielding NotFoundError, not AccessControlException.
+    const { caller: memberCaller } = await createMemberCaller({
+      testData,
+      setup,
+      instanceProfileId: instance.profileId,
+    });
+
+    await expect(
+      memberCaller.resources.collections.update({
+        id: created.id,
+        patch: { name: 'Hijack' },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+  });
+
+  it('rejects an outsider from updating a collection', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
+    });
+    const created = await adminCaller.resources.collections.create({
+      profileId: instance.profileId,
+      name: 'Owner-only',
+    });
+
+    const { caller: outsiderCaller } = await createOutsiderCaller(testData);
+    await expect(
+      outsiderCaller.resources.collections.update({
+        id: created.id,
+        patch: { name: 'Hijack' },
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+  });
 });
 
 describe('resources.collections.reorder', () => {
@@ -308,16 +282,11 @@ describe('resources.collections.reorder', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    await pinCurrentProfile(setup.userEmail, instance.profileId);
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
 
     const a = await adminCaller.resources.collections.create({
       profileId: instance.profileId,
@@ -330,7 +299,6 @@ describe('resources.collections.reorder', () => {
     expect(a.sortOrder).toBe(0);
     expect(b.sortOrder).toBe(1);
 
-    // Move B to the top.
     const reordered = await adminCaller.resources.collections.reorder({
       id: b.id,
       upperNeighborId: null,
@@ -343,6 +311,56 @@ describe('resources.collections.reorder', () => {
     });
     expect(rows.map((r: CollectionDTO) => r.id)).toEqual([b.id, a.id]);
   });
+
+  it('rejects a pinned member from reordering collections', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, setup, instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
+    });
+    const created = await adminCaller.resources.collections.create({
+      profileId: instance.profileId,
+      name: 'A',
+    });
+    const { caller: memberCaller } = await createMemberCaller({
+      testData,
+      setup,
+      instanceProfileId: instance.profileId,
+      pin: true,
+    });
+
+    await expect(
+      memberCaller.resources.collections.reorder({
+        id: created.id,
+        upperNeighborId: null,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+  });
+
+  it('rejects an outsider from reordering collections', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { testData, instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
+    });
+    const created = await adminCaller.resources.collections.create({
+      profileId: instance.profileId,
+      name: 'A',
+    });
+    const { caller: outsiderCaller } = await createOutsiderCaller(testData);
+    await expect(
+      outsiderCaller.resources.collections.reorder({
+        id: created.id,
+        upperNeighborId: null,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+  });
 });
 
 describe('resources.collections.delete', () => {
@@ -350,16 +368,11 @@ describe('resources.collections.delete', () => {
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    await pinCurrentProfile(setup.userEmail, instance.profileId);
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
 
     const created = await adminCaller.resources.collections.create({
       profileId: instance.profileId,
@@ -379,31 +392,26 @@ describe('resources.collections.delete', () => {
     ).toBeUndefined();
   });
 
-  it('rejects a non-admin member from deleting a collection', async ({
+  it('rejects a pinned non-admin member from deleting a collection', async ({
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
+    const { testData, setup, instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+      pinAdmin: true,
     });
-    const instance = requireFirstInstance(setup.instances);
-    registerCleanup(onTestFinished, [instance.profileId]);
-
-    await pinCurrentProfile(setup.userEmail, instance.profileId);
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const created = await adminCaller.resources.collections.create({
       profileId: instance.profileId,
       name: 'Protected',
     });
 
-    const member = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
+    const { caller: memberCaller } = await createMemberCaller({
+      testData,
+      setup,
+      instanceProfileId: instance.profileId,
+      pin: true,
     });
-    await pinCurrentProfile(member.email, instance.profileId);
-    const memberCaller = await createAuthenticatedCaller(member.email);
 
     await expect(
       memberCaller.resources.collections.delete({ id: created.id }),
