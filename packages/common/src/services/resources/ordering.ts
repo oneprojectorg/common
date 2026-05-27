@@ -1,4 +1,4 @@
-import type { db as dbType } from '@op/db/client';
+import type { DbClient, TransactionType } from '@op/db/client';
 import { resourceCollectionItems } from '@op/db/schema';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import type { PgTable } from 'drizzle-orm/pg-core';
@@ -6,15 +6,12 @@ import type { PgTable } from 'drizzle-orm/pg-core';
 import { NotFoundError } from '../../utils/error';
 import { reorderByUpperNeighbor } from '../../utils/sorting';
 
-type Transaction = Parameters<Parameters<typeof dbType.transaction>[0]>[0];
-export type DbOrTx = typeof dbType | Transaction;
-
 // Serializes concurrent ordering writes on one collection for the transaction.
 export const lockCollection = async ({
   tx,
   collectionId,
 }: {
-  tx: Transaction;
+  tx: TransactionType;
   collectionId: string;
 }): Promise<void> => {
   await tx.execute(
@@ -30,7 +27,7 @@ export const shiftSortOrderForInsertAtTop = async ({
   tx,
   collectionId,
 }: {
-  tx: Transaction;
+  tx: TransactionType;
   collectionId: string;
 }): Promise<void> => {
   await tx
@@ -52,7 +49,7 @@ export const computeReorder = async ({
   itemId,
   upperNeighborId,
 }: {
-  tx: Transaction;
+  tx: TransactionType;
   collectionId: string;
   itemId: string;
   upperNeighborId: string | null;
@@ -109,7 +106,7 @@ export const applySortOrderUpdates = async ({
   table,
   updates,
 }: {
-  tx: Transaction;
+  tx: TransactionType;
   table: PgTable;
   updates: Array<{ id: string; sortOrder: number }>;
 }): Promise<void> => {
@@ -151,7 +148,7 @@ export const findCollectionItem = async ({
   collectionId,
   resourceId,
 }: {
-  tx: DbOrTx;
+  tx: DbClient;
   collectionId: string;
   resourceId: string;
 }) => {
