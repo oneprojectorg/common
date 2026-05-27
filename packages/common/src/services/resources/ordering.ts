@@ -1,12 +1,14 @@
 import type { DbClient, TransactionType } from '@op/db/client';
 import { resourceCollectionItems } from '@op/db/schema';
+import { generateKeyBetween } from 'fractional-indexing';
 import { and, asc, eq, sql } from 'drizzle-orm';
-import type { PgTable } from 'drizzle-orm/pg-core';
 
 import { NotFoundError } from '../../utils/error';
-import { computeSortOrderUpdates } from '../../utils/sorting';
 
 // Serializes concurrent ordering writes on one collection for the transaction.
+// With fractional keys the critical section is only the read-neighbors →
+// write-row window, but two concurrent inserts at the same slot would still
+// compute the same midpoint and trip the unique index, so we keep the lock.
 export const lockCollection = async ({
   tx,
   collectionId,
@@ -19,30 +21,27 @@ export const lockCollection = async ({
   );
 };
 
-// Shift existing items up by one so the caller can insert at sortOrder 0.
-// Two-pass via a negative range — a single `+ 1` UPDATE trips the per-row
-// unique index on (collection_id, sort_order). Same trick as
-// applySortOrderUpdates.
-export const shiftSortOrderForInsertAtTop = async ({
+// Caller holds lockCollection. Returns the sortKey to assign to a new row
+// being inserted at the top of `collectionId` (above all existing rows).
+export const generateKeyForInsertAtTop = async ({
   tx,
   collectionId,
 }: {
   tx: TransactionType;
   collectionId: string;
-}): Promise<void> => {
-  await tx
-    .update(resourceCollectionItems)
-    .set({ sortOrder: sql`-1 - ${resourceCollectionItems.sortOrder}` })
-    .where(eq(resourceCollectionItems.collectionId, collectionId));
-
-  await tx
-    .update(resourceCollectionItems)
-    .set({ sortOrder: sql`-${resourceCollectionItems.sortOrder}` })
-    .where(eq(resourceCollectionItems.collectionId, collectionId));
+}): Promise<string> => {
+  const [head] = await tx
+    .select({ sortKey: resourceCollectionItems.sortKey })
+    .from(resourceCollectionItems)
+    .where(eq(resourceCollectionItems.collectionId, collectionId))
+    .orderBy(asc(resourceCollectionItems.sortKey))
+    .limit(1);
+  return generateKeyBetween(null, head?.sortKey ?? null);
 };
 
-// Caller must hold lockCollection so concurrent writers each re-interpret
-// upperNeighborId against the freshly-restriped state.
+// Caller holds lockCollection. Reads the moved item + upperNeighbor + the row
+// immediately after upperNeighbor, computes one new sortKey via
+// generateKeyBetween, and returns it. Null upperNeighborId means "move to top".
 export const computeReorder = async ({
   tx,
   collectionId,
@@ -53,7 +52,7 @@ export const computeReorder = async ({
   collectionId: string;
   itemId: string;
   upperNeighborId: string | null;
-}): Promise<{ updates: Array<{ id: string; sortOrder: number }> } | null> => {
+}): Promise<{ rowId: string; sortKey: string } | null> => {
   if (itemId === upperNeighborId) {
     return null;
   }
@@ -62,79 +61,46 @@ export const computeReorder = async ({
     .select({
       id: resourceCollectionItems.id,
       resourceId: resourceCollectionItems.resourceId,
-      sortOrder: resourceCollectionItems.sortOrder,
+      sortKey: resourceCollectionItems.sortKey,
     })
     .from(resourceCollectionItems)
     .where(eq(resourceCollectionItems.collectionId, collectionId))
-    .orderBy(asc(resourceCollectionItems.sortOrder));
+    .orderBy(asc(resourceCollectionItems.sortKey));
 
-  if (!rows.some((r) => r.resourceId === itemId)) {
+  const movedIdx = rows.findIndex((r) => r.resourceId === itemId);
+  if (movedIdx === -1) {
     throw new NotFoundError('Resource membership', itemId);
   }
-  if (
-    upperNeighborId !== null &&
-    !rows.some((r) => r.resourceId === upperNeighborId)
-  ) {
-    throw new NotFoundError('Pivot resource', upperNeighborId);
+  const moved = rows[movedIdx]!;
+
+  let upperIdx: number;
+  if (upperNeighborId === null) {
+    upperIdx = -1;
+  } else {
+    upperIdx = rows.findIndex((r) => r.resourceId === upperNeighborId);
+    if (upperIdx === -1) {
+      throw new NotFoundError('Pivot resource', upperNeighborId);
+    }
   }
 
-  const updates = computeSortOrderUpdates({
-    rows,
-    getId: (r) => r.id,
-    getKey: (r) => r.resourceId,
-    getSortOrder: (r) => r.sortOrder,
-    movedKey: itemId,
-    upperNeighborKey: upperNeighborId,
-  });
-  if (updates.length === 0) {
+  // Already sits in the requested slot? (sandwiched between upper and the row
+  // that follows upper in the current ordering, ignoring the moved row itself.)
+  const expectedIdxAfterRemoval =
+    upperIdx === -1 ? 0 : upperIdx < movedIdx ? upperIdx + 1 : upperIdx;
+  if (expectedIdxAfterRemoval === movedIdx) {
     return null;
   }
-  return { updates };
-};
 
-// Two-pass via a negative range: PG's per-row unique index check on
-// (collection_id, sort_order) makes a single CASE-WHEN swap collide
-// (A:0→1 fights B:1→…). Park in negatives, then write finals.
-export const applySortOrderUpdates = async ({
-  tx,
-  table,
-  updates,
-}: {
-  tx: TransactionType;
-  table: PgTable;
-  updates: Array<{ id: string; sortOrder: number }>;
-}): Promise<void> => {
-  if (updates.length === 0) {
-    return;
-  }
-  const ids = updates.map((u) => u.id);
-  const idList = sql.join(
-    ids.map((id) => sql`${id}::uuid`),
-    sql.raw(', '),
-  );
+  const upperKey = upperIdx === -1 ? null : rows[upperIdx]!.sortKey;
+  // The row that should end up below the moved row is the one currently at
+  // (upperIdx + 1), unless that's the moved row itself (then skip it).
+  const lowerCandidateIdx = upperIdx + 1;
+  const lowerKey =
+    lowerCandidateIdx === movedIdx
+      ? (rows[lowerCandidateIdx + 1]?.sortKey ?? null)
+      : (rows[lowerCandidateIdx]?.sortKey ?? null);
 
-  await tx.execute(sql`
-    UPDATE ${table}
-    SET sort_order = -1 - sort_order
-    WHERE id IN (${idList})
-  `);
-
-  const caseSql = sql.join(
-    [
-      sql`CASE`,
-      ...updates.map(
-        (u) => sql`WHEN id = ${u.id}::uuid THEN ${u.sortOrder}::integer`,
-      ),
-      sql`END`,
-    ],
-    sql.raw(' '),
-  );
-
-  await tx.execute(sql`
-    UPDATE ${table}
-    SET sort_order = ${caseSql}
-    WHERE id IN (${idList})
-  `);
+  return { rowId: moved.id, sortKey: generateKeyBetween(upperKey, lowerKey) };
 };
 
 export const findCollectionItem = async ({

@@ -1,11 +1,5 @@
 import { InferModel, sql } from 'drizzle-orm';
-import {
-  index,
-  integer,
-  pgTable,
-  uniqueIndex,
-  uuid,
-} from 'drizzle-orm/pg-core';
+import { index, pgTable, text, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { profileUsers } from './profileUsers.sql';
@@ -22,7 +16,7 @@ export const resourceCollectionItems = pgTable(
     resourceId: uuid()
       .notNull()
       .references(() => resources.id, { onDelete: 'cascade' }),
-    sortOrder: integer().notNull().default(0),
+    sortKey: text().notNull(),
     addedByProfileUserId: uuid().references(() => profileUsers.id, {
       onDelete: 'set null',
     }),
@@ -31,7 +25,7 @@ export const resourceCollectionItems = pgTable(
   (table) => [
     ...serviceRolePolicies,
     uniqueIndex('resource_collection_items_order_idx')
-      .on(table.collectionId, table.sortOrder)
+      .on(table.collectionId, table.sortKey)
       .where(sql`${table.deletedAt} IS NULL`),
     index('resource_collection_items_resource_idx').on(table.resourceId),
     index('resource_collection_items_added_by_idx').on(

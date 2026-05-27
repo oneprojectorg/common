@@ -14,7 +14,7 @@ type ResourceInCollectionDTO = {
   type: 'link' | 'document';
   title: string;
   collectionId: string;
-  sortOrder: number;
+  sortKey: string;
   linkUrl: string | null;
 };
 
@@ -41,7 +41,7 @@ describe('resources.createLink', () => {
     expect(row.title).toBe('My Link');
     expect(row.linkUrl).toBe(PUBLIC_URL);
     expect(row.collectionId).toBeTruthy();
-    expect(row.sortOrder).toBe(0);
+    expect(typeof row.sortKey).toBe('string');
   });
 
   it('creates a link directly into an existing collection target', async ({
@@ -65,7 +65,7 @@ describe('resources.createLink', () => {
     });
 
     expect(row.collectionId).toBe(collection.id);
-    expect(row.sortOrder).toBe(0);
+    expect(typeof row.sortKey).toBe('string');
   });
 
   it('rejects private-host URLs via the SSRF guard (BAD_REQUEST)', async ({
@@ -333,8 +333,8 @@ describe('resources.reorder', () => {
       title: 'First',
       linkUrl: PUBLIC_URL,
     });
-    // Newly created resources insert at sortOrder=0, so `second` will be at 0
-    // and `first` will shift to 1.
+    // Newly created resources insert at the top, so `second` lands above
+    // `first` initially. The reorder below pushes `first` back to the top.
     const second = await adminCaller.resources.createLink({
       target: { kind: 'profile', profileId: instance.profileId },
       title: 'Second',
@@ -348,7 +348,7 @@ describe('resources.reorder', () => {
       upperNeighborId: null,
     });
     expect(moved.id).toBe(first.id);
-    expect(moved.sortOrder).toBe(0);
+    expect(moved.sortKey < second.sortKey).toBe(true);
 
     const after = await adminCaller.resources.listByCollection({
       collectionId: first.collectionId,
@@ -416,7 +416,7 @@ describe('resources.attachToCollection', () => {
       collectionId: secondCollection.id,
     });
     expect(attached.collectionId).toBe(secondCollection.id);
-    expect(attached.sortOrder).toBe(0);
+    expect(typeof attached.sortKey).toBe('string');
 
     // Both collections still hold the resource.
     const inOriginal = await adminCaller.resources.listByCollection({
@@ -473,7 +473,7 @@ describe('resources.attachToCollection', () => {
 
     expect(a.collectionId).toBe(secondCollection.id);
     expect(b.collectionId).toBe(secondCollection.id);
-    expect(a.sortOrder).toBe(b.sortOrder);
+    expect(a.sortKey).toBe(b.sortKey);
 
     // Verify the DB really only has one row, not two.
     const rows = await db

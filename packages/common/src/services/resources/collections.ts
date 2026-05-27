@@ -5,19 +5,18 @@ import {
   resourceCollections,
 } from '@op/db/schema';
 import { permission } from 'access-zones';
-import { and, asc, count, eq, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, sql } from 'drizzle-orm';
+import { generateKeyBetween } from 'fractional-indexing';
 
 import { ConflictError, NotFoundError } from '../../utils/error';
-import { computeSortOrderUpdates } from '../../utils/sorting';
 import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
-import { applySortOrderUpdates } from './ordering';
 
 const DEFAULT_COLLECTION_NAME = 'Default';
 
 export type CollectionForProfile = {
   id: string;
   name: string;
-  sortOrder: number;
+  sortKey: string;
   addedByProfileUserId: string | null;
   createdAt: string | null;
   updatedAt: string | null;
@@ -48,7 +47,7 @@ const collectionsForProfileQuery = ({
     .select({
       id: resourceCollections.id,
       name: resourceCollections.name,
-      sortOrder: resourceCollectionProfiles.sortOrder,
+      sortKey: resourceCollectionProfiles.sortKey,
       addedByProfileUserId: resourceCollectionProfiles.addedByProfileUserId,
       createdAt: resourceCollectionProfiles.createdAt,
       updatedAt: resourceCollectionProfiles.updatedAt,
@@ -59,7 +58,7 @@ const collectionsForProfileQuery = ({
       eq(resourceCollections.id, resourceCollectionProfiles.collectionId),
     )
     .where(eq(resourceCollectionProfiles.profileId, profileId))
-    .orderBy(asc(resourceCollectionProfiles.sortOrder));
+    .orderBy(asc(resourceCollectionProfiles.sortKey));
 
 const collectionForProfileById = async ({
   exec,
@@ -74,7 +73,7 @@ const collectionForProfileById = async ({
     .select({
       id: resourceCollections.id,
       name: resourceCollections.name,
-      sortOrder: resourceCollectionProfiles.sortOrder,
+      sortKey: resourceCollectionProfiles.sortKey,
       addedByProfileUserId: resourceCollectionProfiles.addedByProfileUserId,
       createdAt: resourceCollectionProfiles.createdAt,
       updatedAt: resourceCollectionProfiles.updatedAt,
@@ -131,11 +130,13 @@ export const createCollection = async ({
   return db.transaction(async (tx) => {
     await profileLock({ tx, profileId });
 
-    const [maxRow] = await tx
-      .select({ value: count() })
+    const [tail] = await tx
+      .select({ sortKey: resourceCollectionProfiles.sortKey })
       .from(resourceCollectionProfiles)
-      .where(eq(resourceCollectionProfiles.profileId, profileId));
-    const sortOrder = maxRow?.value ?? 0;
+      .where(eq(resourceCollectionProfiles.profileId, profileId))
+      .orderBy(desc(resourceCollectionProfiles.sortKey))
+      .limit(1);
+    const sortKey = generateKeyBetween(tail?.sortKey ?? null, null);
 
     const [collection] = await tx
       .insert(resourceCollections)
@@ -147,7 +148,7 @@ export const createCollection = async ({
 
     const [link] = await tx
       .insert(resourceCollectionProfiles)
-      .values({ collectionId: collection.id, profileId, sortOrder })
+      .values({ collectionId: collection.id, profileId, sortKey })
       .returning();
     if (!link) {
       throw new ConflictError('Failed to attach collection to profile');
@@ -156,7 +157,7 @@ export const createCollection = async ({
     return {
       id: collection.id,
       name: collection.name,
-      sortOrder: link.sortOrder,
+      sortKey: link.sortKey,
       addedByProfileUserId: link.addedByProfileUserId,
       createdAt: link.createdAt,
       updatedAt: link.updatedAt,
@@ -264,37 +265,53 @@ export const reorderCollection = async ({
       .select({
         id: resourceCollectionProfiles.id,
         collectionId: resourceCollectionProfiles.collectionId,
-        sortOrder: resourceCollectionProfiles.sortOrder,
+        sortKey: resourceCollectionProfiles.sortKey,
       })
       .from(resourceCollectionProfiles)
       .where(eq(resourceCollectionProfiles.profileId, profileId))
-      .orderBy(asc(resourceCollectionProfiles.sortOrder));
+      .orderBy(asc(resourceCollectionProfiles.sortKey));
 
-    if (!rows.some((r) => r.collectionId === id)) {
+    const movedIdx = rows.findIndex((r) => r.collectionId === id);
+    if (movedIdx === -1) {
       throw new NotFoundError('Collection', id);
     }
-    if (
-      upperNeighborId !== null &&
-      id !== upperNeighborId &&
-      !rows.some((r) => r.collectionId === upperNeighborId)
-    ) {
-      throw new NotFoundError('Pivot collection', upperNeighborId);
+    if (id === upperNeighborId) {
+      const row = await collectionForProfileById({
+        exec: tx,
+        profileId,
+        collectionId: id,
+      });
+      if (!row) {
+        throw new NotFoundError('Collection', id);
+      }
+      return row;
     }
 
-    const updates = computeSortOrderUpdates({
-      rows,
-      getId: (r) => r.id,
-      getKey: (r) => r.collectionId,
-      getSortOrder: (r) => r.sortOrder,
-      movedKey: id,
-      upperNeighborKey: upperNeighborId,
-    });
-    if (updates.length > 0) {
-      await applySortOrderUpdates({
-        tx,
-        table: resourceCollectionProfiles,
-        updates,
-      });
+    let upperIdx: number;
+    if (upperNeighborId === null) {
+      upperIdx = -1;
+    } else {
+      upperIdx = rows.findIndex((r) => r.collectionId === upperNeighborId);
+      if (upperIdx === -1) {
+        throw new NotFoundError('Pivot collection', upperNeighborId);
+      }
+    }
+
+    const expectedIdxAfterRemoval =
+      upperIdx === -1 ? 0 : upperIdx < movedIdx ? upperIdx + 1 : upperIdx;
+
+    if (expectedIdxAfterRemoval !== movedIdx) {
+      const upperKey = upperIdx === -1 ? null : rows[upperIdx]!.sortKey;
+      const lowerCandidateIdx = upperIdx + 1;
+      const lowerKey =
+        lowerCandidateIdx === movedIdx
+          ? (rows[lowerCandidateIdx + 1]?.sortKey ?? null)
+          : (rows[lowerCandidateIdx]?.sortKey ?? null);
+      const newKey = generateKeyBetween(upperKey, lowerKey);
+      await tx
+        .update(resourceCollectionProfiles)
+        .set({ sortKey: newKey })
+        .where(eq(resourceCollectionProfiles.id, rows[movedIdx]!.id));
     }
 
     const row = await collectionForProfileById({
@@ -346,28 +363,6 @@ export const deleteCollection = async ({
         ),
       );
 
-    // Compact so a later createCollection (count() = next sortOrder) doesn't
-    // collide with a leftover gap on the partial unique index.
-    const remainingForProfile = await tx
-      .select({
-        id: resourceCollectionProfiles.id,
-        sortOrder: resourceCollectionProfiles.sortOrder,
-      })
-      .from(resourceCollectionProfiles)
-      .where(eq(resourceCollectionProfiles.profileId, profileId))
-      .orderBy(asc(resourceCollectionProfiles.sortOrder));
-    const compactUpdates: Array<{ id: string; sortOrder: number }> = [];
-    remainingForProfile.forEach((row, idx) => {
-      if (row.sortOrder !== idx) {
-        compactUpdates.push({ id: row.id, sortOrder: idx });
-      }
-    });
-    await applySortOrderUpdates({
-      tx,
-      table: resourceCollectionProfiles,
-      updates: compactUpdates,
-    });
-
     const [remainingRow] = await tx
       .select({ value: count() })
       .from(resourceCollectionProfiles)
@@ -384,7 +379,7 @@ export const deleteCollection = async ({
 };
 
 // Caller authorizes. Returns the first collection on the profile, or creates
-// a Default one (sortOrder=0) when `createIfMissing`.
+// a Default one when `createIfMissing`.
 export const resolveOrCreateDefaultCollection = async ({
   profileId,
   createIfMissing,
@@ -404,7 +399,7 @@ export const resolveOrCreateDefaultCollection = async ({
       .select({
         id: resourceCollections.id,
         name: resourceCollections.name,
-        sortOrder: resourceCollectionProfiles.sortOrder,
+        sortKey: resourceCollectionProfiles.sortKey,
         addedByProfileUserId: resourceCollectionProfiles.addedByProfileUserId,
         createdAt: resourceCollectionProfiles.createdAt,
         updatedAt: resourceCollectionProfiles.updatedAt,
@@ -415,7 +410,7 @@ export const resolveOrCreateDefaultCollection = async ({
         eq(resourceCollections.id, resourceCollectionProfiles.collectionId),
       )
       .where(eq(resourceCollectionProfiles.profileId, profileId))
-      .orderBy(asc(resourceCollectionProfiles.sortOrder))
+      .orderBy(asc(resourceCollectionProfiles.sortKey))
       .limit(1);
     if (existing) {
       return existing;
@@ -431,7 +426,11 @@ export const resolveOrCreateDefaultCollection = async ({
 
     const [link] = await tx
       .insert(resourceCollectionProfiles)
-      .values({ collectionId: collection.id, profileId, sortOrder: 0 })
+      .values({
+        collectionId: collection.id,
+        profileId,
+        sortKey: generateKeyBetween(null, null),
+      })
       .returning();
     if (!link) {
       throw new ConflictError('Failed to attach Default collection to profile');
@@ -440,7 +439,7 @@ export const resolveOrCreateDefaultCollection = async ({
     return {
       id: collection.id,
       name: collection.name,
-      sortOrder: link.sortOrder,
+      sortKey: link.sortKey,
       addedByProfileUserId: link.addedByProfileUserId,
       createdAt: link.createdAt,
       updatedAt: link.updatedAt,

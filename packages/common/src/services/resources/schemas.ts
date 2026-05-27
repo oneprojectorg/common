@@ -43,7 +43,7 @@ export const resourceSchema = z.discriminatedUnion('type', [
 
 const inCollectionFields = {
   collectionId: z.string().uuid(),
-  sortOrder: z.number(),
+  sortKey: z.string(),
 };
 
 const linkResourceInCollectionSchema = z.object({
@@ -77,7 +77,7 @@ export const resourceListResultSchema = z.object({
 export const collectionSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
-  sortOrder: z.number(),
+  sortKey: z.string(),
   addedByProfileUserId: z.string().uuid().nullable(),
   createdAt: z.string().nullable(),
   updatedAt: z.string().nullable(),

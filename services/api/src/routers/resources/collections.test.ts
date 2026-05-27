@@ -11,7 +11,7 @@ import {
 type CollectionDTO = {
   id: string;
   name: string;
-  sortOrder: number;
+  sortKey: string;
   createdAt: string | null;
   updatedAt: string | null;
 };
@@ -76,7 +76,7 @@ describe('resources.collections.list', () => {
 });
 
 describe('resources.collections.create', () => {
-  it('lets an admin create a collection and assigns sortOrder=0 then 1', async ({
+  it('lets an admin create collections and appends them in creation order', async ({
     task,
     onTestFinished,
   }) => {
@@ -90,14 +90,15 @@ describe('resources.collections.create', () => {
       name: 'First',
     });
     expect(first.name).toBe('First');
-    expect(first.sortOrder).toBe(0);
+    expect(typeof first.sortKey).toBe('string');
 
     const second = await adminCaller.resources.collections.create({
       profileId: instance.profileId,
       name: 'Second',
     });
-    expect(second.sortOrder).toBe(1);
     expect(second.id).not.toBe(first.id);
+    // createCollection appends at the tail — `second` sorts after `first`.
+    expect(first.sortKey < second.sortKey).toBe(true);
   });
 
   it('rejects a non-admin member from creating a collection', async ({
@@ -296,15 +297,14 @@ describe('resources.collections.reorder', () => {
       profileId: instance.profileId,
       name: 'B',
     });
-    expect(a.sortOrder).toBe(0);
-    expect(b.sortOrder).toBe(1);
+    expect(a.sortKey < b.sortKey).toBe(true);
 
     const reordered = await adminCaller.resources.collections.reorder({
       id: b.id,
       upperNeighborId: null,
     });
     expect(reordered.id).toBe(b.id);
-    expect(reordered.sortOrder).toBe(0);
+    expect(reordered.sortKey < a.sortKey).toBe(true);
 
     const rows = await adminCaller.resources.collections.list({
       profileId: instance.profileId,

@@ -1,6 +1,5 @@
 export * from './error';
 export * from './db';
-export * from './sorting';
 export * from './validation';
 
 export const filterNullOrUndefined = (data: Record<string, any>) =>

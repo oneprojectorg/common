@@ -11,7 +11,7 @@ import {
   type ResourceType,
 } from '@op/db/schema';
 import { permission } from 'access-zones';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import {
   ConflictError,
@@ -23,11 +23,10 @@ import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
 import { resolveOrCreateDefaultCollection } from './collections';
 import { resourcePathPrefix } from './constants';
 import {
-  applySortOrderUpdates,
   computeReorder,
   findCollectionItem,
+  generateKeyForInsertAtTop,
   lockCollection,
-  shiftSortOrderForInsertAtTop,
 } from './ordering';
 import {
   type ResourceDTO,
@@ -113,14 +112,14 @@ const loadResourceDTOById = async (id: string): Promise<ResourceDTO> => {
 const loadResourceInCollectionDTO = async ({
   resourceId,
   collectionId,
-  sortOrder,
+  sortKey,
 }: {
   resourceId: string;
   collectionId: string;
-  sortOrder: number;
+  sortKey: string;
 }): Promise<ResourceInCollectionDTO> => {
   const base = await loadResourceDTOById(resourceId);
-  return { ...base, collectionId, sortOrder };
+  return { ...base, collectionId, sortKey };
 };
 
 const profileOwnsCollection = async ({
@@ -175,7 +174,7 @@ const fetchByCollection = async (
 ): Promise<ResourceListResult> => {
   const items = await db.query.resourceCollectionItems.findMany({
     where: { collectionId },
-    orderBy: { sortOrder: 'asc' },
+    orderBy: { sortKey: 'asc' },
     with: {
       resource: {
         with: { attachment: { with: { storageObject: true } } },
@@ -186,7 +185,7 @@ const fetchByCollection = async (
   const dtos = await Promise.all(
     items.map(async (item) => {
       const base = await toResourceDTO(item.resource);
-      return { ...base, collectionId, sortOrder: item.sortOrder };
+      return { ...base, collectionId, sortKey: item.sortKey };
     }),
   );
   return { collectionId, resources: dtos };
@@ -329,22 +328,22 @@ const insertAtTop = async ({
   collectionId: string;
   resourceId: string;
   addedByProfileUserId: string | null;
-}): Promise<number> => {
+}): Promise<string> => {
   await lockCollection({ tx, collectionId });
-  await shiftSortOrderForInsertAtTop({ tx, collectionId });
+  const sortKey = await generateKeyForInsertAtTop({ tx, collectionId });
   const [link] = await tx
     .insert(resourceCollectionItems)
     .values({
       collectionId,
       resourceId,
-      sortOrder: 0,
+      sortKey,
       addedByProfileUserId,
     })
     .returning();
   if (!link) {
     throw new ConflictError('Failed to attach resource to collection');
   }
-  return link.sortOrder;
+  return link.sortKey;
 };
 
 export type CreateLinkInput = {
@@ -372,7 +371,7 @@ export const createLinkResource = async (
     profileId,
   });
 
-  const { resourceId, sortOrder } = await db.transaction(async (tx) => {
+  const { resourceId, sortKey } = await db.transaction(async (tx) => {
     const [row] = await tx
       .insert(resources)
       .values({
@@ -385,16 +384,16 @@ export const createLinkResource = async (
     if (!row) {
       throw new ConflictError('Failed to create resource');
     }
-    const sortOrder = await insertAtTop({
+    const sortKey = await insertAtTop({
       tx,
       collectionId,
       resourceId: row.id,
       addedByProfileUserId,
     });
-    return { resourceId: row.id, sortOrder };
+    return { resourceId: row.id, sortKey };
   });
 
-  return loadResourceInCollectionDTO({ resourceId, collectionId, sortOrder });
+  return loadResourceInCollectionDTO({ resourceId, collectionId, sortKey });
 };
 
 export type CreateDocumentInput = {
@@ -442,7 +441,7 @@ export const createDocumentResource = async (
     throw new ValidationError('Storage object does not belong to this profile');
   }
 
-  const { resourceId, sortOrder } = await db.transaction(async (tx) => {
+  const { resourceId, sortKey } = await db.transaction(async (tx) => {
     const [attachment] = await tx
       .insert(attachments)
       .values({
@@ -470,16 +469,16 @@ export const createDocumentResource = async (
       throw new ConflictError('Failed to create resource');
     }
 
-    const sortOrder = await insertAtTop({
+    const sortKey = await insertAtTop({
       tx,
       collectionId,
       resourceId: row.id,
       addedByProfileUserId,
     });
-    return { resourceId: row.id, sortOrder };
+    return { resourceId: row.id, sortKey };
   });
 
-  return loadResourceInCollectionDTO({ resourceId, collectionId, sortOrder });
+  return loadResourceInCollectionDTO({ resourceId, collectionId, sortKey });
 };
 
 export type UpdateResourceInput = {
@@ -573,7 +572,7 @@ export const reorderResource = async ({
     throw new NotFoundError('Resource', resourceId);
   }
 
-  const finalSortOrder = await db.transaction(async (tx) => {
+  const finalSortKey = await db.transaction(async (tx) => {
     await lockCollection({ tx, collectionId });
 
     const plan = await computeReorder({
@@ -583,24 +582,23 @@ export const reorderResource = async ({
       upperNeighborId,
     });
     if (plan) {
-      await applySortOrderUpdates({
-        tx,
-        table: resourceCollectionItems,
-        updates: plan.updates,
-      });
+      await tx
+        .update(resourceCollectionItems)
+        .set({ sortKey: plan.sortKey })
+        .where(eq(resourceCollectionItems.id, plan.rowId));
     }
 
     const link = await findCollectionItem({ tx, collectionId, resourceId });
     if (!link) {
       throw new NotFoundError('Resource membership', resourceId);
     }
-    return link.sortOrder;
+    return link.sortKey;
   });
 
   return loadResourceInCollectionDTO({
     resourceId,
     collectionId,
-    sortOrder: finalSortOrder,
+    sortKey: finalSortKey,
   });
 };
 
@@ -634,19 +632,19 @@ export const attachResourceToCollection = async ({
     throw new NotFoundError('Resource', resourceId);
   }
 
-  const sortOrder = await db.transaction(async (tx) => {
+  const sortKey = await db.transaction(async (tx) => {
     // Lock before the existence probe — otherwise two concurrent attaches both
     // see "no row", both call insertAtTop, and the second trips the
     // (collection_id, resource_id) unique index as a 500.
     await lockCollection({ tx, collectionId });
     const existing = await findCollectionItem({ tx, collectionId, resourceId });
     if (existing) {
-      return existing.sortOrder;
+      return existing.sortKey;
     }
     return insertAtTop({ tx, collectionId, resourceId, addedByProfileUserId });
   });
 
-  return loadResourceInCollectionDTO({ resourceId, collectionId, sortOrder });
+  return loadResourceInCollectionDTO({ resourceId, collectionId, sortKey });
 };
 
 export const detachResourceFromCollection = async ({
@@ -714,28 +712,6 @@ export const detachResourceFromCollection = async ({
       storageObjectName = existing.attachment?.storageObject?.name ?? null;
     }
 
-    // Compact sortOrder after deletion.
-    const rows = await tx
-      .select({
-        id: resourceCollectionItems.id,
-        sortOrder: resourceCollectionItems.sortOrder,
-      })
-      .from(resourceCollectionItems)
-      .where(eq(resourceCollectionItems.collectionId, collectionId))
-      .orderBy(asc(resourceCollectionItems.sortOrder));
-
-    const updates: Array<{ id: string; sortOrder: number }> = [];
-    rows.forEach((row, idx) => {
-      if (row.sortOrder !== idx) {
-        updates.push({ id: row.id, sortOrder: idx });
-      }
-    });
-    await applySortOrderUpdates({
-      tx,
-      table: resourceCollectionItems,
-      updates,
-    });
-
     return storageObjectName;
   });
 
@@ -778,47 +754,13 @@ export const deleteResource = async ({
   const storageObjectName = existing.attachment?.storageObject?.name ?? null;
 
   await db.transaction(async (tx) => {
-    // Snapshot memberships before the cascade to know which collections need
-    // sort_order compacted. Ordered lock acquisition avoids deadlocks.
-    const memberships = await tx
-      .select({ collectionId: resourceCollectionItems.collectionId })
-      .from(resourceCollectionItems)
-      .where(eq(resourceCollectionItems.resourceId, id))
-      .orderBy(asc(resourceCollectionItems.collectionId));
-
-    for (const membership of memberships) {
-      await lockCollection({ tx, collectionId: membership.collectionId });
-    }
-
+    // resource_collection_items cascades on resource deletion; the resource
+    // row goes first so we don't need to touch memberships explicitly.
     await tx.delete(resources).where(eq(resources.id, id));
     if (existing.attachmentId) {
       await tx
         .delete(attachments)
         .where(eq(attachments.id, existing.attachmentId));
-    }
-
-    for (const membership of memberships) {
-      const rows = await tx
-        .select({
-          id: resourceCollectionItems.id,
-          sortOrder: resourceCollectionItems.sortOrder,
-        })
-        .from(resourceCollectionItems)
-        .where(
-          eq(resourceCollectionItems.collectionId, membership.collectionId),
-        )
-        .orderBy(asc(resourceCollectionItems.sortOrder));
-      const updates: Array<{ id: string; sortOrder: number }> = [];
-      rows.forEach((row, idx) => {
-        if (row.sortOrder !== idx) {
-          updates.push({ id: row.id, sortOrder: idx });
-        }
-      });
-      await applySortOrderUpdates({
-        tx,
-        table: resourceCollectionItems,
-        updates,
-      });
     }
   });
 

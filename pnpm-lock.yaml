@@ -627,7 +627,7 @@ importers:
         version: 16.2.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
       next-intl:
         specifier: ^4.8.3
-        version: 4.8.3(next@16.2.6(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)(typescript@5.7.3)
+        version: 4.8.3(next@16.2.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)(typescript@5.7.3)
       nuqs:
         specifier: ^2.8.5
         version: 2.8.6(next@16.2.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)
@@ -803,6 +803,9 @@ importers:
       drizzle-orm:
         specifier: 'catalog:'
         version: 1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5)
+      fractional-indexing:
+        specifier: ^3.2.0
+        version: 3.2.0
       mitt:
         specifier: ^3.0.1
         version: 3.0.1
@@ -888,7 +891,7 @@ importers:
         version: 3.0.5
       next-intl:
         specifier: ^4.8.3
-        version: 4.8.3(next@16.2.6(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)(typescript@5.7.3)
+        version: 4.8.3(next@16.2.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)(typescript@5.7.3)
       react:
         specifier: ^19.0.1
         version: 19.2.1
@@ -6348,6 +6351,10 @@ packages:
   forwarded-parse@2.1.2:
     resolution: {integrity: sha512-alTFZZQDKMporBH77856pXgzhEzaUVmLCDk+egLgIgHst3Tpndzz8MnKe+GzRJRfvVdn69HhpW7cmXzvtLvJAw==}
 
+  fractional-indexing@3.2.0:
+    resolution: {integrity: sha512-PcOxmqwYCW7O2ovKRU8OoQQj2yqTfEB/yeTYk4gPid6dN5ODRfU1hXd9tTVZzax/0NkO7AxpHykvZnT1aYp/BQ==}
+    engines: {node: ^14.13.1 || >=16.0.0}
+
   framer-motion@12.7.4:
     resolution: {integrity: sha512-jX0bPsTmU0oPZTYz/dVyD0dmOyEOEJvdn0TaZBE5I8g2GvVnnQnW9f65cJnoVfUkY3WZWNXGXnPbVA9YnaIfVA==}
     peerDependencies:
@@ -8766,11 +8773,12 @@ packages:
 
   uuid@3.4.0:
     resolution: {integrity: sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==}
-    deprecated: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   validate.io-array@1.0.6:
@@ -13830,6 +13838,8 @@ snapshots:
 
   forwarded-parse@2.1.2: {}
 
+  fractional-indexing@3.2.0: {}
+
   framer-motion@12.7.4(react-dom@19.2.1(react@19.2.1))(react@19.2.1):
     dependencies:
       motion-dom: 12.7.4
@@ -14984,7 +14994,7 @@ snapshots:
 
   next-intl-swc-plugin-extractor@4.8.3: {}
 
-  next-intl@4.8.3(next@16.2.6(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)(typescript@5.7.3):
+  next-intl@4.8.3(next@16.2.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1))(react@19.2.1)(typescript@5.7.3):
     dependencies:
       '@formatjs/intl-localematcher': 0.8.1
       '@parcel/watcher': 2.5.1

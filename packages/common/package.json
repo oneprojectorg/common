@@ -8,7 +8,6 @@
   "exports": {
     ".": "./src/index.ts",
     "./validation": "./src/utils/validation.ts",
-    "./sorting": "./src/utils/sorting.ts",
     "./realtime": "./src/realtime/index.ts",
     "./client": "./src/client.ts",
     "./src/services/access": "./src/services/access/index.ts",
@@ -45,6 +44,7 @@
     "csv-stringify": "^6.6.0",
     "deepl-node": "^1.24.0",
     "drizzle-orm": "catalog:",
+    "fractional-indexing": "^3.2.0",
     "mitt": "^3.0.1",
     "next": "catalog:",
     "p-map": "^7.0.3",
