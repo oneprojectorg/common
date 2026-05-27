@@ -8,6 +8,7 @@ import { checkPermission } from 'access-zones';
 import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils/error';
+import { memoRequest } from './requestCache';
 import { type RoleJunction, getNormalizedRoles } from './utils';
 
 type OrgUserWithNormalizedRoles = {
@@ -35,15 +36,75 @@ export const getOrgAccessUser = async ({
 }: {
   user: { id: string };
   organizationId: string;
-}): Promise<OrgUserWithNormalizedRoles | undefined> => {
-  const getOrgUser = async () => {
-    const orgUser = await db._query.organizationUsers.findFirst({
+}): Promise<OrgUserWithNormalizedRoles | undefined> =>
+  memoRequest(`orgUser:${organizationId}:${user.id}`, async () => {
+    const getOrgUser = async () => {
+      const orgUser = await db._query.organizationUsers.findFirst({
+        where: (table, { eq }) =>
+          and(
+            eq(table.organizationId, organizationId),
+            eq(table.authUserId, user.id),
+          ),
+        with: {
+          roles: {
+            with: {
+              accessRole: {
+                with: {
+                  zonePermissions: {
+                    with: {
+                      accessZone: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!orgUser) {
+        return;
+      }
+
+      // Transform the relational data into normalized format for access-zones library
+      // Type assertion needed because Drizzle query result type is complex but we know it has the right structure
+      const normalizedRoles = getNormalizedRoles(
+        orgUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
+      );
+
+      const { roles: _, ...orgUserWithoutRoles } = orgUser;
+
+      // Replace roles with normalized format
+      return {
+        ...orgUserWithoutRoles,
+        roles: normalizedRoles,
+      };
+    };
+
+    return cache({
+      type: 'orgUser',
+      params: [organizationId, user.id],
+      fetch: getOrgUser,
+      options: {
+        skipMemCache: true,
+      },
+    });
+  });
+
+// gets a user's access for a specific profile
+export const getProfileAccessUser = async ({
+  user,
+  profileId,
+}: {
+  user: { id: string };
+  profileId: string;
+}): Promise<ProfileUserWithNormalizedRoles | undefined> =>
+  memoRequest(`profileUser:${profileId}:${user.id}`, async () => {
+    const profileUser = await db._query.profileUsers.findFirst({
       where: (table, { eq }) =>
-        and(
-          eq(table.organizationId, organizationId),
-          eq(table.authUserId, user.id),
-        ),
+        and(eq(table.profileId, profileId), eq(table.authUserId, user.id)),
       with: {
+        profile: true,
         roles: {
           with: {
             accessRole: {
@@ -60,81 +121,23 @@ export const getOrgAccessUser = async ({
       },
     });
 
-    if (!orgUser) {
-      return;
+    if (!profileUser) {
+      return undefined;
     }
 
     // Transform the relational data into normalized format for access-zones library
     // Type assertion needed because Drizzle query result type is complex but we know it has the right structure
     const normalizedRoles = getNormalizedRoles(
-      orgUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
+      profileUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
     );
 
-    const { roles: _, ...orgUserWithoutRoles } = orgUser;
-
-    // Replace roles with normalized format
+    const { roles: _, ...profileUserWithoutRoles } = profileUser;
     return {
-      ...orgUserWithoutRoles,
+      ...profileUserWithoutRoles,
+      profile: profileUser.profile as Profile,
       roles: normalizedRoles,
     };
-  };
-
-  return cache({
-    type: 'orgUser',
-    params: [organizationId, user.id],
-    fetch: getOrgUser,
-    options: {
-      skipMemCache: true,
-    },
   });
-};
-
-// gets a user's access for a specific profile
-export const getProfileAccessUser = async ({
-  user,
-  profileId,
-}: {
-  user: { id: string };
-  profileId: string;
-}): Promise<ProfileUserWithNormalizedRoles | undefined> => {
-  const profileUser = await db._query.profileUsers.findFirst({
-    where: (table, { eq }) =>
-      and(eq(table.profileId, profileId), eq(table.authUserId, user.id)),
-    with: {
-      profile: true,
-      roles: {
-        with: {
-          accessRole: {
-            with: {
-              zonePermissions: {
-                with: {
-                  accessZone: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  });
-
-  if (!profileUser) {
-    return undefined;
-  }
-
-  // Transform the relational data into normalized format for access-zones library
-  // Type assertion needed because Drizzle query result type is complex but we know it has the right structure
-  const normalizedRoles = getNormalizedRoles(
-    profileUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
-  );
-
-  const { roles: _, ...profileUserWithoutRoles } = profileUser;
-  return {
-    ...profileUserWithoutRoles,
-    profile: profileUser.profile as Profile,
-    roles: normalizedRoles,
-  };
-};
 
 /**
  * Asserts profile-level access, falling back to org-level access if the user
@@ -327,52 +330,55 @@ export const getUserSession = async ({
 }) => {
   const validatedAuthUserId = validateAuthUserId(authUserId);
 
-  try {
-    const dbUser = await db._query.users.findFirst({
-      where: (table, { eq }) => eq(table.authUserId, validatedAuthUserId),
-      with: {
-        organizationUsers: true,
-      },
-    });
+  return memoRequest(`userSession:${validatedAuthUserId}`, async () => {
+    try {
+      const dbUser = await db._query.users.findFirst({
+        where: (table, { eq }) => eq(table.authUserId, validatedAuthUserId),
+        with: {
+          organizationUsers: true,
+        },
+      });
 
-    if (!dbUser) {
+      if (!dbUser) {
+        return null;
+      }
+
+      // Backwards compatibility: migrate lastOrgId to currentProfileId if needed
+      if (dbUser.lastOrgId && !dbUser.currentProfileId) {
+        try {
+          const [org] = await db
+            .select({ profileId: organizations.profileId })
+            .from(organizations)
+            .where(eq(organizations.id, dbUser.lastOrgId))
+            .limit(1);
+
+          if (org) {
+            // Update the user with the profile ID
+            await db
+              .update(users)
+              .set({ currentProfileId: org.profileId })
+              .where(eq(users.authUserId, validatedAuthUserId));
+
+            // Return the updated user object
+            return { user: { ...dbUser, currentProfileId: org.profileId } };
+          }
+        } catch (migrationError) {
+          console.error('Migration error:', migrationError);
+          // Continue with the original user object if migration fails
+        }
+      }
+
+      return { user: dbUser };
+    } catch (error) {
+      console.error('ERROR');
       return null;
     }
-
-    // Backwards compatibility: migrate lastOrgId to currentProfileId if needed
-    if (dbUser.lastOrgId && !dbUser.currentProfileId) {
-      try {
-        const [org] = await db
-          .select({ profileId: organizations.profileId })
-          .from(organizations)
-          .where(eq(organizations.id, dbUser.lastOrgId))
-          .limit(1);
-
-        if (org) {
-          // Update the user with the profile ID
-          await db
-            .update(users)
-            .set({ currentProfileId: org.profileId })
-            .where(eq(users.authUserId, validatedAuthUserId));
-
-          // Return the updated user object
-          return { user: { ...dbUser, currentProfileId: org.profileId } };
-        }
-      } catch (migrationError) {
-        console.error('Migration error:', migrationError);
-        // Continue with the original user object if migration fails
-      }
-    }
-
-    return { user: dbUser };
-  } catch (error) {
-    console.error('ERROR');
-    return null;
-  }
+  });
 };
 
 export * from './assertProfileTypeAccess';
 export * from './getRoles';
 export * from './permissions';
+export * from './requestCache';
 export * from './utils';
 export * from './platformAdmin';

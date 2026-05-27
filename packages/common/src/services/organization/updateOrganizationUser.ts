@@ -9,7 +9,7 @@ import type { User } from '@supabase/supabase-js';
 import { assertAccess, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { getOrgAccessUser } from '../access';
+import { getOrgAccessUser, invalidateRequest } from '../access';
 
 export interface UpdateOrganizationUserData {
   name?: string;
@@ -131,6 +131,7 @@ export async function updateOrganizationUser({
     type: 'orgUser',
     params: [organizationId, user.id],
   });
+  invalidateRequest(`orgUser:${organizationId}:${user.id}`);
 
   return {
     ...updatedUserWithRoles,
