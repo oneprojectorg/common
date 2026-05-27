@@ -84,8 +84,8 @@ export const collectionSchema = z.object({
 });
 
 export type AttachmentSummary = z.infer<typeof attachmentSummarySchema>;
-export type ResourceDto = z.infer<typeof resourceSchema>;
-export type ResourceInCollectionDto = z.infer<
+export type ResourceDTO = z.infer<typeof resourceSchema>;
+export type ResourceInCollectionDTO = z.infer<
   typeof resourceInCollectionSchema
 >;
 export type ResourceListResult = z.infer<typeof resourceListResultSchema>;

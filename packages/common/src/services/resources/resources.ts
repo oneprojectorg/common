@@ -29,8 +29,8 @@ import {
   shiftSortOrderForInsertAtTop,
 } from './ordering';
 import {
-  type ResourceDto,
-  type ResourceInCollectionDto,
+  type ResourceDTO,
+  type ResourceInCollectionDTO,
   type ResourceListResult,
 } from './schemas';
 import { deleteResourceObject, getResourceSignedUrl } from './storage';
@@ -50,7 +50,7 @@ type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const resourceType = (row: Pick<Resource, 'attachmentId'>): ResourceType =>
   row.attachmentId !== null ? 'document' : 'link';
 
-const toResourceDto = async (row: LoadedResource): Promise<ResourceDto> => {
+const toResourceDTO = async (row: LoadedResource): Promise<ResourceDTO> => {
   const storageObjectName = row.attachment?.storageObject?.name ?? null;
   const signedUrl = storageObjectName
     ? await getResourceSignedUrl(storageObjectName)
@@ -98,7 +98,7 @@ const toResourceDto = async (row: LoadedResource): Promise<ResourceDto> => {
   };
 };
 
-const loadResourceDtoById = async (id: string): Promise<ResourceDto> => {
+const loadResourceDTOById = async (id: string): Promise<ResourceDTO> => {
   const row = await db.query.resources.findFirst({
     where: { id },
     with: { attachment: { with: { storageObject: true } } },
@@ -106,10 +106,10 @@ const loadResourceDtoById = async (id: string): Promise<ResourceDto> => {
   if (!row) {
     throw new NotFoundError('Resource', id);
   }
-  return toResourceDto(row);
+  return toResourceDTO(row);
 };
 
-const loadResourceInCollectionDto = async ({
+const loadResourceInCollectionDTO = async ({
   resourceId,
   collectionId,
   sortOrder,
@@ -117,8 +117,8 @@ const loadResourceInCollectionDto = async ({
   resourceId: string;
   collectionId: string;
   sortOrder: number;
-}): Promise<ResourceInCollectionDto> => {
-  const base = await loadResourceDtoById(resourceId);
+}): Promise<ResourceInCollectionDTO> => {
+  const base = await loadResourceDTOById(resourceId);
   return { ...base, collectionId, sortOrder };
 };
 
@@ -184,7 +184,7 @@ const fetchByCollection = async (
 
   const dtos = await Promise.all(
     items.map(async (item) => {
-      const base = await toResourceDto(item.resource);
+      const base = await toResourceDTO(item.resource);
       return { ...base, collectionId, sortOrder: item.sortOrder };
     }),
   );
@@ -244,7 +244,12 @@ const resolveTargetCollection = async ({
   await assertResourceAccess({ profileId, authUserId, level: 'write' });
 
   if (scope.collectionId !== undefined) {
-    if (!(await profileOwnsCollection({ profileId, collectionId: scope.collectionId }))) {
+    if (
+      !(await profileOwnsCollection({
+        profileId,
+        collectionId: scope.collectionId,
+      }))
+    ) {
       throw new NotFoundError('Collection', scope.collectionId);
     }
     return { collectionId: scope.collectionId, profileId };
@@ -319,7 +324,7 @@ export type CreateLinkInput = {
 
 export const createLinkResource = async (
   input: CreateLinkInput,
-): Promise<ResourceInCollectionDto> => {
+): Promise<ResourceInCollectionDTO> => {
   const { collectionId, profileId } = await resolveTargetCollection({
     authUserId: input.authUserId,
     scope: {
@@ -355,7 +360,7 @@ export const createLinkResource = async (
     return { resourceId: row.id, sortOrder };
   });
 
-  return loadResourceInCollectionDto({ resourceId, collectionId, sortOrder });
+  return loadResourceInCollectionDTO({ resourceId, collectionId, sortOrder });
 };
 
 export type CreateDocumentInput = {
@@ -372,7 +377,7 @@ export type CreateDocumentInput = {
 
 export const createDocumentResource = async (
   input: CreateDocumentInput,
-): Promise<ResourceInCollectionDto> => {
+): Promise<ResourceInCollectionDTO> => {
   const { collectionId, profileId } = await resolveTargetCollection({
     authUserId: input.authUserId,
     scope: {
@@ -441,7 +446,7 @@ export const createDocumentResource = async (
     return { resourceId: row.id, sortOrder };
   });
 
-  return loadResourceInCollectionDto({ resourceId, collectionId, sortOrder });
+  return loadResourceInCollectionDTO({ resourceId, collectionId, sortOrder });
 };
 
 export type UpdateResourceInput = {
@@ -456,7 +461,7 @@ export type UpdateResourceInput = {
 
 export const updateResource = async (
   input: UpdateResourceInput,
-): Promise<ResourceDto> => {
+): Promise<ResourceDTO> => {
   const profileId = await getCurrentProfileId(input.authUserId);
   await assertResourceAccess({
     profileId,
@@ -500,7 +505,7 @@ export const updateResource = async (
   if (!row) {
     throw new NotFoundError('Resource', input.id);
   }
-  return loadResourceDtoById(row.id);
+  return loadResourceDTOById(row.id);
 };
 
 export const reorderResource = async ({
@@ -513,7 +518,7 @@ export const reorderResource = async ({
   resourceId: string;
   collectionId: string;
   upperNeighborId: string | null;
-}): Promise<ResourceInCollectionDto> => {
+}): Promise<ResourceInCollectionDTO> => {
   const profileId = await getCurrentProfileId(authUserId);
   await assertResourceAccess({ profileId, authUserId, level: 'write' });
   const [ownsCollection, ownsResource] = await Promise.all([
@@ -551,7 +556,7 @@ export const reorderResource = async ({
     return link.sortOrder;
   });
 
-  return loadResourceInCollectionDto({
+  return loadResourceInCollectionDTO({
     resourceId,
     collectionId,
     sortOrder: finalSortOrder,
@@ -566,7 +571,7 @@ export const attachResourceToCollection = async ({
   authUserId: string;
   resourceId: string;
   collectionId: string;
-}): Promise<ResourceInCollectionDto> => {
+}): Promise<ResourceInCollectionDTO> => {
   const profileId = await getCurrentProfileId(authUserId);
   await assertResourceAccess({ profileId, authUserId, level: 'write' });
   const [ownsCollection, ownsResource] = await Promise.all([
@@ -593,7 +598,7 @@ export const attachResourceToCollection = async ({
     return insertAtTop({ tx, collectionId, resourceId, addedByProfileUserId });
   });
 
-  return loadResourceInCollectionDto({ resourceId, collectionId, sortOrder });
+  return loadResourceInCollectionDTO({ resourceId, collectionId, sortOrder });
 };
 
 export const detachResourceFromCollection = async ({
