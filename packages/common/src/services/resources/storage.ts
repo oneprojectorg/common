@@ -6,9 +6,8 @@ import { CommonError } from '../../utils/error';
 import { MAX_RESOURCE_FILE_SIZE, isAllowedResourceMimeType } from './constants';
 
 const BUCKET = 'assets';
-// 15 min signed window. Cache layer holds onto the URL for 10 min so callers
-// listing many resources don't fan out into N Supabase sign requests, while
-// always handing back tokens with at least 5 minutes of headroom.
+// Cache 10 min so list views don't fan out into N sign requests; sign for
+// 15 min so cached tokens always have 5 min of headroom.
 const SIGNED_URL_TTL_SECONDS = 15 * 60;
 const SIGNED_URL_CACHE_TTL_MS = 10 * 60 * 1000;
 
@@ -43,10 +42,8 @@ const decodeBase64File = (input: string): Buffer => {
   }
 };
 
-// First few bytes for the binary formats we accept. Sniffing prevents a
-// caller from passing e.g. an .exe with mimeType: 'application/pdf'.
-// text/csv and text/plain have no distinctive header — we trust the
-// declared mimeType for those.
+// Magic-byte check to catch lies in `mimeType` (e.g. .exe declared as PDF).
+// text/csv and text/plain have no header — declared mimeType is trusted.
 const MIME_SIGNATURES: Record<string, Uint8Array[]> = {
   'image/png': [
     new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
@@ -93,8 +90,7 @@ const assertMimeMatchesContent = (buffer: Buffer, mimeType: string): void => {
   if (!headers.some((h) => headerMatches(buffer, h))) {
     throw new CommonError('File content does not match declared file type');
   }
-  // WebP: also require 'WEBP' at offset 8 to disambiguate from other RIFF
-  // containers (WAV, AVI).
+  // RIFF also covers WAV/AVI — disambiguate via 'WEBP' at offset 8.
   if (mimeType === 'image/webp') {
     const webpTag = buffer.subarray(8, 12).toString('ascii');
     if (webpTag !== 'WEBP') {

@@ -12,9 +12,9 @@ const resourceBaseShape = {
   title: z.string(),
   description: z.string().nullable(),
   addedByProfileUserId: z.string().uuid().nullable(),
-  // ISO string from Drizzle (`mode: 'string'`). Don't use `z.coerce.date()`
-  // — tRPC skips `.output()` validation in production builds, so the string
-  // would reach the client unchanged and `.toISOString()` on it blows up.
+  // Drizzle returns ISO strings (`mode: 'string'`). Not `z.coerce.date()` —
+  // tRPC skips `.output()` validation in prod, so the client gets the raw
+  // string and `.toISOString()` would blow up.
   createdAt: z.string().nullable(),
   updatedAt: z.string().nullable(),
   signedUrl: z.string().nullable(),

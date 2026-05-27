@@ -4,10 +4,8 @@ import { zodUrlRefine } from '../../utils/validation';
 
 export const MAX_RESOURCE_FILE_SIZE = 25 * 1024 * 1024;
 
-// Hostnames we never want to fetch on the server side. Catches the
-// obvious SSRF foot-guns (loopback, link-local, RFC1918 by literal IP,
-// metadata service). DNS rebinding is not addressed here — agents that
-// actually fetch the URL should use a DNS-pinning HTTP client.
+// SSRF gate: loopback, link-local, RFC1918, metadata service. Doesn't cover
+// DNS rebinding — fetchers should use a DNS-pinning HTTP client.
 const PRIVATE_HOST_PATTERNS: RegExp[] = [
   /^localhost$/i,
   /^127\./,
@@ -35,11 +33,9 @@ const isPublicHttpUrl = (raw: string): boolean => {
   }
 };
 
-// Backend SSRF gate. Reuses `zodUrlRefine` for the URL-format regex so
-// format rules stay in lockstep with `zodUrl`, then layers a stricter
-// http(s)-only + private-host rejection on top. Don't swap this for
-// `zodUrl` directly — that helper auto-prefixes `https://`, caps at 200
-// chars, and is `.optional()`, none of which fit a security gate.
+// Not `zodUrl` — that helper auto-prefixes `https://`, caps at 200, and is
+// `.optional()`. Reuse the format regex via `zodUrlRefine`, then layer
+// http(s)-only + private-host rejection.
 export const httpUrlSchema = z
   .string()
   .max(2048)

@@ -12,10 +12,9 @@ import { resourceInCollectionEncoder } from './encoders';
 
 const allowedMimeSchema = z.enum(ALLOWED_RESOURCE_MIME_TYPES);
 
-// `profile` variant carries an optional `collectionId` so the upload flow can
-// say "this profile, that collection" (the storage object is keyed by profile,
-// the membership lands in the named collection). `collection` variant resolves
-// the profile from collection access.
+// The upload flow already knows the profile (storage is profile-keyed) and
+// optionally a target collection; pure-collection callers resolve the profile
+// from collection access.
 const inputSchema = z.object({
   target: z.discriminatedUnion('kind', [
     z.object({

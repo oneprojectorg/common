@@ -9,8 +9,7 @@ import { reorderByUpperNeighbor } from '../../utils/sorting';
 type Transaction = Parameters<Parameters<typeof dbType.transaction>[0]>[0];
 export type DbOrTx = typeof dbType | Transaction;
 
-// Serializes concurrent ordering updates within a single collection for the
-// lifetime of the surrounding transaction.
+// Serializes concurrent ordering writes on one collection for the transaction.
 export const lockCollection = async ({
   tx,
   collectionId,
@@ -23,12 +22,10 @@ export const lockCollection = async ({
   );
 };
 
-// New items go to the top: shift every existing item's sortOrder up by one
-// and the caller inserts at 0. A single `sort_order + 1` UPDATE trips the
-// per-row unique index on (collection_id, sort_order) — row 0 tries to
-// become 1 while row 1 still holds 1. Park values in a negative range
-// first (same trick as applySortOrderUpdates) so the second pass settles
-// into the final positive slots without collisions.
+// Shift existing items up by one so the caller can insert at sortOrder 0.
+// Two-pass via a negative range — a single `+ 1` UPDATE trips the per-row
+// unique index on (collection_id, sort_order). Same trick as
+// applySortOrderUpdates.
 export const shiftSortOrderForInsertAtTop = async ({
   tx,
   collectionId,
@@ -47,9 +44,7 @@ export const shiftSortOrderForInsertAtTop = async ({
     .where(eq(resourceCollectionItems.collectionId, collectionId));
 };
 
-// Computes target sortOrders for the moved item plus any neighbors that need
-// to shift. Caller writes the values inside a transaction holding
-// lockCollection so concurrent writers serialize and each re-interprets
+// Caller must hold lockCollection so concurrent writers each re-interpret
 // upperNeighborId against the freshly-restriped state.
 export const computeReorder = async ({
   tx,
@@ -106,14 +101,9 @@ export const computeReorder = async ({
   return { updates };
 };
 
-// Bulk-apply per-row sortOrder updates without N round trips.
-//
-// PostgreSQL checks the unique index on (collection_id, sort_order) per-row
-// during an UPDATE, so a single CASE-WHEN statement that swaps two rows
-// (e.g. A:0->1, B:1->0) collides at the first row update before the second
-// settles. We dodge that by parking every affected row in a negative range
-// first (uniqueness still holds, no value collides with non-updated rows),
-// then writing the final values in a second pass.
+// Two-pass via a negative range: PG's per-row unique index check on
+// (collection_id, sort_order) makes a single CASE-WHEN swap collide
+// (A:0→1 fights B:1→…). Park in negatives, then write finals.
 export const applySortOrderUpdates = async ({
   tx,
   table,
@@ -156,8 +146,6 @@ export const applySortOrderUpdates = async ({
   `);
 };
 
-// Returns the resource-collection-item row for a single (collection, resource)
-// pair, used by movers/deleters that need to inspect membership.
 export const findCollectionItem = async ({
   tx,
   collectionId,

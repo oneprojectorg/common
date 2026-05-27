@@ -15,13 +15,11 @@ export type LinkPreviewResult = {
   error?: string;
 };
 
-// Cache successful previews for an hour — Iframely charges per request and
-// link metadata rarely changes within that window.
+// Iframely is per-request billed.
 const LINK_PREVIEW_TTL_MS = 60 * 60 * 1000;
 
-// Iframely-backed link metadata fetch. Best-effort: returns an object with
-// `error` set on failure instead of throwing, so callers can persist the
-// resource even when OG snapshotting fails.
+// Best-effort: returns `{ error }` instead of throwing so callers can still
+// persist the resource when snapshotting fails.
 export const getLinkPreview = async (
   url: string,
 ): Promise<LinkPreviewResult> => {
@@ -31,7 +29,6 @@ export const getLinkPreview = async (
     fetch: () => fetchLinkPreview(url),
     options: {
       ttl: LINK_PREVIEW_TTL_MS,
-      // Don't poison the cache with transient failures.
       skipCacheWrite: (result) => result.error !== undefined,
     },
   });
@@ -55,10 +52,8 @@ const fetchLinkPreview = async (url: string): Promise<LinkPreviewResult> => {
 
     const data = await response.json();
 
-    // The `/api/iframely` endpoint returns thumbnails under `links.thumbnail[]`
-    // (the oEmbed-shaped top-level `thumbnail_url` is only on `/api/oembed`).
-    // Prefer the first entry; fall back to top-level for forward-compat with
-    // any future shape change.
+    // `/api/iframely` puts thumbnails under `links.thumbnail[]`; top-level
+    // `thumbnail_url` only exists on `/api/oembed`.
     const thumbnailHref = Array.isArray(data.links?.thumbnail)
       ? data.links.thumbnail.find(
           (l: { href?: unknown }) => typeof l?.href === 'string',

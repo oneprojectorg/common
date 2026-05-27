@@ -297,8 +297,7 @@ export const deleteCollection = async ({
         ),
       );
 
-    // Compact sortOrders on the profile's remaining collections so future
-    // createCollection (which uses count() as the next sortOrder) doesn't
+    // Compact so a later createCollection (count() = next sortOrder) doesn't
     // collide with a leftover gap on the partial unique index.
     const remainingForProfile = await tx
       .select({
@@ -335,9 +334,8 @@ export const deleteCollection = async ({
   });
 };
 
-// Authorization is the caller's responsibility — invoked from both reader (no
-// create) and writer (create) paths. Returns the first collection attached to
-// the profile; creates a Pinned collection (sortOrder=0) if none exists.
+// Caller authorizes. Returns the first collection on the profile, or creates
+// a Pinned one (sortOrder=0) when `createIfMissing`.
 export const resolveOrCreatePinnedCollection = async ({
   profileId,
   createIfMissing,

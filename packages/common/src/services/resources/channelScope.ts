@@ -5,11 +5,7 @@ import {
 } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 
-/**
- * Resolve the set of profile IDs that share a collection. Used by the API
- * layer to broadcast realtime invalidations to every profile that subscribes
- * to the collection's list query.
- */
+// Profile IDs sharing a collection — for fanning realtime invalidations.
 export const getProfileIdsForCollection = async (
   collectionId: string,
 ): Promise<string[]> => {
@@ -20,11 +16,8 @@ export const getProfileIdsForCollection = async (
   return rows.map((r) => r.profileId);
 };
 
-/**
- * Resolve the set of (profileId, collectionId) tuples that a resource belongs
- * to. Used by the API layer to fan invalidations out to every profile/list
- * the resource shows up in.
- */
+// (profileId, collectionId) pairs a resource appears in — for fanning
+// realtime invalidations.
 export const getScopesForResource = async (
   resourceId: string,
 ): Promise<{ profileIds: string[]; collectionIds: string[] }> => {

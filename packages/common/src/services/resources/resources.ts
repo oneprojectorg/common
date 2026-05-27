@@ -123,9 +123,6 @@ const loadResourceInCollectionDto = async ({
 const fetchByCollection = async (
   collectionId: string,
 ): Promise<ResourceListResult> => {
-  // Single query: relational select grabs items + resource + attachment +
-  // storageObject in one round-trip, ordered by sortOrder. Don't sort in JS
-  // (orderBy is correct for paginated callers too).
   const items = await db.query.resourceCollectionItems.findMany({
     where: { collectionId },
     orderBy: { sortOrder: 'asc' },
@@ -202,11 +199,9 @@ const resolveTargetCollection = async ({
   authUserId: string;
   scope: { profileId?: string; collectionId?: string };
 }): Promise<{ collectionId: string; profileId: string }> => {
-  // Both supplied: caller (typically the upload→createDocument flow) already
-  // resolved profileId and wants a specific collection. Verify the profile
-  // owns the collection so the auth check still anchors to a single profile
-  // — otherwise a user with access to two profiles sharing the same M:N
-  // collection could pin uploads to the wrong storage prefix.
+  // Verify the profile owns the collection — anchoring auth to a single
+  // profile prevents M:N-shared collections from landing uploads under the
+  // wrong storage prefix.
   if (scope.profileId !== undefined && scope.collectionId !== undefined) {
     const { profileId, collectionId } = scope;
     await assertResourceAccess({
@@ -380,10 +375,8 @@ export const createDocumentResource = async (
     },
   });
 
-  // Verify the client-supplied storage object actually lives under this
-  // profile's resources/ prefix before linking it. Without this an attacker
-  // who learned (or guessed) another profile's storageObjectId could create
-  // an attachment row referencing it.
+  // Verify the storage object lives under this profile's resources/ prefix —
+  // a guessed storageObjectId from another profile would otherwise link here.
   const [storageObject] = await db
     .select({ name: objectsInStorage.name })
     .from(objectsInStorage)
@@ -678,10 +671,8 @@ export const deleteResource = async ({
   const storageObjectName = existing.attachment?.storageObject?.name ?? null;
 
   await db.transaction(async (tx) => {
-    // Snapshot memberships before the cascade so we know which collections
-    // need their sort_order compacted. Deterministic lock order on
-    // collectionId prevents deadlocks when two resources from different
-    // collections delete concurrently.
+    // Snapshot memberships before the cascade to know which collections need
+    // sort_order compacted. Ordered lock acquisition avoids deadlocks.
     const memberships = await tx
       .select({ collectionId: resourceCollectionItems.collectionId })
       .from(resourceCollectionItems)
