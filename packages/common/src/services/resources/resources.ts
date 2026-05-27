@@ -630,6 +630,10 @@ export const attachResourceToCollection = async ({
   });
 
   const sortOrder = await db.transaction(async (tx) => {
+    // Lock before the existence probe — otherwise two concurrent attaches both
+    // see "no row", both call insertAtTop, and the second trips the
+    // (collection_id, resource_id) unique index as a 500.
+    await lockCollection({ tx, collectionId });
     const existing = await findCollectionItem({ tx, collectionId, resourceId });
     if (existing) {
       return existing.sortOrder;
@@ -668,7 +672,15 @@ export const detachResourceFromCollection = async ({
     throw new NotFoundError('Resource', resourceId);
   }
 
-  await db.transaction(async (tx) => {
+  const existing = await db.query.resources.findFirst({
+    where: { id: resourceId },
+    with: { attachment: { with: { storageObject: true } } },
+  });
+  if (!existing) {
+    throw new NotFoundError('Resource', resourceId);
+  }
+
+  const orphanedStorageObjectName = await db.transaction(async (tx) => {
     await lockCollection({ tx, collectionId });
     await tx
       .delete(resourceCollectionItems)
@@ -678,6 +690,25 @@ export const detachResourceFromCollection = async ({
           eq(resourceCollectionItems.resourceId, resourceId),
         ),
       );
+
+    // If this was the last membership, the resource has no home — cascade so
+    // we don't leave a row that's unreachable via profileOwnsResource.
+    const [remaining] = await tx
+      .select({ id: resourceCollectionItems.id })
+      .from(resourceCollectionItems)
+      .where(eq(resourceCollectionItems.resourceId, resourceId))
+      .limit(1);
+
+    let storageObjectName: string | null = null;
+    if (!remaining) {
+      await tx.delete(resources).where(eq(resources.id, resourceId));
+      if (existing.attachmentId) {
+        await tx
+          .delete(attachments)
+          .where(eq(attachments.id, existing.attachmentId));
+      }
+      storageObjectName = existing.attachment?.storageObject?.name ?? null;
+    }
 
     // Compact sortOrder after deletion.
     const rows = await tx
@@ -700,7 +731,13 @@ export const detachResourceFromCollection = async ({
       table: resourceCollectionItems,
       updates,
     });
+
+    return storageObjectName;
   });
+
+  if (orphanedStorageObjectName) {
+    await deleteResourceObject(orphanedStorageObjectName);
+  }
 
   return { ok: true };
 };

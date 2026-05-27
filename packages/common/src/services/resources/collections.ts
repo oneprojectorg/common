@@ -186,39 +186,57 @@ export const updateCollection = async ({
     },
   });
 
-  const existing = await collectionForProfileById({
-    exec: db,
-    profileId,
-    collectionId: id,
+  return db.transaction(async (tx) => {
+    await profileLock({ tx, profileId });
+
+    const existing = await collectionForProfileById({
+      exec: tx,
+      profileId,
+      collectionId: id,
+    });
+    if (!existing) {
+      throw new NotFoundError('Collection', id);
+    }
+
+    const patchValues: Partial<{ name: string }> = {};
+    if (patch.name !== undefined) {
+      patchValues.name = patch.name;
+    }
+
+    if (Object.keys(patchValues).length > 0) {
+      const [updated] = await tx
+        .update(resourceCollections)
+        .set(patchValues)
+        .where(eq(resourceCollections.id, id))
+        .returning({ id: resourceCollections.id });
+
+      if (!updated) {
+        throw new NotFoundError('Collection', id);
+      }
+
+      // The join row is what the DTO reads updatedAt from — bump it so the
+      // response reflects the rename rather than the (stale) attach time.
+      await tx
+        .update(resourceCollectionProfiles)
+        .set({ updatedAt: sql`now()` })
+        .where(
+          and(
+            eq(resourceCollectionProfiles.profileId, profileId),
+            eq(resourceCollectionProfiles.collectionId, id),
+          ),
+        );
+    }
+
+    const row = await collectionForProfileById({
+      exec: tx,
+      profileId,
+      collectionId: id,
+    });
+    if (!row) {
+      throw new NotFoundError('Collection', id);
+    }
+    return row;
   });
-  if (!existing) {
-    throw new NotFoundError('Collection', id);
-  }
-
-  const patchValues: Partial<{ name: string }> = {};
-  if (patch.name !== undefined) {
-    patchValues.name = patch.name;
-  }
-
-  const [updated] = await db
-    .update(resourceCollections)
-    .set(patchValues)
-    .where(eq(resourceCollections.id, id))
-    .returning({ id: resourceCollections.id });
-
-  if (!updated) {
-    throw new NotFoundError('Collection', id);
-  }
-
-  const row = await collectionForProfileById({
-    exec: db,
-    profileId,
-    collectionId: id,
-  });
-  if (!row) {
-    throw new NotFoundError('Collection', id);
-  }
-  return row;
 };
 
 export const reorderCollection = async ({
