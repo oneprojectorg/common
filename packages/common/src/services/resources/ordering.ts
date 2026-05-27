@@ -42,6 +42,8 @@ export const generateKeyForInsertAtTop = async ({
 // Caller holds lockCollection. Reads the moved item + upperNeighbor + the row
 // immediately after upperNeighbor, computes one new sortKey via
 // generateKeyBetween, and returns it. Null upperNeighborId means "move to top".
+// `changed: false` means the row is already in the requested slot — sortKey is
+// the current value, and the caller should skip the UPDATE.
 export const computeReorder = async ({
   tx,
   collectionId,
@@ -52,11 +54,7 @@ export const computeReorder = async ({
   collectionId: string;
   itemId: string;
   upperNeighborId: string | null;
-}): Promise<{ rowId: string; sortKey: string } | null> => {
-  if (itemId === upperNeighborId) {
-    return null;
-  }
-
+}): Promise<{ rowId: string; sortKey: string; changed: boolean }> => {
   const rows = await tx
     .select({
       id: resourceCollectionItems.id,
@@ -73,6 +71,10 @@ export const computeReorder = async ({
   }
   const moved = rows[movedIdx]!;
 
+  if (itemId === upperNeighborId) {
+    return { rowId: moved.id, sortKey: moved.sortKey, changed: false };
+  }
+
   let upperIdx: number;
   if (upperNeighborId === null) {
     upperIdx = -1;
@@ -88,7 +90,7 @@ export const computeReorder = async ({
   const expectedIdxAfterRemoval =
     upperIdx === -1 ? 0 : upperIdx < movedIdx ? upperIdx + 1 : upperIdx;
   if (expectedIdxAfterRemoval === movedIdx) {
-    return null;
+    return { rowId: moved.id, sortKey: moved.sortKey, changed: false };
   }
 
   const upperKey = upperIdx === -1 ? null : rows[upperIdx]!.sortKey;
@@ -100,7 +102,11 @@ export const computeReorder = async ({
       ? (rows[lowerCandidateIdx + 1]?.sortKey ?? null)
       : (rows[lowerCandidateIdx]?.sortKey ?? null);
 
-  return { rowId: moved.id, sortKey: generateKeyBetween(upperKey, lowerKey) };
+  return {
+    rowId: moved.id,
+    sortKey: generateKeyBetween(upperKey, lowerKey),
+    changed: true,
+  };
 };
 
 export const findCollectionItem = async ({

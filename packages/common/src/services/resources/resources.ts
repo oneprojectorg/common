@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { db, type TransactionType } from '@op/db/client';
 import {
   EntityType,
   attachments,
@@ -44,8 +44,6 @@ type LoadedResource = Resource & {
     storageObject: { name: string | null } | null;
   } | null;
 };
-
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const resourceType = (row: Pick<Resource, 'attachmentId'>): ResourceType =>
   row.attachmentId !== null ? 'document' : 'link';
@@ -324,7 +322,7 @@ const insertAtTop = async ({
   resourceId,
   addedByProfileUserId,
 }: {
-  tx: Transaction;
+  tx: TransactionType;
   collectionId: string;
   resourceId: string;
   addedByProfileUserId: string | null;
@@ -343,7 +341,7 @@ const insertAtTop = async ({
   if (!link) {
     throw new ConflictError('Failed to attach resource to collection');
   }
-  return link.sortKey;
+  return sortKey;
 };
 
 export type CreateLinkInput = {
@@ -581,18 +579,13 @@ export const reorderResource = async ({
       itemId: resourceId,
       upperNeighborId,
     });
-    if (plan) {
+    if (plan.changed) {
       await tx
         .update(resourceCollectionItems)
         .set({ sortKey: plan.sortKey })
         .where(eq(resourceCollectionItems.id, plan.rowId));
     }
-
-    const link = await findCollectionItem({ tx, collectionId, resourceId });
-    if (!link) {
-      throw new NotFoundError('Resource membership', resourceId);
-    }
-    return link.sortKey;
+    return plan.sortKey;
   });
 
   return loadResourceInCollectionDTO({
