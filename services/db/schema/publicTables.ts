@@ -69,6 +69,18 @@ export {
 
 export { attachments, attachmentsRelations } from './tables/attachments.sql';
 
+export { resourceCollections } from './tables/resourceCollections.sql';
+export type { ResourceCollection } from './tables/resourceCollections.sql';
+
+export { resourceCollectionItems } from './tables/resourceCollectionItems.sql';
+export type { ResourceCollectionItem } from './tables/resourceCollectionItems.sql';
+
+export { resourceCollectionProfiles } from './tables/resourceCollectionProfiles.sql';
+export type { ResourceCollectionProfile } from './tables/resourceCollectionProfiles.sql';
+
+export { RESOURCE_TYPES, resources } from './tables/resources.sql';
+export type { Resource, ResourceType } from './tables/resources.sql';
+
 export {
   taxonomies,
   taxonomiesRelations,

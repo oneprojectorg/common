@@ -52,6 +52,7 @@ This file provides guidance to Claude Code (claude.ai/code) and other AI agents 
 - tRPC API provides type-safe client-server communication
 - After schema changes: run `pnpm w:db generate` to generate migrations 
 - **NEVER RUN `pnpm w:db migrate`** (migrations are applied by CI/CD, not locally)
+- **Drizzle relations**: define new relations in `services/db/relations.ts` using the v2 `defineRelations` API (the source of truth for `db.query`). The v1 `relations()` blocks in individual `*.sql.ts` files still exist for legacy `db._query` callers but should **not** be added for new tables.
 
 ### Workspace Commands
 
@@ -73,9 +74,6 @@ Use `pnpm w:<workspace>` shortcuts:
 
 
 ## AI Assistant Guidelines
-
-### Branch Management
-- **NEVER commit or push** - these actions are always manual
 
 ### File Search Scope
 

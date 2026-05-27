@@ -14,6 +14,7 @@
     "./GrowingFacePile": "./src/components/GrowingFacePile/index.tsx",
     "./BannerUploader": "./src/components/BannerUploader.tsx",
     "./Button": "./src/components/Button.tsx",
+    "./ButtonGroup": "./src/components/ButtonGroup.tsx",
     "./CategoryList": "./src/components/CategoryList.tsx",
     "./ComboBox": "./src/components/ComboBox.tsx",
     "./CheckIcon": "./src/components/icons/CheckIcon.tsx",
