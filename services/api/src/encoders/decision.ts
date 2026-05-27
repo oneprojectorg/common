@@ -384,18 +384,6 @@ export const processInstanceEncoder = createSelectSchema(processInstances)
     participantCount: z.number().optional(),
   });
 
-export const proposalVersionEncoder = z.object({
-  version: z.number(),
-  createdAt: z.string(),
-  name: z.string().optional(),
-  meta: z.record(z.string(), z.unknown()).optional(),
-});
-
-export const proposalVersionListEncoder = z.object({
-  // Ordered newest-first (descending by integer version) by the service layer.
-  versions: z.array(proposalVersionEncoder),
-});
-
 // State Transition History Encoder
 export const stateTransitionHistoryEncoder = createSelectSchema(
   stateTransitionHistory,
