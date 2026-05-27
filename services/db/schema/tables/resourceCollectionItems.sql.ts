@@ -1,7 +1,7 @@
 import { InferModel, sql } from 'drizzle-orm';
-import { index, pgTable, text, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { index, pgTable, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
-import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
+import { asciiText, autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { profileUsers } from './profileUsers.sql';
 import { resourceCollections } from './resourceCollections.sql';
 import { resources } from './resources.sql';
@@ -16,7 +16,7 @@ export const resourceCollectionItems = pgTable(
     resourceId: uuid()
       .notNull()
       .references(() => resources.id, { onDelete: 'cascade' }),
-    sortKey: text().notNull(),
+    sortKey: asciiText().notNull(),
     addedByProfileUserId: uuid().references(() => profileUsers.id, {
       onDelete: 'set null',
     }),
