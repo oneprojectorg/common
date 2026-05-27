@@ -8,7 +8,7 @@ import { permission } from 'access-zones';
 import { and, asc, count, eq, sql } from 'drizzle-orm';
 
 import { ConflictError, NotFoundError } from '../../utils/error';
-import { reorderByUpperNeighbor } from '../../utils/sorting';
+import { computeSortOrderUpdates } from '../../utils/sorting';
 import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
 import { applySortOrderUpdates } from './ordering';
 
@@ -281,20 +281,15 @@ export const reorderCollection = async ({
       throw new NotFoundError('Pivot collection', upperNeighborId);
     }
 
-    const reordered = reorderByUpperNeighbor({
-      list: rows,
+    const updates = computeSortOrderUpdates({
+      rows,
+      getId: (r) => r.id,
       getKey: (r) => r.collectionId,
+      getSortOrder: (r) => r.sortOrder,
       movedKey: id,
       upperNeighborKey: upperNeighborId,
     });
-    if (reordered !== rows) {
-      const updates: Array<{ id: string; sortOrder: number }> = [];
-      for (let i = 0; i < reordered.length; i++) {
-        const row = reordered[i]!;
-        if (row.sortOrder !== i) {
-          updates.push({ id: row.id, sortOrder: i });
-        }
-      }
+    if (updates.length > 0) {
       await applySortOrderUpdates({
         tx,
         table: resourceCollectionProfiles,

@@ -4,7 +4,7 @@ import { and, asc, eq, sql } from 'drizzle-orm';
 import type { PgTable } from 'drizzle-orm/pg-core';
 
 import { NotFoundError } from '../../utils/error';
-import { reorderByUpperNeighbor } from '../../utils/sorting';
+import { computeSortOrderUpdates } from '../../utils/sorting';
 
 // Serializes concurrent ordering writes on one collection for the transaction.
 export const lockCollection = async ({
@@ -78,22 +78,16 @@ export const computeReorder = async ({
     throw new NotFoundError('Pivot resource', upperNeighborId);
   }
 
-  const reordered = reorderByUpperNeighbor({
-    list: rows,
+  const updates = computeSortOrderUpdates({
+    rows,
+    getId: (r) => r.id,
     getKey: (r) => r.resourceId,
+    getSortOrder: (r) => r.sortOrder,
     movedKey: itemId,
     upperNeighborKey: upperNeighborId,
   });
-  if (reordered === rows) {
+  if (updates.length === 0) {
     return null;
-  }
-
-  const updates: Array<{ id: string; sortOrder: number }> = [];
-  for (let i = 0; i < reordered.length; i++) {
-    const row = reordered[i]!;
-    if (row.sortOrder !== i) {
-      updates.push({ id: row.id, sortOrder: i });
-    }
   }
   return { updates };
 };
