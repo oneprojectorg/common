@@ -61,7 +61,7 @@ export const AddResourceLinkForm = ({
     }
     createLink.mutate(
       {
-        profileId,
+        target: { kind: 'profile', profileId },
         linkUrl: normalizedUrl,
         title: title.trim(),
         description: description.trim() ? description.trim() : null,

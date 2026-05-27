@@ -48,7 +48,7 @@ export const useResourceUpload = (profileId: string) => {
     try {
       const base64 = await fileToBase64(file);
       const result = await uploadMutation.mutateAsync({
-        profileId,
+        target: { kind: 'profile', profileId },
         file: base64,
         fileName: file.name,
         mimeType: file.type,

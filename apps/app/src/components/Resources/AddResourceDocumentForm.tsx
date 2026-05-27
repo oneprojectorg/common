@@ -89,7 +89,7 @@ export const AddResourceDocumentForm = ({
     // profile the storage object is namespaced under.
     createDocument.mutate(
       {
-        profileId: uploaded.profileId,
+        target: { kind: 'profile', profileId: uploaded.profileId },
         storageObjectId: uploaded.storageObjectId,
         fileName: uploaded.fileName,
         mimeType: uploaded.mimeType,

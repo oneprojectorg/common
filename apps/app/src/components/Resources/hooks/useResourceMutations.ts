@@ -1,7 +1,6 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { reorderByUpperNeighbor } from '@op/common/reorder';
 import { toast } from '@op/ui/Toast';
 
 import { useTranslations } from '@/lib/i18n';
@@ -13,16 +12,36 @@ const moveResource = (
   id: string,
   upperNeighborId: string | null,
 ): ResourceListPayload => {
-  const reordered = reorderByUpperNeighbor(
-    prev.resources,
-    (r) => r.id,
-    id,
-    upperNeighborId,
-  );
-  if (reordered === prev.resources) {
+  if (id === upperNeighborId) {
     return prev;
   }
-  return { ...prev, resources: [...reordered] };
+  const fromIndex = prev.resources.findIndex((r) => r.id === id);
+  if (fromIndex === -1) {
+    return prev;
+  }
+  const moved = prev.resources[fromIndex]!;
+  const without = prev.resources.filter((_, i) => i !== fromIndex);
+  let toIndex: number;
+  if (upperNeighborId === null) {
+    toIndex = 0;
+  } else {
+    const upperIndex = without.findIndex((r) => r.id === upperNeighborId);
+    if (upperIndex === -1) {
+      return prev;
+    }
+    toIndex = upperIndex + 1;
+  }
+  if (toIndex === fromIndex) {
+    return prev;
+  }
+  return {
+    ...prev,
+    resources: [
+      ...without.slice(0, toIndex),
+      moved,
+      ...without.slice(toIndex),
+    ],
+  };
 };
 
 export const useResourceMutations = (profileId: string) => {
