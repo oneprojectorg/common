@@ -3,7 +3,7 @@ import { resourceCollectionProfiles, resourceCollections } from '@op/db/schema';
 import { and, asc, count, eq, sql } from 'drizzle-orm';
 
 import { ConflictError, NotFoundError } from '../../utils/error';
-import { reorderByUpperNeighbor } from '../../utils/reorder';
+import { reorderByUpperNeighbor } from '../../utils/sorting';
 import { assertResourceAccess } from './access';
 import { applySortOrderUpdates } from './ordering';
 

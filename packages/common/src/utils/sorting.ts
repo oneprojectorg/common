@@ -29,19 +29,27 @@ export const reorderByUpperNeighbor = <T>({
   movedKey,
   upperNeighborKey,
 }: ReorderByUpperNeighborInput<T>): readonly T[] => {
-  if (movedKey === upperNeighborKey) return list;
-  const fromIdx = list.findIndex((r) => getKey(r) === movedKey);
-  if (fromIdx === -1) return list;
-  const moved = list[fromIdx]!;
-  const without = list.filter((_, i) => i !== fromIdx);
-  let toIdx: number;
-  if (upperNeighborKey === null) {
-    toIdx = 0;
-  } else {
-    const upperIdx = without.findIndex((r) => getKey(r) === upperNeighborKey);
-    if (upperIdx === -1) return list;
-    toIdx = upperIdx + 1;
+  if (movedKey === upperNeighborKey) {
+    return list;
   }
-  if (toIdx === fromIdx) return list;
-  return [...without.slice(0, toIdx), moved, ...without.slice(toIdx)];
+  const fromIndex = list.findIndex((r) => getKey(r) === movedKey);
+  if (fromIndex === -1) {
+    return list;
+  }
+  const moved = list[fromIndex]!;
+  const without = list.filter((_, i) => i !== fromIndex);
+  let toIndex: number;
+  if (upperNeighborKey === null) {
+    toIndex = 0;
+  } else {
+    const upperIndex = without.findIndex((r) => getKey(r) === upperNeighborKey);
+    if (upperIndex === -1) {
+      return list;
+    }
+    toIndex = upperIndex + 1;
+  }
+  if (toIndex === fromIndex) {
+    return list;
+  }
+  return [...without.slice(0, toIndex), moved, ...without.slice(toIndex)];
 };

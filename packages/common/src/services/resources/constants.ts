@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { zodUrlRefine } from '../../utils/validation';
+
 export const MAX_RESOURCE_FILE_SIZE = 25 * 1024 * 1024;
 
 // Hostnames we never want to fetch on the server side. Catches the
@@ -20,32 +22,29 @@ const PRIVATE_HOST_PATTERNS: RegExp[] = [
   /^fe80:/i,
 ];
 
-const isPrivateHost = (hostname: string): boolean => {
-  const stripped = hostname.replace(/^\[|\]$/g, '');
-  return PRIVATE_HOST_PATTERNS.some((p) => p.test(stripped));
+const isPublicHttpUrl = (raw: string): boolean => {
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return false;
+    }
+    const stripped = url.hostname.replace(/^\[|\]$/g, '');
+    return !PRIVATE_HOST_PATTERNS.some((p) => p.test(stripped));
+  } catch {
+    return false;
+  }
 };
 
+// Backend SSRF gate. Reuses `zodUrlRefine` for the URL-format regex so
+// format rules stay in lockstep with `zodUrl`, then layers a stricter
+// http(s)-only + private-host rejection on top. Don't swap this for
+// `zodUrl` directly — that helper auto-prefixes `https://`, caps at 200
+// chars, and is `.optional()`, none of which fit a security gate.
 export const httpUrlSchema = z
   .string()
-  .url()
   .max(2048)
-  .refine(
-    (raw) => {
-      try {
-        const url = new URL(raw);
-        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-          return false;
-        }
-        if (isPrivateHost(url.hostname)) {
-          return false;
-        }
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    { message: 'Only public http(s) URLs are allowed' },
-  );
+  .refine(zodUrlRefine, { message: 'Must be a valid URL' })
+  .refine(isPublicHttpUrl, { message: 'Only public http(s) URLs are allowed' });
 
 export const resourcePathPrefix = (profileId: string) =>
   `profile/${profileId}/resources/`;

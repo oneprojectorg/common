@@ -5,11 +5,11 @@ import {
   resourceCollectionItems,
   resourceCollectionProfiles,
 } from '@op/db/schema';
-import { AccessControlException, permission } from 'access-zones';
+import { checkPermission, permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
 import { UnauthorizedError } from '../../utils/error';
-import { assertProfileTypeAccess } from '../access/assertProfileTypeAccess';
+import { getProfileAccessUser } from '../access';
 
 export type ResourceScope =
   | { kind: 'profile'; profileId: string }
@@ -74,37 +74,43 @@ export type AssertResourceAccessInput = {
   level: ResourceAccessLevel;
 };
 
+// Resources only attach to DECISION-type profiles. Because a collection /
+// resource can be on multiple decision profiles (M:N), we need "any-of"
+// semantics — the user passes if they hold the required role on at least one
+// member profile. `assertProfileTypeAccess` checks every profile, which is
+// the wrong shape for M:N. Instead we look up the user's roles on each
+// candidate (cached per `(profileId, authUserId)`) and probe with
+// `checkPermission` — the same pattern used by `assertInstanceProfileAccess`.
 export const assertResourceAccess = async ({
   scope,
   authUserId,
   level,
 }: AssertResourceAccessInput): Promise<ResolvedScope> => {
   const candidates = await candidateProfilesForScope(scope);
-  if (candidates.length === 0) {
+  const decisionCandidates = candidates.filter(
+    (c) => c.type === EntityType.DECISION,
+  );
+  if (decisionCandidates.length === 0) {
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  for (const candidate of candidates) {
-    if (candidate.type !== EntityType.DECISION) {
-      continue;
-    }
-    try {
-      await assertProfileTypeAccess({
+  const policy = decisionPolicy(level);
+  const profileAccessUsers = await Promise.all(
+    decisionCandidates.map((candidate) =>
+      getProfileAccessUser({
         user: { id: authUserId },
-        profileIds: [candidate.id],
-        policies: {
-          [EntityType.DECISION]: decisionPolicy(level),
-        },
-      });
+        profileId: candidate.id,
+      }),
+    ),
+  );
+
+  for (const [index, candidate] of decisionCandidates.entries()) {
+    const roles = profileAccessUsers[index]?.roles ?? [];
+    if (checkPermission([{ profile: permission.ADMIN }, policy], roles)) {
       return {
         profileId: candidate.id,
         profileType: EntityType.DECISION,
       };
-    } catch (err) {
-      if (err instanceof AccessControlException) {
-        continue;
-      }
-      throw err;
     }
   }
 

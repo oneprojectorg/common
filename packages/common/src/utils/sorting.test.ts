@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { reorderByUpperNeighbor } from './reorder';
+import { reorderByUpperNeighbor } from './sorting';
 
 type Row = { id: string };
 const rows = (...ids: string[]): readonly Row[] => ids.map((id) => ({ id }));

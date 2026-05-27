@@ -26,37 +26,21 @@ import {
   lockCollection,
   shiftSortOrderForInsertAtTop,
 } from './ordering';
+import {
+  type ResourceDto,
+  type ResourceInCollectionDto,
+  type ResourceListResult,
+} from './schemas';
 import { deleteResourceObject, getResourceSignedUrl } from './storage';
 
-export type AttachmentSummary = {
-  storageObjectId: string;
-  fileName: string;
-  mimeType: string;
-  fileSize: number | null;
-};
-
-export type ResourceDTO = Resource & {
-  type: ResourceType;
-  attachment: AttachmentSummary | null;
-  signedUrl: string | null;
-};
-
-export type ResourceInCollectionDTO = ResourceDTO & {
-  collectionId: string;
-  sortOrder: number;
-};
-
-export type ResourceListResult = {
-  collectionId: string | null;
-  resources: ResourceInCollectionDTO[];
-};
-
 type LoadedResource = Resource & {
-  attachment:
-    | (AttachmentSummary & {
-        storageObject: { name: string | null } | null;
-      })
-    | null;
+  attachment: {
+    storageObjectId: string;
+    fileName: string;
+    mimeType: string;
+    fileSize: number | null;
+    storageObject: { name: string | null } | null;
+  } | null;
 };
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -64,26 +48,55 @@ type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const resourceType = (row: Pick<Resource, 'attachmentId'>): ResourceType =>
   row.attachmentId !== null ? 'document' : 'link';
 
-const toResourceDTO = async (row: LoadedResource): Promise<ResourceDTO> => {
-  const attachment = row.attachment
-    ? {
-        storageObjectId: row.attachment.storageObjectId,
-        fileName: row.attachment.fileName,
-        mimeType: row.attachment.mimeType,
-        fileSize: row.attachment.fileSize,
-      }
-    : null;
-
+const toResourceDto = async (row: LoadedResource): Promise<ResourceDto> => {
   const storageObjectName = row.attachment?.storageObject?.name ?? null;
   const signedUrl = storageObjectName
     ? await getResourceSignedUrl(storageObjectName)
     : null;
 
-  const { attachment: _omitted, ...rest } = row;
-  return { ...rest, type: resourceType(row), attachment, signedUrl };
+  const base = {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    addedByProfileUserId: row.addedByProfileUserId,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    signedUrl,
+  };
+
+  if (resourceType(row) === 'document') {
+    if (!row.attachment || row.attachmentId === null) {
+      throw new ConflictError(
+        'Resource has document type but missing attachment',
+      );
+    }
+    return {
+      ...base,
+      type: 'document',
+      linkUrl: null,
+      attachmentId: row.attachmentId,
+      attachment: {
+        storageObjectId: row.attachment.storageObjectId,
+        fileName: row.attachment.fileName,
+        mimeType: row.attachment.mimeType,
+        fileSize: row.attachment.fileSize,
+      },
+    };
+  }
+
+  if (row.linkUrl === null) {
+    throw new ConflictError('Resource has link type but missing linkUrl');
+  }
+  return {
+    ...base,
+    type: 'link',
+    linkUrl: row.linkUrl,
+    attachmentId: null,
+    attachment: null,
+  };
 };
 
-const loadResourceDTOById = async (id: string): Promise<ResourceDTO> => {
+const loadResourceDtoById = async (id: string): Promise<ResourceDto> => {
   const row = await db.query.resources.findFirst({
     where: { id },
     with: { attachment: { with: { storageObject: true } } },
@@ -91,10 +104,10 @@ const loadResourceDTOById = async (id: string): Promise<ResourceDTO> => {
   if (!row) {
     throw new NotFoundError('Resource', id);
   }
-  return toResourceDTO(row);
+  return toResourceDto(row);
 };
 
-const loadResourceInCollectionDTO = async ({
+const loadResourceInCollectionDto = async ({
   resourceId,
   collectionId,
   sortOrder,
@@ -102,8 +115,8 @@ const loadResourceInCollectionDTO = async ({
   resourceId: string;
   collectionId: string;
   sortOrder: number;
-}): Promise<ResourceInCollectionDTO> => {
-  const base = await loadResourceDTOById(resourceId);
+}): Promise<ResourceInCollectionDto> => {
+  const base = await loadResourceDtoById(resourceId);
   return { ...base, collectionId, sortOrder };
 };
 
@@ -125,7 +138,7 @@ const fetchByCollection = async (
 
   const dtos = await Promise.all(
     items.map(async (item) => {
-      const base = await toResourceDTO(item.resource);
+      const base = await toResourceDto(item.resource);
       return { ...base, collectionId, sortOrder: item.sortOrder };
     }),
   );
@@ -305,7 +318,7 @@ export type CreateLinkInput = {
 
 export const createLinkResource = async (
   input: CreateLinkInput,
-): Promise<ResourceInCollectionDTO> => {
+): Promise<ResourceInCollectionDto> => {
   const { collectionId, profileId } = await resolveTargetCollection({
     authUserId: input.authUserId,
     scope: {
@@ -341,7 +354,7 @@ export const createLinkResource = async (
     return { resourceId: row.id, sortOrder };
   });
 
-  return loadResourceInCollectionDTO({ resourceId, collectionId, sortOrder });
+  return loadResourceInCollectionDto({ resourceId, collectionId, sortOrder });
 };
 
 export type CreateDocumentInput = {
@@ -358,7 +371,7 @@ export type CreateDocumentInput = {
 
 export const createDocumentResource = async (
   input: CreateDocumentInput,
-): Promise<ResourceInCollectionDTO> => {
+): Promise<ResourceInCollectionDto> => {
   const { collectionId, profileId } = await resolveTargetCollection({
     authUserId: input.authUserId,
     scope: {
@@ -429,7 +442,7 @@ export const createDocumentResource = async (
     return { resourceId: row.id, sortOrder };
   });
 
-  return loadResourceInCollectionDTO({ resourceId, collectionId, sortOrder });
+  return loadResourceInCollectionDto({ resourceId, collectionId, sortOrder });
 };
 
 export type UpdateResourceInput = {
@@ -444,7 +457,7 @@ export type UpdateResourceInput = {
 
 export const updateResource = async (
   input: UpdateResourceInput,
-): Promise<ResourceDTO> => {
+): Promise<ResourceDto> => {
   await assertResourceAccess({
     scope: { kind: 'resource', resourceId: input.id },
     authUserId: input.authUserId,
@@ -484,7 +497,7 @@ export const updateResource = async (
   if (!row) {
     throw new NotFoundError('Resource', input.id);
   }
-  return loadResourceDTOById(row.id);
+  return loadResourceDtoById(row.id);
 };
 
 export const reorderResource = async ({
@@ -497,7 +510,7 @@ export const reorderResource = async ({
   resourceId: string;
   collectionId: string;
   upperNeighborId: string | null;
-}): Promise<ResourceInCollectionDTO> => {
+}): Promise<ResourceInCollectionDto> => {
   await Promise.all([
     assertResourceAccess({
       scope: { kind: 'resource', resourceId },
@@ -535,7 +548,7 @@ export const reorderResource = async ({
     return link.sortOrder;
   });
 
-  return loadResourceInCollectionDTO({
+  return loadResourceInCollectionDto({
     resourceId,
     collectionId,
     sortOrder: finalSortOrder,
@@ -550,7 +563,7 @@ export const attachResourceToCollection = async ({
   authUserId: string;
   resourceId: string;
   collectionId: string;
-}): Promise<ResourceInCollectionDTO> => {
+}): Promise<ResourceInCollectionDto> => {
   const [resolved] = await Promise.all([
     assertResourceAccess({
       scope: { kind: 'collection', collectionId },
@@ -577,7 +590,7 @@ export const attachResourceToCollection = async ({
     return insertAtTop({ tx, collectionId, resourceId, addedByProfileUserId });
   });
 
-  return loadResourceInCollectionDTO({ resourceId, collectionId, sortOrder });
+  return loadResourceInCollectionDto({ resourceId, collectionId, sortOrder });
 };
 
 export const detachResourceFromCollection = async ({

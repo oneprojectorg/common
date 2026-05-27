@@ -4,7 +4,7 @@ import { and, asc, eq, sql } from 'drizzle-orm';
 import type { PgTable } from 'drizzle-orm/pg-core';
 
 import { NotFoundError } from '../../utils/error';
-import { reorderByUpperNeighbor } from '../../utils/reorder';
+import { reorderByUpperNeighbor } from '../../utils/sorting';
 
 type Transaction = Parameters<Parameters<typeof dbType.transaction>[0]>[0];
 export type DbOrTx = typeof dbType | Transaction;
