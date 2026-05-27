@@ -99,7 +99,6 @@ export async function listSelectionCandidates({
     input: {
       processInstanceId,
       proposalIds: candidateIds,
-      authUserId: user.id,
       limit: candidateIds.length,
       orderBy: sortOrder === 'votes' ? 'votes' : 'createdAt',
       dir: sortOrder === 'oldest' ? 'asc' : 'desc',

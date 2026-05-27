@@ -16,7 +16,7 @@ export const listProposalsRouter = router({
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
       const result = await listProposals({
-        input: { ...input, authUserId: user.id },
+        input,
         user,
       });
 
