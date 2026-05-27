@@ -12,6 +12,10 @@ import { profileUsers } from './profileUsers.sql';
 import { profiles } from './profiles.sql';
 import { resourceCollections } from './resourceCollections.sql';
 
+// Modeled M:N but today a collection is only ever attached to one profile, and
+// permissions are resolved through that profile. If we later allow sharing
+// across profiles, add an explicit "original profile" anchor on
+// resourceCollections so auth stays deterministic.
 export const resourceCollectionProfiles = pgTable(
   'resource_collection_profiles',
   {
