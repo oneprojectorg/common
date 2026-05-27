@@ -1,56 +1,42 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  invalidateRequest,
-  memoRequest,
-  runWithRequestCache,
-} from './requestCache';
+import { memoize, runWithRequestCache } from './requestCache';
 
-describe('requestCache', () => {
+describe('memoize / requestCache', () => {
   describe('isolation between requests', () => {
     it('does not leak entries across separate runWithRequestCache scopes', async () => {
-      const fetcher = vi.fn(async () => 'value');
+      const fetcher = vi.fn(async (_id: string) => 'value');
+      const memoFetcher = memoize(fetcher);
 
       await runWithRequestCache(async () => {
-        await memoRequest('k', fetcher);
-        await memoRequest('k', fetcher);
+        await memoFetcher('k');
+        await memoFetcher('k');
       });
 
       await runWithRequestCache(async () => {
-        await memoRequest('k', fetcher);
+        await memoFetcher('k');
       });
 
-      // first scope: 1 call (dedup); second scope: fresh fetch → 2 total
       expect(fetcher).toHaveBeenCalledTimes(2);
     });
 
-    it('isolates concurrent requests', async () => {
-      const seen: string[] = [];
-      const fetcherA = vi.fn(async () => {
-        seen.push('A');
-        return 'A';
-      });
-      const fetcherB = vi.fn(async () => {
-        seen.push('B');
-        return 'B';
-      });
+    it('isolates concurrent requests with the same key', async () => {
+      const fetcherA = vi.fn(async () => 'A');
+      const fetcherB = vi.fn(async () => 'B');
+      const memoA = memoize(fetcherA);
+      const memoB = memoize(fetcherB);
 
       await Promise.all([
         runWithRequestCache(async () => {
-          const v1 = await memoRequest('shared-key', fetcherA);
-          const v2 = await memoRequest('shared-key', fetcherA);
-          expect(v1).toBe('A');
-          expect(v2).toBe('A');
+          expect(await memoA('shared')).toBe('A');
+          expect(await memoA('shared')).toBe('A');
         }),
         runWithRequestCache(async () => {
-          const v1 = await memoRequest('shared-key', fetcherB);
-          const v2 = await memoRequest('shared-key', fetcherB);
-          expect(v1).toBe('B');
-          expect(v2).toBe('B');
+          expect(await memoB('shared')).toBe('B');
+          expect(await memoB('shared')).toBe('B');
         }),
       ]);
 
-      // Each scope dedups internally — should be 1 call each, NOT cross-contaminated
       expect(fetcherA).toHaveBeenCalledTimes(1);
       expect(fetcherB).toHaveBeenCalledTimes(1);
     });
@@ -66,121 +52,177 @@ describe('requestCache', () => {
         }
         return 'ok';
       });
+      const memoFetcher = memoize(fetcher);
 
       await runWithRequestCache(async () => {
-        await expect(memoRequest('k', fetcher)).rejects.toThrow('transient');
-        const value = await memoRequest('k', fetcher);
-        expect(value).toBe('ok');
+        await expect(memoFetcher('k')).rejects.toThrow('transient');
+        expect(await memoFetcher('k')).toBe('ok');
       });
 
       expect(fetcher).toHaveBeenCalledTimes(2);
     });
 
-    it('does not allow a poisoned rejected promise to be returned to other keys', async () => {
+    it('does not let a poisoned rejected promise leak to other keys', async () => {
       const fetcher = vi.fn(async (key: string) => {
         if (key === 'bad') {
           throw new Error('bad key');
         }
         return `value-${key}`;
       });
+      const memoFetcher = memoize(fetcher);
 
       await runWithRequestCache(async () => {
-        await expect(memoRequest('bad', () => fetcher('bad'))).rejects.toThrow(
-          'bad key',
-        );
-        const good = await memoRequest('good', () => fetcher('good'));
-        expect(good).toBe('value-good');
+        await expect(memoFetcher('bad')).rejects.toThrow('bad key');
+        expect(await memoFetcher('good')).toBe('value-good');
       });
     });
 
-    it('shares the same in-flight rejection among concurrent callers but lets later ones retry', async () => {
+    it('shares the in-flight rejection but allows later retries', async () => {
       const fetcher = vi
         .fn()
         .mockRejectedValueOnce(new Error('boom'))
         .mockResolvedValueOnce('recovered');
+      const memoFetcher = memoize(fetcher);
 
       await runWithRequestCache(async () => {
         const [r1, r2] = await Promise.allSettled([
-          memoRequest('k', fetcher),
-          memoRequest('k', fetcher),
+          memoFetcher('k'),
+          memoFetcher('k'),
         ]);
         expect(r1.status).toBe('rejected');
         expect(r2.status).toBe('rejected');
-        // Both concurrent callers should have received the same in-flight rejection
         expect(fetcher).toHaveBeenCalledTimes(1);
 
-        const retry = await memoRequest('k', fetcher);
-        expect(retry).toBe('recovered');
+        expect(await memoFetcher('k')).toBe('recovered');
         expect(fetcher).toHaveBeenCalledTimes(2);
       });
     });
   });
 
-  describe('key separation', () => {
-    it('does not return one key’s value for another key', async () => {
+  describe('key derivation', () => {
+    it('uses the keyFn to dedupe across differently-shaped args with the same identity', async () => {
+      const fetcher = vi.fn(
+        async (_args: {
+          user: { id: string; extra?: string };
+          profileId: string;
+        }) => 'v',
+      );
+      const memoFetcher = memoize(
+        fetcher,
+        ({ user, profileId }) => `${user.id}:${profileId}`,
+      );
+
       await runWithRequestCache(async () => {
-        const a = await memoRequest('a', async () => 'value-a');
-        const b = await memoRequest('b', async () => 'value-b');
-        expect(a).toBe('value-a');
-        expect(b).toBe('value-b');
+        await memoFetcher({ user: { id: 'u1' }, profileId: 'p1' });
+        // Different shape (extra field), same identity → should be a cache hit
+        await memoFetcher({
+          user: { id: 'u1', extra: 'unrelated' },
+          profileId: 'p1',
+        });
       });
+
+      expect(fetcher).toHaveBeenCalledTimes(1);
+    });
+
+    it('default keyFn stable-stringifies args (order-insensitive for object keys)', async () => {
+      const fetcher = vi.fn(async (_args: Record<string, string>) => 'v');
+      const memoFetcher = memoize(fetcher);
+
+      await runWithRequestCache(async () => {
+        await memoFetcher({ a: '1', b: '2' });
+        // Different key order, same values
+        await memoFetcher({ b: '2', a: '1' });
+      });
+
+      expect(fetcher).toHaveBeenCalledTimes(1);
+    });
+
+    it('distinct keys do not collide', async () => {
+      const fetcher = vi.fn(async (id: string) => `value-${id}`);
+      const memoFetcher = memoize(fetcher);
+
+      await runWithRequestCache(async () => {
+        expect(await memoFetcher('a')).toBe('value-a');
+        expect(await memoFetcher('b')).toBe('value-b');
+      });
+    });
+
+    it('different memoize instances are isolated even with identical keyFns', async () => {
+      const fA = vi.fn(async () => 'A');
+      const fB = vi.fn(async () => 'B');
+      const memoA = memoize(fA, () => 'k');
+      const memoB = memoize(fB, () => 'k');
+
+      await runWithRequestCache(async () => {
+        expect(await memoA()).toBe('A');
+        expect(await memoB()).toBe('B');
+      });
+
+      expect(fA).toHaveBeenCalledTimes(1);
+      expect(fB).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe('invalidation', () => {
-    it('refetches after invalidateRequest by exact key', async () => {
+  describe('invalidate', () => {
+    it('invalidate(args) drops the entry for that key and refetches next time', async () => {
       const fetcher = vi
         .fn()
         .mockResolvedValueOnce('v1')
         .mockResolvedValueOnce('v2');
+      const memoFetcher = memoize(fetcher);
 
       await runWithRequestCache(async () => {
-        expect(await memoRequest('profileUser:p1:u1', fetcher)).toBe('v1');
-        invalidateRequest('profileUser:p1:u1');
-        expect(await memoRequest('profileUser:p1:u1', fetcher)).toBe('v2');
+        expect(await memoFetcher('k')).toBe('v1');
+        memoFetcher.invalidate('k');
+        expect(await memoFetcher('k')).toBe('v2');
       });
-      expect(fetcher).toHaveBeenCalledTimes(2);
     });
 
-    it('only invalidates keys matching the prefix', async () => {
-      const fetcher = vi.fn(async (k: string) => `v-${k}`);
+    it('invalidate only drops matching keys', async () => {
+      const fetcher = vi.fn(async (id: string) => `v-${id}`);
+      const memoFetcher = memoize(fetcher);
 
       await runWithRequestCache(async () => {
-        await memoRequest('profileUser:p1:u1', () =>
-          fetcher('profileUser:p1:u1'),
-        );
-        await memoRequest('profileUser:p1:u2', () =>
-          fetcher('profileUser:p1:u2'),
-        );
-        await memoRequest('orgUser:o1:u1', () => fetcher('orgUser:o1:u1'));
-
-        invalidateRequest('profileUser:p1:u1');
-
-        // Re-call all three: only p1:u1 should refetch
-        await memoRequest('profileUser:p1:u1', () =>
-          fetcher('profileUser:p1:u1'),
-        );
-        await memoRequest('profileUser:p1:u2', () =>
-          fetcher('profileUser:p1:u2'),
-        );
-        await memoRequest('orgUser:o1:u1', () => fetcher('orgUser:o1:u1'));
+        await memoFetcher('a');
+        await memoFetcher('b');
+        memoFetcher.invalidate('a');
+        await memoFetcher('a'); // refetch
+        await memoFetcher('b'); // cached
       });
 
-      // 3 initial + 1 refetch for p1:u1 = 4
+      expect(fetcher).toHaveBeenCalledTimes(3);
+    });
+
+    it('invalidateAll clears every entry for the memoized fn', async () => {
+      const fetcher = vi.fn(async (id: string) => `v-${id}`);
+      const memoFetcher = memoize(fetcher);
+
+      await runWithRequestCache(async () => {
+        await memoFetcher('a');
+        await memoFetcher('b');
+        memoFetcher.invalidateAll();
+        await memoFetcher('a');
+        await memoFetcher('b');
+      });
+
       expect(fetcher).toHaveBeenCalledTimes(4);
+    });
+
+    it('invalidate and invalidateAll are no-ops outside a scope', () => {
+      const memoFetcher = memoize(async () => 'x');
+      expect(() => memoFetcher.invalidate()).not.toThrow();
+      expect(() => memoFetcher.invalidateAll()).not.toThrow();
     });
   });
 
   describe('out-of-scope behavior', () => {
     it('runs the fetcher every call when not inside runWithRequestCache', async () => {
       const fetcher = vi.fn(async () => 'x');
-      await memoRequest('k', fetcher);
-      await memoRequest('k', fetcher);
-      expect(fetcher).toHaveBeenCalledTimes(2);
-    });
+      const memoFetcher = memoize(fetcher);
 
-    it('invalidateRequest is a no-op outside a scope', () => {
-      expect(() => invalidateRequest('anything')).not.toThrow();
+      await memoFetcher();
+      await memoFetcher();
+      expect(fetcher).toHaveBeenCalledTimes(2);
     });
   });
 });

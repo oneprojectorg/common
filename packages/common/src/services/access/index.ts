@@ -8,7 +8,7 @@ import { checkPermission } from 'access-zones';
 import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils/error';
-import { memoRequest } from './requestCache';
+import { memoize } from './requestCache';
 import { type RoleJunction, getNormalizedRoles } from './utils';
 
 type OrgUserWithNormalizedRoles = {
@@ -30,14 +30,14 @@ type ProfileUserWithNormalizedRoles = ProfileUser & {
 };
 
 // gets a user assuming that the user is authenticated
-export const getOrgAccessUser = async ({
-  user,
-  organizationId,
-}: {
-  user: { id: string };
-  organizationId: string;
-}): Promise<OrgUserWithNormalizedRoles | undefined> =>
-  memoRequest(`orgUser:${organizationId}:${user.id}`, async () => {
+export const getOrgAccessUser = memoize(
+  async ({
+    user,
+    organizationId,
+  }: {
+    user: { id: string };
+    organizationId: string;
+  }): Promise<OrgUserWithNormalizedRoles | undefined> => {
     const getOrgUser = async () => {
       const orgUser = await db._query.organizationUsers.findFirst({
         where: (table, { eq }) =>
@@ -89,17 +89,19 @@ export const getOrgAccessUser = async ({
         skipMemCache: true,
       },
     });
-  });
+  },
+  ({ user, organizationId }) => `${user.id}:${organizationId}`,
+);
 
 // gets a user's access for a specific profile
-export const getProfileAccessUser = async ({
-  user,
-  profileId,
-}: {
-  user: { id: string };
-  profileId: string;
-}): Promise<ProfileUserWithNormalizedRoles | undefined> =>
-  memoRequest(`profileUser:${profileId}:${user.id}`, async () => {
+export const getProfileAccessUser = memoize(
+  async ({
+    user,
+    profileId,
+  }: {
+    user: { id: string };
+    profileId: string;
+  }): Promise<ProfileUserWithNormalizedRoles | undefined> => {
     const profileUser = await db._query.profileUsers.findFirst({
       where: (table, { eq }) =>
         and(eq(table.profileId, profileId), eq(table.authUserId, user.id)),
@@ -137,7 +139,9 @@ export const getProfileAccessUser = async ({
       profile: profileUser.profile as Profile,
       roles: normalizedRoles,
     };
-  });
+  },
+  ({ user, profileId }) => `${user.id}:${profileId}`,
+);
 
 /**
  * Asserts profile-level access, falling back to org-level access if the user
@@ -323,14 +327,10 @@ export const validateAuthUserId = (authUserId: string | undefined) => {
  * Gets user session data by authUserId (database-only, no Supabase auth)
  * Used internally
  */
-export const getUserSession = async ({
-  authUserId,
-}: {
-  authUserId: string;
-}) => {
-  const validatedAuthUserId = validateAuthUserId(authUserId);
+export const getUserSession = memoize(
+  async ({ authUserId }: { authUserId: string }) => {
+    const validatedAuthUserId = validateAuthUserId(authUserId);
 
-  return memoRequest(`userSession:${validatedAuthUserId}`, async () => {
     try {
       const dbUser = await db._query.users.findFirst({
         where: (table, { eq }) => eq(table.authUserId, validatedAuthUserId),
@@ -373,8 +373,9 @@ export const getUserSession = async ({
       console.error('ERROR');
       return null;
     }
-  });
-};
+  },
+  ({ authUserId }) => authUserId,
+);
 
 export * from './assertProfileTypeAccess';
 export * from './getRoles';

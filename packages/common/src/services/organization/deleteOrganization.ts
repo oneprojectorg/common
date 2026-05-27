@@ -5,7 +5,7 @@ import type { User } from '@supabase/supabase-js';
 import { assertAccess, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { getOrgAccessUser, invalidateRequest } from '../access';
+import { getOrgAccessUser } from '../access';
 
 export async function deleteOrganization({
   organizationProfileId,
@@ -50,7 +50,7 @@ export async function deleteOrganization({
   invalidate({ type: 'organization', params: [organizationProfileId] });
   invalidate({ type: 'organization', params: [deletedOrganization.slug] });
   invalidate({ type: 'orgUser', params: [organization.id, user.id] });
-  invalidateRequest(`orgUser:${organization.id}:${user.id}`);
+  getOrgAccessUser.invalidate({ user, organizationId: organization.id });
 
   return { deletedId: organizationProfileId };
 }

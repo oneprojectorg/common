@@ -13,7 +13,7 @@ import {
 import {
   getNormalizedRoles,
   getProfileAccessUser,
-  invalidateRequest,
+  getUserSession,
 } from '../access';
 import { getProfileUserWithRelations } from './getProfileUserWithRelations';
 
@@ -143,10 +143,11 @@ export const updateProfileUserRoles = async ({
       params: [targetProfileUser.authUserId],
     }),
   ]);
-  invalidateRequest(
-    `profileUser:${targetProfileId}:${targetProfileUser.authUserId}`,
-  );
-  invalidateRequest(`userSession:${targetProfileUser.authUserId}`);
+  getProfileAccessUser.invalidate({
+    user: { id: targetProfileUser.authUserId },
+    profileId: targetProfileId,
+  });
+  getUserSession.invalidate({ authUserId: targetProfileUser.authUserId });
 
   // Fetch and return the updated profile user with full relations
   const updatedProfileUser = await getProfileUserWithRelations(profileUserId);

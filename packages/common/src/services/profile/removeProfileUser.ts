@@ -9,7 +9,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils/error';
-import { getProfileAccessUser, invalidateRequest } from '../access';
+import { getProfileAccessUser, getUserSession } from '../access';
 import { assertProfileUser } from '../assert';
 
 /**
@@ -60,10 +60,11 @@ export const removeProfileUser = async ({
       params: [deletedUser.authUserId],
     }),
   ]);
-  invalidateRequest(
-    `profileUser:${deletedUser.profileId}:${deletedUser.authUserId}`,
-  );
-  invalidateRequest(`userSession:${deletedUser.authUserId}`);
+  getProfileAccessUser.invalidate({
+    user: { id: deletedUser.authUserId },
+    profileId: deletedUser.profileId,
+  });
+  getUserSession.invalidate({ authUserId: deletedUser.authUserId });
 
   return deletedUser;
 };
