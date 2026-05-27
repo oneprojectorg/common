@@ -1,0 +1,1 @@
+ALTER TABLE "resources" DROP CONSTRAINT "resources_attachment_id_attachments_id_fkey", ADD CONSTRAINT "resources_attachment_id_attachments_id_fkey" FOREIGN KEY ("attachment_id") REFERENCES "attachments"("id") ON DELETE RESTRICT;

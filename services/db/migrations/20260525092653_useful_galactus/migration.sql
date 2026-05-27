@@ -65,7 +65,7 @@ ALTER TABLE "resource_collection_profiles" ADD CONSTRAINT "resource_collection_p
 ALTER TABLE "resource_collection_profiles" ADD CONSTRAINT "resource_collection_profiles_profile_id_profiles_id_fkey" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "resource_collection_profiles" ADD CONSTRAINT "resource_collection_profiles_XPjy8uKRYAwu_fkey" FOREIGN KEY ("added_by_profile_user_id") REFERENCES "profile_users"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "resource_collections" ADD CONSTRAINT "resource_collections_VUNYELhkilWW_fkey" FOREIGN KEY ("added_by_profile_user_id") REFERENCES "profile_users"("id") ON DELETE SET NULL;--> statement-breakpoint
-ALTER TABLE "resources" ADD CONSTRAINT "resources_attachment_id_attachments_id_fkey" FOREIGN KEY ("attachment_id") REFERENCES "attachments"("id") ON DELETE RESTRICT;--> statement-breakpoint
+ALTER TABLE "resources" ADD CONSTRAINT "resources_attachment_id_attachments_id_fkey" FOREIGN KEY ("attachment_id") REFERENCES "attachments"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "resources" ADD CONSTRAINT "resources_added_by_profile_user_id_profile_users_id_fkey" FOREIGN KEY ("added_by_profile_user_id") REFERENCES "profile_users"("id") ON DELETE SET NULL;--> statement-breakpoint
 CREATE POLICY "service-role" ON "resource_collection_items" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint
 CREATE POLICY "service-role" ON "resource_collection_profiles" AS PERMISSIVE FOR ALL TO "service_role";--> statement-breakpoint

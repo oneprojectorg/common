@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "35425593-a58c-47a1-a4e5-98fbf13c9687",
+  "id": "24be20d3-1f1a-40ee-9980-9c27920bf6c6",
   "prevIds": [
-    "d36e36f7-5072-4eb5-a2d3-2072256502ef"
+    "35425593-a58c-47a1-a4e5-98fbf13c9687"
   ],
   "ddl": [
     {
@@ -12503,7 +12503,7 @@
         "id"
       ],
       "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
+      "onDelete": "RESTRICT",
       "name": "resources_attachment_id_attachments_id_fkey",
       "entityType": "fks",
       "schema": "public",
