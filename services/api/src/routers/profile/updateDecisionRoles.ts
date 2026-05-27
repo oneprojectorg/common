@@ -19,7 +19,7 @@ export const updateDecisionRolesRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return updateDecisionRoles({
+      return await updateDecisionRoles({
         roleId: input.roleId,
         decisionPermissions: input.decisionPermissions,
         user: ctx.user,

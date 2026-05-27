@@ -1,4 +1,5 @@
-import { db } from '@op/db/client';
+import { trackProposalReviewed, trackReviewListFinished } from '@op/analytics';
+import { and, db, eq, ne } from '@op/db/client';
 import {
   type ProposalReview,
   ProposalReviewAssignmentStatus,
@@ -7,7 +8,8 @@ import {
   proposalReviews,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { eq } from 'drizzle-orm';
+import { waitUntil } from '@vercel/functions';
+import { count } from 'drizzle-orm';
 
 import { CommonError, ValidationError } from '../../utils';
 import { assertReviewAssignmentContext } from './reviewHelpers';
@@ -82,8 +84,48 @@ export async function submitReview({
     return submittedReview;
   });
 
+  const processInstanceId = context.assignment.processInstanceId;
+
+  waitUntil(
+    trackProposalReviewed(
+      user.id,
+      processInstanceId,
+      context.assignment.proposalId,
+    ),
+  );
+
+  waitUntil(
+    (async () => {
+      const [remaining] = await db
+        .select({ value: count() })
+        .from(proposalReviewAssignments)
+        .where(
+          and(
+            eq(
+              proposalReviewAssignments.processInstanceId,
+              context.assignment.processInstanceId,
+            ),
+            eq(
+              proposalReviewAssignments.reviewerProfileId,
+              context.assignment.reviewerProfileId,
+            ),
+            ne(
+              proposalReviewAssignments.status,
+              ProposalReviewAssignmentStatus.COMPLETED,
+            ),
+          ),
+        );
+
+      // Default to 1 (not 0) on a missing row so a count failure cannot
+      // falsely trigger review_list_finished.
+      if ((remaining?.value ?? 1) === 0) {
+        await trackReviewListFinished(user.id, processInstanceId);
+      }
+    })(),
+  );
+
   return {
     review,
-    processInstanceId: context.assignment.processInstanceId,
+    processInstanceId,
   };
 }
