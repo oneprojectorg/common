@@ -36,11 +36,7 @@ const moveResource = (
   }
   return {
     ...prev,
-    resources: [
-      ...without.slice(0, toIndex),
-      moved,
-      ...without.slice(toIndex),
-    ],
+    resources: [...without.slice(0, toIndex), moved, ...without.slice(toIndex)],
   };
 };
 
