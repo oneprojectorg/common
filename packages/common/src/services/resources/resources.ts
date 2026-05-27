@@ -260,6 +260,27 @@ const resolveTargetCollection = async ({
   scope: { profileId?: string; collectionId?: string };
 }): Promise<{ collectionId: string; profileId: string }> => {
   const profileId = scope.profileId ?? (await getCurrentProfileId(authUserId));
+
+  if (scope.collectionId !== undefined) {
+    const [, ownsCollection] = await Promise.all([
+      assertProfileTypeAccess({
+        user: { id: authUserId },
+        profileIds: [profileId],
+        policies: {
+          [EntityType.DECISION]: { decisions: permission.ADMIN },
+        },
+      }),
+      profileOwnsCollection({
+        profileId,
+        collectionId: scope.collectionId,
+      }),
+    ]);
+    if (!ownsCollection) {
+      throw new NotFoundError('Collection', scope.collectionId);
+    }
+    return { collectionId: scope.collectionId, profileId };
+  }
+
   await assertProfileTypeAccess({
     user: { id: authUserId },
     profileIds: [profileId],
@@ -267,18 +288,6 @@ const resolveTargetCollection = async ({
       [EntityType.DECISION]: { decisions: permission.ADMIN },
     },
   });
-
-  if (scope.collectionId !== undefined) {
-    if (
-      !(await profileOwnsCollection({
-        profileId,
-        collectionId: scope.collectionId,
-      }))
-    ) {
-      throw new NotFoundError('Collection', scope.collectionId);
-    }
-    return { collectionId: scope.collectionId, profileId };
-  }
 
   const collection = await resolveOrCreatePinnedCollection({
     profileId,
@@ -413,11 +422,15 @@ export const createDocumentResource = async (
 
   // Verify the storage object lives under this profile's resources/ prefix —
   // a guessed storageObjectId from another profile would otherwise link here.
-  const [storageObject] = await db
-    .select({ name: objectsInStorage.name })
-    .from(objectsInStorage)
-    .where(eq(objectsInStorage.id, input.storageObjectId))
-    .limit(1);
+  const [storageObjectRows, addedByProfileUserId] = await Promise.all([
+    db
+      .select({ name: objectsInStorage.name })
+      .from(objectsInStorage)
+      .where(eq(objectsInStorage.id, input.storageObjectId))
+      .limit(1),
+    lookupProfileUserId({ authUserId: input.authUserId, profileId }),
+  ]);
+  const storageObject = storageObjectRows[0];
 
   if (!storageObject) {
     throw new NotFoundError('Storage object', input.storageObjectId);
@@ -428,11 +441,6 @@ export const createDocumentResource = async (
   ) {
     throw new ValidationError('Storage object does not belong to this profile');
   }
-
-  const addedByProfileUserId = await lookupProfileUserId({
-    authUserId: input.authUserId,
-    profileId,
-  });
 
   const { resourceId, sortOrder } = await db.transaction(async (tx) => {
     const [attachment] = await tx
@@ -495,13 +503,13 @@ export const updateResource = async (
       [EntityType.DECISION]: { decisions: permission.ADMIN },
     },
   });
-  if (!(await profileOwnsResource({ profileId, resourceId: input.id }))) {
+  const [ownsResource, existing] = await Promise.all([
+    profileOwnsResource({ profileId, resourceId: input.id }),
+    db.query.resources.findFirst({ where: { id: input.id } }),
+  ]);
+  if (!ownsResource) {
     throw new NotFoundError('Resource', input.id);
   }
-
-  const existing = await db.query.resources.findFirst({
-    where: { id: input.id },
-  });
   if (!existing) {
     throw new NotFoundError('Resource', input.id);
   }
@@ -613,21 +621,18 @@ export const attachResourceToCollection = async ({
       [EntityType.DECISION]: { decisions: permission.ADMIN },
     },
   });
-  const [ownsCollection, ownsResource] = await Promise.all([
-    profileOwnsCollection({ profileId, collectionId }),
-    profileOwnsResource({ profileId, resourceId }),
-  ]);
+  const [ownsCollection, ownsResource, addedByProfileUserId] =
+    await Promise.all([
+      profileOwnsCollection({ profileId, collectionId }),
+      profileOwnsResource({ profileId, resourceId }),
+      lookupProfileUserId({ authUserId, profileId }),
+    ]);
   if (!ownsCollection) {
     throw new NotFoundError('Collection', collectionId);
   }
   if (!ownsResource) {
     throw new NotFoundError('Resource', resourceId);
   }
-
-  const addedByProfileUserId = await lookupProfileUserId({
-    authUserId,
-    profileId,
-  });
 
   const sortOrder = await db.transaction(async (tx) => {
     // Lock before the existence probe — otherwise two concurrent attaches both
@@ -661,9 +666,13 @@ export const detachResourceFromCollection = async ({
       [EntityType.DECISION]: { decisions: permission.ADMIN },
     },
   });
-  const [ownsCollection, ownsResource] = await Promise.all([
+  const [ownsCollection, ownsResource, existing] = await Promise.all([
     profileOwnsCollection({ profileId, collectionId }),
     profileOwnsResource({ profileId, resourceId }),
+    db.query.resources.findFirst({
+      where: { id: resourceId },
+      with: { attachment: { with: { storageObject: true } } },
+    }),
   ]);
   if (!ownsCollection) {
     throw new NotFoundError('Collection', collectionId);
@@ -671,11 +680,6 @@ export const detachResourceFromCollection = async ({
   if (!ownsResource) {
     throw new NotFoundError('Resource', resourceId);
   }
-
-  const existing = await db.query.resources.findFirst({
-    where: { id: resourceId },
-    with: { attachment: { with: { storageObject: true } } },
-  });
   if (!existing) {
     throw new NotFoundError('Resource', resourceId);
   }
@@ -757,16 +761,16 @@ export const deleteResource = async ({
       [EntityType.DECISION]: { decisions: permission.ADMIN },
     },
   });
-  if (!(await profileOwnsResource({ profileId, resourceId: id }))) {
+  const [ownsResource, existing] = await Promise.all([
+    profileOwnsResource({ profileId, resourceId: id }),
+    db.query.resources.findFirst({
+      where: { id },
+      with: { attachment: { with: { storageObject: true } } },
+    }),
+  ]);
+  if (!ownsResource) {
     throw new NotFoundError('Resource', id);
   }
-
-  const existing = await db.query.resources.findFirst({
-    where: { id },
-    with: {
-      attachment: { with: { storageObject: true } },
-    },
-  });
   if (!existing) {
     throw new NotFoundError('Resource', id);
   }
