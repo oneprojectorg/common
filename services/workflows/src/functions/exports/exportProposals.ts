@@ -63,6 +63,8 @@ export const exportProposals = inngest.createFunction(
             skipAccessCheck: true, // Access already verified when export was created
           },
           user: userRecord as any,
+          // Trusted-context call: real user IS the access user.
+          accessUser: userRecord as any,
         });
 
         return result.proposals;

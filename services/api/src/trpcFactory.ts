@@ -14,6 +14,7 @@ import withAuthenticated from './middlewares/withAuthenticated';
 import withChannelMeta from './middlewares/withChannelMeta';
 import withLogger from './middlewares/withLogger';
 import withRateLimited from './middlewares/withRateLimited';
+import withResolvedUser from './middlewares/withResolvedUser';
 import type { TContext } from './types';
 
 export const createContext = async ({
@@ -62,7 +63,7 @@ export const { mergeRouters } = t;
 export const createCallerFactory = t.createCallerFactory;
 export const commonProcedure = t.procedure.use(withChannelMeta).use(withLogger);
 
-const DEFAULT_RATE_LIMIT = { windowSize: 10, maxRequests: 10 };
+export const DEFAULT_RATE_LIMIT = { windowSize: 10, maxRequests: 10 };
 
 interface CommonAuthedProcedureOptions {
   rateLimit?: {
@@ -88,5 +89,33 @@ export function commonAuthedProcedure(opts?: CommonAuthedProcedureOptions) {
   return commonProcedure
     .use(withRateLimited(rateLimit))
     .use(withAuthenticated)
+    .use(withAnalytics);
+}
+
+/**
+ * Creates an "open" procedure that admits anonymous-JWT and no-JWT callers
+ * alongside fully authed users. The middleware resolves the caller's
+ * identity into `ctx.authContext` (with `user?` and `accessUser`) but
+ * does not gate — authorisation is delegated to the service layer
+ * (typically via role grants to the seeded `GLOBAL_USER_PUBLIC` and
+ * `GLOBAL_USER_ANONYMOUS` users on the target profile).
+ *
+ * Includes: channelMeta -> logger -> rateLimited -> resolvedUser -> analytics
+ *
+ * Usage:
+ * - `commonOpenProcedure()` - default rate limit (10 req/10s)
+ * - `commonOpenProcedure({ rateLimit: { windowSize: 60, maxRequests: 5 } })`
+ *
+ * Routers using this procedure should still gate at the boundary for any
+ * write that requires a real Supabase user (e.g. `createProposal` throws
+ * `UnauthorizedError` when `ctx.authContext.user` is undefined).
+ *
+ * For closed-network endpoints, use `commonAuthedProcedure` instead.
+ */
+export function commonOpenProcedure(opts?: CommonAuthedProcedureOptions) {
+  const rateLimit = opts?.rateLimit ?? DEFAULT_RATE_LIMIT;
+  return commonProcedure
+    .use(withRateLimited(rateLimit))
+    .use(withResolvedUser)
     .use(withAnalytics);
 }

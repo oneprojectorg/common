@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import dotenv from 'dotenv';
 import { reset } from 'drizzle-seed';
+import { sql } from 'drizzle-orm';
 
 import { db } from '.';
 import * as schema from './schema';
@@ -9,6 +10,14 @@ import {
   ACCESS_ROLE_PERMISSIONS,
   ACCESS_ZONES,
 } from './seedData/accessControl';
+
+// Reserved UUIDs / emails for the two "role-bearer" global users. Kept in
+// sync with packages/common/src/services/access/globalUser.ts — duplicated
+// here because @op/db cannot depend on @op/common.
+const GLOBAL_USER_PUBLIC_ID = '00000000-0000-4000-8000-000000000020';
+const GLOBAL_USER_ANONYMOUS_ID = '00000000-0000-4000-8000-000000000021';
+const GLOBAL_USER_PUBLIC_EMAIL = 'global-public@oneproject.internal';
+const GLOBAL_USER_ANONYMOUS_EMAIL = 'global-anonymous@oneproject.internal';
 
 /**
  * Decision templates for seeding.
@@ -324,6 +333,82 @@ async function seedAccessControl() {
   );
 }
 
+/**
+ * Seed the two "role-bearer" global users — one for no-JWT callers
+ * (GLOBAL_USER_PUBLIC) and one for Supabase-anonymous callers
+ * (GLOBAL_USER_ANONYMOUS). The standard `create_user_on_signup` trigger
+ * fires on the auth.users insert, creating the matching public.users +
+ * profiles rows.
+ *
+ * Inserts are direct SQL into auth.users so we can pin the IDs to the
+ * reserved UUIDs that the access-resolution layer hard-codes. Supabase's
+ * admin API doesn't expose a way to choose the ID, hence the raw insert.
+ *
+ * Idempotent against repeat runs: ON CONFLICT (id) DO NOTHING. The
+ * preceding `wipeDatabase()` reset only touches the public schema, so
+ * auth.users persists across reseeds — repeat runs are no-ops for these
+ * two rows and the profiles already exist.
+ */
+async function seedGlobalUsers() {
+  console.log('👤 Seeding global role-bearer users...');
+
+  // wipeDatabase() only resets public schema, so any prior auth.users
+  // rows for these globals survive. Delete them so the INSERT below
+  // re-fires the create_user_on_signup trigger and rebuilds the linked
+  // public.users + profile rows wipe just removed.
+  await db.execute(sql`
+    DELETE FROM auth.users
+    WHERE id IN (
+      ${GLOBAL_USER_PUBLIC_ID}::uuid,
+      ${GLOBAL_USER_ANONYMOUS_ID}::uuid
+    )
+  `);
+
+  await db.execute(sql`
+    INSERT INTO auth.users (
+      id,
+      instance_id,
+      aud,
+      role,
+      email,
+      encrypted_password,
+      email_confirmed_at,
+      raw_app_meta_data,
+      raw_user_meta_data,
+      created_at,
+      updated_at
+    ) VALUES
+      (
+        ${GLOBAL_USER_PUBLIC_ID}::uuid,
+        '00000000-0000-0000-0000-000000000000'::uuid,
+        'authenticated',
+        'authenticated',
+        ${GLOBAL_USER_PUBLIC_EMAIL},
+        '',
+        now(),
+        '{"provider":"email","providers":["email"]}'::jsonb,
+        '{}'::jsonb,
+        now(),
+        now()
+      ),
+      (
+        ${GLOBAL_USER_ANONYMOUS_ID}::uuid,
+        '00000000-0000-0000-0000-000000000000'::uuid,
+        'authenticated',
+        'authenticated',
+        ${GLOBAL_USER_ANONYMOUS_EMAIL},
+        '',
+        now(),
+        '{"provider":"email","providers":["email"]}'::jsonb,
+        '{}'::jsonb,
+        now(),
+        now()
+      )
+  `);
+
+  console.log(`  ✓ Seeded GLOBAL_USER_PUBLIC + GLOBAL_USER_ANONYMOUS`);
+}
+
 async function seedDecisionTemplates() {
   console.log('🧩 Seeding decision process templates...');
 
@@ -371,6 +456,7 @@ async function seed() {
 
   await wipeDatabase();
   await seedAccessControl();
+  await seedGlobalUsers();
   await seedDecisionTemplates();
 
   console.log('\n✅ Database seeding completed successfully!');

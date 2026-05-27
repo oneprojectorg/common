@@ -155,20 +155,23 @@ const buildBaseConditions = (
 export const listProposals = async ({
   input,
   user,
+  accessUser,
 }: {
   input: ListProposalsInput;
-  user: User;
+  /** Real Supabase user. Undefined for no-JWT callers — owner-keyed
+   *  filters (drafts, own-hidden, ballot self-check) degrade to empty
+   *  rather than throwing. */
+  user?: User;
+  /** Substituted user for permission queries. Always defined. */
+  accessUser: User;
 }) => {
   const { processInstanceId, skipAccessCheck = false } = input;
 
-  // Skip authentication check if this is a trusted context (e.g., background job)
-  if (!skipAccessCheck && !user) {
-    throw new UnauthorizedError('User must be authenticated');
-  }
-
-  // Resolve the caller's profile once; it's reused for ballot auth, the
-  // HIDDEN visibility filter, and owner/editable checks further down.
-  const currentProfileId = await getCurrentProfileId(user.id);
+  // Resolve the caller's profile when present; no-JWT callers have no
+  // Common profile and the owner-keyed filters degrade naturally.
+  const currentProfileId = user
+    ? await getCurrentProfileId(user.id)
+    : undefined;
 
   // Fetch the instance row up front and resolve the explicit ID scope in
   // parallel. The row is reused for the phase-resolution context (instead of
@@ -212,11 +215,10 @@ export const listProposals = async ({
       // votedByProfileId only matches submitted proposals on a ballot.
       return { phaseProposalIds: explicitScopeIds, phaseDraftIds: [] };
     }
-    if (skipAccessCheck) {
-      // Trusted contexts (background jobs) never surface drafts, so only
-      // resolve the non-draft phase set. Legacy instances and instances
-      // without a current phase fall back to all active non-drafts inside
-      // `getProposalIdsForPhase`.
+    if (skipAccessCheck || !user) {
+      // Trusted contexts (background jobs) and no-JWT public-mode readers
+      // never surface drafts. The former by policy; the latter because
+      // there's no caller identity that could own a draft.
       const ids = await getProposalIdsForPhase({
         instance,
         phaseId: input.phaseId,
@@ -242,11 +244,11 @@ export const listProposals = async ({
       return { profileUser: undefined, canManageProposals: false };
     }
     const profileUser = await getProfileAccessUser({
-      user,
+      user: accessUser,
       profileId: instanceProfileId,
     });
     await assertInstanceProfileAccess({
-      user,
+      user: accessUser,
       instance,
       profilePermissions: [
         { decisions: permission.ADMIN },
@@ -368,21 +370,29 @@ export const listProposals = async ({
     // invited collaborators on the proposal's profile — same pattern the
     // draft filter uses, so a collaborator's view of a co-authored proposal
     // doesn't change the moment it's submitted with HIDDEN visibility.
+    //
+    // No-JWT callers have no real auth user id, so the collaborator
+    // subquery is skipped and the filter collapses to VISIBLE-only.
     const nonDraftVisibilityFilter = canManageProposals
       ? phaseScopedNonDraftIdFilter
-      : and(
-          phaseScopedNonDraftIdFilter,
-          or(
+      : user
+        ? and(
+            phaseScopedNonDraftIdFilter,
+            or(
+              eq(t.visibility, Visibility.VISIBLE),
+              inArray(
+                t.profileId,
+                db
+                  .select({ profileId: profileUsers.profileId })
+                  .from(profileUsers)
+                  .where(eq(profileUsers.authUserId, user.id)),
+              ),
+            )!,
+          )!
+        : and(
+            phaseScopedNonDraftIdFilter,
             eq(t.visibility, Visibility.VISIBLE),
-            inArray(
-              t.profileId,
-              db
-                .select({ profileId: profileUsers.profileId })
-                .from(profileUsers)
-                .where(eq(profileUsers.authUserId, user.id)),
-            ),
-          )!,
-        )!;
+          )!;
 
     return and(clause, or(draftFilter, nonDraftVisibilityFilter)!)!;
   };
@@ -452,7 +462,11 @@ export const listProposals = async ({
 
   const [relationshipData, documentContentMap, selectedIds] = await Promise.all(
     [
-      getProposalRelationshipData({ profileIds, currentProfileId }),
+      // Skip the relationship lookup entirely for no-JWT callers — they
+      // have no profile, so isLiked/isFollowed are trivially false.
+      currentProfileId
+        ? getProposalRelationshipData({ profileIds, currentProfileId })
+        : Promise.resolve(new Map()),
       getProposalDocumentsContent(
         proposalList.map((proposal) => {
           const parsed = parseProposalData(proposal.proposalData);

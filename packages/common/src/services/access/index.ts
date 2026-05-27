@@ -183,7 +183,7 @@ export const assertInstanceProfileAccess = async ({
     }
 
     const orgUser = await getOrgAccessUser({
-      user,
+      user: { id: user.id },
       organizationId: org[0].id,
     });
 
@@ -373,6 +373,7 @@ export const getUserSession = async ({
 
 export * from './assertProfileTypeAccess';
 export * from './getRoles';
+export * from './globalUser';
 export * from './permissions';
 export * from './utils';
 export * from './platformAdmin';

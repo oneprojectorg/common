@@ -25,6 +25,7 @@ import {
 } from '../../../test/helpers/pipelineSchemas';
 import {
   createIsolatedSession,
+  createIsolatedTestClient,
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
@@ -34,6 +35,15 @@ const createCaller = createCallerFactory(appRouter);
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+async function createAnonymousCaller() {
+  const client = createIsolatedTestClient();
+  const { data, error } = await client.auth.signInAnonymously();
+  if (error || !data.session) {
+    throw new Error(`Failed to sign in anonymously: ${error?.message}`);
+  }
+  return createCaller(await createTestContextWithSession(data.session));
 }
 
 describe.concurrent('listProposals', () => {
@@ -1689,6 +1699,136 @@ describe.concurrent('listProposals', () => {
       textFragment('{"amount":500,"currency":"EUR"}'),
     );
     expect(fragments.category).toEqual(textFragment('Pinned Category'));
+  });
+
+  // Public-mode gating: listProposals admits anonymous-JWT callers via the
+  // synth `Anonymous` role (READ on decisions). Non-public instances
+  // reject anonymous and no-JWT callers at the standard role check.
+  describe('public-mode gating', () => {
+    it('allows a no-JWT caller to list proposals on a public instance', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+      await testData.setInstancePublic(instance.instance.id);
+
+      const proposal = await testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Visible to public' },
+      });
+
+      // Submit so the proposal is no longer a draft — drafts aren't surfaced
+      // for no-JWT callers (no caller identity to own them).
+      const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
+      await ownerCaller.decision.submitProposal({ proposalId: proposal.id });
+
+      const noJwtCaller = createCaller(
+        await createTestContextWithSession(null),
+      );
+
+      const result = await noJwtCaller.decision.listProposals({
+        processInstanceId: instance.instance.id,
+      });
+
+      expect(result.proposals).toHaveLength(1);
+      expect(result.proposals[0]?.id).toBe(proposal.id);
+      expect(result.canManageProposals).toBe(false);
+    });
+
+    it('allows an anonymous JWT to list proposals on a public instance', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+      await testData.setInstancePublic(instance.instance.id);
+
+      await testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Visible to anon' },
+      });
+
+      const anonCaller = await createAnonymousCaller();
+
+      const result = await anonCaller.decision.listProposals({
+        processInstanceId: instance.instance.id,
+      });
+
+      expect(result.proposals).toBeDefined();
+    });
+
+    it('rejects an unauthenticated request on a non-public instance', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+      // Non-public by default — closed-network gate.
+
+      const caller = createCaller(await createTestContextWithSession(null));
+
+      await expect(
+        caller.decision.listProposals({
+          processInstanceId: instance.instance.id,
+        }),
+      ).rejects.toMatchObject({
+        cause: { name: 'UnauthorizedError' },
+      });
+    });
+
+    it('rejects an anonymous JWT on a non-public instance', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+      // Non-public by default — closed-network gate.
+
+      const anonCaller = await createAnonymousCaller();
+
+      await expect(
+        anonCaller.decision.listProposals({
+          processInstanceId: instance.instance.id,
+        }),
+      ).rejects.toMatchObject({
+        cause: { name: 'UnauthorizedError' },
+      });
+    });
   });
 });
 

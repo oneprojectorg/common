@@ -42,9 +42,16 @@ export interface CreateProposalInput {
 export const createProposal = async ({
   data,
   user,
+  accessUser,
 }: {
   data: CreateProposalInput;
+  /** Real Supabase user. Required: creation writes the new proposal's
+   *  `profile_users` row keyed to this user's id. Callers (routers /
+   *  test fixtures) must enforce presence before invoking. */
   user: User;
+  /** Substituted user for permission queries. Always defined. Equals
+   *  `user` for authed callers; `GLOBAL_USER_ANONYMOUS` for anon-JWT. */
+  accessUser: User;
 }) => {
   const authUserId = user.id;
 
@@ -62,8 +69,10 @@ export const createProposal = async ({
       throw new ValidationError('Process instance has no profile');
     }
 
+    // Use `accessUser` (substituted by withResolvedUser) for the role
+    // lookup so anon-JWT and no-JWT callers hit the seeded global rows.
     const profileAccessUser = await getProfileAccessUser({
-      user: { id: authUserId },
+      user: accessUser,
       profileId: instance.profileId,
     });
 
@@ -71,6 +80,13 @@ export const createProposal = async ({
       throw new UnauthorizedError('Not authorized');
     }
 
+    // NOTE: `assertAccess` throws `AccessControlException` from
+    // `access-zones`, which our outer catch doesn't recognise — so
+    // permission denials here surface to callers as the generic
+    // `CommonError('Failed to create proposal')` rather than
+    // `UnauthorizedError`. Upstream fix in `access-zones`: have the
+    // library throw a type the platform standardises on, or expose a
+    // way to choose the thrown error type.
     assertAccess(
       [
         { profile: permission.ADMIN },

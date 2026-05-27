@@ -27,6 +27,8 @@ const ACCESS_ZONE_IDS = {
 const ACCESS_ROLE_IDS = {
   ADMIN: '00000000-0000-4000-8000-000000000011',
   MEMBER: '00000000-0000-4000-8000-000000000012',
+  ANONYMOUS: '00000000-0000-4000-8000-000000000013',
+  PUBLIC: '00000000-0000-4000-8000-000000000014',
 } as const;
 
 // Access zones data
@@ -60,6 +62,18 @@ export const ACCESS_ROLES = [
     name: 'Admin',
     description: null,
   },
+  {
+    id: ACCESS_ROLE_IDS.ANONYMOUS,
+    name: 'Anonymous',
+    description:
+      'Synthesised at request time for anonymous-JWT callers on public-mode instances. Owner-bounded write capabilities.',
+  },
+  {
+    id: ACCESS_ROLE_IDS.PUBLIC,
+    name: 'Public',
+    description:
+      'Synthesised at request time for no-JWT or authed-no-role callers on public-mode instances. Read-only.',
+  },
 ];
 
 // Role name to ID mapping for convenient access (avoids string references)
@@ -71,6 +85,14 @@ export const ROLES = {
   MEMBER: {
     id: ACCESS_ROLE_IDS.MEMBER,
     name: 'Member',
+  },
+  ANONYMOUS: {
+    id: ACCESS_ROLE_IDS.ANONYMOUS,
+    name: 'Anonymous',
+  },
+  PUBLIC: {
+    id: ACCESS_ROLE_IDS.PUBLIC,
+    name: 'Public',
   },
 } as const;
 
@@ -137,5 +159,19 @@ export const ACCESS_ROLE_PERMISSIONS = [
       PERMISSIONS.UPDATE |
       DECISION_BITS.SUBMIT_PROPOSALS |
       DECISION_BITS.VOTE,
+  },
+  // Anonymous: synthesised for anon-JWT callers on public-mode instances.
+  // Read + submit; owner-bounded writes enforced at the service layer.
+  {
+    accessRoleId: ACCESS_ROLE_IDS.ANONYMOUS,
+    accessZoneId: ACCESS_ZONE_IDS.DECISIONS,
+    permission: PERMISSIONS.READ | DECISION_BITS.SUBMIT_PROPOSALS,
+  },
+  // Public: synthesised for no-JWT (or authed-no-role) callers on public-mode
+  // instances. Read-only.
+  {
+    accessRoleId: ACCESS_ROLE_IDS.PUBLIC,
+    accessZoneId: ACCESS_ZONE_IDS.DECISIONS,
+    permission: PERMISSIONS.READ,
   },
 ];

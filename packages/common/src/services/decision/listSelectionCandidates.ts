@@ -105,6 +105,8 @@ export async function listSelectionCandidates({
       includeVoteCounts: true,
     },
     user,
+    // Internal authed-context caller: real user IS the access user.
+    accessUser: user,
   });
 
   return { proposals };

@@ -1,5 +1,7 @@
 import {
   type DecisionInstanceData,
+  GLOBAL_USER_ANONYMOUS_ID,
+  GLOBAL_USER_PUBLIC_ID,
   advancePhase,
   createDecisionInstance,
   createInstanceDataFromTemplate,
@@ -15,6 +17,7 @@ import {
   decisionProcesses,
   processInstances,
   profileUserToAccessRoles,
+  profileUsers,
   profiles,
   proposals,
   users,
@@ -32,7 +35,11 @@ import type {
   processInstanceWithSchemaEncoder,
 } from '../../encoders/decision';
 import { processInstanceWithSchemaEncoder as processInstanceEncoder } from '../../encoders/decision';
-import { createTestUser, supabaseTestAdminClient } from '../supabase-utils';
+import {
+  createIsolatedTestClient,
+  createTestUser,
+  supabaseTestAdminClient,
+} from '../supabase-utils';
 
 type DecisionSchemaDefinition = z.infer<typeof decisionSchemaDefinitionEncoder>;
 
@@ -431,6 +438,118 @@ export class TestDecisionsDataManager {
   }
 
   /**
+   * Opens an instance to anonymous + no-JWT participation by granting the
+   * two global role-bearer users an explicit role on the instance's
+   * profile:
+   *   - GLOBAL_USER_PUBLIC    → `Public` role    (READ only)
+   *   - GLOBAL_USER_ANONYMOUS → `Anonymous` role (READ + SUBMIT_PROPOSALS)
+   *
+   * The synth-lookup in `getInstanceProfileAccessUser` substitutes the
+   * caller's id for the matching global at permission-check time, so
+   * these two `profile_users` rows act as the policy for every
+   * anonymous-JWT visitor (collectively) and every no-JWT visitor
+   * (collectively) — no per-actor rows.
+   */
+  async setInstancePublic(instanceId: string): Promise<void> {
+    const row = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+    });
+    if (!row?.profileId) {
+      throw new Error(`Instance ${instanceId} has no profile`);
+    }
+
+    const profileId = row.profileId;
+
+    // Look up the two globals' public.users rows to grab their emails for
+    // the profile_users insert (email is NOT NULL on profile_users).
+    const globals = await db.query.users.findMany({
+      where: {
+        authUserId: {
+          in: [GLOBAL_USER_PUBLIC_ID, GLOBAL_USER_ANONYMOUS_ID],
+        },
+      },
+    });
+    const byAuthId = new Map(globals.map((g) => [g.authUserId, g]));
+    const publicGlobal = byAuthId.get(GLOBAL_USER_PUBLIC_ID);
+    const anonGlobal = byAuthId.get(GLOBAL_USER_ANONYMOUS_ID);
+    if (!publicGlobal || !anonGlobal) {
+      throw new Error(
+        'Global role-bearer users missing. Run pnpm w:db seed:test.',
+      );
+    }
+
+    const [publicPU, anonPU] = await db
+      .insert(profileUsers)
+      .values([
+        {
+          profileId,
+          authUserId: GLOBAL_USER_PUBLIC_ID,
+          email: publicGlobal.email,
+        },
+        {
+          profileId,
+          authUserId: GLOBAL_USER_ANONYMOUS_ID,
+          email: anonGlobal.email,
+        },
+      ])
+      .returning();
+    if (!publicPU || !anonPU) {
+      throw new Error('Failed to insert global profile_users');
+    }
+
+    await db.insert(profileUserToAccessRoles).values([
+      { profileUserId: publicPU.id, accessRoleId: ROLES.PUBLIC.id },
+      { profileUserId: anonPU.id, accessRoleId: ROLES.ANONYMOUS.id },
+    ]);
+  }
+
+  /**
+   * Creates an anonymous Supabase participant via `signInAnonymously()`.
+   * Returns the session for building an authenticated tRPC caller, plus
+   * the Supabase user and the participant profileId provisioned by the
+   * auth trigger.
+   *
+   * Anonymous participants are NOT granted any DB role on the instance
+   * profile — public-mode instances admit them via the synth `Anonymous`
+   * role resolved by `getInstanceProfileAccessUser` at request time.
+   */
+  async createAnonymousParticipant(_opts?: { instance?: CreatedInstance }) {
+    this.ensureCleanupRegistered();
+
+    const client = createIsolatedTestClient();
+    const { data, error } = await client.auth.signInAnonymously();
+    if (error || !data.session || !data.user) {
+      throw new Error(
+        `Failed to create anonymous session: ${error?.message ?? 'no session'}`,
+      );
+    }
+
+    const authUserId = data.user.id;
+    this.createdAuthUserIds.push(authUserId);
+
+    // The auth trigger provisions public.users + profile + profile_users
+    // rows for anonymous sign-ins. Fetch the resulting profileId so it
+    // gets cleaned up with the rest of this test's data.
+    const userRecord = await db.query.users.findFirst({
+      where: { authUserId },
+    });
+    if (!userRecord?.profileId) {
+      throw new Error(
+        `Anonymous user ${authUserId} missing profile after sign-in trigger`,
+      );
+    }
+    this.createdProfileIds.push(userRecord.profileId);
+
+    return {
+      authUserId,
+      session: data.session,
+      user: data.user,
+      profileId: userRecord.profileId,
+      client,
+    };
+  }
+
+  /**
    * Assigns an access role to a user on a specific decision profile.
    */
   async assignRole(
@@ -598,6 +717,9 @@ export class TestDecisionsDataManager {
         proposalData,
       },
       user,
+      // Test fixture creates proposals as an authed user; real user IS the
+      // access user.
+      accessUser: user,
     });
 
     // Track the proposal's profile for cleanup

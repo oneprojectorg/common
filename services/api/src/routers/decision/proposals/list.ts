@@ -6,18 +6,23 @@ import {
 } from '@op/common/client';
 
 import { proposalFilterSchema } from '../../../encoders/decision';
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import {
+  commonAuthedProcedure,
+  commonOpenProcedure,
+  router,
+} from '../../../trpcFactory';
 
 export const listProposalsRouter = router({
   /** Lists proposals for a given process instanc in the curent phase. */
-  listProposals: commonAuthedProcedure()
+  listProposals: commonOpenProcedure()
     .input(proposalFilterSchema)
     .output(proposalListSchema)
     .query(async ({ ctx, input }) => {
-      const { user } = ctx;
+      const { user, accessUser } = ctx.authContext;
       const result = await listProposals({
         input,
         user,
+        accessUser,
       });
 
       ctx.registerQueryChannels([
