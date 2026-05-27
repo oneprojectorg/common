@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { type DbClient, type TransactionType, db } from '@op/db/client';
 import {
   EntityType,
   resourceCollectionProfiles,
@@ -26,7 +26,7 @@ const profileLock = async ({
   tx,
   profileId,
 }: {
-  tx: Parameters<Parameters<typeof db.transaction>[0]>[0];
+  tx: TransactionType;
   profileId: string;
 }) => {
   await tx.execute(
@@ -34,13 +34,28 @@ const profileLock = async ({
   );
 };
 
-type Executor = Parameters<Parameters<typeof db.transaction>[0]>[0] | typeof db;
+const linkToCollectionForProfile = (
+  collection: { id: string; name: string },
+  link: {
+    sortKey: string;
+    addedByProfileUserId: string | null;
+    createdAt: string | null;
+    updatedAt: string | null;
+  },
+): CollectionForProfile => ({
+  id: collection.id,
+  name: collection.name,
+  sortKey: link.sortKey,
+  addedByProfileUserId: link.addedByProfileUserId,
+  createdAt: link.createdAt,
+  updatedAt: link.updatedAt,
+});
 
 const collectionsForProfileQuery = ({
   exec,
   profileId,
 }: {
-  exec: Executor;
+  exec: DbClient;
   profileId: string;
 }): Promise<CollectionForProfile[]> =>
   exec
@@ -65,7 +80,7 @@ const collectionForProfileById = async ({
   profileId,
   collectionId,
 }: {
-  exec: Executor;
+  exec: DbClient;
   profileId: string;
   collectionId: string;
 }): Promise<CollectionForProfile | null> => {
@@ -154,14 +169,7 @@ export const createCollection = async ({
       throw new ConflictError('Failed to attach collection to profile');
     }
 
-    return {
-      id: collection.id,
-      name: collection.name,
-      sortKey: link.sortKey,
-      addedByProfileUserId: link.addedByProfileUserId,
-      createdAt: link.createdAt,
-      updatedAt: link.updatedAt,
-    };
+    return linkToCollectionForProfile(collection, link);
   });
 };
 
@@ -199,15 +207,10 @@ export const updateCollection = async ({
       throw new NotFoundError('Collection', id);
     }
 
-    const patchValues: Partial<{ name: string }> = {};
     if (patch.name !== undefined) {
-      patchValues.name = patch.name;
-    }
-
-    if (Object.keys(patchValues).length > 0) {
       const [updated] = await tx
         .update(resourceCollections)
-        .set(patchValues)
+        .set({ name: patch.name })
         .where(eq(resourceCollections.id, id))
         .returning({ id: resourceCollections.id });
 
@@ -263,11 +266,19 @@ export const reorderCollection = async ({
 
     const rows = await tx
       .select({
-        id: resourceCollectionProfiles.id,
+        rowId: resourceCollectionProfiles.id,
         collectionId: resourceCollectionProfiles.collectionId,
+        name: resourceCollections.name,
         sortKey: resourceCollectionProfiles.sortKey,
+        addedByProfileUserId: resourceCollectionProfiles.addedByProfileUserId,
+        createdAt: resourceCollectionProfiles.createdAt,
+        updatedAt: resourceCollectionProfiles.updatedAt,
       })
       .from(resourceCollectionProfiles)
+      .innerJoin(
+        resourceCollections,
+        eq(resourceCollections.id, resourceCollectionProfiles.collectionId),
+      )
       .where(eq(resourceCollectionProfiles.profileId, profileId))
       .orderBy(asc(resourceCollectionProfiles.sortKey));
 
@@ -275,16 +286,18 @@ export const reorderCollection = async ({
     if (movedIdx === -1) {
       throw new NotFoundError('Collection', id);
     }
+    const moved = rows[movedIdx]!;
+    const toDTO = (sortKey: string): CollectionForProfile => ({
+      id: moved.collectionId,
+      name: moved.name,
+      sortKey,
+      addedByProfileUserId: moved.addedByProfileUserId,
+      createdAt: moved.createdAt,
+      updatedAt: moved.updatedAt,
+    });
+
     if (id === upperNeighborId) {
-      const row = await collectionForProfileById({
-        exec: tx,
-        profileId,
-        collectionId: id,
-      });
-      if (!row) {
-        throw new NotFoundError('Collection', id);
-      }
-      return row;
+      return toDTO(moved.sortKey);
     }
 
     let upperIdx: number;
@@ -299,30 +312,22 @@ export const reorderCollection = async ({
 
     const expectedIdxAfterRemoval =
       upperIdx === -1 ? 0 : upperIdx < movedIdx ? upperIdx + 1 : upperIdx;
-
-    if (expectedIdxAfterRemoval !== movedIdx) {
-      const upperKey = upperIdx === -1 ? null : rows[upperIdx]!.sortKey;
-      const lowerCandidateIdx = upperIdx + 1;
-      const lowerKey =
-        lowerCandidateIdx === movedIdx
-          ? (rows[lowerCandidateIdx + 1]?.sortKey ?? null)
-          : (rows[lowerCandidateIdx]?.sortKey ?? null);
-      const newKey = generateKeyBetween(upperKey, lowerKey);
-      await tx
-        .update(resourceCollectionProfiles)
-        .set({ sortKey: newKey })
-        .where(eq(resourceCollectionProfiles.id, rows[movedIdx]!.id));
+    if (expectedIdxAfterRemoval === movedIdx) {
+      return toDTO(moved.sortKey);
     }
 
-    const row = await collectionForProfileById({
-      exec: tx,
-      profileId,
-      collectionId: id,
-    });
-    if (!row) {
-      throw new NotFoundError('Collection', id);
-    }
-    return row;
+    const upperKey = upperIdx === -1 ? null : rows[upperIdx]!.sortKey;
+    const lowerCandidateIdx = upperIdx + 1;
+    const lowerKey =
+      lowerCandidateIdx === movedIdx
+        ? (rows[lowerCandidateIdx + 1]?.sortKey ?? null)
+        : (rows[lowerCandidateIdx]?.sortKey ?? null);
+    const newKey = generateKeyBetween(upperKey, lowerKey);
+    await tx
+      .update(resourceCollectionProfiles)
+      .set({ sortKey: newKey })
+      .where(eq(resourceCollectionProfiles.id, moved.rowId));
+    return toDTO(newKey);
   });
 };
 
@@ -395,23 +400,7 @@ export const resolveOrCreateDefaultCollection = async ({
   return db.transaction(async (tx) => {
     await profileLock({ tx, profileId });
 
-    const [existing] = await tx
-      .select({
-        id: resourceCollections.id,
-        name: resourceCollections.name,
-        sortKey: resourceCollectionProfiles.sortKey,
-        addedByProfileUserId: resourceCollectionProfiles.addedByProfileUserId,
-        createdAt: resourceCollectionProfiles.createdAt,
-        updatedAt: resourceCollectionProfiles.updatedAt,
-      })
-      .from(resourceCollectionProfiles)
-      .innerJoin(
-        resourceCollections,
-        eq(resourceCollections.id, resourceCollectionProfiles.collectionId),
-      )
-      .where(eq(resourceCollectionProfiles.profileId, profileId))
-      .orderBy(asc(resourceCollectionProfiles.sortKey))
-      .limit(1);
+    const existing = (await collectionsForProfileQuery({ exec: tx, profileId }))[0];
     if (existing) {
       return existing;
     }
@@ -436,13 +425,6 @@ export const resolveOrCreateDefaultCollection = async ({
       throw new ConflictError('Failed to attach Default collection to profile');
     }
 
-    return {
-      id: collection.id,
-      name: collection.name,
-      sortKey: link.sortKey,
-      addedByProfileUserId: link.addedByProfileUserId,
-      createdAt: link.createdAt,
-      updatedAt: link.updatedAt,
-    };
+    return linkToCollectionForProfile(collection, link);
   });
 };
