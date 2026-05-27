@@ -11,11 +11,9 @@ import type { User } from '@op/supabase/lib';
  * The IDs sit in the same reserved range as the access-role / access-zone
  * seed UUIDs so they're recognisable in logs.
  */
-export const GLOBAL_USER_PUBLIC_ID =
-  '00000000-0000-4000-8000-000000000020';
+export const GLOBAL_USER_PUBLIC_ID = '00000000-0000-4000-8000-000000000020';
 
-export const GLOBAL_USER_ANONYMOUS_ID =
-  '00000000-0000-4000-8000-000000000021';
+export const GLOBAL_USER_ANONYMOUS_ID = '00000000-0000-4000-8000-000000000021';
 
 /**
  * Reserved emails for the two globals. Domain `@oneproject.internal` is

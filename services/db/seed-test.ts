@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import dotenv from 'dotenv';
-import { reset } from 'drizzle-seed';
 import { sql } from 'drizzle-orm';
+import { reset } from 'drizzle-seed';
 
 import { db } from '.';
 import * as schema from './schema';
