@@ -48,7 +48,7 @@ export async function submitReview({
 
   const submittedAt = new Date().toISOString();
 
-  const { review, remainingCount } = await db.transaction(async (tx) => {
+  const review = await db.transaction(async (tx) => {
     const [submittedReview] = await tx
       .insert(proposalReviews)
       .values({
@@ -81,33 +81,7 @@ export async function submitReview({
       })
       .where(eq(proposalReviewAssignments.id, assignmentId));
 
-    // Under READ COMMITTED, a parallel reviewer finishing concurrently can
-    // observe a stale count here, which means review_list_finished may fire
-    // twice or not at all for the same reviewer on a busy process. Acceptable:
-    // PostHog can dedupe downstream and the race is low-frequency in practice.
-    const [remaining] = await tx
-      .select({ value: count() })
-      .from(proposalReviewAssignments)
-      .where(
-        and(
-          eq(
-            proposalReviewAssignments.processInstanceId,
-            context.assignment.processInstanceId,
-          ),
-          eq(
-            proposalReviewAssignments.reviewerProfileId,
-            context.assignment.reviewerProfileId,
-          ),
-          ne(
-            proposalReviewAssignments.status,
-            ProposalReviewAssignmentStatus.COMPLETED,
-          ),
-        ),
-      );
-
-    // Default to 1 (not 0) on a missing row so a count failure cannot
-    // falsely trigger review_list_finished.
-    return { review: submittedReview, remainingCount: remaining?.value ?? 1 };
+    return submittedReview;
   });
 
   const processInstanceId = context.assignment.processInstanceId;
@@ -117,18 +91,38 @@ export async function submitReview({
       user.id,
       processInstanceId,
       context.assignment.proposalId,
-    ).catch((err) =>
-      console.error('Failed to track user_reviewed_proposal', err),
     ),
   );
 
-  if (remainingCount === 0) {
-    waitUntil(
-      trackReviewListFinished(user.id, processInstanceId).catch((err) =>
-        console.error('Failed to track review_list_finished', err),
-      ),
-    );
-  }
+  waitUntil(
+    (async () => {
+      const [remaining] = await db
+        .select({ value: count() })
+        .from(proposalReviewAssignments)
+        .where(
+          and(
+            eq(
+              proposalReviewAssignments.processInstanceId,
+              context.assignment.processInstanceId,
+            ),
+            eq(
+              proposalReviewAssignments.reviewerProfileId,
+              context.assignment.reviewerProfileId,
+            ),
+            ne(
+              proposalReviewAssignments.status,
+              ProposalReviewAssignmentStatus.COMPLETED,
+            ),
+          ),
+        );
+
+      // Default to 1 (not 0) on a missing row so a count failure cannot
+      // falsely trigger review_list_finished.
+      if ((remaining?.value ?? 1) === 0) {
+        await trackReviewListFinished(user.id, processInstanceId);
+      }
+    })(),
+  );
 
   return {
     review,

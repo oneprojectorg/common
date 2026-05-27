@@ -369,19 +369,11 @@ export const updateDecisionInstance = async ({
   }
 
   if (isBeingPublished) {
-    waitUntil(
-      trackAdminSetProcess(user.id, instanceId).catch((err) =>
-        console.error('Failed to track admin_set_process', err),
-      ),
-    );
+    waitUntil(trackAdminSetProcess(user.id, instanceId));
   }
 
   if (rubricTemplate !== undefined) {
-    waitUntil(
-      trackAdminSetRubric(user.id, instanceId).catch((err) =>
-        console.error('Failed to track admin_set_rubric', err),
-      ),
-    );
+    waitUntil(trackAdminSetRubric(user.id, instanceId));
   }
 
   return { profile, phaseEndDateChanges };

@@ -312,10 +312,7 @@ export const submitVote = async ({
 
     try {
       waitUntil(
-        trackUserVoted(
-          authUserId,
-          result.voteSubmission.processInstanceId,
-        ).catch((err) => console.error('Failed to track user_voted', err)),
+        trackUserVoted(authUserId, result.voteSubmission.processInstanceId),
       );
     } catch (err) {
       // waitUntil can throw synchronously off-Vercel (no request context).
