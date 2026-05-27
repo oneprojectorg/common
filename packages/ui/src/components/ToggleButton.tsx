@@ -11,7 +11,7 @@ import { focusRing } from '../utils';
 
 const styles = tv({
   extend: focusRing,
-  base: 'flex cursor-pointer items-center rounded-full p-1 outline-offset-0 outline-transparent transition-colors duration-300 focus-visible:ring-transparent',
+  base: 'relative flex cursor-pointer items-center rounded-full p-1 outline-offset-0 outline-transparent transition-colors duration-300 focus-visible:ring-transparent rtl:-scale-x-100',
   variants: {
     size: {
       default: 'h-10 min-w-18',
@@ -43,15 +43,13 @@ export const ToggleButton = (
       {({ isSelected }) => (
         <div
           className={cn(
-            'rounded-full bg-white shadow-md transition-transform duration-300',
-            props.size === 'small' ? 'size-4' : 'size-8',
+            'absolute rounded-full bg-white shadow-md transition-transform duration-300',
+            props.size === 'small' ? 'left-0.5 size-4' : 'left-1 size-8',
             isSelected
               ? props.size === 'small'
-                ? 'translate-x-2.5'
+                ? 'translate-x-3'
                 : 'translate-x-8'
-              : props.size === 'small'
-                ? '-translate-x-px'
-                : 'translate-x-0',
+              : 'translate-x-0',
           )}
         />
       )}
