@@ -21,9 +21,7 @@ const linkPreviewResponseSchema = z.object({
 });
 
 export const linkPreview = router({
-  linkPreview: commonAuthedProcedure({
-    rateLimit: { windowSize: 60, maxRequests: 30 },
-  })
+  linkPreview: commonAuthedProcedure()
     .input(z.object({ url: httpUrlSchema }))
     .output(linkPreviewResponseSchema)
     .query(async ({ input }) => {

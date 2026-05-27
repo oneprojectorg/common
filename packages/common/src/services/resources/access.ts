@@ -68,11 +68,17 @@ const decisionPolicy = (level: ResourceAccessLevel) =>
     ? { decisions: permission.ADMIN }
     : { decisions: permission.READ };
 
-export const assertResourceAccess = async (
-  scope: ResourceScope,
-  authUserId: string,
-  level: ResourceAccessLevel,
-): Promise<ResolvedScope> => {
+export type AssertResourceAccessInput = {
+  scope: ResourceScope;
+  authUserId: string;
+  level: ResourceAccessLevel;
+};
+
+export const assertResourceAccess = async ({
+  scope,
+  authUserId,
+  level,
+}: AssertResourceAccessInput): Promise<ResolvedScope> => {
   const candidates = await candidateProfilesForScope(scope);
   if (candidates.length === 0) {
     throw new UnauthorizedError("You don't have access to do this");

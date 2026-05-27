@@ -11,10 +11,13 @@ export type DbOrTx = typeof dbType | Transaction;
 
 // Serializes concurrent ordering updates within a single collection for the
 // lifetime of the surrounding transaction.
-export const lockCollection = async (
-  tx: Transaction,
-  collectionId: string,
-): Promise<void> => {
+export const lockCollection = async ({
+  tx,
+  collectionId,
+}: {
+  tx: Transaction;
+  collectionId: string;
+}): Promise<void> => {
   await tx.execute(
     sql`SELECT pg_advisory_xact_lock(hashtext(${'resources:' + collectionId}))`,
   );
@@ -26,10 +29,13 @@ export const lockCollection = async (
 // become 1 while row 1 still holds 1. Park values in a negative range
 // first (same trick as applySortOrderUpdates) so the second pass settles
 // into the final positive slots without collisions.
-export const shiftSortOrderForInsertAtTop = async (
-  tx: Transaction,
-  collectionId: string,
-): Promise<void> => {
+export const shiftSortOrderForInsertAtTop = async ({
+  tx,
+  collectionId,
+}: {
+  tx: Transaction;
+  collectionId: string;
+}): Promise<void> => {
   await tx
     .update(resourceCollectionItems)
     .set({ sortOrder: sql`-1 - ${resourceCollectionItems.sortOrder}` })
@@ -45,12 +51,17 @@ export const shiftSortOrderForInsertAtTop = async (
 // to shift. Caller writes the values inside a transaction holding
 // lockCollection so concurrent writers serialize and each re-interprets
 // upperNeighborId against the freshly-restriped state.
-export const computeReorder = async (
-  tx: Transaction,
-  collectionId: string,
-  itemId: string,
-  upperNeighborId: string | null,
-): Promise<{ updates: Array<{ id: string; sortOrder: number }> } | null> => {
+export const computeReorder = async ({
+  tx,
+  collectionId,
+  itemId,
+  upperNeighborId,
+}: {
+  tx: Transaction;
+  collectionId: string;
+  itemId: string;
+  upperNeighborId: string | null;
+}): Promise<{ updates: Array<{ id: string; sortOrder: number }> } | null> => {
   if (itemId === upperNeighborId) {
     return null;
   }
@@ -75,12 +86,12 @@ export const computeReorder = async (
     throw new NotFoundError('Pivot resource', upperNeighborId);
   }
 
-  const reordered = reorderByUpperNeighbor(
-    rows,
-    (r) => r.resourceId,
-    itemId,
-    upperNeighborId,
-  );
+  const reordered = reorderByUpperNeighbor({
+    list: rows,
+    getKey: (r) => r.resourceId,
+    movedKey: itemId,
+    upperNeighborKey: upperNeighborId,
+  });
   if (reordered === rows) {
     return null;
   }
@@ -103,11 +114,15 @@ export const computeReorder = async (
 // settles. We dodge that by parking every affected row in a negative range
 // first (uniqueness still holds, no value collides with non-updated rows),
 // then writing the final values in a second pass.
-export const applySortOrderUpdates = async (
-  tx: Transaction,
-  table: PgTable,
-  updates: Array<{ id: string; sortOrder: number }>,
-): Promise<void> => {
+export const applySortOrderUpdates = async ({
+  tx,
+  table,
+  updates,
+}: {
+  tx: Transaction;
+  table: PgTable;
+  updates: Array<{ id: string; sortOrder: number }>;
+}): Promise<void> => {
   if (updates.length === 0) {
     return;
   }
@@ -143,11 +158,15 @@ export const applySortOrderUpdates = async (
 
 // Returns the resource-collection-item row for a single (collection, resource)
 // pair, used by movers/deleters that need to inspect membership.
-export const findCollectionItem = async (
-  tx: DbOrTx,
-  collectionId: string,
-  resourceId: string,
-) => {
+export const findCollectionItem = async ({
+  tx,
+  collectionId,
+  resourceId,
+}: {
+  tx: DbOrTx;
+  collectionId: string;
+  resourceId: string;
+}) => {
   const [row] = await tx
     .select()
     .from(resourceCollectionItems)

@@ -16,12 +16,19 @@
 // already sits immediately after the upper neighbor, or movedKey ===
 // upperNeighborKey). Callers that need to error on missing keys must validate
 // before calling.
-export const reorderByUpperNeighbor = <T>(
-  list: readonly T[],
-  getKey: (item: T) => string,
-  movedKey: string,
-  upperNeighborKey: string | null,
-): readonly T[] => {
+export type ReorderByUpperNeighborInput<T> = {
+  list: readonly T[];
+  getKey: (item: T) => string;
+  movedKey: string;
+  upperNeighborKey: string | null;
+};
+
+export const reorderByUpperNeighbor = <T>({
+  list,
+  getKey,
+  movedKey,
+  upperNeighborKey,
+}: ReorderByUpperNeighborInput<T>): readonly T[] => {
   if (movedKey === upperNeighborKey) return list;
   const fromIdx = list.findIndex((r) => getKey(r) === movedKey);
   if (fromIdx === -1) return list;

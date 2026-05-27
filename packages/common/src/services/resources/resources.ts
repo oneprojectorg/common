@@ -59,6 +59,8 @@ type LoadedResource = Resource & {
     | null;
 };
 
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 const resourceType = (row: Pick<Resource, 'attachmentId'>): ResourceType =>
   row.attachmentId !== null ? 'document' : 'link';
 
@@ -92,11 +94,15 @@ const loadResourceDTOById = async (id: string): Promise<ResourceDTO> => {
   return toResourceDTO(row);
 };
 
-const loadResourceInCollectionDTO = async (
-  resourceId: string,
-  collectionId: string,
-  sortOrder: number,
-): Promise<ResourceInCollectionDTO> => {
+const loadResourceInCollectionDTO = async ({
+  resourceId,
+  collectionId,
+  sortOrder,
+}: {
+  resourceId: string;
+  collectionId: string;
+  sortOrder: number;
+}): Promise<ResourceInCollectionDTO> => {
   const base = await loadResourceDTOById(resourceId);
   return { ...base, collectionId, sortOrder };
 };
@@ -126,28 +132,34 @@ const fetchByCollection = async (
   return { collectionId, resources: dtos };
 };
 
-export const listResources = async (
-  authUserId: string,
-  profileId: string,
-): Promise<ResourceListResult> => {
+export const listResources = async ({
+  authUserId,
+  profileId,
+}: {
+  authUserId: string;
+  profileId: string;
+}): Promise<ResourceListResult> => {
   // Try write first so admin callers create the Pinned collection lazily; fall back to read.
   let canWrite = true;
   try {
-    await assertResourceAccess(
-      { kind: 'profile', profileId },
+    await assertResourceAccess({
+      scope: { kind: 'profile', profileId },
       authUserId,
-      'write',
-    );
+      level: 'write',
+    });
   } catch {
     canWrite = false;
-    await assertResourceAccess(
-      { kind: 'profile', profileId },
+    await assertResourceAccess({
+      scope: { kind: 'profile', profileId },
       authUserId,
-      'read',
-    );
+      level: 'read',
+    });
   }
 
-  const collection = await resolveOrCreatePinnedCollection(profileId, canWrite);
+  const collection = await resolveOrCreatePinnedCollection({
+    profileId,
+    createIfMissing: canWrite,
+  });
   if (!collection) {
     return { collectionId: null, resources: [] };
   }
@@ -155,22 +167,28 @@ export const listResources = async (
   return fetchByCollection(collection.id);
 };
 
-export const listResourcesByCollection = async (
-  authUserId: string,
-  collectionId: string,
-): Promise<ResourceListResult> => {
-  await assertResourceAccess(
-    { kind: 'collection', collectionId },
+export const listResourcesByCollection = async ({
+  authUserId,
+  collectionId,
+}: {
+  authUserId: string;
+  collectionId: string;
+}): Promise<ResourceListResult> => {
+  await assertResourceAccess({
+    scope: { kind: 'collection', collectionId },
     authUserId,
-    'read',
-  );
+    level: 'read',
+  });
   return fetchByCollection(collectionId);
 };
 
-const resolveTargetCollection = async (
-  authUserId: string,
-  scope: { profileId?: string; collectionId?: string },
-): Promise<{ collectionId: string; profileId: string }> => {
+const resolveTargetCollection = async ({
+  authUserId,
+  scope,
+}: {
+  authUserId: string;
+  scope: { profileId?: string; collectionId?: string };
+}): Promise<{ collectionId: string; profileId: string }> => {
   // Both supplied: caller (typically the upload→createDocument flow) already
   // resolved profileId and wants a specific collection. Verify the profile
   // owns the collection so the auth check still anchors to a single profile
@@ -178,11 +196,11 @@ const resolveTargetCollection = async (
   // collection could pin uploads to the wrong storage prefix.
   if (scope.profileId !== undefined && scope.collectionId !== undefined) {
     const { profileId, collectionId } = scope;
-    await assertResourceAccess(
-      { kind: 'profile', profileId },
+    await assertResourceAccess({
+      scope: { kind: 'profile', profileId },
       authUserId,
-      'write',
-    );
+      level: 'write',
+    });
     const [link] = await db
       .select({ id: resourceCollectionProfiles.id })
       .from(resourceCollectionProfiles)
@@ -200,22 +218,25 @@ const resolveTargetCollection = async (
   }
 
   if (scope.collectionId !== undefined && scope.profileId === undefined) {
-    const resolved = await assertResourceAccess(
-      { kind: 'collection', collectionId: scope.collectionId },
+    const resolved = await assertResourceAccess({
+      scope: { kind: 'collection', collectionId: scope.collectionId },
       authUserId,
-      'write',
-    );
+      level: 'write',
+    });
     return { collectionId: scope.collectionId, profileId: resolved.profileId };
   }
 
   if (scope.profileId !== undefined && scope.collectionId === undefined) {
     const { profileId } = scope;
-    await assertResourceAccess(
-      { kind: 'profile', profileId },
+    await assertResourceAccess({
+      scope: { kind: 'profile', profileId },
       authUserId,
-      'write',
-    );
-    const collection = await resolveOrCreatePinnedCollection(profileId, true);
+      level: 'write',
+    });
+    const collection = await resolveOrCreatePinnedCollection({
+      profileId,
+      createIfMissing: true,
+    });
     if (!collection) {
       throw new ConflictError('Failed to resolve collection');
     }
@@ -225,10 +246,13 @@ const resolveTargetCollection = async (
   throw new ValidationError('profileId, collectionId, or both are required');
 };
 
-const lookupProfileUserId = async (
-  authUserId: string,
-  profileId: string,
-): Promise<string | null> => {
+const lookupProfileUserId = async ({
+  authUserId,
+  profileId,
+}: {
+  authUserId: string;
+  profileId: string;
+}): Promise<string | null> => {
   const [row] = await db
     .select({ id: profileUsers.id })
     .from(profileUsers)
@@ -242,14 +266,19 @@ const lookupProfileUserId = async (
   return row?.id ?? null;
 };
 
-const insertAtTop = async (
-  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
-  collectionId: string,
-  resourceId: string,
-  addedByProfileUserId: string | null,
-): Promise<number> => {
-  await lockCollection(tx, collectionId);
-  await shiftSortOrderForInsertAtTop(tx, collectionId);
+const insertAtTop = async ({
+  tx,
+  collectionId,
+  resourceId,
+  addedByProfileUserId,
+}: {
+  tx: Transaction;
+  collectionId: string;
+  resourceId: string;
+  addedByProfileUserId: string | null;
+}): Promise<number> => {
+  await lockCollection({ tx, collectionId });
+  await shiftSortOrderForInsertAtTop({ tx, collectionId });
   const [link] = await tx
     .insert(resourceCollectionItems)
     .values({
@@ -277,18 +306,18 @@ export type CreateLinkInput = {
 export const createLinkResource = async (
   input: CreateLinkInput,
 ): Promise<ResourceInCollectionDTO> => {
-  const { collectionId, profileId } = await resolveTargetCollection(
-    input.authUserId,
-    {
+  const { collectionId, profileId } = await resolveTargetCollection({
+    authUserId: input.authUserId,
+    scope: {
       profileId: input.profileId,
       collectionId: input.collectionId,
     },
-  );
+  });
 
-  const addedByProfileUserId = await lookupProfileUserId(
-    input.authUserId,
+  const addedByProfileUserId = await lookupProfileUserId({
+    authUserId: input.authUserId,
     profileId,
-  );
+  });
 
   const { resourceId, sortOrder } = await db.transaction(async (tx) => {
     const [row] = await tx
@@ -303,16 +332,16 @@ export const createLinkResource = async (
     if (!row) {
       throw new ConflictError('Failed to create resource');
     }
-    const sortOrder = await insertAtTop(
+    const sortOrder = await insertAtTop({
       tx,
       collectionId,
-      row.id,
+      resourceId: row.id,
       addedByProfileUserId,
-    );
+    });
     return { resourceId: row.id, sortOrder };
   });
 
-  return loadResourceInCollectionDTO(resourceId, collectionId, sortOrder);
+  return loadResourceInCollectionDTO({ resourceId, collectionId, sortOrder });
 };
 
 export type CreateDocumentInput = {
@@ -330,13 +359,13 @@ export type CreateDocumentInput = {
 export const createDocumentResource = async (
   input: CreateDocumentInput,
 ): Promise<ResourceInCollectionDTO> => {
-  const { collectionId, profileId } = await resolveTargetCollection(
-    input.authUserId,
-    {
+  const { collectionId, profileId } = await resolveTargetCollection({
+    authUserId: input.authUserId,
+    scope: {
       profileId: input.profileId,
       collectionId: input.collectionId,
     },
-  );
+  });
 
   // Verify the client-supplied storage object actually lives under this
   // profile's resources/ prefix before linking it. Without this an attacker
@@ -358,10 +387,10 @@ export const createDocumentResource = async (
     throw new ValidationError('Storage object does not belong to this profile');
   }
 
-  const addedByProfileUserId = await lookupProfileUserId(
-    input.authUserId,
+  const addedByProfileUserId = await lookupProfileUserId({
+    authUserId: input.authUserId,
     profileId,
-  );
+  });
 
   const { resourceId, sortOrder } = await db.transaction(async (tx) => {
     const [attachment] = await tx
@@ -391,16 +420,16 @@ export const createDocumentResource = async (
       throw new ConflictError('Failed to create resource');
     }
 
-    const sortOrder = await insertAtTop(
+    const sortOrder = await insertAtTop({
       tx,
       collectionId,
-      row.id,
+      resourceId: row.id,
       addedByProfileUserId,
-    );
+    });
     return { resourceId: row.id, sortOrder };
   });
 
-  return loadResourceInCollectionDTO(resourceId, collectionId, sortOrder);
+  return loadResourceInCollectionDTO({ resourceId, collectionId, sortOrder });
 };
 
 export type UpdateResourceInput = {
@@ -416,11 +445,11 @@ export type UpdateResourceInput = {
 export const updateResource = async (
   input: UpdateResourceInput,
 ): Promise<ResourceDTO> => {
-  await assertResourceAccess(
-    { kind: 'resource', resourceId: input.id },
-    input.authUserId,
-    'write',
-  );
+  await assertResourceAccess({
+    scope: { kind: 'resource', resourceId: input.id },
+    authUserId: input.authUserId,
+    level: 'write',
+  });
 
   const existing = await db.query.resources.findFirst({
     where: { id: input.id },
@@ -458,90 +487,123 @@ export const updateResource = async (
   return loadResourceDTOById(row.id);
 };
 
-export const reorderResource = async (
-  authUserId: string,
-  resourceId: string,
-  collectionId: string,
-  upperNeighborId: string | null,
-): Promise<ResourceInCollectionDTO> => {
+export const reorderResource = async ({
+  authUserId,
+  resourceId,
+  collectionId,
+  upperNeighborId,
+}: {
+  authUserId: string;
+  resourceId: string;
+  collectionId: string;
+  upperNeighborId: string | null;
+}): Promise<ResourceInCollectionDTO> => {
   await Promise.all([
-    assertResourceAccess({ kind: 'resource', resourceId }, authUserId, 'write'),
-    assertResourceAccess(
-      { kind: 'collection', collectionId },
+    assertResourceAccess({
+      scope: { kind: 'resource', resourceId },
       authUserId,
-      'write',
-    ),
+      level: 'write',
+    }),
+    assertResourceAccess({
+      scope: { kind: 'collection', collectionId },
+      authUserId,
+      level: 'write',
+    }),
   ]);
 
   const finalSortOrder = await db.transaction(async (tx) => {
-    await lockCollection(tx, collectionId);
+    await lockCollection({ tx, collectionId });
 
-    const plan = await computeReorder(
+    const plan = await computeReorder({
       tx,
       collectionId,
-      resourceId,
+      itemId: resourceId,
       upperNeighborId,
-    );
+    });
     if (plan) {
-      await applySortOrderUpdates(tx, resourceCollectionItems, plan.updates);
+      await applySortOrderUpdates({
+        tx,
+        table: resourceCollectionItems,
+        updates: plan.updates,
+      });
     }
 
-    const link = await findCollectionItem(tx, collectionId, resourceId);
+    const link = await findCollectionItem({ tx, collectionId, resourceId });
     if (!link) {
       throw new NotFoundError('Resource membership', resourceId);
     }
     return link.sortOrder;
   });
 
-  return loadResourceInCollectionDTO(resourceId, collectionId, finalSortOrder);
+  return loadResourceInCollectionDTO({
+    resourceId,
+    collectionId,
+    sortOrder: finalSortOrder,
+  });
 };
 
-export const attachResourceToCollection = async (
-  authUserId: string,
-  resourceId: string,
-  collectionId: string,
-): Promise<ResourceInCollectionDTO> => {
+export const attachResourceToCollection = async ({
+  authUserId,
+  resourceId,
+  collectionId,
+}: {
+  authUserId: string;
+  resourceId: string;
+  collectionId: string;
+}): Promise<ResourceInCollectionDTO> => {
   const [resolved] = await Promise.all([
-    assertResourceAccess(
-      { kind: 'collection', collectionId },
+    assertResourceAccess({
+      scope: { kind: 'collection', collectionId },
       authUserId,
-      'write',
-    ),
-    assertResourceAccess({ kind: 'resource', resourceId }, authUserId, 'write'),
+      level: 'write',
+    }),
+    assertResourceAccess({
+      scope: { kind: 'resource', resourceId },
+      authUserId,
+      level: 'write',
+    }),
   ]);
 
-  const addedByProfileUserId = await lookupProfileUserId(
+  const addedByProfileUserId = await lookupProfileUserId({
     authUserId,
-    resolved.profileId,
-  );
+    profileId: resolved.profileId,
+  });
 
   const sortOrder = await db.transaction(async (tx) => {
-    const existing = await findCollectionItem(tx, collectionId, resourceId);
+    const existing = await findCollectionItem({ tx, collectionId, resourceId });
     if (existing) {
       return existing.sortOrder;
     }
-    return insertAtTop(tx, collectionId, resourceId, addedByProfileUserId);
+    return insertAtTop({ tx, collectionId, resourceId, addedByProfileUserId });
   });
 
-  return loadResourceInCollectionDTO(resourceId, collectionId, sortOrder);
+  return loadResourceInCollectionDTO({ resourceId, collectionId, sortOrder });
 };
 
-export const detachResourceFromCollection = async (
-  authUserId: string,
-  resourceId: string,
-  collectionId: string,
-): Promise<{ ok: true }> => {
+export const detachResourceFromCollection = async ({
+  authUserId,
+  resourceId,
+  collectionId,
+}: {
+  authUserId: string;
+  resourceId: string;
+  collectionId: string;
+}): Promise<{ ok: true }> => {
   await Promise.all([
-    assertResourceAccess({ kind: 'resource', resourceId }, authUserId, 'write'),
-    assertResourceAccess(
-      { kind: 'collection', collectionId },
+    assertResourceAccess({
+      scope: { kind: 'resource', resourceId },
       authUserId,
-      'write',
-    ),
+      level: 'write',
+    }),
+    assertResourceAccess({
+      scope: { kind: 'collection', collectionId },
+      authUserId,
+      level: 'write',
+    }),
   ]);
 
   await db.transaction(async (tx) => {
-    await lockCollection(tx, collectionId);
+    await lockCollection({ tx, collectionId });
     await tx
       .delete(resourceCollectionItems)
       .where(
@@ -567,21 +629,28 @@ export const detachResourceFromCollection = async (
         updates.push({ id: row.id, sortOrder: idx });
       }
     });
-    await applySortOrderUpdates(tx, resourceCollectionItems, updates);
+    await applySortOrderUpdates({
+      tx,
+      table: resourceCollectionItems,
+      updates,
+    });
   });
 
   return { ok: true };
 };
 
-export const deleteResource = async (
-  authUserId: string,
-  id: string,
-): Promise<{ ok: true }> => {
-  await assertResourceAccess(
-    { kind: 'resource', resourceId: id },
+export const deleteResource = async ({
+  authUserId,
+  id,
+}: {
+  authUserId: string;
+  id: string;
+}): Promise<{ ok: true }> => {
+  await assertResourceAccess({
+    scope: { kind: 'resource', resourceId: id },
     authUserId,
-    'write',
-  );
+    level: 'write',
+  });
 
   const existing = await db.query.resources.findFirst({
     where: { id },
@@ -607,7 +676,7 @@ export const deleteResource = async (
       .orderBy(asc(resourceCollectionItems.collectionId));
 
     for (const membership of memberships) {
-      await lockCollection(tx, membership.collectionId);
+      await lockCollection({ tx, collectionId: membership.collectionId });
     }
 
     await tx.delete(resources).where(eq(resources.id, id));
@@ -634,7 +703,11 @@ export const deleteResource = async (
           updates.push({ id: row.id, sortOrder: idx });
         }
       });
-      await applySortOrderUpdates(tx, resourceCollectionItems, updates);
+      await applySortOrderUpdates({
+        tx,
+        table: resourceCollectionItems,
+        updates,
+      });
     }
   });
 

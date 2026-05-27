@@ -6,7 +6,6 @@ import {
 } from '@op/common';
 import { z } from 'zod';
 
-import withDB from '../../middlewares/withDB';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { resourceWithSignedUrlEncoder } from './encoders';
 
@@ -21,10 +20,7 @@ const patchSchema = z
   });
 
 export const update = router({
-  update: commonAuthedProcedure({
-    rateLimit: { windowSize: 10, maxRequests: 20 },
-  })
-    .use(withDB)
+  update: commonAuthedProcedure()
     .input(z.object({ id: z.string().uuid(), patch: patchSchema }))
     .output(resourceWithSignedUrlEncoder)
     .mutation(async ({ input, ctx }) => {

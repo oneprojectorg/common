@@ -5,21 +5,25 @@ import {
 } from '@op/common';
 import { z } from 'zod';
 
-import withDB from '../../middlewares/withDB';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const allowedMimeSchema = z.enum(ALLOWED_RESOURCE_MIME_TYPES);
 
-const commonFields = {
+const inputSchema = z.object({
+  target: z.discriminatedUnion('kind', [
+    z.object({
+      kind: z.literal('profile'),
+      profileId: z.string().uuid(),
+    }),
+    z.object({
+      kind: z.literal('collection'),
+      collectionId: z.string().uuid(),
+    }),
+  ]),
   file: z.string(),
   fileName: z.string().min(1).max(255),
   mimeType: allowedMimeSchema,
-};
-
-const inputSchema = z.union([
-  z.object({ profileId: z.string().uuid(), ...commonFields }),
-  z.object({ collectionId: z.string().uuid(), ...commonFields }),
-]);
+});
 
 const outputSchema = z.object({
   profileId: z.string().uuid(),
@@ -31,28 +35,26 @@ const outputSchema = z.object({
 });
 
 export const uploadFile = router({
-  uploadFile: commonAuthedProcedure({
-    rateLimit: { windowSize: 60, maxRequests: 20 },
-  })
-    .use(withDB)
+  uploadFile: commonAuthedProcedure()
     .input(inputSchema)
     .output(outputSchema)
     .mutation(async ({ input, ctx }) => {
+      const { target } = input;
       let profileId: string;
-      if ('collectionId' in input) {
-        const resolved = await assertResourceAccess(
-          { kind: 'collection', collectionId: input.collectionId },
-          ctx.user.id,
-          'write',
-        );
+      if (target.kind === 'collection') {
+        const resolved = await assertResourceAccess({
+          scope: { kind: 'collection', collectionId: target.collectionId },
+          authUserId: ctx.user.id,
+          level: 'write',
+        });
         profileId = resolved.profileId;
       } else {
-        await assertResourceAccess(
-          { kind: 'profile', profileId: input.profileId },
-          ctx.user.id,
-          'write',
-        );
-        profileId = input.profileId;
+        await assertResourceAccess({
+          scope: { kind: 'profile', profileId: target.profileId },
+          authUserId: ctx.user.id,
+          level: 'write',
+        });
+        profileId = target.profileId;
       }
 
       const uploaded = await uploadResourceFile({

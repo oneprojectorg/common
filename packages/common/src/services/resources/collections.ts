@@ -18,10 +18,13 @@ export type CollectionForProfile = {
   updatedAt: string | null;
 };
 
-const profileLock = async (
-  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
-  profileId: string,
-) => {
+const profileLock = async ({
+  tx,
+  profileId,
+}: {
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0];
+  profileId: string;
+}) => {
   await tx.execute(
     sql`SELECT pg_advisory_xact_lock(hashtext(${'resource_collections:' + profileId}))`,
   );
@@ -29,10 +32,13 @@ const profileLock = async (
 
 type Executor = Parameters<Parameters<typeof db.transaction>[0]>[0] | typeof db;
 
-const collectionsForProfileQuery = (
-  exec: Executor,
-  profileId: string,
-): Promise<CollectionForProfile[]> =>
+const collectionsForProfileQuery = ({
+  exec,
+  profileId,
+}: {
+  exec: Executor;
+  profileId: string;
+}): Promise<CollectionForProfile[]> =>
   exec
     .select({
       id: resourceCollections.id,
@@ -50,11 +56,15 @@ const collectionsForProfileQuery = (
     .where(eq(resourceCollectionProfiles.profileId, profileId))
     .orderBy(asc(resourceCollectionProfiles.sortOrder));
 
-const collectionForProfileById = async (
-  exec: Executor,
-  profileId: string,
-  collectionId: string,
-): Promise<CollectionForProfile | null> => {
+const collectionForProfileById = async ({
+  exec,
+  profileId,
+  collectionId,
+}: {
+  exec: Executor;
+  profileId: string;
+  collectionId: string;
+}): Promise<CollectionForProfile | null> => {
   const [row] = await exec
     .select({
       id: resourceCollections.id,
@@ -79,31 +89,38 @@ const collectionForProfileById = async (
   return row ?? null;
 };
 
-export const listCollections = async (
-  authUserId: string,
-  profileId: string,
-): Promise<CollectionForProfile[]> => {
-  await assertResourceAccess(
-    { kind: 'profile', profileId },
+export const listCollections = async ({
+  authUserId,
+  profileId,
+}: {
+  authUserId: string;
+  profileId: string;
+}): Promise<CollectionForProfile[]> => {
+  await assertResourceAccess({
+    scope: { kind: 'profile', profileId },
     authUserId,
-    'read',
-  );
-  return collectionsForProfileQuery(db, profileId);
+    level: 'read',
+  });
+  return collectionsForProfileQuery({ exec: db, profileId });
 };
 
-export const createCollection = async (
-  authUserId: string,
-  profileId: string,
-  name: string,
-): Promise<CollectionForProfile> => {
-  await assertResourceAccess(
-    { kind: 'profile', profileId },
+export const createCollection = async ({
+  authUserId,
+  profileId,
+  name,
+}: {
+  authUserId: string;
+  profileId: string;
+  name: string;
+}): Promise<CollectionForProfile> => {
+  await assertResourceAccess({
+    scope: { kind: 'profile', profileId },
     authUserId,
-    'write',
-  );
+    level: 'write',
+  });
 
   return db.transaction(async (tx) => {
-    await profileLock(tx, profileId);
+    await profileLock({ tx, profileId });
 
     const [maxRow] = await tx
       .select({ value: count() })
@@ -138,20 +155,33 @@ export const createCollection = async (
   });
 };
 
-export const renameCollection = async (
-  authUserId: string,
-  id: string,
-  name: string,
-): Promise<CollectionForProfile> => {
-  const resolved = await assertResourceAccess(
-    { kind: 'collection', collectionId: id },
+export type UpdateCollectionPatch = {
+  name?: string;
+};
+
+export const updateCollection = async ({
+  authUserId,
+  id,
+  patch,
+}: {
+  authUserId: string;
+  id: string;
+  patch: UpdateCollectionPatch;
+}): Promise<CollectionForProfile> => {
+  const resolved = await assertResourceAccess({
+    scope: { kind: 'collection', collectionId: id },
     authUserId,
-    'write',
-  );
+    level: 'write',
+  });
+
+  const patchValues: Partial<{ name: string }> = {};
+  if (patch.name !== undefined) {
+    patchValues.name = patch.name;
+  }
 
   const [updated] = await db
     .update(resourceCollections)
-    .set({ name })
+    .set(patchValues)
     .where(eq(resourceCollections.id, id))
     .returning({ id: resourceCollections.id });
 
@@ -159,26 +189,34 @@ export const renameCollection = async (
     throw new NotFoundError('Collection', id);
   }
 
-  const row = await collectionForProfileById(db, resolved.profileId, id);
+  const row = await collectionForProfileById({
+    exec: db,
+    profileId: resolved.profileId,
+    collectionId: id,
+  });
   if (!row) {
     throw new NotFoundError('Collection', id);
   }
   return row;
 };
 
-export const reorderCollection = async (
-  authUserId: string,
-  id: string,
-  upperNeighborId: string | null,
-): Promise<CollectionForProfile> => {
-  const resolved = await assertResourceAccess(
-    { kind: 'collection', collectionId: id },
+export const reorderCollection = async ({
+  authUserId,
+  id,
+  upperNeighborId,
+}: {
+  authUserId: string;
+  id: string;
+  upperNeighborId: string | null;
+}): Promise<CollectionForProfile> => {
+  const resolved = await assertResourceAccess({
+    scope: { kind: 'collection', collectionId: id },
     authUserId,
-    'write',
-  );
+    level: 'write',
+  });
 
   return db.transaction(async (tx) => {
-    await profileLock(tx, resolved.profileId);
+    await profileLock({ tx, profileId: resolved.profileId });
 
     const rows = await tx
       .select({
@@ -201,12 +239,12 @@ export const reorderCollection = async (
       throw new NotFoundError('Pivot collection', upperNeighborId);
     }
 
-    const reordered = reorderByUpperNeighbor(
-      rows,
-      (r) => r.collectionId,
-      id,
-      upperNeighborId,
-    );
+    const reordered = reorderByUpperNeighbor({
+      list: rows,
+      getKey: (r) => r.collectionId,
+      movedKey: id,
+      upperNeighborKey: upperNeighborId,
+    });
     if (reordered !== rows) {
       const updates: Array<{ id: string; sortOrder: number }> = [];
       for (let i = 0; i < reordered.length; i++) {
@@ -215,10 +253,18 @@ export const reorderCollection = async (
           updates.push({ id: row.id, sortOrder: i });
         }
       }
-      await applySortOrderUpdates(tx, resourceCollectionProfiles, updates);
+      await applySortOrderUpdates({
+        tx,
+        table: resourceCollectionProfiles,
+        updates,
+      });
     }
 
-    const row = await collectionForProfileById(tx, resolved.profileId, id);
+    const row = await collectionForProfileById({
+      exec: tx,
+      profileId: resolved.profileId,
+      collectionId: id,
+    });
     if (!row) {
       throw new NotFoundError('Collection', id);
     }
@@ -226,15 +272,21 @@ export const reorderCollection = async (
   });
 };
 
-export const deleteCollection = async (authUserId: string, id: string) => {
-  const resolved = await assertResourceAccess(
-    { kind: 'collection', collectionId: id },
+export const deleteCollection = async ({
+  authUserId,
+  id,
+}: {
+  authUserId: string;
+  id: string;
+}) => {
+  const resolved = await assertResourceAccess({
+    scope: { kind: 'collection', collectionId: id },
     authUserId,
-    'write',
-  );
+    level: 'write',
+  });
 
   return db.transaction(async (tx) => {
-    await profileLock(tx, resolved.profileId);
+    await profileLock({ tx, profileId: resolved.profileId });
 
     await tx
       .delete(resourceCollectionProfiles)
@@ -262,7 +314,11 @@ export const deleteCollection = async (authUserId: string, id: string) => {
         compactUpdates.push({ id: row.id, sortOrder: idx });
       }
     });
-    await applySortOrderUpdates(tx, resourceCollectionProfiles, compactUpdates);
+    await applySortOrderUpdates({
+      tx,
+      table: resourceCollectionProfiles,
+      updates: compactUpdates,
+    });
 
     const [remainingRow] = await tx
       .select({ value: count() })
@@ -282,17 +338,20 @@ export const deleteCollection = async (authUserId: string, id: string) => {
 // Authorization is the caller's responsibility — invoked from both reader (no
 // create) and writer (create) paths. Returns the first collection attached to
 // the profile; creates a Pinned collection (sortOrder=0) if none exists.
-export const resolveOrCreatePinnedCollection = async (
-  profileId: string,
-  createIfMissing: boolean,
-): Promise<CollectionForProfile | null> => {
+export const resolveOrCreatePinnedCollection = async ({
+  profileId,
+  createIfMissing,
+}: {
+  profileId: string;
+  createIfMissing: boolean;
+}): Promise<CollectionForProfile | null> => {
   if (!createIfMissing) {
-    const rows = await collectionsForProfileQuery(db, profileId);
+    const rows = await collectionsForProfileQuery({ exec: db, profileId });
     return rows[0] ?? null;
   }
 
   return db.transaction(async (tx) => {
-    await profileLock(tx, profileId);
+    await profileLock({ tx, profileId });
 
     const [existing] = await tx
       .select({

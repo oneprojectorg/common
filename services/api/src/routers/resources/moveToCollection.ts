@@ -6,13 +6,11 @@ import {
 } from '@op/common';
 import { z } from 'zod';
 
-import withDB from '../../middlewares/withDB';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 import { resourceInCollectionEncoder } from './encoders';
 
 export const moveToCollection = router({
   attachToCollection: commonAuthedProcedure()
-    .use(withDB)
     .input(
       z.object({
         id: z.string().uuid(),
@@ -21,11 +19,11 @@ export const moveToCollection = router({
     )
     .output(resourceInCollectionEncoder)
     .mutation(async ({ input, ctx }) => {
-      const row = await attachResourceToCollection(
-        ctx.user.id,
-        input.id,
-        input.collectionId,
-      );
+      const row = await attachResourceToCollection({
+        authUserId: ctx.user.id,
+        resourceId: input.id,
+        collectionId: input.collectionId,
+      });
       const profileIds = await getProfileIdsForCollection(input.collectionId);
       ctx.registerMutationChannels([
         Channels.collectionResources(input.collectionId),
@@ -35,7 +33,6 @@ export const moveToCollection = router({
     }),
 
   detachFromCollection: commonAuthedProcedure()
-    .use(withDB)
     .input(
       z.object({
         id: z.string().uuid(),
@@ -45,11 +42,11 @@ export const moveToCollection = router({
     .output(z.object({ ok: z.literal(true) }))
     .mutation(async ({ input, ctx }) => {
       const profileIds = await getProfileIdsForCollection(input.collectionId);
-      const result = await detachResourceFromCollection(
-        ctx.user.id,
-        input.id,
-        input.collectionId,
-      );
+      const result = await detachResourceFromCollection({
+        authUserId: ctx.user.id,
+        resourceId: input.id,
+        collectionId: input.collectionId,
+      });
       ctx.registerMutationChannels([
         Channels.collectionResources(input.collectionId),
         ...profileIds.map((id) => Channels.profileResources(id)),
