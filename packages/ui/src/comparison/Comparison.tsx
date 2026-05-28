@@ -69,6 +69,7 @@ import {
   ComboboxChipsInput as RawComboboxChipsInput,
   ComboboxContent as RawComboboxContent,
   ComboboxEmpty as RawComboboxEmpty,
+  ComboboxCollection as RawComboboxCollection,
   ComboboxInput as RawComboboxInput,
   ComboboxItem as RawComboboxItem,
   ComboboxList as RawComboboxList,
@@ -507,16 +508,29 @@ function RawRadioSample() {
   );
 }
 
-// Combobox samples — shared item list for single + multi pairs.
+// Combobox samples — the two libraries demand different item shapes:
+//   - @op/sense Combobox: base-ui auto-derives the filter string from
+//     `item.value` when items are `{ value, label }`. Sense's Combobox
+//     type omits `itemToStringLabel`, so we can't use any other shape.
+//   - @op/ui MultiSelectComboBox: typed against an `Option` with `id`.
+// Same data, two views.
 const COMBOBOX_ITEMS = [
-  { id: 'apple', label: 'Apple' },
-  { id: 'banana', label: 'Banana' },
-  { id: 'cherry', label: 'Cherry' },
+  { value: 'apple', label: 'Apple' },
+  { value: 'banana', label: 'Banana' },
+  { value: 'cherry', label: 'Cherry' },
 ];
+const OLD_COMBOBOX_ITEMS = COMBOBOX_ITEMS.map(({ value, label }) => ({
+  id: value,
+  label,
+}));
 
 function OldComboBoxSample() {
   return (
-    <OldComboBox label="Fruit" items={COMBOBOX_ITEMS} placeholder="Pick one">
+    <OldComboBox
+      label="Fruit"
+      items={OLD_COMBOBOX_ITEMS}
+      placeholder="Pick one"
+    >
       {(item) => <OldDropdownItem id={item.id}>{item.label}</OldDropdownItem>}
     </OldComboBox>
   );
@@ -528,11 +542,13 @@ function RawComboboxSample() {
       <RawComboboxInput placeholder="Pick a fruit" className="w-48" />
       <RawComboboxContent>
         <RawComboboxList>
-          {COMBOBOX_ITEMS.map((opt) => (
-            <RawComboboxItem key={opt.id} value={opt}>
-              {opt.label}
-            </RawComboboxItem>
-          ))}
+          <RawComboboxCollection>
+            {(opt: (typeof COMBOBOX_ITEMS)[number]) => (
+              <RawComboboxItem key={opt.value} value={opt}>
+                {opt.label}
+              </RawComboboxItem>
+            )}
+          </RawComboboxCollection>
           <RawComboboxEmpty>No results</RawComboboxEmpty>
         </RawComboboxList>
       </RawComboboxContent>
@@ -541,11 +557,11 @@ function RawComboboxSample() {
 }
 
 function OldMultiComboBoxSample() {
-  const [value, setValue] = useState<typeof COMBOBOX_ITEMS>([]);
+  const [value, setValue] = useState<typeof OLD_COMBOBOX_ITEMS>([]);
   return (
     <OldMultiSelectComboBox
       label="Fruits"
-      items={COMBOBOX_ITEMS}
+      items={OLD_COMBOBOX_ITEMS}
       value={value}
       onChange={setValue}
     />
@@ -568,17 +584,19 @@ function RawMultiComboboxSample() {
     >
       <RawComboboxChips ref={anchor} className="w-48">
         {value.map((opt) => (
-          <RawComboboxChip key={opt.id}>{opt.label}</RawComboboxChip>
+          <RawComboboxChip key={opt.value}>{opt.label}</RawComboboxChip>
         ))}
         <RawComboboxChipsInput placeholder="Pick" />
       </RawComboboxChips>
       <RawComboboxContent anchor={anchor}>
         <RawComboboxList>
-          {COMBOBOX_ITEMS.map((opt) => (
-            <RawComboboxItem key={opt.id} value={opt}>
-              {opt.label}
-            </RawComboboxItem>
-          ))}
+          <RawComboboxCollection>
+            {(opt: (typeof COMBOBOX_ITEMS)[number]) => (
+              <RawComboboxItem key={opt.value} value={opt}>
+                {opt.label}
+              </RawComboboxItem>
+            )}
+          </RawComboboxCollection>
           <RawComboboxEmpty>No results</RawComboboxEmpty>
         </RawComboboxList>
       </RawComboboxContent>
