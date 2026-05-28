@@ -57,7 +57,7 @@ export const ComingSoonScreen = () => {
             </h1>
           </motion.div>
           <motion.div
-            className="relative grid max-w-256 items-center p-[4vw] py-16 sm:px-12"
+            className="relative grid items-center p-[4vw]"
             initial={{ opacity: 0, scale: 0.96, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 2, delay: 0.75 }}
@@ -73,7 +73,7 @@ export const ComingSoonScreen = () => {
                 alt="Screenshot of the Common platform"
                 width={1568}
                 height={1041}
-                className="relative mx-auto w-7xl max-w-[85vw] shadow sm:max-w-224"
+                className="relative mx-auto w-7xl max-w-[85vw] shadow sm:max-w-[70vw]"
                 priority
               />
             </motion.div>
@@ -137,13 +137,6 @@ export const ComingSoonScreen = () => {
           </section>
         </FadeInWrapper>
       </main>
-      <footer className="mt-16 flex flex-col items-center justify-center pb-36 text-sm text-neutral-gray4 sm:mt-0 sm:flex-row sm:gap-4">
-        <p>{t('Beautifully designed')}</p>
-        <p>•</p>
-        <p>{t('Easy to set up')}</p>
-        <p>•</p>
-        <p>{t('No training required')}</p>
-      </footer>
     </>
   );
 };
