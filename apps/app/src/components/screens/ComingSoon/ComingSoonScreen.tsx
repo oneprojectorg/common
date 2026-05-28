@@ -38,7 +38,7 @@ export const ComingSoonScreen = () => {
         </ButtonLink>
       </motion.header>
 
-      <main className="mx-auto my-10 flex max-w-196 flex-col gap-20 px-6 text-center sm:my-24 sm:gap-32">
+      <main className="mx-auto my-10 flex max-w-196 flex-col gap-20 px-6 pb-[20vh] text-center sm:my-24 sm:gap-32">
         <section className="flex flex-col items-center gap-12 sm:gap-24">
           <motion.div
             initial={{ opacity: 0, scale: 0.98, y: 20 }}
