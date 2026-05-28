@@ -45,6 +45,7 @@ const TypeMap = {
   organization: 'org',
   allowList: 'allowList',
   linkPreview: 'linkPreview',
+  resourceSignedUrl: 'resourceSignedUrl',
   user: 'user',
   orgUser: 'orgUser',
   profileUser: 'profileUser',
@@ -56,6 +57,15 @@ const TypeMap = {
 /** Allowed types for cache params - will be stringified for key generation */
 type CacheParam = string | number | boolean | undefined | null | string[];
 type CacheParams = CacheParam[];
+
+// Types whose first param contains '/' as meaningful structure (URLs, file
+// paths) and must NOT be collapsed to the last segment. The default slug
+// collapse exists so CMS pages can move without a 404, but it would cause
+// cross-key collisions for URLs / paths.
+const FULL_KEY_TYPES: ReadonlySet<keyof typeof TypeMap> = new Set([
+  'linkPreview',
+  'resourceSignedUrl',
+]);
 
 const getCacheKey = (
   type: keyof typeof TypeMap,
@@ -72,8 +82,13 @@ const getCacheKey = (
     .filter(Boolean);
   const [fullSlug, ...otherParams] = stringParams;
 
-  // this matches the ability to disregard full paths so pages can be moved without a 404
-  const slug = fullSlug?.split('/').slice(-1)[0] ?? '';
+  // For slug-based types only: keep the last path segment so a page can be
+  // moved without invalidating its cache. For URL/path types, use the full
+  // value verbatim (two different URLs with the same trailing segment must
+  // not collide).
+  const slug = FULL_KEY_TYPES.has(type)
+    ? (fullSlug ?? '')
+    : (fullSlug?.split('/').slice(-1)[0] ?? '');
   return `${apiVersion}/${resolvedAppKey}/${key}/${slug}${
     otherParams?.length ? `:${otherParams.join(':')}` : ''
   }`;
