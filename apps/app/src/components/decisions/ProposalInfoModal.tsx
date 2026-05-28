@@ -33,10 +33,13 @@ export function ProposalInfoModal({
         onOpenChange={(open) => !open && onClose()}
       >
         <div className="flex h-full max-h-[80vh] w-full max-w-2xl flex-col">
-          <ModalHeader>{title}</ModalHeader>
+          <ModalHeader>
+            <bdi>{title}</bdi>
+          </ModalHeader>
 
           <ModalBody className="flex-1 overflow-y-auto">
             <div
+              dir="auto"
               className="prose max-w-none prose-gray"
               dangerouslySetInnerHTML={{
                 __html: translatedContent

@@ -61,7 +61,7 @@ export function ProposalViewLayout({
           onClick={() => router.push(backHref)}
           className="flex cursor-pointer items-center gap-2 text-base text-primary-teal hover:text-primary-tealBlack"
         >
-          <LuArrowLeft className="size-6 text-neutral-charcoal sm:size-4 sm:text-primary-teal" />
+          <LuArrowLeft className="size-6 text-neutral-charcoal sm:size-4 sm:text-primary-teal rtl:-scale-x-100" />
           <span className="hidden sm:block">{t('Back to Proposals')}</span>
         </button>
 
@@ -116,7 +116,7 @@ export function ProposalViewLayout({
                 <LuStickyNote className="size-4" />
                 <span
                   aria-hidden
-                  className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-primary-orange2"
+                  className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-primary-orange2"
                 />
               </Button>
               <Tooltip>{revisionRequestLabel}</Tooltip>

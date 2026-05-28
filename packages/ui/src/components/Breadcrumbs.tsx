@@ -36,7 +36,7 @@ export const Breadcrumb = (
       )}
     >
       <Link variant={props.href ? 'primary' : 'neutral'} {...props} />
-      {props.href && <LuChevronRight className="size-3" />}
+      {props.href && <LuChevronRight className="size-3 rtl:-scale-x-100" />}
     </AriaBreadcrumb>
   );
 };

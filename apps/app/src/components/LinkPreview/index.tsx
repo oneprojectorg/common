@@ -107,7 +107,7 @@ export const LinkPreview = memo(
               e.stopPropagation();
               onRemove();
             }}
-            className="absolute top-2 right-2 z-10 flex size-8 items-center justify-center rounded border border-neutral-gray1 bg-white text-neutral-black opacity-0 transition-opacity group-hover:opacity-100 hover:bg-neutral-gray1 focus-visible:opacity-100"
+            className="absolute end-2 top-2 z-10 flex size-8 items-center justify-center rounded border border-neutral-gray1 bg-white text-neutral-black opacity-0 transition-opacity group-hover:opacity-100 hover:bg-neutral-gray1 focus-visible:opacity-100"
             aria-label={t('Remove preview')}
           >
             <LuX className="size-4" />

@@ -3,6 +3,7 @@ import { getMessages } from 'next-intl/server';
 
 import { I18nProvider } from '@/lib/i18n';
 
+import { LocaleDirSync } from '@/components/LocaleDirSync';
 import { ReactAriaRouterProvider } from '@/components/ReactAriaRouterProvider';
 
 const AppLayout = async ({
@@ -19,6 +20,7 @@ const AppLayout = async ({
 
   return (
     <I18nProvider locale={locale} messages={messages}>
+      <LocaleDirSync />
       <ReactAriaRouterProvider>{children}</ReactAriaRouterProvider>
     </I18nProvider>
   );

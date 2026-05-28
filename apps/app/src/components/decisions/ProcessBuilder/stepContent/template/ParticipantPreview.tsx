@@ -34,7 +34,7 @@ export function ParticipantPreview({
   const fields = useMemo(() => compileProposalSchema(template), [template]);
 
   return (
-    <aside className="hidden flex-1 basis-1/2 overflow-y-auto border-l bg-neutral-offWhite p-14 xl:block">
+    <aside className="hidden flex-1 basis-1/2 overflow-y-auto border-s bg-neutral-offWhite p-14 xl:block">
       <div className="rounded-lg bg-white p-6">
         <div className="mb-6 flex items-center gap-2 text-sm text-neutral-gray3">
           <LuEye className="size-4" />

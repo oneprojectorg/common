@@ -187,7 +187,7 @@ export const NumberField = ({
         {prefixText && (
           <span
             ref={prefixRef}
-            className="pointer-events-none absolute top-0 bottom-0 left-0 flex items-center justify-center pr-2 pl-3 text-neutral-gray4 select-none"
+            className="pointer-events-none absolute start-0 top-0 bottom-0 flex items-center justify-center ps-3 pe-2 text-neutral-gray4 select-none"
           >
             {prefixText}
           </span>

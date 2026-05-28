@@ -214,7 +214,7 @@ export const DatePicker = <T extends DateValue>({
         }}
         inputProps={{
           ...inputProps,
-          className: cn('pr-10', inputProps?.className),
+          className: cn('pe-10', inputProps?.className),
           placeholder: placeholder,
           onClick: () => setIsCalendarOpen(true),
         }}
@@ -229,7 +229,7 @@ export const DatePicker = <T extends DateValue>({
             setIsCalendarOpen((open) => !open);
           }}
           className={cn(
-            'absolute top-1/2 right-1 -translate-y-1/2',
+            'absolute end-1 top-1/2 -translate-y-1/2',
             'h-8 w-8',
             'flex cursor-pointer items-center justify-center',
             'text-neutral-black outline-hidden',

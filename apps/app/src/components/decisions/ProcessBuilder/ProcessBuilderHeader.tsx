@@ -42,16 +42,16 @@ const CreateModeHeader = () => {
 
   return (
     <header className="relative sticky top-0 z-20 flex h-14 w-dvw shrink-0 items-center justify-between border-b bg-white">
-      <div className="flex items-center gap-2 pl-4 md:pl-8">
+      <div className="flex items-center gap-2 ps-4 md:ps-8">
         <Link href="/" className="flex items-center gap-2 text-neutral-black">
           <LuHouse className="size-4" />
           {t('Home')}
         </Link>
-        <LuChevronRight className="size-4" />
+        <LuChevronRight className="size-4 rtl:-scale-x-100" />
         <LuList className="size-4 shrink-0" />
         <span>{t('New process')}</span>
       </div>
-      <div className="flex items-center gap-3 pr-4 md:pr-8">
+      <div className="flex items-center gap-3 pe-4 md:pe-8">
         <LocaleChooser />
         <UserAvatarMenu className="hidden md:block" />
       </div>
@@ -82,7 +82,7 @@ const ProcessBuilderHeaderContent = ({
 
   return (
     <header className="relative sticky top-0 z-20 flex h-14 w-dvw shrink-0 items-center justify-between border-b bg-white">
-      <div className="flex min-w-0 items-center gap-2 pl-4 md:pl-8">
+      <div className="flex min-w-0 items-center gap-2 ps-4 md:ps-8">
         <Link
           href="/"
           className="flex shrink-0 items-center gap-2 text-neutral-black"
@@ -90,11 +90,11 @@ const ProcessBuilderHeaderContent = ({
           <LuHouse className="size-4" />
           {t('Home')}
         </Link>
-        <LuChevronRight className="size-4 shrink-0" />
+        <LuChevronRight className="size-4 shrink-0 rtl:-scale-x-100" />
         <LuList className="size-4 shrink-0" />
         <span className="truncate">{displayName}</span>
       </div>
-      <div className="flex shrink-0 items-center gap-3 pr-4 md:pr-8">
+      <div className="flex shrink-0 items-center gap-3 pe-4 md:pe-8">
         <LocaleChooser />
         <UserAvatarMenu className="hidden sm:block" />
       </div>

@@ -168,7 +168,7 @@ export default function ProposalEditorLayout({
             <LuStickyNote className="size-4" />
             <span
               aria-hidden
-              className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-primary-orange2"
+              className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-primary-orange2"
             />
           </Button>
           <Tooltip>{revisionRequestLabel}</Tooltip>

@@ -30,7 +30,10 @@ export function AuthorRevisionNote({ comment }: { comment: string }) {
           {t("Author's revision note")}
         </span>
         <div className="flex flex-col gap-2">
-          <p className="text-base whitespace-pre-wrap text-neutral-charcoal">
+          <p
+            dir="auto"
+            className="text-base whitespace-pre-wrap text-neutral-charcoal"
+          >
             {comment}
           </p>
           <Link

@@ -1,6 +1,5 @@
 'use client';
 
-import { pluralize } from '@/utils/pluralize';
 import { skipBatch, trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
 import { Header1 } from '@op/ui/Header';
@@ -26,7 +25,9 @@ const RelationshipCount = ({ profile }: { profile: Organization }) => {
     count > 0 && (
       <Link href={`/org/${profile.profile.slug}/relationships`}>
         <span className="font-bold text-teal">
-          {count} {pluralize(t('relationship'), count)}
+          {t('{count, plural, =1 {1 relationship} other {# relationships}}', {
+            count,
+          })}
         </span>
       </Link>
     )
@@ -40,13 +41,17 @@ export const ProfileSummary = ({ profile }: { profile: Organization }) => {
 
   return (
     <div className="flex flex-col gap-2 py-2">
-      <Header1>{profile.profile.name}</Header1>
+      <Header1>
+        <bdi>{profile.profile.name}</bdi>
+      </Header1>
 
       {whereWeWork.length ? (
-        <div className="text-base text-neutral-gray4">{whereWeWork}</div>
+        <div dir="auto" className="text-base text-neutral-gray4">
+          {whereWeWork}
+        </div>
       ) : null}
 
-      <div className="max-w-xl text-base text-neutral-charcoal">
+      <div dir="auto" className="max-w-xl text-base text-neutral-charcoal">
         {profile.profile.bio}
       </div>
 

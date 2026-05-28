@@ -117,6 +117,7 @@ export const TextField = ({
           />
         ) : (
           <Input
+            type={props.type}
             {...inputProps}
             className={cn(
               inputProps?.className,

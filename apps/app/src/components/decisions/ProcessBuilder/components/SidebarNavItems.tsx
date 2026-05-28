@@ -87,7 +87,7 @@ function SectionItem({
         type="button"
         onClick={() => onSectionClick(section.id)}
         className={cn(
-          'flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-left text-base transition-colors',
+          'flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-start text-base transition-colors',
           isActive
             ? 'bg-primary-tealWhite text-primary'
             : 'text-neutral-black hover:bg-neutral-gray1',
@@ -120,7 +120,7 @@ function SectionItem({
                 type="button"
                 onClick={() => onSectionClick(child.id)}
                 className={cn(
-                  'flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-left text-sm transition-colors',
+                  'flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-start text-sm transition-colors',
                   currentSectionId === child.id
                     ? 'bg-primary-tealWhite text-primary'
                     : 'text-neutral-black hover:bg-neutral-gray1',
@@ -163,7 +163,7 @@ function PhaseItem({
         type="button"
         onClick={() => onSectionClick(phaseSectionId)}
         className={cn(
-          'flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-left text-sm transition-colors',
+          'flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-start text-sm transition-colors',
           isActive
             ? 'bg-primary-tealWhite text-primary'
             : 'text-neutral-black hover:bg-neutral-gray1',
@@ -172,7 +172,7 @@ function PhaseItem({
         <CornerDownRight className="shrink-0 opacity-50" />
         <span className="truncate">{phase.name || t('Untitled phase')}</span>
         {phaseValidation[phase.phaseId] === false && (
-          <span className="ml-auto size-1.5 shrink-0 rounded-full bg-primary-teal" />
+          <span className="ms-auto size-1.5 shrink-0 rounded-full bg-primary-teal" />
         )}
       </button>
     </li>

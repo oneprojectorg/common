@@ -276,6 +276,7 @@ export const LoginPanel = () => {
                           aria-label={t('Email')}
                           label={t('Organization email')}
                           isRequired
+                          type="email"
                           inputProps={{
                             placeholder: 'admin@yourorganization.org',
                             spellCheck: false,

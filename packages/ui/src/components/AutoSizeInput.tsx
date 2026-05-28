@@ -63,6 +63,7 @@ export function AutoSizeInput({
       <input
         ref={inputRef ?? inputContainerRef}
         type="text"
+        dir="auto"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}

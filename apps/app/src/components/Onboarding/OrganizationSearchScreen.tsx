@@ -141,7 +141,7 @@ export const OrganizationSearchScreen = ({
             />
 
             {isDropdownOpen && (
-              <div className="absolute top-full right-0 left-0 z-10 mt-1 max-h-72 overflow-y-auto rounded-lg border border-neutral-gray1 bg-white shadow-lg">
+              <div className="absolute start-0 end-0 top-full z-10 mt-1 max-h-72 overflow-y-auto rounded-lg border border-neutral-gray1 bg-white shadow-lg">
                 <SearchDropdown
                   searchResults={searchResults}
                   isFetching={isFetching}
@@ -219,7 +219,7 @@ function SearchDropdown({
               key={org.id}
               type="button"
               disabled={isMember}
-              className="flex w-full items-center px-4 py-3 text-left hover:bg-neutral-offWhite disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
+              className="flex w-full items-center px-4 py-3 text-start hover:bg-neutral-offWhite disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
               onClick={() => onSelect(result)}
             >
               <ProfileItem
@@ -249,7 +249,7 @@ function SearchDropdown({
       {onAddOrganization && searchQuery && (
         <button
           type="button"
-          className="flex w-full items-center gap-2 border-t border-neutral-gray1 px-4 py-3 text-left text-primary-teal hover:bg-neutral-offWhite"
+          className="flex w-full items-center gap-2 border-t border-neutral-gray1 px-4 py-3 text-start text-primary-teal hover:bg-neutral-offWhite"
           onClick={() => onAddOrganization(searchQuery)}
         >
           <LuPlus className="size-4" />

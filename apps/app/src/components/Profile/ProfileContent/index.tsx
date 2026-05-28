@@ -325,7 +325,7 @@ export const OrganizationProfileGrid = ({
           </ProfileFeedProvider>
         </Suspense>
       </div>
-      <div className="col-span-6 h-full border-l">
+      <div className="col-span-6 h-full border-s">
         <Suspense fallback={null}>
           <ProfileDecisions profileId={profile.profile.id} />
         </Suspense>

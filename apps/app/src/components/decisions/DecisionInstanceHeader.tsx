@@ -40,7 +40,7 @@ export const DecisionInstanceHeader = ({
           href={backTo.href}
           className="flex items-center gap-2 text-base text-neutral-black hover:text-primary-tealBlack md:text-primary-teal"
         >
-          <LuArrowLeft className="size-6 md:size-4" />
+          <LuArrowLeft className="size-6 md:size-4 rtl:-scale-x-100" />
           <span className="hidden md:flex">
             {t('Back')} {backTo.label ? `${t('to')} ${backTo.label}` : ''}
           </span>
@@ -49,7 +49,7 @@ export const DecisionInstanceHeader = ({
 
       <div className="flex justify-center text-center">
         <Header1 className="font-serif text-title-sm text-neutral-charcoal sm:text-title-sm">
-          {title}
+          <bdi>{title}</bdi>
         </Header1>
       </div>
 

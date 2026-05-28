@@ -85,7 +85,7 @@ export const DecisionSidePanel = ({
         side="right"
         variant="overlay"
         label={t('Decision updates panel')}
-        className="w-full max-w-full border-t border-l border-neutral-gray1 text-neutral-charcoal shadow-xl sm:top-14 sm:w-[22.5rem]"
+        className="w-full max-w-full border-s border-t border-neutral-gray1 text-neutral-charcoal shadow-xl sm:top-14 sm:w-[22.5rem]"
       >
         <PanelContents
           isOpen={isOpen}
