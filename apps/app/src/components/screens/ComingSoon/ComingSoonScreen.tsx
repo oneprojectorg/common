@@ -20,8 +20,8 @@ export const ComingSoonScreen = () => {
   const t = useTranslations();
   return (
     <>
-      <div className="pointer-events-none absolute top-0 z-10 h-50 w-full bg-gradient-to-b from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
-      <div className="pointer-events-none absolute bottom-0 z-10 h-50 w-full bg-gradient-to-t from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
+      <div className="pointer-events-none absolute top-0 z-10 h-30 w-full bg-gradient-to-b from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
+      <div className="pointer-events-none absolute bottom-0 z-10 h-30 w-full bg-gradient-to-t from-[white] from-10% via-[rgba(255,255,255,0.35)] via-45%" />
       <motion.header
         transition={{ duration: 1 }}
         animate={{ opacity: 1 }}
@@ -38,18 +38,18 @@ export const ComingSoonScreen = () => {
         </ButtonLink>
       </motion.header>
 
-      <main className="mx-auto my-10 flex max-w-196 flex-col gap-20 px-6 text-center sm:my-24 sm:gap-32">
+      <main className="mx-auto my-10 flex max-w-196 flex-col gap-20 px-6 pb-[20vh] text-center sm:my-24 sm:gap-32">
         <section className="flex flex-col items-center gap-12 sm:gap-24">
           <motion.div
             initial={{ opacity: 0, scale: 0.98, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 2, delay: 0.25 }}
           >
-            <h1 className="flex flex-col font-serif text-title-md text-balance text-neutral-charcoal sm:text-3xl">
+            <h1 className="flex flex-col font-serif text-title-md font-normal text-balance text-neutral-charcoal sm:text-3xl">
               <span>
                 {t('Helping people decide together how to use their resources')}
               </span>
-              <span className="font-serif text-title-md sm:text-3xl">
+              <span className="font-serif text-title-md font-normal sm:text-3xl">
                 <AnimatedGradientText>
                   {t('simply, intuitively, and effectively.')}
                 </AnimatedGradientText>
@@ -79,7 +79,7 @@ export const ComingSoonScreen = () => {
             </motion.div>
           </motion.div>
           <FadeInWrapper>
-            <p className="flex flex-col space-y-4 text-balance sm:block sm:max-w-144 sm:text-lg">
+            <p className="flex flex-col space-y-4 text-balance sm:block sm:max-w-196 sm:text-xl">
               <span>
                 {t.rich(
                   'Built for <fancy>communities</fancy> ready to share power and co-create <fancy>social change</fancy> — and <fancy>funders</fancy> who trust them to lead.',
@@ -122,7 +122,7 @@ export const ComingSoonScreen = () => {
         </FadeInWrapper>
         <FadeInWrapper>
           <section className="flex flex-col items-center gap-6 p-6">
-            <Header2 className="font-serif text-title-md">
+            <Header2 className="font-serif text-title-md sm:text-title-lg">
               {t('Get early access')}
             </Header2>
             <div className="sm:text-lg">
@@ -137,13 +137,6 @@ export const ComingSoonScreen = () => {
           </section>
         </FadeInWrapper>
       </main>
-      <footer className="mt-16 flex flex-col items-center justify-center pb-36 text-sm text-neutral-gray4 sm:mt-0 sm:flex-row sm:gap-4">
-        <p>{t('Beautifully designed')}</p>
-        <p>•</p>
-        <p>{t('Easy to set up')}</p>
-        <p>•</p>
-        <p>{t('No training required')}</p>
-      </footer>
     </>
   );
 };
