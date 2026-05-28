@@ -274,12 +274,12 @@
   --color-functional-redWhite: var(--color-functional-red-50);
   --color-red: var(--color-functional-red-600);
   --color-red-100: var(--color-functional-red-100);
-  --color-red-300: var(--color-functional-red-100);
+  --color-red-300: var(--color-functional-red-300);
   --color-red-600: var(--color-functional-red-600);
   --color-red-700: var(--color-functional-red-800);
 
   --color-functional-green: var(--color-functional-green-600);
-  --color-functional-greenWhite: var(--color-functional-green-100);
+  --color-functional-greenWhite: var(--color-functional-green-50);
   --color-functional-yellowWhite: var(--color-primary-orange-50);
   --color-status-green: var(--color-functional-green-600);
   --color-status-greenBg: var(--color-functional-green-100);
@@ -338,7 +338,7 @@
   background-image: radial-gradient(
     96.92% 140.1% at 72.02% 100%,
     var(--op-primary-500) 0%,
-    var(--op-functional-red-600) 92%,
+    var(--color-red) 92%,
     #fafbfb 100%
   );
 }
@@ -347,7 +347,7 @@
   background-image: radial-gradient(
     70.56% 70.56% at 72.75% 33.21%,
     var(--color-data-purple) 0%,
-    var(--color-red-600) 100%
+    var(--color-red) 100%
   );
 }
 
