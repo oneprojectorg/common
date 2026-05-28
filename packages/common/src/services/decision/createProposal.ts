@@ -1,9 +1,8 @@
-import { db, eq } from '@op/db/client';
+import { db } from '@op/db/client';
 import {
   EntityType,
   ProposalStatus,
   Visibility,
-  processInstances,
   profileUserToAccessRoles,
   profileUsers,
   profiles,
@@ -12,15 +11,10 @@ import {
   proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
-import {
-  CommonError,
-  NotFoundError,
-  UnauthorizedError,
-  ValidationError,
-} from '../../utils';
-import { getCurrentProfileId, getProfileAccessUser } from '../access';
+import { CommonError, NotFoundError, ValidationError } from '../../utils';
+import { assertInstanceProfileAccess, getCurrentProfileId } from '../access';
 import { assertGlobalRole } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { decisionPermission } from './permissions';
@@ -48,247 +42,223 @@ export const createProposal = async ({
 }) => {
   const authUserId = user.id;
 
-  try {
-    // Verify the process instance exists
-    const instance = await db._query.processInstances.findFirst({
-      where: eq(processInstances.id, data.processInstanceId),
-    });
+  // Verify the process instance exists
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: data.processInstanceId },
+  });
 
-    if (!instance) {
-      throw new NotFoundError('Process instance', data.processInstanceId);
-    }
+  if (!instance) {
+    throw new NotFoundError('Process instance', data.processInstanceId);
+  }
 
-    if (!instance.profileId) {
-      throw new ValidationError('Process instance has no profile');
-    }
+  await assertInstanceProfileAccess({
+    user: { id: authUserId },
+    instance,
+    profilePermissions: [
+      { profile: permission.ADMIN },
+      { decisions: decisionPermission.SUBMIT_PROPOSALS },
+    ],
+    orgFallbackPermissions: { profile: permission.ADMIN },
+  });
 
-    const profileAccessUser = await getProfileAccessUser({
-      user: { id: authUserId },
-      profileId: instance.profileId,
-    });
+  const instanceData = instance.instanceData as DecisionInstanceData;
+  const currentPhaseId = instance.currentStateId;
 
-    if (!profileAccessUser) {
-      throw new UnauthorizedError('Not authorized');
-    }
+  if (!currentPhaseId) {
+    throw new ValidationError('Invalid phase in process instance');
+  }
 
-    assertAccess(
-      [
-        { profile: permission.ADMIN },
-        { decisions: decisionPermission.SUBMIT_PROPOSALS },
-      ],
-      profileAccessUser.roles,
+  // Check if proposals are allowed in current phase
+  const { allowed, phaseName } = checkProposalsAllowed(
+    instanceData.phases,
+    currentPhaseId,
+  );
+
+  if (!allowed) {
+    throw new ValidationError(
+      `Proposals are not allowed in the ${phaseName} phase`,
     );
+  }
 
-    const instanceData = instance.instanceData as DecisionInstanceData;
-    const currentPhaseId = instance.currentStateId;
+  // Capture the phase's `defaults.hidden` rule at creation time. The flag
+  // sticks with the proposal through submission, so a draft authored under
+  // a hidden-by-default phase remains hidden even if the rule is edited
+  // before submit.
+  const currentPhase = assertInstancePhase({
+    instance: { instanceData },
+    phaseId: currentPhaseId,
+  });
+  const defaultHidden =
+    currentPhase.rules?.proposals?.defaults?.hidden === true;
 
-    if (!currentPhaseId) {
-      throw new ValidationError('Invalid phase in process instance');
-    }
+  const parsedProposalData = parseProposalData(data.proposalData);
 
-    // Check if proposals are allowed in current phase
-    const { allowed, phaseName } = checkProposalsAllowed(
-      instanceData.phases,
-      currentPhaseId,
-    );
+  // Extract title from proposal data
+  const proposalTitle = extractTitleFromProposalData(data.proposalData);
 
-    if (!allowed) {
-      throw new ValidationError(
-        `Proposals are not allowed in the ${phaseName} phase`,
-      );
-    }
+  // Pre-fetch category terms if specified to avoid lookup inside transaction
+  const categoryLabels = [...new Set(parsedProposalData.category)];
+  let categoryTermIds: string[] = [];
 
-    // Capture the phase's `defaults.hidden` rule at creation time. The flag
-    // sticks with the proposal through submission, so a draft authored under
-    // a hidden-by-default phase remains hidden even if the rule is edited
-    // before submit.
-    const currentPhase = assertInstancePhase({
-      instance: { instanceData },
-      phaseId: currentPhaseId,
-    });
-    const defaultHidden =
-      currentPhase.rules?.proposals?.defaults?.hidden === true;
+  if (categoryLabels.length > 0) {
+    try {
+      const proposalTaxonomy = await db.query.taxonomies.findFirst({
+        where: { name: 'proposal' },
+        with: { taxonomyTerms: true },
+      });
 
-    const parsedProposalData = parseProposalData(data.proposalData);
+      if (proposalTaxonomy) {
+        const labelSet = new Set(categoryLabels);
+        const matchedTerms = proposalTaxonomy.taxonomyTerms.filter(
+          (term: { label: string }) => labelSet.has(term.label),
+        );
 
-    // Extract title from proposal data
-    const proposalTitle = extractTitleFromProposalData(data.proposalData);
+        categoryTermIds = matchedTerms.map((term: { id: string }) => term.id);
 
-    // Pre-fetch category terms if specified to avoid lookup inside transaction
-    const categoryLabels = [...new Set(parsedProposalData.category)];
-    let categoryTermIds: string[] = [];
+        const matchedLabels = new Set(
+          matchedTerms.map((term: { label: string }) => term.label),
+        );
 
-    if (categoryLabels.length > 0) {
-      try {
-        const proposalTaxonomy = await db.query.taxonomies.findFirst({
-          where: { name: 'proposal' },
-          with: { taxonomyTerms: true },
-        });
-
-        if (proposalTaxonomy) {
-          const labelSet = new Set(categoryLabels);
-          const matchedTerms = proposalTaxonomy.taxonomyTerms.filter(
-            (term: { label: string }) => labelSet.has(term.label),
-          );
-
-          categoryTermIds = matchedTerms.map((term: { id: string }) => term.id);
-
-          const matchedLabels = new Set(
-            matchedTerms.map((term: { label: string }) => term.label),
-          );
-
-          for (const categoryLabel of categoryLabels) {
-            if (!matchedLabels.has(categoryLabel)) {
-              console.warn(
-                `No valid proposal taxonomy term found for category: ${categoryLabel}`,
-              );
-            }
-          }
-        } else {
-          for (const categoryLabel of categoryLabels) {
+        for (const categoryLabel of categoryLabels) {
+          if (!matchedLabels.has(categoryLabel)) {
             console.warn(
               `No valid proposal taxonomy term found for category: ${categoryLabel}`,
             );
           }
         }
-      } catch (error) {
-        console.warn(
-          'Error fetching category terms, proceeding without category links:',
-          error,
-        );
-      }
-    }
-
-    const [profileId, adminRole] = await Promise.all([
-      getCurrentProfileId(authUserId),
-      assertGlobalRole('Admin'),
-    ]);
-    const createdProposal = await db.transaction(async (tx) => {
-      const slug = await generateUniqueProfileSlug({
-        name: proposalTitle,
-        db: tx,
-      });
-      // Create a profile for the proposal
-      const [proposalProfile] = await tx
-        .insert(profiles)
-        .values({
-          type: EntityType.PROPOSAL,
-          name: proposalTitle,
-          slug,
-        })
-        .returning();
-
-      if (!proposalProfile) {
-        throw new CommonError('Failed to create proposal profile');
-      }
-
-      // Add the creator as a profile user with the global Admin role
-      const [newProfileUser] = await tx
-        .insert(profileUsers)
-        .values({
-          profileId: proposalProfile.id,
-          authUserId,
-          email: user.email!,
-          isOwner: true,
-        })
-        .returning();
-
-      if (!newProfileUser) {
-        throw new CommonError('Failed to create proposal profile user');
-      }
-
-      await tx.insert(profileUserToAccessRoles).values({
-        profileUserId: newProfileUser.id,
-        accessRoleId: adminRole.id,
-      });
-
-      const proposalId = crypto.randomUUID();
-      const collaborationDocId = `proposal-${proposalId}`;
-
-      const [insertedProposal] = await tx
-        .insert(proposals)
-        .values({
-          id: proposalId,
-          processInstanceId: data.processInstanceId,
-          proposalData: {
-            ...data.proposalData,
-            collaborationDocId,
-            category:
-              parsedProposalData.category.length > 0
-                ? parsedProposalData.category
-                : undefined,
-          },
-          submittedByProfileId: profileId,
-          profileId: proposalProfile.id,
-          status: ProposalStatus.DRAFT,
-          ...(defaultHidden ? { visibility: Visibility.HIDDEN } : {}),
-        })
-        .returning();
-
-      if (!insertedProposal) {
-        throw new CommonError('Failed to create proposal');
-      }
-
-      // Link to categories within transaction if we have valid terms
-      if (categoryTermIds.length > 0) {
-        await tx.insert(proposalCategories).values(
-          categoryTermIds.map((taxonomyTermId) => ({
-            proposalId: insertedProposal.id,
-            taxonomyTermId,
-          })),
-        );
-      }
-
-      // Link attachments to proposal if provided
-      if (data.attachmentIds && data.attachmentIds.length > 0) {
-        const proposalAttachmentValues = data.attachmentIds.map(
-          (attachmentId) => ({
-            proposalId: insertedProposal.id,
-            attachmentId: attachmentId,
-            uploadedBy: profileId,
-          }),
-        );
-
-        await tx.insert(proposalAttachments).values(proposalAttachmentValues);
-
-        // Process proposal content to replace temporary URLs with permanent ones
-        try {
-          await processProposalContent({
-            db: tx,
-            proposalId: insertedProposal.id,
-          });
-        } catch (error) {
-          console.error('Error processing proposal content:', error);
-          // Let the transaction roll back on error to maintain data consistency
-          throw error;
+      } else {
+        for (const categoryLabel of categoryLabels) {
+          console.warn(
+            `No valid proposal taxonomy term found for category: ${categoryLabel}`,
+          );
         }
       }
+    } catch (error) {
+      console.warn(
+        'Error fetching category terms, proceeding without category links:',
+        error,
+      );
+    }
+  }
 
-      const proposal = await tx.query.proposals.findFirst({
-        where: { id: insertedProposal.id },
-        with: { profile: true },
-      });
+  const [profileId, adminRole] = await Promise.all([
+    getCurrentProfileId(authUserId),
+    assertGlobalRole('Admin'),
+  ]);
+  const createdProposal = await db.transaction(async (tx) => {
+    const slug = await generateUniqueProfileSlug({
+      name: proposalTitle,
+      db: tx,
+    });
+    // Create a profile for the proposal
+    const [proposalProfile] = await tx
+      .insert(profiles)
+      .values({
+        type: EntityType.PROPOSAL,
+        name: proposalTitle,
+        slug,
+      })
+      .returning();
 
-      if (!proposal) {
-        throw new CommonError('Failed to create proposal');
-      }
+    if (!proposalProfile) {
+      throw new CommonError('Failed to create proposal profile');
+    }
 
-      return proposal;
+    // Add the creator as a profile user with the global Admin role
+    const [newProfileUser] = await tx
+      .insert(profileUsers)
+      .values({
+        profileId: proposalProfile.id,
+        authUserId,
+        email: user.email!,
+        isOwner: true,
+      })
+      .returning();
+
+    if (!newProfileUser) {
+      throw new CommonError('Failed to create proposal profile user');
+    }
+
+    await tx.insert(profileUserToAccessRoles).values({
+      profileUserId: newProfileUser.id,
+      accessRoleId: adminRole.id,
     });
 
-    return createdProposal;
-  } catch (error) {
-    if (
-      error instanceof UnauthorizedError ||
-      error instanceof NotFoundError ||
-      error instanceof ValidationError ||
-      error instanceof CommonError
-    ) {
-      throw error;
+    const proposalId = crypto.randomUUID();
+    const collaborationDocId = `proposal-${proposalId}`;
+
+    const [insertedProposal] = await tx
+      .insert(proposals)
+      .values({
+        id: proposalId,
+        processInstanceId: data.processInstanceId,
+        proposalData: {
+          ...data.proposalData,
+          collaborationDocId,
+          category:
+            parsedProposalData.category.length > 0
+              ? parsedProposalData.category
+              : undefined,
+        },
+        submittedByProfileId: profileId,
+        profileId: proposalProfile.id,
+        status: ProposalStatus.DRAFT,
+        ...(defaultHidden ? { visibility: Visibility.HIDDEN } : {}),
+      })
+      .returning();
+
+    if (!insertedProposal) {
+      throw new CommonError('Failed to create proposal');
     }
-    console.error('Error creating proposal:', error);
-    throw new CommonError('Failed to create proposal');
-  }
+
+    // Link to categories within transaction if we have valid terms
+    if (categoryTermIds.length > 0) {
+      await tx.insert(proposalCategories).values(
+        categoryTermIds.map((taxonomyTermId) => ({
+          proposalId: insertedProposal.id,
+          taxonomyTermId,
+        })),
+      );
+    }
+
+    // Link attachments to proposal if provided
+    if (data.attachmentIds && data.attachmentIds.length > 0) {
+      const proposalAttachmentValues = data.attachmentIds.map(
+        (attachmentId) => ({
+          proposalId: insertedProposal.id,
+          attachmentId: attachmentId,
+          uploadedBy: profileId,
+        }),
+      );
+
+      await tx.insert(proposalAttachments).values(proposalAttachmentValues);
+
+      // Process proposal content to replace temporary URLs with permanent ones
+      try {
+        await processProposalContent({
+          db: tx,
+          proposalId: insertedProposal.id,
+        });
+      } catch (error) {
+        console.error('Error processing proposal content:', error);
+        // Let the transaction roll back on error to maintain data consistency
+        throw error;
+      }
+    }
+
+    const proposal = await tx.query.proposals.findFirst({
+      where: { id: insertedProposal.id },
+      with: { profile: true },
+    });
+
+    if (!proposal) {
+      throw new CommonError('Failed to create proposal');
+    }
+
+    return proposal;
+  });
+
+  return createdProposal;
 };
 
 // Helper function to extract title from proposal data
