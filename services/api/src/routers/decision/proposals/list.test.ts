@@ -18,6 +18,7 @@ import { describe, expect, it } from 'vitest';
 import { appRouter } from '../..';
 import { transformFormDataToProcessSchema as cowopSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/cowop';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { describeDecisionGating } from '../../../test/helpers/decisionGating';
 import {
   schemaWithPipeline,
   schemaWithThreePhases,
@@ -25,7 +26,6 @@ import {
 } from '../../../test/helpers/pipelineSchemas';
 import {
   createIsolatedSession,
-  createIsolatedTestClient,
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
@@ -35,15 +35,6 @@ const createCaller = createCallerFactory(appRouter);
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
-}
-
-async function createAnonymousCaller() {
-  const client = createIsolatedTestClient();
-  const { data, error } = await client.auth.signInAnonymously();
-  if (error || !data.session) {
-    throw new Error(`Failed to sign in anonymously: ${error?.message}`);
-  }
-  return createCaller(await createTestContextWithSession(data.session));
 }
 
 describe.concurrent('listProposals', () => {
@@ -1700,136 +1691,172 @@ describe.concurrent('listProposals', () => {
     );
     expect(fragments.category).toEqual(textFragment('Pinned Category'));
   });
+});
 
-  // Public-mode gating: listProposals admits anonymous-JWT callers via the
-  // synth `Anonymous` role (READ on decisions). Non-public instances
-  // reject anonymous and no-JWT callers at the standard role check.
-  describe('public-mode gating', () => {
-    it('allows a no-JWT caller to list proposals on a public instance', async ({
-      task,
-      onTestFinished,
-    }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+// Public-mode gating matrix: listProposals sits on `openProcedure`, so the
+// expected outcomes are: public-instance × any caller → allowed; non-public
+// instance × no-JWT or anon-JWT → rejected; common-JWT (allow-listed real
+// user) → always allowed.
+describeDecisionGating('listProposals', {
+  noJwtPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-      const setup = await testData.createDecisionSetup({
-        instanceCount: 1,
-        grantAccess: true,
-      });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
-      await testData.setInstancePublic(instance.instance.id);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+    await testData.setInstancePublic(instance.instance.id);
 
-      const proposal = await testData.createProposal({
-        userEmail: setup.userEmail,
-        processInstanceId: instance.instance.id,
-        proposalData: { title: 'Visible to public' },
-      });
-
-      // Submit so the proposal is no longer a draft — drafts aren't surfaced
-      // for no-JWT callers (no caller identity to own them).
-      const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
-      await ownerCaller.decision.submitProposal({ proposalId: proposal.id });
-
-      const noJwtCaller = createCaller(
-        await createTestContextWithSession(null),
-      );
-
-      const result = await noJwtCaller.decision.listProposals({
-        processInstanceId: instance.instance.id,
-      });
-
-      expect(result.proposals).toHaveLength(1);
-      expect(result.proposals[0]?.id).toBe(proposal.id);
-      expect(result.canManageProposals).toBe(false);
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Visible to public' },
     });
 
-    it('allows an anonymous JWT to list proposals on a public instance', async ({
-      task,
-      onTestFinished,
-    }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    // Submit so the proposal is no longer a draft — drafts aren't surfaced
+    // for no-JWT callers (no caller identity to own them).
+    const ownerCaller = await callers.commonJwt(setup.userEmail);
+    await ownerCaller.decision.submitProposal({ proposalId: proposal.id });
 
-      const setup = await testData.createDecisionSetup({
-        instanceCount: 1,
-        grantAccess: true,
-      });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
-      await testData.setInstancePublic(instance.instance.id);
+    const caller = await callers.noJwt();
 
-      await testData.createProposal({
-        userEmail: setup.userEmail,
+    const result = await caller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.proposals).toHaveLength(1);
+    expect(result.proposals[0]?.id).toBe(proposal.id);
+    expect(result.canManageProposals).toBe(false);
+  },
+
+  anonJwtPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+    await testData.setInstancePublic(instance.instance.id);
+
+    await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Visible to anon' },
+    });
+
+    const caller = await callers.anonJwt();
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.proposals).toBeDefined();
+  },
+
+  commonJwtPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+    await testData.setInstancePublic(instance.instance.id);
+
+    const caller = await callers.commonJwt(setup.userEmail);
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.proposals).toBeDefined();
+    // Common-JWT owner has admin access on the instance regardless of
+    // public-mode toggle.
+    expect(result.canManageProposals).toBe(true);
+  },
+
+  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+    // Non-public by default — closed-network gate.
+
+    const caller = await callers.noJwt();
+
+    await expect(
+      caller.decision.listProposals({
         processInstanceId: instance.instance.id,
-        proposalData: { title: 'Visible to anon' },
-      });
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
+  },
 
-      const anonCaller = await createAnonymousCaller();
+  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-      const result = await anonCaller.decision.listProposals({
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+    // Non-public by default — closed-network gate.
+
+    const caller = await callers.anonJwt();
+
+    await expect(
+      caller.decision.listProposals({
         processInstanceId: instance.instance.id,
-      });
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
+  },
 
-      expect(result.proposals).toBeDefined();
+  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+    // Non-public — closed-network gate. Common-JWT still allowed because the
+    // user is on the allow-list and has org-level access to this instance.
+
+    const caller = await callers.commonJwt(setup.userEmail);
+
+    const result = await caller.decision.listProposals({
+      processInstanceId: instance.instance.id,
     });
 
-    it('rejects an unauthenticated request on a non-public instance', async ({
-      task,
-      onTestFinished,
-    }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-      const setup = await testData.createDecisionSetup({
-        instanceCount: 1,
-        grantAccess: true,
-      });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
-      // Non-public by default — closed-network gate.
-
-      const caller = createCaller(await createTestContextWithSession(null));
-
-      await expect(
-        caller.decision.listProposals({
-          processInstanceId: instance.instance.id,
-        }),
-      ).rejects.toMatchObject({
-        cause: { name: 'UnauthorizedError' },
-      });
-    });
-
-    it('rejects an anonymous JWT on a non-public instance', async ({
-      task,
-      onTestFinished,
-    }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-      const setup = await testData.createDecisionSetup({
-        instanceCount: 1,
-        grantAccess: true,
-      });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
-      // Non-public by default — closed-network gate.
-
-      const anonCaller = await createAnonymousCaller();
-
-      await expect(
-        anonCaller.decision.listProposals({
-          processInstanceId: instance.instance.id,
-        }),
-      ).rejects.toMatchObject({
-        cause: { name: 'UnauthorizedError' },
-      });
-    });
-  });
+    expect(result.proposals).toBeDefined();
+    expect(result.canManageProposals).toBe(true);
+  },
 });
 
 describe.concurrent('listProposals: phase-scoped proposal visibility', () => {

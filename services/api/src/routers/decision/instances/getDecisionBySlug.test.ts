@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { describeDecisionGating } from '../../../test/helpers/decisionGating';
 import {
   createIsolatedSession,
-  createIsolatedTestClient,
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
@@ -15,15 +15,6 @@ const createCaller = createCallerFactory(appRouter);
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
-}
-
-async function createAnonymousCaller() {
-  const client = createIsolatedTestClient();
-  const { data, error } = await client.auth.signInAnonymously();
-  if (error || !data.session) {
-    throw new Error(`Failed to sign in anonymously: ${error?.message}`);
-  }
-  return createCaller(await createTestContextWithSession(data.session));
 }
 
 describe.concurrent('getDecisionBySlug', () => {
@@ -166,123 +157,155 @@ describe.concurrent('getDecisionBySlug', () => {
     expect(result.processInstance.proposalCount).toBe(1);
     expect(result.processInstance.participantCount).toBe(1);
   });
+});
 
-  // Public-mode gating: getDecisionBySlug should admit no-JWT and anon-JWT
-  // callers on instances seeded with the PUBLIC / ANONYMOUS roles, and
-  // reject both on non-public instances. Mirrors the gating tests on
-  // listProposals/createProposal — same access model, applied to the
-  // decision-profile read.
-  describe('public-mode gating', () => {
-    it('allows a no-JWT caller to read a public decision', async ({
-      task,
-      onTestFinished,
-    }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+// Public-mode gating matrix: getDecisionBySlug sits on `openProcedure`. The
+// PUBLIC role grants only `decisions: READ`; the ANONYMOUS role grants
+// `decisions: READ | SUBMIT_PROPOSALS`. Common-JWT (owner) always allowed.
+describeDecisionGating('getDecisionBySlug', {
+  noJwtPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-      const setup = await testData.createDecisionSetup({
-        instanceCount: 1,
-        grantAccess: true,
-      });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
-      await testData.setInstancePublic(instance.instance.id);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+    await testData.setInstancePublic(instance.instance.id);
 
-      const noJwtCaller = createCaller(
-        await createTestContextWithSession(null),
-      );
+    const caller = await callers.noJwt();
 
-      const result = await noJwtCaller.decision.getDecisionBySlug({
-        slug: instance.slug,
-      });
-
-      expect(result.slug).toBe(instance.slug);
-      expect(result.processInstance).toBeDefined();
-      // PUBLIC role grants `decisions: READ` only.
-      expect(result.processInstance.access?.read).toBe(true);
-      expect(result.processInstance.access?.admin).toBe(false);
+    const result = await caller.decision.getDecisionBySlug({
+      slug: instance.slug,
     });
 
-    it('allows an anonymous JWT to read a public decision', async ({
-      task,
-      onTestFinished,
-    }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    expect(result.slug).toBe(instance.slug);
+    expect(result.processInstance).toBeDefined();
+    // PUBLIC role grants `decisions: READ` only.
+    expect(result.processInstance.access?.read).toBe(true);
+    expect(result.processInstance.access?.admin).toBe(false);
+  },
 
-      const setup = await testData.createDecisionSetup({
-        instanceCount: 1,
-        grantAccess: true,
-      });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
-      await testData.setInstancePublic(instance.instance.id);
+  anonJwtPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-      const anonCaller = await createAnonymousCaller();
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+    await testData.setInstancePublic(instance.instance.id);
 
-      const result = await anonCaller.decision.getDecisionBySlug({
-        slug: instance.slug,
-      });
+    const caller = await callers.anonJwt();
 
-      expect(result.slug).toBe(instance.slug);
-      expect(result.processInstance).toBeDefined();
-      // ANONYMOUS role grants `decisions: READ | SUBMIT_PROPOSALS`.
-      expect(result.processInstance.access?.read).toBe(true);
-      expect(result.processInstance.access?.admin).toBe(false);
+    const result = await caller.decision.getDecisionBySlug({
+      slug: instance.slug,
     });
 
-    it('rejects a no-JWT caller on a non-public decision', async ({
-      task,
-      onTestFinished,
-    }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    expect(result.slug).toBe(instance.slug);
+    expect(result.processInstance).toBeDefined();
+    // ANONYMOUS role grants `decisions: READ | SUBMIT_PROPOSALS`.
+    expect(result.processInstance.access?.read).toBe(true);
+    expect(result.processInstance.access?.admin).toBe(false);
+  },
 
-      const setup = await testData.createDecisionSetup({
-        instanceCount: 1,
-        grantAccess: true,
-      });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
-      // Non-public by default — closed-network gate.
+  commonJwtPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-      const noJwtCaller = createCaller(
-        await createTestContextWithSession(null),
-      );
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+    await testData.setInstancePublic(instance.instance.id);
 
-      await expect(
-        noJwtCaller.decision.getDecisionBySlug({ slug: instance.slug }),
-      ).rejects.toMatchObject({
-        cause: { name: 'UnauthorizedError' },
-      });
+    const caller = await callers.commonJwt(setup.userEmail);
+
+    const result = await caller.decision.getDecisionBySlug({
+      slug: instance.slug,
     });
 
-    it('rejects an anonymous JWT on a non-public decision', async ({
-      task,
-      onTestFinished,
-    }) => {
-      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    expect(result.slug).toBe(instance.slug);
+    // Common-JWT owner has admin access regardless of public-mode toggle.
+    expect(result.processInstance.access?.read).toBe(true);
+    expect(result.processInstance.access?.admin).toBe(true);
+  },
 
-      const setup = await testData.createDecisionSetup({
-        instanceCount: 1,
-        grantAccess: true,
-      });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
-      // Non-public by default — closed-network gate.
+  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
-      const anonCaller = await createAnonymousCaller();
-
-      await expect(
-        anonCaller.decision.getDecisionBySlug({ slug: instance.slug }),
-      ).rejects.toMatchObject({
-        cause: { name: 'UnauthorizedError' },
-      });
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
     });
-  });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+    // Non-public by default — closed-network gate.
+
+    const caller = await callers.noJwt();
+
+    await expect(
+      caller.decision.getDecisionBySlug({ slug: instance.slug }),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
+  },
+
+  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+    // Non-public by default — closed-network gate.
+
+    const caller = await callers.anonJwt();
+
+    await expect(
+      caller.decision.getDecisionBySlug({ slug: instance.slug }),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
+  },
+
+  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+    // Non-public — closed-network gate. Common-JWT (allow-listed owner)
+    // still allowed via org-level access.
+
+    const caller = await callers.commonJwt(setup.userEmail);
+
+    const result = await caller.decision.getDecisionBySlug({
+      slug: instance.slug,
+    });
+
+    expect(result.slug).toBe(instance.slug);
+    expect(result.processInstance.access?.read).toBe(true);
+    expect(result.processInstance.access?.admin).toBe(true);
+  },
 });
