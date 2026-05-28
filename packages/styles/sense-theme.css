@@ -1,0 +1,129 @@
+/*
+ * Sense (shadcn/ui) Theme
+ * Maps shadcn/ui's semantic CSS variables to @op/styles tokens.
+ *
+ * Shadcn components reference Tailwind utilities like `bg-background`,
+ * `text-foreground`, `border-input`, etc. Those resolve through the
+ * Tailwind v4 `@theme` layer below, which points the semantic names at
+ * the OP brand tokens defined in tokens.css / shared-styles.css.
+ *
+ * This file is imported by shared-styles.css so shadcn components
+ * "just work" with OP branding without modifying any component file.
+ */
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-input: var(--input);
+
+  /* Sidebar */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Chart palette */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Radius scale */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Animations (used by accordion, collapsible, etc.) */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+:root {
+  /* Core surfaces */
+  --background: var(--color-white);
+  --foreground: var(--color-neutral-charcoal);
+
+  /* Card / popover */
+  --card: var(--color-white);
+  --card-foreground: var(--color-neutral-charcoal);
+  --popover: var(--color-white);
+  --popover-foreground: var(--color-neutral-charcoal);
+
+  /* Primary (teal) — note: --color-primary already exists in shared-styles */
+  --primary-foreground: var(--color-white);
+
+  /* Secondary (neutral) — note: --color-secondary already exists upstream */
+  --secondary-foreground: var(--color-neutral-charcoal);
+
+  /* Muted */
+  --muted: var(--color-neutral-gray-1);
+  --muted-foreground: var(--color-neutral-gray-4);
+
+  /* Accent */
+  --accent: var(--color-neutral-gray-1);
+  --accent-foreground: var(--color-neutral-charcoal);
+
+  /* Destructive */
+  --destructive: var(--color-functional-red-600);
+  --destructive-foreground: var(--color-white);
+
+  /* Borders / inputs / focus ring
+     `--color-border` and `--color-ring` are defined in shared-styles.css */
+  --input: var(--color-neutral-gray-2);
+
+  /* Radius */
+  --radius: 0.5rem;
+
+  /* Sidebar */
+  --sidebar: var(--color-neutral-off-white);
+  --sidebar-foreground: var(--color-neutral-charcoal);
+  --sidebar-primary: var(--color-primary-500);
+  --sidebar-primary-foreground: var(--color-white);
+  --sidebar-accent: var(--color-neutral-gray-1);
+  --sidebar-accent-foreground: var(--color-neutral-charcoal);
+  --sidebar-border: var(--color-neutral-gray-2);
+  --sidebar-ring: var(--color-primary-500);
+
+  /* Chart palette — uses brand + data tokens */
+  --chart-1: var(--color-primary-500);
+  --chart-2: var(--color-primary-yellow-500);
+  --chart-3: var(--color-primary-orange-500);
+  --chart-4: var(--color-data-purple);
+  --chart-5: var(--color-data-blue);
+}
