@@ -1,5 +1,10 @@
 import { invalidate } from '@op/cache';
-import { CommonError, NotFoundError, joinOrganization } from '@op/common';
+import {
+  CommonError,
+  NotFoundError,
+  getOrgAccessUser,
+  joinOrganization,
+} from '@op/common';
 import { db } from '@op/db/client';
 import { z } from 'zod';
 
@@ -116,6 +121,12 @@ export const addUsersToOrganizationRouter = router({
           }),
         ),
       ]);
+      for (const addedUser of joinResults) {
+        getOrgAccessUser.invalidate({
+          user: { id: addedUser.authUserId },
+          organizationId,
+        });
+      }
 
       return joinResults;
     }),

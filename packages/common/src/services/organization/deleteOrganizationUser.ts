@@ -63,6 +63,7 @@ export async function deleteOrganizationUser({
     type: 'orgUser',
     params: [organizationId, user.id],
   });
+  getOrgAccessUser.invalidate({ user, organizationId });
 
   if (!deletedUser) {
     throw new NotFoundError('Organization user', organizationUserId);
