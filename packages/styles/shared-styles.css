@@ -338,7 +338,7 @@
   background-image: radial-gradient(
     96.92% 140.1% at 72.02% 100%,
     var(--op-primary-500) 0%,
-    var(--op-red-600) 92%,
+    var(--op-functional-red-600) 92%,
     #fafbfb 100%
   );
 }
@@ -372,8 +372,8 @@
 @utility bg-orangePurple {
   background-image: radial-gradient(
     70.56% 70.56% at 72.75% 33.21%,
-    #6200c3 0%,
-    #ff613d 100%
+    var(--color-data-purple) 0%,
+    #e35f00 100%
   );
 }
 
