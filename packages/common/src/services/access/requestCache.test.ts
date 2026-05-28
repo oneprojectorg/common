@@ -2,11 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { memoize, runWithRequestCache } from './requestCache';
 
+const byArg = (s: string) => s;
+const constant = () => '';
+
 describe('memoize / requestCache', () => {
   describe('isolation between requests', () => {
     it('does not leak entries across separate runWithRequestCache scopes', async () => {
       const fetcher = vi.fn(async (_id: string) => 'value');
-      const memoFetcher = memoize(fetcher);
+      const memoFetcher = memoize(fetcher, byArg);
 
       await runWithRequestCache(async () => {
         await memoFetcher('k');
@@ -21,10 +24,10 @@ describe('memoize / requestCache', () => {
     });
 
     it('isolates concurrent requests with the same key', async () => {
-      const fetcherA = vi.fn(async () => 'A');
-      const fetcherB = vi.fn(async () => 'B');
-      const memoA = memoize(fetcherA);
-      const memoB = memoize(fetcherB);
+      const fetcherA = vi.fn(async (_k: string) => 'A');
+      const fetcherB = vi.fn(async (_k: string) => 'B');
+      const memoA = memoize(fetcherA, byArg);
+      const memoB = memoize(fetcherB, byArg);
 
       await Promise.all([
         runWithRequestCache(async () => {
@@ -45,14 +48,14 @@ describe('memoize / requestCache', () => {
   describe('rejection handling (no poisoning)', () => {
     it('drops the entry when the fetcher rejects so the next caller retries', async () => {
       let attempt = 0;
-      const fetcher = vi.fn(async () => {
+      const fetcher = vi.fn(async (_k: string) => {
         attempt += 1;
         if (attempt === 1) {
           throw new Error('transient');
         }
         return 'ok';
       });
-      const memoFetcher = memoize(fetcher);
+      const memoFetcher = memoize(fetcher, byArg);
 
       await runWithRequestCache(async () => {
         await expect(memoFetcher('k')).rejects.toThrow('transient');
@@ -69,7 +72,7 @@ describe('memoize / requestCache', () => {
         }
         return `value-${key}`;
       });
-      const memoFetcher = memoize(fetcher);
+      const memoFetcher = memoize(fetcher, byArg);
 
       await runWithRequestCache(async () => {
         await expect(memoFetcher('bad')).rejects.toThrow('bad key');
@@ -79,10 +82,10 @@ describe('memoize / requestCache', () => {
 
     it('shares the in-flight rejection but allows later retries', async () => {
       const fetcher = vi
-        .fn()
+        .fn<(k: string) => Promise<string>>()
         .mockRejectedValueOnce(new Error('boom'))
         .mockResolvedValueOnce('recovered');
-      const memoFetcher = memoize(fetcher);
+      const memoFetcher = memoize(fetcher, byArg);
 
       await runWithRequestCache(async () => {
         const [r1, r2] = await Promise.allSettled([
@@ -124,22 +127,9 @@ describe('memoize / requestCache', () => {
       expect(fetcher).toHaveBeenCalledTimes(1);
     });
 
-    it('default keyFn stable-stringifies args (order-insensitive for object keys)', async () => {
-      const fetcher = vi.fn(async (_args: Record<string, string>) => 'v');
-      const memoFetcher = memoize(fetcher);
-
-      await runWithRequestCache(async () => {
-        await memoFetcher({ a: '1', b: '2' });
-        // Different key order, same values
-        await memoFetcher({ b: '2', a: '1' });
-      });
-
-      expect(fetcher).toHaveBeenCalledTimes(1);
-    });
-
     it('distinct keys do not collide', async () => {
       const fetcher = vi.fn(async (id: string) => `value-${id}`);
-      const memoFetcher = memoize(fetcher);
+      const memoFetcher = memoize(fetcher, byArg);
 
       await runWithRequestCache(async () => {
         expect(await memoFetcher('a')).toBe('value-a');
@@ -166,10 +156,10 @@ describe('memoize / requestCache', () => {
   describe('invalidate', () => {
     it('invalidate(args) drops the entry for that key and refetches next time', async () => {
       const fetcher = vi
-        .fn()
+        .fn<(k: string) => Promise<string>>()
         .mockResolvedValueOnce('v1')
         .mockResolvedValueOnce('v2');
-      const memoFetcher = memoize(fetcher);
+      const memoFetcher = memoize(fetcher, byArg);
 
       await runWithRequestCache(async () => {
         expect(await memoFetcher('k')).toBe('v1');
@@ -180,7 +170,7 @@ describe('memoize / requestCache', () => {
 
     it('invalidate only drops matching keys', async () => {
       const fetcher = vi.fn(async (id: string) => `v-${id}`);
-      const memoFetcher = memoize(fetcher);
+      const memoFetcher = memoize(fetcher, byArg);
 
       await runWithRequestCache(async () => {
         await memoFetcher('a');
@@ -195,7 +185,7 @@ describe('memoize / requestCache', () => {
 
     it('invalidateAll clears every entry for the memoized fn', async () => {
       const fetcher = vi.fn(async (id: string) => `v-${id}`);
-      const memoFetcher = memoize(fetcher);
+      const memoFetcher = memoize(fetcher, byArg);
 
       await runWithRequestCache(async () => {
         await memoFetcher('a');
@@ -209,7 +199,7 @@ describe('memoize / requestCache', () => {
     });
 
     it('invalidate and invalidateAll are no-ops outside a scope', () => {
-      const memoFetcher = memoize(async () => 'x');
+      const memoFetcher = memoize(async () => 'x', constant);
       expect(() => memoFetcher.invalidate()).not.toThrow();
       expect(() => memoFetcher.invalidateAll()).not.toThrow();
     });
@@ -218,7 +208,7 @@ describe('memoize / requestCache', () => {
   describe('out-of-scope behavior', () => {
     it('runs the fetcher every call when not inside runWithRequestCache', async () => {
       const fetcher = vi.fn(async () => 'x');
-      const memoFetcher = memoize(fetcher);
+      const memoFetcher = memoize(fetcher, constant);
 
       await memoFetcher();
       await memoFetcher();
