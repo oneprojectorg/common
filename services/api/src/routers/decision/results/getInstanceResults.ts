@@ -2,10 +2,10 @@ import { NotFoundError, getLatestResultWithProposals } from '@op/common';
 
 import { legacyInstanceResultsEncoder } from '../../../encoders/legacyDecision';
 import { getInstanceResultsInputSchema } from '../../../encoders/results';
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../../trpcFactory';
 
 export const getInstanceResultsRouter = router({
-  getInstanceResults: commonAuthedProcedure({
+  getInstanceResults: commonNetworkProcedure({
     rateLimit: { windowSize: 10, maxRequests: 30 },
   })
     .input(getInstanceResultsInputSchema)

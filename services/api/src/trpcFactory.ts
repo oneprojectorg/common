@@ -10,11 +10,12 @@ import {
 } from './lib/cookies';
 import { errorFormatter } from './lib/error';
 import withAnalytics from './middlewares/withAnalytics';
-import withAuthenticated from './middlewares/withAuthenticated';
 import withChannelMeta from './middlewares/withChannelMeta';
 import withLogger from './middlewares/withLogger';
+import withNetworkAuthentication from './middlewares/withNetworkAuthentication';
 import withRateLimited from './middlewares/withRateLimited';
-import withResolvedUser from './middlewares/withResolvedUser';
+import withRequireUser from './middlewares/withRequireUser';
+import withResolveUser from './middlewares/withResolveUser';
 import type { TContext } from './types';
 
 export const createContext = async ({
@@ -65,7 +66,7 @@ export const commonProcedure = t.procedure.use(withChannelMeta).use(withLogger);
 
 export const DEFAULT_RATE_LIMIT = { windowSize: 10, maxRequests: 10 };
 
-interface CommonAuthedProcedureOptions {
+interface CommonProcedureOptions {
   rateLimit?: {
     windowSize: number;
     maxRequests: number;
@@ -73,49 +74,54 @@ interface CommonAuthedProcedureOptions {
 }
 
 /**
- * Creates an authenticated procedure with configurable rate limiting.
- * Includes: channelMeta -> logger -> rateLimited -> authenticated -> analytics
+ * Closed-network procedure: only real authed users on the allow-list (or
+ * `@oneproject.org`) pass. Sets `ctx.user`. Use for endpoints that
+ * remain gated to the closed-network audience.
  *
- * @param opts.rateLimit - Custom rate limit config (default: 10 requests per 10 seconds)
- *
- * Usage:
- * - `commonAuthedProcedure()` - uses default rate limit (10 req/10s)
- * - `commonAuthedProcedure({ rateLimit: { windowSize: 60, maxRequests: 5 } })` - custom rate limit
- *
- * For unauthenticated endpoints, use `commonProcedure` with explicit middleware.
+ * Includes: channelMeta -> logger -> rateLimited -> networkAuthentication -> analytics
  */
-export function commonAuthedProcedure(opts?: CommonAuthedProcedureOptions) {
+export function commonNetworkProcedure(opts?: CommonProcedureOptions) {
   const rateLimit = opts?.rateLimit ?? DEFAULT_RATE_LIMIT;
   return commonProcedure
     .use(withRateLimited(rateLimit))
-    .use(withAuthenticated)
+    .use(withNetworkAuthentication)
     .use(withAnalytics);
 }
 
 /**
- * Creates an "open" procedure that admits anonymous-JWT and no-JWT callers
- * alongside fully authed users. The middleware resolves the caller's
- * identity into `ctx.authContext` (with `user?` and `accessUser`) but
- * does not gate — authorisation is delegated to the service layer
- * (typically via role grants to the seeded `GLOBAL_USER_PUBLIC` and
- * `GLOBAL_USER_ANONYMOUS` users on the target profile).
+ * Authenticated procedure: admits real authed users **and** anon-JWT
+ * callers. Rejects no-JWT callers. Sets `ctx.user` (always defined).
+ * Authorization is delegated to the service layer — `getProfileAccessUser`
+ * / `getOrgAccessUser` substitute the GLOBAL_USER_ANONYMOUS sentinel for
+ * anon callers when resolving role grants.
  *
- * Includes: channelMeta -> logger -> rateLimited -> resolvedUser -> analytics
- *
- * Usage:
- * - `commonOpenProcedure()` - default rate limit (10 req/10s)
- * - `commonOpenProcedure({ rateLimit: { windowSize: 60, maxRequests: 5 } })`
- *
- * Routers using this procedure should still gate at the boundary for any
- * write that requires a real Supabase user (e.g. `createProposal` throws
- * `UnauthorizedError` when `ctx.authContext.user` is undefined).
- *
- * For closed-network endpoints, use `commonAuthedProcedure` instead.
+ * Includes: channelMeta -> logger -> rateLimited -> resolveUser -> requireUser -> analytics
  */
-export function commonOpenProcedure(opts?: CommonAuthedProcedureOptions) {
+export function authenticatedProcedure(opts?: CommonProcedureOptions) {
   const rateLimit = opts?.rateLimit ?? DEFAULT_RATE_LIMIT;
   return commonProcedure
     .use(withRateLimited(rateLimit))
-    .use(withResolvedUser)
+    .use(withResolveUser)
+    .use(withRequireUser)
+    .use(withAnalytics);
+}
+
+/**
+ * Open procedure: admits real authed users, anon-JWT callers, **and**
+ * no-JWT callers. Sets `ctx.user?` — possibly undefined. Authorization
+ * is delegated to the service layer — `getProfileAccessUser` /
+ * `getOrgAccessUser` substitute GLOBAL_USER_PUBLIC for no-JWT and
+ * GLOBAL_USER_ANONYMOUS for anon-JWT when resolving role grants.
+ *
+ * Routers using this procedure should still gate at the boundary for
+ * writes that require a real Supabase user.
+ *
+ * Includes: channelMeta -> logger -> rateLimited -> resolveUser -> analytics
+ */
+export function openProcedure(opts?: CommonProcedureOptions) {
+  const rateLimit = opts?.rateLimit ?? DEFAULT_RATE_LIMIT;
+  return commonProcedure
+    .use(withRateLimited(rateLimit))
+    .use(withResolveUser)
     .use(withAnalytics);
 }

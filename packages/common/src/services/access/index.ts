@@ -8,7 +8,34 @@ import { checkPermission } from 'access-zones';
 import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils/error';
+import { GLOBAL_USER_ANONYMOUS_ID, GLOBAL_USER_PUBLIC_ID } from './globalUser';
 import { type RoleJunction, getNormalizedRoles } from './utils';
+
+/**
+ * Resolves the auth-user-id used for permission lookups:
+ *
+ * - real authed user → their own id
+ * - anon-JWT caller → `GLOBAL_USER_ANONYMOUS_ID`
+ * - no-JWT caller (`user === undefined`) → `GLOBAL_USER_PUBLIC_ID`
+ *
+ * The two `GLOBAL_USER_*` ids point at real seeded `auth.users` rows
+ * that no human can sign in as. Profiles grant role X "to anonymous
+ * callers" / "to no-JWT callers" by attaching role X to the
+ * corresponding global user via `profile_users` — so this substitution
+ * keeps the standard `profile_users -> access_roles` join working for
+ * un-anchored callers.
+ */
+export const resolveAccessAuthUserId = (
+  user: { id: string; is_anonymous?: boolean | null } | undefined,
+): string => {
+  if (!user) {
+    return GLOBAL_USER_PUBLIC_ID;
+  }
+  if (user.is_anonymous) {
+    return GLOBAL_USER_ANONYMOUS_ID;
+  }
+  return user.id;
+};
 
 type OrgUserWithNormalizedRoles = {
   id: string;
@@ -28,20 +55,26 @@ type ProfileUserWithNormalizedRoles = ProfileUser & {
   profile: Profile;
 };
 
-// gets a user assuming that the user is authenticated
+/**
+ * Resolves the caller's org-user row. Pass `undefined` for no-JWT
+ * callers; the lookup falls back to the seeded GLOBAL_USER_PUBLIC row.
+ * Anon-JWT callers fall back to GLOBAL_USER_ANONYMOUS.
+ */
 export const getOrgAccessUser = async ({
   user,
   organizationId,
 }: {
-  user: { id: string };
+  user: { id: string; is_anonymous?: boolean | null } | undefined;
   organizationId: string;
 }): Promise<OrgUserWithNormalizedRoles | undefined> => {
+  const accessAuthUserId = resolveAccessAuthUserId(user);
+
   const getOrgUser = async () => {
     const orgUser = await db._query.organizationUsers.findFirst({
       where: (table, { eq }) =>
         and(
           eq(table.organizationId, organizationId),
-          eq(table.authUserId, user.id),
+          eq(table.authUserId, accessAuthUserId),
         ),
       with: {
         roles: {
@@ -81,7 +114,7 @@ export const getOrgAccessUser = async ({
 
   return cache({
     type: 'orgUser',
-    params: [organizationId, user.id],
+    params: [organizationId, accessAuthUserId],
     fetch: getOrgUser,
     options: {
       skipMemCache: true,
@@ -89,17 +122,26 @@ export const getOrgAccessUser = async ({
   });
 };
 
-// gets a user's access for a specific profile
+/**
+ * Resolves the caller's profile-user row. Pass `undefined` for no-JWT
+ * callers; the lookup falls back to the seeded GLOBAL_USER_PUBLIC row.
+ * Anon-JWT callers fall back to GLOBAL_USER_ANONYMOUS.
+ */
 export const getProfileAccessUser = async ({
   user,
   profileId,
 }: {
-  user: { id: string };
+  user: { id: string; is_anonymous?: boolean | null } | undefined;
   profileId: string;
 }): Promise<ProfileUserWithNormalizedRoles | undefined> => {
+  const accessAuthUserId = resolveAccessAuthUserId(user);
+
   const profileUser = await db._query.profileUsers.findFirst({
     where: (table, { eq }) =>
-      and(eq(table.profileId, profileId), eq(table.authUserId, user.id)),
+      and(
+        eq(table.profileId, profileId),
+        eq(table.authUserId, accessAuthUserId),
+      ),
     with: {
       profile: true,
       roles: {
@@ -149,7 +191,7 @@ export const assertInstanceProfileAccess = async ({
   profilePermissions,
   orgFallbackPermissions,
 }: {
-  user: { id: string };
+  user: { id: string; is_anonymous?: boolean | null } | undefined;
   instance: { profileId: string | null; ownerProfileId: string | null };
   profilePermissions: AccessZonePermissionInput;
   orgFallbackPermissions: AccessZonePermissionInput;
@@ -183,7 +225,7 @@ export const assertInstanceProfileAccess = async ({
     }
 
     const orgUser = await getOrgAccessUser({
-      user: { id: user.id },
+      user,
       organizationId: org[0].id,
     });
 

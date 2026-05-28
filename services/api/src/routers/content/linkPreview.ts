@@ -1,7 +1,7 @@
 // import { cache } from '@op/cache';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 
 const linkPreviewResponseSchema = z.object({
   url: z.string(),
@@ -66,7 +66,7 @@ const getLinkPreview = async (url: string) => {
 };
 
 export const linkPreview = router({
-  linkPreview: commonAuthedProcedure()
+  linkPreview: commonNetworkProcedure()
     .input(
       z.object({
         url: z.url(),

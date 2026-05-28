@@ -14,11 +14,10 @@ export interface ProcessCategory {
 
 export const getProcessCategories = async ({
   processInstanceId,
-  accessUser,
+  user,
 }: {
   processInstanceId: string;
   user?: User;
-  accessUser: User;
 }): Promise<ProcessCategory[]> => {
   try {
     // Get the process instance with its process schema
@@ -42,7 +41,7 @@ export const getProcessCategories = async ({
         },
       }),
       assertInstanceProfileAccess({
-        user: accessUser,
+        user,
         instance: {
           profileId: instance.profileId,
           ownerProfileId: instance.ownerProfileId,

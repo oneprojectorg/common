@@ -2,10 +2,10 @@ import { updateProfileUserRoles } from '@op/common';
 import { z } from 'zod';
 
 import { profileUserEncoder } from '../../../encoders/profiles';
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../../trpcFactory';
 
 export const updateUserRolesRouter = router({
-  updateUserRoles: commonAuthedProcedure()
+  updateUserRoles: commonNetworkProcedure()
     .input(
       z.object({
         profileUserId: z.uuid(),

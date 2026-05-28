@@ -42,7 +42,6 @@ export async function listProposalRevisionRequests({
   const instance = await getInstance({
     instanceId: proposal.processInstanceId,
     user,
-    accessUser: user,
   });
 
   const isAuthor = proposal.submittedByProfileId === commonUser.profileId;

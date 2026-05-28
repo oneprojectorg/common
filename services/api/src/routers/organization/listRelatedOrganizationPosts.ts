@@ -6,11 +6,11 @@ import {
   postsEncoder,
   postsToOrganizationsEncoder,
 } from '../../encoders/posts';
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
 
 export const listRelatedOrganizationPostsRouter = router({
-  listAllPosts: commonAuthedProcedure()
+  listAllPosts: commonNetworkProcedure()
     .input(
       dbFilter
         .extend({

@@ -1,7 +1,7 @@
 import { getExportStatus } from '@op/common';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../../trpcFactory';
 
 const exportStatusInputSchema = z.object({
   exportId: z.string().uuid(),
@@ -28,7 +28,7 @@ const exportStatusOutputSchema = z.union([
 ]);
 
 export const getExportStatusRouter = router({
-  getExportStatus: commonAuthedProcedure()
+  getExportStatus: commonNetworkProcedure()
     .input(exportStatusInputSchema)
     .output(exportStatusOutputSchema)
     .query(async ({ ctx, input }) => {

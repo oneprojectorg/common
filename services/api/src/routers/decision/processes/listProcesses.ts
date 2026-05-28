@@ -4,10 +4,10 @@ import {
   decisionProcessWithSchemaListEncoder,
   processFilterSchema,
 } from '../../../encoders/decision';
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../../trpcFactory';
 
 export const listProcessesRouter = router({
-  listProcesses: commonAuthedProcedure()
+  listProcesses: commonNetworkProcedure()
     .input(processFilterSchema)
     .output(decisionProcessWithSchemaListEncoder)
     .query(async ({ input }) => {

@@ -10,8 +10,8 @@ import {
   legacyProcessInstanceEncoder,
 } from '../../../encoders/legacyDecision';
 import {
-  commonAuthedProcedure,
-  commonOpenProcedure,
+  commonNetworkProcedure,
+  openProcedure,
   router,
 } from '../../../trpcFactory';
 import { trackProcessViewed } from '../../../utils/analytics';
@@ -23,7 +23,7 @@ import { trackProcessViewed } from '../../../utils/analytics';
  */
 
 export const getLegacyInstanceRouter = router({
-  getLegacyInstance: commonAuthedProcedure({
+  getLegacyInstance: commonNetworkProcedure({
     rateLimit: { windowSize: 10, maxRequests: 30 },
   })
     .input(legacyGetInstanceInputSchema)
@@ -34,7 +34,6 @@ export const getLegacyInstanceRouter = router({
       const instance = await getInstance({
         instanceId: input.instanceId,
         user,
-        accessUser: user,
       });
 
       // Track process viewed event
@@ -68,18 +67,17 @@ export const getLegacyInstanceRouter = router({
  * Only supports new decision-making schemas.
  */
 export const getInstanceRouter = router({
-  getInstance: commonOpenProcedure({
+  getInstance: openProcedure({
     rateLimit: { windowSize: 10, maxRequests: 30 },
   })
     .input(getInstanceInputSchema)
     .output(processInstanceWithSchemaEncoder)
     .query(async ({ ctx, input }) => {
-      const { user, accessUser } = ctx.authContext;
+      const { user } = ctx;
 
       const instance = await getInstance({
         instanceId: input.instanceId,
         user,
-        accessUser,
       });
 
       // Track process viewed event — only for real users; anon/no-JWT

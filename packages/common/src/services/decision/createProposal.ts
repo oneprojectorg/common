@@ -42,16 +42,14 @@ export interface CreateProposalInput {
 export const createProposal = async ({
   data,
   user,
-  accessUser,
 }: {
   data: CreateProposalInput;
   /** Real Supabase user. Required: creation writes the new proposal's
    *  `profile_users` row keyed to this user's id. Callers (routers /
-   *  test fixtures) must enforce presence before invoking. */
+   *  test fixtures) must enforce presence before invoking. May be an
+   *  anon-JWT user — `getProfileAccessUser` substitutes the
+   *  GLOBAL_USER_ANONYMOUS sentinel for the role lookup. */
   user: User;
-  /** Substituted user for permission queries. Always defined. Equals
-   *  `user` for authed callers; `GLOBAL_USER_ANONYMOUS` for anon-JWT. */
-  accessUser: User;
 }) => {
   const authUserId = user.id;
 
@@ -69,10 +67,11 @@ export const createProposal = async ({
       throw new ValidationError('Process instance has no profile');
     }
 
-    // Use `accessUser` (substituted by withResolvedUser) for the role
-    // lookup so anon-JWT and no-JWT callers hit the seeded global rows.
+    // `getProfileAccessUser` substitutes the GLOBAL_USER_ANONYMOUS sentinel
+    // internally when `user.is_anonymous`, so anon-JWT callers hit the
+    // seeded global row instead of a phantom `profile_users` lookup.
     const profileAccessUser = await getProfileAccessUser({
-      user: accessUser,
+      user,
       profileId: instance.profileId,
     });
 

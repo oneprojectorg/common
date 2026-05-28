@@ -3,7 +3,7 @@ import { EntityType } from '@op/db/schema';
 import { z } from 'zod';
 
 import { profileEncoder } from '../../encoders/profiles';
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
 
 const inputSchema = z.object({
@@ -14,7 +14,7 @@ const inputSchema = z.object({
 const universalProfileSchema = profileEncoder;
 
 export const getProfileRouter = router({
-  list: commonAuthedProcedure()
+  list: commonNetworkProcedure()
     .input(
       dbFilter
         .extend({
@@ -44,7 +44,7 @@ export const getProfileRouter = router({
         next,
       };
     }),
-  getBySlug: commonAuthedProcedure()
+  getBySlug: commonNetworkProcedure()
     .input(inputSchema)
     .output(universalProfileSchema)
     .query(async ({ ctx, input }) => {

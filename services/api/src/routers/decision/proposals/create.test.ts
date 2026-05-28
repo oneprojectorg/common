@@ -115,10 +115,9 @@ describe.concurrent('createProposal', () => {
 
       const caller = await createUnauthenticatedCaller();
 
-      // createProposal requires a real Supabase user (for proposal
-      // ownership). No-JWT callers arrive with `authContext.user`
-      // undefined and the service throws `UnauthorizedError` before
-      // reaching the role check.
+      // createProposal sits on `authenticatedProcedure`, which rejects
+      // no-JWT callers at the middleware boundary with
+      // `UnauthorizedError` before the router ever runs.
       await expect(
         caller.decision.createProposal({
           processInstanceId: instance.instance.id,

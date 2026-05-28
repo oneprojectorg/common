@@ -4,10 +4,10 @@ import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../../trpcFactory';
 
 export const requestRevisionRouter = router({
-  requestRevision: commonAuthedProcedure()
+  requestRevision: commonNetworkProcedure()
     .input(
       z.object({
         assignmentId: z.uuid(),

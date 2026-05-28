@@ -164,8 +164,6 @@ export const getLatestResultWithProposals = async ({
         limit: paginatedProposalIds.length,
       },
       user,
-      // Internal authed-context caller: real user IS the access user.
-      accessUser: user,
     }),
   ]);
 

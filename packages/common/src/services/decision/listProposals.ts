@@ -155,15 +155,14 @@ const buildBaseConditions = (
 export const listProposals = async ({
   input,
   user,
-  accessUser,
 }: {
   input: ListProposalsInput;
   /** Real Supabase user. Undefined for no-JWT callers — owner-keyed
    *  filters (drafts, own-hidden, ballot self-check) degrade to empty
-   *  rather than throwing. */
+   *  rather than throwing. `getProfileAccessUser` substitutes the
+   *  GLOBAL_USER_* sentinels for permission lookups when `user` is
+   *  undefined or anon. */
   user?: User;
-  /** Substituted user for permission queries. Always defined. */
-  accessUser: User;
 }) => {
   const { processInstanceId, skipAccessCheck = false } = input;
 
@@ -244,11 +243,11 @@ export const listProposals = async ({
       return { profileUser: undefined, canManageProposals: false };
     }
     const profileUser = await getProfileAccessUser({
-      user: accessUser,
+      user,
       profileId: instanceProfileId,
     });
     await assertInstanceProfileAccess({
-      user: accessUser,
+      user,
       instance,
       profilePermissions: [
         { decisions: permission.ADMIN },

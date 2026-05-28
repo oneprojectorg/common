@@ -3,7 +3,7 @@ import { JoinProfileRequestStatus } from '@op/db/schema';
 import { z } from 'zod';
 
 import { joinProfileRequestEncoder } from '../../../encoders/joinProfileRequests';
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../../trpcFactory';
 
 const inputSchema = z.object({
   /** The ID of the join profile request to update */
@@ -16,7 +16,7 @@ const inputSchema = z.object({
 });
 
 export const updateJoinRequestRouter = router({
-  updateJoinRequest: commonAuthedProcedure({
+  updateJoinRequest: commonNetworkProcedure({
     rateLimit: { windowSize: 60, maxRequests: 10 },
   })
     .input(inputSchema)

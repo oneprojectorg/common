@@ -7,22 +7,20 @@ import {
 
 import { proposalFilterSchema } from '../../../encoders/decision';
 import {
-  commonAuthedProcedure,
-  commonOpenProcedure,
+  commonNetworkProcedure,
+  openProcedure,
   router,
 } from '../../../trpcFactory';
 
 export const listProposalsRouter = router({
   /** Lists proposals for a given process instanc in the curent phase. */
-  listProposals: commonOpenProcedure()
+  listProposals: openProcedure()
     .input(proposalFilterSchema)
     .output(proposalListSchema)
     .query(async ({ ctx, input }) => {
-      const { user, accessUser } = ctx.authContext;
       const result = await listProposals({
         input,
-        user,
-        accessUser,
+        user: ctx.user,
       });
 
       ctx.registerQueryChannels([
@@ -32,7 +30,7 @@ export const listProposalsRouter = router({
       return proposalListSchema.parse(result);
     }),
   /** Lists all proposals for a given process instance, no phase filter. */
-  listAllProposals: commonAuthedProcedure()
+  listAllProposals: commonNetworkProcedure()
     .input(allProposalsFilterSchema)
     .output(allProposalsListSchema)
     .query(async ({ ctx, input }) => {

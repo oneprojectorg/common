@@ -2,10 +2,10 @@ import { Channels, cancelRevisionRequest } from '@op/common';
 import { proposalReviewRequestSchema } from '@op/common/client';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../../trpcFactory';
 
 export const cancelRevisionRequestRouter = router({
-  cancelRevisionRequest: commonAuthedProcedure()
+  cancelRevisionRequest: commonNetworkProcedure()
     .input(
       z.object({
         assignmentId: z.uuid(),

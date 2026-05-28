@@ -2,7 +2,7 @@ import { getRoles } from '@op/common';
 import { z } from 'zod';
 
 import { roleEncoder } from '../../encoders/roles';
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 import {
   createPaginatedOutput,
   createSortable,
@@ -20,7 +20,7 @@ const inputSchema = z
   .merge(roleSortableSchema);
 
 export const listRolesRouter = router({
-  listRoles: commonAuthedProcedure()
+  listRoles: commonNetworkProcedure()
     .input(inputSchema)
     .output(createPaginatedOutput(roleEncoder))
     .query(async ({ input }) => {

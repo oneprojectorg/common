@@ -120,7 +120,6 @@ export async function assertReviewAssignmentContext({
   const instance = await getInstance({
     instanceId: assignment.processInstanceId,
     user,
-    accessUser: user,
   });
 
   // TODO: revisit the access here

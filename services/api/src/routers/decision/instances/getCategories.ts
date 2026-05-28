@@ -1,7 +1,7 @@
 import { getProcessCategories } from '@op/common';
 import { z } from 'zod';
 
-import { commonOpenProcedure, router } from '../../../trpcFactory';
+import { openProcedure, router } from '../../../trpcFactory';
 
 const getCategoriesInputSchema = z.object({
   processInstanceId: z.uuid(),
@@ -18,16 +18,13 @@ const getCategoriesOutputSchema = z.object({
 });
 
 export const getCategoriesRouter = router({
-  getCategories: commonOpenProcedure()
+  getCategories: openProcedure()
     .input(getCategoriesInputSchema)
     .output(getCategoriesOutputSchema)
     .query(async ({ ctx, input }) => {
-      const { user, accessUser } = ctx.authContext;
-
       const categories = await getProcessCategories({
         processInstanceId: input.processInstanceId,
-        user,
-        accessUser,
+        user: ctx.user,
       });
 
       return { categories };

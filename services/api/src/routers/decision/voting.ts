@@ -4,8 +4,8 @@ import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import {
-  commonAuthedProcedure,
-  commonOpenProcedure,
+  commonNetworkProcedure,
+  openProcedure,
   router,
 } from '../../trpcFactory';
 
@@ -21,7 +21,7 @@ const submitVoteInput = z.object({
 
 export const votingRouter = router({
   // Submit user's vote (validates against current schema)
-  submitVote: commonAuthedProcedure({
+  submitVote: commonNetworkProcedure({
     rateLimit: { windowSize: 10, maxRequests: 5 },
   })
     .input(submitVoteInput)
@@ -55,18 +55,16 @@ export const votingRouter = router({
   // Open procedure: anon / no-JWT callers get the voting config with
   // `hasVoted: false` so the read-only voting summary can render on a
   // public instance.
-  getVotingStatus: commonOpenProcedure()
+  getVotingStatus: openProcedure()
     .input(
       z.object({
         processInstanceId: z.uuid(),
       }),
     )
     .query(async ({ input, ctx }) => {
-      const { user, accessUser } = ctx.authContext;
       return await getVotingStatus({
         data: { processInstanceId: input.processInstanceId },
-        user,
-        accessUser,
+        user: ctx.user,
       });
     }),
 });

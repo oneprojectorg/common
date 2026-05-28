@@ -342,11 +342,9 @@ export const submitVote = async ({
 export const getVotingStatus = async ({
   data,
   user,
-  accessUser,
 }: {
   data: GetVotingStatusInput;
   user?: User;
-  accessUser: User;
 }): Promise<VotingStatusResult> => {
   try {
     // For public / anon callers there's no individual profile to attribute a
@@ -373,7 +371,7 @@ export const getVotingStatus = async ({
     }
 
     await assertInstanceProfileAccess({
-      user: accessUser,
+      user,
       instance: processInstance,
       profilePermissions: { decisions: permission.READ },
       orgFallbackPermissions: [{ decisions: permission.READ }],

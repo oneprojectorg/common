@@ -2,12 +2,12 @@ import { NotFoundError, getPost as getPostService } from '@op/common';
 import { getPostSchema } from '@op/types';
 
 import { postsEncoder } from '../../encoders';
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 
 const outputSchema = postsEncoder;
 
 export const getPost = router({
-  getPost: commonAuthedProcedure({
+  getPost: commonNetworkProcedure({
     rateLimit: { windowSize: 10, maxRequests: 20 },
   })
     .input(getPostSchema)

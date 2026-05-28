@@ -10,6 +10,7 @@ import {
 import { User } from '@op/supabase/lib';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
+import { resolveAccessAuthUserId } from '../access';
 
 const decisionProfileQueryConfig = {
   with: {
@@ -48,20 +49,21 @@ type DecisionProfileItem = NonNullable<
 };
 
 export const getDecisionBySlug = async ({
-  accessUser,
+  user,
   slug,
 }: {
   user?: User;
-  accessUser: User;
   slug: string;
 }): Promise<DecisionProfileItem> => {
+  const accessAuthUserId = resolveAccessAuthUserId(user);
+
   const [authAndStatsResult, profile] = await Promise.all([
     // Auth check + aggregations.
     // The INNER JOIN on profile_users acts as the gate: a row must exist
-    // for `accessUser`. For real users that's their own row; for no-JWT
-    // / anon callers `accessUser` is the GLOBAL_USER_PUBLIC /
-    // GLOBAL_USER_ANONYMOUS sentinel, so this passes only for instances
-    // whose profile has been seeded with the corresponding role grant.
+    // for the access user. For real users that's their own row; for
+    // no-JWT / anon callers it's GLOBAL_USER_PUBLIC / GLOBAL_USER_ANONYMOUS,
+    // so this passes only for instances whose profile has been seeded
+    // with the corresponding role grant.
     db
       .select({
         profileId: profiles.id,
@@ -73,7 +75,7 @@ export const getDecisionBySlug = async ({
         profileUsers,
         and(
           eq(profileUsers.profileId, profiles.id),
-          eq(profileUsers.authUserId, accessUser.id),
+          eq(profileUsers.authUserId, accessAuthUserId),
         ),
       )
       .innerJoin(processInstances, eq(processInstances.profileId, profiles.id))

@@ -2,11 +2,11 @@ import { Channels, triggerPhaseAdvancement } from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../../trpcFactory';
 import { trackManualTransitionConfirmed } from '../../../utils/analytics';
 
 export const transitionFromPhaseRouter = router({
-  transitionFromPhase: commonAuthedProcedure()
+  transitionFromPhase: commonNetworkProcedure()
     .input(
       z.object({
         instanceId: z.uuid(),

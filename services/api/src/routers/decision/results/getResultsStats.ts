@@ -5,10 +5,10 @@ import {
   getResultsStatsInputSchema,
   resultsStatsEncoder,
 } from '../../../encoders/results';
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../../trpcFactory';
 
 export const getResultsStatsRouter = router({
-  getResultsStats: commonAuthedProcedure({
+  getResultsStats: commonNetworkProcedure({
     rateLimit: { windowSize: 10, maxRequests: 30 },
   })
     .input(getResultsStatsInputSchema)

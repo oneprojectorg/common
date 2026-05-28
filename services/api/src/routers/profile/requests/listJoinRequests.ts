@@ -3,7 +3,7 @@ import { JoinProfileRequestStatus } from '@op/db/schema';
 import { z } from 'zod';
 
 import { joinProfileRequestEncoder } from '../../../encoders/joinProfileRequests';
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../../trpcFactory';
 import { dbFilter } from '../../../utils';
 
 const inputSchema = dbFilter.extend({
@@ -14,7 +14,7 @@ const inputSchema = dbFilter.extend({
 });
 
 export const listJoinRequestsRouter = router({
-  listJoinRequests: commonAuthedProcedure({
+  listJoinRequests: commonNetworkProcedure({
     rateLimit: { windowSize: 60, maxRequests: 60 },
   })
     .input(inputSchema)

@@ -5,10 +5,9 @@ import { getCachedAuthUser } from '../supabase/server';
 import type { MiddlewareBuilderBase, TContextWithUser } from '../types';
 import { verifyAuthentication } from '../utils/verifyAuthentication';
 
-const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
-  ctx,
-  next,
-}) => {
+const withNetworkAuthentication: MiddlewareBuilderBase<
+  TContextWithUser
+> = async ({ ctx, next }) => {
   const data = await getCachedAuthUser(ctx);
 
   const user = verifyAuthentication(data);
@@ -50,4 +49,4 @@ export const withAuthenticatedAdmin: MiddlewareBuilderBase<
   });
 };
 
-export default withAuthenticated;
+export default withNetworkAuthentication;

@@ -3,10 +3,10 @@ import { z } from 'zod';
 
 import { permissionsSchema } from '../../encoders/access';
 import { roleEncoder } from '../../encoders/roles';
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 
 export const createRoleRouter = router({
-  createRole: commonAuthedProcedure()
+  createRole: commonNetworkProcedure()
     .input(
       z.object({
         profileId: z.string().uuid(),

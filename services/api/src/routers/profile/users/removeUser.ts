@@ -1,10 +1,10 @@
 import { removeProfileUser } from '@op/common';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../../trpcFactory';
 
 export const removeUserRouter = router({
-  removeUser: commonAuthedProcedure()
+  removeUser: commonNetworkProcedure()
     .input(z.object({ profileUserId: z.uuid() }))
     .output(
       z.object({

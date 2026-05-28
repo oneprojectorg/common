@@ -27,11 +27,10 @@ export interface ListProposalSubmittersInput {
  */
 export const listProposalSubmitters = async ({
   input,
-  accessUser,
+  user,
 }: {
   input: ListProposalSubmittersInput;
   user?: User;
-  accessUser: User;
 }) => {
   const { processInstanceId } = input;
 
@@ -52,7 +51,7 @@ export const listProposalSubmitters = async ({
   }
 
   await assertInstanceProfileAccess({
-    user: accessUser,
+    user,
     instance,
     profilePermissions: { decisions: permission.READ },
     orgFallbackPermissions: { decisions: permission.READ },

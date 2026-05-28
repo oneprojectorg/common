@@ -1,10 +1,10 @@
 import { deleteProfileInvite } from '@op/common';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 
 export const deleteProfileInviteRouter = router({
-  deleteProfileInvite: commonAuthedProcedure()
+  deleteProfileInvite: commonNetworkProcedure()
     .input(z.object({ inviteId: z.string().uuid() }))
     .output(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {

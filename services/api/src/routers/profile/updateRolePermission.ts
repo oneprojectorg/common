@@ -5,12 +5,12 @@ import {
   accessRoleMinimalEncoder,
   permissionsSchema,
 } from '../../encoders/access';
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 
 const DECISIONS_ZONE_NAME = 'decisions';
 
 export const updateRolePermissionRouter = router({
-  updateRolePermission: commonAuthedProcedure()
+  updateRolePermission: commonNetworkProcedure()
     .input(
       z.object({
         roleId: z.string().uuid(),

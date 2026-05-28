@@ -30,24 +30,14 @@ export interface TContextWithUser {
 }
 
 /**
- * Resolved auth state for endpoints that admit anonymous-JWT and no-JWT
- * callers (e.g. public-mode instance reads/writes).
- *
- * - `user` — real Supabase user; **undefined for no-JWT**. Source of
- *   truth for identity. Use for ownership writes, attribution,
- *   `currentProfileId` lookups, etc.
- * - `accessUser` — substituted user for permission queries. **Always
- *   defined**. Real user for authed; `GLOBAL_USER_ANONYMOUS` for
- *   anon-JWT; `GLOBAL_USER_PUBLIC` for no-JWT. Use for any
- *   `profile_users` JOIN.
+ * `ctx.user` for endpoints that admit anon-JWT and no-JWT callers — the
+ * real Supabase user, or `undefined` for no-JWT. Stack `withRequireUser`
+ * on top to narrow to a defined `User`. Permission lookups
+ * (`getProfileAccessUser` / `getOrgAccessUser`) substitute the seeded
+ * GLOBAL_USER_PUBLIC / GLOBAL_USER_ANONYMOUS sentinels internally.
  */
-export interface AuthContext {
+export interface TContextWithMaybeUser {
   user?: User;
-  accessUser: User;
-}
-
-export interface TContextWithAuthContext {
-  authContext: AuthContext;
 }
 
 export interface TContextWithAnalytics {

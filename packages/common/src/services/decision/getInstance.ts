@@ -17,8 +17,9 @@ import type { DecisionInstanceData } from './schemas/instanceData';
 
 export interface GetInstanceInput {
   instanceId: string;
+  /** Real Supabase user. Undefined for no-JWT callers. The access
+   *  lookups substitute the GLOBAL_USER_* sentinels internally. */
   user?: User;
-  accessUser: User;
 }
 
 const ALL_TRUE_ACCESS: DecisionRolePermissions = {
@@ -37,7 +38,7 @@ const getRolesDecisionBits = (roles: NormalizedRole[]): number =>
   collapseRoles(roles)['decisions'] ?? 0;
 
 const resolveInstanceAccess = async (
-  user: { id: string },
+  user: { id: string; is_anonymous?: boolean | null } | undefined,
   instance: { profileId: string; ownerProfileId: string | null },
   profileUser: Awaited<ReturnType<typeof getProfileAccessUser>>,
 ): Promise<DecisionRolePermissions> => {
@@ -69,10 +70,7 @@ const resolveInstanceAccess = async (
   throw new UnauthorizedError("You don't have access to do this");
 };
 
-export const getInstance = async ({
-  instanceId,
-  accessUser,
-}: GetInstanceInput) => {
+export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
   try {
     const instance = await db.query.processInstances.findFirst({
       where: { id: instanceId },
@@ -100,18 +98,17 @@ export const getInstance = async ({
     }
 
     // Fetch profileUser and assert access in parallel — both need the instance
-    // but are independent of each other. Both lookups key on `accessUser`:
-    // the real user for authed callers, or the GLOBAL_USER_PUBLIC /
-    // GLOBAL_USER_ANONYMOUS sentinel for no-JWT / anon-JWT callers.
+    // but are independent. The access helpers substitute the GLOBAL_USER_*
+    // sentinels internally when `user` is undefined or anon.
     const [profileUser] = await Promise.all([
       instance.profileId
         ? getProfileAccessUser({
-            user: accessUser,
+            user,
             profileId: instance.profileId,
           })
         : Promise.resolve(undefined),
       assertInstanceProfileAccess({
-        user: accessUser,
+        user,
         instance,
         profilePermissions: { decisions: permission.READ },
         orgFallbackPermissions: { decisions: permission.READ },
@@ -124,7 +121,7 @@ export const getInstance = async ({
       throw new NotFoundError('Process instance', instanceId);
     }
     const access = await resolveInstanceAccess(
-      accessUser,
+      user,
       {
         profileId: instance.profileId,
         ownerProfileId: instance.ownerProfileId,

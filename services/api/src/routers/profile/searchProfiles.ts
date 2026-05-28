@@ -4,11 +4,11 @@ import { EntityType } from '@op/db/schema';
 import { z } from 'zod';
 
 import { searchProfilesResultEncoder } from '../../encoders/searchResults';
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
 
 export const searchProfilesRouter = router({
-  search: commonAuthedProcedure()
+  search: commonNetworkProcedure()
     .input(
       dbFilter.extend({
         q: z.string(),

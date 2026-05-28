@@ -27,7 +27,6 @@ export async function getPhaseReviewProgress(
   const instance = await getInstance({
     instanceId: processInstanceId,
     user,
-    accessUser: user,
   });
 
   if (!instance.access.admin) {

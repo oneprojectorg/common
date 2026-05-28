@@ -717,9 +717,6 @@ export class TestDecisionsDataManager {
         proposalData,
       },
       user,
-      // Test fixture creates proposals as an authed user; real user IS the
-      // access user.
-      accessUser: user,
     });
 
     // Track the proposal's profile for cleanup

@@ -6,14 +6,14 @@ import {
 } from '@op/common';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   organizationId: z.uuid('Organization ID must be a valid UUID'),
 });
 
 export const joinOrganization = router({
-  join: commonAuthedProcedure({
+  join: commonNetworkProcedure({
     rateLimit: { windowSize: 60, maxRequests: 5 },
   })
     .input(inputSchema)

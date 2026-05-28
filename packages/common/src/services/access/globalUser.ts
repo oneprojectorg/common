@@ -28,11 +28,11 @@ export const GLOBAL_USER_ANONYMOUS_EMAIL =
 
 /**
  * Sentinel Supabase user objects matching the two seeded `auth.users`
- * rows. `withResolvedUser` places one of these into
- * `ctx.authContext.accessUser` so any permission query has a stable,
- * always-defined user to JOIN against — no `User | undefined` narrowing
- * at query sites. The IDs match real DB rows so lookups keyed on
- * `user.id` succeed.
+ * rows. `getProfileAccessUser` / `getOrgAccessUser` substitute the
+ * matching IDs internally when the caller is `undefined` (no JWT) or
+ * `is_anonymous` (anon JWT), so any permission lookup has a stable,
+ * always-defined `auth.users` row to JOIN against. The IDs match real
+ * DB rows so the lookups succeed.
  *
  * `is_anonymous` is `false` on both — these aren't Supabase anonymous
  * users (those are real callers); these are our DB-backed role-bearer
