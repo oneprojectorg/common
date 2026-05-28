@@ -331,48 +331,43 @@ export const getUserSession = memoize(
   async ({ authUserId }: { authUserId: string }) => {
     const validatedAuthUserId = validateAuthUserId(authUserId);
 
-    try {
-      const dbUser = await db._query.users.findFirst({
-        where: (table, { eq }) => eq(table.authUserId, validatedAuthUserId),
-        with: {
-          organizationUsers: true,
-        },
-      });
+    const dbUser = await db._query.users.findFirst({
+      where: (table, { eq }) => eq(table.authUserId, validatedAuthUserId),
+      with: {
+        organizationUsers: true,
+      },
+    });
 
-      if (!dbUser) {
-        return null;
-      }
-
-      // Backwards compatibility: migrate lastOrgId to currentProfileId if needed
-      if (dbUser.lastOrgId && !dbUser.currentProfileId) {
-        try {
-          const [org] = await db
-            .select({ profileId: organizations.profileId })
-            .from(organizations)
-            .where(eq(organizations.id, dbUser.lastOrgId))
-            .limit(1);
-
-          if (org) {
-            // Update the user with the profile ID
-            await db
-              .update(users)
-              .set({ currentProfileId: org.profileId })
-              .where(eq(users.authUserId, validatedAuthUserId));
-
-            // Return the updated user object
-            return { user: { ...dbUser, currentProfileId: org.profileId } };
-          }
-        } catch (migrationError) {
-          console.error('Migration error:', migrationError);
-          // Continue with the original user object if migration fails
-        }
-      }
-
-      return { user: dbUser };
-    } catch (error) {
-      console.error('ERROR');
+    if (!dbUser) {
       return null;
     }
+
+    // Backwards compatibility: migrate lastOrgId to currentProfileId if needed
+    if (dbUser.lastOrgId && !dbUser.currentProfileId) {
+      try {
+        const [org] = await db
+          .select({ profileId: organizations.profileId })
+          .from(organizations)
+          .where(eq(organizations.id, dbUser.lastOrgId))
+          .limit(1);
+
+        if (org) {
+          // Update the user with the profile ID
+          await db
+            .update(users)
+            .set({ currentProfileId: org.profileId })
+            .where(eq(users.authUserId, validatedAuthUserId));
+
+          // Return the updated user object
+          return { user: { ...dbUser, currentProfileId: org.profileId } };
+        }
+      } catch (migrationError) {
+        console.error('Migration error:', migrationError);
+        // Continue with the original user object if migration fails
+      }
+    }
+
+    return { user: dbUser };
   },
   ({ authUserId }) => authUserId,
 );

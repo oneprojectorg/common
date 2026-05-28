@@ -88,7 +88,8 @@ export const addUsersToOrganizationRouter = router({
         throw new NotFoundError('Role', invalidRoleIds[0]);
       }
 
-      // Join each user to the organization
+      // Join each user to the organization and invalidate caches per-user
+      // immediately so any same-request reads after the join see fresh data.
       const joinResults = await Promise.all(
         users.map(async (user) => {
           const userToAdd = usersToAdd.find(
@@ -98,11 +99,19 @@ export const addUsersToOrganizationRouter = router({
             throw new CommonError('User to add not found');
           }
 
-          // Join the organization
           const orgUser = await joinOrganization({
             user,
             organization,
             roleId: userToAdd.roleId,
+          });
+
+          await invalidate({
+            type: 'orgUser',
+            params: [organizationId, user.authUserId],
+          });
+          getOrgAccessUser.invalidate({
+            user: { id: user.authUserId },
+            organizationId,
           });
 
           return {
@@ -111,22 +120,6 @@ export const addUsersToOrganizationRouter = router({
           };
         }),
       );
-
-      // Invalidate relevant caches for each added user
-      await Promise.all([
-        ...joinResults.map((addedUser) =>
-          invalidate({
-            type: 'orgUser',
-            params: [organizationId, addedUser.authUserId],
-          }),
-        ),
-      ]);
-      for (const addedUser of joinResults) {
-        getOrgAccessUser.invalidate({
-          user: { id: addedUser.authUserId },
-          organizationId,
-        });
-      }
 
       return joinResults;
     }),
