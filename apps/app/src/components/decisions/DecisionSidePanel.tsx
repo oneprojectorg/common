@@ -12,9 +12,10 @@ import { MegaphoneIcon } from '@op/ui/MegaphoneIcon';
 import { Sidebar, SidebarProvider, useSidebar } from '@op/ui/Sidebar';
 import { Surface } from '@op/ui/Surface';
 import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { cn } from '@op/ui/utils';
 import { useQueryState } from 'nuqs';
 import { Fragment, Suspense, useCallback, useEffect, useMemo } from 'react';
-import type { Key } from 'react-aria-components';
+import { type Key, useLocale } from 'react-aria-components';
 import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -47,6 +48,12 @@ export const DecisionSidePanel = ({
   const t = useTranslations();
   const [panel, setPanel] = useQueryState('panel', panelStateParser);
   const decisionUpdatesEnabled = useFeatureFlag('decision_updates');
+  // Sidebar's `side` is direction-aware (Arabic locale PR): `side="right"`
+  // resolves to the visual left in RTL. The decision panel is meant to anchor
+  // to the visual right regardless of reading direction, so flip the prop in
+  // RTL to cancel the Sidebar's flip.
+  const { direction } = useLocale();
+  const sidebarSide = direction === 'rtl' ? 'left' : 'right';
 
   const isOpen = panel !== null;
   const close = useCallback(() => setPanel(null), [setPanel]);
@@ -89,10 +96,14 @@ export const DecisionSidePanel = ({
   return (
     <SidebarProvider isOpen={isOpen} onOpenChange={handleOpenChange}>
       <Sidebar
-        side="right"
+        side={sidebarSide}
         variant="overlay"
         label={t('Decision updates panel')}
-        className="w-full max-w-full border-s border-t border-neutral-gray1 text-neutral-charcoal shadow-xl sm:top-14 sm:w-[22.5rem]"
+        className={cn(
+          'w-full max-w-full border-t border-neutral-gray1 text-neutral-charcoal shadow-xl sm:top-14 sm:w-[22.5rem]',
+          // Border faces the content: visual left of the panel, regardless of locale.
+          direction === 'rtl' ? 'border-e' : 'border-s',
+        )}
       >
         <PanelContents
           isOpen={isOpen}

@@ -1,5 +1,6 @@
 'use client';
 
+import { ALLOWED_RESOURCE_MIME_TYPES } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { Skeleton } from '@op/ui/Skeleton';
 import { TextField } from '@op/ui/TextField';
@@ -14,8 +15,7 @@ import { useResourceMutations } from './hooks/useResourceMutations';
 import { useResourceUpload } from './hooks/useResourceUpload';
 import { getExtension, stripExt, truncateName } from './utils';
 
-const ACCEPT_ATTR =
-  'image/png,image/jpeg,image/webp,image/gif,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/csv,text/plain';
+const ACCEPT_ATTR = ALLOWED_RESOURCE_MIME_TYPES.join(',');
 
 export const AddResourceDocumentForm = ({
   profileId,
@@ -90,15 +90,14 @@ export const AddResourceDocumentForm = ({
     createDocument.mutate(
       {
         target: { kind: 'profile', profileId: uploaded.profileId },
-        storageObjectId: uploaded.storageObjectId,
+        storagePath: uploaded.storagePath,
         fileName: uploaded.fileName,
         mimeType: uploaded.mimeType,
-        fileSize: uploaded.fileSize,
         title: title.trim(),
         description: description.trim() ? description.trim() : null,
       },
       {
-        onSuccess: () => onSuccess(),
+        onSuccess,
       },
     );
   };

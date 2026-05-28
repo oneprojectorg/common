@@ -22,15 +22,15 @@ export const ResourcesList = ({
   const [deleteTarget, setDeleteTarget] = useState<ResourceItem | null>(null);
   // Mirror the server order locally so the drop animation settles into the
   // new position in the same render batch that ends the drag. Reading
-  // directly from data.resources lets dnd-kit's drag end before the
-  // optimistic cache write propagates, producing a visible snap-back.
+  // directly from data.items lets dnd-kit's drag end before the optimistic
+  // cache write propagates, producing a visible snap-back.
   // Sync the local mirror during render (not in an effect) by tracking the
   // source reference — this avoids the extra render that useEffect would add.
-  const [items, setItems] = useState<ResourceItem[]>(data.resources);
-  const [syncedFrom, setSyncedFrom] = useState(data.resources);
-  if (syncedFrom !== data.resources) {
-    setSyncedFrom(data.resources);
-    setItems(data.resources);
+  const [items, setItems] = useState<ResourceItem[]>(data.items);
+  const [syncedFrom, setSyncedFrom] = useState(data.items);
+  if (syncedFrom !== data.items) {
+    setSyncedFrom(data.items);
+    setItems(data.items);
   }
 
   const handleReorder = (next: ResourceItem[]) => {

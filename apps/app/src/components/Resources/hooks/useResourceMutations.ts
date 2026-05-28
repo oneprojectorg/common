@@ -15,12 +15,12 @@ const moveResource = (
   if (id === upperNeighborId) {
     return prev;
   }
-  const fromIndex = prev.resources.findIndex((r) => r.id === id);
+  const fromIndex = prev.items.findIndex((r) => r.id === id);
   if (fromIndex === -1) {
     return prev;
   }
-  const moved = prev.resources[fromIndex]!;
-  const without = prev.resources.filter((_, i) => i !== fromIndex);
+  const moved = prev.items[fromIndex]!;
+  const without = prev.items.filter((_, i) => i !== fromIndex);
   let toIndex: number;
   if (upperNeighborId === null) {
     toIndex = 0;
@@ -36,7 +36,7 @@ const moveResource = (
   }
   return {
     ...prev,
-    resources: [...without.slice(0, toIndex), moved, ...without.slice(toIndex)],
+    items: [...without.slice(0, toIndex), moved, ...without.slice(toIndex)],
   };
 };
 

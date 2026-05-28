@@ -2,9 +2,9 @@
 
 import { trpc } from '@op/api/client';
 import {
-  ALLOWED_RESOURCE_MIME_TYPES,
   type AllowedResourceMimeType,
   MAX_RESOURCE_FILE_SIZE,
+  isAllowedResourceMimeType,
 } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import { useRef, useState } from 'react';
@@ -13,11 +13,9 @@ import { useTranslations } from '@/lib/i18n';
 
 export type UploadedResource = {
   profileId: string;
-  storageObjectId: string;
+  storagePath: string;
   fileName: string;
   mimeType: AllowedResourceMimeType;
-  fileSize: number;
-  signedUrl: string;
 };
 
 export const useResourceUpload = (profileId: string) => {
@@ -28,11 +26,11 @@ export const useResourceUpload = (profileId: string) => {
   // Bump on every upload start. If a slower in-flight call resolves after a
   // newer one was started, its token won't match and we discard the result —
   // otherwise the form would submit metadata for the new file with a
-  // storageObjectId pointing at the old one.
+  // storagePath pointing at the old one.
   const generation = useRef(0);
 
   const upload = async (file: File): Promise<UploadedResource | null> => {
-    if (!isAllowedMime(file.type)) {
+    if (!isAllowedResourceMimeType(file.type)) {
       toast.error({ message: t('Unsupported file type') });
       return null;
     }
@@ -46,25 +44,32 @@ export const useResourceUpload = (profileId: string) => {
     const token = ++generation.current;
     setUploading(true);
     try {
-      const base64 = await fileToBase64(file);
-      const result = await uploadMutation.mutateAsync({
+      const signed = await uploadMutation.mutateAsync({
         target: { kind: 'profile', profileId },
-        file: base64,
         fileName: file.name,
-        mimeType: file.type,
       });
       if (token !== generation.current) {
         return null;
       }
-      if (!isAllowedMime(result.mimeType)) {
-        throw new Error(t('Unsupported file type'));
+      const putRes = await fetch(signed.signedUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+      if (token !== generation.current) {
+        return null;
       }
-      const uploaded: UploadedResource = {
-        ...result,
-        mimeType: result.mimeType,
+      if (!putRes.ok) {
+        throw new Error(t('Could not add resource'));
+      }
+      const result: UploadedResource = {
+        profileId: signed.profileId,
+        storagePath: signed.storagePath,
+        fileName: file.name,
+        mimeType: file.type,
       };
-      setUploaded(uploaded);
-      return uploaded;
+      setUploaded(result);
+      return result;
     } catch (err) {
       if (token !== generation.current) {
         return null;
@@ -91,21 +96,3 @@ export const useResourceUpload = (profileId: string) => {
 };
 
 const MAX_SIZE_MB = MAX_RESOURCE_FILE_SIZE / 1024 / 1024;
-
-const isAllowedMime = (type: string): type is AllowedResourceMimeType =>
-  (ALLOWED_RESOURCE_MIME_TYPES as readonly string[]).includes(type);
-
-const fileToBase64 = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result;
-      if (typeof result !== 'string') {
-        reject(new Error('Unable to read file'));
-        return;
-      }
-      resolve(result);
-    };
-    reader.onerror = () => reject(reader.error ?? new Error('File read error'));
-    reader.readAsDataURL(file);
-  });

@@ -1,5 +1,6 @@
 'use client';
 
+import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
@@ -13,7 +14,6 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { AddResourcePanel } from './AddResourcePanel';
 import { ResourceEmptyState } from './ResourceEmptyState';
 import { ResourcesList } from './ResourcesList';
-import { useResources } from './hooks/useResources';
 
 export const ResourcesTabContent = ({
   profileId,
@@ -85,9 +85,12 @@ const ResourcesFeed = ({
   profileId: string;
   canManage: boolean;
 }) => {
-  const [data] = useResources(profileId);
+  const [data] = trpc.resources.list.useSuspenseQuery(
+    { profileId },
+    { staleTime: 30 * 1000 },
+  );
 
-  if (data.resources.length === 0) {
+  if (data.items.length === 0) {
     return (
       <ResourceEmptyState
         variant={canManage ? 'admin-empty' : 'member-empty'}
