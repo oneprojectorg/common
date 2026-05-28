@@ -128,6 +128,7 @@
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^4.1.3",
+    "@op/sense": "workspace:*",
     "@op/typescript-config": "workspace:*",
     "@storybook/addon-docs": "^10.1.11",
     "@storybook/addon-onboarding": "^10.1.11",
