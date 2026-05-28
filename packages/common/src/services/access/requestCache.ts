@@ -38,7 +38,11 @@ export function memoize<TArgs extends unknown[], TReturn>(
 
     const promise = fn(...args);
     cache.set(key, promise);
-    promise.catch(() => cache.delete(key));
+    promise.catch(() => {
+      if (cache.get(key) === promise) {
+        cache.delete(key);
+      }
+    });
     return promise;
   };
 

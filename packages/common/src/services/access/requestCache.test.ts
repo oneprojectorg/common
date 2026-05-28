@@ -23,6 +23,39 @@ describe('memoize / requestCache', () => {
       expect(fetcher).toHaveBeenCalledTimes(2);
     });
 
+    it('shares the in-flight promise between concurrent same-key callers', async () => {
+      const fetcher = vi.fn(async (k: string) => `value-${k}`);
+      const memoFetcher = memoize(fetcher, byArg);
+
+      await runWithRequestCache(async () => {
+        const [v1, v2] = await Promise.all([
+          memoFetcher('k'),
+          memoFetcher('k'),
+        ]);
+        expect(v1).toBe('value-k');
+        expect(v2).toBe('value-k');
+        expect(fetcher).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it('nested runWithRequestCache creates an isolated inner scope', async () => {
+      const fetcher = vi.fn(async (k: string) => `value-${k}`);
+      const memoFetcher = memoize(fetcher, byArg);
+
+      await runWithRequestCache(async () => {
+        await memoFetcher('k'); // outer fetch #1
+
+        await runWithRequestCache(async () => {
+          await memoFetcher('k'); // inner fetch #2 (separate scope)
+          await memoFetcher('k'); // inner cache hit
+        });
+
+        await memoFetcher('k'); // outer cache hit (still cached from #1)
+      });
+
+      expect(fetcher).toHaveBeenCalledTimes(2);
+    });
+
     it('isolates concurrent requests with the same key', async () => {
       const fetcherA = vi.fn(async (_k: string) => 'A');
       const fetcherB = vi.fn(async (_k: string) => 'B');
@@ -196,6 +229,34 @@ describe('memoize / requestCache', () => {
       });
 
       expect(fetcher).toHaveBeenCalledTimes(4);
+    });
+
+    it('invalidate during an in-flight fetch does not evict a later entry', async () => {
+      let rejectFirst: (e: Error) => void = () => {};
+      const firstPromise = new Promise<string>((_res, rej) => {
+        rejectFirst = rej;
+      });
+
+      const fetcher = vi
+        .fn<(k: string) => Promise<string>>()
+        .mockReturnValueOnce(firstPromise)
+        .mockResolvedValueOnce('second')
+        .mockResolvedValueOnce('third');
+      const memoFetcher = memoize(fetcher, byArg);
+
+      await runWithRequestCache(async () => {
+        const p1 = memoFetcher('k'); // in-flight, pending
+        memoFetcher.invalidate('k');
+
+        expect(await memoFetcher('k')).toBe('second');
+
+        rejectFirst(new Error('late'));
+        await expect(p1).rejects.toThrow('late');
+
+        // p1's late rejection must NOT delete the 'second' entry.
+        expect(await memoFetcher('k')).toBe('second');
+        expect(fetcher).toHaveBeenCalledTimes(2);
+      });
     });
 
     it('invalidate and invalidateAll are no-ops outside a scope', () => {
