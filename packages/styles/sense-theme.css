@@ -11,6 +11,14 @@
  * "just work" with OP branding without modifying any component file.
  */
 
+/* shadcn primitives (especially base-ui slider, scroll-area, tabs) use
+ * `data-horizontal:` / `data-vertical:` shorthand variants. base-ui actually
+ * ships these as `data-orientation="horizontal" | "vertical"` attributes, so
+ * we map the shadcn convention onto the real attribute. Without this, slider
+ * tracks render at 0px etc. */
+@custom-variant data-horizontal (&[data-orientation='horizontal']);
+@custom-variant data-vertical (&[data-orientation='vertical']);
+
 @theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -45,15 +53,62 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
-  /* Radius scale */
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-
   /* Animations (used by accordion, collapsible, etc.) */
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
+}
+
+/* shadcn primitives assume the standard 16px-rooted Tailwind text scale
+ * (xs=12px, sm=14px, base=16px, ...). `@op/styles/shared-styles.css`
+ * overrides these to OP's smaller body scale (xs=10px, sm=12px, base=14px),
+ * which makes shadcn buttons / menus / inputs look noticeably undersized.
+ *
+ * Scope the standard scale to elements carrying a `[data-slot]` attribute
+ * — shadcn convention applies it to every primitive root + part, so this
+ * cascades through portaled popups (which also carry data-slot) without
+ * leaking into `@op/ui` (which doesn't use the attribute).
+ *
+ * Remove this block once the app's base font-size moves from 14px to 16px
+ * and the scale in shared-styles.css aligns with Tailwind defaults. */
+/* Radius scale — matches shadcn.com defaults.
+ * Scoped to `[data-slot]` so the larger shadcn-tuned radii apply only to
+ * sense primitives (which all carry data-slot, including portaled popups).
+ * `@op/ui` components keep the smaller @op/ui-tuned scale defined in
+ * shared-styles.css's @theme block. */
+[data-slot] {
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+[data-slot] {
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 16px;
+  --text-base--line-height: 24px;
+  --text-lg: 18px;
+  --text-lg--line-height: 28px;
+  --text-xl: 20px;
+  --text-xl--line-height: 28px;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 32px;
+}
+
+/* Tailwind v4 / shadcn base-vega no longer apply `cursor: pointer` to
+ * interactive elements by default. Restore it for the OP convention on
+ * buttons, links, and tabs. Disabled/aria-disabled/data-disabled variants
+ * are excluded so they keep the standard arrow cursor. */
+@layer base {
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']):not([data-disabled]),
+  [role='tab']:not([aria-disabled='true']):not([data-disabled]),
+  [role='link']:not([aria-disabled='true']):not([data-disabled]),
+  a[href] {
+    cursor: pointer;
+  }
 }
 
 @keyframes accordion-down {
@@ -103,12 +158,18 @@
   --destructive: var(--color-functional-red-600);
   --destructive-foreground: var(--color-white);
 
-  /* Borders / inputs / focus ring
-     `--color-border` and `--color-ring` are defined in shared-styles.css */
+  /* Borders / inputs / focus ring.
+   * shadcn components read these via `var(--border)` etc. directly (not via
+   * the Tailwind `--color-*` layer), so sense needs them declared regardless
+   * of what shared-styles/intent-ui-theme also declares. */
+  --border: var(--color-neutral-gray-2);
   --input: var(--color-neutral-gray-2);
+  --ring: var(--color-primary-500);
 
-  /* Radius */
-  --radius: 0.5rem;
+  /* `--radius` is the base radius shadcn primitives derive their scale from
+   * (and consume directly, e.g. `rounded-[var(--radius)]`). Safe to declare
+   * on :root because @op/ui doesn't reference --radius. */
+  --radius: 0.625rem;
 
   /* Sidebar */
   --sidebar: var(--color-neutral-off-white);
