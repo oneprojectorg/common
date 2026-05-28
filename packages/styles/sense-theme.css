@@ -58,31 +58,39 @@
   --animate-accordion-up: accordion-up 0.2s ease-out;
 }
 
-/* shadcn primitives assume the standard 16px-rooted Tailwind text scale
- * (xs=12px, sm=14px, base=16px, ...). `@op/styles/shared-styles.css`
- * overrides these to OP's smaller body scale (xs=10px, sm=12px, base=14px),
- * which makes shadcn buttons / menus / inputs look noticeably undersized.
+/* Sense-scoped overrides for radius scale and text scale.
  *
- * Scope the standard scale to elements carrying a `[data-slot]` attribute
- * — shadcn convention applies it to every primitive root + part, so this
- * cascades through portaled popups (which also carry data-slot) without
- * leaking into `@op/ui` (which doesn't use the attribute).
+ * Why a `.sense` class and not `[data-slot]`: shadcn convention puts
+ * `data-slot` on every primitive part, BUT `@op/ui` also uses `data-slot`
+ * on Sidebar / Table / ButtonGroup / AlertBanner. Scoping to `[data-slot]`
+ * leaks the sense scales into any `@op/ui` Sidebar's descendants (Tailwind
+ * `text-*` and `rounded-*` utilities resolve against `--text-*` /
+ * `--radius-*`, which cascade as CSS variables from any matching ancestor).
  *
- * Remove this block once the app's base font-size moves from 14px to 16px
- * and the scale in shared-styles.css aligns with Tailwind defaults. */
-/* Radius scale — matches shadcn.com defaults.
- * Scoped to `[data-slot]` so the larger shadcn-tuned radii apply only to
- * sense primitives (which all carry data-slot, including portaled popups).
- * `@op/ui` components keep the smaller @op/ui-tuned scale defined in
- * shared-styles.css's @theme block. */
-[data-slot] {
+ * `.sense` is opt-in. Apps that want sense conventions wrap their root (or
+ * a subtree) with the class; everything else — including @op/ui — keeps
+ * the OP-tuned scales declared in shared-styles.css.
+ *
+ * Caveat: portaled popups (Dialog / Popover / Combobox content) render at
+ * `document.body`, outside any `.sense` subtree. To keep portal styling
+ * consistent, either add `.sense` to `<body>` at the layout root, or pass
+ * a sense-scoped element via base-ui's Portal `container` prop. */
+
+/* Radius scale — matches shadcn.com defaults. */
+.sense {
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
 }
 
-[data-slot] {
+/* Standard 16px-rooted Tailwind text scale that shadcn primitives assume.
+ * shared-styles.css declares smaller @op/ui-tuned values in its @theme; we
+ * override them here for `.sense` subtrees only.
+ *
+ * Remove this block once the app's base font-size moves from 14px to 16px
+ * and the scale in shared-styles.css aligns with Tailwind defaults. */
+.sense {
   --text-xs: 12px;
   --text-xs--line-height: 16px;
   --text-sm: 14px;
@@ -95,20 +103,6 @@
   --text-xl--line-height: 28px;
   --text-2xl: 24px;
   --text-2xl--line-height: 32px;
-}
-
-/* Tailwind v4 / shadcn base-vega no longer apply `cursor: pointer` to
- * interactive elements by default. Restore it for the OP convention on
- * buttons, links, and tabs. Disabled/aria-disabled/data-disabled variants
- * are excluded so they keep the standard arrow cursor. */
-@layer base {
-  button:not(:disabled),
-  [role='button']:not([aria-disabled='true']):not([data-disabled]),
-  [role='tab']:not([aria-disabled='true']):not([data-disabled]),
-  [role='link']:not([aria-disabled='true']):not([data-disabled]),
-  a[href] {
-    cursor: pointer;
-  }
 }
 
 @keyframes accordion-down {
