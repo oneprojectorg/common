@@ -164,10 +164,12 @@ if (!adminRole) {
   );
 }
 
-const existingAdmins = await db._query.users.findMany({
-  where: (t, { inArray }) => inArray(t.email, [...adminEmails]),
-  columns: { authUserId: true, email: true },
-});
+const existingAdmins = (
+  await db._query.users.findMany({
+    where: (t, { inArray }) => inArray(t.email, [...adminEmails]),
+    columns: { authUserId: true, email: true },
+  })
+).filter((u): u is { authUserId: string; email: string } => u.email !== null);
 
 let linkedCount = 0;
 for (const admin of existingAdmins) {

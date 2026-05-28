@@ -30,7 +30,12 @@ export const joinOrganization = async ({
   roleId?: AccessRole['id'];
   db?: DbClient;
 }): Promise<OrganizationUser> => {
-  const userEmailDomainPart = user.email.split('@')[1];
+  if (!user.email) {
+    throw new CommonError('User email is required to join an organization');
+  }
+  const userEmail = user.email;
+
+  const userEmailDomainPart = userEmail.split('@')[1];
   if (!userEmailDomainPart) {
     throw new CommonError('User email is invalid');
   }
@@ -55,7 +60,7 @@ export const joinOrganization = async ({
       : cache<ReturnType<typeof getAllowListUser>>({
           type: 'allowList',
           params: [userEmailDomain],
-          fetch: () => getAllowListUser({ email: user.email }),
+          fetch: () => getAllowListUser({ email: userEmail }),
           options: {
             skipMemCache: true,
             ttl: 30 * 60 * 1000,
@@ -90,7 +95,7 @@ export const joinOrganization = async ({
       .values({
         organizationId: organization.id,
         authUserId: user.authUserId,
-        email: user.email,
+        email: userEmail,
         name: user.name ?? userEmailDomain,
       })
       .returning();

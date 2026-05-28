@@ -437,7 +437,7 @@ describe.concurrent('profile.users.listUsers', () => {
           dir: 'asc',
         });
 
-        allEmails.push(...page.items.map((u) => u.email));
+        allEmails.push(...page.items.map((u) => u.email!));
         cursor = page.next;
         pageCount++;
 
@@ -494,7 +494,7 @@ describe.concurrent('profile.users.listUsers', () => {
           dir: 'asc',
         });
 
-        allEmails.push(...page.items.map((u) => u.email));
+        allEmails.push(...page.items.map((u) => u.email!));
         cursor = page.next;
       } while (cursor);
 
@@ -624,7 +624,7 @@ describe.concurrent('profile.users.listUsers', () => {
           dir: 'asc',
         });
 
-        allEmails.push(...page.items.map((u) => u.email));
+        allEmails.push(...page.items.map((u) => u.email!));
         cursor = page.next;
         pageCount++;
 

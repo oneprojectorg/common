@@ -1,6 +1,10 @@
-import { organizationUsers, profileUsers, users } from '@op/db/schema';
+import {
+  authUsers,
+  organizationUsers,
+  profileUsers,
+  users,
+} from '@op/db/schema';
 import type { ZonePermissions } from 'access-zones';
-import { authUsers } from 'drizzle-orm/supabase';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 

@@ -39,7 +39,9 @@ export const sendRevisionResubmittedNotification = inngest.createFunction(
           },
           reviewer: {
             with: {
-              profileUsers: true,
+              profileUsers: {
+                where: { email: { isNotNull: true } },
+              },
             },
           },
           requests: true,
@@ -85,7 +87,9 @@ export const sendRevisionResubmittedNotification = inngest.createFunction(
     }
 
     const { proposal, processInstance, reviewer } = assignment;
-    const reviewerEmails = reviewer.profileUsers;
+    const reviewerEmails = reviewer.profileUsers.filter(
+      (p): p is typeof p & { email: string } => p.email !== null,
+    );
 
     if (reviewerEmails.length === 0) {
       console.warn(

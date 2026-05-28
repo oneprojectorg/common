@@ -31,7 +31,9 @@ export const sendRevisionRequestedNotification = inngest.createFunction(
             with: {
               profile: {
                 with: {
-                  profileUsers: true,
+                  profileUsers: {
+                    where: { email: { isNotNull: true } },
+                  },
                 },
               },
             },
@@ -85,7 +87,9 @@ export const sendRevisionRequestedNotification = inngest.createFunction(
     }
 
     const { proposal, processInstance } = assignment;
-    const authorProfileUsers = proposal.profile.profileUsers;
+    const authorProfileUsers = proposal.profile.profileUsers.filter(
+      (p): p is typeof p & { email: string } => p.email !== null,
+    );
 
     if (authorProfileUsers.length === 0) {
       console.warn(

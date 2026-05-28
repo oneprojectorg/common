@@ -8,10 +8,10 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { authUsers } from 'drizzle-orm/supabase';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { accessRoles } from './access.sql';
+import { authUsers } from './authUsers.sql';
 import { organizations } from './organizations.sql';
 import { users } from './users.sql';
 

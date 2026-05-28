@@ -127,8 +127,8 @@ export const inviteUsersToOrganization = async (
                 .values({
                   authUserId: existingUser.authUserId,
                   organizationId,
-                  email: existingUser.email,
-                  name: existingUser.name || existingUser.email.split('@')[0],
+                  email,
+                  name: existingUser.name || email.split('@')[0],
                 })
                 .returning();
 

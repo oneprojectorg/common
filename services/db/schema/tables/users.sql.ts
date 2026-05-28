@@ -9,9 +9,9 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { authUsers } from 'drizzle-orm/supabase';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
+import { authUsers } from './authUsers.sql';
 import { organizationUsers } from './organizationUsers.sql';
 import { organizations } from './organizations.sql';
 import { profileUsers } from './profileUsers.sql';
@@ -30,7 +30,7 @@ export const users = pgTable(
       }),
     username: varchar({ length: 256 }),
     name: varchar({ length: 256 }),
-    email: varchar().notNull().unique(),
+    email: varchar().unique(),
     about: text(),
     title: varchar({ length: 256 }),
     avatarImageId: uuid().references(() => objectsInStorage.id, {

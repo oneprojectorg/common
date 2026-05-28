@@ -11,7 +11,7 @@ export const removeUserRouter = router({
         id: z.string(),
         authUserId: z.string(),
         name: z.string().nullable(),
-        email: z.string(),
+        email: z.string().nullable(),
         about: z.string().nullable(),
         profileId: z.string(),
         createdAt: z.union([z.string(), z.date()]).nullable(),

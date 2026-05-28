@@ -247,7 +247,11 @@ export const inviteUsersToProfile = async ({
   }
 
   const usersByEmail = new Map(
-    existingUsers.map((user) => [user.email.toLowerCase(), user]),
+    existingUsers
+      .filter(
+        (user): user is typeof user & { email: string } => user.email !== null,
+      )
+      .map((user) => [user.email.toLowerCase(), user]),
   );
 
   const existingProfileUserAuthIds = new Set(
