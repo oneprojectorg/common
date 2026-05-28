@@ -110,6 +110,7 @@ import {
 } from '@op/sense/HoverCard';
 import { Input as RawInput } from '@op/sense/Input';
 import { Kbd as RawKbd } from '@op/sense/Kbd';
+import { Label as RawLabel } from '@op/sense/Label';
 import {
   Menubar as RawMenubar,
   MenubarContent as RawMenubarContent,
@@ -153,6 +154,7 @@ import { ScrollArea as RawScrollArea } from '@op/sense/ScrollArea';
 import {
   Select as RawSelect,
   SelectContent as RawSelectContent,
+  SelectGroup as RawSelectGroup,
   SelectItem as RawSelectItem,
   SelectTrigger as RawSelectTrigger,
   SelectValue as RawSelectValue,
@@ -272,6 +274,7 @@ import {
   TableHeader as OldTableHeader,
   TableRow as OldTableRow,
 } from '../components/ui/table';
+import { cn } from '../lib/utils';
 
 // ---------- layout primitives ----------
 
@@ -290,7 +293,10 @@ export function Pair({
     <div className="grid grid-cols-[160px_1fr_1fr] items-start gap-4 border-b border-neutral-200 py-4 last:border-b-0">
       <div className="pt-1 text-sm font-medium text-neutral-700">{label}</div>
       {[old, raw].map((node, i) => (
-        <div key={i} className="min-w-0">
+        // Right column gets `.sense` so the shadcn-tuned text + radius
+        // scales apply only to the sense-rendered cell; the @op/ui cell
+        // (i === 0) keeps OP's smaller scale.
+        <div key={i} className={cn('min-w-0', i === 1 && 'sense')}>
           <div className="mb-2 text-[10px] tracking-wide text-neutral-500 uppercase">
             {COLUMN_LABELS[i]}
           </div>
@@ -311,7 +317,8 @@ export function Gain({ label, raw }: { label: string; raw: ReactNode }) {
         </div>
         <div className="text-sm text-neutral-400 italic">— no equivalent —</div>
       </div>
-      <div className="min-w-0">
+      {/* sense-scoped cell so primitive scales resolve correctly */}
+      <div className="sense min-w-0">
         <div className="mb-2 text-[10px] tracking-wide text-neutral-500 uppercase">
           @op/sense (new)
         </div>
@@ -368,7 +375,7 @@ function RawDialogSample() {
   return (
     <RawDialog>
       <RawDialogTrigger render={<RawButton>Open</RawButton>} />
-      <RawDialogContent>
+      <RawDialogContent className="sense">
         <RawDialogHeader>
           <RawDialogTitle>Dialog title</RawDialogTitle>
         </RawDialogHeader>
@@ -398,7 +405,7 @@ function RawSheetSample() {
   return (
     <RawSheet>
       <RawSheetTrigger render={<RawButton>Open sheet</RawButton>} />
-      <RawSheetContent>
+      <RawSheetContent className="sense">
         <RawSheetHeader>
           <RawSheetTitle>Sheet title</RawSheetTitle>
         </RawSheetHeader>
@@ -427,7 +434,7 @@ function RawDropdownMenuSample() {
       <RawDropdownMenuTrigger
         render={<RawButton variant="outline">Open menu</RawButton>}
       />
-      <RawDropdownMenuContent>
+      <RawDropdownMenuContent className="sense">
         <RawDropdownMenuItem>Profile</RawDropdownMenuItem>
         <RawDropdownMenuItem>Settings</RawDropdownMenuItem>
         <RawDropdownMenuItem>Sign out</RawDropdownMenuItem>
@@ -452,7 +459,7 @@ function RawTooltipSample() {
         <RawTooltipTrigger
           render={<RawButton variant="outline">Hover me</RawButton>}
         />
-        <RawTooltipContent>Tooltip content</RawTooltipContent>
+        <RawTooltipContent className="sense">Tooltip content</RawTooltipContent>
       </RawTooltip>
     </RawTooltipProvider>
   );
@@ -475,10 +482,30 @@ function RawPopoverSample() {
       <RawPopoverTrigger
         render={<RawButton variant="outline">Open popover</RawButton>}
       />
-      <RawPopoverContent className="p-3 text-sm">
+      <RawPopoverContent className="sense p-3 text-sm">
         Popover body
       </RawPopoverContent>
     </RawPopover>
+  );
+}
+
+function RawCheckboxSample() {
+  const id = useId();
+  return (
+    <div className="flex items-center space-x-2">
+      <RawCheckbox id={id} />
+      <RawLabel htmlFor={id}>Accept terms</RawLabel>
+    </div>
+  );
+}
+
+function RawSwitchSample() {
+  const id = useId();
+  return (
+    <div className="flex items-center space-x-2">
+      <RawSwitch id={id} />
+      <RawLabel htmlFor={id}>Notifications</RawLabel>
+    </div>
   );
 }
 
@@ -495,15 +522,15 @@ function RawRadioSample() {
   const idA = useId();
   const idB = useId();
   return (
-    <RawRadioGroup defaultValue="pro" className="flex flex-col gap-1">
-      <label htmlFor={idA} className="flex items-center gap-2 text-sm">
+    <RawRadioGroup defaultValue="pro" className="flex flex-col gap-2">
+      <div className="flex items-center space-x-2">
         <RawRadioGroupItem id={idA} value="free" />
-        Free
-      </label>
-      <label htmlFor={idB} className="flex items-center gap-2 text-sm">
+        <RawLabel htmlFor={idA}>Free</RawLabel>
+      </div>
+      <div className="flex items-center space-x-2">
         <RawRadioGroupItem id={idB} value="pro" />
-        Pro
-      </label>
+        <RawLabel htmlFor={idB}>Pro</RawLabel>
+      </div>
     </RawRadioGroup>
   );
 }
@@ -540,7 +567,7 @@ function RawComboboxSample() {
   return (
     <RawCombobox items={COMBOBOX_ITEMS}>
       <RawComboboxInput placeholder="Pick a fruit" className="w-48" />
-      <RawComboboxContent>
+      <RawComboboxContent className="sense">
         <RawComboboxList>
           <RawComboboxCollection>
             {(opt: (typeof COMBOBOX_ITEMS)[number]) => (
@@ -588,7 +615,7 @@ function RawMultiComboboxSample() {
         ))}
         <RawComboboxChipsInput placeholder="Pick" />
       </RawComboboxChips>
-      <RawComboboxContent anchor={anchor}>
+      <RawComboboxContent anchor={anchor} className="sense">
         <RawComboboxList>
           <RawComboboxCollection>
             {(opt: (typeof COMBOBOX_ITEMS)[number]) => (
@@ -625,12 +652,18 @@ function RawSelectSample() {
       <RawSelectTrigger className="w-40">
         <RawSelectValue placeholder="Pick one" />
       </RawSelectTrigger>
-      <RawSelectContent>
-        {SELECT_ITEMS.map((item) => (
-          <RawSelectItem key={item.id} value={item.id}>
-            {item.label}
-          </RawSelectItem>
-        ))}
+      <RawSelectContent className="sense">
+        {/* SelectGroup carries the `p-1` inner padding; items wrapped here
+            get the breathing room around the popup edge. Sense's bare
+            SelectContent intentionally has no padding so consumers can
+            group items / labels themselves. */}
+        <RawSelectGroup>
+          {SELECT_ITEMS.map((item) => (
+            <RawSelectItem key={item.id} value={item.id}>
+              {item.label}
+            </RawSelectItem>
+          ))}
+        </RawSelectGroup>
       </RawSelectContent>
     </RawSelect>
   );
@@ -866,11 +899,7 @@ export function Forms() {
       <Pair
         label="Checkbox"
         old={<OldCheckbox>Accept terms</OldCheckbox>}
-        raw={
-          <label className="flex items-center gap-2 text-sm">
-            <RawCheckbox /> Accept terms
-          </label>
-        }
+        raw={<RawCheckboxSample />}
       />
       <Pair
         label="RadioGroup"
@@ -899,11 +928,7 @@ export function Forms() {
             Notifications
           </OldToggleButton>
         }
-        raw={
-          <label className="flex items-center gap-2 text-sm">
-            <RawSwitch /> Notifications
-          </label>
-        }
+        raw={<RawSwitchSample />}
       />
       <Gain
         label="Slider"
@@ -940,7 +965,7 @@ export function Overlays() {
             <RawAlertDialogTrigger
               render={<RawButton variant="outline">Delete…</RawButton>}
             />
-            <RawAlertDialogContent>
+            <RawAlertDialogContent className="sense">
               <RawAlertDialogHeader>
                 <RawAlertDialogTitle>Are you sure?</RawAlertDialogTitle>
                 <RawAlertDialogDescription>
@@ -968,7 +993,7 @@ export function Overlays() {
             <RawHoverCardTrigger
               render={<RawButton variant="link">@user</RawButton>}
             />
-            <RawHoverCardContent className="text-sm">
+            <RawHoverCardContent className="sense text-sm">
               Profile preview
             </RawHoverCardContent>
           </RawHoverCard>
@@ -991,7 +1016,7 @@ export function Overlays() {
             <RawContextMenuTrigger className="rounded-md border border-dashed px-3 py-2 text-sm">
               Right-click me
             </RawContextMenuTrigger>
-            <RawContextMenuContent>
+            <RawContextMenuContent className="sense">
               <RawContextMenuItem>Copy</RawContextMenuItem>
               <RawContextMenuItem>Paste</RawContextMenuItem>
             </RawContextMenuContent>
@@ -1004,14 +1029,14 @@ export function Overlays() {
           <RawMenubar>
             <RawMenubarMenu>
               <RawMenubarTrigger>File</RawMenubarTrigger>
-              <RawMenubarContent>
+              <RawMenubarContent className="sense">
                 <RawMenubarItem>New</RawMenubarItem>
                 <RawMenubarItem>Open…</RawMenubarItem>
               </RawMenubarContent>
             </RawMenubarMenu>
             <RawMenubarMenu>
               <RawMenubarTrigger>Edit</RawMenubarTrigger>
-              <RawMenubarContent>
+              <RawMenubarContent className="sense">
                 <RawMenubarItem>Undo</RawMenubarItem>
                 <RawMenubarItem>Redo</RawMenubarItem>
               </RawMenubarContent>
@@ -1094,7 +1119,7 @@ export function Navigation() {
             <RawNavigationMenuList>
               <RawNavigationMenuItem>
                 <RawNavigationMenuTrigger>Docs</RawNavigationMenuTrigger>
-                <RawNavigationMenuContent>
+                <RawNavigationMenuContent className="sense">
                   <ul className="grid w-48 gap-1 p-2 text-sm">
                     <li>
                       <RawNavigationMenuLink href="#">
