@@ -1,17 +1,19 @@
 import { InferModel, sql } from 'drizzle-orm';
-import {
-  index,
-  integer,
-  pgTable,
-  uniqueIndex,
-  uuid,
-} from 'drizzle-orm/pg-core';
+import { index, pgTable, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
-import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
-import { profileUsers } from './profileUsers.sql';
+import {
+  asciiText,
+  autoId,
+  serviceRolePolicies,
+  timestamps,
+} from '../../helpers';
 import { profiles } from './profiles.sql';
 import { resourceCollections } from './resourceCollections.sql';
 
+// Modeled M:N but today a collection is only ever attached to one profile, and
+// permissions are resolved through that profile. If we later allow sharing
+// across profiles, add an explicit "original profile" anchor on
+// resourceCollections so auth stays deterministic.
 export const resourceCollectionProfiles = pgTable(
   'resource_collection_profiles',
   {
@@ -22,8 +24,8 @@ export const resourceCollectionProfiles = pgTable(
     profileId: uuid()
       .notNull()
       .references(() => profiles.id, { onDelete: 'cascade' }),
-    sortOrder: integer().notNull().default(0),
-    addedByProfileUserId: uuid().references(() => profileUsers.id, {
+    sortKey: asciiText().notNull(),
+    addedByProfileId: uuid().references(() => profiles.id, {
       onDelete: 'set null',
     }),
     ...timestamps,
@@ -31,11 +33,11 @@ export const resourceCollectionProfiles = pgTable(
   (table) => [
     ...serviceRolePolicies,
     uniqueIndex('resource_collection_profiles_order_idx')
-      .on(table.profileId, table.sortOrder)
+      .on(table.profileId, table.sortKey)
       .where(sql`${table.deletedAt} IS NULL`),
     index('resource_collection_profiles_collection_idx').on(table.collectionId),
     index('resource_collection_profiles_added_by_idx').on(
-      table.addedByProfileUserId,
+      table.addedByProfileId,
     ),
     uniqueIndex('resource_collection_profiles_unq')
       .on(table.profileId, table.collectionId)
