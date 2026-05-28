@@ -1,0 +1,184 @@
+/*
+ * Sense (shadcn/ui) Theme
+ * Maps shadcn/ui's semantic CSS variables to @op/styles tokens.
+ *
+ * Shadcn components reference Tailwind utilities like `bg-background`,
+ * `text-foreground`, `border-input`, etc. Those resolve through the
+ * Tailwind v4 `@theme` layer below, which points the semantic names at
+ * the OP brand tokens defined in tokens.css / shared-styles.css.
+ *
+ * This file is imported by shared-styles.css so shadcn components
+ * "just work" with OP branding without modifying any component file.
+ */
+
+/* shadcn primitives (especially base-ui slider, scroll-area, tabs) use
+ * `data-horizontal:` / `data-vertical:` shorthand variants. base-ui actually
+ * ships these as `data-orientation="horizontal" | "vertical"` attributes, so
+ * we map the shadcn convention onto the real attribute. Without this, slider
+ * tracks render at 0px etc. */
+@custom-variant data-horizontal (&[data-orientation='horizontal']);
+@custom-variant data-vertical (&[data-orientation='vertical']);
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-input: var(--input);
+
+  /* Sidebar */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Chart palette */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Animations (used by accordion, collapsible, etc.) */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+}
+
+/* Sense-scoped overrides for radius scale and text scale.
+ *
+ * Why a `.sense` class and not `[data-slot]`: shadcn convention puts
+ * `data-slot` on every primitive part, BUT `@op/ui` also uses `data-slot`
+ * on Sidebar / Table / ButtonGroup / AlertBanner. Scoping to `[data-slot]`
+ * leaks the sense scales into any `@op/ui` Sidebar's descendants (Tailwind
+ * `text-*` and `rounded-*` utilities resolve against `--text-*` /
+ * `--radius-*`, which cascade as CSS variables from any matching ancestor).
+ *
+ * `.sense` is opt-in. Apps that want sense conventions wrap their root (or
+ * a subtree) with the class; everything else — including @op/ui — keeps
+ * the OP-tuned scales declared in shared-styles.css.
+ *
+ * Caveat: portaled popups (Dialog / Popover / Combobox content) render at
+ * `document.body`, outside any `.sense` subtree. To keep portal styling
+ * consistent, either add `.sense` to `<body>` at the layout root, or pass
+ * a sense-scoped element via base-ui's Portal `container` prop. */
+
+/* Radius scale — matches shadcn.com defaults. */
+.sense {
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+/* Standard 16px-rooted Tailwind text scale that shadcn primitives assume.
+ * shared-styles.css declares smaller @op/ui-tuned values in its @theme; we
+ * override them here for `.sense` subtrees only.
+ *
+ * Remove this block once the app's base font-size moves from 14px to 16px
+ * and the scale in shared-styles.css aligns with Tailwind defaults. */
+.sense {
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 16px;
+  --text-base--line-height: 24px;
+  --text-lg: 18px;
+  --text-lg--line-height: 28px;
+  --text-xl: 20px;
+  --text-xl--line-height: 28px;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 32px;
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+:root {
+  /* Core surfaces */
+  --background: var(--color-white);
+  --foreground: var(--color-neutral-charcoal);
+
+  /* Card / popover */
+  --card: var(--color-white);
+  --card-foreground: var(--color-neutral-charcoal);
+  --popover: var(--color-white);
+  --popover-foreground: var(--color-neutral-charcoal);
+
+  /* Primary (teal) — note: --color-primary already exists in shared-styles */
+  --primary-foreground: var(--color-white);
+
+  /* Secondary (neutral) — note: --color-secondary already exists upstream */
+  --secondary-foreground: var(--color-neutral-charcoal);
+
+  /* Muted */
+  --muted: var(--color-neutral-gray-1);
+  --muted-foreground: var(--color-neutral-gray-4);
+
+  /* Accent */
+  --accent: var(--color-neutral-gray-1);
+  --accent-foreground: var(--color-neutral-charcoal);
+
+  /* Destructive */
+  --destructive: var(--color-functional-red-600);
+  --destructive-foreground: var(--color-white);
+
+  /* Borders / inputs / focus ring.
+   * shadcn components read these via `var(--border)` etc. directly (not via
+   * the Tailwind `--color-*` layer), so sense needs them declared regardless
+   * of what shared-styles/intent-ui-theme also declares. */
+  --border: var(--color-neutral-gray-2);
+  --input: var(--color-neutral-gray-2);
+  --ring: var(--color-primary-500);
+
+  /* `--radius` is the base radius shadcn primitives derive their scale from
+   * (and consume directly, e.g. `rounded-[var(--radius)]`). Safe to declare
+   * on :root because @op/ui doesn't reference --radius. */
+  --radius: 0.625rem;
+
+  /* Sidebar */
+  --sidebar: var(--color-neutral-off-white);
+  --sidebar-foreground: var(--color-neutral-charcoal);
+  --sidebar-primary: var(--color-primary-500);
+  --sidebar-primary-foreground: var(--color-white);
+  --sidebar-accent: var(--color-neutral-gray-1);
+  --sidebar-accent-foreground: var(--color-neutral-charcoal);
+  --sidebar-border: var(--color-neutral-gray-2);
+  --sidebar-ring: var(--color-primary-500);
+
+  /* Chart palette — uses brand + data tokens */
+  --chart-1: var(--color-primary-500);
+  --chart-2: var(--color-primary-yellow-500);
+  --chart-3: var(--color-primary-orange-500);
+  --chart-4: var(--color-data-purple);
+  --chart-5: var(--color-data-blue);
+}

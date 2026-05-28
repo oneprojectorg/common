@@ -30,6 +30,13 @@ const preview: Preview = {
         date: /Date$/i,
       },
     },
+    options: {
+      // Sort the @op/ui ↔ @op/sense migration surface to the top so it's
+      // easy to find; everything else stays in default alphabetical order.
+      storySort: {
+        order: ['Sense Comparison', '*'],
+      },
+    },
   },
 };
 
