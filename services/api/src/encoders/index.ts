@@ -9,6 +9,7 @@ export * from './projects';
 export * from './roles';
 export * from './users';
 export * from './posts';
+export * from './resources';
 export * from './taxonomyTerms';
 export * from './relationships';
 export * from './profiles';
