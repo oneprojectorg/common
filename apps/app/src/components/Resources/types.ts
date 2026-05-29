@@ -1,4 +1,8 @@
-import type { RouterOutput } from '@op/api/client';
+import type {
+  resourceInCollectionEncoder,
+  resourceListEncoder,
+} from '@op/api/encoders';
+import type { z } from 'zod';
 
-export type ResourceListPayload = RouterOutput['resources']['list'];
-export type ResourceItem = ResourceListPayload['items'][number];
+export type ResourceListPayload = z.infer<typeof resourceListEncoder>;
+export type ResourceItem = z.infer<typeof resourceInCollectionEncoder>;
