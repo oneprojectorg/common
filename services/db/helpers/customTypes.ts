@@ -6,6 +6,17 @@ export const tsvector = customType<{ data: string }>({
   },
 });
 
+// `text` column pinned to byte-order collation. The `fractional-indexing`
+// package mixes upper/lowercase ASCII (e.g. "Zz" sorts before "a0" by byte but
+// AFTER "a0" under `en_US.utf8`, Supabase's default). Without `COLLATE "C"`
+// prepends silently invert in production. The column-level collation flows
+// into any index or ORDER BY automatically.
+export const asciiText = customType<{ data: string }>({
+  dataType() {
+    return 'text COLLATE "C"';
+  },
+});
+
 /**
  * PostgreSQL tstzrange (timestamp with timezone range) type
  * Used for temporal validity ranges in history tables

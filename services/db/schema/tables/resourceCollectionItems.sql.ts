@@ -1,14 +1,13 @@
 import { InferModel, sql } from 'drizzle-orm';
-import {
-  index,
-  integer,
-  pgTable,
-  uniqueIndex,
-  uuid,
-} from 'drizzle-orm/pg-core';
+import { index, pgTable, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
-import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
-import { profileUsers } from './profileUsers.sql';
+import {
+  asciiText,
+  autoId,
+  serviceRolePolicies,
+  timestamps,
+} from '../../helpers';
+import { profiles } from './profiles.sql';
 import { resourceCollections } from './resourceCollections.sql';
 import { resources } from './resources.sql';
 
@@ -22,8 +21,8 @@ export const resourceCollectionItems = pgTable(
     resourceId: uuid()
       .notNull()
       .references(() => resources.id, { onDelete: 'cascade' }),
-    sortOrder: integer().notNull().default(0),
-    addedByProfileUserId: uuid().references(() => profileUsers.id, {
+    sortKey: asciiText().notNull(),
+    addedByProfileId: uuid().references(() => profiles.id, {
       onDelete: 'set null',
     }),
     ...timestamps,
@@ -31,12 +30,10 @@ export const resourceCollectionItems = pgTable(
   (table) => [
     ...serviceRolePolicies,
     uniqueIndex('resource_collection_items_order_idx')
-      .on(table.collectionId, table.sortOrder)
+      .on(table.collectionId, table.sortKey)
       .where(sql`${table.deletedAt} IS NULL`),
     index('resource_collection_items_resource_idx').on(table.resourceId),
-    index('resource_collection_items_added_by_idx').on(
-      table.addedByProfileUserId,
-    ),
+    index('resource_collection_items_added_by_idx').on(table.addedByProfileId),
     uniqueIndex('resource_collection_items_unq')
       .on(table.collectionId, table.resourceId)
       .where(sql`${table.deletedAt} IS NULL`),

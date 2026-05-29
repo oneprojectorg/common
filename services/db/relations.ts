@@ -730,9 +730,9 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.resourceCollections.id,
       to: r.resourceCollectionProfiles.collectionId,
     }),
-    addedBy: r.one.profileUsers({
-      from: r.resourceCollections.addedByProfileUserId,
-      to: r.profileUsers.id,
+    addedBy: r.one.profiles({
+      from: r.resourceCollections.addedByProfileId,
+      to: r.profiles.id,
     }),
   },
 
@@ -750,9 +750,9 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.resources.id,
       optional: false,
     }),
-    addedBy: r.one.profileUsers({
-      from: r.resourceCollectionItems.addedByProfileUserId,
-      to: r.profileUsers.id,
+    addedBy: r.one.profiles({
+      from: r.resourceCollectionItems.addedByProfileId,
+      to: r.profiles.id,
     }),
   },
 
@@ -770,9 +770,9 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.profiles.id,
       optional: false,
     }),
-    addedBy: r.one.profileUsers({
-      from: r.resourceCollectionProfiles.addedByProfileUserId,
-      to: r.profileUsers.id,
+    addedBy: r.one.profiles({
+      from: r.resourceCollectionProfiles.addedByProfileId,
+      to: r.profiles.id,
     }),
   },
 
@@ -788,9 +788,9 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.resources.attachmentId,
       to: r.attachments.id,
     }),
-    addedBy: r.one.profileUsers({
-      from: r.resources.addedByProfileUserId,
-      to: r.profileUsers.id,
+    addedBy: r.one.profiles({
+      from: r.resources.addedByProfileId,
+      to: r.profiles.id,
     }),
     collectionItems: r.many.resourceCollectionItems({
       from: r.resources.id,
