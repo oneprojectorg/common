@@ -27,18 +27,9 @@ export const ResourcesTabContent = ({
   const t = useTranslations();
   const [adding, setAdding] = useState(false);
 
-  if (canManage && adding) {
-    return (
-      <AddResourcePanel
-        profileId={profileId}
-        onClose={() => setAdding(false)}
-      />
-    );
-  }
-
   return (
-    <>
-      <div className="flex flex-1 flex-col px-4 pt-4 pb-4 sm:px-6">
+    <div className="relative flex min-h-0 flex-1 flex-col">
+      <div className="flex flex-1 flex-col overflow-y-auto px-4 pt-4 pb-4 sm:px-6">
         <Header2 className="font-serif text-title-base">
           {t('Resources')}
         </Header2>
@@ -61,8 +52,8 @@ export const ResourcesTabContent = ({
           )}
         </div>
       </div>
-      {canManage ? (
-        <div className="sticky bottom-0 mt-auto shrink-0 border-t border-neutral-gray1 bg-white px-4 py-4 sm:px-6">
+      {canManage && !adding ? (
+        <div className="shrink-0 border-t border-neutral-gray1 bg-white px-4 py-4 sm:px-6">
           <Button
             color="secondary"
             size="small"
@@ -74,7 +65,15 @@ export const ResourcesTabContent = ({
           </Button>
         </div>
       ) : null}
-    </>
+      {canManage && adding ? (
+        <div className="absolute inset-x-0 top-4 bottom-0 z-10 flex flex-col overflow-hidden rounded-t-lg border-t border-neutral-gray1 bg-white shadow-lg">
+          <AddResourcePanel
+            profileId={profileId}
+            onClose={() => setAdding(false)}
+          />
+        </div>
+      ) : null}
+    </div>
   );
 };
 
