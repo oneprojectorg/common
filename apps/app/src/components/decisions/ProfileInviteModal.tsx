@@ -3,6 +3,7 @@
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
+import { hasEmail } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Avatar } from '@op/ui/Avatar';
@@ -223,7 +224,7 @@ function ProfileInviteModalContent({
       allSelectedItems.map((item) => item.email.toLowerCase()),
     );
     const existingUserEmails = new Set(
-      optimisticUsers.map((u) => (u.email ?? '').toLowerCase()),
+      optimisticUsers.filter(hasEmail).map((u) => u.email.toLowerCase()),
     );
     const invitedEmails = new Set(
       optimisticInvites.map((i) => i.email.toLowerCase()),
@@ -246,7 +247,7 @@ function ProfileInviteModalContent({
     const lowerQuery = debouncedQuery.toLowerCase();
     const takenEmails = new Set([
       ...allSelectedItems.map((item) => item.email.toLowerCase()),
-      ...optimisticUsers.map((u) => (u.email ?? '').toLowerCase()),
+      ...optimisticUsers.filter(hasEmail).map((u) => u.email.toLowerCase()),
       ...optimisticInvites.map((i) => i.email.toLowerCase()),
     ]);
     return !takenEmails.has(lowerQuery);
@@ -391,7 +392,7 @@ function ProfileInviteModalContent({
 
     const existingEmails = new Set([
       ...allSelectedItems.map((item) => item.email.toLowerCase()),
-      ...optimisticUsers.map((u) => (u.email ?? '').toLowerCase()),
+      ...optimisticUsers.filter(hasEmail).map((u) => u.email.toLowerCase()),
       ...optimisticInvites.map((i) => i.email.toLowerCase()),
     ]);
     const emails = parseEmailPaste(pastedText, existingEmails);

@@ -2,6 +2,7 @@ import {
   type DecisionInstanceData,
   resolveManualSelectionStatus,
 } from '@op/common';
+import { hasEmail } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import { processInstances, profileUsers, profiles } from '@op/db/schema';
@@ -103,7 +104,7 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
           ),
         );
 
-      return rows.filter((p): p is { email: string } => p.email !== null);
+      return rows.filter(hasEmail);
     });
 
     if (participants.length === 0) {

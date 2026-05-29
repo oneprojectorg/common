@@ -3,6 +3,7 @@
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
+import { hasEmail } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
@@ -168,7 +169,7 @@ function ShareProposalModalContent({
     );
     const takenEmails = new Set([
       ...pendingInvites.map((i) => i.email.toLowerCase()),
-      ...optimisticUsers.map((u) => (u.email ?? '').toLowerCase()),
+      ...optimisticUsers.filter(hasEmail).map((u) => u.email.toLowerCase()),
       ...optimisticInvites.map((i) => i.email.toLowerCase()),
     ]);
 
@@ -189,7 +190,7 @@ function ShareProposalModalContent({
     const lowerQuery = debouncedQuery.toLowerCase();
     const takenEmails = new Set([
       ...pendingInvites.map((i) => i.email.toLowerCase()),
-      ...optimisticUsers.map((u) => (u.email ?? '').toLowerCase()),
+      ...optimisticUsers.filter(hasEmail).map((u) => u.email.toLowerCase()),
       ...optimisticInvites.map((i) => i.email.toLowerCase()),
     ]);
     return !takenEmails.has(lowerQuery);
@@ -326,7 +327,7 @@ function ShareProposalModalContent({
 
     const takenEmails = new Set([
       ...pendingInvites.map((i) => i.email.toLowerCase()),
-      ...optimisticUsers.map((u) => (u.email ?? '').toLowerCase()),
+      ...optimisticUsers.filter(hasEmail).map((u) => u.email.toLowerCase()),
       ...optimisticInvites.map((i) => i.email.toLowerCase()),
     ]);
     const emails = parseEmailPaste(pastedText, takenEmails);

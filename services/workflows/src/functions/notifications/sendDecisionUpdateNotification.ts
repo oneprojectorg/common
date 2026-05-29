@@ -1,3 +1,4 @@
+import { hasEmail } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
@@ -89,10 +90,9 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
       return;
     }
 
-    const recipients = participants.filter(
-      (p): p is { email: string } =>
-        p.email !== null && p.email !== post.authorEmail,
-    );
+    const recipients = participants
+      .filter(hasEmail)
+      .filter((p) => p.email !== post.authorEmail);
 
     if (recipients.length === 0) {
       console.warn('No participants to notify for decision update', {

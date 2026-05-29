@@ -1,3 +1,4 @@
+import { hasEmail } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
@@ -73,7 +74,7 @@ export const sendProposalSubmittedNotification = inngest.createFunction(
           ),
         );
 
-      return rows.filter((p): p is { email: string } => p.email !== null);
+      return rows.filter(hasEmail);
     });
 
     if (collaborators.length === 0) {

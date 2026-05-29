@@ -1,3 +1,4 @@
+import { hasEmail } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
@@ -87,9 +88,7 @@ export const sendRevisionResubmittedNotification = inngest.createFunction(
     }
 
     const { proposal, processInstance, reviewer } = assignment;
-    const reviewerEmails = reviewer.profileUsers.filter(
-      (p): p is typeof p & { email: string } => p.email !== null,
-    );
+    const reviewerEmails = reviewer.profileUsers.filter(hasEmail);
 
     if (reviewerEmails.length === 0) {
       console.warn(
