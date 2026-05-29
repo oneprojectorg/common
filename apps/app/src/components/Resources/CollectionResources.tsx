@@ -4,12 +4,10 @@ import { trpc } from '@op/api/client';
 
 import { ResourcesList } from './ResourcesList';
 
-export const CollectionResources = ({
-  profileId,
+export const CollectionResourcesSuspense = ({
   collectionId,
   canManage,
 }: {
-  profileId: string;
   collectionId: string;
   canManage: boolean;
 }) => {
@@ -22,7 +20,5 @@ export const CollectionResources = ({
     return null;
   }
 
-  return (
-    <ResourcesList profileId={profileId} data={data} canManage={canManage} />
-  );
+  return <ResourcesList data={data} canManage={canManage} />;
 };

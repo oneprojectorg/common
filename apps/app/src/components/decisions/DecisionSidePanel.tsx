@@ -111,9 +111,7 @@ export const DecisionSidePanel = ({
           canPostUpdate={canPostUpdate}
           canReadUpdates={canReadUpdates}
           activeTab={activeTab}
-          onSelectTab={(key) => {
-            void setPanel(key);
-          }}
+          onSelectTab={setPanel}
         />
       </Sidebar>
     </SidebarProvider>

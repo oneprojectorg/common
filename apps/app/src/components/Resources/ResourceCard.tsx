@@ -2,7 +2,7 @@
 
 import { formatDate } from '@/utils/formatting';
 import type { ResourceInCollection } from '@op/api/encoders';
-import { sanitizeUrl } from '@op/core/utils';
+import { match, sanitizeUrl } from '@op/core/utils';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
 import { useState } from 'react';
@@ -152,17 +152,15 @@ const documentIconForMime = (mime: string | null): ReactNode => {
   if (mime.startsWith('image/')) {
     return <LuImage className="size-10" />;
   }
-  if (mime === 'application/pdf') {
-    return <LuFileText className="size-10" />;
-  }
-  if (mime.includes('spreadsheet')) {
-    return <LuFileSpreadsheet className="size-10" />;
-  }
-  if (mime.includes('presentation')) {
-    return <LuPresentation className="size-10" />;
-  }
-  if (mime.includes('wordprocessing')) {
-    return <LuFileText className="size-10" />;
-  }
-  return <LuFile className="size-10" />;
+  return match<ReactNode>(mime, {
+    'application/pdf': () => <LuFileText className="size-10" />,
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+      () => <LuFileText className="size-10" />,
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': () => (
+      <LuFileSpreadsheet className="size-10" />
+    ),
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+      () => <LuPresentation className="size-10" />,
+    _: () => <LuFile className="size-10" />,
+  });
 };

@@ -30,7 +30,7 @@ export const ResourcesTabContent = ({
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
-      <div className="flex flex-1 flex-col overflow-y-auto px-4 pt-4 pb-4 sm:px-6">
+      <div className="flex flex-1 flex-col overflow-y-auto px-4 py-4 sm:px-6">
         <Header2 className="font-serif text-title-base">
           {t('Resources')}
         </Header2>
@@ -107,7 +107,6 @@ const ResourcesFeed = ({
       {collections.items.map((collection) => (
         <CollectionSection
           key={collection.id}
-          profileId={profileId}
           collectionId={collection.id}
           name={collection.name}
           canManage={canManage}

@@ -1,5 +1,3 @@
-'use client';
-
 import {
   AccordionContent,
   AccordionIndicator,
@@ -11,15 +9,13 @@ import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 
-import { CollectionResources } from './CollectionResources';
+import { CollectionResourcesSuspense } from './CollectionResources';
 
 export const CollectionSection = ({
-  profileId,
   collectionId,
   name,
   canManage,
 }: {
-  profileId: string;
   collectionId: string;
   name: string;
   canManage: boolean;
@@ -41,8 +37,7 @@ export const CollectionSection = ({
                 </div>
               }
             >
-              <CollectionResources
-                profileId={profileId}
+              <CollectionResourcesSuspense
                 collectionId={collectionId}
                 canManage={canManage}
               />

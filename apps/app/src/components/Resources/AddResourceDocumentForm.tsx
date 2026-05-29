@@ -1,9 +1,14 @@
 'use client';
 
-import { ALLOWED_RESOURCE_MIME_TYPES } from '@op/common/client';
+import { trpc } from '@op/api/client';
+import {
+  ALLOWED_RESOURCE_MIME_TYPES,
+  MAX_RESOURCE_FILE_SIZE,
+} from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { Skeleton } from '@op/ui/Skeleton';
 import { TextField } from '@op/ui/TextField';
+import { toast } from '@op/ui/Toast';
 import { cn, formatFileSize } from '@op/ui/utils';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -11,11 +16,11 @@ import { LuFilePlus2, LuFileText, LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { useResourceMutations } from './hooks/useResourceMutations';
 import { useResourceUpload } from './hooks/useResourceUpload';
-import { getExtension, stripExt, truncateName } from './utils';
+import { getExtension, stripExtension, truncateName } from './utils';
 
 const ACCEPT_ATTR = ALLOWED_RESOURCE_MIME_TYPES.join(',');
+const MAX_SIZE_MB = MAX_RESOURCE_FILE_SIZE / 1024 / 1024;
 
 export const AddResourceDocumentForm = ({
   profileId,
@@ -27,7 +32,11 @@ export const AddResourceDocumentForm = ({
   onCancel: () => void;
 }) => {
   const t = useTranslations();
-  const { createDocument } = useResourceMutations(profileId);
+  const createDocument = trpc.resources.createDocument.useMutation({
+    onSuccess: () => toast.success({ message: t('Resource added') }),
+    onError: (err) =>
+      toast.error({ message: err.message || t('Could not add resource') }),
+  });
   const { upload, uploading, uploaded, reset } = useResourceUpload(profileId);
 
   const [file, setFile] = useState<File | null>(null);
@@ -37,7 +46,7 @@ export const AddResourceDocumentForm = ({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const fileTitle = file ? truncateName(stripExt(file.name)) : '';
+  const fileTitle = file ? truncateName(stripExtension(file.name)) : '';
   const title = titleInput ?? fileTitle;
   const isImage = file?.type.startsWith('image/') ?? false;
 
@@ -51,7 +60,7 @@ export const AddResourceDocumentForm = ({
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
-  const handleFile = async (selected: File | null) => {
+  const handleFileSelected = async (selected: File | null) => {
     setFile(selected);
     reset();
     if (selected) {
@@ -69,14 +78,14 @@ export const AddResourceDocumentForm = ({
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    void handleFile(event.target.files?.[0] ?? null);
+    void handleFileSelected(event.target.files?.[0] ?? null);
   };
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     setIsDragging(false);
     const dropped = event.dataTransfer.files?.[0] ?? null;
-    void handleFile(dropped);
+    void handleFileSelected(dropped);
   };
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -96,9 +105,7 @@ export const AddResourceDocumentForm = ({
         title: title.trim(),
         description: description.trim() ? description.trim() : null,
       },
-      {
-        onSuccess,
-      },
+      { onSuccess },
     );
   };
 
@@ -203,8 +210,8 @@ export const AddResourceDocumentForm = ({
               <div className="flex size-20 items-center justify-center rounded-full bg-neutral-gray1 text-neutral-charcoal">
                 <LuFilePlus2 className="size-10" />
               </div>
-              <div className="flex flex-col gap-2">
-                <p className="text-base text-neutral-black">
+              <div className="flex flex-col gap-2 text-base">
+                <p className="text-neutral-black">
                   {t.rich('Drag a file here or <browse>browse</browse>', {
                     browse: (chunks: ReactNode) => (
                       <span className="text-primary-teal underline">
@@ -213,7 +220,7 @@ export const AddResourceDocumentForm = ({
                     ),
                   })}
                 </p>
-                <p className="text-base text-neutral-gray4">
+                <p className="text-neutral-gray4">
                   {t('Accepts PDF, DOCX, XLSX, and images up to {size} MB', {
                     size: MAX_SIZE_MB,
                   })}
@@ -265,8 +272,6 @@ export const AddResourceDocumentForm = ({
     </form>
   );
 };
-
-const MAX_SIZE_MB = 25;
 
 const fileMetaLabel = (file: File): string => {
   const ext = getExtension(file.name);

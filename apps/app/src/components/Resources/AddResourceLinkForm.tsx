@@ -5,12 +5,11 @@ import { httpUrlSchema } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { TextField } from '@op/ui/TextField';
+import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
-
-import { useResourceMutations } from './hooks/useResourceMutations';
 
 export const AddResourceLinkForm = ({
   profileId,
@@ -22,7 +21,11 @@ export const AddResourceLinkForm = ({
   onCancel: () => void;
 }) => {
   const t = useTranslations();
-  const { createLink } = useResourceMutations(profileId);
+  const createLink = trpc.resources.createLink.useMutation({
+    onSuccess: () => toast.success({ message: t('Resource added') }),
+    onError: (err) =>
+      toast.error({ message: err.message || t('Could not add resource') }),
+  });
 
   const [url, setUrl] = useState('');
   const [titleInput, setTitleInput] = useState<string | null>(null);
@@ -66,9 +69,7 @@ export const AddResourceLinkForm = ({
         title: title.trim(),
         description: description.trim() ? description.trim() : null,
       },
-      {
-        onSuccess: () => onSuccess(),
-      },
+      { onSuccess },
     );
   };
 
@@ -80,8 +81,8 @@ export const AddResourceLinkForm = ({
         <TextField
           label={t('URL')}
           value={url}
-          onChange={(v) => {
-            setUrl(v);
+          onChange={(value) => {
+            setUrl(value);
             if (urlError) {
               setUrlError(undefined);
             }

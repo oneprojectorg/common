@@ -1,74 +1,70 @@
 'use client';
 
+import { trpc } from '@op/api/client';
 import type { ResourceInCollection, ResourceList } from '@op/api/encoders';
 import { Sortable } from '@op/ui/Sortable';
+import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
+
+import { useTranslations } from '@/lib/i18n';
 
 import { DeleteResourceModal } from './DeleteResourceModal';
 import { ResourceCard } from './ResourceCard';
 import { ResourceOverflowMenu } from './ResourceOverflowMenu';
-import { useResourceMutations } from './hooks/useResourceMutations';
+import { findMovedItem, moveItemAfter } from './utils';
 
 export const ResourcesList = ({
-  profileId,
   data,
   canManage,
 }: {
-  profileId: string;
   data: ResourceList;
   canManage: boolean;
 }) => {
-  const { reorder, remove } = useResourceMutations(profileId);
+  const t = useTranslations();
+  const utils = trpc.useUtils();
   const [deleteTarget, setDeleteTarget] = useState<ResourceInCollection | null>(
     null,
   );
-  // Mirror the server order locally so the drop animation settles into the
-  // new position in the same render batch that ends the drag. Reading
-  // directly from data.items lets dnd-kit's drag end before the optimistic
-  // cache write propagates, producing a visible snap-back.
-  // Sync the local mirror during render (not in an effect) by tracking the
-  // source reference — this avoids the extra render that useEffect would add.
-  const [items, setItems] = useState<ResourceInCollection[]>(data.items);
-  const [syncedFrom, setSyncedFrom] = useState(data.items);
-  if (syncedFrom !== data.items) {
-    setSyncedFrom(data.items);
-    setItems(data.items);
-  }
+
+  const reorder = trpc.resources.reorder.useMutation({
+    onMutate: async (vars) => {
+      const key = { collectionId: vars.collectionId };
+      await utils.resources.listByCollection.cancel(key);
+      const previous = utils.resources.listByCollection.getData(key);
+      if (previous) {
+        utils.resources.listByCollection.setData(key, {
+          ...previous,
+          items: moveItemAfter(previous.items, vars.id, vars.upperNeighborId),
+        });
+      }
+      return { previous, key };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous && ctx?.key) {
+        utils.resources.listByCollection.setData(ctx.key, ctx.previous);
+      }
+      toast.error({ message: t('Could not reorder resource') });
+    },
+  });
+
+  const remove = trpc.resources.delete.useMutation({
+    onSuccess: () => toast.success({ message: t('Resource deleted') }),
+    onError: () => toast.error({ message: t('Could not delete resource') }),
+  });
+
+  const items = data.items;
 
   const handleReorder = (next: ResourceInCollection[]) => {
-    // Find the first index where the two arrays diverge. In a single-move
-    // reorder, either items[i] moved down (then items[i+1] === next[i]) or
-    // next[i] moved up. Pick the moved id accordingly, then read its new
-    // upper neighbor straight off `next`.
-    let movedId: string | null = null;
-    let movedIdxInNext = -1;
-    for (let i = 0; i < next.length; i++) {
-      const a = items[i];
-      const b = next[i];
-      if (!a || !b || a.id === b.id) {
-        continue;
-      }
-      if (items[i + 1]?.id === b.id) {
-        movedId = a.id;
-        movedIdxInNext = next.findIndex((r) => r.id === a.id);
-      } else {
-        movedId = b.id;
-        movedIdxInNext = i;
-      }
-      break;
-    }
-    if (!movedId || movedIdxInNext === -1) {
-      return;
-    }
-
     const collectionId = data.collectionId;
     if (!collectionId) {
       return;
     }
-
-    setItems(next);
-    const upperNeighborId = next[movedIdxInNext - 1]?.id ?? null;
-    reorder.mutate({ id: movedId, collectionId, upperNeighborId });
+    const moved = findMovedItem(items, next);
+    if (!moved) {
+      return;
+    }
+    const upperNeighborId = next[moved.newIndex - 1]?.id ?? null;
+    reorder.mutate({ id: moved.id, collectionId, upperNeighborId });
   };
 
   if (items.length === 0) {
@@ -94,7 +90,7 @@ export const ResourcesList = ({
           items={items}
           onChange={handleReorder}
           dragTrigger="item"
-          getItemLabel={(r) => r.title}
+          getItemLabel={(resource) => resource.title}
           className="gap-4"
         >
           {(resource) => renderItem(resource)}

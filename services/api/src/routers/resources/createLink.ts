@@ -46,7 +46,12 @@ export const createLink = router({
           : await getProfileIdsForCollection(row.collectionId);
       ctx.registerMutationChannels([
         Channels.collectionResources(row.collectionId),
-        ...profileIds.map((id) => Channels.profileResources(id)),
+        ...profileIds.flatMap((id) => [
+          Channels.profileResources(id),
+          // createLink may lazy-create a default collection; broadcast so the
+          // collections list subscriber refreshes without a manual invalidate.
+          Channels.profileCollections(id),
+        ]),
       ]);
       return resourceInCollectionEncoder.parse(row);
     }),

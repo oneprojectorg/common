@@ -12,7 +12,7 @@ import { useTranslations } from '@/lib/i18n';
 import { AddResourceDocumentForm } from './AddResourceDocumentForm';
 import { AddResourceLinkForm } from './AddResourceLinkForm';
 
-type Kind = 'link' | 'document';
+type ResourceType = 'link' | 'document';
 
 export const AddResourcePanel = ({
   profileId,
@@ -22,7 +22,8 @@ export const AddResourcePanel = ({
   onClose: () => void;
 }) => {
   const t = useTranslations();
-  const [kind, setKind] = useState<Kind>('link');
+  const [selectedResourceType, setSelectedResourceType] =
+    useState<ResourceType>('link');
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -44,8 +45,8 @@ export const AddResourcePanel = ({
           <Button
             color="secondary"
             size="small"
-            aria-pressed={kind === 'link'}
-            onPress={() => setKind('link')}
+            aria-pressed={selectedResourceType === 'link'}
+            onPress={() => setSelectedResourceType('link')}
             className="flex-1"
           >
             <LuLink className="size-4" />
@@ -54,8 +55,8 @@ export const AddResourcePanel = ({
           <Button
             color="secondary"
             size="small"
-            aria-pressed={kind === 'document'}
-            onPress={() => setKind('document')}
+            aria-pressed={selectedResourceType === 'document'}
+            onPress={() => setSelectedResourceType('document')}
             className="flex-1"
           >
             <LuFile className="size-4" />
@@ -64,7 +65,7 @@ export const AddResourcePanel = ({
         </ButtonGroup>
       </div>
       <div className="flex min-h-0 flex-1 flex-col">
-        {kind === 'link' ? (
+        {selectedResourceType === 'link' ? (
           <AddResourceLinkForm
             profileId={profileId}
             onSuccess={onClose}

@@ -1,11 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import {
-  type AllowedResourceMimeType,
-  MAX_RESOURCE_FILE_SIZE,
-  isAllowedResourceMimeType,
-} from '@op/common/client';
+import type { AllowedResourceMimeType } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import { useRef, useState } from 'react';
 
@@ -30,17 +26,6 @@ export const useResourceUpload = (profileId: string) => {
   const generation = useRef(0);
 
   const upload = async (file: File): Promise<UploadedResource | null> => {
-    if (!isAllowedResourceMimeType(file.type)) {
-      toast.error({ message: t('Unsupported file type') });
-      return null;
-    }
-    if (file.size > MAX_RESOURCE_FILE_SIZE) {
-      toast.error({
-        message: t('File is too large (max {size} MB)', { size: MAX_SIZE_MB }),
-      });
-      return null;
-    }
-
     const token = ++generation.current;
     setUploading(true);
     try {
@@ -66,7 +51,7 @@ export const useResourceUpload = (profileId: string) => {
         profileId: signed.profileId,
         storagePath: signed.storagePath,
         fileName: file.name,
-        mimeType: file.type,
+        mimeType: file.type as AllowedResourceMimeType,
       };
       setUploaded(result);
       return result;
@@ -94,5 +79,3 @@ export const useResourceUpload = (profileId: string) => {
 
   return { upload, uploading, uploaded, reset };
 };
-
-const MAX_SIZE_MB = MAX_RESOURCE_FILE_SIZE / 1024 / 1024;
