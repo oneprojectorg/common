@@ -115,7 +115,7 @@ export const AddResourceLinkForm = ({
           textareaProps={{ placeholder: t('Add a description') }}
         />
       </div>
-      <div className="sticky bottom-0 mt-auto flex shrink-0 gap-4 border-t border-neutral-gray1 bg-white px-4 py-4 sm:px-6">
+      <div className="sticky bottom-0 mt-auto flex shrink-0 gap-4 bg-white px-4 py-4 sm:px-6">
         <Button
           color="secondary"
           size="small"

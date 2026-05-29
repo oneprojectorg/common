@@ -1,6 +1,33 @@
 import { clsx } from 'clsx';
 import type { ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { extendTailwindMerge } from 'tailwind-merge';
+
+// Register our custom type-scale tokens (defined in @op/styles
+// `shared-styles.css` as `--text-title-*` @theme vars) as font-size
+// utilities. Without this, twMerge groups `text-title-sm` with `text-{color}`
+// under the generic `text-*` prefix and silently drops one.
+const twMerge = extendTailwindMerge({
+  extend: {
+    classGroups: {
+      'font-size': [
+        {
+          text: [
+            'title-xxl',
+            'title-xl',
+            'title-lg',
+            'title-md',
+            'title-base',
+            'title-sm',
+            'title-sm14',
+            'title-sm12',
+            'title-xs',
+            'title-xxs',
+          ],
+        },
+      ],
+    },
+  },
+});
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

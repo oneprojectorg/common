@@ -93,12 +93,12 @@ export const ResourcesList = ({
           onChange={handleReorder}
           dragTrigger="item"
           getItemLabel={(r) => r.title}
-          className="gap-6"
+          className="gap-4"
         >
           {(resource) => renderItem(resource)}
         </Sortable>
       ) : (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4">
           {items.map((resource) => (
             <div key={resource.id}>{renderItem(resource)}</div>
           ))}

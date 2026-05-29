@@ -102,7 +102,7 @@ export const ResourceCard = ({
       <p
         className={cn(
           'truncate font-serif text-title-sm text-neutral-black',
-          trailing ? 'pr-8' : null,
+          trailing && 'pr-8',
         )}
       >
         {resource.title}

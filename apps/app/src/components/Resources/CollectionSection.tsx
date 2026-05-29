@@ -18,20 +18,14 @@ export const CollectionSection = ({
   collectionId,
   name,
   canManage,
-  defaultExpanded = true,
 }: {
   profileId: string;
   collectionId: string;
   name: string;
   canManage: boolean;
-  defaultExpanded?: boolean;
 }) => {
   return (
-    <AccordionItem
-      id={collectionId}
-      variant="unstyled"
-      defaultExpanded={defaultExpanded}
-    >
+    <AccordionItem id={collectionId} variant="unstyled">
       <AccordionTrigger className="flex w-full cursor-pointer items-center gap-1 text-start text-sm text-neutral-black outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
         <AccordionIndicator className="text-neutral-black" />
         <span className="truncate">{name}</span>

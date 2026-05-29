@@ -108,9 +108,7 @@ export const AddResourceDocumentForm = ({
     <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 sm:px-6">
         <div className="flex flex-col gap-1">
-          <span className="text-sm font-semibold text-neutral-black">
-            {t('Upload file')}
-          </span>
+          <span className="text-sm text-neutral-black">{t('Upload file')}</span>
           <input
             ref={inputRef}
             type="file"
@@ -206,7 +204,7 @@ export const AddResourceDocumentForm = ({
                 <LuFilePlus2 className="size-10" />
               </div>
               <div className="flex flex-col gap-2">
-                <p className="text-sm text-neutral-black">
+                <p className="text-base text-neutral-black">
                   {t.rich('Drag a file here or <browse>browse</browse>', {
                     browse: (chunks: ReactNode) => (
                       <span className="text-primary-teal underline">
@@ -215,7 +213,7 @@ export const AddResourceDocumentForm = ({
                     ),
                   })}
                 </p>
-                <p className="text-sm text-neutral-gray4">
+                <p className="text-base text-neutral-gray4">
                   {t('Accepts PDF, DOCX, XLSX, and images up to {size} MB', {
                     size: MAX_SIZE_MB,
                   })}
@@ -245,7 +243,7 @@ export const AddResourceDocumentForm = ({
           }}
         />
       </div>
-      <div className="sticky bottom-0 mt-auto flex shrink-0 gap-4 border-t border-neutral-gray1 bg-white px-4 py-4 sm:px-6">
+      <div className="sticky bottom-0 mt-auto flex shrink-0 gap-4 bg-white px-4 py-4 sm:px-6">
         <Button
           color="secondary"
           size="small"

@@ -54,7 +54,7 @@ export const ResourcesTabContent = ({
         </div>
       </div>
       {canManage && !adding ? (
-        <div className="shrink-0 border-t border-neutral-gray1 bg-white px-4 py-4 sm:px-6">
+        <div className="shrink-0 border-t border-neutral-gray1 bg-white px-4 py-6 sm:px-6">
           <Button
             color="secondary"
             size="small"
