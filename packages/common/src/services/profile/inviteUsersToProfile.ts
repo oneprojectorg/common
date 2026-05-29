@@ -7,6 +7,7 @@ import { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { assertAccess, permission } from 'access-zones';
 
+import { hasEmail } from '../../utils/email';
 import { CommonError, UnauthorizedError } from '../../utils/error';
 import { getProfileAccessUser } from '../access';
 import { assertProfile } from '../assert';
@@ -248,9 +249,7 @@ export const inviteUsersToProfile = async ({
 
   const usersByEmail = new Map(
     existingUsers
-      .filter(
-        (user): user is typeof user & { email: string } => user.email !== null,
-      )
+      .filter(hasEmail)
       .map((user) => [user.email.toLowerCase(), user]),
   );
 

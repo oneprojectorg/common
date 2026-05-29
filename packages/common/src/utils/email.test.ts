@@ -25,7 +25,7 @@ describe('hasEmail', () => {
     expect(hasEmail({})).toBe(false);
   });
 
-  it('preserves the rest of the row when used as a filter', () => {
+  it('preserves the rest of the rows when used as a filter', () => {
     const rows = [
       { id: '1', email: 'ada@example.com' },
       { id: '2', email: null },
