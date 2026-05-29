@@ -1,6 +1,7 @@
 export * from './error';
 export * from './db';
 export * from './validation';
+export * from './email';
 
 export const filterNullOrUndefined = (data: Record<string, any>) =>
   Object.fromEntries(

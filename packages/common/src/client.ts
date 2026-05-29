@@ -72,6 +72,10 @@ export type {
   TranslatedFields,
 } from './services/translation/translatedFields';
 
+// Re-exported from utils so client components can import it without pulling in
+// the server-only utils barrel (which depends on drizzle).
+export { hasEmail } from './utils/email';
+
 const LOGIN_PATH_RE = /^\/(?:[a-z]{2}\/)?login(\/|$|\?)/;
 
 export function isSafeRedirectPath(path: string | null): path is string {

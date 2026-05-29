@@ -1,3 +1,4 @@
+import { hasEmail } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
@@ -8,7 +9,7 @@ import {
 } from '@op/db/schema';
 import { OPBatchSend, ProposalSubmittedEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNotNull } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
 const { proposalSubmitted } = Events;
@@ -61,12 +62,19 @@ export const sendProposalSubmittedNotification = inngest.createFunction(
 
     // Step 2: Get all collaborator emails
     const collaborators = await step.run('get-collaborators', async () => {
-      return db
+      const rows = await db
         .select({
           email: profileUsers.email,
         })
         .from(profileUsers)
-        .where(eq(profileUsers.profileId, proposalData.proposalProfileId));
+        .where(
+          and(
+            eq(profileUsers.profileId, proposalData.proposalProfileId),
+            isNotNull(profileUsers.email),
+          ),
+        );
+
+      return rows.filter(hasEmail);
     });
 
     if (collaborators.length === 0) {

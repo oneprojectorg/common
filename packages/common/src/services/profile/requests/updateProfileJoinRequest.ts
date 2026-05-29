@@ -90,7 +90,8 @@ export const updateProfileJoinRequest = async ({
         eq(table.profileId, existingRequest.requestProfileId),
     });
 
-    if (requestingUser) {
+    if (requestingUser && requestingUser.email) {
+      const requestingUserEmail = requestingUser.email;
       // Check if user is already a member of the target organization.
       // NOTE: We're using organizationUsers instead of profileUsers because we're in between
       // memberships - the profile user membership (new) and the organization user membership (old).
@@ -114,7 +115,7 @@ export const updateProfileJoinRequest = async ({
             .values({
               authUserId: requestingUser.authUserId,
               organizationId: organization.id,
-              email: requestingUser.email,
+              email: requestingUserEmail,
               name: requestingUser.name,
             })
             .returning();

@@ -1,3 +1,4 @@
+import { hasEmail } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
@@ -9,7 +10,7 @@ import {
 } from '@op/db/schema';
 import { DecisionUpdateNotificationEmail, OPBatchSend } from '@op/emails';
 import { Events, inngest } from '@op/events';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNotNull } from 'drizzle-orm';
 
 const key = 'event.data.authorProfileId + "-" + event.data.targetProfileId';
 const { decisionUpdatePosted } = Events;
@@ -63,7 +64,12 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
         return db
           .select({ email: profileUsers.email })
           .from(profileUsers)
-          .where(eq(profileUsers.profileId, targetProfileId));
+          .where(
+            and(
+              eq(profileUsers.profileId, targetProfileId),
+              isNotNull(profileUsers.email),
+            ),
+          );
       }),
     ]);
 
@@ -84,9 +90,9 @@ export const sendDecisionUpdateNotification = inngest.createFunction(
       return;
     }
 
-    const recipients = participants.filter(
-      ({ email }) => email !== post.authorEmail,
-    );
+    const recipients = participants
+      .filter(hasEmail)
+      .filter((p) => p.email !== post.authorEmail);
 
     if (recipients.length === 0) {
       console.warn('No participants to notify for decision update', {

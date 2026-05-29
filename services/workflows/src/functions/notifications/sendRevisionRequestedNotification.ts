@@ -1,3 +1,4 @@
+import { hasEmail } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import {
@@ -31,7 +32,9 @@ export const sendRevisionRequestedNotification = inngest.createFunction(
             with: {
               profile: {
                 with: {
-                  profileUsers: true,
+                  profileUsers: {
+                    where: { email: { isNotNull: true } },
+                  },
                 },
               },
             },
@@ -85,7 +88,7 @@ export const sendRevisionRequestedNotification = inngest.createFunction(
     }
 
     const { proposal, processInstance } = assignment;
-    const authorProfileUsers = proposal.profile.profileUsers;
+    const authorProfileUsers = proposal.profile.profileUsers.filter(hasEmail);
 
     if (authorProfileUsers.length === 0) {
       console.warn(
