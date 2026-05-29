@@ -139,6 +139,38 @@ describe('resources.createLink', () => {
     ]);
   });
 
+  it('inserts at the top when upperNeighborId is omitted (Add Resource / first drop into empty panel)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+    });
+    const first = await adminCaller.resources.createLink({
+      target: { kind: 'profile', profileId: instance.profileId },
+      title: 'First',
+      linkUrl: PUBLIC_URL,
+    });
+    // Omitting upperNeighborId entirely (undefined, not null) must still land
+    // at the top — this is the Add Resource form path and the first file of a
+    // multi-file drop into an empty panel.
+    const top = await adminCaller.resources.createLink({
+      target: { kind: 'profile', profileId: instance.profileId },
+      title: 'Top',
+      linkUrl: SECOND_PUBLIC_URL,
+    });
+    expect(top.collectionId).toBe(first.collectionId);
+
+    const after = await adminCaller.resources.listByCollection({
+      collectionId: first.collectionId,
+    });
+    expect(after.items.map((r: ResourceInCollectionDTO) => r.id)).toEqual([
+      top.id,
+      first.id,
+    ]);
+  });
+
   it('rejects private-host URLs via the SSRF guard (BAD_REQUEST)', async ({
     task,
     onTestFinished,

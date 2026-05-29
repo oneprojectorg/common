@@ -70,6 +70,11 @@ export const useResourceDrop = ({
     startIndex: number,
   ) => {
     // Chain each file below the previous so a multi-file drop preserves order.
+    // When dropping into an empty panel (collectionId null) the first file
+    // lazily creates the Default collection; capture its id from the response
+    // so the rest of the batch targets that collection and chains, instead of
+    // each landing at the top (which would reverse the drop order).
+    let targetCollectionId = collectionId;
     let neighbor = upperNeighborId;
     let index = startIndex;
     for (const file of files) {
@@ -96,15 +101,16 @@ export const useResourceDrop = ({
           target: {
             kind: 'profile',
             profileId: uploaded.profileId,
-            collectionId: collectionId ?? undefined,
+            collectionId: targetCollectionId ?? undefined,
           },
           storagePath: uploaded.storagePath,
           fileName: uploaded.fileName,
           mimeType: uploaded.mimeType,
           title: truncateName(stripExtension(uploaded.fileName)),
           description: null,
-          upperNeighborId: collectionId ? neighbor : undefined,
+          upperNeighborId: targetCollectionId ? neighbor : undefined,
         });
+        targetCollectionId = targetCollectionId ?? row.collectionId;
         neighbor = row.id;
         index += 1;
       } catch {
