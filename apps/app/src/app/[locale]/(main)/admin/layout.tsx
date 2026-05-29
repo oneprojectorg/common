@@ -16,7 +16,7 @@ export default async function AdminLayout({
   const client = await createClient();
   const user = await client.account.getMyAccount();
 
-  if (!isUserEmailPlatformAdmin(user.email)) {
+  if (!user.email || !isUserEmailPlatformAdmin(user.email)) {
     notFound();
   }
 
