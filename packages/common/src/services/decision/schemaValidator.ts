@@ -148,18 +148,17 @@ export class SchemaValidator {
     const nextProperties: Record<string, JSONSchema7Definition> = {};
 
     for (const [key, propSchema] of Object.entries(properties)) {
-      const xFormat =
-        typeof propSchema === 'object'
-          ? (propSchema as XFormatPropertySchema)['x-format']
-          : undefined;
+      if (typeof propSchema !== 'object') {
+        nextProperties[key] = propSchema;
+        continue;
+      }
 
-      if (
-        typeof propSchema !== 'object' ||
-        xFormat !== 'money' ||
-        !propSchema.properties ||
-        (typeof propSchema.minimum !== 'number' &&
-          typeof propSchema.maximum !== 'number')
-      ) {
+      const xFormat = (propSchema as XFormatPropertySchema)['x-format'];
+      const hasNumericBound =
+        typeof propSchema.minimum === 'number' ||
+        typeof propSchema.maximum === 'number';
+
+      if (xFormat !== 'money' || !propSchema.properties || !hasNumericBound) {
         nextProperties[key] = propSchema;
         continue;
       }
