@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { hasEmail } from './client';
+import { hasEmail } from './email';
 
 describe('hasEmail', () => {
   it('returns true for a non-empty email', () => {
