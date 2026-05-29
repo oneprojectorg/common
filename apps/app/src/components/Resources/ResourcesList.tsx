@@ -8,7 +8,8 @@ import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { DeleteResourceModal } from './DeleteResourceModal';
+import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
+
 import { ResourceCard } from './ResourceCard';
 import { ResourceOverflowMenu } from './ResourceOverflowMenu';
 import { findMovedItem, moveItemAfter } from './utils';
@@ -102,8 +103,10 @@ export const ResourcesList = ({
           ))}
         </div>
       )}
-      <DeleteResourceModal
+      <ConfirmDeleteModal
         isOpen={deleteTarget !== null}
+        title={t('Delete this resource?')}
+        message={t('This action cannot be undone.')}
         onConfirm={() => {
           if (deleteTarget) {
             remove.mutate({ id: deleteTarget.id });
