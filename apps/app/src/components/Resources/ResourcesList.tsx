@@ -1,5 +1,6 @@
 'use client';
 
+import type { ResourceInCollection, ResourceList } from '@op/api/encoders';
 import { Sortable } from '@op/ui/Sortable';
 import { useState } from 'react';
 
@@ -7,7 +8,6 @@ import { DeleteResourceModal } from './DeleteResourceModal';
 import { ResourceCard } from './ResourceCard';
 import { ResourceOverflowMenu } from './ResourceOverflowMenu';
 import { useResourceMutations } from './hooks/useResourceMutations';
-import type { ResourceItem, ResourceListPayload } from './types';
 
 export const ResourcesList = ({
   profileId,
@@ -15,25 +15,27 @@ export const ResourcesList = ({
   canManage,
 }: {
   profileId: string;
-  data: ResourceListPayload;
+  data: ResourceList;
   canManage: boolean;
 }) => {
   const { reorder, remove } = useResourceMutations(profileId);
-  const [deleteTarget, setDeleteTarget] = useState<ResourceItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ResourceInCollection | null>(
+    null,
+  );
   // Mirror the server order locally so the drop animation settles into the
   // new position in the same render batch that ends the drag. Reading
   // directly from data.items lets dnd-kit's drag end before the optimistic
   // cache write propagates, producing a visible snap-back.
   // Sync the local mirror during render (not in an effect) by tracking the
   // source reference — this avoids the extra render that useEffect would add.
-  const [items, setItems] = useState<ResourceItem[]>(data.items);
+  const [items, setItems] = useState<ResourceInCollection[]>(data.items);
   const [syncedFrom, setSyncedFrom] = useState(data.items);
   if (syncedFrom !== data.items) {
     setSyncedFrom(data.items);
     setItems(data.items);
   }
 
-  const handleReorder = (next: ResourceItem[]) => {
+  const handleReorder = (next: ResourceInCollection[]) => {
     // Find the first index where the two arrays diverge. In a single-move
     // reorder, either items[i] moved down (then items[i+1] === next[i]) or
     // next[i] moved up. Pick the moved id accordingly, then read its new
@@ -73,7 +75,7 @@ export const ResourcesList = ({
     return null;
   }
 
-  const renderItem = (resource: ResourceItem) => (
+  const renderItem = (resource: ResourceInCollection) => (
     <ResourceCard
       resource={resource}
       signedUrl={resource.signedUrl}

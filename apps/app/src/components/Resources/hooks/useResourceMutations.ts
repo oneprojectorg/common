@@ -1,17 +1,16 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import type { ResourceList } from '@op/api/encoders';
 import { toast } from '@op/ui/Toast';
 
 import { useTranslations } from '@/lib/i18n';
 
-import type { ResourceListPayload } from '../types';
-
 const moveResource = (
-  prev: ResourceListPayload,
+  prev: ResourceList,
   id: string,
   upperNeighborId: string | null,
-): ResourceListPayload => {
+): ResourceList => {
   if (id === upperNeighborId) {
     return prev;
   }

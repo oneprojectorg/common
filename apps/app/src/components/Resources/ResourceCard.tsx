@@ -1,6 +1,7 @@
 'use client';
 
 import { formatDate } from '@/utils/formatting';
+import type { ResourceInCollection } from '@op/api/encoders';
 import { sanitizeUrl } from '@op/core/utils';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
@@ -17,7 +18,6 @@ import {
 
 import { useTranslations } from '@/lib/i18n';
 
-import type { ResourceItem } from './types';
 import { getExtension } from './utils';
 
 export const ResourceCard = ({
@@ -25,7 +25,7 @@ export const ResourceCard = ({
   signedUrl,
   trailing,
 }: {
-  resource: ResourceItem;
+  resource: ResourceInCollection;
   signedUrl?: string | null;
   trailing?: ReactNode;
 }) => {

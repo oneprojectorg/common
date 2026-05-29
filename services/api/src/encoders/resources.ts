@@ -74,6 +74,7 @@ export const resourceInCollectionEncoder = z.discriminatedUnion('type', [
   linkResourceInCollectionEncoder,
   documentResourceInCollectionEncoder,
 ]);
+export type ResourceInCollection = z.infer<typeof resourceInCollectionEncoder>;
 
 export const resourceListEncoder = z.object({
   collectionId: z.string().uuid().nullable(),
@@ -81,6 +82,7 @@ export const resourceListEncoder = z.object({
   // Cursor (sortKey of the last item) for the next page; null at end.
   next: z.string().nullable(),
 });
+export type ResourceList = z.infer<typeof resourceListEncoder>;
 
 export const collectionEncoder = z.object({
   id: z.string().uuid(),
