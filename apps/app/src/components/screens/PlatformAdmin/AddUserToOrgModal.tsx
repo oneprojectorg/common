@@ -141,7 +141,7 @@ const AddUserToOrgModalContent = ({
               </Avatar>
             }
             title={user.profile?.name ?? user.name ?? t('Unknown user')}
-            description={user.email}
+            description={user.email ?? undefined}
           />
         </div>
 

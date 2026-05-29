@@ -68,6 +68,8 @@ export const profileUserEncoder = createSelectSchema(profileUsers).extend({
   createdAt: z.union([z.string(), z.date()]).nullish(),
   updatedAt: z.union([z.string(), z.date()]).nullish(),
   deletedAt: z.union([z.string(), z.date()]).nullish(),
+  // Anonymous users have no email
+  email: z.string().nullable(),
   profile: profileMinimalEncoder.nullable(),
   roles: z.array(accessRoleMinimalEncoder),
 });

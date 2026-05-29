@@ -275,11 +275,11 @@ describe.concurrent('platform.admin.listAllUsers', () => {
     });
     expect(result.items).toSatisfy((items: typeof result.items) => {
       const satisfies = items.every((user: (typeof result.items)[number]) =>
-        customDomainUserEmails.has(user.email),
+        customDomainUserEmails.has(user.email!),
       );
 
       items.forEach((user: (typeof result.items)[number]) => {
-        customDomainUserEmails.delete(user.email);
+        customDomainUserEmails.delete(user.email!);
       });
 
       return satisfies;
@@ -299,7 +299,7 @@ describe.concurrent('platform.admin.listAllUsers', () => {
     });
     expect(result2.items).toSatisfy((items: typeof result2.items) =>
       items.every((user: (typeof result2.items)[number]) =>
-        customDomainUserEmails.has(user.email),
+        customDomainUserEmails.has(user.email!),
       ),
     );
   });

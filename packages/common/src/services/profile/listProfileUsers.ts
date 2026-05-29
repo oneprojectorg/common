@@ -207,13 +207,15 @@ export const listProfileUsers = async ({
     }
 
     if (orderBy === 'email') {
-      return encodeCursor<ProfileUserCursor>({ value: lastResult.email });
+      return encodeCursor<ProfileUserCursor>({
+        value: lastResult.email ?? '',
+      });
     }
 
     if (orderBy === 'name') {
       return encodeCursor<ProfileUserCursor>({
         value: lastResult.name ?? '',
-        tiebreaker: lastResult.email,
+        tiebreaker: lastResult.email ?? '',
       });
     }
 
@@ -233,7 +235,7 @@ export const listProfileUsers = async ({
     const firstRoleName = sortedRoles[0]?.accessRole.name ?? '';
     return encodeCursor<ProfileUserCursor>({
       value: firstRoleName,
-      tiebreaker: lastResult.email,
+      tiebreaker: lastResult.email ?? '',
     });
   };
 

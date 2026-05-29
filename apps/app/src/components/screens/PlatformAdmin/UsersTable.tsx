@@ -34,13 +34,13 @@ import { UsersRowCells } from './UsersRow';
  * Exports user data to CSV and triggers download
  */
 const exportUsersToCSV = (
-  users: Array<{ name: string | null; email: string }>,
+  users: Array<{ name: string | null; email: string | null }>,
 ) => {
   const header = 'name,email\n';
   const rows = users
     .map((user) => {
       const name = user.name?.replace(/"/g, '""') ?? '';
-      const email = user.email.replace(/"/g, '""');
+      const email = user.email?.replace(/"/g, '""') ?? '';
       return `"${name}","${email}"`;
     })
     .join('\n');

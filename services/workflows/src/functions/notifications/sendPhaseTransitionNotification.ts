@@ -7,7 +7,7 @@ import { db } from '@op/db/client';
 import { processInstances, profileUsers, profiles } from '@op/db/schema';
 import { OPBatchSend, PhaseTransitionEmail } from '@op/emails';
 import { Events, inngest } from '@op/events';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNotNull } from 'drizzle-orm';
 
 const { phaseTransitioned, manualSelectionsConfirmed } = Events;
 
@@ -91,12 +91,19 @@ export const sendPhaseTransitionNotification = inngest.createFunction(
     const totalPhases = phases.length;
 
     const participants = await step.run('get-participants', async () => {
-      return db
+      const rows = await db
         .select({
           email: profileUsers.email,
         })
         .from(profileUsers)
-        .where(eq(profileUsers.profileId, processData.profileId!));
+        .where(
+          and(
+            eq(profileUsers.profileId, processData.profileId!),
+            isNotNull(profileUsers.email),
+          ),
+        );
+
+      return rows.filter((p): p is { email: string } => p.email !== null);
     });
 
     if (participants.length === 0) {

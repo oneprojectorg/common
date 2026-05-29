@@ -168,7 +168,7 @@ function ShareProposalModalContent({
     );
     const takenEmails = new Set([
       ...pendingInvites.map((i) => i.email.toLowerCase()),
-      ...optimisticUsers.map((u) => u.email.toLowerCase()),
+      ...optimisticUsers.map((u) => (u.email ?? '').toLowerCase()),
       ...optimisticInvites.map((i) => i.email.toLowerCase()),
     ]);
 
@@ -189,7 +189,7 @@ function ShareProposalModalContent({
     const lowerQuery = debouncedQuery.toLowerCase();
     const takenEmails = new Set([
       ...pendingInvites.map((i) => i.email.toLowerCase()),
-      ...optimisticUsers.map((u) => u.email.toLowerCase()),
+      ...optimisticUsers.map((u) => (u.email ?? '').toLowerCase()),
       ...optimisticInvites.map((i) => i.email.toLowerCase()),
     ]);
     return !takenEmails.has(lowerQuery);
@@ -200,7 +200,8 @@ function ShareProposalModalContent({
   const deleteInviteMutation = trpc.profile.deleteProfileInvite.useMutation();
 
   const handleSelectItem = (result: (typeof flattenedResults)[0]) => {
-    if (!result.user?.email) {
+    const userEmail = result.user?.email;
+    if (!userEmail) {
       return;
     }
     setPendingInvites((prev) => [
@@ -209,7 +210,7 @@ function ShareProposalModalContent({
         id: result.id,
         profileId: result.id,
         name: result.name,
-        email: result.user!.email,
+        email: userEmail,
         avatarUrl: result.avatarImage?.name
           ? getPublicUrl(result.avatarImage.name)
           : undefined,
@@ -325,7 +326,7 @@ function ShareProposalModalContent({
 
     const takenEmails = new Set([
       ...pendingInvites.map((i) => i.email.toLowerCase()),
-      ...optimisticUsers.map((u) => u.email.toLowerCase()),
+      ...optimisticUsers.map((u) => (u.email ?? '').toLowerCase()),
       ...optimisticInvites.map((i) => i.email.toLowerCase()),
     ]);
     const emails = parseEmailPaste(pastedText, takenEmails);
@@ -559,7 +560,7 @@ function ShareProposalModalContent({
                     size="small"
                     avatar={
                       <Avatar
-                        placeholder={user.name ?? user.email}
+                        placeholder={user.name ?? user.email ?? ''}
                         className="size-6 shrink-0"
                       >
                         {user.profile?.avatarImage?.name ? (
@@ -567,14 +568,14 @@ function ShareProposalModalContent({
                             src={
                               getPublicUrl(user.profile.avatarImage.name) ?? ''
                             }
-                            alt={user.name ?? user.email}
+                            alt={user.name ?? user.email ?? ''}
                             fill
                             className="object-cover"
                           />
                         ) : null}
                       </Avatar>
                     }
-                    title={user.name ?? user.email}
+                    title={user.name ?? user.email ?? ''}
                   >
                     {user.name && (
                       <div className="text-sm text-neutral-gray4">
@@ -587,7 +588,7 @@ function ShareProposalModalContent({
                       size="small"
                       onPress={() => handleRemoveExistingUser(user.id)}
                       aria-label={t('Remove {name}', {
-                        name: user.name ?? user.email,
+                        name: user.name ?? user.email ?? '',
                       })}
                     >
                       <LuX className="size-4" />
