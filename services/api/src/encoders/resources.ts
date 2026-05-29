@@ -26,6 +26,7 @@ const linkResourceEncoder = z.object({
   ...resourceBaseShape,
   type: z.literal('link'),
   linkUrl: z.string(),
+  thumbnailUrl: z.string().nullable(),
   attachmentId: z.null(),
   attachment: z.null(),
 });
@@ -34,6 +35,7 @@ const documentResourceEncoder = z.object({
   ...resourceBaseShape,
   type: z.literal('document'),
   linkUrl: z.null(),
+  thumbnailUrl: z.null(),
   attachmentId: z.string().uuid(),
   attachment: attachmentSummaryEncoder,
 });
@@ -53,6 +55,7 @@ const linkResourceInCollectionEncoder = z.object({
   ...inCollectionFields,
   type: z.literal('link'),
   linkUrl: z.string(),
+  thumbnailUrl: z.string().nullable(),
   attachmentId: z.null(),
   attachment: z.null(),
 });
@@ -62,6 +65,7 @@ const documentResourceInCollectionEncoder = z.object({
   ...inCollectionFields,
   type: z.literal('document'),
   linkUrl: z.null(),
+  thumbnailUrl: z.null(),
   attachmentId: z.string().uuid(),
   attachment: attachmentSummaryEncoder,
 });

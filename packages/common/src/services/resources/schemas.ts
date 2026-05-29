@@ -34,6 +34,10 @@ const linkResourceSchema = z.object({
   ...resourceBaseShape,
   type: z.literal('link'),
   linkUrl: z.string(),
+  // OG / oEmbed thumbnail resolved at hydration time via the link-preview
+  // service. Server-side hydration here avoids the per-card client query
+  // (would be O(N) requests on a list of N link resources).
+  thumbnailUrl: z.string().nullable(),
   attachmentId: z.null(),
   attachment: z.null(),
 });
@@ -42,6 +46,7 @@ const documentResourceSchema = z.object({
   ...resourceBaseShape,
   type: z.literal('document'),
   linkUrl: z.null(),
+  thumbnailUrl: z.null(),
   attachmentId: z.string().uuid(),
   attachment: attachmentSummarySchema,
 });
@@ -62,6 +67,7 @@ const linkResourceInCollectionSchema = z.object({
   ...inCollectionFields,
   type: z.literal('link'),
   linkUrl: z.string(),
+  thumbnailUrl: z.string().nullable(),
   attachmentId: z.null(),
   attachment: z.null(),
 });
@@ -71,6 +77,7 @@ const documentResourceInCollectionSchema = z.object({
   ...inCollectionFields,
   type: z.literal('document'),
   linkUrl: z.null(),
+  thumbnailUrl: z.null(),
   attachmentId: z.string().uuid(),
   attachment: attachmentSummarySchema,
 });

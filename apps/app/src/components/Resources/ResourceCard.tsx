@@ -1,7 +1,6 @@
 'use client';
 
 import { formatDate } from '@/utils/formatting';
-import { trpc } from '@op/api/client';
 import { sanitizeUrl } from '@op/core/utils';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
@@ -44,18 +43,11 @@ export const ResourceCard = ({
     attachment?.mimeType.startsWith('image/') === true;
 
   const isLink = resource.type === 'link';
-  const linkUrl = isLink ? resource.linkUrl : null;
-  const { data: linkPreview } = trpc.content.linkPreview.useQuery(
-    { url: linkUrl ?? '' },
-    {
-      enabled: Boolean(linkUrl),
-      retry: false,
-      staleTime: 1000 * 60 * 60,
-    },
-  );
+  // Thumbnail is resolved server-side during list hydration (resourceDTO),
+  // so the card doesn't fan out N preview queries. `setOgImageFailed` covers
+  // the case where the URL we got from Iframely later 404s in the browser.
   const [ogImageFailed, setOgImageFailed] = useState(false);
-  const ogThumbnail =
-    !ogImageFailed && !linkPreview?.error ? linkPreview?.thumbnail_url : null;
+  const ogThumbnail = !ogImageFailed && isLink ? resource.thumbnailUrl : null;
 
   const previewSrc = isImage
     ? (signedUrl ?? null)
@@ -163,13 +155,13 @@ const documentIconForMime = (mime: string | null): ReactNode => {
   if (mime === 'application/pdf') {
     return <LuFileText className="size-10" />;
   }
-  if (mime.includes('spreadsheet') || mime === 'text/csv') {
+  if (mime.includes('spreadsheet')) {
     return <LuFileSpreadsheet className="size-10" />;
   }
   if (mime.includes('presentation')) {
     return <LuPresentation className="size-10" />;
   }
-  if (mime.includes('wordprocessing') || mime === 'text/plain') {
+  if (mime.includes('wordprocessing')) {
     return <LuFileText className="size-10" />;
   }
   return <LuFile className="size-10" />;

@@ -74,26 +74,23 @@ export const createDocumentResource = async (
     throw new ValidationError('Storage object does not belong to this profile');
   }
 
+  // Supabase records the Content-Type sent on PUT into the object metadata,
+  // and serves the file back with that same header. Trust the storage record
+  // (not the user's separate `mimeType` argument), and re-check the allowlist
+  // here in case the client PUT with a Content-Type we don't accept.
+  const storedMimeType = getStorageObjectMimeType(storageObject.metadata);
+  if (!storedMimeType || !isAllowedResourceMimeType(storedMimeType)) {
+    throw new ValidationError('Uploaded file has an unsupported content type');
+  }
+  if (storedMimeType !== input.mimeType) {
+    throw new ValidationError(
+      'Declared mimeType does not match the uploaded file',
+    );
+  }
+
   const fileSize = getStorageObjectSize(storageObject.metadata);
   if (fileSize !== null && fileSize > MAX_RESOURCE_FILE_SIZE) {
     throw new ValidationError('File exceeds the maximum allowed size');
-  }
-
-  // The router constrains the *declared* mimeType to the allowlist, but the
-  // client controls the bytes it uploaded via the signed URL. Cross-check the
-  // declared type against the content-type Supabase recorded for the object
-  // so a caller can't upload arbitrary bytes under an allowed label. When the
-  // metadata has no mimetype we can't verify, so we fall back to the declared
-  // (already-allowlisted) value rather than reject a legitimate upload.
-  const actualMimeType = getStorageObjectMimeType(storageObject.metadata);
-  if (
-    actualMimeType !== null &&
-    (actualMimeType !== input.mimeType ||
-      !isAllowedResourceMimeType(actualMimeType))
-  ) {
-    throw new ValidationError(
-      'Uploaded file content does not match the declared file type',
-    );
   }
 
   const { resourceId, sortKey } = await db.transaction(async (tx) => {
@@ -102,7 +99,7 @@ export const createDocumentResource = async (
       .values({
         storageObjectId: storageObject.id,
         fileName: input.fileName,
-        mimeType: input.mimeType,
+        mimeType: storedMimeType,
         fileSize,
         profileId,
       })

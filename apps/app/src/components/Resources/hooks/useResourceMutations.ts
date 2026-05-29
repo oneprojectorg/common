@@ -84,6 +84,21 @@ export const useResourceMutations = (profileId: string) => {
       }
       return { prev, key };
     },
+    onSuccess: (row, vars) => {
+      // Patch the moved row's sortKey to the value the server returned so the
+      // cached state matches DB truth. Order was already adjusted optimistically.
+      const key = { collectionId: vars.collectionId };
+      const cached = utils.resources.listByCollection.getData(key);
+      if (!cached) {
+        return;
+      }
+      utils.resources.listByCollection.setData(key, {
+        ...cached,
+        items: cached.items.map((item) =>
+          item.id === row.id ? { ...item, sortKey: row.sortKey } : item,
+        ),
+      });
+    },
     onError: (_err, _vars, ctx) => {
       if (ctx?.prev && ctx?.key) {
         utils.resources.listByCollection.setData(ctx.key, ctx.prev);
