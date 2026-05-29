@@ -24,10 +24,12 @@ const SORT_DIRS = ['asc', 'desc'] as const;
 
 export function ReviewAssignmentsList({
   processInstanceId,
+  phaseId,
   decisionSlug,
   canViewReviewers = false,
 }: {
   processInstanceId: string;
+  phaseId: string;
   decisionSlug: string;
   canViewReviewers?: boolean;
 }) {
@@ -58,6 +60,7 @@ export function ReviewAssignmentsList({
       {
         processInstanceId,
         proposalIds,
+        phaseId,
       },
       {
         enabled: canViewReviewers && proposalIds.length > 0,

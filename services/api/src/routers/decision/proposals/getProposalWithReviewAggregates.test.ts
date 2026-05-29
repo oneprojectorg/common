@@ -78,6 +78,7 @@ describe.concurrent('getProposalWithReviewAggregates', () => {
       reviewerCaller.decision.getProposalWithReviewAggregates({
         processInstanceId: created.context.instance.instance.id,
         proposalId: created.proposal.id,
+        phaseId: 'review',
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
@@ -101,6 +102,7 @@ describe.concurrent('getProposalWithReviewAggregates', () => {
       adminCaller.decision.getProposalWithReviewAggregates({
         processInstanceId: primary.context.instance.instance.id,
         proposalId: foreign.proposal.id,
+        phaseId: 'review',
       }),
     ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
@@ -119,6 +121,7 @@ describe.concurrent('getProposalWithReviewAggregates', () => {
       adminCaller.decision.getProposalWithReviewAggregates({
         processInstanceId: context.instance.instance.id,
         proposalId: '00000000-0000-0000-0000-000000000000',
+        phaseId: 'review',
       }),
     ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
   });
@@ -184,6 +187,7 @@ describe.concurrent('getProposalWithReviewAggregates', () => {
     const result = await adminCaller.decision.getProposalWithReviewAggregates({
       processInstanceId: context.instance.instance.id,
       proposalId: submittedScenario.proposal.id,
+      phaseId: 'review',
     });
 
     expect(result.proposal.id).toBe(submittedScenario.proposal.id);
@@ -270,6 +274,7 @@ describe.concurrent('getProposalWithReviewAggregates', () => {
     const result = await adminCaller.decision.getProposalWithReviewAggregates({
       processInstanceId: context.instance.instance.id,
       proposalId: firstScenario.proposal.id,
+      phaseId: 'review',
     });
 
     expect(result.aggregates).toMatchObject({

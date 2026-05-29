@@ -1,6 +1,5 @@
 import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
-import { z } from 'zod';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getInstance } from './getInstance';
@@ -11,29 +10,21 @@ import {
   getSubmittedReviewScore,
   proposalRelations,
 } from './listProposalsWithReviewAggregates';
+import type { ProposalPhaseRef } from './schemas/instance';
 import {
   type ProposalWithSubmittedReviews,
   proposalWithSubmittedReviewsSchema,
 } from './schemas/reviews';
-
-export const getProposalWithReviewAggregatesInputSchema = z.object({
-  processInstanceId: z.uuid(),
-  proposalId: z.uuid(),
-  phaseId: z.string().optional(),
-});
-
-export type GetProposalWithReviewAggregatesInput = z.infer<
-  typeof getProposalWithReviewAggregatesInputSchema
->;
+import { assertInstancePhase } from './utils/instance';
 
 /**
  * Submitted-only by design: drafts and unstarted assignments contribute to
  * `aggregates.assignmentsCount` but are not surfaced in `reviews[]`.
  */
 export async function getProposalWithReviewAggregates(
-  input: GetProposalWithReviewAggregatesInput & { user: User },
+  input: ProposalPhaseRef & { user: User },
 ): Promise<ProposalWithSubmittedReviews> {
-  const { user, processInstanceId, proposalId } = input;
+  const { user, processInstanceId, proposalId, phaseId } = input;
 
   const instance = await getInstance({ instanceId: processInstanceId, user });
 
@@ -43,14 +34,14 @@ export async function getProposalWithReviewAggregates(
     );
   }
 
+  assertInstancePhase({ instance, phaseId });
+
   const rubricTemplate = instance.instanceData.rubricTemplate;
   const scoredCriterionKeys = rubricTemplate
     ? getRubricScoringInfo(rubricTemplate)
         .criteria.filter((c) => c.scored)
         .map((c) => c.key)
     : [];
-
-  const phaseId = input.phaseId ?? instance.currentStateId ?? undefined;
 
   const [proposal, categoriesByProposalId] = await Promise.all([
     db.query.proposals.findFirst({

@@ -71,6 +71,9 @@ export async function ReviewSummaryLayout({
 
   const proposalId = proposal.id;
   const phaseId = resolveReviewPhaseId(instance);
+  if (!phaseId) {
+    notFound();
+  }
 
   await utils.decision.getProposalWithReviewAggregates.prefetch({
     processInstanceId: instanceId,

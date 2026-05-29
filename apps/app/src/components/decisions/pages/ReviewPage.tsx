@@ -95,6 +95,7 @@ export function ReviewPage({
               {canReview ? (
                 <ReviewAssignmentsList
                   processInstanceId={instance.id}
+                  phaseId={currentPhase.phaseId}
                   decisionSlug={decisionSlug}
                   canViewReviewers={isAdmin}
                 />
