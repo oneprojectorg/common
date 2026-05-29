@@ -70,6 +70,75 @@ describe('resources.createLink', () => {
     expect(typeof row.sortKey).toBe('string');
   });
 
+  it('inserts at an explicit sort slot via upperNeighborId (drop-at-position)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+    });
+
+    // New resources land at the top, so after these two the order is
+    // [second, first].
+    const first = await adminCaller.resources.createLink({
+      target: { kind: 'profile', profileId: instance.profileId },
+      title: 'First',
+      linkUrl: PUBLIC_URL,
+    });
+    const second = await adminCaller.resources.createLink({
+      target: { kind: 'profile', profileId: instance.profileId },
+      title: 'Second',
+      linkUrl: SECOND_PUBLIC_URL,
+    });
+
+    // Drop a third directly below `second` → [second, third, first].
+    const third = await adminCaller.resources.createLink({
+      target: { kind: 'collection', collectionId: first.collectionId },
+      title: 'Third',
+      linkUrl: 'https://example.net/third',
+      upperNeighborId: second.id,
+    });
+
+    const after = await adminCaller.resources.listByCollection({
+      collectionId: first.collectionId,
+    });
+    expect(after.items.map((r: ResourceInCollectionDTO) => r.id)).toEqual([
+      second.id,
+      third.id,
+      first.id,
+    ]);
+  });
+
+  it('inserts at the top when upperNeighborId is null', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+    });
+    const first = await adminCaller.resources.createLink({
+      target: { kind: 'profile', profileId: instance.profileId },
+      title: 'First',
+      linkUrl: PUBLIC_URL,
+    });
+    const top = await adminCaller.resources.createLink({
+      target: { kind: 'collection', collectionId: first.collectionId },
+      title: 'Top',
+      linkUrl: SECOND_PUBLIC_URL,
+      upperNeighborId: null,
+    });
+
+    const after = await adminCaller.resources.listByCollection({
+      collectionId: first.collectionId,
+    });
+    expect(after.items.map((r: ResourceInCollectionDTO) => r.id)).toEqual([
+      top.id,
+      first.id,
+    ]);
+  });
+
   it('rejects private-host URLs via the SSRF guard (BAD_REQUEST)', async ({
     task,
     onTestFinished,

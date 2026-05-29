@@ -4,7 +4,7 @@ import { resources } from '@op/db/schema';
 import { ConflictError } from '../../utils/error';
 import { getIndividualProfileId } from '../access';
 import { getResourceById } from './getResourceById';
-import { insertResourceAtTop } from './ordering';
+import { insertResourceAt, insertResourceAtTop } from './ordering';
 import { resolveTargetCollection } from './resolveTargetCollection';
 import { type ResourceInCollectionDTO } from './types';
 
@@ -15,6 +15,10 @@ export type CreateLinkInput = {
   title: string;
   description: string | null;
   linkUrl: string;
+  // When provided (including null), the new resource is inserted directly below
+  // this collection member (null = top) instead of at the top. Drives drop-at-a
+  // -specific-sort-point; the Add Resource form omits it and lands at the top.
+  upperNeighborId?: string | null;
 };
 
 export const createLinkResource = async (
@@ -44,12 +48,21 @@ export const createLinkResource = async (
     if (!row) {
       throw new ConflictError('Failed to create resource');
     }
-    const resourceItem = await insertResourceAtTop({
-      tx,
-      collectionId,
-      resourceId: row.id,
-      addedByProfileId,
-    });
+    const resourceItem =
+      input.upperNeighborId !== undefined
+        ? await insertResourceAt({
+            tx,
+            collectionId,
+            resourceId: row.id,
+            upperNeighborId: input.upperNeighborId,
+            addedByProfileId,
+          })
+        : await insertResourceAtTop({
+            tx,
+            collectionId,
+            resourceId: row.id,
+            addedByProfileId,
+          });
     return { resourceId: row.id, sortKey: resourceItem.sortKey };
   });
 

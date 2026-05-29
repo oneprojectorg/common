@@ -1305,5 +1305,6 @@
   "Following {count, plural, =1 {# organization} other {# organizations}}": "{count, plural, =1 {#টি সংস্থা অনুসরণ করছে} other {#টি সংস্থা অনুসরণ করছে}}",
   "Member of {count, plural, =1 {# Organization} other {# Organizations}}": "{count, plural, =1 {#টি সংস্থার সদস্য} other {#টি সংস্থার সদস্য}}",
   "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}": "{count, plural, =1 {১ জন সদস্য প্রস্তাব জমা দিয়েছেন} other {# জন সদস্য প্রস্তাব জমা দিয়েছেন}}",
-  "<bdi>{authorName}</bdi>'s Post": "<bdi>{authorName}</bdi>-এর পোস্ট"
+  "<bdi>{authorName}</bdi>'s Post": "<bdi>{authorName}</bdi>-এর পোস্ট",
+  "Drag a file or link here to add it": "এটি যোগ করতে এখানে একটি ফাইল বা লিঙ্ক টেনে আনুন"
 }

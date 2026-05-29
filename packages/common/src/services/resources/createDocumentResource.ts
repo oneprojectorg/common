@@ -19,7 +19,7 @@ import {
   resourcePathPrefix,
 } from './constants';
 import { getResourceById } from './getResourceById';
-import { insertResourceAtTop } from './ordering';
+import { insertResourceAt, insertResourceAtTop } from './ordering';
 import { resolveTargetCollection } from './resolveTargetCollection';
 import { type ResourceInCollectionDTO } from './types';
 
@@ -32,6 +32,10 @@ export type CreateDocumentInput = {
   storagePath: string;
   fileName: string;
   mimeType: string;
+  // When provided (including null), the new resource is inserted directly below
+  // this collection member (null = top) instead of at the top. Drives drop-at-a
+  // -specific-sort-point; the Add Resource form omits it and lands at the top.
+  upperNeighborId?: string | null;
 };
 
 export const createDocumentResource = async (
@@ -125,12 +129,21 @@ export const createDocumentResource = async (
       throw new ConflictError('Failed to create resource');
     }
 
-    const resourceItem = await insertResourceAtTop({
-      tx,
-      collectionId,
-      resourceId: row.id,
-      addedByProfileId,
-    });
+    const resourceItem =
+      input.upperNeighborId !== undefined
+        ? await insertResourceAt({
+            tx,
+            collectionId,
+            resourceId: row.id,
+            upperNeighborId: input.upperNeighborId,
+            addedByProfileId,
+          })
+        : await insertResourceAtTop({
+            tx,
+            collectionId,
+            resourceId: row.id,
+            addedByProfileId,
+          });
     return { resourceId: row.id, sortKey: resourceItem.sortKey };
   });
 

@@ -162,6 +162,72 @@ export const insertResourceAtTop = async ({
   return resourceItem;
 };
 
+// Caller need not hold the lock — we take it. Inserts a new row at an explicit
+// slot: directly below `upperNeighborId` (null = top of the collection). The
+// neighbor lookup mirrors computeReorder, but there is no moved row to exclude.
+// If the neighbor was removed between the drop and this insert, we fall back to
+// the top rather than failing the create.
+export const insertResourceAt = async ({
+  tx,
+  collectionId,
+  resourceId,
+  upperNeighborId,
+  addedByProfileId,
+}: {
+  tx: TransactionType;
+  collectionId: string;
+  resourceId: string;
+  upperNeighborId: string | null;
+  addedByProfileId: string | null;
+}): Promise<ResourceCollectionItem> => {
+  await lockCollection({ tx, collectionId });
+
+  let upperKey: string | null = null;
+  if (upperNeighborId !== null) {
+    const [upper] = await tx
+      .select({ sortKey: resourceCollectionItems.sortKey })
+      .from(resourceCollectionItems)
+      .where(
+        and(
+          eq(resourceCollectionItems.collectionId, collectionId),
+          eq(resourceCollectionItems.resourceId, upperNeighborId),
+        ),
+      )
+      .limit(1);
+    upperKey = upper?.sortKey ?? null;
+  }
+
+  const [lower] = await tx
+    .select({ sortKey: resourceCollectionItems.sortKey })
+    .from(resourceCollectionItems)
+    .where(
+      and(
+        eq(resourceCollectionItems.collectionId, collectionId),
+        upperKey !== null
+          ? gt(resourceCollectionItems.sortKey, upperKey)
+          : undefined,
+      ),
+    )
+    .orderBy(asc(resourceCollectionItems.sortKey))
+    .limit(1);
+
+  const sortKey = generateKeyBetween(upperKey, lower?.sortKey ?? null);
+
+  const [resourceItem] = await tx
+    .insert(resourceCollectionItems)
+    .values({
+      collectionId,
+      resourceId,
+      sortKey,
+      addedByProfileId,
+    })
+    .returning();
+  if (!resourceItem) {
+    throw new ConflictError('Failed to attach resource to collection');
+  }
+  return resourceItem;
+};
+
 export const findCollectionItem = async ({
   tx,
   collectionId,

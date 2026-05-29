@@ -30,6 +30,9 @@ const inputSchema = z.object({
     .nullable()
     .optional(),
   linkUrl: httpUrlSchema,
+  // Optional drop-at-position: insert directly below this collection member
+  // (null = top). Omitted by the Add Resource form, which lands at the top.
+  upperNeighborId: z.string().uuid().nullable().optional(),
 });
 
 export const createLink = router({
@@ -46,6 +49,7 @@ export const createLink = router({
         title: input.title,
         description: input.description ?? null,
         linkUrl: input.linkUrl,
+        upperNeighborId: input.upperNeighborId,
       });
       const profileIds =
         target.kind === 'profile'
