@@ -26,6 +26,17 @@ export const ResourcesList = ({
   const [deleteTarget, setDeleteTarget] = useState<ResourceInCollection | null>(
     null,
   );
+  // Mirror the server order locally so the drop animation settles into the
+  // new position in the same render batch that ends the drag. The mutation's
+  // onMutate awaits cancel before patching the tRPC cache, so without this
+  // mirror dnd-kit snaps the item back before the optimistic update lands.
+  // Sync during render (not in an effect) by tracking the source reference.
+  const [items, setItems] = useState<ResourceInCollection[]>(data.items);
+  const [syncedFrom, setSyncedFrom] = useState(data.items);
+  if (syncedFrom !== data.items) {
+    setSyncedFrom(data.items);
+    setItems(data.items);
+  }
 
   const reorder = trpc.resources.reorder.useMutation({
     onMutate: async (vars) => {
@@ -53,8 +64,6 @@ export const ResourcesList = ({
     onError: () => toast.error({ message: t('Could not delete resource') }),
   });
 
-  const items = data.items;
-
   const handleReorder = (next: ResourceInCollection[]) => {
     const collectionId = data.collectionId;
     if (!collectionId) {
@@ -64,6 +73,7 @@ export const ResourcesList = ({
     if (!moved) {
       return;
     }
+    setItems(next);
     const upperNeighborId = next[moved.newIndex - 1]?.id ?? null;
     reorder.mutate({ id: moved.id, collectionId, upperNeighborId });
   };
