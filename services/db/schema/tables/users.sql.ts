@@ -9,9 +9,9 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { authUsers } from 'drizzle-orm/supabase';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
+import { authUsers } from './authUsers.sql';
 import { organizationUsers } from './organizationUsers.sql';
 import { organizations } from './organizations.sql';
 import { profileUsers } from './profileUsers.sql';

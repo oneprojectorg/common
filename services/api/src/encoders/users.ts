@@ -2,9 +2,8 @@ import {
   accessRoleMinimalSchema,
   profileUserWithProfileSchema,
 } from '@op/common/client';
-import { organizationUsers, users } from '@op/db/schema';
+import { authUsers, organizationUsers, users } from '@op/db/schema';
 import type { ZonePermissions } from 'access-zones';
-import { authUsers } from 'drizzle-orm/supabase';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
