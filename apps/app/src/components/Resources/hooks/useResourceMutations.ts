@@ -44,10 +44,16 @@ export const useResourceMutations = (profileId: string) => {
   const t = useTranslations();
   const utils = trpc.useUtils();
 
-  const listKey = { profileId };
+  // Resource create flows can lazy-create the default collection on the
+  // server. The collections list query doesn't share an invalidation channel
+  // with resource creates, so refetch it manually after a successful add.
+  const invalidateCollectionsList = () => {
+    void utils.resources.collections.list.invalidate({ profileId });
+  };
 
   const createLink = trpc.resources.createLink.useMutation({
     onSuccess: () => {
+      invalidateCollectionsList();
       toast.success({ message: t('Resource added') });
     },
     onError: (err) => {
@@ -57,6 +63,7 @@ export const useResourceMutations = (profileId: string) => {
 
   const createDocument = trpc.resources.createDocument.useMutation({
     onSuccess: () => {
+      invalidateCollectionsList();
       toast.success({ message: t('Resource added') });
     },
     onError: (err) => {
@@ -66,19 +73,20 @@ export const useResourceMutations = (profileId: string) => {
 
   const reorder = trpc.resources.reorder.useMutation({
     onMutate: async (vars) => {
-      await utils.resources.list.cancel(listKey);
-      const prev = utils.resources.list.getData(listKey);
+      const key = { collectionId: vars.collectionId };
+      await utils.resources.listByCollection.cancel(key);
+      const prev = utils.resources.listByCollection.getData(key);
       if (prev) {
-        utils.resources.list.setData(
-          listKey,
+        utils.resources.listByCollection.setData(
+          key,
           moveResource(prev, vars.id, vars.upperNeighborId),
         );
       }
-      return { prev };
+      return { prev, key };
     },
     onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) {
-        utils.resources.list.setData(listKey, ctx.prev);
+      if (ctx?.prev && ctx?.key) {
+        utils.resources.listByCollection.setData(ctx.key, ctx.prev);
       }
       toast.error({ message: t('Could not reorder resource') });
     },

@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { Accordion } from '@op/ui/Accordion';
 import { Button } from '@op/ui/Button';
 import { Header2 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
@@ -12,8 +13,8 @@ import { useTranslations } from '@/lib/i18n';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 import { AddResourcePanel } from './AddResourcePanel';
+import { CollectionSection } from './CollectionSection';
 import { ResourceEmptyState } from './ResourceEmptyState';
-import { ResourcesList } from './ResourcesList';
 
 export const ResourcesTabContent = ({
   profileId,
@@ -84,12 +85,12 @@ const ResourcesFeed = ({
   profileId: string;
   canManage: boolean;
 }) => {
-  const [data] = trpc.resources.list.useSuspenseQuery(
+  const [collections] = trpc.resources.collections.list.useSuspenseQuery(
     { profileId },
     { staleTime: 30 * 1000 },
   );
 
-  if (data.items.length === 0) {
+  if (collections.items.length === 0) {
     return (
       <ResourceEmptyState
         variant={canManage ? 'admin-empty' : 'member-empty'}
@@ -98,6 +99,20 @@ const ResourcesFeed = ({
   }
 
   return (
-    <ResourcesList profileId={profileId} data={data} canManage={canManage} />
+    <Accordion
+      allowsMultipleExpanded
+      defaultExpandedKeys={collections.items.map((c) => c.id)}
+      className="gap-4"
+    >
+      {collections.items.map((collection) => (
+        <CollectionSection
+          key={collection.id}
+          profileId={profileId}
+          collectionId={collection.id}
+          name={collection.name}
+          canManage={canManage}
+        />
+      ))}
+    </Accordion>
   );
 };
