@@ -73,14 +73,14 @@ export type {
 } from './services/translation/translatedFields';
 
 /**
- * Type guard for rows whose email may be absent (e.g. anonymous users).
- * Narrows `email` to a non-null string so callers can use it directly instead
- * of coalescing to '' or asserting — anonymous users simply aren't email
- * recipients / collision candidates.
+ * Type guard for rows with a usable email. Treats null, undefined, and '' all
+ * as absent (no format validation), so anonymous users are filtered out rather
+ * than collapsed into an empty entry. Narrows `email` to a non-empty string so
+ * callers can use it directly without coalescing or asserting.
  */
 export const hasEmail = <T extends { email?: string | null }>(
   row: T,
-): row is T & { email: string } => row.email != null;
+): row is T & { email: string } => Boolean(row.email);
 
 const LOGIN_PATH_RE = /^\/(?:[a-z]{2}\/)?login(\/|$|\?)/;
 

@@ -7,10 +7,10 @@ describe('hasEmail', () => {
     expect(hasEmail({ email: 'ada@example.com' })).toBe(true);
   });
 
-  it('returns true for an empty string (presence guard, not a validity check)', () => {
-    // hasEmail only narrows away null/undefined; it does not validate format,
-    // so '' is considered present.
-    expect(hasEmail({ email: '' })).toBe(true);
+  it('returns false for an empty string (treated as absent, not format-validated)', () => {
+    // An empty email is unusable everywhere it's consumed, so it counts as
+    // absent — without validating that a non-empty value is a real address.
+    expect(hasEmail({ email: '' })).toBe(false);
   });
 
   it('returns false for a null email', () => {
