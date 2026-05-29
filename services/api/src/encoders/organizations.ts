@@ -9,7 +9,7 @@ import { locationEncoder } from './locations';
 import { projectEncoder } from './projects';
 import { entityTermsEncoder } from './shared';
 import { storageItemEncoder } from './storageItem';
-import { taxonomyTermsEncoder } from './taxonomyTerms';
+import { taxonomyTermSchema } from './taxonomyTerms';
 
 export const organizationsEncoder = createSelectSchema(organizations)
   .pick({
@@ -26,8 +26,8 @@ export const organizationsEncoder = createSelectSchema(organizations)
     projects: z.array(projectEncoder).optional(),
     links: z.array(linksEncoder).prefault([]),
     whereWeWork: z.array(locationEncoder).prefault([]),
-    receivingFundsTerms: z.array(taxonomyTermsEncoder).prefault([]),
-    strategies: z.array(taxonomyTermsEncoder).prefault([]),
+    receivingFundsTerms: z.array(taxonomyTermSchema).prefault([]),
+    strategies: z.array(taxonomyTermSchema).prefault([]),
     headerImage: storageItemEncoder.nullish(),
     avatarImage: storageItemEncoder.nullish(),
     acceptingApplications: z.boolean().prefault(false).optional(),

@@ -1,6 +1,8 @@
 import { InferSelectModel, SQL, and, db, eq, isNull, sql } from '@op/db/client';
 import { taxonomies, taxonomyTerms } from '@op/db/schema';
 
+export * from './schemas';
+
 interface TermLookupHandler {
   query?: string;
   name: string;
