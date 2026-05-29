@@ -1,7 +1,11 @@
-import { Channels, RESOURCE_LIST_MAX_LIMIT, listCollections } from '@op/common';
+import {
+  Channels,
+  RESOURCE_LIST_MAX_LIMIT,
+  collectionListSchema,
+  listCollections,
+} from '@op/common';
 import { z } from 'zod';
 
-import { collectionListEncoder } from '../../../encoders/resources';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 const inputSchema = z.object({
@@ -13,13 +17,13 @@ const inputSchema = z.object({
 export const collectionsList = router({
   list: commonAuthedProcedure()
     .input(inputSchema)
-    .output(collectionListEncoder)
+    .output(collectionListSchema)
     .query(async ({ input, ctx }) => {
       const result = await listCollections({
         ...input,
         authUserId: ctx.user.id,
       });
       ctx.registerQueryChannels([Channels.profileCollections(input.profileId)]);
-      return collectionListEncoder.parse(result);
+      return collectionListSchema.parse(result);
     }),
 });

@@ -3,11 +3,8 @@ import { permission } from 'access-zones';
 
 import { decodeCursor, encodeCursor } from '../../utils';
 import { assertProfileTypeAccess } from '../access';
-import {
-  type CollectionListResult,
-  RESOURCE_LIST_DEFAULT_LIMIT,
-  RESOURCE_LIST_MAX_LIMIT,
-} from './types';
+import type { CollectionListResult } from './schemas';
+import { RESOURCE_LIST_DEFAULT_LIMIT, RESOURCE_LIST_MAX_LIMIT } from './types';
 import { getCollectionsForProfile } from './utils';
 
 type SortKeyCursor = { value: string };

@@ -1,11 +1,6 @@
-import {
-  Channels,
-  getProfileIdsForCollection,
-  reorderCollection,
-} from '@op/common';
+import { Channels, collectionSchema, reorderCollection } from '@op/common';
 import { z } from 'zod';
 
-import { collectionEncoder } from '../../../encoders/resources';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 const inputSchema = z.object({
@@ -16,17 +11,14 @@ const inputSchema = z.object({
 export const collectionsReorder = router({
   reorder: commonAuthedProcedure()
     .input(inputSchema)
-    .output(collectionEncoder)
+    .output(collectionSchema)
     .mutation(async ({ input, ctx }) => {
-      const row = await reorderCollection({
+      const { collection, profileId } = await reorderCollection({
         authUserId: ctx.user.id,
         id: input.id,
         upperNeighborId: input.upperNeighborId,
       });
-      const profileIds = await getProfileIdsForCollection(input.id);
-      ctx.registerMutationChannels(
-        profileIds.map((id) => Channels.profileCollections(id)),
-      );
-      return collectionEncoder.parse(row);
+      ctx.registerMutationChannels([Channels.profileCollections(profileId)]);
+      return collectionSchema.parse(collection);
     }),
 });

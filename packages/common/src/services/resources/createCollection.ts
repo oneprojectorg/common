@@ -5,7 +5,8 @@ import { permission } from 'access-zones';
 import { ConflictError } from '../../utils/error';
 import { assertProfileTypeAccess } from '../access';
 import { appendCollectionToProfile, lockProfile } from './ordering';
-import { type CollectionForProfile, buildCollectionForProfile } from './utils';
+import type { CollectionDTO } from './schemas';
+import { buildCollectionForProfile } from './utils';
 
 export const createCollection = async ({
   authUserId,
@@ -15,7 +16,7 @@ export const createCollection = async ({
   authUserId: string;
   profileId: string;
   name: string;
-}): Promise<CollectionForProfile> => {
+}): Promise<CollectionDTO> => {
   await assertProfileTypeAccess({
     user: { id: authUserId },
     profileIds: [profileId],

@@ -1,9 +1,5 @@
 import { db } from '@op/db/client';
-import {
-  EntityType,
-  resourceCollectionProfiles,
-  resourceCollections,
-} from '@op/db/schema';
+import { EntityType, resourceCollectionProfiles } from '@op/db/schema';
 import { permission } from 'access-zones';
 import { and, asc, eq, gt, ne } from 'drizzle-orm';
 import { generateKeyBetween } from 'fractional-indexing';
@@ -11,7 +7,8 @@ import { generateKeyBetween } from 'fractional-indexing';
 import { NotFoundError } from '../../utils/error';
 import { lockProfile } from './ordering';
 import { assertCollectionAccess } from './resourceAuth';
-import { type CollectionForProfile, buildCollectionForProfile } from './utils';
+import type { CollectionDTO } from './schemas';
+import { buildCollectionForProfile } from './utils';
 
 export const reorderCollection = async ({
   authUserId,
@@ -21,7 +18,7 @@ export const reorderCollection = async ({
   authUserId: string;
   id: string;
   upperNeighborId: string | null;
-}): Promise<CollectionForProfile> => {
+}): Promise<{ collection: CollectionDTO; profileId: string }> => {
   const { parentProfileId: profileId } = await assertCollectionAccess({
     user: { id: authUserId },
     collectionId: id,
@@ -30,37 +27,27 @@ export const reorderCollection = async ({
     },
   });
 
-  return db.transaction(async (tx) => {
+  const collection = await db.transaction(async (tx) => {
     await lockProfile({ tx, profileId });
 
-    const [moved] = await tx
-      .select({
-        rowId: resourceCollectionProfiles.id,
-        sortKey: resourceCollectionProfiles.sortKey,
-        name: resourceCollections.name,
-        addedByProfileId: resourceCollectionProfiles.addedByProfileId,
-        createdAt: resourceCollectionProfiles.createdAt,
-        updatedAt: resourceCollectionProfiles.updatedAt,
-      })
-      .from(resourceCollectionProfiles)
-      .innerJoin(
-        resourceCollections,
-        eq(resourceCollections.id, resourceCollectionProfiles.collectionId),
-      )
-      .where(
-        and(
-          eq(resourceCollectionProfiles.profileId, profileId),
-          eq(resourceCollectionProfiles.collectionId, id),
-        ),
-      )
-      .limit(1);
+    const moved = await tx.query.resourceCollectionProfiles.findFirst({
+      columns: {
+        id: true,
+        sortKey: true,
+        addedByProfileId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      where: { profileId, collectionId: id },
+      with: { collection: { columns: { name: true } } },
+    });
     if (!moved) {
       throw new NotFoundError('Collection', id);
     }
 
-    const toResult = (sortKey: string): CollectionForProfile =>
+    const toResult = (sortKey: string): CollectionDTO =>
       buildCollectionForProfile(
-        { id, name: moved.name },
+        { id, name: moved.collection.name },
         {
           sortKey,
           addedByProfileId: moved.addedByProfileId,
@@ -97,7 +84,7 @@ export const reorderCollection = async ({
       .where(
         and(
           eq(resourceCollectionProfiles.profileId, profileId),
-          ne(resourceCollectionProfiles.id, moved.rowId),
+          ne(resourceCollectionProfiles.id, moved.id),
           upperKey !== null
             ? gt(resourceCollectionProfiles.sortKey, upperKey)
             : undefined,
@@ -117,7 +104,9 @@ export const reorderCollection = async ({
     await tx
       .update(resourceCollectionProfiles)
       .set({ sortKey: newKey })
-      .where(eq(resourceCollectionProfiles.id, moved.rowId));
+      .where(eq(resourceCollectionProfiles.id, moved.id));
     return toResult(newKey);
   });
+
+  return { collection, profileId };
 };

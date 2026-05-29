@@ -1,11 +1,6 @@
-import {
-  Channels,
-  getProfileIdsForCollection,
-  updateCollection,
-} from '@op/common';
+import { Channels, collectionSchema, updateCollection } from '@op/common';
 import { z } from 'zod';
 
-import { collectionEncoder } from '../../../encoders/resources';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 const dataSchema = z.object({
@@ -15,17 +10,14 @@ const dataSchema = z.object({
 export const collectionsUpdate = router({
   update: commonAuthedProcedure()
     .input(z.object({ id: z.string().uuid(), data: dataSchema }))
-    .output(collectionEncoder)
+    .output(collectionSchema)
     .mutation(async ({ input, ctx }) => {
-      const row = await updateCollection({
+      const { collection, profileId } = await updateCollection({
         authUserId: ctx.user.id,
         id: input.id,
         data: input.data,
       });
-      const profileIds = await getProfileIdsForCollection(input.id);
-      ctx.registerMutationChannels(
-        profileIds.map((id) => Channels.profileCollections(id)),
-      );
-      return collectionEncoder.parse(row);
+      ctx.registerMutationChannels([Channels.profileCollections(profileId)]);
+      return collectionSchema.parse(collection);
     }),
 });

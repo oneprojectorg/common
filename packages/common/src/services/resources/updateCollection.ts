@@ -10,7 +10,8 @@ import { and, eq, sql } from 'drizzle-orm';
 import { NotFoundError } from '../../utils/error';
 import { lockProfile } from './ordering';
 import { assertCollectionAccess } from './resourceAuth';
-import { type CollectionForProfile, getCollectionForProfile } from './utils';
+import type { CollectionDTO } from './schemas';
+import { getCollectionForProfile } from './utils';
 
 export type UpdateCollectionData = {
   name?: string;
@@ -24,7 +25,7 @@ export const updateCollection = async ({
   authUserId: string;
   id: string;
   data: UpdateCollectionData;
-}): Promise<CollectionForProfile> => {
+}): Promise<{ collection: CollectionDTO; profileId: string }> => {
   const { parentProfileId: profileId } = await assertCollectionAccess({
     user: { id: authUserId },
     collectionId: id,
@@ -33,7 +34,7 @@ export const updateCollection = async ({
     },
   });
 
-  return db.transaction(async (tx) => {
+  const collection = await db.transaction(async (tx) => {
     await lockProfile({ tx, profileId });
 
     const existing = await getCollectionForProfile({
@@ -79,4 +80,6 @@ export const updateCollection = async ({
     }
     return row;
   });
+
+  return { collection, profileId };
 };

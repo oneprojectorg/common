@@ -16,14 +16,15 @@ export const deleteCollection = async ({
 }: {
   authUserId: string;
   id: string;
-}): Promise<void> => {
-  const { parentProfileId: profileId } = await assertCollectionAccess({
-    user: { id: authUserId },
-    collectionId: id,
-    policies: {
-      [EntityType.DECISION]: { decisions: permission.ADMIN },
-    },
-  });
+}): Promise<{ profileIds: string[] }> => {
+  const { parentProfileIds, parentProfileId: profileId } =
+    await assertCollectionAccess({
+      user: { id: authUserId },
+      collectionId: id,
+      policies: {
+        [EntityType.DECISION]: { decisions: permission.ADMIN },
+      },
+    });
 
   await db.transaction(async (tx) => {
     await lockProfile({ tx, profileId });
@@ -49,4 +50,6 @@ export const deleteCollection = async ({
         .where(eq(resourceCollections.id, id));
     }
   });
+
+  return { profileIds: parentProfileIds };
 };

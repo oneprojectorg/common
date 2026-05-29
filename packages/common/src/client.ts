@@ -50,6 +50,20 @@ export {
 } from './services/access/schemas/accessRole';
 export * from './services/decision/types';
 export {
+  attachmentSummarySchema,
+  resourceWithSignedUrlSchema,
+  resourceInCollectionSchema,
+  resourceListSchema,
+  collectionSchema,
+  collectionListSchema,
+  type AttachmentSummary,
+  type ResourceDTO,
+  type ResourceInCollectionDTO,
+  type ResourceListResult,
+  type CollectionDTO,
+  type CollectionListResult,
+} from './services/resources/schemas';
+export {
   SYSTEM_FIELD_KEYS,
   getProposalTemplateFieldOrder,
   type ProposalTemplateFieldOrder,

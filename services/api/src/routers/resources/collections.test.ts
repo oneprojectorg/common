@@ -343,7 +343,7 @@ describe('resources.collections.delete', () => {
     });
 
     await adminCaller.resources.collections.delete({
-      id: created.id,
+      collectionId: created.id,
     });
 
     const after = await adminCaller.resources.collections.list({
@@ -374,7 +374,7 @@ describe('resources.collections.delete', () => {
     });
 
     await expect(
-      memberCaller.resources.collections.delete({ id: created.id }),
+      memberCaller.resources.collections.delete({ collectionId: created.id }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 });

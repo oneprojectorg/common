@@ -5,6 +5,7 @@ export * from './listCollections';
 export * from './ordering';
 export * from './reorderCollection';
 export * from './resourceAuth';
+export * from './schemas';
 export * from './types';
 export * from './updateCollection';
 export * from './utils';

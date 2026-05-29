@@ -1,9 +1,10 @@
 import type { DbClient, TransactionType } from '@op/db/client';
 import {
+  type ResourceCollectionItem,
   resourceCollectionItems,
   resourceCollectionProfiles,
 } from '@op/db/schema';
-import { and, asc, desc, eq, gt, ne, sql } from 'drizzle-orm';
+import { and, asc, eq, gt, ne, sql } from 'drizzle-orm';
 import { generateKeyBetween } from 'fractional-indexing';
 
 import { ConflictError, NotFoundError } from '../../utils/error';
@@ -133,7 +134,7 @@ export const computeReorder = async ({
   };
 };
 
-export const insertAtTop = async ({
+export const insertResourceAtTop = async ({
   tx,
   collectionId,
   resourceId,
@@ -143,10 +144,10 @@ export const insertAtTop = async ({
   collectionId: string;
   resourceId: string;
   addedByProfileId: string | null;
-}): Promise<string> => {
+}): Promise<ResourceCollectionItem> => {
   await lockCollection({ tx, collectionId });
   const sortKey = await generateKeyForInsertAtTop({ tx, collectionId });
-  const [link] = await tx
+  const [resourceItem] = await tx
     .insert(resourceCollectionItems)
     .values({
       collectionId,
@@ -155,10 +156,10 @@ export const insertAtTop = async ({
       addedByProfileId,
     })
     .returning();
-  if (!link) {
+  if (!resourceItem) {
     throw new ConflictError('Failed to attach resource to collection');
   }
-  return sortKey;
+  return resourceItem;
 };
 
 export const findCollectionItem = async ({
@@ -170,16 +171,12 @@ export const findCollectionItem = async ({
   collectionId: string;
   resourceId: string;
 }) => {
-  const [row] = await tx
-    .select()
-    .from(resourceCollectionItems)
-    .where(
-      and(
-        eq(resourceCollectionItems.collectionId, collectionId),
-        eq(resourceCollectionItems.resourceId, resourceId),
-      ),
-    )
-    .limit(1);
+  const row = await tx.query.resourceCollectionItems.findFirst({
+    where: {
+      collectionId,
+      resourceId,
+    },
+  });
   return row ?? null;
 };
 
@@ -207,20 +204,19 @@ export const appendCollectionToProfile = async ({
   profileId: string;
   collectionId: string;
 }) => {
-  const [tail] = await tx
-    .select({ sortKey: resourceCollectionProfiles.sortKey })
-    .from(resourceCollectionProfiles)
-    .where(eq(resourceCollectionProfiles.profileId, profileId))
-    .orderBy(desc(resourceCollectionProfiles.sortKey))
-    .limit(1);
+  const tail = await tx.query.resourceCollectionProfiles.findFirst({
+    columns: { sortKey: true },
+    where: { profileId },
+    orderBy: { sortKey: 'desc' },
+  });
   const sortKey = generateKeyBetween(tail?.sortKey ?? null, null);
 
-  const [link] = await tx
+  const [collectionProfile] = await tx
     .insert(resourceCollectionProfiles)
     .values({ collectionId, profileId, sortKey })
     .returning();
-  if (!link) {
+  if (!collectionProfile) {
     throw new ConflictError('Failed to attach collection to profile');
   }
-  return link;
+  return collectionProfile;
 };

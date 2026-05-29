@@ -2,16 +2,9 @@ import { type DbClient, db as defaultDb } from '@op/db/client';
 import { resourceCollectionProfiles, resourceCollections } from '@op/db/schema';
 import { and, asc, eq, gt } from 'drizzle-orm';
 
-export const DEFAULT_COLLECTION_NAME = 'Default';
+import type { CollectionDTO } from './schemas';
 
-export type CollectionForProfile = {
-  id: string;
-  name: string;
-  sortKey: string;
-  addedByProfileId: string | null;
-  createdAt: string | null;
-  updatedAt: string | null;
-};
+export const DEFAULT_COLLECTION_NAME = 'Default';
 
 export const buildCollectionForProfile = (
   collection: { id: string; name: string },
@@ -21,7 +14,7 @@ export const buildCollectionForProfile = (
     createdAt: string | null;
     updatedAt: string | null;
   },
-): CollectionForProfile => ({
+): CollectionDTO => ({
   id: collection.id,
   name: collection.name,
   sortKey: link.sortKey,
@@ -40,7 +33,7 @@ export const getCollectionsForProfile = ({
   profileId: string;
   limit?: number;
   cursor?: string | null;
-}): Promise<CollectionForProfile[]> => {
+}): Promise<CollectionDTO[]> => {
   const baseWhere = eq(resourceCollectionProfiles.profileId, profileId);
   const where = cursor
     ? and(baseWhere, gt(resourceCollectionProfiles.sortKey, cursor))
@@ -72,7 +65,7 @@ export const getCollectionForProfile = async ({
   db?: DbClient;
   profileId: string;
   collectionId: string;
-}): Promise<CollectionForProfile | null> => {
+}): Promise<CollectionDTO | null> => {
   const [row] = await db
     .select({
       id: resourceCollections.id,

@@ -1,7 +1,6 @@
-import { Channels, createCollection } from '@op/common';
+import { Channels, collectionSchema, createCollection } from '@op/common';
 import { z } from 'zod';
 
-import { collectionEncoder } from '../../../encoders/resources';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 
 export const collectionsCreate = router({
@@ -12,9 +11,9 @@ export const collectionsCreate = router({
         name: z.string().trim().min(1).max(80),
       }),
     )
-    .output(collectionEncoder)
+    .output(collectionSchema)
     .mutation(async ({ input, ctx }) => {
-      const row = await createCollection({
+      const collection = await createCollection({
         authUserId: ctx.user.id,
         profileId: input.profileId,
         name: input.name,
@@ -22,6 +21,6 @@ export const collectionsCreate = router({
       ctx.registerMutationChannels([
         Channels.profileCollections(input.profileId),
       ]);
-      return collectionEncoder.parse(row);
+      return collectionSchema.parse(collection);
     }),
 });
