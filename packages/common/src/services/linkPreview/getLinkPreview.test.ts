@@ -129,4 +129,26 @@ describe('getLinkPreview', () => {
     expect(result.error).toBeUndefined();
     expect(result.thumbnail_url).toBeUndefined();
   });
+
+  it('falls back to top-level thumbnail_url/provider_name/provider_url when links.thumbnail and meta canonical/site are absent', async () => {
+    const url = uniqueUrl('top-level-fallback');
+    globalThis.fetch = vi.fn(async () => {
+      return new Response(
+        JSON.stringify({
+          meta: { title: 'Top Level' },
+          thumbnail_url: 'https://cdn.example.com/top.png',
+          provider_name: 'Example Provider',
+          provider_url: 'https://example.com',
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    });
+
+    const result = await getLinkPreview(url);
+
+    expect(result.error).toBeUndefined();
+    expect(result.thumbnail_url).toBe('https://cdn.example.com/top.png');
+    expect(result.provider_name).toBe('Example Provider');
+    expect(result.provider_url).toBe('https://example.com');
+  });
 });

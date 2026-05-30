@@ -715,3 +715,84 @@ describe('resources.delete', () => {
     expect(await resourceExists(created.id)).toBe(true);
   });
 });
+
+describe('resources.list pagination', () => {
+  it('paginates via the cursor: limit yields a next cursor, the second page returns the rest', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+    });
+
+    const created = await Promise.all([
+      adminCaller.resources.createLink({
+        target: { kind: 'profile', profileId: instance.profileId },
+        title: 'One',
+        linkUrl: PUBLIC_URL,
+      }),
+      adminCaller.resources.createLink({
+        target: { kind: 'profile', profileId: instance.profileId },
+        title: 'Two',
+        linkUrl: SECOND_PUBLIC_URL,
+      }),
+      adminCaller.resources.createLink({
+        target: { kind: 'profile', profileId: instance.profileId },
+        title: 'Three',
+        linkUrl: 'https://example.net/third',
+      }),
+    ]);
+    const allIds = new Set(created.map((r) => r.id));
+    const collectionId = created[0]!.collectionId;
+
+    const firstPage = await adminCaller.resources.listByCollection({
+      collectionId,
+      limit: 2,
+    });
+    expect(firstPage.items).toHaveLength(2);
+    expect(firstPage.next).toBeTruthy();
+
+    const secondPage = await adminCaller.resources.listByCollection({
+      collectionId,
+      limit: 2,
+      cursor: firstPage.next,
+    });
+    expect(secondPage.items).toHaveLength(1);
+    // End of the list — no further cursor.
+    expect(secondPage.next).toBeNull();
+
+    // The two pages together cover every created resource with no overlap.
+    const pagedIds = [
+      ...firstPage.items.map((r: ResourceInCollectionDTO) => r.id),
+      ...secondPage.items.map((r: ResourceInCollectionDTO) => r.id),
+    ];
+    expect(new Set(pagedIds)).toEqual(allIds);
+    expect(pagedIds).toHaveLength(allIds.size);
+  });
+});
+
+describe('resources.update description', () => {
+  it('clears the description when null is passed (distinct from undefined no-op)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+    });
+    const created = await adminCaller.resources.createLink({
+      target: { kind: 'profile', profileId: instance.profileId },
+      title: 'Described',
+      description: 'a description',
+      linkUrl: PUBLIC_URL,
+    });
+    expect(created.description).toBe('a description');
+
+    const cleared = await adminCaller.resources.update({
+      id: created.id,
+      data: { description: null },
+    });
+    expect(cleared.description).toBeNull();
+  });
+});

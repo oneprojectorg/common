@@ -16,15 +16,16 @@ export const listResourcesByCollection = async ({
   limit?: number;
   cursor?: string | null;
 }): Promise<ResourceListResult> => {
-  const [result] = await Promise.all([
-    getResourcesInCollection({ collectionId, limit, cursor }),
-    assertCollectionAccess({
-      user: { id: authUserId },
-      collectionId,
-      policies: {
-        [EntityType.DECISION]: { decisions: permission.READ },
-      },
-    }),
-  ]);
-  return result;
+  // Authorize before fetching: the read fans out into per-item signed-URL
+  // generation, so an unauthorized caller must not be able to trigger that
+  // work (DB reads + Supabase sign calls) before being rejected.
+  await assertCollectionAccess({
+    user: { id: authUserId },
+    collectionId,
+    policies: {
+      [EntityType.DECISION]: { decisions: permission.READ },
+    },
+  });
+
+  return getResourcesInCollection({ collectionId, limit, cursor });
 };

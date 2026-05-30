@@ -54,10 +54,10 @@ export const resourcePathPrefix = (profileId: string) =>
   `profile/${profileId}/resources/`;
 
 // text/csv and text/plain were removed: neither has a magic-byte signature,
-// so `assertMimeMatchesContent` can't catch a lie in the declared MIME and
-// Supabase would serve user-chosen bytes with attacker-controlled
-// Content-Type. Add back only with content sniffing + forced
-// Content-Disposition: attachment.
+// so the declared-vs-recorded MIME cross-check in createDocumentResource can't
+// catch a lie for them, and Supabase would serve user-chosen bytes with an
+// attacker-controlled Content-Type. Add back only with content sniffing +
+// forced Content-Disposition: attachment.
 export const ALLOWED_RESOURCE_MIME_TYPES = [
   'image/png',
   'image/jpeg',

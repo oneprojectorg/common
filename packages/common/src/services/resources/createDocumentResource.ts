@@ -7,9 +7,17 @@ import {
   NotFoundError,
   ValidationError,
 } from '../../utils/error';
-import { getStorageObjectSize } from '../../utils/storage';
+import {
+  getStorageObjectMimeType,
+  getStorageObjectSize,
+} from '../../utils/storage';
 import { getIndividualProfileId } from '../access';
-import { STORAGE_BUCKET, resourcePathPrefix } from './constants';
+import {
+  MAX_RESOURCE_FILE_SIZE,
+  STORAGE_BUCKET,
+  isAllowedResourceMimeType,
+  resourcePathPrefix,
+} from './constants';
 import { getResourceById } from './getResourceById';
 import { insertAtTop } from './ordering';
 import { resolveTargetCollection } from './resolveTargetCollection';
@@ -67,6 +75,26 @@ export const createDocumentResource = async (
   }
 
   const fileSize = getStorageObjectSize(storageObject.metadata);
+  if (fileSize !== null && fileSize > MAX_RESOURCE_FILE_SIZE) {
+    throw new ValidationError('File exceeds the maximum allowed size');
+  }
+
+  // The router constrains the *declared* mimeType to the allowlist, but the
+  // client controls the bytes it uploaded via the signed URL. Cross-check the
+  // declared type against the content-type Supabase recorded for the object
+  // so a caller can't upload arbitrary bytes under an allowed label. When the
+  // metadata has no mimetype we can't verify, so we fall back to the declared
+  // (already-allowlisted) value rather than reject a legitimate upload.
+  const actualMimeType = getStorageObjectMimeType(storageObject.metadata);
+  if (
+    actualMimeType !== null &&
+    (actualMimeType !== input.mimeType ||
+      !isAllowedResourceMimeType(actualMimeType))
+  ) {
+    throw new ValidationError(
+      'Uploaded file content does not match the declared file type',
+    );
+  }
 
   const { resourceId, sortKey } = await db.transaction(async (tx) => {
     const [attachment] = await tx
