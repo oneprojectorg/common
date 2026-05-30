@@ -164,12 +164,10 @@ if (!adminRole) {
   );
 }
 
-const existingAdmins = (
-  await db._query.users.findMany({
-    where: (t, { inArray }) => inArray(t.email, [...adminEmails]),
-    columns: { authUserId: true, email: true },
-  })
-).filter((u): u is { authUserId: string; email: string } => u.email !== null);
+const existingAdmins = await db._query.users.findMany({
+  where: (t, { inArray }) => inArray(t.email, [...adminEmails]),
+  columns: { authUserId: true, email: true },
+});
 
 let linkedCount = 0;
 for (const admin of existingAdmins) {
@@ -185,6 +183,11 @@ for (const admin of existingAdmins) {
   let orgUserId = existingOrgUser?.id;
 
   if (!orgUserId) {
+    if (!admin.email) {
+      throw new Error(
+        `Admin user ${admin.authUserId} has no email — cannot link to organization`,
+      );
+    }
     const [created] = await db
       .insert(organizationUsers)
       .values({
