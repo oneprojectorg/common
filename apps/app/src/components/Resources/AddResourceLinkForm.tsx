@@ -1,7 +1,11 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { httpUrlSchema } from '@op/common/client';
+import {
+  RESOURCE_DESCRIPTION_MAX_LEN,
+  RESOURCE_TITLE_MAX_LEN,
+  httpUrlSchema,
+} from '@op/common/client';
 import { useDebounce } from '@op/hooks';
 import { Button } from '@op/ui/Button';
 import { TextField } from '@op/ui/TextField';
@@ -10,6 +14,8 @@ import { useState } from 'react';
 import { LuLink } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+
+import { hostnameForDisplay } from './utils';
 
 export const AddResourceLinkForm = ({
   profileId,
@@ -49,8 +55,11 @@ export const AddResourceLinkForm = ({
     { enabled: debouncedValid, retry: false, staleTime: 60 * 1000 },
   );
 
-  const previewTitle = previewQuery.data?.meta?.title?.slice(0, 50) ?? '';
-  const fallbackTitle = urlValid ? hostnameFromUrl(normalizedUrl) : '';
+  const previewTitle =
+    previewQuery.data?.meta?.title?.slice(0, RESOURCE_TITLE_MAX_LEN) ?? '';
+  const fallbackTitle = urlValid
+    ? hostnameForDisplay(normalizedUrl, RESOURCE_TITLE_MAX_LEN)
+    : '';
   const title = titleInput ?? (previewTitle || fallbackTitle);
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -104,14 +113,14 @@ export const AddResourceLinkForm = ({
           value={title}
           onChange={setTitleInput}
           isRequired
-          maxLength={50}
+          maxLength={RESOURCE_TITLE_MAX_LEN}
           inputProps={{ placeholder: t('Add a title') }}
         />
         <TextField
           label={t('Description')}
           value={description}
           onChange={setDescription}
-          maxLength={250}
+          maxLength={RESOURCE_DESCRIPTION_MAX_LEN}
           useTextArea
           textareaProps={{ placeholder: t('Add a description') }}
         />
@@ -145,15 +154,4 @@ const normalizeHttpUrl = (raw: string): string | null => {
     return null;
   }
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-};
-
-const hostnameFromUrl = (url: string | null): string => {
-  if (!url) {
-    return '';
-  }
-  try {
-    return new URL(url).hostname.replace(/^www\./i, '').slice(0, 50);
-  } catch {
-    return '';
-  }
 };

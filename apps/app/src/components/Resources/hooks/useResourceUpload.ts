@@ -1,7 +1,6 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { AllowedResourceMimeType } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import { useRef, useState } from 'react';
 
@@ -11,7 +10,10 @@ export type UploadedResource = {
   profileId: string;
   storagePath: string;
   fileName: string;
-  mimeType: AllowedResourceMimeType;
+  // Whatever `file.type` was on PUT. Backend validates against the allowlist
+  // (and against the storage object's stored Content-Type), so we don't
+  // narrow this here.
+  mimeType: string;
 };
 
 export const useResourceUpload = (profileId: string) => {
@@ -51,7 +53,7 @@ export const useResourceUpload = (profileId: string) => {
         profileId: signed.profileId,
         storagePath: signed.storagePath,
         fileName: file.name,
-        mimeType: file.type as AllowedResourceMimeType,
+        mimeType: file.type,
       };
       setUploaded(result);
       return result;

@@ -4,6 +4,9 @@ import { trpc } from '@op/api/client';
 import {
   ALLOWED_RESOURCE_MIME_TYPES,
   MAX_RESOURCE_FILE_SIZE,
+  RESOURCE_DESCRIPTION_MAX_LEN,
+  RESOURCE_TITLE_MAX_LEN,
+  isAllowedResourceMimeType,
 } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { Skeleton } from '@op/ui/Skeleton';
@@ -61,6 +64,24 @@ export const AddResourceDocumentForm = ({
   }, [file]);
 
   const handleFileSelected = async (selected: File | null) => {
+    // Backend is the security boundary (mime + size both rechecked against
+    // storage object metadata in createDocument). These guards are UX only:
+    // fail fast before we burn bandwidth uploading a file that will be
+    // rejected.
+    if (selected) {
+      if (!isAllowedResourceMimeType(selected.type)) {
+        toast.error({ message: t('Unsupported file type') });
+        return;
+      }
+      if (selected.size > MAX_RESOURCE_FILE_SIZE) {
+        toast.error({
+          message: t('File is too large (max {size} MB)', {
+            size: MAX_SIZE_MB,
+          }),
+        });
+        return;
+      }
+    }
     setFile(selected);
     reset();
     if (selected) {
@@ -91,6 +112,11 @@ export const AddResourceDocumentForm = ({
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     if (!uploaded || !title.trim()) {
+      return;
+    }
+    // handleFileSelected already gated on the allowlist; this guard is a
+    // type-narrow so the tRPC input enum type is satisfied without a cast.
+    if (!isAllowedResourceMimeType(uploaded.mimeType)) {
       return;
     }
     // Use the profileId returned by uploadFile (not the prop), so collection
@@ -234,7 +260,7 @@ export const AddResourceDocumentForm = ({
           value={title}
           onChange={setTitleInput}
           isRequired
-          maxLength={50}
+          maxLength={RESOURCE_TITLE_MAX_LEN}
           isDisabled={!uploaded}
           inputProps={{ placeholder: t('Resource name') }}
         />
@@ -242,7 +268,7 @@ export const AddResourceDocumentForm = ({
           label={t('Description')}
           value={description}
           onChange={setDescription}
-          maxLength={250}
+          maxLength={RESOURCE_DESCRIPTION_MAX_LEN}
           useTextArea
           isDisabled={!uploaded}
           textareaProps={{

@@ -5,7 +5,7 @@ import type { ResourceInCollection } from '@op/api/encoders';
 import { match, sanitizeUrl } from '@op/core/utils';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   LuFile,
@@ -18,7 +18,7 @@ import {
 
 import { useTranslations } from '@/lib/i18n';
 
-import { getExtension } from './utils';
+import { getExtension, hostnameForDisplay } from './utils';
 
 export const ResourceCard = ({
   resource,
@@ -57,7 +57,7 @@ export const ResourceCard = ({
 
   const subtitle =
     resource.type === 'link'
-      ? getDomain(resource.linkUrl ?? '')
+      ? hostnameForDisplay(resource.linkUrl)
       : (() => {
           const ext = getExtension(attachment?.fileName ?? null);
           if (!resource.createdAt) {
@@ -137,30 +137,28 @@ export const ResourceCard = ({
   );
 };
 
-const getDomain = (url: string): string => {
-  try {
-    return new URL(url).hostname.replace(/^www\./, '');
-  } catch {
-    return url;
+const iconComponentForMime = (
+  mime: string | null,
+): React.ComponentType<{ className?: string }> => {
+  if (!mime) {
+    return LuFile;
   }
+  if (mime.startsWith('image/')) {
+    return LuImage;
+  }
+  return match(mime, {
+    'application/pdf': () => LuFileText,
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+      () => LuFileText,
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': () =>
+      LuFileSpreadsheet,
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+      () => LuPresentation,
+    _: () => LuFile,
+  });
 };
 
 const documentIconForMime = (mime: string | null): ReactNode => {
-  if (!mime) {
-    return <LuFile className="size-10" />;
-  }
-  if (mime.startsWith('image/')) {
-    return <LuImage className="size-10" />;
-  }
-  return match<ReactNode>(mime, {
-    'application/pdf': () => <LuFileText className="size-10" />,
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-      () => <LuFileText className="size-10" />,
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': () => (
-      <LuFileSpreadsheet className="size-10" />
-    ),
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation':
-      () => <LuPresentation className="size-10" />,
-    _: () => <LuFile className="size-10" />,
-  });
+  const Icon = iconComponentForMime(mime);
+  return <Icon className="size-10" />;
 };

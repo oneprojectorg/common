@@ -14,9 +14,11 @@ const linkPreviewResponseSchema = z.object({
     })
     .optional(),
   html: z.string().optional(),
-  thumbnail_url: z.string().optional(),
+  // `getLinkPreview` already strips non-http(s) values; keep `.url()` here as
+  // a wire-level guard so we don't accidentally widen the contract later.
+  thumbnail_url: z.string().url().optional(),
   provider_name: z.string().optional(),
-  provider_url: z.string().optional(),
+  provider_url: z.string().url().optional(),
   error: z.string().optional(),
 });
 

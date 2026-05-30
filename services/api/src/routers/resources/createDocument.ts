@@ -1,6 +1,8 @@
 import {
   ALLOWED_RESOURCE_MIME_TYPES,
   Channels,
+  RESOURCE_DESCRIPTION_MAX_LEN,
+  RESOURCE_TITLE_MAX_LEN,
   createDocumentResource,
   getProfileIdsForCollection,
 } from '@op/common';
@@ -26,8 +28,12 @@ const inputSchema = z.object({
       collectionId: z.string().uuid(),
     }),
   ]),
-  title: z.string().trim().min(1).max(50),
-  description: z.string().max(250).nullable().optional(),
+  title: z.string().trim().min(1).max(RESOURCE_TITLE_MAX_LEN),
+  description: z
+    .string()
+    .max(RESOURCE_DESCRIPTION_MAX_LEN)
+    .nullable()
+    .optional(),
   storagePath: z.string().min(1).max(1024),
   fileName: z.string().min(1).max(255),
   mimeType: allowedMimeSchema,

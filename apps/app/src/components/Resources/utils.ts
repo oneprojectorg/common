@@ -1,3 +1,20 @@
+// Display-friendly hostname: drop leading `www.` and (optionally) cap the
+// length so it fits in a card subtitle / fallback title field.
+export const hostnameForDisplay = (
+  url: string | null,
+  maxLength?: number,
+): string => {
+  if (!url) {
+    return '';
+  }
+  try {
+    const hostname = new URL(url).hostname.replace(/^www\./i, '');
+    return maxLength === undefined ? hostname : hostname.slice(0, maxLength);
+  } catch {
+    return '';
+  }
+};
+
 export const getExtension = (fileName: string | null): string | null => {
   if (!fileName) {
     return null;

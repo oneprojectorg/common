@@ -1,5 +1,7 @@
 import {
   Channels,
+  RESOURCE_DESCRIPTION_MAX_LEN,
+  RESOURCE_TITLE_MAX_LEN,
   createLinkResource,
   getProfileIdsForCollection,
   httpUrlSchema,
@@ -20,8 +22,12 @@ const inputSchema = z.object({
       collectionId: z.string().uuid(),
     }),
   ]),
-  title: z.string().trim().min(1).max(50),
-  description: z.string().max(250).nullable().optional(),
+  title: z.string().trim().min(1).max(RESOURCE_TITLE_MAX_LEN),
+  description: z
+    .string()
+    .max(RESOURCE_DESCRIPTION_MAX_LEN)
+    .nullable()
+    .optional(),
   linkUrl: httpUrlSchema,
 });
 

@@ -4,6 +4,12 @@ import { zodUrlRefine } from '../../utils/validation';
 
 export const MAX_RESOURCE_FILE_SIZE = 25 * 1024 * 1024;
 
+// Title/description length caps. Mirrored by zod `.max()` on every
+// create/update procedure input and by client `maxLength` on the form
+// inputs — pull from here so the two layers can't drift.
+export const RESOURCE_TITLE_MAX_LEN = 50;
+export const RESOURCE_DESCRIPTION_MAX_LEN = 250;
+
 export const STORAGE_BUCKET = 'assets';
 
 // SSRF gate: loopback, link-local, RFC1918, CGNAT, metadata services.

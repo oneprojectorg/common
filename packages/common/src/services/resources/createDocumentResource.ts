@@ -88,9 +88,13 @@ export const createDocumentResource = async (
     );
   }
 
+  // Storage object size is the only place we see the actual upload size: the
+  // signed PUT URL itself has no inherent cap, and the client-side guard is
+  // UX only. Reject before persisting metadata so oversized blobs don't get
+  // a resource row pointing at them.
   const fileSize = getStorageObjectSize(storageObject.metadata);
-  if (fileSize !== null && fileSize > MAX_RESOURCE_FILE_SIZE) {
-    throw new ValidationError('File exceeds the maximum allowed size');
+  if (fileSize === null || fileSize > MAX_RESOURCE_FILE_SIZE) {
+    throw new ValidationError('Uploaded file exceeds the size limit');
   }
 
   const { resourceId, sortKey } = await db.transaction(async (tx) => {
