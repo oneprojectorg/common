@@ -6,6 +6,7 @@ import {
   getProfileIdsForCollection,
   httpUrlSchema,
 } from '@op/common';
+import type { ChannelName } from '@op/common/realtime';
 import { z } from 'zod';
 
 import { resourceInCollectionEncoder } from '../../encoders/resources';
@@ -50,15 +51,18 @@ export const createLink = router({
         target.kind === 'profile'
           ? [target.profileId]
           : await getProfileIdsForCollection(row.collectionId);
-      ctx.registerMutationChannels([
+      const channels: ChannelName[] = [
         Channels.collectionResources(row.collectionId),
-        ...profileIds.flatMap((id) => [
-          Channels.profileResources(id),
-          // createLink may lazy-create a default collection; broadcast so the
-          // collections list subscriber refreshes without a manual invalidate.
-          Channels.profileCollections(id),
-        ]),
-      ]);
+        ...profileIds.map((id) => Channels.profileResources(id)),
+      ];
+      // Only the profile-target path can lazy-create a default collection;
+      // when callers target an existing collection there is no chance of a
+      // new collection appearing, so broadcasting profileCollections is just
+      // wasted invalidation.
+      if (target.kind === 'profile') {
+        channels.push(Channels.profileCollections(target.profileId));
+      }
+      ctx.registerMutationChannels(channels);
       return resourceInCollectionEncoder.parse(row);
     }),
 });
