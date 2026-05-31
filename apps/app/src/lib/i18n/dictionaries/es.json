@@ -1305,5 +1305,7 @@
   "Member of {count, plural, =1 {# Organization} other {# Organizations}}": "Miembro de {count, plural, =1 {# Organización} other {# Organizaciones}}",
   "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}": "{count, plural, =1 {1 miembro ha enviado propuestas} other {# miembros han enviado propuestas}}",
   "<bdi>{authorName}</bdi>'s Post": "Publicación de <bdi>{authorName}</bdi>",
-  "Drag a file or link here to add it": "Arrastra un archivo o enlace aquí para añadirlo"
+  "Drag a file or link here to add it": "Arrastra un archivo o enlace aquí para añadirlo",
+  "Failed to load proposals": "No se pudieron cargar las propuestas",
+  "Thank you for participating. Your voice helps shape how we invest in our community.": "Gracias por participar. Tu voz ayuda a definir cómo invertimos en nuestra comunidad."
 }
