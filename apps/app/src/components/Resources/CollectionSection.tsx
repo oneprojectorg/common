@@ -21,29 +21,30 @@ export const CollectionSection = ({
   canManage: boolean;
 }) => {
   return (
-    <AccordionItem id={collectionId} variant="unstyled">
-      <AccordionTrigger className="flex w-full cursor-pointer items-center gap-1 text-start text-sm text-neutral-black outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
+    <AccordionItem
+      id={collectionId}
+      className="rounded-none border-0 bg-transparent"
+    >
+      <AccordionTrigger className="w-full gap-1 text-sm font-normal text-neutral-black">
         <AccordionIndicator className="text-neutral-black" />
         <span className="truncate">{name}</span>
       </AccordionTrigger>
-      <AccordionContent className="overflow-hidden">
-        <div className="pt-4">
-          <ErrorBoundary>
-            <Suspense
-              fallback={
-                <div className="flex flex-col gap-2">
-                  <Skeleton className="h-24 w-full rounded-lg" />
-                  <Skeleton className="h-24 w-full rounded-lg" />
-                </div>
-              }
-            >
-              <CollectionResourcesSuspense
-                collectionId={collectionId}
-                canManage={canManage}
-              />
-            </Suspense>
-          </ErrorBoundary>
-        </div>
+      <AccordionContent>
+        <ErrorBoundary>
+          <Suspense
+            fallback={
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-24 w-full rounded-lg" />
+                <Skeleton className="h-24 w-full rounded-lg" />
+              </div>
+            }
+          >
+            <CollectionResourcesSuspense
+              collectionId={collectionId}
+              canManage={canManage}
+            />
+          </Suspense>
+        </ErrorBoundary>
       </AccordionContent>
     </AccordionItem>
   );

@@ -20,6 +20,9 @@ import { useTranslations } from '@/lib/i18n';
 
 import { getExtension, hostnameForDisplay } from './utils';
 
+type LinkResource = Extract<ResourceInCollection, { type: 'link' }>;
+type DocumentResource = Extract<ResourceInCollection, { type: 'document' }>;
+
 export const ResourceCard = ({
   resource,
   signedUrl,
@@ -29,66 +32,114 @@ export const ResourceCard = ({
   signedUrl?: string | null;
   trailing?: ReactNode;
 }) => {
-  const t = useTranslations();
-  const href =
-    resource.type === 'link'
-      ? resource.linkUrl
-        ? sanitizeUrl(resource.linkUrl)
-        : null
-      : (signedUrl ?? null);
+  if (resource.type === 'link') {
+    return <ResourceLinkCard resource={resource} trailing={trailing} />;
+  }
+  return (
+    <ResourceDocumentCard
+      resource={resource}
+      signedUrl={signedUrl ?? null}
+      trailing={trailing}
+    />
+  );
+};
 
-  const attachment = resource.attachment;
-  const isImage =
-    resource.type === 'document' &&
-    attachment?.mimeType.startsWith('image/') === true;
+const ResourceLinkCard = ({
+  resource,
+  trailing,
+}: {
+  resource: LinkResource;
+  trailing?: ReactNode;
+}) => {
+  const href = resource.linkUrl ? sanitizeUrl(resource.linkUrl) : null;
 
-  const isLink = resource.type === 'link';
   // Thumbnail is resolved server-side during list hydration (resourceDTO),
-  // so the card doesn't fan out N preview queries. `setOgImageFailed` covers
+  // so the card doesn't fan out N preview queries. `ogImageFailed` covers
   // the case where the URL we got from Iframely later 404s in the browser.
   const [ogImageFailed, setOgImageFailed] = useState(false);
-  const ogThumbnail = !ogImageFailed && isLink ? resource.thumbnailUrl : null;
-
-  const previewSrc = isImage
-    ? (signedUrl ?? null)
-    : isLink
-      ? (ogThumbnail ?? null)
-      : null;
-
-  const subtitle =
-    resource.type === 'link'
-      ? hostnameForDisplay(resource.linkUrl)
-      : (() => {
-          const ext = getExtension(attachment?.fileName ?? null);
-          if (!resource.createdAt) {
-            return ext;
-          }
-          const added = t('Added on {date}', {
-            date: formatDate(resource.createdAt),
-          });
-          return ext ? `${ext} • ${added}` : added;
-        })();
+  const previewSrc = ogImageFailed ? null : resource.thumbnailUrl;
 
   const preview = previewSrc ? (
-    <div className="h-44 w-full overflow-hidden rounded-lg border border-neutral-gray2">
-      <img
-        src={previewSrc}
-        alt=""
-        loading="lazy"
-        onError={isLink ? () => setOgImageFailed(true) : undefined}
-        className="size-full object-cover"
-      />
-    </div>
+    <ResourcePreviewImage
+      src={previewSrc}
+      onError={() => setOgImageFailed(true)}
+    />
   ) : (
-    <div className="flex h-44 w-full items-center justify-center rounded-lg border border-neutral-gray2 bg-neutral-gray1 text-neutral-gray4">
-      {resource.type === 'link' ? (
-        <LuGlobe className="size-10" />
-      ) : (
-        documentIconForMime(attachment?.mimeType ?? null)
-      )}
-    </div>
+    <ResourcePreviewFallback icon={<LuGlobe className="size-10" />} />
   );
 
+  return (
+    <ResourceCardShell
+      title={resource.title}
+      description={resource.description}
+      subtitle={hostnameForDisplay(resource.linkUrl)}
+      preview={preview}
+      href={href}
+      trailing={trailing}
+    />
+  );
+};
+
+const ResourceDocumentCard = ({
+  resource,
+  signedUrl,
+  trailing,
+}: {
+  resource: DocumentResource;
+  signedUrl: string | null;
+  trailing?: ReactNode;
+}) => {
+  const t = useTranslations();
+  const attachment = resource.attachment;
+  const isImage = attachment?.mimeType.startsWith('image/') === true;
+
+  const preview =
+    isImage && signedUrl ? (
+      <ResourcePreviewImage src={signedUrl} />
+    ) : (
+      <ResourcePreviewFallback
+        icon={documentIconForMime(attachment?.mimeType ?? null)}
+      />
+    );
+
+  const ext = getExtension(attachment?.fileName ?? null);
+  const subtitle = (() => {
+    if (!resource.createdAt) {
+      return ext;
+    }
+    const added = t('Added on {date}', {
+      date: formatDate(resource.createdAt),
+    });
+    return ext ? `${ext} • ${added}` : added;
+  })();
+
+  return (
+    <ResourceCardShell
+      title={resource.title}
+      description={resource.description}
+      subtitle={subtitle}
+      preview={preview}
+      href={signedUrl}
+      trailing={trailing}
+    />
+  );
+};
+
+const ResourceCardShell = ({
+  title,
+  description,
+  subtitle,
+  preview,
+  href,
+  trailing,
+}: {
+  title: string;
+  description: string | null;
+  subtitle: string | null;
+  preview: ReactNode;
+  href: string | null;
+  trailing?: ReactNode;
+}) => {
   const body = (
     <div className="flex flex-col gap-2">
       <p
@@ -97,13 +148,13 @@ export const ResourceCard = ({
           trailing && 'pr-8',
         )}
       >
-        {resource.title}
+        {title}
       </p>
       {preview}
       <div className="flex flex-col gap-0.5">
-        {resource.description ? (
+        {description ? (
           <p className="line-clamp-2 text-sm text-neutral-charcoal">
-            {resource.description}
+            {description}
           </p>
         ) : null}
         {subtitle ? (
@@ -114,13 +165,13 @@ export const ResourceCard = ({
   );
 
   return (
-    <Surface className={cn('relative rounded-lg p-4')}>
+    <Surface className="relative rounded-lg p-4">
       {href ? (
         <a
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label={resource.title}
+          aria-label={title}
           className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2"
         >
           {body}
@@ -136,6 +187,30 @@ export const ResourceCard = ({
     </Surface>
   );
 };
+
+const ResourcePreviewImage = ({
+  src,
+  onError,
+}: {
+  src: string;
+  onError?: () => void;
+}) => (
+  <div className="h-44 w-full overflow-hidden rounded-lg border border-neutral-gray2">
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      onError={onError}
+      className="size-full object-cover"
+    />
+  </div>
+);
+
+const ResourcePreviewFallback = ({ icon }: { icon: ReactNode }) => (
+  <div className="flex h-44 w-full items-center justify-center rounded-lg border border-neutral-gray2 bg-neutral-gray1 text-neutral-gray4">
+    {icon}
+  </div>
+);
 
 const iconComponentForMime = (
   mime: string | null,
