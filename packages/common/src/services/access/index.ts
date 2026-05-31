@@ -8,6 +8,7 @@ import { checkPermission } from 'access-zones';
 import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils/error';
+import { memoize } from './requestCache';
 import { type RoleJunction, getNormalizedRoles } from './utils';
 
 type OrgUserWithNormalizedRoles = {
@@ -29,21 +30,83 @@ type ProfileUserWithNormalizedRoles = ProfileUser & {
 };
 
 // gets a user assuming that the user is authenticated
-export const getOrgAccessUser = async ({
-  user,
-  organizationId,
-}: {
-  user: { id: string };
-  organizationId: string;
-}): Promise<OrgUserWithNormalizedRoles | undefined> => {
-  const getOrgUser = async () => {
-    const orgUser = await db._query.organizationUsers.findFirst({
+export const getOrgAccessUser = memoize(
+  async ({
+    user,
+    organizationId,
+  }: {
+    user: { id: string };
+    organizationId: string;
+  }): Promise<OrgUserWithNormalizedRoles | undefined> => {
+    const getOrgUser = async () => {
+      const orgUser = await db._query.organizationUsers.findFirst({
+        where: (table, { eq }) =>
+          and(
+            eq(table.organizationId, organizationId),
+            eq(table.authUserId, user.id),
+          ),
+        with: {
+          roles: {
+            with: {
+              accessRole: {
+                with: {
+                  zonePermissions: {
+                    with: {
+                      accessZone: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!orgUser) {
+        return;
+      }
+
+      // Transform the relational data into normalized format for access-zones library
+      // Type assertion needed because Drizzle query result type is complex but we know it has the right structure
+      const normalizedRoles = getNormalizedRoles(
+        orgUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
+      );
+
+      const { roles: _, ...orgUserWithoutRoles } = orgUser;
+
+      // Replace roles with normalized format
+      return {
+        ...orgUserWithoutRoles,
+        roles: normalizedRoles,
+      };
+    };
+
+    return cache({
+      type: 'orgUser',
+      params: [organizationId, user.id],
+      fetch: getOrgUser,
+      options: {
+        skipMemCache: true,
+      },
+    });
+  },
+  ({ user, organizationId }) => `${user.id}:${organizationId}`,
+);
+
+// gets a user's access for a specific profile
+export const getProfileAccessUser = memoize(
+  async ({
+    user,
+    profileId,
+  }: {
+    user: { id: string };
+    profileId: string;
+  }): Promise<ProfileUserWithNormalizedRoles | undefined> => {
+    const profileUser = await db._query.profileUsers.findFirst({
       where: (table, { eq }) =>
-        and(
-          eq(table.organizationId, organizationId),
-          eq(table.authUserId, user.id),
-        ),
+        and(eq(table.profileId, profileId), eq(table.authUserId, user.id)),
       with: {
+        profile: true,
         roles: {
           with: {
             accessRole: {
@@ -60,81 +123,25 @@ export const getOrgAccessUser = async ({
       },
     });
 
-    if (!orgUser) {
-      return;
+    if (!profileUser) {
+      return undefined;
     }
 
     // Transform the relational data into normalized format for access-zones library
     // Type assertion needed because Drizzle query result type is complex but we know it has the right structure
     const normalizedRoles = getNormalizedRoles(
-      orgUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
+      profileUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
     );
 
-    const { roles: _, ...orgUserWithoutRoles } = orgUser;
-
-    // Replace roles with normalized format
+    const { roles: _, ...profileUserWithoutRoles } = profileUser;
     return {
-      ...orgUserWithoutRoles,
+      ...profileUserWithoutRoles,
+      profile: profileUser.profile as Profile,
       roles: normalizedRoles,
     };
-  };
-
-  return cache({
-    type: 'orgUser',
-    params: [organizationId, user.id],
-    fetch: getOrgUser,
-    options: {
-      skipMemCache: true,
-    },
-  });
-};
-
-// gets a user's access for a specific profile
-export const getProfileAccessUser = async ({
-  user,
-  profileId,
-}: {
-  user: { id: string };
-  profileId: string;
-}): Promise<ProfileUserWithNormalizedRoles | undefined> => {
-  const profileUser = await db._query.profileUsers.findFirst({
-    where: (table, { eq }) =>
-      and(eq(table.profileId, profileId), eq(table.authUserId, user.id)),
-    with: {
-      profile: true,
-      roles: {
-        with: {
-          accessRole: {
-            with: {
-              zonePermissions: {
-                with: {
-                  accessZone: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  });
-
-  if (!profileUser) {
-    return undefined;
-  }
-
-  // Transform the relational data into normalized format for access-zones library
-  // Type assertion needed because Drizzle query result type is complex but we know it has the right structure
-  const normalizedRoles = getNormalizedRoles(
-    profileUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
-  );
-
-  const { roles: _, ...profileUserWithoutRoles } = profileUser;
-  return {
-    ...profileUserWithoutRoles,
-    profile: profileUser.profile as Profile,
-    roles: normalizedRoles,
-  };
-};
+  },
+  ({ user, profileId }) => `${user.id}:${profileId}`,
+);
 
 /**
  * Asserts profile-level access, falling back to org-level access if the user
@@ -320,14 +327,10 @@ export const validateAuthUserId = (authUserId: string | undefined) => {
  * Gets user session data by authUserId (database-only, no Supabase auth)
  * Used internally
  */
-export const getUserSession = async ({
-  authUserId,
-}: {
-  authUserId: string;
-}) => {
-  const validatedAuthUserId = validateAuthUserId(authUserId);
+export const getUserSession = memoize(
+  async ({ authUserId }: { authUserId: string }) => {
+    const validatedAuthUserId = validateAuthUserId(authUserId);
 
-  try {
     const dbUser = await db._query.users.findFirst({
       where: (table, { eq }) => eq(table.authUserId, validatedAuthUserId),
       with: {
@@ -365,14 +368,13 @@ export const getUserSession = async ({
     }
 
     return { user: dbUser };
-  } catch (error) {
-    console.error('ERROR');
-    return null;
-  }
-};
+  },
+  ({ authUserId }) => authUserId,
+);
 
 export * from './assertProfileTypeAccess';
 export * from './getRoles';
 export * from './permissions';
+export * from './requestCache';
 export * from './utils';
 export * from './platformAdmin';

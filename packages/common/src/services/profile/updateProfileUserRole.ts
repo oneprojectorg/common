@@ -10,7 +10,11 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils/error';
-import { getNormalizedRoles, getProfileAccessUser } from '../access';
+import {
+  getNormalizedRoles,
+  getProfileAccessUser,
+  getUserSession,
+} from '../access';
 import { getProfileUserWithRelations } from './getProfileUserWithRelations';
 
 /**
@@ -139,6 +143,11 @@ export const updateProfileUserRoles = async ({
       params: [targetProfileUser.authUserId],
     }),
   ]);
+  getProfileAccessUser.invalidate({
+    user: { id: targetProfileUser.authUserId },
+    profileId: targetProfileId,
+  });
+  getUserSession.invalidate({ authUserId: targetProfileUser.authUserId });
 
   // Fetch and return the updated profile user with full relations
   const updatedProfileUser = await getProfileUserWithRelations(profileUserId);

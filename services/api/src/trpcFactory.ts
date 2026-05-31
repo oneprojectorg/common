@@ -14,6 +14,7 @@ import withAuthenticated from './middlewares/withAuthenticated';
 import withChannelMeta from './middlewares/withChannelMeta';
 import withLogger from './middlewares/withLogger';
 import withRateLimited from './middlewares/withRateLimited';
+import withRequestCache from './middlewares/withRequestCache';
 import type { TContext } from './types';
 
 export const createContext = async ({
@@ -60,7 +61,10 @@ export const { router } = t;
 export const { middleware } = t;
 export const { mergeRouters } = t;
 export const createCallerFactory = t.createCallerFactory;
-export const commonProcedure = t.procedure.use(withChannelMeta).use(withLogger);
+export const commonProcedure = t.procedure
+  .use(withRequestCache)
+  .use(withChannelMeta)
+  .use(withLogger);
 
 const DEFAULT_RATE_LIMIT = { windowSize: 10, maxRequests: 10 };
 

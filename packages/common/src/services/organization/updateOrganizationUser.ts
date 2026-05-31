@@ -131,6 +131,7 @@ export async function updateOrganizationUser({
     type: 'orgUser',
     params: [organizationId, user.id],
   });
+  getOrgAccessUser.invalidate({ user, organizationId });
 
   return {
     ...updatedUserWithRoles,
