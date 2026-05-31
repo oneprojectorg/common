@@ -1246,5 +1246,6 @@
   "Accepts PDF, DOCX, XLSX, and images up to {size} MB": "Wuxuu aqbalaa PDF, DOCX, XLSX, iyo sawirro ilaa {size} MB",
   "Resource name": "Magaca kheyraadka",
   "Brief description of this resource": "Sharaxaad kooban oo ku saabsan kheyraadkan",
-  "Remove file": "Ka saar faylka"
+  "Remove file": "Ka saar faylka",
+  "Resources": "Kheyraadyada"
 }
