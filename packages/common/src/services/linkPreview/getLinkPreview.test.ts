@@ -132,23 +132,29 @@ describe('getLinkPreview', () => {
 
   it('falls back to top-level thumbnail_url/provider_name/provider_url when links.thumbnail and meta canonical/site are absent', async () => {
     const url = uniqueUrl('top-level-fallback');
-    globalThis.fetch = vi.fn(async () => {
+    const fetchSpy = vi.fn(async () => {
       return new Response(
         JSON.stringify({
           meta: { title: 'Top Level' },
           thumbnail_url: 'https://cdn.example.com/top.png',
           provider_name: 'Example Provider',
-          provider_url: 'https://example.com',
+          // Path-bearing so the assertion is exact: a bare origin like
+          // `https://example.com` round-trips to `https://example.com/`.
+          provider_url: 'https://example.com/provider',
         }),
         { status: 200, headers: { 'content-type': 'application/json' } },
       );
     });
+    globalThis.fetch = fetchSpy;
 
     const result = await getLinkPreview(url);
 
+    // Anchor to the mock: if a real/leaked fetch produced this result the spy
+    // wouldn't have run, so the fields below wouldn't be our fixture values.
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(result.error).toBeUndefined();
     expect(result.thumbnail_url).toBe('https://cdn.example.com/top.png');
     expect(result.provider_name).toBe('Example Provider');
-    expect(result.provider_url).toBe('https://example.com');
+    expect(result.provider_url).toBe('https://example.com/provider');
   });
 });
