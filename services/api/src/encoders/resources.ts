@@ -1,13 +1,98 @@
-// The resources wire contract is defined once as Zod schemas in @op/common
-// (services/resources/schemas.ts), derived from the Drizzle tables via
-// createSelectSchema. Re-export them here under the *Encoder names the routers'
-// `.output()` expects, so the API contract and the service-layer DTOs share a
-// single definition and can't drift.
-export {
-  attachmentSummarySchema as attachmentSummaryEncoder,
-  collectionListSchema as collectionListEncoder,
-  collectionSchema as collectionEncoder,
-  resourceInCollectionSchema as resourceInCollectionEncoder,
-  resourceListSchema as resourceListEncoder,
-  resourceWithSignedUrlSchema as resourceWithSignedUrlEncoder,
-} from '@op/common';
+// IMPORTANT: keep this file self-contained (only `zod`). These encoders are
+// re-exported through ./index.ts, which client components import (e.g.
+// SiteHeader -> encoders/access). Importing the matching schemas from
+// `@op/common` to dedupe pulls server-only modules (services/db/client,
+// services/supabase/server) into the client bundle and breaks `next build`.
+// The shape duplication with @op/common/services/resources/schemas.ts is
+// intentional — do not collapse it into a re-export.
+import { z } from 'zod';
+
+export const attachmentSummaryEncoder = z.object({
+  storageObjectId: z.string().uuid(),
+  fileName: z.string(),
+  mimeType: z.string(),
+  fileSize: z.number().nullable(),
+});
+
+const resourceBaseShape = {
+  id: z.string().uuid(),
+  title: z.string(),
+  description: z.string().nullable(),
+  addedByProfileId: z.string().uuid().nullable(),
+  // Drizzle returns ISO strings (`mode: 'string'`). Not `z.coerce.date()` —
+  // tRPC skips `.output()` validation in prod, so the client gets the raw
+  // string and `.toISOString()` would blow up.
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+  signedUrl: z.string().nullable(),
+};
+
+const linkResourceEncoder = z.object({
+  ...resourceBaseShape,
+  type: z.literal('link'),
+  linkUrl: z.string(),
+  attachmentId: z.null(),
+  attachment: z.null(),
+});
+
+const documentResourceEncoder = z.object({
+  ...resourceBaseShape,
+  type: z.literal('document'),
+  linkUrl: z.null(),
+  attachmentId: z.string().uuid(),
+  attachment: attachmentSummaryEncoder,
+});
+
+export const resourceWithSignedUrlEncoder = z.discriminatedUnion('type', [
+  linkResourceEncoder,
+  documentResourceEncoder,
+]);
+
+const inCollectionFields = {
+  collectionId: z.string().uuid(),
+  sortKey: z.string(),
+};
+
+const linkResourceInCollectionEncoder = z.object({
+  ...resourceBaseShape,
+  ...inCollectionFields,
+  type: z.literal('link'),
+  linkUrl: z.string(),
+  attachmentId: z.null(),
+  attachment: z.null(),
+});
+
+const documentResourceInCollectionEncoder = z.object({
+  ...resourceBaseShape,
+  ...inCollectionFields,
+  type: z.literal('document'),
+  linkUrl: z.null(),
+  attachmentId: z.string().uuid(),
+  attachment: attachmentSummaryEncoder,
+});
+
+export const resourceInCollectionEncoder = z.discriminatedUnion('type', [
+  linkResourceInCollectionEncoder,
+  documentResourceInCollectionEncoder,
+]);
+
+export const resourceListEncoder = z.object({
+  collectionId: z.string().uuid().nullable(),
+  items: z.array(resourceInCollectionEncoder),
+  // Cursor (sortKey of the last item) for the next page; null at end.
+  next: z.string().nullable(),
+});
+
+export const collectionEncoder = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  sortKey: z.string(),
+  addedByProfileId: z.string().uuid().nullable(),
+  createdAt: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});
+
+export const collectionListEncoder = z.object({
+  items: z.array(collectionEncoder),
+  next: z.string().nullable(),
+});
