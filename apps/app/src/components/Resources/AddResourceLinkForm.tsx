@@ -29,8 +29,7 @@ export const AddResourceLinkForm = ({
   const t = useTranslations();
   const createLink = trpc.resources.createLink.useMutation({
     onSuccess: () => toast.success({ message: t('Resource added') }),
-    onError: (err) =>
-      toast.error({ message: err.message || t('Could not add resource') }),
+    onError: () => toast.error({ message: t('Could not add resource') }),
   });
 
   const [url, setUrl] = useState('');

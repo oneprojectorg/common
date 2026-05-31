@@ -37,8 +37,7 @@ export const AddResourceDocumentForm = ({
   const t = useTranslations();
   const createDocument = trpc.resources.createDocument.useMutation({
     onSuccess: () => toast.success({ message: t('Resource added') }),
-    onError: (err) =>
-      toast.error({ message: err.message || t('Could not add resource') }),
+    onError: () => toast.error({ message: t('Could not add resource') }),
   });
   const { upload, uploading, uploaded, reset } = useResourceUpload(profileId);
 
