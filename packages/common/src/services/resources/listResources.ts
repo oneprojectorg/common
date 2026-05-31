@@ -17,33 +17,20 @@ export const listResources = async ({
   limit?: number;
   cursor?: string | null;
 }): Promise<ResourceListResult> => {
-  // Try write first so write-capable callers create the Default collection
-  // lazily; fall back to read. Profile-ADMIN is already OR-checked inside
-  // assertProfileTypeAccess, so the zone check just needs to capture write
-  // capability.
-  let canWrite = true;
-  try {
-    await assertProfileTypeAccess({
-      user: { id: authUserId },
-      profileIds: [profileId],
-      policies: {
-        [EntityType.DECISION]: { decisions: permission.CREATE },
-      },
-    });
-  } catch {
-    canWrite = false;
-    await assertProfileTypeAccess({
-      user: { id: authUserId },
-      profileIds: [profileId],
-      policies: {
-        [EntityType.DECISION]: { decisions: permission.READ },
-      },
-    });
-  }
+  await assertProfileTypeAccess({
+    user: { id: authUserId },
+    profileIds: [profileId],
+    policies: {
+      [EntityType.DECISION]: { decisions: permission.READ },
+    },
+  });
 
+  // Listing never creates. The Default collection is created lazily on the
+  // first upload (createLink/createDocument -> resolveTargetCollection); until
+  // then a profile simply has no collection and we return an empty list.
   const collection = await resolveOrCreateDefaultCollection({
     profileId,
-    createIfMissing: canWrite,
+    createIfMissing: false,
   });
   if (!collection) {
     return { collectionId: null, items: [], next: null };

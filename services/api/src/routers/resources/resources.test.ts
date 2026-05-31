@@ -1,5 +1,8 @@
 import { and, db, eq } from '@op/db/client';
-import { resourceCollectionItems } from '@op/db/schema';
+import {
+  resourceCollectionItems,
+  resourceCollectionProfiles,
+} from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -161,6 +164,32 @@ describe('resources.list / listByCollection', () => {
     expect(result.items.map((r: ResourceInCollectionDTO) => r.id)).toContain(
       created.id,
     );
+  });
+
+  it('list returns empty WITHOUT creating a collection when the profile has no resources', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const { instance, adminCaller } = await setupInstance({
+      task,
+      onTestFinished,
+    });
+
+    const result = await adminCaller.resources.list({
+      profileId: instance.profileId,
+    });
+
+    expect(result.collectionId).toBeNull();
+    expect(result.items).toEqual([]);
+    expect(result.next).toBeNull();
+
+    // Listing is a pure read: it must not lazily create a Default collection.
+    // The collection is only created on the first upload.
+    const collections = await db
+      .select({ id: resourceCollectionProfiles.collectionId })
+      .from(resourceCollectionProfiles)
+      .where(eq(resourceCollectionProfiles.profileId, instance.profileId));
+    expect(collections).toHaveLength(0);
   });
 
   it('listByCollection rejects an outsider', async ({
