@@ -5,10 +5,22 @@ import { z } from 'zod';
 import { accessRoleMinimalSchema } from '../../access/schemas/accessRole';
 import { profileMinimalSchema } from './profileMinimal';
 
-// Base shape — one row of `profile_users`. Anonymous users have no email.
-export const profileUserSchema = createSelectSchema(profileUsers).extend({
-  email: z.string().nullable(),
-});
+// Member-facing shape of a `profile_users` row. Explicitly picked rather than a
+// full table select so columns aren't leaked at API boundaries by default — new
+// columns must be opted in here. Anonymous users have no email.
+export const profileUserSchema = createSelectSchema(profileUsers)
+  .pick({
+    id: true,
+    name: true,
+    about: true,
+    isOwner: true,
+    profileId: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    email: z.string().nullable(),
+  });
 
 export type ProfileUserBase = z.infer<typeof profileUserSchema>;
 
