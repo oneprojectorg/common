@@ -9,10 +9,7 @@ import {
 
 const auth = pgSchema('auth');
 
-// Locally declared mirror of Supabase's auth.users so we can expose columns
-// (like is_anonymous) that drizzle-orm/supabase doesn't model. drizzle-kit
-// only generates migrations for the `public` schema (see drizzle.config.ts
-// schemaFilter), so this declaration won't try to ALTER auth.users.
+// Partial mirror of Supabase's auth.users; only columns we read are listed.
 export const authUsers = auth.table('users', {
   id: uuid().primaryKey().notNull(),
   email: varchar({ length: 255 }),
