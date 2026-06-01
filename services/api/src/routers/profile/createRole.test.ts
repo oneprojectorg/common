@@ -146,3 +146,71 @@ describe.concurrent('profile.createRole', () => {
     );
   });
 });
+
+import {
+  describeGating,
+  expectPassesAuthGate,
+} from '../../test/helpers/gating';
+
+// Network gating matrix: profile.createRole sits on commonAuthedProcedure,
+// which rejects no-JWT and anon-JWT at the auth middleware. A normal
+// authenticated caller is admitted.
+describeGating('profile.createRole', {
+  noJwt: async ({ callers }) => {
+    const caller = await callers.noJwt();
+    await expect(
+      caller.profile.createRole({
+        profileId: '00000000-0000-0000-0000-000000000000',
+        zoneName: 'x',
+        name: 'x',
+        permissions: {
+          admin: false,
+          create: false,
+          read: false,
+          update: false,
+          delete: false,
+        },
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwt: async ({ callers }) => {
+    const caller = await callers.anonJwt();
+    await expect(
+      caller.profile.createRole({
+        profileId: '00000000-0000-0000-0000-000000000000',
+        zoneName: 'x',
+        name: 'x',
+        permissions: {
+          admin: false,
+          create: false,
+          read: false,
+          update: false,
+          delete: false,
+        },
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwt: async ({ callers }) => {
+    const caller = await callers.freshJwt();
+    await expectPassesAuthGate(
+      caller.profile.createRole({
+        profileId: '00000000-0000-0000-0000-000000000000',
+        zoneName: 'x',
+        name: 'x',
+        permissions: {
+          admin: false,
+          create: false,
+          read: false,
+          update: false,
+          delete: false,
+        },
+      }),
+    );
+  },
+});

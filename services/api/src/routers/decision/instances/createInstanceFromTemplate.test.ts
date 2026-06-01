@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { describeDecisionGating } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -341,4 +342,59 @@ describe.concurrent('createInstanceFromTemplate', () => {
     expect(instance!.ownerProfileId).toBe(userRecord!.profileId);
     expect(instance!.stewardProfileId).toBe(userRecord!.profileId);
   });
+});
+
+// Network gating matrix: createInstanceFromTemplate sits on
+// `commonAuthedProcedure`, which rejects no-JWT and anon-JWT at the auth
+// middleware. Common-JWT caller is admitted and can create from a real
+// template.
+describeDecisionGating('createInstanceFromTemplate', {
+  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const caller = await callers.noJwt();
+
+    await expect(
+      caller.decision.createInstanceFromTemplate({
+        templateId: '00000000-0000-0000-0000-000000000000',
+        name: `no-JWT ${task.id}`,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const caller = await callers.anonJwt();
+
+    await expect(
+      caller.decision.createInstanceFromTemplate({
+        templateId: '00000000-0000-0000-0000-000000000000',
+        name: `anon ${task.id}`,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { templateId, userEmail } = await createSimpleTemplate(
+      testData,
+      task.id,
+    );
+
+    const caller = await callers.existingJwt(userEmail);
+
+    const result = await caller.decision.createInstanceFromTemplate({
+      templateId,
+      name: `Common-JWT ${task.id}`,
+    });
+    expect(result.id).toBeDefined();
+    testData.trackProfileForCleanup(result.id);
+  },
 });

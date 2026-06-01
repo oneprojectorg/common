@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
+import { describeDecisionGating } from '../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -175,4 +176,130 @@ describe.concurrent('process survey submission', () => {
     });
     expect(after.hasResponded).toBe(true);
   });
+});
+
+// Network gating matrix: submitProcessSurveyResponse sits on
+// `commonAuthedProcedure`, which rejects no-JWT and anon-JWT at the auth
+// middleware. Common-JWT member with decision READ access is admitted.
+describeDecisionGating('submitProcessSurveyResponse', {
+  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+
+    const caller = await callers.noJwt();
+
+    await expect(
+      caller.decision.submitProcessSurveyResponse({
+        processInstanceId: instance.id,
+        internalData: sampleInternalData,
+        locale: 'en',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+
+    const caller = await callers.anonJwt();
+
+    await expect(
+      caller.decision.submitProcessSurveyResponse({
+        processInstanceId: instance.id,
+        internalData: sampleInternalData,
+        locale: 'en',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+
+    const caller = await callers.existingJwt(setup.userEmail);
+
+    const result = await caller.decision.submitProcessSurveyResponse({
+      processInstanceId: instance.id,
+      internalData: sampleInternalData,
+      locale: 'en',
+    });
+
+    expect(result.hasResponded).toBe(true);
+  },
+});
+
+// Network gating matrix: getProcessSurveyResponse sits on
+// `commonAuthedProcedure`, which rejects no-JWT and anon-JWT at the auth
+// middleware. Common-JWT member with decision READ access is admitted.
+describeDecisionGating('getProcessSurveyResponse', {
+  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+
+    const caller = await callers.noJwt();
+
+    await expect(
+      caller.decision.getProcessSurveyResponse({
+        processInstanceId: instance.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+
+    const caller = await callers.anonJwt();
+
+    await expect(
+      caller.decision.getProcessSurveyResponse({
+        processInstanceId: instance.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+
+    const caller = await callers.existingJwt(setup.userEmail);
+
+    const result = await caller.decision.getProcessSurveyResponse({
+      processInstanceId: instance.id,
+    });
+
+    expect(result).toBeDefined();
+  },
 });

@@ -743,3 +743,47 @@ describe.concurrent('profile.createJoinRequest', () => {
     expect(unmatchedOrgUsers).toHaveLength(0);
   });
 });
+
+import {
+  describeGating,
+  expectPassesAuthGate,
+} from '../../../test/helpers/gating';
+
+// Network gating matrix: profile.createJoinRequest sits on
+// commonAuthedProcedure, which rejects no-JWT and anon-JWT at the auth
+// middleware. A normal authenticated caller is admitted.
+describeGating('profile.createJoinRequest', {
+  noJwt: async ({ callers }) => {
+    const caller = await callers.noJwt();
+    await expect(
+      caller.profile.createJoinRequest({
+        requestProfileId: '00000000-0000-0000-0000-000000000000',
+        targetProfileId: '00000000-0000-0000-0000-000000000000',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwt: async ({ callers }) => {
+    const caller = await callers.anonJwt();
+    await expect(
+      caller.profile.createJoinRequest({
+        requestProfileId: '00000000-0000-0000-0000-000000000000',
+        targetProfileId: '00000000-0000-0000-0000-000000000000',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwt: async ({ callers }) => {
+    const caller = await callers.freshJwt();
+    await expectPassesAuthGate(
+      caller.profile.createJoinRequest({
+        requestProfileId: '00000000-0000-0000-0000-000000000000',
+        targetProfileId: '00000000-0000-0000-0000-000000000000',
+      }),
+    );
+  },
+});

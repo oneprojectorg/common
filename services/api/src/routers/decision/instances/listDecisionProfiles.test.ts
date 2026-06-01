@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { describeDecisionGating } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -499,4 +500,45 @@ describe.concurrent('listDecisionProfiles', () => {
 
     expect(pageCount).toBe(5);
   });
+});
+
+// Network gating matrix: listDecisionProfiles sits on
+// `commonAuthedProcedure`, which rejects no-JWT and anon-JWT at the auth
+// middleware. Common-JWT caller is admitted and gets back the list.
+describeDecisionGating('listDecisionProfiles', {
+  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const caller = await callers.noJwt();
+
+    await expect(
+      caller.decision.listDecisionProfiles({ limit: 10 }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const caller = await callers.anonJwt();
+
+    await expect(
+      caller.decision.listDecisionProfiles({ limit: 10 }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const caller = await callers.existingJwt(setup.userEmail);
+
+    const result = await caller.decision.listDecisionProfiles({ limit: 10 });
+    expect(result.items).toBeDefined();
+  },
 });

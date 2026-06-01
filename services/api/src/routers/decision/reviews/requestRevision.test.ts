@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
+import { describeDecisionGating } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -174,4 +175,58 @@ describe.concurrent('requestRevision', () => {
       cause: { name: 'UnauthorizedError' },
     });
   });
+});
+
+// Network gating matrix: requestRevision sits on `commonAuthedProcedure`,
+// which rejects no-JWT and anon-JWT at the auth middleware. Common-JWT
+// caller with a random assignmentId is admitted by the gate; the service
+// then rejects.
+describeDecisionGating('requestRevision', {
+  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    await testData.createContext();
+
+    const caller = await callers.noJwt();
+
+    await expect(
+      caller.decision.requestRevision({
+        assignmentId: crypto.randomUUID(),
+        requestComment: 'Should not reach',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    await testData.createContext();
+
+    const caller = await callers.anonJwt();
+
+    await expect(
+      caller.decision.requestRevision({
+        assignmentId: crypto.randomUUID(),
+        requestComment: 'Should not reach',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+
+    const caller = await callers.existingJwt(context.defaultReviewer.email);
+
+    await expect(
+      caller.decision.requestRevision({
+        assignmentId: crypto.randomUUID(),
+        requestComment: 'Past the gate; assignment missing',
+      }),
+    ).rejects.not.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
+  },
 });

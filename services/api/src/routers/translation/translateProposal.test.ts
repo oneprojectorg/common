@@ -8,6 +8,10 @@ import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import { TestTranslationDataManager } from '../../test/helpers/TestTranslationDataManager';
 import {
+  describeGating,
+  expectPassesAuthGate,
+} from '../../test/helpers/gating';
+import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../test/supabase-utils';
@@ -38,6 +42,45 @@ async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
 }
+
+// Network gating matrix: translation.translateProposal sits on
+// commonAuthedProcedure, which rejects no-JWT and anon-JWT at the auth
+// middleware. A normal authenticated caller is admitted.
+describeGating('translation.translateProposal', {
+  noJwt: async ({ callers }) => {
+    const caller = await callers.noJwt();
+    await expect(
+      caller.translation.translateProposal({
+        profileId: '00000000-0000-0000-0000-000000000000',
+        targetLocale: 'en',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwt: async ({ callers }) => {
+    const caller = await callers.anonJwt();
+    await expect(
+      caller.translation.translateProposal({
+        profileId: '00000000-0000-0000-0000-000000000000',
+        targetLocale: 'en',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwt: async ({ callers }) => {
+    const caller = await callers.freshJwt();
+    await expectPassesAuthGate(
+      caller.translation.translateProposal({
+        profileId: '00000000-0000-0000-0000-000000000000',
+        targetLocale: 'en',
+      }),
+    );
+  },
+});
 
 describe('translation.translateProposal', () => {
   beforeEach(() => {

@@ -1,4 +1,8 @@
-import { UnauthorizedError, isUserEmailPlatformAdmin } from '@op/common';
+import {
+  AuthenticationError,
+  UnauthorizedError,
+  isUserEmailPlatformAdmin,
+} from '@op/common';
 
 import { getCachedAuthUser } from '../supabase/server';
 import type { MiddlewareBuilderBase, TContextWithUser } from '../types';
@@ -17,11 +21,13 @@ export const withAuthenticatedPlatformAdmin: MiddlewareBuilderBase<
   const userEmail = user.email;
 
   if (!userEmail) {
-    throw new UnauthorizedError('User email is required for authentication');
+    throw new AuthenticationError('User email is required for authentication');
   }
 
   const isAdmin = isUserEmailPlatformAdmin(userEmail);
 
+  // Admin membership is authorization: the caller is authenticated (past the
+  // gate) but is not permitted to use this admin endpoint.
   if (!isAdmin) {
     throw new UnauthorizedError('Platform admin access required');
   }

@@ -376,3 +376,47 @@ describe.concurrent('profile.updateJoinRequest', () => {
     expect(memberships[0]?.id).toBe(existingMembership.id);
   });
 });
+
+import {
+  describeGating,
+  expectPassesAuthGate,
+} from '../../../test/helpers/gating';
+
+// Network gating matrix: profile.updateJoinRequest sits on
+// commonAuthedProcedure, which rejects no-JWT and anon-JWT at the auth
+// middleware. A normal authenticated caller is admitted.
+describeGating('profile.updateJoinRequest', {
+  noJwt: async ({ callers }) => {
+    const caller = await callers.noJwt();
+    await expect(
+      caller.profile.updateJoinRequest({
+        requestId: '00000000-0000-0000-0000-000000000000',
+        status: JoinProfileRequestStatus.APPROVED,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwt: async ({ callers }) => {
+    const caller = await callers.anonJwt();
+    await expect(
+      caller.profile.updateJoinRequest({
+        requestId: '00000000-0000-0000-0000-000000000000',
+        status: JoinProfileRequestStatus.APPROVED,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwt: async ({ callers }) => {
+    const caller = await callers.freshJwt();
+    await expectPassesAuthGate(
+      caller.profile.updateJoinRequest({
+        requestId: '00000000-0000-0000-0000-000000000000',
+        status: JoinProfileRequestStatus.APPROVED,
+      }),
+    );
+  },
+});

@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { describeDecisionGating } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -495,4 +496,72 @@ describe.concurrent('getCategories category matching', () => {
       }),
     );
   });
+});
+
+// Network gating matrix: getCategories sits on `commonAuthedProcedure`,
+// which rejects no-JWT and anon-JWT at the auth middleware. Common-JWT
+// owner is admitted and gets back the (empty) categories list.
+describeDecisionGating('getCategories', {
+  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await callers.noJwt();
+
+    await expect(
+      caller.decision.getCategories({
+        processInstanceId: instance.instance.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await callers.anonJwt();
+
+    await expect(
+      caller.decision.getCategories({
+        processInstanceId: instance.instance.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await callers.existingJwt(setup.userEmail);
+
+    const result = await caller.decision.getCategories({
+      processInstanceId: instance.instance.id,
+    });
+    expect(result.categories).toBeDefined();
+  },
 });

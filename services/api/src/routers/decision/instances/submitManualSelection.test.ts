@@ -16,6 +16,7 @@ import type { z } from 'zod';
 import { appRouter } from '../..';
 import type { decisionSchemaDefinitionEncoder } from '../../../encoders/decision';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { describeDecisionGating } from '../../../test/helpers/gating/decision';
 import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 import {
   createIsolatedSession,
@@ -666,4 +667,79 @@ describe.concurrent('submitManualSelection', () => {
     );
     expect(transitionCalls).toHaveLength(0);
   });
+});
+
+// Network gating matrix: submitManualSelection sits on
+// `commonAuthedProcedure`, which rejects no-JWT and anon-JWT at the auth
+// middleware. Common-JWT owner passes the gate; whether the selection
+// succeeds depends on phase state.
+describeDecisionGating('submitManualSelection', {
+  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await callers.noJwt();
+
+    await expect(
+      caller.decision.submitManualSelection({
+        processInstanceId: instance.instance.id,
+        proposalIds: [crypto.randomUUID()],
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await callers.anonJwt();
+
+    await expect(
+      caller.decision.submitManualSelection({
+        processInstanceId: instance.instance.id,
+        proposalIds: [crypto.randomUUID()],
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await callers.existingJwt(setup.userEmail);
+
+    await expect(
+      caller.decision.submitManualSelection({
+        processInstanceId: instance.instance.id,
+        proposalIds: [crypto.randomUUID()],
+      }),
+    ).rejects.not.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
+  },
 });

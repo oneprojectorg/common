@@ -13,6 +13,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { describeDecisionGating } from '../../../test/helpers/gating/decision';
 import { schemaWithPipeline } from '../../../test/helpers/pipelineSchemas';
 import {
   createIsolatedSession,
@@ -435,4 +436,73 @@ describe.concurrent('listAllProposals', () => {
     expect(returnedIds).not.toContain(outOne.id);
     expect(returnedIds).not.toContain(outTwo.id);
   });
+});
+
+// Network gating matrix: listAllProposals sits on `commonAuthedProcedure`,
+// which rejects no-JWT and anon-JWT at the auth middleware. Common-JWT
+// owner is admitted and sees the instance's proposals.
+describeDecisionGating('listAllProposals', {
+  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await callers.noJwt();
+
+    await expect(
+      caller.decision.listAllProposals({
+        processInstanceId: instance.instance.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await callers.anonJwt();
+
+    await expect(
+      caller.decision.listAllProposals({
+        processInstanceId: instance.instance.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await callers.existingJwt(setup.userEmail);
+
+    const result = await caller.decision.listAllProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.items).toBeDefined();
+  },
 });

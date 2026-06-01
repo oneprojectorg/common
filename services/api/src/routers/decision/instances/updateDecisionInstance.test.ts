@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { describeDecisionGating } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -903,4 +904,75 @@ describe.concurrent('updateDecisionInstance', () => {
 
     expect(result.processInstance.name).toBe(newName);
   });
+});
+
+// Network gating matrix: updateDecisionInstance sits on
+// `commonAuthedProcedure`, which rejects no-JWT and anon-JWT at the auth
+// middleware. Common-JWT owner is admitted and can rename the instance.
+describeDecisionGating('updateDecisionInstance', {
+  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await callers.noJwt();
+
+    await expect(
+      caller.decision.updateDecisionInstance({
+        instanceId: instance.instance.id,
+        name: 'should not reach',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await callers.anonJwt();
+
+    await expect(
+      caller.decision.updateDecisionInstance({
+        instanceId: instance.instance.id,
+        name: 'should bounce',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await callers.existingJwt(setup.userEmail);
+
+    const result = await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      name: `Renamed ${task.id}`,
+    });
+    expect(result.processInstance.name).toBe(`Renamed ${task.id}`);
+  },
 });

@@ -5,10 +5,44 @@ import { platformAdminRouter } from '.';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
+  describeGating,
+  expectPassesAuthGate,
+} from '../../../test/helpers/gating';
+import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
+
+// Network gating matrix: platform.admin.listAllDecisionInstances sits on
+// withAuthenticatedPlatformAdmin, which rejects no-JWT and anon-JWT at the auth
+// middleware. A normal authenticated caller is admitted.
+describeGating('platform.admin.listAllDecisionInstances', {
+  noJwt: async ({ callers }) => {
+    const caller = await callers.noJwt();
+    await expect(
+      caller.platform.admin.listAllDecisionInstances(),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwt: async ({ callers }) => {
+    const caller = await callers.anonJwt();
+    await expect(
+      caller.platform.admin.listAllDecisionInstances(),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwt: async ({ callers }) => {
+    const caller = await callers.freshJwt();
+    await expectPassesAuthGate(
+      caller.platform.admin.listAllDecisionInstances(),
+    );
+  },
+});
 
 describe.concurrent('platform.admin.listAllDecisionInstances', () => {
   const createCaller = createCallerFactory(platformAdminRouter);

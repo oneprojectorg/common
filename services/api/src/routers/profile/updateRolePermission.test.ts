@@ -414,3 +414,65 @@ describe.concurrent('profile.updateRolePermission', () => {
     expect(permissions.length).toBe(0);
   });
 });
+
+import {
+  describeGating,
+  expectPassesAuthGate,
+} from '../../test/helpers/gating';
+
+// Network gating matrix: profile.updateRolePermission sits on
+// commonAuthedProcedure, which rejects no-JWT and anon-JWT at the auth
+// middleware. A normal authenticated caller is admitted.
+describeGating('profile.updateRolePermission', {
+  noJwt: async ({ callers }) => {
+    const caller = await callers.noJwt();
+    await expect(
+      caller.profile.updateRolePermission({
+        roleId: '00000000-0000-0000-0000-000000000000',
+        permissions: {
+          admin: false,
+          create: false,
+          read: false,
+          update: false,
+          delete: false,
+        },
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwt: async ({ callers }) => {
+    const caller = await callers.anonJwt();
+    await expect(
+      caller.profile.updateRolePermission({
+        roleId: '00000000-0000-0000-0000-000000000000',
+        permissions: {
+          admin: false,
+          create: false,
+          read: false,
+          update: false,
+          delete: false,
+        },
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwt: async ({ callers }) => {
+    const caller = await callers.freshJwt();
+    await expectPassesAuthGate(
+      caller.profile.updateRolePermission({
+        roleId: '00000000-0000-0000-0000-000000000000',
+        permissions: {
+          admin: false,
+          create: false,
+          read: false,
+          update: false,
+          delete: false,
+        },
+      }),
+    );
+  },
+});

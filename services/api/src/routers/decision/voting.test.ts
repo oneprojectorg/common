@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
+import { describeDecisionGating } from '../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -218,4 +219,115 @@ describe.concurrent('getVotingStatus', () => {
 
     expect(status.votingConfiguration.maxVotesPerMember).toBe(3);
   });
+});
+
+// Network gating matrix: submitVote sits on `commonAuthedProcedure`, which
+// rejects no-JWT and anon-JWT at the auth middleware. Common-JWT member is
+// admitted and can cast a vote in the voting phase.
+describeDecisionGating('submitVote', {
+  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 1,
+    });
+
+    const caller = await callers.noJwt();
+
+    await expect(
+      caller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: [proposals[0]!.id],
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 1,
+    });
+
+    const caller = await callers.anonJwt();
+
+    await expect(
+      caller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: [proposals[0]!.id],
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 1,
+    });
+
+    const caller = await callers.existingJwt(setup.userEmail);
+
+    const result = await caller.decision.submitVote({
+      processInstanceId: instance.instance.id,
+      selectedProposalIds: [proposals[0]!.id],
+    });
+
+    expect(result.selectedProposalIds).toEqual([proposals[0]!.id]);
+  },
+});
+
+// Network gating matrix: getVotingStatus sits on `commonAuthedProcedure`,
+// which rejects no-JWT and anon-JWT at the auth middleware. Common-JWT
+// member is admitted and reads the voting configuration.
+describeDecisionGating('getVotingStatus', {
+  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instance } = await setupVotingInstance(testData, {
+      proposalCount: 0,
+    });
+
+    const caller = await callers.noJwt();
+
+    await expect(
+      caller.decision.getVotingStatus({
+        processInstanceId: instance.instance.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instance } = await setupVotingInstance(testData, {
+      proposalCount: 0,
+    });
+
+    const caller = await callers.anonJwt();
+
+    await expect(
+      caller.decision.getVotingStatus({
+        processInstanceId: instance.instance.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { setup, instance } = await setupVotingInstance(testData, {
+      proposalCount: 0,
+    });
+
+    const caller = await callers.existingJwt(setup.userEmail);
+
+    const status = await caller.decision.getVotingStatus({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(status.votingConfiguration).toBeDefined();
+  },
 });

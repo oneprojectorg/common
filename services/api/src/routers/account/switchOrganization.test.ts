@@ -5,6 +5,10 @@ import { describe, expect, it } from 'vitest';
 
 import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
+  describeGating,
+  expectPassesAuthGate,
+} from '../../test/helpers/gating';
+import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../test/supabase-utils';
@@ -121,4 +125,34 @@ describe.concurrent('account.switchOrganization', () => {
       },
     });
   });
+});
+
+// Network gating matrix: account.switchOrganization sits on
+// commonAuthedProcedure, which rejects no-JWT and anon-JWT at the auth
+// middleware. A normal authenticated caller is admitted.
+describeGating('account.switchOrganization', {
+  noJwt: async ({ callers }) => {
+    const caller = await callers.noJwt();
+    await expect(
+      caller.account.switchOrganization({ organizationId: 'x' }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwt: async ({ callers }) => {
+    const caller = await callers.anonJwt();
+    await expect(
+      caller.account.switchOrganization({ organizationId: 'x' }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwt: async ({ callers }) => {
+    const caller = await callers.freshJwt();
+    await expectPassesAuthGate(
+      caller.account.switchOrganization({ organizationId: 'x' }),
+    );
+  },
 });

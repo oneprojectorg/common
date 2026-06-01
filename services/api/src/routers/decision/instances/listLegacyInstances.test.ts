@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { describeDecisionGating } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -350,4 +351,60 @@ describe.concurrent('listLegacyInstances', () => {
     expect(instance.owner).toBeDefined();
     expect(instance.owner?.id).toBe(setup.organization.profileId);
   });
+});
+
+// Network gating matrix: listLegacyInstances sits on
+// `commonAuthedProcedure`, which rejects no-JWT and anon-JWT at the auth
+// middleware. Common-JWT owner is admitted and gets back the list.
+describeDecisionGating('listLegacyInstances', {
+  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const caller = await callers.noJwt();
+
+    await expect(
+      caller.decision.listLegacyInstances({
+        ownerProfileId: setup.organization.profileId,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const caller = await callers.anonJwt();
+
+    await expect(
+      caller.decision.listLegacyInstances({
+        ownerProfileId: setup.organization.profileId,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const caller = await callers.existingJwt(setup.userEmail);
+
+    const result = await caller.decision.listLegacyInstances({
+      ownerProfileId: setup.organization.profileId,
+    });
+    expect(Array.isArray(result)).toBe(true);
+  },
 });

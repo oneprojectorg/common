@@ -3,6 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { organizationRouter } from '.';
 import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
+  describeGating,
+  expectPassesAuthGate,
+} from '../../test/helpers/gating';
+import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../test/supabase-utils';
@@ -139,4 +143,28 @@ describe.concurrent('organization.list', () => {
 
     expect(reachedEnd).toBe(true);
   });
+});
+
+// Network gating matrix: organization.list sits on commonAuthedProcedure, which
+// rejects no-JWT and anon-JWT at the auth middleware. A normal authenticated
+// caller is admitted. The input is fully optional, so no argument is required.
+describeGating('organization.list', {
+  noJwt: async ({ callers }) => {
+    const caller = await callers.noJwt();
+    await expect(caller.organization.list()).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwt: async ({ callers }) => {
+    const caller = await callers.anonJwt();
+    await expect(caller.organization.list()).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwt: async ({ callers }) => {
+    const caller = await callers.freshJwt();
+    await expectPassesAuthGate(caller.organization.list());
+  },
 });

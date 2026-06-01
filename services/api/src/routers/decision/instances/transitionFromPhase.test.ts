@@ -11,6 +11,7 @@ import { type MockInstance, describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { describeDecisionGating } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -431,4 +432,70 @@ describe('transitionFromPhase', () => {
     });
     expect(dbInstance!.currentStateId).toBe('final');
   });
+});
+
+// Network gating matrix: transitionFromPhase sits on `commonAuthedProcedure`,
+// which rejects no-JWT and anon-JWT at the auth middleware. Common-JWT
+// caller passes the gate; whether the transition succeeds depends on phase
+// state, so the assertion is "passed the gate."
+describeDecisionGating('transitionFromPhase', {
+  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await callers.noJwt();
+
+    await expect(
+      caller.decision.transitionFromPhase({ instanceId: instance.instance.id }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await callers.anonJwt();
+
+    await expect(
+      caller.decision.transitionFromPhase({ instanceId: instance.instance.id }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await callers.existingJwt(setup.userEmail);
+
+    await expect(
+      caller.decision.transitionFromPhase({ instanceId: instance.instance.id }),
+    ).rejects.not.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
+  },
 });

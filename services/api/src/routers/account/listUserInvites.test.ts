@@ -12,6 +12,10 @@ import { describe, expect, it } from 'vitest';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import { TestProfileUserDataManager } from '../../test/helpers/TestProfileUserDataManager';
 import {
+  describeGating,
+  expectPassesAuthGate,
+} from '../../test/helpers/gating';
+import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../test/supabase-utils';
@@ -405,4 +409,28 @@ describe.concurrent('account.listUserInvites', () => {
 
     expect(result).toHaveLength(0);
   });
+});
+
+// Network gating matrix: account.listUserInvites sits on
+// commonAuthedProcedure, which rejects no-JWT and anon-JWT at the auth
+// middleware. A normal authenticated caller is admitted.
+describeGating('account.listUserInvites', {
+  noJwt: async ({ callers }) => {
+    const caller = await callers.noJwt();
+    await expect(caller.account.listUserInvites({})).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwt: async ({ callers }) => {
+    const caller = await callers.anonJwt();
+    await expect(caller.account.listUserInvites({})).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwt: async ({ callers }) => {
+    const caller = await callers.freshJwt();
+    await expectPassesAuthGate(caller.account.listUserInvites({}));
+  },
 });

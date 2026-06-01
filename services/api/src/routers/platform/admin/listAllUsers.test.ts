@@ -3,10 +3,38 @@ import { describe, expect, it } from 'vitest';
 import { platformAdminRouter } from '.';
 import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
+  describeGating,
+  expectPassesAuthGate,
+} from '../../../test/helpers/gating';
+import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
+
+// Network gating matrix: platform.admin.listAllUsers sits on
+// withAuthenticatedPlatformAdmin, which rejects no-JWT and anon-JWT at the auth
+// middleware. A normal authenticated caller is admitted.
+describeGating('platform.admin.listAllUsers', {
+  noJwt: async ({ callers }) => {
+    const caller = await callers.noJwt();
+    await expect(caller.platform.admin.listAllUsers()).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwt: async ({ callers }) => {
+    const caller = await callers.anonJwt();
+    await expect(caller.platform.admin.listAllUsers()).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwt: async ({ callers }) => {
+    const caller = await callers.freshJwt();
+    await expectPassesAuthGate(caller.platform.admin.listAllUsers());
+  },
+});
 
 describe.concurrent('platform.admin.listAllUsers', () => {
   const createCaller = createCallerFactory(platformAdminRouter);

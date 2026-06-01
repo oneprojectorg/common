@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { describeDecisionGating } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -568,4 +569,89 @@ describe.concurrent('getLatestSelectionForProposal', () => {
       selectionRank: 1,
     });
   });
+});
+
+// Network gating matrix: getLatestSelectionForProposal sits on
+// `commonAuthedProcedure`, which rejects no-JWT and anon-JWT at the auth
+// middleware. Common-JWT owner is admitted and gets the (possibly null)
+// selection back.
+describeDecisionGating('getLatestSelectionForProposal', {
+  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'no-JWT should not reach this' },
+    });
+
+    const caller = await callers.noJwt();
+
+    await expect(
+      caller.decision.getLatestSelectionForProposal({
+        proposalId: proposal.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'anon should bounce' },
+    });
+
+    const caller = await callers.anonJwt();
+
+    await expect(
+      caller.decision.getLatestSelectionForProposal({
+        proposalId: proposal.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Common-JWT owner reads selection' },
+    });
+
+    const caller = await callers.existingJwt(setup.userEmail);
+
+    // No selection has been recorded; nullable output expected.
+    const result = await caller.decision.getLatestSelectionForProposal({
+      proposalId: proposal.id,
+    });
+    expect(result).toBeNull();
+  },
 });

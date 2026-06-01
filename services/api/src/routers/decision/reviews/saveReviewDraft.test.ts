@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
+import { describeDecisionGating } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -290,4 +291,58 @@ describe.concurrent('saveReviewDraft', () => {
       ProposalReviewAssignmentStatus.READY_FOR_RE_REVIEW,
     );
   });
+});
+
+// Network gating matrix: saveReviewDraft sits on `commonAuthedProcedure`,
+// which rejects no-JWT and anon-JWT at the auth middleware. Common-JWT
+// caller with a random assignmentId is admitted by the gate; the service
+// then rejects.
+describeDecisionGating('saveReviewDraft', {
+  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    await testData.createContext();
+
+    const caller = await callers.noJwt();
+
+    await expect(
+      caller.decision.saveReviewDraft({
+        assignmentId: crypto.randomUUID(),
+        reviewData: {},
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    await testData.createContext();
+
+    const caller = await callers.anonJwt();
+
+    await expect(
+      caller.decision.saveReviewDraft({
+        assignmentId: crypto.randomUUID(),
+        reviewData: {},
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+
+    const caller = await callers.existingJwt(context.defaultReviewer.email);
+
+    await expect(
+      caller.decision.saveReviewDraft({
+        assignmentId: crypto.randomUUID(),
+        reviewData: {},
+      }),
+    ).rejects.not.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
+  },
 });

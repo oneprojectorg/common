@@ -391,3 +391,32 @@ describe.concurrent('profile.listRoles', () => {
     expect(result.next).toBeNull();
   });
 });
+
+import {
+  describeGating,
+  expectPassesAuthGate,
+} from '../../test/helpers/gating';
+
+// Network gating matrix: profile.listRoles sits on commonAuthedProcedure,
+// which rejects no-JWT and anon-JWT at the auth middleware. A normal
+// authenticated caller is admitted.
+describeGating('profile.listRoles', {
+  noJwt: async ({ callers }) => {
+    const caller = await callers.noJwt();
+    await expect(caller.profile.listRoles({})).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwt: async ({ callers }) => {
+    const caller = await callers.anonJwt();
+    await expect(caller.profile.listRoles({})).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwt: async ({ callers }) => {
+    const caller = await callers.freshJwt();
+    await expectPassesAuthGate(caller.profile.listRoles({}));
+  },
+});

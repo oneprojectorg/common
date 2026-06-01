@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
+import { describeDecisionGating } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -140,4 +141,46 @@ describe.concurrent('listProposalsRevisionRequests', () => {
     // Should only see their own proposals (which have no revision requests)
     expect(result.revisionRequests).toHaveLength(0);
   });
+});
+
+// Network gating matrix: listProposalsRevisionRequests sits on
+// `commonAuthedProcedure`, which rejects no-JWT and anon-JWT at the auth
+// middleware. Common-JWT caller is admitted and gets back the (possibly
+// empty) revision-request list.
+describeDecisionGating('listProposalsRevisionRequests', {
+  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    await testData.createContext();
+
+    const caller = await callers.noJwt();
+
+    await expect(
+      caller.decision.listProposalsRevisionRequests({}),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    await testData.createContext();
+
+    const caller = await callers.anonJwt();
+
+    await expect(
+      caller.decision.listProposalsRevisionRequests({}),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+
+    const caller = await callers.existingJwt(context.defaultReviewer.email);
+
+    const result = await caller.decision.listProposalsRevisionRequests({});
+    expect(result.revisionRequests).toBeDefined();
+  },
 });

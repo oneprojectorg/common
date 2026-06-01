@@ -18,6 +18,7 @@ import { transformFormDataToProcessSchema as cowopSchema } from '../../../../../
 import { transformFormDataToProcessSchema as horizonSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/horizon';
 import { transformFormDataToProcessSchema as simpleSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/simple';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import { describeDecisionGating } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -1576,4 +1577,88 @@ describe.concurrent('getProposal', () => {
     expect(result.id).toBe(proposal.id);
     expect(result.status).toBe(ProposalStatus.SUBMITTED);
   });
+});
+
+// Network gating matrix: getProposal sits on `commonAuthedProcedure`, which
+// rejects no-JWT and anon-JWT at the auth middleware. Common-JWT owner is
+// admitted and can read their proposal.
+describeDecisionGating('getProposal', {
+  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'no-JWT should not reach this' },
+    });
+
+    const caller = await callers.noJwt();
+
+    await expect(
+      caller.decision.getProposal({ profileId: proposal.profileId }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'anon should bounce' },
+    });
+
+    const caller = await callers.anonJwt();
+
+    await expect(
+      caller.decision.getProposal({ profileId: proposal.profileId }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Common-JWT owner read' },
+    });
+
+    const caller = await callers.existingJwt(setup.userEmail);
+
+    const result = await caller.decision.getProposal({
+      profileId: proposal.profileId,
+    });
+
+    expect(result.id).toBe(proposal.id);
+    expect(result.profileId).toBe(proposal.profileId);
+  },
 });

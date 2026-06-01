@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
+import { describeDecisionGating } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -460,4 +461,63 @@ describe('computeDaysLeft', () => {
       }),
     ).toBeNull();
   });
+});
+
+// Network gating matrix: getPhaseReviewProgress sits on
+// `commonAuthedProcedure`, which rejects no-JWT and anon-JWT at the auth
+// middleware. Common-JWT defaultReviewer is admitted.
+describeDecisionGating('getPhaseReviewProgress', {
+  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+
+    const caller = await callers.noJwt();
+
+    await expect(
+      caller.decision.getPhaseReviewProgress({
+        processInstanceId: context.instance.instance.id,
+        phaseId: 'review',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+
+    const caller = await callers.anonJwt();
+
+    await expect(
+      caller.decision.getPhaseReviewProgress({
+        processInstanceId: context.instance.instance.id,
+        phaseId: 'review',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthenticationError' },
+    });
+  },
+
+  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+
+    const caller = await callers.existingJwt(context.defaultReviewer.email);
+
+    // Passes the gate if the call resolves OR rejects with anything other
+    // than UnauthorizedError.
+    let caught: unknown;
+    try {
+      await caller.decision.getPhaseReviewProgress({
+        processInstanceId: context.instance.instance.id,
+        phaseId: 'review',
+      });
+    } catch (err) {
+      caught = err;
+    }
+    expect((caught as { cause?: { name?: string } })?.cause?.name).not.toBe(
+      'UnauthorizedError',
+    );
+  },
 });
