@@ -3,7 +3,6 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
-import { createClient } from '@op/api/serverClient';
 import { Skeleton } from '@op/ui/Skeleton';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
@@ -47,10 +46,11 @@ export async function generateMetadata({
   const { id } = await params;
 
   try {
-    const client = await createClient();
-    const instance = await client.decision.getLegacyInstance({
-      instanceId: id,
-    });
+    const { utils } = await createServerUtils();
+    const instance = await utils.decision.getLegacyInstance.fetch(
+      { instanceId: id },
+      { staleTime: 30_000 },
+    );
     return instance?.name ? { title: instance.name } : {};
   } catch {
     return {};
@@ -65,7 +65,10 @@ const DecisionInstancePageContent = async ({
   slug: string;
 }) => {
   const { utils, queryClient } = await createServerUtils();
-  await utils.decision.getLegacyInstance.prefetch({ instanceId });
+  await utils.decision.getLegacyInstance.prefetch(
+    { instanceId },
+    { staleTime: 30_000 },
+  );
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

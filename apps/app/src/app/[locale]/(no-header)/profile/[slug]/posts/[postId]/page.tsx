@@ -1,24 +1,75 @@
-'use client';
-
+import {
+  HydrationBoundary,
+  createServerUtils,
+  dehydrate,
+} from '@op/api/server';
 import { Skeleton } from '@op/ui/Skeleton';
-import { useParams } from 'next/navigation';
+import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { PostDetail } from '@/components/posts/PostDetailView';
 
-const PostDetailPage = () => {
-  const { postId, slug } = useParams<{
-    postId: string;
-    slug: string;
-  }>();
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ postId: string; slug: string; locale: string }>;
+}): Promise<Metadata> {
+  const { postId, slug, locale } = await params;
+
+  try {
+    const [{ utils }, t] = await Promise.all([
+      createServerUtils(),
+      getTranslations({ locale }),
+    ]);
+    const [post, organization] = await Promise.all([
+      utils.posts.getPost.fetch(
+        { postId, includeChildren: false },
+        { staleTime: 30_000 },
+      ),
+      utils.organization.getBySlug.fetch({ slug }, { staleTime: 30_000 }),
+    ]);
+
+    if (!post) {
+      return {};
+    }
+
+    const label = t('Post');
+    const orgName = organization?.profile?.name;
+    return { title: orgName ? `${label} | ${orgName}` : label };
+  } catch {
+    return {};
+  }
+}
+
+const PostDetailPage = async ({
+  params,
+}: {
+  params: Promise<{ postId: string; slug: string }>;
+}) => {
+  const { postId, slug } = await params;
+  const { utils, queryClient } = await createServerUtils();
+
+  // Prefetch on the server so the client useSuspenseQuery hydrates without a
+  // second request. Shares the cached queryClient with generateMetadata above
+  // (staleTime), so each query resolves once per request.
+  await Promise.all([
+    utils.posts.getPost.prefetch(
+      { postId, includeChildren: false },
+      { staleTime: 30_000 },
+    ),
+    utils.organization.getBySlug.prefetch({ slug }, { staleTime: 30_000 }),
+  ]).catch(() => {});
 
   return (
-    <ErrorBoundary>
-      <Suspense fallback={<PostDetailPageSkeleton />}>
-        <PostDetail postId={postId} slug={slug} />
-      </Suspense>
-    </ErrorBoundary>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <ErrorBoundary>
+        <Suspense fallback={<PostDetailPageSkeleton />}>
+          <PostDetail postId={postId} slug={slug} />
+        </Suspense>
+      </ErrorBoundary>
+    </HydrationBoundary>
   );
 };
 

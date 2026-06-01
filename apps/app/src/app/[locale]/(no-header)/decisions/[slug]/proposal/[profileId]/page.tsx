@@ -1,140 +1,59 @@
-'use client';
+import {
+  HydrationBoundary,
+  createServerUtils,
+  dehydrate,
+} from '@op/api/server';
+import type { Metadata } from 'next';
 
-import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { useUser } from '@/utils/UserProvider';
-import { trpc } from '@op/api/client';
-import { isLastPhase } from '@op/common/client';
-import { APP_NAME } from '@op/core';
-import { notFound, useParams } from 'next/navigation';
-import { Suspense, useEffect } from 'react';
+import { ProposalViewClient } from './ProposalViewClient';
 
-import { ProposalView } from '@/components/decisions/ProposalView';
-
-function ProposalViewPageContent({
-  profileId,
-  slug,
+export async function generateMetadata({
+  params,
 }: {
-  profileId: string;
-  slug: string;
-}) {
-  const [[proposal, decisionProfile]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getProposal({ profileId }),
-    t.decision.getDecisionBySlug({ slug }),
-  ]);
+  params: Promise<{ slug: string; profileId: string }>;
+}): Promise<Metadata> {
+  const { slug, profileId } = await params;
 
-  if (!proposal) {
-    notFound();
+  try {
+    const { utils } = await createServerUtils();
+    const [proposal, decisionProfile] = await Promise.all([
+      utils.decision.getProposal.fetch({ profileId }, { staleTime: 30_000 }),
+      utils.decision.getDecisionBySlug.fetch({ slug }, { staleTime: 30_000 }),
+    ]);
+
+    const proposalTitle = proposal?.proposalData?.title;
+    if (!proposalTitle) {
+      return {};
+    }
+
+    const decisionName = decisionProfile?.name;
+    return {
+      title: decisionName
+        ? `${proposalTitle} | ${decisionName}`
+        : proposalTitle,
+    };
+  } catch {
+    return {};
   }
-
-  const instance = decisionProfile.processInstance;
-  const { user } = useUser();
-
-  // Set the document title client-side from already-fetched data. The proposal
-  // query carries a "proposal viewed" analytics side effect, so we deliberately
-  // avoid a server-side generateMetadata fetch (which would double-count views).
-  const proposalTitle = proposal.proposalData?.title;
-  useEffect(() => {
-    const parts = [proposalTitle, decisionProfile.name, APP_NAME].filter(
-      Boolean,
-    );
-    document.title = parts.join(' | ');
-  }, [proposalTitle, decisionProfile.name]);
-
-  const phases = instance.instanceData?.phases ?? [];
-  const currentPhase = phases.find(
-    (phase) => phase.phaseId === instance.currentStateId,
-  );
-  const isInReviewPhase = currentPhase?.rules?.proposals?.review === true;
-  const isAuthor =
-    !!user.currentProfile?.id &&
-    proposal.submittedBy?.id === user.currentProfile.id;
-  // Author, admin, or explicit review access — only in a review phase.
-  const canSeeRevisions =
-    isInReviewPhase &&
-    (isAuthor ||
-      instance.access?.admin === true ||
-      instance.access?.review === true);
-
-  // Selections only make sense once we've reached the final/results phase.
-  const inLastPhase = isLastPhase(instance.currentStateId, phases);
-  const { data: selection } =
-    trpc.decision.getLatestSelectionForProposal.useQuery(
-      { proposalId: proposal.id },
-      { enabled: inLastPhase },
-    );
-
-  return (
-    <ProposalView
-      proposal={proposal}
-      canSeeRevisions={canSeeRevisions}
-      backHref={`/decisions/${slug}`}
-      selection={selection ?? null}
-    />
-  );
 }
 
-function ProposalViewPageSkeleton() {
-  return (
-    <div className="flex min-h-screen flex-col">
-      {/* Header loading */}
-      <div className="flex items-center justify-between border-b bg-white px-6 py-4">
-        <div className="h-6 w-32 animate-pulse rounded bg-gray-200" />
-        <div className="h-6 w-48 animate-pulse rounded bg-gray-200" />
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-20 animate-pulse rounded bg-gray-200" />
-          <div className="h-10 w-24 animate-pulse rounded bg-gray-200" />
-          <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200" />
-        </div>
-      </div>
+const ProposalViewPage = async ({
+  params,
+}: {
+  params: Promise<{ slug: string; profileId: string }>;
+}) => {
+  const { slug, profileId } = await params;
+  const { utils, queryClient } = await createServerUtils();
 
-      {/* Content loading */}
-      <div className="flex-1 bg-white px-6 py-8">
-        <div className="mx-auto max-w-4xl space-y-6">
-          <div className="h-12 w-96 animate-pulse rounded bg-gray-200" />
-          <div className="flex gap-4">
-            <div className="h-8 w-32 animate-pulse rounded bg-gray-200" />
-            <div className="h-8 w-28 animate-pulse rounded bg-gray-200" />
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200" />
-            <div className="space-y-1">
-              <div className="h-4 w-32 animate-pulse rounded bg-gray-200" />
-              <div className="h-3 w-24 animate-pulse rounded bg-gray-200" />
-            </div>
-          </div>
-          <div className="flex gap-6 border-b pb-4">
-            <div className="h-4 w-16 animate-pulse rounded bg-gray-200" />
-            <div className="h-4 w-20 animate-pulse rounded bg-gray-200" />
-            <div className="h-4 w-18 animate-pulse rounded bg-gray-200" />
-          </div>
-          <div className="mt-6 space-y-4">
-            <div className="h-4 w-full animate-pulse rounded bg-gray-200" />
-            <div className="h-4 w-3/4 animate-pulse rounded bg-gray-200" />
-            <div className="h-4 w-5/6 animate-pulse rounded bg-gray-200" />
-            <div className="h-4 w-1/2 animate-pulse rounded bg-gray-200" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const ProposalViewPage = () => {
-  const { profileId, slug } = useParams<{
-    profileId: string;
-    slug: string;
-  }>();
+  await Promise.all([
+    utils.decision.getProposal.prefetch({ profileId }, { staleTime: 30_000 }),
+    utils.decision.getDecisionBySlug.prefetch({ slug }, { staleTime: 30_000 }),
+  ]).catch(() => {});
 
   return (
-    <APIErrorBoundary
-      fallbacks={{
-        404: () => notFound(),
-      }}
-    >
-      <Suspense fallback={<ProposalViewPageSkeleton />}>
-        <ProposalViewPageContent profileId={profileId} slug={slug} />
-      </Suspense>
-    </APIErrorBoundary>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <ProposalViewClient profileId={profileId} slug={slug} />
+    </HydrationBoundary>
   );
 };
 

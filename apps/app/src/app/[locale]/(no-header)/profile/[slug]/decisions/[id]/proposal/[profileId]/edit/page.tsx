@@ -1,101 +1,74 @@
-'use client';
+import {
+  HydrationBoundary,
+  createServerUtils,
+  dehydrate,
+} from '@op/api/server';
+import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
-import { trpc } from '@op/api/client';
-import { APP_NAME } from '@op/core';
-import { notFound, useParams } from 'next/navigation';
-import { Suspense, useEffect } from 'react';
+import { LegacyProposalEditClient } from './ProposalEditClient';
 
-import { useTranslations } from '@/lib/i18n';
-
-import ErrorBoundary from '@/components/ErrorBoundary';
-import { DocumentNotAvailable } from '@/components/decisions/DocumentNotAvailable';
-import { ProposalEditor } from '@/components/decisions/proposalEditor';
-
-function ProposalEditPageContent({
-  profileId,
-  instanceId,
-  decisionSlug,
+export async function generateMetadata({
+  params,
 }: {
-  profileId: string;
-  instanceId: string;
-  decisionSlug: string;
-}) {
-  const t = useTranslations();
-
-  // Get both the proposal and the instance in parallel
-  const [[proposal, instance]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getProposal({ profileId }),
-    t.decision.getInstance({ instanceId }),
-  ]);
-
-  if (!proposal || !instance) {
-    notFound();
-  }
-
-  const proposalTitle = proposal.proposalData?.title;
-  useEffect(() => {
-    const parts = [
-      proposalTitle ? t('Edit {name}', { name: proposalTitle }) : null,
-      instance.name,
-      APP_NAME,
-    ].filter(Boolean);
-    document.title = parts.join(' | ');
-  }, [proposalTitle, instance.name, t]);
-
-  const backHref = `/decisions/${decisionSlug}`;
-
-  return (
-    <ProposalEditor
-      instance={instance}
-      backHref={backHref}
-      proposal={proposal}
-      isEditMode={true}
-    />
-  );
-}
-
-function ProposalEditPageSkeleton() {
-  return (
-    <div className="flex min-h-screen flex-col">
-      {/* Header loading */}
-      <div className="flex items-center justify-between border-b bg-white px-6 py-4">
-        <div className="h-6 w-32 animate-pulse rounded bg-gray-200" />
-        <div className="h-6 w-48 animate-pulse rounded bg-gray-200" />
-        <div className="h-10 w-24 animate-pulse rounded bg-gray-200" />
-      </div>
-
-      {/* Content loading */}
-      <div className="flex-1 bg-white px-6 py-8">
-        <div className="mx-auto max-w-4xl space-y-6">
-          <div className="h-12 w-96 animate-pulse rounded bg-gray-200" />
-          <div className="flex gap-4">
-            <div className="h-8 w-32 animate-pulse rounded bg-gray-200" />
-            <div className="h-8 w-28 animate-pulse rounded bg-gray-200" />
-          </div>
-          <div className="h-96 w-full animate-pulse rounded bg-gray-200" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const ProposalEditPage = () => {
-  const { profileId, id, slug } = useParams<{
+  params: Promise<{
     profileId: string;
     id: string;
     slug: string;
-  }>();
+    locale: string;
+  }>;
+}): Promise<Metadata> {
+  const { profileId, id, locale } = await params;
+
+  try {
+    const [{ utils }, t] = await Promise.all([
+      createServerUtils(),
+      getTranslations({ locale }),
+    ]);
+    const [proposal, instance] = await Promise.all([
+      utils.decision.getProposal.fetch({ profileId }, { staleTime: 30_000 }),
+      utils.decision.getInstance.fetch(
+        { instanceId: id },
+        { staleTime: 30_000 },
+      ),
+    ]);
+
+    const proposalTitle = proposal?.proposalData?.title;
+    if (!proposalTitle) {
+      return {};
+    }
+
+    const label = t('Edit {name}', { name: proposalTitle });
+    return { title: instance?.name ? `${label} | ${instance.name}` : label };
+  } catch {
+    return {};
+  }
+}
+
+const ProposalEditPage = async ({
+  params,
+}: {
+  params: Promise<{ profileId: string; id: string; slug: string }>;
+}) => {
+  const { profileId, id, slug } = await params;
+  const { utils, queryClient } = await createServerUtils();
+
+  await Promise.all([
+    utils.decision.getProposal.prefetch({ profileId }, { staleTime: 30_000 }),
+    utils.decision.getInstance.prefetch(
+      { instanceId: id },
+      { staleTime: 30_000 },
+    ),
+  ]).catch(() => {});
 
   return (
-    <ErrorBoundary fallback={<DocumentNotAvailable />}>
-      <Suspense fallback={<ProposalEditPageSkeleton />}>
-        <ProposalEditPageContent
-          profileId={profileId}
-          instanceId={id}
-          decisionSlug={slug}
-        />
-      </Suspense>
-    </ErrorBoundary>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <LegacyProposalEditClient
+        profileId={profileId}
+        instanceId={id}
+        decisionSlug={slug}
+      />
+    </HydrationBoundary>
   );
 };
 

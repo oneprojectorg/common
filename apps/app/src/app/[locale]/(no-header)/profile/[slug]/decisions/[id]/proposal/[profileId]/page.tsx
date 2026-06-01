@@ -1,116 +1,52 @@
-'use client';
+import {
+  HydrationBoundary,
+  createServerUtils,
+  dehydrate,
+} from '@op/api/server';
+import type { Metadata } from 'next';
 
-import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { trpc } from '@op/api/client';
-import { APP_NAME } from '@op/core';
-import { notFound, useParams } from 'next/navigation';
-import { Suspense, useEffect } from 'react';
+import { LegacyProposalViewClient } from './ProposalViewClient';
 
-import { ProposalView } from '@/components/decisions/ProposalView';
-
-function ProposalViewPageContent({
-  profileId,
-  orgSlug,
-  instanceId,
+export async function generateMetadata({
+  params,
 }: {
-  profileId: string;
-  orgSlug: string;
-  instanceId: string;
-}) {
-  // Legacy decision boundary — still served via shared public links.
-  // Revisions aren't available on legacy instances, so the instance fetch
-  // isn't needed.
-  const [proposal] = trpc.decision.getProposal.useSuspenseQuery({ profileId });
+  params: Promise<{ profileId: string; slug: string; id: string }>;
+}): Promise<Metadata> {
+  const { profileId } = await params;
 
-  if (!proposal) {
-    notFound();
+  try {
+    const { utils } = await createServerUtils();
+    const proposal = await utils.decision.getProposal.fetch(
+      { profileId },
+      { staleTime: 30_000 },
+    );
+    const title = proposal?.proposalData?.title;
+    return title ? { title } : {};
+  } catch {
+    return {};
   }
-
-  const proposalTitle = proposal.proposalData?.title;
-  useEffect(() => {
-    const parts = [proposalTitle, APP_NAME].filter(Boolean);
-    document.title = parts.join(' | ');
-  }, [proposalTitle]);
-
-  const backHref = `/profile/${orgSlug}/decisions/${instanceId}/`;
-
-  return (
-    <ProposalView
-      proposal={proposal}
-      canSeeRevisions={false}
-      backHref={backHref}
-      selection={null}
-    />
-  );
 }
 
-function ProposalViewPageSkeleton() {
-  return (
-    <div className="flex min-h-screen flex-col">
-      {/* Header loading */}
-      <div className="flex items-center justify-between border-b bg-white px-6 py-4">
-        <div className="h-6 w-32 animate-pulse rounded bg-gray-200" />
-        <div className="h-6 w-48 animate-pulse rounded bg-gray-200" />
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-20 animate-pulse rounded bg-gray-200" />
-          <div className="h-10 w-24 animate-pulse rounded bg-gray-200" />
-          <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200" />
-        </div>
-      </div>
+const ProposalViewPage = async ({
+  params,
+}: {
+  params: Promise<{ profileId: string; slug: string; id: string }>;
+}) => {
+  const { profileId, slug, id } = await params;
+  const { utils, queryClient } = await createServerUtils();
 
-      {/* Content loading */}
-      <div className="flex-1 bg-white px-6 py-8">
-        <div className="mx-auto max-w-4xl space-y-6">
-          <div className="h-12 w-96 animate-pulse rounded bg-gray-200" />
-          <div className="flex gap-4">
-            <div className="h-8 w-32 animate-pulse rounded bg-gray-200" />
-            <div className="h-8 w-28 animate-pulse rounded bg-gray-200" />
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200" />
-            <div className="space-y-1">
-              <div className="h-4 w-32 animate-pulse rounded bg-gray-200" />
-              <div className="h-3 w-24 animate-pulse rounded bg-gray-200" />
-            </div>
-          </div>
-          <div className="flex gap-6 border-b pb-4">
-            <div className="h-4 w-16 animate-pulse rounded bg-gray-200" />
-            <div className="h-4 w-20 animate-pulse rounded bg-gray-200" />
-            <div className="h-4 w-18 animate-pulse rounded bg-gray-200" />
-          </div>
-          <div className="mt-6 space-y-4">
-            <div className="h-4 w-full animate-pulse rounded bg-gray-200" />
-            <div className="h-4 w-3/4 animate-pulse rounded bg-gray-200" />
-            <div className="h-4 w-5/6 animate-pulse rounded bg-gray-200" />
-            <div className="h-4 w-1/2 animate-pulse rounded bg-gray-200" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const ProposalViewPage = () => {
-  const { profileId, slug, id } = useParams<{
-    profileId: string;
-    slug: string;
-    id: string;
-  }>();
+  await utils.decision.getProposal
+    .prefetch({ profileId }, { staleTime: 30_000 })
+    .catch(() => {});
 
   return (
-    <APIErrorBoundary
-      fallbacks={{
-        404: () => notFound(),
-      }}
-    >
-      <Suspense fallback={<ProposalViewPageSkeleton />}>
-        <ProposalViewPageContent
-          profileId={profileId}
-          orgSlug={slug}
-          instanceId={id}
-        />
-      </Suspense>
-    </APIErrorBoundary>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <LegacyProposalViewClient
+        profileId={profileId}
+        orgSlug={slug}
+        instanceId={id}
+      />
+    </HydrationBoundary>
   );
 };
 

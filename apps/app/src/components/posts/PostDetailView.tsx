@@ -2,10 +2,9 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import { APP_NAME } from '@op/core';
 import { Surface } from '@op/ui/Surface';
 import { notFound } from 'next/navigation';
-import { Suspense, useEffect } from 'react';
+import { Suspense } from 'react';
 import React from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -30,12 +29,6 @@ export function PostDetail({ postId, slug }: { postId: string; slug: string }) {
   if (!post) {
     notFound();
   }
-
-  const orgName = organization?.profile?.name;
-  useEffect(() => {
-    const parts = [t('Post'), orgName, APP_NAME].filter(Boolean);
-    document.title = parts.join(' | ');
-  }, [orgName, t]);
 
   const { handleReactionClick } = usePostDetailActions({
     postId: post.id,
