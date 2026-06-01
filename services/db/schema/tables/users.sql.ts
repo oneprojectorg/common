@@ -30,7 +30,7 @@ export const users = pgTable(
       }),
     username: varchar({ length: 256 }),
     name: varchar({ length: 256 }),
-    email: varchar().notNull().unique(),
+    email: varchar().unique(),
     about: text(),
     title: varchar({ length: 256 }),
     avatarImageId: uuid().references(() => objectsInStorage.id, {

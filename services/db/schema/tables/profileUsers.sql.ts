@@ -27,7 +27,7 @@ export const profileUsers = pgTable(
         onUpdate: 'cascade',
       }),
     name: varchar({ length: 256 }),
-    email: varchar().notNull(),
+    email: varchar(),
     about: text(),
     isOwner: boolean().default(false).notNull(),
     profileId: uuid()

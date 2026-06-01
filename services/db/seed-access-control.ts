@@ -183,6 +183,11 @@ for (const admin of existingAdmins) {
   let orgUserId = existingOrgUser?.id;
 
   if (!orgUserId) {
+    if (!admin.email) {
+      throw new Error(
+        `Admin user ${admin.authUserId} has no email — cannot link to organization`,
+      );
+    }
     const [created] = await db
       .insert(organizationUsers)
       .values({
