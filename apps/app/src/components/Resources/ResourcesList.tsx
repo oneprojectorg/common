@@ -5,19 +5,23 @@ import type { ResourceInCollection, ResourceList } from '@op/api/encoders';
 import { Sortable } from '@op/ui/Sortable';
 import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
+import { LuUpload } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
 
 import { ResourceCard } from './ResourceCard';
+import { ResourceDropZone } from './ResourceDropZone';
 import { ResourceOverflowMenu } from './ResourceOverflowMenu';
 import { findMovedItem, moveItemAfter } from './utils';
 
 export const ResourcesList = ({
+  profileId,
   data,
   canManage,
 }: {
+  profileId: string;
   data: ResourceList;
   canManage: boolean;
 }) => {
@@ -64,8 +68,9 @@ export const ResourcesList = ({
     onError: () => toast.error({ message: t('Could not delete resource') }),
   });
 
+  const collectionId = data.collectionId ?? null;
+
   const handleReorder = (next: ResourceInCollection[]) => {
-    const collectionId = data.collectionId;
     if (!collectionId) {
       return;
     }
@@ -78,7 +83,7 @@ export const ResourcesList = ({
     reorder.mutate({ id: moved.id, collectionId, upperNeighborId });
   };
 
-  if (items.length === 0) {
+  if (items.length === 0 && !canManage) {
     return null;
   }
 
@@ -94,25 +99,41 @@ export const ResourcesList = ({
     />
   );
 
+  if (!canManage) {
+    return (
+      <div className="flex flex-col gap-4">
+        {items.map((resource) => (
+          <div key={resource.id}>{renderItem(resource)}</div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4">
-      {canManage ? (
-        <Sortable
-          items={items}
-          onChange={handleReorder}
-          dragTrigger="item"
-          getItemLabel={(resource) => resource.title}
-          className="gap-4"
-        >
-          {(resource) => renderItem(resource)}
-        </Sortable>
-      ) : (
-        <div className="flex flex-col gap-4">
-          {items.map((resource) => (
-            <div key={resource.id}>{renderItem(resource)}</div>
-          ))}
-        </div>
-      )}
+      <ResourceDropZone
+        profileId={profileId}
+        collectionId={collectionId}
+        items={items}
+        renderItem={renderItem}
+      >
+        {items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-neutral-gray2 px-6 py-10 text-center text-neutral-gray4">
+            <LuUpload className="size-6" />
+            <p className="text-sm">{t('Drag a file or link here to add it')}</p>
+          </div>
+        ) : (
+          <Sortable
+            items={items}
+            onChange={handleReorder}
+            dragTrigger="item"
+            getItemLabel={(resource) => resource.title}
+            className="gap-4"
+          >
+            {(resource) => renderItem(resource)}
+          </Sortable>
+        )}
+      </ResourceDropZone>
       <ConfirmDeleteModal
         isOpen={deleteTarget !== null}
         title={t('Delete this resource?')}

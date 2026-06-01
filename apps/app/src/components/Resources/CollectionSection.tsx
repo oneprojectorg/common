@@ -12,10 +12,12 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { CollectionResourcesSuspense } from './CollectionResources';
 
 export const CollectionSection = ({
+  profileId,
   collectionId,
   name,
   canManage,
 }: {
+  profileId: string;
   collectionId: string;
   name: string;
   canManage: boolean;
@@ -40,6 +42,7 @@ export const CollectionSection = ({
             }
           >
             <CollectionResourcesSuspense
+              profileId={profileId}
               collectionId={collectionId}
               canManage={canManage}
             />

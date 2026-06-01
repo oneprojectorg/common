@@ -15,7 +15,7 @@ import { LuLink } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { hostnameForDisplay } from './utils';
+import { hostnameForDisplay, normalizeHttpUrl } from './utils';
 
 export const AddResourceLinkForm = ({
   profileId,
@@ -37,9 +37,8 @@ export const AddResourceLinkForm = ({
   const [description, setDescription] = useState('');
   const [urlError, setUrlError] = useState<string | undefined>();
 
-  // Mirror the profile-edit website field: bare domains like "example.com"
-  // submit as "https://example.com". Validation runs against the normalized
-  // form so the preview query and the API see the same URL.
+  // Validation runs against the normalized form (see normalizeHttpUrl) so the
+  // preview query and the API see the same URL.
   const normalizedUrl = normalizeHttpUrl(url);
   const urlValid =
     normalizedUrl !== null && httpUrlSchema.safeParse(normalizedUrl).success;
@@ -145,12 +144,4 @@ export const AddResourceLinkForm = ({
       </div>
     </form>
   );
-};
-
-const normalizeHttpUrl = (raw: string): string | null => {
-  const trimmed = raw.trim();
-  if (!trimmed) {
-    return null;
-  }
-  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 };

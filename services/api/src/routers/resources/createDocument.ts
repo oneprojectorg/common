@@ -38,6 +38,9 @@ const inputSchema = z.object({
   storagePath: z.string().min(1).max(1024),
   fileName: z.string().min(1).max(255),
   mimeType: allowedMimeSchema,
+  // Optional drop-at-position: insert directly below this collection member
+  // (null = top). Omitted by the Add Resource form, which lands at the top.
+  upperNeighborId: z.string().uuid().nullable().optional(),
 });
 
 export const createDocument = router({
@@ -55,6 +58,7 @@ export const createDocument = router({
         storagePath: input.storagePath,
         fileName: input.fileName,
         mimeType: input.mimeType,
+        upperNeighborId: input.upperNeighborId,
       });
       const profileIds =
         target.kind === 'profile'

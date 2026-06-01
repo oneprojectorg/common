@@ -97,3 +97,41 @@ export const findMovedItem = <T extends ItemWithId>(
   }
   return null;
 };
+
+// Mirror the profile-edit website field: bare domains like "example.com"
+// normalize to "https://example.com". Returns null for empty input so callers
+// can treat "no URL" and "invalid URL" the same way.
+export const normalizeHttpUrl = (raw: string): string | null => {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+};
+
+// Pull a single URL out of a drag-and-drop payload. Browsers expose dragged
+// links/text as `text/uri-list` (preferred) or `text/plain`; OS file drops
+// carry no usable text, so this returns null and the caller falls back to
+// `dataTransfer.files`.
+export const extractDropUrl = (dataTransfer: DataTransfer): string | null => {
+  const raw =
+    dataTransfer.getData('text/uri-list') || dataTransfer.getData('text/plain');
+  if (!raw) {
+    return null;
+  }
+  // uri-list may contain comment lines starting with '#'; take the first URL.
+  const firstLine = raw
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find((line) => line.length > 0 && !line.startsWith('#'));
+  const candidate = firstLine ?? '';
+  // A dragged hyperlink arrives as a full http(s) URL (or at least a
+  // domain-like token). Be stricter than the manual URL input here: don't turn
+  // arbitrary dragged plain text like "meeting notes" into "https://meeting".
+  const looksLikeUrl =
+    /^https?:\/\//i.test(candidate) || /^[^\s]+\.[^\s.]{2,}/.test(candidate);
+  if (!looksLikeUrl) {
+    return null;
+  }
+  return normalizeHttpUrl(candidate);
+};

@@ -1305,5 +1305,10 @@
   "Following {count, plural, =1 {# organization} other {# organizations}}": "{count, plural, =1 {#টি সংস্থা অনুসরণ করছে} other {#টি সংস্থা অনুসরণ করছে}}",
   "Member of {count, plural, =1 {# Organization} other {# Organizations}}": "{count, plural, =1 {#টি সংস্থার সদস্য} other {#টি সংস্থার সদস্য}}",
   "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}": "{count, plural, =1 {১ জন সদস্য প্রস্তাব জমা দিয়েছেন} other {# জন সদস্য প্রস্তাব জমা দিয়েছেন}}",
-  "<bdi>{authorName}</bdi>'s Post": "<bdi>{authorName}</bdi>-এর পোস্ট"
+  "<bdi>{authorName}</bdi>'s Post": "<bdi>{authorName}</bdi>-এর পোস্ট",
+  "Drag a file or link here to add it": "এটি যোগ করতে এখানে একটি ফাইল বা লিঙ্ক টেনে আনুন",
+  "Failed to load proposals": "প্রস্তাবগুলি লোড করা যায়নি",
+  "No more updates.": "আর কোনো আপডেট নেই।",
+  "Thank you for participating. Your voice helps shape how we invest in our community.": "অংশগ্রহণের জন্য ধন্যবাদ। আপনার মতামত আমরা কীভাবে আমাদের সম্প্রদায়ে বিনিয়োগ করি তা গঠনে সহায়তা করে।",
+  "HORIZONRESULTSABOUT": "&lt;p&gt;প্রক্রিয়া এবং কীভাবে সিদ্ধান্ত নেওয়া হয়েছিল সে সম্পর্কে আরও জানুন &lt;a target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot; href=&quot;https://docs.google.com/presentation/d/1umMJylcpBaMtT2OLnO4THaj2aPzJqyz_g73Wi2VCyLQ/edit?slide=id.g355b90e2c0a_0_0#slide=id.g355b90e2c0a_0_0&quot;&gt;এখানে &lt;/a&gt; &lt;/p&gt;"
 }

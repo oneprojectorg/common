@@ -1306,5 +1306,6 @@
   "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}": "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}",
   "<bdi>{authorName}</bdi>'s Post": "<bdi>{authorName}</bdi>'s Post",
   "This action cannot be undone.": "This action cannot be undone.",
-  "File is too large (max {size} MB)": "File is too large (max {size} MB)"
+  "File is too large (max {size} MB)": "File is too large (max {size} MB)",
+  "Drag a file or link here to add it": "Drag a file or link here to add it"
 }

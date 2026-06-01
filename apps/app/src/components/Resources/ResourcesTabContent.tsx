@@ -14,6 +14,7 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 
 import { AddResourcePanel } from './AddResourcePanel';
 import { CollectionSection } from './CollectionSection';
+import { ResourceDropZone } from './ResourceDropZone';
 import { ResourceEmptyState } from './ResourceEmptyState';
 
 export const ResourcesTabContent = ({
@@ -91,11 +92,16 @@ const ResourcesFeed = ({
   );
 
   if (collections.items.length === 0) {
-    return (
-      <ResourceEmptyState
-        variant={canManage ? 'admin-empty' : 'member-empty'}
-      />
-    );
+    // Managers can drop a file/link straight onto the empty state — the drop
+    // lazily creates the Default collection. Readers just see the empty state.
+    if (canManage) {
+      return (
+        <ResourceDropZone profileId={profileId} collectionId={null} items={[]}>
+          <ResourceEmptyState variant="admin-empty" />
+        </ResourceDropZone>
+      );
+    }
+    return <ResourceEmptyState variant="member-empty" />;
   }
 
   return (
@@ -107,6 +113,7 @@ const ResourcesFeed = ({
       {collections.items.map((collection) => (
         <CollectionSection
           key={collection.id}
+          profileId={profileId}
           collectionId={collection.id}
           name={collection.name}
           canManage={canManage}

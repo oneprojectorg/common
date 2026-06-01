@@ -1304,5 +1304,8 @@
   "Following {count, plural, =1 {# organization} other {# organizations}}": "Seguindo {count, plural, =1 {# organização} other {# organizações}}",
   "Member of {count, plural, =1 {# Organization} other {# Organizations}}": "Membro de {count, plural, =1 {# Organização} other {# Organizações}}",
   "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}": "{count, plural, =1 {1 membro enviou propostas} other {# membros enviaram propostas}}",
-  "<bdi>{authorName}</bdi>'s Post": "Publicação de <bdi>{authorName}</bdi>"
+  "<bdi>{authorName}</bdi>'s Post": "Publicação de <bdi>{authorName}</bdi>",
+  "Drag a file or link here to add it": "Arraste um arquivo ou link aqui para adicioná-lo",
+  "Failed to load proposals": "Falha ao carregar as propostas",
+  "Thank you for participating. Your voice helps shape how we invest in our community.": "Obrigado por participar. A sua voz ajuda a definir como investimos na nossa comunidade."
 }
