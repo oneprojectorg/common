@@ -9,6 +9,7 @@ import {
   isAllowedResourceMimeType,
 } from '@op/common/client';
 import { Button } from '@op/ui/Button';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Skeleton } from '@op/ui/Skeleton';
 import { TextField } from '@op/ui/TextField';
 import { toast } from '@op/ui/Toast';
@@ -159,8 +160,8 @@ export const AddResourceDocumentForm = ({
                   />
                 ) : null}
                 {uploading ? (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/60 text-sm text-neutral-charcoal">
-                    {t('Uploading...')}
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/60">
+                    <LoadingSpinner />
                   </div>
                 ) : null}
                 <Button
