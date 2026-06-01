@@ -812,6 +812,9 @@ importers:
       drizzle-zod:
         specifier: 'catalog:'
         version: 1.0.0-beta.11-05230d9(drizzle-orm@1.0.0-beta.11-05230d9(@opentelemetry/api@1.9.0)(@types/mssql@9.1.9)(@types/pg@8.11.11)(gel@2.0.0)(mssql@11.0.1)(pg@8.16.0)(postgres@3.4.5))(zod@4.1.12)
+      fractional-indexing:
+        specifier: ^3.2.0
+        version: 3.2.0
       mitt:
         specifier: ^3.0.1
         version: 3.0.1
@@ -6545,6 +6548,10 @@ packages:
 
   forwarded-parse@2.1.2:
     resolution: {integrity: sha512-alTFZZQDKMporBH77856pXgzhEzaUVmLCDk+egLgIgHst3Tpndzz8MnKe+GzRJRfvVdn69HhpW7cmXzvtLvJAw==}
+
+  fractional-indexing@3.2.0:
+    resolution: {integrity: sha512-PcOxmqwYCW7O2ovKRU8OoQQj2yqTfEB/yeTYk4gPid6dN5ODRfU1hXd9tTVZzax/0NkO7AxpHykvZnT1aYp/BQ==}
+    engines: {node: ^14.13.1 || >=16.0.0}
 
   framer-motion@12.7.4:
     resolution: {integrity: sha512-jX0bPsTmU0oPZTYz/dVyD0dmOyEOEJvdn0TaZBE5I8g2GvVnnQnW9f65cJnoVfUkY3WZWNXGXnPbVA9YnaIfVA==}
@@ -14207,6 +14214,8 @@ snapshots:
   formidable@1.2.6: {}
 
   forwarded-parse@2.1.2: {}
+
+  fractional-indexing@3.2.0: {}
 
   framer-motion@12.7.4(react-dom@19.2.1(react@19.2.1))(react@19.2.1):
     dependencies:

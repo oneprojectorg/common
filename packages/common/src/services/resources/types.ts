@@ -1,0 +1,2 @@
+export const RESOURCE_LIST_DEFAULT_LIMIT = 50;
+export const RESOURCE_LIST_MAX_LIMIT = 200;
