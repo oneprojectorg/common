@@ -94,6 +94,8 @@ export {
 export {
   ALLOWED_RESOURCE_MIME_TYPES,
   MAX_RESOURCE_FILE_SIZE,
+  RESOURCE_DESCRIPTION_MAX_LEN,
+  RESOURCE_TITLE_MAX_LEN,
   httpUrlSchema,
   isAllowedResourceMimeType,
   resourcePathPrefix,

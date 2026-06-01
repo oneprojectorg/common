@@ -1,6 +1,7 @@
 import { type Resource, type ResourceType } from '@op/db/schema';
 
 import { ConflictError } from '../../utils/error';
+import { getLinkPreview } from '../linkPreview';
 import { getResourceSignedUrl } from './storage';
 import { type AttachmentSummary, type ResourceDTO } from './types';
 
@@ -47,7 +48,18 @@ export const getResourceAttachment = async (
 export const getResource = async (
   row: LoadedResource,
 ): Promise<ResourceDTO> => {
-  const { attachment, signedUrl } = await getResourceAttachment(row);
+  const isDocument = resourceType(row) === 'document';
+  // Resolve attachment + thumbnail in parallel — both are network-ish
+  // (signed-URL sign + iframely fetch) and independent. For document rows
+  // the thumbnail promise short-circuits to null.
+  const [{ attachment, signedUrl }, thumbnailUrl] = await Promise.all([
+    getResourceAttachment(row),
+    !isDocument && row.linkUrl
+      ? getLinkPreview(row.linkUrl).then((preview) =>
+          preview.error ? null : (preview.thumbnail_url ?? null),
+        )
+      : Promise.resolve(null),
+  ]);
 
   const base = {
     id: row.id,
@@ -59,7 +71,7 @@ export const getResource = async (
     signedUrl,
   };
 
-  if (resourceType(row) === 'document') {
+  if (isDocument) {
     if (!attachment || row.attachmentId === null) {
       throw new ConflictError(
         'Resource has document type but missing attachment',
@@ -69,6 +81,7 @@ export const getResource = async (
       ...base,
       type: 'document',
       linkUrl: null,
+      thumbnailUrl: null,
       attachmentId: row.attachmentId,
       attachment,
     };
@@ -81,6 +94,7 @@ export const getResource = async (
     ...base,
     type: 'link',
     linkUrl: row.linkUrl,
+    thumbnailUrl,
     attachmentId: null,
     attachment: null,
   };

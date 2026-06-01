@@ -12,6 +12,7 @@ export * from './posts';
 export * from './taxonomyTerms';
 export * from './relationships';
 export * from './profiles';
+export * from './resources';
 export * from './searchResults';
 export * from './shared';
 export * from './joinProfileRequests';

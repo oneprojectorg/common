@@ -11,8 +11,11 @@ import { IconButton } from '@op/ui/IconButton';
 import { MegaphoneIcon } from '@op/ui/MegaphoneIcon';
 import { Sidebar, SidebarProvider, useSidebar } from '@op/ui/Sidebar';
 import { Surface } from '@op/ui/Surface';
+import { Tab, TabList, TabPanel, Tabs } from '@op/ui/Tabs';
+import { cn } from '@op/ui/utils';
 import { useQueryState } from 'nuqs';
 import { Fragment, Suspense, useCallback, useEffect, useMemo } from 'react';
+import { type Key, useLocale } from 'react-aria-components';
 import { LuX } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -26,10 +29,14 @@ import {
   usePostFeedActions,
 } from '@/components/PostFeed';
 import { PostUpdate } from '@/components/PostUpdate';
+import { ResourcesTabContent } from '@/components/Resources/ResourcesTabContent';
 
-import { panelStateParser } from './panelState';
+import { PANEL_TABS, type PanelTab, panelStateParser } from './panelState';
 
 const UPDATES_PAGE_SIZE = 20;
+
+const isPanelTab = (key: Key): key is PanelTab =>
+  typeof key === 'string' && (PANEL_TABS as readonly string[]).includes(key);
 
 export const DecisionSidePanel = ({
   decisionProfileId,
@@ -41,6 +48,12 @@ export const DecisionSidePanel = ({
   const t = useTranslations();
   const [panel, setPanel] = useQueryState('panel', panelStateParser);
   const decisionUpdatesEnabled = useFeatureFlag('decision_updates');
+  // Sidebar's `side` is direction-aware (Arabic locale PR): `side="right"`
+  // resolves to the visual left in RTL. The decision panel is meant to anchor
+  // to the visual right regardless of reading direction, so flip the prop in
+  // RTL to cancel the Sidebar's flip.
+  const { direction } = useLocale();
+  const sidebarSide = direction === 'rtl' ? 'left' : 'right';
 
   const isOpen = panel !== null;
   const close = useCallback(() => setPanel(null), [setPanel]);
@@ -72,6 +85,7 @@ export const DecisionSidePanel = ({
 
   const canPostUpdate = access?.admin === true;
   const canReadUpdates = canPostUpdate || access?.read === true;
+  const activeTab: PanelTab = panel ?? 'updates';
 
   // Mirror the toggle in DecisionInstanceHeader: anyone who can actually
   // read updates sees the panel; the flag opens it up to everyone else.
@@ -82,16 +96,22 @@ export const DecisionSidePanel = ({
   return (
     <SidebarProvider isOpen={isOpen} onOpenChange={handleOpenChange}>
       <Sidebar
-        side="right"
+        side={sidebarSide}
         variant="overlay"
         label={t('Decision updates panel')}
-        className="w-full max-w-full border-s border-t border-neutral-gray1 text-neutral-charcoal shadow-xl sm:top-14 sm:w-[22.5rem]"
+        className={cn(
+          'w-full max-w-full border-t border-neutral-gray1 text-neutral-charcoal shadow-xl sm:top-14 sm:w-[22.5rem]',
+          // Border faces the content: visual left of the panel, regardless of locale.
+          direction === 'rtl' ? 'border-e' : 'border-s',
+        )}
       >
         <PanelContents
           isOpen={isOpen}
           decisionProfileId={decisionProfileId}
           canPostUpdate={canPostUpdate}
           canReadUpdates={canReadUpdates}
+          activeTab={activeTab}
+          onSelectTab={setPanel}
         />
       </Sidebar>
     </SidebarProvider>
@@ -103,28 +123,56 @@ const PanelContents = ({
   decisionProfileId,
   canPostUpdate,
   canReadUpdates,
+  activeTab,
+  onSelectTab,
 }: {
   isOpen: boolean;
   decisionProfileId: string;
   canPostUpdate: boolean;
   canReadUpdates: boolean;
+  activeTab: PanelTab;
+  onSelectTab: (tab: PanelTab) => void;
 }) => {
   const t = useTranslations();
   const { setOpen } = useSidebar();
 
   return (
-    <>
-      <div className="flex shrink-0 items-center justify-end border-b border-neutral-gray1 px-4 py-2 sm:hidden">
+    <Tabs
+      selectedKey={activeTab}
+      onSelectionChange={(key) => {
+        if (isPanelTab(key)) {
+          onSelectTab(key);
+        }
+      }}
+      className="min-h-0 flex-1 gap-0"
+    >
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-neutral-gray1 pr-4 sm:pt-4 sm:pr-0">
+        <TabList
+          aria-label={t('Decision side panel tabs')}
+          className="grow border-b-0 px-4 sm:px-6"
+        >
+          <Tab id="updates" className="h-auto px-0">
+            {t('Updates')}
+          </Tab>
+          <Tab id="resources" className="h-auto px-0">
+            {t('Resources')}
+          </Tab>
+        </TabList>
         <IconButton
           variant="ghost"
           size="small"
           onPress={() => setOpen(false)}
           aria-label={t('Close')}
+          className="sm:hidden"
         >
           <LuX className="size-5" />
         </IconButton>
       </div>
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+
+      <TabPanel
+        id="updates"
+        className="flex min-h-0 flex-col overflow-y-auto p-0 sm:p-0"
+      >
         {isOpen ? (
           <UpdatesTabContent
             decisionProfileId={decisionProfileId}
@@ -132,8 +180,20 @@ const PanelContents = ({
             canReadUpdates={canReadUpdates}
           />
         ) : null}
-      </div>
-    </>
+      </TabPanel>
+      <TabPanel
+        id="resources"
+        className="flex min-h-0 flex-col overflow-y-auto p-0 sm:p-0"
+      >
+        {isOpen ? (
+          <ResourcesTabContent
+            profileId={decisionProfileId}
+            canManage={canPostUpdate}
+            canRead={canReadUpdates}
+          />
+        ) : null}
+      </TabPanel>
+    </Tabs>
   );
 };
 

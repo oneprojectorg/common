@@ -1,9 +1,12 @@
 import {
   Channels,
+  RESOURCE_DESCRIPTION_MAX_LEN,
+  RESOURCE_TITLE_MAX_LEN,
   createLinkResource,
   getProfileIdsForCollection,
   httpUrlSchema,
 } from '@op/common';
+import type { ChannelName } from '@op/common/realtime';
 import { z } from 'zod';
 
 import { resourceInCollectionEncoder } from '../../encoders/resources';
@@ -20,8 +23,12 @@ const inputSchema = z.object({
       collectionId: z.string().uuid(),
     }),
   ]),
-  title: z.string().trim().min(1).max(50),
-  description: z.string().max(250).nullable().optional(),
+  title: z.string().trim().min(1).max(RESOURCE_TITLE_MAX_LEN),
+  description: z
+    .string()
+    .max(RESOURCE_DESCRIPTION_MAX_LEN)
+    .nullable()
+    .optional(),
   linkUrl: httpUrlSchema,
 });
 
@@ -44,10 +51,18 @@ export const createLink = router({
         target.kind === 'profile'
           ? [target.profileId]
           : await getProfileIdsForCollection(row.collectionId);
-      ctx.registerMutationChannels([
+      const channels: ChannelName[] = [
         Channels.collectionResources(row.collectionId),
         ...profileIds.map((id) => Channels.profileResources(id)),
-      ]);
+      ];
+      // Only the profile-target path can lazy-create a default collection;
+      // when callers target an existing collection there is no chance of a
+      // new collection appearing, so broadcasting profileCollections is just
+      // wasted invalidation.
+      if (target.kind === 'profile') {
+        channels.push(Channels.profileCollections(target.profileId));
+      }
+      ctx.registerMutationChannels(channels);
       return resourceInCollectionEncoder.parse(row);
     }),
 });

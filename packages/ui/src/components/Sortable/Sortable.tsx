@@ -165,9 +165,16 @@ export function Sortable<T extends SortableItem>({
   const styles = sortableStyles();
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
 
+  // Without activation constraints the pointer sensors swallow the initial
+  // mousedown/touchstart, which blocks clicks on interactive children (e.g.
+  // an <a> inside a dragTrigger="item" card). A small distance threshold
+  // lets a stationary click pass through; touch waits briefly so taps and
+  // scrolls aren't hijacked.
   const sensors = useSensors(
-    useSensor(MouseSensor),
-    useSensor(TouchSensor),
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 5 },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),

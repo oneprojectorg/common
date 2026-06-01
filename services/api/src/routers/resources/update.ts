@@ -1,5 +1,7 @@
 import {
   Channels,
+  RESOURCE_DESCRIPTION_MAX_LEN,
+  RESOURCE_TITLE_MAX_LEN,
   getScopesForResource,
   httpUrlSchema,
   updateResource,
@@ -11,8 +13,12 @@ import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const dataSchema = z
   .object({
-    title: z.string().trim().min(1).max(50).optional(),
-    description: z.string().max(250).nullable().optional(),
+    title: z.string().trim().min(1).max(RESOURCE_TITLE_MAX_LEN).optional(),
+    description: z
+      .string()
+      .max(RESOURCE_DESCRIPTION_MAX_LEN)
+      .nullable()
+      .optional(),
     linkUrl: httpUrlSchema.optional(),
   })
   .refine((v) => Object.keys(v).length > 0, {

@@ -4,6 +4,12 @@ import { zodUrlRefine } from '../../utils/validation';
 
 export const MAX_RESOURCE_FILE_SIZE = 25 * 1024 * 1024;
 
+// Title/description length caps. Mirrored by zod `.max()` on every
+// create/update procedure input and by client `maxLength` on the form
+// inputs — pull from here so the two layers can't drift.
+export const RESOURCE_TITLE_MAX_LEN = 50;
+export const RESOURCE_DESCRIPTION_MAX_LEN = 250;
+
 export const STORAGE_BUCKET = 'assets';
 
 // SSRF gate: loopback, link-local, RFC1918, CGNAT, metadata services.
@@ -53,11 +59,13 @@ export const httpUrlSchema = z
 export const resourcePathPrefix = (profileId: string) =>
   `profile/${profileId}/resources/`;
 
-// text/csv and text/plain were removed: neither has a magic-byte signature,
-// so the declared-vs-recorded MIME cross-check in createDocumentResource can't
-// catch a lie for them, and Supabase would serve user-chosen bytes with an
-// attacker-controlled Content-Type. Add back only with content sniffing +
-// forced Content-Disposition: attachment.
+// text/csv and text/plain were removed: neither has a magic-byte signature
+// and Supabase serves the file with the Content-Type sent on PUT. We assert
+// the storage object's Content-Type is in this allowlist in createDocument,
+// but without content sniffing we can't catch a wrong-but-allowed MIME
+// (e.g. HTML PUT as application/pdf). Add types here only if (a) they have a
+// magic-byte signature we verify, or (b) we force Content-Disposition:
+// attachment so they're never rendered inline.
 export const ALLOWED_RESOURCE_MIME_TYPES = [
   'image/png',
   'image/jpeg',

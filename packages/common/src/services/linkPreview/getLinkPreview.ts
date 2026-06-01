@@ -8,6 +8,9 @@ export type LinkPreviewResult = {
     author?: string;
     site?: string;
   };
+  // Iframely-supplied embed HTML. Rendered by the existing <LinkPreview>
+  // component via dangerouslySetInnerHTML. Kept as-is for back-compat with
+  // Posts/Proposals; new callers (e.g. resource cards) should not render it.
   html?: string;
   thumbnail_url?: string;
   provider_name?: string;
@@ -17,6 +20,25 @@ export type LinkPreviewResult = {
 
 // Iframely is per-request billed.
 const LINK_PREVIEW_TTL_MS = 60 * 60 * 1000;
+
+// Iframely-returned URLs are user-influenced (the destination URL the user
+// submitted controls what their site advertises in meta tags). Strip
+// anything that isn't a plain http(s) absolute URL before it leaves this
+// boundary so callers can't accidentally render `javascript:`/`data:`/etc.
+const sanitizeExternalUrl = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return undefined;
+    }
+    return parsed.toString();
+  } catch {
+    return undefined;
+  }
+};
 
 // Best-effort: returns `{ error }` instead of throwing so callers can still
 // persist the resource when snapshotting fails.
@@ -74,9 +96,11 @@ const fetchLinkPreview = async (url: string): Promise<LinkPreviewResult> => {
           }
         : undefined,
       html: data.html,
-      thumbnail_url: thumbnailHref ?? data.thumbnail_url,
+      thumbnail_url: sanitizeExternalUrl(thumbnailHref ?? data.thumbnail_url),
       provider_name: data.provider_name ?? data.meta?.site,
-      provider_url: data.provider_url ?? data.meta?.canonical,
+      provider_url: sanitizeExternalUrl(
+        data.provider_url ?? data.meta?.canonical,
+      ),
     };
   } catch (error) {
     // Never echo the upstream error message: the fetch URL embeds

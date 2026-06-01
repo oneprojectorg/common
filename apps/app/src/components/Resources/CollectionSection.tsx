@@ -1,0 +1,51 @@
+import {
+  AccordionContent,
+  AccordionIndicator,
+  AccordionItem,
+  AccordionTrigger,
+} from '@op/ui/Accordion';
+import { Skeleton } from '@op/ui/Skeleton';
+import { Suspense } from 'react';
+
+import ErrorBoundary from '@/components/ErrorBoundary';
+
+import { CollectionResourcesSuspense } from './CollectionResources';
+
+export const CollectionSection = ({
+  collectionId,
+  name,
+  canManage,
+}: {
+  collectionId: string;
+  name: string;
+  canManage: boolean;
+}) => {
+  return (
+    <AccordionItem
+      id={collectionId}
+      className="rounded-none border-0 bg-transparent"
+    >
+      <AccordionTrigger className="w-full gap-1 text-sm font-normal text-neutral-black">
+        <AccordionIndicator className="text-neutral-black" />
+        <span className="truncate">{name}</span>
+      </AccordionTrigger>
+      <AccordionContent>
+        <ErrorBoundary>
+          <Suspense
+            fallback={
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-24 w-full rounded-lg" />
+                <Skeleton className="h-24 w-full rounded-lg" />
+              </div>
+            }
+          >
+            <CollectionResourcesSuspense
+              collectionId={collectionId}
+              canManage={canManage}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      </AccordionContent>
+    </AccordionItem>
+  );
+};
