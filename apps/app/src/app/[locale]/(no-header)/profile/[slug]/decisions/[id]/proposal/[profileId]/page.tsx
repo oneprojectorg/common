@@ -2,8 +2,9 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
+import { APP_NAME } from '@op/core';
 import { notFound, useParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 
 import { ProposalView } from '@/components/decisions/ProposalView';
 
@@ -24,6 +25,12 @@ function ProposalViewPageContent({
   if (!proposal) {
     notFound();
   }
+
+  const proposalTitle = proposal.proposalData?.title;
+  useEffect(() => {
+    const parts = [proposalTitle, APP_NAME].filter(Boolean);
+    document.title = parts.join(' | ');
+  }, [proposalTitle]);
 
   const backHref = `/profile/${orgSlug}/decisions/${instanceId}/`;
 

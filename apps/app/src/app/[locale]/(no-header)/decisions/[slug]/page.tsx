@@ -5,6 +5,7 @@ import {
 } from '@op/api/server';
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
+import type { Metadata } from 'next';
 import { forbidden, notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -12,6 +13,28 @@ import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionSidePanel } from '@/components/decisions/DecisionSidePanel';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
 import { DecisionContentSkeleton } from '@/components/skeletons/DecisionSkeleton';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+
+  try {
+    const client = await createClient();
+    const decisionProfile = await client.decision.getDecisionBySlug({ slug });
+    const name = decisionProfile?.name;
+    const steward = decisionProfile?.processInstance?.owner?.name;
+
+    if (!name) {
+      return {};
+    }
+    return { title: steward ? `${name} | ${steward}` : name };
+  } catch {
+    return {};
+  }
+}
 
 const DecisionPageContent = async ({ slug }: { slug: string }) => {
   const [client, { utils, queryClient }] = await Promise.all([

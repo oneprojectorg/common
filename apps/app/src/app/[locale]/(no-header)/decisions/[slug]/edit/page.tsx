@@ -1,5 +1,7 @@
 import { ProcessStatus } from '@op/api/encoders';
 import { createClient } from '@op/api/serverClient';
+import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { forbidden, notFound } from 'next/navigation';
 
 import { ProcessBuilderAutosaveProvider } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
@@ -9,6 +11,27 @@ import { ProcessBuilderHeader } from '@/components/decisions/ProcessBuilder/Proc
 import { ProcessBuilderShell } from '@/components/decisions/ProcessBuilder/ProcessBuilderShell';
 import { ProcessBuilderStoreInitializer } from '@/components/decisions/ProcessBuilder/ProcessBuilderStoreInitializer';
 import type { ProcessBuilderInstanceData } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string; locale: string }>;
+}): Promise<Metadata> {
+  const { slug, locale } = await params;
+
+  try {
+    const [client, t] = await Promise.all([
+      createClient(),
+      getTranslations({ locale }),
+    ]);
+    const decisionProfile = await client.decision.getDecisionBySlug({ slug });
+    return decisionProfile?.name
+      ? { title: t('Edit {name}', { name: decisionProfile.name }) }
+      : {};
+  } catch {
+    return {};
+  }
+}
 
 const EditDecisionPage = async ({
   params,

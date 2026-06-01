@@ -4,8 +4,9 @@ import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { isLastPhase } from '@op/common/client';
+import { APP_NAME } from '@op/core';
 import { notFound, useParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 
 import { ProposalView } from '@/components/decisions/ProposalView';
 
@@ -27,6 +28,17 @@ function ProposalViewPageContent({
 
   const instance = decisionProfile.processInstance;
   const { user } = useUser();
+
+  // Set the document title client-side from already-fetched data. The proposal
+  // query carries a "proposal viewed" analytics side effect, so we deliberately
+  // avoid a server-side generateMetadata fetch (which would double-count views).
+  const proposalTitle = proposal.proposalData?.title;
+  useEffect(() => {
+    const parts = [proposalTitle, decisionProfile.name, APP_NAME].filter(
+      Boolean,
+    );
+    document.title = parts.join(' | ');
+  }, [proposalTitle, decisionProfile.name]);
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhase = phases.find(
