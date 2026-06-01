@@ -22,6 +22,7 @@ import {
   organizations,
   organizationsWhereWeWork,
 } from './schema/tables/organizations.sql';
+import { seedGlobalUsers } from './seed-global-users';
 
 // For local development, we need to load the .env.local file from the root of the monorepo
 dotenv.config({
@@ -150,6 +151,10 @@ for (const email of adminEmails) {
     console.warn(e);
   }
 }
+
+// Seed the global sentinel users (PUBLIC / ANONYMOUS) used by the
+// access-control substitution layer.
+await seedGlobalUsers(db);
 
 // Run the SQL seed scripts
 const seedDataPath = path.join(process.cwd(), 'seedData');

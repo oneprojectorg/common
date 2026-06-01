@@ -220,6 +220,19 @@ export const genericEmail = 'support@oneproject.org';
 
 export const adminEmails = ['scott@oneproject.org'];
 
+// Sentinel "global" user identities used by the access-control substitution
+// layer. GLOBAL_USER_PUBLIC stands in for no-JWT public callers and
+// GLOBAL_USER_ANONYMOUS for anon-JWT callers when resolving role grants. Their
+// UUIDs are hardcoded so every environment references the same rows; the rows
+// are created by the database seed (services/db/seed-global-users.ts). They are
+// quarantined: cannot sign in, and never surface in user/profile lists.
+export const GLOBAL_USER_PUBLIC = '00000000-0000-4000-a000-000000000001';
+export const GLOBAL_USER_ANONYMOUS = '00000000-0000-4000-a000-000000000002';
+export const GLOBAL_USER_IDS = [
+  GLOBAL_USER_PUBLIC,
+  GLOBAL_USER_ANONYMOUS,
+] as const;
+
 // NOTE: This allowlist will eventually be moved to the database
 export const platformAdminEmails = new Set([
   'iza@oneproject.org',
