@@ -1,8 +1,3 @@
-// IMPORTANT: keep this file self-contained (only `zod`). These encoders are
-// re-exported through ./index.ts, which client components import (e.g.
-// SiteHeader -> encoders/access). Importing the matching schemas from
-// `@op/common` to dedupe pulls server-only modules (services/db/client,
-// services/supabase/server) into the client bundle and breaks `next build`.
 // The shape duplication with @op/common/services/resources/schemas.ts is
 // intentional — do not collapse it into a re-export.
 import { z } from 'zod';
