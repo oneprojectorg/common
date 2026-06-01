@@ -51,7 +51,7 @@
     "cookie": "^1.0.2",
     "deepl-node": "^1.24.0",
     "drizzle-orm": "catalog:",
-    "drizzle-zod": "1.0.0-beta.11-05230d9",
+    "drizzle-zod": "catalog:",
     "fast-xml-parser": "^5.2.1",
     "nanoid": "5.1.2",
     "node-geonames-client": "^0.0.2",

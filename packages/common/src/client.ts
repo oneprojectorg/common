@@ -31,6 +31,23 @@ export {
   proposalSelectionSchema,
   type ProposalSelection,
 } from './services/decision/schemas/selection';
+export {
+  profileUserSchema,
+  profileUserWithProfileSchema,
+  profileUserWithRolesSchema,
+  type ProfileUser,
+  type ProfileUserBase,
+} from './services/profile/schemas/profileUser';
+export {
+  profileMinimalSchema,
+  storageItemMinimalSchema,
+  type ProfileMinimal,
+  type StorageItemMinimal,
+} from './services/profile/schemas/profileMinimal';
+export {
+  accessRoleMinimalSchema,
+  type AccessRoleMinimal,
+} from './services/access/schemas/accessRole';
 export * from './services/decision/types';
 export {
   SYSTEM_FIELD_KEYS,

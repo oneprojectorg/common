@@ -1,15 +1,19 @@
-import { organizationUsers, profileUsers, users } from '@op/db/schema';
+import {
+  accessRoleMinimalSchema,
+  profileUserWithProfileSchema,
+} from '@op/common/client';
+import { organizationUsers, users } from '@op/db/schema';
 import type { ZonePermissions } from 'access-zones';
 import { authUsers } from 'drizzle-orm/supabase';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-import { accessRoleMinimalEncoder, permissionsSchema } from './access';
+import { permissionsSchema } from './access';
 import {
   organizationsEncoder,
   organizationsWithProfileEncoder,
 } from './organizations';
-import { baseProfileEncoder, profileMinimalEncoder } from './profiles';
+import { baseProfileEncoder } from './profiles';
 import { storageItemEncoder } from './storageItem';
 
 const zonePermissionsSchema = z.record(
@@ -31,7 +35,7 @@ const zonePermissionSchema = z.object({
 });
 
 // Extend the shared minimal encoder with zone permissions for full role context
-const accessRoleSchema = accessRoleMinimalEncoder.extend({
+const accessRoleSchema = accessRoleMinimalSchema.extend({
   zonePermissions: z.array(zonePermissionSchema).nullish(),
 });
 
@@ -49,13 +53,10 @@ const organizationUserWithPermissionsEncoder = createSelectSchema(
   roles: z.array(roleJunctionSchema).nullish(),
 });
 
-const profileUserWithPermissionsEncoder = createSelectSchema(
-  profileUsers,
-).extend({
-  profile: profileMinimalEncoder.nullish(),
+// Shared base + profile, plus computed permissions. Roles are omitted: they're
+// fetched only to derive `permissions` and no client reads them off the account.
+const profileUserWithPermissionsEncoder = profileUserWithProfileSchema.extend({
   permissions: zonePermissionsSchema.nullish(),
-  roles: z.array(roleJunctionSchema).nullish(),
-  isOwner: z.boolean().default(false),
 });
 
 /**

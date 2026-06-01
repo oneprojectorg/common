@@ -15,3 +15,4 @@ export * from './updateProfileUserRole';
 export * from './removeProfileUser';
 export * from './getProfileUserWithRelations';
 export * from './requests';
+export * from './schemas';

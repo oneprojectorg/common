@@ -1,10 +1,8 @@
 import { updateRolePermissions } from '@op/common';
+import { accessRoleMinimalSchema } from '@op/common/client';
 import { z } from 'zod';
 
-import {
-  accessRoleMinimalEncoder,
-  permissionsSchema,
-} from '../../encoders/access';
+import { permissionsSchema } from '../../encoders/access';
 import { commonAuthedProcedure, router } from '../../trpcFactory';
 
 const DECISIONS_ZONE_NAME = 'decisions';
@@ -17,7 +15,7 @@ export const updateRolePermissionRouter = router({
         permissions: permissionsSchema,
       }),
     )
-    .output(accessRoleMinimalEncoder)
+    .output(accessRoleMinimalSchema)
     .mutation(async ({ ctx, input }) => {
       return updateRolePermissions({
         roleId: input.roleId,
