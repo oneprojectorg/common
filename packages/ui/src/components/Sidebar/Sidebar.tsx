@@ -14,6 +14,17 @@ import { IconButton, IconButtonProps } from '../IconButton';
 // Tailwind v4 default sm breakpoint (640px)
 const SM_BREAKPOINT = screens.sm;
 
+// Created once at module scope: `motion(Component)` returns a brand-new
+// component type on every call, so building these inside the render body would
+// remount the modal on each re-render (e.g. switching panel tabs) and replay
+// the slide-in animation even though the sidebar is already open.
+const MotionModalOverlay = motion(ModalOverlay);
+const MotionModal = motion(Modal);
+const sidebarTransition = {
+  duration: 0.3,
+  ease: [0.65, 0.05, 0.36, 1.0],
+} as const;
+
 type SidebarContextProps = {
   state: 'expanded' | 'collapsed';
   open: boolean;
@@ -105,13 +116,6 @@ const Sidebar = ({
   const { direction } = useLocale();
   const isRtl = direction === 'rtl';
 
-  const MotionModalOverlay = motion(ModalOverlay);
-  const MotionModal = motion(Modal);
-  const transition = {
-    duration: 0.3,
-    ease: [0.65, 0.05, 0.36, 1.0],
-  };
-
   if (isMobile) {
     const isRight = side === 'right';
     const offscreenSign = isRight === isRtl ? '-100%' : '100%';
@@ -127,7 +131,7 @@ const Sidebar = ({
             initial={{ opacity: 0 }}
             exit={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={transition}
+            transition={sidebarTransition}
           >
             <MotionModal
               className={cn(
@@ -138,9 +142,18 @@ const Sidebar = ({
               initial={{ x: offscreenSign }}
               animate={{ x: 0 }}
               exit={{ x: offscreenSign }}
-              transition={transition}
+              transition={sidebarTransition}
             >
-              <Dialog aria-label={label}>{children}</Dialog>
+              {/* Fill the modal height as a flex column so children using
+                  `flex-1` / `min-h-0` get a bounded scroll area (sticky
+                  footers, inner overflow-y-auto) instead of overflowing the
+                  viewport — matching the desktop overlay branch below. */}
+              <Dialog
+                aria-label={label}
+                className="flex h-full flex-col outline-hidden"
+              >
+                {children}
+              </Dialog>
             </MotionModal>
           </MotionModalOverlay>
         )}
