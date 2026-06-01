@@ -218,7 +218,7 @@ describeDecisionGating('requestRevision', {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
 
-    const caller = await callers.existingJwt(context.defaultReviewer.email);
+    const caller = await callers.networkJwt(context.defaultReviewer.email);
 
     await expect(
       caller.decision.requestRevision({

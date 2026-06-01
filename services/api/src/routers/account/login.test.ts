@@ -24,7 +24,7 @@ describeGating('account.login', {
   },
 
   commonJwt: async ({ callers }) => {
-    const caller = await callers.freshJwt();
+    const caller = await callers.networkJwt();
     await expect(caller.account.login(input)).resolves.toBe(true);
   },
 });

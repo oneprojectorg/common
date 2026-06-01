@@ -40,7 +40,7 @@ describeGating('organization.invite', {
       await db.delete(allowList).where(eq(allowList.email, invitee));
     });
 
-    const caller = await callers.freshJwt();
+    const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.organization.invite({ emails: [invitee] }),
     );

@@ -256,7 +256,7 @@ describeDecisionGating('uploadProposalAttachment', {
       proposalData: { title: 'Common-JWT owner uploads' },
     });
 
-    const caller = await callers.existingJwt(setup.userEmail);
+    const caller = await callers.networkJwt(setup.userEmail);
 
     const result = await caller.decision.uploadProposalAttachment({
       file: VALID_PNG_BASE64,

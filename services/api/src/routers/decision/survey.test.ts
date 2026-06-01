@@ -232,7 +232,7 @@ describeDecisionGating('submitProcessSurveyResponse', {
     });
     const instance = requireFirstInstance(setup.instances);
 
-    const caller = await callers.existingJwt(setup.userEmail);
+    const caller = await callers.networkJwt(setup.userEmail);
 
     const result = await caller.decision.submitProcessSurveyResponse({
       processInstanceId: instance.id,
@@ -294,7 +294,7 @@ describeDecisionGating('getProcessSurveyResponse', {
     });
     const instance = requireFirstInstance(setup.instances);
 
-    const caller = await callers.existingJwt(setup.userEmail);
+    const caller = await callers.networkJwt(setup.userEmail);
 
     const result = await caller.decision.getProcessSurveyResponse({
       processInstanceId: instance.id,

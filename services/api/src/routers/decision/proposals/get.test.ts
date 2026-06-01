@@ -1652,7 +1652,7 @@ describeDecisionGating('getProposal', {
       proposalData: { title: 'Common-JWT owner read' },
     });
 
-    const caller = await callers.existingJwt(setup.userEmail);
+    const caller = await callers.networkJwt(setup.userEmail);
 
     const result = await caller.decision.getProposal({
       profileId: proposal.profileId,

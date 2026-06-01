@@ -34,7 +34,7 @@ describeGating('profile.updateRole', {
   },
 
   commonJwt: async ({ callers }) => {
-    const caller = await callers.freshJwt();
+    const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.profile.updateRole({
         roleId: '00000000-0000-0000-0000-000000000000',

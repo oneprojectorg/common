@@ -28,7 +28,7 @@ describeGating('organization.listPendingRelationships', {
   },
 
   commonJwt: async ({ callers }) => {
-    const caller = await callers.freshJwt();
+    const caller = await callers.networkJwt();
     await expectPassesAuthGate(caller.organization.listPendingRelationships());
   },
 });
@@ -60,7 +60,7 @@ describeGating('organization.listDirectedRelationships', {
   },
 
   commonJwt: async ({ callers }) => {
-    const caller = await callers.freshJwt();
+    const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.organization.listDirectedRelationships({
         from: '00000000-0000-0000-0000-000000000000',
@@ -96,7 +96,7 @@ describeGating('organization.listRelationships', {
   },
 
   commonJwt: async ({ callers }) => {
-    const caller = await callers.freshJwt();
+    const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.organization.listRelationships({
         organizationId: '00000000-0000-0000-0000-000000000000',

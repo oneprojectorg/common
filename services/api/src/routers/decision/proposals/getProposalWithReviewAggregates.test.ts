@@ -382,7 +382,7 @@ describeDecisionGating('getProposalWithReviewAggregates', {
       proposalData: { title: 'Common-JWT owner reads aggregates' },
     });
 
-    const caller = await callers.existingJwt(setup.userEmail);
+    const caller = await callers.networkJwt(setup.userEmail);
 
     const result = await caller.decision.getProposalWithReviewAggregates({
       processInstanceId: instance.instance.id,

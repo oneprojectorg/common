@@ -503,7 +503,7 @@ describeDecisionGating('getPhaseReviewProgress', {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
 
-    const caller = await callers.existingJwt(context.defaultReviewer.email);
+    const caller = await callers.networkJwt(context.defaultReviewer.email);
 
     // Passes the gate if the call resolves OR rejects with anything other
     // than UnauthorizedError.

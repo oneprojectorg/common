@@ -31,7 +31,7 @@ describeGating('platform.admin.listAllUsers', {
   },
 
   commonJwt: async ({ callers }) => {
-    const caller = await callers.freshJwt();
+    const caller = await callers.networkJwt();
     await expectPassesAuthGate(caller.platform.admin.listAllUsers());
   },
 });

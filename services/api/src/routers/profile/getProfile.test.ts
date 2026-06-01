@@ -24,7 +24,7 @@ describeGating('profile.list', {
   },
 
   commonJwt: async ({ callers }) => {
-    const caller = await callers.freshJwt();
+    const caller = await callers.networkJwt();
     await expectPassesAuthGate(caller.profile.list());
   },
 });
@@ -52,7 +52,7 @@ describeGating('profile.getBySlug', {
   },
 
   commonJwt: async ({ callers }) => {
-    const caller = await callers.freshJwt();
+    const caller = await callers.networkJwt();
     await expectPassesAuthGate(caller.profile.getBySlug({ slug: 'x' }));
   },
 });

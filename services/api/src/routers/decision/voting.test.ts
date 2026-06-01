@@ -267,7 +267,7 @@ describeDecisionGating('submitVote', {
       proposalCount: 1,
     });
 
-    const caller = await callers.existingJwt(setup.userEmail);
+    const caller = await callers.networkJwt(setup.userEmail);
 
     const result = await caller.decision.submitVote({
       processInstanceId: instance.instance.id,
@@ -322,7 +322,7 @@ describeDecisionGating('getVotingStatus', {
       proposalCount: 0,
     });
 
-    const caller = await callers.existingJwt(setup.userEmail);
+    const caller = await callers.networkJwt(setup.userEmail);
 
     const status = await caller.decision.getVotingStatus({
       processInstanceId: instance.instance.id,

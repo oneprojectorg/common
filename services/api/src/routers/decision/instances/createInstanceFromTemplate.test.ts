@@ -388,7 +388,7 @@ describeDecisionGating('createInstanceFromTemplate', {
       task.id,
     );
 
-    const caller = await callers.existingJwt(userEmail);
+    const caller = await callers.networkJwt(userEmail);
 
     const result = await caller.decision.createInstanceFromTemplate({
       templateId,

@@ -22,15 +22,23 @@ export type GatingCallers = {
   noJwt: () => Promise<GatingCaller>;
   /** Supabase anonymous sign-in. */
   anonJwt: () => Promise<GatingCaller>;
-  /** Authenticate as an existing `@oneproject.org` user by email. */
-  existingJwt: (email: string) => Promise<GatingCaller>;
   /**
-   * Create a throwaway `@oneproject.org` user and authenticate as them.
-   * Useful for the generic gating matrix where the common-JWT cell only needs
-   * a normal authenticated caller, not any particular org/profile context.
-   * The created auth user and profile are cleaned up after the test.
+   * Tier 2 — an authenticated account that is *not* in the network: a non-org
+   * (`@example.com`) user with no allow-list entry (e.g. an anonymous user who
+   * upgraded to a real account). Today's gate rejects this with
+   * `AuthenticationError`; only a procedure that admits tier-2 access lets it
+   * through.
+   *
+   * With `email`, signs in that existing user; without, creates a throwaway one
+   * (auth user + profile are cleaned up after the test).
    */
-  freshJwt: () => Promise<GatingCaller>;
+  userJwt: (email?: string) => Promise<GatingCaller>;
+  /**
+   * Tier 3 — a user who is in the network: an `@oneproject.org` member (or a
+   * non-org user on the allow list). With `email`, signs in that existing user;
+   * without, creates a throwaway one (cleaned up after the test).
+   */
+  networkJwt: (email?: string) => Promise<GatingCaller>;
 };
 
 export const createGatingCallers = (
@@ -61,6 +69,34 @@ export const createGatingCallers = (
     }
   });
 
+  // Sign in as an already-seeded user.
+  const existingCaller = async (email: string) => {
+    const { session } = await createIsolatedSession(email);
+    return createCaller(await createTestContextWithSession(session));
+  };
+
+  // Create a throwaway, confirmed user on the given domain and sign in as them.
+  // `@oneproject.org` is in-network (tier 3); any other domain is a plain
+  // tier-2 user with no allow-list entry.
+  const freshCaller = async (domain: string) => {
+    const email = `gating-${randomUUID().slice(0, 12)}@${domain}`;
+    const { user } = await createTestUser(email);
+    if (!user) {
+      throw new Error(`Failed to create gating user: ${email}`);
+    }
+
+    createdAuthUserIds.push(user.id);
+
+    const userRecord = await db.query.users.findFirst({
+      where: { authUserId: user.id },
+    });
+    if (userRecord?.profileId) {
+      createdProfileIds.push(userRecord.profileId);
+    }
+
+    return existingCaller(email);
+  };
+
   return {
     noJwt: async () => createCaller(await createTestContextWithSession(null)),
 
@@ -89,30 +125,11 @@ export const createGatingCallers = (
       return createCaller(await createTestContextWithSession(data.session));
     },
 
-    existingJwt: async (email: string) => {
-      const { session } = await createIsolatedSession(email);
-      return createCaller(await createTestContextWithSession(session));
-    },
+    userJwt: async (email?: string) =>
+      email ? existingCaller(email) : freshCaller('example.com'),
 
-    freshJwt: async () => {
-      const email = `gating-${randomUUID().slice(0, 12)}@oneproject.org`;
-      const { user } = await createTestUser(email);
-      if (!user) {
-        throw new Error(`Failed to create gating user: ${email}`);
-      }
-
-      createdAuthUserIds.push(user.id);
-
-      const userRecord = await db.query.users.findFirst({
-        where: { authUserId: user.id },
-      });
-      if (userRecord?.profileId) {
-        createdProfileIds.push(userRecord.profileId);
-      }
-
-      const { session } = await createIsolatedSession(email);
-      return createCaller(await createTestContextWithSession(session));
-    },
+    networkJwt: async (email?: string) =>
+      email ? existingCaller(email) : freshCaller('oneproject.org'),
   };
 };
 

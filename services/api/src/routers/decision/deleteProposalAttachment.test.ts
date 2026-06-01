@@ -297,7 +297,7 @@ describeDecisionGating('deleteProposalAttachment', {
       proposalData: { title: 'Common-JWT owner deletes' },
     });
 
-    const caller = await callers.existingJwt(setup.userEmail);
+    const caller = await callers.networkJwt(setup.userEmail);
 
     const uploadResult = await caller.decision.uploadProposalAttachment({
       file: VALID_PNG_BASE64,

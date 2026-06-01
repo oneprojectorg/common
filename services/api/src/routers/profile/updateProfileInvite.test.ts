@@ -34,7 +34,7 @@ describeGating('profile.updateProfileInvite', {
   },
 
   commonJwt: async ({ callers }) => {
-    const caller = await callers.freshJwt();
+    const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.profile.updateProfileInvite({
         inviteId: '00000000-0000-0000-0000-000000000000',

@@ -14,13 +14,16 @@ type GatingBody = (ctx: GatingTestCtx) => Promise<void>;
  *
  *   - no-JWT     — an unauthenticated request (no session cookie)
  *   - anon-JWT   — a Supabase anonymous sign-in
- *   - common-JWT — a normal authenticated `@oneproject.org` user
+ *   - common-JWT — an authenticated in-network user (`callers.networkJwt()`)
  *
  * Endpoints behind `commonAuthedProcedure` (or `withAuthenticatedPlatformAdmin`)
  * reject the first two at the auth middleware — before input parsing — and
  * admit the third. The common-JWT cell should assert the caller gets *past*
  * the auth gate via {@link expectPassesAuthGate}; it does not have to reach a
  * successful business outcome.
+ *
+ * `callers` also exposes `userJwt()` — an authenticated account that is *not*
+ * in the network — for exercising procedures that admit tier-2 access.
  *
  * Forgetting a key is a compile error.
  */

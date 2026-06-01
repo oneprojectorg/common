@@ -646,7 +646,7 @@ describeDecisionGating('getLatestSelectionForProposal', {
       proposalData: { title: 'Common-JWT owner reads selection' },
     });
 
-    const caller = await callers.existingJwt(setup.userEmail);
+    const caller = await callers.networkJwt(setup.userEmail);
 
     // No selection has been recorded; nullable output expected.
     const result = await caller.decision.getLatestSelectionForProposal({

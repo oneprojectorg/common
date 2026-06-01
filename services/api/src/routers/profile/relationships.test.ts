@@ -34,7 +34,7 @@ describeGating('profile.addRelationship', {
   },
 
   commonJwt: async ({ callers }) => {
-    const caller = await callers.freshJwt();
+    const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.profile.addRelationship({
         targetProfileId: '00000000-0000-0000-0000-000000000000',
@@ -73,7 +73,7 @@ describeGating('profile.removeRelationship', {
   },
 
   commonJwt: async ({ callers }) => {
-    const caller = await callers.freshJwt();
+    const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.profile.removeRelationship({
         targetProfileId: '00000000-0000-0000-0000-000000000000',
@@ -106,7 +106,7 @@ describeGating('profile.getRelationships', {
   },
 
   commonJwt: async ({ callers }) => {
-    const caller = await callers.freshJwt();
+    const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.profile.getRelationships({ types: ['following'] }),
     );

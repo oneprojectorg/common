@@ -35,7 +35,7 @@ describeGating('organization.toggleReaction', {
   },
 
   commonJwt: async ({ callers }) => {
-    const caller = await callers.freshJwt();
+    const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.organization.toggleReaction({
         postId: 'x',

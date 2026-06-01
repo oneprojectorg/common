@@ -490,7 +490,7 @@ describeDecisionGating('transitionFromPhase', {
       throw new Error('No instance created');
     }
 
-    const caller = await callers.existingJwt(setup.userEmail);
+    const caller = await callers.networkJwt(setup.userEmail);
 
     await expect(
       caller.decision.transitionFromPhase({ instanceId: instance.instance.id }),

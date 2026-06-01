@@ -232,7 +232,7 @@ describeDecisionGating('getInstance', {
       throw new Error('No instance created');
     }
 
-    const caller = await callers.existingJwt(setup.userEmail);
+    const caller = await callers.networkJwt(setup.userEmail);
 
     const result = await caller.decision.getInstance({
       instanceId: instance.instance.id,
@@ -295,7 +295,7 @@ describeDecisionGating('getLegacyInstance', {
       throw new Error('No instance created');
     }
 
-    const caller = await callers.existingJwt(setup.userEmail);
+    const caller = await callers.networkJwt(setup.userEmail);
 
     // getLegacyInstance is @deprecated and its legacy output encoder only
     // accepts the pre-v2 processSchema shape. createDecisionSetup builds

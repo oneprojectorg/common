@@ -506,7 +506,7 @@ describeDecisionGating('acceptProposalInvite', {
     }
     profileData.trackProfileInvite(invitee.email, proposal.profileId);
 
-    const caller = await callers.existingJwt(invitee.email);
+    const caller = await callers.networkJwt(invitee.email);
 
     await caller.decision.acceptProposalInvite({
       profileId: proposal.profileId,

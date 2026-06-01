@@ -69,7 +69,7 @@ describeDecisionGating('createProposal', {
       throw new Error('No instance created');
     }
 
-    const caller = await callers.existingJwt(setup.userEmail);
+    const caller = await callers.networkJwt(setup.userEmail);
 
     const result = await caller.decision.createProposal({
       processInstanceId: instance.instance.id,

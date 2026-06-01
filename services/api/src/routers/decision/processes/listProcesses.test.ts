@@ -33,7 +33,7 @@ describeDecisionGating('listProcesses', {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
 
-    const caller = await callers.existingJwt(setup.userEmail);
+    const caller = await callers.networkJwt(setup.userEmail);
 
     const result = await caller.decision.listProcesses({});
     expect(result.processes).toBeDefined();
