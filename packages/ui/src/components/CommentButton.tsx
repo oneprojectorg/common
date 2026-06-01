@@ -38,18 +38,25 @@ export interface CommentButtonProps extends Omit<
   'children'
 > {
   count?: number;
+  /**
+   * Fully-formatted, translated label (e.g. "3 comments"). Consumers should
+   * pass an i18n-translated string since this package is locale-agnostic.
+   * Falls back to an English default when omitted.
+   */
+  label?: string;
   className?: string;
 }
 
 export const CommentButton = ({
   count = 0,
+  label,
   className,
   ...props
 }: CommentButtonProps) => {
   return (
     <RACButton {...props} className={commentButtonStyle({ className })}>
       <MessageCircleIcon className={iconStyle()} />
-      <span>{count} comments</span>
+      <span>{label ?? `${count} comments`}</span>
     </RACButton>
   );
 };
