@@ -1,5 +1,5 @@
 import { accessRoleMinimalSchema } from '@op/common/client';
-import { organizationUsers, organizations, profiles } from '@op/db/schema';
+import { organizations, profiles } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
@@ -106,5 +106,3 @@ export type OrganizationSearchResult = z.infer<
 >;
 export type Organization = z.infer<typeof organizationsWithProfileEncoder>;
 export type AdminOrg = z.infer<typeof adminOrgEncoder>;
-
-export const orgUserEncoder = createSelectSchema(organizationUsers);
