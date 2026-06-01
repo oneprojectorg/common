@@ -1,10 +1,10 @@
 import { deleteProposalAttachment as deleteProposalAttachmentService } from '@op/common';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 
 export const deleteProposalAttachment = router({
-  deleteProposalAttachment: commonAuthedProcedure({
+  deleteProposalAttachment: commonNetworkProcedure({
     rateLimit: { windowSize: 10, maxRequests: 20 },
   })
     .input(

@@ -3,10 +3,10 @@ import { acceptProposalInvite } from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../../trpcFactory';
 
 export const acceptProposalInviteRouter = router({
-  acceptProposalInvite: commonAuthedProcedure()
+  acceptProposalInvite: commonNetworkProcedure()
     .input(z.object({ profileId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       await acceptProposalInvite({

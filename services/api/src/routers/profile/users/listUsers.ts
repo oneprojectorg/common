@@ -2,13 +2,13 @@ import { listProfileUsers } from '@op/common';
 import { profileUserWithRolesSchema } from '@op/common/client';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../../trpcFactory';
 import { createSortable } from '../../../utils';
 
 const profileUserSortable = createSortable(['name', 'email', 'role'] as const);
 
 export const listUsersRouter = router({
-  listUsers: commonAuthedProcedure()
+  listUsers: commonNetworkProcedure()
     .input(
       z
         .object({

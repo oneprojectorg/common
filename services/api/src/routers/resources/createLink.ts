@@ -10,7 +10,7 @@ import type { ChannelName } from '@op/common/realtime';
 import { z } from 'zod';
 
 import { resourceInCollectionEncoder } from '../../encoders/resources';
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   target: z.discriminatedUnion('kind', [
@@ -36,7 +36,7 @@ const inputSchema = z.object({
 });
 
 export const createLink = router({
-  createLink: commonAuthedProcedure()
+  createLink: commonNetworkProcedure()
     .input(inputSchema)
     .output(resourceInCollectionEncoder)
     .mutation(async ({ input, ctx }) => {

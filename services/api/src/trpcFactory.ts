@@ -10,11 +10,13 @@ import {
 } from './lib/cookies';
 import { errorFormatter } from './lib/error';
 import withAnalytics from './middlewares/withAnalytics';
-import withAuthenticated from './middlewares/withAuthenticated';
 import withChannelMeta from './middlewares/withChannelMeta';
 import withLogger from './middlewares/withLogger';
+import withNetworkAuthentication from './middlewares/withNetworkAuthentication';
 import withRateLimited from './middlewares/withRateLimited';
 import withRequestCache from './middlewares/withRequestCache';
+import withRequireUser from './middlewares/withRequireUser';
+import withResolvedUser from './middlewares/withResolvedUser';
 import type { TContext } from './types';
 
 export const createContext = async ({
@@ -68,7 +70,7 @@ export const commonProcedure = t.procedure
 
 const DEFAULT_RATE_LIMIT = { windowSize: 10, maxRequests: 10 };
 
-interface CommonAuthedProcedureOptions {
+interface RateLimitedProcedureOptions {
   rateLimit?: {
     windowSize: number;
     maxRequests: number;
@@ -76,21 +78,64 @@ interface CommonAuthedProcedureOptions {
 }
 
 /**
- * Creates an authenticated procedure with configurable rate limiting.
- * Includes: channelMeta -> logger -> rateLimited -> authenticated -> analytics
+ * Closed-network authenticated procedure (formerly `commonAuthedProcedure`).
+ * Includes: requestCache -> channelMeta -> logger -> rateLimited ->
+ * networkAuthentication -> analytics.
+ *
+ * Rejects anonymous and unauthenticated callers at the auth gate and admits
+ * only confirmed `@oneproject.org` / allow-listed users. Use this for endpoints
+ * that genuinely require closed-network membership.
  *
  * @param opts.rateLimit - Custom rate limit config (default: 10 requests per 10 seconds)
  *
  * Usage:
- * - `commonAuthedProcedure()` - uses default rate limit (10 req/10s)
- * - `commonAuthedProcedure({ rateLimit: { windowSize: 60, maxRequests: 5 } })` - custom rate limit
- *
- * For unauthenticated endpoints, use `commonProcedure` with explicit middleware.
+ * - `commonNetworkProcedure()` - uses default rate limit (10 req/10s)
+ * - `commonNetworkProcedure({ rateLimit: { windowSize: 60, maxRequests: 5 } })` - custom rate limit
  */
-export function commonAuthedProcedure(opts?: CommonAuthedProcedureOptions) {
+export function commonNetworkProcedure(opts?: RateLimitedProcedureOptions) {
   const rateLimit = opts?.rateLimit ?? DEFAULT_RATE_LIMIT;
   return commonProcedure
     .use(withRateLimited(rateLimit))
-    .use(withAuthenticated)
+    .use(withNetworkAuthentication)
+    .use(withAnalytics);
+}
+
+/**
+ * Authenticated procedure for any real Supabase user — including anonymous
+ * sign-ins. Includes: requestCache -> channelMeta -> logger -> rateLimited ->
+ * resolvedUser -> requireUser -> analytics.
+ *
+ * Requires *a* user but performs no closed-network gating; authorization is
+ * deferred to the service layer. Endpoints move here from
+ * `commonNetworkProcedure` once gating tests prove anon / out-of-network
+ * callers still fail closed (or are intentionally admitted).
+ *
+ * @param opts.rateLimit - Custom rate limit config (default: 10 requests per 10 seconds)
+ */
+export function authenticatedProcedure(opts?: RateLimitedProcedureOptions) {
+  const rateLimit = opts?.rateLimit ?? DEFAULT_RATE_LIMIT;
+  return commonProcedure
+    .use(withRateLimited(rateLimit))
+    .use(withResolvedUser)
+    .use(withRequireUser)
+    .use(withAnalytics);
+}
+
+/**
+ * Open procedure for no-JWT / public-capable endpoints. Includes: requestCache
+ * -> channelMeta -> logger -> rateLimited -> resolvedUser -> analytics.
+ *
+ * Resolves an optional user (`ctx.user?`) but never rejects at the middleware
+ * layer — authorization is fully the service layer's responsibility. Used by
+ * nothing yet; endpoints opt in only once their service layer does real role
+ * checks and has updated gating coverage.
+ *
+ * @param opts.rateLimit - Custom rate limit config (default: 10 requests per 10 seconds)
+ */
+export function openProcedure(opts?: RateLimitedProcedureOptions) {
+  const rateLimit = opts?.rateLimit ?? DEFAULT_RATE_LIMIT;
+  return commonProcedure
+    .use(withRateLimited(rateLimit))
+    .use(withResolvedUser)
     .use(withAnalytics);
 }

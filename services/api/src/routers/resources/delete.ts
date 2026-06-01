@@ -1,10 +1,10 @@
 import { Channels, deleteResource, getScopesForResource } from '@op/common';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 
 export const deleteResourceRouter = router({
-  delete: commonAuthedProcedure()
+  delete: commonNetworkProcedure()
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ input, ctx }) => {
       // Resolve scopes BEFORE delete - after delete the resource has no rows.

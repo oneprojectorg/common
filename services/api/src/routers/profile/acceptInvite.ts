@@ -3,10 +3,10 @@ import { acceptProfileInvite } from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 
 export const acceptInviteRouter = router({
-  acceptInvite: commonAuthedProcedure()
+  acceptInvite: commonNetworkProcedure()
     .input(
       z.object({
         inviteId: z.string().uuid(),

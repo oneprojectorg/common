@@ -5,10 +5,10 @@ import {
 } from '@op/common';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 
 export const detachFromCollection = router({
-  detachFromCollection: commonAuthedProcedure()
+  detachFromCollection: commonNetworkProcedure()
     .input(
       z.object({
         id: z.string().uuid(),

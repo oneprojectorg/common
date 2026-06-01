@@ -1,7 +1,7 @@
 import { updateOrganizationUser } from '@op/common';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   organizationId: z.uuid(),
@@ -33,7 +33,7 @@ const outputSchema = z.object({
 });
 
 export const updateOrganizationUserRouter = router({
-  updateOrganizationUser: commonAuthedProcedure({
+  updateOrganizationUser: commonNetworkProcedure({
     rateLimit: { windowSize: 60, maxRequests: 10 },
   })
     .input(inputSchema)

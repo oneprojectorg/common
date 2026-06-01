@@ -3,12 +3,12 @@ import { updateOrganization } from '@op/common';
 import { waitUntil } from '@vercel/functions';
 
 import { organizationsEncoder } from '../../encoders/organizations';
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 import { trackFundingToggle } from '../../utils/analytics';
 import { updateOrganizationInputSchema } from './validators';
 
 export const updateOrganizationRouter = router({
-  update: commonAuthedProcedure({
+  update: commonNetworkProcedure({
     rateLimit: { windowSize: 10, maxRequests: 20 },
   })
     .input(updateOrganizationInputSchema)

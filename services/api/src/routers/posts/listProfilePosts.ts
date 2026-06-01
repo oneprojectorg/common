@@ -5,7 +5,7 @@ import {
 import { z } from 'zod';
 
 import { postsEncoder } from '../../encoders';
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   profileId: z.string(),
@@ -14,7 +14,7 @@ const inputSchema = z.object({
 });
 
 export const listProfilePosts = router({
-  listProfilePosts: commonAuthedProcedure()
+  listProfilePosts: commonNetworkProcedure()
     .input(inputSchema)
     .output(
       z.object({

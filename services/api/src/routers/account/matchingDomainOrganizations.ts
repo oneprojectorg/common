@@ -2,10 +2,10 @@ import { matchingDomainOrganizations as getMatchingDomainOrganizations } from '@
 import { z } from 'zod';
 
 import { searchedOrganizationEncoder } from '../../encoders';
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 
 export const matchingDomainOrganizations = router({
-  listMatchingDomainOrganizations: commonAuthedProcedure({
+  listMatchingDomainOrganizations: commonNetworkProcedure({
     rateLimit: { windowSize: 10, maxRequests: 100 },
   })
     .input(z.undefined())

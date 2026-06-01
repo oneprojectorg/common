@@ -1,7 +1,7 @@
 import { Channels, collectionSchema, reorderCollection } from '@op/common';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../../trpcFactory';
 
 const inputSchema = z.object({
   id: z.string().uuid(),
@@ -9,7 +9,7 @@ const inputSchema = z.object({
 });
 
 export const collectionsReorder = router({
-  reorder: commonAuthedProcedure()
+  reorder: commonNetworkProcedure()
     .input(inputSchema)
     .output(collectionSchema)
     .mutation(async ({ input, ctx }) => {

@@ -5,10 +5,17 @@ import { getCachedAuthUser } from '../supabase/server';
 import type { MiddlewareBuilderBase, TContextWithUser } from '../types';
 import { verifyAuthentication } from '../utils/verifyAuthentication';
 
-const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
-  ctx,
-  next,
-}) => {
+/**
+ * Closed-network authentication gate (formerly `withAuthenticated`).
+ *
+ * Requires a confirmed, non-anonymous Supabase user that is either an
+ * `@oneproject.org` account or present on the invite allow list. Anonymous and
+ * unauthenticated callers are rejected here, before any input parsing — this is
+ * the gate that enforces today's closed-network behavior.
+ */
+const withNetworkAuthentication: MiddlewareBuilderBase<
+  TContextWithUser
+> = async ({ ctx, next }) => {
   const data = await getCachedAuthUser(ctx);
 
   const user = verifyAuthentication(data);
@@ -50,4 +57,4 @@ export const withAuthenticatedAdmin: MiddlewareBuilderBase<
   });
 };
 
-export default withAuthenticated;
+export default withNetworkAuthentication;

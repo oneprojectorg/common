@@ -9,7 +9,7 @@ import { getCurrentOrgId } from '@op/common/src/services/access';
 import { Organization } from '@op/db/schema';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 
 const directedInputSchema = z.object({
   from: z.uuid({
@@ -32,7 +32,7 @@ const nonDirectedInputSchema = z.object({
 });
 
 export const listRelationshipsRouter = router({
-  listPendingRelationships: commonAuthedProcedure()
+  listPendingRelationships: commonNetworkProcedure()
     .input(z.void())
     .query(async ({ ctx }) => {
       const { user } = ctx;
@@ -45,7 +45,7 @@ export const listRelationshipsRouter = router({
 
       return { organizations, count };
     }),
-  listDirectedRelationships: commonAuthedProcedure()
+  listDirectedRelationships: commonNetworkProcedure()
     .input(directedInputSchema)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
@@ -79,7 +79,7 @@ export const listRelationshipsRouter = router({
 
       return { relationships, count };
     }),
-  listRelationships: commonAuthedProcedure()
+  listRelationships: commonNetworkProcedure()
     .input(nonDirectedInputSchema)
     .query(async ({ ctx, input }) => {
       const { user } = ctx;

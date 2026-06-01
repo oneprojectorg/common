@@ -1,10 +1,10 @@
 import { updateRole } from '@op/common';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 
 export const updateRoleRouter = router({
-  updateRole: commonAuthedProcedure()
+  updateRole: commonNetworkProcedure()
     .input(
       z.object({
         roleId: z.string().uuid(),

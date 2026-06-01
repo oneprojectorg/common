@@ -4,7 +4,7 @@ import { db } from '@op/db/client';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z
   .object({
@@ -54,7 +54,7 @@ const outputSchema = z.object({
 });
 
 export const inviteUserRouter = router({
-  invite: commonAuthedProcedure({
+  invite: commonNetworkProcedure({
     rateLimit: { windowSize: 60, maxRequests: 10 },
   })
     .input(inputSchema)

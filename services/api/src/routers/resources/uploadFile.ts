@@ -1,7 +1,7 @@
 import { signResourceUploadUrlForTarget } from '@op/common';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   target: z.discriminatedUnion('kind', [
@@ -25,7 +25,7 @@ const outputSchema = z.object({
 });
 
 export const uploadFile = router({
-  uploadFile: commonAuthedProcedure()
+  uploadFile: commonNetworkProcedure()
     .input(inputSchema)
     .output(outputSchema)
     .mutation(({ input, ctx }) =>

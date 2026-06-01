@@ -6,7 +6,7 @@ import {
 import { z } from 'zod';
 
 import { resourceInCollectionEncoder } from '../../encoders/resources';
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { commonNetworkProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   id: z.string().uuid(),
@@ -15,7 +15,7 @@ const inputSchema = z.object({
 });
 
 export const reorder = router({
-  reorder: commonAuthedProcedure()
+  reorder: commonNetworkProcedure()
     .input(inputSchema)
     .output(resourceInCollectionEncoder)
     .mutation(async ({ input, ctx }) => {
