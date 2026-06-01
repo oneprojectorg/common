@@ -56,7 +56,7 @@ describe.concurrent('organization.deleteOrganization', () => {
       }),
     ).rejects.toMatchObject({
       cause: {
-        name: 'AuthenticationError',
+        name: 'AuthGateError',
       },
     });
   });
@@ -179,9 +179,6 @@ describe.concurrent('organization.deleteOrganization', () => {
   });
 });
 
-// Network gating matrix: organization.deleteOrganization sits on
-// commonAuthedProcedure, which rejects no-JWT and anon-JWT at the auth
-// middleware. A normal authenticated caller is admitted.
 describeGating('organization.deleteOrganization', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
@@ -190,7 +187,7 @@ describeGating('organization.deleteOrganization', {
         organizationProfileId: '00000000-0000-0000-0000-000000000000',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -201,11 +198,22 @@ describeGating('organization.deleteOrganization', {
         organizationProfileId: '00000000-0000-0000-0000-000000000000',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwt: async ({ callers }) => {
+  userJwt: async ({ callers }) => {
+    const caller = await callers.userJwt();
+    await expect(
+      caller.organization.deleteOrganization({
+        organizationProfileId: '00000000-0000-0000-0000-000000000000',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.organization.deleteOrganization({

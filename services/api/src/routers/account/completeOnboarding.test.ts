@@ -5,16 +5,13 @@ import {
   expectPassesAuthGate,
 } from '../../test/helpers/gating';
 
-// Network gating matrix: account.completeOnboarding sits on
-// commonAuthedProcedure, which rejects no-JWT and anon-JWT at the auth
-// middleware. A normal authenticated caller is admitted.
 describeGating('account.completeOnboarding', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expect(
       caller.account.completeOnboarding({ tos: false, privacy: false }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -23,11 +20,20 @@ describeGating('account.completeOnboarding', {
     await expect(
       caller.account.completeOnboarding({ tos: false, privacy: false }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwt: async ({ callers }) => {
+  userJwt: async ({ callers }) => {
+    const caller = await callers.userJwt();
+    await expect(
+      caller.account.completeOnboarding({ tos: false, privacy: false }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.account.completeOnboarding({ tos: false, privacy: false }),

@@ -5,10 +5,6 @@ import {
   expectPassesAuthGate,
 } from '../../test/helpers/gating';
 
-// Network gating matrix: organization.toggleReaction sits on
-// commonAuthedProcedure (via the aliased `reactionProcedure`), which rejects
-// no-JWT and anon-JWT at the auth middleware. A normal authenticated caller is
-// admitted.
 describeGating('organization.toggleReaction', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
@@ -18,7 +14,7 @@ describeGating('organization.toggleReaction', {
         reactionType: 'like',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -30,11 +26,23 @@ describeGating('organization.toggleReaction', {
         reactionType: 'like',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwt: async ({ callers }) => {
+  userJwt: async ({ callers }) => {
+    const caller = await callers.userJwt();
+    await expect(
+      caller.organization.toggleReaction({
+        postId: 'x',
+        reactionType: 'like',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.organization.toggleReaction({

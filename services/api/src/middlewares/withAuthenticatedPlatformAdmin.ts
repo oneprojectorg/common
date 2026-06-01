@@ -1,5 +1,5 @@
 import {
-  AuthenticationError,
+  AuthGateError,
   UnauthorizedError,
   isUserEmailPlatformAdmin,
 } from '@op/common';
@@ -21,7 +21,7 @@ export const withAuthenticatedPlatformAdmin: MiddlewareBuilderBase<
   const userEmail = user.email;
 
   if (!userEmail) {
-    throw new AuthenticationError('User email is required for authentication');
+    throw new AuthGateError('User email is required for authentication');
   }
 
   const isAdmin = isUserEmailPlatformAdmin(userEmail);

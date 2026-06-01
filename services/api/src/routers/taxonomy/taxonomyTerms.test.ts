@@ -5,16 +5,13 @@ import {
   expectPassesAuthGate,
 } from '../../test/helpers/gating';
 
-// Network gating matrix: taxonomy.getTerms sits on commonAuthedProcedure,
-// which rejects no-JWT and anon-JWT at the auth middleware. A normal
-// authenticated caller is admitted.
 describeGating('taxonomy.getTerms', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expect(
       caller.taxonomy.getTerms({ name: 'xxx' }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -23,11 +20,20 @@ describeGating('taxonomy.getTerms', {
     await expect(
       caller.taxonomy.getTerms({ name: 'xxx' }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwt: async ({ callers }) => {
+  userJwt: async ({ callers }) => {
+    const caller = await callers.userJwt();
+    await expect(
+      caller.taxonomy.getTerms({ name: 'xxx' }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
     await expectPassesAuthGate(caller.taxonomy.getTerms({ name: 'xxx' }));
   },

@@ -131,10 +131,6 @@ describe.concurrent('submitReview', () => {
   });
 });
 
-// Network gating matrix: submitReview sits on `commonAuthedProcedure`,
-// which rejects no-JWT and anon-JWT at the auth middleware. Common-JWT
-// caller with a random assignmentId is admitted by the gate; the service
-// then rejects (assignment not found / no review access).
 describeDecisionGating('submitReview', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
@@ -148,7 +144,7 @@ describeDecisionGating('submitReview', {
         reviewData: {},
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -164,11 +160,27 @@ describeDecisionGating('submitReview', {
         reviewData: {},
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    await testData.createContext();
+
+    const caller = await callers.userJwt();
+
+    await expect(
+      caller.decision.submitReview({
+        assignmentId: crypto.randomUUID(),
+        reviewData: {},
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
 

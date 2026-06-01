@@ -498,9 +498,6 @@ describe.concurrent('getCategories category matching', () => {
   });
 });
 
-// Network gating matrix: getCategories sits on `commonAuthedProcedure`,
-// which rejects no-JWT and anon-JWT at the auth middleware. Common-JWT
-// owner is admitted and gets back the (empty) categories list.
 describeDecisionGating('getCategories', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
@@ -520,7 +517,7 @@ describeDecisionGating('getCategories', {
         processInstanceId: instance.instance.id,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -542,11 +539,33 @@ describeDecisionGating('getCategories', {
         processInstanceId: instance.instance.id,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await callers.userJwt();
+
+    await expect(
+      caller.decision.getCategories({
+        processInstanceId: instance.instance.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,

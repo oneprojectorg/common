@@ -5,9 +5,6 @@ import {
   expectPassesAuthGate,
 } from '../../test/helpers/gating';
 
-// Network gating matrix: organization.declineRelationship sits on
-// commonAuthedProcedure, which rejects no-JWT and anon-JWT at the auth
-// middleware. A normal authenticated caller is admitted.
 describeGating('organization.declineRelationship', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
@@ -17,7 +14,7 @@ describeGating('organization.declineRelationship', {
         ids: [],
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -29,11 +26,23 @@ describeGating('organization.declineRelationship', {
         ids: [],
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwt: async ({ callers }) => {
+  userJwt: async ({ callers }) => {
+    const caller = await callers.userJwt();
+    await expect(
+      caller.organization.declineRelationship({
+        targetOrganizationId: '00000000-0000-0000-0000-000000000000',
+        ids: [],
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.organization.declineRelationship({

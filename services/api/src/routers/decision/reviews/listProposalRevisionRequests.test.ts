@@ -204,11 +204,6 @@ describe.concurrent('listProposalRevisionRequests', () => {
   });
 });
 
-// Network gating matrix: listProposalRevisionRequests sits on
-// `commonAuthedProcedure`, which rejects no-JWT and anon-JWT at the auth
-// middleware. Common-JWT caller with a random proposalId is admitted by
-// the gate; the service then throws NotFoundError because the proposal
-// doesn't exist.
 describeDecisionGating('listProposalRevisionRequests', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
@@ -221,7 +216,7 @@ describeDecisionGating('listProposalRevisionRequests', {
         proposalId: crypto.randomUUID(),
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -236,11 +231,26 @@ describeDecisionGating('listProposalRevisionRequests', {
         proposalId: crypto.randomUUID(),
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    await testData.createContext();
+
+    const caller = await callers.userJwt();
+
+    await expect(
+      caller.decision.listProposalRevisionRequests({
+        proposalId: crypto.randomUUID(),
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
 

@@ -116,9 +116,6 @@ import {
   expectPassesAuthGate,
 } from '../../../test/helpers/gating';
 
-// Network gating matrix: profile.removeUser sits on commonAuthedProcedure,
-// which rejects no-JWT and anon-JWT at the auth middleware. A normal
-// authenticated caller is admitted.
 describeGating('profile.removeUser', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
@@ -127,7 +124,7 @@ describeGating('profile.removeUser', {
         profileUserId: '00000000-0000-0000-0000-000000000000',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -138,11 +135,22 @@ describeGating('profile.removeUser', {
         profileUserId: '00000000-0000-0000-0000-000000000000',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwt: async ({ callers }) => {
+  userJwt: async ({ callers }) => {
+    const caller = await callers.userJwt();
+    await expect(
+      caller.profile.removeUser({
+        profileUserId: '00000000-0000-0000-0000-000000000000',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.profile.removeUser({

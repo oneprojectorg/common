@@ -1,5 +1,5 @@
 import { cache } from '@op/cache';
-import { AuthenticationError, getAllowListUser } from '@op/common';
+import { AuthGateError, getAllowListUser } from '@op/common';
 
 import { getCachedAuthUser } from '../supabase/server';
 import type { MiddlewareBuilderBase, TContextWithUser } from '../types';
@@ -26,7 +26,7 @@ const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
     });
 
     if (!allowedUserEmail) {
-      throw new AuthenticationError();
+      throw new AuthGateError();
     }
   }
 

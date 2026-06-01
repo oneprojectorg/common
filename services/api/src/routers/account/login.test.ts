@@ -23,7 +23,12 @@ describeGating('account.login', {
     await expect(caller.account.login(input)).resolves.toBe(true);
   },
 
-  commonJwt: async ({ callers }) => {
+  userJwt: async ({ callers }) => {
+    const caller = await callers.userJwt();
+    await expect(caller.account.login(input)).resolves.toBe(true);
+  },
+
+  networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
     await expect(caller.account.login(input)).resolves.toBe(true);
   },

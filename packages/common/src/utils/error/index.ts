@@ -54,15 +54,16 @@ export class UnauthorizedError extends CommonError {
 }
 
 /**
- * Raised by the authentication gate (`verifyAuthentication` and the
- * `withAuthenticated*` middlewares) when a request is not a valid authenticated
- * user: no session, anonymous, unconfirmed email, or non-allow-listed.
+ * Raised by protected API auth gates (`verifyAuthentication` and the
+ * `withAuthenticated*` middlewares) when a request fails before resolver-level
+ * authorization runs: no valid session, anonymous user, unconfirmed email,
+ * missing auth email, or non-allow-listed user.
  *
- * Subclassing {@link UnauthorizedError} keeps the 403 wire mapping unchanged
- * while letting callers tell a *gate* rejection apart from a deeper
- * authorization failure (which still throws plain `UnauthorizedError`).
+ * It intentionally maps like {@link UnauthorizedError} today, while letting
+ * tests and callers distinguish gate rejection from deeper permission checks
+ * that throw plain `UnauthorizedError`.
  */
-export class AuthenticationError extends UnauthorizedError {}
+export class AuthGateError extends UnauthorizedError {}
 
 export class ConflictError extends CommonError {
   public readonly statusCode: number = 409;

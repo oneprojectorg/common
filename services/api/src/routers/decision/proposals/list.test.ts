@@ -2229,10 +2229,6 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
   });
 });
 
-// Network gating matrix: listProposals sits on `commonAuthedProcedure`,
-// which rejects no-JWT and anon-JWT at the auth middleware. Common-JWT
-// allow-listed owner is admitted and sees the instance's proposals.
-// Public-instance cells will be added when the public-mode toggle ships.
 describeDecisionGating('listProposals', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
@@ -2253,7 +2249,7 @@ describeDecisionGating('listProposals', {
         processInstanceId: instance.instance.id,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -2276,11 +2272,34 @@ describeDecisionGating('listProposals', {
         processInstanceId: instance.instance.id,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await callers.userJwt();
+
+    await expect(
+      caller.decision.listProposals({
+        processInstanceId: instance.instance.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
     const setup = await testData.createDecisionSetup({

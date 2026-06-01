@@ -6,17 +6,20 @@ type DecisionGatingBody = (ctx: GatingTestCtx) => Promise<void>;
 
 /**
  * Decision-instance endpoints that participate in network gating declare an
- * outcome for the three caller kinds (no-JWT / anon-JWT / common-JWT)
- * against a non-public instance. Public-mode cells will be added when the
- * public-instance toggle mechanism lands; until then the matrix only
- * exercises the closed-network behavior that is enforced today.
+ * outcome for the four caller kinds (no-JWT / anon-JWT / user-JWT / network-JWT)
+ * against a non-public instance. Decision endpoints are `commonAuthedProcedure`,
+ * so the first three are rejected with `AuthGateError` and network-JWT is
+ * admitted. Public-mode cells will be added when the public-instance toggle
+ * mechanism lands; until then the matrix only exercises the closed-network
+ * behavior that is enforced today.
  *
  * Forgetting a key is a compile error.
  */
 export type DecisionGatingCells = {
   noJwtNonPublic: DecisionGatingBody;
   anonJwtNonPublic: DecisionGatingBody;
-  commonJwtNonPublic: DecisionGatingBody;
+  userJwtNonPublic: DecisionGatingBody;
+  networkJwtNonPublic: DecisionGatingBody;
 };
 
 export const describeDecisionGating = (
@@ -42,9 +45,10 @@ export const describeDecisionGating = (
 
     it('no-JWT caller on non-public instance', wrap(cells.noJwtNonPublic));
     it('anon-JWT caller on non-public instance', wrap(cells.anonJwtNonPublic));
+    it('user-JWT caller on non-public instance', wrap(cells.userJwtNonPublic));
     it(
-      'common-JWT caller on non-public instance',
-      wrap(cells.commonJwtNonPublic),
+      'network-JWT caller on non-public instance',
+      wrap(cells.networkJwtNonPublic),
     );
   });
 };

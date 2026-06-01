@@ -5,9 +5,6 @@ import {
   expectPassesAuthGate,
 } from '../../test/helpers/gating';
 
-// Network gating matrix: profile.updateRole sits on commonAuthedProcedure,
-// which rejects no-JWT and anon-JWT at the auth middleware. A normal
-// authenticated caller is admitted.
 describeGating('profile.updateRole', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
@@ -17,7 +14,7 @@ describeGating('profile.updateRole', {
         name: 'x',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -29,11 +26,23 @@ describeGating('profile.updateRole', {
         name: 'x',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwt: async ({ callers }) => {
+  userJwt: async ({ callers }) => {
+    const caller = await callers.userJwt();
+    await expect(
+      caller.profile.updateRole({
+        roleId: '00000000-0000-0000-0000-000000000000',
+        name: 'x',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.profile.updateRole({

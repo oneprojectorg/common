@@ -5,9 +5,6 @@ import {
   expectPassesAuthGate,
 } from '../../test/helpers/gating';
 
-// Network gating matrix: posts.uploadPostAttachment sits on
-// commonAuthedProcedure, which rejects no-JWT and anon-JWT at the auth
-// middleware. A normal authenticated caller is admitted.
 describeGating('posts.uploadPostAttachment', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
@@ -18,7 +15,7 @@ describeGating('posts.uploadPostAttachment', {
         mimeType: 'x',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -31,11 +28,24 @@ describeGating('posts.uploadPostAttachment', {
         mimeType: 'x',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwt: async ({ callers }) => {
+  userJwt: async ({ callers }) => {
+    const caller = await callers.userJwt();
+    await expect(
+      caller.posts.uploadPostAttachment({
+        file: 'x',
+        fileName: 'x',
+        mimeType: 'x',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.posts.uploadPostAttachment({

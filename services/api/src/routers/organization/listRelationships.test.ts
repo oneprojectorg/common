@@ -5,16 +5,13 @@ import {
   expectPassesAuthGate,
 } from '../../test/helpers/gating';
 
-// Network gating matrix: organization.listPendingRelationships sits on
-// commonAuthedProcedure, which rejects no-JWT and anon-JWT at the auth
-// middleware. A normal authenticated caller is admitted.
 describeGating('organization.listPendingRelationships', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expect(
       caller.organization.listPendingRelationships(),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -23,19 +20,25 @@ describeGating('organization.listPendingRelationships', {
     await expect(
       caller.organization.listPendingRelationships(),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwt: async ({ callers }) => {
+  userJwt: async ({ callers }) => {
+    const caller = await callers.userJwt();
+    await expect(
+      caller.organization.listPendingRelationships(),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
     await expectPassesAuthGate(caller.organization.listPendingRelationships());
   },
 });
 
-// Network gating matrix: organization.listDirectedRelationships sits on
-// commonAuthedProcedure, which rejects no-JWT and anon-JWT at the auth
-// middleware. A normal authenticated caller is admitted.
 describeGating('organization.listDirectedRelationships', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
@@ -44,7 +47,7 @@ describeGating('organization.listDirectedRelationships', {
         from: '00000000-0000-0000-0000-000000000000',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -55,11 +58,22 @@ describeGating('organization.listDirectedRelationships', {
         from: '00000000-0000-0000-0000-000000000000',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwt: async ({ callers }) => {
+  userJwt: async ({ callers }) => {
+    const caller = await callers.userJwt();
+    await expect(
+      caller.organization.listDirectedRelationships({
+        from: '00000000-0000-0000-0000-000000000000',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.organization.listDirectedRelationships({
@@ -69,9 +83,6 @@ describeGating('organization.listDirectedRelationships', {
   },
 });
 
-// Network gating matrix: organization.listRelationships sits on
-// commonAuthedProcedure, which rejects no-JWT and anon-JWT at the auth
-// middleware. A normal authenticated caller is admitted.
 describeGating('organization.listRelationships', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
@@ -80,7 +91,7 @@ describeGating('organization.listRelationships', {
         organizationId: '00000000-0000-0000-0000-000000000000',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -91,11 +102,22 @@ describeGating('organization.listRelationships', {
         organizationId: '00000000-0000-0000-0000-000000000000',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwt: async ({ callers }) => {
+  userJwt: async ({ callers }) => {
+    const caller = await callers.userJwt();
+    await expect(
+      caller.organization.listRelationships({
+        organizationId: '00000000-0000-0000-0000-000000000000',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.organization.listRelationships({

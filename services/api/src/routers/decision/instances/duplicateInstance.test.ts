@@ -541,9 +541,6 @@ describe.concurrent('duplicateInstance', () => {
   });
 });
 
-// Network gating matrix: duplicateInstance sits on `commonAuthedProcedure`,
-// which rejects no-JWT and anon-JWT at the auth middleware. Common-JWT
-// owner is admitted; the duplication succeeds against their own instance.
 describeDecisionGating('duplicateInstance', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
@@ -573,7 +570,7 @@ describeDecisionGating('duplicateInstance', {
         },
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -605,11 +602,43 @@ describeDecisionGating('duplicateInstance', {
         },
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await callers.userJwt();
+
+    await expect(
+      caller.decision.duplicateInstance({
+        instanceId: instance.instance.id,
+        name: 'anon copy',
+        include: {
+          processSettings: false,
+          phases: false,
+          proposalCategories: false,
+          proposalTemplate: false,
+          reviewSettings: false,
+          reviewRubric: false,
+          roles: false,
+        },
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,

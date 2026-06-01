@@ -5,16 +5,13 @@ import {
   expectPassesAuthGate,
 } from '../../test/helpers/gating';
 
-// Network gating matrix: posts.listProfilePosts sits on commonAuthedProcedure,
-// which rejects no-JWT and anon-JWT at the auth middleware. A normal
-// authenticated caller is admitted.
 describeGating('posts.listProfilePosts', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expect(
       caller.posts.listProfilePosts({ profileId: 'x' }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -23,11 +20,20 @@ describeGating('posts.listProfilePosts', {
     await expect(
       caller.posts.listProfilePosts({ profileId: 'x' }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwt: async ({ callers }) => {
+  userJwt: async ({ callers }) => {
+    const caller = await callers.userJwt();
+    await expect(
+      caller.posts.listProfilePosts({ profileId: 'x' }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.posts.listProfilePosts({ profileId: 'x' }),

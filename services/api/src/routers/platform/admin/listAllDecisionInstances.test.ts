@@ -14,16 +14,13 @@ import {
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
 
-// Network gating matrix: platform.admin.listAllDecisionInstances sits on
-// withAuthenticatedPlatformAdmin, which rejects no-JWT and anon-JWT at the auth
-// middleware. A normal authenticated caller is admitted.
 describeGating('platform.admin.listAllDecisionInstances', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expect(
       caller.platform.admin.listAllDecisionInstances(),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -32,11 +29,20 @@ describeGating('platform.admin.listAllDecisionInstances', {
     await expect(
       caller.platform.admin.listAllDecisionInstances(),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwt: async ({ callers }) => {
+  userJwt: async ({ callers }) => {
+    const caller = await callers.userJwt();
+    await expect(
+      caller.platform.admin.listAllDecisionInstances(),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
+  },
+
+  networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.platform.admin.listAllDecisionInstances(),

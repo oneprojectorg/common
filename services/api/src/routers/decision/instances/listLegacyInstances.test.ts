@@ -353,9 +353,6 @@ describe.concurrent('listLegacyInstances', () => {
   });
 });
 
-// Network gating matrix: listLegacyInstances sits on
-// `commonAuthedProcedure`, which rejects no-JWT and anon-JWT at the auth
-// middleware. Common-JWT owner is admitted and gets back the list.
 describeDecisionGating('listLegacyInstances', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
@@ -371,7 +368,7 @@ describeDecisionGating('listLegacyInstances', {
         ownerProfileId: setup.organization.profileId,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -389,11 +386,29 @@ describeDecisionGating('listLegacyInstances', {
         ownerProfileId: setup.organization.profileId,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const caller = await callers.userJwt();
+
+    await expect(
+      caller.decision.listLegacyInstances({
+        ownerProfileId: setup.organization.profileId,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,

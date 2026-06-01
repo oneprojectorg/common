@@ -411,25 +411,29 @@ describe.concurrent('account.listUserInvites', () => {
   });
 });
 
-// Network gating matrix: account.listUserInvites sits on
-// commonAuthedProcedure, which rejects no-JWT and anon-JWT at the auth
-// middleware. A normal authenticated caller is admitted.
 describeGating('account.listUserInvites', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expect(caller.account.listUserInvites({})).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
     await expect(caller.account.listUserInvites({})).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwt: async ({ callers }) => {
+  userJwt: async ({ callers }) => {
+    const caller = await callers.userJwt();
+    await expect(caller.account.listUserInvites({})).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
     await expectPassesAuthGate(caller.account.listUserInvites({}));
   },

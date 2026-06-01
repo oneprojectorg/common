@@ -5,16 +5,13 @@ import {
   expectPassesAuthGate,
 } from '../../../test/helpers/gating';
 
-// Network gating matrix: platform.admin.listAllOrganizations sits on
-// withAuthenticatedPlatformAdmin, which rejects no-JWT and anon-JWT at the auth
-// middleware. A normal authenticated caller is admitted.
 describeGating('platform.admin.listAllOrganizations', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expect(
       caller.platform.admin.listAllOrganizations(),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -23,11 +20,20 @@ describeGating('platform.admin.listAllOrganizations', {
     await expect(
       caller.platform.admin.listAllOrganizations(),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwt: async ({ callers }) => {
+  userJwt: async ({ callers }) => {
+    const caller = await callers.userJwt();
+    await expect(
+      caller.platform.admin.listAllOrganizations(),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
+  },
+
+  networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
     await expectPassesAuthGate(caller.platform.admin.listAllOrganizations());
   },

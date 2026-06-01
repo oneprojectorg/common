@@ -178,9 +178,6 @@ describe.concurrent('process survey submission', () => {
   });
 });
 
-// Network gating matrix: submitProcessSurveyResponse sits on
-// `commonAuthedProcedure`, which rejects no-JWT and anon-JWT at the auth
-// middleware. Common-JWT member with decision READ access is admitted.
 describeDecisionGating('submitProcessSurveyResponse', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
@@ -199,7 +196,7 @@ describeDecisionGating('submitProcessSurveyResponse', {
         locale: 'en',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -220,11 +217,32 @@ describeDecisionGating('submitProcessSurveyResponse', {
         locale: 'en',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+
+    const caller = await callers.userJwt();
+
+    await expect(
+      caller.decision.submitProcessSurveyResponse({
+        processInstanceId: instance.id,
+        internalData: sampleInternalData,
+        locale: 'en',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,
@@ -244,9 +262,6 @@ describeDecisionGating('submitProcessSurveyResponse', {
   },
 });
 
-// Network gating matrix: getProcessSurveyResponse sits on
-// `commonAuthedProcedure`, which rejects no-JWT and anon-JWT at the auth
-// middleware. Common-JWT member with decision READ access is admitted.
 describeDecisionGating('getProcessSurveyResponse', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
@@ -263,7 +278,7 @@ describeDecisionGating('getProcessSurveyResponse', {
         processInstanceId: instance.id,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -282,11 +297,30 @@ describeDecisionGating('getProcessSurveyResponse', {
         processInstanceId: instance.id,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+
+    const caller = await callers.userJwt();
+
+    await expect(
+      caller.decision.getProcessSurveyResponse({
+        processInstanceId: instance.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,

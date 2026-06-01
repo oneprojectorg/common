@@ -170,9 +170,6 @@ describe.concurrent('organization.join', () => {
   });
 });
 
-// Network gating matrix: organization.join sits on commonAuthedProcedure, which
-// rejects no-JWT and anon-JWT at the auth middleware. A normal authenticated
-// caller is admitted.
 describeGating('organization.join', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
@@ -181,7 +178,7 @@ describeGating('organization.join', {
         organizationId: '00000000-0000-0000-0000-000000000000',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -192,11 +189,22 @@ describeGating('organization.join', {
         organizationId: '00000000-0000-0000-0000-000000000000',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwt: async ({ callers }) => {
+  userJwt: async ({ callers }) => {
+    const caller = await callers.userJwt();
+    await expect(
+      caller.organization.join({
+        organizationId: '00000000-0000-0000-0000-000000000000',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.organization.join({

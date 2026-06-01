@@ -140,10 +140,6 @@ describe.concurrent('cancelRevisionRequest', () => {
   });
 });
 
-// Network gating matrix: cancelRevisionRequest sits on
-// `commonAuthedProcedure`, which rejects no-JWT and anon-JWT at the auth
-// middleware. Common-JWT caller with random ids is admitted by the gate;
-// the service then rejects.
 describeDecisionGating('cancelRevisionRequest', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
@@ -157,7 +153,7 @@ describeDecisionGating('cancelRevisionRequest', {
         revisionRequestId: crypto.randomUUID(),
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -173,11 +169,27 @@ describeDecisionGating('cancelRevisionRequest', {
         revisionRequestId: crypto.randomUUID(),
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    await testData.createContext();
+
+    const caller = await callers.userJwt();
+
+    await expect(
+      caller.decision.cancelRevisionRequest({
+        assignmentId: crypto.randomUUID(),
+        revisionRequestId: crypto.randomUUID(),
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
 

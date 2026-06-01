@@ -260,10 +260,6 @@ describe.concurrent('listReviewAssignments', () => {
   });
 });
 
-// Network gating matrix: listReviewAssignments sits on
-// `commonAuthedProcedure`, which rejects no-JWT and anon-JWT at the auth
-// middleware. Common-JWT defaultReviewer (admin on the instance) is
-// admitted and gets back the (empty) assignment list.
 describeDecisionGating('listReviewAssignments', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
@@ -276,7 +272,7 @@ describeDecisionGating('listReviewAssignments', {
         processInstanceId: context.instance.instance.id,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -291,11 +287,26 @@ describeDecisionGating('listReviewAssignments', {
         processInstanceId: context.instance.instance.id,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+
+    const caller = await callers.userJwt();
+
+    await expect(
+      caller.decision.listReviewAssignments({
+        processInstanceId: context.instance.instance.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
 

@@ -8,17 +8,13 @@ import {
   expectPassesAuthGate,
 } from '../../test/helpers/gating';
 
-// Network gating matrix: organization.invite sits on commonAuthedProcedure,
-// which rejects no-JWT and anon-JWT at the auth middleware. A normal
-// authenticated caller is admitted. The input is a union; the `emails` branch
-// only requires a non-empty array of valid emails.
 describeGating('organization.invite', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expect(
       caller.organization.invite({ emails: ['gate@example.com'] }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -27,11 +23,20 @@ describeGating('organization.invite', {
     await expect(
       caller.organization.invite({ emails: ['gate@example.com'] }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwt: async ({ callers, onTestFinished }) => {
+  userJwt: async ({ callers }) => {
+    const caller = await callers.userJwt();
+    await expect(
+      caller.organization.invite({ emails: ['gate@example.com'] }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwt: async ({ callers, onTestFinished }) => {
     // A platform invite (no organizationId) writes the invitee to `allowList`,
     // which the global teardown asserts is empty. Use a unique email and clean
     // up just that row so concurrent tests are unaffected.

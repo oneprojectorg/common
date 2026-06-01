@@ -17,9 +17,6 @@ const decisionPermissions = {
   vote: false,
 };
 
-// Network gating matrix: profile.updateDecisionRoles sits on
-// commonAuthedProcedure, which rejects no-JWT and anon-JWT at the auth
-// middleware. A normal authenticated caller is admitted.
 describeGating('profile.updateDecisionRoles', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
@@ -29,7 +26,7 @@ describeGating('profile.updateDecisionRoles', {
         decisionPermissions,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -41,11 +38,23 @@ describeGating('profile.updateDecisionRoles', {
         decisionPermissions,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwt: async ({ callers }) => {
+  userJwt: async ({ callers }) => {
+    const caller = await callers.userJwt();
+    await expect(
+      caller.profile.updateDecisionRoles({
+        roleId: '00000000-0000-0000-0000-000000000000',
+        decisionPermissions,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.profile.updateDecisionRoles({

@@ -221,9 +221,6 @@ describe.concurrent('getVotingStatus', () => {
   });
 });
 
-// Network gating matrix: submitVote sits on `commonAuthedProcedure`, which
-// rejects no-JWT and anon-JWT at the auth middleware. Common-JWT member is
-// admitted and can cast a vote in the voting phase.
 describeDecisionGating('submitVote', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
@@ -239,7 +236,7 @@ describeDecisionGating('submitVote', {
         selectedProposalIds: [proposals[0]!.id],
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -257,11 +254,29 @@ describeDecisionGating('submitVote', {
         selectedProposalIds: [proposals[0]!.id],
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instance, proposals } = await setupVotingInstance(testData, {
+      proposalCount: 1,
+    });
+
+    const caller = await callers.userJwt();
+
+    await expect(
+      caller.decision.submitVote({
+        processInstanceId: instance.instance.id,
+        selectedProposalIds: [proposals[0]!.id],
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { setup, instance, proposals } = await setupVotingInstance(testData, {
       proposalCount: 1,
@@ -278,9 +293,6 @@ describeDecisionGating('submitVote', {
   },
 });
 
-// Network gating matrix: getVotingStatus sits on `commonAuthedProcedure`,
-// which rejects no-JWT and anon-JWT at the auth middleware. Common-JWT
-// member is admitted and reads the voting configuration.
 describeDecisionGating('getVotingStatus', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
@@ -295,7 +307,7 @@ describeDecisionGating('getVotingStatus', {
         processInstanceId: instance.instance.id,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -312,11 +324,28 @@ describeDecisionGating('getVotingStatus', {
         processInstanceId: instance.instance.id,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const { instance } = await setupVotingInstance(testData, {
+      proposalCount: 0,
+    });
+
+    const caller = await callers.userJwt();
+
+    await expect(
+      caller.decision.getVotingStatus({
+        processInstanceId: instance.instance.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { setup, instance } = await setupVotingInstance(testData, {
       proposalCount: 0,

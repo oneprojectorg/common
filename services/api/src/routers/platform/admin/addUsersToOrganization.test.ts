@@ -16,9 +16,6 @@ import { platformAdminRouter } from './index';
 
 const createCaller = createCallerFactory(platformAdminRouter);
 
-// Network gating matrix: platform.admin.addUsersToOrganization sits on
-// withAuthenticatedPlatformAdmin, which rejects no-JWT and anon-JWT at the auth
-// middleware. A normal authenticated caller is admitted.
 describeGating('platform.admin.addUsersToOrganization', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
@@ -28,7 +25,7 @@ describeGating('platform.admin.addUsersToOrganization', {
         users: [{ authUserId: 'x', roleId: 'x' }],
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -40,11 +37,23 @@ describeGating('platform.admin.addUsersToOrganization', {
         users: [{ authUserId: 'x', roleId: 'x' }],
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwt: async ({ callers }) => {
+  userJwt: async ({ callers }) => {
+    const caller = await callers.userJwt();
+    await expect(
+      caller.platform.admin.addUsersToOrganization({
+        organizationId: 'x',
+        users: [{ authUserId: 'x', roleId: 'x' }],
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
+  },
+
+  networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
     await expectPassesAuthGate(
       caller.platform.admin.addUsersToOrganization({

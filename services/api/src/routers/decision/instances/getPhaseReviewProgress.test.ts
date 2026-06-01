@@ -463,9 +463,6 @@ describe('computeDaysLeft', () => {
   });
 });
 
-// Network gating matrix: getPhaseReviewProgress sits on
-// `commonAuthedProcedure`, which rejects no-JWT and anon-JWT at the auth
-// middleware. Common-JWT defaultReviewer is admitted.
 describeDecisionGating('getPhaseReviewProgress', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
@@ -479,7 +476,7 @@ describeDecisionGating('getPhaseReviewProgress', {
         phaseId: 'review',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
@@ -495,11 +492,27 @@ describeDecisionGating('getPhaseReviewProgress', {
         phaseId: 'review',
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AuthenticationError' },
+      cause: { name: 'AuthGateError' },
     });
   },
 
-  commonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
+    const testData = new TestReviewsDataManager(task.id, onTestFinished);
+    const context = await testData.createContext();
+
+    const caller = await callers.userJwt();
+
+    await expect(
+      caller.decision.getPhaseReviewProgress({
+        processInstanceId: context.instance.instance.id,
+        phaseId: 'review',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'AuthGateError' },
+    });
+  },
+
+  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     const context = await testData.createContext();
 
