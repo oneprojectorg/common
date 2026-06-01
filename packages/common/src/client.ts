@@ -90,6 +90,16 @@ export {
   isVotingEligible,
 } from './services/decision/votingEligibility';
 
+// Resource constants (no server dependencies)
+export {
+  ALLOWED_RESOURCE_MIME_TYPES,
+  MAX_RESOURCE_FILE_SIZE,
+  httpUrlSchema,
+  isAllowedResourceMimeType,
+  resourcePathPrefix,
+  type AllowedResourceMimeType,
+} from './services/resources/constants';
+
 // Translation constants (no server dependencies)
 export {
   SUPPORTED_LOCALES,

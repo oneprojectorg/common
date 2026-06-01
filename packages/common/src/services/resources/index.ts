@@ -1,11 +1,30 @@
+export * from './attachResourceToCollection';
 export * from './channelScope';
+export * from './utils';
+export * from './constants';
 export * from './createCollection';
+export * from './createDocumentResource';
+export * from './createLinkResource';
 export * from './deleteCollection';
+export * from './deleteResource';
+export * from './detachResourceFromCollection';
 export * from './listCollections';
+export * from './listResources';
+export * from './listResourcesByCollection';
 export * from './ordering';
 export * from './reorderCollection';
+export * from './reorderResource';
+export * from './resolveOrCreateDefaultCollection';
 export * from './resourceAuth';
+export * from './getResourceById';
+export * from './getResourcesInCollection';
+export * from './resolveTargetCollection';
+export * from './resourceDTO';
 export * from './schemas';
-export * from './types';
+// DTO types now live in schemas.ts; types.ts only contributes the list-limit
+// constants here to avoid double-exporting the DTO names through the barrel.
+export { RESOURCE_LIST_DEFAULT_LIMIT, RESOURCE_LIST_MAX_LIMIT } from './types';
+export * from './storage';
 export * from './updateCollection';
-export * from './utils';
+export * from './updateResource';
+export * from './uploads';
