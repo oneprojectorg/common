@@ -19,7 +19,7 @@ import {
   resourcePathPrefix,
 } from './constants';
 import { getResourceById } from './getResourceById';
-import { insertAtTop } from './ordering';
+import { insertResourceAtTop } from './ordering';
 import { resolveTargetCollection } from './resolveTargetCollection';
 import { type ResourceInCollectionDTO } from './types';
 
@@ -124,13 +124,13 @@ export const createDocumentResource = async (
       throw new ConflictError('Failed to create resource');
     }
 
-    const sortKey = await insertAtTop({
+    const resourceItem = await insertResourceAtTop({
       tx,
       collectionId,
       resourceId: row.id,
       addedByProfileId,
     });
-    return { resourceId: row.id, sortKey };
+    return { resourceId: row.id, sortKey: resourceItem.sortKey };
   });
 
   const base = await getResourceById({ id: resourceId });

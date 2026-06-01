@@ -4,7 +4,7 @@ import { resources } from '@op/db/schema';
 import { ConflictError } from '../../utils/error';
 import { getIndividualProfileId } from '../access';
 import { getResourceById } from './getResourceById';
-import { insertAtTop } from './ordering';
+import { insertResourceAtTop } from './ordering';
 import { resolveTargetCollection } from './resolveTargetCollection';
 import { type ResourceInCollectionDTO } from './types';
 
@@ -44,13 +44,13 @@ export const createLinkResource = async (
     if (!row) {
       throw new ConflictError('Failed to create resource');
     }
-    const sortKey = await insertAtTop({
+    const resourceItem = await insertResourceAtTop({
       tx,
       collectionId,
       resourceId: row.id,
       addedByProfileId,
     });
-    return { resourceId: row.id, sortKey };
+    return { resourceId: row.id, sortKey: resourceItem.sortKey };
   });
 
   const base = await getResourceById({ id: resourceId });

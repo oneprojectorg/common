@@ -3,8 +3,8 @@ import { resourceCollections } from '@op/db/schema';
 
 import { ConflictError } from '../../utils/error';
 import { appendCollectionToProfile, lockProfile } from './ordering';
+import { type CollectionDTO } from './schemas';
 import {
-  type CollectionForProfile,
   DEFAULT_COLLECTION_NAME,
   buildCollectionForProfile,
   getCollectionsForProfile,
@@ -18,7 +18,7 @@ export const resolveOrCreateDefaultCollection = async ({
 }: {
   profileId: string;
   createIfMissing: boolean;
-}): Promise<CollectionForProfile | null> => {
+}): Promise<CollectionDTO | null> => {
   if (!createIfMissing) {
     const [row] = await getCollectionsForProfile({ profileId, limit: 1 });
     return row ?? null;

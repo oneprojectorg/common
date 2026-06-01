@@ -16,12 +16,14 @@ export * from './reorderCollection';
 export * from './reorderResource';
 export * from './resolveOrCreateDefaultCollection';
 export * from './resourceAuth';
-export * from './schemas';
 export * from './getResourceById';
 export * from './getResourcesInCollection';
 export * from './resolveTargetCollection';
 export * from './resourceDTO';
-export * from './types';
+export * from './schemas';
+// DTO types now live in schemas.ts; types.ts only contributes the list-limit
+// constants here to avoid double-exporting the DTO names through the barrel.
+export { RESOURCE_LIST_DEFAULT_LIMIT, RESOURCE_LIST_MAX_LIMIT } from './types';
 export * from './storage';
 export * from './updateCollection';
 export * from './updateResource';

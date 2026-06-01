@@ -4,7 +4,11 @@ import { permission } from 'access-zones';
 
 import { getIndividualProfileId } from '../access';
 import { getResourceById } from './getResourceById';
-import { findCollectionItem, insertAtTop, lockCollection } from './ordering';
+import {
+  findCollectionItem,
+  insertResourceAtTop,
+  lockCollection,
+} from './ordering';
 import { assertCollectionAccess, assertResourceAccess } from './resourceAuth';
 import { type ResourceInCollectionDTO } from './types';
 
@@ -34,14 +38,20 @@ export const attachResourceToCollection = async ({
 
   const sortKey = await db.transaction(async (tx) => {
     // Lock before the existence probe — otherwise two concurrent attaches both
-    // see "no row", both call insertAtTop, and the second trips the
+    // see "no row", both call insertResourceAtTop, and the second trips the
     // (collection_id, resource_id) unique index as a 500.
     await lockCollection({ tx, collectionId });
     const existing = await findCollectionItem({ tx, collectionId, resourceId });
     if (existing) {
       return existing.sortKey;
     }
-    return insertAtTop({ tx, collectionId, resourceId, addedByProfileId });
+    const resourceItem = await insertResourceAtTop({
+      tx,
+      collectionId,
+      resourceId,
+      addedByProfileId,
+    });
+    return resourceItem.sortKey;
   });
 
   const base = await getResourceById({ id: resourceId });
