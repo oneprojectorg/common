@@ -19,7 +19,7 @@ import {
   resourcePathPrefix,
 } from './constants';
 import { getResourceById } from './getResourceById';
-import { insertResourceAt, insertResourceAtTop } from './ordering';
+import { insertResourceAt } from './ordering';
 import { resolveTargetCollection } from './resolveTargetCollection';
 import { type ResourceInCollectionDTO } from './types';
 
@@ -129,21 +129,16 @@ export const createDocumentResource = async (
       throw new ConflictError('Failed to create resource');
     }
 
-    const resourceItem =
-      input.upperNeighborId !== undefined
-        ? await insertResourceAt({
-            tx,
-            collectionId,
-            resourceId: row.id,
-            upperNeighborId: input.upperNeighborId,
-            addedByProfileId,
-          })
-        : await insertResourceAtTop({
-            tx,
-            collectionId,
-            resourceId: row.id,
-            addedByProfileId,
-          });
+    // `upperNeighborId: null` (the Add Resource form's default, since it omits
+    // the field) inserts at the top, so a single insertResourceAt call covers
+    // both the drop-at-a-slot and add-at-top cases.
+    const resourceItem = await insertResourceAt({
+      tx,
+      collectionId,
+      resourceId: row.id,
+      upperNeighborId: input.upperNeighborId ?? null,
+      addedByProfileId,
+    });
     return { resourceId: row.id, sortKey: resourceItem.sortKey };
   });
 
