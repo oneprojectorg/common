@@ -7,20 +7,18 @@ import { profileMinimalSchema } from './profileMinimal';
 
 // Member-facing shape of a `profile_users` row. Explicitly picked rather than a
 // full table select so columns aren't leaked at API boundaries by default — new
-// columns must be opted in here. Anonymous users have no email.
-export const profileUserSchema = createSelectSchema(profileUsers)
-  .pick({
-    id: true,
-    name: true,
-    about: true,
-    isOwner: true,
-    profileId: true,
-    createdAt: true,
-    updatedAt: true,
-  })
-  .extend({
-    email: z.string().nullable(),
-  });
+// columns must be opted in here. email is nullable (anonymous users have none),
+// derived from the now-nullable column.
+export const profileUserSchema = createSelectSchema(profileUsers).pick({
+  id: true,
+  name: true,
+  email: true,
+  about: true,
+  isOwner: true,
+  profileId: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 export type ProfileUserBase = z.infer<typeof profileUserSchema>;
 
