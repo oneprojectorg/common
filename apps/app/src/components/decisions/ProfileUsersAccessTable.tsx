@@ -1,7 +1,8 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { ProfileInvite, ProfileUser } from '@op/api/encoders';
+import type { ProfileInvite } from '@op/api/encoders';
+import type { ProfileUser } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { DialogTrigger } from '@op/ui/Dialog';
 import { EmptyState } from '@op/ui/EmptyState';

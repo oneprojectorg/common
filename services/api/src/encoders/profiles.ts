@@ -1,14 +1,13 @@
-import { organizations, profileInvites, profileUsers } from '@op/db/schema';
+import { profileMinimalSchema } from '@op/common/client';
+import { organizations, profileInvites } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-import { accessRoleMinimalEncoder } from './access';
 import { baseProfileEncoder } from './baseProfile';
 import { linksEncoder } from './links';
 import { locationEncoder } from './locations';
 import { organizationsEncoder } from './organizations';
 import { projectEncoder } from './projects';
-import { storageItemMinimalEncoder } from './shared';
 import { storageItemEncoder } from './storageItem';
 
 export { baseProfileEncoder } from './baseProfile';
@@ -46,33 +45,7 @@ export const profileWithFullOrgEncoder = baseProfileEncoder.extend({
 
 export const profileWithAvatarEncoder = baseProfileEncoder;
 
-// Minimal profile encoder for nested references (e.g., in profileUser, invites)
-export const profileMinimalEncoder = baseProfileEncoder
-  .pick({
-    id: true,
-    name: true,
-    slug: true,
-    bio: true,
-    email: true,
-    type: true,
-  })
-  .extend({
-    avatarImage: storageItemMinimalEncoder.nullable(),
-  });
-
 export type Profile = z.infer<typeof profileEncoder>;
-
-// Profile user encoders - using createSelectSchema for base fields
-export const profileUserEncoder = createSelectSchema(profileUsers).extend({
-  // Override timestamp fields to handle both string and Date, and allow null/undefined
-  createdAt: z.union([z.string(), z.date()]).nullish(),
-  updatedAt: z.union([z.string(), z.date()]).nullish(),
-  deletedAt: z.union([z.string(), z.date()]).nullish(),
-  // Anonymous users have no email
-  email: z.string().nullable(),
-  profile: profileMinimalEncoder.nullable(),
-  roles: z.array(accessRoleMinimalEncoder),
-});
 
 // Profile invite encoder for pending invitations returned by listProfileInvites
 export const profileInviteEncoder = createSelectSchema(profileInvites)
@@ -84,8 +57,7 @@ export const profileInviteEncoder = createSelectSchema(profileInvites)
     notifiedAt: true,
   })
   .extend({
-    inviteeProfile: profileMinimalEncoder.nullable(),
+    inviteeProfile: profileMinimalSchema.nullable(),
   });
 
-export type ProfileUser = z.infer<typeof profileUserEncoder>;
 export type ProfileInvite = z.infer<typeof profileInviteEncoder>;

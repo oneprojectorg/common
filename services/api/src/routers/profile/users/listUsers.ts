@@ -1,7 +1,7 @@
 import { listProfileUsers } from '@op/common';
+import { profileUserWithRolesSchema } from '@op/common/client';
 import { z } from 'zod';
 
-import { profileUserEncoder } from '../../../encoders/profiles';
 import { commonAuthedProcedure, router } from '../../../trpcFactory';
 import { createSortable } from '../../../utils';
 
@@ -21,7 +21,7 @@ export const listUsersRouter = router({
     )
     .output(
       z.object({
-        items: z.array(profileUserEncoder),
+        items: z.array(profileUserWithRolesSchema),
         next: z.string().nullable(),
       }),
     )
