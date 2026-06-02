@@ -2,6 +2,7 @@ import { GLOBAL_USER_IDS } from '@op/core';
 import { and, count, db, ilike, notInArray } from '@op/db/client';
 import { users } from '@op/db/schema';
 import type { SQL } from 'drizzle-orm';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 
 import {
   type SortDir,
@@ -12,12 +13,8 @@ import {
 
 /**
  * List every user on the platform with cursor-based pagination and optional
- * email search. Used by the platform-admin dashboard.
- *
- * The access-control sentinel users (GLOBAL_USER_PUBLIC / GLOBAL_USER_ANONYMOUS)
- * are always excluded from both the items and the total. Their UUIDs are the
- * auth.users ids, which map to public.users.authUserId — not the autoId()
- * primary key.
+ * email search. Used by the platform-admin dashboard. Skips the global
+ * access-control sentinel users.
  */
 export const listAllUsers = async ({
   cursor,
@@ -34,32 +31,31 @@ export const listAllUsers = async ({
   const hasSearch = !!(query && query.length >= 2);
   const sentinelIds = [...GLOBAL_USER_IDS];
 
-  // Used by the count() select below; references the raw schema table.
-  const searchCondition = hasSearch
-    ? and(
-        notInArray(users.authUserId, sentinelIds),
-        ilike(users.email, `%${query}%`),
-      )
-    : notInArray(users.authUserId, sentinelIds);
+  // Filter shared by the paginated query and the total count: exclude the
+  // sentinel users and, when searching, match the email. The cursor condition
+  // is added only to the paginated query.
+  const baseConds = (table: {
+    authUserId: AnyPgColumn;
+    email: AnyPgColumn;
+  }): SQL[] => {
+    const conds: SQL[] = [notInArray(table.authUserId, sentinelIds)];
+    if (hasSearch) {
+      conds.push(ilike(table.email, `%${query}%`));
+    }
+    return conds;
+  };
 
-  // Uses V2 `db.query` (single SQL via LATERAL joins) instead of V1 `db._query`
-  // to avoid fan-out that saturates the Supavisor transaction-mode pool.
-  // The RAW callback receives the aliased table used inside V2's generated
-  // SQL — conditions must be built against that alias, not the schema ref.
   const [allUsers, [totalCountResult]] = await Promise.all([
     db.query.users.findMany({
       where: {
         RAW: (table) => {
-          const conds: SQL[] = [notInArray(table.authUserId, sentinelIds)];
+          const conds = baseConds(table);
           if (decodedCursor) {
             const cursorCond = getGenericCursorCondition({
               columns: { id: table.id, date: table.createdAt },
               cursor: decodedCursor,
             });
             if (cursorCond) conds.push(cursorCond);
-          }
-          if (hasSearch) {
-            conds.push(ilike(table.email, `%${query}%`));
           }
           return conds.length > 1 ? and(...conds)! : conds[0]!;
         },
@@ -95,7 +91,10 @@ export const listAllUsers = async ({
       orderBy: { createdAt: dir },
       ...(limit !== undefined && { limit: limit + 1 }),
     }),
-    db.select({ value: count() }).from(users).where(searchCondition),
+    db
+      .select({ value: count() })
+      .from(users)
+      .where(and(...baseConds(users))),
   ]);
 
   const totalCount = totalCountResult?.value ?? 0;
