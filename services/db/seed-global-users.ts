@@ -17,6 +17,7 @@ import { db } from '.';
  * owned by `supabase_auth_admin`. Idempotent: safe to re-run.
  */
 export async function seedGlobalUsers(): Promise<void> {
+  // TODO: protect these two rows from deletion.
   const sentinels = [
     { id: GLOBAL_USER_PUBLIC, name: 'Public', isAnonymous: false },
     { id: GLOBAL_USER_ANONYMOUS, name: 'Anonymous', isAnonymous: true },
