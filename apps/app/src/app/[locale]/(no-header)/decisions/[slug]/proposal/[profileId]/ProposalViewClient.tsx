@@ -4,13 +4,11 @@ import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { isLastPhase } from '@op/common/client';
-import { APP_NAME } from '@op/core';
 import { notFound } from 'next/navigation';
-import { Suspense, useEffect } from 'react';
+import { Suspense } from 'react';
 
 import { ProposalView } from '@/components/decisions/ProposalView';
 import { ProposalViewSkeleton } from '@/components/decisions/ProposalViewSkeleton';
-import { getProposalDisplayTitle } from '@/components/decisions/proposalContentUtils';
 
 function ProposalViewPageContent({
   profileId,
@@ -30,14 +28,6 @@ function ProposalViewPageContent({
 
   const instance = decisionProfile.processInstance;
   const { user } = useUser();
-
-  const proposalTitle = getProposalDisplayTitle(proposal);
-  useEffect(() => {
-    const parts = [proposalTitle, decisionProfile.name, APP_NAME].filter(
-      Boolean,
-    );
-    document.title = parts.join(' | ');
-  }, [proposalTitle, decisionProfile.name]);
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhase = phases.find(

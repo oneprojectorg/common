@@ -2,13 +2,11 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import { APP_NAME } from '@op/core';
 import { notFound } from 'next/navigation';
-import { Suspense, useEffect } from 'react';
+import { Suspense } from 'react';
 
 import { ProposalView } from '@/components/decisions/ProposalView';
 import { ProposalViewSkeleton } from '@/components/decisions/ProposalViewSkeleton';
-import { getProposalDisplayTitle } from '@/components/decisions/proposalContentUtils';
 
 function ProposalViewPageContent({
   profileId,
@@ -27,12 +25,6 @@ function ProposalViewPageContent({
   if (!proposal) {
     notFound();
   }
-
-  const proposalTitle = getProposalDisplayTitle(proposal);
-  useEffect(() => {
-    const parts = [proposalTitle, APP_NAME].filter(Boolean);
-    document.title = parts.join(' | ');
-  }, [proposalTitle]);
 
   const backHref = `/profile/${orgSlug}/decisions/${instanceId}/`;
 

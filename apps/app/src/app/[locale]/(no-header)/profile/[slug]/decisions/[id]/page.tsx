@@ -3,7 +3,9 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
+import { createClient } from '@op/api/serverClient';
 import { Skeleton } from '@op/ui/Skeleton';
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
@@ -35,6 +37,25 @@ function DecisionHeaderSkeleton() {
       </div>
     </div>
   );
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string; slug: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+
+  try {
+    const client = await createClient();
+    const instance = await client.decision.getLegacyInstance({
+      instanceId: id,
+      skipTracking: true,
+    });
+    return instance?.name ? { title: instance.name } : {};
+  } catch {
+    return {};
+  }
 }
 
 const DecisionInstancePageContent = async ({

@@ -3,9 +3,8 @@
 import { trpc } from '@op/api/client';
 import { type ProcessPhase } from '@op/api/encoders';
 import { isLastPhase } from '@op/common/client';
-import { APP_NAME } from '@op/core';
 import { cn } from '@op/ui/utils';
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -116,15 +115,6 @@ function LegacyDecisionHeaderContent({
   const [instance] = trpc.decision.getLegacyInstance.useSuspenseQuery({
     instanceId,
   });
-
-  // Legacy decision route has no server generateMetadata — set the tab title
-  // client-side from the data this header already loaded.
-  const decisionName = instance.name || profileName;
-  useEffect(() => {
-    if (decisionName) {
-      document.title = `${decisionName} | ${APP_NAME}`;
-    }
-  }, [decisionName]);
 
   const instancePhases = instance.instanceData?.phases ?? [];
   const processSchema = instance.process?.processSchema;
