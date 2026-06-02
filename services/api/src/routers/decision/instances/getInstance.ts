@@ -33,7 +33,9 @@ export const getLegacyInstanceRouter = router({
       });
 
       // Track process viewed event
-      waitUntil(trackProcessViewed(ctx, input.instanceId));
+      if (!input.skipTracking) {
+        waitUntil(trackProcessViewed(ctx, input.instanceId));
+      }
 
       return legacyProcessInstanceEncoder.parse({
         ...instance,
@@ -77,7 +79,9 @@ export const getInstanceRouter = router({
       });
 
       // Track process viewed event
-      waitUntil(trackProcessViewed(ctx, input.instanceId));
+      if (!input.skipTracking) {
+        waitUntil(trackProcessViewed(ctx, input.instanceId));
+      }
 
       ctx.registerQueryChannels([Channels.decisionInstance(input.instanceId)]);
 

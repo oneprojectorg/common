@@ -3,6 +3,7 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
+import { createClient } from '@op/api/serverClient';
 import { Skeleton } from '@op/ui/Skeleton';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
@@ -19,16 +20,13 @@ export async function generateMetadata({
   const { postId, slug, locale } = await params;
 
   try {
-    const [{ utils }, t] = await Promise.all([
-      createServerUtils(),
+    const [client, t] = await Promise.all([
+      createClient(),
       getTranslations({ locale }),
     ]);
     const [post, organization] = await Promise.all([
-      utils.posts.getPost.fetch(
-        { postId, includeChildren: false },
-        { staleTime: 30_000 },
-      ),
-      utils.organization.getBySlug.fetch({ slug }, { staleTime: 30_000 }),
+      client.posts.getPost({ postId, includeChildren: false }),
+      client.organization.getBySlug({ slug }),
     ]);
 
     if (!post) {
@@ -52,14 +50,10 @@ const PostDetailPage = async ({
   const { utils, queryClient } = await createServerUtils();
 
   // Prefetch on the server so the client useSuspenseQuery hydrates without a
-  // second request. Shares the cached queryClient with generateMetadata above
-  // (staleTime), so each query resolves once per request.
+  // second request.
   await Promise.all([
-    utils.posts.getPost.prefetch(
-      { postId, includeChildren: false },
-      { staleTime: 30_000 },
-    ),
-    utils.organization.getBySlug.prefetch({ slug }, { staleTime: 30_000 }),
+    utils.posts.getPost.prefetch({ postId, includeChildren: false }),
+    utils.organization.getBySlug.prefetch({ slug }),
   ]).catch(() => {});
 
   return (

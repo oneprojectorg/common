@@ -3,6 +3,7 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
+import { createClient } from '@op/api/serverClient';
 import type { Metadata } from 'next';
 
 import { getProposalDisplayTitle } from '@/components/decisions/proposalContentUtils';
@@ -16,12 +17,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { profileId } = await params;
 
+  // Title-only read: skipTracking avoids a duplicate "viewed" event.
   try {
-    const { utils } = await createServerUtils();
-    const proposal = await utils.decision.getProposal.fetch(
-      { profileId },
-      { staleTime: 30_000 },
-    );
+    const client = await createClient();
+    const proposal = await client.decision.getProposal({
+      profileId,
+      skipTracking: true,
+    });
     const title = getProposalDisplayTitle(proposal);
     return title ? { title } : {};
   } catch {
@@ -37,9 +39,7 @@ const ProposalViewPage = async ({
   const { profileId, slug, id } = await params;
   const { utils, queryClient } = await createServerUtils();
 
-  await utils.decision.getProposal
-    .prefetch({ profileId }, { staleTime: 30_000 })
-    .catch(() => {});
+  await utils.decision.getProposal.prefetch({ profileId }).catch(() => {});
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

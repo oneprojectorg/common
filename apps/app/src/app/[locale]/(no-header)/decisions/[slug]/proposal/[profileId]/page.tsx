@@ -3,6 +3,7 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
+import { createClient } from '@op/api/serverClient';
 import type { Metadata } from 'next';
 
 import { getProposalDisplayTitle } from '@/components/decisions/proposalContentUtils';
@@ -16,11 +17,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug, profileId } = await params;
 
+  // Title-only reads: skipTracking avoids firing a duplicate "viewed" event
+  // (the page render below fires the real one).
   try {
-    const { utils } = await createServerUtils();
+    const client = await createClient();
     const [proposal, decisionProfile] = await Promise.all([
-      utils.decision.getProposal.fetch({ profileId }, { staleTime: 30_000 }),
-      utils.decision.getDecisionBySlug.fetch({ slug }, { staleTime: 30_000 }),
+      client.decision.getProposal({ profileId, skipTracking: true }),
+      client.decision.getDecisionBySlug({ slug }),
     ]);
 
     const proposalTitle = getProposalDisplayTitle(proposal);
@@ -48,8 +51,8 @@ const ProposalViewPage = async ({
   const { utils, queryClient } = await createServerUtils();
 
   await Promise.all([
-    utils.decision.getProposal.prefetch({ profileId }, { staleTime: 30_000 }),
-    utils.decision.getDecisionBySlug.prefetch({ slug }, { staleTime: 30_000 }),
+    utils.decision.getProposal.prefetch({ profileId }),
+    utils.decision.getDecisionBySlug.prefetch({ slug }),
   ]).catch(() => {});
 
   return (

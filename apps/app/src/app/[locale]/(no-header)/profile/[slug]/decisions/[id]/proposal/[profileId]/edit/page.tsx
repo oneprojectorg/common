@@ -3,6 +3,7 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
+import { createClient } from '@op/api/serverClient';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
@@ -23,16 +24,13 @@ export async function generateMetadata({
   const { profileId, id, locale } = await params;
 
   try {
-    const [{ utils }, t] = await Promise.all([
-      createServerUtils(),
+    const [client, t] = await Promise.all([
+      createClient(),
       getTranslations({ locale }),
     ]);
     const [proposal, instance] = await Promise.all([
-      utils.decision.getProposal.fetch({ profileId }, { staleTime: 30_000 }),
-      utils.decision.getInstance.fetch(
-        { instanceId: id },
-        { staleTime: 30_000 },
-      ),
+      client.decision.getProposal({ profileId, skipTracking: true }),
+      client.decision.getInstance({ instanceId: id, skipTracking: true }),
     ]);
 
     const proposalTitle = getProposalDisplayTitle(proposal);
@@ -56,11 +54,8 @@ const ProposalEditPage = async ({
   const { utils, queryClient } = await createServerUtils();
 
   await Promise.all([
-    utils.decision.getProposal.prefetch({ profileId }, { staleTime: 30_000 }),
-    utils.decision.getInstance.prefetch(
-      { instanceId: id },
-      { staleTime: 30_000 },
-    ),
+    utils.decision.getProposal.prefetch({ profileId }),
+    utils.decision.getInstance.prefetch({ instanceId: id }),
   ]).catch(() => {});
 
   return (
