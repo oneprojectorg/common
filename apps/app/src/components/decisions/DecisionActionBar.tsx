@@ -18,11 +18,13 @@ import { getViewerExtensions } from '../RichTextEditor/editorConfig';
 export const DecisionActionBar = ({
   instanceId,
   description,
+  label,
   markup = false,
   showSubmitButton = false,
 }: {
   instanceId: string;
   description?: string;
+  label?: string;
   markup?: boolean;
   showSubmitButton?: boolean;
 }) => {
@@ -59,12 +61,12 @@ export const DecisionActionBar = ({
         {description ? (
           <DialogTrigger>
             <Button color="secondary" className="w-full">
-              {t('Learn more')}
+              {label ?? t('Learn more')}
             </Button>
 
             <Modal isDismissable>
               <Dialog>
-                <ModalHeader>{t('About the process')}</ModalHeader>
+                <ModalHeader>{label ?? t('About the process')}</ModalHeader>
                 <ModalBody>
                   {markup && description ? (
                     <div
