@@ -3,10 +3,11 @@ import {
   decisionProcessSurveyResponses,
   decisionProcessSurveySubmitters,
 } from '@op/db/schema';
-import { assertAccess, collapseRoles, permission } from 'access-zones';
+import { collapseRoles, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getIndividualProfileId, getProfileAccessUser } from '../access';
+import { assertProfileAccess } from '../assert';
 import { fromDecisionBitField } from './permissions';
 
 type ProfileAccessUser = Awaited<ReturnType<typeof getProfileAccessUser>>;
@@ -70,12 +71,10 @@ async function authorizeSurveyAccess({
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  const profileUser = await getProfileAccessUser({
-    user: { id: authUserId },
-    profileId: processInstance.profileId,
-  });
-
-  assertAccess({ decisions: permission.READ }, profileUser?.roles ?? []);
+  const profileUser = await assertProfileAccess(
+    { user: { id: authUserId }, profileId: processInstance.profileId },
+    { decisions: permission.READ },
+  );
 
   return { profileId, processInstance, profileUser };
 }

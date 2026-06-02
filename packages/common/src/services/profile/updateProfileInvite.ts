@@ -1,14 +1,10 @@
 import { and, db, eq, isNull } from '@op/db/client';
 import { profileInvites } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
-import {
-  CommonError,
-  NotFoundError,
-  UnauthorizedError,
-} from '../../utils/error';
-import { getProfileAccessUser } from '../access';
+import { CommonError, NotFoundError } from '../../utils/error';
+import { assertProfileAccess } from '../assert';
 
 /**
  * Update a pending profile invite's role.
@@ -53,16 +49,10 @@ export const updateProfileInvite = async ({
   }
 
   // Check if user has ADMIN access on the profile
-  const profileAccessUser = await getProfileAccessUser({
-    user,
-    profileId: invite.profileId,
-  });
-
-  if (!profileAccessUser) {
-    throw new UnauthorizedError('You do not have access to this profile');
-  }
-
-  assertAccess({ profile: permission.ADMIN }, profileAccessUser.roles ?? []);
+  await assertProfileAccess(
+    { user, profileId: invite.profileId },
+    { profile: permission.ADMIN },
+  );
 
   // Update the invite
   const [updated] = await db

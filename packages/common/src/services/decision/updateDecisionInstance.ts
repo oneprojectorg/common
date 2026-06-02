@@ -10,11 +10,10 @@ import {
 import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
-import { getProfileAccessUser } from '../access';
-import { assertProfileAdmin } from '../assert';
+import { assertProfileAccess, assertProfileAdmin } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
 import { createTransitionsForProcess } from './createTransitionsForProcess';
 import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
@@ -74,12 +73,10 @@ export const updateDecisionInstance = async ({
   }
 
   // Check if user has admin access on the decision instance's profile
-  const profileUser = await getProfileAccessUser({
-    user,
-    profileId,
-  });
-
-  assertAccess({ decisions: permission.ADMIN }, profileUser?.roles ?? []);
+  await assertProfileAccess(
+    { user, profileId },
+    { decisions: permission.ADMIN },
+  );
 
   // Validate proposalTemplate is a structurally valid JSON Schema before persisting
   if (proposalTemplate !== undefined) {

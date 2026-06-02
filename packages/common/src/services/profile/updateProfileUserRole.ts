@@ -2,19 +2,15 @@ import { invalidate } from '@op/cache';
 import { and, db, eq, inArray } from '@op/db/client';
 import { profileUserToAccessRoles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { assertAccess, checkPermission, permission } from 'access-zones';
+import { checkPermission, permission } from 'access-zones';
 
-import {
-  CommonError,
-  NotFoundError,
-  UnauthorizedError,
-  ValidationError,
-} from '../../utils/error';
+import { CommonError, NotFoundError, ValidationError } from '../../utils/error';
 import {
   getNormalizedRoles,
   getProfileAccessUser,
   getUserSession,
 } from '../access';
+import { assertProfileAccess } from '../assert';
 import { getProfileUserWithRelations } from './getProfileUserWithRelations';
 
 /**
@@ -62,16 +58,10 @@ export const updateProfileUserRoles = async ({
 
   const targetProfileId = targetProfileUser.profileId;
 
-  const currentProfileUser = await getProfileAccessUser({
-    user,
-    profileId: targetProfileId,
-  });
-
-  if (!currentProfileUser) {
-    throw new UnauthorizedError('You do not have access to this profile');
-  }
-
-  assertAccess({ profile: permission.ADMIN }, currentProfileUser.roles ?? []);
+  await assertProfileAccess(
+    { user, profileId: targetProfileId },
+    { profile: permission.ADMIN },
+  );
 
   if (targetProfileUser.isOwner) {
     // Profile owners must always retain admin access on their own profile —

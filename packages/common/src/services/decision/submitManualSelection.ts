@@ -8,7 +8,7 @@ import {
 } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import type { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import {
   CommonError,
@@ -17,8 +17,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { getProfileAccessUser } from '../access';
-import { assertUserByAuthId } from '../assert';
+import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import { processResults } from './processResults';
@@ -70,12 +69,10 @@ export async function submitManualSelection({
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  const profileUser = await getProfileAccessUser({
-    user,
-    profileId: instance.profileId,
-  });
-
-  assertAccess({ decisions: permission.ADMIN }, profileUser?.roles ?? []);
+  await assertProfileAccess(
+    { user, profileId: instance.profileId },
+    { decisions: permission.ADMIN },
+  );
 
   if (instance.status !== ProcessStatus.PUBLISHED) {
     throw new ValidationError(

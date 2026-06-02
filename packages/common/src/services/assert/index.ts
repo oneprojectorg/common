@@ -4,6 +4,7 @@ export {
   assertOrganizationByProfileId,
 } from './assertOrganization';
 export { assertProfile, assertProfileBySlug } from './assertProfile';
+export { assertProfileAccess } from './assertProfileAccess';
 export { assertProfileAdmin } from './assertProfileAdmin';
 export { assertProfileUser } from './assertProfileUser';
 export { assertUser, assertUserByAuthId } from './assertUser';

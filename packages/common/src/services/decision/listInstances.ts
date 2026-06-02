@@ -1,10 +1,10 @@
 import { and, asc, db, desc, eq, sql } from '@op/db/client';
 import { ProcessStatus, processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
-import { getProfileAccessUser } from '../access';
+import { assertProfileAccess } from '../assert';
 
 export interface ListInstancesInput {
   ownerProfileId?: string;
@@ -39,14 +39,9 @@ export const listInstances = async ({
     );
   }
 
-  const profileUser = await getProfileAccessUser({
-    user: { id: user.id },
-    profileId: filterProfileId,
-  });
-
-  assertAccess(
+  await assertProfileAccess(
+    { user: { id: user.id }, profileId: filterProfileId },
     [{ decisions: permission.ADMIN }, { decisions: permission.READ }],
-    profileUser?.roles ?? [],
   );
 
   try {

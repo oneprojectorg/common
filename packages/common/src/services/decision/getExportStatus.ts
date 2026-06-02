@@ -3,10 +3,10 @@ import { db, eq } from '@op/db/client';
 import { processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { createSBServerClient } from '@op/supabase/server';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { getProfileAccessUser } from '../access';
+import { assertProfileAccess } from '../assert';
 
 export interface ExportStatusData {
   exportId: string;
@@ -62,14 +62,10 @@ export const getExportStatus = async ({
     throw new NotFoundError('Decision profile', exportStatus.processInstanceId);
   }
 
-  // Get user's profile membership and roles
-  const profileUser = await getProfileAccessUser({
-    user,
-    profileId: instance[0].profileId,
-  });
-
-  // Verify user has admin permission
-  assertAccess([{ decisions: permission.ADMIN }], profileUser?.roles ?? []);
+  // Verify user has admin permission on the profile
+  await assertProfileAccess({ user, profileId: instance[0].profileId }, [
+    { decisions: permission.ADMIN },
+  ]);
 
   // Refresh signed URL if expired but file exists
   if (

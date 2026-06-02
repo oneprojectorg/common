@@ -1,7 +1,7 @@
 import { and, db, eq, gt, lt, or, sql } from '@op/db/client';
 import { profileUsers, profiles, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import {
   type PaginatedResult,
@@ -9,9 +9,7 @@ import {
   decodeCursor,
   encodeCursor,
 } from '../../utils/db';
-import { UnauthorizedError } from '../../utils/error';
-import { getProfileAccessUser } from '../access';
-import { assertProfile } from '../assert';
+import { assertProfile, assertProfileAccess } from '../assert';
 import type {
   ProfileUserQueryResult,
   ProfileUserWithRelations,
@@ -53,16 +51,10 @@ export const listProfileUsers = async ({
   cursor?: string | null;
   limit?: number;
 }): Promise<PaginatedResult<ProfileUserWithRelations>> => {
-  const [profileAccessUser] = await Promise.all([
-    getProfileAccessUser({ user, profileId }),
+  await Promise.all([
+    assertProfileAccess({ user, profileId }, { profile: permission.ADMIN }),
     assertProfile(profileId),
   ]);
-
-  if (!profileAccessUser) {
-    throw new UnauthorizedError('You do not have access to this profile');
-  }
-
-  assertAccess({ profile: permission.ADMIN }, profileAccessUser.roles ?? []);
 
   // Build where clause with optional search filter (minimum 2 characters)
   // Uses ILIKE for substring matching and trigram word_similarity for fuzzy matching

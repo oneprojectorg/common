@@ -4,11 +4,11 @@ import { db, eq } from '@op/db/client';
 import { ProposalStatus, organizations, processInstances } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 import { randomUUID } from 'crypto';
 
 import { NotFoundError } from '../../utils';
-import { getProfileAccessUser } from '../access';
+import { assertProfileAccess } from '../assert';
 
 export interface ExportProposalsInput {
   processInstanceId: string;
@@ -52,12 +52,9 @@ export const exportProposals = async ({
   }
 
   // Check user permissions via profile
-  const profileUser = await getProfileAccessUser({
-    user,
-    profileId: result[0].profileId,
-  });
-
-  assertAccess([{ decisions: permission.ADMIN }], profileUser?.roles ?? []);
+  await assertProfileAccess({ user, profileId: result[0].profileId }, [
+    { decisions: permission.ADMIN },
+  ]);
 
   const exportId = randomUUID();
 
