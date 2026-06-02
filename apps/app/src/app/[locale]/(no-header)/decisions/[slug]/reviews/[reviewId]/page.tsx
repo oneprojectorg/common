@@ -23,12 +23,11 @@ export async function generateMetadata({
     ]);
 
     const reviewedProposal = assignment?.assignment?.proposal;
-    const proposalTitle = reviewedProposal
-      ? getProposalDisplayTitle(reviewedProposal)
-      : undefined;
-    if (!proposalTitle) {
+    if (!reviewedProposal) {
       return {};
     }
+    const proposalTitle =
+      getProposalDisplayTitle(reviewedProposal) || t('Untitled Proposal');
 
     const reviewLabel = t('Review {title}', { title: proposalTitle });
     const decisionName = decisionProfile?.name;

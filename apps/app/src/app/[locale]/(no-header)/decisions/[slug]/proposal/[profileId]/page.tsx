@@ -4,6 +4,7 @@ import {
   dehydrate,
 } from '@op/api/server';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
 import { getProposalDisplayTitle } from '@/components/decisions/proposalContentUtils';
 import {
@@ -16,21 +17,19 @@ import { ProposalViewClient } from './ProposalViewClient';
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string; profileId: string }>;
+  params: Promise<{ slug: string; profileId: string; locale: string }>;
 }): Promise<Metadata> {
-  const { slug, profileId } = await params;
+  const { slug, profileId, locale } = await params;
 
   try {
-    const [proposal, decisionProfile] = await Promise.all([
+    const [t, proposal, decisionProfile] = await Promise.all([
+      getTranslations({ locale }),
       renderProposal(profileId),
       renderDecisionBySlug(slug),
     ]);
 
-    const proposalTitle = getProposalDisplayTitle(proposal);
-    if (!proposalTitle) {
-      return {};
-    }
-
+    const proposalTitle =
+      getProposalDisplayTitle(proposal) || t('Untitled Proposal');
     const decisionName = decisionProfile?.name;
     return {
       title: decisionName

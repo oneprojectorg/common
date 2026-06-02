@@ -6,6 +6,7 @@ import {
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { forbidden, notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -17,19 +18,19 @@ import { DecisionContentSkeleton } from '@/components/skeletons/DecisionSkeleton
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; locale: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug, locale } = await params;
 
   try {
-    const client = await createClient();
+    const [client, t] = await Promise.all([
+      createClient(),
+      getTranslations({ locale }),
+    ]);
     const decisionProfile = await client.decision.getDecisionBySlug({ slug });
-    const name = decisionProfile?.name;
+    const name = decisionProfile?.name || t('Decision');
     const steward = decisionProfile?.processInstance?.owner?.name;
 
-    if (!name) {
-      return {};
-    }
     return { title: steward ? `${name} | ${steward}` : name };
   } catch {
     return {};

@@ -33,11 +33,8 @@ export async function generateMetadata({
       renderInstance(id),
     ]);
 
-    const proposalTitle = getProposalDisplayTitle(proposal);
-    if (!proposalTitle) {
-      return {};
-    }
-
+    const proposalTitle =
+      getProposalDisplayTitle(proposal) || t('Untitled Proposal');
     const label = `${proposalTitle} (${t('Editing')})`;
     return { title: instance?.name ? `${label} | ${instance.name}` : label };
   } catch {

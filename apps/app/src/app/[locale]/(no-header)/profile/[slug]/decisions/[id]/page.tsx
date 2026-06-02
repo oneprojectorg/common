@@ -5,6 +5,7 @@ import {
 } from '@op/api/server';
 import { Skeleton } from '@op/ui/Skeleton';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
@@ -42,13 +43,16 @@ function DecisionHeaderSkeleton() {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string; slug: string }>;
+  params: Promise<{ id: string; slug: string; locale: string }>;
 }): Promise<Metadata> {
-  const { id } = await params;
+  const { id, locale } = await params;
 
   try {
-    const instance = await renderLegacyInstance(id);
-    return instance?.name ? { title: instance.name } : {};
+    const [t, instance] = await Promise.all([
+      getTranslations({ locale }),
+      renderLegacyInstance(id),
+    ]);
+    return { title: instance?.name || t('Decision') };
   } catch {
     return {};
   }
