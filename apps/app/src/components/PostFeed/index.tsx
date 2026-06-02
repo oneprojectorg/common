@@ -181,13 +181,21 @@ const PostCommentButton = ({
   post: Post;
   onCommentClick: () => void;
 }) => {
+  const t = useTranslations();
+
   // we can disable this to allow for threads in the future
   if (!post?.id || post.parentPostId) {
     return null;
   }
 
+  const count = post.commentCount || 0;
+
   return (
-    <CommentButton count={post.commentCount || 0} onPress={onCommentClick} />
+    <CommentButton
+      count={count}
+      label={t('{count} comments', { count })}
+      onPress={onCommentClick}
+    />
   );
 };
 
@@ -420,6 +428,7 @@ export const PostItemOnDetailPage = ({
   commentCount: number;
   className?: string;
 }) => {
+  const t = useTranslations();
   const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
   const { displayPost, handleReactionClick } = useOptimisticReaction(
     post,
@@ -466,7 +475,11 @@ export const PostItemOnDetailPage = ({
               post={displayPost}
               onReactionClick={handleReactionClick}
             />
-            <CommentButton count={commentCount} isDisabled />
+            <CommentButton
+              count={commentCount}
+              label={t('{count} comments', { count: commentCount })}
+              isDisabled
+            />
           </div>
         </FeedContent>
       </FeedMain>
