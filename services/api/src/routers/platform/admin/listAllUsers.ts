@@ -3,7 +3,8 @@ import {
   encodeCursor,
   getGenericCursorCondition,
 } from '@op/common';
-import { and, count, db, ilike } from '@op/db/client';
+import { GLOBAL_USER_IDS } from '@op/core';
+import { and, count, db, ilike, notInArray } from '@op/db/client';
 import { users } from '@op/db/schema';
 import type { SQL } from 'drizzle-orm';
 import { z } from 'zod';
@@ -38,12 +39,18 @@ export const listAllUsersRouter = router({
       const decodedCursor = cursor ? decodeCursor(cursor) : undefined;
       const hasSearch = !!(query && query.length >= 2);
 
+      // Always exclude the access-control sentinel users (GLOBAL_USER_PUBLIC /
+      // GLOBAL_USER_ANONYMOUS). Their UUIDs are auth.users ids, which map to
+      // public.users.authUserId — not the autoId() primary key.
+      const sentinelIds = [...GLOBAL_USER_IDS];
+
       // Used by the count() select below; references the raw schema table.
       const searchCondition = hasSearch
-        ? ilike(users.email, `%${query}%`)
-        : undefined;
-
-      const hasWhere = !!decodedCursor || hasSearch;
+        ? and(
+            notInArray(users.authUserId, sentinelIds),
+            ilike(users.email, `%${query}%`),
+          )
+        : notInArray(users.authUserId, sentinelIds);
 
       // Uses V2 `db.query` (single SQL via LATERAL joins) instead of V1 `db._query`
       // to avoid fan-out that saturates the Supavisor transaction-mode pool.
@@ -51,24 +58,22 @@ export const listAllUsersRouter = router({
       // SQL — conditions must be built against that alias, not the schema ref.
       const [allUsers, [totalCountResult]] = await Promise.all([
         db.query.users.findMany({
-          where: hasWhere
-            ? {
-                RAW: (table) => {
-                  const conds: SQL[] = [];
-                  if (decodedCursor) {
-                    const cursorCond = getGenericCursorCondition({
-                      columns: { id: table.id, date: table.createdAt },
-                      cursor: decodedCursor,
-                    });
-                    if (cursorCond) conds.push(cursorCond);
-                  }
-                  if (hasSearch) {
-                    conds.push(ilike(table.email, `%${query}%`));
-                  }
-                  return conds.length > 1 ? and(...conds)! : conds[0]!;
-                },
+          where: {
+            RAW: (table) => {
+              const conds: SQL[] = [notInArray(table.authUserId, sentinelIds)];
+              if (decodedCursor) {
+                const cursorCond = getGenericCursorCondition({
+                  columns: { id: table.id, date: table.createdAt },
+                  cursor: decodedCursor,
+                });
+                if (cursorCond) conds.push(cursorCond);
               }
-            : undefined,
+              if (hasSearch) {
+                conds.push(ilike(table.email, `%${query}%`));
+              }
+              return conds.length > 1 ? and(...conds)! : conds[0]!;
+            },
+          },
           with: {
             authUser: true,
             profile: true,

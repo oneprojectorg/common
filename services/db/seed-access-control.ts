@@ -66,7 +66,7 @@ console.log(`Inserted ${ACCESS_ROLE_PERMISSIONS.length} role permissions`);
 // Global sentinel users (PUBLIC / ANONYMOUS) for the access-control
 // substitution layer. Must exist in every environment.
 // ---------------------------------------------------------------------------
-await seedGlobalUsers(db);
+await seedGlobalUsers();
 
 // ---------------------------------------------------------------------------
 // Default organization: One Project

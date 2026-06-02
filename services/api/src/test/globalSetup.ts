@@ -1,3 +1,4 @@
+import { GLOBAL_USER_IDS } from '@op/core';
 import * as schema from '@op/db/schema';
 import { ACCESS_ROLES, ACCESS_ZONES } from '@op/db/seedData/accessControl';
 import { count, eq, getTableName, inArray } from 'drizzle-orm';
@@ -121,6 +122,15 @@ export async function teardown() {
   await db
     .delete(schema.accessZones)
     .where(inArray(schema.accessZones.id, accessZoneIds));
+
+  // Delete the global sentinel users seeded by seedGlobalUsers(). Remove the
+  // public.users mirror first, then the auth.users source row.
+  await db
+    .delete(schema.users)
+    .where(inArray(schema.users.authUserId, [...GLOBAL_USER_IDS]));
+  await db
+    .delete(schema.authUsers)
+    .where(inArray(schema.authUsers.id, [...GLOBAL_USER_IDS]));
 
   console.log('✅ Deseeding completed');
 

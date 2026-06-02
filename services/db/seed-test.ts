@@ -372,7 +372,7 @@ async function seed() {
 
   await wipeDatabase();
   await seedAccessControl();
-  await seedGlobalUsers(db);
+  await seedGlobalUsers();
   await seedDecisionTemplates();
 
   console.log('\n✅ Database seeding completed successfully!');

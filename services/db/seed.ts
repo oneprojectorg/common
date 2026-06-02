@@ -154,7 +154,7 @@ for (const email of adminEmails) {
 
 // Seed the global sentinel users (PUBLIC / ANONYMOUS) used by the
 // access-control substitution layer.
-await seedGlobalUsers(db);
+await seedGlobalUsers();
 
 // Run the SQL seed scripts
 const seedDataPath = path.join(process.cwd(), 'seedData');

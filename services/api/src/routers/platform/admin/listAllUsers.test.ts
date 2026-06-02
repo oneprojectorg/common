@@ -1,3 +1,4 @@
+import { GLOBAL_USER_IDS } from '@op/core';
 import { describe, expect, it } from 'vitest';
 
 import { platformAdminRouter } from '.';
@@ -346,6 +347,30 @@ describe.concurrent('platform.admin.listAllUsers', () => {
       items.every((user: (typeof result2.items)[number]) =>
         customDomainUserEmails.has(user.email!),
       ),
+    );
+  });
+
+  it('should never surface the global sentinel users', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+    const { adminUser } = await testData.createOrganization({
+      users: { admin: 1 },
+    });
+
+    // Create isolated session for this test
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    const sentinelIds = new Set<string>(GLOBAL_USER_IDS);
+
+    // The sentinels are seeded before any test user, so ascending order by
+    // createdAt would surface them first if they weren't filtered out.
+    const result = await caller.listAllUsers({ limit: 100, dir: 'asc' });
+
+    expect(result.items.some((user) => sentinelIds.has(user.authUserId))).toBe(
+      false,
     );
   });
 });
