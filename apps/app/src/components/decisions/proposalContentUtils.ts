@@ -139,9 +139,15 @@ export function resolveProposalSystemFields(proposal: Proposal) {
 export function getProposalDisplayTitle(
   proposal: Proposal,
 ): string | undefined {
+  // Prefer the proposal profile name: it's kept in sync with the title by
+  // createProposal/updateProposal and is a plain column, so it resolves cheaply.
+  // The document-resolved title runs tiptap over the fragments — keeping it out
+  // of the hot path keeps generateMetadata fast enough to land in the initial
+  // response (not streamed late), so the route announcer reads the real title.
+  // Falls back to the document title, then undefined.
   return (
-    resolveProposalSystemFields(proposal).title ||
     proposal.profile?.name ||
+    resolveProposalSystemFields(proposal).title ||
     undefined
   );
 }
