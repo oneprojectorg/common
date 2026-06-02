@@ -41,7 +41,7 @@ export async function generateMetadata({
       return {};
     }
 
-    const label = t('{name} (Editing)', { name: proposalTitle });
+    const label = `${proposalTitle} (${t('Editing')})`;
     return { title: instance?.name ? `${label} | ${instance.name}` : label };
   } catch {
     return {};

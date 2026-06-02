@@ -84,7 +84,7 @@ export default function ProposalEditorLayout({
     resolveProposalSystemFields(proposal).title || proposal.profile?.name;
   useEffect(() => {
     const parts = [
-      proposalTitle ? t('{name} (Editing)', { name: proposalTitle }) : null,
+      proposalTitle ? `${proposalTitle} (${t('Editing')})` : null,
       decisionProfile.name,
       APP_NAME,
     ].filter(Boolean);
