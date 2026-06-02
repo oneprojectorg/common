@@ -27,8 +27,11 @@ export const moderateTextContent = async (
   }
 
   const scores = await provider.scoreText({ content });
-  const total = Object.values(scores).reduce(
-    (sum, score) => sum + (score ?? 0),
+  // Sum only finite numeric scores; ignore anything a misbehaving provider
+  // returns that isn't a real number.
+  const total = Object.values(scores).reduce<number>(
+    (sum, score) =>
+      sum + (typeof score === 'number' && Number.isFinite(score) ? score : 0),
     0,
   );
 

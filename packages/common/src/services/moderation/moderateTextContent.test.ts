@@ -46,6 +46,17 @@ describe('moderateTextContent', () => {
     expect(scoreText).not.toHaveBeenCalled();
   });
 
+  it('ignores non-numeric scores from a misbehaving provider', async () => {
+    const decision = await moderateTextContent('hello', {
+      // Provider contract says numbers; guard against junk at runtime.
+      scoreText: async () =>
+        ({ profanity: 'high', hate: 0.2 }) as unknown as ModerationScores,
+    });
+
+    expect(decision.passed).toBe(true);
+    expect(decision.total).toBeCloseTo(0.2);
+  });
+
   it('propagates the error when the provider throws (fail-closed)', async () => {
     await expect(
       moderateTextContent('content that errors', throwingProvider()),
