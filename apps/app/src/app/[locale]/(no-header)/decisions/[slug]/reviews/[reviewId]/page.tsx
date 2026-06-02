@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
 import { ReviewLayout } from '@/components/decisions/Review/ReviewLayout';
-import { resolveProposalSystemFields } from '@/components/decisions/proposalContentUtils';
+import { getProposalDisplayTitle } from '@/components/decisions/proposalContentUtils';
 
 export async function generateMetadata({
   params,
@@ -24,8 +24,7 @@ export async function generateMetadata({
 
     const reviewedProposal = assignment?.assignment?.proposal;
     const proposalTitle = reviewedProposal
-      ? resolveProposalSystemFields(reviewedProposal).title ||
-        reviewedProposal.profile?.name
+      ? getProposalDisplayTitle(reviewedProposal)
       : undefined;
     if (!proposalTitle) {
       return {};

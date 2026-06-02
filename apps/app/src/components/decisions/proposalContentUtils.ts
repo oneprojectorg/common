@@ -129,3 +129,19 @@ export function resolveProposalSystemFields(proposal: Proposal) {
     }),
   };
 }
+
+/**
+ * A proposal's display title: the document-resolved title, falling back to the
+ * proposal profile name. Mirrors the on-screen `<Header1>`. Single source of
+ * truth for page `<title>`s and headings — don't read `proposalData.title`
+ * directly (it's empty for collab-doc proposals).
+ */
+export function getProposalDisplayTitle(
+  proposal: Proposal,
+): string | undefined {
+  return (
+    resolveProposalSystemFields(proposal).title ||
+    proposal.profile?.name ||
+    undefined
+  );
+}

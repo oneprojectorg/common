@@ -24,7 +24,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { CollaborativeDocProvider } from '@/components/collaboration';
 import { ProposalEditorSkeleton } from '@/components/decisions/ProposalEditorSkeleton';
-import { resolveProposalSystemFields } from '@/components/decisions/proposalContentUtils';
+import { getProposalDisplayTitle } from '@/components/decisions/proposalContentUtils';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
 import { VersionPreviewProvider } from '@/components/decisions/proposalEditor/VersionPreviewContext';
 import { useOptionalVersionPreview } from '@/components/decisions/proposalEditor/VersionPreviewContext';
@@ -80,8 +80,7 @@ export default function ProposalEditorLayout({
 
   const instance = decisionProfile.processInstance;
 
-  const proposalTitle =
-    resolveProposalSystemFields(proposal).title || proposal.profile?.name;
+  const proposalTitle = getProposalDisplayTitle(proposal);
   useEffect(() => {
     const parts = [
       proposalTitle ? `${proposalTitle} (${t('Editing')})` : null,
