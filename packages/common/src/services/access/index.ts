@@ -102,9 +102,11 @@ export const getProfileAccessUser = memoize(
     user: { id: string };
     profileId: string;
   }): Promise<ProfileUserWithNormalizedRoles | undefined> => {
-    const profileUser = await db._query.profileUsers.findFirst({
-      where: (table, { eq }) =>
-        and(eq(table.profileId, profileId), eq(table.authUserId, user.id)),
+    const profileUser = await db.query.profileUsers.findFirst({
+      where: {
+        profileId,
+        authUserId: user.id,
+      },
       with: {
         profile: true,
         roles: {
@@ -136,7 +138,7 @@ export const getProfileAccessUser = memoize(
     const { roles: _, ...profileUserWithoutRoles } = profileUser;
     return {
       ...profileUserWithoutRoles,
-      profile: profileUser.profile as Profile,
+      profile: profileUser.profile,
       roles: normalizedRoles,
     };
   },

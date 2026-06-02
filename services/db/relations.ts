@@ -483,6 +483,11 @@ export const relations = defineRelations(schema, (r) => ({
    * Links profile users to their assigned roles.
    */
   profileUsers: {
+    profile: r.one.profiles({
+      from: r.profileUsers.profileId,
+      to: r.profiles.id,
+      optional: false,
+    }),
     roles: r.many.profileUserToAccessRoles({
       from: r.profileUsers.id,
       to: r.profileUserToAccessRoles.profileUserId,
