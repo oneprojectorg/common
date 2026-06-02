@@ -8,7 +8,6 @@
  * Naming: --op-<category>[-<role>]-<scale>
  *
  * Figma↔code gaps (handled by semantic aliases in shared-styles.css):
- *   - no green-50  → functional-greenWhite alias uses green-100
  *   - one orange   → orange1 + orange2 collapse to a single hue
  *   - no separate status-green → uses functional-green-600 / -100
  */
