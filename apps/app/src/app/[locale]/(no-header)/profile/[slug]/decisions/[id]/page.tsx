@@ -3,10 +3,11 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
-import { createClient } from '@op/api/serverClient';
 import { Skeleton } from '@op/ui/Skeleton';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+
+import { renderLegacyInstance } from '@/lib/decisionRenderData';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
@@ -47,11 +48,7 @@ export async function generateMetadata({
   const { id } = await params;
 
   try {
-    const client = await createClient();
-    const instance = await client.decision.getLegacyInstance({
-      instanceId: id,
-      skipTracking: true,
-    });
+    const instance = await renderLegacyInstance(id);
     return instance?.name ? { title: instance.name } : {};
   } catch {
     return {};
@@ -65,8 +62,8 @@ const DecisionInstancePageContent = async ({
   instanceId: string;
   slug: string;
 }) => {
-  const { utils, queryClient } = await createServerUtils();
-  await utils.decision.getLegacyInstance.prefetch({ instanceId });
+  const { queryClient } = await createServerUtils();
+  await renderLegacyInstance(instanceId).catch(() => {});
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

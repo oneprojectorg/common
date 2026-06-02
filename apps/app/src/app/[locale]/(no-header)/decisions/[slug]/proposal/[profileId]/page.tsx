@@ -3,8 +3,9 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
-import { createClient } from '@op/api/serverClient';
 import type { Metadata } from 'next';
+
+import { renderDecisionBySlug, renderProposal } from '@/lib/decisionRenderData';
 
 import { getProposalDisplayTitle } from '@/components/decisions/proposalContentUtils';
 
@@ -17,13 +18,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug, profileId } = await params;
 
-  // Title-only reads: skipTracking avoids firing a duplicate "viewed" event
-  // (the page render below fires the real one).
   try {
-    const client = await createClient();
     const [proposal, decisionProfile] = await Promise.all([
-      client.decision.getProposal({ profileId, skipTracking: true }),
-      client.decision.getDecisionBySlug({ slug }),
+      renderProposal(profileId),
+      renderDecisionBySlug(slug),
     ]);
 
     const proposalTitle = getProposalDisplayTitle(proposal);
@@ -48,11 +46,13 @@ const ProposalViewPage = async ({
   params: Promise<{ slug: string; profileId: string }>;
 }) => {
   const { slug, profileId } = await params;
-  const { utils, queryClient } = await createServerUtils();
+  const { queryClient } = await createServerUtils();
 
+  // Shares the cache()-wrapped fetch with generateMetadata above, so the
+  // resolver (and its view event) runs once and the data is hydrated.
   await Promise.all([
-    utils.decision.getProposal.prefetch({ profileId }),
-    utils.decision.getDecisionBySlug.prefetch({ slug }),
+    renderProposal(profileId),
+    renderDecisionBySlug(slug),
   ]).catch(() => {});
 
   return (

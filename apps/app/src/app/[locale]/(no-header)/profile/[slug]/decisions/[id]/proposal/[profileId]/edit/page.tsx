@@ -3,9 +3,10 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
-import { createClient } from '@op/api/serverClient';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+
+import { renderInstance, renderProposal } from '@/lib/decisionRenderData';
 
 import { getProposalDisplayTitle } from '@/components/decisions/proposalContentUtils';
 
@@ -24,13 +25,10 @@ export async function generateMetadata({
   const { profileId, id, locale } = await params;
 
   try {
-    const [client, t] = await Promise.all([
-      createClient(),
+    const [t, proposal, instance] = await Promise.all([
       getTranslations({ locale }),
-    ]);
-    const [proposal, instance] = await Promise.all([
-      client.decision.getProposal({ profileId, skipTracking: true }),
-      client.decision.getInstance({ instanceId: id, skipTracking: true }),
+      renderProposal(profileId),
+      renderInstance(id),
     ]);
 
     const proposalTitle = getProposalDisplayTitle(proposal);
@@ -51,12 +49,11 @@ const ProposalEditPage = async ({
   params: Promise<{ profileId: string; id: string; slug: string }>;
 }) => {
   const { profileId, id, slug } = await params;
-  const { utils, queryClient } = await createServerUtils();
+  const { queryClient } = await createServerUtils();
 
-  await Promise.all([
-    utils.decision.getProposal.prefetch({ profileId }),
-    utils.decision.getInstance.prefetch({ instanceId: id }),
-  ]).catch(() => {});
+  await Promise.all([renderProposal(profileId), renderInstance(id)]).catch(
+    () => {},
+  );
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

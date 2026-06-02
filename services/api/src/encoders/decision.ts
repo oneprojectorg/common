@@ -470,9 +470,6 @@ export const updateInstanceInputSchema = createInstanceInputSchema
 
 export const getInstanceInputSchema = z.object({
   instanceId: z.uuid(),
-  // Skip the "viewed" analytics side effect for metadata/SSR reads that aren't
-  // a real user view. TODO: remove once view-tracking moves out of read resolvers.
-  skipTracking: z.boolean().optional(),
 });
 
 export const createProposalInputSchema = z.object({
