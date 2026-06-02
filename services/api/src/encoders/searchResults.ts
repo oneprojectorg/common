@@ -1,9 +1,5 @@
-import {
-  EntityType,
-  objectsInStorage,
-  organizations,
-  users,
-} from '@op/db/schema';
+import { storageItemMinimalSchema } from '@op/common/client';
+import { EntityType, organizations, users } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
@@ -12,13 +8,6 @@ import { baseProfileEncoder } from './baseProfile';
 // The search service over-selects every column; these encoders are the output
 // boundary that picks back down to what the UI reads. Never bare
 // createSelectSchema here — that would forward PII and internal FKs.
-
-const searchStorageObjectEncoder = createSelectSchema(objectsInStorage)
-  .pick({
-    id: true,
-    name: true,
-  })
-  .nullable();
 
 // On the raw table, not organizationsEncoder: this validates raw left-join rows,
 // before that encoder's output transforms (e.g. acceptingApplications default).
@@ -64,7 +53,7 @@ export const profileSearchResultEncoder = baseProfileEncoder
     city: true,
   })
   .extend({
-    avatarImage: searchStorageObjectEncoder,
+    avatarImage: storageItemMinimalSchema.nullable(),
     organization: searchOrganizationEncoder,
     user: searchUserEncoder,
     rank: z.coerce.number(), // raw SQL result is unknown
