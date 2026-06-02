@@ -1015,7 +1015,7 @@
   "Participant Preview": "Aperçu du participant",
   "Review Proposal": "Évaluer la proposition",
   "Review {title}": "Évaluer {title}",
-  "Edit {name}": "Modifier {name}",
+  "{name} (Editing)": "{name} (Modification)",
   "People": "Personnes",
   "Users": "Utilisateurs",
   "pts": "pts",

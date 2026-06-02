@@ -41,7 +41,7 @@ export async function generateMetadata({
       return {};
     }
 
-    const label = t('Edit {name}', { name: proposalTitle });
+    const label = t('{name} (Editing)', { name: proposalTitle });
     return { title: instance?.name ? `${label} | ${instance.name}` : label };
   } catch {
     return {};

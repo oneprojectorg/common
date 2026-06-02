@@ -945,7 +945,7 @@
   "Participant Preview": "معاينة المشارك",
   "Review Proposal": "مراجعة المقترح",
   "Review {title}": "مراجعة {title}",
-  "Edit {name}": "تعديل {name}",
+  "{name} (Editing)": "{name} (تحرير)",
   "People": "الأشخاص",
   "Users": "المستخدمون",
   "pts": "نقاط",

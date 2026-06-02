@@ -1012,7 +1012,7 @@
   "Participant Preview": "Participant Preview",
   "Review Proposal": "Review Proposal",
   "Review {title}": "Review {title}",
-  "Edit {name}": "Edit {name}",
+  "{name} (Editing)": "{name} (Editing)",
   "People": "People",
   "Users": "Users",
   "pts": "pts",
