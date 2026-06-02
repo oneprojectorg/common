@@ -199,8 +199,10 @@
    * ============================================ */
   --color-functional-red-50: var(--op-functional-red-50);
   --color-functional-red-100: var(--op-functional-red-100);
+  --color-functional-red-300: var(--op-functional-red-300);
   --color-functional-red-600: var(--op-functional-red-600);
   --color-functional-red-800: var(--op-functional-red-800);
+  --color-functional-green-50: var(--op-functional-green-50);
   --color-functional-green-100: var(--op-functional-green-100);
   --color-functional-green-600: var(--op-functional-green-600);
 
@@ -238,7 +240,7 @@
    *
    * Notes on Figma↔code gaps:
    *   - primary-orange1 and primary-orange2 collapse to one orange (hue distinction lost)
-   *   - functional-greenWhite maps to green-100 (Figma has no green-50)
+   *   - functional-greenWhite maps to green-50
    *   - functional-yellowWhite borrows the orange-50 tint
    *   - status-green / status-greenBg share the functional green scale
    * ============================================ */
