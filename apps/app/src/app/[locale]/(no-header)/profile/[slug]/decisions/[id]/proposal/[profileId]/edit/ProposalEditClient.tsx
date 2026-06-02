@@ -1,11 +1,15 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { APP_NAME } from '@op/core';
 import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
+
+import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { DocumentNotAvailable } from '@/components/decisions/DocumentNotAvailable';
+import { getProposalDisplayTitle } from '@/components/decisions/proposalContentUtils';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
 
 function ProposalEditPageContent({
@@ -17,6 +21,8 @@ function ProposalEditPageContent({
   instanceId: string;
   decisionSlug: string;
 }) {
+  const t = useTranslations();
+
   // Get both the proposal and the instance in parallel
   const [[proposal, instance]] = trpc.useSuspenseQueries((t) => [
     t.decision.getProposal({ profileId }),
@@ -26,6 +32,16 @@ function ProposalEditPageContent({
   if (!proposal || !instance) {
     notFound();
   }
+
+  const proposalTitle = getProposalDisplayTitle(proposal);
+  useEffect(() => {
+    const parts = [
+      proposalTitle ? `${proposalTitle} (${t('Editing')})` : null,
+      instance.name,
+      APP_NAME,
+    ].filter(Boolean);
+    document.title = parts.join(' | ');
+  }, [proposalTitle, instance.name, t]);
 
   const backHref = `/decisions/${decisionSlug}`;
 
