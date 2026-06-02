@@ -2,11 +2,12 @@ import {
   EntityType,
   objectsInStorage,
   organizations,
-  profiles,
   users,
 } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
+
+import { baseProfileEncoder } from './baseProfile';
 
 // The search service over-selects every column via `getTableColumns`; these
 // output encoders are the boundary that strips it back down. Keep them picked
@@ -20,7 +21,10 @@ const searchStorageObjectEncoder = createSelectSchema(objectsInStorage)
   })
   .nullable();
 
-// Mirrors the config columns organizationsEncoder exposes; only whereWeWork is read.
+// Mirrors the config columns organizationsEncoder exposes; only whereWeWork is
+// read. Kept on the raw table schema (not organizationsEncoder) because this is
+// the boundary for raw left-join rows, before organizationsEncoder's output
+// transforms (e.g. acceptingApplications default) are applied.
 const searchOrganizationEncoder = createSelectSchema(organizations)
   .pick({
     id: true,
@@ -51,8 +55,9 @@ const searchUserEncoder = createSelectSchema(users)
   })
   .nullable();
 
-// Stays within what baseProfileEncoder exposes — must not leak phone/address/postalCode.
-export const profileSearchResultEncoder = createSelectSchema(profiles)
+// Pick from baseProfileEncoder so search structurally can't leak more than the
+// public profile does (no phone/address/postalCode — and notably not email).
+export const profileSearchResultEncoder = baseProfileEncoder
   .pick({
     id: true,
     name: true,
