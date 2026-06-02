@@ -1,22 +1,24 @@
-import {
-  EntityType,
-  objectsInStorage,
-  organizations,
-  profiles,
-  users,
-} from '@op/db/schema';
+import { storageItemMinimalSchema } from '@op/common/client';
+import { EntityType, organizations, users } from '@op/db/schema';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-// Storage encoder for search results that accepts raw database format from LEFT JOIN
-// Uses createSelectSchema to handle all objectsInStorage fields and make them nullable
-const searchStorageObjectEncoder =
-  createSelectSchema(objectsInStorage).nullable();
+import { baseProfileEncoder } from './baseProfile';
 
-// Search-specific organization encoder (nullable fields from left join)
-// Include whereWeWork array which is used by ProfileSummaryList
-// Make links, receivingFundsTerms, and strategies optional since they're not in the base table
+// The search service over-selects every column; these encoders pick it back
+// down to what the UI reads, so PII and internal FKs aren't forwarded.
+
+// Raw table, not organizationsEncoder, which transforms its output.
 const searchOrganizationEncoder = createSelectSchema(organizations)
+  .pick({
+    id: true,
+    isOfferingFunds: true,
+    isReceivingFunds: true,
+    acceptingApplications: true,
+    networkOrganization: true,
+    orgType: true,
+    domain: true,
+  })
   .extend({
     whereWeWork: z
       .array(
@@ -25,26 +27,34 @@ const searchOrganizationEncoder = createSelectSchema(organizations)
         }),
       )
       .optional(),
-    links: z.array(z.any()).optional(),
-    receivingFundsTerms: z.array(z.any()).optional(),
-    strategies: z.array(z.any()).optional(),
   })
   .nullable();
 
-// Search-specific user encoder (nullable fields from left join)
 const searchUserEncoder = createSelectSchema(users)
-  .omit({ onboardedAt: true })
+  .pick({
+    id: true,
+    name: true,
+    email: true,
+  })
   .nullable();
 
-// Profile search result encoder
-export const profileSearchResultEncoder = createSelectSchema(profiles).extend({
-  avatarImage: searchStorageObjectEncoder,
-  organization: searchOrganizationEncoder,
-  user: searchUserEncoder,
-  rank: z.coerce.number(), // Coerce from unknown (raw SQL result) to number
-});
+// Picked from baseProfileEncoder so search can't expose more than the profile.
+export const profileSearchResultEncoder = baseProfileEncoder
+  .pick({
+    id: true,
+    name: true,
+    slug: true,
+    type: true,
+    bio: true,
+    city: true,
+  })
+  .extend({
+    avatarImage: storageItemMinimalSchema.nullable(),
+    organization: searchOrganizationEncoder,
+    user: searchUserEncoder,
+    rank: z.coerce.number(),
+  });
 
-// Discriminated union for search results grouped by entity type
 export const searchProfilesResultEncoder = z.array(
   z.object({
     type: z.enum(EntityType),
