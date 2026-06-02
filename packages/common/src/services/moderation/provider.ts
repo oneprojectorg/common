@@ -27,7 +27,7 @@ const createHttpModerationProvider = (
       throw new Error(`Moderation provider returned ${response.status}`);
     }
 
-    const data = (await response.json()) as { scores?: ModerationScores };
+    const data: { scores?: ModerationScores } = await response.json();
 
     return data.scores ?? {};
   },
