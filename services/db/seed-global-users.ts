@@ -19,8 +19,8 @@ import { db } from '.';
 export async function seedGlobalUsers(): Promise<void> {
   // TODO: protect these two rows from deletion.
   const sentinels = [
-    { id: GLOBAL_USER_PUBLIC, name: 'Public', isAnonymous: false },
-    { id: GLOBAL_USER_ANONYMOUS, name: 'Anonymous', isAnonymous: true },
+    { id: GLOBAL_USER_PUBLIC, name: 'Public' },
+    { id: GLOBAL_USER_ANONYMOUS, name: 'Anonymous' },
   ];
 
   await db.transaction(async (tx) => {
@@ -30,8 +30,8 @@ export async function seedGlobalUsers(): Promise<void> {
 
     for (const sentinel of sentinels) {
       await tx.execute(sql`
-        INSERT INTO auth.users (id, email, is_anonymous, created_at, updated_at)
-        VALUES (${sentinel.id}, NULL, ${sentinel.isAnonymous}, now(), now())
+        INSERT INTO auth.users (id, email, created_at, updated_at)
+        VALUES (${sentinel.id}, NULL, now(), now())
         ON CONFLICT (id) DO NOTHING
       `);
 
