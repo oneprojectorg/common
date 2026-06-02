@@ -7,10 +7,9 @@ import { Skeleton } from '@op/ui/Skeleton';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
-import { renderLegacyInstance } from '@/lib/decisionRenderData';
-
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
+import { renderLegacyInstance } from '@/components/decisions/serverRenderData';
 
 function DecisionHeaderSkeleton() {
   return (

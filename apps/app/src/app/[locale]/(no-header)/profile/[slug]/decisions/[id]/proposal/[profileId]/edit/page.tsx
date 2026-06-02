@@ -6,9 +6,11 @@ import {
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
-import { renderInstance, renderProposal } from '@/lib/decisionRenderData';
-
 import { getProposalDisplayTitle } from '@/components/decisions/proposalContentUtils';
+import {
+  renderInstance,
+  renderProposal,
+} from '@/components/decisions/serverRenderData';
 
 import { LegacyProposalEditClient } from './ProposalEditClient';
 

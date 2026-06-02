@@ -5,9 +5,8 @@ import {
 } from '@op/api/server';
 import type { Metadata } from 'next';
 
-import { renderProposal } from '@/lib/decisionRenderData';
-
 import { getProposalDisplayTitle } from '@/components/decisions/proposalContentUtils';
+import { renderProposal } from '@/components/decisions/serverRenderData';
 
 import { LegacyProposalViewClient } from './ProposalViewClient';
 
