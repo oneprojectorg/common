@@ -506,7 +506,7 @@ describe.concurrent('profile.decisionRoles', () => {
       }),
     ).rejects.toSatisfy(
       (error: Error & { cause?: Error }) =>
-        error.cause?.name === 'UnauthorizedError',
+        error.cause?.name === 'AccessControlException',
     );
   });
 });

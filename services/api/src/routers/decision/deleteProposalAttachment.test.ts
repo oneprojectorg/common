@@ -202,7 +202,7 @@ describe.concurrent('deleteProposalAttachment', () => {
         proposalId: proposal.id,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'UnauthorizedError' },
+      cause: { name: 'AccessControlException' },
     });
   });
 });
