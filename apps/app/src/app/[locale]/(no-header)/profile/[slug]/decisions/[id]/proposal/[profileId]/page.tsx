@@ -5,6 +5,8 @@ import {
 } from '@op/api/server';
 import type { Metadata } from 'next';
 
+import { resolveProposalSystemFields } from '@/components/decisions/proposalContentUtils';
+
 import { LegacyProposalViewClient } from './ProposalViewClient';
 
 export async function generateMetadata({
@@ -20,7 +22,8 @@ export async function generateMetadata({
       { profileId },
       { staleTime: 30_000 },
     );
-    const title = proposal?.proposalData?.title;
+    const title =
+      resolveProposalSystemFields(proposal).title || proposal.profile?.name;
     return title ? { title } : {};
   } catch {
     return {};

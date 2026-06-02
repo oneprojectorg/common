@@ -6,6 +6,8 @@ import {
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+import { resolveProposalSystemFields } from '@/components/decisions/proposalContentUtils';
+
 import { LegacyProposalEditClient } from './ProposalEditClient';
 
 export async function generateMetadata({
@@ -33,7 +35,8 @@ export async function generateMetadata({
       ),
     ]);
 
-    const proposalTitle = proposal?.proposalData?.title;
+    const proposalTitle =
+      resolveProposalSystemFields(proposal).title || proposal.profile?.name;
     if (!proposalTitle) {
       return {};
     }

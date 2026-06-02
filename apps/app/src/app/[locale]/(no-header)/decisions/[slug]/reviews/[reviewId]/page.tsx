@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
 import { ReviewLayout } from '@/components/decisions/Review/ReviewLayout';
+import { resolveProposalSystemFields } from '@/components/decisions/proposalContentUtils';
 
 export async function generateMetadata({
   params,
@@ -21,7 +22,11 @@ export async function generateMetadata({
       client.decision.getDecisionBySlug({ slug }),
     ]);
 
-    const proposalTitle = assignment?.assignment?.proposal?.proposalData?.title;
+    const reviewedProposal = assignment?.assignment?.proposal;
+    const proposalTitle = reviewedProposal
+      ? resolveProposalSystemFields(reviewedProposal).title ||
+        reviewedProposal.profile?.name
+      : undefined;
     if (!proposalTitle) {
       return {};
     }

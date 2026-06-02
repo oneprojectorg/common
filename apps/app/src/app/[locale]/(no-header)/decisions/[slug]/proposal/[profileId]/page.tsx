@@ -5,6 +5,8 @@ import {
 } from '@op/api/server';
 import type { Metadata } from 'next';
 
+import { resolveProposalSystemFields } from '@/components/decisions/proposalContentUtils';
+
 import { ProposalViewClient } from './ProposalViewClient';
 
 export async function generateMetadata({
@@ -21,7 +23,8 @@ export async function generateMetadata({
       utils.decision.getDecisionBySlug.fetch({ slug }, { staleTime: 30_000 }),
     ]);
 
-    const proposalTitle = proposal?.proposalData?.title;
+    const proposalTitle =
+      resolveProposalSystemFields(proposal).title || proposal.profile?.name;
     if (!proposalTitle) {
       return {};
     }
