@@ -1,27 +1,25 @@
-import { GLOBAL_USER_ANONYMOUS, GLOBAL_USER_PUBLIC } from '@op/core';
+import { GLOBAL_USER_PUBLIC } from '@op/core';
 import { sql } from 'drizzle-orm';
 
 import { db } from '.';
 
 /**
- * Seeds the two sentinel "global" user identities the access-control
- * substitution layer resolves role grants against (GLOBAL_USER_PUBLIC for
- * no-JWT callers, GLOBAL_USER_ANONYMOUS for anon-JWT callers). They must exist
- * in every environment or sentinel lookups fail closed.
+ * Seeds the sentinel "global" user identity the access-control substitution
+ * layer resolves role grants against (GLOBAL_USER_PUBLIC for no-JWT callers).
+ * It must exist in every environment or sentinel lookups fail closed. Anonymous
+ * (anon-JWT) callers are not substituted — they have their own real identity —
+ * so there is no anonymous sentinel.
  *
- * Each is identity-only — an `auth.users` row + `public.users` mirror, no
- * profile/owner/Admin scaffolding — so they can never sign in or surface in
+ * It is identity-only — an `auth.users` row + `public.users` mirror, no
+ * profile/owner/Admin scaffolding — so it can never sign in or surface in
  * search, invites, or people lists. We direct-INSERT (the Admin API can't pin
  * a UUID) and suppress `on_auth_signup_create_user` via SET LOCAL
  * session_replication_role rather than DISABLE TRIGGER, since `auth.users` is
  * owned by `supabase_auth_admin`. Idempotent: safe to re-run.
  */
 export async function seedGlobalUsers(): Promise<void> {
-  // TODO: protect these two rows from deletion.
-  const sentinels = [
-    { id: GLOBAL_USER_PUBLIC, name: 'Public' },
-    { id: GLOBAL_USER_ANONYMOUS, name: 'Anonymous' },
-  ];
+  // TODO: protect this row from deletion.
+  const sentinels = [{ id: GLOBAL_USER_PUBLIC, name: 'Public' }];
 
   await db.transaction(async (tx) => {
     // Suppress all triggers (notably on_auth_signup_create_user) for the inserts
@@ -45,5 +43,5 @@ export async function seedGlobalUsers(): Promise<void> {
     }
   });
 
-  console.log(`Seeded ${sentinels.length} global sentinel users`);
+  console.log(`Seeded ${sentinels.length} global sentinel user(s)`);
 }

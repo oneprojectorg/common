@@ -152,8 +152,8 @@ for (const email of adminEmails) {
   }
 }
 
-// Seed the global sentinel users (PUBLIC / ANONYMOUS) used by the
-// access-control substitution layer.
+// Seed the global sentinel user (PUBLIC) used by the access-control
+// substitution layer.
 await seedGlobalUsers();
 
 // Run the SQL seed scripts
