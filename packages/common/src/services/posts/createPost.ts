@@ -20,6 +20,7 @@ import { CommonError } from '../../utils';
 import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
 import { decisionPermission } from '../decision/permissions';
 import { sendCommentNotificationEmail } from '../email';
+import { assertTextContentModerated } from '../moderation';
 import { resolvePostRoots } from './resolvePostRoots';
 
 interface CreatePostServiceInput extends CreatePostInput {
@@ -266,6 +267,9 @@ export const createPost = async (input: CreatePostServiceInput) => {
         : { decisions: decisionPermission.SUBMIT_PROPOSALS },
     },
   });
+
+  // Moderation gate: block disallowed text before any row is written.
+  await assertTextContentModerated(content);
 
   // postsToProfiles inheritance for comments is purely a feed/discovery
   // index now — auth is pinned on rootProfileId above. We still pre-read

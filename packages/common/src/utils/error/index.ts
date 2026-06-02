@@ -62,6 +62,16 @@ export class ConflictError extends CommonError {
   }
 }
 
+/** Content was rejected by the moderation gate. */
+export class ModerationError extends CommonError {
+  public readonly statusCode: number = 422;
+
+  constructor(message?: string) {
+    const defaultMessage = 'This content violates our community guidelines.';
+    super(message ?? defaultMessage);
+  }
+}
+
 export class RateLimitError extends CommonError {
   public readonly statusCode: number = 429;
 
