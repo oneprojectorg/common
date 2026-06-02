@@ -6,6 +6,7 @@ import { Header1 } from '@op/ui/Header';
 import { IconButton } from '@op/ui/IconButton';
 import { MegaphoneIcon } from '@op/ui/MegaphoneIcon';
 import { useQueryState } from 'nuqs';
+import { type ReactNode } from 'react';
 import { LuArrowLeft, LuSettings } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -21,6 +22,7 @@ export const DecisionInstanceHeader = ({
   decisionSlug,
   isAdmin,
   canReadUpdates = false,
+  centerSlot,
 }: {
   backTo: {
     label?: string;
@@ -30,27 +32,47 @@ export const DecisionInstanceHeader = ({
   decisionSlug?: string;
   isAdmin?: boolean;
   canReadUpdates?: boolean;
+  /**
+   * Optional content for the header's center column (e.g. the Overview /
+   * Current Phase toggle). When provided, the title moves beside the Back
+   * link so the center stays reserved for the slot; otherwise the title is
+   * centered as before.
+   */
+  centerSlot?: ReactNode;
 }) => {
   const t = useTranslations();
 
   return (
     <header className="grid grid-cols-[auto_1fr_auto] items-center border-b bg-white p-2 px-6 sm:grid-cols-3 md:py-3">
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center gap-3">
         <Link
           href={backTo.href}
-          className="flex items-center gap-2 text-base text-neutral-black hover:text-primary-tealBlack md:text-primary-teal"
+          className="flex shrink-0 items-center gap-2 text-base text-neutral-black hover:text-primary-tealBlack md:text-primary-teal"
         >
           <LuArrowLeft className="size-6 md:size-4 rtl:-scale-x-100" />
           <span className="hidden md:flex">
             {t('Back')} {backTo.label ? `${t('to')} ${backTo.label}` : ''}
           </span>
         </Link>
+        {centerSlot ? (
+          <>
+            <span
+              aria-hidden
+              className="hidden h-6 w-px shrink-0 bg-neutral-gray2 md:block"
+            />
+            <Header1 className="truncate font-serif text-title-sm text-neutral-charcoal sm:text-title-sm">
+              <bdi>{title}</bdi>
+            </Header1>
+          </>
+        ) : null}
       </div>
 
       <div className="flex justify-center text-center">
-        <Header1 className="font-serif text-title-sm text-neutral-charcoal sm:text-title-sm">
-          <bdi>{title}</bdi>
-        </Header1>
+        {centerSlot ?? (
+          <Header1 className="font-serif text-title-sm text-neutral-charcoal sm:text-title-sm">
+            <bdi>{title}</bdi>
+          </Header1>
+        )}
       </div>
 
       <div className="flex items-center justify-end gap-2 md:gap-4">

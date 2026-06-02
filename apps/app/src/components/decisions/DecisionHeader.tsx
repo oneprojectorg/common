@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import { type ProcessPhase } from '@op/api/encoders';
 import { isLastPhase } from '@op/common/client';
@@ -27,6 +28,10 @@ interface DecisionHeaderProps {
   slug?: string;
   /** Title from the decision profile */
   profileName?: string;
+  /** Center-column content, e.g. the Overview / Current Phase toggle */
+  centerSlot?: ReactNode;
+  /** Whether to render the phase stepper below the header bar (default true) */
+  showStepper?: boolean;
 }
 
 export function DecisionHeader(props: DecisionHeaderProps) {
@@ -43,9 +48,19 @@ function DecisionHeaderContent({
   isAdmin,
   canReadUpdates,
   profileName,
+  centerSlot,
+  showStepper = true,
 }: DecisionHeaderProps) {
   const t = useTranslations();
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+
+  // The overview page + its Overview/Current Phase toggle ship behind a flag.
+  // Off: render the original header (centered title, stepper, no toggle) on
+  // every route. On: the toggle takes the center column and the title shifts
+  // beside Back. Gating here is the single chokepoint both routes inherit.
+  const overviewEnabled = useFeatureFlag('decision_overview');
+  const effectiveCenterSlot = overviewEnabled ? centerSlot : undefined;
+  const effectiveShowStepper = overviewEnabled ? showStepper : true;
 
   const instancePhases = instance.instanceData?.phases ?? [];
 
@@ -84,19 +99,22 @@ function DecisionHeaderContent({
         decisionSlug={decisionSlug}
         isAdmin={isAdmin}
         canReadUpdates={canReadUpdates}
+        centerSlot={effectiveCenterSlot}
       />
       <DecisionTranslationProvider>
-        <div className="flex flex-col overflow-x-auto sm:items-center">
-          <div className="w-fit rounded-b border border-t-0 bg-white px-12 py-4 sm:px-32">
-            <DecisionProcessStepper
-              phases={phases}
-              currentStateId={instance.currentStateId || ''}
-              instanceId={instanceId}
-              isAdmin={isAdmin}
-              className="mx-auto"
-            />
+        {effectiveShowStepper ? (
+          <div className="flex flex-col overflow-x-auto sm:items-center">
+            <div className="w-fit rounded-b border border-t-0 bg-white px-12 py-4 sm:px-32">
+              <DecisionProcessStepper
+                phases={phases}
+                currentStateId={instance.currentStateId || ''}
+                instanceId={instanceId}
+                isAdmin={isAdmin}
+                className="mx-auto"
+              />
+            </div>
           </div>
-        </div>
+        ) : null}
 
         {children}
       </DecisionTranslationProvider>

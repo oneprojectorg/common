@@ -11,6 +11,7 @@ import { Suspense } from 'react';
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionSidePanel } from '@/components/decisions/DecisionSidePanel';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
+import { DecisionViewToggle } from '@/components/decisions/DecisionViewToggle';
 import { DecisionContentSkeleton } from '@/components/skeletons/DecisionSkeleton';
 
 const DecisionPageContent = async ({ slug }: { slug: string }) => {
@@ -62,6 +63,9 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
           decisionProfile.processInstance.access?.read === true
         }
         profileName={decisionProfile.name}
+        centerSlot={
+          <DecisionViewToggle activeView="current" decisionSlug={slug} />
+        }
       >
         <Suspense fallback={<DecisionContentSkeleton />}>
           <DecisionStateRouter

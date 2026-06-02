@@ -10,6 +10,7 @@ import { Suspense } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionOverview } from '@/components/decisions/DecisionOverview';
+import { DecisionViewToggle } from '@/components/decisions/DecisionViewToggle';
 import { DecisionContentSkeleton } from '@/components/skeletons/DecisionSkeleton';
 
 const DecisionOverviewPageContent = async ({ slug }: { slug: string }) => {
@@ -60,6 +61,10 @@ const DecisionOverviewPageContent = async ({ slug }: { slug: string }) => {
           decisionProfile.processInstance.access?.read === true
         }
         profileName={decisionProfile.name}
+        showStepper={false}
+        centerSlot={
+          <DecisionViewToggle activeView="overview" decisionSlug={slug} />
+        }
       >
         <Suspense fallback={<DecisionContentSkeleton />}>
           <DecisionOverview
