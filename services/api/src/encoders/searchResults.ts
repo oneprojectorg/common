@@ -9,10 +9,9 @@ import { z } from 'zod';
 
 import { baseProfileEncoder } from './baseProfile';
 
-// The search service over-selects every column via `getTableColumns`; these
-// output encoders are the boundary that strips it back down. Keep them picked
-// to the fields the search UI actually reads — never bare createSelectSchema,
-// which would forward PII and internal FKs.
+// The search service over-selects every column; these encoders are the output
+// boundary that picks back down to what the UI reads. Never bare
+// createSelectSchema here — that would forward PII and internal FKs.
 
 const searchStorageObjectEncoder = createSelectSchema(objectsInStorage)
   .pick({
@@ -21,10 +20,8 @@ const searchStorageObjectEncoder = createSelectSchema(objectsInStorage)
   })
   .nullable();
 
-// Mirrors the config columns organizationsEncoder exposes; only whereWeWork is
-// read. Kept on the raw table schema (not organizationsEncoder) because this is
-// the boundary for raw left-join rows, before organizationsEncoder's output
-// transforms (e.g. acceptingApplications default) are applied.
+// On the raw table, not organizationsEncoder: this validates raw left-join rows,
+// before that encoder's output transforms (e.g. acceptingApplications default).
 const searchOrganizationEncoder = createSelectSchema(organizations)
   .pick({
     id: true,
@@ -46,7 +43,7 @@ const searchOrganizationEncoder = createSelectSchema(organizations)
   })
   .nullable();
 
-// Only email is read (member/invite dedupe); drops the user table's internal FKs.
+// Only email is read (member/invite dedupe).
 const searchUserEncoder = createSelectSchema(users)
   .pick({
     id: true,
@@ -55,8 +52,8 @@ const searchUserEncoder = createSelectSchema(users)
   })
   .nullable();
 
-// Pick from baseProfileEncoder so search structurally can't leak more than the
-// public profile does (no phone/address/postalCode — and notably not email).
+// Picked from baseProfileEncoder so search can't expose more than the public
+// profile does (notably not email/phone/address).
 export const profileSearchResultEncoder = baseProfileEncoder
   .pick({
     id: true,
@@ -70,10 +67,10 @@ export const profileSearchResultEncoder = baseProfileEncoder
     avatarImage: searchStorageObjectEncoder,
     organization: searchOrganizationEncoder,
     user: searchUserEncoder,
-    rank: z.coerce.number(), // Coerce from unknown (raw SQL result) to number
+    rank: z.coerce.number(), // raw SQL result is unknown
   });
 
-// Discriminated union for search results grouped by entity type
+// Results grouped by entity type
 export const searchProfilesResultEncoder = z.array(
   z.object({
     type: z.enum(EntityType),
