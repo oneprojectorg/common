@@ -6,11 +6,12 @@ import {
 import { collapseRoles, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { getIndividualProfileId } from '../access';
+import {
+  type ProfileUserWithNormalizedRoles,
+  getIndividualProfileId,
+} from '../access';
 import { assertProfileAccess } from '../assert';
 import { fromDecisionBitField } from './permissions';
-
-type ProfileAccessUser = Awaited<ReturnType<typeof assertProfileAccess>>;
 
 export type SurveyInternalData = Record<string, unknown>;
 
@@ -47,7 +48,7 @@ async function authorizeSurveyAccess({
 }): Promise<{
   profileId: string;
   processInstance: ProcessInstanceForSurvey;
-  profileUser: ProfileAccessUser;
+  profileUser: ProfileUserWithNormalizedRoles;
 }> {
   const [profileId, processInstance] = await Promise.all([
     getIndividualProfileId(authUserId),
@@ -87,16 +88,15 @@ function getSurveyMeta({
 }: {
   processInstance: ProcessInstanceForSurvey;
   submittedByProfileId: string;
-  profileUser: ProfileAccessUser;
+  profileUser: ProfileUserWithNormalizedRoles;
   locale: string;
 }) {
-  const roles = (profileUser?.roles ?? []).map((role) => ({
+  const roles = profileUser.roles.map((role) => ({
     id: role.id,
     name: role.name,
   }));
 
-  const decisionsBits =
-    collapseRoles(profileUser?.roles ?? [])['decisions'] ?? 0;
+  const decisionsBits = collapseRoles(profileUser.roles)['decisions'] ?? 0;
 
   return {
     roles,

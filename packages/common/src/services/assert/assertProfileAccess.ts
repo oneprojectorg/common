@@ -16,8 +16,8 @@ import {
  * @param notMemberMessage - Optional message for the thrown exception when the
  *   user has no role on the profile. Defaults to the access-zones denial message.
  * @throws AccessControlException if the user is not a member of the profile or
- *   their roles don't satisfy the permissions — every denial surfaces as the
- *   same exception, with no member/non-member distinction.
+ *   their roles don't satisfy the permissions — every denial throws the same
+ *   exception type (only the message differs when `notMemberMessage` is given).
  */
 export async function assertProfileAccess(
   { user, profileId }: { user: { id: string }; profileId: string },

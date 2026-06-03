@@ -3,11 +3,10 @@ import { db, eq } from '@op/db/client';
 import { organizations, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import type { AccessZonePermissionInput, NormalizedRole } from 'access-zones';
-import { AccessControlException, checkPermission } from 'access-zones';
+import { checkPermission } from 'access-zones';
 import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils/error';
-import { assertProfileAccess } from '../assert/assertProfileAccess';
 import type { OrganizationUserBase } from '../organization/schemas/organizationUser';
 import type { ProfileMinimal } from '../profile/schemas/profileMinimal';
 import type { ProfileUserBase } from '../profile/schemas/profileUser';
@@ -158,18 +157,17 @@ export const assertInstanceProfileAccess = async ({
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  try {
-    await assertProfileAccess(
-      { user, profileId: instance.profileId },
-      profilePermissions,
-    );
-  } catch (error) {
-    // Only a profile-access denial triggers the org-level fallback; any other
-    // error (e.g. a DB failure) propagates untouched.
-    if (!(error instanceof AccessControlException)) {
-      throw error;
-    }
+  const profileUser = await getProfileAccessUser({
+    user,
+    profileId: instance.profileId,
+  });
 
+  const hasProfileAccess = checkPermission(
+    profilePermissions,
+    profileUser?.roles ?? [],
+  );
+
+  if (!hasProfileAccess) {
     if (!instance.ownerProfileId) {
       throw new UnauthorizedError("You don't have access to do this");
     }
