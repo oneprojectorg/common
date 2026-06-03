@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { appRouter } from '../..';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
+  accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
@@ -147,49 +148,61 @@ describe.concurrent('listProposalsRevisionRequests', () => {
 });
 
 describeDecisionAccessTierGating('listProposalsRevisionRequests', {
-  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    await testData.createContext();
+  noJwtNonPublic: accessTierGatingCell(
+    'rejects no-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      await testData.createContext();
 
-    const caller = await callers.noJwt();
+      const caller = await callers.noJwt();
 
-    await expectFailsAccessTierGate(
-      caller.decision.listProposalsRevisionRequests({}),
-      'none',
-    );
-  },
+      await expectFailsAccessTierGate(
+        caller.decision.listProposalsRevisionRequests({}),
+        'none',
+      );
+    },
+  ),
 
-  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    await testData.createContext();
+  anonJwtNonPublic: accessTierGatingCell(
+    'rejects anon-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      await testData.createContext();
 
-    const caller = await callers.anonJwt();
+      const caller = await callers.anonJwt();
 
-    await expectFailsAccessTierGate(
-      caller.decision.listProposalsRevisionRequests({}),
-      'anon',
-    );
-  },
+      await expectFailsAccessTierGate(
+        caller.decision.listProposalsRevisionRequests({}),
+        'anon',
+      );
+    },
+  ),
 
-  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    await testData.createContext();
+  userJwtNonPublic: accessTierGatingCell(
+    'rejects user-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      await testData.createContext();
 
-    const caller = await callers.userJwt();
+      const caller = await callers.userJwt();
 
-    await expectFailsAccessTierGate(
-      caller.decision.listProposalsRevisionRequests({}),
-      'user',
-    );
-  },
+      await expectFailsAccessTierGate(
+        caller.decision.listProposalsRevisionRequests({}),
+        'user',
+      );
+    },
+  ),
 
-  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const context = await testData.createContext();
+  networkJwtNonPublic: accessTierGatingCell(
+    'admits network-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      const context = await testData.createContext();
 
-    const caller = await callers.networkJwt(context.defaultReviewer.email);
+      const caller = await callers.networkJwt(context.defaultReviewer.email);
 
-    const result = await caller.decision.listProposalsRevisionRequests({});
-    expect(result.revisionRequests).toBeDefined();
-  },
+      const result = await caller.decision.listProposalsRevisionRequests({});
+      expect(result.revisionRequests).toBeDefined();
+    },
+  ),
 });

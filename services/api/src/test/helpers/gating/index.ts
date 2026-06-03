@@ -5,6 +5,11 @@ import { createGatingCallers, type GatingTestCtx } from './callers';
 
 type GatingBody = (ctx: GatingTestCtx) => Promise<void>;
 
+export type GatingCell = {
+  title: string;
+  run: GatingBody;
+};
+
 /**
  * Generic access-tier gating matrix for any authenticated endpoint.
  *
@@ -31,34 +36,47 @@ type GatingBody = (ctx: GatingTestCtx) => Promise<void>;
  * Forgetting a key is a compile error.
  */
 export type GatingCells = {
-  noJwt: GatingBody;
-  anonJwt: GatingBody;
-  userJwt: GatingBody;
-  networkJwt: GatingBody;
+  noJwt: GatingCell;
+  anonJwt: GatingCell;
+  userJwt: GatingCell;
+  networkJwt: GatingCell;
+};
+
+export const accessTierGatingCell = (
+  title: string,
+  run: GatingBody,
+): GatingCell => ({
+  title,
+  run,
+});
+
+export const itAccessTierGatingCell = (cell: GatingCell) => {
+  const { run, title } = cell;
+
+  it.concurrent(
+    title,
+    async ({
+      task,
+      onTestFinished,
+    }: {
+      task: { id: string };
+      onTestFinished: (fn: () => void | Promise<void>) => void;
+    }) => {
+      await run({
+        task,
+        onTestFinished,
+        callers: createGatingCallers(onTestFinished),
+      });
+    },
+  );
 };
 
 export const describeAccessTierGating = (name: string, cells: GatingCells) => {
-  describe(`${name}: tier gating`, () => {
-    const wrap =
-      (body: GatingBody) =>
-      async ({
-        task,
-        onTestFinished,
-      }: {
-        task: { id: string };
-        onTestFinished: (fn: () => void | Promise<void>) => void;
-      }) => {
-        await body({
-          task,
-          onTestFinished,
-          callers: createGatingCallers(onTestFinished),
-        });
-      };
-
-    it('no-JWT caller', wrap(cells.noJwt));
-    it('anon-JWT caller', wrap(cells.anonJwt));
-    it('user-JWT caller', wrap(cells.userJwt));
-    it('network-JWT caller', wrap(cells.networkJwt));
+  describe.concurrent(`${name}: access-tier gating`, () => {
+    itAccessTierGatingCell(cells.noJwt);
+    itAccessTierGatingCell(cells.anonJwt);
+    itAccessTierGatingCell(cells.userJwt);
+    itAccessTierGatingCell(cells.networkJwt);
   });
 };
 

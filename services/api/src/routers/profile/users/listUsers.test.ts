@@ -644,13 +644,14 @@ describe.concurrent('profile.users.listUsers', () => {
 });
 
 import {
+  accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating';
 
 describeAccessTierGating('profile.listUsers', {
-  noJwt: async ({ callers }) => {
+  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsAccessTierGate(
       caller.profile.listUsers({
@@ -658,34 +659,43 @@ describeAccessTierGating('profile.listUsers', {
       }),
       'none',
     );
-  },
+  }),
 
-  anonJwt: async ({ callers }) => {
-    const caller = await callers.anonJwt();
-    await expectFailsAccessTierGate(
-      caller.profile.listUsers({
-        profileId: '00000000-0000-0000-0000-000000000000',
-      }),
-      'anon',
-    );
-  },
+  anonJwt: accessTierGatingCell(
+    'rejects anon-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectFailsAccessTierGate(
+        caller.profile.listUsers({
+          profileId: '00000000-0000-0000-0000-000000000000',
+        }),
+        'anon',
+      );
+    },
+  ),
 
-  userJwt: async ({ callers }) => {
-    const caller = await callers.userJwt();
-    await expectFailsAccessTierGate(
-      caller.profile.listUsers({
-        profileId: '00000000-0000-0000-0000-000000000000',
-      }),
-      'user',
-    );
-  },
+  userJwt: accessTierGatingCell(
+    'rejects user-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.userJwt();
+      await expectFailsAccessTierGate(
+        caller.profile.listUsers({
+          profileId: '00000000-0000-0000-0000-000000000000',
+        }),
+        'user',
+      );
+    },
+  ),
 
-  networkJwt: async ({ callers }) => {
-    const caller = await callers.networkJwt();
-    await expectPassesAccessTierGate(
-      caller.profile.listUsers({
-        profileId: '00000000-0000-0000-0000-000000000000',
-      }),
-    );
-  },
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.networkJwt();
+      await expectPassesAccessTierGate(
+        caller.profile.listUsers({
+          profileId: '00000000-0000-0000-0000-000000000000',
+        }),
+      );
+    },
+  ),
 });

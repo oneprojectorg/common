@@ -17,6 +17,7 @@ import { appRouter } from '../..';
 import type { decisionSchemaDefinitionEncoder } from '../../../encoders/decision';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
+  accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
@@ -673,92 +674,104 @@ describe.concurrent('submitManualSelection', () => {
 });
 
 describeDecisionAccessTierGating('submitManualSelection', {
-  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+  noJwtNonPublic: accessTierGatingCell(
+    'rejects no-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
 
-    const caller = await callers.noJwt();
+      const caller = await callers.noJwt();
 
-    await expectFailsAccessTierGate(
-      caller.decision.submitManualSelection({
-        processInstanceId: instance.instance.id,
-        proposalIds: [crypto.randomUUID()],
-      }),
-      'none',
-    );
-  },
+      await expectFailsAccessTierGate(
+        caller.decision.submitManualSelection({
+          processInstanceId: instance.instance.id,
+          proposalIds: [crypto.randomUUID()],
+        }),
+        'none',
+      );
+    },
+  ),
 
-  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+  anonJwtNonPublic: accessTierGatingCell(
+    'rejects anon-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
 
-    const caller = await callers.anonJwt();
+      const caller = await callers.anonJwt();
 
-    await expectFailsAccessTierGate(
-      caller.decision.submitManualSelection({
-        processInstanceId: instance.instance.id,
-        proposalIds: [crypto.randomUUID()],
-      }),
-      'anon',
-    );
-  },
+      await expectFailsAccessTierGate(
+        caller.decision.submitManualSelection({
+          processInstanceId: instance.instance.id,
+          proposalIds: [crypto.randomUUID()],
+        }),
+        'anon',
+      );
+    },
+  ),
 
-  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+  userJwtNonPublic: accessTierGatingCell(
+    'rejects user-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
 
-    const caller = await callers.userJwt();
+      const caller = await callers.userJwt();
 
-    await expectFailsAccessTierGate(
-      caller.decision.submitManualSelection({
-        processInstanceId: instance.instance.id,
-        proposalIds: [crypto.randomUUID()],
-      }),
-      'user',
-    );
-  },
+      await expectFailsAccessTierGate(
+        caller.decision.submitManualSelection({
+          processInstanceId: instance.instance.id,
+          proposalIds: [crypto.randomUUID()],
+        }),
+        'user',
+      );
+    },
+  ),
 
-  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+  networkJwtNonPublic: accessTierGatingCell(
+    'admits network-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
 
-    const caller = await callers.networkJwt(setup.userEmail);
+      const caller = await callers.networkJwt(setup.userEmail);
 
-    await expect(
-      caller.decision.submitManualSelection({
-        processInstanceId: instance.instance.id,
-        proposalIds: [crypto.randomUUID()],
-      }),
-    ).rejects.not.toMatchObject({
-      cause: { name: 'UnauthorizedError' },
-    });
-  },
+      await expect(
+        caller.decision.submitManualSelection({
+          processInstanceId: instance.instance.id,
+          proposalIds: [crypto.randomUUID()],
+        }),
+      ).rejects.not.toMatchObject({
+        cause: { name: 'UnauthorizedError' },
+      });
+    },
+  ),
 });

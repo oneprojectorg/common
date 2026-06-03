@@ -1,4 +1,5 @@
 import {
+  accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
@@ -11,23 +12,38 @@ import {
 const input = { url: 'https://example.com' };
 
 describeAccessTierGating('content.linkPreview', {
-  noJwt: async ({ callers }) => {
+  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsAccessTierGate(caller.content.linkPreview(input), 'none');
-  },
+  }),
 
-  anonJwt: async ({ callers }) => {
-    const caller = await callers.anonJwt();
-    await expectFailsAccessTierGate(caller.content.linkPreview(input), 'anon');
-  },
+  anonJwt: accessTierGatingCell(
+    'rejects anon-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectFailsAccessTierGate(
+        caller.content.linkPreview(input),
+        'anon',
+      );
+    },
+  ),
 
-  userJwt: async ({ callers }) => {
-    const caller = await callers.userJwt();
-    await expectFailsAccessTierGate(caller.content.linkPreview(input), 'user');
-  },
+  userJwt: accessTierGatingCell(
+    'rejects user-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.userJwt();
+      await expectFailsAccessTierGate(
+        caller.content.linkPreview(input),
+        'user',
+      );
+    },
+  ),
 
-  networkJwt: async ({ callers }) => {
-    const caller = await callers.networkJwt();
-    await expectPassesAccessTierGate(caller.content.linkPreview(input));
-  },
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.networkJwt();
+      await expectPassesAccessTierGate(caller.content.linkPreview(input));
+    },
+  ),
 });

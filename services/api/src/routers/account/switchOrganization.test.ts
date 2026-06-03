@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
+  accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
@@ -129,34 +130,43 @@ describe.concurrent('account.switchOrganization', () => {
 });
 
 describeAccessTierGating('account.switchOrganization', {
-  noJwt: async ({ callers }) => {
+  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsAccessTierGate(
       caller.account.switchOrganization({ organizationId: 'x' }),
       'none',
     );
-  },
+  }),
 
-  anonJwt: async ({ callers }) => {
-    const caller = await callers.anonJwt();
-    await expectFailsAccessTierGate(
-      caller.account.switchOrganization({ organizationId: 'x' }),
-      'anon',
-    );
-  },
+  anonJwt: accessTierGatingCell(
+    'rejects anon-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectFailsAccessTierGate(
+        caller.account.switchOrganization({ organizationId: 'x' }),
+        'anon',
+      );
+    },
+  ),
 
-  userJwt: async ({ callers }) => {
-    const caller = await callers.userJwt();
-    await expectFailsAccessTierGate(
-      caller.account.switchOrganization({ organizationId: 'x' }),
-      'user',
-    );
-  },
+  userJwt: accessTierGatingCell(
+    'rejects user-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.userJwt();
+      await expectFailsAccessTierGate(
+        caller.account.switchOrganization({ organizationId: 'x' }),
+        'user',
+      );
+    },
+  ),
 
-  networkJwt: async ({ callers }) => {
-    const caller = await callers.networkJwt();
-    await expectPassesAccessTierGate(
-      caller.account.switchOrganization({ organizationId: 'x' }),
-    );
-  },
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.networkJwt();
+      await expectPassesAccessTierGate(
+        caller.account.switchOrganization({ organizationId: 'x' }),
+      );
+    },
+  ),
 });

@@ -378,13 +378,14 @@ describe.concurrent('profile.updateJoinRequest', () => {
 });
 
 import {
+  accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating';
 
 describeAccessTierGating('profile.updateJoinRequest', {
-  noJwt: async ({ callers }) => {
+  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsAccessTierGate(
       caller.profile.updateJoinRequest({
@@ -393,37 +394,46 @@ describeAccessTierGating('profile.updateJoinRequest', {
       }),
       'none',
     );
-  },
+  }),
 
-  anonJwt: async ({ callers }) => {
-    const caller = await callers.anonJwt();
-    await expectFailsAccessTierGate(
-      caller.profile.updateJoinRequest({
-        requestId: '00000000-0000-0000-0000-000000000000',
-        status: JoinProfileRequestStatus.APPROVED,
-      }),
-      'anon',
-    );
-  },
+  anonJwt: accessTierGatingCell(
+    'rejects anon-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectFailsAccessTierGate(
+        caller.profile.updateJoinRequest({
+          requestId: '00000000-0000-0000-0000-000000000000',
+          status: JoinProfileRequestStatus.APPROVED,
+        }),
+        'anon',
+      );
+    },
+  ),
 
-  userJwt: async ({ callers }) => {
-    const caller = await callers.userJwt();
-    await expectFailsAccessTierGate(
-      caller.profile.updateJoinRequest({
-        requestId: '00000000-0000-0000-0000-000000000000',
-        status: JoinProfileRequestStatus.APPROVED,
-      }),
-      'user',
-    );
-  },
+  userJwt: accessTierGatingCell(
+    'rejects user-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.userJwt();
+      await expectFailsAccessTierGate(
+        caller.profile.updateJoinRequest({
+          requestId: '00000000-0000-0000-0000-000000000000',
+          status: JoinProfileRequestStatus.APPROVED,
+        }),
+        'user',
+      );
+    },
+  ),
 
-  networkJwt: async ({ callers }) => {
-    const caller = await callers.networkJwt();
-    await expectPassesAccessTierGate(
-      caller.profile.updateJoinRequest({
-        requestId: '00000000-0000-0000-0000-000000000000',
-        status: JoinProfileRequestStatus.APPROVED,
-      }),
-    );
-  },
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.networkJwt();
+      await expectPassesAccessTierGate(
+        caller.profile.updateJoinRequest({
+          requestId: '00000000-0000-0000-0000-000000000000',
+          status: JoinProfileRequestStatus.APPROVED,
+        }),
+      );
+    },
+  ),
 });

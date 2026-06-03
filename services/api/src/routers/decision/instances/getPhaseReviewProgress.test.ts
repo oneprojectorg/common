@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest';
 import { appRouter } from '../..';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
+  accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
@@ -467,70 +468,82 @@ describe('computeDaysLeft', () => {
 });
 
 describeDecisionAccessTierGating('getPhaseReviewProgress', {
-  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const context = await testData.createContext();
+  noJwtNonPublic: accessTierGatingCell(
+    'rejects no-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      const context = await testData.createContext();
 
-    const caller = await callers.noJwt();
+      const caller = await callers.noJwt();
 
-    await expectFailsAccessTierGate(
-      caller.decision.getPhaseReviewProgress({
-        processInstanceId: context.instance.instance.id,
-        phaseId: 'review',
-      }),
-      'none',
-    );
-  },
+      await expectFailsAccessTierGate(
+        caller.decision.getPhaseReviewProgress({
+          processInstanceId: context.instance.instance.id,
+          phaseId: 'review',
+        }),
+        'none',
+      );
+    },
+  ),
 
-  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const context = await testData.createContext();
+  anonJwtNonPublic: accessTierGatingCell(
+    'rejects anon-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      const context = await testData.createContext();
 
-    const caller = await callers.anonJwt();
+      const caller = await callers.anonJwt();
 
-    await expectFailsAccessTierGate(
-      caller.decision.getPhaseReviewProgress({
-        processInstanceId: context.instance.instance.id,
-        phaseId: 'review',
-      }),
-      'anon',
-    );
-  },
+      await expectFailsAccessTierGate(
+        caller.decision.getPhaseReviewProgress({
+          processInstanceId: context.instance.instance.id,
+          phaseId: 'review',
+        }),
+        'anon',
+      );
+    },
+  ),
 
-  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const context = await testData.createContext();
+  userJwtNonPublic: accessTierGatingCell(
+    'rejects user-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      const context = await testData.createContext();
 
-    const caller = await callers.userJwt();
+      const caller = await callers.userJwt();
 
-    await expectFailsAccessTierGate(
-      caller.decision.getPhaseReviewProgress({
-        processInstanceId: context.instance.instance.id,
-        phaseId: 'review',
-      }),
-      'user',
-    );
-  },
+      await expectFailsAccessTierGate(
+        caller.decision.getPhaseReviewProgress({
+          processInstanceId: context.instance.instance.id,
+          phaseId: 'review',
+        }),
+        'user',
+      );
+    },
+  ),
 
-  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestReviewsDataManager(task.id, onTestFinished);
-    const context = await testData.createContext();
+  networkJwtNonPublic: accessTierGatingCell(
+    'admits network-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      const context = await testData.createContext();
 
-    const caller = await callers.networkJwt(context.defaultReviewer.email);
+      const caller = await callers.networkJwt(context.defaultReviewer.email);
 
-    // Passes the gate if the call resolves OR rejects with anything other
-    // than UnauthorizedError.
-    let caught: unknown;
-    try {
-      await caller.decision.getPhaseReviewProgress({
-        processInstanceId: context.instance.instance.id,
-        phaseId: 'review',
-      });
-    } catch (err) {
-      caught = err;
-    }
-    expect((caught as { cause?: { name?: string } })?.cause?.name).not.toBe(
-      'UnauthorizedError',
-    );
-  },
+      // Passes the gate if the call resolves OR rejects with anything other
+      // than UnauthorizedError.
+      let caught: unknown;
+      try {
+        await caller.decision.getPhaseReviewProgress({
+          processInstanceId: context.instance.instance.id,
+          phaseId: 'review',
+        });
+      } catch (err) {
+        caught = err;
+      }
+      expect((caught as { cause?: { name?: string } })?.cause?.name).not.toBe(
+        'UnauthorizedError',
+      );
+    },
+  ),
 });

@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import { TestProfileUserDataManager } from '../../test/helpers/TestProfileUserDataManager';
 import {
+  accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
@@ -413,23 +414,38 @@ describe.concurrent('account.listUserInvites', () => {
 });
 
 describeAccessTierGating('account.listUserInvites', {
-  noJwt: async ({ callers }) => {
+  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsAccessTierGate(caller.account.listUserInvites({}), 'none');
-  },
+  }),
 
-  anonJwt: async ({ callers }) => {
-    const caller = await callers.anonJwt();
-    await expectFailsAccessTierGate(caller.account.listUserInvites({}), 'anon');
-  },
+  anonJwt: accessTierGatingCell(
+    'rejects anon-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectFailsAccessTierGate(
+        caller.account.listUserInvites({}),
+        'anon',
+      );
+    },
+  ),
 
-  userJwt: async ({ callers }) => {
-    const caller = await callers.userJwt();
-    await expectFailsAccessTierGate(caller.account.listUserInvites({}), 'user');
-  },
+  userJwt: accessTierGatingCell(
+    'rejects user-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.userJwt();
+      await expectFailsAccessTierGate(
+        caller.account.listUserInvites({}),
+        'user',
+      );
+    },
+  ),
 
-  networkJwt: async ({ callers }) => {
-    const caller = await callers.networkJwt();
-    await expectPassesAccessTierGate(caller.account.listUserInvites({}));
-  },
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.networkJwt();
+      await expectPassesAccessTierGate(caller.account.listUserInvites({}));
+    },
+  ),
 });

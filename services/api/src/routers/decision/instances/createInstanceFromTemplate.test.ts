@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
+  accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
@@ -348,65 +349,77 @@ describe.concurrent('createInstanceFromTemplate', () => {
 });
 
 describeDecisionAccessTierGating('createInstanceFromTemplate', {
-  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    await testData.createDecisionSetup({ instanceCount: 0 });
+  noJwtNonPublic: accessTierGatingCell(
+    'rejects no-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      await testData.createDecisionSetup({ instanceCount: 0 });
 
-    const caller = await callers.noJwt();
+      const caller = await callers.noJwt();
 
-    await expectFailsAccessTierGate(
-      caller.decision.createInstanceFromTemplate({
-        templateId: '00000000-0000-0000-0000-000000000000',
-        name: `no-JWT ${task.id}`,
-      }),
-      'none',
-    );
-  },
+      await expectFailsAccessTierGate(
+        caller.decision.createInstanceFromTemplate({
+          templateId: '00000000-0000-0000-0000-000000000000',
+          name: `no-JWT ${task.id}`,
+        }),
+        'none',
+      );
+    },
+  ),
 
-  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    await testData.createDecisionSetup({ instanceCount: 0 });
+  anonJwtNonPublic: accessTierGatingCell(
+    'rejects anon-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      await testData.createDecisionSetup({ instanceCount: 0 });
 
-    const caller = await callers.anonJwt();
+      const caller = await callers.anonJwt();
 
-    await expectFailsAccessTierGate(
-      caller.decision.createInstanceFromTemplate({
-        templateId: '00000000-0000-0000-0000-000000000000',
-        name: `anon ${task.id}`,
-      }),
-      'anon',
-    );
-  },
+      await expectFailsAccessTierGate(
+        caller.decision.createInstanceFromTemplate({
+          templateId: '00000000-0000-0000-0000-000000000000',
+          name: `anon ${task.id}`,
+        }),
+        'anon',
+      );
+    },
+  ),
 
-  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    await testData.createDecisionSetup({ instanceCount: 0 });
+  userJwtNonPublic: accessTierGatingCell(
+    'rejects user-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      await testData.createDecisionSetup({ instanceCount: 0 });
 
-    const caller = await callers.userJwt();
+      const caller = await callers.userJwt();
 
-    await expectFailsAccessTierGate(
-      caller.decision.createInstanceFromTemplate({
-        templateId: '00000000-0000-0000-0000-000000000000',
-        name: `anon ${task.id}`,
-      }),
-      'user',
-    );
-  },
+      await expectFailsAccessTierGate(
+        caller.decision.createInstanceFromTemplate({
+          templateId: '00000000-0000-0000-0000-000000000000',
+          name: `anon ${task.id}`,
+        }),
+        'user',
+      );
+    },
+  ),
 
-  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { templateId, userEmail } = await createSimpleTemplate(
-      testData,
-      task.id,
-    );
+  networkJwtNonPublic: accessTierGatingCell(
+    'admits network-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { templateId, userEmail } = await createSimpleTemplate(
+        testData,
+        task.id,
+      );
 
-    const caller = await callers.networkJwt(userEmail);
+      const caller = await callers.networkJwt(userEmail);
 
-    const result = await caller.decision.createInstanceFromTemplate({
-      templateId,
-      name: `Common-JWT ${task.id}`,
-    });
-    expect(result.id).toBeDefined();
-    testData.trackProfileForCleanup(result.id);
-  },
+      const result = await caller.decision.createInstanceFromTemplate({
+        templateId,
+        name: `Common-JWT ${task.id}`,
+      });
+      expect(result.id).toBeDefined();
+      testData.trackProfileForCleanup(result.id);
+    },
+  ),
 });

@@ -1,41 +1,51 @@
 import { expect } from 'vitest';
 
 import {
+  accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating';
 
 describeAccessTierGating('platform.admin.listAllOrganizations', {
-  noJwt: async ({ callers }) => {
+  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsAccessTierGate(
       caller.platform.admin.listAllOrganizations(),
       'none',
     );
-  },
+  }),
 
-  anonJwt: async ({ callers }) => {
-    const caller = await callers.anonJwt();
-    await expectFailsAccessTierGate(
-      caller.platform.admin.listAllOrganizations(),
-      'anon',
-    );
-  },
+  anonJwt: accessTierGatingCell(
+    'rejects anon-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectFailsAccessTierGate(
+        caller.platform.admin.listAllOrganizations(),
+        'anon',
+      );
+    },
+  ),
 
-  userJwt: async ({ callers }) => {
-    const caller = await callers.userJwt();
-    await expect(
-      caller.platform.admin.listAllOrganizations(),
-    ).rejects.toMatchObject({
-      cause: { name: 'UnauthorizedError' },
-    });
-  },
+  userJwt: accessTierGatingCell(
+    'rejects user-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.userJwt();
+      await expect(
+        caller.platform.admin.listAllOrganizations(),
+      ).rejects.toMatchObject({
+        cause: { name: 'UnauthorizedError' },
+      });
+    },
+  ),
 
-  networkJwt: async ({ callers }) => {
-    const caller = await callers.networkJwt();
-    await expectPassesAccessTierGate(
-      caller.platform.admin.listAllOrganizations(),
-    );
-  },
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.networkJwt();
+      await expectPassesAccessTierGate(
+        caller.platform.admin.listAllOrganizations(),
+      );
+    },
+  ),
 });

@@ -1,12 +1,14 @@
-import { describe, it } from 'vitest';
+import { describe } from 'vitest';
 
-import { createGatingCallers, type GatingTestCtx } from './callers';
+import { type GatingCell, itAccessTierGatingCell } from '.';
 
 // Re-exported so decision gating tests can pull the tier assertions from the
 // same module as describeDecisionAccessTierGating.
-export { expectFailsAccessTierGate, expectPassesAccessTierGate } from '.';
-
-type DecisionGatingBody = (ctx: GatingTestCtx) => Promise<void>;
+export {
+  accessTierGatingCell,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
+} from '.';
 
 /**
  * Decision-instance endpoints that participate in network gating declare an
@@ -21,39 +23,20 @@ type DecisionGatingBody = (ctx: GatingTestCtx) => Promise<void>;
  * Forgetting a key is a compile error.
  */
 export type DecisionGatingCells = {
-  noJwtNonPublic: DecisionGatingBody;
-  anonJwtNonPublic: DecisionGatingBody;
-  userJwtNonPublic: DecisionGatingBody;
-  networkJwtNonPublic: DecisionGatingBody;
+  noJwtNonPublic: GatingCell;
+  anonJwtNonPublic: GatingCell;
+  userJwtNonPublic: GatingCell;
+  networkJwtNonPublic: GatingCell;
 };
 
 export const describeDecisionAccessTierGating = (
   name: string,
   cells: DecisionGatingCells,
 ) => {
-  describe(`${name}: tier gating`, () => {
-    const wrap =
-      (body: DecisionGatingBody) =>
-      async ({
-        task,
-        onTestFinished,
-      }: {
-        task: { id: string };
-        onTestFinished: (fn: () => void | Promise<void>) => void;
-      }) => {
-        await body({
-          task,
-          onTestFinished,
-          callers: createGatingCallers(onTestFinished),
-        });
-      };
-
-    it('no-JWT caller on non-public instance', wrap(cells.noJwtNonPublic));
-    it('anon-JWT caller on non-public instance', wrap(cells.anonJwtNonPublic));
-    it('user-JWT caller on non-public instance', wrap(cells.userJwtNonPublic));
-    it(
-      'network-JWT caller on non-public instance',
-      wrap(cells.networkJwtNonPublic),
-    );
+  describe.concurrent(`${name}: access-tier gating`, () => {
+    itAccessTierGatingCell(cells.noJwtNonPublic);
+    itAccessTierGatingCell(cells.anonJwtNonPublic);
+    itAccessTierGatingCell(cells.userJwtNonPublic);
+    itAccessTierGatingCell(cells.networkJwtNonPublic);
   });
 };

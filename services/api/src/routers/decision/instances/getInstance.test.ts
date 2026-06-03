@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
+  accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
@@ -181,168 +182,192 @@ describe.concurrent('getInstance', () => {
 });
 
 describeDecisionAccessTierGating('getInstance', {
-  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+  noJwtNonPublic: accessTierGatingCell(
+    'rejects no-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
 
-    const caller = await callers.noJwt();
+      const caller = await callers.noJwt();
 
-    await expectFailsAccessTierGate(
-      caller.decision.getInstance({ instanceId: instance.instance.id }),
-      'none',
-    );
-  },
+      await expectFailsAccessTierGate(
+        caller.decision.getInstance({ instanceId: instance.instance.id }),
+        'none',
+      );
+    },
+  ),
 
-  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+  anonJwtNonPublic: accessTierGatingCell(
+    'rejects anon-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
 
-    const caller = await callers.anonJwt();
+      const caller = await callers.anonJwt();
 
-    await expectFailsAccessTierGate(
-      caller.decision.getInstance({ instanceId: instance.instance.id }),
-      'anon',
-    );
-  },
+      await expectFailsAccessTierGate(
+        caller.decision.getInstance({ instanceId: instance.instance.id }),
+        'anon',
+      );
+    },
+  ),
 
-  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+  userJwtNonPublic: accessTierGatingCell(
+    'rejects user-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
 
-    const caller = await callers.userJwt();
+      const caller = await callers.userJwt();
 
-    await expectFailsAccessTierGate(
-      caller.decision.getInstance({ instanceId: instance.instance.id }),
-      'user',
-    );
-  },
+      await expectFailsAccessTierGate(
+        caller.decision.getInstance({ instanceId: instance.instance.id }),
+        'user',
+      );
+    },
+  ),
 
-  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+  networkJwtNonPublic: accessTierGatingCell(
+    'admits network-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
 
-    const caller = await callers.networkJwt(setup.userEmail);
+      const caller = await callers.networkJwt(setup.userEmail);
 
-    const result = await caller.decision.getInstance({
-      instanceId: instance.instance.id,
-    });
-    expect(result.id).toBe(instance.instance.id);
-  },
+      const result = await caller.decision.getInstance({
+        instanceId: instance.instance.id,
+      });
+      expect(result.id).toBe(instance.instance.id);
+    },
+  ),
 });
 
 describeDecisionAccessTierGating('getLegacyInstance', {
-  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
-
-    const caller = await callers.noJwt();
-
-    await expectFailsAccessTierGate(
-      caller.decision.getLegacyInstance({ instanceId: instance.instance.id }),
-      'none',
-    );
-  },
-
-  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
-
-    const caller = await callers.anonJwt();
-
-    await expectFailsAccessTierGate(
-      caller.decision.getLegacyInstance({ instanceId: instance.instance.id }),
-      'anon',
-    );
-  },
-
-  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
-
-    const caller = await callers.userJwt();
-
-    await expectFailsAccessTierGate(
-      caller.decision.getLegacyInstance({ instanceId: instance.instance.id }),
-      'user',
-    );
-  },
-
-  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
-
-    const caller = await callers.networkJwt(setup.userEmail);
-
-    // getLegacyInstance is @deprecated and its legacy output encoder only
-    // accepts the pre-v2 processSchema shape. createDecisionSetup builds
-    // v2 schemas, so output validation fails — but the call passes the
-    // gate, which is what this matrix asserts.
-    let caught: unknown;
-    try {
-      await caller.decision.getLegacyInstance({
-        instanceId: instance.instance.id,
+  noJwtNonPublic: accessTierGatingCell(
+    'rejects no-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
       });
-    } catch (err) {
-      caught = err;
-    }
-    expect((caught as { cause?: { name?: string } })?.cause?.name).not.toBe(
-      'UnauthorizedError',
-    );
-  },
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+
+      const caller = await callers.noJwt();
+
+      await expectFailsAccessTierGate(
+        caller.decision.getLegacyInstance({ instanceId: instance.instance.id }),
+        'none',
+      );
+    },
+  ),
+
+  anonJwtNonPublic: accessTierGatingCell(
+    'rejects anon-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+
+      const caller = await callers.anonJwt();
+
+      await expectFailsAccessTierGate(
+        caller.decision.getLegacyInstance({ instanceId: instance.instance.id }),
+        'anon',
+      );
+    },
+  ),
+
+  userJwtNonPublic: accessTierGatingCell(
+    'rejects user-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+
+      const caller = await callers.userJwt();
+
+      await expectFailsAccessTierGate(
+        caller.decision.getLegacyInstance({ instanceId: instance.instance.id }),
+        'user',
+      );
+    },
+  ),
+
+  networkJwtNonPublic: accessTierGatingCell(
+    'admits network-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+
+      const caller = await callers.networkJwt(setup.userEmail);
+
+      // getLegacyInstance is @deprecated and its legacy output encoder only
+      // accepts the pre-v2 processSchema shape. createDecisionSetup builds
+      // v2 schemas, so output validation fails — but the call passes the
+      // gate, which is what this matrix asserts.
+      let caught: unknown;
+      try {
+        await caller.decision.getLegacyInstance({
+          instanceId: instance.instance.id,
+        });
+      } catch (err) {
+        caught = err;
+      }
+      expect((caught as { cause?: { name?: string } })?.cause?.name).not.toBe(
+        'UnauthorizedError',
+      );
+    },
+  ),
 });

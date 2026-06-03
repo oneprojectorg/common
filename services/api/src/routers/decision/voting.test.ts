@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import {
+  accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
 } from '../../test/helpers/gating/decision';
@@ -225,135 +226,162 @@ describe.concurrent('getVotingStatus', () => {
 });
 
 describeDecisionAccessTierGating('submitVote', {
-  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instance, proposals } = await setupVotingInstance(testData, {
-      proposalCount: 1,
-    });
+  noJwtNonPublic: accessTierGatingCell(
+    'rejects no-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instance, proposals } = await setupVotingInstance(testData, {
+        proposalCount: 1,
+      });
 
-    const caller = await callers.noJwt();
+      const caller = await callers.noJwt();
 
-    await expectFailsAccessTierGate(
-      caller.decision.submitVote({
+      await expectFailsAccessTierGate(
+        caller.decision.submitVote({
+          processInstanceId: instance.instance.id,
+          selectedProposalIds: [proposals[0]!.id],
+        }),
+        'none',
+      );
+    },
+  ),
+
+  anonJwtNonPublic: accessTierGatingCell(
+    'rejects anon-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instance, proposals } = await setupVotingInstance(testData, {
+        proposalCount: 1,
+      });
+
+      const caller = await callers.anonJwt();
+
+      await expectFailsAccessTierGate(
+        caller.decision.submitVote({
+          processInstanceId: instance.instance.id,
+          selectedProposalIds: [proposals[0]!.id],
+        }),
+        'anon',
+      );
+    },
+  ),
+
+  userJwtNonPublic: accessTierGatingCell(
+    'rejects user-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instance, proposals } = await setupVotingInstance(testData, {
+        proposalCount: 1,
+      });
+
+      const caller = await callers.userJwt();
+
+      await expectFailsAccessTierGate(
+        caller.decision.submitVote({
+          processInstanceId: instance.instance.id,
+          selectedProposalIds: [proposals[0]!.id],
+        }),
+        'user',
+      );
+    },
+  ),
+
+  networkJwtNonPublic: accessTierGatingCell(
+    'admits network-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { setup, instance, proposals } = await setupVotingInstance(
+        testData,
+        {
+          proposalCount: 1,
+        },
+      );
+
+      const caller = await callers.networkJwt(setup.userEmail);
+
+      const result = await caller.decision.submitVote({
         processInstanceId: instance.instance.id,
         selectedProposalIds: [proposals[0]!.id],
-      }),
-      'none',
-    );
-  },
+      });
 
-  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instance, proposals } = await setupVotingInstance(testData, {
-      proposalCount: 1,
-    });
-
-    const caller = await callers.anonJwt();
-
-    await expectFailsAccessTierGate(
-      caller.decision.submitVote({
-        processInstanceId: instance.instance.id,
-        selectedProposalIds: [proposals[0]!.id],
-      }),
-      'anon',
-    );
-  },
-
-  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instance, proposals } = await setupVotingInstance(testData, {
-      proposalCount: 1,
-    });
-
-    const caller = await callers.userJwt();
-
-    await expectFailsAccessTierGate(
-      caller.decision.submitVote({
-        processInstanceId: instance.instance.id,
-        selectedProposalIds: [proposals[0]!.id],
-      }),
-      'user',
-    );
-  },
-
-  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { setup, instance, proposals } = await setupVotingInstance(testData, {
-      proposalCount: 1,
-    });
-
-    const caller = await callers.networkJwt(setup.userEmail);
-
-    const result = await caller.decision.submitVote({
-      processInstanceId: instance.instance.id,
-      selectedProposalIds: [proposals[0]!.id],
-    });
-
-    expect(result.selectedProposalIds).toEqual([proposals[0]!.id]);
-  },
+      expect(result.selectedProposalIds).toEqual([proposals[0]!.id]);
+    },
+  ),
 });
 
 describeDecisionAccessTierGating('getVotingStatus', {
-  noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instance } = await setupVotingInstance(testData, {
-      proposalCount: 0,
-    });
+  noJwtNonPublic: accessTierGatingCell(
+    'rejects no-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instance } = await setupVotingInstance(testData, {
+        proposalCount: 0,
+      });
 
-    const caller = await callers.noJwt();
+      const caller = await callers.noJwt();
 
-    await expectFailsAccessTierGate(
-      caller.decision.getVotingStatus({
+      await expectFailsAccessTierGate(
+        caller.decision.getVotingStatus({
+          processInstanceId: instance.instance.id,
+        }),
+        'none',
+      );
+    },
+  ),
+
+  anonJwtNonPublic: accessTierGatingCell(
+    'rejects anon-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instance } = await setupVotingInstance(testData, {
+        proposalCount: 0,
+      });
+
+      const caller = await callers.anonJwt();
+
+      await expectFailsAccessTierGate(
+        caller.decision.getVotingStatus({
+          processInstanceId: instance.instance.id,
+        }),
+        'anon',
+      );
+    },
+  ),
+
+  userJwtNonPublic: accessTierGatingCell(
+    'rejects user-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { instance } = await setupVotingInstance(testData, {
+        proposalCount: 0,
+      });
+
+      const caller = await callers.userJwt();
+
+      await expectFailsAccessTierGate(
+        caller.decision.getVotingStatus({
+          processInstanceId: instance.instance.id,
+        }),
+        'user',
+      );
+    },
+  ),
+
+  networkJwtNonPublic: accessTierGatingCell(
+    'admits network-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const { setup, instance } = await setupVotingInstance(testData, {
+        proposalCount: 0,
+      });
+
+      const caller = await callers.networkJwt(setup.userEmail);
+
+      const status = await caller.decision.getVotingStatus({
         processInstanceId: instance.instance.id,
-      }),
-      'none',
-    );
-  },
+      });
 
-  anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instance } = await setupVotingInstance(testData, {
-      proposalCount: 0,
-    });
-
-    const caller = await callers.anonJwt();
-
-    await expectFailsAccessTierGate(
-      caller.decision.getVotingStatus({
-        processInstanceId: instance.instance.id,
-      }),
-      'anon',
-    );
-  },
-
-  userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { instance } = await setupVotingInstance(testData, {
-      proposalCount: 0,
-    });
-
-    const caller = await callers.userJwt();
-
-    await expectFailsAccessTierGate(
-      caller.decision.getVotingStatus({
-        processInstanceId: instance.instance.id,
-      }),
-      'user',
-    );
-  },
-
-  networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const { setup, instance } = await setupVotingInstance(testData, {
-      proposalCount: 0,
-    });
-
-    const caller = await callers.networkJwt(setup.userEmail);
-
-    const status = await caller.decision.getVotingStatus({
-      processInstanceId: instance.instance.id,
-    });
-
-    expect(status.votingConfiguration).toBeDefined();
-  },
+      expect(status.votingConfiguration).toBeDefined();
+    },
+  ),
 });

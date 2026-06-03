@@ -416,13 +416,14 @@ describe.concurrent('profile.updateRolePermission', () => {
 });
 
 import {
+  accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('profile.updateRolePermission', {
-  noJwt: async ({ callers }) => {
+  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsAccessTierGate(
       caller.profile.updateRolePermission({
@@ -437,55 +438,64 @@ describeAccessTierGating('profile.updateRolePermission', {
       }),
       'none',
     );
-  },
+  }),
 
-  anonJwt: async ({ callers }) => {
-    const caller = await callers.anonJwt();
-    await expectFailsAccessTierGate(
-      caller.profile.updateRolePermission({
-        roleId: '00000000-0000-0000-0000-000000000000',
-        permissions: {
-          admin: false,
-          create: false,
-          read: false,
-          update: false,
-          delete: false,
-        },
-      }),
-      'anon',
-    );
-  },
+  anonJwt: accessTierGatingCell(
+    'rejects anon-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectFailsAccessTierGate(
+        caller.profile.updateRolePermission({
+          roleId: '00000000-0000-0000-0000-000000000000',
+          permissions: {
+            admin: false,
+            create: false,
+            read: false,
+            update: false,
+            delete: false,
+          },
+        }),
+        'anon',
+      );
+    },
+  ),
 
-  userJwt: async ({ callers }) => {
-    const caller = await callers.userJwt();
-    await expectFailsAccessTierGate(
-      caller.profile.updateRolePermission({
-        roleId: '00000000-0000-0000-0000-000000000000',
-        permissions: {
-          admin: false,
-          create: false,
-          read: false,
-          update: false,
-          delete: false,
-        },
-      }),
-      'user',
-    );
-  },
+  userJwt: accessTierGatingCell(
+    'rejects user-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.userJwt();
+      await expectFailsAccessTierGate(
+        caller.profile.updateRolePermission({
+          roleId: '00000000-0000-0000-0000-000000000000',
+          permissions: {
+            admin: false,
+            create: false,
+            read: false,
+            update: false,
+            delete: false,
+          },
+        }),
+        'user',
+      );
+    },
+  ),
 
-  networkJwt: async ({ callers }) => {
-    const caller = await callers.networkJwt();
-    await expectPassesAccessTierGate(
-      caller.profile.updateRolePermission({
-        roleId: '00000000-0000-0000-0000-000000000000',
-        permissions: {
-          admin: false,
-          create: false,
-          read: false,
-          update: false,
-          delete: false,
-        },
-      }),
-    );
-  },
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.networkJwt();
+      await expectPassesAccessTierGate(
+        caller.profile.updateRolePermission({
+          roleId: '00000000-0000-0000-0000-000000000000',
+          permissions: {
+            admin: false,
+            create: false,
+            read: false,
+            update: false,
+            delete: false,
+          },
+        }),
+      );
+    },
+  ),
 });

@@ -112,13 +112,14 @@ describe.concurrent('profile.users.removeUser', () => {
 });
 
 import {
+  accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating';
 
 describeAccessTierGating('profile.removeUser', {
-  noJwt: async ({ callers }) => {
+  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsAccessTierGate(
       caller.profile.removeUser({
@@ -126,34 +127,43 @@ describeAccessTierGating('profile.removeUser', {
       }),
       'none',
     );
-  },
+  }),
 
-  anonJwt: async ({ callers }) => {
-    const caller = await callers.anonJwt();
-    await expectFailsAccessTierGate(
-      caller.profile.removeUser({
-        profileUserId: '00000000-0000-0000-0000-000000000000',
-      }),
-      'anon',
-    );
-  },
+  anonJwt: accessTierGatingCell(
+    'rejects anon-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectFailsAccessTierGate(
+        caller.profile.removeUser({
+          profileUserId: '00000000-0000-0000-0000-000000000000',
+        }),
+        'anon',
+      );
+    },
+  ),
 
-  userJwt: async ({ callers }) => {
-    const caller = await callers.userJwt();
-    await expectFailsAccessTierGate(
-      caller.profile.removeUser({
-        profileUserId: '00000000-0000-0000-0000-000000000000',
-      }),
-      'user',
-    );
-  },
+  userJwt: accessTierGatingCell(
+    'rejects user-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.userJwt();
+      await expectFailsAccessTierGate(
+        caller.profile.removeUser({
+          profileUserId: '00000000-0000-0000-0000-000000000000',
+        }),
+        'user',
+      );
+    },
+  ),
 
-  networkJwt: async ({ callers }) => {
-    const caller = await callers.networkJwt();
-    await expectPassesAccessTierGate(
-      caller.profile.removeUser({
-        profileUserId: '00000000-0000-0000-0000-000000000000',
-      }),
-    );
-  },
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.networkJwt();
+      await expectPassesAccessTierGate(
+        caller.profile.removeUser({
+          profileUserId: '00000000-0000-0000-0000-000000000000',
+        }),
+      );
+    },
+  ),
 });

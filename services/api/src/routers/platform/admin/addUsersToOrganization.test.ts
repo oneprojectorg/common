@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
+  accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
@@ -18,7 +19,7 @@ import { platformAdminRouter } from './index';
 const createCaller = createCallerFactory(platformAdminRouter);
 
 describeAccessTierGating('platform.admin.addUsersToOrganization', {
-  noJwt: async ({ callers }) => {
+  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsAccessTierGate(
       caller.platform.admin.addUsersToOrganization({
@@ -27,40 +28,49 @@ describeAccessTierGating('platform.admin.addUsersToOrganization', {
       }),
       'none',
     );
-  },
+  }),
 
-  anonJwt: async ({ callers }) => {
-    const caller = await callers.anonJwt();
-    await expectFailsAccessTierGate(
-      caller.platform.admin.addUsersToOrganization({
-        organizationId: 'x',
-        users: [{ authUserId: 'x', roleId: 'x' }],
-      }),
-      'anon',
-    );
-  },
+  anonJwt: accessTierGatingCell(
+    'rejects anon-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectFailsAccessTierGate(
+        caller.platform.admin.addUsersToOrganization({
+          organizationId: 'x',
+          users: [{ authUserId: 'x', roleId: 'x' }],
+        }),
+        'anon',
+      );
+    },
+  ),
 
-  userJwt: async ({ callers }) => {
-    const caller = await callers.userJwt();
-    await expect(
-      caller.platform.admin.addUsersToOrganization({
-        organizationId: 'x',
-        users: [{ authUserId: 'x', roleId: 'x' }],
-      }),
-    ).rejects.toMatchObject({
-      cause: { name: 'UnauthorizedError' },
-    });
-  },
+  userJwt: accessTierGatingCell(
+    'rejects user-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.userJwt();
+      await expect(
+        caller.platform.admin.addUsersToOrganization({
+          organizationId: 'x',
+          users: [{ authUserId: 'x', roleId: 'x' }],
+        }),
+      ).rejects.toMatchObject({
+        cause: { name: 'UnauthorizedError' },
+      });
+    },
+  ),
 
-  networkJwt: async ({ callers }) => {
-    const caller = await callers.networkJwt();
-    await expectPassesAccessTierGate(
-      caller.platform.admin.addUsersToOrganization({
-        organizationId: 'x',
-        users: [{ authUserId: 'x', roleId: 'x' }],
-      }),
-    );
-  },
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.networkJwt();
+      await expectPassesAccessTierGate(
+        caller.platform.admin.addUsersToOrganization({
+          organizationId: 'x',
+          users: [{ authUserId: 'x', roleId: 'x' }],
+        }),
+      );
+    },
+  ),
 });
 
 describe.concurrent('platform.admin.addUsersToOrganization', () => {

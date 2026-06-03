@@ -8,6 +8,7 @@ import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import { TestTranslationDataManager } from '../../test/helpers/TestTranslationDataManager';
 import {
+  accessTierGatingCell,
   describeAccessTierGating,
   expectFailsAccessTierGate,
   expectPassesAccessTierGate,
@@ -45,7 +46,7 @@ async function createAuthenticatedCaller(email: string) {
 }
 
 describeAccessTierGating('translation.translateProposal', {
-  noJwt: async ({ callers }) => {
+  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsAccessTierGate(
       caller.translation.translateProposal({
@@ -54,39 +55,48 @@ describeAccessTierGating('translation.translateProposal', {
       }),
       'none',
     );
-  },
+  }),
 
-  anonJwt: async ({ callers }) => {
-    const caller = await callers.anonJwt();
-    await expectFailsAccessTierGate(
-      caller.translation.translateProposal({
-        profileId: '00000000-0000-0000-0000-000000000000',
-        targetLocale: 'en',
-      }),
-      'anon',
-    );
-  },
+  anonJwt: accessTierGatingCell(
+    'rejects anon-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectFailsAccessTierGate(
+        caller.translation.translateProposal({
+          profileId: '00000000-0000-0000-0000-000000000000',
+          targetLocale: 'en',
+        }),
+        'anon',
+      );
+    },
+  ),
 
-  userJwt: async ({ callers }) => {
-    const caller = await callers.userJwt();
-    await expectFailsAccessTierGate(
-      caller.translation.translateProposal({
-        profileId: '00000000-0000-0000-0000-000000000000',
-        targetLocale: 'en',
-      }),
-      'user',
-    );
-  },
+  userJwt: accessTierGatingCell(
+    'rejects user-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.userJwt();
+      await expectFailsAccessTierGate(
+        caller.translation.translateProposal({
+          profileId: '00000000-0000-0000-0000-000000000000',
+          targetLocale: 'en',
+        }),
+        'user',
+      );
+    },
+  ),
 
-  networkJwt: async ({ callers }) => {
-    const caller = await callers.networkJwt();
-    await expectPassesAccessTierGate(
-      caller.translation.translateProposal({
-        profileId: '00000000-0000-0000-0000-000000000000',
-        targetLocale: 'en',
-      }),
-    );
-  },
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.networkJwt();
+      await expectPassesAccessTierGate(
+        caller.translation.translateProposal({
+          profileId: '00000000-0000-0000-0000-000000000000',
+          targetLocale: 'en',
+        }),
+      );
+    },
+  ),
 });
 
 describe('translation.translateProposal', () => {
