@@ -1,13 +1,13 @@
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('organization.getOrganizationsByProfile', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.getOrganizationsByProfile({
         profileId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -17,7 +17,7 @@ describeAccessTierGating('organization.getOrganizationsByProfile', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.getOrganizationsByProfile({
         profileId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -27,7 +27,7 @@ describeAccessTierGating('organization.getOrganizationsByProfile', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.getOrganizationsByProfile({
         profileId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -37,7 +37,7 @@ describeAccessTierGating('organization.getOrganizationsByProfile', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.organization.getOrganizationsByProfile({
         profileId: '00000000-0000-0000-0000-000000000000',
       }),

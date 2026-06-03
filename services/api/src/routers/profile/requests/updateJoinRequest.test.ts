@@ -379,14 +379,14 @@ describe.concurrent('profile.updateJoinRequest', () => {
 
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../../test/helpers/gating';
 
 describeAccessTierGating('profile.updateJoinRequest', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.updateJoinRequest({
         requestId: '00000000-0000-0000-0000-000000000000',
         status: JoinProfileRequestStatus.APPROVED,
@@ -397,7 +397,7 @@ describeAccessTierGating('profile.updateJoinRequest', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.updateJoinRequest({
         requestId: '00000000-0000-0000-0000-000000000000',
         status: JoinProfileRequestStatus.APPROVED,
@@ -408,7 +408,7 @@ describeAccessTierGating('profile.updateJoinRequest', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.updateJoinRequest({
         requestId: '00000000-0000-0000-0000-000000000000',
         status: JoinProfileRequestStatus.APPROVED,
@@ -419,7 +419,7 @@ describeAccessTierGating('profile.updateJoinRequest', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.profile.updateJoinRequest({
         requestId: '00000000-0000-0000-0000-000000000000',
         status: JoinProfileRequestStatus.APPROVED,

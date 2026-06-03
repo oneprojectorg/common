@@ -5,7 +5,7 @@ import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -194,7 +194,7 @@ describeDecisionAccessTierGating('getInstance', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getInstance({ instanceId: instance.instance.id }),
       'none',
     );
@@ -213,7 +213,7 @@ describeDecisionAccessTierGating('getInstance', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getInstance({ instanceId: instance.instance.id }),
       'anon',
     );
@@ -232,7 +232,7 @@ describeDecisionAccessTierGating('getInstance', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getInstance({ instanceId: instance.instance.id }),
       'user',
     );
@@ -272,7 +272,7 @@ describeDecisionAccessTierGating('getLegacyInstance', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getLegacyInstance({ instanceId: instance.instance.id }),
       'none',
     );
@@ -291,7 +291,7 @@ describeDecisionAccessTierGating('getLegacyInstance', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getLegacyInstance({ instanceId: instance.instance.id }),
       'anon',
     );
@@ -310,7 +310,7 @@ describeDecisionAccessTierGating('getLegacyInstance', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getLegacyInstance({ instanceId: instance.instance.id }),
       'user',
     );

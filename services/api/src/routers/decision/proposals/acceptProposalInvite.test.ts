@@ -8,7 +8,7 @@ import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDat
 import { TestProfileUserDataManager } from '../../../test/helpers/TestProfileUserDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -439,7 +439,7 @@ describeDecisionAccessTierGating('acceptProposalInvite', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.acceptProposalInvite({ profileId: proposal.profileId }),
       'none',
     );
@@ -463,7 +463,7 @@ describeDecisionAccessTierGating('acceptProposalInvite', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.acceptProposalInvite({ profileId: proposal.profileId }),
       'anon',
     );
@@ -487,7 +487,7 @@ describeDecisionAccessTierGating('acceptProposalInvite', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.acceptProposalInvite({ profileId: proposal.profileId }),
       'user',
     );

@@ -8,8 +8,8 @@ import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataMa
 import { TestTranslationDataManager } from '../../test/helpers/TestTranslationDataManager';
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 import {
   createIsolatedSession,
@@ -46,7 +46,7 @@ async function createAuthenticatedCaller(email: string) {
 describeAccessTierGating('translation.translateDecision', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.translation.translateDecision({
         decisionProfileId: '00000000-0000-0000-0000-000000000000',
         targetLocale: 'en',
@@ -57,7 +57,7 @@ describeAccessTierGating('translation.translateDecision', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.translation.translateDecision({
         decisionProfileId: '00000000-0000-0000-0000-000000000000',
         targetLocale: 'en',
@@ -68,7 +68,7 @@ describeAccessTierGating('translation.translateDecision', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.translation.translateDecision({
         decisionProfileId: '00000000-0000-0000-0000-000000000000',
         targetLocale: 'en',
@@ -79,7 +79,7 @@ describeAccessTierGating('translation.translateDecision', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.translation.translateDecision({
         decisionProfileId: '00000000-0000-0000-0000-000000000000',
         targetLocale: 'en',

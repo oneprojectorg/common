@@ -1,13 +1,13 @@
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('organization.declineRelationship', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.declineRelationship({
         targetOrganizationId: '00000000-0000-0000-0000-000000000000',
         ids: [],
@@ -18,7 +18,7 @@ describeAccessTierGating('organization.declineRelationship', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.declineRelationship({
         targetOrganizationId: '00000000-0000-0000-0000-000000000000',
         ids: [],
@@ -29,7 +29,7 @@ describeAccessTierGating('organization.declineRelationship', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.declineRelationship({
         targetOrganizationId: '00000000-0000-0000-0000-000000000000',
         ids: [],
@@ -40,7 +40,7 @@ describeAccessTierGating('organization.declineRelationship', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.organization.declineRelationship({
         targetOrganizationId: '00000000-0000-0000-0000-000000000000',
         ids: [],

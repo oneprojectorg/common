@@ -1,13 +1,13 @@
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('profile.getDecisionRole', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.getDecisionRole({
         roleId: '00000000-0000-0000-0000-000000000000',
         profileId: '00000000-0000-0000-0000-000000000000',
@@ -18,7 +18,7 @@ describeAccessTierGating('profile.getDecisionRole', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.getDecisionRole({
         roleId: '00000000-0000-0000-0000-000000000000',
         profileId: '00000000-0000-0000-0000-000000000000',
@@ -29,7 +29,7 @@ describeAccessTierGating('profile.getDecisionRole', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.getDecisionRole({
         roleId: '00000000-0000-0000-0000-000000000000',
         profileId: '00000000-0000-0000-0000-000000000000',
@@ -40,7 +40,7 @@ describeAccessTierGating('profile.getDecisionRole', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.profile.getDecisionRole({
         roleId: '00000000-0000-0000-0000-000000000000',
         profileId: '00000000-0000-0000-0000-000000000000',

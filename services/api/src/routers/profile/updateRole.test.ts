@@ -1,13 +1,13 @@
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('profile.updateRole', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.updateRole({
         roleId: '00000000-0000-0000-0000-000000000000',
         name: 'x',
@@ -18,7 +18,7 @@ describeAccessTierGating('profile.updateRole', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.updateRole({
         roleId: '00000000-0000-0000-0000-000000000000',
         name: 'x',
@@ -29,7 +29,7 @@ describeAccessTierGating('profile.updateRole', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.updateRole({
         roleId: '00000000-0000-0000-0000-000000000000',
         name: 'x',
@@ -40,7 +40,7 @@ describeAccessTierGating('profile.updateRole', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.profile.updateRole({
         roleId: '00000000-0000-0000-0000-000000000000',
         name: 'x',

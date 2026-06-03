@@ -1,13 +1,13 @@
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('organization.listPendingRelationships', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.listPendingRelationships(),
       'none',
     );
@@ -15,7 +15,7 @@ describeAccessTierGating('organization.listPendingRelationships', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.listPendingRelationships(),
       'anon',
     );
@@ -23,7 +23,7 @@ describeAccessTierGating('organization.listPendingRelationships', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.listPendingRelationships(),
       'user',
     );
@@ -31,14 +31,16 @@ describeAccessTierGating('organization.listPendingRelationships', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(caller.organization.listPendingRelationships());
+    await expectPassesAccessTierGate(
+      caller.organization.listPendingRelationships(),
+    );
   },
 });
 
 describeAccessTierGating('organization.listDirectedRelationships', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.listDirectedRelationships({
         from: '00000000-0000-0000-0000-000000000000',
       }),
@@ -48,7 +50,7 @@ describeAccessTierGating('organization.listDirectedRelationships', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.listDirectedRelationships({
         from: '00000000-0000-0000-0000-000000000000',
       }),
@@ -58,7 +60,7 @@ describeAccessTierGating('organization.listDirectedRelationships', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.listDirectedRelationships({
         from: '00000000-0000-0000-0000-000000000000',
       }),
@@ -68,7 +70,7 @@ describeAccessTierGating('organization.listDirectedRelationships', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.organization.listDirectedRelationships({
         from: '00000000-0000-0000-0000-000000000000',
       }),
@@ -79,7 +81,7 @@ describeAccessTierGating('organization.listDirectedRelationships', {
 describeAccessTierGating('organization.listRelationships', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.listRelationships({
         organizationId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -89,7 +91,7 @@ describeAccessTierGating('organization.listRelationships', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.listRelationships({
         organizationId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -99,7 +101,7 @@ describeAccessTierGating('organization.listRelationships', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.listRelationships({
         organizationId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -109,7 +111,7 @@ describeAccessTierGating('organization.listRelationships', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.organization.listRelationships({
         organizationId: '00000000-0000-0000-0000-000000000000',
       }),

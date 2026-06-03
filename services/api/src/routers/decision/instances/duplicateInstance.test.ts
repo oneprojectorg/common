@@ -8,7 +8,7 @@ import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -558,7 +558,7 @@ describeDecisionAccessTierGating('duplicateInstance', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.duplicateInstance({
         instanceId: instance.instance.id,
         name: 'no-JWT copy',
@@ -589,7 +589,7 @@ describeDecisionAccessTierGating('duplicateInstance', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.duplicateInstance({
         instanceId: instance.instance.id,
         name: 'anon copy',
@@ -620,7 +620,7 @@ describeDecisionAccessTierGating('duplicateInstance', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.duplicateInstance({
         instanceId: instance.instance.id,
         name: 'anon copy',

@@ -4,7 +4,7 @@ import { expect } from 'vitest';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 
 describeDecisionAccessTierGating('createProposal', {
@@ -22,7 +22,7 @@ describeDecisionAccessTierGating('createProposal', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.createProposal({
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Should reject no-JWT create' },
@@ -45,7 +45,7 @@ describeDecisionAccessTierGating('createProposal', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.createProposal({
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Non-public; anon should bounce' },
@@ -68,7 +68,7 @@ describeDecisionAccessTierGating('createProposal', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.createProposal({
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Non-public; anon should bounce' },

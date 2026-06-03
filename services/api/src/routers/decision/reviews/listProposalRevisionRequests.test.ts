@@ -9,7 +9,7 @@ import { appRouter } from '../..';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -214,7 +214,7 @@ describeDecisionAccessTierGating('listProposalRevisionRequests', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.listProposalRevisionRequests({
         proposalId: crypto.randomUUID(),
       }),
@@ -228,7 +228,7 @@ describeDecisionAccessTierGating('listProposalRevisionRequests', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.listProposalRevisionRequests({
         proposalId: crypto.randomUUID(),
       }),
@@ -242,7 +242,7 @@ describeDecisionAccessTierGating('listProposalRevisionRequests', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.listProposalRevisionRequests({
         proposalId: crypto.randomUUID(),
       }),

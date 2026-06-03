@@ -1,13 +1,13 @@
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('individual.getTermsByProfile', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.individual.getTermsByProfile({ profileId: 'x' }),
       'none',
     );
@@ -15,7 +15,7 @@ describeAccessTierGating('individual.getTermsByProfile', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.individual.getTermsByProfile({ profileId: 'x' }),
       'anon',
     );
@@ -23,7 +23,7 @@ describeAccessTierGating('individual.getTermsByProfile', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.individual.getTermsByProfile({ profileId: 'x' }),
       'user',
     );
@@ -31,7 +31,7 @@ describeAccessTierGating('individual.getTermsByProfile', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.individual.getTermsByProfile({ profileId: 'x' }),
     );
   },

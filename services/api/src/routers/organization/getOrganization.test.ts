@@ -1,13 +1,13 @@
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('organization.getBySlug', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.getBySlug({ slug: 'x' }),
       'none',
     );
@@ -15,7 +15,7 @@ describeAccessTierGating('organization.getBySlug', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.getBySlug({ slug: 'x' }),
       'anon',
     );
@@ -23,7 +23,7 @@ describeAccessTierGating('organization.getBySlug', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.getBySlug({ slug: 'x' }),
       'user',
     );
@@ -31,14 +31,16 @@ describeAccessTierGating('organization.getBySlug', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(caller.organization.getBySlug({ slug: 'x' }));
+    await expectPassesAccessTierGate(
+      caller.organization.getBySlug({ slug: 'x' }),
+    );
   },
 });
 
 describeAccessTierGating('organization.getTerms', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.getTerms({ id: 'x' }),
       'none',
     );
@@ -46,7 +48,7 @@ describeAccessTierGating('organization.getTerms', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.getTerms({ id: 'x' }),
       'anon',
     );
@@ -54,7 +56,7 @@ describeAccessTierGating('organization.getTerms', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.getTerms({ id: 'x' }),
       'user',
     );
@@ -62,6 +64,6 @@ describeAccessTierGating('organization.getTerms', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(caller.organization.getTerms({ id: 'x' }));
+    await expectPassesAccessTierGate(caller.organization.getTerms({ id: 'x' }));
   },
 });

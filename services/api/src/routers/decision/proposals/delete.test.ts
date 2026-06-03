@@ -3,7 +3,7 @@ import { expect } from 'vitest';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 
 describeDecisionAccessTierGating('deleteProposal', {
@@ -25,7 +25,7 @@ describeDecisionAccessTierGating('deleteProposal', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.deleteProposal({ proposalId: proposal.id }),
       'none',
     );
@@ -49,7 +49,7 @@ describeDecisionAccessTierGating('deleteProposal', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.deleteProposal({ proposalId: proposal.id }),
       'anon',
     );
@@ -73,7 +73,7 @@ describeDecisionAccessTierGating('deleteProposal', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.deleteProposal({ proposalId: proposal.id }),
       'user',
     );

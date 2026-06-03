@@ -7,8 +7,8 @@ import { organizationRouter } from '.';
 import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 import {
   createIsolatedSession,
@@ -123,7 +123,7 @@ describe.concurrent('organization.listUsers', () => {
 describeAccessTierGating('organization.listUsers', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.listUsers({
         profileId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -133,7 +133,7 @@ describeAccessTierGating('organization.listUsers', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.listUsers({
         profileId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -143,7 +143,7 @@ describeAccessTierGating('organization.listUsers', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.listUsers({
         profileId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -153,7 +153,7 @@ describeAccessTierGating('organization.listUsers', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.organization.listUsers({
         profileId: '00000000-0000-0000-0000-000000000000',
       }),

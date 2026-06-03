@@ -3,7 +3,7 @@ import { expect } from 'vitest';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 
 describeDecisionAccessTierGating('getInstanceResults', {
@@ -20,7 +20,7 @@ describeDecisionAccessTierGating('getInstanceResults', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getInstanceResults({ instanceId: instance.instance.id }),
       'none',
     );
@@ -39,7 +39,7 @@ describeDecisionAccessTierGating('getInstanceResults', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getInstanceResults({ instanceId: instance.instance.id }),
       'anon',
     );
@@ -58,7 +58,7 @@ describeDecisionAccessTierGating('getInstanceResults', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getInstanceResults({ instanceId: instance.instance.id }),
       'user',
     );

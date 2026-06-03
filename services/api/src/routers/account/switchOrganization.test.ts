@@ -6,8 +6,8 @@ import { describe, expect, it } from 'vitest';
 import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 import {
   createIsolatedSession,
@@ -131,7 +131,7 @@ describe.concurrent('account.switchOrganization', () => {
 describeAccessTierGating('account.switchOrganization', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.account.switchOrganization({ organizationId: 'x' }),
       'none',
     );
@@ -139,7 +139,7 @@ describeAccessTierGating('account.switchOrganization', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.account.switchOrganization({ organizationId: 'x' }),
       'anon',
     );
@@ -147,7 +147,7 @@ describeAccessTierGating('account.switchOrganization', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.account.switchOrganization({ organizationId: 'x' }),
       'user',
     );
@@ -155,7 +155,7 @@ describeAccessTierGating('account.switchOrganization', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.account.switchOrganization({ organizationId: 'x' }),
     );
   },

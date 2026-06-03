@@ -5,8 +5,8 @@ import { organizationRouter } from '.';
 import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 import {
   createIsolatedSession,
@@ -51,7 +51,7 @@ describe.concurrent('organization.deleteOrganization', () => {
   it('should reject requests from unauthenticated users', async () => {
     const caller = createCaller(await createTestContextWithSession(null));
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.deleteOrganization({
         organizationProfileId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -180,7 +180,7 @@ describe.concurrent('organization.deleteOrganization', () => {
 describeAccessTierGating('organization.deleteOrganization', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.deleteOrganization({
         organizationProfileId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -190,7 +190,7 @@ describeAccessTierGating('organization.deleteOrganization', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.deleteOrganization({
         organizationProfileId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -200,7 +200,7 @@ describeAccessTierGating('organization.deleteOrganization', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.deleteOrganization({
         organizationProfileId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -210,7 +210,7 @@ describeAccessTierGating('organization.deleteOrganization', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.organization.deleteOrganization({
         organizationProfileId: '00000000-0000-0000-0000-000000000000',
       }),

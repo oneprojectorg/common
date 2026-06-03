@@ -5,7 +5,7 @@ import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -198,7 +198,7 @@ describeDecisionAccessTierGating('uploadProposalAttachment', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.uploadProposalAttachment({
         file: VALID_PNG_BASE64,
         fileName: 'no-jwt.png',
@@ -227,7 +227,7 @@ describeDecisionAccessTierGating('uploadProposalAttachment', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.uploadProposalAttachment({
         file: VALID_PNG_BASE64,
         fileName: 'anon.png',
@@ -256,7 +256,7 @@ describeDecisionAccessTierGating('uploadProposalAttachment', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.uploadProposalAttachment({
         file: VALID_PNG_BASE64,
         fileName: 'anon.png',

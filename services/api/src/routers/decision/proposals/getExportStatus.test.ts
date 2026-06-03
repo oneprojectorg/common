@@ -4,7 +4,7 @@ import { expect } from 'vitest';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 
 describeDecisionAccessTierGating('getExportStatus', {
@@ -14,7 +14,7 @@ describeDecisionAccessTierGating('getExportStatus', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getExportStatus({ exportId: randomUUID() }),
       'none',
     );
@@ -26,7 +26,7 @@ describeDecisionAccessTierGating('getExportStatus', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getExportStatus({ exportId: randomUUID() }),
       'anon',
     );
@@ -38,7 +38,7 @@ describeDecisionAccessTierGating('getExportStatus', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getExportStatus({ exportId: randomUUID() }),
       'user',
     );

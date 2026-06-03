@@ -203,14 +203,14 @@ describe.concurrent('profile.declineInvite', () => {
 
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('profile.declineInvite', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.declineInvite({
         inviteId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -220,7 +220,7 @@ describeAccessTierGating('profile.declineInvite', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.declineInvite({
         inviteId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -230,7 +230,7 @@ describeAccessTierGating('profile.declineInvite', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.declineInvite({
         inviteId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -240,7 +240,7 @@ describeAccessTierGating('profile.declineInvite', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.profile.declineInvite({
         inviteId: '00000000-0000-0000-0000-000000000000',
       }),

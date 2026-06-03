@@ -1,13 +1,13 @@
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('account.completeOnboarding', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.account.completeOnboarding({ tos: false, privacy: false }),
       'none',
     );
@@ -15,7 +15,7 @@ describeAccessTierGating('account.completeOnboarding', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.account.completeOnboarding({ tos: false, privacy: false }),
       'anon',
     );
@@ -23,7 +23,7 @@ describeAccessTierGating('account.completeOnboarding', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.account.completeOnboarding({ tos: false, privacy: false }),
       'user',
     );
@@ -31,7 +31,7 @@ describeAccessTierGating('account.completeOnboarding', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.account.completeOnboarding({ tos: false, privacy: false }),
     );
   },

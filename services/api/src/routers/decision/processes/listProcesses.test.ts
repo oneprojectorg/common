@@ -3,7 +3,7 @@ import { expect } from 'vitest';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 
 describeDecisionAccessTierGating('listProcesses', {
@@ -13,7 +13,7 @@ describeDecisionAccessTierGating('listProcesses', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(caller.decision.listProcesses({}), 'none');
+    await expectFailsAccessTierGate(caller.decision.listProcesses({}), 'none');
   },
 
   anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
@@ -22,7 +22,7 @@ describeDecisionAccessTierGating('listProcesses', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(caller.decision.listProcesses({}), 'anon');
+    await expectFailsAccessTierGate(caller.decision.listProcesses({}), 'anon');
   },
 
   userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
@@ -31,7 +31,7 @@ describeDecisionAccessTierGating('listProcesses', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(caller.decision.listProcesses({}), 'user');
+    await expectFailsAccessTierGate(caller.decision.listProcesses({}), 'user');
   },
 
   networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {

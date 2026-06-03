@@ -22,8 +22,8 @@ type GatingBody = (ctx: GatingTestCtx) => Promise<void>;
  * (401) for no-JWT, `callerTier: 'anon'` (403) for anon-JWT, and
  * `callerTier: 'user'` (403) for the out-of-network user-JWT — and admits
  * network-JWT. So the reject cells assert the caller's tier via
- * {@link expectFailsTierGate}, and the network-JWT cell asserts the caller gets
- * *past* the gate via {@link expectPassesTierGate}. A
+ * {@link expectFailsAccessTierGate}, and the network-JWT cell asserts the caller gets
+ * *past* the gate via {@link expectPassesAccessTierGate}. A
  * `withAuthenticatedPlatformAdmin` endpoint instead rejects user-JWT with
  * `UnauthorizedError` (authenticated, but not an admin), and a public procedure
  * admits every tier.
@@ -72,9 +72,9 @@ export const describeAccessTierGating = (name: string, cells: GatingCells) => {
  * resolve, input validation, not-found, or a deeper resource-authorization
  * `UnauthorizedError`) means the gate let them through.
  *
- * @see expectFailsTierGate for the inverse assertion.
+ * @see expectFailsAccessTierGate for the inverse assertion.
  */
-export const expectPassesTierGate = async (promise: Promise<unknown>) => {
+export const expectPassesAccessTierGate = async (promise: Promise<unknown>) => {
   try {
     await promise;
   } catch (error) {
@@ -94,7 +94,7 @@ export const expectPassesTierGate = async (promise: Promise<unknown>) => {
  * rejected caller and the HTTP status it pins — `'none'` is 401 (authenticate),
  * everything else is 403.
  */
-export const expectFailsTierGate = async (
+export const expectFailsAccessTierGate = async (
   promise: Promise<unknown>,
   callerTier: AccessTier,
 ) => {

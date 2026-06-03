@@ -177,14 +177,14 @@ describe.concurrent('profile.deleteRole', () => {
 
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('profile.deleteRole', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.deleteRole({
         roleId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -194,7 +194,7 @@ describeAccessTierGating('profile.deleteRole', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.deleteRole({
         roleId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -204,7 +204,7 @@ describeAccessTierGating('profile.deleteRole', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.deleteRole({
         roleId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -214,7 +214,7 @@ describeAccessTierGating('profile.deleteRole', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.profile.deleteRole({
         roleId: '00000000-0000-0000-0000-000000000000',
       }),

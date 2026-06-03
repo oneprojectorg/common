@@ -1,27 +1,27 @@
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('organization.getRoles', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(caller.organization.getRoles(), 'none');
+    await expectFailsAccessTierGate(caller.organization.getRoles(), 'none');
   },
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(caller.organization.getRoles(), 'anon');
+    await expectFailsAccessTierGate(caller.organization.getRoles(), 'anon');
   },
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(caller.organization.getRoles(), 'user');
+    await expectFailsAccessTierGate(caller.organization.getRoles(), 'user');
   },
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(caller.organization.getRoles());
+    await expectPassesAccessTierGate(caller.organization.getRoles());
   },
 });

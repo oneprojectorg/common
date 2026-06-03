@@ -10,7 +10,7 @@ import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -275,7 +275,7 @@ describeDecisionAccessTierGating('getResultsStats', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getResultsStats({ instanceId: instance.instance.id }),
       'none',
     );
@@ -294,7 +294,7 @@ describeDecisionAccessTierGating('getResultsStats', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getResultsStats({ instanceId: instance.instance.id }),
       'anon',
     );
@@ -313,7 +313,7 @@ describeDecisionAccessTierGating('getResultsStats', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getResultsStats({ instanceId: instance.instance.id }),
       'user',
     );

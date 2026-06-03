@@ -4,8 +4,8 @@ import { organizationRouter } from '.';
 import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 import {
   createIsolatedSession,
@@ -149,21 +149,21 @@ describe.concurrent('organization.list', () => {
 describeAccessTierGating('organization.list', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(caller.organization.list(), 'none');
+    await expectFailsAccessTierGate(caller.organization.list(), 'none');
   },
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(caller.organization.list(), 'anon');
+    await expectFailsAccessTierGate(caller.organization.list(), 'anon');
   },
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(caller.organization.list(), 'user');
+    await expectFailsAccessTierGate(caller.organization.list(), 'user');
   },
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(caller.organization.list());
+    await expectPassesAccessTierGate(caller.organization.list());
   },
 });

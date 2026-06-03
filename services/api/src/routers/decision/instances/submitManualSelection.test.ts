@@ -18,7 +18,7 @@ import type { decisionSchemaDefinitionEncoder } from '../../../encoders/decision
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 import {
@@ -686,7 +686,7 @@ describeDecisionAccessTierGating('submitManualSelection', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.submitManualSelection({
         processInstanceId: instance.instance.id,
         proposalIds: [crypto.randomUUID()],
@@ -708,7 +708,7 @@ describeDecisionAccessTierGating('submitManualSelection', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.submitManualSelection({
         processInstanceId: instance.instance.id,
         proposalIds: [crypto.randomUUID()],
@@ -730,7 +730,7 @@ describeDecisionAccessTierGating('submitManualSelection', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.submitManualSelection({
         processInstanceId: instance.instance.id,
         proposalIds: [crypto.randomUUID()],

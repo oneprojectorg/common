@@ -5,7 +5,7 @@ import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -512,7 +512,7 @@ describeDecisionAccessTierGating('listDecisionProfiles', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.listDecisionProfiles({ limit: 10 }),
       'none',
     );
@@ -524,7 +524,7 @@ describeDecisionAccessTierGating('listDecisionProfiles', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.listDecisionProfiles({ limit: 10 }),
       'anon',
     );
@@ -536,7 +536,7 @@ describeDecisionAccessTierGating('listDecisionProfiles', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.listDecisionProfiles({ limit: 10 }),
       'user',
     );

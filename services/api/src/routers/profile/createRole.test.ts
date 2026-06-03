@@ -149,14 +149,14 @@ describe.concurrent('profile.createRole', () => {
 
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('profile.createRole', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.createRole({
         profileId: '00000000-0000-0000-0000-000000000000',
         zoneName: 'x',
@@ -175,7 +175,7 @@ describeAccessTierGating('profile.createRole', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.createRole({
         profileId: '00000000-0000-0000-0000-000000000000',
         zoneName: 'x',
@@ -194,7 +194,7 @@ describeAccessTierGating('profile.createRole', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.createRole({
         profileId: '00000000-0000-0000-0000-000000000000',
         zoneName: 'x',
@@ -213,7 +213,7 @@ describeAccessTierGating('profile.createRole', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.profile.createRole({
         profileId: '00000000-0000-0000-0000-000000000000',
         zoneName: 'x',

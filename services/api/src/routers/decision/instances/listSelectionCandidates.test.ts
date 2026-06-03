@@ -14,7 +14,7 @@ import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 import {
@@ -430,7 +430,7 @@ describeDecisionAccessTierGating('listSelectionCandidates', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.listSelectionCandidates({
         processInstanceId: instance.instance.id,
         sortOrder: 'votes',
@@ -452,7 +452,7 @@ describeDecisionAccessTierGating('listSelectionCandidates', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.listSelectionCandidates({
         processInstanceId: instance.instance.id,
         sortOrder: 'votes',
@@ -474,7 +474,7 @@ describeDecisionAccessTierGating('listSelectionCandidates', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.listSelectionCandidates({
         processInstanceId: instance.instance.id,
         sortOrder: 'votes',

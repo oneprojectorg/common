@@ -10,7 +10,7 @@ import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -593,7 +593,7 @@ describeDecisionAccessTierGating('getLatestSelectionForProposal', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getLatestSelectionForProposal({
         proposalId: proposal.id,
       }),
@@ -619,7 +619,7 @@ describeDecisionAccessTierGating('getLatestSelectionForProposal', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getLatestSelectionForProposal({
         proposalId: proposal.id,
       }),
@@ -645,7 +645,7 @@ describeDecisionAccessTierGating('getLatestSelectionForProposal', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getLatestSelectionForProposal({
         proposalId: proposal.id,
       }),

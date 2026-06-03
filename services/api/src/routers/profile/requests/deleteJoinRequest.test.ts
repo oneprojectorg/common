@@ -209,14 +209,14 @@ describe.concurrent('profile.deleteJoinRequest', () => {
 
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../../test/helpers/gating';
 
 describeAccessTierGating('profile.deleteJoinRequest', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.deleteJoinRequest({
         requestId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -226,7 +226,7 @@ describeAccessTierGating('profile.deleteJoinRequest', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.deleteJoinRequest({
         requestId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -236,7 +236,7 @@ describeAccessTierGating('profile.deleteJoinRequest', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.deleteJoinRequest({
         requestId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -246,7 +246,7 @@ describeAccessTierGating('profile.deleteJoinRequest', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.profile.deleteJoinRequest({
         requestId: '00000000-0000-0000-0000-000000000000',
       }),

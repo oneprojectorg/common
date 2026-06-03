@@ -4,14 +4,14 @@ import { eq } from 'drizzle-orm';
 
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('organization.invite', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.invite({ emails: ['gate@example.com'] }),
       'none',
     );
@@ -19,7 +19,7 @@ describeAccessTierGating('organization.invite', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.invite({ emails: ['gate@example.com'] }),
       'anon',
     );
@@ -27,7 +27,7 @@ describeAccessTierGating('organization.invite', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.invite({ emails: ['gate@example.com'] }),
       'user',
     );
@@ -43,7 +43,7 @@ describeAccessTierGating('organization.invite', {
     });
 
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.organization.invite({ emails: [invitee] }),
     );
   },

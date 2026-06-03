@@ -5,7 +5,7 @@ import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -217,7 +217,7 @@ describeDecisionAccessTierGating('deleteDecision', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.deleteDecision({ instanceId: instance.instance.id }),
       'none',
     );
@@ -236,7 +236,7 @@ describeDecisionAccessTierGating('deleteDecision', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.deleteDecision({ instanceId: instance.instance.id }),
       'anon',
     );
@@ -255,7 +255,7 @@ describeDecisionAccessTierGating('deleteDecision', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.deleteDecision({ instanceId: instance.instance.id }),
       'user',
     );

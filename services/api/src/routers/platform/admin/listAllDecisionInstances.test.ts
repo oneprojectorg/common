@@ -6,8 +6,8 @@ import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDat
 import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../../test/helpers/gating';
 import {
   createIsolatedSession,
@@ -18,7 +18,7 @@ import { createCallerFactory } from '../../../trpcFactory';
 describeAccessTierGating('platform.admin.listAllDecisionInstances', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.platform.admin.listAllDecisionInstances(),
       'none',
     );
@@ -26,7 +26,7 @@ describeAccessTierGating('platform.admin.listAllDecisionInstances', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.platform.admin.listAllDecisionInstances(),
       'anon',
     );
@@ -43,7 +43,7 @@ describeAccessTierGating('platform.admin.listAllDecisionInstances', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.platform.admin.listAllDecisionInstances(),
     );
   },

@@ -3,7 +3,7 @@ import { expect } from 'vitest';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 
 describeDecisionAccessTierGating('export', {
@@ -20,7 +20,7 @@ describeDecisionAccessTierGating('export', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.export({
         processInstanceId: instance.instance.id,
         format: 'csv',
@@ -43,7 +43,7 @@ describeDecisionAccessTierGating('export', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.export({
         processInstanceId: instance.instance.id,
         format: 'csv',
@@ -66,7 +66,7 @@ describeDecisionAccessTierGating('export', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.export({
         processInstanceId: instance.instance.id,
         format: 'csv',

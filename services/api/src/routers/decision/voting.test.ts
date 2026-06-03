@@ -6,7 +6,7 @@ import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -233,7 +233,7 @@ describeDecisionAccessTierGating('submitVote', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.submitVote({
         processInstanceId: instance.instance.id,
         selectedProposalIds: [proposals[0]!.id],
@@ -250,7 +250,7 @@ describeDecisionAccessTierGating('submitVote', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.submitVote({
         processInstanceId: instance.instance.id,
         selectedProposalIds: [proposals[0]!.id],
@@ -267,7 +267,7 @@ describeDecisionAccessTierGating('submitVote', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.submitVote({
         processInstanceId: instance.instance.id,
         selectedProposalIds: [proposals[0]!.id],
@@ -302,7 +302,7 @@ describeDecisionAccessTierGating('getVotingStatus', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getVotingStatus({
         processInstanceId: instance.instance.id,
       }),
@@ -318,7 +318,7 @@ describeDecisionAccessTierGating('getVotingStatus', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getVotingStatus({
         processInstanceId: instance.instance.id,
       }),
@@ -334,7 +334,7 @@ describeDecisionAccessTierGating('getVotingStatus', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getVotingStatus({
         processInstanceId: instance.instance.id,
       }),

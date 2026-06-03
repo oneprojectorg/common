@@ -1,27 +1,36 @@
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('organization.search', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(caller.organization.search({ q: 'x' }), 'none');
+    await expectFailsAccessTierGate(
+      caller.organization.search({ q: 'x' }),
+      'none',
+    );
   },
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(caller.organization.search({ q: 'x' }), 'anon');
+    await expectFailsAccessTierGate(
+      caller.organization.search({ q: 'x' }),
+      'anon',
+    );
   },
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(caller.organization.search({ q: 'x' }), 'user');
+    await expectFailsAccessTierGate(
+      caller.organization.search({ q: 'x' }),
+      'user',
+    );
   },
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(caller.organization.search({ q: 'x' }));
+    await expectPassesAccessTierGate(caller.organization.search({ q: 'x' }));
   },
 });

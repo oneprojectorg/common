@@ -1,13 +1,13 @@
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('taxonomy.getTerms', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.taxonomy.getTerms({ name: 'xxx' }),
       'none',
     );
@@ -15,7 +15,7 @@ describeAccessTierGating('taxonomy.getTerms', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.taxonomy.getTerms({ name: 'xxx' }),
       'anon',
     );
@@ -23,7 +23,7 @@ describeAccessTierGating('taxonomy.getTerms', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.taxonomy.getTerms({ name: 'xxx' }),
       'user',
     );
@@ -31,6 +31,6 @@ describeAccessTierGating('taxonomy.getTerms', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(caller.taxonomy.getTerms({ name: 'xxx' }));
+    await expectPassesAccessTierGate(caller.taxonomy.getTerms({ name: 'xxx' }));
   },
 });

@@ -10,7 +10,7 @@ import { appRouter } from '../..';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -150,7 +150,7 @@ describeDecisionAccessTierGating('cancelRevisionRequest', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.cancelRevisionRequest({
         assignmentId: crypto.randomUUID(),
         revisionRequestId: crypto.randomUUID(),
@@ -165,7 +165,7 @@ describeDecisionAccessTierGating('cancelRevisionRequest', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.cancelRevisionRequest({
         assignmentId: crypto.randomUUID(),
         revisionRequestId: crypto.randomUUID(),
@@ -180,7 +180,7 @@ describeDecisionAccessTierGating('cancelRevisionRequest', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.cancelRevisionRequest({
         assignmentId: crypto.randomUUID(),
         revisionRequestId: crypto.randomUUID(),

@@ -1,13 +1,13 @@
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('profile.updateProfileInvite', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.updateProfileInvite({
         inviteId: '00000000-0000-0000-0000-000000000000',
         accessRoleId: '00000000-0000-0000-0000-000000000000',
@@ -18,7 +18,7 @@ describeAccessTierGating('profile.updateProfileInvite', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.updateProfileInvite({
         inviteId: '00000000-0000-0000-0000-000000000000',
         accessRoleId: '00000000-0000-0000-0000-000000000000',
@@ -29,7 +29,7 @@ describeAccessTierGating('profile.updateProfileInvite', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.updateProfileInvite({
         inviteId: '00000000-0000-0000-0000-000000000000',
         accessRoleId: '00000000-0000-0000-0000-000000000000',
@@ -40,7 +40,7 @@ describeAccessTierGating('profile.updateProfileInvite', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.profile.updateProfileInvite({
         inviteId: '00000000-0000-0000-0000-000000000000',
         accessRoleId: '00000000-0000-0000-0000-000000000000',

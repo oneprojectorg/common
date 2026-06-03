@@ -11,7 +11,7 @@ import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -354,7 +354,7 @@ describeDecisionAccessTierGating('createInstanceFromTemplate', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.createInstanceFromTemplate({
         templateId: '00000000-0000-0000-0000-000000000000',
         name: `no-JWT ${task.id}`,
@@ -369,7 +369,7 @@ describeDecisionAccessTierGating('createInstanceFromTemplate', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.createInstanceFromTemplate({
         templateId: '00000000-0000-0000-0000-000000000000',
         name: `anon ${task.id}`,
@@ -384,7 +384,7 @@ describeDecisionAccessTierGating('createInstanceFromTemplate', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.createInstanceFromTemplate({
         templateId: '00000000-0000-0000-0000-000000000000',
         name: `anon ${task.id}`,

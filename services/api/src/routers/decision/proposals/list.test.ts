@@ -20,7 +20,7 @@ import { transformFormDataToProcessSchema as cowopSchema } from '../../../../../
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   schemaWithPipeline,
@@ -2247,7 +2247,7 @@ describeDecisionAccessTierGating('listProposals', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.listProposals({
         processInstanceId: instance.instance.id,
       }),
@@ -2269,7 +2269,7 @@ describeDecisionAccessTierGating('listProposals', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.listProposals({
         processInstanceId: instance.instance.id,
       }),
@@ -2291,7 +2291,7 @@ describeDecisionAccessTierGating('listProposals', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.listProposals({
         processInstanceId: instance.instance.id,
       }),

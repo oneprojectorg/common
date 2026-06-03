@@ -1,13 +1,13 @@
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('organization.uploadAvatarImage', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.uploadAvatarImage({
         file: 'x',
         fileName: 'x',
@@ -19,7 +19,7 @@ describeAccessTierGating('organization.uploadAvatarImage', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.uploadAvatarImage({
         file: 'x',
         fileName: 'x',
@@ -31,7 +31,7 @@ describeAccessTierGating('organization.uploadAvatarImage', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.uploadAvatarImage({
         file: 'x',
         fileName: 'x',
@@ -43,7 +43,7 @@ describeAccessTierGating('organization.uploadAvatarImage', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.organization.uploadAvatarImage({
         file: 'x',
         fileName: 'x',

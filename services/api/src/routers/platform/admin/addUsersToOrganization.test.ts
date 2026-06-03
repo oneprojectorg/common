@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../../test/helpers/gating';
 import {
   createIsolatedSession,
@@ -20,7 +20,7 @@ const createCaller = createCallerFactory(platformAdminRouter);
 describeAccessTierGating('platform.admin.addUsersToOrganization', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.platform.admin.addUsersToOrganization({
         organizationId: 'x',
         users: [{ authUserId: 'x', roleId: 'x' }],
@@ -31,7 +31,7 @@ describeAccessTierGating('platform.admin.addUsersToOrganization', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.platform.admin.addUsersToOrganization({
         organizationId: 'x',
         users: [{ authUserId: 'x', roleId: 'x' }],
@@ -54,7 +54,7 @@ describeAccessTierGating('platform.admin.addUsersToOrganization', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.platform.admin.addUsersToOrganization({
         organizationId: 'x',
         users: [{ authUserId: 'x', roleId: 'x' }],

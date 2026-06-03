@@ -12,7 +12,7 @@ import { appRouter } from '../..';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -268,7 +268,7 @@ describeDecisionAccessTierGating('getReviewAssignment', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getReviewAssignment({
         assignmentId: crypto.randomUUID(),
       }),
@@ -282,7 +282,7 @@ describeDecisionAccessTierGating('getReviewAssignment', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getReviewAssignment({
         assignmentId: crypto.randomUUID(),
       }),
@@ -296,7 +296,7 @@ describeDecisionAccessTierGating('getReviewAssignment', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.getReviewAssignment({
         assignmentId: crypto.randomUUID(),
       }),

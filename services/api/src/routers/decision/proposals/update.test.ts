@@ -6,7 +6,7 @@ import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -749,7 +749,7 @@ describeDecisionAccessTierGating('updateProposal', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.updateProposal({
         proposalId: proposal.id,
         data: { visibility: Visibility.HIDDEN },
@@ -777,7 +777,7 @@ describeDecisionAccessTierGating('updateProposal', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.updateProposal({
         proposalId: proposal.id,
         data: { visibility: Visibility.HIDDEN },
@@ -805,7 +805,7 @@ describeDecisionAccessTierGating('updateProposal', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.updateProposal({
         proposalId: proposal.id,
         data: { visibility: Visibility.HIDDEN },

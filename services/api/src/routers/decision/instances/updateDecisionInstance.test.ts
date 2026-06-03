@@ -10,7 +10,7 @@ import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -923,7 +923,7 @@ describeDecisionAccessTierGating('updateDecisionInstance', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.updateDecisionInstance({
         instanceId: instance.instance.id,
         name: 'should not reach',
@@ -945,7 +945,7 @@ describeDecisionAccessTierGating('updateDecisionInstance', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.updateDecisionInstance({
         instanceId: instance.instance.id,
         name: 'should bounce',
@@ -967,7 +967,7 @@ describeDecisionAccessTierGating('updateDecisionInstance', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.updateDecisionInstance({
         instanceId: instance.instance.id,
         name: 'should bounce',

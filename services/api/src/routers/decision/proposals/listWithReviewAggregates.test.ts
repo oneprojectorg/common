@@ -16,7 +16,7 @@ import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDat
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -387,7 +387,7 @@ describeDecisionAccessTierGating('listWithReviewAggregates', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.listWithReviewAggregates({
         processInstanceId: instance.instance.id,
       }),
@@ -408,7 +408,7 @@ describeDecisionAccessTierGating('listWithReviewAggregates', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.listWithReviewAggregates({
         processInstanceId: instance.instance.id,
       }),
@@ -429,7 +429,7 @@ describeDecisionAccessTierGating('listWithReviewAggregates', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.listWithReviewAggregates({
         processInstanceId: instance.instance.id,
       }),

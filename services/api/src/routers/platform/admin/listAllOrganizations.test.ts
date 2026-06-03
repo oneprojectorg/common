@@ -2,14 +2,14 @@ import { expect } from 'vitest';
 
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../../test/helpers/gating';
 
 describeAccessTierGating('platform.admin.listAllOrganizations', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.platform.admin.listAllOrganizations(),
       'none',
     );
@@ -17,7 +17,7 @@ describeAccessTierGating('platform.admin.listAllOrganizations', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.platform.admin.listAllOrganizations(),
       'anon',
     );
@@ -34,6 +34,8 @@ describeAccessTierGating('platform.admin.listAllOrganizations', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(caller.platform.admin.listAllOrganizations());
+    await expectPassesAccessTierGate(
+      caller.platform.admin.listAllOrganizations(),
+    );
   },
 });

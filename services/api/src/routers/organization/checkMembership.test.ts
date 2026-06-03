@@ -1,13 +1,13 @@
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('organization.checkMembership', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.checkMembership({
         email: 'gate@example.com',
         organizationId: '00000000-0000-0000-0000-000000000000',
@@ -18,7 +18,7 @@ describeAccessTierGating('organization.checkMembership', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.checkMembership({
         email: 'gate@example.com',
         organizationId: '00000000-0000-0000-0000-000000000000',
@@ -29,7 +29,7 @@ describeAccessTierGating('organization.checkMembership', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.checkMembership({
         email: 'gate@example.com',
         organizationId: '00000000-0000-0000-0000-000000000000',
@@ -40,7 +40,7 @@ describeAccessTierGating('organization.checkMembership', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.organization.checkMembership({
         email: 'gate@example.com',
         organizationId: '00000000-0000-0000-0000-000000000000',

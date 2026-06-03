@@ -1,13 +1,13 @@
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('organization.deletePost', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.deletePost({ id: 'x' }),
       'none',
     );
@@ -15,7 +15,7 @@ describeAccessTierGating('organization.deletePost', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.deletePost({ id: 'x' }),
       'anon',
     );
@@ -23,7 +23,7 @@ describeAccessTierGating('organization.deletePost', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.deletePost({ id: 'x' }),
       'user',
     );
@@ -31,6 +31,8 @@ describeAccessTierGating('organization.deletePost', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(caller.organization.deletePost({ id: 'x' }));
+    await expectPassesAccessTierGate(
+      caller.organization.deletePost({ id: 'x' }),
+    );
   },
 });

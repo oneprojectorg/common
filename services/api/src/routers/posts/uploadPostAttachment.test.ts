@@ -1,13 +1,13 @@
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('posts.uploadPostAttachment', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.posts.uploadPostAttachment({
         file: 'x',
         fileName: 'x',
@@ -19,7 +19,7 @@ describeAccessTierGating('posts.uploadPostAttachment', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.posts.uploadPostAttachment({
         file: 'x',
         fileName: 'x',
@@ -31,7 +31,7 @@ describeAccessTierGating('posts.uploadPostAttachment', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.posts.uploadPostAttachment({
         file: 'x',
         fileName: 'x',
@@ -43,7 +43,7 @@ describeAccessTierGating('posts.uploadPostAttachment', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.posts.uploadPostAttachment({
         file: 'x',
         fileName: 'x',

@@ -2,19 +2,19 @@ import { expect } from 'vitest';
 
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../../test/helpers/gating';
 
 describeAccessTierGating('platform.admin.getStats', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(caller.platform.admin.getStats(), 'none');
+    await expectFailsAccessTierGate(caller.platform.admin.getStats(), 'none');
   },
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(caller.platform.admin.getStats(), 'anon');
+    await expectFailsAccessTierGate(caller.platform.admin.getStats(), 'anon');
   },
 
   userJwt: async ({ callers }) => {
@@ -26,6 +26,6 @@ describeAccessTierGating('platform.admin.getStats', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(caller.platform.admin.getStats());
+    await expectPassesAccessTierGate(caller.platform.admin.getStats());
   },
 });

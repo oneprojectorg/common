@@ -4,8 +4,8 @@ import { platformAdminRouter } from '.';
 import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../../test/helpers/gating';
 import {
   createIsolatedSession,
@@ -16,12 +16,18 @@ import { createCallerFactory } from '../../../trpcFactory';
 describeAccessTierGating('platform.admin.listAllUsers', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(caller.platform.admin.listAllUsers(), 'none');
+    await expectFailsAccessTierGate(
+      caller.platform.admin.listAllUsers(),
+      'none',
+    );
   },
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(caller.platform.admin.listAllUsers(), 'anon');
+    await expectFailsAccessTierGate(
+      caller.platform.admin.listAllUsers(),
+      'anon',
+    );
   },
 
   userJwt: async ({ callers }) => {
@@ -33,7 +39,7 @@ describeAccessTierGating('platform.admin.listAllUsers', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(caller.platform.admin.listAllUsers());
+    await expectPassesAccessTierGate(caller.platform.admin.listAllUsers());
   },
 });
 

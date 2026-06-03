@@ -1,13 +1,13 @@
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('account.listMatchingDomainOrganizations', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.account.listMatchingDomainOrganizations(),
       'none',
     );
@@ -15,7 +15,7 @@ describeAccessTierGating('account.listMatchingDomainOrganizations', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.account.listMatchingDomainOrganizations(),
       'anon',
     );
@@ -23,7 +23,7 @@ describeAccessTierGating('account.listMatchingDomainOrganizations', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.account.listMatchingDomainOrganizations(),
       'user',
     );
@@ -31,7 +31,7 @@ describeAccessTierGating('account.listMatchingDomainOrganizations', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.account.listMatchingDomainOrganizations(),
     );
   },

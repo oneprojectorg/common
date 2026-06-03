@@ -1,13 +1,13 @@
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('organization.listPosts', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.listPosts({ slug: 'x' }),
       'none',
     );
@@ -15,7 +15,7 @@ describeAccessTierGating('organization.listPosts', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.listPosts({ slug: 'x' }),
       'anon',
     );
@@ -23,7 +23,7 @@ describeAccessTierGating('organization.listPosts', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.organization.listPosts({ slug: 'x' }),
       'user',
     );
@@ -31,6 +31,8 @@ describeAccessTierGating('organization.listPosts', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(caller.organization.listPosts({ slug: 'x' }));
+    await expectPassesAccessTierGate(
+      caller.organization.listPosts({ slug: 'x' }),
+    );
   },
 });

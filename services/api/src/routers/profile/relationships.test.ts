@@ -1,13 +1,13 @@
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('profile.addRelationship', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.addRelationship({
         targetProfileId: '00000000-0000-0000-0000-000000000000',
         relationshipType: 'following',
@@ -18,7 +18,7 @@ describeAccessTierGating('profile.addRelationship', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.addRelationship({
         targetProfileId: '00000000-0000-0000-0000-000000000000',
         relationshipType: 'following',
@@ -29,7 +29,7 @@ describeAccessTierGating('profile.addRelationship', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.addRelationship({
         targetProfileId: '00000000-0000-0000-0000-000000000000',
         relationshipType: 'following',
@@ -40,7 +40,7 @@ describeAccessTierGating('profile.addRelationship', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.profile.addRelationship({
         targetProfileId: '00000000-0000-0000-0000-000000000000',
         relationshipType: 'following',
@@ -52,7 +52,7 @@ describeAccessTierGating('profile.addRelationship', {
 describeAccessTierGating('profile.removeRelationship', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.removeRelationship({
         targetProfileId: '00000000-0000-0000-0000-000000000000',
         relationshipType: 'following',
@@ -63,7 +63,7 @@ describeAccessTierGating('profile.removeRelationship', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.removeRelationship({
         targetProfileId: '00000000-0000-0000-0000-000000000000',
         relationshipType: 'following',
@@ -74,7 +74,7 @@ describeAccessTierGating('profile.removeRelationship', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.removeRelationship({
         targetProfileId: '00000000-0000-0000-0000-000000000000',
         relationshipType: 'following',
@@ -85,7 +85,7 @@ describeAccessTierGating('profile.removeRelationship', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.profile.removeRelationship({
         targetProfileId: '00000000-0000-0000-0000-000000000000',
         relationshipType: 'following',
@@ -97,7 +97,7 @@ describeAccessTierGating('profile.removeRelationship', {
 describeAccessTierGating('profile.getRelationships', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.getRelationships({ types: ['following'] }),
       'none',
     );
@@ -105,7 +105,7 @@ describeAccessTierGating('profile.getRelationships', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.getRelationships({ types: ['following'] }),
       'anon',
     );
@@ -113,7 +113,7 @@ describeAccessTierGating('profile.getRelationships', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.getRelationships({ types: ['following'] }),
       'user',
     );
@@ -121,7 +121,7 @@ describeAccessTierGating('profile.getRelationships', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.profile.getRelationships({ types: ['following'] }),
     );
   },

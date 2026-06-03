@@ -13,8 +13,8 @@ import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataMa
 import { TestProfileUserDataManager } from '../../test/helpers/TestProfileUserDataManager';
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 import {
   createIsolatedSession,
@@ -415,21 +415,21 @@ describe.concurrent('account.listUserInvites', () => {
 describeAccessTierGating('account.listUserInvites', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(caller.account.listUserInvites({}), 'none');
+    await expectFailsAccessTierGate(caller.account.listUserInvites({}), 'none');
   },
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(caller.account.listUserInvites({}), 'anon');
+    await expectFailsAccessTierGate(caller.account.listUserInvites({}), 'anon');
   },
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(caller.account.listUserInvites({}), 'user');
+    await expectFailsAccessTierGate(caller.account.listUserInvites({}), 'user');
   },
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(caller.account.listUserInvites({}));
+    await expectPassesAccessTierGate(caller.account.listUserInvites({}));
   },
 });

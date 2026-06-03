@@ -815,14 +815,14 @@ describe.concurrent('Profile Invite Integration Tests', () => {
 
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('profile.invite', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.invite({
         invitations: [
           {
@@ -838,7 +838,7 @@ describeAccessTierGating('profile.invite', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.invite({
         invitations: [
           {
@@ -854,7 +854,7 @@ describeAccessTierGating('profile.invite', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.invite({
         invitations: [
           {
@@ -870,7 +870,7 @@ describeAccessTierGating('profile.invite', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.profile.invite({
         invitations: [
           {

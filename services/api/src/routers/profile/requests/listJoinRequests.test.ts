@@ -350,14 +350,14 @@ describe.concurrent('profile.listJoinRequests', () => {
 
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../../test/helpers/gating';
 
 describeAccessTierGating('profile.listJoinRequests', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.listJoinRequests({
         targetProfileId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -367,7 +367,7 @@ describeAccessTierGating('profile.listJoinRequests', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.listJoinRequests({
         targetProfileId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -377,7 +377,7 @@ describeAccessTierGating('profile.listJoinRequests', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.listJoinRequests({
         targetProfileId: '00000000-0000-0000-0000-000000000000',
       }),
@@ -387,7 +387,7 @@ describeAccessTierGating('profile.listJoinRequests', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.profile.listJoinRequests({
         targetProfileId: '00000000-0000-0000-0000-000000000000',
       }),

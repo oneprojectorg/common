@@ -4,7 +4,7 @@ import { createGatingCallers, type GatingTestCtx } from './callers';
 
 // Re-exported so decision gating tests can pull the tier assertions from the
 // same module as describeDecisionAccessTierGating.
-export { expectFailsTierGate, expectPassesTierGate } from '.';
+export { expectFailsAccessTierGate, expectPassesAccessTierGate } from '.';
 
 type DecisionGatingBody = (ctx: GatingTestCtx) => Promise<void>;
 

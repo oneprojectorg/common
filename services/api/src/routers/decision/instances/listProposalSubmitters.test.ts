@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
   describeDecisionAccessTierGating,
-  expectFailsTierGate,
+  expectFailsAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 import {
@@ -167,7 +167,7 @@ describeDecisionAccessTierGating('listProposalSubmitters', {
 
     const caller = await callers.noJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.listProposalSubmitters({
         processInstanceId: instance.instance.id,
       }),
@@ -188,7 +188,7 @@ describeDecisionAccessTierGating('listProposalSubmitters', {
 
     const caller = await callers.anonJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.listProposalSubmitters({
         processInstanceId: instance.instance.id,
       }),
@@ -209,7 +209,7 @@ describeDecisionAccessTierGating('listProposalSubmitters', {
 
     const caller = await callers.userJwt();
 
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.decision.listProposalSubmitters({
         processInstanceId: instance.instance.id,
       }),

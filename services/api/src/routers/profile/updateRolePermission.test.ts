@@ -417,14 +417,14 @@ describe.concurrent('profile.updateRolePermission', () => {
 
 import {
   describeAccessTierGating,
-  expectFailsTierGate,
-  expectPassesTierGate,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('profile.updateRolePermission', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.updateRolePermission({
         roleId: '00000000-0000-0000-0000-000000000000',
         permissions: {
@@ -441,7 +441,7 @@ describeAccessTierGating('profile.updateRolePermission', {
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.updateRolePermission({
         roleId: '00000000-0000-0000-0000-000000000000',
         permissions: {
@@ -458,7 +458,7 @@ describeAccessTierGating('profile.updateRolePermission', {
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expectFailsTierGate(
+    await expectFailsAccessTierGate(
       caller.profile.updateRolePermission({
         roleId: '00000000-0000-0000-0000-000000000000',
         permissions: {
@@ -475,7 +475,7 @@ describeAccessTierGating('profile.updateRolePermission', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesTierGate(
+    await expectPassesAccessTierGate(
       caller.profile.updateRolePermission({
         roleId: '00000000-0000-0000-0000-000000000000',
         permissions: {
