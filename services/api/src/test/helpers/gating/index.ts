@@ -91,14 +91,18 @@ export const expectPassesTierGate = async (promise: Promise<unknown>) => {
 
 /**
  * Asserts a call is rejected by the tier gate, carrying the `callerTier` of the
- * rejected caller (which also pins the HTTP status — `'none'` is 401,
- * everything else 403).
+ * rejected caller and the HTTP status it pins — `'none'` is 401 (authenticate),
+ * everything else is 403.
  */
 export const expectFailsTierGate = async (
   promise: Promise<unknown>,
   callerTier: AccessTier,
 ) => {
   await expect(promise).rejects.toMatchObject({
-    cause: { name: 'AccessTierError', callerTier },
+    cause: {
+      name: 'AccessTierError',
+      callerTier,
+      statusCode: callerTier === 'none' ? 401 : 403,
+    },
   });
 };
