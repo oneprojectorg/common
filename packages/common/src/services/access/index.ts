@@ -1,6 +1,5 @@
 import { cache } from '@op/cache';
 import { db, eq } from '@op/db/client';
-import type { Profile, ProfileUser } from '@op/db/schema';
 import { organizations, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import type { AccessZonePermissionInput, NormalizedRole } from 'access-zones';
@@ -8,25 +7,19 @@ import { checkPermission } from 'access-zones';
 import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils/error';
+import type { OrganizationUserBase } from '../organization/schemas/organizationUser';
+import type { ProfileMinimal } from '../profile/schemas/profileMinimal';
+import type { ProfileUserBase } from '../profile/schemas/profileUser';
 import { memoize } from './requestCache';
 import { getNormalizedRoles } from './utils';
 
-type OrgUserWithNormalizedRoles = {
-  id: string;
-  authUserId: string;
-  name: string | null;
-  email: string;
-  about: string | null;
-  organizationId: string;
-  createdAt: string | Date | null;
-  updatedAt: string | Date | null;
-  deletedAt?: string | Date | null;
+type OrgUserWithNormalizedRoles = OrganizationUserBase & {
   roles: NormalizedRole[];
 };
 
-type ProfileUserWithNormalizedRoles = ProfileUser & {
+type ProfileUserWithNormalizedRoles = ProfileUserBase & {
   roles: NormalizedRole[];
-  profile: Profile;
+  profile: ProfileMinimal;
 };
 
 // gets a user assuming that the user is authenticated
@@ -104,7 +97,11 @@ export const getProfileAccessUser = memoize(
         authUserId: user.id,
       },
       with: {
-        profile: true,
+        profile: {
+          with: {
+            avatarImage: true,
+          },
+        },
         roles: {
           with: {
             accessRole: {
