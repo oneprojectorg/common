@@ -24,13 +24,6 @@ interface AccessRole {
   zonePermissions?: ZonePermission[];
 }
 
-// Primary interface for when we have the exact structure
-export interface RoleJunction {
-  organizationUserId: string;
-  accessRoleId: string;
-  accessRole: AccessRole;
-}
-
 // For Drizzle query results that we know have the right structure but TypeScript can't verify
 export const getNormalizedRoles = (
   roleJunctions: Array<{ accessRole: AccessRole }>,

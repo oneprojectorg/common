@@ -1,6 +1,5 @@
 import { cache } from '@op/cache';
-import { and, db, eq } from '@op/db/client';
-import type { Profile, ProfileUser } from '@op/db/schema';
+import { db, eq } from '@op/db/client';
 import { organizations, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import type { AccessZonePermissionInput, NormalizedRole } from 'access-zones';
@@ -8,25 +7,19 @@ import { checkPermission } from 'access-zones';
 import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils/error';
+import type { OrganizationUserBase } from '../organization/schemas/organizationUser';
+import type { ProfileMinimal } from '../profile/schemas/profileMinimal';
+import type { ProfileUserBase } from '../profile/schemas/profileUser';
 import { memoize } from './requestCache';
-import { type RoleJunction, getNormalizedRoles } from './utils';
+import { getNormalizedRoles } from './utils';
 
-type OrgUserWithNormalizedRoles = {
-  id: string;
-  authUserId: string;
-  name: string | null;
-  email: string;
-  about: string | null;
-  organizationId: string;
-  createdAt: string | Date | null;
-  updatedAt: string | Date | null;
-  deletedAt?: string | Date | null;
+type OrgUserWithNormalizedRoles = OrganizationUserBase & {
   roles: NormalizedRole[];
 };
 
-type ProfileUserWithNormalizedRoles = ProfileUser & {
+type ProfileUserWithNormalizedRoles = ProfileUserBase & {
   roles: NormalizedRole[];
-  profile: Profile;
+  profile: ProfileMinimal;
 };
 
 // gets a user assuming that the user is authenticated
@@ -39,12 +32,11 @@ export const getOrgAccessUser = memoize(
     organizationId: string;
   }): Promise<OrgUserWithNormalizedRoles | undefined> => {
     const getOrgUser = async () => {
-      const orgUser = await db._query.organizationUsers.findFirst({
-        where: (table, { eq }) =>
-          and(
-            eq(table.organizationId, organizationId),
-            eq(table.authUserId, user.id),
-          ),
+      const orgUser = await db.query.organizationUsers.findFirst({
+        where: {
+          organizationId,
+          authUserId: user.id,
+        },
         with: {
           roles: {
             with: {
@@ -67,10 +59,7 @@ export const getOrgAccessUser = memoize(
       }
 
       // Transform the relational data into normalized format for access-zones library
-      // Type assertion needed because Drizzle query result type is complex but we know it has the right structure
-      const normalizedRoles = getNormalizedRoles(
-        orgUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
-      );
+      const normalizedRoles = getNormalizedRoles(orgUser.roles);
 
       const { roles: _, ...orgUserWithoutRoles } = orgUser;
 
@@ -102,11 +91,17 @@ export const getProfileAccessUser = memoize(
     user: { id: string };
     profileId: string;
   }): Promise<ProfileUserWithNormalizedRoles | undefined> => {
-    const profileUser = await db._query.profileUsers.findFirst({
-      where: (table, { eq }) =>
-        and(eq(table.profileId, profileId), eq(table.authUserId, user.id)),
+    const profileUser = await db.query.profileUsers.findFirst({
+      where: {
+        profileId,
+        authUserId: user.id,
+      },
       with: {
-        profile: true,
+        profile: {
+          with: {
+            avatarImage: true,
+          },
+        },
         roles: {
           with: {
             accessRole: {
@@ -128,15 +123,12 @@ export const getProfileAccessUser = memoize(
     }
 
     // Transform the relational data into normalized format for access-zones library
-    // Type assertion needed because Drizzle query result type is complex but we know it has the right structure
-    const normalizedRoles = getNormalizedRoles(
-      profileUser.roles as Array<Pick<RoleJunction, 'accessRole'>>,
-    );
+    const normalizedRoles = getNormalizedRoles(profileUser.roles);
 
     const { roles: _, ...profileUserWithoutRoles } = profileUser;
     return {
       ...profileUserWithoutRoles,
-      profile: profileUser.profile as Profile,
+      profile: profileUser.profile,
       roles: normalizedRoles,
     };
   },
