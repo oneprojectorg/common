@@ -13,6 +13,11 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
+import {
+  accessTierGatingCell,
+  describeDecisionAccessTierGating,
+  expectFailsAccessTierGate,
+} from '../../../test/helpers/gating/decision';
 import { schemaWithPipeline } from '../../../test/helpers/pipelineSchemas';
 import {
   createIsolatedSession,
@@ -435,4 +440,101 @@ describe.concurrent('listAllProposals', () => {
     expect(returnedIds).not.toContain(outOne.id);
     expect(returnedIds).not.toContain(outTwo.id);
   });
+});
+
+describeDecisionAccessTierGating('listAllProposals', {
+  noJwtNonPublic: accessTierGatingCell(
+    'rejects no-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+
+      const caller = await callers.noJwt();
+
+      await expectFailsAccessTierGate(
+        caller.decision.listAllProposals({
+          processInstanceId: instance.instance.id,
+        }),
+        'none',
+      );
+    },
+  ),
+
+  anonJwtNonPublic: accessTierGatingCell(
+    'rejects anon-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+
+      const caller = await callers.anonJwt();
+
+      await expectFailsAccessTierGate(
+        caller.decision.listAllProposals({
+          processInstanceId: instance.instance.id,
+        }),
+        'anon',
+      );
+    },
+  ),
+
+  userJwtNonPublic: accessTierGatingCell(
+    'rejects user-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+
+      const caller = await callers.userJwt();
+
+      await expectFailsAccessTierGate(
+        caller.decision.listAllProposals({
+          processInstanceId: instance.instance.id,
+        }),
+        'user',
+      );
+    },
+  ),
+
+  networkJwtNonPublic: accessTierGatingCell(
+    'admits network-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+
+      const caller = await callers.networkJwt(setup.userEmail);
+
+      const result = await caller.decision.listAllProposals({
+        processInstanceId: instance.instance.id,
+      });
+
+      expect(result.items).toBeDefined();
+    },
+  ),
 });

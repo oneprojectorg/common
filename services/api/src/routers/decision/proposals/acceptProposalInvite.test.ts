@@ -7,6 +7,11 @@ import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import { TestProfileUserDataManager } from '../../../test/helpers/TestProfileUserDataManager';
 import {
+  accessTierGatingCell,
+  describeDecisionAccessTierGating,
+  expectFailsAccessTierGate,
+} from '../../../test/helpers/gating/decision';
+import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
@@ -414,4 +419,142 @@ describe.concurrent('decision.acceptProposalInvite', () => {
       cause: { name: 'NotFoundError' },
     });
   });
+});
+
+describeDecisionAccessTierGating('acceptProposalInvite', {
+  noJwtNonPublic: accessTierGatingCell(
+    'rejects no-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+      const proposal = await testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'no-JWT should not reach this' },
+      });
+
+      const caller = await callers.noJwt();
+
+      await expectFailsAccessTierGate(
+        caller.decision.acceptProposalInvite({ profileId: proposal.profileId }),
+        'none',
+      );
+    },
+  ),
+
+  anonJwtNonPublic: accessTierGatingCell(
+    'rejects anon-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+      const proposal = await testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'anon should bounce' },
+      });
+
+      const caller = await callers.anonJwt();
+
+      await expectFailsAccessTierGate(
+        caller.decision.acceptProposalInvite({ profileId: proposal.profileId }),
+        'anon',
+      );
+    },
+  ),
+
+  userJwtNonPublic: accessTierGatingCell(
+    'rejects user-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+      const proposal = await testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'anon should bounce' },
+      });
+
+      const caller = await callers.userJwt();
+
+      await expectFailsAccessTierGate(
+        caller.decision.acceptProposalInvite({ profileId: proposal.profileId }),
+        'user',
+      );
+    },
+  ),
+
+  networkJwtNonPublic: accessTierGatingCell(
+    'admits network-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+      const profileData = new TestProfileUserDataManager(
+        task.id,
+        onTestFinished,
+      );
+
+      const setup = await testData.createDecisionSetup({
+        instanceCount: 1,
+        grantAccess: true,
+      });
+      const instance = setup.instances[0];
+      if (!instance) {
+        throw new Error('No instance created');
+      }
+      const proposal = await testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'Common-JWT invitee accepts' },
+      });
+
+      const invitee = await profileData.createStandaloneUser();
+      const [invite] = await db
+        .insert(profileInvites)
+        .values({
+          email: invitee.email,
+          profileId: proposal.profileId,
+          profileEntityType: EntityType.PROPOSAL,
+          accessRoleId: ROLES.MEMBER.id,
+          invitedBy: setup.organization.profileId,
+        })
+        .returning();
+      if (!invite) {
+        throw new Error('Failed to create invite');
+      }
+      profileData.trackProfileInvite(invitee.email, proposal.profileId);
+
+      const caller = await callers.networkJwt(invitee.email);
+
+      await caller.decision.acceptProposalInvite({
+        profileId: proposal.profileId,
+      });
+
+      const profileUser = await db.query.profileUsers.findFirst({
+        where: {
+          profileId: proposal.profileId,
+          authUserId: invitee.authUserId,
+        },
+      });
+      expect(profileUser).toBeDefined();
+    },
+  ),
 });

@@ -4,6 +4,12 @@ import { describe, expect, it } from 'vitest';
 import { organizationRouter } from '.';
 import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
+  accessTierGatingCell,
+  describeAccessTierGating,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
+} from '../../test/helpers/gating';
+import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../test/supabase-utils';
@@ -46,15 +52,12 @@ describe.concurrent('organization.deleteOrganization', () => {
   it('should reject requests from unauthenticated users', async () => {
     const caller = createCaller(await createTestContextWithSession(null));
 
-    await expect(
+    await expectFailsAccessTierGate(
       caller.deleteOrganization({
         organizationProfileId: '00000000-0000-0000-0000-000000000000',
       }),
-    ).rejects.toMatchObject({
-      cause: {
-        name: 'UnauthorizedError',
-      },
-    });
+      'none',
+    );
   });
 
   it('should reject non-members with 403 (UnauthorizedError) when trying to delete organization', async ({
@@ -173,4 +176,54 @@ describe.concurrent('organization.deleteOrganization', () => {
       code: 'BAD_REQUEST',
     });
   });
+});
+
+describeAccessTierGating('organization.deleteOrganization', {
+  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
+    const caller = await callers.noJwt();
+    await expectFailsAccessTierGate(
+      caller.organization.deleteOrganization({
+        organizationProfileId: '00000000-0000-0000-0000-000000000000',
+      }),
+      'none',
+    );
+  }),
+
+  anonJwt: accessTierGatingCell(
+    'rejects anon-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectFailsAccessTierGate(
+        caller.organization.deleteOrganization({
+          organizationProfileId: '00000000-0000-0000-0000-000000000000',
+        }),
+        'anon',
+      );
+    },
+  ),
+
+  userJwt: accessTierGatingCell(
+    'rejects user-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.userJwt();
+      await expectFailsAccessTierGate(
+        caller.organization.deleteOrganization({
+          organizationProfileId: '00000000-0000-0000-0000-000000000000',
+        }),
+        'user',
+      );
+    },
+  ),
+
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.networkJwt();
+      await expectPassesAccessTierGate(
+        caller.organization.deleteOrganization({
+          organizationProfileId: '00000000-0000-0000-0000-000000000000',
+        }),
+      );
+    },
+  ),
 });

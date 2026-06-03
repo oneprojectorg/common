@@ -12,6 +12,12 @@ import { describe, expect, it } from 'vitest';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import { TestProfileUserDataManager } from '../../test/helpers/TestProfileUserDataManager';
 import {
+  accessTierGatingCell,
+  describeAccessTierGating,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
+} from '../../test/helpers/gating';
+import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../test/supabase-utils';
@@ -405,4 +411,41 @@ describe.concurrent('account.listUserInvites', () => {
 
     expect(result).toHaveLength(0);
   });
+});
+
+describeAccessTierGating('account.listUserInvites', {
+  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
+    const caller = await callers.noJwt();
+    await expectFailsAccessTierGate(caller.account.listUserInvites({}), 'none');
+  }),
+
+  anonJwt: accessTierGatingCell(
+    'rejects anon-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectFailsAccessTierGate(
+        caller.account.listUserInvites({}),
+        'anon',
+      );
+    },
+  ),
+
+  userJwt: accessTierGatingCell(
+    'rejects user-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.userJwt();
+      await expectFailsAccessTierGate(
+        caller.account.listUserInvites({}),
+        'user',
+      );
+    },
+  ),
+
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.networkJwt();
+      await expectPassesAccessTierGate(caller.account.listUserInvites({}));
+    },
+  ),
 });

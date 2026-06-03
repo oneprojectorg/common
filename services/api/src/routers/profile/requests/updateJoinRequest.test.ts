@@ -376,3 +376,64 @@ describe.concurrent('profile.updateJoinRequest', () => {
     expect(memberships[0]?.id).toBe(existingMembership.id);
   });
 });
+
+import {
+  accessTierGatingCell,
+  describeAccessTierGating,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
+} from '../../../test/helpers/gating';
+
+describeAccessTierGating('profile.updateJoinRequest', {
+  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
+    const caller = await callers.noJwt();
+    await expectFailsAccessTierGate(
+      caller.profile.updateJoinRequest({
+        requestId: '00000000-0000-0000-0000-000000000000',
+        status: JoinProfileRequestStatus.APPROVED,
+      }),
+      'none',
+    );
+  }),
+
+  anonJwt: accessTierGatingCell(
+    'rejects anon-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectFailsAccessTierGate(
+        caller.profile.updateJoinRequest({
+          requestId: '00000000-0000-0000-0000-000000000000',
+          status: JoinProfileRequestStatus.APPROVED,
+        }),
+        'anon',
+      );
+    },
+  ),
+
+  userJwt: accessTierGatingCell(
+    'rejects user-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.userJwt();
+      await expectFailsAccessTierGate(
+        caller.profile.updateJoinRequest({
+          requestId: '00000000-0000-0000-0000-000000000000',
+          status: JoinProfileRequestStatus.APPROVED,
+        }),
+        'user',
+      );
+    },
+  ),
+
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.networkJwt();
+      await expectPassesAccessTierGate(
+        caller.profile.updateJoinRequest({
+          requestId: '00000000-0000-0000-0000-000000000000',
+          status: JoinProfileRequestStatus.APPROVED,
+        }),
+      );
+    },
+  ),
+});

@@ -812,3 +812,84 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     });
   });
 });
+
+import {
+  accessTierGatingCell,
+  describeAccessTierGating,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
+} from '../../test/helpers/gating';
+
+describeAccessTierGating('profile.invite', {
+  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
+    const caller = await callers.noJwt();
+    await expectFailsAccessTierGate(
+      caller.profile.invite({
+        invitations: [
+          {
+            email: 'gate@example.com',
+            roleId: '00000000-0000-0000-0000-000000000000',
+          },
+        ],
+        profileId: '00000000-0000-0000-0000-000000000000',
+      }),
+      'none',
+    );
+  }),
+
+  anonJwt: accessTierGatingCell(
+    'rejects anon-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectFailsAccessTierGate(
+        caller.profile.invite({
+          invitations: [
+            {
+              email: 'gate@example.com',
+              roleId: '00000000-0000-0000-0000-000000000000',
+            },
+          ],
+          profileId: '00000000-0000-0000-0000-000000000000',
+        }),
+        'anon',
+      );
+    },
+  ),
+
+  userJwt: accessTierGatingCell(
+    'rejects user-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.userJwt();
+      await expectFailsAccessTierGate(
+        caller.profile.invite({
+          invitations: [
+            {
+              email: 'gate@example.com',
+              roleId: '00000000-0000-0000-0000-000000000000',
+            },
+          ],
+          profileId: '00000000-0000-0000-0000-000000000000',
+        }),
+        'user',
+      );
+    },
+  ),
+
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.networkJwt();
+      await expectPassesAccessTierGate(
+        caller.profile.invite({
+          invitations: [
+            {
+              email: 'gate@example.com',
+              roleId: '00000000-0000-0000-0000-000000000000',
+            },
+          ],
+          profileId: '00000000-0000-0000-0000-000000000000',
+        }),
+      );
+    },
+  ),
+});

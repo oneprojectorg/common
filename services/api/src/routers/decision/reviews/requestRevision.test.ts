@@ -9,6 +9,11 @@ import { describe, expect, it } from 'vitest';
 import { appRouter } from '../..';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
+  accessTierGatingCell,
+  describeDecisionAccessTierGating,
+  expectFailsAccessTierGate,
+} from '../../../test/helpers/gating/decision';
+import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
@@ -174,4 +179,79 @@ describe.concurrent('requestRevision', () => {
       cause: { name: 'UnauthorizedError' },
     });
   });
+});
+
+describeDecisionAccessTierGating('requestRevision', {
+  noJwtNonPublic: accessTierGatingCell(
+    'rejects no-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      await testData.createContext();
+
+      const caller = await callers.noJwt();
+
+      await expectFailsAccessTierGate(
+        caller.decision.requestRevision({
+          assignmentId: crypto.randomUUID(),
+          requestComment: 'Should not reach',
+        }),
+        'none',
+      );
+    },
+  ),
+
+  anonJwtNonPublic: accessTierGatingCell(
+    'rejects anon-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      await testData.createContext();
+
+      const caller = await callers.anonJwt();
+
+      await expectFailsAccessTierGate(
+        caller.decision.requestRevision({
+          assignmentId: crypto.randomUUID(),
+          requestComment: 'Should not reach',
+        }),
+        'anon',
+      );
+    },
+  ),
+
+  userJwtNonPublic: accessTierGatingCell(
+    'rejects user-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      await testData.createContext();
+
+      const caller = await callers.userJwt();
+
+      await expectFailsAccessTierGate(
+        caller.decision.requestRevision({
+          assignmentId: crypto.randomUUID(),
+          requestComment: 'Should not reach',
+        }),
+        'user',
+      );
+    },
+  ),
+
+  networkJwtNonPublic: accessTierGatingCell(
+    'admits network-JWT caller on non-public instance',
+    async ({ task, onTestFinished, callers }) => {
+      const testData = new TestReviewsDataManager(task.id, onTestFinished);
+      const context = await testData.createContext();
+
+      const caller = await callers.networkJwt(context.defaultReviewer.email);
+
+      await expect(
+        caller.decision.requestRevision({
+          assignmentId: crypto.randomUUID(),
+          requestComment: 'Past the gate; assignment missing',
+        }),
+      ).rejects.not.toMatchObject({
+        cause: { name: 'UnauthorizedError' },
+      });
+    },
+  ),
 });

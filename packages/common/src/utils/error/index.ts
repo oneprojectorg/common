@@ -53,6 +53,34 @@ export class UnauthorizedError extends CommonError {
   }
 }
 
+/**
+ * The caller's position on the access ladder. Procedures declare a minimum
+ * required tier; the gate compares it against the caller's actual tier.
+ *
+ *   none    — no session at all
+ *   anon    — an anonymous (or unconfirmed) session, no real identity
+ *   user    — a confirmed, real account
+ *   network — a confirmed account that is in the instance's network
+ */
+export type AccessTier = 'none' | 'anon' | 'user' | 'network';
+
+/** User-facing copy per caller tier; `none` (401) prompts sign-in, the rest reuse the generic 403 wording. */
+const accessTierMessages: Record<AccessTier, string> = {
+  none: 'You need to sign in to access this resource.',
+  anon: 'You do not have permission to access this resource.',
+  user: 'You do not have permission to access this resource.',
+  network: 'You do not have permission to access this resource.',
+};
+
+export class AccessTierError extends CommonError {
+  public readonly statusCode: number;
+
+  constructor(public readonly callerTier: AccessTier) {
+    super(accessTierMessages[callerTier]);
+    this.statusCode = callerTier === 'none' ? 401 : 403;
+  }
+}
+
 export class ConflictError extends CommonError {
   public readonly statusCode: number = 409;
 

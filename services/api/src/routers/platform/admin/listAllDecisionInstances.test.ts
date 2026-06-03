@@ -5,10 +5,59 @@ import { platformAdminRouter } from '.';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
+  accessTierGatingCell,
+  describeAccessTierGating,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
+} from '../../../test/helpers/gating';
+import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
+
+describeAccessTierGating('platform.admin.listAllDecisionInstances', {
+  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
+    const caller = await callers.noJwt();
+    await expectFailsAccessTierGate(
+      caller.platform.admin.listAllDecisionInstances(),
+      'none',
+    );
+  }),
+
+  anonJwt: accessTierGatingCell(
+    'rejects anon-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectFailsAccessTierGate(
+        caller.platform.admin.listAllDecisionInstances(),
+        'anon',
+      );
+    },
+  ),
+
+  userJwt: accessTierGatingCell(
+    'rejects user-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.userJwt();
+      await expect(
+        caller.platform.admin.listAllDecisionInstances(),
+      ).rejects.toMatchObject({
+        cause: { name: 'UnauthorizedError' },
+      });
+    },
+  ),
+
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.networkJwt();
+      await expectPassesAccessTierGate(
+        caller.platform.admin.listAllDecisionInstances(),
+      );
+    },
+  ),
+});
 
 describe.concurrent('platform.admin.listAllDecisionInstances', () => {
   const createCaller = createCallerFactory(platformAdminRouter);

@@ -3,10 +3,55 @@ import { describe, expect, it } from 'vitest';
 import { platformAdminRouter } from '.';
 import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
+  accessTierGatingCell,
+  describeAccessTierGating,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
+} from '../../../test/helpers/gating';
+import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
+
+describeAccessTierGating('platform.admin.listAllUsers', {
+  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
+    const caller = await callers.noJwt();
+    await expectFailsAccessTierGate(
+      caller.platform.admin.listAllUsers(),
+      'none',
+    );
+  }),
+
+  anonJwt: accessTierGatingCell(
+    'rejects anon-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectFailsAccessTierGate(
+        caller.platform.admin.listAllUsers(),
+        'anon',
+      );
+    },
+  ),
+
+  userJwt: accessTierGatingCell(
+    'rejects user-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.userJwt();
+      await expect(caller.platform.admin.listAllUsers()).rejects.toMatchObject({
+        cause: { name: 'UnauthorizedError' },
+      });
+    },
+  ),
+
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.networkJwt();
+      await expectPassesAccessTierGate(caller.platform.admin.listAllUsers());
+    },
+  ),
+});
 
 describe.concurrent('platform.admin.listAllUsers', () => {
   const createCaller = createCallerFactory(platformAdminRouter);

@@ -5,6 +5,12 @@ import { describe, expect, it } from 'vitest';
 
 import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
+  accessTierGatingCell,
+  describeAccessTierGating,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
+} from '../../test/helpers/gating';
+import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../test/supabase-utils';
@@ -121,4 +127,46 @@ describe.concurrent('account.switchOrganization', () => {
       },
     });
   });
+});
+
+describeAccessTierGating('account.switchOrganization', {
+  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
+    const caller = await callers.noJwt();
+    await expectFailsAccessTierGate(
+      caller.account.switchOrganization({ organizationId: 'x' }),
+      'none',
+    );
+  }),
+
+  anonJwt: accessTierGatingCell(
+    'rejects anon-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectFailsAccessTierGate(
+        caller.account.switchOrganization({ organizationId: 'x' }),
+        'anon',
+      );
+    },
+  ),
+
+  userJwt: accessTierGatingCell(
+    'rejects user-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.userJwt();
+      await expectFailsAccessTierGate(
+        caller.account.switchOrganization({ organizationId: 'x' }),
+        'user',
+      );
+    },
+  ),
+
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.networkJwt();
+      await expectPassesAccessTierGate(
+        caller.account.switchOrganization({ organizationId: 'x' }),
+      );
+    },
+  ),
 });

@@ -3,6 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { organizationRouter } from '.';
 import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
+  accessTierGatingCell,
+  describeAccessTierGating,
+  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
+} from '../../test/helpers/gating';
+import {
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../test/supabase-utils';
@@ -139,4 +145,35 @@ describe.concurrent('organization.list', () => {
 
     expect(reachedEnd).toBe(true);
   });
+});
+
+describeAccessTierGating('organization.list', {
+  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
+    const caller = await callers.noJwt();
+    await expectFailsAccessTierGate(caller.organization.list(), 'none');
+  }),
+
+  anonJwt: accessTierGatingCell(
+    'rejects anon-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectFailsAccessTierGate(caller.organization.list(), 'anon');
+    },
+  ),
+
+  userJwt: accessTierGatingCell(
+    'rejects user-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.userJwt();
+      await expectFailsAccessTierGate(caller.organization.list(), 'user');
+    },
+  ),
+
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller',
+    async ({ callers }) => {
+      const caller = await callers.networkJwt();
+      await expectPassesAccessTierGate(caller.organization.list());
+    },
+  ),
 });
