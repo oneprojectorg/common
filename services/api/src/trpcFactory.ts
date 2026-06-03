@@ -12,6 +12,7 @@ import { errorFormatter } from './lib/error';
 import withAnalytics from './middlewares/withAnalytics';
 import withAuthenticatedUser from './middlewares/withAuthenticatedUser';
 import withChannelMeta from './middlewares/withChannelMeta';
+import withConfirmedUser from './middlewares/withConfirmedUser';
 import withLogger from './middlewares/withLogger';
 import withNetworkAuthenticatedUser from './middlewares/withNetworkAuthenticatedUser';
 import withRateLimited from './middlewares/withRateLimited';
@@ -89,6 +90,22 @@ export function networkAuthenticatedProcedure(
   return commonProcedure
     .use(withRateLimited(rateLimit))
     .use(withNetworkAuthenticatedUser)
+    .use(withAnalytics);
+}
+
+/**
+ * Confirmed-user procedure: admits any confirmed, non-anonymous user (a real
+ * account whose email/phone is confirmed) via {@link withConfirmedUser}, but
+ * applies no closed-network/allow-list gating. Sits one tier below
+ * {@link networkAuthenticatedProcedure} (which adds the `@oneproject.org` /
+ * invite allow list) and one above {@link authenticatedProcedure} (which also
+ * admits anonymous sessions). Default rate limit is 10 requests per 10 seconds.
+ */
+export function confirmedProcedure(opts?: RateLimitedProcedureOptions) {
+  const rateLimit = opts?.rateLimit ?? DEFAULT_RATE_LIMIT;
+  return commonProcedure
+    .use(withRateLimited(rateLimit))
+    .use(withConfirmedUser)
     .use(withAnalytics);
 }
 
