@@ -1,8 +1,7 @@
-import { expect } from 'vitest';
-
 import {
   describeGating,
-  expectPassesAuthGate,
+  expectFailsTierGate,
+  expectPassesTierGate,
 } from '../../test/helpers/gating';
 
 const decisionPermissions = {
@@ -20,43 +19,40 @@ const decisionPermissions = {
 describeGating('profile.updateDecisionRoles', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expect(
+    await expectFailsTierGate(
       caller.profile.updateDecisionRoles({
         roleId: '00000000-0000-0000-0000-000000000000',
         decisionPermissions,
       }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'none',
+    );
   },
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expect(
+    await expectFailsTierGate(
       caller.profile.updateDecisionRoles({
         roleId: '00000000-0000-0000-0000-000000000000',
         decisionPermissions,
       }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'anon',
+    );
   },
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expect(
+    await expectFailsTierGate(
       caller.profile.updateDecisionRoles({
         roleId: '00000000-0000-0000-0000-000000000000',
         decisionPermissions,
       }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'user',
+    );
   },
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesAuthGate(
+    await expectPassesTierGate(
       caller.profile.updateDecisionRoles({
         roleId: '00000000-0000-0000-0000-000000000000',
         decisionPermissions,

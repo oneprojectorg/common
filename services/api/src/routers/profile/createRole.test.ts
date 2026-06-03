@@ -149,13 +149,14 @@ describe.concurrent('profile.createRole', () => {
 
 import {
   describeGating,
-  expectPassesAuthGate,
+  expectFailsTierGate,
+  expectPassesTierGate,
 } from '../../test/helpers/gating';
 
 describeGating('profile.createRole', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expect(
+    await expectFailsTierGate(
       caller.profile.createRole({
         profileId: '00000000-0000-0000-0000-000000000000',
         zoneName: 'x',
@@ -168,14 +169,13 @@ describeGating('profile.createRole', {
           delete: false,
         },
       }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'none',
+    );
   },
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expect(
+    await expectFailsTierGate(
       caller.profile.createRole({
         profileId: '00000000-0000-0000-0000-000000000000',
         zoneName: 'x',
@@ -188,14 +188,13 @@ describeGating('profile.createRole', {
           delete: false,
         },
       }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'anon',
+    );
   },
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expect(
+    await expectFailsTierGate(
       caller.profile.createRole({
         profileId: '00000000-0000-0000-0000-000000000000',
         zoneName: 'x',
@@ -208,14 +207,13 @@ describeGating('profile.createRole', {
           delete: false,
         },
       }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'user',
+    );
   },
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesAuthGate(
+    await expectPassesTierGate(
       caller.profile.createRole({
         profileId: '00000000-0000-0000-0000-000000000000',
         zoneName: 'x',

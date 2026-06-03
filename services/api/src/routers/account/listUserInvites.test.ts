@@ -13,7 +13,8 @@ import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataMa
 import { TestProfileUserDataManager } from '../../test/helpers/TestProfileUserDataManager';
 import {
   describeGating,
-  expectPassesAuthGate,
+  expectFailsTierGate,
+  expectPassesTierGate,
 } from '../../test/helpers/gating';
 import {
   createIsolatedSession,
@@ -414,27 +415,21 @@ describe.concurrent('account.listUserInvites', () => {
 describeGating('account.listUserInvites', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expect(caller.account.listUserInvites({})).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+    await expectFailsTierGate(caller.account.listUserInvites({}), 'none');
   },
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expect(caller.account.listUserInvites({})).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+    await expectFailsTierGate(caller.account.listUserInvites({}), 'anon');
   },
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expect(caller.account.listUserInvites({})).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+    await expectFailsTierGate(caller.account.listUserInvites({}), 'user');
   },
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesAuthGate(caller.account.listUserInvites({}));
+    await expectPassesTierGate(caller.account.listUserInvites({}));
   },
 });

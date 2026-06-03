@@ -177,46 +177,44 @@ describe.concurrent('profile.deleteRole', () => {
 
 import {
   describeGating,
-  expectPassesAuthGate,
+  expectFailsTierGate,
+  expectPassesTierGate,
 } from '../../test/helpers/gating';
 
 describeGating('profile.deleteRole', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expect(
+    await expectFailsTierGate(
       caller.profile.deleteRole({
         roleId: '00000000-0000-0000-0000-000000000000',
       }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'none',
+    );
   },
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expect(
+    await expectFailsTierGate(
       caller.profile.deleteRole({
         roleId: '00000000-0000-0000-0000-000000000000',
       }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'anon',
+    );
   },
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expect(
+    await expectFailsTierGate(
       caller.profile.deleteRole({
         roleId: '00000000-0000-0000-0000-000000000000',
       }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'user',
+    );
   },
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesAuthGate(
+    await expectPassesTierGate(
       caller.profile.deleteRole({
         roleId: '00000000-0000-0000-0000-000000000000',
       }),

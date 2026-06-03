@@ -1,40 +1,27 @@
-import { expect } from 'vitest';
-
 import {
   describeGating,
-  expectPassesAuthGate,
+  expectFailsTierGate,
+  expectPassesTierGate,
 } from '../../test/helpers/gating';
 
 describeGating('organization.update', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expect(caller.organization.update({ id: 'x' })).rejects.toMatchObject(
-      {
-        cause: { name: 'AuthGateError' },
-      },
-    );
+    await expectFailsTierGate(caller.organization.update({ id: 'x' }), 'none');
   },
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expect(caller.organization.update({ id: 'x' })).rejects.toMatchObject(
-      {
-        cause: { name: 'AuthGateError' },
-      },
-    );
+    await expectFailsTierGate(caller.organization.update({ id: 'x' }), 'anon');
   },
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expect(caller.organization.update({ id: 'x' })).rejects.toMatchObject(
-      {
-        cause: { name: 'AuthGateError' },
-      },
-    );
+    await expectFailsTierGate(caller.organization.update({ id: 'x' }), 'user');
   },
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesAuthGate(caller.organization.update({ id: 'x' }));
+    await expectPassesTierGate(caller.organization.update({ id: 'x' }));
   },
 });

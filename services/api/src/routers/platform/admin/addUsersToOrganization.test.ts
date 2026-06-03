@@ -5,7 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
   describeGating,
-  expectPassesAuthGate,
+  expectFailsTierGate,
+  expectPassesTierGate,
 } from '../../../test/helpers/gating';
 import {
   createIsolatedSession,
@@ -19,26 +20,24 @@ const createCaller = createCallerFactory(platformAdminRouter);
 describeGating('platform.admin.addUsersToOrganization', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expect(
+    await expectFailsTierGate(
       caller.platform.admin.addUsersToOrganization({
         organizationId: 'x',
         users: [{ authUserId: 'x', roleId: 'x' }],
       }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'none',
+    );
   },
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expect(
+    await expectFailsTierGate(
       caller.platform.admin.addUsersToOrganization({
         organizationId: 'x',
         users: [{ authUserId: 'x', roleId: 'x' }],
       }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'anon',
+    );
   },
 
   userJwt: async ({ callers }) => {
@@ -55,7 +54,7 @@ describeGating('platform.admin.addUsersToOrganization', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesAuthGate(
+    await expectPassesTierGate(
       caller.platform.admin.addUsersToOrganization({
         organizationId: 'x',
         users: [{ authUserId: 'x', roleId: 'x' }],

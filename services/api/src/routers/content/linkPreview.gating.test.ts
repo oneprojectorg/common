@@ -1,8 +1,7 @@
-import { expect } from 'vitest';
-
 import {
   describeGating,
-  expectPassesAuthGate,
+  expectFailsTierGate,
+  expectPassesTierGate,
 } from '../../test/helpers/gating';
 
 // Kept in its own file rather than appended to __tests__/linkPreview.test.ts:
@@ -14,27 +13,21 @@ const input = { url: 'https://example.com' };
 describeGating('content.linkPreview', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expect(caller.content.linkPreview(input)).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+    await expectFailsTierGate(caller.content.linkPreview(input), 'none');
   },
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expect(caller.content.linkPreview(input)).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+    await expectFailsTierGate(caller.content.linkPreview(input), 'anon');
   },
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expect(caller.content.linkPreview(input)).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+    await expectFailsTierGate(caller.content.linkPreview(input), 'user');
   },
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesAuthGate(caller.content.linkPreview(input));
+    await expectPassesTierGate(caller.content.linkPreview(input));
   },
 });

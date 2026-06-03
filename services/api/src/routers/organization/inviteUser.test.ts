@@ -1,39 +1,36 @@
 import { db } from '@op/db/client';
 import { allowList } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
-import { expect } from 'vitest';
 
 import {
   describeGating,
-  expectPassesAuthGate,
+  expectFailsTierGate,
+  expectPassesTierGate,
 } from '../../test/helpers/gating';
 
 describeGating('organization.invite', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expect(
+    await expectFailsTierGate(
       caller.organization.invite({ emails: ['gate@example.com'] }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'none',
+    );
   },
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expect(
+    await expectFailsTierGate(
       caller.organization.invite({ emails: ['gate@example.com'] }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'anon',
+    );
   },
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expect(
+    await expectFailsTierGate(
       caller.organization.invite({ emails: ['gate@example.com'] }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'user',
+    );
   },
 
   networkJwt: async ({ callers, onTestFinished }) => {
@@ -46,7 +43,7 @@ describeGating('organization.invite', {
     });
 
     const caller = await callers.networkJwt();
-    await expectPassesAuthGate(
+    await expectPassesTierGate(
       caller.organization.invite({ emails: [invitee] }),
     );
   },

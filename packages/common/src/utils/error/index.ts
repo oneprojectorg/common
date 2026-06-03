@@ -54,16 +54,39 @@ export class UnauthorizedError extends CommonError {
 }
 
 /**
- * Raised by protected API auth gates (`verifyAuthentication` and the
- * `withAuthenticated*` middlewares) when a request fails before resolver-level
- * authorization runs: no valid session, anonymous user, unconfirmed email,
- * missing auth email, or non-allow-listed user.
+ * The caller's position on the access ladder. Procedures declare a minimum
+ * required tier; the gate compares it against the caller's actual tier.
  *
- * It intentionally maps like {@link UnauthorizedError} today, while letting
- * tests and callers distinguish gate rejection from deeper permission checks
- * that throw plain `UnauthorizedError`.
+ *   none    — no session at all
+ *   anon    — an anonymous (or unconfirmed) session, no real identity
+ *   user    — a confirmed, real account
+ *   network — a confirmed account that is in the instance's network
  */
-export class AuthGateError extends UnauthorizedError {}
+export type AccessTier = 'none' | 'anon' | 'user' | 'network';
+
+/**
+ * Raised by the API tier gate (`verifyAuthentication` and the
+ * `withAuthenticated*` middlewares) when the caller's access tier is below what
+ * a procedure requires, before any resolver-level authorization runs.
+ *
+ * The status code follows from `callerTier`: a caller with no session at all
+ * (`none`) gets **401** — they must authenticate; a caller who *is*
+ * authenticated but whose tier is insufficient (`anon` needing to sign up, a
+ * `user` needing network access) gets **403** — re-authenticating won't help.
+ *
+ * This is distinct from {@link UnauthorizedError}, which is resolver-level
+ * resource authorization: the caller's tier is sufficient, but they lack
+ * permission on a specific object. Keeping the two separate lets the gating
+ * tests prove the gate rejected a caller at the right tier.
+ */
+export class AccessTierError extends CommonError {
+  public readonly statusCode: number;
+
+  constructor(public readonly callerTier: AccessTier) {
+    super(`Caller tier '${callerTier}' is below the required access tier.`);
+    this.statusCode = callerTier === 'none' ? 401 : 403;
+  }
+}
 
 export class ConflictError extends CommonError {
   public readonly statusCode: number = 409;

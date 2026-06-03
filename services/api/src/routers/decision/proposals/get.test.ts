@@ -18,7 +18,10 @@ import { transformFormDataToProcessSchema as cowopSchema } from '../../../../../
 import { transformFormDataToProcessSchema as horizonSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/horizon';
 import { transformFormDataToProcessSchema as simpleSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/simple';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import { describeDecisionGating } from '../../../test/helpers/gating/decision';
+import {
+  describeDecisionGating,
+  expectFailsTierGate,
+} from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -1599,11 +1602,10 @@ describeDecisionGating('getProposal', {
 
     const caller = await callers.noJwt();
 
-    await expect(
+    await expectFailsTierGate(
       caller.decision.getProposal({ profileId: proposal.profileId }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'none',
+    );
   },
 
   anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
@@ -1625,11 +1627,10 @@ describeDecisionGating('getProposal', {
 
     const caller = await callers.anonJwt();
 
-    await expect(
+    await expectFailsTierGate(
       caller.decision.getProposal({ profileId: proposal.profileId }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'anon',
+    );
   },
 
   userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
@@ -1651,11 +1652,10 @@ describeDecisionGating('getProposal', {
 
     const caller = await callers.userJwt();
 
-    await expect(
+    await expectFailsTierGate(
       caller.decision.getProposal({ profileId: proposal.profileId }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'user',
+    );
   },
 
   networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {

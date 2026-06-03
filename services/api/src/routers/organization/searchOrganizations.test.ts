@@ -1,34 +1,27 @@
-import { expect } from 'vitest';
-
 import {
   describeGating,
-  expectPassesAuthGate,
+  expectFailsTierGate,
+  expectPassesTierGate,
 } from '../../test/helpers/gating';
 
 describeGating('organization.search', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expect(caller.organization.search({ q: 'x' })).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+    await expectFailsTierGate(caller.organization.search({ q: 'x' }), 'none');
   },
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expect(caller.organization.search({ q: 'x' })).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+    await expectFailsTierGate(caller.organization.search({ q: 'x' }), 'anon');
   },
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expect(caller.organization.search({ q: 'x' })).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+    await expectFailsTierGate(caller.organization.search({ q: 'x' }), 'user');
   },
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesAuthGate(caller.organization.search({ q: 'x' }));
+    await expectPassesTierGate(caller.organization.search({ q: 'x' }));
   },
 });

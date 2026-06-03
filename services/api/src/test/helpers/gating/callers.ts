@@ -25,9 +25,9 @@ export type GatingCallers = {
   /**
    * Tier 2 — an authenticated account that is *not* in the network: a non-org
    * (`@example.com`) user with no allow-list entry (e.g. an anonymous user who
-   * upgraded to a real account). Today's gate rejects this with
-   * `AuthGateError`; only a procedure that admits tier-2 access lets it
-   * through.
+   * upgraded to a real account). Today's network gate rejects this with
+   * `AccessTierError` (callerTier `user`); only a procedure that admits tier-2
+   * access lets it through.
    *
    * With `email`, signs in that existing user; without, creates a throwaway one
    * (auth user + profile are cleaned up after the test).

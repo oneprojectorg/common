@@ -2,26 +2,25 @@ import { expect } from 'vitest';
 
 import {
   describeGating,
-  expectPassesAuthGate,
+  expectFailsTierGate,
+  expectPassesTierGate,
 } from '../../../test/helpers/gating';
 
 describeGating('platform.admin.listAllOrganizations', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expect(
+    await expectFailsTierGate(
       caller.platform.admin.listAllOrganizations(),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'none',
+    );
   },
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expect(
+    await expectFailsTierGate(
       caller.platform.admin.listAllOrganizations(),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'anon',
+    );
   },
 
   userJwt: async ({ callers }) => {
@@ -35,6 +34,6 @@ describeGating('platform.admin.listAllOrganizations', {
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesAuthGate(caller.platform.admin.listAllOrganizations());
+    await expectPassesTierGate(caller.platform.admin.listAllOrganizations());
   },
 });

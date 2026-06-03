@@ -1,40 +1,27 @@
-import { expect } from 'vitest';
-
 import {
   describeGating,
-  expectPassesAuthGate,
+  expectFailsTierGate,
+  expectPassesTierGate,
 } from '../../test/helpers/gating';
 
 describeGating('taxonomy.getGeoNames', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expect(
-      caller.taxonomy.getGeoNames({ q: 'xx' }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+    await expectFailsTierGate(caller.taxonomy.getGeoNames({ q: 'xx' }), 'none');
   },
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expect(
-      caller.taxonomy.getGeoNames({ q: 'xx' }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+    await expectFailsTierGate(caller.taxonomy.getGeoNames({ q: 'xx' }), 'anon');
   },
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expect(
-      caller.taxonomy.getGeoNames({ q: 'xx' }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+    await expectFailsTierGate(caller.taxonomy.getGeoNames({ q: 'xx' }), 'user');
   },
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesAuthGate(caller.taxonomy.getGeoNames({ q: 'xx' }));
+    await expectPassesTierGate(caller.taxonomy.getGeoNames({ q: 'xx' }));
   },
 });

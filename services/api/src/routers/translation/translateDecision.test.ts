@@ -8,7 +8,8 @@ import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataMa
 import { TestTranslationDataManager } from '../../test/helpers/TestTranslationDataManager';
 import {
   describeGating,
-  expectPassesAuthGate,
+  expectFailsTierGate,
+  expectPassesTierGate,
 } from '../../test/helpers/gating';
 import {
   createIsolatedSession,
@@ -45,43 +46,40 @@ async function createAuthenticatedCaller(email: string) {
 describeGating('translation.translateDecision', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expect(
+    await expectFailsTierGate(
       caller.translation.translateDecision({
         decisionProfileId: '00000000-0000-0000-0000-000000000000',
         targetLocale: 'en',
       }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'none',
+    );
   },
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expect(
+    await expectFailsTierGate(
       caller.translation.translateDecision({
         decisionProfileId: '00000000-0000-0000-0000-000000000000',
         targetLocale: 'en',
       }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'anon',
+    );
   },
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expect(
+    await expectFailsTierGate(
       caller.translation.translateDecision({
         decisionProfileId: '00000000-0000-0000-0000-000000000000',
         targetLocale: 'en',
       }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'user',
+    );
   },
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesAuthGate(
+    await expectPassesTierGate(
       caller.translation.translateDecision({
         decisionProfileId: '00000000-0000-0000-0000-000000000000',
         targetLocale: 'en',

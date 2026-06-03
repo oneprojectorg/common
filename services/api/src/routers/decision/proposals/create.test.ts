@@ -2,7 +2,10 @@ import { ProposalStatus } from '@op/db/schema';
 import { expect } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import { describeDecisionGating } from '../../../test/helpers/gating/decision';
+import {
+  describeDecisionGating,
+  expectFailsTierGate,
+} from '../../../test/helpers/gating/decision';
 
 describeDecisionGating('createProposal', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
@@ -19,14 +22,13 @@ describeDecisionGating('createProposal', {
 
     const caller = await callers.noJwt();
 
-    await expect(
+    await expectFailsTierGate(
       caller.decision.createProposal({
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Should reject no-JWT create' },
       }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'none',
+    );
   },
 
   anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
@@ -43,14 +45,13 @@ describeDecisionGating('createProposal', {
 
     const caller = await callers.anonJwt();
 
-    await expect(
+    await expectFailsTierGate(
       caller.decision.createProposal({
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Non-public; anon should bounce' },
       }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'anon',
+    );
   },
 
   userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
@@ -67,14 +68,13 @@ describeDecisionGating('createProposal', {
 
     const caller = await callers.userJwt();
 
-    await expect(
+    await expectFailsTierGate(
       caller.decision.createProposal({
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Non-public; anon should bounce' },
       }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'user',
+    );
   },
 
   networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {

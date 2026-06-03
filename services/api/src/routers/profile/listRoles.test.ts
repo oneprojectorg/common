@@ -394,33 +394,28 @@ describe.concurrent('profile.listRoles', () => {
 
 import {
   describeGating,
-  expectPassesAuthGate,
+  expectFailsTierGate,
+  expectPassesTierGate,
 } from '../../test/helpers/gating';
 
 describeGating('profile.listRoles', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expect(caller.profile.listRoles({})).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+    await expectFailsTierGate(caller.profile.listRoles({}), 'none');
   },
 
   anonJwt: async ({ callers }) => {
     const caller = await callers.anonJwt();
-    await expect(caller.profile.listRoles({})).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+    await expectFailsTierGate(caller.profile.listRoles({}), 'anon');
   },
 
   userJwt: async ({ callers }) => {
     const caller = await callers.userJwt();
-    await expect(caller.profile.listRoles({})).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+    await expectFailsTierGate(caller.profile.listRoles({}), 'user');
   },
 
   networkJwt: async ({ callers }) => {
     const caller = await callers.networkJwt();
-    await expectPassesAuthGate(caller.profile.listRoles({}));
+    await expectPassesTierGate(caller.profile.listRoles({}));
   },
 });

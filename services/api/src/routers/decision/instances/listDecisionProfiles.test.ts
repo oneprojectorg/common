@@ -3,7 +3,10 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import { describeDecisionGating } from '../../../test/helpers/gating/decision';
+import {
+  describeDecisionGating,
+  expectFailsTierGate,
+} from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -509,11 +512,10 @@ describeDecisionGating('listDecisionProfiles', {
 
     const caller = await callers.noJwt();
 
-    await expect(
+    await expectFailsTierGate(
       caller.decision.listDecisionProfiles({ limit: 10 }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'none',
+    );
   },
 
   anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
@@ -522,11 +524,10 @@ describeDecisionGating('listDecisionProfiles', {
 
     const caller = await callers.anonJwt();
 
-    await expect(
+    await expectFailsTierGate(
       caller.decision.listDecisionProfiles({ limit: 10 }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'anon',
+    );
   },
 
   userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
@@ -535,11 +536,10 @@ describeDecisionGating('listDecisionProfiles', {
 
     const caller = await callers.userJwt();
 
-    await expect(
+    await expectFailsTierGate(
       caller.decision.listDecisionProfiles({ limit: 10 }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'user',
+    );
   },
 
   networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {

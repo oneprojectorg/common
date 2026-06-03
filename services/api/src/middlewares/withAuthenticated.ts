@@ -1,5 +1,5 @@
 import { cache } from '@op/cache';
-import { AuthGateError, getAllowListUser } from '@op/common';
+import { AccessTierError, getAllowListUser } from '@op/common';
 
 import { getCachedAuthUser } from '../supabase/server';
 import type { MiddlewareBuilderBase, TContextWithUser } from '../types';
@@ -11,6 +11,8 @@ const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
 }) => {
   const data = await getCachedAuthUser(ctx);
 
+  // This procedure requires network membership; verifyAuthentication first
+  // enforces the `user` tier, then we check network access below.
   const user = verifyAuthentication(data);
 
   // if the user is not a oneproject.org user, verify against the allow list
@@ -26,7 +28,8 @@ const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
     });
 
     if (!allowedUserEmail) {
-      throw new AuthGateError();
+      // Authenticated, real user, but not in the network.
+      throw new AccessTierError('user');
     }
   }
 

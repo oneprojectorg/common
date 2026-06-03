@@ -1,4 +1,4 @@
-import { AuthGateError } from '@op/common';
+import { type AccessTier, AccessTierError } from '@op/common';
 import { describe, expect, it } from 'vitest';
 
 import { createGatingCallers, type GatingTestCtx } from './callers';
@@ -17,10 +17,13 @@ type GatingBody = (ctx: GatingTestCtx) => Promise<void>;
  *   - user-JWT    — an authenticated account that is *not* in the network
  *   - network-JWT — an authenticated in-network user
  *
- * For a `commonAuthedProcedure` endpoint, the gate rejects the first three with
- * `AuthGateError` (no session / anon / not allow-listed) and admits
- * network-JWT — so the network-JWT cell asserts the caller gets *past* the gate
- * via {@link expectPassesAuthGate}, while the others assert the rejection. A
+ * For a `commonAuthedProcedure` endpoint (required tier `network`), the gate
+ * rejects the first three with an `AccessTierError` — `callerTier: 'none'`
+ * (401) for no-JWT, `callerTier: 'anon'` (403) for anon-JWT, and
+ * `callerTier: 'user'` (403) for the out-of-network user-JWT — and admits
+ * network-JWT. So the reject cells assert the caller's tier via
+ * {@link expectFailsTierGate}, and the network-JWT cell asserts the caller gets
+ * *past* the gate via {@link expectPassesTierGate}. A
  * `withAuthenticatedPlatformAdmin` endpoint instead rejects user-JWT with
  * `UnauthorizedError` (authenticated, but not an admin), and a public procedure
  * admits every tier.
@@ -60,26 +63,42 @@ export const describeGating = (name: string, cells: GatingCells) => {
 };
 
 /**
- * Asserts a call is admitted by the authentication gate.
+ * Asserts a call is admitted by the tier gate.
  *
  * The gate (`verifyAuthentication` / the `withAuthenticated*` middlewares)
- * throws {@link AuthGateError} — and nothing else does. So the check is a
+ * throws {@link AccessTierError} — and nothing else does. So the check is a
  * single `instanceof` on the rejection's cause, with no message parsing: an
- * `AuthGateError` means the gate blocked the caller, anything else (a
- * resolve, input validation, not-found, or a deeper authorization
+ * `AccessTierError` means the gate blocked the caller, anything else (a
+ * resolve, input validation, not-found, or a deeper resource-authorization
  * `UnauthorizedError`) means the gate let them through.
+ *
+ * @see expectFailsTierGate for the inverse assertion.
  */
-export const expectPassesAuthGate = async (promise: Promise<unknown>) => {
+export const expectPassesTierGate = async (promise: Promise<unknown>) => {
   try {
     await promise;
   } catch (error) {
     const cause = (error as { cause?: unknown }).cause;
 
     expect(
-      cause instanceof AuthGateError,
-      `expected to pass the auth gate but was rejected by it: ${
+      cause instanceof AccessTierError,
+      `expected to pass the tier gate but was rejected by it: ${
         cause instanceof Error ? cause.message : String(cause)
       }`,
     ).toBe(false);
   }
+};
+
+/**
+ * Asserts a call is rejected by the tier gate, carrying the `callerTier` of the
+ * rejected caller (which also pins the HTTP status — `'none'` is 401,
+ * everything else 403).
+ */
+export const expectFailsTierGate = async (
+  promise: Promise<unknown>,
+  callerTier: AccessTier,
+) => {
+  await expect(promise).rejects.toMatchObject({
+    cause: { name: 'AccessTierError', callerTier },
+  });
 };

@@ -16,7 +16,10 @@ import type { z } from 'zod';
 import { appRouter } from '../..';
 import type { decisionSchemaDefinitionEncoder } from '../../../encoders/decision';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import { describeDecisionGating } from '../../../test/helpers/gating/decision';
+import {
+  describeDecisionGating,
+  expectFailsTierGate,
+} from '../../../test/helpers/gating/decision';
 import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 import {
   createIsolatedSession,
@@ -683,14 +686,13 @@ describeDecisionGating('submitManualSelection', {
 
     const caller = await callers.noJwt();
 
-    await expect(
+    await expectFailsTierGate(
       caller.decision.submitManualSelection({
         processInstanceId: instance.instance.id,
         proposalIds: [crypto.randomUUID()],
       }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'none',
+    );
   },
 
   anonJwtNonPublic: async ({ task, onTestFinished, callers }) => {
@@ -706,14 +708,13 @@ describeDecisionGating('submitManualSelection', {
 
     const caller = await callers.anonJwt();
 
-    await expect(
+    await expectFailsTierGate(
       caller.decision.submitManualSelection({
         processInstanceId: instance.instance.id,
         proposalIds: [crypto.randomUUID()],
       }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'anon',
+    );
   },
 
   userJwtNonPublic: async ({ task, onTestFinished, callers }) => {
@@ -729,14 +730,13 @@ describeDecisionGating('submitManualSelection', {
 
     const caller = await callers.userJwt();
 
-    await expect(
+    await expectFailsTierGate(
       caller.decision.submitManualSelection({
         processInstanceId: instance.instance.id,
         proposalIds: [crypto.randomUUID()],
       }),
-    ).rejects.toMatchObject({
-      cause: { name: 'AuthGateError' },
-    });
+      'user',
+    );
   },
 
   networkJwtNonPublic: async ({ task, onTestFinished, callers }) => {
