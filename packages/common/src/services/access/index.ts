@@ -17,7 +17,7 @@ type OrgUserWithNormalizedRoles = OrganizationUserBase & {
   roles: NormalizedRole[];
 };
 
-type ProfileUserWithNormalizedRoles = ProfileUserBase & {
+export type ProfileUserWithNormalizedRoles = ProfileUserBase & {
   roles: NormalizedRole[];
   profile: ProfileMinimal;
 };

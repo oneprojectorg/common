@@ -1,6 +1,9 @@
 import { type AccessZonePermissionInput, assertAccess } from 'access-zones';
 
-import { getProfileAccessUser } from '../access';
+import {
+  type ProfileUserWithNormalizedRoles,
+  getProfileAccessUser,
+} from '../access';
 
 /**
  * Fetches the user's roles on a profile and asserts the given permissions.
@@ -22,7 +25,7 @@ import { getProfileAccessUser } from '../access';
 export async function assertProfileAccess(
   { user, profileId }: { user: { id: string }; profileId: string },
   permissions: AccessZonePermissionInput,
-): Promise<Awaited<ReturnType<typeof getProfileAccessUser>>> {
+): Promise<ProfileUserWithNormalizedRoles | undefined> {
   const profileUser = await getProfileAccessUser({ user, profileId });
 
   assertAccess(permissions, profileUser?.roles ?? []);
