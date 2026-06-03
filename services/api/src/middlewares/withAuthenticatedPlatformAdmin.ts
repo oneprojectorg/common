@@ -16,14 +16,11 @@ export const withAuthenticatedPlatformAdmin: MiddlewareBuilderBase<
 > = async ({ ctx, next }) => {
   const data = await getCachedAuthUser(ctx);
 
-  // Admin endpoints require at least the `user` tier; admin membership itself
-  // is a role check (authorization), handled below.
   const user = verifyAuthentication(data);
 
   const userEmail = user.email;
 
   if (!userEmail) {
-    // A confirmed account with no email isn't a usable `user`-tier identity.
     throw new AccessTierError('anon');
   }
 

@@ -64,26 +64,19 @@ export class UnauthorizedError extends CommonError {
  */
 export type AccessTier = 'none' | 'anon' | 'user' | 'network';
 
-/**
- * Raised by the API tier gate (`verifyAuthentication` and the
- * `withAuthenticated*` middlewares) when the caller's access tier is below what
- * a procedure requires, before any resolver-level authorization runs.
- *
- * The status code follows from `callerTier`: a caller with no session at all
- * (`none`) gets **401** — they must authenticate; a caller who *is*
- * authenticated but whose tier is insufficient (`anon` needing to sign up, a
- * `user` needing network access) gets **403** — re-authenticating won't help.
- *
- * This is distinct from {@link UnauthorizedError}, which is resolver-level
- * resource authorization: the caller's tier is sufficient, but they lack
- * permission on a specific object. Keeping the two separate lets the gating
- * tests prove the gate rejected a caller at the right tier.
- */
+/** User-facing copy per caller tier; `none` (401) prompts sign-in, the rest reuse the generic 403 wording. */
+const accessTierMessages: Record<AccessTier, string> = {
+  none: 'You need to sign in to access this resource.',
+  anon: 'You do not have permission to access this resource.',
+  user: 'You do not have permission to access this resource.',
+  network: 'You do not have permission to access this resource.',
+};
+
 export class AccessTierError extends CommonError {
   public readonly statusCode: number;
 
   constructor(public readonly callerTier: AccessTier) {
-    super(`Caller tier '${callerTier}' is below the required access tier.`);
+    super(accessTierMessages[callerTier]);
     this.statusCode = callerTier === 'none' ? 401 : 403;
   }
 }

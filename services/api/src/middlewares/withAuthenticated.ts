@@ -11,8 +11,6 @@ const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
 }) => {
   const data = await getCachedAuthUser(ctx);
 
-  // This procedure requires network membership; verifyAuthentication first
-  // enforces the `user` tier, then we check network access below.
   const user = verifyAuthentication(data);
 
   // if the user is not a oneproject.org user, verify against the allow list
@@ -28,7 +26,6 @@ const withAuthenticated: MiddlewareBuilderBase<TContextWithUser> = async ({
     });
 
     if (!allowedUserEmail) {
-      // Authenticated, real user, but not in the network.
       throw new AccessTierError('user');
     }
   }
