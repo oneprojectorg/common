@@ -1,4 +1,8 @@
-import { type AccessZonePermissionInput, assertAccess } from 'access-zones';
+import {
+  AccessControlException,
+  type AccessZonePermissionInput,
+  assertAccess,
+} from 'access-zones';
 
 import {
   type ProfileUserWithNormalizedRoles,
@@ -8,8 +12,9 @@ import {
 /**
  * Fetches the user's roles on a profile and asserts the given permissions.
  *
- * Throws (via access-zones `assertAccess`) if the user lacks them — including
- * when the user has no role on the profile, in which case the roles are empty.
+ * Throws an `AccessControlException` if the user is not a member of the profile
+ * or their roles don't satisfy the permissions — every denial surfaces as the
+ * same exception, with no member/non-member distinction.
  *
  * Returns the resolved profile-access user so callers that also need the
  * profileUser (its roles, profile, etc.) can reuse it instead of re-fetching.
@@ -18,17 +23,28 @@ import {
  * @param user - The user to check
  * @param profileId - The profile to check access against
  * @param permissions - The required permissions (single object or array of objects)
- * @returns The profile-access user (or `undefined` — though a missing user
- *   means empty roles, which fails the assertion for any real permission)
- * @throws AccessControlException if the user's roles don't satisfy the permissions
+ * @param notMemberMessage - Optional message for the `AccessControlException`
+ *   thrown when the user has no role on the profile. Defaults to the standard
+ *   access-zones denial message.
+ * @returns The profile-access user (always present — a missing membership throws)
+ * @throws AccessControlException if the user is not a member of the profile or
+ *   their roles don't satisfy the permissions
  */
 export async function assertProfileAccess(
   { user, profileId }: { user: { id: string }; profileId: string },
   permissions: AccessZonePermissionInput,
-): Promise<ProfileUserWithNormalizedRoles | undefined> {
+  notMemberMessage?: string,
+): Promise<ProfileUserWithNormalizedRoles> {
   const profileUser = await getProfileAccessUser({ user, profileId });
 
-  assertAccess(permissions, profileUser?.roles ?? []);
+  if (!profileUser) {
+    throw new AccessControlException({
+      message: notMemberMessage ?? 'Not authenticated',
+      status: 'unauthorized',
+    });
+  }
+
+  assertAccess(permissions, profileUser.roles);
 
   return profileUser;
 }

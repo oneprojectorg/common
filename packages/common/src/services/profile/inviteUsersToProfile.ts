@@ -5,12 +5,11 @@ import { ProcessStatus, allowList, profileInvites } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import { hasEmail } from '../../utils/email';
-import { CommonError, UnauthorizedError } from '../../utils/error';
-import { getProfileAccessUser } from '../access';
-import { assertProfile } from '../assert';
+import { CommonError } from '../../utils/error';
+import { assertProfile, assertProfileAccess } from '../assert';
 import { decisionPermission } from '../decision/permissions';
 
 /**
@@ -123,7 +122,7 @@ export const inviteUsersToProfile = async ({
     existingUsers,
     existingAllowListEntries,
     existingPendingInvites,
-    profileUser,
+    ,
     proposalWithDecision,
     processInstanceForProfile,
   ] = await Promise.all([
@@ -161,10 +160,16 @@ export const inviteUsersToProfile = async ({
         acceptedOn: { isNull: true },
       },
     }),
-    getProfileAccessUser({
-      user,
-      profileId,
-    }),
+    // Assert the requester may invite to this profile (profile admin or an
+    // explicit decision-level invite permission). Throws on no membership.
+    assertProfileAccess(
+      { user, profileId },
+      [
+        { profile: permission.ADMIN },
+        { decisions: decisionPermission.INVITE_MEMBERS },
+      ],
+      'User must be associated with this profile to send invites',
+    ),
     // Get the proposal with its decision profile for building the invite URL
     db.query.proposals.findFirst({
       where: { profileId },
@@ -179,20 +184,6 @@ export const inviteUsersToProfile = async ({
       where: { profileId },
     }),
   ]);
-
-  if (!profileUser) {
-    throw new UnauthorizedError(
-      'User must be associated with this profile to send invites',
-    );
-  }
-
-  assertAccess(
-    [
-      { profile: permission.ADMIN },
-      { decisions: decisionPermission.INVITE_MEMBERS },
-    ],
-    profileUser.roles ?? [],
-  );
 
   // Validate all roles exist
   const rolesById = new Map(targetRoles.map((r) => [r.id, r]));
