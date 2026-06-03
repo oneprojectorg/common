@@ -1,10 +1,10 @@
 import {
-  describeGating,
+  describeProcedureGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../test/helpers/gating';
 
-describeGating('organization.removeRelationship', {
+describeProcedureGating('organization.removeRelationship', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(

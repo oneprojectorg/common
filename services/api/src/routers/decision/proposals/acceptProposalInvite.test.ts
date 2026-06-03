@@ -7,7 +7,7 @@ import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import { TestProfileUserDataManager } from '../../../test/helpers/TestProfileUserDataManager';
 import {
-  describeDecisionGating,
+  describeDecisionProcedureGating,
   expectFailsTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
@@ -420,7 +420,7 @@ describe.concurrent('decision.acceptProposalInvite', () => {
   });
 });
 
-describeDecisionGating('acceptProposalInvite', {
+describeDecisionProcedureGating('acceptProposalInvite', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({

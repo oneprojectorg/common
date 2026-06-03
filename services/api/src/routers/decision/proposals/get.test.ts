@@ -19,7 +19,7 @@ import { transformFormDataToProcessSchema as horizonSchema } from '../../../../.
 import { transformFormDataToProcessSchema as simpleSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/simple';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
-  describeDecisionGating,
+  describeDecisionProcedureGating,
   expectFailsTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
@@ -1582,7 +1582,7 @@ describe.concurrent('getProposal', () => {
   });
 });
 
-describeDecisionGating('getProposal', {
+describeDecisionProcedureGating('getProposal', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 

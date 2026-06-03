@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import {
-  describeDecisionGating,
+  describeDecisionProcedureGating,
   expectFailsTierGate,
 } from '../../test/helpers/gating/decision';
 import {
@@ -224,7 +224,7 @@ describe.concurrent('getVotingStatus', () => {
   });
 });
 
-describeDecisionGating('submitVote', {
+describeDecisionProcedureGating('submitVote', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { instance, proposals } = await setupVotingInstance(testData, {
@@ -293,7 +293,7 @@ describeDecisionGating('submitVote', {
   },
 });
 
-describeDecisionGating('getVotingStatus', {
+describeDecisionProcedureGating('getVotingStatus', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const { instance } = await setupVotingInstance(testData, {

@@ -1,10 +1,10 @@
 import {
-  describeGating,
+  describeProcedureGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../test/helpers/gating';
 
-describeGating('profile.list', {
+describeProcedureGating('profile.list', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(caller.profile.list(), 'none');
@@ -26,7 +26,7 @@ describeGating('profile.list', {
   },
 });
 
-describeGating('profile.getBySlug', {
+describeProcedureGating('profile.getBySlug', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(caller.profile.getBySlug({ slug: 'x' }), 'none');

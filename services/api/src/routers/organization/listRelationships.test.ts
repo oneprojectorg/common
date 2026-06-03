@@ -1,10 +1,10 @@
 import {
-  describeGating,
+  describeProcedureGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../test/helpers/gating';
 
-describeGating('organization.listPendingRelationships', {
+describeProcedureGating('organization.listPendingRelationships', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(
@@ -35,7 +35,7 @@ describeGating('organization.listPendingRelationships', {
   },
 });
 
-describeGating('organization.listDirectedRelationships', {
+describeProcedureGating('organization.listDirectedRelationships', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(
@@ -76,7 +76,7 @@ describeGating('organization.listDirectedRelationships', {
   },
 });
 
-describeGating('organization.listRelationships', {
+describeProcedureGating('organization.listRelationships', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(

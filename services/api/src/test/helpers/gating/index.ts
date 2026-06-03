@@ -6,9 +6,9 @@ import { createGatingCallers, type GatingTestCtx } from './callers';
 type GatingBody = (ctx: GatingTestCtx) => Promise<void>;
 
 /**
- * Generic network-gating matrix for any authenticated endpoint.
+ * Generic access-tier gating matrix for any authenticated endpoint.
  *
- * Unlike `describeDecisionGating`, this helper carries no domain-specific
+ * Unlike `describeDecisionProcedureGating`, this helper carries no domain-specific
  * context (e.g. public vs non-public instances) — it varies only the caller's
  * JWT, across the access ladder:
  *
@@ -37,8 +37,8 @@ export type GatingCells = {
   networkJwt: GatingBody;
 };
 
-export const describeGating = (name: string, cells: GatingCells) => {
-  describe(`${name}: network gating`, () => {
+export const describeProcedureGating = (name: string, cells: GatingCells) => {
+  describe(`${name}: tier gating`, () => {
     const wrap =
       (body: GatingBody) =>
       async ({

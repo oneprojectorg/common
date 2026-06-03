@@ -5,7 +5,7 @@ import { platformAdminRouter } from '.';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
-  describeGating,
+  describeProcedureGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../../test/helpers/gating';
@@ -15,7 +15,7 @@ import {
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
 
-describeGating('platform.admin.listAllDecisionInstances', {
+describeProcedureGating('platform.admin.listAllDecisionInstances', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(

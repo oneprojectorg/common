@@ -1,12 +1,12 @@
 import { expect } from 'vitest';
 
 import {
-  describeGating,
+  describeProcedureGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../../test/helpers/gating';
 
-describeGating('platform.admin.getStats', {
+describeProcedureGating('platform.admin.getStats', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(caller.platform.admin.getStats(), 'none');

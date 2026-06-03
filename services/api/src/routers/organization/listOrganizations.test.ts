@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { organizationRouter } from '.';
 import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
-  describeGating,
+  describeProcedureGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../test/helpers/gating';
@@ -146,7 +146,7 @@ describe.concurrent('organization.list', () => {
   });
 });
 
-describeGating('organization.list', {
+describeProcedureGating('organization.list', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(caller.organization.list(), 'none');

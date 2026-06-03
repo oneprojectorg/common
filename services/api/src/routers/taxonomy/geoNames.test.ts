@@ -1,10 +1,10 @@
 import {
-  describeGating,
+  describeProcedureGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../test/helpers/gating';
 
-describeGating('taxonomy.getGeoNames', {
+describeProcedureGating('taxonomy.getGeoNames', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(caller.taxonomy.getGeoNames({ q: 'xx' }), 'none');

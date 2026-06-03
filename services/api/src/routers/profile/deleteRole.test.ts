@@ -176,12 +176,12 @@ describe.concurrent('profile.deleteRole', () => {
 });
 
 import {
-  describeGating,
+  describeProcedureGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../test/helpers/gating';
 
-describeGating('profile.deleteRole', {
+describeProcedureGating('profile.deleteRole', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(

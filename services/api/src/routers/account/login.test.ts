@@ -1,6 +1,6 @@
 import { expect } from 'vitest';
 
-import { describeGating } from '../../test/helpers/gating';
+import { describeProcedureGating } from '../../test/helpers/gating';
 
 // account.login is a PUBLIC `commonProcedure` — it has no authentication
 // middleware and ignores the caller's JWT entirely (it gates on the *input*
@@ -12,7 +12,7 @@ import { describeGating } from '../../test/helpers/gating';
 // `true` regardless of who is calling.
 const input = { email: 'gate@oneproject.org', usingOAuth: true };
 
-describeGating('account.login', {
+describeProcedureGating('account.login', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expect(caller.account.login(input)).resolves.toBe(true);

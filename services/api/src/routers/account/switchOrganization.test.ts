@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { TestOrganizationDataManager } from '../../test/helpers/TestOrganizationDataManager';
 import {
-  describeGating,
+  describeProcedureGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../test/helpers/gating';
@@ -128,7 +128,7 @@ describe.concurrent('account.switchOrganization', () => {
   });
 });
 
-describeGating('account.switchOrganization', {
+describeProcedureGating('account.switchOrganization', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(

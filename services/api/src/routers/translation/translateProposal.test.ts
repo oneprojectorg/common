@@ -8,7 +8,7 @@ import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import { TestTranslationDataManager } from '../../test/helpers/TestTranslationDataManager';
 import {
-  describeGating,
+  describeProcedureGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../test/helpers/gating';
@@ -44,7 +44,7 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-describeGating('translation.translateProposal', {
+describeProcedureGating('translation.translateProposal', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(

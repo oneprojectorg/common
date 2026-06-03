@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import { TestProfileUserDataManager } from '../../test/helpers/TestProfileUserDataManager';
 import {
-  describeGating,
+  describeProcedureGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../test/helpers/gating';
@@ -412,7 +412,7 @@ describe.concurrent('account.listUserInvites', () => {
   });
 });
 
-describeGating('account.listUserInvites', {
+describeProcedureGating('account.listUserInvites', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(caller.account.listUserInvites({}), 'none');

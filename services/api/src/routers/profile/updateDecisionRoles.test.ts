@@ -1,5 +1,5 @@
 import {
-  describeGating,
+  describeProcedureGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../test/helpers/gating';
@@ -16,7 +16,7 @@ const decisionPermissions = {
   vote: false,
 };
 
-describeGating('profile.updateDecisionRoles', {
+describeProcedureGating('profile.updateDecisionRoles', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(

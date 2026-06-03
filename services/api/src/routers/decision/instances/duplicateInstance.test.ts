@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
-  describeDecisionGating,
+  describeDecisionProcedureGating,
   expectFailsTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
@@ -544,7 +544,7 @@ describe.concurrent('duplicateInstance', () => {
   });
 });
 
-describeDecisionGating('duplicateInstance', {
+describeDecisionProcedureGating('duplicateInstance', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({

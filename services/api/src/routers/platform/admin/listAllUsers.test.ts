@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { platformAdminRouter } from '.';
 import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
-  describeGating,
+  describeProcedureGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../../test/helpers/gating';
@@ -13,7 +13,7 @@ import {
 } from '../../../test/supabase-utils';
 import { createCallerFactory } from '../../../trpcFactory';
 
-describeGating('platform.admin.listAllUsers', {
+describeProcedureGating('platform.admin.listAllUsers', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(caller.platform.admin.listAllUsers(), 'none');

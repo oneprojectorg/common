@@ -196,12 +196,12 @@ describe.concurrent('profile.users.updateUserRoles', () => {
 });
 
 import {
-  describeGating,
+  describeProcedureGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../../test/helpers/gating';
 
-describeGating('profile.updateUserRoles', {
+describeProcedureGating('profile.updateUserRoles', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(
