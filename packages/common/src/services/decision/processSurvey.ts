@@ -6,11 +6,11 @@ import {
 import { collapseRoles, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { getIndividualProfileId, getProfileAccessUser } from '../access';
+import { getIndividualProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
 import { fromDecisionBitField } from './permissions';
 
-type ProfileAccessUser = Awaited<ReturnType<typeof getProfileAccessUser>>;
+type ProfileAccessUser = Awaited<ReturnType<typeof assertProfileAccess>>;
 
 export type SurveyInternalData = Record<string, unknown>;
 

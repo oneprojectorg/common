@@ -22,7 +22,7 @@ import { getProfileAccessUser } from '../access';
 export async function assertProfileAccess(
   { user, profileId }: { user: { id: string }; profileId: string },
   permissions: AccessZonePermissionInput,
-) {
+): Promise<Awaited<ReturnType<typeof getProfileAccessUser>>> {
   const profileUser = await getProfileAccessUser({ user, profileId });
 
   assertAccess(permissions, profileUser?.roles ?? []);
