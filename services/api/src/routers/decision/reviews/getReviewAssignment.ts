@@ -5,10 +5,10 @@ import {
 } from '@op/common';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const getReviewAssignmentRouter = router({
-  getReviewAssignment: commonNetworkProcedure()
+  getReviewAssignment: networkAuthenticatedProcedure()
     .input(
       z.object({
         assignmentId: z.uuid(),

@@ -1,10 +1,10 @@
 import { declineProfileInvite } from '@op/common';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 export const declineInviteRouter = router({
-  declineInvite: commonNetworkProcedure()
+  declineInvite: networkAuthenticatedProcedure()
     .input(
       z.object({
         inviteId: z.string().uuid(),

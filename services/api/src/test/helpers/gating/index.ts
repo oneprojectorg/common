@@ -22,7 +22,7 @@ export type GatingCell = {
  *   - user-JWT    — an authenticated account that is *not* in the network
  *   - network-JWT — an authenticated in-network user
  *
- * For a `commonNetworkProcedure` endpoint (required tier `network`), the gate
+ * For a `networkAuthenticatedProcedure` endpoint (required tier `network`), the gate
  * rejects the first three with an `AccessTierError` — `callerTier: 'none'`
  * (401) for no-JWT, `callerTier: 'anon'` (403) for anon-JWT, and
  * `callerTier: 'user'` (403) for the out-of-network user-JWT — and admits

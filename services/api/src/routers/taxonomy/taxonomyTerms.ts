@@ -2,10 +2,10 @@ import { getTerms } from '@op/common';
 import { z } from 'zod';
 
 import { taxonomyTermsWithChildrenEncoder } from '../../encoders/taxonomyTerms';
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 export const termsRouter = router({
-  getTerms: commonNetworkProcedure()
+  getTerms: networkAuthenticatedProcedure()
     .input(z.object({ name: z.string().min(3), q: z.string().optional() }))
     .output(z.array(taxonomyTermsWithChildrenEncoder))
     .query(async ({ input }) => {

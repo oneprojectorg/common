@@ -2,7 +2,7 @@ import { Channels, getProfileJoinRequest } from '@op/common';
 import { z } from 'zod';
 
 import { joinProfileRequestEncoder } from '../../../encoders/joinProfileRequests';
-import { commonNetworkProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 const inputSchema = z.object({
   /** The profile ID of the requester */
@@ -12,7 +12,7 @@ const inputSchema = z.object({
 });
 
 export const getJoinRequestRouter = router({
-  getJoinRequest: commonNetworkProcedure({
+  getJoinRequest: networkAuthenticatedProcedure({
     rateLimit: { windowSize: 60, maxRequests: 60 },
   })
     .input(inputSchema)

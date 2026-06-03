@@ -1,7 +1,7 @@
 import { deleteOrganizationUser } from '@op/common';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   organizationId: z.uuid(),
@@ -20,7 +20,7 @@ const outputSchema = z.object({
 });
 
 export const deleteOrganizationUserRouter = router({
-  deleteOrganizationUser: commonNetworkProcedure({
+  deleteOrganizationUser: networkAuthenticatedProcedure({
     rateLimit: { windowSize: 60, maxRequests: 5 },
   })
     .input(inputSchema)

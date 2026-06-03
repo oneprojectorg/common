@@ -7,7 +7,7 @@ import { Buffer } from 'buffer';
 import { z } from 'zod';
 
 import withDB from '../../middlewares/withDB';
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 import { MAX_FILE_SIZE, sanitizeS3Filename } from '../../utils';
 import { trackImageUpload } from '../../utils/analytics';
 
@@ -20,7 +20,7 @@ const ALLOWED_MIME_TYPES = [
 
 // TODO: This is a duplicate of organization/uploadAvatarImage. Converge these
 export const uploadAvatarImage = router({
-  uploadImage: commonNetworkProcedure()
+  uploadImage: networkAuthenticatedProcedure()
     .use(withDB)
     .input(
       z.object({

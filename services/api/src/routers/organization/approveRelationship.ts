@@ -2,7 +2,7 @@ import { approveRelationship } from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 import { trackRelationshipAccepted } from '../../utils/analytics';
 
 const inputSchema = z.object({
@@ -15,7 +15,7 @@ const inputSchema = z.object({
 });
 
 export const approveRelationshipRouter = router({
-  approveRelationship: commonNetworkProcedure()
+  approveRelationship: networkAuthenticatedProcedure()
     .input(inputSchema)
     .output(z.boolean())
     .mutation(async ({ ctx, input }) => {

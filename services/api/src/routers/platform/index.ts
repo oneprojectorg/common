@@ -1,14 +1,14 @@
 import { getPlatformStats } from '@op/common';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 import { platformAdminRouter } from './admin';
 
 /**
  * Handles platform-wide operations such as retrieving statistics, listing profiles, users, organizations, etc,.
  */
 export const platformRouter = router({
-  getStats: commonNetworkProcedure()
+  getStats: networkAuthenticatedProcedure()
     .input(z.void())
     .output(
       z.object({

@@ -5,7 +5,7 @@ import {
 } from '@op/common/client';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 const saveReviewDraftInputSchema = z.object({
   assignmentId: z.uuid(),
@@ -14,7 +14,7 @@ const saveReviewDraftInputSchema = z.object({
 });
 
 export const saveReviewDraftRouter = router({
-  saveReviewDraft: commonNetworkProcedure()
+  saveReviewDraft: networkAuthenticatedProcedure()
     .input(saveReviewDraftInputSchema)
     .output(proposalReviewSchema)
     .mutation(async ({ ctx, input }) => {

@@ -2,11 +2,11 @@ import { invalidate } from '@op/cache';
 import { createOrganization } from '@op/common';
 
 import { organizationsEncoder } from '../../encoders/organizations';
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 import { createOrganizationInputSchema } from './validators';
 
 export const createOrganizationRouter = router({
-  create: commonNetworkProcedure()
+  create: networkAuthenticatedProcedure()
     .input(createOrganizationInputSchema)
     .output(organizationsEncoder)
     .mutation(async ({ ctx, input }) => {

@@ -2,10 +2,10 @@ import { getLatestSelectionForProposal } from '@op/common';
 import { proposalSelectionSchema } from '@op/common/client';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const getLatestSelectionForProposalRouter = router({
-  getLatestSelectionForProposal: commonNetworkProcedure()
+  getLatestSelectionForProposal: networkAuthenticatedProcedure()
     .input(
       z.object({
         proposalId: z.uuid(),

@@ -1,10 +1,10 @@
 import { Channels, deleteDecision } from '@op/common';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const deleteDecisionRouter = router({
-  deleteDecision: commonNetworkProcedure({
+  deleteDecision: networkAuthenticatedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 5 },
   })
     .input(

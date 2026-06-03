@@ -2,10 +2,10 @@ import { getDecisionRole } from '@op/common';
 import { z } from 'zod';
 
 import { decisionRoleEncoder } from '../../encoders/access';
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 export const getDecisionRoleRouter = router({
-  getDecisionRole: commonNetworkProcedure()
+  getDecisionRole: networkAuthenticatedProcedure()
     .input(
       z.object({
         roleId: z.string().uuid(),

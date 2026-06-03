@@ -7,16 +7,9 @@ import type {
 } from '../types';
 
 /**
- * Narrows an optionally-resolved user (see {@link withResolvedUser}) to a
- * required one: any real Supabase user — **including anonymous sign-ins** — is
- * admitted, and `ctx.user` is guaranteed defined downstream. Only fully
- * unauthenticated (no-JWT) callers are rejected here.
- *
- * Unlike {@link withNetworkAuthentication}, this gate does not enforce
- * closed-network membership, email confirmation, or the allow list. Whether an
- * authenticated caller may perform the operation is left to the service layer.
- *
- * Must run after `withResolvedUser`.
+ * Requires *a* user (any session, including anonymous sign-ins), rejecting only
+ * no-JWT callers. No network/allow-list gating — authorization is left to the
+ * service layer. Must run after {@link withResolvedUser}.
  */
 const withRequireUser: MiddlewareBuilderBeforeAfter<
   TContextWithMaybeUser,

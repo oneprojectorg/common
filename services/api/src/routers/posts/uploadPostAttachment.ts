@@ -4,7 +4,7 @@ import { Buffer } from 'buffer';
 import { z } from 'zod';
 
 import withDB from '../../middlewares/withDB';
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 import { MAX_FILE_SIZE, sanitizeS3Filename } from '../../utils';
 
 const ALLOWED_MIME_TYPES = [
@@ -16,7 +16,7 @@ const ALLOWED_MIME_TYPES = [
 ];
 
 export const uploadPostAttachment = router({
-  uploadPostAttachment: commonNetworkProcedure({
+  uploadPostAttachment: networkAuthenticatedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 20 },
   })
     .use(withDB)

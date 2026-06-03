@@ -4,7 +4,7 @@ import {
 } from '@op/common';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 const FREE_TEXT_MAX = 5000;
 const OPTION_ID_MAX = 50;
@@ -42,7 +42,7 @@ const processSurveyQueryInput = z.object({
 });
 
 export const surveyRouter = router({
-  submitProcessSurveyResponse: commonNetworkProcedure({
+  submitProcessSurveyResponse: networkAuthenticatedProcedure({
     rateLimit: { windowSize: 60, maxRequests: 10 },
   })
     .input(submitProcessSurveyResponseInput)
@@ -57,7 +57,7 @@ export const surveyRouter = router({
       });
     }),
 
-  getProcessSurveyResponse: commonNetworkProcedure()
+  getProcessSurveyResponse: networkAuthenticatedProcedure()
     .input(processSurveyQueryInput)
     .query(async ({ input, ctx }) => {
       return await getProcessSurveyResponse({

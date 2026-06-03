@@ -2,11 +2,11 @@ import { listOrganizations } from '@op/common';
 import { z } from 'zod';
 
 import { organizationsWithProfileEncoder } from '../../encoders/organizations';
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
 
 export const listOrganizationsRouter = router({
-  list: commonNetworkProcedure()
+  list: networkAuthenticatedProcedure()
     .input(
       dbFilter
         .extend({

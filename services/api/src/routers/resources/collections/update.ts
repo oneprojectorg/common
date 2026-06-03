@@ -1,14 +1,14 @@
 import { Channels, collectionSchema, updateCollection } from '@op/common';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 const dataSchema = z.object({
   name: z.string().trim().min(1).max(80),
 });
 
 export const collectionsUpdate = router({
-  update: commonNetworkProcedure()
+  update: networkAuthenticatedProcedure()
     .input(z.object({ id: z.string().uuid(), data: dataSchema }))
     .output(collectionSchema)
     .mutation(async ({ input, ctx }) => {

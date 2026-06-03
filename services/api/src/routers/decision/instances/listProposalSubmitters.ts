@@ -5,14 +5,14 @@ import {
 } from '@op/common';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 const listProposalSubmittersInputSchema = z.object({
   processInstanceId: z.uuid(),
 });
 
 export const listProposalSubmittersRouter = router({
-  listProposalSubmitters: commonNetworkProcedure()
+  listProposalSubmitters: networkAuthenticatedProcedure()
     .input(listProposalSubmittersInputSchema)
     .output(proposalSubmittersListSchema)
     .query(({ ctx, input }) => {

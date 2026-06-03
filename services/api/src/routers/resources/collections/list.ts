@@ -6,7 +6,7 @@ import {
 } from '@op/common';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 const inputSchema = z.object({
   profileId: z.string().uuid(),
@@ -15,7 +15,7 @@ const inputSchema = z.object({
 });
 
 export const collectionsList = router({
-  list: commonNetworkProcedure()
+  list: networkAuthenticatedProcedure()
     .input(inputSchema)
     .output(collectionListSchema)
     .query(async ({ input, ctx }) => {

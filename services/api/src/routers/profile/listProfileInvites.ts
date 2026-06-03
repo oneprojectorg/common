@@ -2,7 +2,7 @@ import { listProfileUserInvites } from '@op/common';
 import { z } from 'zod';
 
 import { profileInviteEncoder } from '../../encoders/profiles';
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   profileId: z.string().uuid(),
@@ -12,7 +12,7 @@ const inputSchema = z.object({
 const outputSchema = z.array(profileInviteEncoder);
 
 export const listProfileInvitesRouter = router({
-  listProfileInvites: commonNetworkProcedure()
+  listProfileInvites: networkAuthenticatedProcedure()
     .input(inputSchema)
     .output(outputSchema)
     .query(async ({ ctx, input }) => {

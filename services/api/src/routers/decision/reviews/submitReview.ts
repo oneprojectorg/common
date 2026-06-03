@@ -5,7 +5,7 @@ import {
 } from '@op/common/client';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 const reviewInputSchema = z.object({
   assignmentId: z.uuid(),
@@ -14,7 +14,7 @@ const reviewInputSchema = z.object({
 });
 
 export const submitReviewRouter = router({
-  submitReview: commonNetworkProcedure()
+  submitReview: networkAuthenticatedProcedure()
     .input(reviewInputSchema)
     .output(proposalReviewSchema)
     .mutation(async ({ ctx, input }) => {

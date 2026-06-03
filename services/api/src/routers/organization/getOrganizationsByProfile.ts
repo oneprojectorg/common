@@ -2,10 +2,10 @@ import { getOrganizationsByProfile } from '@op/common';
 import { z } from 'zod';
 
 import { organizationsWithProfileEncoder } from '../../encoders/organizations';
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 export const getOrganizationsByProfileRouter = router({
-  getOrganizationsByProfile: commonNetworkProcedure()
+  getOrganizationsByProfile: networkAuthenticatedProcedure()
     .input(z.object({ profileId: z.uuid() }))
     .output(z.array(organizationsWithProfileEncoder))
     .query(async ({ input }) => {

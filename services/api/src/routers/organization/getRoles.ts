@@ -1,7 +1,7 @@
 import { getRoles } from '@op/common';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 const outputSchema = z.object({
   roles: z.array(
@@ -14,7 +14,7 @@ const outputSchema = z.object({
 });
 
 export const getRolesRouter = router({
-  getRoles: commonNetworkProcedure()
+  getRoles: networkAuthenticatedProcedure()
     .output(outputSchema)
     .query(async () => {
       const result = await getRoles();

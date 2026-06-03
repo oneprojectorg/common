@@ -4,10 +4,10 @@ import {
   proposalsWithReviewAggregatesListSchema,
 } from '@op/common';
 
-import { commonNetworkProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const listWithReviewAggregatesRouter = router({
-  listWithReviewAggregates: commonNetworkProcedure()
+  listWithReviewAggregates: networkAuthenticatedProcedure()
     .input(listProposalsWithReviewAggregatesInputSchema)
     .output(proposalsWithReviewAggregatesListSchema)
     .query(async ({ ctx, input }) => {

@@ -6,14 +6,14 @@ import {
   organizationsTermsEncoder,
   organizationsWithProfileEncoder,
 } from '../../encoders/organizations';
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   slug: z.string(),
 });
 
 export const getOrganizationRouter = router({
-  getBySlug: commonNetworkProcedure()
+  getBySlug: networkAuthenticatedProcedure()
     .input(inputSchema)
     .output(organizationsWithProfileEncoder)
     .query(async ({ input }) => {
@@ -27,7 +27,7 @@ export const getOrganizationRouter = router({
 
       return organizationsWithProfileEncoder.parse(result);
     }),
-  getTerms: commonNetworkProcedure()
+  getTerms: networkAuthenticatedProcedure()
     .input(z.object({ id: z.string(), termUri: z.string().optional() }))
     .output(organizationsTermsEncoder)
     .query(async ({ input }) => {

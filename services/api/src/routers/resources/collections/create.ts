@@ -1,10 +1,10 @@
 import { Channels, collectionSchema, createCollection } from '@op/common';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const collectionsCreate = router({
-  create: commonNetworkProcedure()
+  create: networkAuthenticatedProcedure()
     .input(
       z.object({
         profileId: z.string().uuid(),

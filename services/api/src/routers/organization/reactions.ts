@@ -2,11 +2,11 @@ import { channelsForPost, toggleReaction } from '@op/common';
 import { VALID_REACTION_TYPES } from '@op/types';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 const reactionTypeEnum = z.enum(VALID_REACTION_TYPES as [string, ...string[]]);
 
-const reactionProcedure = commonNetworkProcedure({
+const reactionProcedure = networkAuthenticatedProcedure({
   rateLimit: { windowSize: 10, maxRequests: 20 },
 });
 

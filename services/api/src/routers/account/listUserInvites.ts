@@ -2,10 +2,10 @@ import { listUserInvites } from '@op/common';
 import { EntityType } from '@op/db/schema';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 export const listUserInvitesRouter = router({
-  listUserInvites: commonNetworkProcedure()
+  listUserInvites: networkAuthenticatedProcedure()
     .input(
       z.object({
         entityType: z.nativeEnum(EntityType).optional(),

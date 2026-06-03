@@ -6,10 +6,10 @@ import {
 import { z } from 'zod';
 
 import { resourceInCollectionEncoder } from '../../encoders/resources';
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 export const attachToCollection = router({
-  attachToCollection: commonNetworkProcedure()
+  attachToCollection: networkAuthenticatedProcedure()
     .input(
       z.object({
         id: z.string().uuid(),

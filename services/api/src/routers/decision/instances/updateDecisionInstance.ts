@@ -6,10 +6,10 @@ import {
   decisionProfileWithSchemaEncoder,
   updateDecisionInstanceInputSchema,
 } from '../../../encoders/decision';
-import { commonNetworkProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const updateDecisionInstanceRouter = router({
-  updateDecisionInstance: commonNetworkProcedure()
+  updateDecisionInstance: networkAuthenticatedProcedure()
     .input(updateDecisionInstanceInputSchema)
     .output(decisionProfileWithSchemaEncoder)
     .mutation(async ({ ctx, input }) => {

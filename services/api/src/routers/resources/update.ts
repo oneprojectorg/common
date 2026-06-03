@@ -9,7 +9,7 @@ import {
 import { z } from 'zod';
 
 import { resourceWithSignedUrlEncoder } from '../../encoders/resources';
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 const dataSchema = z
   .object({
@@ -26,7 +26,7 @@ const dataSchema = z
   });
 
 export const update = router({
-  update: commonNetworkProcedure()
+  update: networkAuthenticatedProcedure()
     .input(z.object({ id: z.string().uuid(), data: dataSchema }))
     .output(resourceWithSignedUrlEncoder)
     .mutation(async ({ input, ctx }) => {

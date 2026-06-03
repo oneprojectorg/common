@@ -3,7 +3,7 @@ import { ProposalFilter } from '@op/core';
 import { ProposalStatus } from '@op/db/schema';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 const exportInputSchema = z.object({
   processInstanceId: z.string().uuid(),
@@ -20,7 +20,7 @@ const exportOutputSchema = z.object({
 });
 
 export const exportProposalsRouter = router({
-  export: commonNetworkProcedure()
+  export: networkAuthenticatedProcedure()
     .input(exportInputSchema)
     .output(exportOutputSchema)
     .mutation(async ({ ctx, input }) => {

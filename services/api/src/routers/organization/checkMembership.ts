@@ -3,7 +3,7 @@ import { db } from '@op/db/client';
 import { assertAccess, permission } from 'access-zones';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   email: z.email(),
@@ -15,7 +15,7 @@ const outputSchema = z.object({
 });
 
 export const checkMembershipRouter = router({
-  checkMembership: commonNetworkProcedure({
+  checkMembership: networkAuthenticatedProcedure({
     rateLimit: { windowSize: 60, maxRequests: 20 },
   })
     .input(inputSchema)

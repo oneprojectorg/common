@@ -1,10 +1,10 @@
 import { deletePostById } from '@op/common';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 export const deletePost = router({
-  deletePost: commonNetworkProcedure({
+  deletePost: networkAuthenticatedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 5 },
   })
     .input(

@@ -78,21 +78,13 @@ interface RateLimitedProcedureOptions {
 }
 
 /**
- * Closed-network authenticated procedure (formerly `commonAuthedProcedure`).
- * Includes: requestCache -> channelMeta -> logger -> rateLimited ->
- * networkAuthentication -> analytics.
- *
- * Rejects anonymous and unauthenticated callers at the auth gate and admits
- * only confirmed `@oneproject.org` / allow-listed users. Use this for endpoints
- * that genuinely require closed-network membership.
- *
- * @param opts.rateLimit - Custom rate limit config (default: 10 requests per 10 seconds)
- *
- * Usage:
- * - `commonNetworkProcedure()` - uses default rate limit (10 req/10s)
- * - `commonNetworkProcedure({ rateLimit: { windowSize: 60, maxRequests: 5 } })` - custom rate limit
+ * Closed-network procedure (formerly `commonAuthedProcedure`): admits only
+ * confirmed `@oneproject.org` / allow-listed users via {@link withNetworkAuthentication}.
+ * Default rate limit is 10 requests per 10 seconds.
  */
-export function commonNetworkProcedure(opts?: RateLimitedProcedureOptions) {
+export function networkAuthenticatedProcedure(
+  opts?: RateLimitedProcedureOptions,
+) {
   const rateLimit = opts?.rateLimit ?? DEFAULT_RATE_LIMIT;
   return commonProcedure
     .use(withRateLimited(rateLimit))
@@ -101,16 +93,11 @@ export function commonNetworkProcedure(opts?: RateLimitedProcedureOptions) {
 }
 
 /**
- * Authenticated procedure for any real Supabase user — including anonymous
- * sign-ins. Includes: requestCache -> channelMeta -> logger -> rateLimited ->
- * resolvedUser -> requireUser -> analytics.
- *
- * Requires *a* user but performs no closed-network gating; authorization is
- * deferred to the service layer. Endpoints move here from
- * `commonNetworkProcedure` once gating tests prove anon / out-of-network
- * callers still fail closed (or are intentionally admitted).
- *
- * @param opts.rateLimit - Custom rate limit config (default: 10 requests per 10 seconds)
+ * Requires *a* user (any session, including anonymous sign-ins) but does no
+ * closed-network gating; authorization is deferred to the service layer.
+ * Endpoints migrate here from {@link networkAuthenticatedProcedure} once gating
+ * tests prove out-of-network callers still fail closed. Default rate limit is
+ * 10 requests per 10 seconds.
  */
 export function authenticatedProcedure(opts?: RateLimitedProcedureOptions) {
   const rateLimit = opts?.rateLimit ?? DEFAULT_RATE_LIMIT;
@@ -122,15 +109,9 @@ export function authenticatedProcedure(opts?: RateLimitedProcedureOptions) {
 }
 
 /**
- * Open procedure for no-JWT / public-capable endpoints. Includes: requestCache
- * -> channelMeta -> logger -> rateLimited -> resolvedUser -> analytics.
- *
- * Resolves an optional user (`ctx.user?`) but never rejects at the middleware
- * layer — authorization is fully the service layer's responsibility. Used by
- * nothing yet; endpoints opt in only once their service layer does real role
- * checks and has updated gating coverage.
- *
- * @param opts.rateLimit - Custom rate limit config (default: 10 requests per 10 seconds)
+ * Public-capable procedure: resolves an optional `ctx.user` but never rejects
+ * at the middleware layer — authorization is fully the service layer's job.
+ * Not used yet. Default rate limit is 10 requests per 10 seconds.
  */
 export function openProcedure(opts?: RateLimitedProcedureOptions) {
   const rateLimit = opts?.rateLimit ?? DEFAULT_RATE_LIMIT;

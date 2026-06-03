@@ -6,11 +6,11 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { searchedOrganizationEncoder } from '../../encoders/organizations';
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
 
 export const searchOrganizationsRouter = router({
-  search: commonNetworkProcedure()
+  search: networkAuthenticatedProcedure()
     .input(
       dbFilter.extend({
         q: z.string(),

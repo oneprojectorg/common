@@ -5,10 +5,10 @@ import {
   phaseReviewProgressSchema,
 } from '@op/common';
 
-import { commonNetworkProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const getPhaseReviewProgressRouter = router({
-  getPhaseReviewProgress: commonNetworkProcedure()
+  getPhaseReviewProgress: networkAuthenticatedProcedure()
     .input(instancePhaseRefSchema)
     .output(phaseReviewProgressSchema)
     .query(async ({ ctx, input }) => {

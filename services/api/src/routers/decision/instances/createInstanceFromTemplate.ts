@@ -5,10 +5,10 @@ import {
   createInstanceFromTemplateInputSchema,
   decisionProfileWithSchemaEncoder,
 } from '../../../encoders/decision';
-import { commonNetworkProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const createInstanceFromTemplateRouter = router({
-  createInstanceFromTemplate: commonNetworkProcedure()
+  createInstanceFromTemplate: networkAuthenticatedProcedure()
     .input(createInstanceFromTemplateInputSchema)
     .output(decisionProfileWithSchemaEncoder)
     .mutation(async ({ ctx, input }) => {

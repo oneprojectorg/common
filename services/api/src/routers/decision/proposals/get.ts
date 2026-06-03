@@ -6,11 +6,11 @@ import { logger } from '@op/logging';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 import { trackProposalViewed } from '../../../utils/analytics';
 
 export const getProposalRouter = router({
-  getProposal: commonNetworkProcedure()
+  getProposal: networkAuthenticatedProcedure()
     .input(
       z.object({
         profileId: z.uuid(),

@@ -1,7 +1,7 @@
 import { declineRelationship } from '@op/common';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   targetOrganizationId: z.uuid({
@@ -11,7 +11,7 @@ const inputSchema = z.object({
 });
 
 export const declineRelationshipRouter = router({
-  declineRelationship: commonNetworkProcedure()
+  declineRelationship: networkAuthenticatedProcedure()
     .input(inputSchema)
     .output(z.boolean())
     .mutation(async ({ ctx, input }) => {

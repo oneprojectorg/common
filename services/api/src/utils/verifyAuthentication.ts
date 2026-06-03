@@ -1,5 +1,4 @@
-import { AccessTierError, UnauthorizedError } from '@op/common';
-import { adminEmails } from '@op/core';
+import { AccessTierError } from '@op/common';
 import type { UserResponse } from '@op/supabase/lib';
 
 /**
@@ -10,11 +9,10 @@ import type { UserResponse } from '@op/supabase/lib';
  *   - no session / auth error  → actual `none` (401)
  *   - anonymous / unconfirmed  → actual `anon` (403)
  *
- * Network membership is checked by the caller (it needs an async allow-list
- * lookup); admin membership is authorization, not a tier, so a non-admin who
- * passed the tier check is rejected with a plain {@link UnauthorizedError}.
+ * Network membership and admin authorization are checked by the caller; this
+ * helper only establishes that a confirmed user is present.
  */
-export const verifyAuthentication = (data: UserResponse, adminOnly = false) => {
+export const verifyAuthentication = (data: UserResponse) => {
   if (!data) {
     throw new AccessTierError('none');
   }
@@ -29,12 +27,6 @@ export const verifyAuthentication = (data: UserResponse, adminOnly = false) => {
 
   if (data.data.user.confirmed_at === null) {
     throw new AccessTierError('anon');
-  }
-
-  // Admin membership is authorization, not a tier: a valid user who is not an
-  // admin has met the tier requirement but lacks permission.
-  if (adminOnly && !adminEmails.includes(data.data.user.email || '')) {
-    throw new UnauthorizedError('User is not an admin');
   }
 
   return data.data.user;

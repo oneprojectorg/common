@@ -2,10 +2,10 @@ import { getIndividualTermsByProfile } from '@op/common';
 import { z } from 'zod';
 
 import { individualsTermsEncoder } from '../../encoders/individuals';
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 export const getIndividualRouter = router({
-  getTermsByProfile: commonNetworkProcedure()
+  getTermsByProfile: networkAuthenticatedProcedure()
     .input(z.object({ profileId: z.string(), termUri: z.string().optional() }))
     .output(individualsTermsEncoder)
     .query(async ({ input }) => {

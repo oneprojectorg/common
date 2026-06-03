@@ -6,7 +6,7 @@ import {
   postsEncoder,
   postsToOrganizationsEncoder,
 } from '../../encoders/posts';
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 import { dbFilter } from '../../utils';
 
 const inputSchema = dbFilter.extend({
@@ -15,7 +15,7 @@ const inputSchema = dbFilter.extend({
 });
 
 export const listOrganizationPostsRouter = router({
-  listPosts: commonNetworkProcedure()
+  listPosts: networkAuthenticatedProcedure()
     .input(inputSchema)
     .output(
       z.object({

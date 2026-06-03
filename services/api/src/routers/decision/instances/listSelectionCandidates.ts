@@ -2,7 +2,7 @@ import { Channels, listSelectionCandidates } from '@op/common';
 import { proposalSchema } from '@op/common/client';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 const listSelectionCandidatesInputSchema = z.object({
   processInstanceId: z.uuid(),
@@ -15,7 +15,7 @@ const listSelectionCandidatesOutputSchema = z.object({
 });
 
 export const listSelectionCandidatesRouter = router({
-  listSelectionCandidates: commonNetworkProcedure()
+  listSelectionCandidates: networkAuthenticatedProcedure()
     .input(listSelectionCandidatesInputSchema)
     .output(listSelectionCandidatesOutputSchema)
     .query(async ({ ctx, input }) => {

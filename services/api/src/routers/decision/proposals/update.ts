@@ -4,10 +4,10 @@ import { proposalSchema } from '@op/common/client';
 import { z } from 'zod';
 
 import { updateProposalInputSchema } from '../../../encoders/decision';
-import { commonNetworkProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const updateProposalRouter = router({
-  updateProposal: commonNetworkProcedure({
+  updateProposal: networkAuthenticatedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 20 },
   })
     .input(

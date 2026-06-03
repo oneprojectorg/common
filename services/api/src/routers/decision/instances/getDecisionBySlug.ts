@@ -8,14 +8,14 @@ import { collapseRoles } from 'access-zones';
 import { z } from 'zod';
 
 import { decisionProfileWithSchemaEncoder } from '../../../encoders/decision';
-import { commonNetworkProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 const inputSchema = z.object({
   slug: z.string().min(1, 'Slug cannot be empty'),
 });
 
 export const getDecisionBySlugRouter = router({
-  getDecisionBySlug: commonNetworkProcedure({
+  getDecisionBySlug: networkAuthenticatedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 20 },
   })
     .input(inputSchema)

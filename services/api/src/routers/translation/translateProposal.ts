@@ -1,7 +1,7 @@
 import { SUPPORTED_LOCALES, translateProposal } from '@op/common';
 import { z } from 'zod';
 
-import { commonNetworkProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 /**
  * Generic output schema for all translation endpoints.
@@ -14,7 +14,7 @@ export const translateOutput = z.object({
 });
 
 export const translateProposalRouter = router({
-  translateProposal: commonNetworkProcedure()
+  translateProposal: networkAuthenticatedProcedure()
     .input(
       z.object({
         profileId: z.uuid(),

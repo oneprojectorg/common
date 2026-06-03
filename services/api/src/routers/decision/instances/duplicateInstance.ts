@@ -2,7 +2,7 @@ import { duplicateInstance } from '@op/common';
 import { z } from 'zod';
 
 import { decisionProfileWithSchemaEncoder } from '../../../encoders/decision';
-import { commonNetworkProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 const duplicateInstanceInputSchema = z.object({
   instanceId: z.string().uuid(),
@@ -20,7 +20,7 @@ const duplicateInstanceInputSchema = z.object({
 });
 
 export const duplicateInstanceRouter = router({
-  duplicateInstance: commonNetworkProcedure({
+  duplicateInstance: networkAuthenticatedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 5 },
   })
     .input(duplicateInstanceInputSchema)

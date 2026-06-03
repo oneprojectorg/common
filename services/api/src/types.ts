@@ -29,12 +29,8 @@ export interface TContextWithUser {
   user: User;
 }
 
-/**
- * Context after an optional user resolution: `user` is the real Supabase
- * identity if the caller presented a valid session (including anonymous
- * sign-ins), otherwise `undefined`. Used by procedures that resolve the caller
- * without rejecting unauthenticated requests at the middleware layer.
- */
+/** Context after optional user resolution: `user` is the resolved Supabase
+ * identity, or `undefined` when the caller has no valid session. */
 export interface TContextWithMaybeUser {
   user?: User;
 }
