@@ -7,11 +7,11 @@ import type {
 } from '../types';
 
 /**
- * Requires *a* user (any session, including anonymous sign-ins), rejecting only
- * no-JWT callers. No network/allow-list gating — authorization is left to the
- * service layer. Must run after {@link withResolvedUser}.
+ * Requires an authenticated user (any session, including anonymous sign-ins),
+ * rejecting only no-JWT callers. No network/allow-list gating — authorization
+ * is left to the service layer. Must run after {@link withResolvedUser}.
  */
-const withRequireUser: MiddlewareBuilderBeforeAfter<
+const withAuthenticatedUser: MiddlewareBuilderBeforeAfter<
   TContextWithMaybeUser,
   TContextWithUser
 > = async ({ ctx, next }) => {
@@ -24,4 +24,4 @@ const withRequireUser: MiddlewareBuilderBeforeAfter<
   });
 };
 
-export default withRequireUser;
+export default withAuthenticatedUser;

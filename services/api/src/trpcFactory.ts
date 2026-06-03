@@ -10,12 +10,12 @@ import {
 } from './lib/cookies';
 import { errorFormatter } from './lib/error';
 import withAnalytics from './middlewares/withAnalytics';
+import withAuthenticatedUser from './middlewares/withAuthenticatedUser';
 import withChannelMeta from './middlewares/withChannelMeta';
 import withLogger from './middlewares/withLogger';
-import withNetworkAuthentication from './middlewares/withNetworkAuthentication';
+import withNetworkAuthenticatedUser from './middlewares/withNetworkAuthenticatedUser';
 import withRateLimited from './middlewares/withRateLimited';
 import withRequestCache from './middlewares/withRequestCache';
-import withRequireUser from './middlewares/withRequireUser';
 import withResolvedUser from './middlewares/withResolvedUser';
 import type { TContext } from './types';
 
@@ -79,7 +79,7 @@ interface RateLimitedProcedureOptions {
 
 /**
  * Closed-network procedure (formerly `commonAuthedProcedure`): admits only
- * confirmed `@oneproject.org` / allow-listed users via {@link withNetworkAuthentication}.
+ * confirmed `@oneproject.org` / allow-listed users via {@link withNetworkAuthenticatedUser}.
  * Default rate limit is 10 requests per 10 seconds.
  */
 export function networkAuthenticatedProcedure(
@@ -88,7 +88,7 @@ export function networkAuthenticatedProcedure(
   const rateLimit = opts?.rateLimit ?? DEFAULT_RATE_LIMIT;
   return commonProcedure
     .use(withRateLimited(rateLimit))
-    .use(withNetworkAuthentication)
+    .use(withNetworkAuthenticatedUser)
     .use(withAnalytics);
 }
 
@@ -104,7 +104,7 @@ export function authenticatedProcedure(opts?: RateLimitedProcedureOptions) {
   return commonProcedure
     .use(withRateLimited(rateLimit))
     .use(withResolvedUser)
-    .use(withRequireUser)
+    .use(withAuthenticatedUser)
     .use(withAnalytics);
 }
 
