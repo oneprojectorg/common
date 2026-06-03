@@ -450,6 +450,171 @@ describe.concurrent('submitProposal', () => {
     }
   });
 
+  it('should reject submission when budget exceeds the template maximum (numeric budget schema, matches production)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    // Production process schemas (simple/cowop/horizon) generate the budget
+    // as `{ type: 'number', maximum: budgetCapAmount }` with no `x-format`.
+    // This mirrors that exact shape to catch the budget-cap bypass.
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        required: ['title', 'description', 'budget'],
+        properties: {
+          title: { type: 'string' },
+          description: { type: 'string' },
+          budget: { type: 'number', maximum: 100000 },
+        },
+      },
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: {
+        title: 'Way Over Budget',
+        description: 'Testing the production-shape budget cap',
+      },
+    });
+
+    const collaborationDocId = `proposal-${proposal.id}`;
+
+    // Simulate the real frontend: budget is stored in proposalData as a
+    // MoneyAmount object, and the TipTap fragment is the JSON-stringified
+    // MoneyAmount (see CollaborativeBudgetField).
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          title: 'Way Over Budget',
+          description: 'Testing the production-shape budget cap',
+          collaborationDocId,
+          budget: { amount: 1000000, currency: 'USD' },
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    mockCollab.setDocFragments(collaborationDocId, {
+      title: 'Way Over Budget',
+      description: 'Testing the production-shape budget cap',
+      budget: JSON.stringify({ amount: 1000000, currency: 'USD' }),
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // 1,000,000 must not slip past a 100,000 cap.
+    const submission = caller.decision.submitProposal({
+      proposalId: proposal.id,
+    });
+
+    await expect(submission).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
+    // And it must be the budget-cap error, not a confusing type-mismatch.
+    await expect(submission).rejects.toThrow(/Budget cannot exceed 100,000/);
+  });
+
+  it('should reject submission when budget exceeds the template maximum (Simple Voting shape — object with x-format: money)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    // The seeded "Simple Voting" template uses the object-shaped budget with
+    // `x-format: 'money'` and (until this fix) no `maximum` constraint on
+    // `amount`. Real users on this template can therefore submit any amount.
+    // We mirror that shape and require validation to enforce a cap supplied
+    // on the `amount` property.
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        required: ['title', 'summary'],
+        'x-field-order': ['title', 'budget', 'summary'],
+        properties: {
+          title: {
+            type: 'string',
+            title: 'Proposal title',
+            'x-format': 'short-text',
+          },
+          summary: {
+            type: 'string',
+            title: 'Proposal summary',
+            'x-format': 'long-text',
+          },
+          budget: {
+            type: 'object',
+            title: 'Budget',
+            'x-format': 'money',
+            properties: {
+              amount: { type: 'number', maximum: 100000 },
+              currency: { type: 'string', default: 'USD' },
+            },
+          },
+        },
+      },
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: {
+        title: 'Way Over Budget',
+        description: 'Testing the production-shape budget cap',
+      },
+    });
+
+    const collaborationDocId = `proposal-${proposal.id}`;
+
+    // Simulate the real frontend: budget is stored in proposalData as a
+    // MoneyAmount object, and the TipTap fragment is the JSON-stringified
+    // MoneyAmount (see CollaborativeBudgetField).
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          title: 'Way Over Budget',
+          description: 'Testing the production-shape budget cap',
+          collaborationDocId,
+          budget: { amount: 1000000, currency: 'USD' },
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    mockCollab.setDocFragments(collaborationDocId, {
+      title: 'Way Over Budget',
+      description: 'Testing the production-shape budget cap',
+      budget: JSON.stringify({ amount: 1000000, currency: 'USD' }),
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // 1,000,000 must not slip past a 100,000 cap.
+    await expect(
+      caller.decision.submitProposal({
+        proposalId: proposal.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
+  });
+
   it('should reject submission when budget exceeds the template maximum', async ({
     task,
     onTestFinished,

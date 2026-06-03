@@ -13,6 +13,11 @@ import type { ProposalTemplateSchema } from './types';
  * field values from the Yjs doc and assembles them before validation.
  * For legacy proposals without a collab doc, validates the raw proposalData directly.
  *
+ * Callers MUST pass a template that has already been canonicalized via
+ * `resolveProposalTemplate` — legacy `budget: { type: 'number' }` shapes are
+ * rewritten there into the canonical `x-format: 'money'` object, so this
+ * function only ever sees one budget shape and no field-level coercion is needed.
+ *
  * @throws {ValidationError} when the proposal data does not satisfy the template schema
  * @throws {CommonError} when TipTap credentials are missing for a collab-doc proposal
  */
@@ -53,6 +58,9 @@ export async function validateProposalAgainstTemplate(
   } else {
     schemaValidator.assertProposalData(proposalTemplate, {
       ...storedProposalData,
+      ...(storedProposalData.budget !== undefined
+        ? { budget: parsed.budget }
+        : {}),
       ...(shouldInjectTitle ? { title } : {}),
     });
   }
