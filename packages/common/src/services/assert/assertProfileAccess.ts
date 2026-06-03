@@ -10,25 +10,14 @@ import {
 } from '../access';
 
 /**
- * Fetches the user's roles on a profile and asserts the given permissions.
+ * Fetches the user's roles on a profile and asserts the given permissions,
+ * returning the resolved profile-access user so callers can reuse it.
  *
- * Throws an `AccessControlException` if the user is not a member of the profile
- * or their roles don't satisfy the permissions — every denial surfaces as the
- * same exception, with no member/non-member distinction.
- *
- * Returns the resolved profile-access user so callers that also need the
- * profileUser (its roles, profile, etc.) can reuse it instead of re-fetching.
- * Callers that only need the gate can ignore the return value.
- *
- * @param user - The user to check
- * @param profileId - The profile to check access against
- * @param permissions - The required permissions (single object or array of objects)
- * @param notMemberMessage - Optional message for the `AccessControlException`
- *   thrown when the user has no role on the profile. Defaults to the standard
- *   access-zones denial message.
- * @returns The profile-access user (always present — a missing membership throws)
+ * @param notMemberMessage - Optional message for the thrown exception when the
+ *   user has no role on the profile. Defaults to the access-zones denial message.
  * @throws AccessControlException if the user is not a member of the profile or
- *   their roles don't satisfy the permissions
+ *   their roles don't satisfy the permissions — every denial surfaces as the
+ *   same exception, with no member/non-member distinction.
  */
 export async function assertProfileAccess(
   { user, profileId }: { user: { id: string }; profileId: string },
