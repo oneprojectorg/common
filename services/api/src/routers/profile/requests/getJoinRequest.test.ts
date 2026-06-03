@@ -216,12 +216,12 @@ describe.concurrent('profile.getJoinRequest', () => {
 });
 
 import {
-  describeProcedureGating,
+  describeAccessTierGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../../test/helpers/gating';
 
-describeProcedureGating('profile.getJoinRequest', {
+describeAccessTierGating('profile.getJoinRequest', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(

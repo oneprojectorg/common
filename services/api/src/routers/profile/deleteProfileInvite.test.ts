@@ -1,10 +1,10 @@
 import {
-  describeProcedureGating,
+  describeAccessTierGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../test/helpers/gating';
 
-describeProcedureGating('profile.deleteProfileInvite', {
+describeAccessTierGating('profile.deleteProfileInvite', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(

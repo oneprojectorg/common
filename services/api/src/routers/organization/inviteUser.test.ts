@@ -3,12 +3,12 @@ import { allowList } from '@op/db/schema';
 import { eq } from 'drizzle-orm';
 
 import {
-  describeProcedureGating,
+  describeAccessTierGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../test/helpers/gating';
 
-describeProcedureGating('organization.invite', {
+describeAccessTierGating('organization.invite', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(

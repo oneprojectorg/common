@@ -17,7 +17,7 @@ import { appRouter } from '../..';
 import type { decisionSchemaDefinitionEncoder } from '../../../encoders/decision';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
-  describeDecisionProcedureGating,
+  describeDecisionAccessTierGating,
   expectFailsTierGate,
 } from '../../../test/helpers/gating/decision';
 import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
@@ -672,7 +672,7 @@ describe.concurrent('submitManualSelection', () => {
   });
 });
 
-describeDecisionProcedureGating('submitManualSelection', {
+describeDecisionAccessTierGating('submitManualSelection', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({

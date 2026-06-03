@@ -1,10 +1,10 @@
 import {
-  describeProcedureGating,
+  describeAccessTierGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../test/helpers/gating';
 
-describeProcedureGating('posts.getPosts', {
+describeAccessTierGating('posts.getPosts', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(caller.posts.getPosts({}), 'none');

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
-  describeDecisionProcedureGating,
+  describeDecisionAccessTierGating,
   expectFailsTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
@@ -505,7 +505,7 @@ describe.concurrent('listDecisionProfiles', () => {
   });
 });
 
-describeDecisionProcedureGating('listDecisionProfiles', {
+describeDecisionAccessTierGating('listDecisionProfiles', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     await testData.createDecisionSetup({ instanceCount: 0 });

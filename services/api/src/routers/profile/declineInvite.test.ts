@@ -202,12 +202,12 @@ describe.concurrent('profile.declineInvite', () => {
 });
 
 import {
-  describeProcedureGating,
+  describeAccessTierGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../test/helpers/gating';
 
-describeProcedureGating('profile.declineInvite', {
+describeAccessTierGating('profile.declineInvite', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(

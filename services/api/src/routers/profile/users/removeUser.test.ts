@@ -112,12 +112,12 @@ describe.concurrent('profile.users.removeUser', () => {
 });
 
 import {
-  describeProcedureGating,
+  describeAccessTierGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../../test/helpers/gating';
 
-describeProcedureGating('profile.removeUser', {
+describeAccessTierGating('profile.removeUser', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(

@@ -19,7 +19,7 @@ import { appRouter } from '../..';
 import { transformFormDataToProcessSchema as cowopSchema } from '../../../../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/cowop';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
-  describeDecisionProcedureGating,
+  describeDecisionAccessTierGating,
   expectFailsTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
@@ -2232,7 +2232,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
   });
 });
 
-describeDecisionProcedureGating('listProposals', {
+describeDecisionAccessTierGating('listProposals', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 

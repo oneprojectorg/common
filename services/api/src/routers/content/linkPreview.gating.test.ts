@@ -1,5 +1,5 @@
 import {
-  describeProcedureGating,
+  describeAccessTierGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../test/helpers/gating';
@@ -10,7 +10,7 @@ import {
 //
 const input = { url: 'https://example.com' };
 
-describeProcedureGating('content.linkPreview', {
+describeAccessTierGating('content.linkPreview', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(caller.content.linkPreview(input), 'none');

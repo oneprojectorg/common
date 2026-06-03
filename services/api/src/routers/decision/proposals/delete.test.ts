@@ -2,11 +2,11 @@ import { expect } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import {
-  describeDecisionProcedureGating,
+  describeDecisionAccessTierGating,
   expectFailsTierGate,
 } from '../../../test/helpers/gating/decision';
 
-describeDecisionProcedureGating('deleteProposal', {
+describeDecisionAccessTierGating('deleteProposal', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({

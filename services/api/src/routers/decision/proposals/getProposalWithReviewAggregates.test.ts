@@ -14,7 +14,7 @@ import { appRouter } from '../..';
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
-  describeDecisionProcedureGating,
+  describeDecisionAccessTierGating,
   expectFailsTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
@@ -308,7 +308,7 @@ describe.concurrent('getProposalWithReviewAggregates', () => {
   });
 });
 
-describeDecisionProcedureGating('getProposalWithReviewAggregates', {
+describeDecisionAccessTierGating('getProposalWithReviewAggregates', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({

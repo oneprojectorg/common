@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { TestOrganizationDataManager } from '../../../test/helpers/TestOrganizationDataManager';
 import {
-  describeProcedureGating,
+  describeAccessTierGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../../test/helpers/gating';
@@ -17,7 +17,7 @@ import { platformAdminRouter } from './index';
 
 const createCaller = createCallerFactory(platformAdminRouter);
 
-describeProcedureGating('platform.admin.addUsersToOrganization', {
+describeAccessTierGating('platform.admin.addUsersToOrganization', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(

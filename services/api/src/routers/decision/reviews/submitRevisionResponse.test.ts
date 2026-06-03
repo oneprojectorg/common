@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { appRouter } from '../..';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
-  describeDecisionProcedureGating,
+  describeDecisionAccessTierGating,
   expectFailsTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
@@ -312,7 +312,7 @@ describe.concurrent('submitRevisionResponse', () => {
   });
 });
 
-describeDecisionProcedureGating('submitRevisionResponse', {
+describeDecisionAccessTierGating('submitRevisionResponse', {
   noJwtNonPublic: async ({ task, onTestFinished, callers }) => {
     const testData = new TestReviewsDataManager(task.id, onTestFinished);
     await testData.createContext();

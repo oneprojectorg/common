@@ -1,10 +1,10 @@
 import {
-  describeProcedureGating,
+  describeAccessTierGating,
   expectFailsTierGate,
   expectPassesTierGate,
 } from '../../test/helpers/gating';
 
-describeProcedureGating('profile.addRelationship', {
+describeAccessTierGating('profile.addRelationship', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(
@@ -49,7 +49,7 @@ describeProcedureGating('profile.addRelationship', {
   },
 });
 
-describeProcedureGating('profile.removeRelationship', {
+describeAccessTierGating('profile.removeRelationship', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(
@@ -94,7 +94,7 @@ describeProcedureGating('profile.removeRelationship', {
   },
 });
 
-describeProcedureGating('profile.getRelationships', {
+describeAccessTierGating('profile.getRelationships', {
   noJwt: async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsTierGate(

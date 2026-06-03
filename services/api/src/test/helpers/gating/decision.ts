@@ -3,7 +3,7 @@ import { describe, it } from 'vitest';
 import { createGatingCallers, type GatingTestCtx } from './callers';
 
 // Re-exported so decision gating tests can pull the tier assertions from the
-// same module as describeDecisionProcedureGating.
+// same module as describeDecisionAccessTierGating.
 export { expectFailsTierGate, expectPassesTierGate } from '.';
 
 type DecisionGatingBody = (ctx: GatingTestCtx) => Promise<void>;
@@ -27,7 +27,7 @@ export type DecisionGatingCells = {
   networkJwtNonPublic: DecisionGatingBody;
 };
 
-export const describeDecisionProcedureGating = (
+export const describeDecisionAccessTierGating = (
   name: string,
   cells: DecisionGatingCells,
 ) => {
