@@ -6,10 +6,11 @@ import {
   organizationUsers,
 } from '@op/db/schema';
 import type { User } from '@supabase/supabase-js';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
-import { NotFoundError, UnauthorizedError } from '../../utils';
+import { NotFoundError } from '../../utils';
 import { getOrgAccessUser } from '../access';
+import { assertOrgAccess } from '../assert';
 
 export interface UpdateOrganizationUserData {
   name?: string;
@@ -31,14 +32,13 @@ export async function updateOrganizationUser({
   data,
   user,
 }: UpdateOrganizationUserParams) {
-  // Get the org access user and assert admin UPDATE permissions
-  const orgUser = await getOrgAccessUser({ user, organizationId });
-
-  if (!orgUser) {
-    throw new UnauthorizedError('You are not a member of this organization');
-  }
-
-  assertAccess({ admin: permission.UPDATE }, orgUser?.roles || []);
+  // Assert the user has admin UPDATE permissions on the organization
+  await assertOrgAccess({
+    user,
+    organizationId,
+    permissions: { admin: permission.UPDATE },
+    notMemberMessage: 'You are not a member of this organization',
+  });
 
   // Check if the organization user to update exists
   const targetOrgUser = await db.query.organizationUsers.findFirst({

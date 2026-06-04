@@ -9,12 +9,11 @@ import {
   profiles,
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 import pMap from 'p-map';
 
-import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
-import { getOrgAccessUser } from '../access';
-import { assertOrganization } from '../assert';
+import { CommonError, NotFoundError } from '../../utils';
+import { assertOrgAccess, assertOrganization } from '../assert';
 import {
   type FundingLinksInput,
   type UpdateOrganizationInput,
@@ -39,13 +38,12 @@ export const updateOrganization = async ({
     throw new CommonError('Organization ID is required');
   }
 
-  const orgUser = await getOrgAccessUser({ user, organizationId });
-
-  if (!orgUser) {
-    throw new UnauthorizedError('You are not a member of this organization');
-  }
-
-  assertAccess({ profile: permission.UPDATE }, orgUser?.roles || []);
+  await assertOrgAccess({
+    user,
+    organizationId,
+    permissions: { profile: permission.UPDATE },
+    notMemberMessage: 'You are not a member of this organization',
+  });
 
   const { ...updateData } = data;
 

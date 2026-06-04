@@ -2,10 +2,11 @@ import { invalidate } from '@op/cache';
 import { and, db, eq } from '@op/db/client';
 import { organizationUsers } from '@op/db/schema';
 import type { User } from '@supabase/supabase-js';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import { getOrgAccessUser } from '../access';
+import { assertOrgAccess } from '../assert';
 
 export interface DeleteOrganizationUserParams {
   organizationUserId: string;
@@ -18,14 +19,13 @@ export async function deleteOrganizationUser({
   organizationId,
   user,
 }: DeleteOrganizationUserParams) {
-  // Get the org access user and assert admin UPDATE permissions
-  const orgUser = await getOrgAccessUser({ user, organizationId });
-
-  if (!orgUser) {
-    throw new UnauthorizedError('You are not a member of this organization');
-  }
-
-  assertAccess({ admin: permission.UPDATE }, orgUser?.roles || []);
+  // Assert the user has admin UPDATE permissions on the organization
+  await assertOrgAccess({
+    user,
+    organizationId,
+    permissions: { admin: permission.UPDATE },
+    notMemberMessage: 'You are not a member of this organization',
+  });
 
   // Check if the organization user to delete exists
   const targetOrgUser = await db.query.organizationUsers.findFirst({

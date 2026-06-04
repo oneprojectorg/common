@@ -11,10 +11,10 @@ import {
 } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils/error';
-import { getOrgAccessUser } from '../access';
+import { assertOrgAccess } from '../assert';
 import { sendBatchInvitationEmails } from '../email';
 import { AllowListMetadata } from '../user/validators';
 
@@ -61,15 +61,13 @@ export const inviteUsersToOrganization = async (
 ) => {
   const { emails, roleId, organizationId, personalMessage, user } = input;
 
-  const orgUser = await getOrgAccessUser({ user, organizationId });
-
-  if (!orgUser) {
-    throw new UnauthorizedError(
+  const orgUser = await assertOrgAccess({
+    user,
+    organizationId,
+    permissions: { profile: permission.ADMIN },
+    notMemberMessage:
       'User must be associated with an organization to send organization invites',
-    );
-  }
-
-  assertAccess({ profile: permission.ADMIN }, orgUser.roles || []);
+  });
 
   const authUser = (await db.query.users.findFirst({
     where: { authUserId: user.id },
