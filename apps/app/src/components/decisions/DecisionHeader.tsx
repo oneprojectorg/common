@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import { type ProcessPhase } from '@op/api/encoders';
 import { isLastPhase } from '@op/common/client';
@@ -54,14 +53,6 @@ function DecisionHeaderContent({
   const t = useTranslations();
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
 
-  // The overview page + its Overview/Current Phase toggle ship behind a flag.
-  // Off: render the original header (centered title, stepper, no toggle) on
-  // every route. On: the toggle takes the center column and the title shifts
-  // beside Back. Gating here is the single chokepoint both routes inherit.
-  const overviewEnabled = useFeatureFlag('decision_overview');
-  const effectiveCenterSlot = overviewEnabled ? centerSlot : undefined;
-  const effectiveShowStepper = overviewEnabled ? showStepper : true;
-
   const instancePhases = instance.instanceData?.phases ?? [];
 
   const phases: ProcessPhase[] = instancePhases.map((p) => ({
@@ -99,10 +90,10 @@ function DecisionHeaderContent({
         decisionSlug={decisionSlug}
         isAdmin={isAdmin}
         canReadUpdates={canReadUpdates}
-        centerSlot={effectiveCenterSlot}
+        centerSlot={centerSlot}
       />
       <DecisionTranslationProvider>
-        {effectiveShowStepper ? (
+        {showStepper ? (
           <div className="flex flex-col overflow-x-auto sm:items-center">
             <div className="w-fit rounded-b border border-t-0 bg-white px-12 py-4 sm:px-32">
               <DecisionProcessStepper

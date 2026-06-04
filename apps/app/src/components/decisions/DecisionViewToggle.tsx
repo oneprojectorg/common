@@ -3,13 +3,9 @@
 import { Tabs, TabsList, TabsTrigger } from '@op/sense/Tabs';
 
 import { useTranslations } from '@/lib/i18n';
-import { Link } from '@/lib/i18n/routing';
-
-export type DecisionView = 'overview' | 'current';
+import { Link, usePathname } from '@/lib/i18n/routing';
 
 interface DecisionViewToggleProps {
-  /** Which view is currently active — drives the selected segment. */
-  activeView: DecisionView;
   /** Decision profile slug, used to build the two destination hrefs. */
   decisionSlug: string;
 }
@@ -17,15 +13,14 @@ interface DecisionViewToggleProps {
 /**
  * Segmented Overview / Current Phase switch shown in the decision header.
  * Each segment is a route link, so the toggle anchors the user as they move
- * between /decisions/[slug] (current phase) and /decisions/[slug]/overview.
- * The active segment is controlled by `activeView` — the page that renders
- * the header knows which view it is, so no client-side path matching needed.
+ * between /decisions/[slug] (overview) and /decisions/[slug]/current. The
+ * active segment is derived from the path — the toggle lives in the shared
+ * layout, so it has no per-page prop telling it which tab is active.
  */
-export function DecisionViewToggle({
-  activeView,
-  decisionSlug,
-}: DecisionViewToggleProps) {
+export function DecisionViewToggle({ decisionSlug }: DecisionViewToggleProps) {
   const t = useTranslations();
+  const pathname = usePathname();
+  const activeView = pathname.endsWith('/current') ? 'current' : 'overview';
 
   return (
     <Tabs value={activeView}>
@@ -46,7 +41,7 @@ export function DecisionViewToggle({
           render={
             <Link
               className="hover:no-underline"
-              href={`/decisions/${decisionSlug}`}
+              href={`/decisions/${decisionSlug}/current`}
             />
           }
         >
