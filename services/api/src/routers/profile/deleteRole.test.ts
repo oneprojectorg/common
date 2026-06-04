@@ -79,7 +79,7 @@ describe.concurrent('profile.deleteRole', () => {
       caller.deleteRole({ roleId: customRole!.id }),
     ).rejects.toSatisfy(
       (error: Error & { cause?: Error }) =>
-        error.cause?.name === 'AccessControlException',
+        error.cause?.name === 'UnauthorizedError',
     );
 
     // Verify role still exists after failed delete attempt
@@ -164,7 +164,7 @@ describe.concurrent('profile.deleteRole', () => {
       caller.deleteRole({ roleId: customRole!.id }),
     ).rejects.toSatisfy(
       (error: Error & { cause?: Error }) =>
-        error.cause?.name === 'AccessControlException',
+        error.cause?.name === 'UnauthorizedError',
     );
 
     // Verify role still exists

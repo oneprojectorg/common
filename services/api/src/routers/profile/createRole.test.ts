@@ -106,7 +106,7 @@ describe.concurrent('profile.createRole', () => {
       }),
     ).rejects.toSatisfy(
       (error: Error & { cause?: Error }) =>
-        error.cause?.name === 'AccessControlException',
+        error.cause?.name === 'UnauthorizedError',
     );
   });
 
@@ -142,7 +142,7 @@ describe.concurrent('profile.createRole', () => {
       }),
     ).rejects.toSatisfy(
       (error: Error & { cause?: Error }) =>
-        error.cause?.name === 'AccessControlException',
+        error.cause?.name === 'UnauthorizedError',
     );
   });
 });

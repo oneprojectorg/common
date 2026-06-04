@@ -175,7 +175,7 @@ describe.concurrent('uploadProposalAttachment', () => {
         proposalId: proposal.id,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AccessControlException' },
+      cause: { name: 'UnauthorizedError' },
     });
   });
 });

@@ -240,7 +240,7 @@ describe.concurrent('listSelectionCandidates', () => {
       outsiderCaller.decision.listSelectionCandidates({
         processInstanceId: instanceId,
       }),
-    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
   it('orders candidates by descending vote count when sortOrder is "votes"', async ({

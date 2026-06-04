@@ -204,7 +204,7 @@ describe.concurrent('profile.updateRolePermission', () => {
       }),
     ).rejects.toSatisfy(
       (error: Error & { cause?: Error }) =>
-        error.cause?.name === 'AccessControlException',
+        error.cause?.name === 'UnauthorizedError',
     );
 
     // Verify no permissions were created (role should have no permissions)
@@ -390,7 +390,7 @@ describe.concurrent('profile.updateRolePermission', () => {
       }),
     ).rejects.toSatisfy(
       (error: Error & { cause?: Error }) =>
-        error.cause?.name === 'AccessControlException',
+        error.cause?.name === 'UnauthorizedError',
     );
 
     // Verify no permissions were created for the role

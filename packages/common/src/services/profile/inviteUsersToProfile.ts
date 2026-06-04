@@ -122,7 +122,6 @@ export const inviteUsersToProfile = async ({
     existingUsers,
     existingAllowListEntries,
     existingPendingInvites,
-    ,
     proposalWithDecision,
     processInstanceForProfile,
   ] = await Promise.all([
@@ -160,16 +159,6 @@ export const inviteUsersToProfile = async ({
         acceptedOn: { isNull: true },
       },
     }),
-    // Assert the requester may invite to this profile (profile admin or an
-    // explicit decision-level invite permission). Throws on no membership.
-    assertProfileAccess(
-      { user, profileId },
-      [
-        { profile: permission.ADMIN },
-        { decisions: decisionPermission.INVITE_MEMBERS },
-      ],
-      'User must be associated with this profile to send invites',
-    ),
     // Get the proposal with its decision profile for building the invite URL
     db.query.proposals.findFirst({
       where: { profileId },
@@ -184,6 +173,17 @@ export const inviteUsersToProfile = async ({
       where: { profileId },
     }),
   ]);
+
+  // Assert the requester may invite to this profile (profile admin or an
+  // explicit decision-level invite permission). Throws on no membership.
+  await assertProfileAccess(
+    { user, profileId },
+    [
+      { profile: permission.ADMIN },
+      { decisions: decisionPermission.INVITE_MEMBERS },
+    ],
+    'User must be associated with this profile to send invites',
+  );
 
   // Validate all roles exist
   const rolesById = new Map(targetRoles.map((r) => [r.id, r]));

@@ -1,9 +1,6 @@
-import {
-  AccessControlException,
-  type AccessZonePermissionInput,
-  assertAccess,
-} from 'access-zones';
+import { type AccessZonePermissionInput, checkPermission } from 'access-zones';
 
+import { UnauthorizedError } from '../../utils';
 import {
   type ProfileUserWithNormalizedRoles,
   getProfileAccessUser,
@@ -15,8 +12,8 @@ import {
  *
  * @param notMemberMessage - Optional message for the thrown exception when the
  *   user has no role on the profile. Defaults to 'Not authorized'.
- * @throws AccessControlException if the user is not a member of the profile or
- *   their roles don't satisfy the permissions — every denial throws the same
+ * @throws UnauthorizedError if the user is not a member of the profile or their
+ *   roles don't satisfy the permissions — every denial throws the same
  *   exception type (only the message differs when `notMemberMessage` is given).
  */
 export async function assertProfileAccess(
@@ -27,13 +24,12 @@ export async function assertProfileAccess(
   const profileUser = await getProfileAccessUser({ user, profileId });
 
   if (!profileUser) {
-    throw new AccessControlException({
-      message: notMemberMessage ?? 'Not authorized',
-      status: 'unauthorized',
-    });
+    throw new UnauthorizedError(notMemberMessage ?? 'Not authorized');
   }
 
-  assertAccess(permissions, profileUser.roles);
+  if (!checkPermission(permissions, profileUser.roles)) {
+    throw new UnauthorizedError('Not authorized');
+  }
 
   return profileUser;
 }
