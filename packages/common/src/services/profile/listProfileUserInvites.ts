@@ -17,10 +17,10 @@ export const listProfileUserInvites = async ({
   user: User;
   query?: string;
 }) => {
-  await Promise.all([
-    assertProfileAdmin({ user, profileId }),
-    assertProfile(profileId),
-  ]);
+  // Check existence before access so a nonexistent profile is a 404
+  // regardless of the caller's permissions.
+  await assertProfile(profileId);
+  await assertProfileAdmin({ user, profileId });
 
   const trimmedQuery = query?.trim();
 
