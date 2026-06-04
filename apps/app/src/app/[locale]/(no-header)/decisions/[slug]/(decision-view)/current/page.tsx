@@ -19,7 +19,16 @@ export async function generateMetadata({
       loadDecision(slug),
       getTranslations({ locale }),
     ]);
-    const label = t('Current Phase');
+
+    // Title the page with the active phase's name; fall back to a generic
+    // label if it can't be resolved. Phase data rides along on the decision
+    // profile, so no extra instance fetch is needed.
+    const { instanceData, currentStateId } = decisionProfile.processInstance;
+    const currentPhase = instanceData?.phases?.find(
+      (phase) => phase.phaseId === currentStateId,
+    );
+    const label = currentPhase?.name || t('Current Phase');
+
     return {
       title: decisionProfile.name
         ? `${label} | ${decisionProfile.name}`
