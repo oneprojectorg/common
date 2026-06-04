@@ -67,7 +67,7 @@ export async function createRole({
     db.query.accessZones.findFirst({
       where: { name: zoneName },
     }),
-    assertProfileAdmin(user, profileId),
+    assertProfileAdmin({ user, profileId }),
   ]);
 
   if (!zone) {
@@ -161,7 +161,7 @@ export async function updateRolePermissions({
     throw new CommonError('Cannot modify permissions for global roles');
   }
 
-  await assertProfileAdmin(user, role.profileId);
+  await assertProfileAdmin({ user, profileId: role.profileId });
 
   const bitfield = toBitField(permissions);
 
@@ -211,7 +211,7 @@ export async function updateRole({
     throw new CommonError('Cannot update global roles');
   }
 
-  await assertProfileAdmin(user, role.profileId);
+  await assertProfileAdmin({ user, profileId: role.profileId });
 
   const [updated] = await db
     .update(accessRoles)
@@ -249,7 +249,7 @@ export async function deleteRole({
     throw new CommonError('Cannot delete global roles');
   }
 
-  await assertProfileAdmin(user, role.profileId);
+  await assertProfileAdmin({ user, profileId: role.profileId });
 
   // Invalidate before delete (cascade will remove the join rows we query)
   await invalidateProfileUserCacheForRole(roleId);

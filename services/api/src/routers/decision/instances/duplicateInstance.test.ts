@@ -454,7 +454,7 @@ describe.concurrent('duplicateInstance', () => {
         name: 'Should Fail',
         include: ALL_INCLUDED,
       }),
-    ).rejects.toThrow(/not authenticated/i);
+    ).rejects.toThrow(/not authorized/i);
   });
 
   it('should return not found for non-existent instance', async ({

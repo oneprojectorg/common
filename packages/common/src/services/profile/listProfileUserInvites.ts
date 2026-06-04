@@ -1,9 +1,8 @@
 import { db, sql } from '@op/db/client';
 import { profiles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
-import { assertProfile, assertProfileAccess } from '../assert';
+import { assertProfile, assertProfileAdmin } from '../assert';
 
 /**
  * List pending invites for a profile.
@@ -19,11 +18,7 @@ export const listProfileUserInvites = async ({
   query?: string;
 }) => {
   await Promise.all([
-    assertProfileAccess({
-      user,
-      profileId,
-      permissions: { profile: permission.ADMIN },
-    }),
+    assertProfileAdmin({ user, profileId }),
     assertProfile(profileId),
   ]);
 

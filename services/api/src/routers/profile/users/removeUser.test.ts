@@ -107,7 +107,7 @@ describe.concurrent('profile.users.removeUser', () => {
       caller.removeUser({
         profileUserId: memberUser2.profileUserId,
       }),
-    ).rejects.toThrow(/not authenticated/i);
+    ).rejects.toThrow(/not authorized/i);
   });
 });
 

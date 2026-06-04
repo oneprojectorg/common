@@ -1,7 +1,6 @@
 import { and, db, eq, gt, lt, or, sql } from '@op/db/client';
 import { profileUsers, profiles, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
 import {
   type PaginatedResult,
@@ -9,7 +8,7 @@ import {
   decodeCursor,
   encodeCursor,
 } from '../../utils/db';
-import { assertProfile, assertProfileAccess } from '../assert';
+import { assertProfile, assertProfileAdmin } from '../assert';
 import type {
   ProfileUserQueryResult,
   ProfileUserWithRelations,
@@ -52,11 +51,7 @@ export const listProfileUsers = async ({
   limit?: number;
 }): Promise<PaginatedResult<ProfileUserWithRelations>> => {
   await Promise.all([
-    assertProfileAccess({
-      user,
-      profileId,
-      permissions: { profile: permission.ADMIN },
-    }),
+    assertProfileAdmin({ user, profileId }),
     assertProfile(profileId),
   ]);
 

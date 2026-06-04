@@ -1,10 +1,9 @@
 import { db, eq } from '@op/db/client';
 import { type ProfileInvite, profileInvites } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils/error';
-import { assertProfileAccess } from '../assert';
+import { assertProfileAdmin } from '../assert';
 
 /**
  * Delete a pending profile invite.
@@ -30,11 +29,7 @@ export const deleteProfileInvite = async ({
   }
 
   // Check if user has ADMIN access on the profile
-  await assertProfileAccess({
-    user,
-    profileId: invite.profileId,
-    permissions: { profile: permission.ADMIN },
-  });
+  await assertProfileAdmin({ user, profileId: invite.profileId });
 
   const [deleted] = await db
     .delete(profileInvites)

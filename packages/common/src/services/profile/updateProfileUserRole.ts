@@ -10,7 +10,7 @@ import {
   getProfileAccessUser,
   getUserSession,
 } from '../access';
-import { assertProfileAccess } from '../assert';
+import { assertProfileAdmin } from '../assert';
 import { getProfileUserWithRelations } from './getProfileUserWithRelations';
 
 /**
@@ -58,11 +58,7 @@ export const updateProfileUserRoles = async ({
 
   const targetProfileId = targetProfileUser.profileId;
 
-  await assertProfileAccess({
-    user,
-    profileId: targetProfileId,
-    permissions: { profile: permission.ADMIN },
-  });
+  await assertProfileAdmin({ user, profileId: targetProfileId });
 
   if (targetProfileUser.isOwner) {
     // Profile owners must always retain admin access on their own profile —

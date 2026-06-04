@@ -257,7 +257,7 @@ export async function updateDecisionRoles({
     throw new NotFoundError('Role', roleId);
   }
 
-  await assertProfileAdmin(user, role.profileId);
+  await assertProfileAdmin({ user, profileId: role.profileId });
 
   const existing =
     await defaultDb.query.accessRolePermissionsOnAccessZones.findFirst({

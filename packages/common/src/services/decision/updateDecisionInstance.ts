@@ -122,7 +122,10 @@ export const updateDecisionInstance = async ({
       );
     }
 
-    await assertProfileAdmin(user, existingInstance.ownerProfileId);
+    await assertProfileAdmin({
+      user,
+      profileId: existingInstance.ownerProfileId,
+    });
 
     updateData.stewardProfileId = stewardProfileId;
   }
