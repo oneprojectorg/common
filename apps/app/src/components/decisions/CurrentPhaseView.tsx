@@ -1,7 +1,4 @@
-'use client';
-
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
-import { DecisionStepperBar } from '@/components/decisions/DecisionStepperBar';
 
 interface CurrentPhaseViewProps {
   instanceId: string;
@@ -21,17 +18,13 @@ export function CurrentPhaseView({
   ownerSlug,
   decisionSlug,
   decisionProfileId,
-  isAdmin,
 }: CurrentPhaseViewProps) {
   return (
-    <>
-      <DecisionStepperBar instanceId={instanceId} isAdmin={isAdmin} />
-      <DecisionStateRouter
-        instanceId={instanceId}
-        slug={ownerSlug}
-        decisionSlug={decisionSlug}
-        decisionProfileId={decisionProfileId}
-      />
-    </>
+    <DecisionStateRouter
+      instanceId={instanceId}
+      slug={ownerSlug}
+      decisionSlug={decisionSlug}
+      decisionProfileId={decisionProfileId}
+    />
   );
 }

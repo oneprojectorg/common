@@ -43,7 +43,7 @@ export const DecisionInstanceHeader = ({
   const t = useTranslations();
 
   return (
-    <header className="grid grid-cols-[auto_1fr_auto] items-center border-b bg-white p-2 px-6 sm:grid-cols-3 md:py-3">
+    <header className="sticky top-0 grid grid-cols-[auto_1fr_auto] items-center border-b bg-white p-2 px-6 sm:grid-cols-3 md:py-3">
       <div className="flex min-w-0 items-center gap-3">
         <Link
           href={backTo.href}
