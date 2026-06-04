@@ -31,6 +31,7 @@ import {
 import { organizations } from './schema/tables/organizations.sql';
 import { profiles } from './schema/tables/profiles.sql';
 import { users } from './schema/tables/users.sql';
+import { seedGlobalUsers } from './seed-global-users';
 import {
   ACCESS_ROLES,
   ACCESS_ROLE_PERMISSIONS,
@@ -60,6 +61,12 @@ await db
   .values(ACCESS_ROLE_PERMISSIONS)
   .onConflictDoNothing();
 console.log(`Inserted ${ACCESS_ROLE_PERMISSIONS.length} role permissions`);
+
+// ---------------------------------------------------------------------------
+// Global sentinel user (PUBLIC) for the access-control substitution layer.
+// Must exist in every environment.
+// ---------------------------------------------------------------------------
+await seedGlobalUsers();
 
 // ---------------------------------------------------------------------------
 // Default organization: One Project

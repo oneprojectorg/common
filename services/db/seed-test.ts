@@ -4,6 +4,7 @@ import { reset } from 'drizzle-seed';
 
 import { db } from '.';
 import * as schema from './schema';
+import { seedGlobalUsers } from './seed-global-users';
 import {
   ACCESS_ROLES,
   ACCESS_ROLE_PERMISSIONS,
@@ -371,6 +372,7 @@ async function seed() {
 
   await wipeDatabase();
   await seedAccessControl();
+  await seedGlobalUsers();
   await seedDecisionTemplates();
 
   console.log('\n✅ Database seeding completed successfully!');
