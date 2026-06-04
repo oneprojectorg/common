@@ -408,11 +408,18 @@ function PhaseDetailForm({
         >
           <ToggleButton
             isSelected={phase.rules?.voting?.submit ?? false}
-            onChange={(val) =>
-              updateRules({
-                voting: { ...phase.rules?.voting, submit: val },
-              })
-            }
+            onChange={(val) => {
+              const nextVoting: PhaseRules['voting'] = {
+                ...phase.rules?.voting,
+                submit: val,
+              };
+              // "1 vote per member" is the standard default — unlimited voting
+              // is the unusual choice and should be picked deliberately.
+              if (val && nextVoting.maxVotesPerMember === undefined) {
+                nextVoting.maxVotesPerMember = 1;
+              }
+              updateRules({ voting: nextVoting });
+            }}
             size="small"
           />
         </ToggleRow>
