@@ -101,7 +101,9 @@ export function networkAuthenticatedProcedure(
  * invite allow list) and one above {@link authenticatedProcedure} (which also
  * admits anonymous sessions). Default rate limit is 10 requests per 10 seconds.
  */
-export function confirmedProcedure(opts?: RateLimitedProcedureOptions) {
+export function authenticatedConfirmedProcedure(
+  opts?: RateLimitedProcedureOptions,
+) {
   const rateLimit = opts?.rateLimit ?? DEFAULT_RATE_LIMIT;
   return commonProcedure
     .use(withRateLimited(rateLimit))
