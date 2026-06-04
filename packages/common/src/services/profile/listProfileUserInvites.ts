@@ -1,11 +1,8 @@
 import { db, sql } from '@op/db/client';
 import { profiles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
 
-import { UnauthorizedError } from '../../utils/error';
-import { getProfileAccessUser } from '../access';
-import { assertProfile } from '../assert';
+import { assertProfile, assertProfileAdmin } from '../assert';
 
 /**
  * List pending invites for a profile.
@@ -20,16 +17,10 @@ export const listProfileUserInvites = async ({
   user: User;
   query?: string;
 }) => {
-  const [profileAccessUser] = await Promise.all([
-    getProfileAccessUser({ user, profileId }),
+  await Promise.all([
+    assertProfileAdmin({ user, profileId }),
     assertProfile(profileId),
   ]);
-
-  if (!profileAccessUser) {
-    throw new UnauthorizedError('You do not have access to this profile');
-  }
-
-  assertAccess({ profile: permission.ADMIN }, profileAccessUser.roles ?? []);
 
   const trimmedQuery = query?.trim();
 

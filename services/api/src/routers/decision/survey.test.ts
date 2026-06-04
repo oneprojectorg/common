@@ -69,7 +69,7 @@ describe.concurrent('process survey submission', () => {
         internalData: sampleInternalData,
         locale: 'en',
       }),
-    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
 
     const responses = await db
       .select({ id: decisionProcessSurveyResponses.id })

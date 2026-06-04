@@ -1,10 +1,10 @@
 import { db, eq } from '@op/db/client';
 import { profiles } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError } from '../../utils';
-import { getProfileAccessUser } from '../access';
+import { assertProfileAccess } from '../assert';
 
 export const deleteDecision = async ({
   instanceId,
@@ -25,15 +25,14 @@ export const deleteDecision = async ({
     throw new CommonError('Decision profile not found');
   }
 
-  const profileUser = await getProfileAccessUser({
+  await assertProfileAccess({
     user,
     profileId: instance.profileId,
+    permissions: [
+      { decisions: permission.DELETE },
+      { decisions: permission.ADMIN },
+    ],
   });
-
-  assertAccess(
-    [{ decisions: permission.DELETE }, { decisions: permission.ADMIN }],
-    profileUser?.roles ?? [],
-  );
 
   // Delete the decision's profile, which cascades to the instance and all related data
   const [deletedProfile] = await db

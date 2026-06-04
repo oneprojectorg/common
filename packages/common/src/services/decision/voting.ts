@@ -8,7 +8,7 @@ import {
   proposals,
 } from '@op/db/schema';
 import { waitUntil } from '@vercel/functions';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import {
   CommonError,
@@ -16,11 +16,8 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import {
-  assertInstanceProfileAccess,
-  getIndividualProfileId,
-  getProfileAccessUser,
-} from '../access';
+import { assertInstanceProfileAccess, getIndividualProfileId } from '../access';
+import { assertProfileAccess } from '../assert';
 import { decisionPermission } from './permissions';
 import { processDecisionProcessSchema } from './schemaRegistry';
 import { validateVoteSelection } from './schemaValidators';
@@ -188,15 +185,14 @@ export const submitVote = async ({
     }
 
     // Check user permissions
-    const profileUser = await getProfileAccessUser({
+    await assertProfileAccess({
       user: { id: authUserId },
       profileId: processInstance.profileId,
+      permissions: [
+        { decisions: permission.ADMIN },
+        { decisions: decisionPermission.VOTE },
+      ],
     });
-
-    assertAccess(
-      [{ decisions: permission.ADMIN }, { decisions: decisionPermission.VOTE }],
-      profileUser?.roles ?? [],
-    );
 
     const phaseConfig = getCurrentPhaseConfig(processInstance);
 

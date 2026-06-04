@@ -234,7 +234,7 @@ describe.concurrent('submitManualSelection', () => {
         processInstanceId: instanceId,
         proposalIds: [proposal.id],
       }),
-    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
   it('rejects a second submission after the selection has been confirmed', async ({

@@ -1,11 +1,10 @@
 import { type DbClient, db as defaultDb, eq } from '@op/db/client';
 import { accessRolePermissionsOnAccessZones, accessRoles } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
-import { getProfileAccessUser } from '../access';
-import { assertUserByAuthId } from '../assert';
+import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { createDecisionInstance } from './createInstanceFromTemplate';
 import type {
   DecisionInstanceData,
@@ -81,12 +80,11 @@ export const duplicateInstance = async ({
   }
 
   // Verify the caller has admin access on the source instance
-  const profileUser = await getProfileAccessUser({
+  await assertProfileAccess({
     user,
     profileId: sourceInstance.profileId,
+    permissions: { decisions: permission.ADMIN },
   });
-
-  assertAccess({ decisions: permission.ADMIN }, profileUser?.roles ?? []);
 
   const sourceData = sourceInstance.instanceData as DecisionInstanceData | null;
   if (!sourceData) {

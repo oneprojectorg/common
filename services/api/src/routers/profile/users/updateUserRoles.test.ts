@@ -191,7 +191,7 @@ describe.concurrent('profile.users.updateUserRoles', () => {
         profileUserId: memberUser2.profileUserId,
         roleIds: [ROLES.ADMIN.id],
       }),
-    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 });
 

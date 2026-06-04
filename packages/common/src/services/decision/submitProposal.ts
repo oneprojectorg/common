@@ -1,10 +1,10 @@
 import { getTipTapClient } from '@op/collab';
 import { db, eq } from '@op/db/client';
 import { type ProcessInstance, ProposalStatus, proposals } from '@op/db/schema';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
-import { getProfileAccessUser } from '../access';
+import { assertProfileAccess } from '../assert';
 import { decisionPermission } from './permissions';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
@@ -53,18 +53,14 @@ export const submitProposal = async ({
   }
 
   // Authorization check - verify user has access to the decision profile
-  const profileUser = await getProfileAccessUser({
+  await assertProfileAccess({
     user: { id: authUserId },
     profileId: instance.profileId,
-  });
-
-  assertAccess(
-    [
+    permissions: [
       { profile: permission.ADMIN },
       { decisions: decisionPermission.SUBMIT_PROPOSALS },
     ],
-    profileUser?.roles ?? [],
-  );
+  });
 
   const instanceData = instance.instanceData as DecisionInstanceData;
   const currentPhaseId = instance.currentStateId;

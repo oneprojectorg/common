@@ -1,10 +1,10 @@
 import { and, db, eq } from '@op/db/client';
 import { proposalAttachments } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
-import { CommonError, UnauthorizedError } from '../../utils';
-import { getProfileAccessUser } from '../access';
+import { CommonError } from '../../utils';
+import { assertProfileAccess } from '../assert';
 
 /**
  * Deletes the link between an attachment and a proposal.
@@ -41,16 +41,11 @@ export async function deleteProposalAttachment({
     throw new CommonError('Proposal not found');
   }
 
-  const profileUser = await getProfileAccessUser({
+  await assertProfileAccess({
     user: { id: user.id },
     profileId: proposal.profileId,
+    permissions: { profile: permission.UPDATE },
   });
-
-  if (!profileUser) {
-    throw new UnauthorizedError('Not authorized');
-  }
-
-  assertAccess({ profile: permission.UPDATE }, profileUser.roles);
 
   // Delete the link (soft delete - keeps the attachment record)
   await db

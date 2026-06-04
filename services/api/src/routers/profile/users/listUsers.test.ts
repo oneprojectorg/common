@@ -88,7 +88,7 @@ describe.concurrent('profile.users.listUsers', () => {
       caller.listUsers({
         profileId: profile.id,
       }),
-    ).rejects.toThrow(/not authenticated/i);
+    ).rejects.toThrow(/not authorized/i);
   });
 
   it('should throw error for invalid profile ID', async ({

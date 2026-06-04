@@ -3,13 +3,15 @@ import {
   decisionProcessSurveyResponses,
   decisionProcessSurveySubmitters,
 } from '@op/db/schema';
-import { assertAccess, collapseRoles, permission } from 'access-zones';
+import { collapseRoles, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { getIndividualProfileId, getProfileAccessUser } from '../access';
+import {
+  type ProfileUserWithNormalizedRoles,
+  getIndividualProfileId,
+} from '../access';
+import { assertProfileAccess } from '../assert';
 import { fromDecisionBitField } from './permissions';
-
-type ProfileAccessUser = Awaited<ReturnType<typeof getProfileAccessUser>>;
 
 export type SurveyInternalData = Record<string, unknown>;
 
@@ -46,7 +48,7 @@ async function authorizeSurveyAccess({
 }): Promise<{
   profileId: string;
   processInstance: ProcessInstanceForSurvey;
-  profileUser: ProfileAccessUser;
+  profileUser: ProfileUserWithNormalizedRoles;
 }> {
   const [profileId, processInstance] = await Promise.all([
     getIndividualProfileId(authUserId),
@@ -70,12 +72,11 @@ async function authorizeSurveyAccess({
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  const profileUser = await getProfileAccessUser({
+  const profileUser = await assertProfileAccess({
     user: { id: authUserId },
     profileId: processInstance.profileId,
+    permissions: { decisions: permission.READ },
   });
-
-  assertAccess({ decisions: permission.READ }, profileUser?.roles ?? []);
 
   return { profileId, processInstance, profileUser };
 }
@@ -88,16 +89,15 @@ function getSurveyMeta({
 }: {
   processInstance: ProcessInstanceForSurvey;
   submittedByProfileId: string;
-  profileUser: ProfileAccessUser;
+  profileUser: ProfileUserWithNormalizedRoles;
   locale: string;
 }) {
-  const roles = (profileUser?.roles ?? []).map((role) => ({
+  const roles = profileUser.roles.map((role) => ({
     id: role.id,
     name: role.name,
   }));
 
-  const decisionsBits =
-    collapseRoles(profileUser?.roles ?? [])['decisions'] ?? 0;
+  const decisionsBits = collapseRoles(profileUser.roles)['decisions'] ?? 0;
 
   return {
     roles,

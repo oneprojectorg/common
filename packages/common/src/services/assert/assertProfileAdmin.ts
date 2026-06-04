@@ -1,25 +1,28 @@
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
-import { UnauthorizedError } from '../../utils';
-import { getProfileAccessUser } from '../access';
+import type { ProfileUserWithNormalizedRoles } from '../access';
+import { assertProfileAccess } from './assertProfileAccess';
 
 /**
- * Asserts that a user has admin permission on a profile.
+ * Asserts that a user has admin permission on a profile, returning the
+ * resolved profile-access user so callers can reuse it.
  *
- * @param user - The user to check
- * @param profileId - The profile ID to check admin access for
- * @throws UnauthorizedError if user is not a member of the profile
- * @throws AccessError if user doesn't have admin permission
+ * Thin wrapper around {@link assertProfileAccess} for the common
+ * `{ profile: permission.ADMIN }` check.
+ *
+ * @throws UnauthorizedError if the user doesn't have admin permission
+ *   (including when the user is not a member of the profile)
  */
-export async function assertProfileAdmin(
-  user: { id: string },
-  profileId: string,
-): Promise<void> {
-  const profileUser = await getProfileAccessUser({ user, profileId });
-
-  if (!profileUser) {
-    throw new UnauthorizedError('You are not a member of this profile');
-  }
-
-  assertAccess({ profile: permission.ADMIN }, profileUser.roles || []);
+export async function assertProfileAdmin({
+  user,
+  profileId,
+}: {
+  user: { id: string };
+  profileId: string;
+}): Promise<ProfileUserWithNormalizedRoles> {
+  return assertProfileAccess({
+    user,
+    profileId,
+    permissions: { profile: permission.ADMIN },
+  });
 }

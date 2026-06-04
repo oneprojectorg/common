@@ -1,7 +1,7 @@
 import { db } from '@op/db/client';
 import { ProcessStatus } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import {
   CommonError,
@@ -10,8 +10,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { getProfileAccessUser } from '../access';
-import { assertUserByAuthId } from '../assert';
+import { assertProfileAccess, assertUserByAuthId } from '../assert';
 import { advancePhase } from './advancePhase';
 import { onPhaseAdvanced } from './onPhaseAdvanced';
 import type { DecisionInstanceData } from './schemas/instanceData';
@@ -64,12 +63,11 @@ export async function triggerPhaseAdvancement({
     );
   }
 
-  const profileUser = await getProfileAccessUser({
+  await assertProfileAccess({
     user,
     profileId: instance.profileId,
+    permissions: { decisions: permission.ADMIN },
   });
-
-  assertAccess({ decisions: permission.ADMIN }, profileUser?.roles ?? []);
 
   if (instance.status !== ProcessStatus.PUBLISHED) {
     throw new ValidationError('Instance must be published');

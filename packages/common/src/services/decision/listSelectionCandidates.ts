@@ -1,10 +1,10 @@
 import { type DbClient, db as defaultDb, eq } from '@op/db/client';
 import { proposalCategories } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError } from '../../utils';
-import { getProfileAccessUser } from '../access';
+import { assertProfileAccess } from '../assert';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
 import { isLegacyInstanceData } from './isLegacyInstance';
 import { listProposals } from './listProposals';
@@ -55,12 +55,11 @@ export async function listSelectionCandidates({
     );
   }
 
-  const profileUser = await getProfileAccessUser({
+  await assertProfileAccess({
     user,
     profileId: instance.profileId,
+    permissions: { decisions: permission.ADMIN },
   });
-
-  assertAccess({ decisions: permission.ADMIN }, profileUser?.roles ?? []);
 
   const previousPhaseId = resolvePreviousPhaseId(instance);
   if (!previousPhaseId) {

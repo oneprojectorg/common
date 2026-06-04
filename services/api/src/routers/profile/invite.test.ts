@@ -427,7 +427,7 @@ describe.concurrent('Profile Invite Integration Tests', () => {
         profileId: profile.id,
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'AccessControlException' },
+      cause: { name: 'UnauthorizedError' },
     });
   });
 
