@@ -24,7 +24,6 @@ export async function deleteOrganizationUser({
     user,
     organizationId,
     permissions: { admin: permission.UPDATE },
-    notMemberMessage: 'You are not a member of this organization',
   });
 
   // Check if the organization user to delete exists

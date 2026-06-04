@@ -18,7 +18,6 @@ export const getOrganizationUsers = async ({
     user,
     organizationId: organization.id,
     permissions: { admin: permission.READ },
-    notMemberMessage: 'You are not a member of this organization',
   });
 
   // Fetch all users in the organization with their roles and avatar images

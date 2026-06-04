@@ -42,7 +42,6 @@ export const updateOrganization = async ({
     user,
     organizationId,
     permissions: { profile: permission.UPDATE },
-    notMemberMessage: 'You are not a member of this organization',
   });
 
   const { ...updateData } = data;

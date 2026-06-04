@@ -29,7 +29,6 @@ export async function deleteOrganization({
     user,
     organizationId: organization.id,
     permissions: { profile: permission.DELETE },
-    notMemberMessage: 'You are not a member of this organization',
   });
 
   // Delete the organization profile

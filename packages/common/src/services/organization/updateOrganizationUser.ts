@@ -37,7 +37,6 @@ export async function updateOrganizationUser({
     user,
     organizationId,
     permissions: { admin: permission.UPDATE },
-    notMemberMessage: 'You are not a member of this organization',
   });
 
   // Check if the organization user to update exists
