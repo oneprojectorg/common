@@ -5,10 +5,12 @@ import {
 } from '@op/api/server';
 import { type ReactNode } from 'react';
 
+import { getServerFeatureFlag } from '@/lib/getServerFeatureFlag';
+import { redirect } from '@/lib/i18n/routing';
+
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionSidePanel } from '@/components/decisions/DecisionSidePanel';
 import { DecisionViewToggle } from '@/components/decisions/DecisionViewToggle';
-import { OverviewRouteGuard } from '@/components/decisions/OverviewRouteGuard';
 
 import { loadDecision } from './loadDecision';
 
@@ -19,15 +21,24 @@ import { loadDecision } from './loadDecision';
  * swaps, which is what makes the switch feel like a single page. The instance
  * is prefetched once here so both tabs' client suspense reads resolve from a
  * warm cache.
+ *
+ * This whole branch is gated by the `decision_overview` flag, evaluated
+ * server-side so flag-off visitors are redirected to the canonical root (the
+ * original, unflagged page) before anything renders — no client flash.
  */
 const DecisionViewLayout = async ({
   children,
   params,
 }: {
   children: ReactNode;
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; locale: string }>;
 }) => {
-  const { slug } = await params;
+  const { slug, locale } = await params;
+
+  if (!(await getServerFeatureFlag('decision_overview'))) {
+    redirect({ href: `/decisions/${slug}`, locale });
+  }
+
   const { decisionProfile, instanceId } = await loadDecision(slug);
   const { utils, queryClient } = await createServerUtils();
 
@@ -37,7 +48,6 @@ const DecisionViewLayout = async ({
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <OverviewRouteGuard decisionSlug={slug} />
       <DecisionHeader
         instanceId={instanceId}
         decisionSlug={slug}
