@@ -1,7 +1,7 @@
 import { Channels, removeRelationship } from '@op/common';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   id: z.uuid({
@@ -10,7 +10,7 @@ const inputSchema = z.object({
 });
 
 export const removeRelationshipRouter = router({
-  removeRelationship: commonAuthedProcedure()
+  removeRelationship: networkAuthenticatedProcedure()
     .input(inputSchema)
     .mutation(async ({ ctx, input }) => {
       const { id } = input;

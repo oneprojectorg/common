@@ -5,10 +5,10 @@ import {
   legacyOnlyInstanceFilterSchema,
   legacyProcessInstanceEncoder,
 } from '../../../encoders/legacyDecision';
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const listLegacyInstancesRouter = router({
-  listLegacyInstances: commonAuthedProcedure()
+  listLegacyInstances: networkAuthenticatedProcedure()
     .input(legacyOnlyInstanceFilterSchema)
     .output(legacyInstanceListEncoder)
     .query(async ({ input, ctx }) => {

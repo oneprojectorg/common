@@ -10,7 +10,7 @@ import type { ChannelName } from '@op/common/realtime';
 import { z } from 'zod';
 
 import { resourceInCollectionEncoder } from '../../encoders/resources';
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 const allowedMimeSchema = z.enum(ALLOWED_RESOURCE_MIME_TYPES);
 
@@ -44,7 +44,7 @@ const inputSchema = z.object({
 });
 
 export const createDocument = router({
-  createDocument: commonAuthedProcedure()
+  createDocument: networkAuthenticatedProcedure()
     .input(inputSchema)
     .output(resourceInCollectionEncoder)
     .mutation(async ({ input, ctx }) => {

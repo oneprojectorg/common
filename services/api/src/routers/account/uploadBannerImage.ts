@@ -7,7 +7,7 @@ import { Buffer } from 'buffer';
 import { z } from 'zod';
 
 import withDB from '../../middlewares/withDB';
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 import { MAX_FILE_SIZE, sanitizeS3Filename } from '../../utils';
 import { trackImageUpload } from '../../utils/analytics';
 
@@ -19,7 +19,7 @@ const ALLOWED_MIME_TYPES = [
 ];
 
 export const uploadBannerImage = router({
-  uploadBannerImage: commonAuthedProcedure()
+  uploadBannerImage: networkAuthenticatedProcedure()
     .use(withDB)
     .input(
       z.object({

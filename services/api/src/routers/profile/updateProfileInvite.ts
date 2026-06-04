@@ -2,10 +2,10 @@ import { updateProfileInvite } from '@op/common';
 import { z } from 'zod';
 
 import { profileInviteEncoder } from '../../encoders/profiles';
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 export const updateProfileInviteRouter = router({
-  updateProfileInvite: commonAuthedProcedure()
+  updateProfileInvite: networkAuthenticatedProcedure()
     .input(
       z.object({
         inviteId: z.string().uuid(),

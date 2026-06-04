@@ -6,10 +6,10 @@ import {
 import { ProposalReviewRequestState } from '@op/db/schema';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const listProposalsRevisionRequestsRouter = router({
-  listProposalsRevisionRequests: commonAuthedProcedure()
+  listProposalsRevisionRequests: networkAuthenticatedProcedure()
     .input(
       z.object({
         states: z.array(z.enum(ProposalReviewRequestState)).optional(),

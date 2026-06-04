@@ -3,13 +3,13 @@ import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import { postsEncoder } from '../../encoders';
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 import { trackUserPost } from '../../utils/analytics';
 
 const outputSchema = postsEncoder;
 
 export const createPostInOrganizationRouter = router({
-  createPost: commonAuthedProcedure({
+  createPost: networkAuthenticatedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 3 },
   })
     .input(

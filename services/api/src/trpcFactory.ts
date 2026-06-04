@@ -10,11 +10,14 @@ import {
 } from './lib/cookies';
 import { errorFormatter } from './lib/error';
 import withAnalytics from './middlewares/withAnalytics';
-import withAuthenticated from './middlewares/withAuthenticated';
+import withAuthenticatedUser from './middlewares/withAuthenticatedUser';
 import withChannelMeta from './middlewares/withChannelMeta';
+import withConfirmedUser from './middlewares/withConfirmedUser';
 import withLogger from './middlewares/withLogger';
+import withNetworkAuthenticatedUser from './middlewares/withNetworkAuthenticatedUser';
 import withRateLimited from './middlewares/withRateLimited';
 import withRequestCache from './middlewares/withRequestCache';
+import withResolvedUser from './middlewares/withResolvedUser';
 import type { TContext } from './types';
 
 export const createContext = async ({
@@ -68,7 +71,7 @@ export const commonProcedure = t.procedure
 
 const DEFAULT_RATE_LIMIT = { windowSize: 10, maxRequests: 10 };
 
-interface CommonAuthedProcedureOptions {
+interface RateLimitedProcedureOptions {
   rateLimit?: {
     windowSize: number;
     maxRequests: number;
@@ -76,21 +79,63 @@ interface CommonAuthedProcedureOptions {
 }
 
 /**
- * Creates an authenticated procedure with configurable rate limiting.
- * Includes: channelMeta -> logger -> rateLimited -> authenticated -> analytics
- *
- * @param opts.rateLimit - Custom rate limit config (default: 10 requests per 10 seconds)
- *
- * Usage:
- * - `commonAuthedProcedure()` - uses default rate limit (10 req/10s)
- * - `commonAuthedProcedure({ rateLimit: { windowSize: 60, maxRequests: 5 } })` - custom rate limit
- *
- * For unauthenticated endpoints, use `commonProcedure` with explicit middleware.
+ * Closed-network procedure (formerly `commonAuthedProcedure`): admits only
+ * confirmed `@oneproject.org` / allow-listed users via {@link withNetworkAuthenticatedUser}.
+ * Default rate limit is 10 requests per 10 seconds.
  */
-export function commonAuthedProcedure(opts?: CommonAuthedProcedureOptions) {
+export function networkAuthenticatedProcedure(
+  opts?: RateLimitedProcedureOptions,
+) {
   const rateLimit = opts?.rateLimit ?? DEFAULT_RATE_LIMIT;
   return commonProcedure
     .use(withRateLimited(rateLimit))
-    .use(withAuthenticated)
+    .use(withNetworkAuthenticatedUser)
+    .use(withAnalytics);
+}
+
+/**
+ * Confirmed-user procedure: admits any confirmed, non-anonymous user (a real
+ * account whose email/phone is confirmed) via {@link withConfirmedUser}, but
+ * applies no closed-network/allow-list gating. Sits one tier below
+ * {@link networkAuthenticatedProcedure} (which adds the `@oneproject.org` /
+ * invite allow list) and one above {@link authenticatedProcedure} (which also
+ * admits anonymous sessions). Default rate limit is 10 requests per 10 seconds.
+ */
+export function authenticatedConfirmedProcedure(
+  opts?: RateLimitedProcedureOptions,
+) {
+  const rateLimit = opts?.rateLimit ?? DEFAULT_RATE_LIMIT;
+  return commonProcedure
+    .use(withRateLimited(rateLimit))
+    .use(withConfirmedUser)
+    .use(withAnalytics);
+}
+
+/**
+ * Requires *a* user (any session, including anonymous sign-ins) but does no
+ * closed-network gating; authorization is deferred to the service layer.
+ * Endpoints migrate here from {@link networkAuthenticatedProcedure} once gating
+ * tests prove out-of-network callers still fail closed. Default rate limit is
+ * 10 requests per 10 seconds.
+ */
+export function authenticatedProcedure(opts?: RateLimitedProcedureOptions) {
+  const rateLimit = opts?.rateLimit ?? DEFAULT_RATE_LIMIT;
+  return commonProcedure
+    .use(withRateLimited(rateLimit))
+    .use(withResolvedUser)
+    .use(withAuthenticatedUser)
+    .use(withAnalytics);
+}
+
+/**
+ * Public-capable procedure: resolves an optional `ctx.user` but never rejects
+ * at the middleware layer — authorization is fully the service layer's job.
+ * Not used yet. Default rate limit is 10 requests per 10 seconds.
+ */
+export function openProcedure(opts?: RateLimitedProcedureOptions) {
+  const rateLimit = opts?.rateLimit ?? DEFAULT_RATE_LIMIT;
+  return commonProcedure
+    .use(withRateLimited(rateLimit))
+    .use(withResolvedUser)
     .use(withAnalytics);
 }

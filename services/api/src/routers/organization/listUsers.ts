@@ -1,7 +1,7 @@
 import { getOrganizationUsers } from '@op/common';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   profileId: z.uuid(),
@@ -42,7 +42,7 @@ const organizationUserEncoder = z.object({
 });
 
 export const listUsersRouter = router({
-  listUsers: commonAuthedProcedure()
+  listUsers: networkAuthenticatedProcedure()
     .input(inputSchema)
     .output(z.array(organizationUserEncoder))
     .query(async ({ ctx, input }) => {

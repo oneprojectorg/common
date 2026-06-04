@@ -8,7 +8,7 @@ import { ProfileRelationshipType, proposals } from '@op/db/schema';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 import {
   trackProposalFollowed,
   trackProposalLiked,
@@ -66,7 +66,7 @@ const getRelationshipsInputSchema = z.object({
   profileType: z.string().optional(),
 });
 
-const relationshipProcedure = commonAuthedProcedure({
+const relationshipProcedure = networkAuthenticatedProcedure({
   rateLimit: { windowSize: 10, maxRequests: 20 },
 });
 
@@ -118,7 +118,7 @@ export const profileRelationshipRouter = router({
       });
     }),
 
-  getRelationships: commonAuthedProcedure({
+  getRelationships: networkAuthenticatedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 100 },
   })
     .input(getRelationshipsInputSchema)

@@ -11,10 +11,10 @@ import { assertAccess, permission } from 'access-zones';
 import { z } from 'zod';
 
 import { userEncoder } from '../../encoders';
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 export const switchProfile = router({
-  switchProfile: commonAuthedProcedure()
+  switchProfile: networkAuthenticatedProcedure()
     .input(z.object({ profileId: z.uuid() }))
     .output(userEncoder)
     .mutation(async ({ input, ctx }) => {

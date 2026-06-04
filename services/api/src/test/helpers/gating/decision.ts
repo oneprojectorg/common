@@ -13,7 +13,7 @@ export {
 /**
  * Decision-instance endpoints that participate in network gating declare an
  * outcome for the four caller kinds (no-JWT / anon-JWT / user-JWT / network-JWT)
- * against a non-public instance. Decision endpoints are `commonAuthedProcedure`,
+ * against a non-public instance. Decision endpoints are `networkAuthenticatedProcedure`,
  * so the first three are rejected by the tier gate (`AccessTierError`) and
  * network-JWT is admitted. Public-mode cells will be added when the
  * public-instance toggle

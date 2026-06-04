@@ -9,7 +9,7 @@ import {
   legacyGetInstanceInputSchema,
   legacyProcessInstanceEncoder,
 } from '../../../encoders/legacyDecision';
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 import { trackProcessViewed } from '../../../utils/analytics';
 
 /**
@@ -19,7 +19,7 @@ import { trackProcessViewed } from '../../../utils/analytics';
  */
 
 export const getLegacyInstanceRouter = router({
-  getLegacyInstance: commonAuthedProcedure({
+  getLegacyInstance: networkAuthenticatedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 30 },
   })
     .input(legacyGetInstanceInputSchema)
@@ -63,7 +63,7 @@ export const getLegacyInstanceRouter = router({
  * Only supports new decision-making schemas.
  */
 export const getInstanceRouter = router({
-  getInstance: commonAuthedProcedure({
+  getInstance: networkAuthenticatedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 30 },
   })
     .input(getInstanceInputSchema)

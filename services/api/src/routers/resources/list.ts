@@ -2,7 +2,7 @@ import { Channels, RESOURCE_LIST_MAX_LIMIT, listResources } from '@op/common';
 import { z } from 'zod';
 
 import { resourceListEncoder } from '../../encoders/resources';
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   profileId: z.string().uuid(),
@@ -11,7 +11,7 @@ const inputSchema = z.object({
 });
 
 export const list = router({
-  list: commonAuthedProcedure()
+  list: networkAuthenticatedProcedure()
     .input(inputSchema)
     .output(resourceListEncoder)
     .query(async ({ input, ctx }) => {

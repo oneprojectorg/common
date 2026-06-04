@@ -2,10 +2,10 @@ import { invalidate } from '@op/cache';
 import { completeOnboarding as completeOnboardingService } from '@op/common';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 export const completeOnboarding = router({
-  completeOnboarding: commonAuthedProcedure()
+  completeOnboarding: networkAuthenticatedProcedure()
     .input(
       z.object({
         tos: z.boolean(),

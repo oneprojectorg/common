@@ -2,7 +2,7 @@ import { UnauthorizedError, getUserWithProfiles } from '@op/common';
 import { EntityType, ObjectsInStorage, Profile } from '@op/db/schema';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 export const userProfileSchema = z.object({
   id: z.string(),
@@ -19,7 +19,7 @@ export const userProfileSchema = z.object({
 });
 
 export const getUserProfiles = router({
-  getUserProfiles: commonAuthedProcedure()
+  getUserProfiles: networkAuthenticatedProcedure()
     .input(z.undefined())
     .output(
       z.array(

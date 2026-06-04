@@ -1,7 +1,7 @@
 import { Channels, deleteCollection } from '@op/common';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 const collectionChannels = (profileIds: string[]) => [
   ...profileIds.map((id) => Channels.profileCollections(id)),
@@ -9,7 +9,7 @@ const collectionChannels = (profileIds: string[]) => [
 ];
 
 export const collectionsDelete = router({
-  delete: commonAuthedProcedure()
+  delete: networkAuthenticatedProcedure()
     .input(z.object({ collectionId: z.string().uuid() }))
     .mutation(async ({ input, ctx }) => {
       const { profileIds } = await deleteCollection({

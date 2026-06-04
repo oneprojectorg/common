@@ -4,12 +4,12 @@ import { getPostsSchema } from '@op/types';
 import { z } from 'zod';
 
 import { postsEncoder } from '../../encoders';
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 const outputSchema = z.array(postsEncoder);
 
 export const getPosts = router({
-  getPosts: commonAuthedProcedure()
+  getPosts: networkAuthenticatedProcedure()
     .input(getPostsSchema)
     .output(outputSchema)
     .query(async ({ input, ctx }) => {

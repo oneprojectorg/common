@@ -4,7 +4,7 @@ import { waitUntil } from '@vercel/functions';
 import { Buffer } from 'buffer';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 import { MAX_FILE_SIZE, sanitizeS3Filename } from '../../utils';
 import { trackImageUpload } from '../../utils/analytics';
 
@@ -16,7 +16,7 @@ const ALLOWED_MIME_TYPES = [
 ];
 
 export const uploadAvatarImage = router({
-  uploadAvatarImage: commonAuthedProcedure()
+  uploadAvatarImage: networkAuthenticatedProcedure()
     .input(
       z.object({
         file: z.string(), // base64 encoded

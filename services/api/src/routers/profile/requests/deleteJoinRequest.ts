@@ -2,7 +2,7 @@ import { Channels, deleteProfileJoinRequest } from '@op/common';
 import { z } from 'zod';
 
 import { joinProfileRequestEncoder } from '../../../encoders/joinProfileRequests';
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 const inputSchema = z.object({
   /** The ID of the join profile request to delete */
@@ -10,7 +10,7 @@ const inputSchema = z.object({
 });
 
 export const deleteJoinRequestRouter = router({
-  deleteJoinRequest: commonAuthedProcedure({
+  deleteJoinRequest: networkAuthenticatedProcedure({
     rateLimit: { windowSize: 60, maxRequests: 10 },
   })
     .input(inputSchema)

@@ -4,10 +4,10 @@ import {
   decisionProfileWithSchemaFilterSchema,
   decisionProfileWithSchemaListEncoder,
 } from '../../../encoders/decision';
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 
 export const listDecisionProfilesRouter = router({
-  listDecisionProfiles: commonAuthedProcedure()
+  listDecisionProfiles: networkAuthenticatedProcedure()
     .input(decisionProfileWithSchemaFilterSchema)
     .output(decisionProfileWithSchemaListEncoder)
     .query(async ({ input, ctx }) => {

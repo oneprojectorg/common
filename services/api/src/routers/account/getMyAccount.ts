@@ -8,10 +8,10 @@ import {
 import { z } from 'zod';
 
 import { userEncoder } from '../../encoders';
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 export const getMyAccount = router({
-  getMyAccount: commonAuthedProcedure()
+  getMyAccount: networkAuthenticatedProcedure()
     .input(z.undefined())
     .output(userEncoder)
     .query(async ({ ctx }) => {

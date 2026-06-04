@@ -3,7 +3,7 @@ import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 // Input Schemas based on our contracts
 const customDataSchema = z.record(z.string(), z.unknown()).optional();
@@ -17,7 +17,7 @@ const submitVoteInput = z.object({
 
 export const votingRouter = router({
   // Submit user's vote (validates against current schema)
-  submitVote: commonAuthedProcedure({
+  submitVote: networkAuthenticatedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 5 },
   })
     .input(submitVoteInput)
@@ -48,7 +48,7 @@ export const votingRouter = router({
     }),
 
   // Get user's vote status with schema context
-  getVotingStatus: commonAuthedProcedure()
+  getVotingStatus: networkAuthenticatedProcedure()
     .input(
       z.object({
         processInstanceId: z.uuid(),

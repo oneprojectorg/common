@@ -7,7 +7,7 @@ import { getCurrentOrgId } from '@op/common/src/services/access';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 import { trackRelationshipAdded } from '../../utils/analytics';
 
 const inputSchema = z.object({
@@ -19,7 +19,7 @@ const inputSchema = z.object({
 });
 
 export const addRelationshipRouter = router({
-  addRelationship: commonAuthedProcedure()
+  addRelationship: networkAuthenticatedProcedure()
     .input(inputSchema)
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx;

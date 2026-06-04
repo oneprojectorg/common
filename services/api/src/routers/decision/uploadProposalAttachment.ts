@@ -7,7 +7,7 @@ import { createServerClient } from '@op/supabase/lib';
 import { Buffer } from 'node:buffer';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 import { MAX_FILE_SIZE, sanitizeS3Filename } from '../../utils';
 
 const ALLOWED_MIME_TYPES = [
@@ -22,7 +22,7 @@ const ALLOWED_MIME_TYPES = [
 ];
 
 export const uploadProposalAttachment = router({
-  uploadProposalAttachment: commonAuthedProcedure({
+  uploadProposalAttachment: networkAuthenticatedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 20 },
   })
     .input(

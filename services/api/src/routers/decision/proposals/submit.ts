@@ -4,7 +4,7 @@ import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
 import { trackProposalSubmitted } from '../../../utils/analytics';
 
 const submitProposalInputSchema = z.object({
@@ -12,7 +12,7 @@ const submitProposalInputSchema = z.object({
 });
 
 export const submitProposalRouter = router({
-  submitProposal: commonAuthedProcedure()
+  submitProposal: networkAuthenticatedProcedure()
     .input(submitProposalInputSchema)
     .output(proposalSchema)
     .mutation(async ({ ctx, input }) => {

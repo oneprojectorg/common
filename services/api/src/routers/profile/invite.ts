@@ -3,7 +3,7 @@ import { getIndividualProfileId, inviteUsersToProfile } from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { commonAuthedProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   invitations: z
@@ -34,7 +34,7 @@ const outputSchema = z.object({
 });
 
 export const inviteProfileUserRouter = router({
-  invite: commonAuthedProcedure({
+  invite: networkAuthenticatedProcedure({
     rateLimit: { windowSize: 60, maxRequests: 10 },
   })
     .input(inputSchema)
