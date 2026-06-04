@@ -1,12 +1,11 @@
 import { db } from '@op/db/client';
 import { type Organization, type Profile, organizations } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
 import { UnauthorizedError } from '../../../utils';
-import { getOrgAccessUser } from '../../access';
-import { assertProfile } from '../../assert';
+import { assertOrgAccess, assertProfile } from '../../assert';
 
 type TargetProfileAdminContext = {
   targetProfile: Profile;
@@ -42,18 +41,13 @@ export const assertTargetProfileAdminAccess = async ({
   // NOTE: We're using organizationUsers instead of profileUsers because we're in between
   // memberships - the profile user membership (new) and the organization user membership (old).
   // After we migrate to profile users, this code should be changed to use profileUsers.
-  const orgUser = await getOrgAccessUser({
+  await assertOrgAccess({
     user,
     organizationId: organization.id,
-  });
-
-  if (!orgUser) {
-    throw new UnauthorizedError(
+    permissions: { profile: permission.ADMIN },
+    notMemberMessage:
       'You must be a member of this organization to view join requests',
-    );
-  }
-
-  assertAccess({ profile: permission.ADMIN }, orgUser.roles);
+  });
 
   return { targetProfile, organization };
 };

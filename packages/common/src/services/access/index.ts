@@ -13,7 +13,7 @@ import type { ProfileUserBase } from '../profile/schemas/profileUser';
 import { memoize } from './requestCache';
 import { getNormalizedRoles } from './utils';
 
-type OrgUserWithNormalizedRoles = OrganizationUserBase & {
+export type OrgUserWithNormalizedRoles = OrganizationUserBase & {
   roles: NormalizedRole[];
 };
 

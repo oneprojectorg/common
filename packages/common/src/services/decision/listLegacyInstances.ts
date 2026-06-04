@@ -1,10 +1,10 @@
 import { db, desc, eq } from '@op/db/client';
 import { ProposalStatus, organizations, processInstances } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
-import { getOrgAccessUser } from '../access';
+import { assertOrgAccess } from '../assert';
 
 export const listLegacyInstances = async ({
   ownerProfileId,
@@ -22,12 +22,11 @@ export const listLegacyInstances = async ({
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  const orgUser = await getOrgAccessUser({
+  await assertOrgAccess({
     user,
     organizationId: org[0].id,
+    permissions: { decisions: permission.READ },
   });
-
-  assertAccess({ decisions: permission.READ }, orgUser?.roles ?? []);
 
   const instanceList = await db._query.processInstances.findMany({
     where: eq(processInstances.ownerProfileId, ownerProfileId),

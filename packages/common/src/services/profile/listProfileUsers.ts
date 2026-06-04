@@ -50,10 +50,10 @@ export const listProfileUsers = async ({
   cursor?: string | null;
   limit?: number;
 }): Promise<PaginatedResult<ProfileUserWithRelations>> => {
-  await Promise.all([
-    assertProfileAdmin({ user, profileId }),
-    assertProfile(profileId),
-  ]);
+  // Check existence before access so a nonexistent profile is a 404
+  // regardless of the caller's permissions.
+  await assertProfile(profileId);
+  await assertProfileAdmin({ user, profileId });
 
   // Build where clause with optional search filter (minimum 2 characters)
   // Uses ILIKE for substring matching and trigram word_similarity for fuzzy matching

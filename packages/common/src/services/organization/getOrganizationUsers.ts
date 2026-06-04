@@ -1,10 +1,8 @@
 import { db, sql } from '@op/db/client';
 import { User } from '@op/supabase/lib';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
-import { UnauthorizedError } from '../../utils';
-import { getOrgAccessUser } from '../access';
-import { assertOrganizationByProfileId } from '../assert';
+import { assertOrgAccess, assertOrganizationByProfileId } from '../assert';
 
 export const getOrganizationUsers = async ({
   profileId,
@@ -16,16 +14,11 @@ export const getOrganizationUsers = async ({
   // First, find the organization by profileId
   const organization = await assertOrganizationByProfileId(profileId);
 
-  const orgUser = await getOrgAccessUser({
+  await assertOrgAccess({
     user,
     organizationId: organization.id,
+    permissions: { admin: permission.READ },
   });
-
-  if (!orgUser) {
-    throw new UnauthorizedError('You are not a member of this organization');
-  }
-
-  assertAccess({ admin: permission.READ }, orgUser?.roles || []);
 
   // Fetch all users in the organization with their roles and avatar images
   const organizationUsers = await db.query.organizationUsers.findMany({

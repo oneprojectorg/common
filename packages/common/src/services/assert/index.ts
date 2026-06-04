@@ -1,4 +1,5 @@
 export { assertGlobalRole } from './assertGlobalRole';
+export { assertOrgAccess } from './assertOrgAccess';
 export {
   assertOrganization,
   assertOrganizationByProfileId,

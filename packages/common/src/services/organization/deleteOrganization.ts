@@ -2,10 +2,11 @@ import { invalidate } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { profiles } from '@op/db/schema';
 import type { User } from '@supabase/supabase-js';
-import { assertAccess, permission } from 'access-zones';
+import { permission } from 'access-zones';
 
-import { NotFoundError, UnauthorizedError } from '../../utils';
+import { NotFoundError } from '../../utils';
 import { getOrgAccessUser } from '../access';
+import { assertOrgAccess } from '../assert';
 
 export async function deleteOrganization({
   organizationProfileId,
@@ -23,17 +24,12 @@ export async function deleteOrganization({
     throw new NotFoundError('Organization', organizationProfileId);
   }
 
-  // Get the org access user and assert admin DELETE permissions
-  const orgUser = await getOrgAccessUser({
+  // Assert the user has admin DELETE permissions on the organization
+  await assertOrgAccess({
     user,
     organizationId: organization.id,
+    permissions: { profile: permission.DELETE },
   });
-
-  if (!orgUser) {
-    throw new UnauthorizedError('You are not a member of this organization');
-  }
-
-  assertAccess({ profile: permission.DELETE }, orgUser?.roles || []);
 
   // Delete the organization profile
   // The cascade delete will handle removing org data
