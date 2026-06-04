@@ -189,8 +189,13 @@ export function getFieldOptions(
     return [];
   }
 
-  // dropdown / category: prefer oneOf, fall back to legacy enum
-  if (schema.type === 'string' || Array.isArray(schema.type)) {
+  // dropdown / category: prefer oneOf, fall back to legacy enum.
+  // `array` covers multi-select dropdowns whose options live on `items`.
+  if (
+    schema.type === 'string' ||
+    schema.type === 'array' ||
+    Array.isArray(schema.type)
+  ) {
     return parseSchemaOptions(schema).map((opt, i) => ({
       id: `${fieldId}-opt-${i}`,
       value: String(opt.value),

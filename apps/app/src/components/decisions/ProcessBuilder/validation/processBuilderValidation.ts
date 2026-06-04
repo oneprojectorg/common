@@ -38,6 +38,14 @@ const phasesSchema = z.object({
   phases: z.array(phaseSchema).min(1),
 });
 
+/**
+ * Proposal fields the template editor renders as locked/auto-generated
+ * (title, category) — the user can't edit them here, so error validators
+ * skip them to avoid surfacing dead-end errors. Budget is a system field
+ * but IS editable (BudgetFieldConfig), so it stays in scope.
+ */
+const LOCKED_PROPOSAL_FIELD_KEYS = new Set(['title', 'category']);
+
 // ============ Helpers ============
 
 /** Returns true when at least one phase has review enabled. */
@@ -76,7 +84,12 @@ function validateTemplateEditor(
   if (!data?.proposalTemplate) {
     return false;
   }
-  const fields = getFields(data.proposalTemplate);
+  // Skip locked, non-editable fields (title/category): an error there can't be
+  // fixed from this editor, so flagging it would be a dead-end. Budget stays
+  // in scope because it IS editable here.
+  const fields = getFields(data.proposalTemplate).filter(
+    (field) => !LOCKED_PROPOSAL_FIELD_KEYS.has(field.id),
+  );
   return fields.every((field) => getFieldErrors(field).length === 0);
 }
 
@@ -153,7 +166,7 @@ const LAUNCH_CHECKLIST: ChecklistItem[] = [
         return true;
       }
       const fields = getFields(data.proposalTemplate).filter(
-        (f) => !SYSTEM_FIELD_KEYS.has(f.id),
+        (f) => !LOCKED_PROPOSAL_FIELD_KEYS.has(f.id),
       );
       return fields.every((field) => getFieldErrors(field).length === 0);
     },
