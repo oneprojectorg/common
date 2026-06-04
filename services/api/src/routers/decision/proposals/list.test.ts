@@ -2231,6 +2231,65 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
     });
     expect(reviewResult.proposals.map((p) => p.id)).toContain(draft.id);
   });
+
+  it('orders proposals deterministically when createdAt values tie', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const [p1, p2, p3, caller] = await Promise.all([
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'A', description: 'A' },
+      }),
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'B', description: 'B' },
+      }),
+      testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: 'C', description: 'C' },
+      }),
+      createAuthenticatedCaller(setup.userEmail),
+    ]);
+
+    // Force identical createdAt so the primary sort key alone can't order
+    // them — the query needs a tie-breaker for asc/desc to differ.
+    const sharedTimestamp = '2026-01-01T00:00:00.000Z';
+    await db
+      .update(proposals)
+      .set({ createdAt: sharedTimestamp })
+      .where(eq(proposals.processInstanceId, instance.instance.id));
+
+    const desc = await caller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+      dir: 'desc',
+    });
+    const asc = await caller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+      dir: 'asc',
+    });
+
+    const descIds = desc.proposals.map((p) => p.id);
+    const ascIds = asc.proposals.map((p) => p.id);
+
+    expect([...descIds].sort()).toEqual([p1.id, p2.id, p3.id].sort());
+    expect(ascIds).toEqual([...descIds].reverse());
+  });
 });
 
 describeDecisionAccessTierGating('listProposals', {
