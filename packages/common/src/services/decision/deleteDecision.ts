@@ -25,10 +25,14 @@ export const deleteDecision = async ({
     throw new CommonError('Decision profile not found');
   }
 
-  await assertProfileAccess({ user, profileId: instance.profileId }, [
-    { decisions: permission.DELETE },
-    { decisions: permission.ADMIN },
-  ]);
+  await assertProfileAccess({
+    user,
+    profileId: instance.profileId,
+    permissions: [
+      { decisions: permission.DELETE },
+      { decisions: permission.ADMIN },
+    ],
+  });
 
   // Delete the decision's profile, which cascades to the instance and all related data
   const [deletedProfile] = await db

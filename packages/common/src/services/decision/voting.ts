@@ -185,10 +185,14 @@ export const submitVote = async ({
     }
 
     // Check user permissions
-    await assertProfileAccess(
-      { user: { id: authUserId }, profileId: processInstance.profileId },
-      [{ decisions: permission.ADMIN }, { decisions: decisionPermission.VOTE }],
-    );
+    await assertProfileAccess({
+      user: { id: authUserId },
+      profileId: processInstance.profileId,
+      permissions: [
+        { decisions: permission.ADMIN },
+        { decisions: decisionPermission.VOTE },
+      ],
+    });
 
     const phaseConfig = getCurrentPhaseConfig(processInstance);
 

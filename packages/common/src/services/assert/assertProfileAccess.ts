@@ -16,11 +16,17 @@ import {
  *   roles don't satisfy the permissions — every denial throws the same
  *   exception type (only the message differs when `notMemberMessage` is given).
  */
-export async function assertProfileAccess(
-  { user, profileId }: { user: { id: string }; profileId: string },
-  permissions: AccessZonePermissionInput,
-  notMemberMessage?: string,
-): Promise<ProfileUserWithNormalizedRoles> {
+export async function assertProfileAccess({
+  user,
+  profileId,
+  permissions,
+  notMemberMessage,
+}: {
+  user: { id: string };
+  profileId: string;
+  permissions: AccessZonePermissionInput;
+  notMemberMessage?: string;
+}): Promise<ProfileUserWithNormalizedRoles> {
   const profileUser = await getProfileAccessUser({ user, profileId });
 
   if (!profileUser) {

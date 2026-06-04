@@ -41,10 +41,11 @@ export async function deleteProposalAttachment({
     throw new CommonError('Proposal not found');
   }
 
-  await assertProfileAccess(
-    { user: { id: user.id }, profileId: proposal.profileId },
-    { profile: permission.UPDATE },
-  );
+  await assertProfileAccess({
+    user: { id: user.id },
+    profileId: proposal.profileId,
+    permissions: { profile: permission.UPDATE },
+  });
 
   // Delete the link (soft delete - keeps the attachment record)
   await db

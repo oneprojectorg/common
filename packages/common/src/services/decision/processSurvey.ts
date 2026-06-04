@@ -72,10 +72,11 @@ async function authorizeSurveyAccess({
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  const profileUser = await assertProfileAccess(
-    { user: { id: authUserId }, profileId: processInstance.profileId },
-    { decisions: permission.READ },
-  );
+  const profileUser = await assertProfileAccess({
+    user: { id: authUserId },
+    profileId: processInstance.profileId,
+    permissions: { decisions: permission.READ },
+  });
 
   return { profileId, processInstance, profileUser };
 }

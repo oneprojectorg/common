@@ -53,13 +53,14 @@ export const submitProposal = async ({
   }
 
   // Authorization check - verify user has access to the decision profile
-  await assertProfileAccess(
-    { user: { id: authUserId }, profileId: instance.profileId },
-    [
+  await assertProfileAccess({
+    user: { id: authUserId },
+    profileId: instance.profileId,
+    permissions: [
       { profile: permission.ADMIN },
       { decisions: decisionPermission.SUBMIT_PROPOSALS },
     ],
-  );
+  });
 
   const instanceData = instance.instanceData as DecisionInstanceData;
   const currentPhaseId = instance.currentStateId;

@@ -55,10 +55,11 @@ export async function listSelectionCandidates({
     );
   }
 
-  await assertProfileAccess(
-    { user, profileId: instance.profileId },
-    { decisions: permission.ADMIN },
-  );
+  await assertProfileAccess({
+    user,
+    profileId: instance.profileId,
+    permissions: { decisions: permission.ADMIN },
+  });
 
   const previousPhaseId = resolvePreviousPhaseId(instance);
   if (!previousPhaseId) {

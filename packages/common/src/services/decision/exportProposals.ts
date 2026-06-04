@@ -52,9 +52,11 @@ export const exportProposals = async ({
   }
 
   // Check user permissions via profile
-  await assertProfileAccess({ user, profileId: result[0].profileId }, [
-    { decisions: permission.ADMIN },
-  ]);
+  await assertProfileAccess({
+    user,
+    profileId: result[0].profileId,
+    permissions: [{ decisions: permission.ADMIN }],
+  });
 
   const exportId = randomUUID();
 

@@ -49,10 +49,11 @@ export const updateProfileInvite = async ({
   }
 
   // Check if user has ADMIN access on the profile
-  await assertProfileAccess(
-    { user, profileId: invite.profileId },
-    { profile: permission.ADMIN },
-  );
+  await assertProfileAccess({
+    user,
+    profileId: invite.profileId,
+    permissions: { profile: permission.ADMIN },
+  });
 
   // Update the invite
   const [updated] = await db

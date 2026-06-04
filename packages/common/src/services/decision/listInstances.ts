@@ -39,10 +39,14 @@ export const listInstances = async ({
     );
   }
 
-  await assertProfileAccess(
-    { user: { id: user.id }, profileId: filterProfileId },
-    [{ decisions: permission.ADMIN }, { decisions: permission.READ }],
-  );
+  await assertProfileAccess({
+    user: { id: user.id },
+    profileId: filterProfileId,
+    permissions: [
+      { decisions: permission.ADMIN },
+      { decisions: permission.READ },
+    ],
+  });
 
   try {
     // Build filter conditions

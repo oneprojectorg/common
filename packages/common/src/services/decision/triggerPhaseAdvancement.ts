@@ -63,10 +63,11 @@ export async function triggerPhaseAdvancement({
     );
   }
 
-  await assertProfileAccess(
-    { user, profileId: instance.profileId },
-    { decisions: permission.ADMIN },
-  );
+  await assertProfileAccess({
+    user,
+    profileId: instance.profileId,
+    permissions: { decisions: permission.ADMIN },
+  });
 
   if (instance.status !== ProcessStatus.PUBLISHED) {
     throw new ValidationError('Instance must be published');

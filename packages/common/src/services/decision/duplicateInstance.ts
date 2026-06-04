@@ -80,10 +80,11 @@ export const duplicateInstance = async ({
   }
 
   // Verify the caller has admin access on the source instance
-  await assertProfileAccess(
-    { user, profileId: sourceInstance.profileId },
-    { decisions: permission.ADMIN },
-  );
+  await assertProfileAccess({
+    user,
+    profileId: sourceInstance.profileId,
+    permissions: { decisions: permission.ADMIN },
+  });
 
   const sourceData = sourceInstance.instanceData as DecisionInstanceData | null;
   if (!sourceData) {

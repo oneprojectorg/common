@@ -52,7 +52,11 @@ export const listProfileUsers = async ({
   limit?: number;
 }): Promise<PaginatedResult<ProfileUserWithRelations>> => {
   await Promise.all([
-    assertProfileAccess({ user, profileId }, { profile: permission.ADMIN }),
+    assertProfileAccess({
+      user,
+      profileId,
+      permissions: { profile: permission.ADMIN },
+    }),
     assertProfile(profileId),
   ]);
 

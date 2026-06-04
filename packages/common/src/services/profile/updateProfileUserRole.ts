@@ -58,10 +58,11 @@ export const updateProfileUserRoles = async ({
 
   const targetProfileId = targetProfileUser.profileId;
 
-  await assertProfileAccess(
-    { user, profileId: targetProfileId },
-    { profile: permission.ADMIN },
-  );
+  await assertProfileAccess({
+    user,
+    profileId: targetProfileId,
+    permissions: { profile: permission.ADMIN },
+  });
 
   if (targetProfileUser.isOwner) {
     // Profile owners must always retain admin access on their own profile —

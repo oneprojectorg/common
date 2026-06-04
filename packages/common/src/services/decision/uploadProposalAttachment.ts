@@ -50,10 +50,11 @@ export async function uploadProposalAttachment({
     throw new CommonError('Proposal not found');
   }
 
-  await assertProfileAccess(
-    { user: { id: user.id }, profileId: proposal.profileId },
-    { profile: permission.UPDATE },
-  );
+  await assertProfileAccess({
+    user: { id: user.id },
+    profileId: proposal.profileId,
+    permissions: { profile: permission.UPDATE },
+  });
 
   // Create attachment record in database
   const [attachment] = await db

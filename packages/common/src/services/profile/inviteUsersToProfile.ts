@@ -176,14 +176,16 @@ export const inviteUsersToProfile = async ({
 
   // Assert the requester may invite to this profile (profile admin or an
   // explicit decision-level invite permission). Throws on no membership.
-  await assertProfileAccess(
-    { user, profileId },
-    [
+  await assertProfileAccess({
+    user,
+    profileId,
+    permissions: [
       { profile: permission.ADMIN },
       { decisions: decisionPermission.INVITE_MEMBERS },
     ],
-    'User must be associated with this profile to send invites',
-  );
+    notMemberMessage:
+      'User must be associated with this profile to send invites',
+  });
 
   // Validate all roles exist
   const rolesById = new Map(targetRoles.map((r) => [r.id, r]));

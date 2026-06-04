@@ -10,12 +10,16 @@ import { assertProfileAccess } from './assertProfileAccess';
  *
  * @param user - The user to check
  * @param profileId - The profile ID to check admin access for
- * @throws AccessControlException if the user doesn't have admin permission
+ * @throws UnauthorizedError if the user doesn't have admin permission
  *   (including when the user is not a member of the profile)
  */
 export async function assertProfileAdmin(
   user: { id: string },
   profileId: string,
 ): Promise<void> {
-  await assertProfileAccess({ user, profileId }, { profile: permission.ADMIN });
+  await assertProfileAccess({
+    user,
+    profileId,
+    permissions: { profile: permission.ADMIN },
+  });
 }

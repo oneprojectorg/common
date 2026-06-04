@@ -21,10 +21,11 @@ export const removeProfileUser = async ({
   const targetProfileUser = await assertProfileUser(profileUserId);
 
   // Check if user has ADMIN access on the profile
-  await assertProfileAccess(
-    { user, profileId: targetProfileUser.profileId },
-    { profile: permission.ADMIN },
-  );
+  await assertProfileAccess({
+    user,
+    profileId: targetProfileUser.profileId,
+    permissions: { profile: permission.ADMIN },
+  });
 
   if (targetProfileUser.isOwner) {
     throw new ValidationError('Cannot remove the owner of a profile');

@@ -73,10 +73,11 @@ export const updateDecisionInstance = async ({
   }
 
   // Check if user has admin access on the decision instance's profile
-  await assertProfileAccess(
-    { user, profileId },
-    { decisions: permission.ADMIN },
-  );
+  await assertProfileAccess({
+    user,
+    profileId,
+    permissions: { decisions: permission.ADMIN },
+  });
 
   // Validate proposalTemplate is a structurally valid JSON Schema before persisting
   if (proposalTemplate !== undefined) {

@@ -19,7 +19,11 @@ export const listProfileUserInvites = async ({
   query?: string;
 }) => {
   await Promise.all([
-    assertProfileAccess({ user, profileId }, { profile: permission.ADMIN }),
+    assertProfileAccess({
+      user,
+      profileId,
+      permissions: { profile: permission.ADMIN },
+    }),
     assertProfile(profileId),
   ]);
 

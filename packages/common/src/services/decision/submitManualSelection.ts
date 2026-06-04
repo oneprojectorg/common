@@ -69,10 +69,11 @@ export async function submitManualSelection({
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  await assertProfileAccess(
-    { user, profileId: instance.profileId },
-    { decisions: permission.ADMIN },
-  );
+  await assertProfileAccess({
+    user,
+    profileId: instance.profileId,
+    permissions: { decisions: permission.ADMIN },
+  });
 
   if (instance.status !== ProcessStatus.PUBLISHED) {
     throw new ValidationError(
