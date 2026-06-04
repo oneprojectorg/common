@@ -20,7 +20,8 @@ interface DecisionViewToggleProps {
 export function DecisionViewToggle({ decisionSlug }: DecisionViewToggleProps) {
   const t = useTranslations();
   const pathname = usePathname();
-  const activeView = pathname.endsWith('/current') ? 'current' : 'overview';
+  const activeView =
+    pathname.split('/').pop() === 'current' ? 'current' : 'overview';
 
   return (
     <Tabs value={activeView}>

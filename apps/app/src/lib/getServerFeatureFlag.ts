@@ -12,7 +12,12 @@ function getClient(): PostHog | null {
     return null;
   }
   if (!client) {
-    client = new PostHog(key, { host: POSTHOG_HOST });
+    // Cap the per-request flag network call so a PostHog brownout can't stall
+    // the layout render (the flag is awaited before anything paints).
+    client = new PostHog(key, {
+      host: POSTHOG_HOST,
+      featureFlagsRequestTimeoutMs: 3000,
+    });
   }
   return client;
 }
@@ -63,8 +68,21 @@ export async function getServerFeatureFlag(flag: string): Promise<boolean> {
   const ph = getClient();
   const distinctId = await getDistinctId();
   if (!ph || !distinctId) {
+    // TODO(overview-canonical): cookie-less visitors (new/anon, private mode,
+    // crawlers) have no distinct id, so the flag is forced off. Fine while the
+    // overview lives behind the flag at /overview. Before it becomes the
+    // canonical public root, stand up PostHog's recommended Next.js setup:
+    // middleware that ensures a distinct-id cookie and bootstraps flag values
+    // (or @posthog/next). That durably fixes anon identity, the per-render
+    // /decide network call, and server/client flag flicker in one move.
     return false;
   }
 
-  return (await ph.isFeatureEnabled(flag, distinctId)) === true;
+  // Fail closed: any network/timeout error resolves to off, so a PostHog
+  // outage routes visitors to the canonical root rather than crashing render.
+  try {
+    return (await ph.isFeatureEnabled(flag, distinctId)) === true;
+  } catch {
+    return false;
+  }
 }
