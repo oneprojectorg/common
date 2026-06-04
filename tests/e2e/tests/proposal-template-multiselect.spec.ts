@@ -1,0 +1,118 @@
+import { expect, test } from '../fixtures/index.js';
+
+// Wider viewport so the participant preview panel (xl:block >= 1280px) is visible.
+test.use({ viewport: { width: 1440, height: 900 } });
+
+/** Resolves when the next matching updateDecisionInstance mutation succeeds. */
+function waitForAutoSave(
+  page: import('@playwright/test').Page,
+  requestBodyIncludes?: string,
+) {
+  return page.waitForResponse(
+    (resp) => {
+      if (
+        !resp.url().includes('decision.updateDecisionInstance') ||
+        !resp.ok()
+      ) {
+        return false;
+      }
+
+      if (!requestBodyIncludes) {
+        return true;
+      }
+
+      return resp.request().postData()?.includes(requestBodyIncludes) ?? false;
+    },
+    { timeout: 12_000 },
+  );
+}
+
+test.describe('Proposal template — multi-select category', () => {
+  // Regression guard for the multi-select category fix:
+  //   - getFieldOptions now reads options off array-typed (multi-select) dropdowns
+  //   - validateTemplateEditor skips locked fields (title/category)
+  // Before the fix, a multi-select category resolved to zero options, tripped the
+  // "needs 2+ options" dropdown check, and lit the Proposal Template section's
+  // incomplete dot — an error the user could not fix from the editor.
+  test('multi-select category does not flag the Proposal Template section as incomplete', async ({
+    authenticatedPage: page,
+  }) => {
+    test.setTimeout(144_000);
+
+    // 1. Create a draft process from the seeded template.
+    await page.goto('/en/');
+    await page.getByRole('button', { name: 'Create' }).click();
+    await page
+      .getByRole('menuitem', { name: 'Decision-making process' })
+      .click();
+    await page.waitForURL(/\/decisions\/[^/]+\/edit/, { timeout: 12_000 });
+    await expect(page.getByText('Process Overview')).toBeVisible({
+      timeout: 36_000,
+    });
+
+    const sidebarNav = page.getByRole('navigation', {
+      name: 'Section navigation',
+    });
+
+    // 2. Jump straight to Proposal Categories.
+    await sidebarNav
+      .getByRole('button', { name: 'Proposal Categories' })
+      .click();
+    await expect(page.getByText('Proposal Categories').first()).toBeVisible({
+      timeout: 12_000,
+    });
+
+    // 3. Add two categories.
+    await page.getByRole('button', { name: 'Create first category' }).click();
+    await page.getByLabel('Shorthand').fill('Education');
+    let saved = waitForAutoSave(page);
+    await page.getByRole('button', { name: 'Add category' }).click();
+    await expect(page.getByText('Education', { exact: true })).toBeVisible();
+    await saved;
+
+    await page.getByRole('button', { name: 'Add category' }).click();
+    await page.getByLabel('Shorthand').fill('Health');
+    saved = waitForAutoSave(page);
+    await page.getByRole('button', { name: 'Add category' }).click();
+    await expect(page.getByText('Health', { exact: true })).toBeVisible();
+    await saved;
+
+    // 4. Enable "Allow multiple categories" (the toggle is unlabeled, so scope
+    //    by the row that contains the label text).
+    const multiRow = page.locator('div.flex.items-center.justify-between', {
+      has: page.getByText('Allow multiple categories', { exact: true }),
+    });
+    const multiToggle = multiRow.getByRole('button');
+    const multiSaved = waitForAutoSave(page, 'allowMultipleCategories');
+    await multiToggle.click();
+    await multiSaved;
+    await expect(multiToggle).toHaveAttribute('aria-pressed', 'true');
+
+    // 5. Open the Proposal Template editor and make one edit so the normalized
+    //    template (now carrying the multi-select category) is persisted — the
+    //    section validator reads the persisted template, not editor-local state.
+    await sidebarNav.getByRole('button', { name: 'Proposal Template' }).click();
+    await expect(page.getByText('Proposal template').first()).toBeVisible({
+      timeout: 12_000,
+    });
+
+    const addFieldButton = page.getByRole('button', { name: 'Add field' });
+    await expect(addFieldButton).toBeVisible({ timeout: 6_000 });
+    await addFieldButton.click();
+    const fieldSaved = waitForAutoSave(page);
+    await page.getByRole('menuitem', { name: 'Short text' }).click();
+    await fieldSaved;
+
+    // 6. Positive control: Overview was left blank, so its section MUST show the
+    //    incomplete dot. This proves the selector matches real indicators, so the
+    //    assertion below is meaningful rather than a never-matching selector.
+    const overviewNav = sidebarNav.getByRole('button', { name: 'Overview' });
+    await expect(overviewNav.locator('span.bg-primary-teal')).toHaveCount(1);
+
+    // 7. The Proposal Template section must NOT show the incomplete dot.
+    const templateNav = sidebarNav.getByRole('button', {
+      name: 'Proposal Template',
+    });
+    await expect(templateNav.locator('span.bg-primary-teal')).toHaveCount(0);
+  });
+});
