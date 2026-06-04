@@ -179,7 +179,7 @@ describe.concurrent('profile.listJoinRequests', () => {
       caller.listJoinRequests({
         targetProfileId: targetProfile.id,
       }),
-    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
   it('should deny access to users who are not members of the profile', async ({
