@@ -2,6 +2,7 @@ import { type AccessZonePermissionInput, checkPermission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
 import {
+  type AccessUser,
   type ProfileUserWithNormalizedRoles,
   getProfileAccessUser,
 } from '../access';
@@ -22,7 +23,7 @@ export async function assertProfileAccess({
   permissions,
   notMemberMessage,
 }: {
-  user: { id: string };
+  user?: AccessUser;
   profileId: string;
   permissions: AccessZonePermissionInput;
   notMemberMessage?: string;
