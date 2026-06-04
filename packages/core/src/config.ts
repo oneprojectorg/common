@@ -222,6 +222,7 @@ export const adminEmails = ['scott@oneproject.org'];
 
 // NOTE: This allowlist will eventually be moved to the database
 export const platformAdminEmails = new Set([
+  'iza@oneproject.org',
   'casimiro@oneproject.org',
   'nour@oneproject.org',
   'raphael@oneproject.org',
