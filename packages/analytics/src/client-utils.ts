@@ -23,15 +23,8 @@ export interface DecisionCommonProperties {
 
 /**
  * Builds the common property bag for decision-making analytics events.
- *
- * Client-safe and the single source of truth (the server `./utils` re-exports
- * it). Firing client-side means `location`/`timezone`/`language` are actually
- * populated, whereas server-side calls always skip them because `window` is
- * undefined.
- *
- * Note: the value is emitted under the `process_id` property for backwards
- * compatibility with existing PostHog dashboards, even though the input is the
- * decision instance id.
+ * `location`/`timezone`/`language` are only populated client-side. The instance
+ * id is emitted as `process_id` for backwards compatibility with PostHog.
  */
 export function getDecisionCommonProperties({
   decisionInstanceId,
