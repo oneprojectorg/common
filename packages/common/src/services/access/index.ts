@@ -7,7 +7,7 @@ import { checkPermission } from 'access-zones';
 import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils/error';
-import { assertOrgAccess } from '../assert';
+import { assertOrgAccess, assertOrganizationByProfileId } from '../assert';
 import type { OrganizationUserBase } from '../organization/schemas/organizationUser';
 import type { ProfileMinimal } from '../profile/schemas/profileMinimal';
 import type { ProfileUserBase } from '../profile/schemas/profileUser';
@@ -189,14 +189,10 @@ export const assertInstanceProfileAccess = async ({
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  const [org] = await db
-    .select({ id: organizations.id })
-    .from(organizations)
-    .where(eq(organizations.profileId, instance.ownerProfileId));
-
-  if (!org?.id) {
-    throw new UnauthorizedError("You don't have access to do this");
-  }
+  const org = await assertOrganizationByProfileId(
+    instance.ownerProfileId,
+    new UnauthorizedError("You don't have access to do this"),
+  );
 
   const orgUser = await assertOrgAccess({
     user,
