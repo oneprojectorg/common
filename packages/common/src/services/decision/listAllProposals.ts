@@ -9,11 +9,7 @@ import {
   encodeCursor,
   getCursorCondition,
 } from '../../utils';
-import {
-  assertInstanceProfileAccess,
-  getCurrentProfileId,
-  getProfileAccessUser,
-} from '../access';
+import { assertInstanceProfileAccess, getCurrentProfileId } from '../access';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
@@ -55,12 +51,10 @@ export const listAllProposals = async ({
     throw new UnauthorizedError('User does not have access to this process');
   }
 
-  const profileUser = await getProfileAccessUser({
-    user,
-    profileId: instance.profileId,
-  });
-
-  await assertInstanceProfileAccess({
+  // Reuse the profile-access user resolved by the assert (present only when
+  // access was granted at the profile level) to derive admin status — a miss
+  // here, or an org-fallback grant, means no profile-level decisions ADMIN.
+  const { profileUser } = await assertInstanceProfileAccess({
     user,
     instance,
     profilePermissions: [

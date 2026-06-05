@@ -7,6 +7,7 @@ import { checkPermission } from 'access-zones';
 import { z } from 'zod';
 
 import { UnauthorizedError } from '../../utils/error';
+import { assertOrgAccess } from '../assert';
 import type { OrganizationUserBase } from '../organization/schemas/organizationUser';
 import type { ProfileMinimal } from '../profile/schemas/profileMinimal';
 import type { ProfileUserBase } from '../profile/schemas/profileUser';
@@ -136,11 +137,26 @@ export const getProfileAccessUser = memoize(
 );
 
 /**
+ * Result of {@link assertInstanceProfileAccess}: a discriminated union that
+ * reports which access path was satisfied. Exactly one of `profileUser` /
+ * `orgUser` is present, so a truthy check on either narrows the other to
+ * `undefined`.
+ */
+export type InstanceProfileAccess =
+  | { profileUser: ProfileUserWithNormalizedRoles; orgUser?: undefined }
+  | { profileUser?: undefined; orgUser: OrgUserWithNormalizedRoles };
+
+/**
  * Asserts profile-level access, falling back to org-level access if the user
  * doesn't have a profileUser role on the given profile.
  *
  * Uses `instance.profileId` for the profile-level check and
  * `instance.ownerProfileId` for the org-level fallback lookup.
+ *
+ * @returns the resolved access user, tagged by which path was satisfied —
+ *   `{ profileUser }` when profile-level access passed, otherwise `{ orgUser }`.
+ * @throws UnauthorizedError if neither the profile nor the org fallback grants
+ *   access.
  */
 export const assertInstanceProfileAccess = async ({
   user,
@@ -152,44 +168,44 @@ export const assertInstanceProfileAccess = async ({
   instance: { profileId: string | null; ownerProfileId: string | null };
   profilePermissions: AccessZonePermissionInput;
   orgFallbackPermissions: AccessZonePermissionInput;
-}) => {
+}): Promise<InstanceProfileAccess> => {
   if (!instance.profileId) {
     throw new UnauthorizedError("You don't have access to do this");
   }
 
+  // Soft profile-level check: a miss here is expected and falls through to the
+  // org-level check, so we don't use the throwing assertProfileAccess.
   const profileUser = await getProfileAccessUser({
     user,
     profileId: instance.profileId,
   });
 
-  const hasProfileAccess = checkPermission(
-    profilePermissions,
-    profileUser?.roles ?? [],
-  );
-
-  if (!hasProfileAccess) {
-    if (!instance.ownerProfileId) {
-      throw new UnauthorizedError("You don't have access to do this");
-    }
-
-    const org = await db
-      .select({ id: organizations.id })
-      .from(organizations)
-      .where(eq(organizations.profileId, instance.ownerProfileId));
-
-    if (!org[0]?.id) {
-      throw new UnauthorizedError("You don't have access to do this");
-    }
-
-    const orgUser = await getOrgAccessUser({
-      user,
-      organizationId: org[0].id,
-    });
-
-    if (!checkPermission(orgFallbackPermissions, orgUser?.roles ?? [])) {
-      throw new UnauthorizedError("You don't have access to do this");
-    }
+  if (profileUser && checkPermission(profilePermissions, profileUser.roles)) {
+    return { profileUser };
   }
+
+  // Org-level fallback (hard check).
+  if (!instance.ownerProfileId) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+
+  const [org] = await db
+    .select({ id: organizations.id })
+    .from(organizations)
+    .where(eq(organizations.profileId, instance.ownerProfileId));
+
+  if (!org?.id) {
+    throw new UnauthorizedError("You don't have access to do this");
+  }
+
+  const orgUser = await assertOrgAccess({
+    user,
+    organizationId: org.id,
+    permissions: orgFallbackPermissions,
+    notMemberMessage: "You don't have access to do this",
+  });
+
+  return { orgUser };
 };
 
 export const getCurrentProfileId = async (authUserId: string) => {
