@@ -45,16 +45,17 @@ const {
   useRouter,
 } = createNavigation(routing);
 
-// The intermittent "Could not find module ... in the React Client Manifest" 500
-// (Asana 1213980160576009) is fixed structurally by unifying the (main)/(no-header)
-// route groups under a single layout (see app/[locale]/(app)/layout.tsx), which
-// removes the cross-route-group layout swap that broke RSC manifest resolution.
+// prefetch was previously forced {false} to work around the intermittent
+// "Could not find module ... in the React Client Manifest" 500
+// (Asana 1213980160576009). That 500 is now fixed structurally by unifying the
+// (main)/(no-header) route groups under a single layout (see
+// app/[locale]/(app)/layout.tsx), which removes the cross-route-group layout swap
+// that broke RSC manifest resolution — so prefetch is re-enabled for snappier nav.
 //
-// prefetch is kept {false} as defense-in-depth: with prefetch enabled, Next/Turbopack
-// still emits NON-fatal manifest errors when *prefetch* renders carry a sibling route's
-// router-state-tree (logged, no 500). Disabling prefetch avoids that log noise and any
-// wasted prefetch work until the upstream Turbopack bug is fixed. Navigation itself is
-// now safe regardless, so prefetch could be re-enabled later if desired.
+// Caveat: with prefetch enabled, Next/Turbopack still emits a few NON-fatal manifest
+// errors when a *prefetch* render carries a sibling route's router-state-tree (logged
+// only, no 500, navigation returns 200). This is the upstream Turbopack bug
+// (vercel/next.js #52862/#72903); revisit on Next upgrades.
 const Link = ({
   children,
   className,
@@ -65,7 +66,7 @@ const Link = ({
     <NavLink
       {...props}
       className={cn('hover:underline', className)}
-      prefetch={false}
+      prefetch={true}
     >
       {children}
     </NavLink>
