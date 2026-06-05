@@ -15,10 +15,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       capture_pageleave: true,
       capture_exceptions: true,
       __add_tracing_headers: true,
-      // Logs every capture to the browser console so events can be verified in
-      // devtools. NOTE: this is enabled for all users in production — revert
-      // once view tracking is verified.
-      debug: true,
+      // debug: process.env.NODE_ENV === 'development',
     });
   }, []);
 
