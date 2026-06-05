@@ -45,10 +45,6 @@ export const getProposalRouter = router({
         return { access: undefined };
       });
 
-      // Note: the `proposal_viewed` analytics event is tracked client-side in
-      // ProposalView so it fires on an actual view rather than on every query
-      // execution (prefetch/refetch/invalidation/editor+review fetches).
-
       ctx.registerQueryChannels([
         Channels.decisionProposal(proposal.processInstanceId, proposal.id),
       ]);

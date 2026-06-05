@@ -1,5 +1,10 @@
 import PostHogClient from '@op/analytics/client';
 
+import {
+  type DecisionCommonProperties,
+  getDecisionCommonProperties,
+} from './client-utils';
+
 const posthog = PostHogClient();
 
 /**
@@ -254,41 +259,9 @@ export async function trackRelationshipAccepted(userId: string): Promise<void> {
  * Decision-making process analytics
  */
 
-export interface DecisionCommonProperties {
-  process_id: string;
-  proposal_id?: string;
-  location?: string;
-  timezone?: string;
-  language?: string;
-}
-
-/**
- * Helper function to get common properties for decision events
- */
-export function getDecisionCommonProperties(
-  processId: string,
-  proposalId?: string,
-  additionalProps?: Record<string, any>,
-): DecisionCommonProperties & Record<string, any> {
-  // Server-side safe implementation - only add client-side properties if available
-  const baseProps: DecisionCommonProperties & Record<string, any> = {
-    process_id: processId,
-    ...additionalProps,
-  };
-
-  if (proposalId) {
-    baseProps.proposal_id = proposalId;
-  }
-
-  // Only add browser-specific properties if we're on the client side
-  if (typeof window !== 'undefined') {
-    baseProps.location = window.location.href;
-    baseProps.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    baseProps.language = navigator.language;
-  }
-
-  return baseProps;
-}
+// Re-exported from the client-safe module so there is a single definition
+// shared by server-side tracking here and client-side tracking in the app.
+export { type DecisionCommonProperties, getDecisionCommonProperties };
 
 /**
  * Track when a user views a decision-making process

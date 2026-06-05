@@ -30,10 +30,6 @@ export const getLegacyInstanceRouter = router({
         user,
       });
 
-      // Note: the `process_viewed` analytics event is tracked client-side in
-      // DecisionHeader so it fires on an actual view rather than on every query
-      // execution (prefetch/refetch/invalidation).
-
       return legacyProcessInstanceEncoder.parse({
         ...instance,
         instanceData: instance.instanceData,
@@ -74,10 +70,6 @@ export const getInstanceRouter = router({
         instanceId: input.instanceId,
         user,
       });
-
-      // Note: the `process_viewed` analytics event is tracked client-side in
-      // DecisionHeader so it fires on an actual view rather than on every query
-      // execution (prefetch/refetch/invalidation).
 
       ctx.registerQueryChannels([Channels.decisionInstance(input.instanceId)]);
 
