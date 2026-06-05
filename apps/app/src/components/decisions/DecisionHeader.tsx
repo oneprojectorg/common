@@ -34,9 +34,11 @@ interface DecisionHeaderProps {
 export function DecisionHeader(props: DecisionHeaderProps) {
   const { instanceId } = props;
 
-  useTrackPageView('process_viewed', getDecisionCommonProperties(instanceId), [
-    instanceId,
-  ]);
+  useTrackPageView(
+    'process_viewed',
+    getDecisionCommonProperties({ decisionInstanceId: instanceId }),
+    [instanceId],
+  );
 
   if (props.useLegacy) {
     return <LegacyDecisionHeaderContent {...props} />;

@@ -50,7 +50,10 @@ export function ProposalView({
   const { processInstanceId, id: proposalId } = currentProposal;
   useTrackPageView(
     'proposal_viewed',
-    getDecisionCommonProperties(processInstanceId, proposalId),
+    getDecisionCommonProperties({
+      decisionInstanceId: processInstanceId,
+      proposalId,
+    }),
     [processInstanceId, proposalId],
   );
 

@@ -274,7 +274,10 @@ export async function trackProcessViewed(
   await trackEventWithContext(
     userId,
     'process_viewed',
-    getDecisionCommonProperties(processId, undefined, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      additionalProps,
+    }),
   );
 }
 
@@ -290,7 +293,11 @@ export async function trackProposalSubmitted(
   await trackEventWithContext(
     userId,
     'proposal_submitted',
-    getDecisionCommonProperties(processId, proposalId, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      proposalId,
+      additionalProps,
+    }),
   );
 }
 
@@ -306,7 +313,11 @@ export async function trackProposalViewed(
   await trackEventWithContext(
     userId,
     'proposal_viewed',
-    getDecisionCommonProperties(processId, proposalId, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      proposalId,
+      additionalProps,
+    }),
   );
 }
 
@@ -322,7 +333,11 @@ export async function trackProposalCommented(
   await trackEventWithContext(
     userId,
     'proposal_commented',
-    getDecisionCommonProperties(processId, proposalId, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      proposalId,
+      additionalProps,
+    }),
   );
 }
 
@@ -338,7 +353,11 @@ export async function trackProposalLiked(
   await trackEventWithContext(
     userId,
     'proposal_liked',
-    getDecisionCommonProperties(processId, proposalId, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      proposalId,
+      additionalProps,
+    }),
   );
 }
 
@@ -354,7 +373,11 @@ export async function trackProposalFollowed(
   await trackEventWithContext(
     userId,
     'proposal_followed',
-    getDecisionCommonProperties(processId, proposalId, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      proposalId,
+      additionalProps,
+    }),
   );
 }
 
@@ -365,7 +388,7 @@ export async function trackUserVoted(
   await trackEventWithContext(
     userId,
     'user_voted',
-    getDecisionCommonProperties(processId),
+    getDecisionCommonProperties({ decisionInstanceId: processId }),
   );
 }
 
@@ -381,7 +404,11 @@ export async function trackProposalReviewed(
   await trackEventWithContext(
     userId,
     'user_reviewed_proposal',
-    getDecisionCommonProperties(processId, proposalId, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      proposalId,
+      additionalProps,
+    }),
   );
 }
 
@@ -396,7 +423,10 @@ export async function trackReviewListFinished(
   await trackEventWithContext(
     userId,
     'user_finished_review',
-    getDecisionCommonProperties(processId, undefined, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      additionalProps,
+    }),
   );
 }
 
@@ -411,7 +441,10 @@ export async function trackAdminSetProcess(
   await trackEventWithContext(
     userId,
     'admin_set_process',
-    getDecisionCommonProperties(processId, undefined, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      additionalProps,
+    }),
   );
 }
 
@@ -456,7 +489,10 @@ export async function trackAdminSetRubric(
   await trackEventWithContext(
     userId,
     'admin_set_rubric',
-    getDecisionCommonProperties(processId, undefined, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      additionalProps,
+    }),
   );
 }
 
@@ -486,7 +522,10 @@ export async function trackManualTransitionConfirmed(
   await trackEventWithContext(
     userId,
     'manual_transition_confirmed',
-    getDecisionCommonProperties(processId, undefined, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      additionalProps,
+    }),
   );
 }
 
@@ -498,7 +537,10 @@ export async function trackManualSelectionSubmitted(
   await trackEventWithContext(
     userId,
     'manual_selection_submitted',
-    getDecisionCommonProperties(processId, undefined, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      additionalProps,
+    }),
   );
 }
 
@@ -510,6 +552,9 @@ export async function trackPhaseEndDateChanged(
   await trackEventWithContext(
     userId,
     'phase_end_date_changed',
-    getDecisionCommonProperties(processId, undefined, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      additionalProps,
+    }),
   );
 }
