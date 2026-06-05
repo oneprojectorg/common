@@ -47,15 +47,11 @@ export function ProposalView({
   // Safety check - fallback to initial data if query returns undefined
   const currentProposal = proposal || initialProposal;
 
-  // Track the proposal view once per proposal. Lives in the view component
-  // (not the getProposal procedure) so it fires on an actual view — not on
-  // every prefetch, refetch, cache invalidation, or editor/review fetch that
-  // re-runs the query.
   const { processInstanceId, id: proposalId } = currentProposal;
   useTrackPageView(
     'proposal_viewed',
     getDecisionCommonProperties(processInstanceId, proposalId),
-    `${processInstanceId}:${proposalId}`,
+    [processInstanceId, proposalId],
   );
 
   // Use relationship mutations hook for like/follow functionality

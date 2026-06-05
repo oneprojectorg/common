@@ -34,15 +34,9 @@ interface DecisionHeaderProps {
 export function DecisionHeader(props: DecisionHeaderProps) {
   const { instanceId } = props;
 
-  // Track the process view once per instance. Lives in the header (shared by
-  // the new and legacy routes) rather than the getInstance procedure so it
-  // fires on an actual view — not on every server prefetch, refetch, or cache
-  // invalidation (vote/transition/edit) that re-runs the query.
-  useTrackPageView(
-    'process_viewed',
-    getDecisionCommonProperties(instanceId),
+  useTrackPageView('process_viewed', getDecisionCommonProperties(instanceId), [
     instanceId,
-  );
+  ]);
 
   if (props.useLegacy) {
     return <LegacyDecisionHeaderContent {...props} />;
