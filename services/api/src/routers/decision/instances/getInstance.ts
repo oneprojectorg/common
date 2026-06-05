@@ -1,5 +1,4 @@
 import { Channels, getInstance } from '@op/common';
-import { waitUntil } from '@vercel/functions';
 
 import {
   getInstanceInputSchema,
@@ -10,7 +9,6 @@ import {
   legacyProcessInstanceEncoder,
 } from '../../../encoders/legacyDecision';
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
-import { trackProcessViewed } from '../../../utils/analytics';
 
 /**
  * Legacy getInstance endpoint - uses legacy encoders with state-based format.
@@ -32,8 +30,9 @@ export const getLegacyInstanceRouter = router({
         user,
       });
 
-      // Track process viewed event
-      waitUntil(trackProcessViewed(ctx, input.instanceId));
+      // Note: the `process_viewed` analytics event is tracked client-side in
+      // DecisionHeader so it fires on an actual view rather than on every query
+      // execution (prefetch/refetch/invalidation).
 
       return legacyProcessInstanceEncoder.parse({
         ...instance,
@@ -76,8 +75,9 @@ export const getInstanceRouter = router({
         user,
       });
 
-      // Track process viewed event
-      waitUntil(trackProcessViewed(ctx, input.instanceId));
+      // Note: the `process_viewed` analytics event is tracked client-side in
+      // DecisionHeader so it fires on an actual view rather than on every query
+      // execution (prefetch/refetch/invalidation).
 
       ctx.registerQueryChannels([Channels.decisionInstance(input.instanceId)]);
 

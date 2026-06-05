@@ -1,10 +1,12 @@
 'use client';
 
+import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import { type ProcessPhase } from '@op/api/encoders';
 import { isLastPhase } from '@op/common/client';
 import { cn } from '@op/ui/utils';
-import { type ReactNode } from 'react';
+import { usePostHog } from 'posthog-js/react';
+import { type ReactNode, useEffect } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -30,6 +32,17 @@ interface DecisionHeaderProps {
 }
 
 export function DecisionHeader(props: DecisionHeaderProps) {
+  const posthog = usePostHog();
+  const { instanceId } = props;
+
+  // Track the process view once per instance. This lives in the header (shared
+  // by the new and legacy routes) rather than the getInstance procedure so it
+  // fires on an actual view — not on every server prefetch, refetch, or cache
+  // invalidation (vote/transition/edit) that re-runs the query.
+  useEffect(() => {
+    posthog.capture('process_viewed', getDecisionCommonProperties(instanceId));
+  }, [posthog, instanceId]);
+
   if (props.useLegacy) {
     return <LegacyDecisionHeaderContent {...props} />;
   }

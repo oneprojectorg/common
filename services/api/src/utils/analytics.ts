@@ -4,12 +4,10 @@ import {
   trackImageUpload as trackImageUploadOriginal,
   trackManualSelectionSubmitted as trackManualSelectionSubmittedOriginal,
   trackManualTransitionConfirmed as trackManualTransitionConfirmedOriginal,
-  trackProcessViewed as trackProcessViewedOriginal,
   trackProposalCommented as trackProposalCommentedOriginal,
   trackProposalFollowed as trackProposalFollowedOriginal,
   trackProposalLiked as trackProposalLikedOriginal,
   trackProposalSubmitted as trackProposalSubmittedOriginal,
-  trackProposalViewed as trackProposalViewedOriginal,
   trackRelationshipAccepted as trackRelationshipAcceptedOriginal,
   trackRelationshipAdded as trackRelationshipAddedOriginal,
   trackUserPost as trackUserPostOriginal,
@@ -51,34 +49,6 @@ export const trackProposalFollowed = (
   additionalProps?: Record<string, any>,
 ) => {
   return trackProposalFollowedOriginal(
-    ctx.user.id,
-    processId,
-    proposalId,
-    additionalProps,
-  );
-};
-
-/**
- * Track a process being viewed with automatic context injection
- */
-export const trackProcessViewed = (
-  ctx: AnalyticsContext,
-  processId: string,
-  additionalProps?: Record<string, any>,
-) => {
-  return trackProcessViewedOriginal(ctx.user.id, processId, additionalProps);
-};
-
-/**
- * Track a proposal being viewed with automatic context injection
- */
-export const trackProposalViewed = (
-  ctx: AnalyticsContext,
-  processId: string,
-  proposalId: string,
-  additionalProps?: Record<string, any>,
-) => {
-  return trackProposalViewedOriginal(
     ctx.user.id,
     processId,
     proposalId,

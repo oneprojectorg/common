@@ -1,6 +1,7 @@
 'use client';
 
 import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
+import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import {
   type Proposal,
@@ -12,7 +13,8 @@ import {
 import { SplitPane } from '@op/ui/SplitPane';
 import { useLocale } from 'next-intl';
 import { useQueryStates } from 'nuqs';
-import { type ReactNode, useCallback, useState } from 'react';
+import { usePostHog } from 'posthog-js/react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -37,6 +39,7 @@ export function ProposalView({
 }) {
   const t = useTranslations();
   const locale = useLocale();
+  const posthog = usePostHog();
 
   const { data: proposal } = trpc.decision.getProposal.useQuery({
     profileId: initialProposal.profileId,
@@ -44,6 +47,18 @@ export function ProposalView({
 
   // Safety check - fallback to initial data if query returns undefined
   const currentProposal = proposal || initialProposal;
+
+  // Track the proposal view once per proposal. This lives in the view
+  // component (rather than the getProposal procedure) so it fires on an actual
+  // view — not on every prefetch, refetch, cache invalidation, or editor/review
+  // fetch that re-runs the query.
+  const { processInstanceId, id: proposalId } = currentProposal;
+  useEffect(() => {
+    posthog.capture(
+      'proposal_viewed',
+      getDecisionCommonProperties(processInstanceId, proposalId),
+    );
+  }, [posthog, processInstanceId, proposalId]);
 
   // Use relationship mutations hook for like/follow functionality
   const {
