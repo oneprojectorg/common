@@ -48,7 +48,11 @@ import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor
  * Yjs connection, and draft state are never remounted while the aside
  * panel is opened or closed.
  */
-export default function ProposalEditorLayout() {
+export default function ProposalEditorLayout({
+  children: _children,
+}: {
+  children: React.ReactNode;
+}) {
   const { profileId, slug } = useParams<{
     profileId: string;
     slug: string;
