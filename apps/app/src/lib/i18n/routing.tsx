@@ -45,10 +45,17 @@ const {
   useRouter,
 } = createNavigation(routing);
 
-// prefetch={false} works around a Next.js prefetch bug that causes intermittent 500s.
-// With prefetch enabled, the server generates RSC payloads that reference client modules
-// not found in the React Client Manifest, producing:
-//   "Could not find the module ... in the React Client Manifest"
+// prefetch was previously forced {false} to work around the intermittent
+// "Could not find module ... in the React Client Manifest" 500
+// (Asana 1213980160576009). That 500 is now fixed structurally by unifying the
+// (main)/(no-header) route groups under a single layout (see
+// app/[locale]/(app)/layout.tsx), which removes the cross-route-group layout swap
+// that broke RSC manifest resolution — so prefetch is re-enabled for snappier nav.
+//
+// Caveat: with prefetch enabled, Next/Turbopack still emits a few NON-fatal manifest
+// errors when a *prefetch* render carries a sibling route's router-state-tree (logged
+// only, no 500, navigation returns 200). This is the upstream Turbopack bug
+// (vercel/next.js #52862/#72903); revisit on Next upgrades.
 const Link = ({
   children,
   className,
@@ -59,7 +66,7 @@ const Link = ({
     <NavLink
       {...props}
       className={cn('hover:underline', className)}
-      prefetch={false}
+      prefetch={true}
     >
       {children}
     </NavLink>

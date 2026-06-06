@@ -5,8 +5,8 @@
   "license": "SEE LICENSE in /LICENSE",
   "type": "module",
   "scripts": {
-    "build": "next build",
-    "build:e2e": "NEXT_PUBLIC_APP_PORT=4100 NEXT_PUBLIC_API_PORT=4300 next build",
+    "build": "next build --webpack",
+    "build:e2e": "NEXT_PUBLIC_APP_PORT=4100 NEXT_PUBLIC_API_PORT=4300 next build --webpack",
     "check:i18n": "tsx scripts/check-missing-intl-keys.ts",
     "dev": "next dev -p 3100",
     "dev:e2e": "NEXT_PUBLIC_APP_PORT=4100 NEXT_PUBLIC_API_PORT=4300 next dev -p 4100",
