@@ -84,7 +84,10 @@ const config = {
     if (!isServer) {
       config.resolve = config.resolve || {};
       // Disable the 'tls' node core module on the client side.
-      config.resolve.fallback = { ...(config.resolve.fallback || {}), tls: false };
+      config.resolve.fallback = {
+        ...(config.resolve.fallback || {}),
+        tls: false,
+      };
       if (process.env.E2E === 'true') {
         config.resolve.alias = {
           ...(config.resolve.alias || {}),
