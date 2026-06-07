@@ -55,10 +55,10 @@ const Link = ({
     <NavLink
       {...props}
       className={cn('hover:underline', className)}
-      // Keep prefetch off: under Turbopack (dev/e2e) it reintroduces the RSC
-      // manifest 500 on cross-route navigation. The webpack production build
-      // resolves the manifest correctly, but dev/e2e still run Turbopack.
-      prefetch={false}
+      // prefetch is safe with the webpack build (prod + e2e), which resolves the
+      // RSC client manifest correctly. Local `dev` still uses Turbopack, where
+      // cross-route prefetch can surface the manifest 500.
+      prefetch={true}
     >
       {children}
     </NavLink>
