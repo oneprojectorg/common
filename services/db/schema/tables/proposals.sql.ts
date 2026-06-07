@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import type { InferModel } from 'drizzle-orm';
 import { relations } from 'drizzle-orm/_relations';
 import {
+  geometry,
   index,
   jsonb,
   pgEnum,
@@ -51,6 +52,10 @@ export const proposalColumns = {
 
   // Proposal data following the template schema
   proposalData: jsonb('proposal_data').notNull(),
+
+  // Denormalized projection of proposalData.location ({ lat, lng }) for
+  // PostGIS queries. Synced server-side wherever proposalData is written.
+  location: geometry({ type: 'point', mode: 'xy', srid: 4326 }),
 
   // Proposal status (defaults to DRAFT for new proposals)
   status: proposalStatusEnum('status').default(ProposalStatus.DRAFT),
@@ -130,6 +135,7 @@ export const proposals = pgTable(
     index('proposals_process_status_idx')
       .on(table.processInstanceId, table.status)
       .concurrently(),
+    index('proposals_location_gist_idx').using('gist', table.location),
   ],
 );
 
