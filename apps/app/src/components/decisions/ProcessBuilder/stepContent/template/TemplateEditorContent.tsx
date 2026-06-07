@@ -27,6 +27,7 @@ import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/st
 import {
   type FieldType,
   type FieldView,
+  LOCATION_FIELD_KEY,
   addField as addFieldToTemplate,
   changeFieldType,
   createDefaultTemplate,
@@ -161,6 +162,12 @@ export function TemplateEditorContent({
     [template],
   );
 
+  // Single-instance field types that can't currently be added
+  const disabledTypes = useMemo<FieldType[]>(
+    () => (template.properties?.[LOCATION_FIELD_KEY] ? ['location'] : []),
+    [template],
+  );
+
   // Sidebar field list — includes visual-only locked fields at the top
   const sidebarFields = useMemo(() => {
     const locked = [
@@ -216,9 +223,19 @@ export function TemplateEditorContent({
 
   const handleAddField = useCallback(
     (type: FieldType) => {
-      const fieldId = crypto.randomUUID().slice(0, 8);
+      // Location uses a fixed key (single instance, projected to a geometry
+      // column server-side) and is always required.
+      const fieldId =
+        type === 'location'
+          ? LOCATION_FIELD_KEY
+          : crypto.randomUUID().slice(0, 8);
       const label = t(getFieldLabelKey(type));
-      setTemplate((prev) => addFieldToTemplate(prev, fieldId, type, label));
+      setTemplate((prev) => {
+        const next = addFieldToTemplate(prev, fieldId, type, label);
+        return type === 'location'
+          ? setFieldRequired(next, fieldId, true)
+          : next;
+      });
       // Auto-expand the newly added field and mark it as new
       setExpandedFieldIds((prev) => new Set(prev).add(fieldId));
       setNewFieldIds((prev) => new Set(prev).add(fieldId));
@@ -300,6 +317,10 @@ export function TemplateEditorContent({
 
   const handleUpdateRequired = useCallback(
     (fieldId: string, required: boolean) => {
+      // The location field is always required (its toggle is disabled)
+      if (fieldId === LOCATION_FIELD_KEY) {
+        return;
+      }
       setTemplate((prev) => setFieldRequired(prev, fieldId, required));
     },
     [],
@@ -338,6 +359,11 @@ export function TemplateEditorContent({
 
   const handleChangeFieldType = useCallback(
     (fieldId: string, newType: FieldType) => {
+      // Location fields can't change type (and nothing can become one) —
+      // the type selector is hidden for them, this is defense in depth.
+      if (fieldId === LOCATION_FIELD_KEY || newType === 'location') {
+        return;
+      }
       setTemplate((prev) => changeFieldType(prev, fieldId, newType));
     },
     [],
@@ -391,6 +417,7 @@ export function TemplateEditorContent({
         <TemplateEditorSidebar
           fields={sidebarFields}
           onAddField={handleAddField}
+          disabledTypes={disabledTypes}
           side={isMobile ? 'right' : 'left'}
         />
 
@@ -482,7 +509,10 @@ export function TemplateEditorContent({
         <ParticipantPreview template={template} />
 
         <div className="fixed inset-x-0 bottom-0 border-t bg-white p-4 md:hidden">
-          <AddFieldMenu onAddField={handleAddField} />
+          <AddFieldMenu
+            onAddField={handleAddField}
+            disabledTypes={disabledTypes}
+          />
         </div>
       </div>
 

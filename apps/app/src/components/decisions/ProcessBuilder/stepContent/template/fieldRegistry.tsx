@@ -1,7 +1,12 @@
 import type { XFormatPropertySchema } from '@op/common/client';
 import type { ComponentType } from 'react';
 import type { IconType } from 'react-icons';
-import { LuAlignLeft, LuChevronDown, LuLetterText } from 'react-icons/lu';
+import {
+  LuAlignLeft,
+  LuChevronDown,
+  LuLetterText,
+  LuMapPin,
+} from 'react-icons/lu';
 
 import type { TranslationKey } from '@/lib/i18n';
 
@@ -50,6 +55,11 @@ export const FIELD_TYPE_REGISTRY: Record<FieldType, FieldTypeRegistryEntry> = {
     placeholderKey: 'Select an option',
     ConfigComponent: FieldConfigDropdown,
   },
+  location: {
+    icon: LuMapPin,
+    labelKey: 'Location',
+    placeholderKey: 'Location',
+  },
 };
 
 /**
@@ -69,6 +79,11 @@ export const FIELD_CATEGORIES: {
     id: 'choice',
     labelKey: 'Choice',
     types: ['dropdown'],
+  },
+  {
+    id: 'map',
+    labelKey: 'Map',
+    types: ['location'],
   },
 ];
 

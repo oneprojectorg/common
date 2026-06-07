@@ -13,13 +13,15 @@ import { FIELD_CATEGORIES, FIELD_TYPE_REGISTRY } from './fieldRegistry';
 
 interface AddFieldMenuProps {
   onAddField: (type: FieldType) => void;
+  /** Field types that cannot currently be added (e.g. single-instance fields). */
+  disabledTypes?: FieldType[];
 }
 
 /**
  * Button with popover menu for adding new fields to the form builder.
  * Fields are organized by category as shown in the Figma mockup.
  */
-export function AddFieldMenu({ onAddField }: AddFieldMenuProps) {
+export function AddFieldMenu({ onAddField, disabledTypes }: AddFieldMenuProps) {
   const t = useTranslations();
 
   return (
@@ -47,7 +49,12 @@ export function AddFieldMenu({ onAddField }: AddFieldMenuProps) {
                 const config = FIELD_TYPE_REGISTRY[type];
                 const Icon = config.icon;
                 return (
-                  <MenuItem key={type} id={type} className="gap-2">
+                  <MenuItem
+                    key={type}
+                    id={type}
+                    className="gap-2"
+                    isDisabled={disabledTypes?.includes(type)}
+                  >
                     <Icon className="size-4 text-neutral-gray4" />
                     {t(config.labelKey)}
                   </MenuItem>

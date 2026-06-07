@@ -20,6 +20,7 @@ import {
 } from '../../utils';
 import { assertInstanceProfileAccess, getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
+import { proposalLocationToGeometry } from './locationGeometry';
 import type {
   CheckpointVersion,
   ProposalDataInput,
@@ -205,8 +206,13 @@ export const updateProposal = async ({
       .update(proposals)
       .set({
         ...proposalFields,
+        // Keep the geometry column in sync whenever proposalData is written;
+        // status/visibility-only updates leave it untouched.
         ...(proposalDataWithVersion
-          ? { proposalData: proposalDataWithVersion }
+          ? {
+              proposalData: proposalDataWithVersion,
+              location: proposalLocationToGeometry(proposalDataWithVersion),
+            }
           : {}),
         lastEditedByProfileId: dbUser.profileId,
         updatedAt: new Date().toISOString(),

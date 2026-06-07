@@ -6,7 +6,7 @@ import { permission } from 'access-zones';
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { decisionPermission } from './permissions';
-import { parseProposalData } from './proposalDataSchema';
+import { normalizeLocation, parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { checkProposalsAllowed } from './utils/proposal';
@@ -91,13 +91,22 @@ export const submitProposal = async ({
   // created by the DB trigger links back to a concrete document revision.
   const parsed = parseProposalData(existingProposal.proposalData);
 
+  // For collab-doc proposals the assembled fragment values are authoritative —
+  // stored proposalData may lag the last autosave.
+  let assembledData: Record<string, unknown> | null = null;
+
   if (proposalTemplate) {
-    await validateProposalAgainstTemplate(
+    assembledData = await validateProposalAgainstTemplate(
       proposalTemplate,
       existingProposal.proposalData,
       existingProposal.profile.name,
     );
   }
+
+  const location =
+    normalizeLocation(
+      assembledData ? assembledData.location : parsed.location,
+    ) ?? null;
 
   // Create a named version snapshot. Best-effort — failures logged, never block.
   if (!parsed.collaborationDocId) {
@@ -118,10 +127,13 @@ export const submitProposal = async ({
   // Update proposal status to submitted and re-query with profile
   const updatedProposal = await db.transaction(async (tx) => {
     const proposalDataUpdate =
-      collaborationDocVersionId != null
+      collaborationDocVersionId != null || location
         ? {
             ...(existingProposal.proposalData as Record<string, unknown>),
-            collaborationDocVersionId,
+            ...(location ? { location } : {}),
+            ...(collaborationDocVersionId != null
+              ? { collaborationDocVersionId }
+              : {}),
           }
         : undefined;
 
@@ -130,6 +142,9 @@ export const submitProposal = async ({
       .set({
         status: ProposalStatus.SUBMITTED,
         ...(proposalDataUpdate ? { proposalData: proposalDataUpdate } : {}),
+        // Submitted rows always reflect the validated location (NULL when the
+        // template has no location field).
+        location: location ? { x: location.lng, y: location.lat } : null,
       })
       .where(eq(proposals.id, data.proposalId))
       .returning();

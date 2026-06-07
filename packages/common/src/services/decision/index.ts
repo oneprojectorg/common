@@ -82,6 +82,7 @@ export * from './getProposalRelationshipData';
 export * from './getProposalFragmentNames';
 export * from './assembleProposalData';
 export * from './extractProposalText';
+export * from './locationGeometry';
 export * from './resolveProposalTemplate';
 export * from './getProposalTemplateFieldOrder';
 export * from './getRubricScoringInfo';

@@ -13,6 +13,7 @@ import type { ProposalTemplateSchema } from './types';
  * - Text fields (`short-text`, `long-text`, `title`): pass through as string
  * - Category fields: pass through as string or parse JSON arrays for multi-select
  * - Money fields: `JSON.parse` the fragment (stored as `{"amount":N,"currency":"..."}`)
+ * - Location fields: `JSON.parse` the fragment (stored as `{"lat":N,"lng":N}`)
  * - Everything else with no `x-format`: attempt `JSON.parse`, fall back to string
  */
 export function assembleProposalData(
@@ -40,6 +41,14 @@ export function assembleProposalData(
         if (schemaAllowsMultipleSelection(schema)) {
           data[key] = parseCategoryFragmentValue(text);
         } else {
+          data[key] = text;
+        }
+        break;
+      case 'location':
+        // Raw-string fallback fails schema validation cleanly, same as money
+        try {
+          data[key] = JSON.parse(text);
+        } catch {
           data[key] = text;
         }
         break;

@@ -17,6 +17,7 @@ import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertInstanceProfileAccess, getCurrentProfileId } from '../access';
 import { assertGlobalRole } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
+import { proposalLocationToGeometry } from './locationGeometry';
 import { decisionPermission } from './permissions';
 import { processProposalContent } from './proposalContentProcessor';
 import {
@@ -200,6 +201,7 @@ export const createProposal = async ({
               ? parsedProposalData.category
               : undefined,
         },
+        location: proposalLocationToGeometry(data.proposalData),
         submittedByProfileId: profileId,
         profileId: proposalProfile.id,
         status: ProposalStatus.DRAFT,

@@ -1,9 +1,11 @@
 import { trpc } from '@op/api/client';
 import {
   type BudgetData,
+  type LocationData,
   type Proposal,
   type ProposalDataInput,
   normalizeBudget,
+  normalizeLocation,
   normalizeProposalCategories,
   parseProposalData,
 } from '@op/common/client';
@@ -20,6 +22,7 @@ export interface ProposalDraftFields extends Record<string, unknown> {
   title: string;
   category: string[];
   budget: BudgetData | null;
+  location: LocationData | null;
 }
 
 /**
@@ -48,11 +51,13 @@ export function useProposalDraft({
       title: proposal.profile.name ?? '',
       category: parsedProposalData?.category ?? [],
       budget: parsedProposalData?.budget ?? null,
+      location: parsedProposalData?.location ?? null,
     }),
     [
       proposal.profile.name,
       parsedProposalData?.category,
       parsedProposalData?.budget,
+      parsedProposalData?.location,
     ],
   );
 
@@ -86,6 +91,7 @@ export function useProposalDraft({
         category:
           nextDraft.category.length > 0 ? nextDraft.category : undefined,
         budget: nextDraft.budget ?? undefined,
+        location: nextDraft.location ?? undefined,
       };
     },
     [proposal?.proposalData, collaborationDocId],
@@ -130,6 +136,8 @@ export function useProposalDraft({
           next.category = normalizeProposalCategories(value);
         } else if (key === 'budget') {
           next.budget = normalizeBudget(value) ?? null;
+        } else if (key === 'location') {
+          next.location = normalizeLocation(value) ?? null;
         }
         // Dynamic fields are Yjs-only — we don't store them in draft state.
 

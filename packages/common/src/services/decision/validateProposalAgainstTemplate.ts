@@ -13,6 +13,10 @@ import type { ProposalTemplateSchema } from './types';
  * field values from the Yjs doc and assembles them before validation.
  * For legacy proposals without a collab doc, validates the raw proposalData directly.
  *
+ * Returns the assembled validation data for collab-doc proposals (the
+ * authoritative fragment values at validation time), or `null` for legacy
+ * proposals validated from stored proposalData.
+ *
  * @throws {ValidationError} when the proposal data does not satisfy the template schema
  * @throws {CommonError} when TipTap credentials are missing for a collab-doc proposal
  */
@@ -20,7 +24,7 @@ export async function validateProposalAgainstTemplate(
   proposalTemplate: ProposalTemplateSchema,
   proposalData: unknown,
   title?: string,
-): Promise<void> {
+): Promise<Record<string, unknown> | null> {
   const parsed = parseProposalData(proposalData);
   const storedProposalData =
     proposalData && typeof proposalData === 'object'
@@ -50,12 +54,12 @@ export async function validateProposalAgainstTemplate(
     };
 
     schemaValidator.assertProposalData(proposalTemplate, validationData);
-    return;
+    return validationData;
   }
 
-  const legacyData = {
+  schemaValidator.assertProposalData(proposalTemplate, {
     ...storedProposalData,
     ...(shouldInjectTitle ? { title } : {}),
-  };
-  schemaValidator.assertProposalData(proposalTemplate, legacyData);
+  });
+  return null;
 }

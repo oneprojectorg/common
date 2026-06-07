@@ -15,6 +15,7 @@ import type { TranslateFn } from '@/lib/i18n';
 import {
   CollaborativeBudgetField,
   CollaborativeDropdownField,
+  CollaborativeLocationField,
   CollaborativeMultiSelectField,
   CollaborativeTextField,
   CollaborativeTitleField,
@@ -24,10 +25,15 @@ import type { FieldDescriptor } from '../forms/types';
 import {
   ReadonlyBudgetField,
   ReadonlyDropdownField,
+  ReadonlyLocationField,
   ReadonlyTextField,
   ReadonlyTitleField,
 } from './ReadonlyProposalFields';
-import { getFragmentText, parsePreviewBudget } from './proposalPreviewContent';
+import {
+  getFragmentText,
+  parsePreviewBudget,
+  parsePreviewLocation,
+} from './proposalPreviewContent';
 import type { ProposalDraftFields } from './useProposalDraft';
 
 // ---------------------------------------------------------------------------
@@ -336,6 +342,36 @@ function renderField(
           initialValue={null}
           onChange={(value) => onFieldChange(key, value)}
         />
+      );
+    }
+
+    case 'location': {
+      if (isReadonlyMode) {
+        const location =
+          mode === 'preview-version'
+            ? parsePreviewLocation(previewContent)
+            : ((draft[key] as ProposalDraftFields['location']) ?? undefined);
+
+        return (
+          <ReadonlyLocationField
+            value={location ? `${location.lat}, ${location.lng}` : null}
+            title={schema.title}
+            description={schema.description}
+            placeholder={t('Add location')}
+          />
+        );
+      }
+
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldHeader title={schema.title} description={schema.description} />
+          <CollaborativeLocationField
+            initialValue={
+              (draft[key] as ProposalDraftFields['location']) ?? null
+            }
+            onChange={(value) => onFieldChange(key, value)}
+          />
+        </div>
       );
     }
 

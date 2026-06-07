@@ -28,6 +28,21 @@ export const budgetValueSchema = z
   .nullish();
 
 /**
+ * Location stored as `{ lat, lng }` in proposalData (WGS84 / SRID 4326).
+ * `address` is reserved for the upcoming address-search experience.
+ */
+export const locationValueSchema = z
+  .object({
+    lat: z.number().min(-90).max(90),
+    lng: z.number().min(-180).max(180),
+    address: z.string().optional(),
+  })
+  .nullish();
+
+/** Canonical location shape stored in proposalData. */
+export type LocationData = NonNullable<z.infer<typeof locationValueSchema>>;
+
+/**
  * Canonical budget shape — an alias for `MoneyAmount`.
  * @deprecated Prefer `MoneyAmount` for new code.
  */
@@ -48,6 +63,7 @@ export const proposalDataSchema = z
     content: z.string().nullish(), // backward compatibility
     category: categoryValueSchema,
     budget: budgetValueSchema,
+    location: locationValueSchema,
     attachmentIds: z
       .array(z.string())
       .nullish()
@@ -122,6 +138,16 @@ export function normalizeBudget(raw: unknown): BudgetData | undefined {
 }
 
 /**
+ * Normalize a raw location value into `LocationData` using
+ * `locationValueSchema`. Returns `undefined` for absent or malformed values —
+ * never throws.
+ */
+export function normalizeLocation(raw: unknown): LocationData | undefined {
+  const result = locationValueSchema.safeParse(raw);
+  return result.success ? (result.data ?? undefined) : undefined;
+}
+
+/**
  * Extract the numeric value from any budget representation.
  * Handles `BudgetData`, legacy plain numbers, and numeric strings.
  * Returns 0 when the input can't be parsed.
@@ -154,6 +180,7 @@ export function parseProposalData(proposalData: unknown): ProposalData {
     content: (raw.content as string) ?? undefined,
     category: normalizeProposalCategories(raw.category),
     budget: normalizeBudget(raw.budget),
+    location: normalizeLocation(raw.location),
     attachmentIds: (raw.attachmentIds as string[]) ?? [],
     collaborationDocId: (raw.collaborationDocId as string) ?? undefined,
     collaborationDocVersionId:
