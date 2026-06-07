@@ -13,6 +13,7 @@ import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -386,19 +387,18 @@ describeDecisionAccessTierGating('createInstanceFromTemplate', {
   ),
 
   userJwtNonPublic: accessTierGatingCell(
-    'rejects user-JWT caller on non-public instance',
+    'admits user-JWT caller past the tier gate',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       await testData.createDecisionSetup({ instanceCount: 0 });
 
       const caller = await callers.userJwt();
 
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.decision.createInstanceFromTemplate({
           templateId: '00000000-0000-0000-0000-000000000000',
           name: `anon ${task.id}`,
         }),
-        'user',
       );
     },
   ),

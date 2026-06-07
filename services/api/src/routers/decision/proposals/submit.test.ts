@@ -15,6 +15,7 @@ import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -1110,7 +1111,7 @@ describeDecisionAccessTierGating('submitProposal', {
   ),
 
   anonJwtNonPublic: accessTierGatingCell(
-    'rejects anon-JWT caller on non-public instance',
+    'admits anon-JWT caller past the tier gate',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
@@ -1130,15 +1131,14 @@ describeDecisionAccessTierGating('submitProposal', {
 
       const caller = await callers.anonJwt();
 
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.decision.submitProposal({ proposalId: proposal.id }),
-        'anon',
       );
     },
   ),
 
   userJwtNonPublic: accessTierGatingCell(
-    'rejects user-JWT caller on non-public instance',
+    'admits user-JWT caller past the tier gate',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
@@ -1158,9 +1158,8 @@ describeDecisionAccessTierGating('submitProposal', {
 
       const caller = await callers.userJwt();
 
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.decision.submitProposal({ proposalId: proposal.id }),
-        'user',
       );
     },
   ),

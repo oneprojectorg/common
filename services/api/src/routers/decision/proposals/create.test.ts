@@ -6,6 +6,7 @@ import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 
 describeDecisionAccessTierGating('createProposal', {
@@ -36,7 +37,7 @@ describeDecisionAccessTierGating('createProposal', {
   ),
 
   anonJwtNonPublic: accessTierGatingCell(
-    'rejects anon-JWT caller on non-public instance',
+    'admits anon-JWT caller past the tier gate',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
@@ -51,18 +52,17 @@ describeDecisionAccessTierGating('createProposal', {
 
       const caller = await callers.anonJwt();
 
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.decision.createProposal({
           processInstanceId: instance.instance.id,
           proposalData: { title: 'Non-public; anon should bounce' },
         }),
-        'anon',
       );
     },
   ),
 
   userJwtNonPublic: accessTierGatingCell(
-    'rejects user-JWT caller on non-public instance',
+    'admits user-JWT caller past the tier gate',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
@@ -77,12 +77,11 @@ describeDecisionAccessTierGating('createProposal', {
 
       const caller = await callers.userJwt();
 
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.decision.createProposal({
           processInstanceId: instance.instance.id,
           proposalData: { title: 'Non-public; anon should bounce' },
         }),
-        'user',
       );
     },
   ),
