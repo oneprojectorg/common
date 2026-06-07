@@ -1,6 +1,7 @@
 import { mergeRouters } from '../../../trpcFactory';
 import { acceptProposalInviteRouter } from './acceptProposalInvite';
 import { createProposalRouter } from './create';
+import { createPublicProposalRouter } from './createPublic';
 import { deleteProposalRouter } from './delete';
 import { exportProposalsRouter } from './export';
 import { getProposalRouter } from './get';
@@ -15,6 +16,7 @@ import { updateProposalRouter } from './update';
 export const proposalsRouter = mergeRouters(
   acceptProposalInviteRouter,
   createProposalRouter,
+  createPublicProposalRouter,
   getProposalRouter,
   getLatestSelectionForProposalRouter,
   getProposalWithReviewAggregatesRouter,

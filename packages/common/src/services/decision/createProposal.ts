@@ -170,7 +170,7 @@ export const createProposal = async ({
       .values({
         profileId: proposalProfile.id,
         authUserId,
-        email: user.email!,
+        email: user.email,
         isOwner: true,
       })
       .returning();

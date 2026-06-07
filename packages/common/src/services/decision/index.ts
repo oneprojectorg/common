@@ -14,6 +14,8 @@ export * from './listLegacyInstances';
 export * from './getInstance';
 export * from './listDecisionProfiles';
 export * from './getDecisionBySlug';
+export * from './joinInstance';
+export * from './publicParticipation';
 
 // Shared phase advancement core (used by transitionFromPhase and transitionMonitor)
 export * from './advancePhase';
@@ -49,6 +51,7 @@ export * from './resolveManualSelectionStatus';
 export * from './submitManualSelection';
 export * from './getProposalsForPhase';
 export * from './createProposal';
+export * from './createPublicProposal';
 export * from './submitProposal';
 export * from './updateProposal';
 export * from './getProposal';

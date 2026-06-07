@@ -27,6 +27,7 @@ const ACCESS_ZONE_IDS = {
 const ACCESS_ROLE_IDS = {
   ADMIN: '00000000-0000-4000-8000-000000000011',
   MEMBER: '00000000-0000-4000-8000-000000000012',
+  PUBLIC: '00000000-0000-4000-8000-000000000013',
 } as const;
 
 // Access zones data
@@ -60,6 +61,12 @@ export const ACCESS_ROLES = [
     name: 'Admin',
     description: null,
   },
+  {
+    id: ACCESS_ROLE_IDS.PUBLIC,
+    name: 'Public',
+    description:
+      'Global role for public participation. Its read-only global rows are the baseline; what the public may do on a given profile comes from per-profile permission override rows.',
+  },
 ];
 
 // Role name to ID mapping for convenient access (avoids string references)
@@ -71,6 +78,10 @@ export const ROLES = {
   MEMBER: {
     id: ACCESS_ROLE_IDS.MEMBER,
     name: 'Member',
+  },
+  PUBLIC: {
+    id: ACCESS_ROLE_IDS.PUBLIC,
+    name: 'Public',
   },
 } as const;
 
@@ -137,5 +148,17 @@ export const ACCESS_ROLE_PERMISSIONS = [
       PERMISSIONS.UPDATE |
       DECISION_BITS.SUBMIT_PROPOSALS |
       DECISION_BITS.VOTE,
+  },
+  // Public baseline is read-only on both zones; participation bits (submit,
+  // vote, …) are granted per profile via override rows, never globally
+  {
+    accessRoleId: ACCESS_ROLE_IDS.PUBLIC,
+    accessZoneId: ACCESS_ZONE_IDS.PROFILE,
+    permission: PERMISSIONS.READ,
+  },
+  {
+    accessRoleId: ACCESS_ROLE_IDS.PUBLIC,
+    accessZoneId: ACCESS_ZONE_IDS.DECISIONS,
+    permission: PERMISSIONS.READ,
   },
 ];
