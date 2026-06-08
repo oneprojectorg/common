@@ -3,7 +3,7 @@ import type {
   ModerationProvider,
   ModerationScores,
 } from '../types';
-import { moderationFetch } from './http';
+import { moderationFetch } from './moderationFetch';
 
 const DEFAULT_URL = 'https://api.thehive.ai/api/v2/task/sync';
 // Hive returns integer severity 0-3 per class; normalize onto our 0-1 scale.

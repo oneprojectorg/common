@@ -3,7 +3,7 @@ import type {
   ModerationProviderReference,
   ModerationScores,
 } from '../types';
-import { moderationFetch } from './http';
+import { moderationFetch } from './moderationFetch';
 
 const DEFAULT_API_URL = 'https://api.lassomoderation.com/api/v1';
 // Lasso returns an allow/block verdict rather than per-category scores; a block

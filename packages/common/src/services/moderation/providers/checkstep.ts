@@ -4,7 +4,7 @@ import type {
   ModerationProviderReference,
   ModerationScores,
 } from '../types';
-import { moderationFetch } from './http';
+import { moderationFetch } from './moderationFetch';
 
 const DEFAULT_API_URL = 'https://api.checkstep.com/api/v2';
 
