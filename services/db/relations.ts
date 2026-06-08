@@ -827,4 +827,19 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.taxonomies.id,
     }),
   },
+
+  /**
+   * Moderation flag relations
+   *
+   * The flagged item is polymorphic (`itemType` + `itemId`, no FK) and resolved
+   * manually in services, so only `flaggedBy` (who raised the flag, null for
+   * automated) is expressed here.
+   */
+  moderationFlags: {
+    flaggedBy: r.one.profiles({
+      from: r.moderationFlags.flaggedByProfileId,
+      to: r.profiles.id,
+      alias: 'moderationFlag_flaggedBy',
+    }),
+  },
 }));
