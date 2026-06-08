@@ -6,7 +6,6 @@ import type {
 } from '../types';
 
 const DEFAULT_API_URL = 'https://api.checkstep.com/api/v2';
-const DASHBOARD_URL = 'https://app.checkstep.com';
 const REQUEST_TIMEOUT_MS = 5_000;
 
 // Checkstep policy codes mapped onto our categories; anything unmapped is `other`.
@@ -98,11 +97,9 @@ export const createCheckstepProvider = ({
     const result = await post(`${apiUrl}/content`, apiKey, {
       ...contentBody(content, subjectId),
     });
-    const id = result.id ?? subjectId;
     const reference: ModerationProviderReference = {
       providerName: 'checkstep',
-      providerRecordId: id,
-      providerUrl: `${DASHBOARD_URL}/content/${id}`,
+      providerRecordId: result.id ?? subjectId,
     };
     return reference;
   },

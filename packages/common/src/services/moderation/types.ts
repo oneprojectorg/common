@@ -26,14 +26,14 @@ export type ModerationVendor = 'hive' | 'lasso' | 'checkstep';
 export type ModerationSubjectType = 'proposal' | 'post' | 'user';
 
 /**
- * Link back to the record on the external provider, so an admin/owner can click
- * through to review or dispute. Only platform vendors (Lasso/Checkstep) expose
- * one; pure classifiers (Hive) do not.
+ * Reference to the record on the external provider. The dispute/review URL is
+ * generated downstream from `providerRecordId` (the provider is fixed by
+ * config), so it isn't carried here. Only platform vendors (Lasso/Checkstep)
+ * expose a record id; pure classifiers (Hive) do not.
  */
 export interface ModerationProviderReference {
   providerName: string;
   providerRecordId?: string;
-  providerUrl?: string;
 }
 
 export interface ModerationSubmission {

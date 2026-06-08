@@ -5,7 +5,6 @@ import type {
 } from '../types';
 
 const DEFAULT_API_URL = 'https://api.lassomoderation.com/api/v1';
-const DASHBOARD_URL = 'https://app.lassomoderation.com';
 const REQUEST_TIMEOUT_MS = 5_000;
 // Lasso returns an allow/block verdict rather than per-category scores; a block
 // maps to a decisive score that meets the summed gate threshold on its own.
@@ -49,11 +48,9 @@ const envelope = (content: string, subjectId: string) => ({
 });
 
 const referenceFrom = (result: LassoResult): ModerationProviderReference => {
-  const id = result.actions?.[0]?.content?.id ?? result.content?.id;
   return {
     providerName: 'lasso',
-    providerRecordId: id,
-    providerUrl: id ? `${DASHBOARD_URL}/content/${id}` : undefined,
+    providerRecordId: result.actions?.[0]?.content?.id ?? result.content?.id,
   };
 };
 

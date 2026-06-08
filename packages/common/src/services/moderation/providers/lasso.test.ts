@@ -91,6 +91,5 @@ describe('createLassoProvider', () => {
 
     expect(ref.providerName).toBe('lasso');
     expect(ref.providerRecordId).toBe('content-123');
-    expect(ref.providerUrl).toContain('content-123');
   });
 });
