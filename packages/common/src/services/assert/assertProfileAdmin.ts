@@ -1,6 +1,6 @@
 import { permission } from 'access-zones';
 
-import type { ProfileUserWithNormalizedRoles } from '../access';
+import type { AccessUser, ProfileUserWithNormalizedRoles } from '../access';
 import { assertProfileAccess } from './assertProfileAccess';
 
 /**
@@ -17,7 +17,7 @@ export async function assertProfileAdmin({
   user,
   profileId,
 }: {
-  user: { id: string };
+  user?: AccessUser;
   profileId: string;
 }): Promise<ProfileUserWithNormalizedRoles> {
   return assertProfileAccess({

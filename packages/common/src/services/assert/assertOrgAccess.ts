@@ -1,7 +1,11 @@
 import { type AccessZonePermissionInput, checkPermission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
-import { type OrgUserWithNormalizedRoles, getOrgAccessUser } from '../access';
+import {
+  type AccessUser,
+  type OrgUserWithNormalizedRoles,
+  getOrgAccessUser,
+} from '../access';
 
 /**
  * Fetches the user's roles on an organization and asserts the given
@@ -20,7 +24,7 @@ export async function assertOrgAccess({
   permissions,
   notMemberMessage,
 }: {
-  user: { id: string };
+  user?: AccessUser;
   organizationId: string;
   permissions: AccessZonePermissionInput;
   notMemberMessage?: string;

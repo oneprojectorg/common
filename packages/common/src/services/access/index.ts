@@ -22,15 +22,30 @@ export type ProfileUserWithNormalizedRoles = ProfileUserBase & {
   profile: ProfileMinimal;
 };
 
+/**
+ * The caller identity the access layer needs. A subset of the Supabase `User`
+ * (only the id is read today); widen the `Pick` as later auth work needs more
+ * fields. Optional throughout the access layer so a future no-JWT (public)
+ * caller can be represented as `undefined` — resolvers fail closed on it.
+ */
+export type AccessUser = Pick<User, 'id'>;
+
 // gets a user assuming that the user is authenticated
 export const getOrgAccessUser = memoize(
   async ({
     user,
     organizationId,
   }: {
-    user: { id: string };
+    user?: AccessUser;
     organizationId: string;
   }): Promise<OrgUserWithNormalizedRoles | undefined> => {
+    // No caller identity → fail closed. Never let an undefined id reach the
+    // query: Drizzle skips undefined filter conditions, which would drop the
+    // authUserId constraint and match an arbitrary member (auth bypass).
+    if (!user?.id) {
+      throw new UnauthorizedError();
+    }
+
     const getOrgUser = async () => {
       const orgUser = await db.query.organizationUsers.findFirst({
         where: {
@@ -79,7 +94,7 @@ export const getOrgAccessUser = memoize(
       },
     });
   },
-  ({ user, organizationId }) => `${user.id}:${organizationId}`,
+  ({ user, organizationId }) => `${user?.id}:${organizationId}`,
 );
 
 // gets a user's access for a specific profile
@@ -88,9 +103,14 @@ export const getProfileAccessUser = memoize(
     user,
     profileId,
   }: {
-    user: { id: string };
+    user?: AccessUser;
     profileId: string;
   }): Promise<ProfileUserWithNormalizedRoles | undefined> => {
+    // No caller identity → fail closed (see getOrgAccessUser for why).
+    if (!user?.id) {
+      throw new UnauthorizedError();
+    }
+
     const profileUser = await db.query.profileUsers.findFirst({
       where: {
         profileId,
@@ -132,7 +152,7 @@ export const getProfileAccessUser = memoize(
       roles: normalizedRoles,
     };
   },
-  ({ user, profileId }) => `${user.id}:${profileId}`,
+  ({ user, profileId }) => `${user?.id}:${profileId}`,
 );
 
 /**
@@ -288,7 +308,7 @@ export const getCurrentOrgUserId = async (
   }
 
   const orgUser = await getOrgAccessUser({
-    user: { id: session.user.authUserId } as User,
+    user: { id: session.user.authUserId },
     organizationId,
   });
 
