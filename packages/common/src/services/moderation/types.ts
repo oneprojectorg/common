@@ -22,8 +22,8 @@ export interface ModerationDecision {
 /** The moderation vendors we support; the active one is chosen by env. */
 export type ModerationVendor = 'hive' | 'lasso' | 'checkstep';
 
-/** What kind of entity is being submitted for async review. */
-export type ModerationSubjectType = 'proposal' | 'post' | 'user';
+/** What kind of item is being submitted for async review. */
+export type ModerationItemType = 'proposal' | 'post' | 'user';
 
 /**
  * Reference to the record on the external provider. The dispute/review URL is
@@ -37,8 +37,8 @@ export interface ModerationProviderReference {
 }
 
 export interface ModerationSubmission {
-  subjectType: ModerationSubjectType;
-  subjectId: string;
+  itemType: ModerationItemType;
+  itemId: string;
   content: string;
   authorRef?: string;
 }

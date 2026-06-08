@@ -80,8 +80,8 @@ describe('createCheckstepProvider', () => {
     const ref = await createCheckstepProvider({
       apiKey: 'k',
     }).submitForReview!({
-      subjectType: 'proposal',
-      subjectId: 'prop-1',
+      itemType: 'proposal',
+      itemId: 'prop-1',
       content: 'review me',
     });
 

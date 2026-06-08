@@ -51,8 +51,8 @@ const post = async (
   return response.json();
 };
 
-const contentBody = (content: string, subjectId: string) => ({
-  id: subjectId,
+const contentBody = (content: string, itemId: string) => ({
+  id: itemId,
   fields: [{ id: 'text', type: 'text', src: content }],
 });
 
@@ -93,13 +93,13 @@ export const createCheckstepProvider = ({
     return scoresFromViolations(result.violations);
   },
 
-  submitForReview: async ({ subjectId, content }) => {
+  submitForReview: async ({ itemId, content }) => {
     const result = await post(`${apiUrl}/content`, apiKey, {
-      ...contentBody(content, subjectId),
+      ...contentBody(content, itemId),
     });
     const reference: ModerationProviderReference = {
       providerName: 'checkstep',
-      providerRecordId: result.id ?? subjectId,
+      providerRecordId: result.id ?? itemId,
     };
     return reference;
   },

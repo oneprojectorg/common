@@ -39,8 +39,8 @@ const post = async (
 };
 
 // Minimal envelope Lasso's content endpoints require beyond the text itself.
-const envelope = (content: string, subjectId: string) => ({
-  content_id: subjectId,
+const envelope = (content: string, itemId: string) => ({
+  content_id: itemId,
   text: content,
   category: { id: 'content', name: 'content' },
   subcategory: { id: 'content', name: 'content' },
@@ -75,9 +75,9 @@ export const createLassoProvider = ({
     return scores;
   },
 
-  submitForReview: async ({ subjectId, content }) => {
+  submitForReview: async ({ itemId, content }) => {
     const result = await post(`${apiUrl}/content`, apiToken, {
-      ...envelope(content, subjectId),
+      ...envelope(content, itemId),
     });
     return referenceFrom(result);
   },

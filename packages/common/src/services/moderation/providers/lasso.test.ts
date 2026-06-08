@@ -84,8 +84,8 @@ describe('createLassoProvider', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const ref = await createLassoProvider({ apiToken: 't' }).submitForReview!({
-      subjectType: 'post',
-      subjectId: 'post-1',
+      itemType: 'post',
+      itemId: 'post-1',
       content: 'review me',
     });
 
