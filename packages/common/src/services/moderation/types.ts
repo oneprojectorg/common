@@ -1,4 +1,4 @@
-import type { ModerationFlag } from '@op/db/schema';
+import type { ModerationItemType as ModerationItemTypeEnum } from '@op/db/schema';
 
 /** Vendor-agnostic moderation contracts. Concrete providers live in `providers/`. */
 
@@ -24,9 +24,9 @@ export interface ModerationDecision {
 /** The moderation vendors we support; the active one is chosen by env. */
 export type ModerationVendor = 'hive' | 'lasso' | 'checkstep';
 
-/** What kind of item is moderated. Derived from the db `moderation_item_type`
- *  enum so the service and schema never drift. */
-export type ModerationItemType = ModerationFlag['itemType'];
+/** What kind of item is moderated. Derived from the db `ModerationItemType`
+ *  enum (as its value union) so the service and schema never drift. */
+export type ModerationItemType = `${ModerationItemTypeEnum}`;
 
 /**
  * Reference to the record on the external provider. The dispute/review URL is
