@@ -5,7 +5,7 @@ import { Button } from '@op/ui/Button';
 import { Header4 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { type ReactNode, useState } from 'react';
-import { LuArrowLeft, LuCheck, LuShare2 } from 'react-icons/lu';
+import { LuArrowLeft, LuCheck, LuUserPlus } from 'react-icons/lu';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
@@ -96,7 +96,7 @@ export function ProposalEditorLayout({
                   size="small"
                   onPress={() => setIsShareModalOpen(true)}
                 >
-                  <LuShare2 className="size-4" />
+                  <LuUserPlus className="size-4" />
                   <span className="hidden sm:inline">{t('Share')}</span>
                 </Button>
               )}
