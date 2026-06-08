@@ -460,6 +460,9 @@ importers:
       '@op/realtime':
         specifier: workspace:*
         version: link:../../services/realtime
+      '@op/sense':
+        specifier: workspace:*
+        version: link:../../packages/sense
       '@op/styles':
         specifier: workspace:*
         version: link:../../packages/styles
