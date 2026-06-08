@@ -143,6 +143,7 @@ export const ProfileUsersAccess = ({
           isMobile={isMobile}
           invites={invites ?? []}
           processName={processName}
+          isDraft={isDraft}
         />
 
         {shouldShowTrigger && (
