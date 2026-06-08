@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import type { ProposalReviewRequest } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { Header4 } from '@op/ui/Header';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
-import { type ReactNode, useState } from 'react';
-import { LuArrowLeft, LuCheck, LuShare2 } from 'react-icons/lu';
+import type { ProposalReviewRequest } from "@op/common/client";
+import { Button } from "@op/ui/Button";
+import { Header4 } from "@op/ui/Header";
+import { LoadingSpinner } from "@op/ui/LoadingSpinner";
+import { type ReactNode, useState } from "react";
+import { LuArrowLeft, LuCheck, LuShare } from "react-icons/lu";
 
-import { useRouter, useTranslations } from '@/lib/i18n';
+import { useRouter, useTranslations } from "@/lib/i18n";
 
-import { LocaleChooser } from '../LocaleChooser';
-import { UserAvatarMenu } from '../SiteHeader';
-import { ShareProposalModal } from './ShareProposalModal';
-import { ResubmitProposalModal } from './proposalEditor/ResubmitProposalModal';
+import { LocaleChooser } from "../LocaleChooser";
+import { UserAvatarMenu } from "../SiteHeader";
+import { ShareProposalModal } from "./ShareProposalModal";
+import { ResubmitProposalModal } from "./proposalEditor/ResubmitProposalModal";
 
 interface ProposalEditorLayoutProps {
   children: ReactNode;
@@ -76,11 +76,11 @@ export function ProposalEditorLayout({
           className="flex cursor-pointer items-center gap-2 text-primary-teal hover:text-primary-tealBlack"
         >
           <LuArrowLeft className="size-6 text-neutral-charcoal sm:size-4 sm:text-primary-teal rtl:-scale-x-100" />
-          <span className="hidden sm:block">{t('Back')}</span>
+          <span className="hidden sm:block">{t("Back")}</span>
         </button>
 
         <Header4 className="hidden min-w-0 truncate sm:block">
-          {title ? title : t('Untitled Proposal')}
+          {title ? title : t("Untitled Proposal")}
         </Header4>
 
         <div className="flex items-center justify-end gap-4">
@@ -96,8 +96,8 @@ export function ProposalEditorLayout({
                   size="small"
                   onPress={() => setIsShareModalOpen(true)}
                 >
-                  <LuShare2 className="size-4" />
-                  <span className="hidden sm:inline">{t('Share')}</span>
+                  <LuShare className="size-4" />
+                  <span className="hidden sm:inline">{t("Share")}</span>
                 </Button>
               )}
               {!readOnlyMode && (
@@ -115,20 +115,20 @@ export function ProposalEditorLayout({
                 >
                   {isSubmitting ? <LoadingSpinner /> : <LuCheck />}
                   {isRevisionMode ? (
-                    t('Resubmit')
+                    t("Resubmit")
                   ) : isEditMode && !isDraft ? (
                     <>
-                      <span className="inline lg:hidden">{t('Update')}</span>
+                      <span className="inline lg:hidden">{t("Update")}</span>
                       <span className="hidden lg:inline">
-                        {t('Update Proposal')}
+                        {t("Update Proposal")}
                       </span>
                     </>
                   ) : (
                     <>
                       <span className="hidden sm:block">
-                        {t('Submit Proposal')}
+                        {t("Submit Proposal")}
                       </span>
-                      <span className="sm:hidden">{t('Submit')}</span>{' '}
+                      <span className="sm:hidden">{t("Submit")}</span>{" "}
                     </>
                   )}
                 </Button>
