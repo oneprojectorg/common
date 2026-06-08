@@ -44,7 +44,9 @@ const phasesSchema = z.object({
  * skip them to avoid surfacing dead-end errors. Budget is a system field
  * but IS editable (BudgetFieldConfig), so it stays in scope.
  */
-const LOCKED_PROPOSAL_FIELD_KEYS = new Set(['title', 'category']);
+const LOCKED_PROPOSAL_FIELD_KEYS = new Set(
+  [...SYSTEM_FIELD_KEYS].filter((key) => key !== 'budget'),
+);
 
 // ============ Helpers ============
 
