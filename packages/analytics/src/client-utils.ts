@@ -12,3 +12,43 @@ import { posthogUIHost } from '@op/core';
 export const getAnalyticsUserUrl = (distinctUserId: string) => {
   return `${posthogUIHost}/person/${encodeURIComponent(distinctUserId)}`;
 };
+
+export interface DecisionCommonProperties {
+  process_id: string;
+  proposal_id?: string;
+  location?: string;
+  timezone?: string;
+  language?: string;
+}
+
+/**
+ * Builds the common property bag for decision-making analytics events.
+ * `location`/`timezone`/`language` are only populated client-side. The instance
+ * id is emitted as `process_id` for backwards compatibility with PostHog.
+ */
+export function getDecisionCommonProperties({
+  decisionInstanceId,
+  proposalId,
+  additionalProps,
+}: {
+  decisionInstanceId: string;
+  proposalId?: string;
+  additionalProps?: Record<string, unknown>;
+}): DecisionCommonProperties & Record<string, unknown> {
+  const baseProps: DecisionCommonProperties & Record<string, unknown> = {
+    process_id: decisionInstanceId,
+    ...additionalProps,
+  };
+
+  if (proposalId) {
+    baseProps.proposal_id = proposalId;
+  }
+
+  if (typeof window !== 'undefined') {
+    baseProps.location = window.location.href;
+    baseProps.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    baseProps.language = navigator.language;
+  }
+
+  return baseProps;
+}

@@ -15,7 +15,6 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       capture_pageleave: true,
       capture_exceptions: true,
       __add_tracing_headers: true,
-      // debug: process.env.NODE_ENV === 'development',
     });
   }, []);
 

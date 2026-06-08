@@ -1,5 +1,7 @@
 'use client';
 
+import { useTrackPageView } from '@/hooks/useTrackPageView';
+import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import { type ProcessPhase } from '@op/api/encoders';
 import { isLastPhase } from '@op/common/client';
@@ -30,6 +32,14 @@ interface DecisionHeaderProps {
 }
 
 export function DecisionHeader(props: DecisionHeaderProps) {
+  const { instanceId } = props;
+
+  useTrackPageView(
+    'process_viewed',
+    getDecisionCommonProperties({ decisionInstanceId: instanceId }),
+    [instanceId],
+  );
+
   if (props.useLegacy) {
     return <LegacyDecisionHeaderContent {...props} />;
   }

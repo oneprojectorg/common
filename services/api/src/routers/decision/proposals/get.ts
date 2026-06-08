@@ -3,11 +3,9 @@ import { Channels, getPermissionsOnProposal, getProposal } from '@op/common';
 import { proposalSchema } from '@op/common/client';
 import { ProposalStatus } from '@op/db/schema';
 import { logger } from '@op/logging';
-import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
-import { trackProposalViewed } from '../../../utils/analytics';
 
 export const getProposalRouter = router({
   getProposal: networkAuthenticatedProcedure()
@@ -46,18 +44,6 @@ export const getProposalRouter = router({
         });
         return { access: undefined };
       });
-
-      // Track proposal viewed event
-      if (
-        proposal.processInstance &&
-        typeof proposal.processInstance === 'object' &&
-        !Array.isArray(proposal.processInstance) &&
-        'id' in proposal.processInstance
-      ) {
-        waitUntil(
-          trackProposalViewed(ctx, proposal.processInstance.id, proposal.id),
-        );
-      }
 
       ctx.registerQueryChannels([
         Channels.decisionProposal(proposal.processInstanceId, proposal.id),

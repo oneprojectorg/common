@@ -1,6 +1,8 @@
 'use client';
 
 import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
+import { useTrackPageView } from '@/hooks/useTrackPageView';
+import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import {
   type Proposal,
@@ -44,6 +46,16 @@ export function ProposalView({
 
   // Safety check - fallback to initial data if query returns undefined
   const currentProposal = proposal || initialProposal;
+
+  const { processInstanceId, id: proposalId } = currentProposal;
+  useTrackPageView(
+    'proposal_viewed',
+    getDecisionCommonProperties({
+      decisionInstanceId: processInstanceId,
+      proposalId,
+    }),
+    [processInstanceId, proposalId],
+  );
 
   // Use relationship mutations hook for like/follow functionality
   const {

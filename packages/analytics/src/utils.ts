@@ -1,5 +1,10 @@
 import PostHogClient from '@op/analytics/client';
 
+import {
+  type DecisionCommonProperties,
+  getDecisionCommonProperties,
+} from './client-utils';
+
 const posthog = PostHogClient();
 
 /**
@@ -254,41 +259,9 @@ export async function trackRelationshipAccepted(userId: string): Promise<void> {
  * Decision-making process analytics
  */
 
-export interface DecisionCommonProperties {
-  process_id: string;
-  proposal_id?: string;
-  location?: string;
-  timezone?: string;
-  language?: string;
-}
-
-/**
- * Helper function to get common properties for decision events
- */
-export function getDecisionCommonProperties(
-  processId: string,
-  proposalId?: string,
-  additionalProps?: Record<string, any>,
-): DecisionCommonProperties & Record<string, any> {
-  // Server-side safe implementation - only add client-side properties if available
-  const baseProps: DecisionCommonProperties & Record<string, any> = {
-    process_id: processId,
-    ...additionalProps,
-  };
-
-  if (proposalId) {
-    baseProps.proposal_id = proposalId;
-  }
-
-  // Only add browser-specific properties if we're on the client side
-  if (typeof window !== 'undefined') {
-    baseProps.location = window.location.href;
-    baseProps.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    baseProps.language = navigator.language;
-  }
-
-  return baseProps;
-}
+// Re-exported from the client-safe module so there is a single definition
+// shared by server-side tracking here and client-side tracking in the app.
+export { type DecisionCommonProperties, getDecisionCommonProperties };
 
 /**
  * Track when a user views a decision-making process
@@ -301,7 +274,10 @@ export async function trackProcessViewed(
   await trackEventWithContext(
     userId,
     'process_viewed',
-    getDecisionCommonProperties(processId, undefined, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      additionalProps,
+    }),
   );
 }
 
@@ -317,7 +293,11 @@ export async function trackProposalSubmitted(
   await trackEventWithContext(
     userId,
     'proposal_submitted',
-    getDecisionCommonProperties(processId, proposalId, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      proposalId,
+      additionalProps,
+    }),
   );
 }
 
@@ -333,7 +313,11 @@ export async function trackProposalViewed(
   await trackEventWithContext(
     userId,
     'proposal_viewed',
-    getDecisionCommonProperties(processId, proposalId, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      proposalId,
+      additionalProps,
+    }),
   );
 }
 
@@ -349,7 +333,11 @@ export async function trackProposalCommented(
   await trackEventWithContext(
     userId,
     'proposal_commented',
-    getDecisionCommonProperties(processId, proposalId, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      proposalId,
+      additionalProps,
+    }),
   );
 }
 
@@ -365,7 +353,11 @@ export async function trackProposalLiked(
   await trackEventWithContext(
     userId,
     'proposal_liked',
-    getDecisionCommonProperties(processId, proposalId, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      proposalId,
+      additionalProps,
+    }),
   );
 }
 
@@ -381,7 +373,11 @@ export async function trackProposalFollowed(
   await trackEventWithContext(
     userId,
     'proposal_followed',
-    getDecisionCommonProperties(processId, proposalId, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      proposalId,
+      additionalProps,
+    }),
   );
 }
 
@@ -392,7 +388,7 @@ export async function trackUserVoted(
   await trackEventWithContext(
     userId,
     'user_voted',
-    getDecisionCommonProperties(processId),
+    getDecisionCommonProperties({ decisionInstanceId: processId }),
   );
 }
 
@@ -408,7 +404,11 @@ export async function trackProposalReviewed(
   await trackEventWithContext(
     userId,
     'user_reviewed_proposal',
-    getDecisionCommonProperties(processId, proposalId, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      proposalId,
+      additionalProps,
+    }),
   );
 }
 
@@ -423,7 +423,10 @@ export async function trackReviewListFinished(
   await trackEventWithContext(
     userId,
     'user_finished_review',
-    getDecisionCommonProperties(processId, undefined, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      additionalProps,
+    }),
   );
 }
 
@@ -438,7 +441,10 @@ export async function trackAdminSetProcess(
   await trackEventWithContext(
     userId,
     'admin_set_process',
-    getDecisionCommonProperties(processId, undefined, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      additionalProps,
+    }),
   );
 }
 
@@ -483,7 +489,10 @@ export async function trackAdminSetRubric(
   await trackEventWithContext(
     userId,
     'admin_set_rubric',
-    getDecisionCommonProperties(processId, undefined, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      additionalProps,
+    }),
   );
 }
 
@@ -513,7 +522,10 @@ export async function trackManualTransitionConfirmed(
   await trackEventWithContext(
     userId,
     'manual_transition_confirmed',
-    getDecisionCommonProperties(processId, undefined, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      additionalProps,
+    }),
   );
 }
 
@@ -525,7 +537,10 @@ export async function trackManualSelectionSubmitted(
   await trackEventWithContext(
     userId,
     'manual_selection_submitted',
-    getDecisionCommonProperties(processId, undefined, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      additionalProps,
+    }),
   );
 }
 
@@ -537,6 +552,9 @@ export async function trackPhaseEndDateChanged(
   await trackEventWithContext(
     userId,
     'phase_end_date_changed',
-    getDecisionCommonProperties(processId, undefined, additionalProps),
+    getDecisionCommonProperties({
+      decisionInstanceId: processId,
+      additionalProps,
+    }),
   );
 }
