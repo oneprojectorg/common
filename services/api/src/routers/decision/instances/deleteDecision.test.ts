@@ -7,6 +7,7 @@ import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -250,7 +251,7 @@ describeDecisionAccessTierGating('deleteDecision', {
   ),
 
   userJwtNonPublic: accessTierGatingCell(
-    'rejects user-JWT caller on non-public instance',
+    'admits user-JWT caller past the tier gate',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const setup = await testData.createDecisionSetup({
@@ -264,9 +265,8 @@ describeDecisionAccessTierGating('deleteDecision', {
 
       const caller = await callers.userJwt();
 
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.decision.deleteDecision({ instanceId: instance.instance.id }),
-        'user',
       );
     },
   ),

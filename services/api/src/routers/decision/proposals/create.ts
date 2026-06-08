@@ -2,11 +2,11 @@ import { Channels, createProposal } from '@op/common';
 import { proposalSchema } from '@op/common/client';
 
 import { createProposalInputSchema } from '../../../encoders/decision';
-import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
+import { authenticatedProcedure, router } from '../../../trpcFactory';
 
 export const createProposalRouter = router({
   /** Creates a new proposal in draft status. Use submitProposal to transition to submitted. */
-  createProposal: networkAuthenticatedProcedure()
+  createProposal: authenticatedProcedure()
     .input(createProposalInputSchema)
     .output(proposalSchema)
     .mutation(async ({ ctx, input }) => {

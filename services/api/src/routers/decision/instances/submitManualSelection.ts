@@ -2,7 +2,7 @@ import { Channels, submitManualSelection } from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
+import { authenticatedConfirmedProcedure, router } from '../../../trpcFactory';
 import { trackManualSelectionSubmitted } from '../../../utils/analytics';
 
 const submitManualSelectionInputSchema = z.object({
@@ -11,7 +11,7 @@ const submitManualSelectionInputSchema = z.object({
 });
 
 export const submitManualSelectionRouter = router({
-  submitManualSelection: networkAuthenticatedProcedure()
+  submitManualSelection: authenticatedConfirmedProcedure()
     .input(submitManualSelectionInputSchema)
     .mutation(async ({ ctx, input }) => {
       await submitManualSelection({
