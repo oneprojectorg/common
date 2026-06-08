@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import { ButtonLink } from '@op/ui/Button';
-import { Header1 } from '@op/ui/Header';
-import { IconButton } from '@op/ui/IconButton';
-import { MegaphoneIcon } from '@op/ui/MegaphoneIcon';
-import { useQueryState } from 'nuqs';
-import { type ReactNode } from 'react';
-import { LuArrowLeft, LuSettings } from 'react-icons/lu';
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { ButtonLink } from "@op/ui/Button";
+import { Header1 } from "@op/ui/Header";
+import { IconButton } from "@op/ui/IconButton";
+import { MegaphoneIcon } from "@op/ui/MegaphoneIcon";
+import { useQueryState } from "nuqs";
+import { type ReactNode } from "react";
+import { LuArrowLeft, LuSettings } from "react-icons/lu";
 
-import { useTranslations } from '@/lib/i18n';
-import { Link } from '@/lib/i18n/routing';
+import { useTranslations } from "@/lib/i18n";
+import { Link } from "@/lib/i18n/routing";
 
-import { LocaleChooser } from '../LocaleChooser';
-import { UserAvatarMenu } from '../SiteHeader';
-import { panelStateParser } from './panelState';
+import { LocaleChooser } from "../LocaleChooser";
+import { UserAvatarMenu } from "../SiteHeader";
+import { panelStateParser } from "./panelState";
 
 export const DecisionInstanceHeader = ({
   backTo,
@@ -51,7 +51,7 @@ export const DecisionInstanceHeader = ({
         >
           <LuArrowLeft className="size-6 md:size-4 rtl:-scale-x-100" />
           <span className="hidden md:flex">
-            {t('Back')} {backTo.label ? `${t('to')} ${backTo.label}` : ''}
+            {t("Back")} {backTo.label ? `${t("to")} ${backTo.label}` : ""}
           </span>
         </Link>
         {centerSlot ? (
@@ -77,7 +77,7 @@ export const DecisionInstanceHeader = ({
 
       <div className="flex items-center justify-end gap-2 md:gap-4">
         <DecisionUpdatesToggle
-          ariaLabel={t('Toggle updates panel')}
+          ariaLabel={t("Toggle updates panel")}
           canReadUpdates={canReadUpdates}
         />
         {isAdmin && decisionSlug && (
@@ -86,7 +86,7 @@ export const DecisionInstanceHeader = ({
             color="secondary"
             size="small"
             className="p-2"
-            aria-label={t('Settings')}
+            aria-label={t("Settings")}
           >
             <LuSettings className="size-4" />
           </ButtonLink>
@@ -105,8 +105,8 @@ const DecisionUpdatesToggle = ({
   ariaLabel: string;
   canReadUpdates: boolean;
 }) => {
-  const [panel, setPanel] = useQueryState('panel', panelStateParser);
-  const decisionUpdatesEnabled = useFeatureFlag('decision_updates');
+  const [panel, setPanel] = useQueryState("panel", panelStateParser);
+  const decisionUpdatesEnabled = useFeatureFlag("decision_updates");
 
   // Show the entry point to anyone who can actually read updates;
   // the feature flag lets us preview the panel for everyone else.
@@ -120,11 +120,11 @@ const DecisionUpdatesToggle = ({
     <IconButton
       variant="outline"
       size="medium"
-      onPress={() => setPanel(isOpen ? null : 'updates')}
+      onPress={() => setPanel(isOpen ? null : "updates")}
       aria-label={ariaLabel}
       aria-pressed={isOpen}
       className={
-        isOpen ? 'bg-primary-tealWhite text-primary-teal' : 'text-neutral-black'
+        isOpen ? "bg-primary-tealWhite text-primary-teal" : "text-neutral-black"
       }
     >
       <MegaphoneIcon className="size-4" />
