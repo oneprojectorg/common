@@ -61,13 +61,11 @@ export async function getServerFeatureFlag(flag: string): Promise<boolean> {
   const ph = getClient();
   const distinctId = await getDistinctId();
   if (!ph || !distinctId) {
-    // TODO(overview-canonical): cookie-less visitors (new/anon, private mode,
-    // crawlers) have no distinct id, so the flag is forced off. Fine while the
-    // overview lives behind the flag at /overview. Before it becomes the
-    // canonical public root, stand up PostHog's recommended Next.js setup:
-    // middleware that ensures a distinct-id cookie and bootstraps flag values
-    // (or @posthog/next). That durably fixes anon identity, the per-render
-    // /decide network call, and server/client flag flicker in one move.
+    // No distinct id (logged-out / no prior posthog session) → flag off. This
+    // is a team-only gate: the people meant to see the overview are logged in
+    // and identified, so they resolve fine. When the overview is ready to be
+    // the canonical public root, delete this flag entirely instead of building
+    // anonymous-identity infra for it.
     return false;
   }
 
