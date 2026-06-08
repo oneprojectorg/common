@@ -1,21 +1,21 @@
-'use client';
+"use client";
 
-import { trpc } from '@op/api/client';
-import { Accordion } from '@op/ui/Accordion';
-import { Button } from '@op/ui/Button';
-import { Header2 } from '@op/ui/Header';
-import { Skeleton } from '@op/ui/Skeleton';
-import { Suspense, useState } from 'react';
-import { LuPlus } from 'react-icons/lu';
+import { trpc } from "@op/api/client";
+import { Accordion } from "@op/ui/Accordion";
+import { Button } from "@op/ui/Button";
+import { Header2 } from "@op/ui/Header";
+import { Skeleton } from "@op/ui/Skeleton";
+import { Suspense, useState } from "react";
+import { LuPlus } from "react-icons/lu";
 
-import { useTranslations } from '@/lib/i18n';
+import { useTranslations } from "@/lib/i18n";
 
-import ErrorBoundary from '@/components/ErrorBoundary';
+import ErrorBoundary from "@/components/ErrorBoundary";
 
-import { AddResourcePanel } from './AddResourcePanel';
-import { CollectionSection } from './CollectionSection';
-import { ResourceDropZone } from './ResourceDropZone';
-import { ResourceEmptyState } from './ResourceEmptyState';
+import { AddResourcePanel } from "./AddResourcePanel";
+import { CollectionSection } from "./CollectionSection";
+import { ResourceDropZone } from "./ResourceDropZone";
+import { ResourceEmptyState } from "./ResourceEmptyState";
 
 export const ResourcesTabContent = ({
   profileId,
@@ -33,7 +33,7 @@ export const ResourcesTabContent = ({
     <div className="relative flex min-h-0 flex-1 flex-col">
       <div className="flex flex-1 flex-col overflow-y-auto px-4 py-4 sm:px-6">
         <Header2 className="font-serif text-title-base">
-          {t('Resources')}
+          {t("Resources")}
         </Header2>
         <div className="mt-4">
           {canRead ? (
@@ -60,10 +60,10 @@ export const ResourcesTabContent = ({
             color="secondary"
             size="small"
             onPress={() => setAdding(true)}
-            className="w-full justify-center text-primary-teal"
+            className="w-full justify-center"
           >
             <LuPlus className="size-4" />
-            {t('Add resource')}
+            {t("Add resource")}
           </Button>
         </div>
       ) : null}

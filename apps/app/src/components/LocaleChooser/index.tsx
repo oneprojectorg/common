@@ -1,30 +1,30 @@
-'use client';
+"use client";
 
-import { useMediaQuery } from '@op/hooks';
-import { screens } from '@op/styles/constants';
-import { Button } from '@op/ui/Button';
-import { IconButton } from '@op/ui/IconButton';
-import { Select, SelectItem } from '@op/ui/Select';
-import { cn } from '@op/ui/utils';
-import { useParams } from 'next/navigation';
-import { LuGlobe } from 'react-icons/lu';
+import { useMediaQuery } from "@op/hooks";
+import { screens } from "@op/styles/constants";
+import { Button } from "@op/ui/Button";
+import { IconButton } from "@op/ui/IconButton";
+import { Select, SelectItem } from "@op/ui/Select";
+import { cn } from "@op/ui/utils";
+import { useParams } from "next/navigation";
+import { LuGlobe } from "react-icons/lu";
 
-import { useRouter as useI18nRouter, usePathname } from '@/lib/i18n';
-import { useTranslations } from '@/lib/i18n';
-import { i18nConfig } from '@/lib/i18n/config';
+import { useRouter as useI18nRouter, usePathname } from "@/lib/i18n";
+import { useTranslations } from "@/lib/i18n";
+import { i18nConfig } from "@/lib/i18n/config";
 
 interface LocaleChooserProps {
   onClose?: () => void;
 }
 
 const localeDisplayNames: Record<string, string> = {
-  en: 'English',
-  es: 'Español',
-  fr: 'Français',
-  pt: 'Português',
-  bn: 'বাংলা',
-  so: 'Af-Soomaali',
-  ar: 'العربية',
+  en: "English",
+  es: "Español",
+  fr: "Français",
+  pt: "Português",
+  bn: "বাংলা",
+  so: "Af-Soomaali",
+  ar: "العربية",
 };
 
 export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
@@ -50,19 +50,19 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
     <Select
       selectedKey={currentLocale}
       onSelectionChange={handleSelectionChange}
-      aria-label={t('Select language')}
+      aria-label={t("Select language")}
       listBoxClassName="max-h-none overflow-visible"
       popoverProps={{
-        className: '!max-h-none overflow-visible',
-        placement: 'bottom end',
+        className: "!max-h-none overflow-visible",
+        placement: "bottom end",
       }}
       customTrigger={
         <>
           <IconButton
-            aria-label={t('Select language')}
+            aria-label={t("Select language")}
             variant="outline"
             size="medium"
-            className="hidden text-primary-teal sm:flex"
+            className="hidden sm:flex"
           >
             <LuGlobe className="size-4" />
           </IconButton>
@@ -83,12 +83,12 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
         <SelectItem
           key={locale}
           id={locale}
-          className={cn(currentLocale === locale && 'text-primary-teal')}
+          className={cn(currentLocale === locale && "text-primary-teal")}
         >
           <div
             className={cn(
-              'flex items-center justify-between',
-              currentLocale === locale && 'text-primary-teal',
+              "flex items-center justify-between",
+              currentLocale === locale && "text-primary-teal",
             )}
           >
             <span>{localeDisplayNames[locale] || locale}</span>
