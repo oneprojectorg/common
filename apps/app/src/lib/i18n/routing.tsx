@@ -45,10 +45,6 @@ const {
   useRouter,
 } = createNavigation(routing);
 
-// prefetch={false} works around a Next.js prefetch bug that causes intermittent 500s.
-// With prefetch enabled, the server generates RSC payloads that reference client modules
-// not found in the React Client Manifest, producing:
-//   "Could not find the module ... in the React Client Manifest"
 const Link = ({
   children,
   className,
@@ -59,7 +55,10 @@ const Link = ({
     <NavLink
       {...props}
       className={cn('hover:underline', className)}
-      prefetch={false}
+      // prefetch is safe with the webpack build (prod + e2e), which resolves the
+      // RSC client manifest correctly. Local `dev` still uses Turbopack, where
+      // cross-route prefetch can surface the manifest 500.
+      prefetch={true}
     >
       {children}
     </NavLink>
