@@ -60,7 +60,7 @@ export const ResourcesTabContent = ({
             color="secondary"
             size="small"
             onPress={() => setAdding(true)}
-            className="w-full justify-center text-primary-teal"
+            className="w-full justify-center"
           >
             <LuPlus className="size-4" />
             {t('Add resource')}

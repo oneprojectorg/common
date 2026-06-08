@@ -62,7 +62,7 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
             aria-label={t('Select language')}
             variant="outline"
             size="medium"
-            className="hidden text-primary-teal sm:flex"
+            className="hidden sm:flex"
           >
             <LuGlobe className="size-4" />
           </IconButton>
