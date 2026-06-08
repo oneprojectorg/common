@@ -75,7 +75,6 @@ describe('assertTextContentModerated', () => {
   it('returns the decision when content passes', async () => {
     const decision = await assertTextContentModerated(
       'a friendly message',
-      undefined,
       fakeProvider({ profanity: 0.1 }),
     );
 
@@ -84,19 +83,7 @@ describe('assertTextContentModerated', () => {
 
   it('throws ModerationError when content fails', async () => {
     await expect(
-      assertTextContentModerated(
-        'something nasty',
-        undefined,
-        fakeProvider({ hate: 2 }),
-      ),
+      assertTextContentModerated('something nasty', fakeProvider({ hate: 2 })),
     ).rejects.toBeInstanceOf(ModerationError);
-  });
-
-  it('throws the provided custom error on failure', async () => {
-    const custom = new Error('custom rejection');
-
-    await expect(
-      assertTextContentModerated('nope', custom, fakeProvider({ hate: 2 })),
-    ).rejects.toBe(custom);
   });
 });
