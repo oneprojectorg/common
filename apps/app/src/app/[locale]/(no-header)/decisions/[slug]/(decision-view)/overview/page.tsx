@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
-import { DecisionOverview } from '@/components/decisions/DecisionOverview';
+import { DecisionOverviewSuspense } from '@/components/decisions/DecisionOverview';
 import { DecisionContentSkeleton } from '@/components/skeletons/DecisionSkeleton';
 
 import { loadDecision } from '../loadDecision';
@@ -48,7 +48,7 @@ const DecisionOverviewPage = async ({
 
   return (
     <Suspense fallback={<DecisionContentSkeleton />}>
-      <DecisionOverview
+      <DecisionOverviewSuspense
         instanceId={instanceId}
         slug={ownerSlug}
         decisionSlug={slug}

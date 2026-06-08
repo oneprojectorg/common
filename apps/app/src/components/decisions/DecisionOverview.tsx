@@ -20,7 +20,9 @@ interface DecisionOverviewProps {
  * Scaffold: renders the instance title + a placeholder body. Flesh out with
  * the full process summary (hero, proposals, phases, About) next.
  */
-export function DecisionOverview({ instanceId }: DecisionOverviewProps) {
+export function DecisionOverviewSuspense({
+  instanceId,
+}: DecisionOverviewProps) {
   const t = useTranslations();
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
 

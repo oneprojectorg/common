@@ -1,23 +1,16 @@
+import PostHogClient from '@op/analytics/client';
 import { cookies } from 'next/headers';
-import { PostHog } from 'posthog-node';
+import type { PostHog } from 'posthog-node';
 
-// EU ingestion host — matches `posthogUIHost` (eu.posthog.com) in @op/core.
-const POSTHOG_HOST = 'https://eu.i.posthog.com';
-
+// Reuse the shared server PostHog client rather than spinning up a bespoke one.
 let client: PostHog | null = null;
 
 function getClient(): PostHog | null {
-  const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-  if (!key) {
+  if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) {
     return null;
   }
   if (!client) {
-    // Cap the per-request flag network call so a PostHog brownout can't stall
-    // the layout render (the flag is awaited before anything paints).
-    client = new PostHog(key, {
-      host: POSTHOG_HOST,
-      featureFlagsRequestTimeoutMs: 3000,
-    });
+    client = PostHogClient();
   }
   return client;
 }

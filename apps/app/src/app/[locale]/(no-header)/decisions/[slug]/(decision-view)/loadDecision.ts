@@ -3,14 +3,6 @@ import { CommonError } from '@op/common';
 import { forbidden, notFound } from 'next/navigation';
 import { cache } from 'react';
 
-/**
- * Resolve a decision profile by slug for the (decision-view) route group.
- *
- * Wrapped in React `cache` so the layout and the active page (overview or
- * current) share a single fetch within one request instead of each hitting
- * the API. Throws the framework's `forbidden()` / `notFound()` so the nearest
- * boundary renders the right error UI.
- */
 export const loadDecision = cache(async (slug: string) => {
   const client = await createClient();
 

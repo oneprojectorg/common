@@ -9,7 +9,7 @@ import { type ReactNode } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
-import { DecisionProcessStepper } from '@/components/decisions/DecisionProcessStepper';
+import { DecisionStepperBar } from '@/components/decisions/DecisionStepperBar';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
 
 interface DecisionHeaderProps {
@@ -94,17 +94,12 @@ function DecisionHeaderContent({
       />
       <DecisionTranslationProvider>
         {showStepper ? (
-          <div className="flex flex-col overflow-x-auto sm:items-center">
-            <div className="w-fit rounded-b border border-t-0 bg-white px-12 py-4 sm:px-32">
-              <DecisionProcessStepper
-                phases={phases}
-                currentStateId={instance.currentStateId || ''}
-                instanceId={instanceId}
-                isAdmin={isAdmin}
-                className="mx-auto"
-              />
-            </div>
-          </div>
+          <DecisionStepperBar
+            phases={phases}
+            currentStateId={instance.currentStateId || ''}
+            instanceId={instanceId}
+            isAdmin={isAdmin}
+          />
         ) : null}
 
         {children}
@@ -154,17 +149,12 @@ function LegacyDecisionHeaderContent({
         isAdmin={isAdmin}
       />
       <DecisionTranslationProvider>
-        <div className="flex flex-col overflow-x-auto sm:items-center">
-          <div className="w-fit rounded-b border border-t-0 bg-white px-12 py-4 sm:px-32">
-            <DecisionProcessStepper
-              phases={phases}
-              currentStateId={instance.currentStateId || ''}
-              instanceId={instanceId}
-              isAdmin={isAdmin}
-              className="mx-auto"
-            />
-          </div>
-        </div>
+        <DecisionStepperBar
+          phases={phases}
+          currentStateId={instance.currentStateId || ''}
+          instanceId={instanceId}
+          isAdmin={isAdmin}
+        />
 
         {children}
       </DecisionTranslationProvider>
