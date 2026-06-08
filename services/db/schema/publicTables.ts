@@ -149,6 +149,17 @@ export type { Proposal, ProposalCategory } from './tables/proposals.sql';
 export { Visibility, visibilityEnum } from './tables/visibility.sql';
 
 export {
+  ModerationRecordStatus,
+  moderationRecordStatusEnum,
+  moderationRecords,
+  ModerationSource,
+  moderationSourceEnum,
+  ModerationSubjectType,
+  moderationSubjectTypeEnum,
+} from './tables/moderation.sql';
+export type { ModerationRecord } from './tables/moderation.sql';
+
+export {
   proposalHistory,
   proposalHistoryRelations,
 } from './tables/proposalHistory.sql';

@@ -2,7 +2,12 @@ import { InferModel } from 'drizzle-orm';
 import { relations } from 'drizzle-orm/_relations';
 import { index, pgTable, primaryKey, text, uuid } from 'drizzle-orm/pg-core';
 
-import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
+import {
+  autoId,
+  moderationColumns,
+  serviceRolePolicies,
+  timestamps,
+} from '../../helpers';
 import { attachments } from './attachments.sql';
 import { organizations } from './organizations.sql';
 import { postReactions } from './postReactions.sql';
@@ -31,6 +36,7 @@ export const posts = pgTable(
     rootPostId: uuid().references((): any => posts.id, {
       onDelete: 'cascade',
     }),
+    ...moderationColumns,
     ...timestamps,
   },
   (table) => [
@@ -40,6 +46,9 @@ export const posts = pgTable(
     index().on(table.parentPostId).concurrently(),
     index().on(table.rootProfileId),
     index().on(table.rootPostId),
+    index('posts_moderation_hidden_at_idx')
+      .on(table.moderationHiddenAt)
+      .concurrently(),
   ],
 );
 

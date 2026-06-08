@@ -12,7 +12,12 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-import { autoId, enumToPgEnum, serviceRolePolicies } from '../../helpers';
+import {
+  autoId,
+  enumToPgEnum,
+  moderationColumns,
+  serviceRolePolicies,
+} from '../../helpers';
 import { decisionsVoteProposals } from './decisions_vote_proposals.sql';
 import { processInstances } from './processInstances.sql';
 import { profiles } from './profiles.sql';
@@ -111,9 +116,16 @@ export const proposals = pgTable(
 
     // All columns that get copied to history (single source of truth)
     ...proposalColumns,
+
+    // Moderation-hide flag. Deliberately OUTSIDE proposalColumns: it must not be
+    // versioned into proposal history by the proposal_history_trigger.
+    ...moderationColumns,
   },
   (table) => [
     ...serviceRolePolicies,
+    index('proposals_moderation_hidden_at_idx')
+      .on(table.moderationHiddenAt)
+      .concurrently(),
     unique('proposals_process_instance_uniq').on(
       table.processInstanceId,
       table.id,

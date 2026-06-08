@@ -827,4 +827,23 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.taxonomies.id,
     }),
   },
+
+  /**
+   * Moderation record relations
+   *
+   * The subject is polymorphic (`subjectType` + `subjectId`) and resolved
+   * manually in services, so only the profile actors are expressed here.
+   */
+  moderationRecords: {
+    flaggedBy: r.one.profiles({
+      from: r.moderationRecords.flaggedByProfileId,
+      to: r.profiles.id,
+      alias: 'moderationRecord_flaggedBy',
+    }),
+    reviewedBy: r.one.profiles({
+      from: r.moderationRecords.reviewedByProfileId,
+      to: r.profiles.id,
+      alias: 'moderationRecord_reviewedBy',
+    }),
+  },
 }));

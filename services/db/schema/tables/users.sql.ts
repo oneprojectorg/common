@@ -10,7 +10,12 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 
-import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
+import {
+  autoId,
+  moderationColumns,
+  serviceRolePolicies,
+  timestamps,
+} from '../../helpers';
 import { authUsers } from './authUsers.sql';
 import { organizationUsers } from './organizationUsers.sql';
 import { organizations } from './organizations.sql';
@@ -49,6 +54,7 @@ export const users = pgTable(
     privacy: boolean(),
     // Used for measuring when a user completed onboarding
     onboardedAt: timestamp({ withTimezone: true, mode: 'string' }),
+    ...moderationColumns,
     ...timestamps,
   },
   (table) => [
