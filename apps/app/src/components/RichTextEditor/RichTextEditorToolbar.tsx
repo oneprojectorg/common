@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useFileUpload } from '@/hooks/useFileUpload';
-import { cn } from '@op/ui/utils';
-import type { Editor } from '@tiptap/react';
-import { useCallback, useRef } from 'react';
+import { useFileUpload } from "@/hooks/useFileUpload";
+import { cn } from "@op/ui/utils";
+import type { Editor } from "@tiptap/react";
+import { useCallback, useRef } from "react";
 import {
   LuAlignCenter,
   LuAlignLeft,
@@ -25,9 +25,9 @@ import {
   LuStrikethrough,
   LuUnderline,
   LuUndo,
-} from 'react-icons/lu';
+} from "react-icons/lu";
 
-import { useTranslations } from '@/lib/i18n';
+import { useTranslations } from "@/lib/i18n";
 
 export interface RichTextEditorToolbarProps {
   editor: Editor | null;
@@ -36,41 +36,41 @@ export interface RichTextEditorToolbarProps {
 
 export function RichTextEditorToolbar({
   editor,
-  className = '',
+  className = "",
 }: RichTextEditorToolbarProps) {
   const t = useTranslations();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // File upload setup for images only
   const { uploadFile } = useFileUpload({
-    acceptedTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/gif'],
+    acceptedTypes: ["image/png", "image/jpeg", "image/webp", "image/gif"],
     maxFiles: 10,
     maxSizePerFile: 25 * 1024 * 1024, // 25MB
   });
 
   const addLink = useCallback(() => {
-    const previousUrl = editor?.getAttributes('link').href;
-    const url = window.prompt('URL', previousUrl);
+    const previousUrl = editor?.getAttributes("link").href;
+    const url = window.prompt("URL", previousUrl);
 
     if (url === null) {
       return;
     }
 
-    if (url === '') {
-      editor?.chain().focus().extendMarkRange('link').unsetLink().run();
+    if (url === "") {
+      editor?.chain().focus().extendMarkRange("link").unsetLink().run();
       return;
     }
 
     editor
       ?.chain()
       .focus()
-      .extendMarkRange('link')
+      .extendMarkRange("link")
       .setLink({ href: url })
       .run();
   }, [editor]);
 
   const addEmbedLink = useCallback(() => {
-    const url = window.prompt('Enter the URL to embed:');
+    const url = window.prompt("Enter the URL to embed:");
 
     if (url && url.trim()) {
       editor?.chain().focus().setIframely({ src: url.trim() }).run();
@@ -94,12 +94,12 @@ export function RichTextEditorToolbar({
         // Insert the uploaded image into the editor
         editor.chain().focus().setImage({ src: uploadResult.url }).run();
       } catch (error) {
-        console.error('Failed to upload image:', error);
+        console.error("Failed to upload image:", error);
       }
 
       // Clear the input
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     },
     [editor, uploadFile],
@@ -108,12 +108,12 @@ export function RichTextEditorToolbar({
   const noEditor = !editor;
 
   const btnClass = (active: boolean) =>
-    `shrink-0 rounded p-2 hover:bg-gray-100 ${active ? 'bg-gray-200' : ''}`;
+    `shrink-0 cursor-pointer rounded p-2 hover:bg-gray-100 ${active ? "bg-gray-200" : ""}`;
 
   return (
     <div
       className={cn(
-        'justify-between border-b px-6 py-2 text-neutral-charcoal',
+        "justify-between border-b px-6 py-2 text-neutral-charcoal",
         className,
       )}
     >
@@ -122,16 +122,16 @@ export function RichTextEditorToolbar({
         <button
           onClick={() => editor?.chain().focus().undo().run()}
           disabled={noEditor || !editor.can().undo()}
-          className="shrink-0 rounded p-2 hover:bg-gray-100"
-          title={t('Undo')}
+          className="shrink-0 cursor-pointer rounded p-2 hover:bg-gray-100"
+          title={t("Undo")}
         >
           <LuUndo className="size-4" />
         </button>
         <button
           onClick={() => editor?.chain().focus().redo().run()}
           disabled={noEditor || !editor.can().redo()}
-          className="shrink-0 rounded p-2 hover:bg-gray-100"
-          title={t('Redo')}
+          className="shrink-0 cursor-pointer rounded p-2 hover:bg-gray-100"
+          title={t("Redo")}
         >
           <LuRedo className="h-4 w-4" />
         </button>
@@ -145,9 +145,9 @@ export function RichTextEditorToolbar({
           }
           disabled={noEditor}
           className={btnClass(
-            editor?.isActive('heading', { level: 1 }) ?? false,
+            editor?.isActive("heading", { level: 1 }) ?? false,
           )}
-          title={t('Heading 1')}
+          title={t("Heading 1")}
         >
           <LuHeading1 className="h-4 w-4" />
         </button>
@@ -157,9 +157,9 @@ export function RichTextEditorToolbar({
           }
           disabled={noEditor}
           className={btnClass(
-            editor?.isActive('heading', { level: 2 }) ?? false,
+            editor?.isActive("heading", { level: 2 }) ?? false,
           )}
-          title={t('Heading 2')}
+          title={t("Heading 2")}
         >
           <LuHeading2 className="h-4 w-4" />
         </button>
@@ -169,9 +169,9 @@ export function RichTextEditorToolbar({
           }
           disabled={noEditor}
           className={btnClass(
-            editor?.isActive('heading', { level: 3 }) ?? false,
+            editor?.isActive("heading", { level: 3 }) ?? false,
           )}
-          title={t('Heading 3')}
+          title={t("Heading 3")}
         >
           <LuHeading3 className="h-4 w-4" />
         </button>
@@ -182,40 +182,40 @@ export function RichTextEditorToolbar({
         <button
           onClick={() => editor?.chain().focus().toggleBold().run()}
           disabled={noEditor}
-          className={btnClass(editor?.isActive('bold') ?? false)}
-          title={t('Bold')}
+          className={btnClass(editor?.isActive("bold") ?? false)}
+          title={t("Bold")}
         >
           <LuBold className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor?.chain().focus().toggleItalic().run()}
           disabled={noEditor}
-          className={btnClass(editor?.isActive('italic') ?? false)}
-          title={t('Italic')}
+          className={btnClass(editor?.isActive("italic") ?? false)}
+          title={t("Italic")}
         >
           <LuItalic className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor?.chain().focus().toggleUnderline().run()}
           disabled={noEditor}
-          className={btnClass(editor?.isActive('underline') ?? false)}
-          title={t('Underline')}
+          className={btnClass(editor?.isActive("underline") ?? false)}
+          title={t("Underline")}
         >
           <LuUnderline className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor?.chain().focus().toggleStrike().run()}
           disabled={noEditor}
-          className={btnClass(editor?.isActive('strike') ?? false)}
-          title={t('Strikethrough')}
+          className={btnClass(editor?.isActive("strike") ?? false)}
+          title={t("Strikethrough")}
         >
           <LuStrikethrough className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor?.chain().focus().toggleCode().run()}
           disabled={noEditor}
-          className={btnClass(editor?.isActive('code') ?? false)}
-          title={t('Code')}
+          className={btnClass(editor?.isActive("code") ?? false)}
+          title={t("Code")}
         >
           <LuCode className="h-4 w-4" />
         </button>
@@ -226,24 +226,24 @@ export function RichTextEditorToolbar({
         <button
           onClick={() => editor?.chain().focus().toggleBulletList().run()}
           disabled={noEditor}
-          className={btnClass(editor?.isActive('bulletList') ?? false)}
-          title={t('Bullet List')}
+          className={btnClass(editor?.isActive("bulletList") ?? false)}
+          title={t("Bullet List")}
         >
           <LuList className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor?.chain().focus().toggleOrderedList().run()}
           disabled={noEditor}
-          className={btnClass(editor?.isActive('orderedList') ?? false)}
-          title={t('Numbered List')}
+          className={btnClass(editor?.isActive("orderedList") ?? false)}
+          title={t("Numbered List")}
         >
           <LuListOrdered className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor?.chain().focus().toggleBlockquote().run()}
           disabled={noEditor}
-          className={btnClass(editor?.isActive('blockquote') ?? false)}
-          title={t('Blockquote')}
+          className={btnClass(editor?.isActive("blockquote") ?? false)}
+          title={t("Blockquote")}
         >
           <LuQuote className="h-4 w-4" />
         </button>
@@ -252,30 +252,30 @@ export function RichTextEditorToolbar({
 
         {/* Text Alignment */}
         <button
-          onClick={() => editor?.chain().focus().setTextAlign('left').run()}
+          onClick={() => editor?.chain().focus().setTextAlign("left").run()}
           disabled={noEditor}
-          className={btnClass(editor?.isActive({ textAlign: 'left' }) ?? false)}
-          title={t('Align Left')}
+          className={btnClass(editor?.isActive({ textAlign: "left" }) ?? false)}
+          title={t("Align Left")}
         >
           <LuAlignLeft className="h-4 w-4" />
         </button>
         <button
-          onClick={() => editor?.chain().focus().setTextAlign('center').run()}
+          onClick={() => editor?.chain().focus().setTextAlign("center").run()}
           disabled={noEditor}
           className={btnClass(
-            editor?.isActive({ textAlign: 'center' }) ?? false,
+            editor?.isActive({ textAlign: "center" }) ?? false,
           )}
-          title={t('Align Center')}
+          title={t("Align Center")}
         >
           <LuAlignCenter className="h-4 w-4" />
         </button>
         <button
-          onClick={() => editor?.chain().focus().setTextAlign('right').run()}
+          onClick={() => editor?.chain().focus().setTextAlign("right").run()}
           disabled={noEditor}
           className={btnClass(
-            editor?.isActive({ textAlign: 'right' }) ?? false,
+            editor?.isActive({ textAlign: "right" }) ?? false,
           )}
-          title={t('Align Right')}
+          title={t("Align Right")}
         >
           <LuAlignRight className="h-4 w-4" />
         </button>
@@ -286,32 +286,32 @@ export function RichTextEditorToolbar({
         <button
           onClick={addLink}
           disabled={noEditor}
-          className={btnClass(editor?.isActive('link') ?? false)}
-          title={t('Add Link')}
+          className={btnClass(editor?.isActive("link") ?? false)}
+          title={t("Add Link")}
         >
           <LuLink className="h-4 w-4" />
         </button>
         <button
           onClick={addEmbedLink}
           disabled={noEditor}
-          className="shrink-0 rounded p-2 hover:bg-gray-100"
-          title={t('Embed Link Preview')}
+          className="shrink-0 cursor-pointer rounded p-2 hover:bg-gray-100"
+          title={t("Embed Link Preview")}
         >
           <LuLink2 className="h-4 w-4" />
         </button>
         <button
           onClick={handleImageUpload}
           disabled={noEditor}
-          className="shrink-0 rounded p-2 hover:bg-gray-100"
-          title={t('Add Image')}
+          className="shrink-0 cursor-pointer rounded p-2 hover:bg-gray-100"
+          title={t("Add Image")}
         >
           <LuImage className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor?.chain().focus().setHorizontalRule().run()}
           disabled={noEditor}
-          className="shrink-0 rounded p-2 hover:bg-gray-100"
-          title={t('Add Horizontal Rule')}
+          className="shrink-0 cursor-pointer rounded p-2 hover:bg-gray-100"
+          title={t("Add Horizontal Rule")}
         >
           <LuMinus className="h-4 w-4" />
         </button>
