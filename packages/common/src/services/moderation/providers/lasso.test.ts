@@ -89,7 +89,6 @@ describe('createLassoProvider', () => {
       content: 'review me',
     });
 
-    expect(ref.providerName).toBe('lasso');
     expect(ref.providerRecordId).toBe('content-123');
   });
 });

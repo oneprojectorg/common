@@ -85,7 +85,6 @@ describe('createCheckstepProvider', () => {
       content: 'review me',
     });
 
-    expect(ref.providerName).toBe('checkstep');
     expect(ref.providerRecordId).toBe('cs-789');
   });
 });

@@ -3,15 +3,20 @@ import type {
   ModerationProviderReference,
   ModerationScores,
 } from '../types';
+import { moderationFetch } from './http';
 
 const DEFAULT_API_URL = 'https://api.lassomoderation.com/api/v1';
-const REQUEST_TIMEOUT_MS = 5_000;
 // Lasso returns an allow/block verdict rather than per-category scores; a block
 // maps to a decisive score that meets the summed gate threshold on its own.
 const BLOCK_SCORE = 1;
 
+/** Lasso's verdict for a piece of content. */
+type LassoStatus = 'allowed' | 'flagged' | 'hidden';
+/** Verdicts where Lasso's rules acted on the content (i.e. it's disallowed). */
+const BLOCKING_STATUSES: readonly LassoStatus[] = ['flagged', 'hidden'];
+
 interface LassoResult {
-  status?: string;
+  status?: LassoStatus;
   actions?: Array<{ content?: { id?: string } }>;
   content?: { id?: string };
 }
@@ -21,14 +26,13 @@ const post = async (
   apiToken: string,
   body: Record<string, unknown>,
 ): Promise<LassoResult> => {
-  const response = await fetch(url, {
+  const response = await moderationFetch(url, {
     method: 'POST',
     headers: {
       authorization: `Bearer ${apiToken}`,
       'content-type': 'application/json',
     },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
 
   if (!response.ok) {
@@ -49,7 +53,6 @@ const envelope = (content: string, itemId: string) => ({
 
 const referenceFrom = (result: LassoResult): ModerationProviderReference => {
   return {
-    providerName: 'lasso',
     providerRecordId: result.actions?.[0]?.content?.id ?? result.content?.id,
   };
 };
@@ -70,7 +73,9 @@ export const createLassoProvider = ({
     const result = await post(`${apiUrl}/content/sync`, apiToken, {
       ...envelope(content, crypto.randomUUID()),
     });
-    const blocked = result.status === 'flagged' || result.status === 'hidden';
+    const blocked = result.status
+      ? BLOCKING_STATUSES.includes(result.status)
+      : false;
     const scores: ModerationScores = blocked ? { other: BLOCK_SCORE } : {};
     return scores;
   },

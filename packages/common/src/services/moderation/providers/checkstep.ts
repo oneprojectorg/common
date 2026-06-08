@@ -4,9 +4,9 @@ import type {
   ModerationProviderReference,
   ModerationScores,
 } from '../types';
+import { moderationFetch } from './http';
 
 const DEFAULT_API_URL = 'https://api.checkstep.com/api/v2';
-const REQUEST_TIMEOUT_MS = 5_000;
 
 // Checkstep policy codes mapped onto our categories; anything unmapped is `other`.
 const POLICY_MAP: Record<string, ModerationCategory> = {
@@ -34,14 +34,13 @@ const post = async (
   apiKey: string,
   body: Record<string, unknown>,
 ): Promise<{ violations?: CheckstepViolation[]; id?: string }> => {
-  const response = await fetch(url, {
+  const response = await moderationFetch(url, {
     method: 'POST',
     headers: {
       authorization: `Bearer ${apiKey}`,
       'content-type': 'application/json',
     },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
 
   if (!response.ok) {
@@ -98,7 +97,6 @@ export const createCheckstepProvider = ({
       ...contentBody(content, itemId),
     });
     const reference: ModerationProviderReference = {
-      providerName: 'checkstep',
       providerRecordId: result.id ?? itemId,
     };
     return reference;

@@ -1,3 +1,5 @@
+import type { ModerationFlag } from '@op/db/schema';
+
 /** Vendor-agnostic moderation contracts. Concrete providers live in `providers/`. */
 
 export type ModerationCategory =
@@ -22,17 +24,17 @@ export interface ModerationDecision {
 /** The moderation vendors we support; the active one is chosen by env. */
 export type ModerationVendor = 'hive' | 'lasso' | 'checkstep';
 
-/** What kind of item is being submitted for async review. */
-export type ModerationItemType = 'proposal' | 'post' | 'user';
+/** What kind of item is moderated. Derived from the db `moderation_item_type`
+ *  enum so the service and schema never drift. */
+export type ModerationItemType = ModerationFlag['itemType'];
 
 /**
  * Reference to the record on the external provider. The dispute/review URL is
  * generated downstream from `providerRecordId` (the provider is fixed by
- * config), so it isn't carried here. Only platform vendors (Lasso/Checkstep)
- * expose a record id; pure classifiers (Hive) do not.
+ * config). Only platform vendors (Lasso/Checkstep) expose a record id; pure
+ * classifiers (Hive) do not.
  */
 export interface ModerationProviderReference {
-  providerName: string;
   providerRecordId?: string;
 }
 
@@ -40,7 +42,6 @@ export interface ModerationSubmission {
   itemType: ModerationItemType;
   itemId: string;
   content: string;
-  authorRef?: string;
 }
 
 /**

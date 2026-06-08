@@ -3,9 +3,9 @@ import type {
   ModerationProvider,
   ModerationScores,
 } from '../types';
+import { moderationFetch } from './http';
 
 const DEFAULT_URL = 'https://api.thehive.ai/api/v2/task/sync';
-const REQUEST_TIMEOUT_MS = 5_000;
 // Hive returns integer severity 0-3 per class; normalize onto our 0-1 scale.
 const HIVE_MAX_SCORE = 3;
 
@@ -59,14 +59,13 @@ export const createHiveProvider = ({
   apiUrl?: string;
 }): ModerationProvider => ({
   scoreText: async ({ content }) => {
-    const response = await fetch(apiUrl, {
+    const response = await moderationFetch(apiUrl, {
       method: 'POST',
       headers: {
         authorization: `Token ${apiKey}`,
         'content-type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({ text_data: content }),
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
 
     if (!response.ok) {
