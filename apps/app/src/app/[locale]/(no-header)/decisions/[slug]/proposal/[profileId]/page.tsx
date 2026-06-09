@@ -5,14 +5,23 @@ import {
 } from '@op/api/server';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { cache } from 'react';
 
 import { getProposalDisplayTitle } from '@/components/decisions/proposalContentUtils';
-import {
-  renderDecisionBySlug,
-  renderProposal,
-} from '@/components/decisions/serverRenderData';
 
 import { ProposalViewClient } from './ProposalViewClient';
+
+// cache() dedupes the read across generateMetadata + page render (one request),
+// so the resolver and its "viewed" event fire once and the data hydrates.
+const fetchProposal = cache(async (profileId: string) => {
+  const { utils } = await createServerUtils();
+  return utils.decision.getProposal.fetch({ profileId });
+});
+
+const fetchDecisionBySlug = cache(async (slug: string) => {
+  const { utils } = await createServerUtils();
+  return utils.decision.getDecisionBySlug.fetch({ slug });
+});
 
 export async function generateMetadata({
   params,
@@ -24,8 +33,8 @@ export async function generateMetadata({
   try {
     const [t, proposal, decisionProfile] = await Promise.all([
       getTranslations({ locale }),
-      renderProposal(profileId),
-      renderDecisionBySlug(slug),
+      fetchProposal(profileId),
+      fetchDecisionBySlug(slug),
     ]);
 
     const proposalTitle =
@@ -52,8 +61,8 @@ const ProposalViewPage = async ({
   // Shares the cache()-wrapped fetch with generateMetadata above, so the
   // resolver (and its view event) runs once and the data is hydrated.
   await Promise.all([
-    renderProposal(profileId),
-    renderDecisionBySlug(slug),
+    fetchProposal(profileId),
+    fetchDecisionBySlug(slug),
   ]).catch(() => {});
 
   return (

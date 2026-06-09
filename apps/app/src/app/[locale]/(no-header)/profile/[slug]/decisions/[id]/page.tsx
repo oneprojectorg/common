@@ -6,11 +6,17 @@ import {
 import { Skeleton } from '@op/ui/Skeleton';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { Suspense } from 'react';
+import { Suspense, cache } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
-import { renderLegacyInstance } from '@/components/decisions/serverRenderData';
+
+// cache() dedupes the read across generateMetadata + page render (one request),
+// so the resolver and its "viewed" event fire once and the data hydrates.
+const fetchLegacyInstance = cache(async (instanceId: string) => {
+  const { utils } = await createServerUtils();
+  return utils.decision.getLegacyInstance.fetch({ instanceId });
+});
 
 function DecisionHeaderSkeleton() {
   return (
@@ -50,7 +56,7 @@ export async function generateMetadata({
   try {
     const [t, instance] = await Promise.all([
       getTranslations({ locale }),
-      renderLegacyInstance(id),
+      fetchLegacyInstance(id),
     ]);
     return { title: instance?.name || t('Decision') };
   } catch {
@@ -66,7 +72,7 @@ const DecisionInstancePageContent = async ({
   slug: string;
 }) => {
   const { queryClient } = await createServerUtils();
-  await renderLegacyInstance(instanceId).catch(() => {});
+  await fetchLegacyInstance(instanceId).catch(() => {});
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

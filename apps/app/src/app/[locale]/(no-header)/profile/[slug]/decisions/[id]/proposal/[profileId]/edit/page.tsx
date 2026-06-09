@@ -5,14 +5,23 @@ import {
 } from '@op/api/server';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { cache } from 'react';
 
 import { getProposalDisplayTitle } from '@/components/decisions/proposalContentUtils';
-import {
-  renderInstance,
-  renderProposal,
-} from '@/components/decisions/serverRenderData';
 
 import { LegacyProposalEditClient } from './ProposalEditClient';
+
+// cache() dedupes the reads across generateMetadata + page render (one request),
+// so each resolver and its "viewed" event fire once and the data hydrates.
+const fetchProposal = cache(async (profileId: string) => {
+  const { utils } = await createServerUtils();
+  return utils.decision.getProposal.fetch({ profileId });
+});
+
+const fetchInstance = cache(async (instanceId: string) => {
+  const { utils } = await createServerUtils();
+  return utils.decision.getInstance.fetch({ instanceId });
+});
 
 export async function generateMetadata({
   params,
@@ -29,8 +38,8 @@ export async function generateMetadata({
   try {
     const [t, proposal, instance] = await Promise.all([
       getTranslations({ locale }),
-      renderProposal(profileId),
-      renderInstance(id),
+      fetchProposal(profileId),
+      fetchInstance(id),
     ]);
 
     const proposalTitle =
@@ -50,7 +59,7 @@ const ProposalEditPage = async ({
   const { profileId, id, slug } = await params;
   const { queryClient } = await createServerUtils();
 
-  await Promise.all([renderProposal(profileId), renderInstance(id)]).catch(
+  await Promise.all([fetchProposal(profileId), fetchInstance(id)]).catch(
     () => {},
   );
 
