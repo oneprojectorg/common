@@ -193,9 +193,18 @@ export const instancePhaseDataEncoder = z.object({
   settings: z.record(z.string(), z.unknown()).optional(),
 });
 
+/** Public-facing overview content (headline, short description, rich text body) */
+const instanceOverviewEncoder = z.object({
+  headline: z.string().optional(),
+  description: z.string().optional(),
+  /** Rich text body as HTML */
+  body: z.string().optional(),
+});
+
 /** Instance data encoder for new schema format */
 const instanceDataWithSchemaEncoder = z.object({
   config: processConfigEncoder.optional(),
+  overview: instanceOverviewEncoder.optional(),
   fieldValues: z.record(z.string(), z.unknown()).optional(),
   templateId: z.string().optional(),
   templateVersion: z.string().optional(),
@@ -452,6 +461,8 @@ export const updateDecisionInstanceInputSchema = z.object({
   stewardProfileId: z.string().uuid().optional(),
   /** Process-level configuration (e.g., hideBudget, categories) */
   config: processConfigEncoder.optional(),
+  /** Public-facing overview content (headline, short description, rich text body) */
+  overview: instanceOverviewEncoder.optional(),
   /** Phase overrides for dates, rules, and settings */
   phases: z.array(instancePhaseDataInputEncoder).optional(),
   /** Proposal template (JSON Schema) */

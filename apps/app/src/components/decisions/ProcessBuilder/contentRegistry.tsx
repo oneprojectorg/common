@@ -6,6 +6,7 @@ import { type SectionId, isPhaseSection } from './navigationConfig';
 import OverviewSection from './stepContent/general/OverviewSection';
 import PhaseDetailSection from './stepContent/general/PhaseDetailSection';
 import PhasesSection from './stepContent/general/PhasesSection';
+import ProcessSettingsSection from './stepContent/general/ProcessSettingsSection';
 import ProposalCategoriesSection from './stepContent/general/ProposalCategoriesSection';
 import ParticipantsSection from './stepContent/participants/ParticipantsSection';
 import RolesSection from './stepContent/participants/RolesSection';
@@ -25,6 +26,7 @@ type SectionComponent = ComponentType<SectionProps>;
 
 // Flat section-to-component mapping for the unified sidebar
 const FLAT_CONTENT_REGISTRY: Record<string, SectionComponent> = {
+  processSettings: ProcessSettingsSection,
   overview: OverviewSection,
   phases: PhasesSection,
   proposalCategories: ProposalCategoriesSection,
