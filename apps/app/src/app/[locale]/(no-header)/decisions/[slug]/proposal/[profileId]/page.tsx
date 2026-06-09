@@ -7,8 +7,6 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { cache } from 'react';
 
-import { getProposalDisplayTitle } from '@/components/decisions/proposalContentUtils';
-
 import { ProposalViewClient } from './ProposalViewClient';
 
 // cache() dedupes the read across generateMetadata + page render (one request),
@@ -37,8 +35,7 @@ export async function generateMetadata({
       fetchDecisionBySlug(slug),
     ]);
 
-    const proposalTitle =
-      getProposalDisplayTitle(proposal) || t('Untitled Proposal');
+    const proposalTitle = proposal.profile?.name || t('Untitled Proposal');
     const decisionName = decisionProfile?.name;
     return {
       title: decisionName

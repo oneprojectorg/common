@@ -3,7 +3,6 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
 import { ReviewLayout } from '@/components/decisions/Review/ReviewLayout';
-import { getProposalDisplayTitle } from '@/components/decisions/proposalContentUtils';
 
 export async function generateMetadata({
   params,
@@ -27,7 +26,7 @@ export async function generateMetadata({
       return {};
     }
     const proposalTitle =
-      getProposalDisplayTitle(reviewedProposal) || t('Untitled Proposal');
+      reviewedProposal.profile?.name || t('Untitled Proposal');
 
     const reviewLabel = t('Review {title}', { title: proposalTitle });
     const decisionName = decisionProfile?.name;
