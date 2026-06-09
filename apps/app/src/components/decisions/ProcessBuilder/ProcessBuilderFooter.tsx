@@ -101,6 +101,7 @@ export const ProcessBuilderFooter = ({
         name: storeData?.name || undefined,
         description: storeData?.description || undefined,
         stewardProfileId: storeData?.stewardProfileId || undefined,
+        overview: storeData?.overview,
         phases: storeData?.phases,
         proposalTemplate: storeData?.proposalTemplate,
         rubricTemplate: storeData?.rubricTemplate,
