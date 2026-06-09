@@ -3,7 +3,11 @@ import type {
   ModerationProviderReference,
   ModerationScores,
 } from '../types';
-import { moderationFetch } from './moderationFetch';
+import {
+  type ModerationFetchOptions,
+  SYNC_GATE_FETCH,
+  moderationFetch,
+} from './moderationFetch';
 
 const DEFAULT_API_URL = 'https://api.lassomoderation.com/api/v1';
 // Lasso returns an allow/block verdict rather than per-category scores; a block
@@ -25,15 +29,20 @@ const post = async (
   url: string,
   apiToken: string,
   body: Record<string, unknown>,
+  fetchOptions?: ModerationFetchOptions,
 ): Promise<LassoResult> => {
-  const response = await moderationFetch(url, {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${apiToken}`,
-      'content-type': 'application/json',
+  const response = await moderationFetch(
+    url,
+    {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${apiToken}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(body),
     },
-    body: JSON.stringify(body),
-  });
+    fetchOptions,
+  );
 
   if (!response.ok) {
     throw new Error(`Moderation provider returned ${response.status}`);
@@ -70,9 +79,12 @@ export const createLassoProvider = ({
   apiUrl?: string;
 }): ModerationProvider => ({
   scoreText: async ({ content }) => {
-    const result = await post(`${apiUrl}/content/sync`, apiToken, {
-      ...envelope(content, crypto.randomUUID()),
-    });
+    const result = await post(
+      `${apiUrl}/content/sync`,
+      apiToken,
+      envelope(content, crypto.randomUUID()),
+      SYNC_GATE_FETCH,
+    );
     const blocked = result.status
       ? BLOCKING_STATUSES.includes(result.status)
       : false;
@@ -81,9 +93,11 @@ export const createLassoProvider = ({
   },
 
   submitForReview: async ({ itemId, content }) => {
-    const result = await post(`${apiUrl}/content`, apiToken, {
-      ...envelope(content, itemId),
-    });
+    const result = await post(
+      `${apiUrl}/content`,
+      apiToken,
+      envelope(content, itemId),
+    );
     return referenceFrom(result);
   },
 });

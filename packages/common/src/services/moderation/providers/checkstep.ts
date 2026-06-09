@@ -4,7 +4,11 @@ import type {
   ModerationProviderReference,
   ModerationScores,
 } from '../types';
-import { moderationFetch } from './moderationFetch';
+import {
+  type ModerationFetchOptions,
+  SYNC_GATE_FETCH,
+  moderationFetch,
+} from './moderationFetch';
 
 const DEFAULT_API_URL = 'https://api.checkstep.com/api/v2';
 
@@ -33,15 +37,20 @@ const post = async (
   url: string,
   apiKey: string,
   body: Record<string, unknown>,
+  fetchOptions?: ModerationFetchOptions,
 ): Promise<{ violations?: CheckstepViolation[]; id?: string }> => {
-  const response = await moderationFetch(url, {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${apiKey}`,
-      'content-type': 'application/json',
+  const response = await moderationFetch(
+    url,
+    {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(body),
     },
-    body: JSON.stringify(body),
-  });
+    fetchOptions,
+  );
 
   if (!response.ok) {
     throw new Error(`Moderation provider returned ${response.status}`);
@@ -86,16 +95,21 @@ export const createCheckstepProvider = ({
   apiUrl?: string;
 }): ModerationProvider => ({
   scoreText: async ({ content }) => {
-    const result = await post(`${apiUrl}/content/sync`, apiKey, {
-      ...contentBody(content, crypto.randomUUID()),
-    });
+    const result = await post(
+      `${apiUrl}/content/sync`,
+      apiKey,
+      contentBody(content, crypto.randomUUID()),
+      SYNC_GATE_FETCH,
+    );
     return scoresFromViolations(result.violations);
   },
 
   submitForReview: async ({ itemId, content }) => {
-    const result = await post(`${apiUrl}/content`, apiKey, {
-      ...contentBody(content, itemId),
-    });
+    const result = await post(
+      `${apiUrl}/content`,
+      apiKey,
+      contentBody(content, itemId),
+    );
     const reference: ModerationProviderReference = {
       providerRecordId: result.id ?? itemId,
     };

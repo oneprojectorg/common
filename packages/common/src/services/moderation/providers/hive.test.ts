@@ -83,6 +83,51 @@ describe('createHiveProvider', () => {
     expect(scores).toEqual({});
   });
 
+  it('maps spam and promotions classes onto the `other` category', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      ok({
+        response: {
+          output: [
+            {
+              classes: [
+                { class: 'spam', score: 3 },
+                { class: 'promotions', score: 1.5 },
+              ],
+            },
+          ],
+        },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const scores = await createHiveProvider({ apiKey: 'k' }).scoreText({
+      content: 'buy now',
+    });
+
+    // Both fold into `other`; the stronger (spam, 3/3) wins.
+    expect(scores.other).toBeCloseTo(1);
+  });
+
+  it('chunks content over 1024 chars and keeps the worst score per category', async () => {
+    const score = (value: number) => ({
+      response: { output: [{ classes: [{ class: 'hate', score: value }] }] },
+    });
+    // First chunk scores low, second scores high; the high score must win.
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(ok(score(1)))
+      .mockResolvedValueOnce(ok(score(3)));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const content = `${'a'.repeat(1100)} ${'b'.repeat(50)}`;
+    const scores = await createHiveProvider({ apiKey: 'k' }).scoreText({
+      content,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(scores.hate).toBeCloseTo(1); // max(1/3, 3/3)
+  });
+
   it('does not expose submitForReview (pure classifier, no record link)', () => {
     expect(createHiveProvider({ apiKey: 'k' }).submitForReview).toBeUndefined();
   });
