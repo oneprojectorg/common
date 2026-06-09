@@ -1,24 +1,71 @@
-'use client';
-
+import {
+  HydrationBoundary,
+  createServerUtils,
+  dehydrate,
+} from '@op/api/server';
+import { createClient } from '@op/api/serverClient';
 import { Skeleton } from '@op/ui/Skeleton';
-import { useParams } from 'next/navigation';
+import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { PostDetail } from '@/components/posts/PostDetailView';
 
-const PostDetailPage = () => {
-  const { postId, slug } = useParams<{
-    postId: string;
-    slug: string;
-  }>();
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ postId: string; slug: string; locale: string }>;
+}): Promise<Metadata> {
+  const { postId, slug, locale } = await params;
+
+  try {
+    const [client, t] = await Promise.all([
+      createClient(),
+      getTranslations({ locale }),
+    ]);
+    const [post, organization] = await Promise.all([
+      client.posts.getPost({ postId, includeChildren: false }),
+      client.organization.getBySlug({ slug }),
+    ]);
+
+    if (!post) {
+      return {};
+    }
+
+    const label = t('Post');
+    const orgName = organization?.profile?.name;
+    return { title: orgName ? `${label} | ${orgName}` : label };
+  } catch {
+    return {};
+  }
+}
+
+const PostDetailPage = async ({
+  params,
+}: {
+  params: Promise<{ postId: string; slug: string }>;
+}) => {
+  const { postId, slug } = await params;
+  const { utils, queryClient } = await createServerUtils();
+
+  // Prefetch on the server so the client useSuspenseQuery hydrates without a
+  // second request. Swallow failures: this only warms the cache — the client
+  // suspense query refetches and its error boundary owns errors, so a failed
+  // warmup must not crash the route.
+  await Promise.all([
+    utils.posts.getPost.prefetch({ postId, includeChildren: false }),
+    utils.organization.getBySlug.prefetch({ slug }),
+  ]).catch(() => {});
 
   return (
-    <ErrorBoundary>
-      <Suspense fallback={<PostDetailPageSkeleton />}>
-        <PostDetail postId={postId} slug={slug} />
-      </Suspense>
-    </ErrorBoundary>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <ErrorBoundary>
+        <Suspense fallback={<PostDetailPageSkeleton />}>
+          <PostDetail postId={postId} slug={slug} />
+        </Suspense>
+      </ErrorBoundary>
+    </HydrationBoundary>
   );
 };
 

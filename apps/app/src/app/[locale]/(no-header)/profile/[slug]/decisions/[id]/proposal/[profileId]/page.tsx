@@ -1,109 +1,67 @@
-'use client';
+import {
+  HydrationBoundary,
+  createServerUtils,
+  dehydrate,
+} from '@op/api/server';
+import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
+import { cache } from 'react';
 
-import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { trpc } from '@op/api/client';
-import { notFound, useParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { LegacyProposalViewClient } from './ProposalViewClient';
 
-import { ProposalView } from '@/components/decisions/ProposalView';
+// cache() dedupes the read across generateMetadata + page render (one request),
+// so the resolver and its "viewed" event fire once and the data hydrates.
+const fetchProposal = cache(async (profileId: string) => {
+  const { utils } = await createServerUtils();
+  return utils.decision.getProposal.fetch({ profileId });
+});
 
-function ProposalViewPageContent({
-  profileId,
-  orgSlug,
-  instanceId,
+export async function generateMetadata({
+  params,
 }: {
-  profileId: string;
-  orgSlug: string;
-  instanceId: string;
-}) {
-  // Legacy decision boundary — still served via shared public links.
-  // Revisions aren't available on legacy instances, so the instance fetch
-  // isn't needed.
-  const [proposal] = trpc.decision.getProposal.useSuspenseQuery({ profileId });
-
-  if (!proposal) {
-    notFound();
-  }
-
-  const backHref = `/profile/${orgSlug}/decisions/${instanceId}/`;
-
-  return (
-    <ProposalView
-      proposal={proposal}
-      canSeeRevisions={false}
-      backHref={backHref}
-      selection={null}
-    />
-  );
-}
-
-function ProposalViewPageSkeleton() {
-  return (
-    <div className="flex min-h-screen flex-col">
-      {/* Header loading */}
-      <div className="flex items-center justify-between border-b bg-white px-6 py-4">
-        <div className="h-6 w-32 animate-pulse rounded bg-gray-200" />
-        <div className="h-6 w-48 animate-pulse rounded bg-gray-200" />
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-20 animate-pulse rounded bg-gray-200" />
-          <div className="h-10 w-24 animate-pulse rounded bg-gray-200" />
-          <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200" />
-        </div>
-      </div>
-
-      {/* Content loading */}
-      <div className="flex-1 bg-white px-6 py-8">
-        <div className="mx-auto max-w-4xl space-y-6">
-          <div className="h-12 w-96 animate-pulse rounded bg-gray-200" />
-          <div className="flex gap-4">
-            <div className="h-8 w-32 animate-pulse rounded bg-gray-200" />
-            <div className="h-8 w-28 animate-pulse rounded bg-gray-200" />
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200" />
-            <div className="space-y-1">
-              <div className="h-4 w-32 animate-pulse rounded bg-gray-200" />
-              <div className="h-3 w-24 animate-pulse rounded bg-gray-200" />
-            </div>
-          </div>
-          <div className="flex gap-6 border-b pb-4">
-            <div className="h-4 w-16 animate-pulse rounded bg-gray-200" />
-            <div className="h-4 w-20 animate-pulse rounded bg-gray-200" />
-            <div className="h-4 w-18 animate-pulse rounded bg-gray-200" />
-          </div>
-          <div className="mt-6 space-y-4">
-            <div className="h-4 w-full animate-pulse rounded bg-gray-200" />
-            <div className="h-4 w-3/4 animate-pulse rounded bg-gray-200" />
-            <div className="h-4 w-5/6 animate-pulse rounded bg-gray-200" />
-            <div className="h-4 w-1/2 animate-pulse rounded bg-gray-200" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const ProposalViewPage = () => {
-  const { profileId, slug, id } = useParams<{
+  params: Promise<{
     profileId: string;
     slug: string;
     id: string;
-  }>();
+    locale: string;
+  }>;
+}): Promise<Metadata> {
+  const { profileId, locale } = await params;
+
+  try {
+    const [t, proposal] = await Promise.all([
+      getTranslations({ locale }),
+      fetchProposal(profileId),
+    ]);
+    return {
+      title: proposal.profile?.name || t('Untitled Proposal'),
+    };
+  } catch {
+    return {};
+  }
+}
+
+const ProposalViewPage = async ({
+  params,
+}: {
+  params: Promise<{ profileId: string; slug: string; id: string }>;
+}) => {
+  const { profileId, slug, id } = await params;
+  const { queryClient } = await createServerUtils();
+
+  // Swallow failures: this only warms the cache — the client suspense query
+  // refetches and its error boundary owns errors, so a failed warmup must not
+  // crash the route.
+  await fetchProposal(profileId).catch(() => {});
 
   return (
-    <APIErrorBoundary
-      fallbacks={{
-        404: () => notFound(),
-      }}
-    >
-      <Suspense fallback={<ProposalViewPageSkeleton />}>
-        <ProposalViewPageContent
-          profileId={profileId}
-          orgSlug={slug}
-          instanceId={id}
-        />
-      </Suspense>
-    </APIErrorBoundary>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <LegacyProposalViewClient
+        profileId={profileId}
+        orgSlug={slug}
+        instanceId={id}
+      />
+    </HydrationBoundary>
   );
 };
 

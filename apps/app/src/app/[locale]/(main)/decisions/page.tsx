@@ -1,9 +1,22 @@
+import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
+
 import { TranslatedText } from '@/components/TranslatedText';
 import { AllDecisions } from '@/components/decisions/AllDecisions';
 import {
   ListPageLayout,
   ListPageLayoutHeader,
 } from '@/components/layout/ListPageLayout';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale });
+  return { title: t('Decisions') };
+}
 
 const DecisionsListingPage = () => {
   return (

@@ -10,13 +10,14 @@ import {
   getProposalFragmentNames,
   parseProposalData,
 } from '@op/common/client';
+import { APP_NAME } from '@op/core';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Button } from '@op/ui/Button';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { notFound, useParams } from 'next/navigation';
 import { useQueryStates } from 'nuqs';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { LuHistory, LuStickyNote } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -73,6 +74,16 @@ export default function ProposalEditorLayout() {
   }
 
   const instance = decisionProfile.processInstance;
+
+  const proposalTitle = proposal.profile?.name;
+  useEffect(() => {
+    const parts = [
+      proposalTitle ? `${proposalTitle} (${t('Editing')})` : null,
+      decisionProfile.name,
+      APP_NAME,
+    ].filter(Boolean);
+    document.title = parts.join(' | ');
+  }, [proposalTitle, decisionProfile.name, t]);
 
   const { user } = useUser();
 

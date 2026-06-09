@@ -1,5 +1,7 @@
 import { EntityType } from '@op/api/encoders';
 import { createClient } from '@op/api/serverClient';
+import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
 import { AllOrganizations } from '@/components/Organizations/AllOrganizations';
 import {
@@ -8,6 +10,16 @@ import {
 } from '@/components/layout/ListPageLayout';
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale });
+  return { title: t('Organizations') };
+}
 
 const OrgListingPage = async () => {
   try {

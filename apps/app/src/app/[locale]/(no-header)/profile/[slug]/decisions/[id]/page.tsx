@@ -4,10 +4,19 @@ import {
   dehydrate,
 } from '@op/api/server';
 import { Skeleton } from '@op/ui/Skeleton';
-import { Suspense } from 'react';
+import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
+import { Suspense, cache } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
+
+// cache() dedupes the read across generateMetadata + page render (one request),
+// so the resolver and its "viewed" event fire once and the data hydrates.
+const fetchLegacyInstance = cache(async (instanceId: string) => {
+  const { utils } = await createServerUtils();
+  return utils.decision.getLegacyInstance.fetch({ instanceId });
+});
 
 function DecisionHeaderSkeleton() {
   return (
@@ -37,6 +46,24 @@ function DecisionHeaderSkeleton() {
   );
 }
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string; slug: string; locale: string }>;
+}): Promise<Metadata> {
+  const { id, locale } = await params;
+
+  try {
+    const [t, instance] = await Promise.all([
+      getTranslations({ locale }),
+      fetchLegacyInstance(id),
+    ]);
+    return { title: instance?.name || t('Decision') };
+  } catch {
+    return {};
+  }
+}
+
 const DecisionInstancePageContent = async ({
   instanceId,
   slug,
@@ -44,8 +71,11 @@ const DecisionInstancePageContent = async ({
   instanceId: string;
   slug: string;
 }) => {
-  const { utils, queryClient } = await createServerUtils();
-  await utils.decision.getLegacyInstance.prefetch({ instanceId });
+  const { queryClient } = await createServerUtils();
+  // Swallow failures: this only warms the cache — the client suspense query
+  // refetches and its error boundary owns errors, so a failed warmup must not
+  // crash the route.
+  await fetchLegacyInstance(instanceId).catch(() => {});
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
