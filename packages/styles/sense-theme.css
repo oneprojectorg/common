@@ -158,7 +158,7 @@
    * of what shared-styles/intent-ui-theme also declares. */
   --border: var(--color-neutral-gray-2);
   --input: var(--color-neutral-gray-2);
-  --ring: var(--color-primary-500);
+  --ring: var(--color-primary);
 
   /* `--radius` is the base radius shadcn primitives derive their scale from
    * (and consume directly, e.g. `rounded-[var(--radius)]`). Safe to declare
@@ -168,15 +168,15 @@
   /* Sidebar */
   --sidebar: var(--color-neutral-off-white);
   --sidebar-foreground: var(--color-neutral-charcoal);
-  --sidebar-primary: var(--color-primary-500);
+  --sidebar-primary: var(--color-primary);
   --sidebar-primary-foreground: var(--color-white);
   --sidebar-accent: var(--color-neutral-gray-1);
   --sidebar-accent-foreground: var(--color-neutral-charcoal);
   --sidebar-border: var(--color-neutral-gray-2);
-  --sidebar-ring: var(--color-primary-500);
+  --sidebar-ring: var(--color-primary);
 
   /* Chart palette — uses brand + data tokens */
-  --chart-1: var(--color-primary-500);
+  --chart-1: var(--color-primary);
   --chart-2: var(--color-primary-yellow-500);
   --chart-3: var(--color-primary-orange-500);
   --chart-4: var(--color-data-purple);

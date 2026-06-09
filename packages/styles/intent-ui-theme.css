@@ -43,7 +43,7 @@
   --primary-fg: var(--color-white);
   --primary-subtle: color-mix(
     in srgb,
-    var(--color-primary-500) 15%,
+    var(--color-primary) 15%,
     transparent
   );
   --primary-subtle-fg: var(--color-primary-700);
@@ -84,11 +84,11 @@
   --success-subtle-fg: var(--color-functional-green-600);
 
   /* Info - teal */
-  --info: var(--color-primary-500);
+  --info: var(--color-primary);
   --info-fg: var(--color-white);
   --info-subtle: color-mix(
     in srgb,
-    var(--color-primary-500) 15%,
+    var(--color-primary) 15%,
     transparent
   );
   --info-subtle-fg: var(--color-primary-700);
@@ -118,7 +118,7 @@
    * ============================================ */
   --border: var(--color-neutral-gray-1);
   --input: var(--color-neutral-gray-1);
-  --ring: var(--color-primary-500);
+  --ring: var(--color-primary);
 
   /* ============================================
    * Layout
@@ -130,19 +130,19 @@
   --sidebar-fg: var(--color-neutral-charcoal);
   --sidebar-primary: color-mix(
     in srgb,
-    var(--color-primary-500) 15%,
+    var(--color-primary) 15%,
     transparent
   );
   --sidebar-primary-fg: var(--color-primary-700);
   --sidebar-accent: var(--color-neutral-gray-1);
   --sidebar-accent-fg: var(--color-neutral-charcoal);
   --sidebar-border: var(--color-neutral-gray-1);
-  --sidebar-ring: var(--color-primary-500);
+  --sidebar-ring: var(--color-primary);
 
   /* ============================================
    * Charts
    * ============================================ */
-  --chart-1: var(--color-primary-500);
+  --chart-1: var(--color-primary);
   --chart-2: var(--color-functional-green-600);
   --chart-3: var(--color-primary-yellow-500);
   --chart-4: var(--color-data-purple);
@@ -155,11 +155,11 @@
   --bg: var(--color-neutral-black);
   --fg: var(--color-neutral-off-white);
 
-  --primary: var(--color-primary-500);
+  --primary: var(--color-primary);
   --primary-fg: var(--color-neutral-black);
   --primary-subtle: color-mix(
     in srgb,
-    var(--color-primary-500) 10%,
+    var(--color-primary) 10%,
     transparent
   );
   --primary-subtle-fg: var(--color-primary-100);
@@ -191,7 +191,7 @@
 
   --info-subtle: color-mix(
     in srgb,
-    var(--color-primary-500) 10%,
+    var(--color-primary) 10%,
     transparent
   );
   --info-subtle-fg: var(--color-primary-100);
@@ -220,7 +220,7 @@
   --sidebar-fg: var(--color-neutral-off-white);
   --sidebar-primary: color-mix(
     in srgb,
-    var(--color-primary-500) 10%,
+    var(--color-primary) 10%,
     transparent
   );
   --sidebar-primary-fg: var(--color-primary-100);
