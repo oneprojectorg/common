@@ -1,11 +1,10 @@
 import { CommonError, UnauthorizedError } from '@op/common';
+import { withRetry } from '@op/core';
 import { db } from '@op/db/client';
 import { objectsInStorage } from '@op/db/schema';
 import { createServerClient } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { and, eq } from 'drizzle-orm';
-
-import { retryWithBackoff } from './retry';
 
 export const STORAGE_BUCKET = 'assets';
 export const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
@@ -90,7 +89,10 @@ export async function getUploadedStorageObject({
   allowedMimeTypes: readonly string[];
   unsupportedMessage?: string;
 }): Promise<VerifiedStorageObject> {
-  const row = await retryWithBackoff(
+  // Throwing inside `fn` is what drives the retry: a missing row (or a row
+  // whose metadata hasn't replicated yet) means "not visible yet, try again".
+  // Exhausting the retries rethrows the last error to the caller.
+  const { id, size, mimetype } = await withRetry(
     async () => {
       const [found] = await db
         .select({
@@ -104,23 +106,23 @@ export async function getUploadedStorageObject({
             eq(objectsInStorage.name, path),
           ),
         );
-      return found;
+
+      const metadata = (found?.metadata ?? {}) as StorageObjectMetadata;
+      const size =
+        typeof metadata.size === 'number' ? metadata.size : undefined;
+      const mimetype =
+        typeof metadata.mimetype === 'string' ? metadata.mimetype : undefined;
+
+      if (!found || size === undefined || mimetype === undefined) {
+        throw new CommonError(
+          'Upload could not be confirmed. Please try again.',
+        );
+      }
+
+      return { id: found.id, size, mimetype };
     },
-    { retries: 3, baseMs: 150 },
+    { retries: 2, minDelayMs: 150 },
   );
-
-  if (!row) {
-    throw new CommonError('Upload could not be confirmed. Please try again.');
-  }
-
-  const metadata = (row.metadata ?? {}) as StorageObjectMetadata;
-  const size = typeof metadata.size === 'number' ? metadata.size : undefined;
-  const mimetype =
-    typeof metadata.mimetype === 'string' ? metadata.mimetype : undefined;
-
-  if (size === undefined || mimetype === undefined) {
-    throw new CommonError('Upload could not be confirmed. Please try again.');
-  }
 
   validateMimeAndSize({
     mimeType: mimetype,
@@ -129,7 +131,7 @@ export async function getUploadedStorageObject({
     unsupportedMessage,
   });
 
-  return { id: row.id, size, mimetype };
+  return { id, size, mimetype };
 }
 
 /**
