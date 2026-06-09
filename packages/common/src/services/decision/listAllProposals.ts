@@ -9,11 +9,7 @@ import {
   encodeCursor,
   getCursorCondition,
 } from '../../utils';
-import {
-  assertInstanceProfileAccess,
-  getCurrentProfileId,
-  getProfileAccessUser,
-} from '../access';
+import { assertInstanceProfileAccess, getCurrentProfileId } from '../access';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
@@ -33,7 +29,7 @@ export const listAllProposals = async ({
   user,
 }: {
   input: AllProposalsFilter;
-  user: User;
+  user: User | undefined;
 }) => {
   const { processInstanceId, status, categoryId } = input;
   const limit = input.limit ?? 50;
@@ -45,7 +41,7 @@ export const listAllProposals = async ({
     : undefined;
 
   const [currentProfileId, instance] = await Promise.all([
-    getCurrentProfileId(user.id),
+    user ? getCurrentProfileId(user.id) : undefined,
     db.query.processInstances.findFirst({
       where: { id: processInstanceId },
     }),
@@ -55,12 +51,7 @@ export const listAllProposals = async ({
     throw new UnauthorizedError('User does not have access to this process');
   }
 
-  const profileUser = await getProfileAccessUser({
-    user,
-    profileId: instance.profileId,
-  });
-
-  await assertInstanceProfileAccess({
+  const profileUser = await assertInstanceProfileAccess({
     user,
     instance,
     profilePermissions: [

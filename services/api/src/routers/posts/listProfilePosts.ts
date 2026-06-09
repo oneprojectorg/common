@@ -5,7 +5,7 @@ import {
 import { z } from 'zod';
 
 import { postsEncoder } from '../../encoders';
-import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
+import { openProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   profileId: z.string(),
@@ -14,7 +14,8 @@ const inputSchema = z.object({
 });
 
 export const listProfilePosts = router({
-  listProfilePosts: networkAuthenticatedProcedure()
+  /** Lists a decision profile's update posts (public on a public decision). */
+  listProfilePosts: openProcedure()
     .input(inputSchema)
     .output(
       z.object({
@@ -25,7 +26,7 @@ export const listProfilePosts = router({
     .query(async ({ input, ctx }) => {
       const { items, next } = await listProfilePostsService({
         ...input,
-        authUserId: ctx.user.id,
+        user: ctx.user,
       });
 
       ctx.registerQueryChannels([Channels.profilePosts(input.profileId)]);

@@ -5,7 +5,7 @@ import type { User } from '@supabase/supabase-js';
 import { permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import { getOrgAccessUser } from '../access';
+import { getOrgAccessUser, orgUserCacheKey } from '../access';
 import { assertOrgAccess } from '../assert';
 
 export interface DeleteOrganizationUserParams {
@@ -60,7 +60,7 @@ export async function deleteOrganizationUser({
   // invalidate to get rid of the cache entry
   invalidate({
     type: 'orgUser',
-    params: [organizationId, user.id],
+    params: orgUserCacheKey({ user, organizationId }),
   });
   getOrgAccessUser.invalidate({ user, organizationId });
 

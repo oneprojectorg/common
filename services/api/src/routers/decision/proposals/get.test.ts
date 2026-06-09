@@ -21,7 +21,7 @@ import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDat
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
-  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -1585,10 +1585,9 @@ describe.concurrent('getProposal', () => {
 
 describeDecisionAccessTierGating('getProposal', {
   noJwtNonPublic: accessTierGatingCell(
-    'rejects no-JWT caller on non-public instance',
+    'admits no-JWT caller past the tier gate',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
       const setup = await testData.createDecisionSetup({
         instanceCount: 1,
         grantAccess: true,
@@ -1600,23 +1599,21 @@ describeDecisionAccessTierGating('getProposal', {
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
-        proposalData: { title: 'no-JWT should not reach this' },
+        proposalData: { title: 'gating' },
       });
 
       const caller = await callers.noJwt();
 
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.decision.getProposal({ profileId: proposal.profileId }),
-        'none',
       );
     },
   ),
 
   anonJwtNonPublic: accessTierGatingCell(
-    'rejects anon-JWT caller on non-public instance',
+    'admits anon-JWT caller past the tier gate',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
       const setup = await testData.createDecisionSetup({
         instanceCount: 1,
         grantAccess: true,
@@ -1628,23 +1625,21 @@ describeDecisionAccessTierGating('getProposal', {
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
-        proposalData: { title: 'anon should bounce' },
+        proposalData: { title: 'gating' },
       });
 
       const caller = await callers.anonJwt();
 
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.decision.getProposal({ profileId: proposal.profileId }),
-        'anon',
       );
     },
   ),
 
   userJwtNonPublic: accessTierGatingCell(
-    'rejects user-JWT caller on non-public instance',
+    'admits user-JWT caller past the tier gate',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
       const setup = await testData.createDecisionSetup({
         instanceCount: 1,
         grantAccess: true,
@@ -1656,23 +1651,21 @@ describeDecisionAccessTierGating('getProposal', {
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
-        proposalData: { title: 'anon should bounce' },
+        proposalData: { title: 'gating' },
       });
 
       const caller = await callers.userJwt();
 
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.decision.getProposal({ profileId: proposal.profileId }),
-        'user',
       );
     },
   ),
 
   networkJwtNonPublic: accessTierGatingCell(
-    'admits network-JWT caller on non-public instance',
+    'admits network-JWT caller past the tier gate',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
       const setup = await testData.createDecisionSetup({
         instanceCount: 1,
         grantAccess: true,
@@ -1684,17 +1677,14 @@ describeDecisionAccessTierGating('getProposal', {
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
-        proposalData: { title: 'Common-JWT owner read' },
+        proposalData: { title: 'gating' },
       });
 
       const caller = await callers.networkJwt(setup.userEmail);
 
-      const result = await caller.decision.getProposal({
-        profileId: proposal.profileId,
-      });
-
-      expect(result.id).toBe(proposal.id);
-      expect(result.profileId).toBe(proposal.profileId);
+      await expectPassesAccessTierGate(
+        caller.decision.getProposal({ profileId: proposal.profileId }),
+      );
     },
   ),
 });

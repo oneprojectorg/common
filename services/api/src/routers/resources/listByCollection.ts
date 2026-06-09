@@ -6,7 +6,7 @@ import {
 import { z } from 'zod';
 
 import { resourceListEncoder } from '../../encoders/resources';
-import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
+import { openProcedure, router } from '../../trpcFactory';
 
 const inputSchema = z.object({
   collectionId: z.string().uuid(),
@@ -15,13 +15,13 @@ const inputSchema = z.object({
 });
 
 export const listByCollection = router({
-  listByCollection: networkAuthenticatedProcedure()
+  listByCollection: openProcedure()
     .input(inputSchema)
     .output(resourceListEncoder)
     .query(async ({ input, ctx }) => {
       const result = await listResourcesByCollection({
         ...input,
-        authUserId: ctx.user.id,
+        user: ctx.user,
       });
       ctx.registerQueryChannels([
         Channels.collectionResources(input.collectionId),

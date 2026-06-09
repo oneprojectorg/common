@@ -7,6 +7,7 @@ import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
   expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   createIsolatedSession,
@@ -183,7 +184,7 @@ describe.concurrent('getInstance', () => {
 
 describeDecisionAccessTierGating('getInstance', {
   noJwtNonPublic: accessTierGatingCell(
-    'rejects no-JWT caller on non-public instance',
+    'admits no-JWT caller past the tier gate',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const setup = await testData.createDecisionSetup({
@@ -197,15 +198,14 @@ describeDecisionAccessTierGating('getInstance', {
 
       const caller = await callers.noJwt();
 
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.decision.getInstance({ instanceId: instance.instance.id }),
-        'none',
       );
     },
   ),
 
   anonJwtNonPublic: accessTierGatingCell(
-    'rejects anon-JWT caller on non-public instance',
+    'admits anon-JWT caller past the tier gate',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const setup = await testData.createDecisionSetup({
@@ -219,15 +219,14 @@ describeDecisionAccessTierGating('getInstance', {
 
       const caller = await callers.anonJwt();
 
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.decision.getInstance({ instanceId: instance.instance.id }),
-        'anon',
       );
     },
   ),
 
   userJwtNonPublic: accessTierGatingCell(
-    'rejects user-JWT caller on non-public instance',
+    'admits user-JWT caller past the tier gate',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const setup = await testData.createDecisionSetup({
@@ -241,15 +240,14 @@ describeDecisionAccessTierGating('getInstance', {
 
       const caller = await callers.userJwt();
 
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.decision.getInstance({ instanceId: instance.instance.id }),
-        'user',
       );
     },
   ),
 
   networkJwtNonPublic: accessTierGatingCell(
-    'admits network-JWT caller on non-public instance',
+    'admits network-JWT caller past the tier gate',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const setup = await testData.createDecisionSetup({
@@ -263,10 +261,9 @@ describeDecisionAccessTierGating('getInstance', {
 
       const caller = await callers.networkJwt(setup.userEmail);
 
-      const result = await caller.decision.getInstance({
-        instanceId: instance.instance.id,
-      });
-      expect(result.id).toBe(instance.instance.id);
+      await expectPassesAccessTierGate(
+        caller.decision.getInstance({ instanceId: instance.instance.id }),
+      );
     },
   ),
 });

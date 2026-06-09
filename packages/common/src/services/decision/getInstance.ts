@@ -6,6 +6,7 @@ import type { NormalizedRole } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import {
+  type AccessUser,
   assertInstanceProfileAccess,
   getOrgAccessUser,
   getProfileAccessUser,
@@ -17,7 +18,7 @@ import type { DecisionInstanceData } from './schemas/instanceData';
 
 export interface GetInstanceInput {
   instanceId: string;
-  user: User;
+  user: User | undefined;
 }
 
 const ALL_TRUE_ACCESS: DecisionRolePermissions = {
@@ -36,7 +37,7 @@ const getRolesDecisionBits = (roles: NormalizedRole[]): number =>
   collapseRoles(roles)['decisions'] ?? 0;
 
 const resolveInstanceAccess = async (
-  user: { id: string },
+  user: AccessUser | undefined,
   instance: { profileId: string; ownerProfileId: string | null },
   profileUser: Awaited<ReturnType<typeof getProfileAccessUser>>,
 ): Promise<DecisionRolePermissions> => {
@@ -95,19 +96,13 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       throw new NotFoundError('Process instance', instanceId);
     }
 
-    // Fetch profileUser and assert access in parallel — both need the instance
-    // but are independent of each other.
-    const [profileUser] = await Promise.all([
-      instance.profileId
-        ? getProfileAccessUser({ user, profileId: instance.profileId })
-        : Promise.resolve(undefined),
-      assertInstanceProfileAccess({
-        user,
-        instance,
-        profilePermissions: { decisions: permission.READ },
-        orgFallbackPermissions: { decisions: permission.READ },
-      }),
-    ]);
+    // Assert read access and reuse the profile-access user it resolves.
+    const profileUser = await assertInstanceProfileAccess({
+      user,
+      instance,
+      profilePermissions: { decisions: permission.READ },
+      orgFallbackPermissions: { decisions: permission.READ },
+    });
 
     // Resolve access capabilities for the current user.
     // profileId is guaranteed non-null here: assertInstanceProfileAccess throws above if null.

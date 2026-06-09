@@ -21,7 +21,7 @@ import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDat
 import {
   accessTierGatingCell,
   describeDecisionAccessTierGating,
-  expectFailsAccessTierGate,
+  expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
 import {
   schemaWithPipeline,
@@ -2294,10 +2294,9 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
 
 describeDecisionAccessTierGating('listProposals', {
   noJwtNonPublic: accessTierGatingCell(
-    'rejects no-JWT caller at the access-tier gate on non-public instance',
+    'admits no-JWT caller past the tier gate',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
       const setup = await testData.createDecisionSetup({
         instanceCount: 1,
         grantAccess: true,
@@ -2309,20 +2308,18 @@ describeDecisionAccessTierGating('listProposals', {
 
       const caller = await callers.noJwt();
 
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.decision.listProposals({
           processInstanceId: instance.instance.id,
         }),
-        'none',
       );
     },
   ),
 
   anonJwtNonPublic: accessTierGatingCell(
-    'rejects anon-JWT caller at the access-tier gate on non-public instance',
+    'admits anon-JWT caller past the tier gate',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
       const setup = await testData.createDecisionSetup({
         instanceCount: 1,
         grantAccess: true,
@@ -2334,20 +2331,18 @@ describeDecisionAccessTierGating('listProposals', {
 
       const caller = await callers.anonJwt();
 
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.decision.listProposals({
           processInstanceId: instance.instance.id,
         }),
-        'anon',
       );
     },
   ),
 
   userJwtNonPublic: accessTierGatingCell(
-    'rejects user-JWT caller at the access-tier gate on non-public instance',
+    'admits user-JWT caller past the tier gate',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
       const setup = await testData.createDecisionSetup({
         instanceCount: 1,
         grantAccess: true,
@@ -2359,20 +2354,18 @@ describeDecisionAccessTierGating('listProposals', {
 
       const caller = await callers.userJwt();
 
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.decision.listProposals({
           processInstanceId: instance.instance.id,
         }),
-        'user',
       );
     },
   ),
 
   networkJwtNonPublic: accessTierGatingCell(
-    'admits network-JWT caller on non-public instance',
+    'admits network-JWT caller past the tier gate',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
       const setup = await testData.createDecisionSetup({
         instanceCount: 1,
         grantAccess: true,
@@ -2384,12 +2377,11 @@ describeDecisionAccessTierGating('listProposals', {
 
       const caller = await callers.networkJwt(setup.userEmail);
 
-      const result = await caller.decision.listProposals({
-        processInstanceId: instance.instance.id,
-      });
-
-      expect(result.proposals).toBeDefined();
-      expect(result.canManageProposals).toBe(true);
+      await expectPassesAccessTierGate(
+        caller.decision.listProposals({
+          processInstanceId: instance.instance.id,
+        }),
+      );
     },
   ),
 });

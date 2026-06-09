@@ -8,26 +8,42 @@ import { permission } from 'access-zones';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
 import {
+  UnauthorizedError,
   decodeCursor,
   encodeCursor,
   getGenericCursorCondition,
 } from '../../utils';
-import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
+import {
+  type AccessUser,
+  assertProfileTypeAccess,
+  getCurrentProfileId,
+} from '../access';
 import { getItemsWithReactionsAndComments } from './listPosts';
 
 export const listProfilePosts = async ({
-  authUserId,
+  user,
   profileId,
   limit = 20,
   cursor,
 }: {
-  authUserId: string;
+  user: AccessUser | undefined;
   profileId: string;
   limit?: number;
   cursor?: string | null;
 }) => {
+  // Scoped to decision profiles: assertProfileTypeAccess leniently passes
+  // ungated types, which would leak org/individual posts to public callers.
+  const profile = await db.query.profiles.findFirst({
+    where: { id: profileId },
+    columns: { type: true },
+  });
+
+  if (profile?.type !== EntityType.DECISION) {
+    throw new UnauthorizedError('You do not have access to these posts');
+  }
+
   await assertProfileTypeAccess({
-    user: { id: authUserId },
+    user,
     profileIds: [profileId],
     policies: {
       [EntityType.DECISION]: { decisions: permission.READ },
@@ -101,7 +117,7 @@ export const listProfilePosts = async ({
         })
       : null;
 
-  const actorProfileId = await getCurrentProfileId(authUserId);
+  const actorProfileId = user ? await getCurrentProfileId(user.id) : undefined;
   const itemsWithReactions = await getItemsWithReactionsAndComments({
     items: orderedPosts.map((post) => ({ post })),
     profileId: actorProfileId,

@@ -15,9 +15,10 @@ import { count as countFn } from 'drizzle-orm';
 
 import { UnauthorizedError } from '../../utils';
 import {
+  type ProfileUserWithNormalizedRoles,
   assertInstanceProfileAccess,
   getCurrentProfileId,
-  getProfileAccessUser,
+  resolveAccessUserIds,
 } from '../access';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
@@ -157,18 +158,28 @@ export const listProposals = async ({
   user,
 }: {
   input: ListProposalsInput;
-  user: User;
+  user: User | undefined;
 }) => {
   const { processInstanceId, skipAccessCheck = false } = input;
 
-  // Skip authentication check if this is a trusted context (e.g., background job)
-  if (!skipAccessCheck && !user) {
-    throw new UnauthorizedError('User must be authenticated');
+  // Resolve the caller's profile once; it's reused for ballot auth, the
+  // HIDDEN visibility filter, and owner/editable checks further down. Public
+  // (no-JWT) and anonymous callers have no account profile — treat as none.
+  let currentProfileId: string | undefined;
+  if (user) {
+    try {
+      currentProfileId = await getCurrentProfileId(user.id);
+    } catch {
+      currentProfileId = undefined;
+    }
   }
 
-  // Resolve the caller's profile once; it's reused for ballot auth, the
-  // HIDDEN visibility filter, and owner/editable checks further down.
-  const currentProfileId = await getCurrentProfileId(user.id);
+  // Caller's own grants unioned with public (GLOBAL_USER_PUBLIC) grants — used
+  // for the draft and HIDDEN visibility subqueries below.
+  // INVARIANT: public grants must only be placed on the process/decision
+  // profile, never on an individual proposal profile — otherwise this would
+  // surface every caller's drafts/HIDDEN proposals to the public.
+  const accessUserIds = resolveAccessUserIds(user);
 
   // Fetch the instance row up front and resolve the explicit ID scope in
   // parallel. The row is reused for the phase-resolution context (instead of
@@ -194,7 +205,6 @@ export const listProposals = async ({
   if (!instance?.profileId) {
     throw new UnauthorizedError('User does not have access to this process');
   }
-  const instanceProfileId = instance.profileId;
 
   // Resolve phase-scoped IDs for non-drafts and drafts. Drafts are phase-scoped
   // via a `createdAt` window since they're never attached to transition
@@ -226,7 +236,7 @@ export const listProposals = async ({
     const ids = await getPhaseProposalAndDraftIds({
       instance,
       phaseId: input.phaseId,
-      authUserId: user.id,
+      authUserIds: accessUserIds,
     });
     return { phaseProposalIds: ids.nonDraftIds, phaseDraftIds: ids.draftIds };
   })();
@@ -235,17 +245,13 @@ export const listProposals = async ({
   // only on the instance row (already fetched), so there's no ordering
   // dependency — the auth check still throws on failure, just slightly later.
   const accessPromise: Promise<{
-    profileUser: Awaited<ReturnType<typeof getProfileAccessUser>>;
+    profileUser: ProfileUserWithNormalizedRoles | undefined;
     canManageProposals: boolean;
   }> = (async () => {
     if (skipAccessCheck) {
       return { profileUser: undefined, canManageProposals: false };
     }
-    const profileUser = await getProfileAccessUser({
-      user,
-      profileId: instanceProfileId,
-    });
-    await assertInstanceProfileAccess({
+    const profileUser = await assertInstanceProfileAccess({
       user,
       instance,
       profilePermissions: [
@@ -379,7 +385,7 @@ export const listProposals = async ({
               db
                 .select({ profileId: profileUsers.profileId })
                 .from(profileUsers)
-                .where(eq(profileUsers.authUserId, user.id)),
+                .where(inArray(profileUsers.authUserId, accessUserIds)),
             ),
           )!,
         )!;

@@ -611,7 +611,7 @@ describe.concurrent('listProfilePosts authorization and pagination', () => {
     ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
   });
 
-  it('does not gate listProfilePosts on non-decision profiles', async ({
+  it('rejects listProfilePosts on non-decision (org) profiles', async ({
     task,
     onTestFinished,
   }) => {
@@ -624,14 +624,12 @@ describe.concurrent('listProfilePosts authorization and pagination', () => {
       profileId: setup.organization.profileId,
     });
 
-    const outsiderCaller = await createOutsiderCaller(testData);
-    const page = await outsiderCaller.posts.listProfilePosts({
-      profileId: setup.organization.profileId,
-      limit: 10,
-    });
-
-    expect(page.items.length).toBeGreaterThanOrEqual(1);
-    expect(page.items.map((p) => p.content)).toContain('Org-level update.');
+    await expect(
+      ownerCaller.posts.listProfilePosts({
+        profileId: setup.organization.profileId,
+        limit: 10,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
   it('paginates with cursor across multiple pages', async ({

@@ -602,6 +602,10 @@ describe.concurrent('Onboarding Organization Search', () => {
       );
       const userBefore = await accountCaller.getMyAccount();
 
+      if (!userBefore) {
+        throw new Error('expected an account for the authenticated user');
+      }
+
       expect(userBefore.onboardedAt).toBeNull();
       expect(userBefore.organizationUsers).toHaveLength(0);
 
@@ -613,6 +617,10 @@ describe.concurrent('Onboarding Organization Search', () => {
 
       // After onboarding: onboardedAt is set, tos and privacy are true
       const userAfter = await accountCaller.getMyAccount();
+
+      if (!userAfter) {
+        throw new Error('expected an account for the authenticated user');
+      }
 
       expect(userAfter.onboardedAt).toBeTruthy();
       expect(userAfter.tos).toBe(true);

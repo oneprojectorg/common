@@ -33,7 +33,7 @@ export const getProposalRelationshipData = async ({
   currentProfileId,
 }: {
   profileIds: string[];
-  currentProfileId: string;
+  currentProfileId?: string;
 }): Promise<Map<string, ProposalRelationshipData>> => {
   const relationshipData = new Map<string, ProposalRelationshipData>();
 
@@ -56,18 +56,20 @@ export const getProposalRelationshipData = async ({
           profileRelationships.relationshipType,
         ),
 
-      db
-        .select({
-          targetProfileId: profileRelationships.targetProfileId,
-          relationshipType: profileRelationships.relationshipType,
-        })
-        .from(profileRelationships)
-        .where(
-          and(
-            eq(profileRelationships.sourceProfileId, currentProfileId),
-            inArray(profileRelationships.targetProfileId, profileIds),
-          ),
-        ),
+      currentProfileId
+        ? db
+            .select({
+              targetProfileId: profileRelationships.targetProfileId,
+              relationshipType: profileRelationships.relationshipType,
+            })
+            .from(profileRelationships)
+            .where(
+              and(
+                eq(profileRelationships.sourceProfileId, currentProfileId),
+                inArray(profileRelationships.targetProfileId, profileIds),
+              ),
+            )
+        : Promise.resolve([]),
 
       db
         .select({

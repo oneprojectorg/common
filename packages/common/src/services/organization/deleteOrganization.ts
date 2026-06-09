@@ -5,7 +5,7 @@ import type { User } from '@supabase/supabase-js';
 import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
-import { getOrgAccessUser } from '../access';
+import { getOrgAccessUser, orgUserCacheKey } from '../access';
 import { assertOrgAccess } from '../assert';
 
 export async function deleteOrganization({
@@ -45,7 +45,10 @@ export async function deleteOrganization({
   // Invalidate caches for the deleted organization
   invalidate({ type: 'organization', params: [organizationProfileId] });
   invalidate({ type: 'organization', params: [deletedOrganization.slug] });
-  invalidate({ type: 'orgUser', params: [organization.id, user.id] });
+  invalidate({
+    type: 'orgUser',
+    params: orgUserCacheKey({ user, organizationId: organization.id }),
+  });
   getOrgAccessUser.invalidate({ user, organizationId: organization.id });
 
   return { deletedId: organizationProfileId };

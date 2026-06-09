@@ -170,7 +170,7 @@ export const getItemsWithReactionsAndComments = async <
   profileId,
 }: {
   items: T[];
-  profileId: string;
+  profileId?: string;
 }): Promise<Array<T & { post: T['post'] & EnhancedPostFields }>> => {
   // Get all post IDs to fetch comment counts
   const postIds = items.map((item) => item.post.id).filter(Boolean);
