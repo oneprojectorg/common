@@ -13,6 +13,9 @@ export const updateRolePermissionRouter = router({
       z.object({
         roleId: z.string().uuid(),
         permissions: permissionsSchema,
+        // Required for global roles: the profile whose per-profile override
+        // row to write. Optional (and validated) for profile-scoped roles.
+        profileId: z.string().uuid().optional(),
       }),
     )
     .output(accessRoleMinimalSchema)
@@ -22,6 +25,7 @@ export const updateRolePermissionRouter = router({
         zoneName: DECISIONS_ZONE_NAME,
         permissions: input.permissions,
         user: ctx.user,
+        profileId: input.profileId,
       });
     }),
 });

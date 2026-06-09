@@ -6,8 +6,14 @@ import { permission, toBitField } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
 import { CommonError, NotFoundError } from '../../utils';
-import { invalidateProfileUserCacheForRole } from '../access/permissions';
-import { assertProfileAdmin } from '../assert';
+import {
+  assertPermissionRowScope,
+  invalidateProfileUserCacheForRole,
+} from '../access/permissions';
+import {
+  pickEffectivePermissionRows,
+  zonePermissionsWhere,
+} from '../access/utils';
 import {
   type DecisionRolePermissions,
   fromDecisionBitField,
@@ -201,11 +207,17 @@ export async function createDefaultDecisionRoles({
 
 /**
  * Get the decision role permissions for a role on the decisions zone.
+ *
+ * Pass `profileId` to resolve the permissions in effect for that profile: a
+ * per-profile override row wins over the role's global (NULL) row. Without
+ * `profileId`, only the global row is read.
  */
 export async function getDecisionRole({
   roleId,
+  profileId,
 }: {
   roleId: string;
+  profileId?: string;
 }): Promise<DecisionRolePermissions> {
   const zone = await defaultDb.query.accessZones.findFirst({
     where: { name: 'decisions' },
@@ -215,12 +227,23 @@ export async function getDecisionRole({
     throw new NotFoundError('Zone', 'decisions');
   }
 
-  const existing =
-    await defaultDb.query.accessRolePermissionsOnAccessZones.findFirst({
-      where: { accessRoleId: roleId, accessZoneId: zone.id },
+  const rows =
+    await defaultDb.query.accessRolePermissionsOnAccessZones.findMany({
+      where: {
+        accessRoleId: roleId,
+        accessZoneId: zone.id,
+        ...zonePermissionsWhere(profileId),
+      },
+      columns: { accessRoleId: true, permission: true, profileId: true },
     });
 
-  return fromDecisionBitField(existing?.permission ?? 0);
+  const [effective] = pickEffectivePermissionRows(
+    rows,
+    (row) => row.accessRoleId,
+    profileId,
+  );
+
+  return fromDecisionBitField(effective?.permission ?? 0);
 }
 
 /**
@@ -231,10 +254,12 @@ export async function updateDecisionRoles({
   roleId,
   decisionPermissions,
   user,
+  profileId,
 }: {
   roleId: string;
   decisionPermissions: DecisionRolePermissions;
   user: { id: string };
+  profileId?: string;
 }) {
   const [zone, role] = await Promise.all([
     defaultDb.query.accessZones.findFirst({
@@ -253,15 +278,19 @@ export async function updateDecisionRoles({
     throw new NotFoundError('Role', roleId);
   }
 
-  if (!role.profileId) {
-    throw new NotFoundError('Role', roleId);
-  }
-
-  await assertProfileAdmin({ user, profileId: role.profileId });
+  const rowProfileId = await assertPermissionRowScope({
+    role,
+    profileId,
+    user,
+  });
 
   const existing =
     await defaultDb.query.accessRolePermissionsOnAccessZones.findFirst({
-      where: { accessRoleId: roleId, accessZoneId: zone.id },
+      where: {
+        accessRoleId: roleId,
+        accessZoneId: zone.id,
+        profileId: rowProfileId ?? { isNull: true },
+      },
     });
 
   const bitfield = toDecisionBitField(decisionPermissions) | permission.READ;
@@ -276,6 +305,7 @@ export async function updateDecisionRoles({
       accessRoleId: roleId,
       accessZoneId: zone.id,
       permission: bitfield,
+      profileId: rowProfileId,
     });
   }
 

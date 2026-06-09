@@ -254,7 +254,8 @@ async function copyCustomRoles({
       throw new CommonError(`Failed to create custom role: ${role.name}`);
     }
 
-    // Copy zone permissions
+    // Copy zone permissions. Rows on profile-scoped roles are always global
+    // (NULL profileId) — the role itself is the scope.
     if (role.zonePermissions.length > 0) {
       await db.insert(accessRolePermissionsOnAccessZones).values(
         role.zonePermissions.map((zp) => ({

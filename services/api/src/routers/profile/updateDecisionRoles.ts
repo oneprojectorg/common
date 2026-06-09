@@ -10,6 +10,9 @@ export const updateDecisionRolesRouter = router({
       z.object({
         roleId: z.string().uuid(),
         decisionPermissions: decisionRoleEncoder,
+        // Required for global roles: the profile whose per-profile override
+        // row to write. Optional (and validated) for profile-scoped roles.
+        profileId: z.string().uuid().optional(),
       }),
     )
     .output(
@@ -23,6 +26,7 @@ export const updateDecisionRolesRouter = router({
         roleId: input.roleId,
         decisionPermissions: input.decisionPermissions,
         user: ctx.user,
+        profileId: input.profileId,
       });
     }),
 });

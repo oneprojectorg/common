@@ -374,6 +374,46 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     });
   });
 
+  it('should fail when inviting with a non-assignable system global role', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { profile, adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    const standaloneUser = await testData.createStandaloneUser();
+
+    // A global role outside EXPOSABLE_GLOBAL_ROLE_NAMES — stands in for system
+    // roles like the global Public role, which are never granted by hand.
+    const [systemRole] = await db
+      .insert(accessRoles)
+      .values({
+        name: `System Role ${task.id}`,
+        profileId: null,
+      })
+      .returning();
+
+    onTestFinished(async () => {
+      if (systemRole) {
+        await db.delete(accessRoles).where(eq(accessRoles.id, systemRole.id));
+      }
+    });
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await expect(
+      caller.invite({
+        invitations: [{ email: standaloneUser.email, roleId: systemRole!.id }],
+        profileId: profile.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'CommonError' },
+    });
+  });
+
   it('should fail when user is not associated with the profile', async ({
     task,
     onTestFinished,

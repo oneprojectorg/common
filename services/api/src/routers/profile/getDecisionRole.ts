@@ -16,6 +16,7 @@ export const getDecisionRoleRouter = router({
     .query(async ({ input }) => {
       return getDecisionRole({
         roleId: input.roleId,
+        profileId: input.profileId,
       });
     }),
 });

@@ -9,6 +9,7 @@ import { permission } from 'access-zones';
 
 import { hasEmail } from '../../utils/email';
 import { CommonError } from '../../utils/error';
+import { assignableRoleFilter } from '../access';
 import { assertProfile, assertProfileAccess } from '../assert';
 import { decisionPermission } from '../decision/permissions';
 
@@ -129,9 +130,14 @@ export const inviteUsersToProfile = async ({
     assertProfile(profileId),
     // Get the requester's profile for the inviter name
     assertProfile(requesterProfileId),
-    // Get all target roles with their zone permissions (needed to detect admin roles)
+    // Get all target roles with their zone permissions (needed to detect
+    // admin roles). Non-assignable system global roles resolve as nonexistent
+    // and fail the invalid-role check below.
     db.query.accessRoles.findMany({
-      where: { id: { in: uniqueRoleIds } },
+      where: {
+        id: { in: uniqueRoleIds },
+        RAW: (table) => assignableRoleFilter(table),
+      },
       with: {
         zonePermissions: {
           with: { accessZone: true },

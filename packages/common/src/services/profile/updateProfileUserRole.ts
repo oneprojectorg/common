@@ -6,6 +6,7 @@ import { checkPermission, permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils/error';
 import {
+  assignableRoleFilter,
   getNormalizedRoles,
   getProfileAccessUser,
   getUserSession,
@@ -39,8 +40,13 @@ export const updateProfileUserRoles = async ({
         roles: true,
       },
     }),
+    // Non-assignable system global roles resolve as nonexistent and fail the
+    // invalid-role check below.
     db.query.accessRoles.findMany({
-      where: { id: { in: roleIdsDeduped } },
+      where: {
+        id: { in: roleIdsDeduped },
+        RAW: (table) => assignableRoleFilter(table),
+      },
     }),
   ]);
 
@@ -76,6 +82,7 @@ export const updateProfileUserRoles = async ({
 
     const normalizedDesired = getNormalizedRoles(
       requestedRolesWithPermissions.map((accessRole) => ({ accessRole })),
+      { profileId: targetProfileId },
     );
 
     if (!checkPermission({ profile: permission.ADMIN }, normalizedDesired)) {

@@ -292,7 +292,7 @@ describe.concurrent('profile.decisionRoles', () => {
         },
       }),
     ).rejects.toMatchObject({
-      cause: { name: 'NotFoundError' },
+      cause: { name: 'ValidationError' },
     });
   });
 

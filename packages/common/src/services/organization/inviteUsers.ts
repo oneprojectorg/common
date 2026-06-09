@@ -14,6 +14,7 @@ import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils/error';
+import { assignableRoleFilter } from '../access';
 import { assertOrgAccess } from '../assert';
 import { sendBatchInvitationEmails } from '../email';
 import { AllowListMetadata } from '../user/validators';
@@ -113,8 +114,13 @@ export const inviteUsersToOrganization = async (
         // User exists - check if they're already in this organization
         if (existingUser.organizationUsers.length === 0) {
           // User exists but not in this organization - add them directly
+          // Non-assignable system global roles resolve as nonexistent and
+          // fall into the invalid-role failure below.
           const targetRole = await db.query.accessRoles.findFirst({
-            where: { id: roleId },
+            where: {
+              id: roleId,
+              RAW: (table) => assignableRoleFilter(table),
+            },
           });
 
           if (targetRole) {

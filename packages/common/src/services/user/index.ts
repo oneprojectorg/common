@@ -184,7 +184,9 @@ export const getUserByAuthId = async ({
           return profileUser;
         }
 
-        const normalizedRoles = getNormalizedRoles(profileUser.roles);
+        const normalizedRoles = getNormalizedRoles(profileUser.roles, {
+          profileId: profileUser.profileId,
+        });
 
         const userForTransformation: UserWithRoles = {
           id: profileUser.id,

@@ -10,7 +10,7 @@ import {
 import { permission, toBitField } from 'access-zones';
 import { and, eq } from 'drizzle-orm';
 
-import { CommonError, NotFoundError } from '../../utils';
+import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAdmin } from '../assert';
 
 export async function invalidateProfileUserCacheForRole(roleId: string) {
@@ -47,6 +47,40 @@ export type Permissions = {
   update: boolean;
   delete: boolean;
 };
+
+/**
+ * Authorizes a permission-row write on a role and resolves the scope the row
+ * is written under. Rows on profile-scoped roles are always global (NULL) —
+ * the role itself is the scope — while global roles take per-profile override
+ * rows and require an explicit `profileId` (the global baseline of a global
+ * role is not editable).
+ */
+export async function assertPermissionRowScope({
+  role,
+  profileId,
+  user,
+}: {
+  role: { profileId: string | null };
+  profileId?: string;
+  user: { id: string };
+}): Promise<string | null> {
+  if (role.profileId) {
+    if (profileId && profileId !== role.profileId) {
+      throw new ValidationError(
+        'profileId does not match the profile of the role',
+      );
+    }
+    await assertProfileAdmin({ user, profileId: role.profileId });
+    return null;
+  }
+
+  if (!profileId) {
+    throw new ValidationError('Cannot modify permissions for global roles');
+  }
+
+  await assertProfileAdmin({ user, profileId });
+  return profileId;
+}
 
 export async function createRole({
   name,
@@ -114,7 +148,12 @@ export async function createRole({
       await tx
         .update(accessRolePermissionsOnAccessZones)
         .set({ permission: toBitField({ ...permissions, read: true }) })
-        .where(eq(accessRolePermissionsOnAccessZones.accessRoleId, role.id));
+        .where(
+          and(
+            eq(accessRolePermissionsOnAccessZones.accessRoleId, role.id),
+            eq(accessRolePermissionsOnAccessZones.accessZoneId, zone.id),
+          ),
+        );
     }
 
     return {
@@ -127,18 +166,20 @@ export async function createRole({
 }
 
 /**
- * Update the permission for a role on a specific zone
+ * Update the permission for a role on a specific zone.
  */
 export async function updateRolePermissions({
   roleId,
   zoneName,
   permissions,
   user,
+  profileId,
 }: {
   roleId: string;
   zoneName: string;
   permissions: Permissions;
   user: { id: string };
+  profileId?: string;
 }) {
   const [zone, role] = await Promise.all([
     db.query.accessZones.findFirst({
@@ -157,16 +198,20 @@ export async function updateRolePermissions({
     throw new NotFoundError('Role', roleId);
   }
 
-  if (!role.profileId) {
-    throw new CommonError('Cannot modify permissions for global roles');
-  }
-
-  await assertProfileAdmin({ user, profileId: role.profileId });
+  const rowProfileId = await assertPermissionRowScope({
+    role,
+    profileId,
+    user,
+  });
 
   const bitfield = toBitField(permissions);
 
   const existing = await db.query.accessRolePermissionsOnAccessZones.findFirst({
-    where: { accessRoleId: roleId, accessZoneId: zone.id },
+    where: {
+      accessRoleId: roleId,
+      accessZoneId: zone.id,
+      profileId: rowProfileId ?? { isNull: true },
+    },
   });
 
   if (existing) {
@@ -179,6 +224,7 @@ export async function updateRolePermissions({
       accessRoleId: roleId,
       accessZoneId: zone.id,
       permission: bitfield,
+      profileId: rowProfileId,
     });
   }
 
