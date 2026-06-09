@@ -57,6 +57,9 @@ const ProposalViewPage = async ({
 
   // Shares the cache()-wrapped fetch with generateMetadata above, so the
   // resolver (and its view event) runs once and the data is hydrated.
+  // Swallow failures: this only warms the cache — the client suspense query
+  // refetches and its error boundary owns errors, so a failed warmup must not
+  // crash the route.
   await Promise.all([
     fetchProposal(profileId),
     fetchDecisionBySlug(slug),

@@ -50,7 +50,9 @@ const PostDetailPage = async ({
   const { utils, queryClient } = await createServerUtils();
 
   // Prefetch on the server so the client useSuspenseQuery hydrates without a
-  // second request.
+  // second request. Swallow failures: this only warms the cache — the client
+  // suspense query refetches and its error boundary owns errors, so a failed
+  // warmup must not crash the route.
   await Promise.all([
     utils.posts.getPost.prefetch({ postId, includeChildren: false }),
     utils.organization.getBySlug.prefetch({ slug }),

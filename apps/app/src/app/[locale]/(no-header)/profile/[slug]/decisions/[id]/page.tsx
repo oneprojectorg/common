@@ -72,6 +72,9 @@ const DecisionInstancePageContent = async ({
   slug: string;
 }) => {
   const { queryClient } = await createServerUtils();
+  // Swallow failures: this only warms the cache — the client suspense query
+  // refetches and its error boundary owns errors, so a failed warmup must not
+  // crash the route.
   await fetchLegacyInstance(instanceId).catch(() => {});
 
   return (

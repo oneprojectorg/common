@@ -49,6 +49,9 @@ const ProposalViewPage = async ({
   const { profileId, slug, id } = await params;
   const { queryClient } = await createServerUtils();
 
+  // Swallow failures: this only warms the cache — the client suspense query
+  // refetches and its error boundary owns errors, so a failed warmup must not
+  // crash the route.
   await fetchProposal(profileId).catch(() => {});
 
   return (
