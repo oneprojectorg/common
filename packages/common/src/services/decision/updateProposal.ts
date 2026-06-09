@@ -20,7 +20,6 @@ import {
 } from '../../utils';
 import { assertInstanceProfileAccess, getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
-import { proposalLocationToGeometry } from './locationGeometry';
 import type {
   CheckpointVersion,
   ProposalDataInput,
@@ -28,6 +27,7 @@ import type {
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
+import { syncProposalProfileLocation } from './syncProposalProfileLocation';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
 async function updateProposalCategoryLink(
@@ -206,13 +206,8 @@ export const updateProposal = async ({
       .update(proposals)
       .set({
         ...proposalFields,
-        // Keep the geometry column in sync whenever proposalData is written;
-        // status/visibility-only updates leave it untouched.
         ...(proposalDataWithVersion
-          ? {
-              proposalData: proposalDataWithVersion,
-              location: proposalLocationToGeometry(proposalDataWithVersion),
-            }
+          ? { proposalData: proposalDataWithVersion }
           : {}),
         lastEditedByProfileId: dbUser.profileId,
         updatedAt: new Date().toISOString(),
@@ -222,6 +217,16 @@ export const updateProposal = async ({
 
     if (!updatedProposalRow) {
       throw new CommonError('Failed to update proposal');
+    }
+
+    // Keep the profile's location relation in sync whenever proposalData is
+    // written; status/visibility-only updates leave it untouched.
+    if (proposalDataWithVersion) {
+      await syncProposalProfileLocation(
+        tx,
+        existingProposal.profileId,
+        proposalDataWithVersion,
+      );
     }
 
     if (nextTitle !== undefined) {

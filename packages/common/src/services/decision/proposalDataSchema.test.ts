@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { assembleProposalData } from './assembleProposalData';
-import { proposalLocationToGeometry } from './locationGeometry';
 import {
   normalizeLocation,
   normalizeProposalCategories,
@@ -72,27 +71,6 @@ describe('normalizeLocation', () => {
     });
 
     expect(result.location).toEqual({ lat: 40.7, lng: -74 });
-  });
-});
-
-describe('proposalLocationToGeometry', () => {
-  it('projects lat/lng into x/y (lng first)', () => {
-    expect(
-      proposalLocationToGeometry({ location: { lat: 40.7, lng: -74 } }),
-    ).toEqual({ x: -74, y: 40.7 });
-  });
-
-  it('returns null when location is absent', () => {
-    expect(proposalLocationToGeometry({ title: 'No location' })).toBeNull();
-    expect(proposalLocationToGeometry(undefined)).toBeNull();
-    expect(proposalLocationToGeometry(null)).toBeNull();
-  });
-
-  it('returns null for malformed locations without throwing', () => {
-    expect(proposalLocationToGeometry({ location: 'oops' })).toBeNull();
-    expect(
-      proposalLocationToGeometry({ location: { lat: 999, lng: 0 } }),
-    ).toBeNull();
   });
 });
 

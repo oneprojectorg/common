@@ -17,7 +17,6 @@ import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertInstanceProfileAccess, getCurrentProfileId } from '../access';
 import { assertGlobalRole } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
-import { proposalLocationToGeometry } from './locationGeometry';
 import { decisionPermission } from './permissions';
 import { processProposalContent } from './proposalContentProcessor';
 import {
@@ -25,6 +24,7 @@ import {
   parseProposalData,
 } from './proposalDataSchema';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import { syncProposalProfileLocation } from './syncProposalProfileLocation';
 import { assertInstancePhase } from './utils/instance';
 import { checkProposalsAllowed } from './utils/proposal';
 
@@ -201,7 +201,6 @@ export const createProposal = async ({
               ? parsedProposalData.category
               : undefined,
         },
-        location: proposalLocationToGeometry(data.proposalData),
         submittedByProfileId: profileId,
         profileId: proposalProfile.id,
         status: ProposalStatus.DRAFT,
@@ -212,6 +211,14 @@ export const createProposal = async ({
     if (!insertedProposal) {
       throw new CommonError('Failed to create proposal');
     }
+
+    // Project the proposal's location onto its profile via the shared
+    // locations relation (no bespoke column on the proposal itself).
+    await syncProposalProfileLocation(
+      tx,
+      proposalProfile.id,
+      data.proposalData,
+    );
 
     // Link to categories within transaction if we have valid terms
     if (categoryTermIds.length > 0) {

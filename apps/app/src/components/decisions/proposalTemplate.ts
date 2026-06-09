@@ -41,7 +41,7 @@ export type FieldType = 'short_text' | 'long_text' | 'dropdown' | 'location';
 /**
  * The fixed property key used for the single location field. Unlike other
  * dynamic fields (random ids), location uses a well-known key so the server
- * can project it into the `proposals.location` geometry column and the
+ * can project it onto the proposal profile's location relation and the
  * builder can enforce a single instance per template.
  */
 export const LOCATION_FIELD_KEY = 'location';

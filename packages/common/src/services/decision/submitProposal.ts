@@ -9,6 +9,7 @@ import { decisionPermission } from './permissions';
 import { normalizeLocation, parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import { syncProposalProfileLocation } from './syncProposalProfileLocation';
 import { checkProposalsAllowed } from './utils/proposal';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
@@ -142,9 +143,6 @@ export const submitProposal = async ({
       .set({
         status: ProposalStatus.SUBMITTED,
         ...(proposalDataUpdate ? { proposalData: proposalDataUpdate } : {}),
-        // Submitted rows always reflect the validated location (NULL when the
-        // template has no location field).
-        location: location ? { x: location.lng, y: location.lat } : null,
       })
       .where(eq(proposals.id, data.proposalId))
       .returning();
@@ -152,6 +150,15 @@ export const submitProposal = async ({
     if (!submittedProposal) {
       throw new CommonError('Failed to submit proposal');
     }
+
+    // Fragments are authoritative at submit — project the validated location
+    // onto the proposal's profile (clears the link when the template has no
+    // location field).
+    await syncProposalProfileLocation(
+      tx,
+      existingProposal.profileId,
+      proposalDataUpdate ?? existingProposal.proposalData,
+    );
 
     const proposal = await tx.query.proposals.findFirst({
       where: { id: submittedProposal.id },
