@@ -10,9 +10,7 @@ describeAccessTierGating('account.uploadBannerImage', {
     const caller = await callers.noJwt();
     await expectFailsAccessTierGate(
       caller.account.uploadBannerImage({
-        file: 'x',
-        fileName: 'x',
-        mimeType: 'image/png',
+        path: 'x',
       }),
       'none',
     );
@@ -24,9 +22,7 @@ describeAccessTierGating('account.uploadBannerImage', {
       const caller = await callers.anonJwt();
       await expectFailsAccessTierGate(
         caller.account.uploadBannerImage({
-          file: 'x',
-          fileName: 'x',
-          mimeType: 'image/png',
+          path: 'x',
         }),
         'anon',
       );
@@ -39,9 +35,7 @@ describeAccessTierGating('account.uploadBannerImage', {
       const caller = await callers.userJwt();
       await expectFailsAccessTierGate(
         caller.account.uploadBannerImage({
-          file: 'x',
-          fileName: 'x',
-          mimeType: 'image/png',
+          path: 'x',
         }),
         'user',
       );
@@ -54,9 +48,7 @@ describeAccessTierGating('account.uploadBannerImage', {
       const caller = await callers.networkJwt();
       await expectPassesAccessTierGate(
         caller.account.uploadBannerImage({
-          file: 'x',
-          fileName: 'x',
-          mimeType: 'image/png',
+          path: 'x',
         }),
       );
     },
