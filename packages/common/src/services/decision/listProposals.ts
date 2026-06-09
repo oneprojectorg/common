@@ -169,9 +169,7 @@ export const listProposals = async ({
   if (user) {
     try {
       currentProfileId = await getCurrentProfileId(user.id);
-    } catch {
-      currentProfileId = undefined;
-    }
+    } catch {}
   }
 
   // Caller's own grants unioned with public (GLOBAL_USER_PUBLIC) grants — used
