@@ -242,38 +242,34 @@ export const createPost = async (input: CreatePostServiceInput) => {
     authUserId,
   } = input;
 
-  // getCurrentProfileId and resolvePostRoots are independent reads — run them
-  // together. resolvePostRoots pins the access gate (rootProfileId) and thread
-  // root (rootPostId) at write time, handling the proposal → parent-decision
-  // lookup so rootProfileId is always the correct gate even when the target is
-  // a proposal profile (which carries no permissions of its own).
-  const [profileId, { rootProfileId, rootPostId }] = await Promise.all([
-    getCurrentProfileId(authUserId),
-    resolvePostRoots({
-      targetProfileId,
-      parentPostId,
-    }),
-  ]);
+  const profileId = await getCurrentProfileId(authUserId);
 
-  // Access gate and moderation gate are independent and must both pass before
-  // any row is written, so run them in parallel. Decision profiles get a
-  // decision-permission gate: top-level posts (targetProfileId set) require
-  // ADMIN; comments (parentPostId only) require SUBMIT_PROPOSALS. Org/individual
-  // profile types fall through (no policy = lenient — callers on those paths
-  // layer their own membership checks).
-  await Promise.all([
-    assertProfileTypeAccess({
-      user: { id: authUserId },
-      profileIds: rootProfileId ? [rootProfileId] : [],
-      policies: {
-        [EntityType.DECISION]: targetProfileId
-          ? { decisions: permission.ADMIN }
-          : { decisions: decisionPermission.SUBMIT_PROPOSALS },
-      },
-    }),
-    // Block disallowed text before any row is written.
-    assertTextContentModerated(content),
-  ]);
+  // Pin the access gate (rootProfileId) and thread root (rootPostId) at
+  // write time. resolvePostRoots handles the proposal → parent-decision
+  // lookup, so rootProfileId is always the correct gate even when the
+  // target is a proposal profile (which carries no permissions of its own).
+  const { rootProfileId, rootPostId } = await resolvePostRoots({
+    targetProfileId,
+    parentPostId,
+  });
+
+  // Decision profiles get a decision-permission gate. Top-level posts
+  // (targetProfileId set) require ADMIN; comments (parentPostId only)
+  // require SUBMIT_PROPOSALS. Org/individual profile types fall through
+  // (no policy = lenient — callers on those paths layer their own
+  // membership checks).
+  await assertProfileTypeAccess({
+    user: { id: authUserId },
+    profileIds: rootProfileId ? [rootProfileId] : [],
+    policies: {
+      [EntityType.DECISION]: targetProfileId
+        ? { decisions: permission.ADMIN }
+        : { decisions: decisionPermission.SUBMIT_PROPOSALS },
+    },
+  });
+
+  // Moderation gate: block disallowed text before any row is written.
+  await assertTextContentModerated(content);
 
   // postsToProfiles inheritance for comments is purely a feed/discovery
   // index now — auth is pinned on rootProfileId above. We still pre-read
