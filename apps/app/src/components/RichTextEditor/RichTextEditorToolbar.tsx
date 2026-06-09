@@ -108,7 +108,7 @@ export function RichTextEditorToolbar({
   const noEditor = !editor;
 
   const btnClass = (active: boolean) =>
-    `shrink-0 cursor-pointer rounded p-2 hover:bg-gray-100 ${active ? 'bg-gray-200' : ''}`;
+    `shrink-0 rounded p-2 hover:bg-gray-100 ${active ? 'bg-gray-200' : ''}`;
 
   return (
     <div
@@ -122,7 +122,7 @@ export function RichTextEditorToolbar({
         <button
           onClick={() => editor?.chain().focus().undo().run()}
           disabled={noEditor || !editor.can().undo()}
-          className="shrink-0 cursor-pointer rounded p-2 hover:bg-gray-100"
+          className="shrink-0 rounded p-2 hover:bg-gray-100"
           title={t('Undo')}
         >
           <LuUndo className="size-4" />
@@ -130,7 +130,7 @@ export function RichTextEditorToolbar({
         <button
           onClick={() => editor?.chain().focus().redo().run()}
           disabled={noEditor || !editor.can().redo()}
-          className="shrink-0 cursor-pointer rounded p-2 hover:bg-gray-100"
+          className="shrink-0 rounded p-2 hover:bg-gray-100"
           title={t('Redo')}
         >
           <LuRedo className="h-4 w-4" />
@@ -294,7 +294,7 @@ export function RichTextEditorToolbar({
         <button
           onClick={addEmbedLink}
           disabled={noEditor}
-          className="shrink-0 cursor-pointer rounded p-2 hover:bg-gray-100"
+          className="shrink-0 rounded p-2 hover:bg-gray-100"
           title={t('Embed Link Preview')}
         >
           <LuLink2 className="h-4 w-4" />
@@ -302,7 +302,7 @@ export function RichTextEditorToolbar({
         <button
           onClick={handleImageUpload}
           disabled={noEditor}
-          className="shrink-0 cursor-pointer rounded p-2 hover:bg-gray-100"
+          className="shrink-0 rounded p-2 hover:bg-gray-100"
           title={t('Add Image')}
         >
           <LuImage className="h-4 w-4" />
@@ -310,7 +310,7 @@ export function RichTextEditorToolbar({
         <button
           onClick={() => editor?.chain().focus().setHorizontalRule().run()}
           disabled={noEditor}
-          className="shrink-0 cursor-pointer rounded p-2 hover:bg-gray-100"
+          className="shrink-0 rounded p-2 hover:bg-gray-100"
           title={t('Add Horizontal Rule')}
         >
           <LuMinus className="h-4 w-4" />
