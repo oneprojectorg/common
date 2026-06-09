@@ -8,7 +8,11 @@ import {
   legacyGetInstanceInputSchema,
   legacyProcessInstanceEncoder,
 } from '../../../encoders/legacyDecision';
-import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
+import {
+  networkAuthenticatedProcedure,
+  openProcedure,
+  router,
+} from '../../../trpcFactory';
 
 /**
  * Legacy getInstance endpoint - uses legacy encoders with state-based format.
@@ -58,7 +62,7 @@ export const getLegacyInstanceRouter = router({
  * Only supports new decision-making schemas.
  */
 export const getInstanceRouter = router({
-  getInstance: networkAuthenticatedProcedure({
+  getInstance: openProcedure({
     rateLimit: { windowSize: 10, maxRequests: 30 },
   })
     .input(getInstanceInputSchema)

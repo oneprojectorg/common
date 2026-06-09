@@ -3,7 +3,11 @@ import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
+import {
+  networkAuthenticatedProcedure,
+  openProcedure,
+  router,
+} from '../../trpcFactory';
 
 // Input Schemas based on our contracts
 const customDataSchema = z.record(z.string(), z.unknown()).optional();
@@ -47,8 +51,9 @@ export const votingRouter = router({
       return result;
     }),
 
-  // Get user's vote status with schema context
-  getVotingStatus: networkAuthenticatedProcedure()
+  // Get the caller's vote status with schema context. Open to public /
+  // anonymous viewers of public decisions — they resolve to "not voted".
+  getVotingStatus: openProcedure()
     .input(
       z.object({
         processInstanceId: z.uuid(),
@@ -58,9 +63,8 @@ export const votingRouter = router({
       return await getVotingStatus({
         data: {
           processInstanceId: input.processInstanceId,
-          authUserId: ctx.user.id,
         },
-        authUserId: ctx.user.id,
+        user: ctx.user,
       });
     }),
 });

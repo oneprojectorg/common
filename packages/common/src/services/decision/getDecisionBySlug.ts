@@ -1,15 +1,10 @@
 import { and, countDistinct, db, eq, ne } from '@op/db/client';
-import {
-  EntityType,
-  ProposalStatus,
-  processInstances,
-  profileUsers,
-  profiles,
-  proposals,
-} from '@op/db/schema';
+import { EntityType, ProposalStatus, proposals } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
+import { permission } from 'access-zones';
 
-import { NotFoundError, UnauthorizedError } from '../../utils';
+import { UnauthorizedError } from '../../utils';
+import { assertProfileAccess } from '../assert';
 
 const decisionProfileQueryConfig = {
   with: {
@@ -18,30 +13,23 @@ const decisionProfileQueryConfig = {
     processInstance: {
       with: {
         process: true,
-        owner: {
-          with: {
-            avatarImage: true,
-            organization: true,
-          },
-        },
+        owner: { with: { avatarImage: true, organization: true } },
         steward: true,
       },
     },
   },
 } as const;
 
-type DecisionProfileQueryResult = Awaited<
-  ReturnType<
-    typeof db._query.profiles.findFirst<typeof decisionProfileQueryConfig>
+type LoadedDecisionProfile = NonNullable<
+  Awaited<
+    ReturnType<
+      typeof db.query.profiles.findFirst<typeof decisionProfileQueryConfig>
+    >
   >
 >;
 
-type DecisionProfileItem = NonNullable<
-  Omit<DecisionProfileQueryResult, 'processInstance'>
-> & {
-  processInstance: NonNullable<
-    NonNullable<DecisionProfileQueryResult>['processInstance']
-  > & {
+type DecisionProfileItem = Omit<LoadedDecisionProfile, 'processInstance'> & {
+  processInstance: NonNullable<LoadedDecisionProfile['processInstance']> & {
     proposalCount: number;
     participantCount: number;
   };
@@ -51,68 +39,55 @@ export const getDecisionBySlug = async ({
   user,
   slug,
 }: {
-  user: User;
+  user: User | undefined;
   slug: string;
 }): Promise<DecisionProfileItem> => {
-  const [authAndStatsResult, profile] = await Promise.all([
-    // Auth check + aggregations
+  const profile = await db.query.profiles.findFirst({
+    where: { slug, type: EntityType.DECISION },
+    ...decisionProfileQueryConfig,
+  });
+
+  if (!profile?.processInstance) {
+    // No readable decision with this slug. Don't distinguish "missing" from
+    // "no access" — surfacing a 404 would leak which decisions exist.
+    throw new UnauthorizedError('User does not have access to this process');
+  }
+
+  const instance = profile.processInstance;
+
+  // Read-access gate alongside the proposal aggregates. A rejected caller never
+  // sees the aggregates: the assert and the query share one Promise.all, so a
+  // failed assert rejects the whole thing.
+  const [, statsRows] = await Promise.all([
+    assertProfileAccess({
+      user,
+      profileId: profile.id,
+      permissions: [
+        { decisions: permission.ADMIN },
+        { decisions: permission.READ },
+      ],
+      notMemberMessage: 'User does not have access to this process',
+    }),
     db
       .select({
-        profileId: profiles.id,
         proposalCount: countDistinct(proposals.id),
         participantCount: countDistinct(proposals.submittedByProfileId),
       })
-      .from(profiles)
-      .innerJoin(
-        profileUsers,
+      .from(proposals)
+      .where(
         and(
-          eq(profileUsers.profileId, profiles.id),
-          eq(profileUsers.authUserId, user.id),
-        ),
-      )
-      .innerJoin(processInstances, eq(processInstances.profileId, profiles.id))
-      // left join to remove processes that don't exist
-      .leftJoin(
-        proposals,
-        and(
-          eq(proposals.processInstanceId, processInstances.id),
+          eq(proposals.processInstanceId, instance.id),
           ne(proposals.status, ProposalStatus.DRAFT),
         ),
-      )
-      .where(
-        and(eq(profiles.type, EntityType.DECISION), eq(profiles.slug, slug)),
-      )
-      .groupBy(profiles.id)
-      .limit(1)
-      .then((rows) => {
-        if (rows.length === 0) {
-          // If auth failed throw immediately and don't wait for the other results
-          throw new UnauthorizedError(
-            'User does not have access to this process',
-          );
-        }
-        return rows[0];
-      }),
-    // Full profile data
-    db._query.profiles.findFirst({
-      where: and(
-        eq(profiles.slug, slug),
-        eq(profiles.type, EntityType.DECISION),
       ),
-      ...decisionProfileQueryConfig,
-    }),
   ]);
-
-  if (!authAndStatsResult || !profile?.processInstance) {
-    throw new NotFoundError('Decision profile', slug);
-  }
 
   return {
     ...profile,
     processInstance: {
-      ...profile.processInstance,
-      proposalCount: authAndStatsResult.proposalCount,
-      participantCount: authAndStatsResult.participantCount,
+      ...instance,
+      proposalCount: statsRows[0]?.proposalCount ?? 0,
+      participantCount: statsRows[0]?.participantCount ?? 0,
     },
   };
 };

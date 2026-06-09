@@ -1,4 +1,5 @@
 import { cache } from '@op/cache';
+import { GLOBAL_USER_PUBLIC } from '@op/core';
 import { db, eq } from '@op/db/client';
 import { organizations, users } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
@@ -30,6 +31,77 @@ export type ProfileUserWithNormalizedRoles = ProfileUserBase & {
  */
 export type AccessUser = Pick<User, 'id'>;
 
+/**
+ * The set of auth-user ids whose grants make up a caller's *effective* access:
+ * their own grants unioned with grants made to the public ({@link
+ * GLOBAL_USER_PUBLIC}). So a no-JWT caller resolves only public grants, while an
+ * authenticated or anonymous caller gets their own grants **and** any public
+ * grant on the resource — that's what makes a "public" resource visible to
+ * everyone (members, logged-in non-members, anonymous sessions, and no-JWT
+ * visitors alike) without losing a caller's own (e.g. participant) grants.
+ *
+ * Always returns a non-empty set (at minimum the public sentinel), so an
+ * undefined id can never drop the `authUserId` filter (Drizzle skips undefined
+ * conditions — the fail-open trap). Use this everywhere grants are filtered —
+ * `{ in: … }` / `inArray(…)` — and `.join(':')` it where a scalar cache-key
+ * identity is needed.
+ */
+export const resolveAccessUserIds = (user?: AccessUser): string[] =>
+  user?.id && user.id !== GLOBAL_USER_PUBLIC
+    ? [user.id, GLOBAL_USER_PUBLIC]
+    : [GLOBAL_USER_PUBLIC];
+
+/**
+ * Cache key for the durable `orgUser` cache. Shared by the write site and every
+ * invalidator so the key shape can't drift — the resolved id set (own ∪ public)
+ * is part of the identity, so a stale `[organizationId, user.id]` key would miss
+ * and serve removed/demoted members their old roles until TTL.
+ */
+export const orgUserCacheKey = ({
+  user,
+  organizationId,
+}: {
+  user?: AccessUser;
+  organizationId: string;
+}): [string, string] => [organizationId, resolveAccessUserIds(user).join(':')];
+
+/**
+ * Cache key for profile-access lookups. Mirrors {@link orgUserCacheKey}: the
+ * resolved id set (own ∪ public) is part of the identity. NOTE:
+ * {@link getProfileAccessUser} has no durable cache today, so this currently
+ * only keys the request-scoped memo — but it keeps the shape in one place for
+ * symmetry and if a durable profile-access cache is ever added.
+ */
+export const profileUserCacheKey = ({
+  user,
+  profileId,
+}: {
+  user?: AccessUser;
+  profileId: string;
+}): [string, string] => [profileId, resolveAccessUserIds(user).join(':')];
+
+/**
+ * Collapse the grant rows matched for a caller (their own ∪ the public
+ * {@link GLOBAL_USER_PUBLIC} grant) into a single access record: prefer the
+ * caller's own row for identity fields, but union the roles across every
+ * matched row. `rows` must be non-empty.
+ */
+const mergeGrantRows = <
+  TRow extends {
+    authUserId: string;
+    roles: Parameters<typeof getNormalizedRoles>[0];
+  },
+>(
+  rows: TRow[],
+  user?: AccessUser,
+): { baseRow: TRow; normalizedRoles: NormalizedRole[] } => {
+  const ownRow = rows.find((row) => row.authUserId === user?.id);
+  return {
+    baseRow: ownRow ?? rows[0]!,
+    normalizedRoles: rows.flatMap((row) => getNormalizedRoles(row.roles)),
+  };
+};
+
 // gets a user assuming that the user is authenticated
 export const getOrgAccessUser = memoize(
   async ({
@@ -39,18 +111,13 @@ export const getOrgAccessUser = memoize(
     user?: AccessUser;
     organizationId: string;
   }): Promise<OrgUserWithNormalizedRoles | undefined> => {
-    // No caller identity → fail closed. Never let an undefined id reach the
-    // query: Drizzle skips undefined filter conditions, which would drop the
-    // authUserId constraint and match an arbitrary member (auth bypass).
-    if (!user?.id) {
-      throw new UnauthorizedError();
-    }
+    const authUserIds = resolveAccessUserIds(user);
 
     const getOrgUser = async () => {
-      const orgUser = await db.query.organizationUsers.findFirst({
+      const orgUsers = await db.query.organizationUsers.findMany({
         where: {
           organizationId,
-          authUserId: user.id,
+          authUserId: { in: authUserIds },
         },
         with: {
           roles: {
@@ -69,14 +136,13 @@ export const getOrgAccessUser = memoize(
         },
       });
 
-      if (!orgUser) {
+      if (orgUsers.length === 0) {
         return;
       }
 
-      // Transform the relational data into normalized format for access-zones library
-      const normalizedRoles = getNormalizedRoles(orgUser.roles);
+      const { baseRow, normalizedRoles } = mergeGrantRows(orgUsers, user);
 
-      const { roles: _, ...orgUserWithoutRoles } = orgUser;
+      const { roles: _, ...orgUserWithoutRoles } = baseRow;
 
       // Replace roles with normalized format
       return {
@@ -87,14 +153,14 @@ export const getOrgAccessUser = memoize(
 
     return cache({
       type: 'orgUser',
-      params: [organizationId, user.id],
+      params: orgUserCacheKey({ user, organizationId }),
       fetch: getOrgUser,
       options: {
         skipMemCache: true,
       },
     });
   },
-  ({ user, organizationId }) => `${user?.id}:${organizationId}`,
+  (args) => orgUserCacheKey(args).join(':'),
 );
 
 // gets a user's access for a specific profile
@@ -106,15 +172,12 @@ export const getProfileAccessUser = memoize(
     user?: AccessUser;
     profileId: string;
   }): Promise<ProfileUserWithNormalizedRoles | undefined> => {
-    // No caller identity → fail closed (see getOrgAccessUser for why).
-    if (!user?.id) {
-      throw new UnauthorizedError();
-    }
+    const authUserIds = resolveAccessUserIds(user);
 
-    const profileUser = await db.query.profileUsers.findFirst({
+    const profileUserRows = await db.query.profileUsers.findMany({
       where: {
         profileId,
-        authUserId: user.id,
+        authUserId: { in: authUserIds },
       },
       with: {
         profile: {
@@ -138,21 +201,20 @@ export const getProfileAccessUser = memoize(
       },
     });
 
-    if (!profileUser) {
+    if (profileUserRows.length === 0) {
       return undefined;
     }
 
-    // Transform the relational data into normalized format for access-zones library
-    const normalizedRoles = getNormalizedRoles(profileUser.roles);
+    const { baseRow, normalizedRoles } = mergeGrantRows(profileUserRows, user);
 
-    const { roles: _, ...profileUserWithoutRoles } = profileUser;
+    const { roles: _, ...profileUserWithoutRoles } = baseRow;
     return {
       ...profileUserWithoutRoles,
-      profile: profileUser.profile,
+      profile: baseRow.profile,
       roles: normalizedRoles,
     };
   },
-  ({ user, profileId }) => `${user?.id}:${profileId}`,
+  (args) => profileUserCacheKey(args).join(':'),
 );
 
 /**
@@ -168,11 +230,11 @@ export const assertInstanceProfileAccess = async ({
   profilePermissions,
   orgFallbackPermissions,
 }: {
-  user: { id: string };
+  user?: AccessUser;
   instance: { profileId: string | null; ownerProfileId: string | null };
   profilePermissions: AccessZonePermissionInput;
   orgFallbackPermissions: AccessZonePermissionInput;
-}) => {
+}): Promise<ProfileUserWithNormalizedRoles | undefined> => {
   if (!instance.profileId) {
     throw new UnauthorizedError("You don't have access to do this");
   }
@@ -210,6 +272,8 @@ export const assertInstanceProfileAccess = async ({
       throw new UnauthorizedError("You don't have access to do this");
     }
   }
+
+  return profileUser;
 };
 
 export const getCurrentProfileId = async (authUserId: string) => {

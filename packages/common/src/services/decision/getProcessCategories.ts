@@ -17,7 +17,7 @@ export const getProcessCategories = async ({
   user,
 }: {
   processInstanceId: string;
-  user: User;
+  user: User | undefined;
 }): Promise<ProcessCategory[]> => {
   try {
     // Get the process instance with its process schema

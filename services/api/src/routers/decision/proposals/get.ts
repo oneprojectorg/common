@@ -1,14 +1,18 @@
-import { cache } from '@op/cache';
 import { Channels, getPermissionsOnProposal, getProposal } from '@op/common';
 import { proposalSchema } from '@op/common/client';
-import { ProposalStatus } from '@op/db/schema';
 import { logger } from '@op/logging';
 import { z } from 'zod';
 
-import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
+import { openProcedure, router } from '../../../trpcFactory';
 
 export const getProposalRouter = router({
-  getProposal: networkAuthenticatedProcedure()
+  /**
+   * NOTE: not wrapped in a shared `cache()` here. The cache key is keyed by
+   * profileId only (no caller identity), so a cache hit would serve the
+   * proposal to a non-member and bypass the authz inside `getProposal`. The
+   * proposal is fetched (and authorized) on every request.
+   */
+  getProposal: openProcedure()
     .input(
       z.object({
         profileId: z.uuid(),
@@ -20,17 +24,9 @@ export const getProposalRouter = router({
       const { profileId } = input;
 
       // Fetch proposal (includes documentContent)
-      const proposal = await cache({
-        type: 'profile',
-        params: [profileId],
-        fetch: () =>
-          getProposal({
-            profileId,
-            user,
-          }),
-        options: {
-          skipCacheWrite: (result) => result.status === ProposalStatus.DRAFT,
-        },
+      const proposal = await getProposal({
+        profileId,
+        user,
       });
 
       // Fetch permissions

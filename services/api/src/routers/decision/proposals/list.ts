@@ -6,11 +6,11 @@ import {
 } from '@op/common/client';
 
 import { proposalFilterSchema } from '../../../encoders/decision';
-import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
+import { openProcedure, router } from '../../../trpcFactory';
 
 export const listProposalsRouter = router({
-  /** Lists proposals for a given process instanc in the curent phase. */
-  listProposals: networkAuthenticatedProcedure()
+  /** Lists proposals for a given process instance in the current phase. */
+  listProposals: openProcedure()
     .input(proposalFilterSchema)
     .output(proposalListSchema)
     .query(async ({ ctx, input }) => {
@@ -27,7 +27,7 @@ export const listProposalsRouter = router({
       return proposalListSchema.parse(result);
     }),
   /** Lists all proposals for a given process instance, no phase filter. */
-  listAllProposals: networkAuthenticatedProcedure()
+  listAllProposals: openProcedure()
     .input(allProposalsFilterSchema)
     .output(allProposalsListSchema)
     .query(async ({ ctx, input }) => {

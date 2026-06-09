@@ -1,7 +1,12 @@
-import { AccessControlException } from 'access-zones';
+import { AccessControlException, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils/error';
-import { type ProfileTypePolicies, assertProfileTypeAccess } from '../access';
+import {
+  type AccessUser,
+  type ProfileTypePolicies,
+  assertProfileTypeAccess,
+} from '../access';
+import { assertProfileAccess } from '../assert';
 import {
   getProfileIdsForCollection,
   getScopesForResource,
@@ -90,4 +95,45 @@ export const assertResourceAccess = async ({
     policies,
   });
   return { parentProfileIds, parentProfileId };
+};
+
+// Fail-closed READ gate for the public list endpoints: requires `decisions:
+// READ` (own or public grant) on a parent profile, never the type-lenient
+// pass-through of assertCollectionAccess.
+export const assertCollectionReadAccess = async ({
+  user,
+  collectionId,
+}: {
+  user?: AccessUser;
+  collectionId: string;
+}): Promise<void> => {
+  const parentProfileIds = await getProfileIdsForCollection(collectionId);
+  if (parentProfileIds.length === 0) {
+    throw new NotFoundError('Collection', collectionId);
+  }
+
+  // Authorized if READ is granted on any parent profile — checked in parallel,
+  // first pass wins.
+  try {
+    await Promise.any(
+      [...new Set(parentProfileIds)].map((profileId) =>
+        assertProfileAccess({
+          user,
+          profileId,
+          permissions: { decisions: permission.READ },
+        }),
+      ),
+    );
+  } catch (error) {
+    // Promise.any rejects only once every parent rejected. Surface a real
+    // (non-denial) error if one slipped in; otherwise it's a clean denial.
+    if (error instanceof AggregateError) {
+      const unexpected = error.errors.find((e) => !isDenied(e));
+      if (unexpected) {
+        throw unexpected;
+      }
+      throw new UnauthorizedError("You don't have access to do this");
+    }
+    throw error;
+  }
 };

@@ -1,8 +1,8 @@
-import { EntityType } from '@op/db/schema';
 import { permission } from 'access-zones';
 
 import { decodeCursor, encodeCursor } from '../../utils';
-import { assertProfileTypeAccess } from '../access';
+import { type AccessUser } from '../access';
+import { assertProfileAccess } from '../assert';
 import type { CollectionListResult } from './schemas';
 import { RESOURCE_LIST_DEFAULT_LIMIT, RESOURCE_LIST_MAX_LIMIT } from './types';
 import { getCollectionsForProfile } from './utils';
@@ -10,22 +10,22 @@ import { getCollectionsForProfile } from './utils';
 type SortKeyCursor = { value: string };
 
 export const listCollections = async ({
-  authUserId,
+  user,
   profileId,
   limit = RESOURCE_LIST_DEFAULT_LIMIT,
   cursor,
 }: {
-  authUserId: string;
+  user?: AccessUser;
   profileId: string;
   limit?: number;
   cursor?: string | null;
 }): Promise<CollectionListResult> => {
-  await assertProfileTypeAccess({
-    user: { id: authUserId },
-    profileIds: [profileId],
-    policies: {
-      [EntityType.DECISION]: { decisions: permission.READ },
-    },
+  // Fail-closed: this endpoint is public, so require a decisions READ grant
+  // (own or public), not the type-lenient pass-through.
+  await assertProfileAccess({
+    user,
+    profileId,
+    permissions: { decisions: permission.READ },
   });
   const clampedLimit = Math.min(Math.max(1, limit), RESOURCE_LIST_MAX_LIMIT);
   const decoded = cursor ? decodeCursor<SortKeyCursor>(cursor) : undefined;

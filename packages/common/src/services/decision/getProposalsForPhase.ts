@@ -326,12 +326,12 @@ export async function getProposalIdsForPhase({
 export async function getPhaseProposalAndDraftIds({
   instance,
   phaseId,
-  authUserId,
+  authUserIds,
   db = defaultDb,
 }: {
   instance: PhaseScopedInstance;
   phaseId?: string;
-  authUserId: string;
+  authUserIds: string[];
   db?: DbClient;
 }): Promise<{ nonDraftIds: string[]; draftIds: string[] }> {
   const ctx = deriveInstanceContext(instance);
@@ -345,7 +345,7 @@ export async function getPhaseProposalAndDraftIds({
       db
         .select({ profileId: profileUsers.profileId })
         .from(profileUsers)
-        .where(eq(profileUsers.authUserId, authUserId)),
+        .where(inArray(profileUsers.authUserId, authUserIds)),
     ),
   );
 

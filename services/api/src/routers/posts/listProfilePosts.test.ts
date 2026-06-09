@@ -1,43 +1,47 @@
 import {
   accessTierGatingCell,
   describeAccessTierGating,
-  expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
+// These cells only assert the caller is admitted *past the tier gate* — i.e. the
+// rejection (if any) is not an `AccessTierError`. They don't exercise a real
+// resource, so a bogus profileId is enough: the open procedure lets the caller
+// through and the service rejects on the missing profile, which still counts as
+// passing the gate. Resource-level authorization is covered by postAuthorization.test.ts.
 describeAccessTierGating('posts.listProfilePosts', {
-  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
-    const caller = await callers.noJwt();
-    await expectFailsAccessTierGate(
-      caller.posts.listProfilePosts({ profileId: 'x' }),
-      'none',
-    );
-  }),
+  noJwt: accessTierGatingCell(
+    'admits no-JWT caller past the tier gate',
+    async ({ callers }) => {
+      const caller = await callers.noJwt();
+      await expectPassesAccessTierGate(
+        caller.posts.listProfilePosts({ profileId: 'x' }),
+      );
+    },
+  ),
 
   anonJwt: accessTierGatingCell(
-    'rejects anon-JWT caller',
+    'admits anon-JWT caller past the tier gate',
     async ({ callers }) => {
       const caller = await callers.anonJwt();
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.posts.listProfilePosts({ profileId: 'x' }),
-        'anon',
       );
     },
   ),
 
   userJwt: accessTierGatingCell(
-    'rejects user-JWT caller',
+    'admits user-JWT caller past the tier gate',
     async ({ callers }) => {
       const caller = await callers.userJwt();
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.posts.listProfilePosts({ profileId: 'x' }),
-        'user',
       );
     },
   ),
 
   networkJwt: accessTierGatingCell(
-    'admits network-JWT caller',
+    'admits network-JWT caller past the tier gate',
     async ({ callers }) => {
       const caller = await callers.networkJwt();
       await expectPassesAccessTierGate(

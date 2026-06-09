@@ -17,9 +17,8 @@ import type { User } from '@op/supabase/lib';
 import { createSBServiceClient } from '@op/supabase/server';
 import { checkPermission, permission } from 'access-zones';
 
-import { NotFoundError, UnauthorizedError } from '../../utils';
+import { NotFoundError } from '../../utils';
 import { assertInstanceProfileAccess, getProfileAccessUser } from '../access';
-import { assertUserByAuthId } from '../assert';
 import { generateProposalHtml } from './generateProposalHtml';
 import {
   type ProposalDocumentContent,
@@ -57,7 +56,7 @@ export const getProposal = async ({
   user,
 }: {
   profileId: string;
-  user: User;
+  user: User | undefined;
 }): Promise<
   Omit<Proposal, 'proposalData'> & {
     proposalData: ProposalData;
@@ -73,12 +72,6 @@ export const getProposal = async ({
     attachments: ProposalAttachmentWithDetails[];
   }
 > => {
-  const dbUser = await assertUserByAuthId(user.id);
-
-  if (!dbUser.currentProfileId) {
-    throw new UnauthorizedError('User must have an active profile');
-  }
-
   const proposal = await db.query.proposals.findFirst({
     where: {
       profileId,
@@ -107,18 +100,25 @@ export const getProposal = async ({
     throw new NotFoundError('Proposal', profileId);
   }
 
+  await assertInstanceProfileAccess({
+    user,
+    instance: proposal.processInstance,
+    profilePermissions: { decisions: permission.READ },
+    orgFallbackPermissions: [
+      { decisions: permission.READ },
+      { decisions: permission.ADMIN },
+    ],
+  });
+
   // Draft proposals are only visible to users with proposal-level access
   // (the creator and invited collaborators who have a profileUsers record).
   if (proposal.status === ProposalStatus.DRAFT) {
-    const hasProposalAccess = await db.query.profileUsers.findFirst({
-      where: {
-        profileId: proposal.profileId,
-        authUserId: user.id,
-      },
-      columns: { id: true },
+    const proposalProfileUser = await getProfileAccessUser({
+      user,
+      profileId: proposal.profileId,
     });
 
-    if (!hasProposalAccess) {
+    if (!proposalProfileUser) {
       throw new NotFoundError('Proposal', profileId);
     }
   }
@@ -190,18 +190,6 @@ export const getProposal = async ({
       },
     ]),
   ]);
-
-  // Check that user has read access on the instance's profile,
-  // falling back to org-level access for legacy proposals
-  await assertInstanceProfileAccess({
-    user: { id: user.id },
-    instance: proposal.processInstance,
-    profilePermissions: { decisions: permission.READ },
-    orgFallbackPermissions: [
-      { decisions: permission.READ },
-      { decisions: permission.ADMIN },
-    ],
-  });
 
   // Hidden proposals are only visible to admins on the instance's profile and
   // users with proposal-level access (creator and invited collaborators tracked
@@ -279,16 +267,9 @@ export const getPermissionsOnProposal = async ({
   user,
   proposal,
 }: {
-  user: User;
+  user: User | undefined;
   proposal: Proposal & { processInstance: ProcessInstance };
 }): Promise<{ access: DecisionRolePermissions }> => {
-  const dbUser = await assertUserByAuthId(user.id);
-
-  if (!dbUser.currentProfileId) {
-    throw new UnauthorizedError('User must have an active profile');
-  }
-
-  // Fetch the user's roles on the proposal's profile
   const profileUser = await getProfileAccessUser({
     user,
     profileId: proposal.profileId,

@@ -74,7 +74,7 @@ describe('resources.collections.list', () => {
       outsiderCaller.resources.collections.list({
         profileId: instance.profileId,
       }),
-    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 });
 

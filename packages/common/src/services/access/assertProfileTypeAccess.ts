@@ -5,6 +5,7 @@ import { assertAccess, permission } from 'access-zones';
 import { inArray } from 'drizzle-orm';
 
 import { ValidationError } from '../../utils/error';
+import { type AccessUser, resolveAccessUserIds } from './index';
 import { getNormalizedRoles } from './utils';
 
 // Per-profile-type permission policy. Omitting a type from the record means
@@ -15,7 +16,7 @@ export type ProfileTypePolicies = Partial<
 >;
 
 export type AssertProfileTypeAccessOptions = {
-  user: { id: string };
+  user?: AccessUser;
   profileIds: string[];
   policies: ProfileTypePolicies;
 };
@@ -54,9 +55,14 @@ export const assertProfileTypeAccess = async ({
     return;
   }
 
+  // A caller's effective access is the union of their own grants and any
+  // public (GLOBAL_USER_PUBLIC) grant; a no-JWT caller resolves only the public
+  // sentinel. Never a raw undefined (fail-open).
+  const authUserIds = resolveAccessUserIds(user);
+
   const profileUsers = await db.query.profileUsers.findMany({
     where: {
-      authUserId: user.id,
+      authUserId: { in: authUserIds },
       profileId: { in: gatedRows.map((row) => row.id) },
     },
     with: {
@@ -74,12 +80,15 @@ export const assertProfileTypeAccess = async ({
     },
   });
 
-  const rolesByProfileId = new Map<string, NormalizedRole[]>(
-    profileUsers.map((profileUser) => [
-      profileUser.profileId,
-      getNormalizedRoles(profileUser.roles),
-    ]),
-  );
+  // Merge roles across the caller's own and public grants per profile.
+  const rolesByProfileId = new Map<string, NormalizedRole[]>();
+  for (const profileUser of profileUsers) {
+    const existing = rolesByProfileId.get(profileUser.profileId) ?? [];
+    rolesByProfileId.set(profileUser.profileId, [
+      ...existing,
+      ...getNormalizedRoles(profileUser.roles),
+    ]);
+  }
 
   for (const row of gatedRows) {
     assertAccess(

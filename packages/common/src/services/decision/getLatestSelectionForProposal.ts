@@ -20,7 +20,7 @@ export const getLatestSelectionForProposal = async ({
   user,
 }: {
   proposalId: string;
-  user: User;
+  user: User | undefined;
 }): Promise<ProposalSelection | null> => {
   const proposal = await db.query.proposals.findFirst({
     where: { id: proposalId },
@@ -35,7 +35,7 @@ export const getLatestSelectionForProposal = async ({
   }
 
   await assertInstanceProfileAccess({
-    user: { id: user.id },
+    user,
     instance: proposal.processInstance,
     profilePermissions: { decisions: permission.READ },
     orgFallbackPermissions: [

@@ -30,7 +30,7 @@ export const listProposalSubmitters = async ({
   user,
 }: {
   input: ListProposalSubmittersInput;
-  user: User;
+  user: User | undefined;
 }) => {
   const { processInstanceId } = input;
 
