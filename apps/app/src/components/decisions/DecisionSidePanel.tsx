@@ -1,7 +1,7 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import { useUser } from '@/utils/UserProvider';
+import { useOptionalUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { DecisionAccess } from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
@@ -247,7 +247,9 @@ const UpdatesTabContent = ({
 
 const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
   const t = useTranslations();
-  const { user } = useUser();
+  // Public / anonymous visitors with read access can view updates but have no
+  // account; the feed renders read-only for them.
+  const { user } = useOptionalUser();
 
   const [paginatedData, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
     trpc.posts.listProfilePosts.useSuspenseInfiniteQuery(
@@ -294,7 +296,7 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
             <PostItem
               post={post}
               organization={null}
-              user={user}
+              user={user ?? undefined}
               withLinks={false}
               onReactionClick={handleReactionClick}
               onCommentClick={handleCommentClick}

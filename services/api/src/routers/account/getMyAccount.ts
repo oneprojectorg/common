@@ -1,20 +1,23 @@
 import { cache } from '@op/cache';
-import {
-  CommonError,
-  NotFoundError,
-  createUserByAuthId,
-  getUserByAuthId,
-} from '@op/common';
+import { CommonError, createUserByAuthId, getUserByAuthId } from '@op/common';
 import { z } from 'zod';
 
 import { userEncoder } from '../../encoders';
-import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
+import { openProcedure, router } from '../../trpcFactory';
 
 export const getMyAccount = router({
-  getMyAccount: networkAuthenticatedProcedure()
+  getMyAccount: openProcedure()
     .input(z.undefined())
-    .output(userEncoder)
+    .output(userEncoder.nullable())
     .query(async ({ ctx }) => {
+      // Public callers (no session) and anonymous sign-ins have no real
+      // account. Resolve to `null` instead of rejecting so public pages can
+      // render for non-users and anonymous visitors alike — authorization for
+      // anything they touch is enforced at the service layer.
+      if (!ctx.user || ctx.user.is_anonymous) {
+        return null;
+      }
+
       const { id, email } = ctx.user;
 
       const user = await cache({
@@ -32,14 +35,15 @@ export const getMyAccount = router({
       });
 
       if (!user) {
+        // No account row yet. A confirmed session carrying an email gets one
+        // created on first read; anything else resolves to no account.
         if (!email) {
-          throw new NotFoundError('User', id);
+          return null;
         }
 
-        // if there is no user but the user is authenticated, create one
         const newUserWithRelations = await createUserByAuthId({
           authUserId: id,
-          email: ctx.user.email!,
+          email,
         });
 
         if (!newUserWithRelations) {

@@ -50,6 +50,30 @@ describe.concurrent('getInstance', () => {
     expect(result.access?.vote).toBe(true);
   });
 
+  it('should signal public proposal eligibility', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const result = await caller.decision.getInstance({
+      instanceId: instance.instance.id,
+    });
+
+    expect(result.publicProposalsAllowed).toBe(true);
+  });
+
   it('should return limited access for a member (non-admin) user', async ({
     task,
     onTestFinished,

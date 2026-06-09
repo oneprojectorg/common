@@ -1,37 +1,44 @@
+import { expect } from 'vitest';
+
 import {
   accessTierGatingCell,
   describeAccessTierGating,
-  expectFailsAccessTierGate,
-  expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('account.getMyAccount', {
-  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
-    const caller = await callers.noJwt();
-    await expectFailsAccessTierGate(caller.account.getMyAccount(), 'none');
-  }),
+  noJwt: accessTierGatingCell(
+    'resolves null for a no-JWT (public) caller',
+    async ({ callers }) => {
+      const caller = await callers.noJwt();
+      await expect(caller.account.getMyAccount()).resolves.toBeNull();
+    },
+  ),
 
   anonJwt: accessTierGatingCell(
-    'rejects anon-JWT caller',
+    'resolves null for an anonymous caller',
     async ({ callers }) => {
       const caller = await callers.anonJwt();
-      await expectFailsAccessTierGate(caller.account.getMyAccount(), 'anon');
+      await expect(caller.account.getMyAccount()).resolves.toBeNull();
     },
   ),
 
   userJwt: accessTierGatingCell(
-    'rejects user-JWT caller',
+    'resolves the account for an out-of-network user',
     async ({ callers }) => {
       const caller = await callers.userJwt();
-      await expectFailsAccessTierGate(caller.account.getMyAccount(), 'user');
+      const account = await caller.account.getMyAccount();
+      expect(account).not.toBeNull();
+      expect(account?.authUserId).toBeDefined();
     },
   ),
 
   networkJwt: accessTierGatingCell(
-    'admits network-JWT caller',
+    'resolves the account for an in-network user',
     async ({ callers }) => {
       const caller = await callers.networkJwt();
-      await expectPassesAccessTierGate(caller.account.getMyAccount());
+      const account = await caller.account.getMyAccount();
+      expect(account).not.toBeNull();
+      expect(account?.authUserId).toBeDefined();
     },
   ),
 });

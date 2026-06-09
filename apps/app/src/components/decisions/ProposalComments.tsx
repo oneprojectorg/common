@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
+import { useOptionalUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
 import { Header3 } from '@op/ui/Header';
@@ -20,8 +20,13 @@ export function ProposalComments({
   readOnly?: boolean;
 }) {
   const t = useTranslations();
-  const { user } = useUser();
+  const { user } = useOptionalUser();
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Public / anonymous visitors have no account to compose as — they read
+  // comments only. (getMyAccount resolves to null for them, so PostUpdate,
+  // which needs the current profile, can't render anyway.)
+  const canCompose = !readOnly && !!user;
 
   const { data: commentsData, isLoading: commentsLoading } =
     trpc.posts.getPosts.useQuery({
@@ -52,12 +57,12 @@ export function ProposalComments({
           {t('Comments')} ({comments.length})
         </Header3>
 
-        {!readOnly && (
+        {canCompose && (
           <div className="mb-8">
             <Surface className="border-0 p-0 sm:border sm:p-4">
               <PostUpdate
                 profileId={proposal.profileId || undefined}
-                placeholder={`${t('Comment')}${user.currentProfile?.name ? ` as ${user.currentProfile?.name}` : ''}...`}
+                placeholder={`${t('Comment')}${user?.currentProfile?.name ? ` as ${user.currentProfile?.name}` : ''}...`}
                 label={t('Comment')}
                 onSuccess={scrollToComments}
                 proposalId={proposal.id}
@@ -83,7 +88,7 @@ export function ProposalComments({
                   <PostItem
                     post={comment}
                     organization={null}
-                    user={user}
+                    user={user ?? undefined}
                     withLinks={false}
                     onReactionClick={handleReactionClick}
                     className="sm:px-0"
@@ -99,9 +104,9 @@ export function ProposalComments({
             role="status"
             aria-label={t('No comments')}
           >
-            {readOnly
-              ? t('No comments yet.')
-              : t('No comments yet. Be the first to comment!')}
+            {canCompose
+              ? t('No comments yet. Be the first to comment!')
+              : t('No comments yet.')}
           </div>
         )}
       </div>

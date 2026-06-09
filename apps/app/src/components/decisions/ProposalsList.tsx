@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
+import { useOptionalUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import {
   type DecisionAccess,
@@ -598,7 +598,7 @@ export const ProposalsList = ({
   const isReviewPhase = currentPhase?.rules?.proposals?.review === true;
   const isVotingPhase = currentPhase?.rules?.voting?.submit === true;
   const t = useTranslations();
-  const { user } = useUser();
+  const { user } = useOptionalUser();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -616,7 +616,7 @@ export const ProposalsList = ({
   );
 
   // Get current user's profile ID for "My Proposals" filter
-  const currentProfileId = user.currentProfile?.id;
+  const currentProfileId = user?.currentProfile?.id;
   const [[categoriesData, voteStatus]] = trpc.useSuspenseQueries((t) => [
     t.decision.getCategories({
       processInstanceId: instanceId,

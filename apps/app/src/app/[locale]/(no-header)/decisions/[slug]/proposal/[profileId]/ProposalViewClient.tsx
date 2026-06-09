@@ -1,7 +1,7 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { useUser } from '@/utils/UserProvider';
+import { useOptionalUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { isLastPhase } from '@op/common/client';
 import { notFound } from 'next/navigation';
@@ -27,7 +27,7 @@ function ProposalViewPageContent({
   }
 
   const instance = decisionProfile.processInstance;
-  const { user } = useUser();
+  const { user } = useOptionalUser();
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhase = phases.find(
@@ -35,7 +35,7 @@ function ProposalViewPageContent({
   );
   const isInReviewPhase = currentPhase?.rules?.proposals?.review === true;
   const isAuthor =
-    !!user.currentProfile?.id &&
+    !!user?.currentProfile?.id &&
     proposal.submittedBy?.id === user.currentProfile.id;
   // Author, admin, or explicit review access — only in a review phase.
   const canSeeRevisions =

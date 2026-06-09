@@ -239,18 +239,17 @@ const WelcomeSkeleton = () => {
 
 const UserContent = async () => {
   const user = await getUser();
+  const currentProfile = user?.currentProfile;
 
   return (
     <>
       <PendingDecisionInvites />
       <ActiveDecisionsNotifications />
-      {user.currentProfile?.type === 'org' ? (
-        <OrgNotifications currentProfile={user.currentProfile} />
+      {currentProfile?.type === 'org' ? (
+        <OrgNotifications currentProfile={currentProfile} />
       ) : null}
       <hr />
-      <LandingScreenFeeds
-        showPostUpdate={user.currentProfile?.type === 'org'}
-      />
+      <LandingScreenFeeds showPostUpdate={currentProfile?.type === 'org'} />
     </>
   );
 };

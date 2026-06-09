@@ -54,6 +54,8 @@ export function StandardDecisionPage({
   const description =
     instance.description ?? instance.instanceData?.templateDescription;
   const canSubmitProposal = instance.access?.submitProposals ?? false;
+  const publicProposalsAllowed = instance.publicProposalsAllowed === true;
+  const canStartProposal = canSubmitProposal || publicProposalsAllowed;
   const isAdmin = Boolean(instance.access?.admin);
   // Non-admin landing on the last phase before the admin has confirmed
   // winners: show a results-pending notice instead of the open proposal list.
@@ -87,7 +89,8 @@ export function StandardDecisionPage({
           instanceId={instanceId}
           description={actionBarDescription}
           markup={!!translation?.additionalInfo}
-          showSubmitButton={allowProposals && canSubmitProposal}
+          showSubmitButton={allowProposals && canStartProposal}
+          publicProposalFlow={publicProposalsAllowed && !canSubmitProposal}
         />
       </div>
 

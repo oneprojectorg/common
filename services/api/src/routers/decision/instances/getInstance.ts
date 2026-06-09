@@ -81,6 +81,8 @@ export const getInstanceRouter = router({
         ...instance,
         instanceData: instance.instanceData,
         process: instance.process,
+        // TODO: Replace this with the real public-instance marker once it lands.
+        publicProposalsAllowed: true,
       });
     }),
 });

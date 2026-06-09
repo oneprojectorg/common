@@ -3,10 +3,10 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { getPublicUrl } from '@/utils';
 import { ClientOnly } from '@/utils/ClientOnly';
-import { useUser } from '@/utils/UserProvider';
+import { useOptionalUser, useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { EntityType, Profile } from '@op/api/encoders';
-import { useAuthLogout, useMediaQuery } from '@op/hooks';
+import { useAuthLogout, useAuthUser, useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { Avatar } from '@op/ui/Avatar';
 import { Button } from '@op/ui/Button';
@@ -336,6 +336,40 @@ const AvatarMenuContent = ({
 };
 
 export const UserAvatarMenu = ({ className }: { className?: string }) => {
+  // Public / anonymous visitors (e.g. on a public decision page) have no
+  // account — show a login affordance instead of the account menu.
+  const { user } = useOptionalUser();
+
+  if (!user) {
+    return <PublicUserMenu className={className} />;
+  }
+
+  return <AuthedUserAvatarMenu className={className} />;
+};
+
+const PublicUserMenu = ({ className }: { className?: string }) => {
+  const t = useTranslations();
+  const { data } = useAuthUser();
+
+  // An anonymous session is still a user — prompt them to create a real
+  // account ("Sign up") rather than to "Log in". Genuine no-session visitors
+  // still get "Log in".
+  const isAnonymous = data?.user?.is_anonymous === true;
+
+  return (
+    <Link
+      href="/login"
+      className={cn(
+        'text-sm font-semibold whitespace-nowrap text-primary-teal',
+        className,
+      )}
+    >
+      {isAnonymous ? t('Sign up') : t('Log in')}
+    </Link>
+  );
+};
+
+const AuthedUserAvatarMenu = ({ className }: { className?: string }) => {
   const { user } = useUser();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);

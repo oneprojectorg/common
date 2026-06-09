@@ -12,6 +12,19 @@ import { i18nConfig, routing } from './lib/i18n';
 
 const useUrl = OPURLConfig('APP');
 
+// Routes a visitor may reach without a session. Authorization for the
+// underlying data is enforced at the service layer (e.g. `getDecisionBySlug`
+// returns 403 for private instances), and the page itself decides whether to
+// render the public view or bounce a session-less visitor to /login. So rather
+// than gate these at the middleware, we let unauthenticated requests through.
+const isPublicRoute = (pathname: string) => {
+  // Strip an optional leading locale segment: `/en/decisions/...` → `/decisions/...`
+  const withoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, '');
+  return (
+    withoutLocale === '/decisions' || withoutLocale.startsWith('/decisions/')
+  );
+};
+
 export async function proxy(request: NextRequest, event: NextFetchEvent) {
   // Log request
   logger.info(...transformMiddlewareRequest(request));
@@ -123,7 +136,8 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   if (
     !user &&
     !request.nextUrl.pathname.startsWith('/login') &&
-    !(request.nextUrl.pathname === '/')
+    !(request.nextUrl.pathname === '/') &&
+    !isPublicRoute(request.nextUrl.pathname)
   ) {
     // no user, redirect to login with the original path preserved
     const url = request.nextUrl.clone();

@@ -1,6 +1,6 @@
 'use client';
 
-import { isPermissionAction, useUser } from '@/utils/UserProvider';
+import { isPermissionAction, useOptionalUser } from '@/utils/UserProvider';
 import type { ZonePermissions } from 'access-zones';
 import { ReactNode } from 'react';
 
@@ -21,7 +21,7 @@ export function AccessBoundary({
   fallback = null,
   children,
 }: AccessBoundaryProps) {
-  const { getPermissionsForProfile } = useUser();
+  const { getPermissionsForProfile } = useOptionalUser();
   const userPermissions: ZonePermissions = getPermissionsForProfile(profileId);
   const conditions = Array.isArray(required) ? required : [required];
 

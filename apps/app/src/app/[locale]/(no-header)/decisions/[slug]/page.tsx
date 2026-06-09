@@ -5,9 +5,10 @@ import {
 } from '@op/api/server';
 import { createClient } from '@op/api/serverClient';
 import { CommonError } from '@op/common';
+import { createSBServerClient } from '@op/supabase/server';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { forbidden, notFound } from 'next/navigation';
+import { forbidden, notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
@@ -37,7 +38,13 @@ export async function generateMetadata({
   }
 }
 
-const DecisionPageContent = async ({ slug }: { slug: string }) => {
+const DecisionPageContent = async ({
+  slug,
+  locale,
+}: {
+  slug: string;
+  locale: string;
+}) => {
   const [client, { utils, queryClient }] = await Promise.all([
     createClient(),
     createServerUtils(),
@@ -51,6 +58,21 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
   } catch (error) {
     const cause = error instanceof Error ? error.cause : null;
     if (cause instanceof CommonError && cause.statusCode === 403) {
+      // Private decision. A session-less visitor may just need to log in to
+      // gain access, so send them to /login with the path preserved. A caller
+      // who already has a session (real or anonymous) but still lacks access
+      // gets a forbidden page.
+      const supabase = await createSBServerClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        redirect(
+          `/login?redirect=${encodeURIComponent(`/${locale}/decisions/${slug}`)}`,
+        );
+      }
+
       forbidden();
     }
     if (cause instanceof CommonError && cause.statusCode === 404) {
@@ -107,11 +129,11 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
 const DecisionPage = async ({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; locale: string }>;
 }) => {
-  const { slug } = await params;
+  const { slug, locale } = await params;
 
-  return <DecisionPageContent slug={slug} />;
+  return <DecisionPageContent slug={slug} locale={locale} />;
 };
 
 export default DecisionPage;

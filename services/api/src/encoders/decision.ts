@@ -244,6 +244,7 @@ export const processInstanceWithSchemaEncoder = createSelectSchema(
     proposalCount: z.number().optional(),
     participantCount: z.number().optional(),
     access: decisionAccessEncoder.optional(),
+    publicProposalsAllowed: z.boolean().optional(),
     selectionsAreConfirmed: z.boolean().optional(),
   });
 

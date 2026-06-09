@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { createSBBrowserClient } from '@op/supabase/client';
 import { Button } from '@op/ui/Button';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
@@ -21,38 +22,57 @@ export const DecisionActionBar = ({
   label,
   markup = false,
   showSubmitButton = false,
+  publicProposalFlow = false,
 }: {
   instanceId: string;
   description?: string;
   label?: string;
   markup?: boolean;
   showSubmitButton?: boolean;
+  publicProposalFlow?: boolean;
 }) => {
   const t = useTranslations();
   const { slug } = useParams();
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
+  const supabase = createSBBrowserClient();
 
-  const createProposalMutation = trpc.decision.createProposal.useMutation({
-    onSuccess: (proposal) => {
-      // Navigate to edit the newly created draft proposal
+  const createProposalMutation = trpc.decision.createProposal.useMutation();
+  const createPublicProposalMutation =
+    trpc.decision.createPublicProposal.useMutation();
+
+  const handleCreateProposal = async () => {
+    setIsCreating(true);
+
+    try {
+      // Empty draft — the user fills it in via the edit page.
+      const input = { processInstanceId: instanceId, proposalData: {} };
+
+      let proposal;
+      if (publicProposalFlow) {
+        // The public endpoint joins the instance server-side, so ensure the
+        // visitor has at least an anonymous session to identify them.
+        const { data } = await supabase.auth.getUser();
+        if (!data.user) {
+          const { error } = await supabase.auth.signInAnonymously();
+          if (error) {
+            throw error;
+          }
+        }
+
+        proposal = await createPublicProposalMutation.mutateAsync(input);
+      } else {
+        proposal = await createProposalMutation.mutateAsync(input);
+      }
+
       router.push(`/decisions/${slug}/proposal/${proposal.profileId}/edit`);
-    },
-    onError: (error) => {
+    } catch (error) {
       setIsCreating(false);
       toast.error({
         title: t('Failed to create proposal'),
-        message: error.message,
+        message: error instanceof Error ? error.message : undefined,
       });
-    },
-  });
-
-  const handleCreateProposal = () => {
-    setIsCreating(true);
-    createProposalMutation.mutate({
-      processInstanceId: instanceId,
-      proposalData: {}, // Empty draft - user will fill in via edit page
-    });
+    }
   };
 
   return (
