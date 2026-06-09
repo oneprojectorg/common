@@ -7,6 +7,7 @@
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
     "a11y:baseline": "playwright test --project=a11y --workers=1 --reporter=list",
+    "a11y:seed": "A11Y_SEED=1 playwright test --project=a11y --workers=1 --reporter=list",
     "format:check": "oxfmt --check",
     "supabase:migrate": "tsx supabase-e2e.ts migrate",
     "supabase:reset": "tsx supabase-e2e.ts reset",
