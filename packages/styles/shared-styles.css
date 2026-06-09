@@ -112,32 +112,32 @@
   --text-title-xl--font-weight: 300;
   --text-title-xl--letter-spacing: -0.0625rem;
 
-  --text-title-lg: 1.75rem;
+  --text-title-lg: 1.875rem;
   --text-title-lg--line-height: 110%;
   --text-title-lg--font-weight: 300;
   --text-title-lg--letter-spacing: -0.02625rem;
 
-  --text-title-md: 1.5rem;
+  --text-title-md: 1.625rem;
   --text-title-md--line-height: 110%;
   --text-title-md--font-weight: 300;
   --text-title-md--letter-spacing: -0.0225rem;
 
-  --text-title-base: 1.25rem;
+  --text-title-base: 1.375rem;
   --text-title-base--line-height: 110%;
   --text-title-base--font-weight: 300;
   --text-title-base--letter-spacing: -0.01875rem;
 
-  --text-title-sm: 1rem;
+  --text-title-sm: 1.25rem;
   --text-title-sm--line-height: 130%;
   --text-title-sm--font-weight: 300;
   --text-title-sm--letter-spacing: -0.015rem;
 
-  --text-title-xs: 0.875rem;
+  --text-title-xs: 1rem;
   --text-title-xs--line-height: 130%;
   --text-title-xs--font-weight: 300;
   --text-title-xs--letter-spacing: -0.01313rem;
 
-  --text-title-xxs: 0.75rem;
+  --text-title-xxs: 0.875rem;
   --text-title-xxs--line-height: 130%;
   --text-title-xxs--font-weight: 300;
   --text-title-xxs--letter-spacing: -0.01125rem;
@@ -153,23 +153,18 @@
   --text-title-sm12--letter-spacing: -0.01125rem;
 
   /* Body sizes (override defaults with custom weights) */
-  --text-xs: 0.625rem;
   --text-xs--line-height: 150%;
   --text-xs--font-weight: 400;
 
-  --text-sm: 0.75rem;
   --text-sm--line-height: 150%;
   --text-sm--font-weight: 400;
 
-  --text-base: 0.875rem;
   --text-base--line-height: 150%;
   --text-base--font-weight: 400;
 
-  --text-lg: 1rem;
   --text-lg--line-height: 150%;
   --text-lg--font-weight: 400;
 
-  --text-xl: 1.125rem;
   --text-xl--line-height: 150%;
   --text-xl--font-weight: 400;
 
