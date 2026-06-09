@@ -1,0 +1,57 @@
+import type { ModerationItemType as ModerationItemTypeEnum } from '@op/db/schema';
+
+/** Vendor-agnostic moderation contracts. Concrete providers live in `providers/`. */
+
+export type ModerationCategory =
+  | 'profanity'
+  | 'sexual'
+  | 'hate'
+  | 'violence'
+  | 'harassment'
+  // Verdict-based platforms (Lasso/Checkstep) don't always classify; `other`
+  // carries a decisive score when only an allow/block verdict is available.
+  | 'other';
+
+export type ModerationScores = Partial<Record<ModerationCategory, number>>;
+
+export interface ModerationDecision {
+  passed: boolean;
+  scores: ModerationScores;
+  total: number;
+  threshold: number;
+}
+
+/** The moderation vendors we support; the active one is chosen by env. */
+export type ModerationVendor = 'hive' | 'lasso' | 'checkstep';
+
+/** What kind of item is moderated. Derived from the db `ModerationItemType`
+ *  enum (as its value union) so the service and schema never drift. */
+export type ModerationItemType = `${ModerationItemTypeEnum}`;
+
+/**
+ * Reference to the record on the external provider. The dispute/review URL is
+ * generated downstream from `providerRecordId` (the provider is fixed by
+ * config). Only platform vendors (Lasso/Checkstep) expose a record id; pure
+ * classifiers (Hive) do not.
+ */
+export interface ModerationProviderReference {
+  providerRecordId?: string;
+}
+
+export interface ModerationSubmission {
+  itemType: ModerationItemType;
+  itemId: string;
+  content: string;
+}
+
+/**
+ * Scores text (sync gate) and — for platform vendors — submits content for
+ * async review, returning a click-through reference. `submitForReview` is
+ * optional: present on Lasso/Checkstep, absent on Hive.
+ */
+export interface ModerationProvider {
+  scoreText(input: { content: string }): Promise<ModerationScores>;
+  submitForReview?(
+    input: ModerationSubmission,
+  ): Promise<ModerationProviderReference>;
+}
