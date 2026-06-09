@@ -64,8 +64,6 @@ export function sanitizeS3Filename(filename: string) {
   return sanitizeForS3(filename, '_');
 }
 
-export { MAX_FILE_SIZE } from './storage';
-
 /** Short, deterministic digest of a search string for cache keys. */
 export function hashSearch(search: string) {
   return crypto.createHash('md5').update(search).digest('hex').substring(0, 16);

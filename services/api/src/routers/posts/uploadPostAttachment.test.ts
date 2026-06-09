@@ -10,9 +10,8 @@ describeAccessTierGating('posts.uploadPostAttachment', {
     const caller = await callers.noJwt();
     await expectFailsAccessTierGate(
       caller.posts.uploadPostAttachment({
-        file: 'x',
+        path: 'x',
         fileName: 'x',
-        mimeType: 'x',
       }),
       'none',
     );
@@ -24,9 +23,8 @@ describeAccessTierGating('posts.uploadPostAttachment', {
       const caller = await callers.anonJwt();
       await expectFailsAccessTierGate(
         caller.posts.uploadPostAttachment({
-          file: 'x',
+          path: 'x',
           fileName: 'x',
-          mimeType: 'x',
         }),
         'anon',
       );
@@ -39,9 +37,8 @@ describeAccessTierGating('posts.uploadPostAttachment', {
       const caller = await callers.userJwt();
       await expectFailsAccessTierGate(
         caller.posts.uploadPostAttachment({
-          file: 'x',
+          path: 'x',
           fileName: 'x',
-          mimeType: 'x',
         }),
         'user',
       );
@@ -54,9 +51,8 @@ describeAccessTierGating('posts.uploadPostAttachment', {
       const caller = await callers.networkJwt();
       await expectPassesAccessTierGate(
         caller.posts.uploadPostAttachment({
-          file: 'x',
+          path: 'x',
           fileName: 'x',
-          mimeType: 'x',
         }),
       );
     },
