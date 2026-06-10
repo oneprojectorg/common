@@ -50,7 +50,9 @@ const accordionStyles = tv({
         ],
         indicator: 'text-muted-fg',
         content: '',
-        contentInner: 'p-4',
+        // No inner padding so content aligns flush with the trigger text.
+        // Consumers that need spacing wrap the children themselves.
+        contentInner: '',
       },
       unstyled: {},
     },
