@@ -27,7 +27,8 @@ export enum ModerationItemType {
 
 /** Lifecycle of a single flag (distinct from the item's own status). */
 export enum ModerationFlagStatus {
-  FLAGGED = 'flagged', // open flag
+  PENDING = 'pending', // submitted to the provider, awaiting the async verdict
+  FLAGGED = 'flagged', // open flag (provider/user deemed it disallowed)
   CONFIRMED = 'confirmed', // admin confirmed the flag
   DISMISSED = 'dismissed', // false positive
   DISPUTED = 'disputed', // owner contested; awaiting admin
@@ -38,6 +39,11 @@ export enum ModerationSource {
   AUTOMATED = 'automated', // async provider scoring
   MANUAL = 'manual', // a human / admin
 }
+
+/** Provider per-category scores (0-1). Keys mirror the moderation service's
+ *  `ModerationCategory`; kept as a string record here so the schema doesn't
+ *  depend on the service layer. */
+export type ModerationScoresData = Record<string, number | undefined>;
 
 export const moderationItemTypeEnum = pgEnum(
   'moderation_item_type',
@@ -78,7 +84,7 @@ export const moderationFlags = pgTable(
       .default(ModerationSource.AUTOMATED),
 
     // Provider's per-category scores and a human-readable summary.
-    scores: jsonb('scores'),
+    scores: jsonb('scores').$type<ModerationScoresData>(),
     reason: text('reason'),
 
     // The record id on the external provider. The dispute/review URL is
@@ -104,11 +110,17 @@ export const moderationFlags = pgTable(
     ...serviceRolePolicies,
     // Per-item flag history (all statuses).
     index('moderation_flags_item_idx').on(table.itemType, table.itemId),
-    // Hot "is this item currently flagged?" lookup, and enforces at most one
-    // open flag per item (race-safe idempotency for flagContent).
+    // Hot "does this item have an open review?" lookup, and enforces at most
+    // one open flag per item (race-safe idempotency). Open = not yet resolved,
+    // i.e. `pending` or `flagged`. The predicate is written as "not a terminal
+    // status" rather than naming `pending`/`flagged` so it never references a
+    // freshly-added enum label: drizzle runs all pending migrations in one
+    // transaction, and Postgres rejects using a value added by `ALTER TYPE ...
+    // ADD VALUE` in the same transaction. Listing only pre-existing terminal
+    // labels keeps the enum-add and this index safe to co-locate.
     uniqueIndex('moderation_flags_open_item_uniq')
       .on(table.itemType, table.itemId)
-      .where(sql`status = 'flagged'`),
+      .where(sql`status NOT IN ('confirmed', 'dismissed', 'disputed')`),
     // Admin review queue, per-kind tabs: filter by item kind + status, newest first.
     index('moderation_flags_item_status_created_at_idx').on(
       table.itemType,

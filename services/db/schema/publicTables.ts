@@ -160,6 +160,13 @@ export {
 export type { ModerationFlag } from './tables/moderationFlags.sql';
 
 export {
+  ModerationSubmissionVerdict,
+  moderationSubmissionVerdictEnum,
+  moderationSubmissions,
+} from './tables/moderationSubmissions.sql';
+export type { ModerationSubmission } from './tables/moderationSubmissions.sql';
+
+export {
   proposalHistory,
   proposalHistoryRelations,
 } from './tables/proposalHistory.sql';
