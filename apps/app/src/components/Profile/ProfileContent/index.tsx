@@ -51,7 +51,7 @@ const FocusAreas = ({
 
   return (
     <section className="flex flex-col gap-2 text-neutral-charcoal">
-      <Header3>{t('Focus Areas')}</Header3>
+      <Header3 className="font-sans">{t('Focus Areas')}</Header3>
       <TagGroup>
         {focusAreas.map((term) => (
           <Tag key={term.label}>{term.label}</Tag>
@@ -97,7 +97,7 @@ const CommunitiesServed = ({ profileId }: { profileId: string }) => {
 
   return (
     <section className="flex flex-col gap-2 text-neutral-charcoal">
-      <Header3>{t('Communities We Serve')}</Header3>
+      <Header3 className="font-sans">{t('Communities We Serve')}</Header3>
       <TagGroup>
         {communitiesServed.map((term) => (
           <Tag key={term.label}>{term.label}</Tag>
@@ -128,7 +128,7 @@ const ProfileAbout = ({
       <div className="flex flex-col gap-4 rounded border p-4 sm:rounded-none sm:border-none sm:p-0">
         {email || website ? (
           <section className="flex flex-col gap-2">
-            <Header3>{t('Contact')}</Header3>
+            <Header3 className="font-sans">{t('Contact')}</Header3>
             <div className="flex flex-col text-teal">
               {website ? (
                 <ContactLink>
@@ -177,7 +177,9 @@ const ProfileAbout = ({
 
         {orgType ? (
           <section className="flex flex-col gap-2 text-neutral-charcoal">
-            <Header3>{t('Organizational Status')}</Header3>
+            <Header3 className="font-sans">
+              {t('Organizational Status')}
+            </Header3>
             <TagGroup>
               <Tag className="capitalize">{orgType}</Tag>
             </TagGroup>
@@ -186,14 +188,14 @@ const ProfileAbout = ({
 
         {mission ? (
           <section className="flex flex-col gap-2 text-neutral-charcoal">
-            <Header3>{t('Mission Statement')}</Header3>
+            <Header3 className="font-sans">{t('Mission Statement')}</Header3>
             <p>{mission}</p>
           </section>
         ) : null}
 
         {strategies?.length > 0 ? (
           <section className="flex flex-col gap-2 text-neutral-charcoal">
-            <Header3>{t('Strategies')}</Header3>
+            <Header3 className="font-sans">{t('Strategies')}</Header3>
             <TagGroup>
               {strategies.map((strategy) =>
                 strategy ? (
@@ -211,7 +213,7 @@ const ProfileAbout = ({
           <Suspense
             fallback={
               <section className="flex flex-col gap-2 text-neutral-charcoal">
-                <Header3>{t('Focus Areas')}</Header3>
+                <Header3 className="font-sans">{t('Focus Areas')}</Header3>
                 <div className="flex flex-wrap gap-2">
                   <Skeleton className="h-6 w-16" />
                   <Skeleton className="h-6 w-20" />
@@ -232,7 +234,9 @@ const ProfileAbout = ({
           <Suspense
             fallback={
               <section className="flex flex-col gap-2 text-neutral-charcoal">
-                <Header3>{t('Communities We Serve')}</Header3>
+                <Header3 className="font-sans">
+                  {t('Communities We Serve')}
+                </Header3>
                 <div className="flex flex-wrap gap-2">
                   <Skeleton className="h-6 w-18" />
                   <Skeleton className="h-6 w-24" />

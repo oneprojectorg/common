@@ -31,7 +31,7 @@ export const MediaDisplay = ({
 
   if (title && mimeType?.match(/application\/pdf/)) {
     detailComponents.push(
-      <Header3 key="title" className="text-base text-neutral-black">
+      <Header3 key="title" className="font-sans text-base text-neutral-black">
         {title}
       </Header3>,
     );

@@ -16,6 +16,6 @@ export const screens = {
  */
 export const headingClasses = {
   h1: 'font-serif text-title-sm sm:text-title-lg',
-  h2: 'text-title-lg text-neutral-black',
-  h3: 'text-title-base text-neutral-black',
+  h2: 'font-serif text-title-lg text-neutral-black',
+  h3: 'font-serif text-title-base text-neutral-black',
 } as const;
