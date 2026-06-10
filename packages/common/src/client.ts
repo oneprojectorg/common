@@ -135,33 +135,63 @@ const LOGIN_PATH_RE = /^\/(?:[a-z]{2}\/)?login(\/|$|\?)/;
 // — `//host`, `/\host`, `/\t//host`, etc. — and must be rejected.
 const REDIRECT_VALIDATOR_BASE = 'https://op-redirect-validator.invalid';
 
-export function isSafeRedirectPath(path: string | null): path is string {
-  if (!path?.startsWith('/')) {
-    return false;
+/**
+ * Validate a relative redirect path and return its safe canonical (decoded)
+ * form. Accepts both already-decoded paths (the common case after
+ * `searchParams.get`) and percent-encoded paths like `%2Fen%2Fprofile%2Fx` —
+ * the latter happens when the redirect param arrives without being URL-decoded
+ * (e.g. read off `request.url` manually, or set on a downstream Location
+ * header). Returns `null` if the path is unsafe.
+ *
+ * Callers should redirect to the **returned** string, not the original input —
+ * `redirect()` / `new URL()` don't decode percent sequences, so passing the
+ * encoded form lands the user on a literal-`%2F` path that won't route.
+ */
+export function getSafeRedirectPath(path: string | null): string | null {
+  if (path == null) {
+    return null;
+  }
+  // Decode percent-encoded paths once. We only decode when the input doesn't
+  // already look like a path so legitimate paths with embedded `%XX` sequences
+  // (e.g. `/foo%20bar`) are left alone.
+  let candidate = path;
+  if (candidate.startsWith('%')) {
+    try {
+      candidate = decodeURIComponent(candidate);
+    } catch {
+      return null;
+    }
+  }
+  if (!candidate.startsWith('/')) {
+    return null;
   }
   // Reject backslashes and ASCII control characters anywhere in the path.
   // The WHATWG URL parser normalizes `\` to `/` and strips control chars,
   // which is how `/\evil.com` and `/\t//evil.com` produce a foreign origin
   // when handed to NextResponse.redirect / window.location.href.
-  if (/[\\\x00-\x1f\x7f]/.test(path)) {
-    return false;
+  if (/[\\\x00-\x1f\x7f]/.test(candidate)) {
+    return null;
   }
   let resolved: URL;
   try {
-    resolved = new URL(path, REDIRECT_VALIDATOR_BASE);
+    resolved = new URL(candidate, REDIRECT_VALIDATOR_BASE);
   } catch {
-    return false;
+    return null;
   }
   // Belt-and-braces: if the path resolved to a different origin (e.g. via a
   // future parser quirk the string check above missed), reject it.
   if (resolved.origin !== REDIRECT_VALIDATOR_BASE) {
-    return false;
+    return null;
   }
-  if (LOGIN_PATH_RE.test(path)) {
-    return false;
+  if (LOGIN_PATH_RE.test(candidate)) {
+    return null;
   }
-  if (path.startsWith('/api/')) {
-    return false;
+  if (candidate.startsWith('/api/')) {
+    return null;
   }
-  return true;
+  return candidate;
+}
+
+export function isSafeRedirectPath(path: string | null): path is string {
+  return getSafeRedirectPath(path) !== null;
 }
