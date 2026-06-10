@@ -14,7 +14,11 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       capture_pageview: false, // We capture pageviews manually
       capture_pageleave: true,
       capture_exceptions: true,
-      __add_tracing_headers: true,
+      // Off: this patches global fetch and adds X-POSTHOG-* headers to every
+      // request unconditionally (no per-host control), which trips CORS
+      // preflight on any cross-origin fetch (e.g. MapTiler map tiles/styles).
+      __add_tracing_headers: false,
+      // debug: process.env.NODE_ENV === 'development',
     });
   }, []);
 

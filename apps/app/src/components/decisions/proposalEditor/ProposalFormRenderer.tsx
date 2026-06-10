@@ -22,10 +22,10 @@ import {
 } from '../../collaboration';
 import { FieldHeader } from '../forms/FieldHeader';
 import type { FieldDescriptor } from '../forms/types';
+import { LocationMapView } from '../location/LocationMapView';
 import {
   ReadonlyBudgetField,
   ReadonlyDropdownField,
-  ReadonlyLocationField,
   ReadonlyTextField,
   ReadonlyTitleField,
 } from './ReadonlyProposalFields';
@@ -353,12 +353,13 @@ function renderField(
             : ((draft[key] as ProposalDraftFields['location']) ?? undefined);
 
         return (
-          <ReadonlyLocationField
-            value={location ? `${location.lat}, ${location.lng}` : null}
-            title={schema.title}
-            description={schema.description}
-            placeholder={t('Add location')}
-          />
+          <div className="flex flex-col gap-2">
+            <FieldHeader
+              title={schema.title}
+              description={schema.description}
+            />
+            <LocationMapView value={location ?? null} />
+          </div>
         );
       }
 

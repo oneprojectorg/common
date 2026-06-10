@@ -3,16 +3,33 @@
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import type { LocationData } from '@op/common/client';
 import { normalizeLocation } from '@op/common/client';
-import { NumberField } from '@op/ui/NumberField';
 import { useEffect, useRef, useState } from 'react';
 
-import { useTranslations } from '@/lib/i18n';
+import { LocationMapField } from '@/components/decisions/location/LocationMapField';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
 
 interface CollaborativeLocationFieldProps {
   initialValue?: LocationData | null;
   onChange?: (location: LocationData | null) => void;
+}
+
+/**
+ * Serializes the persisted fields of a `LocationData` for the shared fragment.
+ * Empty string represents "no location".
+ */
+function serializeLocation(location: LocationData | null): string {
+  if (!location) {
+    return '';
+  }
+  return JSON.stringify({
+    lat: location.lat,
+    lng: location.lng,
+    address: location.address,
+    placeId: location.placeId,
+    placeLat: location.placeLat,
+    placeLng: location.placeLng,
+  });
 }
 
 /**
@@ -32,47 +49,37 @@ function parseLocationText(text: string): LocationData | null {
 }
 
 /**
- * Collaborative location input synced via Yjs XmlFragment.
- * Stores `{ lat, lng }` as a JSON string in the shared doc, mirroring the
- * budget field's JSON-in-fragment pattern.
+ * Collaborative location input synced via Yjs XmlFragment. Stores the full
+ * `{ lat, lng, address, placeId }` as a JSON string in the shared doc,
+ * mirroring the budget field's JSON-in-fragment pattern.
  *
- * Interim experience: plain Latitude/Longitude number inputs. A map picker
- * and address search will replace these in a follow-up.
- *
- * Partial entry (only one coordinate) lives in local state — the fragment
- * only ever stores a complete pair, so validation and persistence never see
- * half a location.
+ * The Yjs wiring lives here; the map UI itself is {@link LocationMapField}.
  */
 export function CollaborativeLocationField({
   initialValue = null,
   onChange,
 }: CollaborativeLocationFieldProps) {
-  const t = useTranslations();
   const { ydoc } = useCollaborativeDoc();
 
   const [locationText, setLocationText] = useCollaborativeFragment(
     ydoc,
     'location',
-    initialValue
-      ? JSON.stringify({ lat: initialValue.lat, lng: initialValue.lng })
-      : '',
+    serializeLocation(initialValue),
   );
 
-  const initialLocation = parseLocationText(locationText);
-  const [lat, setLat] = useState<number | null>(initialLocation?.lat ?? null);
-  const [lng, setLng] = useState<number | null>(initialLocation?.lng ?? null);
+  const [location, setLocation] = useState<LocationData | null>(() =>
+    parseLocationText(locationText),
+  );
 
-  // Sync remote fragment changes into the local inputs. Local writes update
-  // the ref first so this only fires for changes made elsewhere.
+  // Sync remote fragment changes into local state. Local writes update the ref
+  // first so this only fires for changes made elsewhere.
   const lastSeenTextRef = useRef(locationText);
   useEffect(() => {
     if (locationText === lastSeenTextRef.current) {
       return;
     }
     lastSeenTextRef.current = locationText;
-    const remote = parseLocationText(locationText);
-    setLat(remote?.lat ?? null);
-    setLng(remote?.lng ?? null);
+    setLocation(parseLocationText(locationText));
   }, [locationText]);
 
   const onChangeRef = useRef(onChange);
@@ -94,42 +101,14 @@ export function CollaborativeLocationField({
     onChangeRef.current?.(emitted);
   }, [locationText]);
 
-  const handleCoordinateChange = (
-    nextLat: number | null,
-    nextLng: number | null,
-  ) => {
-    setLat(nextLat);
-    setLng(nextLng);
-
-    const nextText =
-      nextLat !== null && nextLng !== null
-        ? JSON.stringify({ lat: nextLat, lng: nextLng })
-        : '';
-
+  const handleChange = (next: LocationData | null) => {
+    setLocation(next);
+    const nextText = serializeLocation(next);
     if (nextText !== lastSeenTextRef.current) {
       lastSeenTextRef.current = nextText;
       setLocationText(nextText);
     }
   };
 
-  return (
-    <div className="flex max-w-md flex-col gap-4 sm:flex-row">
-      <NumberField
-        label={t('Latitude')}
-        value={lat}
-        onChange={(value) => handleCoordinateChange(value, lng)}
-        minValue={-90}
-        maxValue={90}
-        className="min-w-0 flex-1"
-      />
-      <NumberField
-        label={t('Longitude')}
-        value={lng}
-        onChange={(value) => handleCoordinateChange(lat, value)}
-        minValue={-180}
-        maxValue={180}
-        className="min-w-0 flex-1"
-      />
-    </div>
-  );
+  return <LocationMapField value={location} onChange={handleChange} />;
 }

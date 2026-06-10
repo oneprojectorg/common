@@ -250,6 +250,7 @@ export function ProposalPreview({
         <ProposalContentRenderer
           proposalTemplate={proposalTemplate}
           htmlContent={htmlContent}
+          location={proposal.proposalData?.location}
           translatedMeta={translatedMeta}
         />
       ) : (

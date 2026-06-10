@@ -42,6 +42,7 @@ if (REDIS_URL) {
 const TypeMap = {
   search: 'search',
   geonames: 'geonames',
+  reverseGeocode: 'reverseGeocode',
   organization: 'org',
   allowList: 'allowList',
   linkPreview: 'linkPreview',

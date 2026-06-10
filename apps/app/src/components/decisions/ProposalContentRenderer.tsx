@@ -1,18 +1,21 @@
 'use client';
 
-import type { ProposalTemplateSchema } from '@op/common/client';
+import type { LocationData, ProposalTemplateSchema } from '@op/common/client';
 import { viewerProseStyles } from '@op/ui/RichTextEditor';
 import { useMemo } from 'react';
 
 import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { compileProposalSchema } from './forms/proposal';
 import type { FieldDescriptor } from './forms/types';
+import { LocationMapView } from './location/LocationMapView';
 
 interface ProposalContentRendererProps {
   /** The proposal template schema (from processSchema or instanceData). */
   proposalTemplate: ProposalTemplateSchema;
   /** Pre-rendered HTML per fragment key (from getProposal). */
   htmlContent?: Record<string, string>;
+  /** Structured location value, rendered as a read-only map for location fields. */
+  location?: LocationData | null;
   /** Optional translated field titles, descriptions, and option labels keyed by field key. */
   translatedMeta?: {
     fieldTitles: Record<string, string>;
@@ -32,6 +35,7 @@ interface ProposalContentRendererProps {
 export function ProposalContentRenderer({
   proposalTemplate,
   htmlContent,
+  location,
   translatedMeta,
 }: ProposalContentRendererProps) {
   const dynamicFields = useMemo(() => {
@@ -47,36 +51,55 @@ export function ProposalContentRenderer({
 
   return (
     <div className="space-y-8">
-      {dynamicFields.map((field) => (
-        <ViewField
-          key={field.key}
-          field={field}
-          html={htmlContent?.[field.key]}
-          translatedTitle={translatedMeta?.fieldTitles[field.key]}
-          translatedDescription={translatedMeta?.fieldDescriptions[field.key]}
-        />
-      ))}
+      {dynamicFields.map((field) => {
+        const translatedTitle = translatedMeta?.fieldTitles[field.key];
+        const translatedDescription =
+          translatedMeta?.fieldDescriptions[field.key];
+
+        // Location is structured data, not HTML — render it as a read-only map.
+        if (field.format === 'location') {
+          return (
+            <FieldChrome
+              key={field.key}
+              field={field}
+              translatedTitle={translatedTitle}
+              translatedDescription={translatedDescription}
+            >
+              <LocationMapView value={location ?? null} />
+            </FieldChrome>
+          );
+        }
+
+        return (
+          <ViewField
+            key={field.key}
+            field={field}
+            html={htmlContent?.[field.key]}
+            translatedTitle={translatedTitle}
+            translatedDescription={translatedDescription}
+          />
+        );
+      })}
     </div>
   );
 }
 
 /**
- * Renders a single field in view mode: label + description chrome,
- * then the pre-rendered HTML content for that fragment.
+ * Title + description chrome shared by field renderers, wrapping arbitrary
+ * field content (HTML, a map, etc.).
  */
-function ViewField({
+function FieldChrome({
   field,
-  html,
   translatedTitle,
   translatedDescription,
+  children,
 }: {
   field: FieldDescriptor;
-  html: string | undefined;
   translatedTitle?: string;
   translatedDescription?: string;
+  children: React.ReactNode;
 }) {
   const { schema } = field;
-
   const title = translatedTitle ?? schema.title;
   const description = translatedDescription ?? schema.description;
 
@@ -99,6 +122,32 @@ function ViewField({
           )}
         </div>
       )}
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Renders a single field in view mode: label + description chrome,
+ * then the pre-rendered HTML content for that fragment.
+ */
+function ViewField({
+  field,
+  html,
+  translatedTitle,
+  translatedDescription,
+}: {
+  field: FieldDescriptor;
+  html: string | undefined;
+  translatedTitle?: string;
+  translatedDescription?: string;
+}) {
+  return (
+    <FieldChrome
+      field={field}
+      translatedTitle={translatedTitle}
+      translatedDescription={translatedDescription}
+    >
       {html ? (
         <ProposalHtmlContent html={html} />
       ) : (
@@ -106,6 +155,6 @@ function ViewField({
           <p className="text-neutral-gray3 italic">—</p>
         </div>
       )}
-    </div>
+    </FieldChrome>
   );
 }

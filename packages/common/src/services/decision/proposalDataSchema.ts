@@ -28,14 +28,24 @@ export const budgetValueSchema = z
   .nullish();
 
 /**
- * Location stored as `{ lat, lng }` in proposalData (WGS84 / SRID 4326).
- * `address` is reserved for the upcoming address-search experience.
+ * Location stored in proposalData (WGS84 / SRID 4326).
+ *
+ * Two granularities live here:
+ * - `lat`/`lng` — the proposal's exact pin, unique to this submission and what
+ *   the UI renders.
+ * - `placeId`/`address`/`placeLat`/`placeLng` — the geocoded place (Google).
+ *   `placeLat`/`placeLng` are the canonical place coordinate, which the
+ *   deduplicated `locations` row stores so every proposal at the same place
+ *   agrees on one point (see `syncProposalProfileLocation`).
  */
 export const locationValueSchema = z
   .object({
     lat: z.number().min(-90).max(90),
     lng: z.number().min(-180).max(180),
     address: z.string().optional(),
+    placeId: z.string().optional(),
+    placeLat: z.number().min(-90).max(90).optional(),
+    placeLng: z.number().min(-180).max(180).optional(),
   })
   .nullish();
 
