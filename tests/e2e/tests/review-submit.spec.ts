@@ -629,9 +629,11 @@ test.describe('Review Submit', () => {
     ).toBeVisible({ timeout: 36_000 });
 
     await page.evaluate(() => {
-      document.querySelectorAll('[role="tabpanel"]').forEach((el) => {
-        (el as HTMLElement).scrollTop = el.scrollHeight;
-      });
+      document
+        .querySelectorAll<HTMLElement>('[role="tabpanel"]')
+        .forEach((el) => {
+          el.scrollTop = el.scrollHeight;
+        });
     });
 
     // Safari could scroll the header off-screen when pane content overflowed
