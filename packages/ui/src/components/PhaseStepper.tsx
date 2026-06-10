@@ -83,9 +83,13 @@ const StepIndicator = ({
   const label = phase.ariaLabel ?? `Start ${phase.name}`;
   const showPlayButton = phase.showOnHoverOnly ? isHovered : true;
 
+  // Wrapper matches the non-interactive step's size-6 so the icon's centerline
+  // lines up exactly with sibling steps. The hover ripple is absolutely-
+  // positioned and uses transform scaling to expand visually past this box,
+  // so a smaller wrapper doesn't clip the animation.
   return (
     <div
-      className="relative flex size-8 items-center justify-center"
+      className="relative flex size-6 items-center justify-center"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
