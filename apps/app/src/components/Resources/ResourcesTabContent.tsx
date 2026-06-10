@@ -46,7 +46,11 @@ export const ResourcesTabContent = ({
                   </div>
                 }
               >
-                <ResourcesFeed profileId={profileId} canManage={canManage} />
+                <ResourcesFeed
+                  profileId={profileId}
+                  canManage={canManage}
+                  onAddResource={() => setAdding(true)}
+                />
               </Suspense>
             </ErrorBoundary>
           ) : (
@@ -82,9 +86,11 @@ export const ResourcesTabContent = ({
 const ResourcesFeed = ({
   profileId,
   canManage,
+  onAddResource,
 }: {
   profileId: string;
   canManage: boolean;
+  onAddResource: () => void;
 }) => {
   const [collections] = trpc.resources.collections.list.useSuspenseQuery(
     { profileId },
@@ -97,7 +103,10 @@ const ResourcesFeed = ({
     if (canManage) {
       return (
         <ResourceDropZone profileId={profileId} collectionId={null} items={[]}>
-          <ResourceEmptyState variant="admin-empty" />
+          <ResourceEmptyState
+            variant="admin-empty"
+            onAddResource={onAddResource}
+          />
         </ResourceDropZone>
       );
     }
