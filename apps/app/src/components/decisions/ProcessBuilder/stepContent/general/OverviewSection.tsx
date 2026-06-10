@@ -9,6 +9,10 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
+import {
+  RichTextEditorFloatingToolbar,
+  useRichTextEditorFloatingToolbar,
+} from '@/components/RichTextEditor';
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
@@ -18,6 +22,7 @@ import {
   buildOverviewDoc,
   extractOverviewParts,
   getOverviewEditorExtensions,
+  isSelectionInBody,
 } from './overviewEditor';
 
 // Wrapper component that waits for Zustand hydration before rendering the editor
@@ -103,6 +108,13 @@ function OverviewSectionContent({
     },
   });
 
+  const { isVisible, position, handleSelectionChange } =
+    useRichTextEditorFloatingToolbar({ editor });
+
+  // Only surface the toolbar in the body — the title/subhead schema blocks
+  // marks and block changes, so its actions would be dead there
+  const showToolbar = isVisible && editor !== null && isSelectionInBody(editor);
+
   return (
     <div className="size-full [scrollbar-gutter:stable]">
       <div className="mx-auto flex w-full max-w-xl flex-col gap-4 p-4 md:px-0 md:py-6">
@@ -118,6 +130,13 @@ function OverviewSectionContent({
         ) : (
           <OverviewEditorSkeleton />
         )}
+
+        <RichTextEditorFloatingToolbar
+          editor={editor}
+          isVisible={showToolbar}
+          position={position}
+          onSelectionChange={handleSelectionChange}
+        />
       </div>
     </div>
   );

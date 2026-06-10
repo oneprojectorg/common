@@ -153,6 +153,19 @@ const OverviewPasteHandler = Extension.create({
 /** Index of the fixed horizontal rule in the top-level document. */
 const FIXED_RULE_INDEX = 2;
 
+/**
+ * True when the selection sits entirely in the body (below the fixed rule).
+ * Used to hide formatting UI in the title/subhead, where the schema blocks
+ * marks and block changes anyway.
+ */
+export function isSelectionInBody(editor: Editor): boolean {
+  const { $from, $to } = editor.state.selection;
+  return (
+    !PLAIN_TEXT_NODES.has($from.parent.type.name) &&
+    !PLAIN_TEXT_NODES.has($to.parent.type.name)
+  );
+}
+
 export function getOverviewEditorExtensions(t: TranslateFn): AnyExtension[] {
   return [
     StarterKit.configure({
@@ -229,7 +242,9 @@ export function extractOverviewParts(doc: ProseMirrorNode): OverviewParts {
   };
 }
 
-function getBodyNodes(content: Record<string, unknown> | undefined): JSONContent[] {
+function getBodyNodes(
+  content: Record<string, unknown> | undefined,
+): JSONContent[] {
   const nodes = content?.content;
   if (Array.isArray(nodes) && nodes.length > 0) {
     return nodes;
