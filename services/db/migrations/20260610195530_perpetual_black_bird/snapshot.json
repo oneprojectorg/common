@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "dd613db1-51ad-4c35-8e9b-5cc6f0d02a1a",
+  "id": "1c9a5b7c-3c1f-43a4-990e-e5176c7c6b5a",
   "prevIds": [
     "2ebce7a3-7fab-4fed-90f1-713dded9cff8"
   ],
@@ -2799,19 +2799,6 @@
       "generated": null,
       "identity": null,
       "name": "updated_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "moderation_submissions"
-    },
-    {
-      "type": "timestamp with time zone",
-      "typeSchema": null,
-      "notNull": false,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "deleted_at",
       "entityType": "columns",
       "schema": "public",
       "table": "moderation_submissions"

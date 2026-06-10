@@ -11,8 +11,7 @@ CREATE TABLE "moderation_submissions" (
 	"reason" text,
 	"external_record_id" text,
 	"created_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text),
-	"deleted_at" timestamp with time zone
+	"updated_at" timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text)
 );
 --> statement-breakpoint
 ALTER TABLE "moderation_submissions" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
