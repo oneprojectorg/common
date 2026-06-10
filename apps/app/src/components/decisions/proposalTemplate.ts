@@ -189,15 +189,13 @@ export function getFieldOptions(
     return [];
   }
 
-  // dropdown / category: prefer oneOf, fall back to legacy enum
-  if (schema.type === 'string' || Array.isArray(schema.type)) {
-    return parseSchemaOptions(schema).map((opt, i) => ({
-      id: `${fieldId}-opt-${i}`,
-      value: String(opt.value),
-    }));
-  }
-
-  return [];
+  // Option-bearing shapes (dropdown, multi-select category) are detected by
+  // parseSchemaOptions, which reads oneOf / items.oneOf / enum and returns []
+  // for everything else — so no type gate is needed here.
+  return parseSchemaOptions(schema).map((opt, i) => ({
+    id: `${fieldId}-opt-${i}`,
+    value: String(opt.value),
+  }));
 }
 
 export { schemaHasOptions };
