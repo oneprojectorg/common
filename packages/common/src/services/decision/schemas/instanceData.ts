@@ -47,8 +47,8 @@ export interface PhaseInstanceData {
 export interface InstanceOverview {
   headline?: string;
   description?: string;
-  /** Rich text body as HTML */
-  body?: string;
+  /** Rich text body as a TipTap JSON document */
+  content?: Record<string, unknown>;
 }
 
 /**

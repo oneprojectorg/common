@@ -197,8 +197,8 @@ export const instancePhaseDataEncoder = z.object({
 const instanceOverviewEncoder = z.object({
   headline: z.string().optional(),
   description: z.string().optional(),
-  /** Rich text body as HTML */
-  body: z.string().optional(),
+  /** Rich text body as a TipTap JSON document */
+  content: z.record(z.string(), z.unknown()).optional(),
 });
 
 /** Instance data encoder for new schema format */
