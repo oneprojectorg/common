@@ -130,11 +130,31 @@ export { hasEmail } from './utils/email';
 
 const LOGIN_PATH_RE = /^\/(?:[a-z]{2}\/)?login(\/|$|\?)/;
 
+// Sentinel base used to detect open-redirect bypass attempts. Any path that
+// resolves to an origin different from this base is escaping the app origin
+// — `//host`, `/\host`, `/\t//host`, etc. — and must be rejected.
+const REDIRECT_VALIDATOR_BASE = 'https://op-redirect-validator.invalid';
+
 export function isSafeRedirectPath(path: string | null): path is string {
   if (!path?.startsWith('/')) {
     return false;
   }
-  if (path.startsWith('//')) {
+  // Reject backslashes and ASCII control characters anywhere in the path.
+  // The WHATWG URL parser normalizes `\` to `/` and strips control chars,
+  // which is how `/\evil.com` and `/\t//evil.com` produce a foreign origin
+  // when handed to NextResponse.redirect / window.location.href.
+  if (/[\\\x00-\x1f\x7f]/.test(path)) {
+    return false;
+  }
+  let resolved: URL;
+  try {
+    resolved = new URL(path, REDIRECT_VALIDATOR_BASE);
+  } catch {
+    return false;
+  }
+  // Belt-and-braces: if the path resolved to a different origin (e.g. via a
+  // future parser quirk the string check above missed), reject it.
+  if (resolved.origin !== REDIRECT_VALIDATOR_BASE) {
     return false;
   }
   if (LOGIN_PATH_RE.test(path)) {
