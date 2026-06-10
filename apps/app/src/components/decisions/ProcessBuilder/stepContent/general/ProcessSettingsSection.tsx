@@ -2,8 +2,11 @@
 
 import { Suspense, useEffect, useState } from 'react';
 
-import type { SectionProps } from '../../contentRegistry';
-import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { ErrorMessage } from '@/components/ErrorMessage';
+import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
+import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
+
 import { ProcessSettingsForm } from './ProcessSettingsForm';
 import { ProcessSettingsSkeleton } from './ProcessSettingsSkeleton';
 
@@ -26,8 +29,10 @@ export default function ProcessSettingsSection(props: SectionProps) {
   }
 
   return (
-    <Suspense fallback={<ProcessSettingsSkeleton />}>
-      <ProcessSettingsForm {...props} />
-    </Suspense>
+    <ErrorBoundary fallback={<ErrorMessage />}>
+      <Suspense fallback={<ProcessSettingsSkeleton />}>
+        <ProcessSettingsForm {...props} />
+      </Suspense>
+    </ErrorBoundary>
   );
 }

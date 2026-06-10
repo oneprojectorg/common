@@ -244,6 +244,145 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(result.processInstance.id).toBe(instance.instance.id);
   });
 
+  it('should round-trip overview content through update and getInstance', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const overview = {
+      headline: `Overview headline ${task.id}`,
+      description: 'A short description for the overview page',
+      content: {
+        type: 'doc' as const,
+        content: [
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: 'Overview body text' }],
+          },
+        ],
+      },
+    };
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      overview,
+    });
+
+    // Round-trip through getInstance — this also guards the encoder: if
+    // `overview` were dropped from instanceDataWithSchemaEncoder, zod would
+    // strip it from the response and the editor would initialize empty.
+    const fetched = await caller.decision.getInstance({
+      instanceId: instance.instance.id,
+    });
+
+    expect(fetched.instanceData?.overview).toEqual(overview);
+  });
+
+  it('should preserve sibling instanceData and overview fields when updating overview', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Seed unrelated instanceData and a full overview
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      config: { hideBudget: true },
+    });
+    const content = {
+      type: 'doc' as const,
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'Body' }] },
+      ],
+    };
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      overview: { headline: 'Original headline', description: 'Desc', content },
+    });
+
+    // Partial overview update — only the headline changes
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      overview: { headline: 'New headline' },
+    });
+
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+    const instanceData = dbInstance!.instanceData as DecisionInstanceData;
+
+    // Sibling instanceData fields survive overview updates
+    expect(instanceData.config?.hideBudget).toBe(true);
+    expect(instanceData.phases.length).toBeGreaterThan(0);
+
+    // Unspecified overview fields are preserved by the merge
+    expect(instanceData.overview?.headline).toBe('New headline');
+    expect(instanceData.overview?.description).toBe('Desc');
+    expect(instanceData.overview?.content).toEqual(content);
+  });
+
+  it('should clear overview headline and description with empty strings', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      overview: { headline: 'To be cleared', description: 'Also cleared' },
+    });
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      overview: { headline: '', description: '' },
+    });
+
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+    const instanceData = dbInstance!.instanceData as DecisionInstanceData;
+
+    expect(instanceData.overview?.headline).toBe('');
+    expect(instanceData.overview?.description).toBe('');
+  });
+
   it('should update phase settings', async ({ task, onTestFinished }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 

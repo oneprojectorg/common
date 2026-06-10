@@ -9,12 +9,15 @@
  * The title, subhead, and leading horizontal rule are required by the
  * content expression, so they cannot be deleted, reordered, or duplicated —
  * invalid transactions are rejected by ProseMirror. Users can still add
- * their own horizontal rules in the body section below the fixed one.
+ * their own horizontal rules in the body section below the fixed one (a
+ * body rule directly after the fixed one can be promoted into its slot,
+ * which is harmless since extraction is positional).
  *
- * Title and subhead disallow marks and block content, so their plain text
- * can be stored as strings (`headline`, `description`) and rendered on
- * other pages without parsing a TipTap document. Only the body is stored
- * as TipTap JSON (`content`).
+ * Title and subhead only allow plain text (`content: 'text*'` — no marks,
+ * no inline nodes like hard breaks), so their content can be stored as
+ * strings (`headline`, `description`) and rendered on other pages without
+ * parsing a TipTap document. Only the body is stored as TipTap JSON
+ * (`content`).
  */
 import { Extension, Node } from '@tiptap/core';
 import Document from '@tiptap/extension-document';
@@ -26,13 +29,25 @@ import StarterKit from '@tiptap/starter-kit';
 
 import type { TranslateFn } from '@/lib/i18n';
 
+/** TipTap JSON document holding the overview body */
+export interface OverviewBodyDoc {
+  type: 'doc';
+  content?: Record<string, unknown>[];
+}
+
 /** The overview parts persisted in `instanceData.overview` */
 export interface OverviewParts {
   headline: string;
   description: string;
   /** TipTap JSON document for the body (everything below the fixed rule) */
-  content?: Record<string, unknown>;
+  content?: OverviewBodyDoc;
 }
+
+/** Index of the fixed horizontal rule in the top-level document. */
+const FIXED_RULE_INDEX = 2;
+
+/** Index of the first body node (right after the fixed rule). */
+const BODY_START_INDEX = FIXED_RULE_INDEX + 1;
 
 const OverviewDocument = Document.extend({
   content: 'overviewTitle overviewSubhead horizontalRule block+',
@@ -56,9 +71,27 @@ function focusChild(editor: Editor, index: number): boolean {
     .run();
 }
 
+/**
+ * Enter/Tab in `fromNode` advance the cursor to the top-level child at
+ * `toIndex` (the schema blocks splitting, so Enter would otherwise no-op).
+ */
+function advanceCursorShortcuts(fromNode: string, toIndex: number) {
+  const move = ({ editor }: { editor: Editor }) => {
+    if (editor.state.selection.$from.parent.type.name !== fromNode) {
+      return false;
+    }
+    return focusChild(editor, toIndex);
+  };
+
+  return {
+    Enter: move,
+    Tab: move,
+  };
+}
+
 const OverviewTitle = Node.create({
   name: 'overviewTitle',
-  content: 'inline*',
+  content: 'text*',
   marks: '',
   defining: true,
 
@@ -71,24 +104,13 @@ const OverviewTitle = Node.create({
   },
 
   addKeyboardShortcuts() {
-    // Enter/Tab move to the subhead instead of splitting the title
-    const goToSubhead = ({ editor }: { editor: Editor }) => {
-      if (editor.state.selection.$from.parent.type.name !== this.name) {
-        return false;
-      }
-      return focusChild(editor, 1);
-    };
-
-    return {
-      Enter: goToSubhead,
-      Tab: goToSubhead,
-    };
+    return advanceCursorShortcuts(this.name, 1);
   },
 });
 
 const OverviewSubhead = Node.create({
   name: 'overviewSubhead',
-  content: 'inline*',
+  content: 'text*',
   marks: '',
   defining: true,
 
@@ -101,22 +123,11 @@ const OverviewSubhead = Node.create({
   },
 
   addKeyboardShortcuts() {
-    // Enter/Tab move past the fixed rule into the body
-    const goToBody = ({ editor }: { editor: Editor }) => {
-      if (editor.state.selection.$from.parent.type.name !== this.name) {
-        return false;
-      }
-      return focusChild(editor, 3);
-    };
-
-    return {
-      Enter: goToBody,
-      Tab: goToBody,
-    };
+    return advanceCursorShortcuts(this.name, BODY_START_INDEX);
   },
 });
 
-/** Node types that only accept plain inline text */
+/** Node types that only accept plain text */
 const PLAIN_TEXT_NODES = new Set(['overviewTitle', 'overviewSubhead']);
 
 /**
@@ -141,6 +152,11 @@ const OverviewPasteHandler = Extension.create({
               .textBetween(0, slice.content.size, ' ', ' ')
               .replace(/\s+/g, ' ')
               .trim();
+            if (!text) {
+              // Nothing textual to insert (e.g. an image) — let the default
+              // schema-filtered handling run instead of eating the event
+              return false;
+            }
             view.dispatch(view.state.tr.insertText(text));
             return true;
           },
@@ -150,20 +166,16 @@ const OverviewPasteHandler = Extension.create({
   },
 });
 
-/** Index of the fixed horizontal rule in the top-level document. */
-const FIXED_RULE_INDEX = 2;
-
 /**
- * True when the selection sits entirely in the body (below the fixed rule).
- * Used to hide formatting UI in the title/subhead, where the schema blocks
- * marks and block changes anyway.
+ * True when the selection sits entirely in the body (at or below the first
+ * body node). Used to hide formatting UI in the title/subhead and on the
+ * fixed rule, where the schema blocks marks and block changes anyway.
  */
 export function isSelectionInBody(editor: Editor): boolean {
-  const { $from, $to } = editor.state.selection;
-  return (
-    !PLAIN_TEXT_NODES.has($from.parent.type.name) &&
-    !PLAIN_TEXT_NODES.has($to.parent.type.name)
-  );
+  const { doc, selection } = editor.state;
+  // Position just before the first body node
+  const bodyStart = nodeStartPos(doc, BODY_START_INDEX) - 1;
+  return selection.$from.pos >= bodyStart;
 }
 
 export function getOverviewEditorExtensions(t: TranslateFn): AnyExtension[] {
@@ -187,12 +199,11 @@ export function getOverviewEditorExtensions(t: TranslateFn): AnyExtension[] {
             'Add a short description — one or two lines that sit under the headline.',
           );
         }
-        // Body placeholder: only on the first body paragraph, and only while
+        // Body placeholder: only on the first body node, and only while
         // it is the sole body node (mirrors the standard empty-editor hint)
         const doc = editor.state.doc;
-        const isFirstBodyNode =
-          pos === nodeStartPos(doc, FIXED_RULE_INDEX + 1) - 1;
-        if (isFirstBodyNode && doc.childCount === FIXED_RULE_INDEX + 2) {
+        const isFirstBodyNode = pos === nodeStartPos(doc, BODY_START_INDEX) - 1;
+        if (isFirstBodyNode && doc.childCount === BODY_START_INDEX + 1) {
           return t(
             "Write what residents need to know about this process — its goals, timeline, who's running it, how to participate.",
           );
@@ -226,8 +237,26 @@ export function buildOverviewDoc(parts: OverviewParts): JSONContent {
   };
 }
 
-/** Splits the editor document back into storable overview parts. */
+/**
+ * Splits the editor document back into storable overview parts.
+ *
+ * Throws when the document doesn't match the fixed structure — the schema
+ * guarantees it always does, so a violation here means the schema and this
+ * extraction have drifted apart, and failing loudly beats silently
+ * persisting miscategorized data.
+ */
 export function extractOverviewParts(doc: ProseMirrorNode): OverviewParts {
+  const hasFixedStructure =
+    doc.childCount > FIXED_RULE_INDEX &&
+    doc.child(0).type.name === 'overviewTitle' &&
+    doc.child(1).type.name === 'overviewSubhead' &&
+    doc.child(FIXED_RULE_INDEX).type.name === 'horizontalRule';
+  if (!hasFixedStructure) {
+    throw new Error(
+      'Overview document does not match the fixed structure (title, subhead, rule, body)',
+    );
+  }
+
   const bodyNodes: Record<string, unknown>[] = [];
   doc.forEach((node, _offset, index) => {
     if (index > FIXED_RULE_INDEX) {
@@ -242,12 +271,22 @@ export function extractOverviewParts(doc: ProseMirrorNode): OverviewParts {
   };
 }
 
-function getBodyNodes(
-  content: Record<string, unknown> | undefined,
-): JSONContent[] {
-  const nodes = content?.content;
-  if (Array.isArray(nodes) && nodes.length > 0) {
-    return nodes;
+function getBodyNodes(content: OverviewBodyDoc | undefined): JSONContent[] {
+  if (!content) {
+    return [{ type: 'paragraph' }];
   }
-  return [{ type: 'paragraph' }];
+
+  // Runtime guard: stored data (localStorage, API) may not match the type
+  const nodes: unknown = content.content;
+  if (!Array.isArray(nodes)) {
+    if (nodes !== undefined) {
+      console.error(
+        'Malformed overview body content; starting with an empty body',
+        content,
+      );
+    }
+    return [{ type: 'paragraph' }];
+  }
+
+  return nodes.length > 0 ? nodes : [{ type: 'paragraph' }];
 }

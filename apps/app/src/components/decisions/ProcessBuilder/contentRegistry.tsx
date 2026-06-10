@@ -2,7 +2,11 @@
 
 import { type ComponentType } from 'react';
 
-import { type SectionId, isPhaseSection } from './navigationConfig';
+import {
+  type SectionId,
+  isPhaseSection,
+  isSectionId,
+} from './navigationConfig';
 import OverviewSection from './stepContent/general/OverviewSection';
 import PhaseDetailSection from './stepContent/general/PhaseDetailSection';
 import PhasesSection from './stepContent/general/PhasesSection';
@@ -24,8 +28,10 @@ export interface SectionProps {
 
 type SectionComponent = ComponentType<SectionProps>;
 
-// Flat section-to-component mapping for the unified sidebar
-const FLAT_CONTENT_REGISTRY: Record<string, SectionComponent> = {
+// Flat section-to-component mapping for the unified sidebar.
+// Keyed by SectionId so adding a section without a component is a compile
+// error instead of a blank screen at runtime.
+const FLAT_CONTENT_REGISTRY: Record<SectionId, SectionComponent> = {
   processSettings: ProcessSettingsSection,
   overview: OverviewSection,
   phases: PhasesSection,
@@ -48,5 +54,8 @@ export function getContentComponentFlat(
   if (isPhaseSection(sectionId)) {
     return PhaseDetailSection;
   }
-  return FLAT_CONTENT_REGISTRY[sectionId] ?? null;
+  if (isSectionId(sectionId)) {
+    return FLAT_CONTENT_REGISTRY[sectionId];
+  }
+  return null;
 }

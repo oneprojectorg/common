@@ -48,12 +48,15 @@ export interface InstanceOverview {
   headline?: string;
   description?: string;
   /** Rich text body as a TipTap JSON document */
-  content?: Record<string, unknown>;
+  content?: {
+    type: 'doc';
+    content?: Record<string, unknown>[];
+  };
 }
 
 /**
  * Instance data stored in processInstances table for new DecisionSchemaDefinition-based instances.
- * This structure must match instanceDataNewEncoder in the API encoders.
+ * This structure must match instanceDataWithSchemaEncoder in the API encoders.
  */
 export interface DecisionInstanceData {
   config?: ProcessConfig;
