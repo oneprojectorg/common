@@ -112,6 +112,8 @@ export {
 } from './services/resources/constants';
 
 // Translation constants (no server dependencies)
+import { SUPPORTED_LOCALES } from './services/translation/locales';
+
 export {
   SUPPORTED_LOCALES,
   LOCALE_TO_DEEPL,
@@ -128,20 +130,21 @@ export type {
 // the server-only utils barrel (which depends on drizzle).
 export { hasEmail } from './utils/email';
 
-const LOGIN_PATH_RE = /^\/(?:[a-z]{2}\/)?login(\/|$|\?)/;
-
-// Sentinel base used to detect open-redirect bypass attempts. Any path that
-// resolves to an origin different from this base is escaping the app origin
-// — `//host`, `/\host`, `/\t//host`, etc. — and must be rejected.
-const REDIRECT_VALIDATOR_BASE = 'https://op-redirect-validator.invalid';
+// Whitelist of safe redirect-path prefixes. Every legitimate app route lives
+// under a locale segment (en/es/fr/…) or under `/info`. Anything else —
+// `//evil`, `/\evil`, `/api/*`, `https://evil`, etc. — never matches and is
+// rejected. Adding a new top-level segment requires extending this list; a
+// missed update fails loudly (user lands on `/` after login).
+const SAFE_REDIRECT_PATH_RE = new RegExp(
+  `^/(?:${SUPPORTED_LOCALES.join('|')}|info)(?:[/?#]|$)`,
+);
 
 /**
  * Validate a relative redirect path and return its safe canonical (decoded)
  * form. Accepts both already-decoded paths (the common case after
- * `searchParams.get`) and percent-encoded paths like `%2Fen%2Fprofile%2Fx` —
- * the latter happens when the redirect param arrives without being URL-decoded
- * (e.g. read off `request.url` manually, or set on a downstream Location
- * header). Returns `null` if the path is unsafe.
+ * `searchParams.get`) and percent-encoded paths like `%2Fen%2Fprofile%2Fx`
+ * (which can arrive when the redirect param hasn't been URL-decoded). Returns
+ * `null` if the path is unsafe or doesn't target a known app route prefix.
  *
  * Callers should redirect to the **returned** string, not the original input —
  * `redirect()` / `new URL()` don't decode percent sequences, so passing the
@@ -162,34 +165,7 @@ export function getSafeRedirectPath(path: string | null): string | null {
       return null;
     }
   }
-  if (!candidate.startsWith('/')) {
-    return null;
-  }
-  // Reject backslashes and ASCII control characters anywhere in the path.
-  // The WHATWG URL parser normalizes `\` to `/` and strips control chars,
-  // which is how `/\evil.com` and `/\t//evil.com` produce a foreign origin
-  // when handed to NextResponse.redirect / window.location.href.
-  if (/[\\\x00-\x1f\x7f]/.test(candidate)) {
-    return null;
-  }
-  let resolved: URL;
-  try {
-    resolved = new URL(candidate, REDIRECT_VALIDATOR_BASE);
-  } catch {
-    return null;
-  }
-  // Belt-and-braces: if the path resolved to a different origin (e.g. via a
-  // future parser quirk the string check above missed), reject it.
-  if (resolved.origin !== REDIRECT_VALIDATOR_BASE) {
-    return null;
-  }
-  if (LOGIN_PATH_RE.test(candidate)) {
-    return null;
-  }
-  if (candidate.startsWith('/api/')) {
-    return null;
-  }
-  return candidate;
+  return SAFE_REDIRECT_PATH_RE.test(candidate) ? candidate : null;
 }
 
 export function isSafeRedirectPath(path: string | null): path is string {
