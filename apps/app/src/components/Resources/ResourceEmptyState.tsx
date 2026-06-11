@@ -25,32 +25,28 @@ export const ResourceEmptyState = ({
     );
   }
 
-  if (variant === 'admin-empty') {
-    return (
-      <div className="rounded-lg border border-neutral-gray1">
-        <EmptyState className="p-6" icon={<LuLeaf className="size-6" />}>
-          <p className="text-base text-neutral-black">
-            {t('No resources yet')}
-          </p>
-          <p className="max-w-72 text-center text-base text-neutral-charcoal">
-            {t(
-              'Share documents, guidelines, and links to help participants through the process.',
-            )}
-          </p>
-          {onAddResource ? (
-            <Button color="primary" onPress={onAddResource}>
-              <LuPlus className="size-4" />
-              {t('Add a resource')}
-            </Button>
-          ) : null}
-        </EmptyState>
-      </div>
-    );
-  }
-
   return (
-    <EmptyState icon={<LuLeaf className="size-6" />}>
-      {t('No resources yet')}
-    </EmptyState>
+    <div className="rounded-lg border border-neutral-gray1">
+      <EmptyState className="p-6" icon={<LuLeaf className="size-6" />}>
+        <p className="text-base text-neutral-black">
+          {t('No resources added')}
+        </p>
+        {variant === 'admin-empty' ? (
+          <>
+            <p className="max-w-72 text-center text-base text-neutral-charcoal">
+              {t(
+                'Share documents, guidelines, and links to help participants through the process.',
+              )}
+            </p>
+            {onAddResource ? (
+              <Button color="primary" onPress={onAddResource}>
+                <LuPlus className="size-4" />
+                {t('Add a resource')}
+              </Button>
+            ) : null}
+          </>
+        ) : null}
+      </EmptyState>
+    </div>
   );
 };

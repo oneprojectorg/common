@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { LuCircleAlert } from 'react-icons/lu';
 
-import { cn } from '@/lib/utils';
+import { cn } from '../lib/utils';
 
 export const EmptyState = ({
   icon,
