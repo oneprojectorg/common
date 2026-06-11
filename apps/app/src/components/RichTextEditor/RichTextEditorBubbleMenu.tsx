@@ -7,17 +7,15 @@ import { Toggle } from '@op/sense/Toggle';
 import { NodeSelection } from '@tiptap/pm/state';
 import { type Editor, useEditorState } from '@tiptap/react';
 import { BubbleMenu, type BubbleMenuProps } from '@tiptap/react/menus';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import type { IconType } from 'react-icons';
 import {
-  LuAlignCenter,
-  LuAlignLeft,
-  LuAlignRight,
   LuBold,
   LuCode,
   LuHeading1,
   LuHeading2,
   LuHeading3,
+  LuHeading4,
   LuItalic,
   LuLink,
   LuList,
@@ -66,6 +64,7 @@ export function RichTextEditorBubbleMenu({
             heading1: e.isActive('heading', { level: 1 }),
             heading2: e.isActive('heading', { level: 2 }),
             heading3: e.isActive('heading', { level: 3 }),
+            heading4: e.isActive('heading', { level: 4 }),
             bold: e.isActive('bold'),
             italic: e.isActive('italic'),
             underline: e.isActive('underline'),
@@ -74,9 +73,6 @@ export function RichTextEditorBubbleMenu({
             bulletList: e.isActive('bulletList'),
             orderedList: e.isActive('orderedList'),
             blockquote: e.isActive('blockquote'),
-            alignLeft: e.isActive({ textAlign: 'left' }),
-            alignCenter: e.isActive({ textAlign: 'center' }),
-            alignRight: e.isActive({ textAlign: 'right' }),
             link: e.isActive('link'),
           }
         : null,
@@ -87,29 +83,6 @@ export function RichTextEditorBubbleMenu({
   }
 
   const groups: MenuItem[][] = [
-    [
-      {
-        key: 'heading1',
-        label: t('Heading 1'),
-        icon: LuHeading1,
-        isActive: activeStates.heading1,
-        toggle: () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
-      },
-      {
-        key: 'heading2',
-        label: t('Heading 2'),
-        icon: LuHeading2,
-        isActive: activeStates.heading2,
-        toggle: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
-      },
-      {
-        key: 'heading3',
-        label: t('Heading 3'),
-        icon: LuHeading3,
-        isActive: activeStates.heading3,
-        toggle: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
-      },
-    ],
     [
       {
         key: 'bold',
@@ -139,12 +112,35 @@ export function RichTextEditorBubbleMenu({
         isActive: activeStates.strike,
         toggle: () => editor.chain().focus().toggleStrike().run(),
       },
+    ],
+    [
       {
-        key: 'code',
-        label: t('Code'),
-        icon: LuCode,
-        isActive: activeStates.code,
-        toggle: () => editor.chain().focus().toggleCode().run(),
+        key: 'heading1',
+        label: t('Heading 1'),
+        icon: LuHeading1,
+        isActive: activeStates.heading1,
+        toggle: () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
+      },
+      {
+        key: 'heading2',
+        label: t('Heading 2'),
+        icon: LuHeading2,
+        isActive: activeStates.heading2,
+        toggle: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
+      },
+      {
+        key: 'heading3',
+        label: t('Heading 3'),
+        icon: LuHeading3,
+        isActive: activeStates.heading3,
+        toggle: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
+      },
+      {
+        key: 'heading4',
+        label: t('Heading 4'),
+        icon: LuHeading4,
+        isActive: activeStates.heading4,
+        toggle: () => editor.chain().focus().toggleHeading({ level: 4 }).run(),
       },
     ],
     [
@@ -169,28 +165,12 @@ export function RichTextEditorBubbleMenu({
         isActive: activeStates.blockquote,
         toggle: () => editor.chain().focus().toggleBlockquote().run(),
       },
-    ],
-    [
       {
-        key: 'alignLeft',
-        label: t('Align Left'),
-        icon: LuAlignLeft,
-        isActive: activeStates.alignLeft,
-        toggle: () => editor.chain().focus().setTextAlign('left').run(),
-      },
-      {
-        key: 'alignCenter',
-        label: t('Align Center'),
-        icon: LuAlignCenter,
-        isActive: activeStates.alignCenter,
-        toggle: () => editor.chain().focus().setTextAlign('center').run(),
-      },
-      {
-        key: 'alignRight',
-        label: t('Align Right'),
-        icon: LuAlignRight,
-        isActive: activeStates.alignRight,
-        toggle: () => editor.chain().focus().setTextAlign('right').run(),
+        key: 'code',
+        label: t('Code'),
+        icon: LuCode,
+        isActive: activeStates.code,
+        toggle: () => editor.chain().focus().toggleCode().run(),
       },
     ],
   ];
@@ -207,42 +187,43 @@ export function RichTextEditorBubbleMenu({
         shift: true,
         onHide: () => setIsEditingLink(false),
       }}
-      className="z-50 rounded-lg border border-border bg-popover p-1 shadow-md"
+      className="z-50 rounded-lg border border-border bg-popover p-2 shadow-md"
     >
       {isEditingLink ? (
         <LinkEditor editor={editor} onClose={() => setIsEditingLink(false)} />
       ) : (
         <div
-          className="flex items-center gap-0.5"
+          className="flex flex-col gap-2"
           // Keep the editor selection: don't let toolbar clicks move focus
           onMouseDown={(e) => e.preventDefault()}
         >
-          {groups.map((group, groupIndex) => (
-            <div key={group[0]?.key} className="flex items-center gap-0.5">
-              {groupIndex > 0 && (
-                <Separator orientation="vertical" className="mx-0.5 h-5" />
-              )}
-              {group.map((item) => (
-                <Toggle
-                  key={item.key}
-                  size="sm"
-                  pressed={item.isActive}
-                  onPressedChange={item.toggle}
-                  aria-label={item.label}
-                  title={item.label}
-                >
-                  <item.icon className="size-4" />
-                </Toggle>
-              ))}
-            </div>
+          {groups.map((group) => (
+            <React.Fragment key={group[0]?.key}>
+              <div className="grid grid-cols-2 gap-2">
+                {group.map((item) => (
+                  <Toggle
+                    key={item.key}
+                    size="sm"
+                    pressed={item.isActive}
+                    onPressedChange={item.toggle}
+                    aria-label={item.label}
+                    title={item.label}
+                    className="size-8 aria-pressed:bg-primary aria-pressed:text-white"
+                  >
+                    <item.icon className="size-4" />
+                  </Toggle>
+                ))}
+              </div>
+              <Separator orientation="horizontal" className="w-full" />
+            </React.Fragment>
           ))}
-          <Separator orientation="vertical" className="mx-0.5 h-5" />
           <Toggle
             size="sm"
             pressed={activeStates.link}
             onPressedChange={() => setIsEditingLink(true)}
             aria-label={t('Add Link')}
             title={t('Add Link')}
+            className="h-8 aria-pressed:bg-primary aria-pressed:text-white"
           >
             <LuLink className="size-4" />
           </Toggle>
