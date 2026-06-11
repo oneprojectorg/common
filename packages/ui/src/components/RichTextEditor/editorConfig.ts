@@ -43,7 +43,7 @@ const baseExtensions = [
     allowBase64: true,
   }),
   Heading.configure({
-    levels: [1, 2, 3],
+    levels: [1, 2, 3, 4],
   }),
   Underline,
   Strike,

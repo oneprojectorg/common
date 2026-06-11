@@ -51,6 +51,11 @@
   [role='button']:not(:disabled) {
     cursor: pointer;
   }
+  
+  /* Selection color */
+  ::selection {
+    background-color: rgba(from var(--color-primary) r g b / 0.4);
+  }
 }
 
 @theme {
