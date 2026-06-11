@@ -1,7 +1,12 @@
 'use client';
 
+import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { ButtonLink } from '@op/ui/Button';
+import { EmptyState } from '@op/ui/EmptyState';
+import { Header2, Header3 } from '@op/ui/Header';
+import he from 'he';
+import { LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -10,9 +15,7 @@ import { decisionOverviewMock } from './decisionOverviewMock';
 
 interface DecisionOverviewProps {
   instanceId: string;
-  slug: string;
-  decisionSlug?: string;
-  decisionProfileId?: string | null;
+  decisionSlug: string;
 }
 
 /**
@@ -28,11 +31,39 @@ export function DecisionOverviewSuspense({
   instanceId,
   decisionSlug,
 }: DecisionOverviewProps) {
+  const t = useTranslations();
+
+  return (
+    <APIErrorBoundary
+      fallbacks={{
+        default: () => (
+          <EmptyState icon={<LuTriangleAlert className="size-6" />}>
+            <Header3 className="font-serif font-light">
+              {t("Couldn't load the overview")}
+            </Header3>
+            <p className="text-base text-neutral-charcoal">
+              {t('Refresh the page to try again.')}
+            </p>
+          </EmptyState>
+        ),
+      }}
+    >
+      <DecisionOverviewContent
+        instanceId={instanceId}
+        decisionSlug={decisionSlug}
+      />
+    </APIErrorBoundary>
+  );
+}
+
+function DecisionOverviewContent({
+  instanceId,
+  decisionSlug,
+}: DecisionOverviewProps) {
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
 
   const overview = decisionOverviewMock;
-  const headline = overview.headline ?? instance.name ?? '';
-  const content = overview.content ?? instance.description ?? undefined;
+  const headline = overview.headline ?? instance.name;
 
   // Same gate as StandardDecisionPage: the phase must accept proposals and
   // the viewer must have submit access.
@@ -54,10 +85,13 @@ export function DecisionOverviewSuspense({
       {/* 12-col grid mirroring the Figma layout grid: sidebar spans 4 cols,
           body spans 7 starting at col 6. Stacks to one column below md. */}
       <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-12 px-6 py-12 md:grid-cols-12 md:gap-x-6">
-        {/* Phases timeline lands here in a follow-up PR */}
+        {/* TODO: phases timeline lands here in a follow-up PR */}
         <div className="md:col-span-4" />
         <div className="min-w-0 md:col-span-7 md:col-start-6">
-          <OverviewAbout content={content} />
+          <OverviewAbout
+            html={overview.content}
+            fallbackText={instance.description ?? undefined}
+          />
         </div>
       </div>
     </div>
@@ -72,17 +106,15 @@ const OverviewHero = ({
 }: {
   headline: string;
   subhead?: string;
-  decisionSlug?: string;
-  canSubmitProposal?: boolean;
+  decisionSlug: string;
+  canSubmitProposal: boolean;
 }) => {
   const t = useTranslations();
-  const currentPhaseHref = decisionSlug
-    ? `/decisions/${decisionSlug}/current`
-    : undefined;
+  const currentPhaseHref = `/decisions/${decisionSlug}/current`;
 
   return (
     // Gradient stands in until overview header images exist — same radial
-    // gradient as the results-view decision header.
+    // gradient as the results page hero.
     <section className="grid w-full grid-cols-1 justify-center gap-12 bg-redPurple md:grid-cols-12">
       <div className="mx-auto flex flex-col items-center gap-4 px-6 py-16 text-center text-neutral-offWhite sm:py-24 md:col-span-6 md:col-start-4">
         <div className="flex flex-col items-center gap-2">
@@ -95,32 +127,48 @@ const OverviewHero = ({
             </p>
           ) : null}
         </div>
-        {currentPhaseHref ? (
-          <div className="flex w-full flex-wrap justify-center gap-4">
-            <ButtonLink color="secondary" href={currentPhaseHref}>
-              {t('Browse proposals')}
+        <div className="flex w-full flex-wrap justify-center gap-4">
+          <ButtonLink color="secondary" href={currentPhaseHref}>
+            {t('Browse proposals')}
+          </ButtonLink>
+          {canSubmitProposal ? (
+            <ButtonLink color="primary" href={currentPhaseHref}>
+              {t('Submit a proposal')}
             </ButtonLink>
-            {canSubmitProposal ? (
-              <ButtonLink color="primary" href={currentPhaseHref}>
-                {t('Submit a proposal')}
-              </ButtonLink>
-            ) : null}
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </div>
     </section>
   );
 };
 
-const OverviewAbout = ({ content }: { content?: string }) => {
+const OverviewAbout = ({
+  html,
+  fallbackText,
+}: {
+  /** TipTap-generated HTML from the overview content. */
+  html?: string;
+  /** Plain-text process description shown when no overview content exists. */
+  fallbackText?: string;
+}) => {
   const t = useTranslations();
+
+  if (!html && !fallbackText) {
+    return null;
+  }
 
   return (
     <section className="flex flex-col gap-4">
-      <h2 className="font-serif text-title-lg text-neutral-black">
-        {t('About the process')}
-      </h2>
-      {content ? <ProposalHtmlContent html={content} /> : null}
+      <Header2 className="font-serif">{t('About the process')}</Header2>
+      {html ? (
+        <ProposalHtmlContent html={html} />
+      ) : fallbackText ? (
+        // The description is plain text (entity-encoded for some orgs, same as
+        // DecisionActionBar) — decode and render as text, not HTML.
+        <p dir="auto" className="text-base">
+          {he.decode(fallbackText)}
+        </p>
+      ) : null}
     </section>
   );
 };

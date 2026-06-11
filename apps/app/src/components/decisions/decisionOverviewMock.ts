@@ -4,11 +4,11 @@
  * at the read site in DecisionOverview.
  */
 export interface DecisionOverviewData {
-  /** Hero headline. Falls back to the process name when absent. */
+  /** Hero headline. Falls back to `instance.name` (see DecisionOverview). */
   headline?: string;
   /** Hero subhead. No fallback — omitted entirely when absent. */
   subhead?: string;
-  /** TipTap-generated HTML for the About section. Falls back to the process description. */
+  /** TipTap-generated HTML for the About section. Falls back to `instance.description`. */
   content?: string;
 }
 
