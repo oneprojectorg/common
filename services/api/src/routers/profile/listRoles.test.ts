@@ -44,6 +44,53 @@ describe.concurrent('profile.listRoles', () => {
     expect(memberRole).toBeDefined();
   });
 
+  it('should not expose non-exposable global roles (e.g. system roles like Public)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { adminUser } = await testData.createProfile({
+      users: { admin: 1 },
+    });
+
+    // A global role (profileId NULL) outside EXPOSABLE_GLOBAL_ROLE_NAMES —
+    // stands in for system roles like the global Public role.
+    const [systemRole] = await db
+      .insert(accessRoles)
+      .values({
+        name: `System Role ${task.id}`,
+        description: 'A non-exposable global role',
+        profileId: null,
+      })
+      .returning();
+
+    onTestFinished(async () => {
+      if (systemRole) {
+        await db.delete(accessRoles).where(eq(accessRoles.id, systemRole.id));
+      }
+    });
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    // Simple branch (no zoneName)
+    const result = await caller.listRoles({ limit: 100 });
+    const roleIds = result.items.map((r) => r.id);
+    expect(roleIds).not.toContain(systemRole?.id);
+    expect(roleIds).toContain(ROLES.ADMIN.id);
+    expect(roleIds).toContain(ROLES.MEMBER.id);
+
+    // Join branch (with zoneName)
+    const zoneResult = await caller.listRoles({
+      zoneName: ZONES.PROFILE.name,
+      limit: 100,
+    });
+    const zoneRoleIds = zoneResult.items.map((r) => r.id);
+    expect(zoneRoleIds).not.toContain(systemRole?.id);
+    expect(zoneRoleIds).toContain(ROLES.ADMIN.id);
+    expect(zoneRoleIds).toContain(ROLES.MEMBER.id);
+  });
+
   it('should return profile-specific roles when profileId provided', async ({
     task,
     onTestFinished,

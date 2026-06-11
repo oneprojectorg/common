@@ -12,7 +12,7 @@ import type { OrganizationUserBase } from '../organization/schemas/organizationU
 import type { ProfileMinimal } from '../profile/schemas/profileMinimal';
 import type { ProfileUserBase } from '../profile/schemas/profileUser';
 import { memoize } from './requestCache';
-import { getNormalizedRoles } from './utils';
+import { getNormalizedRoles, zonePermissionsWhere } from './utils';
 
 export type OrgUserWithNormalizedRoles = OrganizationUserBase & {
   roles: NormalizedRole[];
@@ -94,11 +94,14 @@ const mergeGrantRows = <
 >(
   rows: TRow[],
   user?: AccessUser,
+  profileId?: string,
 ): { baseRow: TRow; normalizedRoles: NormalizedRole[] } => {
   const ownRow = rows.find((row) => row.authUserId === user?.id);
   return {
     baseRow: ownRow ?? rows[0]!,
-    normalizedRoles: rows.flatMap((row) => getNormalizedRoles(row.roles)),
+    normalizedRoles: rows.flatMap((row) =>
+      getNormalizedRoles(row.roles, { profileId }),
+    ),
   };
 };
 
@@ -125,6 +128,7 @@ export const getOrgAccessUser = memoize(
               accessRole: {
                 with: {
                   zonePermissions: {
+                    where: zonePermissionsWhere(),
                     with: {
                       accessZone: true,
                     },
@@ -140,6 +144,9 @@ export const getOrgAccessUser = memoize(
         return;
       }
 
+      // Org context: no profileId — only global (profileId IS NULL) zone
+      // permission rows apply; per-profile override rows are a profile/instance
+      // concept and never count toward org-level access.
       const { baseRow, normalizedRoles } = mergeGrantRows(orgUsers, user);
 
       const { roles: _, ...orgUserWithoutRoles } = baseRow;
@@ -190,6 +197,7 @@ export const getProfileAccessUser = memoize(
             accessRole: {
               with: {
                 zonePermissions: {
+                  where: zonePermissionsWhere(profileId),
                   with: {
                     accessZone: true,
                   },
@@ -205,7 +213,11 @@ export const getProfileAccessUser = memoize(
       return undefined;
     }
 
-    const { baseRow, normalizedRoles } = mergeGrantRows(profileUserRows, user);
+    const { baseRow, normalizedRoles } = mergeGrantRows(
+      profileUserRows,
+      user,
+      profileId,
+    );
 
     const { roles: _, ...profileUserWithoutRoles } = baseRow;
     return {

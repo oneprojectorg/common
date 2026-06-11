@@ -188,7 +188,9 @@ export const listDecisionProfiles = async ({
 
       // Compute decision access from the joined profileUser roles
       const profileUser = profile.profileUsers?.[0];
-      const roles = profileUser ? getNormalizedRoles(profileUser.roles) : [];
+      const roles = profileUser
+        ? getNormalizedRoles(profileUser.roles, { profileId: profile.id })
+        : [];
       const collapsed = collapseRoles(roles);
       const access = fromDecisionBitField(collapsed.decisions ?? 0);
 

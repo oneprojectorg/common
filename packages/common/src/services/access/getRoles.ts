@@ -6,6 +6,8 @@ import {
   desc,
   eq,
   gt,
+  inArray,
+  isNotNull,
   isNull,
   lt,
   or,
@@ -31,12 +33,38 @@ interface Role {
   permissions?: Permission;
 }
 
+/**
+ * The global roles exposed through role listings (invite modals, member role
+ * dropdowns). Global roles outside this list are system roles that are never
+ * granted by hand — e.g. the global Public role, whose permissions everyone
+ * holds by default — so offering them as an invite/assignment option is
+ * meaningless. Names are the runtime identifier for global roles (see
+ * assertGlobalRole); they are seeded and cannot be renamed via the API.
+ */
+export const EXPOSABLE_GLOBAL_ROLE_NAMES = ['Admin', 'Member'];
+
+/**
+ * Filter matching only roles an admin may hand out: profile-scoped roles and
+ * exposable global roles. Apply via `RAW` in the role lookup of assignment
+ * paths (invites, member role updates) so that system global roles resolve as
+ * nonexistent and hit the caller's existing invalid-role handling. System
+ * roles are granted only by their dedicated services (e.g. the
+ * public-participation flow), never by hand. Accepts the callback's table arg
+ * since db.query aliases tables.
+ */
+export const assignableRoleFilter = (accessRoleCols: typeof accessRoles): SQL =>
+  or(
+    isNotNull(accessRoleCols.profileId),
+    inArray(accessRoleCols.name, EXPOSABLE_GLOBAL_ROLE_NAMES),
+  )!;
+
 type RoleCursor = { value: string; id: string };
 
 /**
  * Get roles for a profile or global roles with cursor-based pagination.
  * - If profileId is provided: returns only roles specific to that profile
- * - If no profileId: returns only global roles (profileId IS NULL)
+ * - If no profileId: returns only exposable global roles (profileId IS NULL
+ *   and named in EXPOSABLE_GLOBAL_ROLE_NAMES)
  * - If zoneName is provided: includes permission for that zone
  */
 export const getRoles = async (params?: {
@@ -76,7 +104,10 @@ export const getRoles = async (params?: {
 
     const profileCondition = profileId
       ? eq(accessRoleCols.profileId, profileId)
-      : isNull(accessRoleCols.profileId);
+      : and(
+          isNull(accessRoleCols.profileId),
+          inArray(accessRoleCols.name, EXPOSABLE_GLOBAL_ROLE_NAMES),
+        )!;
 
     return cursorCondition
       ? and(profileCondition, cursorCondition)!
@@ -104,6 +135,10 @@ export const getRoles = async (params?: {
               .from(accessZones)
               .where(eq(accessZones.name, zoneName)),
           ),
+          // Only the role's global permission row: per-profile override rows
+          // would multiply join rows (breaking limit-based pagination) and are
+          // read via the effective resolvers (e.g. getDecisionRole) instead.
+          isNull(accessRolePermissionsOnAccessZones.profileId),
         ),
       )
       .where(buildWhereCondition(accessRoles))

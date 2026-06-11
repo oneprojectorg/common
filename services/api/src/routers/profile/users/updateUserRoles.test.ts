@@ -1,5 +1,5 @@
 import { db, eq } from '@op/db/client';
-import { profileUsers } from '@op/db/schema';
+import { accessRoles, profileUsers } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it } from 'vitest';
 
@@ -50,6 +50,59 @@ describe.concurrent('profile.users.updateUserRoles', () => {
 
     expect(updatedUser?.roles).toHaveLength(1);
     expect(updatedUser?.roles[0]?.accessRole.id).toBe(ROLES.ADMIN.id);
+  });
+
+  it('should reject non-assignable system global roles', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+    const { adminUser, memberUsers } = await testData.createProfile({
+      users: { admin: 1, member: 1 },
+    });
+
+    const memberUser = memberUsers[0];
+    if (!memberUser) {
+      throw new Error('Expected memberUser to be defined');
+    }
+
+    // A global role outside EXPOSABLE_GLOBAL_ROLE_NAMES — stands in for system
+    // roles like the global Public role, which are never granted by hand.
+    const [systemRole] = await db
+      .insert(accessRoles)
+      .values({
+        name: `System Role ${task.id}`,
+        profileId: null,
+      })
+      .returning();
+
+    onTestFinished(async () => {
+      if (systemRole) {
+        await db.delete(accessRoles).where(eq(accessRoles.id, systemRole.id));
+      }
+    });
+
+    const { session } = await createIsolatedSession(adminUser.email);
+    const caller = createCaller(await createTestContextWithSession(session));
+
+    await expect(
+      caller.updateUserRoles({
+        profileUserId: memberUser.profileUserId,
+        roleIds: [systemRole!.id],
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'CommonError' },
+    });
+
+    // The member's existing roles are untouched
+    const unchangedUser = await db.query.profileUsers.findFirst({
+      where: { id: memberUser.profileUserId },
+      with: {
+        roles: { with: { accessRole: true } },
+      },
+    });
+    expect(unchangedUser?.roles).toHaveLength(1);
+    expect(unchangedUser?.roles[0]?.accessRole.id).toBe(ROLES.MEMBER.id);
   });
 
   it('should support multiple roles and sync correctly', async ({

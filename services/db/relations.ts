@@ -535,6 +535,10 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.accessZones.id,
       optional: false,
     }),
+    profile: r.one.profiles({
+      from: r.accessRolePermissionsOnAccessZones.profileId,
+      to: r.profiles.id,
+    }),
   },
 
   /**

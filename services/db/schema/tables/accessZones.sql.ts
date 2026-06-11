@@ -1,5 +1,12 @@
 import { relations } from 'drizzle-orm/_relations';
-import { index, integer, pgTable, uuid, varchar } from 'drizzle-orm/pg-core';
+import {
+  index,
+  integer,
+  pgTable,
+  unique,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core';
 
 import { autoId, serviceRolePolicies, timestamps } from '../../helpers';
 import { accessRoles } from './access.sql';
@@ -41,6 +48,13 @@ export const accessRolePermissionsOnAccessZones = pgTable(
         onDelete: 'cascade',
       }),
     permission: integer().notNull(), // Bitfield: CREATE=8, READ=4, UPDATE=2, DELETE=1
+    // NULL = the role's global permission row (applies everywhere the role is
+    // granted); set = a per-profile override row. When both exist for the same
+    // (role, zone), the profile-scoped row OVERRIDES the global one for that
+    // profile. Only global roles (accessRoles.profileId IS NULL) should carry
+    // scoped rows — profile-scoped roles are already scoped by the role itself
+    // (app-level invariant, enforced by the writers).
+    profileId: uuid().references(() => profiles.id, { onDelete: 'cascade' }),
     ...timestamps,
   },
   (table) => [
@@ -48,6 +62,10 @@ export const accessRolePermissionsOnAccessZones = pgTable(
     index().on(table.accessRoleId).concurrently(),
     index().on(table.accessZoneId).concurrently(),
     index().on(table.accessRoleId, table.accessZoneId).concurrently(),
+    index('arpoaz_profile_id_idx').on(table.profileId),
+    unique('arpoaz_role_zone_profile_unique')
+      .on(table.accessRoleId, table.accessZoneId, table.profileId)
+      .nullsNotDistinct(),
   ],
 );
 

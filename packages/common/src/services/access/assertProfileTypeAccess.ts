@@ -6,7 +6,7 @@ import { inArray } from 'drizzle-orm';
 
 import { ValidationError } from '../../utils/error';
 import { type AccessUser, resolveAccessUserIds } from './index';
-import { getNormalizedRoles } from './utils';
+import { getNormalizedRoles, zonePermissionsWhere } from './utils';
 
 // Per-profile-type permission policy. Omitting a type from the record means
 // that type is NOT gated — the caller is opting into lenient pass-through
@@ -71,6 +71,9 @@ export const assertProfileTypeAccess = async ({
           accessRole: {
             with: {
               zonePermissions: {
+                // Narrowed to the whole batch; getNormalizedRoles scopes
+                // each profileUser's rows to its own profile.
+                where: zonePermissionsWhere(gatedRows.map((row) => row.id)),
                 with: { accessZone: true },
               },
             },
@@ -86,7 +89,9 @@ export const assertProfileTypeAccess = async ({
     const existing = rolesByProfileId.get(profileUser.profileId) ?? [];
     rolesByProfileId.set(profileUser.profileId, [
       ...existing,
-      ...getNormalizedRoles(profileUser.roles),
+      ...getNormalizedRoles(profileUser.roles, {
+        profileId: profileUser.profileId,
+      }),
     ]);
   }
 

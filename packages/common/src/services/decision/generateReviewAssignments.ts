@@ -1,6 +1,5 @@
-import { and, db, eq, inArray, sql } from '@op/db/client';
+import { and, db, eq, inArray } from '@op/db/client';
 import {
-  accessRolePermissionsOnAccessZones,
   decisionTransitionProposals,
   profileUserToAccessRoles,
   profileUsers,
@@ -10,6 +9,10 @@ import {
 } from '@op/db/schema';
 
 import { CommonError } from '../../utils';
+import {
+  pickEffectivePermissionRows,
+  zonePermissionsWhere,
+} from '../access/utils';
 import { decisionPermission } from './permissions';
 import type { DecisionInstanceData } from './schemas/instanceData';
 
@@ -73,6 +76,34 @@ export async function generateReviewAssignments({
     return;
   }
 
+  // Resolve which roles grant REVIEW on the decisions zone for this decision
+  // profile. Permission rows are profile-scoped: global rows (profileId IS
+  // NULL) are the baseline, and a row scoped to the decision profile OVERRIDES
+  // the global one. Candidate roles are the profile's own roles plus global
+  // roles — the only ones grantable to its members.
+  const zonePermissionRows =
+    await db.query.accessRolePermissionsOnAccessZones.findMany({
+      where: {
+        accessZoneId: decisionsZone.id,
+        ...zonePermissionsWhere(decisionProfileId),
+        accessRole: {
+          OR: [
+            { profileId: { isNull: true } },
+            { profileId: decisionProfileId },
+          ],
+        },
+      },
+      columns: { accessRoleId: true, permission: true, profileId: true },
+    });
+
+  const reviewRoleIds = pickEffectivePermissionRows(
+    zonePermissionRows,
+    (row) => row.accessRoleId,
+    decisionProfileId,
+  )
+    .filter((row) => (row.permission & decisionPermission.REVIEW) !== 0)
+    .map((row) => row.accessRoleId);
+
   const [selectedProposals, reviewerProfileIds, transitionProposalRows] =
     await Promise.all([
       db
@@ -85,39 +116,29 @@ export async function generateReviewAssignments({
 
       // profileUsers (decision membership)
       //   → profileUserToAccessRoles (role assignments)
-      //   → accessRolePermissionsOnAccessZones (zone permissions)
       //   → users (personal profileId)
-      // Filtered to members with the REVIEW bit on the decisions zone.
-      db
-        .selectDistinct({ profileId: users.profileId })
-        .from(profileUsers)
-        .innerJoin(users, eq(profileUsers.authUserId, users.authUserId))
-        .innerJoin(
-          profileUserToAccessRoles,
-          eq(profileUsers.id, profileUserToAccessRoles.profileUserId),
-        )
-        .innerJoin(
-          accessRolePermissionsOnAccessZones,
-          and(
-            eq(
-              profileUserToAccessRoles.accessRoleId,
-              accessRolePermissionsOnAccessZones.accessRoleId,
+      // Filtered to members holding a role with the REVIEW capability.
+      reviewRoleIds.length === 0
+        ? Promise.resolve<string[]>([])
+        : db
+            .selectDistinct({ profileId: users.profileId })
+            .from(profileUsers)
+            .innerJoin(users, eq(profileUsers.authUserId, users.authUserId))
+            .innerJoin(
+              profileUserToAccessRoles,
+              eq(profileUsers.id, profileUserToAccessRoles.profileUserId),
+            )
+            .where(
+              and(
+                eq(profileUsers.profileId, decisionProfileId),
+                inArray(profileUserToAccessRoles.accessRoleId, reviewRoleIds),
+              ),
+            )
+            .then((rows) =>
+              rows
+                .map((r) => r.profileId)
+                .filter((id): id is string => id != null),
             ),
-            eq(
-              accessRolePermissionsOnAccessZones.accessZoneId,
-              decisionsZone.id,
-            ),
-          ),
-        )
-        .where(
-          and(
-            eq(profileUsers.profileId, decisionProfileId),
-            sql`(${accessRolePermissionsOnAccessZones.permission} & ${decisionPermission.REVIEW}) != 0`,
-          ),
-        )
-        .then((rows) =>
-          rows.map((r) => r.profileId).filter((id): id is string => id != null),
-        ),
 
       // Look up the proposal history snapshots captured during the phase transition.
       db

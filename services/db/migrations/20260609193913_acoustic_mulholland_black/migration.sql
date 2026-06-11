@@ -1,0 +1,4 @@
+ALTER TABLE "access_role_permissions_on_access_zones" ADD COLUMN "profile_id" uuid;--> statement-breakpoint
+ALTER TABLE "access_role_permissions_on_access_zones" ADD CONSTRAINT "arpoaz_role_zone_profile_unique" UNIQUE NULLS NOT DISTINCT("access_role_id","access_zone_id","profile_id");--> statement-breakpoint
+CREATE INDEX "arpoaz_profile_id_idx" ON "access_role_permissions_on_access_zones" ("profile_id");--> statement-breakpoint
+ALTER TABLE "access_role_permissions_on_access_zones" ADD CONSTRAINT "access_role_permissions_on_access_zones_cT9NmXFQh358_fkey" FOREIGN KEY ("profile_id") REFERENCES "profiles"("id") ON DELETE CASCADE;
