@@ -126,7 +126,7 @@ const OverviewHero = ({
     // Gradient stands in until overview header images exist — same radial
     // gradient as the results page hero.
     <section className="grid w-full grid-cols-1 justify-center gap-12 bg-redPurple md:grid-cols-12">
-      <div className="mx-auto flex flex-col items-center gap-4 px-6 py-16 text-center text-neutral-offWhite sm:py-24 md:col-span-6 md:col-start-4">
+      <div className="mx-auto flex flex-col items-center gap-4 px-6 pt-16 pb-8 text-center text-neutral-offWhite sm:py-24 md:col-span-6 md:col-start-4">
         <div className="flex flex-col items-center gap-2">
           <h1 className="font-serif text-title-xl font-light sm:text-title-xxl">
             <bdi>{headline}</bdi>
