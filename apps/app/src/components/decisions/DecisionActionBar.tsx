@@ -64,7 +64,7 @@ export const DecisionActionBar = ({
               {label ?? t('Learn more')}
             </Button>
 
-            <Modal isDismissable>
+            <Modal isDismissable className="sm:max-w-2xl">
               <Dialog>
                 <ModalHeader>{label ?? t('About the process')}</ModalHeader>
                 <ModalBody>
