@@ -9,6 +9,11 @@ export { RichTextEditorToolbar } from './RichTextEditorToolbar';
 export { RichTextEditorFloatingToolbar } from './RichTextEditorFloatingToolbar';
 export { useRichTextEditorFloatingToolbar } from './useRichTextEditorFloatingToolbar';
 
+export {
+  RichTextEditorBubbleMenu,
+  type RichTextEditorBubbleMenuProps,
+} from './RichTextEditorBubbleMenu';
+
 // App-specific editor extensions
 export {
   getProposalExtensions,
