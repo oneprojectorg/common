@@ -30,6 +30,7 @@ export const LaunchProcessModal = ({
   const instanceData = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId],
   );
+  const clearInstance = useProcessBuilderStore((s) => s.clearInstance);
 
   const { data: invites, isLoading: invitesLoading } =
     trpc.profile.listProfileInvites.useQuery(
@@ -50,6 +51,10 @@ export const LaunchProcessModal = ({
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
     onSuccess: async (data) => {
       onOpenChange(false);
+      // Drop local state so the editor reseeds from fresh server data —
+      // draft edits were already autosaved, and leftover dirty fields
+      // would otherwise overlay the now-published instance.
+      clearInstance(decisionProfileId);
       await utils.decision.getDecisionBySlug.invalidate();
       router.push(`/decisions/${data.slug}`);
     },
