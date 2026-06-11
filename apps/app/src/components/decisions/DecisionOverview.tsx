@@ -89,7 +89,7 @@ function DecisionOverviewContent({
         <div className="md:col-span-4" />
         <div className="min-w-0 md:col-span-7 md:col-start-6">
           <OverviewAbout
-            html={overview.content}
+            html={overview.body}
             fallbackText={instance.description ?? undefined}
           />
         </div>
