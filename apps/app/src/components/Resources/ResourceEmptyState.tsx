@@ -29,18 +29,18 @@ export const ResourceEmptyState = ({
     return (
       <div className="rounded-lg border border-neutral-gray1">
         <EmptyState icon={<LuLeaf className="size-6" />}>
-          <p className="text-sm text-neutral-charcoal">
+          <p className="text-base text-neutral-black">
             {t('No resources yet')}
           </p>
-          <p className="max-w-72 text-center text-sm text-neutral-gray4">
+          <p className="max-w-72 text-center text-base text-neutral-charcoal">
             {t(
               'Share documents, guidelines, and links to help participants through the process.',
             )}
           </p>
           {onAddResource ? (
-            <Button color="primary" size="small" onPress={onAddResource}>
+            <Button color="primary" onPress={onAddResource}>
               <LuPlus className="size-4" />
-              {t('Add your first resource')}
+              {t('Add a resource')}
             </Button>
           ) : null}
         </EmptyState>
