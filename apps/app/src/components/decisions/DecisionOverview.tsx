@@ -88,7 +88,9 @@ function DecisionOverviewContent({
       <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-12 px-6 py-12 md:grid-cols-12 md:gap-x-6">
         {/* TODO: phases timeline lands here in a follow-up PR */}
         <div className="flex flex-col gap-4 md:col-span-4">
-          <Header3>{t('Process Overview')}</Header3>
+          <Header3 className="text-sm text-neutral-gray4">
+            {t('Process Overview')}
+          </Header3>
           <div className="flex flex-col gap-6">
             <div className="h-24 rounded border bg-neutral-offWhite" />
             <div className="h-24 rounded border bg-neutral-offWhite" />
