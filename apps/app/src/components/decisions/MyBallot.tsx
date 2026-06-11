@@ -41,7 +41,7 @@ export const MyBallot = ({
 }) => {
   const user = useUser();
 
-  if (!user.user.id) {
+  if (!user.user?.id) {
     return <NoVoteFound />;
   }
 

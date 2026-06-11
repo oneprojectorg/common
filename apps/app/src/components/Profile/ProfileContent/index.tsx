@@ -303,7 +303,7 @@ export const OrganizationProfileGrid = ({
 }) => {
   const t = useTranslations();
   const { user } = useUser();
-  const isOrg = user.currentProfile?.type === 'org';
+  const isOrg = user?.currentProfile?.type === 'org';
 
   return (
     <ProfileGridWrapper>

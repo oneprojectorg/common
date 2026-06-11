@@ -1,16 +1,12 @@
 'use client';
 
-import { RouterOutput } from '@op/api/client';
+import type { OrganizationUser } from '@/utils/UserProvider';
 import { Header1 } from '@op/ui/Header';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
 
-export const Welcome = ({
-  user,
-}: {
-  user: RouterOutput['account']['getMyAccount'];
-}) => {
+export const Welcome = ({ user }: { user: OrganizationUser }) => {
   const searchParams = useSearchParams();
   const t = useTranslations();
 

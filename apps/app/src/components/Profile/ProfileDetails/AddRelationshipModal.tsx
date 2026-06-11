@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import { skipBatch, trpc } from '@op/api/client';
 import { Organization } from '@op/api/encoders';
 import { relationshipMap } from '@op/types';
@@ -98,7 +98,7 @@ export const AddRelationshipModalSuspense = ({
 }: {
   profile: Organization;
 }) => {
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const t = useTranslations();
   const utils = trpc.useUtils();
   const [selectedRelationshipId, setSelectedRelationshipId] = useState<

@@ -163,8 +163,8 @@ const PostUpdateWithUser = ({
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           deletedAt: null,
-          profile: user.currentProfile || null,
-          profileId: user.currentProfileId || null,
+          profile: user?.currentProfile || null,
+          profileId: user?.currentProfileId || null,
           parentPostId: variables.parentPostId,
           rootProfileId: null,
           rootPostId: null,
@@ -212,8 +212,8 @@ const PostUpdateWithUser = ({
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           deletedAt: null,
-          profile: user.currentProfile || null,
-          profileId: user.currentProfileId || null,
+          profile: user?.currentProfile || null,
+          profileId: user?.currentProfileId || null,
           parentPostId: null,
           rootProfileId: null,
           rootPostId: null,
@@ -308,7 +308,7 @@ const PostUpdateWithUser = ({
         // Enhance server data with user profile if not present
         const enhancedData = {
           ...data,
-          profile: data.profile || user.currentProfile || null,
+          profile: data.profile || user?.currentProfile || null,
         };
 
         // For comments (posts with parentPostId)
@@ -592,7 +592,7 @@ const PostUpdateWithUser = ({
     }
   }, [content]);
 
-  if (!user.currentProfile) {
+  if (!user?.currentProfile) {
     return null;
   }
 
@@ -771,7 +771,7 @@ export const PostUpdate = ({
   processInstanceId?: string;
 }) => {
   const { user } = useUser();
-  const currentProfileId = user.currentProfileId;
+  const currentProfileId = user?.currentProfileId;
 
   // For profile-based associations (like proposals), we don't need an organization
   if (profileId) {
@@ -801,13 +801,13 @@ export const PostUpdate = ({
   // TODO: Ugly! Still a stopgap until we migrate off of organizationId
   if (
     organization &&
-    (user.currentOrganization?.profile.id !== currentProfileId ||
-      !user.currentOrganization)
+    (user?.currentOrganization?.profile.id !== currentProfileId ||
+      !user?.currentOrganization)
   ) {
     return null;
   }
 
-  const org = organization ?? user.currentOrganization;
+  const org = organization ?? user?.currentOrganization;
 
   return (
     <PostUpdateWithUser

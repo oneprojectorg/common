@@ -27,7 +27,8 @@ type DiscussionModalState = {
 export type ProfileFeedRenderProps = {
   posts: PostToOrganization[];
   isEmpty: boolean;
-  user: OrganizationUser;
+  // Absent for public (signed-out) viewers; the feed itself is public.
+  user?: OrganizationUser;
   infiniteScrollRef: RefObject<HTMLElement | null>;
   shouldShowTrigger: boolean;
   isFetchingNextPage: boolean;

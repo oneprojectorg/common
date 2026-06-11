@@ -35,7 +35,7 @@ function ProposalViewPageContent({
   );
   const isInReviewPhase = currentPhase?.rules?.proposals?.review === true;
   const isAuthor =
-    !!user.currentProfile?.id &&
+    !!user?.currentProfile?.id &&
     proposal.submittedBy?.id === user.currentProfile.id;
   // Author, admin, or explicit review access — only in a review phase.
   const canSeeRevisions =

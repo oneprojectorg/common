@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
 import {
@@ -85,7 +85,7 @@ export default function ProposalEditorLayout() {
     document.title = parts.join(' | ');
   }, [proposalTitle, decisionProfile.name, t]);
 
-  const { user } = useUser();
+  const { user } = useRequiredUser();
 
   // The server throws UnauthorizedError when the viewer lacks review access;
   // treat any error as "no revision requests" so the editor still loads.

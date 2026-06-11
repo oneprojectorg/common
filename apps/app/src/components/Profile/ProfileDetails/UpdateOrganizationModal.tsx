@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import type { Organization } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalHeader } from '@op/ui/Modal';
@@ -19,7 +19,7 @@ interface UpdateOrganizationModalProps {
 export const UpdateOrganizationModal = ({
   organization,
 }: UpdateOrganizationModalProps) => {
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);

@@ -1,20 +1,21 @@
 import { cache } from '@op/cache';
-import {
-  CommonError,
-  NotFoundError,
-  createUserByAuthId,
-  getUserByAuthId,
-} from '@op/common';
+import { CommonError, createUserByAuthId, getUserByAuthId } from '@op/common';
 import { z } from 'zod';
 
 import { userEncoder } from '../../encoders';
-import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
+import { openProcedure, router } from '../../trpcFactory';
 
 export const getMyAccount = router({
-  getMyAccount: networkAuthenticatedProcedure()
+  getMyAccount: openProcedure()
     .input(z.undefined())
-    .output(userEncoder)
+    .output(userEncoder.nullable())
     .query(async ({ ctx }) => {
+      // No session → no account. Anonymous sign-ins do have one (the signup
+      // trigger creates a users row for every auth user), so they fall through.
+      if (!ctx.user) {
+        return null;
+      }
+
       const { id, email } = ctx.user;
 
       const user = await cache({
@@ -32,14 +33,15 @@ export const getMyAccount = router({
       });
 
       if (!user) {
+        // Backfill accounts predating the signup trigger; without an email
+        // there is nothing to create from.
         if (!email) {
-          throw new NotFoundError('User', id);
+          return null;
         }
 
-        // if there is no user but the user is authenticated, create one
         const newUserWithRelations = await createUserByAuthId({
           authUserId: id,
-          email: ctx.user.email!,
+          email,
         });
 
         if (!newUserWithRelations) {

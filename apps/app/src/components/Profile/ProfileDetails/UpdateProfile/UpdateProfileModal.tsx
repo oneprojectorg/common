@@ -1,4 +1,4 @@
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import { Dialog } from '@op/ui/Dialog';
 import { Modal, ModalHeader } from '@op/ui/Modal';
 import { DialogTrigger } from '@op/ui/RAC';
@@ -15,7 +15,7 @@ export const UpdateProfileModal = ({
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }) => {
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const t = useTranslations();
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -35,10 +35,6 @@ export const UpdateProfileModal = ({
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen]);
-
-  if (!user) {
-    return null;
-  }
 
   return (
     <DialogTrigger>

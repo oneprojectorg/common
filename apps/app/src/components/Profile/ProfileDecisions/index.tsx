@@ -78,7 +78,7 @@ const EmptyDecisions = ({ profileId }: { profileId: string }) => {
   const access = useUser();
   const { user } = access;
   const permission = access.getPermissionsForProfile(profileId);
-  const isOwnProfile = user.currentProfile?.id === profileId;
+  const isOwnProfile = user?.currentProfile?.id === profileId;
   const isProcessAdmin = permission.decisions.create && isOwnProfile;
 
   return (

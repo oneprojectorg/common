@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { JoinProfileRequestStatus, type Organization } from '@op/api/encoders';
 import { Button, ButtonTooltip } from '@op/ui/Button';
@@ -43,7 +43,7 @@ const RequestMembershipButtonSuspense = ({
   profile: Organization;
 }) => {
   const t = useTranslations();
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const [isPending, startTransition] = useTransition();
 
   const currentProfileId = user.currentProfile?.id;

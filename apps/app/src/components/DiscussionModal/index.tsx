@@ -152,7 +152,7 @@ export function DiscussionModal({
             <PostUpdate
               parentPostId={post.id}
               placeholder={
-                user.currentProfile?.name
+                user?.currentProfile?.name
                   ? t('Comment as {name}...', {
                       name: user.currentProfile.name,
                     })

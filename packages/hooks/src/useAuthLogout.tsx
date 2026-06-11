@@ -1,11 +1,9 @@
 'use client';
 
-import { trpc } from '@op/api/client';
 import type { AuthError } from '@op/supabase/lib';
 import { useQuery } from '@tanstack/react-query';
 import type { DefinedUseQueryResult } from '@tanstack/react-query';
 
-import useAuthUser from './useAuthUser';
 import nukeCookies from './utils/nukeCookies';
 
 const useAuthLogout: () => DefinedUseQueryResult<
@@ -14,8 +12,6 @@ const useAuthLogout: () => DefinedUseQueryResult<
   } | null,
   Error
 > = () => {
-  const user = useAuthUser();
-  const utils = trpc.useUtils();
   const logout = useQuery<{
     error: AuthError | null;
   } | null>({
@@ -29,9 +25,10 @@ const useAuthLogout: () => DefinedUseQueryResult<
 
       nukeCookies();
 
-      await user.refetch();
-      utils.account.getMyAccount.invalidate();
-
+      // No in-place cache update (neither getMyAccount invalidation nor an
+      // auth-user refetch): both would re-render the still-mounted authed
+      // tree with a dead session. Callers must follow up with a full-page
+      // navigation, which tears down the client cache wholesale.
       if (locData.error) {
         throw new Error(locData.error.message);
       }
