@@ -1,7 +1,7 @@
 /**
  * Regression tests for the process builder store's persistence contract.
  *
- * The COWOP bug: visiting the editor of a published process persisted a
+ * The bug: visiting the editor of a published process persisted a
  * full server snapshot to localStorage. That stale snapshot shadowed other
  * admins' saved changes on later visits, and "Update Process" sent it back
  * to the server, silently reverting their edits.
@@ -80,14 +80,14 @@ const sarahsRubric: RubricTemplateSchema = {
 };
 
 const serverDataV1: ProcessBuilderInstanceData = {
-  name: 'COWOP Pilot',
+  name: 'Budgeting Pilot',
   description: 'Participatory budgeting pilot',
   rubricTemplate: emptyRubric,
   config: { hideBudget: false },
   phases: [{ phaseId: 'phase-1' }],
 };
 
-// Server state after another admin (Sarah) saved her rubric criteria
+// Server state after another admin saved their rubric criteria
 const serverDataV2: ProcessBuilderInstanceData = {
   ...serverDataV1,
   rubricTemplate: sarahsRubric,
@@ -156,8 +156,8 @@ describe('useProcessBuilderStore persistence contract', () => {
       useProcessBuilderStore.getState().dirty[DECISION_ID],
     ).toBeUndefined();
 
-    // Session 2: Sarah saved her rubric in the meantime; seeding with the
-    // new server data must show her criteria
+    // Session 2: another admin saved their rubric in the meantime; seeding
+    // with the new server data must show their criteria
     useProcessBuilderStore.getState().seedInstance(DECISION_ID, serverDataV2);
     expect(
       useProcessBuilderStore.getState().instances[DECISION_ID]?.rubricTemplate,

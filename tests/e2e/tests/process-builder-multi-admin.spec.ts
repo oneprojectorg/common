@@ -16,7 +16,7 @@ import {
 test.use({ viewport: { width: 1440, height: 900 } });
 
 /**
- * Regression test for the COWOP stale-localStorage bug.
+ * Regression test for the process builder stale-localStorage bug.
  *
  * Visiting the editor of a published process used to persist a full server
  * snapshot to localStorage. When another admin later saved changes via
@@ -34,7 +34,7 @@ test.describe('Process Builder multi-admin editing', () => {
     test.setTimeout(180_000);
 
     // 1. Create a published process owned by the worker org.
-    //    `authenticatedPage` (admin A / "Sarah") is an admin of this org.
+    //    `authenticatedPage` (admin A) is an admin of this org.
     const template = await getSeededTemplate();
     const instance = await createDecisionInstance({
       processId: template.id,
@@ -44,7 +44,7 @@ test.describe('Process Builder multi-admin editing', () => {
       schema: template.processSchema,
     });
 
-    // 2. Create a second admin (admin B / "Casimiro") with admin access
+    // 2. Create a second admin (admin B) with admin access
     //    on the decision profile, in their own browser context.
     const otherOrg = await createOrganization({
       testId: `pb-multi-admin-${Date.now()}`,
@@ -85,7 +85,7 @@ test.describe('Process Builder multi-admin editing', () => {
       timeout: 18_000,
     });
 
-    const newName = `Renamed by Sarah ${Date.now()}`;
+    const newName = `Renamed by admin A ${Date.now()}`;
     const nameInputA = nameField(authenticatedPage);
     await expect(nameInputA).toBeVisible({ timeout: 12_000 });
     await nameInputA.fill(newName);
