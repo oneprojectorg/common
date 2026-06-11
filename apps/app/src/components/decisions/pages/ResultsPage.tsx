@@ -137,8 +137,8 @@ function ResultsPageContent({
     <>
       <FinalPhaseSubmissionSuccessDialog />
       <ProcessSurveyGate instanceId={instanceId} isLegacy={isLegacy} />
-      {/* Hero section - will be inside gradient from DecisionHeader */}
-      <div className="px-4 py-8">
+      {/* Hero section — owns the results gradient; the header above stays neutral */}
+      <div className="bg-redPurple px-4 py-8 text-neutral-offWhite">
         <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4">
           <DecisionHero
             title={heroContent.title}

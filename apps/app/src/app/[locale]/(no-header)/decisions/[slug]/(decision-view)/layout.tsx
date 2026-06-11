@@ -10,6 +10,7 @@ import { redirect } from '@/lib/i18n/routing';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionSidePanel } from '@/components/decisions/DecisionSidePanel';
+import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
 import { DecisionViewToggle } from '@/components/decisions/DecisionViewToggle';
 
 import { loadDecision } from './loadDecision';
@@ -48,21 +49,22 @@ const DecisionViewLayout = async ({
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <DecisionHeader
-        instanceId={instanceId}
-        decisionSlug={slug}
-        isAdmin={access?.admin}
-        canReadUpdates={access?.admin === true || access?.read === true}
-        profileName={decisionProfile.name}
-        showStepper={false}
-        centerSlot={<DecisionViewToggle decisionSlug={slug} />}
-      >
+      <DecisionTranslationProvider>
+        <DecisionHeader
+          instanceId={instanceId}
+          decisionSlug={slug}
+          isAdmin={access?.admin}
+          canReadUpdates={access?.admin === true || access?.read === true}
+          profileName={decisionProfile.name}
+          showStepper={false}
+          centerSlot={<DecisionViewToggle decisionSlug={slug} />}
+        />
         {children}
         <DecisionSidePanel
           decisionProfileId={decisionProfile.id}
           access={access}
         />
-      </DecisionHeader>
+      </DecisionTranslationProvider>
     </HydrationBoundary>
   );
 };

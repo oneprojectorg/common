@@ -13,6 +13,7 @@ import { Suspense } from 'react';
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionSidePanel } from '@/components/decisions/DecisionSidePanel';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
+import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
 import { DecisionContentSkeleton } from '@/components/skeletons/DecisionSkeleton';
 
 export async function generateMetadata({
@@ -77,29 +78,32 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <DecisionHeader
-        instanceId={instanceId}
-        decisionSlug={slug}
-        isAdmin={decisionProfile.processInstance.access?.admin}
-        canReadUpdates={
-          decisionProfile.processInstance.access?.admin === true ||
-          decisionProfile.processInstance.access?.read === true
-        }
-        profileName={decisionProfile.name}
-      >
-        <Suspense fallback={<DecisionContentSkeleton />}>
-          <DecisionStateRouter
+      <div className="bg-neutral-offWhite text-gray-700">
+        <DecisionTranslationProvider>
+          <DecisionHeader
             instanceId={instanceId}
-            slug={ownerSlug}
             decisionSlug={slug}
-            decisionProfileId={decisionProfile.id}
+            isAdmin={decisionProfile.processInstance.access?.admin}
+            canReadUpdates={
+              decisionProfile.processInstance.access?.admin === true ||
+              decisionProfile.processInstance.access?.read === true
+            }
+            profileName={decisionProfile.name}
           />
-        </Suspense>
-        <DecisionSidePanel
-          decisionProfileId={decisionProfile.id}
-          access={decisionProfile.processInstance.access}
-        />
-      </DecisionHeader>
+          <Suspense fallback={<DecisionContentSkeleton />}>
+            <DecisionStateRouter
+              instanceId={instanceId}
+              slug={ownerSlug}
+              decisionSlug={slug}
+              decisionProfileId={decisionProfile.id}
+            />
+          </Suspense>
+          <DecisionSidePanel
+            decisionProfileId={decisionProfile.id}
+            access={decisionProfile.processInstance.access}
+          />
+        </DecisionTranslationProvider>
+      </div>
     </HydrationBoundary>
   );
 };
