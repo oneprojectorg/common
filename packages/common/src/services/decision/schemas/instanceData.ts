@@ -48,7 +48,7 @@ export interface InstanceOverview {
   headline?: string;
   description?: string;
   /** Rich text body as a TipTap JSON document */
-  content?: {
+  body?: {
     type: 'doc';
     content?: Record<string, unknown>[];
   };

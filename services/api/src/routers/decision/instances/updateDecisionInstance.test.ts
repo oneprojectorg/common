@@ -265,7 +265,7 @@ describe.concurrent('updateDecisionInstance', () => {
     const overview = {
       headline: `Overview headline ${task.id}`,
       description: 'A short description for the overview page',
-      content: {
+      body: {
         type: 'doc' as const,
         content: [
           {
@@ -314,7 +314,7 @@ describe.concurrent('updateDecisionInstance', () => {
       instanceId: instance.instance.id,
       config: { hideBudget: true },
     });
-    const content = {
+    const body = {
       type: 'doc' as const,
       content: [
         { type: 'paragraph', content: [{ type: 'text', text: 'Body' }] },
@@ -322,7 +322,7 @@ describe.concurrent('updateDecisionInstance', () => {
     };
     await caller.decision.updateDecisionInstance({
       instanceId: instance.instance.id,
-      overview: { headline: 'Original headline', description: 'Desc', content },
+      overview: { headline: 'Original headline', description: 'Desc', body },
     });
 
     // Partial overview update — only the headline changes
@@ -343,7 +343,7 @@ describe.concurrent('updateDecisionInstance', () => {
     // Unspecified overview fields are preserved by the merge
     expect(instanceData.overview?.headline).toBe('New headline');
     expect(instanceData.overview?.description).toBe('Desc');
-    expect(instanceData.overview?.content).toEqual(content);
+    expect(instanceData.overview?.body).toEqual(body);
   });
 
   it('should clear overview headline and description with empty strings', async ({

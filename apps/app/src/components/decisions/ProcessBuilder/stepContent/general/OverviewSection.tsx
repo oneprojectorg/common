@@ -87,14 +87,14 @@ function OverviewSectionContent({
       storeOverview?.description ??
       instance.instanceData?.overview?.description ??
       '',
-    content: storeOverview?.content ?? instance.instanceData?.overview?.content,
+    body: storeOverview?.body ?? instance.instanceData?.overview?.body,
   }).current;
 
   const [headline, setHeadline] = useState(initialOverview.headline);
   const [description, setDescription] = useState(initialOverview.description);
   // The editor manages body state internally; track the latest doc so
   // headline/description saves don't clobber it.
-  const bodyRef = useRef<OverviewBodyDoc | undefined>(initialOverview.content);
+  const bodyRef = useRef<OverviewBodyDoc | undefined>(initialOverview.body);
 
   // Set when stored content fails to load into the editor. The body editor
   // is replaced with an error message and body saves are suppressed so a
@@ -105,13 +105,13 @@ function OverviewSectionContent({
   const saveOverview = (patch: {
     headline?: string;
     description?: string;
-    content?: OverviewBodyDoc;
+    body?: OverviewBodyDoc;
   }) => {
     saveChanges({
       overview: {
         headline,
         description,
-        content: bodyRef.current,
+        body: bodyRef.current,
         ...patch,
       },
     });
@@ -134,11 +134,11 @@ function OverviewSectionContent({
   // Only a missing or empty body starts fresh. Any other shape — including
   // malformed stored data — is passed to the editor, where enableContentCheck
   // routes it to onContentError instead of silently treating it as new.
-  const bodyNodes: unknown = initialOverview.content?.content;
+  const bodyNodes: unknown = initialOverview.body?.content;
   const isFreshBody =
     bodyNodes === undefined ||
     (Array.isArray(bodyNodes) && bodyNodes.length === 0);
-  const initialBody = isFreshBody ? null : initialOverview.content;
+  const initialBody = isFreshBody ? null : initialOverview.body;
 
   const editor = useEditor({
     extensions,
@@ -166,7 +166,7 @@ function OverviewSectionContent({
       }
       const body: OverviewBodyDoc = editor.state.doc.toJSON();
       bodyRef.current = body;
-      saveOverview({ content: body });
+      saveOverview({ body });
     },
   });
 

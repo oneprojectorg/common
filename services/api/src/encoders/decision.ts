@@ -198,7 +198,7 @@ const instanceOverviewEncoder = z.object({
   headline: z.string().max(200).optional(),
   description: z.string().max(500).optional(),
   /** Rich text body as a TipTap JSON document */
-  content: z
+  body: z
     .object({
       type: z.literal('doc'),
       content: z.array(z.record(z.string(), z.unknown())).optional(),
