@@ -28,6 +28,13 @@ export const ResourcesTabContent = ({
 }) => {
   const t = useTranslations();
   const [adding, setAdding] = useState(false);
+  // Shares the cache with ResourcesFeed's suspense query — used only to hide
+  // the footer when the list is empty (the empty state has its own CTA).
+  const { data: collections } = trpc.resources.collections.list.useQuery(
+    { profileId },
+    { enabled: canRead, staleTime: 30 * 1000 },
+  );
+  const isEmpty = collections !== undefined && collections.items.length === 0;
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
@@ -58,7 +65,7 @@ export const ResourcesTabContent = ({
           )}
         </div>
       </div>
-      {canManage && !adding ? (
+      {canManage && !adding && !isEmpty ? (
         <div className="shrink-0 border-t border-neutral-gray1 bg-white px-4 py-6 sm:px-6">
           <Button
             color="secondary"
