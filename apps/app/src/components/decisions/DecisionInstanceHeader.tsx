@@ -34,16 +34,17 @@ export const DecisionInstanceHeader = ({
   canReadUpdates?: boolean;
   /**
    * Optional content for the header's center column (e.g. the Overview /
-   * Current Phase toggle). When provided, the title moves beside the Back
-   * link so the center stays reserved for the slot; otherwise the title is
-   * centered as before.
+   * Current Phase toggle). When provided, on md+ the title moves beside the
+   * Back link so the center stays reserved for the slot; on mobile the title
+   * stays centered and the slot floats below the sticky header instead.
+   * Otherwise the title is centered as before.
    */
   centerSlot?: ReactNode;
 }) => {
   const t = useTranslations();
 
   return (
-    <header className="sticky top-0 z-10 grid grid-cols-[auto_1fr_auto] items-center border-b bg-white p-2 px-6 sm:grid-cols-3 md:py-3">
+    <header className="sticky top-0 z-10 grid grid-cols-[auto_1fr_auto] items-center border-b bg-white p-2 px-4 sm:grid-cols-3 md:px-6 md:py-3">
       <div className="flex min-w-0 items-center gap-3">
         <Link
           href={backTo.href}
@@ -60,15 +61,22 @@ export const DecisionInstanceHeader = ({
               aria-hidden
               className="hidden h-6 w-px shrink-0 bg-neutral-gray2 md:block"
             />
-            <Header1 className="truncate font-serif text-title-sm text-neutral-charcoal sm:text-title-sm">
+            <Header1 className="hidden truncate font-serif text-title-sm text-neutral-charcoal sm:text-title-sm md:block">
               <bdi>{title}</bdi>
             </Header1>
           </>
         ) : null}
       </div>
 
-      <div className="flex justify-center text-center">
-        {centerSlot ?? (
+      <div className="flex min-w-0 justify-center text-center">
+        {centerSlot ? (
+          <>
+            <div className="hidden md:flex">{centerSlot}</div>
+            <Header1 className="truncate font-serif text-title-sm text-neutral-charcoal md:hidden">
+              <bdi>{title}</bdi>
+            </Header1>
+          </>
+        ) : (
           <Header1 className="font-serif text-title-sm text-neutral-charcoal sm:text-title-sm">
             <bdi>{title}</bdi>
           </Header1>
@@ -94,6 +102,12 @@ export const DecisionInstanceHeader = ({
         <LocaleChooser />
         <UserAvatarMenu />
       </div>
+
+      {centerSlot ? (
+        <div className="pointer-events-none absolute inset-x-0 top-full flex justify-center pt-4 md:hidden">
+          <div className="pointer-events-auto">{centerSlot}</div>
+        </div>
+      ) : null}
     </header>
   );
 };
