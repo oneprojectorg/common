@@ -137,12 +137,20 @@ const OverviewHero = ({
             </p>
           ) : null}
         </div>
-        <div className="flex w-full flex-wrap justify-center gap-4">
-          <ButtonLink color="secondary" href={currentPhaseHref}>
+        <div className="align-stretch flex w-full flex-col gap-4 md:flex-row md:justify-center">
+          <ButtonLink
+            color="secondary"
+            href={currentPhaseHref}
+            className="w-auto"
+          >
             {t('Browse proposals')}
           </ButtonLink>
           {canSubmitProposal ? (
-            <ButtonLink color="primary" href={currentPhaseHref}>
+            <ButtonLink
+              color="primary"
+              href={currentPhaseHref}
+              className="w-auto"
+            >
               {t('Submit a proposal')}
             </ButtonLink>
           ) : null}
