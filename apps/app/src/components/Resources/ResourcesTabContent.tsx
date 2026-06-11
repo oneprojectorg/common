@@ -13,6 +13,7 @@ import { useTranslations } from '@/lib/i18n';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 import { AddResourcePanel } from './AddResourcePanel';
+import { CollectionResourcesSuspense } from './CollectionResources';
 import { CollectionSection } from './CollectionSection';
 import { ResourceDropZone } from './ResourceDropZone';
 import { ResourceEmptyState } from './ResourceEmptyState';
@@ -102,6 +103,20 @@ const ResourcesFeed = ({
       );
     }
     return <ResourceEmptyState variant="member-empty" />;
+  }
+
+  // Multi-section grouping isn't user-controllable yet, so when there's only
+  // one collection the accordion is just visual noise — render the items
+  // directly. The accordion comes back as soon as a second collection exists.
+  if (collections.items.length === 1) {
+    const collection = collections.items[0]!;
+    return (
+      <CollectionResourcesSuspense
+        profileId={profileId}
+        collectionId={collection.id}
+        canManage={canManage}
+      />
+    );
   }
 
   return (

@@ -32,22 +32,24 @@ export const CollectionSection = ({
         <span className="truncate">{name}</span>
       </AccordionTrigger>
       <AccordionContent>
-        <ErrorBoundary>
-          <Suspense
-            fallback={
-              <div className="flex flex-col gap-2">
-                <Skeleton className="h-24 w-full rounded-lg" />
-                <Skeleton className="h-24 w-full rounded-lg" />
-              </div>
-            }
-          >
-            <CollectionResourcesSuspense
-              profileId={profileId}
-              collectionId={collectionId}
-              canManage={canManage}
-            />
-          </Suspense>
-        </ErrorBoundary>
+        <div className="pt-3">
+          <ErrorBoundary>
+            <Suspense
+              fallback={
+                <div className="flex flex-col gap-2">
+                  <Skeleton className="h-24 w-full rounded-lg" />
+                  <Skeleton className="h-24 w-full rounded-lg" />
+                </div>
+              }
+            >
+              <CollectionResourcesSuspense
+                profileId={profileId}
+                collectionId={collectionId}
+                canManage={canManage}
+              />
+            </Suspense>
+          </ErrorBoundary>
+        </div>
       </AccordionContent>
     </AccordionItem>
   );
