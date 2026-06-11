@@ -60,6 +60,7 @@ function DecisionOverviewContent({
   instanceId,
   decisionSlug,
 }: DecisionOverviewProps) {
+  const t = useTranslations();
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
 
   const overview = decisionOverviewMock;
@@ -86,7 +87,14 @@ function DecisionOverviewContent({
           body spans 7 starting at col 6. Stacks to one column below md. */}
       <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-12 px-6 py-12 md:grid-cols-12 md:gap-x-6">
         {/* TODO: phases timeline lands here in a follow-up PR */}
-        <div className="md:col-span-4" />
+        <div className="flex flex-col gap-4 md:col-span-4">
+          <Header3>{t('Process Overview')}</Header3>
+          <div className="flex flex-col gap-6">
+            <div className="h-24 rounded border bg-neutral-offWhite" />
+            <div className="h-24 rounded border bg-neutral-offWhite" />
+            <div className="h-24 rounded border bg-neutral-offWhite" />
+          </div>
+        </div>
         <div className="min-w-0 md:col-span-7 md:col-start-6">
           <OverviewAbout
             html={overview.body}
