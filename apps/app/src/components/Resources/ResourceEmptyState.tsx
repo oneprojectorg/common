@@ -28,7 +28,7 @@ export const ResourceEmptyState = ({
   if (variant === 'admin-empty') {
     return (
       <div className="rounded-lg border border-neutral-gray1">
-        <EmptyState icon={<LuLeaf className="size-6" />}>
+        <EmptyState className="p-6" icon={<LuLeaf className="size-6" />}>
           <p className="text-base text-neutral-black">
             {t('No resources yet')}
           </p>
