@@ -53,8 +53,8 @@ export const resolveAccessUserIds = (user?: AccessUser): string[] =>
 
 /**
  * Cache key for the durable `orgUser` cache. Shared by the write site and every
- * invalidator so the key shape can't drift — the resolved id set (own ∪ public)
- * is part of the identity, so a stale `[organizationId, user.id]` key would miss
+ * invalidator so the key shape can't drift — the resolved id set (own plus
+ * public) is part of the identity, so a stale `[organizationId, user.id]` key would miss
  * and serve removed/demoted members their old roles until TTL.
  */
 export const orgUserCacheKey = ({
@@ -67,7 +67,7 @@ export const orgUserCacheKey = ({
 
 /**
  * Cache key for profile-access lookups. Mirrors {@link orgUserCacheKey}: the
- * resolved id set (own ∪ public) is part of the identity. NOTE:
+ * resolved id set (own plus public) is part of the identity. NOTE:
  * {@link getProfileAccessUser} has no durable cache today, so this currently
  * only keys the request-scoped memo — but it keeps the shape in one place for
  * symmetry and if a durable profile-access cache is ever added.
@@ -81,9 +81,9 @@ export const profileUserCacheKey = ({
 }): [string, string] => [profileId, resolveAccessUserIds(user).join(':')];
 
 /**
- * Collapse the grant rows matched for a caller (their own ∪ the public
+ * Merge the grant rows matched for a caller (their own grant plus the public
  * {@link GLOBAL_USER_PUBLIC} grant) into a single access record: prefer the
- * caller's own row for identity fields, but union the roles across every
+ * caller's own row for identity fields, but collect the roles across every
  * matched row. `rows` must be non-empty.
  */
 const mergeGrantRows = <

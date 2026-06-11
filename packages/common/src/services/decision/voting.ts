@@ -348,9 +348,7 @@ export const getVotingStatus = async ({
     if (user) {
       try {
         profileId = await getIndividualProfileId(user.id);
-      } catch {
-        profileId = undefined;
-      }
+      } catch {}
     }
 
     // Get process instance and schema
@@ -388,14 +386,11 @@ export const getVotingStatus = async ({
     // Check if user has voted
     let voteSubmission = null;
     if (profileId) {
-      voteSubmission = await db._query.decisionsVoteSubmissions.findFirst({
-        where: and(
-          eq(
-            decisionsVoteSubmissions.processInstanceId,
-            data.processInstanceId,
-          ),
-          eq(decisionsVoteSubmissions.submittedByProfileId, profileId),
-        ),
+      voteSubmission = await db.query.decisionsVoteSubmissions.findFirst({
+        where: {
+          processInstanceId: data.processInstanceId,
+          submittedByProfileId: profileId,
+        },
         with: {
           voteProposals: {
             with: {

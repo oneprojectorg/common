@@ -1,4 +1,5 @@
 import { mockCollab, textFragment } from '@op/collab/testing';
+import { GLOBAL_USER_PUBLIC } from '@op/core';
 import { db } from '@op/db/client';
 import {
   ProcessStatus,
@@ -267,6 +268,115 @@ describe.concurrent('listProposals', () => {
     // Non-admin should only see visible proposal
     expect(result.proposals).toHaveLength(1);
     expect(result.proposals[0]?.id).toBe(visibleProposal.id);
+  });
+
+  it('does NOT surface a HIDDEN proposal via a public grant on the proposal profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const [visibleProposal, hiddenProposal, adminCaller, memberUser] =
+      await Promise.all([
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Visible Proposal' },
+        }),
+        testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: 'Hidden Proposal' },
+        }),
+        createAuthenticatedCaller(setup.userEmail),
+        testData.createMemberUser({
+          organization: setup.organization,
+          instanceProfileIds: [instance.profileId],
+        }),
+      ]);
+
+    await Promise.all([
+      adminCaller.decision.submitProposal({ proposalId: visibleProposal.id }),
+      adminCaller.decision.submitProposal({ proposalId: hiddenProposal.id }),
+    ]);
+
+    await adminCaller.decision.updateProposal({
+      proposalId: hiddenProposal.id,
+      data: { visibility: Visibility.HIDDEN },
+    });
+
+    await testData.grantProfileAccess(
+      hiddenProposal.profileId!,
+      GLOBAL_USER_PUBLIC,
+      'public-sentinel@example.com',
+      false,
+    );
+
+    const memberCaller = await createAuthenticatedCaller(memberUser.email);
+    const result = await memberCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.proposals).toHaveLength(1);
+    expect(result.proposals[0]?.id).toBe(visibleProposal.id);
+  });
+
+  it('does NOT surface a draft proposal via a public grant on the proposal profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const [creator, memberUser] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
+
+    const draftProposal = await testData.createProposal({
+      userEmail: creator.email,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Private Draft' },
+    });
+
+    await testData.grantProfileAccess(
+      draftProposal.profileId!,
+      GLOBAL_USER_PUBLIC,
+      'public-sentinel@example.com',
+      false,
+    );
+
+    const memberCaller = await createAuthenticatedCaller(memberUser.email);
+    const result = await memberCaller.decision.listProposals({
+      processInstanceId: instance.instance.id,
+    });
+
+    expect(result.proposals.map((p) => p.id)).not.toContain(draftProposal.id);
   });
 
   it('should show hidden proposals to admin users', async ({

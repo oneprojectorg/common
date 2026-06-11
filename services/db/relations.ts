@@ -842,4 +842,47 @@ export const relations = defineRelations(schema, (r) => ({
       alias: 'moderationFlag_flaggedBy',
     }),
   },
+
+  /**
+   * Decision vote submission relations
+   *
+   * processInstanceId and submittedByProfileId are NOT NULL. A submission
+   * fans out to its selected proposals via the decisionsVoteProposals junction.
+   */
+  decisionsVoteSubmissions: {
+    processInstance: r.one.processInstances({
+      from: r.decisionsVoteSubmissions.processInstanceId,
+      to: r.processInstances.id,
+      optional: false,
+    }),
+    submittedBy: r.one.profiles({
+      from: r.decisionsVoteSubmissions.submittedByProfileId,
+      to: r.profiles.id,
+      alias: 'decisionsVoteSubmission_submittedBy',
+      optional: false,
+    }),
+    voteProposals: r.many.decisionsVoteProposals({
+      from: r.decisionsVoteSubmissions.id,
+      to: r.decisionsVoteProposals.voteSubmissionId,
+    }),
+  },
+
+  /**
+   * Decision vote proposals relations (junction table)
+   *
+   * Links a vote submission to each proposal it selected. Both columns are
+   * NOT NULL.
+   */
+  decisionsVoteProposals: {
+    voteSubmission: r.one.decisionsVoteSubmissions({
+      from: r.decisionsVoteProposals.voteSubmissionId,
+      to: r.decisionsVoteSubmissions.id,
+      optional: false,
+    }),
+    proposal: r.one.proposals({
+      from: r.decisionsVoteProposals.proposalId,
+      to: r.proposals.id,
+      optional: false,
+    }),
+  },
 }));

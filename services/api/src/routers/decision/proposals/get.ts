@@ -9,7 +9,7 @@ export const getProposalRouter = router({
   /**
    * NOTE: not wrapped in a shared `cache()` here. The cache key is keyed by
    * profileId only (no caller identity), so a cache hit would serve the
-   * proposal to a non-member and bypass the authz inside `getProposal`. The
+   * proposal to a non-member and bypass the authorization inside `getProposal`. The
    * proposal is fetched (and authorized) on every request.
    */
   getProposal: openProcedure()

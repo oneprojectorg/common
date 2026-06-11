@@ -12,6 +12,7 @@ import {
   isNull,
   lt,
   ne,
+  sql,
 } from '@op/db/client';
 import type { Proposal } from '@op/db/schema';
 import {
@@ -326,28 +327,30 @@ export async function getProposalIdsForPhase({
 export async function getPhaseProposalAndDraftIds({
   instance,
   phaseId,
-  authUserIds,
+  ownerAuthUserId,
   db = defaultDb,
 }: {
   instance: PhaseScopedInstance;
   phaseId?: string;
-  authUserIds: string[];
+  ownerAuthUserId: string | undefined;
   db?: DbClient;
 }): Promise<{ nonDraftIds: string[]; draftIds: string[] }> {
   const ctx = deriveInstanceContext(instance);
   const instanceId = instance.id;
 
   const nonDraftPredicate = ne(proposals.status, ProposalStatus.DRAFT);
-  const draftAccessPredicate = and(
-    eq(proposals.status, ProposalStatus.DRAFT),
-    inArray(
-      proposals.profileId,
-      db
-        .select({ profileId: profileUsers.profileId })
-        .from(profileUsers)
-        .where(inArray(profileUsers.authUserId, authUserIds)),
-    ),
-  );
+  const draftAccessPredicate = ownerAuthUserId
+    ? and(
+        eq(proposals.status, ProposalStatus.DRAFT),
+        inArray(
+          proposals.profileId,
+          db
+            .select({ profileId: profileUsers.profileId })
+            .from(profileUsers)
+            .where(eq(profileUsers.authUserId, ownerAuthUserId)),
+        ),
+      )
+    : sql`false`;
 
   const resolvedPhaseId = ctx.isLegacy
     ? undefined

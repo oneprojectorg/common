@@ -18,7 +18,6 @@ import {
   type ProfileUserWithNormalizedRoles,
   assertInstanceProfileAccess,
   getCurrentProfileId,
-  resolveAccessUserIds,
 } from '../access';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
@@ -169,17 +168,10 @@ export const listProposals = async ({
   if (user) {
     try {
       currentProfileId = await getCurrentProfileId(user.id);
-    } catch {
-      currentProfileId = undefined;
-    }
+    } catch {}
   }
 
-  // Caller's own grants unioned with public (GLOBAL_USER_PUBLIC) grants — used
-  // for the draft and HIDDEN visibility subqueries below.
-  // INVARIANT: public grants must only be placed on the process/decision
-  // profile, never on an individual proposal profile — otherwise this would
-  // surface every caller's drafts/HIDDEN proposals to the public.
-  const accessUserIds = resolveAccessUserIds(user);
+  const ownerAuthUserId = user?.id;
 
   // Fetch the instance row up front and resolve the explicit ID scope in
   // parallel. The row is reused for the phase-resolution context (instead of
@@ -236,7 +228,7 @@ export const listProposals = async ({
     const ids = await getPhaseProposalAndDraftIds({
       instance,
       phaseId: input.phaseId,
-      authUserIds: accessUserIds,
+      ownerAuthUserId,
     });
     return { phaseProposalIds: ids.nonDraftIds, phaseDraftIds: ids.draftIds };
   })();
@@ -374,20 +366,23 @@ export const listProposals = async ({
     // invited collaborators on the proposal's profile — same pattern the
     // draft filter uses, so a collaborator's view of a co-authored proposal
     // doesn't change the moment it's submitted with HIDDEN visibility.
+    const ownsProposalProfile = ownerAuthUserId
+      ? inArray(
+          t.profileId,
+          db
+            .select({ profileId: profileUsers.profileId })
+            .from(profileUsers)
+            .where(eq(profileUsers.authUserId, ownerAuthUserId)),
+        )
+      : undefined;
+
     const nonDraftVisibilityFilter = canManageProposals
       ? phaseScopedNonDraftIdFilter
       : and(
           phaseScopedNonDraftIdFilter,
-          or(
-            eq(t.visibility, Visibility.VISIBLE),
-            inArray(
-              t.profileId,
-              db
-                .select({ profileId: profileUsers.profileId })
-                .from(profileUsers)
-                .where(inArray(profileUsers.authUserId, accessUserIds)),
-            ),
-          )!,
+          ownsProposalProfile
+            ? or(eq(t.visibility, Visibility.VISIBLE), ownsProposalProfile)!
+            : eq(t.visibility, Visibility.VISIBLE),
         )!;
 
     return and(clause, or(draftFilter, nonDraftVisibilityFilter)!)!;
