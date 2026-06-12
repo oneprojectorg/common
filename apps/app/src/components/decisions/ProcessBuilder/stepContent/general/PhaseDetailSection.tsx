@@ -1,10 +1,9 @@
 'use client';
 
 import { Skeleton } from '@op/ui/Skeleton';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense } from 'react';
 
 import type { SectionProps } from '../../contentRegistry';
-import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 import { PhaseDetailPage } from './PhaseDetailPage';
 
 function PhaseDetailSkeleton() {
@@ -29,24 +28,6 @@ function PhaseDetailSkeleton() {
 }
 
 export default function PhaseDetailSection(props: SectionProps) {
-  const [hasHydrated, setHasHydrated] = useState(() =>
-    useProcessBuilderStore.persist.hasHydrated(),
-  );
-
-  useEffect(() => {
-    const unsubscribe = useProcessBuilderStore.persist.onFinishHydration(() => {
-      setHasHydrated(true);
-    });
-
-    void useProcessBuilderStore.persist.rehydrate();
-
-    return unsubscribe;
-  }, []);
-
-  if (!hasHydrated) {
-    return <PhaseDetailSkeleton />;
-  }
-
   return (
     <Suspense fallback={<PhaseDetailSkeleton />}>
       <PhaseDetailPage {...props} />

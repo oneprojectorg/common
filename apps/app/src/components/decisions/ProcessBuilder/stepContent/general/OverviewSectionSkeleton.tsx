@@ -1,6 +1,5 @@
 import { Skeleton } from '@op/ui/Skeleton';
 
-// Skeleton shown while Zustand hydrates from localStorage
 export function OverviewSectionSkeleton() {
   return (
     <div className="mx-auto w-full max-w-160 space-y-8 p-4 md:p-8">

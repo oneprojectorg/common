@@ -43,7 +43,7 @@ export function ProposalCategoriesSectionContent({
   const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
 
   // Local state — immediate source of truth for UI
-  // Seed from store (localStorage) first, then fall back to server data
+  // Seed from the store's merged view first, then fall back to server data
   const [config, setConfig] = useState<CategoryConfig>(() => ({
     categories: storeData?.config?.categories ?? serverConfig?.categories ?? [],
     requireCategorySelection:
