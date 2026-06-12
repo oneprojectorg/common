@@ -7,6 +7,7 @@ import {
   type MapLayerMouseEvent,
   type MapRef,
   NavigationControl,
+  type ViewStateChangeEvent,
 } from 'react-map-gl/maplibre';
 
 import { cn } from '../lib/utils';
@@ -34,6 +35,11 @@ export interface MapProps {
   showZoomControl?: boolean;
   /** Called with the clicked coordinate when the user taps the map. */
   onClick?: (lngLat: LngLat) => void;
+  /**
+   * Called with the settled camera (center + zoom) after the user finishes
+   * panning or zooming. Use it to persist a chosen view.
+   */
+  onMoveEnd?: (view: { center: LngLat; zoom: number }) => void;
   /** Accessible label for the map region. */
   ariaLabel?: string;
   className?: string;
@@ -53,6 +59,7 @@ export function Map({
   interactive = true,
   showZoomControl = true,
   onClick,
+  onMoveEnd,
   ariaLabel,
   className,
   children,
@@ -86,6 +93,18 @@ export function Map({
           onClick
             ? (event: MapLayerMouseEvent) =>
                 onClick({ lng: event.lngLat.lng, lat: event.lngLat.lat })
+            : undefined
+        }
+        onMoveEnd={
+          onMoveEnd
+            ? (event: ViewStateChangeEvent) =>
+                onMoveEnd({
+                  center: {
+                    lng: event.viewState.longitude,
+                    lat: event.viewState.latitude,
+                  },
+                  zoom: event.viewState.zoom,
+                })
             : undefined
         }
       >

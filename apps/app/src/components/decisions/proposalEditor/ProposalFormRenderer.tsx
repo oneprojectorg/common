@@ -374,6 +374,7 @@ function renderField(
             initialValue={
               (draft[key] as ProposalDraftFields['location']) ?? null
             }
+            defaultMapView={schema['x-map-default']}
             onChange={(value) => onFieldChange(key, value)}
           />
         </div>

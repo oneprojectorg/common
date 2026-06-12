@@ -12,6 +12,7 @@ import type { TranslationKey } from '@/lib/i18n';
 
 import type { FieldType, FieldView } from '../../../proposalTemplate';
 import { FieldConfigDropdown } from './FieldConfigDropdown';
+import { FieldConfigLocation } from './FieldConfigLocation';
 import { FieldConfigText } from './FieldConfigText';
 
 /**
@@ -59,6 +60,7 @@ export const FIELD_TYPE_REGISTRY: Record<FieldType, FieldTypeRegistryEntry> = {
     icon: LuMapPin,
     labelKey: 'Location',
     placeholderKey: 'Location',
+    ConfigComponent: FieldConfigLocation,
   },
 };
 

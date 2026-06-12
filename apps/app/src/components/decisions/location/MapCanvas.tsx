@@ -6,11 +6,15 @@ import { MapMarker } from '@op/ui/MapMarker';
 export interface MapCanvasProps {
   styleUrl: string;
   center: LngLat;
+  /** Initial zoom level (defaults to the underlying Map's default). */
+  zoom?: number;
   /** Pin position, or null for no marker. */
   marker?: LngLat | null;
   draggable?: boolean;
   onMapClick?: (lngLat: LngLat) => void;
   onMarkerDragEnd?: (lngLat: LngLat) => void;
+  /** Called with the settled camera after the user pans or zooms. */
+  onMoveEnd?: (view: { center: LngLat; zoom: number }) => void;
   ariaLabel?: string;
   className?: string;
 }
@@ -25,10 +29,12 @@ export interface MapCanvasProps {
 export default function MapCanvas({
   styleUrl,
   center,
+  zoom,
   marker,
   draggable = false,
   onMapClick,
   onMarkerDragEnd,
+  onMoveEnd,
   ariaLabel,
   className,
 }: MapCanvasProps) {
@@ -36,7 +42,9 @@ export default function MapCanvas({
     <Map
       styleUrl={styleUrl}
       center={center}
+      zoom={zoom}
       onClick={onMapClick}
+      onMoveEnd={onMoveEnd}
       ariaLabel={ariaLabel}
       className={className}
     >

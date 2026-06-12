@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import type { LocationData } from '@op/common/client';
+import type { LocationData, MapDefaultView } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { FieldError } from '@op/ui/Field';
 import type { LngLat } from '@op/ui/Map';
@@ -18,6 +18,11 @@ import { useProjectAreaCheck } from './useProjectAreaCheck';
 
 interface LocationMapFieldProps {
   value: LocationData | null;
+  /**
+   * Default map camera (from the template's location field) used to position
+   * the map before the participant has chosen a location.
+   */
+  defaultMapView?: MapDefaultView;
   onChange: (value: LocationData | null) => void;
 }
 
@@ -31,11 +36,17 @@ interface LocationMapFieldProps {
  * or clicking moves the pin without the camera lurching; only search and
  * "use my location" recenter.
  */
-export function LocationMapField({ value, onChange }: LocationMapFieldProps) {
+export function LocationMapField({
+  value,
+  defaultMapView,
+  onChange,
+}: LocationMapFieldProps) {
   const t = useTranslations();
   const utils = trpc.useUtils();
   const [center, setCenter] = useState<LngLat>(
-    value ? { lng: value.lng, lat: value.lat } : DEFAULT_MAP_CENTER,
+    value
+      ? { lng: value.lng, lat: value.lat }
+      : (defaultMapView?.center ?? DEFAULT_MAP_CENTER),
   );
   // Bumped on every direct map placement to clear the search box.
   const [searchResetToken, setSearchResetToken] = useState(0);
@@ -117,6 +128,7 @@ export function LocationMapField({ value, onChange }: LocationMapFieldProps) {
         <MapCanvas
           styleUrl={MAP_STYLE_URL}
           center={center}
+          zoom={value ? undefined : defaultMapView?.zoom}
           marker={value ? { lng: value.lng, lat: value.lat } : null}
           draggable
           onMapClick={placeFromCoordinates}

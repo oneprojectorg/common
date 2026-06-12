@@ -1,7 +1,7 @@
 'use client';
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
-import type { LocationData } from '@op/common/client';
+import type { LocationData, MapDefaultView } from '@op/common/client';
 import { normalizeLocation } from '@op/common/client';
 import { useEffect, useRef, useState } from 'react';
 
@@ -11,6 +11,8 @@ import { useCollaborativeDoc } from './CollaborativeDocContext';
 
 interface CollaborativeLocationFieldProps {
   initialValue?: LocationData | null;
+  /** Default map camera shown before a location is chosen (from the template). */
+  defaultMapView?: MapDefaultView;
   onChange?: (location: LocationData | null) => void;
 }
 
@@ -57,6 +59,7 @@ function parseLocationText(text: string): LocationData | null {
  */
 export function CollaborativeLocationField({
   initialValue = null,
+  defaultMapView,
   onChange,
 }: CollaborativeLocationFieldProps) {
   const { ydoc } = useCollaborativeDoc();
@@ -110,5 +113,11 @@ export function CollaborativeLocationField({
     }
   };
 
-  return <LocationMapField value={location} onChange={handleChange} />;
+  return (
+    <LocationMapField
+      value={location}
+      defaultMapView={defaultMapView}
+      onChange={handleChange}
+    />
+  );
 }
