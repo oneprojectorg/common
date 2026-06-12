@@ -27,6 +27,7 @@ import type {
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
+import { syncProposalBoundaryTag } from './syncProposalBoundaryTag';
 import { syncProposalProfileLocation } from './syncProposalProfileLocation';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
@@ -243,6 +244,12 @@ export const updateProposal = async ({
     if (data.proposalData) {
       const newCategoryLabels = parseProposalData(data.proposalData).category;
       await updateProposalCategoryLink(tx, proposalId, newCategoryLabels);
+    }
+
+    // Re-tag the proposal with its location's boundary category. Runs AFTER the
+    // category re-link above, which clears all categories before re-adding.
+    if (proposalDataWithVersion) {
+      await syncProposalBoundaryTag(tx, proposalId, proposalDataWithVersion);
     }
 
     const proposal = await tx.query.proposals.findFirst({

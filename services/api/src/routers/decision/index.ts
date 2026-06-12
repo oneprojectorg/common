@@ -3,6 +3,7 @@ import { deleteProposalAttachment } from './deleteProposalAttachment';
 import { instancesRouter } from './instances';
 import { processesRouter } from './processes';
 import { proposalsRouter } from './proposals';
+import { resolveBoundaryRouter } from './resolveBoundary';
 import { resultsRouter } from './results';
 import { reviewsRouter } from './reviews';
 import { surveyRouter } from './survey';
@@ -19,6 +20,7 @@ export const decisionRouter = mergeRouters(
   deleteProposalAttachment,
   votingRouter,
   surveyRouter,
+  resolveBoundaryRouter,
 );
 
 export type { SurveyInternalData } from './survey';

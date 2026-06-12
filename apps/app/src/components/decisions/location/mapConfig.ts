@@ -12,9 +12,3 @@ export const MAP_STYLE_URL = MAPTILER_KEY
 
 /** Fallback camera target before a location is chosen (Bexley, OH). */
 export const DEFAULT_MAP_CENTER: LngLat = { lng: -82.9371, lat: 39.9686 };
-
-/**
- * Council district shown beneath the map. Hardcoded for now — the backend that
- * resolves a district from the placed point is a follow-up.
- */
-export const COUNCIL_DISTRICT = 5;

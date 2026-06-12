@@ -7,6 +7,7 @@ import { useTranslations } from '@/lib/i18n';
 import { CouncilDistrictBadge } from './CouncilDistrictBadge';
 import { MapCanvas } from './dynamicMap';
 import { MAP_STYLE_URL } from './mapConfig';
+import { useProjectAreaCheck } from './useProjectAreaCheck';
 
 interface LocationMapViewProps {
   value: LocationData | null;
@@ -19,13 +20,16 @@ interface LocationMapViewProps {
  */
 export function LocationMapView({ value }: LocationMapViewProps) {
   const t = useTranslations();
+  const { boundaryName } = useProjectAreaCheck(
+    value ? { lng: value.lng, lat: value.lat } : null,
+  );
 
   if (!value || !MAP_STYLE_URL) {
     return <p className="text-sm text-neutral-gray3 italic">—</p>;
   }
 
   return (
-    <div className="rounded-lg overflow-hidden border border-neutral-gray1">
+    <div className="overflow-hidden rounded-lg border border-neutral-gray1">
       <MapCanvas
         styleUrl={MAP_STYLE_URL}
         center={{ lng: value.lng, lat: value.lat }}
@@ -37,7 +41,7 @@ export function LocationMapView({ value }: LocationMapViewProps) {
         <span className="text-neutral-black" dir="auto">
           {value.address ?? `${value.lat.toFixed(5)}, ${value.lng.toFixed(5)}`}
         </span>
-        <CouncilDistrictBadge />
+        <CouncilDistrictBadge boundaryName={boundaryName} />
       </div>
     </div>
   );

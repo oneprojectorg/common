@@ -3,6 +3,7 @@ import { taxonomies, taxonomyTerms } from '@op/db/schema';
 import slugify from 'slugify';
 
 import { CommonError } from '../../utils';
+import { linkBoundaryToCategoryTerm } from './linkBoundaryToCategory';
 
 /**
  * Ensures the proposal taxonomy exists and that each category label has a
@@ -77,6 +78,9 @@ export async function ensureProposalTaxonomyTerms(
 
     if (existingTerm) {
       taxonomyTermIds.push(existingTerm.id);
+      // If a boundary was imported with this category's name, link it now so
+      // the boundary auto-tags proposals once the category is in use.
+      await linkBoundaryToCategoryTerm(db, existingTerm.id, categoryLabel);
     }
   }
 

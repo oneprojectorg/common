@@ -1,5 +1,7 @@
 'use client';
 
+import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
+import { trpc } from '@op/api/client';
 import {
   formatProposalCategories,
   parseCategoryFragmentValue,
@@ -8,6 +10,7 @@ import {
 } from '@op/common/client';
 import { cn } from '@op/ui/utils';
 import type { Editor, JSONContent } from '@tiptap/react';
+import { useEffect, useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 import type { TranslateFn } from '@/lib/i18n';
@@ -20,6 +23,7 @@ import {
   CollaborativeTextField,
   CollaborativeTitleField,
 } from '../../collaboration';
+import { useCollaborativeDoc } from '../../collaboration/CollaborativeDocContext';
 import { FieldHeader } from '../forms/FieldHeader';
 import type { FieldDescriptor } from '../forms/types';
 import { LocationMapView } from '../location/LocationMapView';
@@ -427,6 +431,99 @@ function renderField(
 }
 
 // ---------------------------------------------------------------------------
+// District ⇄ category sync
+// ---------------------------------------------------------------------------
+
+interface DistrictCategorySyncProps {
+  /** Current location draft value, if the template collects a location. */
+  location: ProposalDraftFields['location'] | null | undefined;
+  /** Whether the category field allows multiple selections. */
+  isMultiple: boolean;
+}
+
+/**
+ * Headless coordinator that keeps the `category` field in sync with the
+ * location's resolved boundary. As soon as a placed pin resolves to a district,
+ * that district is applied as a category; when the pin moves to a different
+ * district or outside every boundary, the previously-applied district is
+ * removed. Manually chosen, non-district categories are preserved (multi-select).
+ *
+ * Writes the shared `category` fragment directly so the category field — which
+ * observes the same fragment — reflects the change and its "required" error
+ * clears. Renders nothing.
+ */
+function DistrictCategorySync({
+  location,
+  isMultiple,
+}: DistrictCategorySyncProps) {
+  const { ydoc } = useCollaborativeDoc();
+  const point = location ? { lat: location.lat, lng: location.lng } : null;
+
+  const boundaryQuery = trpc.decision.resolveBoundary.useQuery(
+    { lat: point?.lat ?? 0, lng: point?.lng ?? 0 },
+    { enabled: point != null, staleTime: 60_000 },
+  );
+
+  const [categoryText, setCategoryText] = useCollaborativeFragment(
+    ydoc,
+    'category',
+    '',
+  );
+
+  const categoryTextRef = useRef(categoryText);
+  useEffect(() => {
+    categoryTextRef.current = categoryText;
+  }, [categoryText]);
+
+  // Only act on a settled lookup: no point at all, or a finished query. Acting
+  // while fetching could clear a valid category on a stale/empty response.
+  const settled =
+    point == null || (boundaryQuery.isSuccess && !boundaryQuery.isFetching);
+  const resolvedDistrict =
+    point != null ? (boundaryQuery.data?.boundary?.name ?? null) : null;
+
+  const appliedDistrictRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!ydoc || !settled) {
+      return;
+    }
+
+    const previous = appliedDistrictRef.current;
+    if (resolvedDistrict === previous) {
+      return;
+    }
+
+    const current = categoryTextRef.current;
+    let next: string;
+
+    if (isMultiple) {
+      const values = parseCategoryFragmentValue(current).filter(
+        (value) => value !== previous,
+      );
+      if (resolvedDistrict && !values.includes(resolvedDistrict)) {
+        values.push(resolvedDistrict);
+      }
+      next = JSON.stringify(values);
+    } else if (resolvedDistrict) {
+      // Single-select: the category is the district — apply it.
+      next = resolvedDistrict;
+    } else {
+      // No district: clear only the district we previously applied.
+      next = current === previous ? '' : current;
+    }
+
+    appliedDistrictRef.current = resolvedDistrict;
+
+    if (next !== current) {
+      setCategoryText(next);
+    }
+  }, [ydoc, settled, resolvedDistrict, isMultiple, setCategoryText]);
+
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // ProposalFormRenderer
 // ---------------------------------------------------------------------------
 
@@ -458,6 +555,7 @@ export function ProposalFormRenderer({
   const categoryField = fields.find((f) => f.key === 'category');
   const budgetField = fields.find((f) => f.key === 'budget');
   const dynamicFields = fields.filter((f) => !f.isSystem);
+  const locationField = dynamicFields.find((f) => f.format === 'location');
 
   const render = (field: FieldDescriptor) =>
     renderField(
@@ -473,6 +571,16 @@ export function ProposalFormRenderer({
 
   return (
     <div className={cn('flex flex-col', formGapClass)}>
+      {mode === 'edit-collaborative' && categoryField && locationField && (
+        <DistrictCategorySync
+          location={
+            (draft[locationField.key] as ProposalDraftFields['location']) ??
+            null
+          }
+          isMultiple={schemaAllowsMultipleSelection(categoryField.schema)}
+        />
+      )}
+
       {titleField && render(titleField)}
 
       {(categoryField || budgetField) && (

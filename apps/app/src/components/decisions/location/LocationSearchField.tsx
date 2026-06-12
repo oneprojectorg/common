@@ -23,6 +23,9 @@ interface LocationSearchFieldProps {
  * Address / landmark search backed by Google Places (`getGeoNames`). Selecting
  * a result hands a full {@link LocationData} (with `placeId` + `address`) back
  * to the picker, which drops the pin and recenters the map.
+ *
+ * The picker remounts this (via `key`) to reset it after a direct map
+ * placement, so it stays uncontrolled here.
  */
 export function LocationSearchField({ onSelect }: LocationSearchFieldProps) {
   const t = useTranslations();

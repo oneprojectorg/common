@@ -7,9 +7,12 @@ import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { decisionPermission } from './permissions';
 import { normalizeLocation, parseProposalData } from './proposalDataSchema';
+import { resolveBoundary } from './resolveBoundary';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import { syncProposalBoundaryTag } from './syncProposalBoundaryTag';
 import { syncProposalProfileLocation } from './syncProposalProfileLocation';
+import { templateCollectsLocation } from './templateLocation';
 import { checkProposalsAllowed } from './utils/proposal';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
 
@@ -109,6 +112,28 @@ export const submitProposal = async ({
       assembledData ? assembledData.location : parsed.location,
     ) ?? null;
 
+  // When the template collects a location, it is mandatory and must fall inside
+  // a known boundary — this is the authoritative server-side enforcement of the
+  // picker's out-of-area check.
+  if (templateCollectsLocation(proposalTemplate)) {
+    if (!location) {
+      throw new ValidationError(
+        'A project location is required to submit this proposal.',
+      );
+    }
+
+    const boundary = await resolveBoundary({
+      lat: location.lat,
+      lng: location.lng,
+    });
+
+    if (!boundary) {
+      throw new ValidationError(
+        'The selected location is outside the project boundary. Choose a spot within the boundary.',
+      );
+    }
+  }
+
   // Create a named version snapshot. Best-effort — failures logged, never block.
   if (!parsed.collaborationDocId) {
     throw new ValidationError('Proposal is missing a collaboration document');
@@ -157,6 +182,13 @@ export const submitProposal = async ({
     await syncProposalProfileLocation(
       tx,
       existingProposal.profileId,
+      proposalDataUpdate ?? existingProposal.proposalData,
+    );
+
+    // Re-tag the proposal with its location's boundary category (if any).
+    await syncProposalBoundaryTag(
+      tx,
+      submittedProposal.id,
       proposalDataUpdate ?? existingProposal.proposalData,
     );
 

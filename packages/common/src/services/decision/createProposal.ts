@@ -24,6 +24,7 @@ import {
   parseProposalData,
 } from './proposalDataSchema';
 import type { DecisionInstanceData } from './schemas/instanceData';
+import { syncProposalBoundaryTag } from './syncProposalBoundaryTag';
 import { syncProposalProfileLocation } from './syncProposalProfileLocation';
 import { assertInstancePhase } from './utils/instance';
 import { checkProposalsAllowed } from './utils/proposal';
@@ -229,6 +230,9 @@ export const createProposal = async ({
         })),
       );
     }
+
+    // Auto-tag the proposal with its location's boundary category (if any).
+    await syncProposalBoundaryTag(tx, insertedProposal.id, data.proposalData);
 
     // Link attachments to proposal if provided
     if (data.attachmentIds && data.attachmentIds.length > 0) {
