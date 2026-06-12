@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import type { LocationData, ProposalTemplateSchema } from '@op/common/client';
 import { viewerProseStyles } from '@op/ui/RichTextEditor';
 import { useMemo } from 'react';
@@ -38,12 +39,16 @@ export function ProposalContentRenderer({
   location,
   translatedMeta,
 }: ProposalContentRendererProps) {
+  const gisMapsEnabled = useFeatureFlag('gis_maps');
   const dynamicFields = useMemo(() => {
     if (!proposalTemplate) {
       return [];
     }
-    return compileProposalSchema(proposalTemplate).filter((f) => !f.isSystem);
-  }, [proposalTemplate]);
+    // The location field renders a map behind the `gis_maps` flag.
+    return compileProposalSchema(proposalTemplate).filter(
+      (f) => !f.isSystem && (gisMapsEnabled || f.format !== 'location'),
+    );
+  }, [proposalTemplate, gisMapsEnabled]);
 
   if (dynamicFields.length === 0) {
     return null;

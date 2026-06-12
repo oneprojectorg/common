@@ -1,6 +1,7 @@
 'use client';
 
 import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import {
   formatProposalCategories,
@@ -550,12 +551,17 @@ export function ProposalFormRenderer({
   previewVersionFragmentContents = {},
 }: ProposalFormRendererProps) {
   const t = useTranslations();
+  const gisMapsEnabled = useFeatureFlag('gis_maps');
   const formGapClass = mode === 'preview-template' ? 'gap-4' : 'gap-8';
 
   const titleField = fields.find((f) => f.key === 'title');
   const categoryField = fields.find((f) => f.key === 'category');
   const budgetField = fields.find((f) => f.key === 'budget');
-  const dynamicFields = fields.filter((f) => !f.isSystem);
+  // The location field lives behind the `gis_maps` flag. Filtering it out here
+  // also leaves `locationField` undefined, so DistrictCategorySync is skipped.
+  const dynamicFields = fields.filter(
+    (f) => !f.isSystem && (gisMapsEnabled || f.format !== 'location'),
+  );
   const locationField = dynamicFields.find((f) => f.format === 'location');
 
   const render = (field: FieldDescriptor) =>

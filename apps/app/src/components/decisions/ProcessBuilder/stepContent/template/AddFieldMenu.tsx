@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { Button } from '@op/ui/Button';
 import { Menu, MenuItem, MenuSeparator, MenuTrigger } from '@op/ui/Menu';
 import { Popover } from '@op/ui/Popover';
@@ -23,6 +24,16 @@ interface AddFieldMenuProps {
  */
 export function AddFieldMenu({ onAddField, disabledTypes }: AddFieldMenuProps) {
   const t = useTranslations();
+  const gisMapsEnabled = useFeatureFlag('gis_maps');
+
+  // The location field type lives behind the `gis_maps` flag. When it's off,
+  // strip it from the menu and drop any category left empty (e.g. "Map").
+  const categories = gisMapsEnabled
+    ? FIELD_CATEGORIES
+    : FIELD_CATEGORIES.map((category) => ({
+        ...category,
+        types: category.types.filter((type) => type !== 'location'),
+      })).filter((category) => category.types.length > 0);
 
   return (
     <MenuTrigger>
@@ -35,7 +46,7 @@ export function AddFieldMenu({ onAddField, disabledTypes }: AddFieldMenuProps) {
           onAction={(key) => onAddField(key as FieldType)}
           aria-label={t('Add field')}
         >
-          {FIELD_CATEGORIES.map((category, categoryIndex) => (
+          {categories.map((category, categoryIndex) => (
             <Fragment key={category.id}>
               {categoryIndex > 0 && <MenuSeparator />}
               <MenuItem
