@@ -1,7 +1,6 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { ProcessStatus } from '@op/api/encoders';
 import { Sheet, SheetBody } from '@op/ui/Sheet';
 import { useSidebar } from '@op/ui/Sidebar';
 import { LuChevronRight, LuHouse, LuList } from 'react-icons/lu';
@@ -12,7 +11,6 @@ import { LocaleChooser } from '@/components/LocaleChooser';
 import { UserAvatarMenu } from '@/components/SiteHeader';
 
 import { SidebarNavItems } from './components/SidebarNavItems';
-import { UnsavedExitLink } from './components/UnsavedExitLink';
 import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
 import { usePhaseValidation } from './usePhaseValidation';
@@ -75,8 +73,6 @@ const ProcessBuilderHeaderContent = ({
   );
 
   const decisionProfileId = decisionProfile?.id;
-  const isDraft =
-    decisionProfile?.processInstance?.status === ProcessStatus.DRAFT;
 
   const storeData = useProcessBuilderStore((s) =>
     decisionProfileId ? s.instances[decisionProfileId] : undefined,
@@ -87,15 +83,13 @@ const ProcessBuilderHeaderContent = ({
   return (
     <header className="relative sticky top-0 z-20 flex h-14 w-dvw shrink-0 items-center justify-between border-b bg-white">
       <div className="flex min-w-0 items-center gap-2 ps-4 md:ps-8">
-        <UnsavedExitLink
+        <Link
           href="/"
-          decisionProfileId={decisionProfileId}
-          isDraft={isDraft}
           className="flex shrink-0 items-center gap-2 text-neutral-black"
         >
           <LuHouse className="size-4" />
           {t('Home')}
-        </UnsavedExitLink>
+        </Link>
         <LuChevronRight className="size-4 shrink-0 rtl:-scale-x-100" />
         <LuList className="size-4 shrink-0" />
         <span className="truncate">{displayName}</span>

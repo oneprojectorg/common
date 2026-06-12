@@ -8,12 +8,11 @@ import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuLogOut } from 'react-icons/lu';
 
-import { useRouter, useTranslations } from '@/lib/i18n';
+import { Link, useRouter, useTranslations } from '@/lib/i18n';
 
 import { LaunchProcessModal } from './LaunchProcessModal';
 import { useProcessBuilderAutosave } from './ProcessBuilderAutosaveContext';
 import { ProgressIndicator } from './components/ProgressIndicator';
-import { UnsavedExitLink } from './components/UnsavedExitLink';
 import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
@@ -60,6 +59,9 @@ export const ProcessBuilderFooter = ({
   );
   const dirtyFields = useProcessBuilderStore((s) => s.dirty[decisionProfileId]);
   const clearInstance = useProcessBuilderStore((s) => s.clearInstance);
+  // Published edits stay local until "Update Process" — surface that
+  const hasUnsavedChanges =
+    !isDraft && !!dirtyFields && Object.keys(dirtyFields).length > 0;
   const displayName =
     storeData?.name || decisionProfile?.name || t('New process');
 
@@ -128,15 +130,13 @@ export const ProcessBuilderFooter = ({
         <div className="flex h-full items-center justify-between md:px-0">
           {/* Left: Exit + Back — matches sidebar width */}
           <div className="flex items-center gap-2 md:w-60 md:shrink-0">
-            <UnsavedExitLink
+            <Link
               href={`/decisions/${slug}`}
-              decisionProfileId={decisionProfileId}
-              isDraft={isDraft}
               className="inline-flex h-10 items-center gap-1 px-2 text-base text-charcoal transition-colors hover:bg-neutral-gray1"
             >
               <LuLogOut className="size-4 rotate-180" />
               {t('Exit')}
-            </UnsavedExitLink>
+            </Link>
             {hasPrev && (
               <Button
                 color="secondary"
@@ -159,6 +159,11 @@ export const ProcessBuilderFooter = ({
             )}
             {/* Desktop action buttons */}
             <div className="flex shrink-0 items-center gap-2">
+              {hasUnsavedChanges && (
+                <span className="text-sm text-neutral-gray4">
+                  {t('Unsaved changes')}
+                </span>
+              )}
               {hasNext && (
                 <Button color="secondary" onPress={goNext}>
                   {t('Next')}

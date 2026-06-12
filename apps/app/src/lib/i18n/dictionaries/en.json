@@ -1316,8 +1316,5 @@
   "This action cannot be undone.": "This action cannot be undone.",
   "File is too large (max {size} MB)": "File is too large (max {size} MB)",
   "Drag a file or link here to add it": "Drag a file or link here to add it",
-  "Leave anyway": "Leave anyway",
-  "Stay": "Stay",
-  "Unsaved changes": "Unsaved changes",
-  "You have edits that haven’t been published. Use “Update Process” to save them before leaving.": "You have edits that haven’t been published. Use “Update Process” to save them before leaving."
+  "Unsaved changes": "Unsaved changes"
 }
