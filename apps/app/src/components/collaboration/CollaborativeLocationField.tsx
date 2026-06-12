@@ -94,7 +94,18 @@ export function CollaborativeLocationField({
 
   useEffect(() => {
     const emitted = parseLocationText(locationText);
-    const key = emitted ? `${emitted.lat}:${emitted.lng}` : null;
+    // Key on the full location, not just lat/lng: dropping a pin commits the
+    // bare coordinate first, then the reverse-geocoded address at the *same*
+    // lat/lng. A lat/lng-only key would treat the enriched value as a no-op and
+    // never emit it, so the address would never reach the draft / autosave.
+    const key = emitted
+      ? JSON.stringify([
+          emitted.lat,
+          emitted.lng,
+          emitted.address ?? null,
+          emitted.placeId ?? null,
+        ])
+      : null;
 
     if (lastEmittedRef.current === key) {
       return;
