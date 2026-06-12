@@ -69,12 +69,7 @@ export function Map({
   }, [center.lng, center.lat]);
 
   return (
-    <div
-      className={cn(
-        'relative h-44 sm:h-80 w-full',
-        className,
-      )}
-    >
+    <div className={cn('relative h-44 w-full sm:h-80', className)}>
       <MapLibreMap
         ref={mapRef}
         mapStyle={styleUrl}
@@ -86,6 +81,7 @@ export function Map({
         interactive={interactive}
         aria-label={ariaLabel}
         style={{ width: '100%', height: '100%' }}
+        attributionControl={{ compact: true }}
         onClick={
           onClick
             ? (event: MapLayerMouseEvent) =>

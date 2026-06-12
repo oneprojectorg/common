@@ -20,8 +20,7 @@ export default function GlobalError({
         api_host: '/stats',
         ui_host: posthogUIHost,
         capture_exceptions: true,
-        // Off: adds X-POSTHOG-* headers to every fetch and breaks cross-origin
-        // CORS preflight (e.g. MapTiler). Mirrors PostHogProvider.
+        // Tracing headers set to `false` because it breaks CORS requests
         __add_tracing_headers: false,
       });
     }
