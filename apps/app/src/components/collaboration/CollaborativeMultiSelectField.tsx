@@ -25,6 +25,16 @@ interface CollaborativeMultiSelectFieldProps {
   fragmentName: string;
   /** Placeholder text shown when no value is selected. */
   placeholder?: string;
+  /**
+   * A single value to auto-apply through this field's own writer (e.g. a
+   * boundary-resolved council district). `undefined` means "not settled yet —
+   * don't touch"; `null` means "resolved to no district". The previously
+   * auto-applied value is swapped out; manually chosen values are preserved.
+   *
+   * Routing this through the field keeps a single writer per fragment — two
+   * collaborative writers race under Yjs and duplicate the stored value.
+   */
+  autoValue?: string | null;
 }
 
 /**
@@ -40,6 +50,7 @@ export function CollaborativeMultiSelectField({
   onChange,
   fragmentName,
   placeholder,
+  autoValue,
 }: CollaborativeMultiSelectFieldProps) {
   const t = useTranslations();
   const { ydoc } = useCollaborativeDoc();
@@ -75,6 +86,30 @@ export function CollaborativeMultiSelectField({
     lastEmittedValueRef.current = nextValueKey;
     onChangeRef.current?.(selectedValues);
   }, [selectedValues]);
+
+  // Apply an externally-resolved value (e.g. a council district) through this
+  // field's own writer, so the fragment has a single writer. Swaps out the
+  // previously auto-applied district; leaves manually chosen values intact.
+  const appliedAutoRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (autoValue === undefined) {
+      return;
+    }
+    const previous = appliedAutoRef.current;
+    if (autoValue === previous) {
+      return;
+    }
+
+    const nextValues = selectedValues.filter((value) => value !== previous);
+    if (autoValue && !nextValues.includes(autoValue)) {
+      nextValues.push(autoValue);
+    }
+
+    appliedAutoRef.current = autoValue;
+    if (JSON.stringify(nextValues) !== JSON.stringify(selectedValues)) {
+      setSyncedValue(JSON.stringify(nextValues));
+    }
+  }, [autoValue, selectedValues]);
 
   const handleSelectionChange = (keys: Selection) => {
     if (keys === 'all') {
