@@ -48,8 +48,10 @@ export function MapMarker({
       <svg
         viewBox="0 0 24 24"
         className={cn(
-          'h-8 w-8 drop-shadow',
-          draggable && 'cursor-grab active:cursor-grabbing',
+          // Markers aren't clickable yet, so never show the pointer cursor:
+          // static and draggable markers both use the grab/hand cursor.
+          'h-8 w-8 cursor-grab drop-shadow',
+          draggable && 'active:cursor-grabbing',
         )}
         aria-hidden="true"
       >
