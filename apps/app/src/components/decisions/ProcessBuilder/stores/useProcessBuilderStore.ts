@@ -5,21 +5,16 @@
  *
  * ## Data Flow
  * 1. `ProcessBuilderStoreInitializer` seeds `instances` with server data
- *    (overlaid with locally-dirty fields) via `seedInstance`
- * 2. Form components read values from `instances` (after hydration)
- * 3. User edits write through the edit setters, which update `instances`
- *    AND record the edited fields in `dirty`
- * 4. Only edited fields are sent to the API: draft autosave uses its own
- *    per-debounce accumulator (and removes confirmed-saved fields from
- *    `dirty` via `clearDirtyFields`); "Update Process" for published
- *    processes reads the `dirty` map directly
+ *    overlaid with dirty fields
+ * 2. Form components read from `instances` (after hydration)
+ * 3. Edit setters update `instances` AND record the fields in `dirty`
+ * 4. Only edited fields are sent to the API — draft autosave via its own
+ *    debounce accumulator, "Update Process" via the `dirty` map
  *
  * ## Persistence
- * Only the `dirty` map is persisted to localStorage (via `partialize`).
- * `instances` is an in-memory merged view, re-seeded from the server on
- * every editor load. This distinction is what lets us tell "the user's
- * unsaved edits" apart from "a snapshot of server data" — persisting the
- * full snapshot caused stale data to shadow other admins' saved changes.
+ * Only `dirty` is persisted (`partialize`); `instances` is an in-memory
+ * view re-seeded from the server each load. Persisting more than the
+ * user's own edits lets stale data shadow other admins' saved changes.
  *
  * ## Hydration
  * This store uses `skipHydration: true` to prevent race conditions in SSR.
@@ -138,11 +133,8 @@ interface ProcessBuilderState {
 
   // Cleanup actions
   clearDirty: (decisionId: string) => void;
-  /**
-   * Removes the given fields from the dirty map after they were confirmed
-   * saved. Keeps `dirty` ≈ "unsaved or failed" so seeding can safely
-   * overlay it without already-saved fields shadowing newer server data.
-   */
+  /** Removes confirmed-saved fields — `dirty` must only ever hold
+   *  unsaved or failed edits, or seeding would overlay stale data. */
   clearDirtyFields: (
     decisionId: string,
     fields: Partial<ProcessBuilderInstanceData>,
@@ -175,9 +167,8 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
           const existingDirty = state.dirty[decisionId];
           const { config, ...rest } = data;
 
-          // Only carry a config key when one is actually involved —
-          // a `config: undefined` entry would make the dirty map look
-          // non-empty after all real fields are confirmed saved.
+          // No `config: undefined` entry — it would keep the dirty map
+          // non-empty after everything is confirmed saved.
           const dirtyEntry: Partial<ProcessBuilderInstanceData> = {
             ...existingDirty,
             ...rest,
@@ -389,9 +380,8 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
       name: 'process-builder',
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
-      // v1: only `dirty` is persisted. v0 persisted full snapshots
-      // (instances + saveStates), which made stale server data shadow
-      // other admins' saved changes — discard it on migration.
+      // v0 persisted full snapshots, which shadowed other admins' saved
+      // changes — discard them on migration.
       version: 1,
       partialize: (state) => ({ dirty: state.dirty }),
       migrate: () => ({ dirty: {} }),

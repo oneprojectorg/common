@@ -51,9 +51,7 @@ export const LaunchProcessModal = ({
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
     onSuccess: async (data) => {
       onOpenChange(false);
-      // Drop local state so the editor reseeds from fresh server data —
-      // draft edits were already autosaved, and leftover dirty fields
-      // would otherwise overlay the now-published instance.
+      // Leftover dirty fields would otherwise overlay the published instance
       clearInstance(decisionProfileId);
       await utils.decision.getDecisionBySlug.invalidate();
       router.push(`/decisions/${data.slug}`);

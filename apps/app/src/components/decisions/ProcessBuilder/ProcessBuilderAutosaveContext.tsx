@@ -59,20 +59,15 @@ export function ProcessBuilderAutosaveProvider({
 }: {
   decisionProfileId: string;
   instanceId: string;
-  /** SSR snapshot of the instance status — used only until the live query
-   *  resolves. The live value matters when the status changes while the
-   *  editor is open (e.g. another admin or another tab launches the
-   *  process): autosave must stop writing straight to the now-published
-   *  instance and fall back to buffering until "Update Process". */
+  /** SSR snapshot, used only until the live query resolves — the status
+   *  can change mid-session (another tab/admin launches the process). */
   isDraft: boolean;
   children: React.ReactNode;
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
 
-  // Reactive status: getInstance is already cached (sections suspense-query
-  // it, and autosave invalidates it on settle), so this subscription costs
-  // no extra request. Refetch-on-focus heals the stale-tab case.
+  // Already cached by section queries — no extra request.
   const { data: liveInstance } = trpc.decision.getInstance.useQuery({
     instanceId,
   });
@@ -144,18 +139,13 @@ export function ProcessBuilderAutosaveProvider({
       inflightRef.current = promise;
       promise
         .then(() => {
-          // Drop confirmed-saved fields from the persisted dirty map so it
-          // only ever holds unsaved (or failed) edits. The seed-time overlay
-          // can then safely re-apply it after a reload: failed autosaves
-          // survive, while saved fields can't shadow newer server data.
+          // Keep the persisted dirty map holding unsaved/failed edits only.
           clearDirtyFields(decisionProfileId, payload);
         })
         .catch(() => {
-          // Error surfaced by the mutation's onError callback (toast +
-          // status). Restore the failed payload so the next debounced save
-          // retries it — newer edits win on conflict. No retry is scheduled
-          // here: a persistently rejecting payload would loop; the next
-          // user edit (or flush) re-sends naturally.
+          // Error toasted by onError. Restore the payload so the next save
+          // retries it (newer edits win); no scheduled retry — a rejecting
+          // payload would loop.
           dirtyFieldsRef.current = {
             ...payload,
             ...dirtyFieldsRef.current,
@@ -163,10 +153,8 @@ export function ProcessBuilderAutosaveProvider({
           };
         });
     } else {
-      // Published: edits stay in the store (the dirty map is persisted to
-      // localStorage) until the user clicks "Update Process". Don't show a
-      // save indicator — it would be misleading since nothing has been
-      // persisted to the server yet.
+      // Published: edits stay in the persisted dirty map until "Update
+      // Process". No save indicator — nothing reached the server yet.
     }
   }, AUTOSAVE_DEBOUNCE_MS);
   debouncedSaveRef.current = () => debouncedSave.isPending();

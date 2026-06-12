@@ -97,13 +97,10 @@ export const ProcessBuilderFooter = ({
     if (isDraft) {
       setIsLaunchModalOpen(true);
     } else {
-      // Send only the fields the user actually edited. Sending the full
-      // store snapshot would overwrite other admins' saved changes with
-      // whatever this client last saw.
-      // A cleared (empty-string) name or steward is not a valid value, so
-      // those coalesce to undefined and keep the server value — the form
-      // already shows a validation error for an empty name. A cleared
-      // description IS valid and is sent through.
+      // Send only edited fields — a full snapshot would overwrite other
+      // admins' saved changes. Cleared name/steward are invalid, so they
+      // coalesce to undefined (server keeps its value); cleared
+      // description is valid and goes through.
       updateInstance.mutate({
         instanceId,
         name: dirtyFields?.name || undefined,

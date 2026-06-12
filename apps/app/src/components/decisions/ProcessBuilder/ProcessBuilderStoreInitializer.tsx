@@ -12,12 +12,9 @@ import {
  * validation (and other consumers) have data immediately — even before
  * the user visits any individual section.
  *
- * Server data is the base layer; locally-dirty fields (the user's own
- * unsaved edits) overlay on top. The dirty map only ever holds unsaved
- * or failed edits — draft autosaves remove confirmed-saved fields
- * (see ProcessBuilderAutosaveContext), and published saves clear the
- * whole instance — so the overlay can't shadow other admins' newer
- * server data, while edits whose autosave failed survive a reload.
+ * Server data is the base; the user's own unsaved edits (`dirty`)
+ * overlay on top. Safe because `dirty` only ever holds unsaved or
+ * failed edits — confirmed saves remove their fields from it.
  */
 export function ProcessBuilderStoreInitializer({
   decisionProfileId,
