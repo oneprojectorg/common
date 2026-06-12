@@ -71,6 +71,22 @@ test.describe('Process Builder multi-admin editing', () => {
     const nameField = (page: typeof pageB) =>
       page.getByRole('textbox', { name: 'Process Name' });
 
+    // The persistence contract: an edit lands in localStorage as a dirty
+    // field. Polling it beats arbitrary timeouts for "has the form watcher
+    // propagated the edit into the store buffer".
+    const hasDirtyField = (page: typeof pageB, field: string) =>
+      page.evaluate(
+        ({ profileId, key }) => {
+          const raw = localStorage.getItem('process-builder');
+          if (!raw) {
+            return false;
+          }
+          const parsed = JSON.parse(raw);
+          return parsed?.state?.dirty?.[profileId]?.[key] !== undefined;
+        },
+        { profileId: instance.profileId, key: field },
+      );
+
     // 3. Admin B opens the editor BEFORE admin A makes any changes.
     //    (Pre-fix, this stamped a full snapshot into B's localStorage.)
     await pageB.goto(editUrl);
@@ -91,8 +107,11 @@ test.describe('Process Builder multi-admin editing', () => {
     await nameInputA.fill(newName);
     await expect(nameInputA).toHaveValue(newName);
 
-    // Let the form watcher propagate the edit into the store buffer
-    await authenticatedPage.waitForTimeout(1_500);
+    await expect
+      .poll(() => hasDirtyField(authenticatedPage, 'name'), {
+        timeout: 6_000,
+      })
+      .toBe(true);
 
     const footer = authenticatedPage.getByRole('contentinfo');
     const saveResponse = authenticatedPage.waitForResponse(
@@ -122,6 +141,40 @@ test.describe('Process Builder multi-admin editing', () => {
       timeout: 18_000,
     });
     await expect(nameField(pageB)).toHaveValue(newName, { timeout: 12_000 });
+
+    // 7. Write path: admin B edits a DIFFERENT field and saves. Only B's
+    //    dirty fields may be sent — pre-fix, B's full snapshot rode along
+    //    and silently reverted A's rename.
+    const newDescription = `Description by admin B ${Date.now()}`;
+    const descriptionInputB = pageB.getByRole('textbox', {
+      name: 'Description',
+    });
+    await expect(descriptionInputB).toBeVisible({ timeout: 6_000 });
+    await descriptionInputB.fill(newDescription);
+    await expect
+      .poll(() => hasDirtyField(pageB, 'description'), { timeout: 6_000 })
+      .toBe(true);
+
+    const footerB = pageB.getByRole('contentinfo');
+    const saveResponseB = pageB.waitForResponse(
+      (resp) =>
+        resp.url().includes('decision.updateDecisionInstance') && resp.ok(),
+      { timeout: 12_000 },
+    );
+    await footerB.getByRole('button', { name: 'Update Process' }).click();
+    await saveResponseB;
+
+    // 8. Both edits must coexist in the DB: B's description saved, A's
+    //    rename untouched.
+    await expect
+      .poll(
+        async () => {
+          const saved = await getDecisionInstance(instance.instance.id);
+          return { name: saved.name, description: saved.description };
+        },
+        { timeout: 6_000 },
+      )
+      .toEqual({ name: newName, description: newDescription });
 
     await contextB.close();
   });

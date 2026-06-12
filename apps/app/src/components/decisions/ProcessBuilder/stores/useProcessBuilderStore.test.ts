@@ -185,6 +185,47 @@ describe('useProcessBuilderStore persistence contract', () => {
     expect(state.dirty).toEqual({});
   });
 
+  it('removes confirmed-saved fields from dirty, keeping unsaved ones', () => {
+    const store = useProcessBuilderStore.getState();
+    store.seedInstance(DECISION_ID, serverDataV1);
+    store.setInstanceData(DECISION_ID, { name: 'New name' });
+    store.setRubricTemplateSchema(DECISION_ID, sarahsRubric);
+    store.setInstanceData(DECISION_ID, {
+      config: { hideBudget: true, organizeByCategories: false },
+    });
+
+    // Simulate a successful autosave of name + one config sub-key
+    useProcessBuilderStore.getState().clearDirtyFields(DECISION_ID, {
+      name: 'New name',
+      config: { hideBudget: true },
+    });
+
+    // The failed/unsaved edits must survive — both in memory and persisted
+    expect(useProcessBuilderStore.getState().dirty[DECISION_ID]).toEqual({
+      rubricTemplate: sarahsRubric,
+      config: { organizeByCategories: false },
+    });
+    expect(readPersisted()?.state?.dirty?.[DECISION_ID]).toEqual({
+      rubricTemplate: sarahsRubric,
+      config: { organizeByCategories: false },
+    });
+  });
+
+  it('drops the dirty entry entirely once every field is confirmed saved', () => {
+    const store = useProcessBuilderStore.getState();
+    store.seedInstance(DECISION_ID, serverDataV1);
+    store.setInstanceData(DECISION_ID, { name: 'New name' });
+
+    useProcessBuilderStore
+      .getState()
+      .clearDirtyFields(DECISION_ID, { name: 'New name' });
+
+    expect(
+      useProcessBuilderStore.getState().dirty[DECISION_ID],
+    ).toBeUndefined();
+    expect(readPersisted()?.state?.dirty?.[DECISION_ID]).toBeUndefined();
+  });
+
   it('clears dirty fields and persisted residue on clearInstance', () => {
     const store = useProcessBuilderStore.getState();
     store.seedInstance(DECISION_ID, serverDataV1);

@@ -5,12 +5,14 @@
  *
  * ## Data Flow
  * 1. `ProcessBuilderStoreInitializer` seeds `instances` with server data
- *    (merged with any locally-dirty fields) via `seedInstance`
+ *    (overlaid with locally-dirty fields) via `seedInstance`
  * 2. Form components read values from `instances` (after hydration)
  * 3. User edits write through the edit setters, which update `instances`
  *    AND record the edited fields in `dirty`
- * 4. On save (autosave for drafts, "Update Process" for published), only
- *    the dirty fields are sent to the API
+ * 4. Only edited fields are sent to the API: draft autosave uses its own
+ *    per-debounce accumulator (and removes confirmed-saved fields from
+ *    `dirty` via `clearDirtyFields`); "Update Process" for published
+ *    processes reads the `dirty` map directly
  *
  * ## Persistence
  * Only the `dirty` map is persisted to localStorage (via `partialize`).
@@ -136,6 +138,15 @@ interface ProcessBuilderState {
 
   // Cleanup actions
   clearDirty: (decisionId: string) => void;
+  /**
+   * Removes the given fields from the dirty map after they were confirmed
+   * saved. Keeps `dirty` ≈ "unsaved or failed" so seeding can safely
+   * overlay it without already-saved fields shadowing newer server data.
+   */
+  clearDirtyFields: (
+    decisionId: string,
+    fields: Partial<ProcessBuilderInstanceData>,
+  ) => void;
   clearInstance: (decisionId: string) => void;
   reset: () => void;
 }
@@ -162,24 +173,31 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
         set((state) => {
           const existing = state.instances[decisionId];
           const existingDirty = state.dirty[decisionId];
+          const { config, ...rest } = data;
+
+          // Only carry a config key when one is actually involved —
+          // a `config: undefined` entry would make the dirty map look
+          // non-empty after all real fields are confirmed saved.
+          const dirtyEntry: Partial<ProcessBuilderInstanceData> = {
+            ...existingDirty,
+            ...rest,
+          };
+          if (config || existingDirty?.config) {
+            dirtyEntry.config = { ...existingDirty?.config, ...config };
+          }
+
           return {
             instances: {
               ...state.instances,
               [decisionId]: {
                 ...existing,
                 ...data,
-                config: { ...existing?.config, ...data.config },
+                config: { ...existing?.config, ...config },
               },
             },
             dirty: {
               ...state.dirty,
-              [decisionId]: {
-                ...existingDirty,
-                ...data,
-                config: data.config
-                  ? { ...existingDirty?.config, ...data.config }
-                  : existingDirty?.config,
-              },
+              [decisionId]: dirtyEntry,
             },
           };
         }),
@@ -306,6 +324,46 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
         set((state) => {
           const { [decisionId]: _, ...restDirty } = state.dirty;
           return { dirty: restDirty };
+        }),
+
+      clearDirtyFields: (decisionId, fields) =>
+        set((state) => {
+          const existing = state.dirty[decisionId];
+          if (!existing) {
+            return state;
+          }
+
+          const { config: savedConfig, ...savedRest } = fields;
+          const remaining: Partial<ProcessBuilderInstanceData> = {
+            ...existing,
+          };
+          for (const key of Object.keys(savedRest)) {
+            delete remaining[key as keyof ProcessBuilderInstanceData];
+          }
+
+          // Config is accumulated per sub-key, so clear at that granularity
+          if (savedConfig && remaining.config) {
+            const remainingConfig = { ...remaining.config };
+            for (const key of Object.keys(savedConfig)) {
+              delete remainingConfig[key as keyof typeof remainingConfig];
+            }
+            if (Object.keys(remainingConfig).length > 0) {
+              remaining.config = remainingConfig;
+            } else {
+              delete remaining.config;
+            }
+          }
+
+          if (Object.keys(remaining).length === 0) {
+            const { [decisionId]: _, ...restDirty } = state.dirty;
+            return { dirty: restDirty };
+          }
+          return {
+            dirty: {
+              ...state.dirty,
+              [decisionId]: remaining,
+            },
+          };
         }),
 
       clearInstance: (decisionId) =>

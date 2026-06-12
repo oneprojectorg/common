@@ -72,6 +72,7 @@ export function ProcessBuilderAutosaveProvider({
   );
   const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
   const markSaved = useProcessBuilderStore((s) => s.markSaved);
+  const clearDirtyFields = useProcessBuilderStore((s) => s.clearDirtyFields);
   const currentStatus = useProcessBuilderStore((s) =>
     s.getSaveState(decisionProfileId),
   );
@@ -125,10 +126,18 @@ export function ProcessBuilderAutosaveProvider({
         ...payload,
       });
       inflightRef.current = promise;
-      promise.catch(() => {
-        // Handled by the mutation's onError callback (toast + status).
-        // This catch only prevents unhandled promise rejection warnings.
-      });
+      promise
+        .then(() => {
+          // Drop confirmed-saved fields from the persisted dirty map so it
+          // only ever holds unsaved (or failed) edits. The seed-time overlay
+          // can then safely re-apply it after a reload: failed autosaves
+          // survive, while saved fields can't shadow newer server data.
+          clearDirtyFields(decisionProfileId, payload);
+        })
+        .catch(() => {
+          // Handled by the mutation's onError callback (toast + status).
+          // This catch only prevents unhandled promise rejection warnings.
+        });
     } else {
       // Published: data is only in the store (localStorage) until the user
       // clicks "Update Process". Don't show a save indicator — it would be

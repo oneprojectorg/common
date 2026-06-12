@@ -83,7 +83,6 @@ const EditDecisionPage = async ({
           <ProcessBuilderStoreInitializer
             decisionProfileId={decisionProfile.id}
             serverData={serverData}
-            isDraft={isDraft}
           />
           <ProcessBuilderHeader instanceId={instanceId} slug={slug} />
           <ProcessBuilderEditArea
