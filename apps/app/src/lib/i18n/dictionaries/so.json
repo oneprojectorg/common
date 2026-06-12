@@ -1317,5 +1317,9 @@
   "{count, plural, =1 {active relationship} other {active relationships}}": "{count, plural, =1 {xiriir firfircoon} other {xiriiro firfircoon}}",
   "Following {count, plural, =1 {# organization} other {# organizations}}": "Raacaya {count, plural, =1 {# urur} other {# ururo}}",
   "Member of {count, plural, =1 {# Organization} other {# Organizations}}": "Xubin ka ah {count, plural, =1 {# Urur} other {# Ururo}}",
-  "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}": "{count, plural, =1 {1 xubin ayaa soo gudbisay soo jeedimo} other {# xubno ayaa soo gudbiyay soo jeedimo}}"
+  "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}": "{count, plural, =1 {1 xubin ayaa soo gudbisay soo jeedimo} other {# xubno ayaa soo gudbiyay soo jeedimo}}",
+  "Leave anyway": "Si kastaba ka bax",
+  "Stay": "Joog",
+  "Unsaved changes": "Isbedello aan la kaydin",
+  "You have edits that haven’t been published. Use “Update Process” to save them before leaving.": "Waxaad leedahay isbedello aan la daabicin. Isticmaal “Cusboonaysii Habka” si aad u kaydiso ka hor inta aadan bixin."
 }

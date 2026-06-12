@@ -8,11 +8,12 @@ import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 import { LuLogOut } from 'react-icons/lu';
 
-import { Link, useRouter, useTranslations } from '@/lib/i18n';
+import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { LaunchProcessModal } from './LaunchProcessModal';
 import { useProcessBuilderAutosave } from './ProcessBuilderAutosaveContext';
 import { ProgressIndicator } from './components/ProgressIndicator';
+import { UnsavedExitLink } from './components/UnsavedExitLink';
 import { useProcessBuilderStore } from './stores/useProcessBuilderStore';
 import { useNavigationConfig } from './useNavigationConfig';
 import { useProcessNavigation } from './useProcessNavigation';
@@ -127,13 +128,15 @@ export const ProcessBuilderFooter = ({
         <div className="flex h-full items-center justify-between md:px-0">
           {/* Left: Exit + Back — matches sidebar width */}
           <div className="flex items-center gap-2 md:w-60 md:shrink-0">
-            <Link
+            <UnsavedExitLink
               href={`/decisions/${slug}`}
+              decisionProfileId={decisionProfileId}
+              isDraft={isDraft}
               className="inline-flex h-10 items-center gap-1 px-2 text-base text-charcoal transition-colors hover:bg-neutral-gray1"
             >
               <LuLogOut className="size-4 rotate-180" />
               {t('Exit')}
-            </Link>
+            </UnsavedExitLink>
             {hasPrev && (
               <Button
                 color="secondary"

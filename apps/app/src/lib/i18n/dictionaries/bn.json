@@ -1318,5 +1318,9 @@
   "Failed to load proposals": "প্রস্তাবগুলি লোড করা যায়নি",
   "No more updates.": "আর কোনো আপডেট নেই।",
   "Thank you for participating. Your voice helps shape how we invest in our community.": "অংশগ্রহণের জন্য ধন্যবাদ। আপনার মতামত আমরা কীভাবে আমাদের সম্প্রদায়ে বিনিয়োগ করি তা গঠনে সহায়তা করে।",
-  "HORIZONRESULTSABOUT": "&lt;p&gt;প্রক্রিয়া এবং কীভাবে সিদ্ধান্ত নেওয়া হয়েছিল সে সম্পর্কে আরও জানুন &lt;a target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot; href=&quot;https://docs.google.com/presentation/d/1umMJylcpBaMtT2OLnO4THaj2aPzJqyz_g73Wi2VCyLQ/edit?slide=id.g355b90e2c0a_0_0#slide=id.g355b90e2c0a_0_0&quot;&gt;এখানে &lt;/a&gt; &lt;/p&gt;"
+  "HORIZONRESULTSABOUT": "&lt;p&gt;প্রক্রিয়া এবং কীভাবে সিদ্ধান্ত নেওয়া হয়েছিল সে সম্পর্কে আরও জানুন &lt;a target=&quot;_blank&quot; rel=&quot;noopener noreferrer nofollow&quot; href=&quot;https://docs.google.com/presentation/d/1umMJylcpBaMtT2OLnO4THaj2aPzJqyz_g73Wi2VCyLQ/edit?slide=id.g355b90e2c0a_0_0#slide=id.g355b90e2c0a_0_0&quot;&gt;এখানে &lt;/a&gt; &lt;/p&gt;",
+  "Leave anyway": "তবুও চলে যান",
+  "Stay": "থাকুন",
+  "Unsaved changes": "অসংরক্ষিত পরিবর্তন",
+  "You have edits that haven’t been published. Use “Update Process” to save them before leaving.": "আপনার এমন পরিবর্তন রয়েছে যা প্রকাশিত হয়নি। চলে যাওয়ার আগে সেগুলি সংরক্ষণ করতে “প্রক্রিয়া আপডেট করুন” ব্যবহার করুন।"
 }
