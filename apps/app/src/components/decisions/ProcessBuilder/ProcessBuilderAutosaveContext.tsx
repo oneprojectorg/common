@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { ProcessStatus } from '@op/api/encoders';
 import { useDebouncedCallback } from '@op/hooks';
 import { toast } from '@op/ui/Toast';
 import {
@@ -53,16 +54,31 @@ export function useProcessBuilderAutosave(): AutosaveActions & {
 export function ProcessBuilderAutosaveProvider({
   decisionProfileId,
   instanceId,
-  isDraft,
+  isDraft: isDraftInitial,
   children,
 }: {
   decisionProfileId: string;
   instanceId: string;
+  /** SSR snapshot of the instance status — used only until the live query
+   *  resolves. The live value matters when the status changes while the
+   *  editor is open (e.g. another admin or another tab launches the
+   *  process): autosave must stop writing straight to the now-published
+   *  instance and fall back to buffering until "Update Process". */
   isDraft: boolean;
   children: React.ReactNode;
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
+
+  // Reactive status: getInstance is already cached (sections suspense-query
+  // it, and autosave invalidates it on settle), so this subscription costs
+  // no extra request. Refetch-on-focus heals the stale-tab case.
+  const { data: liveInstance } = trpc.decision.getInstance.useQuery({
+    instanceId,
+  });
+  const isDraft = liveInstance
+    ? liveInstance.status === ProcessStatus.DRAFT
+    : isDraftInitial;
   const setInstanceData = useProcessBuilderStore((s) => s.setInstanceData);
   const setProposalTemplateSchema = useProcessBuilderStore(
     (s) => s.setProposalTemplateSchema,
@@ -135,13 +151,22 @@ export function ProcessBuilderAutosaveProvider({
           clearDirtyFields(decisionProfileId, payload);
         })
         .catch(() => {
-          // Handled by the mutation's onError callback (toast + status).
-          // This catch only prevents unhandled promise rejection warnings.
+          // Error surfaced by the mutation's onError callback (toast +
+          // status). Restore the failed payload so the next debounced save
+          // retries it — newer edits win on conflict. No retry is scheduled
+          // here: a persistently rejecting payload would loop; the next
+          // user edit (or flush) re-sends naturally.
+          dirtyFieldsRef.current = {
+            ...payload,
+            ...dirtyFieldsRef.current,
+            config: { ...payload.config, ...dirtyFieldsRef.current.config },
+          };
         });
     } else {
-      // Published: data is only in the store (localStorage) until the user
-      // clicks "Update Process". Don't show a save indicator — it would be
-      // misleading since nothing has been persisted to the server yet.
+      // Published: edits stay in the store (the dirty map is persisted to
+      // localStorage) until the user clicks "Update Process". Don't show a
+      // save indicator — it would be misleading since nothing has been
+      // persisted to the server yet.
     }
   }, AUTOSAVE_DEBOUNCE_MS);
   debouncedSaveRef.current = () => debouncedSave.isPending();
