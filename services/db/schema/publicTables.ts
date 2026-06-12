@@ -146,6 +146,9 @@ export {
 } from './tables/proposals.sql';
 export type { Proposal, ProposalCategory } from './tables/proposals.sql';
 
+export { decisionBoundaries } from './tables/decisionBoundaries.sql';
+export type { DecisionBoundary } from './tables/decisionBoundaries.sql';
+
 export { Visibility, visibilityEnum } from './tables/visibility.sql';
 
 export {
