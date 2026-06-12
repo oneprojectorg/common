@@ -1,10 +1,6 @@
-import { useTranslations } from '@/lib/i18n';
-
 interface CouncilDistrictBadgeProps {
   /** Resolved boundary name. The badge renders nothing when absent. */
   boundaryName: string | null | undefined;
-  /** Appends "(resolved from map)" — shown in the editable picker only. */
-  resolvedFromMap?: boolean;
 }
 
 /**
@@ -14,10 +10,7 @@ interface CouncilDistrictBadgeProps {
  */
 export function CouncilDistrictBadge({
   boundaryName,
-  resolvedFromMap = false,
 }: CouncilDistrictBadgeProps) {
-  const t = useTranslations();
-
   if (!boundaryName) {
     return null;
   }
@@ -28,9 +21,7 @@ export function CouncilDistrictBadge({
         aria-hidden
         className="size-2 shrink-0 rounded-full bg-primary-teal"
       />
-      {resolvedFromMap
-        ? t('{boundary} (resolved from map)', { boundary: boundaryName })
-        : boundaryName}
+      {boundaryName}
     </span>
   );
 }

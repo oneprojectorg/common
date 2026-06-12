@@ -153,12 +153,7 @@ export function LocationMapField({
                 {t('This address is outside the allowed proposal area.')}
               </span>
             )}
-            {value && (
-              <CouncilDistrictBadge
-                boundaryName={boundaryName}
-                resolvedFromMap
-              />
-            )}
+            {value && <CouncilDistrictBadge boundaryName={boundaryName} />}
           </div>
           <Button
             variant="icon"
