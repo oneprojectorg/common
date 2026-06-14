@@ -20,6 +20,10 @@ import {
   getCurrentProfileId,
   resolveAccessUserIds,
 } from '../access';
+import {
+  getActivelyFlaggedItemIds,
+  noActiveModerationFlag,
+} from '../moderation/moderationVisibility';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import {
@@ -390,7 +394,31 @@ export const listProposals = async ({
           )!,
         )!;
 
-    return and(clause, or(draftFilter, nonDraftVisibilityFilter)!)!;
+    // Items with an active moderation flag are hidden from everyone except
+    // members of the proposal's own profile (creator + invited collaborators);
+    // instance admins (canManageProposals) skip the filter entirely. The owner
+    // audience is proposal.profileId membership — the same set getProposal
+    // grants the flagged proposal to — so the list and detail views agree
+    // (keying on submittedByProfileId alone would diverge for group-owned
+    // proposals). Applied in SQL so pagination stays correct.
+    const moderationFilter = canManageProposals
+      ? undefined
+      : or(
+          noActiveModerationFlag('proposal', t.id),
+          inArray(
+            t.profileId,
+            db
+              .select({ profileId: profileUsers.profileId })
+              .from(profileUsers)
+              .where(inArray(profileUsers.authUserId, accessUserIds)),
+          ),
+        )!;
+
+    return and(
+      clause,
+      or(draftFilter, nonDraftVisibilityFilter)!,
+      moderationFilter,
+    )!;
   };
 
   const { includeVoteCounts = false } = input;
@@ -468,8 +496,8 @@ export const listProposals = async ({
     .map((proposal) => proposal.profileId)
     .filter((id): id is string => Boolean(id));
 
-  const [relationshipData, documentContentMap, selectedIds] = await Promise.all(
-    [
+  const [relationshipData, documentContentMap, selectedIds, flaggedIds] =
+    await Promise.all([
       getProposalRelationshipData({ profileIds, currentProfileId }),
       getProposalDocumentsContent(
         proposalList.map((proposal) => {
@@ -486,8 +514,13 @@ export const listProposals = async ({
         }),
       ),
       getSelectedProposalIds(processInstanceId),
-    ],
-  );
+      // Flagged items reach this point only for their creator or an admin —
+      // decorate them so the UI can render the "Flagged" indicator.
+      getActivelyFlaggedItemIds(
+        'proposal',
+        proposalList.map((proposal) => proposal.id),
+      ),
+    ]);
 
   const hasAdminPermission = checkPermission(
     { profile: permission.ADMIN },
@@ -526,6 +559,7 @@ export const listProposals = async ({
       commentsCount: relationshipInfo?.commentsCount || 0,
       isEditable,
       isSelected: selectedIds.has(proposal.id),
+      isFlagged: flaggedIds.has(proposal.id),
       documentContent: documentContentMap.get(proposal.id),
       proposalTemplate,
       ...(includeVoteCounts && {

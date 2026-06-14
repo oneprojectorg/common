@@ -4,10 +4,15 @@ import {
   posts as postsTable,
   postsToProfiles,
 } from '@op/db/schema';
-import { permission } from 'access-zones';
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { checkPermission, permission } from 'access-zones';
+import { type SQL, and, desc, eq, isNull, or, sql } from 'drizzle-orm';
 
-import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
+import {
+  assertProfileTypeAccess,
+  getCurrentProfileId,
+  getProfileAccessUser,
+} from '../access';
+import { noActiveModerationFlag } from '../moderation/moderationVisibility';
 import { getItemsWithReactionsAndComments } from './listPosts';
 
 export interface GetPostsInput {
@@ -85,12 +90,27 @@ export const getPosts = async (input: GetPostsInput) => {
     },
   });
 
-  const postWhere =
-    effectiveParentPostId === null
-      ? ({ parentPostId: { isNull: true } } as const)
-      : effectiveParentPostId
-        ? { parentPostId: effectiveParentPostId }
-        : undefined;
+  // Flagged posts/comments stay visible to their author and to admins of the
+  // governing profile; everyone else has them filtered out in SQL (so a
+  // flagged comment doesn't leak into a thread, and pagination stays correct).
+  const actorProfileId = await getCurrentProfileId(authUserId);
+  const governingProfileUser = profileIdsToAuthorize[0]
+    ? await getProfileAccessUser({
+        user: { id: authUserId },
+        profileId: profileIdsToAuthorize[0],
+      })
+    : undefined;
+  const isProfileAdmin = checkPermission(
+    { profile: permission.ADMIN },
+    governingProfileUser?.roles ?? [],
+  );
+  const moderationCondition = (table: typeof postsTable): SQL | undefined =>
+    isProfileAdmin
+      ? undefined
+      : or(
+          noActiveModerationFlag('post', table.id),
+          actorProfileId ? eq(table.profileId, actorProfileId) : sql`false`,
+        );
 
   const childPostsRelation =
     includeChildren && maxDepth > 0
@@ -123,12 +143,11 @@ export const getPosts = async (input: GetPostsInput) => {
           .from(postsToProfiles)
           .innerJoin(
             postsTable,
-            parentPostCondition
-              ? and(
-                  eq(postsTable.id, postsToProfiles.postId),
-                  parentPostCondition,
-                )
-              : eq(postsTable.id, postsToProfiles.postId),
+            and(
+              eq(postsTable.id, postsToProfiles.postId),
+              parentPostCondition,
+              moderationCondition(postsTable),
+            ),
           )
           .where(eq(postsToProfiles.profileId, profileId))
           .orderBy(
@@ -158,7 +177,18 @@ export const getPosts = async (input: GetPostsInput) => {
       })()
     : (
         await db.query.posts.findMany({
-          where: postWhere,
+          where: {
+            RAW: (table) => {
+              const parent =
+                effectiveParentPostId === null
+                  ? isNull(table.parentPostId)
+                  : effectiveParentPostId
+                    ? eq(table.parentPostId, effectiveParentPostId)
+                    : sql`true`;
+              const moderation = moderationCondition(table);
+              return moderation ? (and(parent, moderation) ?? parent) : parent;
+            },
+          },
           with: postWith,
           limit,
           offset,
@@ -166,7 +196,6 @@ export const getPosts = async (input: GetPostsInput) => {
         })
       ).map((post) => ({ post }));
 
-  const actorProfileId = await getCurrentProfileId(authUserId);
   const itemsWithReactionsAndComments = await getItemsWithReactionsAndComments({
     items: postsData.map((item) => ({ post: item.post })),
     profileId: actorProfileId,

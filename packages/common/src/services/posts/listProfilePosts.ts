@@ -4,8 +4,8 @@ import {
   posts as postsTable,
   postsToProfiles,
 } from '@op/db/schema';
-import { permission } from 'access-zones';
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { checkPermission, permission } from 'access-zones';
+import { and, desc, eq, isNull, or, sql } from 'drizzle-orm';
 
 import {
   UnauthorizedError,
@@ -17,7 +17,9 @@ import {
   type AccessUser,
   assertProfileTypeAccess,
   getCurrentProfileId,
+  getProfileAccessUser,
 } from '../access';
+import { noActiveModerationFlag } from '../moderation/moderationVisibility';
 import { getItemsWithReactionsAndComments } from './listPosts';
 
 export const listProfilePosts = async ({
@@ -62,11 +64,23 @@ export const listProfilePosts = async ({
       })
     : undefined;
 
+  // The caller's profile + admin standing on this profile drive the
+  // moderation filter below: flagged posts stay visible to their author and
+  // to profile admins, hidden from everyone else.
+  const [actorProfileId, profileUser] = await Promise.all([
+    user ? getCurrentProfileId(user.id) : undefined,
+    getProfileAccessUser({ user, profileId }),
+  ]);
+  const isProfileAdmin = checkPermission(
+    { profile: permission.ADMIN },
+    profileUser?.roles ?? [],
+  );
+
   // Filter top-level posts at the SQL level so pagination doesn't under-fetch
   // when comments inherit profile associations from their parent. A relational
   // `where: { post: { parentPostId: isNull } }` produces a LEFT JOIN that
   // returns nulls for filtered rows — paginating on those rows silently drops
-  // pages.
+  // pages. The moderation filter rides on the same join for the same reason.
   const pageRows = await db
     .select({
       postId: postsToProfiles.postId,
@@ -78,6 +92,14 @@ export const listProfilePosts = async ({
       and(
         eq(postsTable.id, postsToProfiles.postId),
         isNull(postsTable.parentPostId),
+        isProfileAdmin
+          ? undefined
+          : or(
+              noActiveModerationFlag('post', postsTable.id),
+              actorProfileId
+                ? eq(postsTable.profileId, actorProfileId)
+                : sql`false`,
+            ),
       ),
     )
     .where(
@@ -117,7 +139,6 @@ export const listProfilePosts = async ({
         })
       : null;
 
-  const actorProfileId = user ? await getCurrentProfileId(user.id) : undefined;
   const itemsWithReactions = await getItemsWithReactionsAndComments({
     items: orderedPosts.map((post) => ({ post })),
     profileId: actorProfileId,

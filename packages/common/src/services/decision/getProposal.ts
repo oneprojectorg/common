@@ -19,6 +19,7 @@ import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
 import { assertInstanceProfileAccess, getProfileAccessUser } from '../access';
+import { hasActiveModerationFlag } from '../moderation/moderationVisibility';
 import { generateProposalHtml } from './generateProposalHtml';
 import {
   type ProposalDocumentContent,
@@ -70,6 +71,7 @@ export const getProposal = async ({
     documentContent: ProposalDocumentContent | undefined;
     htmlContent: Record<string, string> | undefined;
     attachments: ProposalAttachmentWithDetails[];
+    isFlagged: boolean;
   }
 > => {
   const proposal = await db.query.proposals.findFirst({
@@ -213,6 +215,29 @@ export const getProposal = async ({
     }
   }
 
+  // Moderation gate: a proposal with an active flag is visible only to those
+  // with proposal-level access (creator + invited collaborators) and instance
+  // admins — same audience as HIDDEN visibility. NotFoundError, not
+  // Unauthorized, so existence doesn't leak. `isFlagged` rides on the result
+  // so the UI can render the "Flagged" indicator for that audience.
+  const isFlagged = await hasActiveModerationFlag('proposal', proposal.id);
+  if (isFlagged) {
+    const instanceProfileId = proposal.processInstance.profileId;
+    const [proposalProfileUser, instanceProfileUser] = await Promise.all([
+      getProfileAccessUser({ user, profileId: proposal.profileId }),
+      instanceProfileId
+        ? getProfileAccessUser({ user, profileId: instanceProfileId })
+        : undefined,
+    ]);
+    const canManageProposals = checkPermission(
+      { profile: permission.ADMIN },
+      instanceProfileUser?.roles ?? [],
+    );
+    if (!proposalProfileUser && !canManageProposals) {
+      throw new NotFoundError('Proposal', profileId);
+    }
+  }
+
   // Generate signed URLs for attachments
   let attachmentsWithUrls = proposal.attachments ?? [];
 
@@ -260,6 +285,7 @@ export const getProposal = async ({
     documentContent,
     htmlContent,
     attachments: attachmentsWithUrls,
+    isFlagged,
   };
 };
 

@@ -119,6 +119,10 @@ export const proposalSchema = z.object({
   isEditable: z.boolean().optional(),
   /** True when this proposal is in the latest results selection set. */
   isSelected: z.boolean().optional(),
+  /** True when an active moderation flag hides this proposal from general
+   *  readers. Only the creator (+ collaborators) and admins ever receive a
+   *  flagged proposal, so this drives their "Flagged" indicator. */
+  isFlagged: z.boolean().optional(),
   access: proposalAccessSchema.optional(),
   attachments: z.array(proposalAttachmentSchema).optional(),
   selectionRank: z.number().nullable().optional(),

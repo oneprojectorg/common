@@ -1,9 +1,17 @@
 import { db } from '@op/db/client';
 import { EntityType, postsToProfiles } from '@op/db/schema';
-import { permission } from 'access-zones';
-import { eq } from 'drizzle-orm';
+import { checkPermission, permission } from 'access-zones';
+import { eq, or, sql } from 'drizzle-orm';
 
-import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
+import {
+  assertProfileTypeAccess,
+  getCurrentProfileId,
+  getProfileAccessUser,
+} from '../access';
+import {
+  hasActiveModerationFlag,
+  noActiveModerationFlag,
+} from '../moderation/moderationVisibility';
 import { getItemsWithReactionsAndComments } from './listPosts';
 
 export const getPost = async ({
@@ -22,6 +30,8 @@ export const getPost = async ({
   if (maxDepth > 2) {
     maxDepth = 2;
   }
+
+  const actorProfileId = await getCurrentProfileId(authUserId);
 
   const post = await db.query.posts.findFirst({
     where: { id: postId },
@@ -44,6 +54,18 @@ export const getPost = async ({
       ...(includeChildren && maxDepth > 0
         ? {
             childPosts: {
+              // Flagged comments are hidden from the thread for everyone but
+              // their author. (Admins review them via the moderation queue,
+              // not inline.) Filtered in SQL so the `limit` isn't distorted.
+              where: {
+                RAW: (table) =>
+                  or(
+                    noActiveModerationFlag('post', table.id),
+                    actorProfileId
+                      ? eq(table.profileId, actorProfileId)
+                      : sql`false`,
+                  )!,
+              },
               limit: 50,
               orderBy: { createdAt: 'desc' as const },
               with: {
@@ -86,8 +108,6 @@ export const getPost = async ({
           .where(eq(postsToProfiles.postId, postId))
       ).map((a) => a.profileId);
 
-  const actorProfileId = await getCurrentProfileId(authUserId);
-
   await assertProfileTypeAccess({
     user: { id: authUserId },
     profileIds: profileIdsToAuthorize,
@@ -95,6 +115,28 @@ export const getPost = async ({
       [EntityType.DECISION]: { decisions: permission.READ },
     },
   });
+
+  // Moderation gate: a post with an active flag is visible only to its author
+  // and admins of the post's root profile. Returns null (same as a missing
+  // post) so existence doesn't leak.
+  if (await hasActiveModerationFlag('post', post.id)) {
+    const isAuthor = post.profileId === actorProfileId;
+    if (!isAuthor) {
+      const rootProfileUser = post.rootProfileId
+        ? await getProfileAccessUser({
+            user: { id: authUserId },
+            profileId: post.rootProfileId,
+          })
+        : undefined;
+      const isAdmin = checkPermission(
+        { profile: permission.ADMIN },
+        rootProfileUser?.roles ?? [],
+      );
+      if (!isAdmin) {
+        return null;
+      }
+    }
+  }
 
   const itemsWithReactionsAndComments = await getItemsWithReactionsAndComments({
     items: [{ post }],

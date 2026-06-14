@@ -18,7 +18,7 @@ import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
 import { ReactNode, memo, useCallback, useMemo, useState } from 'react';
-import { LuLeaf } from 'react-icons/lu';
+import { LuFlag, LuLeaf } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
@@ -65,6 +65,24 @@ const PostContent = ({ content }: { content?: string }) => {
     <p dir="auto" className="whitespace-pre-wrap">
       {linkifyText(content)}
     </p>
+  );
+};
+
+// Only the author and admins ever receive a flagged post/comment — everyone
+// else has it filtered out server-side — so this indicator marks content that
+// is hidden from general readers while moderation is pending/upheld.
+const PostFlaggedIndicator = ({ post }: { post: Post }) => {
+  const t = useTranslations();
+
+  if (!post.isFlagged) {
+    return null;
+  }
+
+  return (
+    <div className="flex items-center gap-1 text-sm text-functional-red">
+      <LuFlag className="size-4" />
+      <span>{t('Flagged')}</span>
+    </div>
   );
 };
 
@@ -390,6 +408,7 @@ export const PostItem = ({
           <PostMenu post={post} user={user} organization={organization} />
         </FeedHeader>
         <FeedContent>
+          <PostFlaggedIndicator post={post} />
           <PostContent content={post?.content} />
           <PostAttachments attachments={post.attachments} />
           <PostUrls urls={urls} />
@@ -467,6 +486,7 @@ export const PostItemOnDetailPage = ({
           <PostMenu post={post} user={user} organization={organization} />
         </FeedHeader>
         <FeedContent>
+          <PostFlaggedIndicator post={post} />
           <PostContent content={post?.content} />
           <PostAttachments attachments={post.attachments} />
           <PostUrls urls={urls} />
