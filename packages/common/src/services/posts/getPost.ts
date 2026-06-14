@@ -11,10 +11,10 @@ import {
   assertProfileTypeAccess,
   getCurrentProfileId,
   getOrgAccessUser,
-  hasProfileAccessWithOrgFallback,
+  getProfileAccessUserWithOrgFallback,
 } from '../access';
 import {
-  hasActiveModerationFlag,
+  getActivelyFlaggedItemIds,
   noActiveModerationFlag,
 } from '../moderation/moderationVisibility';
 import { getItemsWithReactionsAndComments } from './listPosts';
@@ -121,6 +121,10 @@ export const getPost = async ({
     },
   });
 
+  // Resolve the flag state once (reused below for the gate and for the
+  // `isFlagged` decoration, so the moderation_flags table is hit a single time).
+  const flaggedItemIds = await getActivelyFlaggedItemIds('post', [post.id]);
+
   // Moderation gate: a post with an active flag is visible only to its author
   // and admins of the entities that govern it. Returns null (same as a missing
   // post) so existence doesn't leak. Admin standing comes from two places: a
@@ -128,7 +132,7 @@ export const getPost = async ({
   // `organizationUsers`, not `profileUsers`) or — for org-feed posts, which
   // carry no governing profile and link to the org only via
   // `postsToOrganizations` — the post's organizations directly.
-  if (await hasActiveModerationFlag('post', post.id)) {
+  if (flaggedItemIds.has(post.id)) {
     const isAuthor = post.profileId === actorProfileId;
     if (!isAuthor) {
       const user = { id: authUserId };
@@ -139,21 +143,15 @@ export const getPost = async ({
 
       const adminChecks = [
         ...profileIdsToAuthorize.map((pid) =>
-          hasProfileAccessWithOrgFallback({
-            user,
-            profileId: pid,
-            permissions: { profile: permission.ADMIN },
-          }),
+          getProfileAccessUserWithOrgFallback({ user, profileId: pid }),
         ),
-        ...orgRows.map(async ({ organizationId }) => {
-          const orgUser = await getOrgAccessUser({ user, organizationId });
-          return checkPermission(
-            { profile: permission.ADMIN },
-            orgUser?.roles ?? [],
-          );
-        }),
+        ...orgRows.map(({ organizationId }) =>
+          getOrgAccessUser({ user, organizationId }),
+        ),
       ];
-      const isAdmin = (await Promise.all(adminChecks)).some(Boolean);
+      const isAdmin = (await Promise.all(adminChecks)).some((accessUser) =>
+        checkPermission({ profile: permission.ADMIN }, accessUser?.roles ?? []),
+      );
       if (!isAdmin) {
         return null;
       }
@@ -163,6 +161,7 @@ export const getPost = async ({
   const itemsWithReactionsAndComments = await getItemsWithReactionsAndComments({
     items: [{ post }],
     profileId: actorProfileId,
+    flaggedItemIds,
   });
 
   return itemsWithReactionsAndComments[0]?.post ?? null;

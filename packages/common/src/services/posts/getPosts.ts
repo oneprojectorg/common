@@ -10,7 +10,7 @@ import { type SQL, and, desc, eq, isNull, or, sql } from 'drizzle-orm';
 import {
   assertProfileTypeAccess,
   getCurrentProfileId,
-  getProfileAccessUser,
+  getProfileAccessUserWithOrgFallback,
 } from '../access';
 import { noActiveModerationFlag } from '../moderation/moderationVisibility';
 import { getItemsWithReactionsAndComments } from './listPosts';
@@ -95,7 +95,7 @@ export const getPosts = async (input: GetPostsInput) => {
   // flagged comment doesn't leak into a thread, and pagination stays correct).
   const actorProfileId = await getCurrentProfileId(authUserId);
   const governingProfileUser = profileIdsToAuthorize[0]
-    ? await getProfileAccessUser({
+    ? await getProfileAccessUserWithOrgFallback({
         user: { id: authUserId },
         profileId: profileIdsToAuthorize[0],
       })

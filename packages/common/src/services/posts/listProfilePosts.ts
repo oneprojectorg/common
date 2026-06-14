@@ -17,7 +17,7 @@ import {
   type AccessUser,
   assertProfileTypeAccess,
   getCurrentProfileId,
-  getProfileAccessUser,
+  getProfileAccessUserWithOrgFallback,
 } from '../access';
 import { noActiveModerationFlag } from '../moderation/moderationVisibility';
 import { getItemsWithReactionsAndComments } from './listPosts';
@@ -69,7 +69,7 @@ export const listProfilePosts = async ({
   // to profile admins, hidden from everyone else.
   const [actorProfileId, profileUser] = await Promise.all([
     user ? getCurrentProfileId(user.id) : undefined,
-    getProfileAccessUser({ user, profileId }),
+    getProfileAccessUserWithOrgFallback({ user, profileId }),
   ]);
   const isProfileAdmin = checkPermission(
     { profile: permission.ADMIN },
