@@ -1,5 +1,19 @@
-import { and, db, eq, exists, isNull, notInArray } from '@op/db/client';
-import { ProposalStatus, Visibility, proposalCategories } from '@op/db/schema';
+import {
+  and,
+  db,
+  eq,
+  exists,
+  inArray,
+  isNull,
+  notInArray,
+  or,
+} from '@op/db/client';
+import {
+  ProposalStatus,
+  Visibility,
+  proposalCategories,
+  profileUsers,
+} from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
@@ -9,7 +23,15 @@ import {
   encodeCursor,
   getCursorCondition,
 } from '../../utils';
-import { assertInstanceProfileAccess, getCurrentProfileId } from '../access';
+import {
+  assertInstanceProfileAccess,
+  getCurrentProfileId,
+  resolveAccessUserIds,
+} from '../access';
+import {
+  getActivelyFlaggedItemIds,
+  noActiveModerationFlag,
+} from '../moderation/moderationVisibility';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
@@ -39,6 +61,10 @@ export const listAllProposals = async ({
   const decodedCursor = input.cursor
     ? decodeCursor<{ value: string | Date }>(input.cursor)
     : undefined;
+
+  // The caller's own grants unioned with public grants — used by the
+  // moderation owner-exception subquery (proposal.profileId membership).
+  const accessUserIds = resolveAccessUserIds(user);
 
   const [currentProfileId, instance] = await Promise.all([
     user ? getCurrentProfileId(user.id) : undefined,
@@ -95,6 +121,22 @@ export const listAllProposals = async ({
           ]),
           isNull(table.deletedAt),
           isAdmin ? undefined : eq(table.visibility, Visibility.VISIBLE),
+          // Items with an active moderation flag are hidden from everyone
+          // except members of the proposal's own profile (the same audience
+          // getProposal grants it to, so list and detail agree); admins skip
+          // the filter.
+          isAdmin
+            ? undefined
+            : or(
+                noActiveModerationFlag('proposal', table.id),
+                inArray(
+                  table.profileId,
+                  db
+                    .select({ profileId: profileUsers.profileId })
+                    .from(profileUsers)
+                    .where(inArray(profileUsers.authUserId, accessUserIds)),
+                ),
+              ),
           getCursorCondition({
             column: table[orderBy],
             cursor: decodedCursor,
@@ -127,8 +169,8 @@ export const listAllProposals = async ({
     .map((proposal) => proposal.profileId)
     .filter((id): id is string => Boolean(id));
 
-  const [relationshipData, documentContentMap, selectedIds] = await Promise.all(
-    [
+  const [relationshipData, documentContentMap, selectedIds, flaggedIds] =
+    await Promise.all([
       getProposalRelationshipData({ profileIds, currentProfileId }),
       getProposalDocumentsContent(
         pageItems.map((proposal) => ({
@@ -138,8 +180,13 @@ export const listAllProposals = async ({
         })),
       ),
       getSelectedProposalIds(processInstanceId),
-    ],
-  );
+      // Flagged items reach this point only for their creator or an admin —
+      // decorate them so the UI can render the "Flagged" indicator.
+      getActivelyFlaggedItemIds(
+        'proposal',
+        pageItems.map((proposal) => proposal.id),
+      ),
+    ]);
 
   const items = pageItems.map((proposal) => {
     const submittedBy = Array.isArray(proposal.submittedBy)
@@ -167,6 +214,7 @@ export const listAllProposals = async ({
       isFollowedByUser: relationshipInfo?.isFollowedByUser || false,
       commentsCount: relationshipInfo?.commentsCount || 0,
       isSelected: selectedIds.has(proposal.id),
+      isFlagged: flaggedIds.has(proposal.id),
       documentContent: documentContentMap.get(proposal.id),
       proposalTemplate,
     };

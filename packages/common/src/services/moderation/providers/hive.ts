@@ -1,11 +1,44 @@
+import { z } from 'zod';
+
+import { decodeContentRef, encodeContentRef } from '../contentRef';
 import type {
   ModerationCategory,
+  ModerationItemType,
+  ModerationMediaItem,
   ModerationProvider,
+  ModerationProviderReference,
   ModerationScores,
+  ModerationVerdict,
+  ModerationWebhookInput,
 } from '../types';
+import { mergeModerationScores } from '../utils';
 import { SYNC_GATE_FETCH, moderationFetch } from './moderationFetch';
 
+// External input driving DB writes: validate the shape instead of casting.
+// Unknown fields are stripped; a payload without our echoed `post_id` (the
+// content ref) is rejected and the route answers 400.
+const hiveWebhookSchema = z.object({
+  post_id: z.string(),
+  task_id: z.string().nullish(),
+  triggered_rules: z
+    .array(z.object({ rule_name: z.string().nullish() }))
+    .nullish(),
+});
+
+// The async-submit response is external input too — validate the task id
+// instead of casting (matches the webhook-parsing pattern above).
+const hiveAsyncResponseSchema = z.object({
+  task_id: z.string().nullish(),
+  id: z.string().nullish(),
+});
+
 const DEFAULT_URL = 'https://api.thehive.ai/api/v2/task/sync';
+// The Moderation Dashboard async endpoint (distinct host from the classifier):
+// submit content + a callback_url, the verdict arrives later via webhook.
+const DEFAULT_ASYNC_URL = 'https://api.hivemoderation.com/api/v1/task/async';
+// Publisher id Hive requires on every submission; we moderate on behalf of the
+// platform rather than per-end-user, so a constant suffices.
+const PUBLISHER_ID = 'oneproject';
 // Hive returns integer severity 0-3 per class; normalize onto our 0-1 scale.
 const HIVE_MAX_SCORE = 3;
 // Hive's sync text endpoint caps submissions at 1024 chars and asks callers to
@@ -74,18 +107,42 @@ const chunkText = (text: string, maxLength: number): string[] => {
   return chunks;
 };
 
-// Content is as bad as its worst chunk: keep the max score per category.
-const mergeScores = (parts: ModerationScores[]): ModerationScores => {
-  const merged: ModerationScores = {};
-  for (const part of parts) {
-    for (const [category, score] of Object.entries(part)) {
-      if (typeof score === 'number' && Number.isFinite(score)) {
-        const key = category as ModerationCategory;
-        merged[key] = Math.max(merged[key] ?? 0, score);
-      }
-    }
+// Hive takes text_data OR url per submission, so text and each media url are
+// separate async tasks correlated to the same item via the content ref. Both
+// the up-front plan (`planReviewRefs`) and the actual submit derive from this
+// single helper so the recorded round always matches what gets submitted.
+const planSubmissions = ({
+  itemType,
+  itemId,
+  roundId,
+  content,
+  media = [],
+}: {
+  itemType: ModerationItemType;
+  itemId: string;
+  roundId: string;
+  content: string;
+  media?: ModerationMediaItem[];
+}): Array<{ ref: string; fields: { text_data: string } | { url: string } }> => {
+  const tasks: Array<{
+    ref: string;
+    fields: { text_data: string } | { url: string };
+  }> = [];
+  if (content.trim()) {
+    tasks.push({
+      ref: encodeContentRef(itemType, itemId, roundId),
+      fields: { text_data: content },
+    });
   }
-  return merged;
+  // Hive's async endpoint detects the media type from the URL itself, so each
+  // attachment is submitted as a `url` task regardless of kind.
+  for (const [index, item] of media.entries()) {
+    tasks.push({
+      ref: encodeContentRef(itemType, itemId, roundId, String(index)),
+      fields: { url: item.url },
+    });
+  }
+  return tasks;
 };
 
 /**
@@ -97,9 +154,11 @@ const mergeScores = (parts: ModerationScores[]): ModerationScores => {
 export const createHiveProvider = ({
   apiKey,
   apiUrl = DEFAULT_URL,
+  asyncUrl = DEFAULT_ASYNC_URL,
 }: {
   apiKey: string;
   apiUrl?: string;
+  asyncUrl?: string;
 }): ModerationProvider => {
   const scoreChunk = async (chunk: string): Promise<ModerationScores> => {
     const response = await moderationFetch(
@@ -122,11 +181,85 @@ export const createHiveProvider = ({
     return normalizeHiveScores(await response.json());
   };
 
+  // One async submission (text or a single media url) → Hive returns a task id.
+  const submitAsync = async (
+    postId: string,
+    fields: { text_data: string } | { url: string },
+    callbackUrl: string,
+  ): Promise<string | undefined> => {
+    const response = await moderationFetch(asyncUrl, {
+      method: 'POST',
+      headers: {
+        authorization: `token ${apiKey}`,
+        'content-type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        user_id: PUBLISHER_ID,
+        post_id: postId,
+        callback_url: callbackUrl,
+        ...fields,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Moderation provider returned ${response.status}`);
+    }
+
+    const data = hiveAsyncResponseSchema.parse(await response.json());
+    return data.task_id ?? data.id ?? undefined;
+  };
+
   return {
     scoreText: async ({ content }) => {
       const chunks = chunkText(content, HIVE_MAX_TEXT_LENGTH);
       const perChunk = await Promise.all(chunks.map(scoreChunk));
-      return mergeScores(perChunk);
+      return mergeModerationScores(...perChunk);
+    },
+
+    planReviewRefs: (input) => planSubmissions(input).map((task) => task.ref),
+
+    submitForReview: async ({
+      callbackUrl,
+      ...input
+    }): Promise<ModerationProviderReference> => {
+      let primaryId: string | undefined;
+      const submittedRefs: string[] = [];
+
+      for (const task of planSubmissions(input)) {
+        submittedRefs.push(task.ref);
+        const recordId = await submitAsync(task.ref, task.fields, callbackUrl);
+        primaryId ??= recordId;
+      }
+
+      return { providerRecordId: primaryId, submittedRefs };
+    },
+
+    // One verdict per callback (one async task per callback).
+    parseWebhook: ({
+      rawBody,
+    }: ModerationWebhookInput): ModerationVerdict[] => {
+      const payload = hiveWebhookSchema.parse(JSON.parse(rawBody));
+      const { itemType, itemId, roundId, mediaId } = decodeContentRef(
+        payload.post_id,
+      );
+      const rules = payload.triggered_rules ?? [];
+      const flagged = rules.length > 0;
+      return [
+        {
+          itemType,
+          itemId,
+          roundId,
+          mediaId,
+          verdict: flagged ? 'flagged' : 'clear',
+          externalRecordId: payload.task_id ?? undefined,
+          reason: flagged
+            ? rules
+                .map((rule) => rule.rule_name)
+                .filter(Boolean)
+                .join(', ')
+            : undefined,
+        },
+      ];
     },
   };
 };

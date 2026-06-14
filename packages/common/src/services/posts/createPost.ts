@@ -402,6 +402,21 @@ export const createPost = async (input: CreatePostServiceInput) => {
 
   waitUntil(
     (async () => {
+      // Async moderation pass (the sync gate already ran on write). Covers
+      // posts and comments alike. Isolated from the notification sends below
+      // so a failure on one side never suppresses the other.
+      try {
+        await event.send({
+          name: Events.contentSubmitted.name,
+          data: {
+            itemType: 'post',
+            itemId: newPost.id,
+          },
+        });
+      } catch (error) {
+        console.error('Failed to submit post for moderation review:', error);
+      }
+
       try {
         switch (postKind) {
           case 'comment':

@@ -5,6 +5,8 @@ import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
+import { assertTextContentModerated } from '../moderation';
+import { extractProposalText } from './extractProposalText';
 import { decisionPermission } from './permissions';
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
@@ -91,13 +93,22 @@ export const submitProposal = async ({
   // created by the DB trigger links back to a concrete document revision.
   const parsed = parseProposalData(existingProposal.proposalData);
 
+  // Templates define arbitrary text fields, so the validated record — which
+  // for collab-doc proposals carries the latest TipTap fragment text per
+  // field — is what the moderation gate must examine, not just a known
+  // title/description pair.
+  let moderatableData: unknown = existingProposal.proposalData;
   if (proposalTemplate) {
-    await validateProposalAgainstTemplate(
+    moderatableData = await validateProposalAgainstTemplate(
       proposalTemplate,
       existingProposal.proposalData,
       existingProposal.profile.name,
     );
   }
+
+  // Synchronous moderation gate: block disallowed proposal text on submit (the
+  // async pass below re-checks the text plus any attachments via the provider).
+  await assertTextContentModerated(extractProposalText(moderatableData));
 
   // Create a named version snapshot. Best-effort — failures logged, never block.
   if (!parsed.collaborationDocId) {

@@ -6,6 +6,10 @@ import type { AppRouter } from './src/routers';
 export * from './src/routers';
 export * from './src/trpcFactory';
 export {
+  handleModerationWebhookRequest,
+  type ModerationWebhookRequest,
+} from './src/moderation/handleModerationWebhookRequest';
+export {
   unwrapResponseWithChannels,
   wrapResponseWithChannels,
   type WrappedResponse,

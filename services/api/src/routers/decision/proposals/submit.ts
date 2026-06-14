@@ -43,6 +43,19 @@ export const submitProposalRouter = router({
         }),
       );
 
+      // Submit the proposal for async moderation review. The workflow
+      // resolves the text (TipTap fragments + proposalData) and attachments
+      // itself — proposalData alone is empty for collab-doc proposals.
+      waitUntil(
+        inngest.send({
+          name: Events.contentSubmitted.name,
+          data: {
+            itemType: 'proposal',
+            itemId: proposal.id,
+          },
+        }),
+      );
+
       return proposalSchema.parse(proposal);
     }),
 });
