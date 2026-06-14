@@ -24,7 +24,7 @@ import {
   encodeCursor,
   getGenericCursorCondition,
 } from '../../utils';
-import { getCurrentProfileId, getProfileAccessUser } from '../access';
+import { getCurrentProfileId, getOrgAccessUser } from '../access';
 import {
   getActivelyFlaggedItemIds,
   noActiveModerationFlag,
@@ -80,15 +80,18 @@ export const listPosts = async ({
     }
 
     // The caller's profile + org-admin standing drive the moderation filter:
-    // flagged posts stay visible to their author and to admins of the org's
-    // profile, and are hidden from everyone else (filtered in SQL).
-    const [actorProfileId, orgProfileUser] = await Promise.all([
+    // flagged posts stay visible to their author and to admins of the org, and
+    // are hidden from everyone else (filtered in SQL). Org-admin roles live on
+    // `organizationUsers` (not `profileUsers`), so resolve them via
+    // `getOrgAccessUser` — a `getProfileAccessUser` lookup on the org's profile
+    // never sees them and would hide flagged posts from admins too.
+    const [actorProfileId, orgUser] = await Promise.all([
       getCurrentProfileId(authUserId),
-      getProfileAccessUser({ user: { id: authUserId }, profileId }),
+      getOrgAccessUser({ user: { id: authUserId }, organizationId: org.id }),
     ]);
     const isOrgAdmin = checkPermission(
       { profile: permission.ADMIN },
-      orgProfileUser?.roles ?? [],
+      orgUser?.roles ?? [],
     );
 
     // Page the post ids on the join itself (top-level + moderation filters on

@@ -3,6 +3,7 @@ import {
   ModerationFlagStatus,
   ModerationItemType,
   ModerationSource,
+  ProposalStatus,
   Visibility,
   moderationFlags,
   posts,
@@ -130,14 +131,16 @@ describe.concurrent('moderation read visibility', () => {
         }),
       ]);
 
+      // SUBMITTED (not DRAFT) + VISIBLE so a non-owner member can read it
+      // pre-flag — this isolates the moderation gate from the draft-only and
+      // hidden-by-default visibility gates that run before it in getProposal.
       const proposal = await testData.createProposal({
         userEmail: submitter.email,
         processInstanceId: instance.instance.id,
         proposalData: { title: 'Proposal to flag', description: 'An idea' },
+        status: ProposalStatus.SUBMITTED,
       });
 
-      // A freshly created proposal is visible; make that explicit so the test
-      // isolates the moderation gate from any phase hidden-by-default rule.
       await db
         .update(proposals)
         .set({ visibility: Visibility.VISIBLE })
