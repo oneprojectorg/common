@@ -1,12 +1,17 @@
 import { db } from '@op/db/client';
-import { EntityType, postsToProfiles } from '@op/db/schema';
+import {
+  EntityType,
+  postsToOrganizations,
+  postsToProfiles,
+} from '@op/db/schema';
 import { checkPermission, permission } from 'access-zones';
 import { eq, or, sql } from 'drizzle-orm';
 
 import {
   assertProfileTypeAccess,
   getCurrentProfileId,
-  getProfileAccessUser,
+  getOrgAccessUser,
+  hasProfileAccessWithOrgFallback,
 } from '../access';
 import {
   hasActiveModerationFlag,
@@ -117,21 +122,38 @@ export const getPost = async ({
   });
 
   // Moderation gate: a post with an active flag is visible only to its author
-  // and admins of the post's root profile. Returns null (same as a missing
-  // post) so existence doesn't leak.
+  // and admins of the entities that govern it. Returns null (same as a missing
+  // post) so existence doesn't leak. Admin standing comes from two places: a
+  // governing profile (with org fallback, since org admins' roles live on
+  // `organizationUsers`, not `profileUsers`) or — for org-feed posts, which
+  // carry no governing profile and link to the org only via
+  // `postsToOrganizations` — the post's organizations directly.
   if (await hasActiveModerationFlag('post', post.id)) {
     const isAuthor = post.profileId === actorProfileId;
     if (!isAuthor) {
-      const rootProfileUser = post.rootProfileId
-        ? await getProfileAccessUser({
-            user: { id: authUserId },
-            profileId: post.rootProfileId,
-          })
-        : undefined;
-      const isAdmin = checkPermission(
-        { profile: permission.ADMIN },
-        rootProfileUser?.roles ?? [],
-      );
+      const user = { id: authUserId };
+      const orgRows = await db
+        .select({ organizationId: postsToOrganizations.organizationId })
+        .from(postsToOrganizations)
+        .where(eq(postsToOrganizations.postId, post.id));
+
+      const adminChecks = [
+        ...profileIdsToAuthorize.map((pid) =>
+          hasProfileAccessWithOrgFallback({
+            user,
+            profileId: pid,
+            permissions: { profile: permission.ADMIN },
+          }),
+        ),
+        ...orgRows.map(async ({ organizationId }) => {
+          const orgUser = await getOrgAccessUser({ user, organizationId });
+          return checkPermission(
+            { profile: permission.ADMIN },
+            orgUser?.roles ?? [],
+          );
+        }),
+      ];
+      const isAdmin = (await Promise.all(adminChecks)).some(Boolean);
       if (!isAdmin) {
         return null;
       }

@@ -101,6 +101,51 @@ describe.concurrent('moderation read visibility', () => {
       expect(adminPost).toBeDefined();
       expect(adminPost?.post.isFlagged).toBe(true);
     });
+
+    it('hides a flagged org post from outsiders in getPost detail but returns it to the org admin with isFlagged', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const hostData = new TestOrganizationDataManager(
+        `${task.id}-ghost`,
+        onTestFinished,
+      );
+      const outsiderData = new TestOrganizationDataManager(
+        `${task.id}-gout`,
+        onTestFinished,
+      );
+
+      const { organization, adminUser } = await hostData.createOrganization({
+        users: { admin: 1 },
+      });
+      const { adminUser: outsider } = await outsiderData.createOrganization({
+        users: { admin: 1 },
+      });
+
+      const adminCaller = await createAuthenticatedCaller(adminUser.email);
+      const post = await adminCaller.organization.createPost({
+        id: organization.id,
+        content: 'Org post fetched via getPost.',
+      });
+      onTestFinished(async () => {
+        await db.delete(posts).where(inArray(posts.id, [post.id]));
+      });
+
+      await flagItem(onTestFinished, ModerationItemType.POST, post.id);
+
+      // Org admin still resolves the post (via the post's organization),
+      // marked flagged.
+      const adminView = await adminCaller.posts.getPost({ postId: post.id });
+      expect(adminView.id).toBe(post.id);
+      expect(adminView.isFlagged).toBe(true);
+
+      // Outsider gets a NotFound (the service returns null, the router 404s) so
+      // existence doesn't leak.
+      const outsiderCaller = await createAuthenticatedCaller(outsider.email);
+      await expect(
+        outsiderCaller.posts.getPost({ postId: post.id }),
+      ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+    });
   });
 
   describe('proposal (getProposal)', () => {

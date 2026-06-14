@@ -230,6 +230,40 @@ export const getProfileAccessUser = memoize(
 );
 
 /**
+ * Whether the caller satisfies `permissions` on a profile, falling back to
+ * org-level access when that profile is an organization's profile. Org grants
+ * live on `organizationUsers`, not `profileUsers`, so a `getProfileAccessUser`
+ * lookup alone never sees an org admin/member — callers that must treat org
+ * admins as admins of the org's profile (e.g. moderation visibility on org
+ * content) need this fallback. Non-throwing; returns a boolean.
+ */
+export const hasProfileAccessWithOrgFallback = async ({
+  user,
+  profileId,
+  permissions,
+}: {
+  user?: AccessUser;
+  profileId: string;
+  permissions: AccessZonePermissionInput;
+}): Promise<boolean> => {
+  const profileUser = await getProfileAccessUser({ user, profileId });
+  if (checkPermission(permissions, profileUser?.roles ?? [])) {
+    return true;
+  }
+
+  const [org] = await db
+    .select({ id: organizations.id })
+    .from(organizations)
+    .where(eq(organizations.profileId, profileId));
+  if (!org?.id) {
+    return false;
+  }
+
+  const orgUser = await getOrgAccessUser({ user, organizationId: org.id });
+  return checkPermission(permissions, orgUser?.roles ?? []);
+};
+
+/**
  * Asserts profile-level access, falling back to org-level access if the user
  * doesn't have a profileUser role on the given profile.
  *
