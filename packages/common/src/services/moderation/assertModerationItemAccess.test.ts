@@ -32,6 +32,7 @@ vi.mock('./moderationVisibility', () => ({
 }));
 
 import { db } from '@op/db/client';
+
 import {
   assertInstanceProfileAccess,
   assertProfileTypeAccess,
