@@ -5,15 +5,17 @@ import {
   postsToProfiles,
 } from '@op/db/schema';
 import { checkPermission, permission } from 'access-zones';
-import { type SQL, and, desc, eq, isNull, or, sql } from 'drizzle-orm';
+import { type SQL, and, desc, eq, isNull, sql } from 'drizzle-orm';
 
 import {
   assertProfileTypeAccess,
   getCurrentProfileId,
   getProfileAccessRolesWithOrgFallback,
 } from '../access';
-import { noActiveModerationFlag } from '../moderation/moderationVisibility';
-import { getItemsWithReactionsAndComments } from './listPosts';
+import {
+  getItemsWithReactionsAndComments,
+  postModerationFilter,
+} from './listPosts';
 
 export interface GetPostsInput {
   profileId?: string;
@@ -105,12 +107,7 @@ export const getPosts = async (input: GetPostsInput) => {
     governingRoles,
   );
   const moderationCondition = (table: typeof postsTable): SQL | undefined =>
-    isProfileAdmin
-      ? undefined
-      : or(
-          noActiveModerationFlag('post', table.id),
-          actorProfileId ? eq(table.profileId, actorProfileId) : sql`false`,
-        );
+    isProfileAdmin ? undefined : postModerationFilter(table, actorProfileId);
 
   const childPostsRelation =
     includeChildren && maxDepth > 0

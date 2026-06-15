@@ -5,7 +5,7 @@ import {
   postsToProfiles,
 } from '@op/db/schema';
 import { checkPermission, permission } from 'access-zones';
-import { and, desc, eq, isNull, or, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 
 import {
   UnauthorizedError,
@@ -19,8 +19,10 @@ import {
   getCurrentProfileId,
   getProfileAccessRolesWithOrgFallback,
 } from '../access';
-import { noActiveModerationFlag } from '../moderation/moderationVisibility';
-import { getItemsWithReactionsAndComments } from './listPosts';
+import {
+  getItemsWithReactionsAndComments,
+  postModerationFilter,
+} from './listPosts';
 
 export const listProfilePosts = async ({
   user,
@@ -94,12 +96,7 @@ export const listProfilePosts = async ({
         isNull(postsTable.parentPostId),
         isProfileAdmin
           ? undefined
-          : or(
-              noActiveModerationFlag('post', postsTable.id),
-              actorProfileId
-                ? eq(postsTable.profileId, actorProfileId)
-                : sql`false`,
-            ),
+          : postModerationFilter(postsTable, actorProfileId),
       ),
     )
     .where(

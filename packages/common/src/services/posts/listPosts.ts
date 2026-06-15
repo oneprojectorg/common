@@ -17,6 +17,7 @@ import {
   profiles,
 } from '@op/db/schema';
 import { checkPermission, permission } from 'access-zones';
+import type { SQL } from 'drizzle-orm';
 
 import {
   NotFoundError,
@@ -29,6 +30,22 @@ import {
   getActivelyFlaggedItemIds,
   noActiveModerationFlag,
 } from '../moderation/moderationVisibility';
+
+/**
+ * SQL filter for post/comment reads: the row carries no active moderation flag,
+ * or `actorProfileId` authored it. Pass the (possibly aliased) posts table the
+ * surrounding query builds against. Admins skip moderation entirely, so callers
+ * compose that exception themselves:
+ * `isAdmin ? undefined : postModerationFilter(table, actorProfileId)`.
+ */
+export const postModerationFilter = (
+  table: typeof posts,
+  actorProfileId: string | undefined,
+): SQL =>
+  or(
+    noActiveModerationFlag('post', table.id),
+    actorProfileId ? eq(table.profileId, actorProfileId) : sql`false`,
+  )!;
 
 export const listPosts = async ({
   authUserId,
@@ -101,10 +118,7 @@ export const listPosts = async ({
     // listProfilePosts for the same two-stage pattern.
     const moderationFilter = isOrgAdmin
       ? undefined
-      : or(
-          noActiveModerationFlag('post', posts.id),
-          actorProfileId ? eq(posts.profileId, actorProfileId) : sql`false`,
-        );
+      : postModerationFilter(posts, actorProfileId);
 
     const pageRows = await db
       .select({

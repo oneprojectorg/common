@@ -1,7 +1,6 @@
-import { and, db, eq, exists, inArray, isNull, or, sql } from '@op/db/client';
+import { and, db, eq, exists, inArray, isNull } from '@op/db/client';
 import { posts, postsToOrganizations } from '@op/db/schema';
 import type { User } from '@supabase/supabase-js';
-import type { SQL } from 'drizzle-orm';
 
 import {
   getCurrentProfileId,
@@ -13,18 +12,13 @@ import {
   encodeCursor,
   getGenericCursorCondition,
 } from '../../utils';
-import { noActiveModerationFlag } from '../moderation/moderationVisibility';
+import { postModerationFilter } from './listPosts';
 
 // Cross-org aggregate feeds hide flagged posts from general readers but keep
 // them visible to their author. Admin visibility lives in the per-org and
 // per-profile views (listPosts/getPosts), which resolve a single governing
 // profile to check; an aggregate feed spans many orgs with no single governing
-// profile, so it filters on author identity alone.
-const postModerationFilter = (actorProfileId?: string): SQL | undefined =>
-  or(
-    noActiveModerationFlag('post', posts.id),
-    actorProfileId ? eq(posts.profileId, actorProfileId) : sql`false`,
-  );
+// profile, so it filters on author identity alone (no admin exception).
 
 export interface ListAllPostsOptions {
   limit?: number;
@@ -70,7 +64,7 @@ export const listAllRelatedOrganizationPosts = async (
             and(
               eq(posts.id, table.postId),
               isNull(posts.parentPostId),
-              postModerationFilter(profileId),
+              postModerationFilter(posts, profileId),
             ),
           ),
       );
@@ -157,7 +151,7 @@ export const listRelatedOrganizationPosts = async (
             and(
               eq(posts.id, table.postId),
               isNull(posts.parentPostId),
-              postModerationFilter(actorProfileId),
+              postModerationFilter(posts, actorProfileId),
             ),
           ),
       );

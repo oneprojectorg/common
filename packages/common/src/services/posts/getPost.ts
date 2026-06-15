@@ -5,7 +5,7 @@ import {
   postsToProfiles,
 } from '@op/db/schema';
 import { checkPermission, permission } from 'access-zones';
-import { eq, or, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import {
   assertProfileTypeAccess,
@@ -13,11 +13,11 @@ import {
   getOrgAccessUser,
   getProfileAccessRolesWithOrgFallback,
 } from '../access';
+import { getActivelyFlaggedItemIds } from '../moderation/moderationVisibility';
 import {
-  getActivelyFlaggedItemIds,
-  noActiveModerationFlag,
-} from '../moderation/moderationVisibility';
-import { getItemsWithReactionsAndComments } from './listPosts';
+  getItemsWithReactionsAndComments,
+  postModerationFilter,
+} from './listPosts';
 
 export const getPost = async ({
   postId,
@@ -63,13 +63,7 @@ export const getPost = async ({
               // their author. (Admins review them via the moderation queue,
               // not inline.) Filtered in SQL so the `limit` isn't distorted.
               where: {
-                RAW: (table) =>
-                  or(
-                    noActiveModerationFlag('post', table.id),
-                    actorProfileId
-                      ? eq(table.profileId, actorProfileId)
-                      : sql`false`,
-                  )!,
+                RAW: (table) => postModerationFilter(table, actorProfileId),
               },
               limit: 50,
               orderBy: { createdAt: 'desc' as const },
