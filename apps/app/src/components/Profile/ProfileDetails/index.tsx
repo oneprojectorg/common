@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import type { Organization } from '@op/api/encoders';
 import { EntityType } from '@op/api/encoders';
 import { formatToUrl } from '@op/common/validation';
@@ -18,7 +18,7 @@ import { UpdateOrganizationModal } from './UpdateOrganizationModal';
 import { UpdateUserProfileModal } from './UpdateProfile';
 
 const ProfileInteractions = ({ profile }: { profile: Organization }) => {
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const { isReceivingFunds, isOfferingFunds, links } = profile;
 
   // split funding links up by type

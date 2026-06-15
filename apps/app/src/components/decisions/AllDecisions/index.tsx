@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProcessStatus } from '@op/api/encoders';
 import { match } from '@op/core';
@@ -111,7 +111,7 @@ const DecisionsListSuspense = ({
 
 const AllDecisionsTabs = () => {
   const t = useTranslations();
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const [tab, setTab] = useQueryState('tab');
   const ownerProfileId = user.currentProfile?.id;
 
@@ -173,7 +173,7 @@ const AllDecisionsTabs = () => {
 };
 
 export const AllDecisions = () => {
-  const { user } = useUser();
+  const { user } = useRequiredUser();
 
   return (
     <ErrorBoundary

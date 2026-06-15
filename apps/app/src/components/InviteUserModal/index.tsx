@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
@@ -41,7 +41,7 @@ export const InviteUserModal = ({
   const [invitedCount, setInvitedCount] = useState(0);
   const [activeTab, setActiveTab] = useState('existing');
   const t = useTranslations();
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const isOnline = useConnectionStatus();
 
   const isModalOpen = controlledIsOpen ?? internalIsModalOpen;

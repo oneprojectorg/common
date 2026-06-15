@@ -1,7 +1,7 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
 import { useMediaQuery } from '@op/hooks';
@@ -29,7 +29,7 @@ export const CreateMenu = () => {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isCreateOrganizationModalOpen, setIsCreateOrganizationModalOpen] =
     useState(false);
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const isOrg = user.currentProfile?.type === EntityType.ORG;
   const isMobile = useMediaQuery(`(max-width: ${SM_BREAKPOINT})`);
   const createDecisionEnabled = useFeatureFlag('create_decision_process');

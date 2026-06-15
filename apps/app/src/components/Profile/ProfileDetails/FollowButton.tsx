@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Organization, ProfileRelationshipType } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
@@ -12,7 +12,7 @@ import { LuCheck, LuPlus } from 'react-icons/lu';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 const FollowButtonSuspense = ({ profile }: { profile: Organization }) => {
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const utils = trpc.useUtils();
   const [isPending, startTransition] = useTransition();
 

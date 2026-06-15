@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { trpc } from '@op/api/client';
 import type { Organization } from '@op/api/encoders';
@@ -18,7 +18,7 @@ interface InviteToOrganizationButtonProps {
 export const InviteToOrganizationButton = ({
   profile,
 }: InviteToOrganizationButtonProps) => {
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const isOnline = useConnectionStatus();
 
   const [[rolesData, membershipData]] = trpc.useSuspenseQueries((t) => [

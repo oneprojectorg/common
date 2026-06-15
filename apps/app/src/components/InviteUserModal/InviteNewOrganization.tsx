@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import { toast } from '@op/ui/Toast';
 import { LuX } from 'react-icons/lu';
@@ -27,7 +27,7 @@ export const InviteNewOrganization = ({
   setPersonalMessage,
 }: InviteNewOrganizationProps) => {
   const t = useTranslations();
-  const { user } = useUser();
+  const { user } = useRequiredUser();
 
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

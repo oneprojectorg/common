@@ -1,7 +1,7 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import { RouterOutput } from '@op/api';
 import { trpc } from '@op/api/client';
 import { EntityType } from '@op/api/encoders';
@@ -37,7 +37,7 @@ export const DeleteOrganizationModal = ({
 
   const [isSubmitting, startTransition] = useTransition();
   const utils = trpc.useUtils();
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const deleteProfile = trpc.organization.deleteOrganization.useMutation();
   const switchProfile = trpc.account.switchProfile.useMutation();
 

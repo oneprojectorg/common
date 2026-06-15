@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import { DATE_TIME_UTC_FORMAT, formatDate } from '@/utils/formatting';
 import { trpc } from '@op/api/client';
 import { type ProcessInstance, ProposalStatus } from '@op/api/encoders';
@@ -104,7 +104,7 @@ export function ProposalEditor({
   showHeaderActions?: boolean;
   revisionRequest?: ProposalReviewRequest | null;
 }) {
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const t = useTranslations();
 
   // -- Collaboration ---------------------------------------------------------

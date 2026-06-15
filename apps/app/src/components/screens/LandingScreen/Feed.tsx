@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { useInfiniteScroll } from '@op/hooks';
 import { Fragment, useCallback } from 'react';
@@ -28,7 +28,7 @@ export const Feed = () => {
 
 /** Feed content component with live data */
 const FeedContent = ({ limit = 10 }: { limit?: number }) => {
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const t = useTranslations();
 
   const {
@@ -67,7 +67,7 @@ const FeedContent = ({ limit = 10 }: { limit?: number }) => {
     handleModalClose,
   } = usePostFeedActions();
 
-  if (!paginatedData || !user) {
+  if (!paginatedData) {
     return <PostFeedSkeleton numPosts={4} />;
   }
 

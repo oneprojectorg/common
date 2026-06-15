@@ -3,7 +3,7 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { getPublicUrl } from '@/utils';
 import { ClientOnly } from '@/utils/ClientOnly';
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser, useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { EntityType, Profile } from '@op/api/encoders';
 import { useAuthLogout, useMediaQuery } from '@op/hooks';
@@ -55,7 +55,7 @@ const ProfileMenuItem = ({
   }) => void;
   children?: React.ReactNode;
 }) => {
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const router = useRouter();
   const utils = trpc.useUtils();
   const switchProfile = trpc.account.switchProfile.useMutation({
@@ -123,9 +123,8 @@ const AvatarMenuContent = ({
     avatarImage?: { name: string } | null;
   }) => void;
 }) => {
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const logout = useAuthLogout();
-  const router = useRouter();
   const t = useTranslations();
 
   const { data: profiles } = trpc.account.getUserProfiles.useQuery();
@@ -275,7 +274,9 @@ const AvatarMenuContent = ({
         id="logout"
         className="px-0 py-2 text-neutral-charcoal hover:bg-neutral-offWhite focus-visible:bg-neutral-offWhite"
         onAction={() => {
-          void logout.refetch().finally(() => router.push('/'));
+          // Full-page navigation: client-side routing would re-render the
+          // authed tree with a dead session before the redirect lands.
+          void logout.refetch().finally(() => window.location.assign('/'));
           onClose?.();
         }}
       >
@@ -336,7 +337,7 @@ const AvatarMenuContent = ({
 };
 
 export const UserAvatarMenu = ({ className }: { className?: string }) => {
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -469,6 +470,36 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
   );
 };
 
+/**
+ * Right-side header actions. Creating and the account menu are authed
+ * features; signed-out visitors only get the locale chooser.
+ */
+const HeaderActions = () => {
+  const { user } = useUser();
+
+  return (
+    <ClientOnly>
+      {user && <CreateMenu />}
+      <LocaleChooser />
+      {user && (
+        <ErrorBoundary
+          fallback={
+            <div className="size-8 rounded-full border bg-white shadow" />
+          }
+        >
+          <Suspense
+            fallback={
+              <Skeleton className="size-8 rounded-full border bg-white shadow" />
+            }
+          >
+            <UserAvatarMenu />
+          </Suspense>
+        </ErrorBoundary>
+      )}
+    </ClientOnly>
+  );
+};
+
 export const SiteHeader = () => {
   const t = useTranslations();
   const [isMobileSearchExpanded, setIsMobileSearchExpanded] = useState(false);
@@ -488,23 +519,7 @@ export const SiteHeader = () => {
           </ErrorBoundary>
         </span>
         <div className="flex items-center gap-3">
-          <ClientOnly>
-            <CreateMenu />
-            <LocaleChooser />
-            <ErrorBoundary
-              fallback={
-                <div className="size-8 rounded-full border bg-white shadow" />
-              }
-            >
-              <Suspense
-                fallback={
-                  <Skeleton className="size-8 rounded-full border bg-white shadow" />
-                }
-              >
-                <UserAvatarMenu />
-              </Suspense>
-            </ErrorBoundary>
-          </ClientOnly>
+          <HeaderActions />
         </div>
       </header>
 
@@ -554,23 +569,7 @@ export const SiteHeader = () => {
               </Button>
 
               <div className="flex items-center gap-3">
-                <ClientOnly>
-                  <CreateMenu />
-                  <LocaleChooser />
-                  <ErrorBoundary
-                    fallback={
-                      <div className="size-8 rounded-full border bg-white shadow" />
-                    }
-                  >
-                    <Suspense
-                      fallback={
-                        <Skeleton className="size-8 rounded-full border bg-white shadow" />
-                      }
-                    >
-                      <UserAvatarMenu />
-                    </Suspense>
-                  </ErrorBoundary>
-                </ClientOnly>
+                <HeaderActions />
               </div>
             </>
           )}

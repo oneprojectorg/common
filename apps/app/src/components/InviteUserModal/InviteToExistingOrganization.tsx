@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { Select, SelectItem } from '@op/ui/Select';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
@@ -36,7 +36,7 @@ export const InviteToExistingOrganization = ({
   setSelectedOrganization,
 }: InviteToExistingOrganizationProps) => {
   const t = useTranslations();
-  const { user } = useUser();
+  const { user } = useRequiredUser();
 
   const [rolesData] = trpc.organization.getRoles.useSuspenseQuery();
 

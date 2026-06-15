@@ -1,4 +1,4 @@
-import { getUser } from '@/utils/getUser';
+import { getRequiredUser } from '@/utils/getUser';
 import { Organization } from '@op/api/encoders';
 import {
   HydrationBoundary,
@@ -210,7 +210,7 @@ const LandingScreenFeeds = ({
  * Async component that fetches user data and renders user-dependent content.
  */
 const WelcomeSection = async () => {
-  const user = await getUser();
+  const user = await getRequiredUser();
 
   return (
     <div className="flex flex-col gap-2">
@@ -238,7 +238,7 @@ const WelcomeSkeleton = () => {
 };
 
 const UserContent = async () => {
-  const user = await getUser();
+  const user = await getRequiredUser();
 
   return (
     <>

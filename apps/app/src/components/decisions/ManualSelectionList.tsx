@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
@@ -45,7 +45,7 @@ export const ManualSelectionList = ({
   confirmVariant = 'standard',
 }: ManualSelectionListProps) => {
   const t = useTranslations();
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const posthog = usePostHog();
   const router = useRouter();
   const pathname = usePathname();

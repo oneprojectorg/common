@@ -1,9 +1,13 @@
 'use client';
 
-import type { OrganizationUser } from '@/utils/UserProvider';
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import type { Organization, Post, PostToOrganization } from '@op/api/encoders';
+import type {
+  CommonUser,
+  Organization,
+  Post,
+  PostToOrganization,
+} from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
 import { HorizontalList, HorizontalListItem } from '@op/ui/HorizontalList';
 import { SkeletonLine } from '@op/ui/Skeleton';
@@ -27,7 +31,7 @@ type DiscussionModalState = {
 export type ProfileFeedRenderProps = {
   posts: PostToOrganization[];
   isEmpty: boolean;
-  user: OrganizationUser;
+  user: CommonUser;
   infiniteScrollRef: RefObject<HTMLElement | null>;
   shouldShowTrigger: boolean;
   isFetchingNextPage: boolean;
@@ -46,7 +50,7 @@ export const ProfileFeedProvider = ({
   limit?: number;
   children: (props: ProfileFeedRenderProps) => React.ReactNode;
 }) => {
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const {
     data: paginatedData,
     fetchNextPage,

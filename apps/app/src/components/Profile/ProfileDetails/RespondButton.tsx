@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import { skipBatch, trpc } from '@op/api/client';
 import { Organization } from '@op/api/encoders';
 import { DropDownButton } from '@op/ui/DropDownButton';
@@ -12,7 +12,7 @@ import { LuCheck, LuUserPlus, LuX } from 'react-icons/lu';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 const RespondButtonSuspense = ({ profile }: { profile: Organization }) => {
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const utils = trpc.useUtils();
 
   if (!user.currentOrganization?.id) {

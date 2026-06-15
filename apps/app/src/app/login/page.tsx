@@ -2,13 +2,9 @@
 
 import { isSafeRedirectPath } from '@op/common/client';
 import { useAuthUser } from '@op/hooks';
-import { redirect, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 import { LoginPanel } from '@/components/LoginPanel';
-
-const LoginPageWithLayout = () => {
-  return <LoginPanel />;
-};
 
 const LoginPage = () => {
   const user = useAuthUser();
@@ -19,15 +15,15 @@ const LoginPage = () => {
     return null;
   }
 
-  if (user.isFetchedAfterMount && !user.isFetching && !user.data?.user) {
-    return <LoginPageWithLayout />;
+  if (user.isFetchedAfterMount && !user.data?.user) {
+    return <LoginPanel />;
   }
 
-  if (isSafeRedirectPath(redirectParam)) {
-    redirect(redirectParam);
-  }
-
-  redirect('/');
+  // Signed in: hard-navigate so the authed tree mounts with a fresh query
+  // cache (client routing would carry the signed-out null account in).
+  const target = isSafeRedirectPath(redirectParam) ? redirectParam : '/';
+  window.location.assign(target);
+  return null;
 };
 
 export default LoginPage;

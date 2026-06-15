@@ -1,6 +1,7 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { useUser } from '@/utils/UserProvider';
 import { ButtonLink } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
 import { IconButton } from '@op/ui/IconButton';
@@ -42,6 +43,7 @@ export const DecisionInstanceHeader = ({
   centerSlot?: ReactNode;
 }) => {
   const t = useTranslations();
+  const { user } = useUser();
 
   return (
     <header className="sticky top-0 z-10 grid grid-cols-[auto_1fr_auto] items-center border-b bg-white p-2 px-4 sm:grid-cols-3 md:px-6 md:py-3">
@@ -100,7 +102,9 @@ export const DecisionInstanceHeader = ({
           </ButtonLink>
         )}
         <LocaleChooser />
-        <UserAvatarMenu />
+        {/* TODO(public decision view): render a Login / upgrade-account CTA
+            for signed-out visitors here once anonymous sessions ship. */}
+        {user ? <UserAvatarMenu /> : null}
       </div>
 
       {centerSlot ? (

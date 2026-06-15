@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import type { Profile } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalHeader } from '@op/ui/Modal';
@@ -19,7 +19,7 @@ interface UpdateUserProfileModalProps {
 export const UpdateUserProfileModal = ({
   profile,
 }: UpdateUserProfileModalProps) => {
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const t = useTranslations();
   const formRef = useRef<HTMLFormElement>(null);
   const [isOpen, setIsOpen] = useState(false);
