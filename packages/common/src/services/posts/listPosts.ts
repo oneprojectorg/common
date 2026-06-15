@@ -10,12 +10,7 @@ import {
   or,
   sql,
 } from '@op/db/client';
-import {
-  organizations,
-  posts,
-  postsToOrganizations,
-  profiles,
-} from '@op/db/schema';
+import { posts, postsToOrganizations, profiles } from '@op/db/schema';
 import { checkPermission, permission } from 'access-zones';
 import type { SQL } from 'drizzle-orm';
 
@@ -84,8 +79,8 @@ export const listPosts = async ({
       throw new NotFoundError('Organization', slug);
     }
 
-    const org = await db._query.organizations.findFirst({
-      where: (_, { eq }) => eq(organizations.profileId, profileId),
+    const org = await db.query.organizations.findFirst({
+      where: { profileId },
     });
 
     if (!org) {
@@ -156,11 +151,11 @@ export const listPosts = async ({
     // happened above). Re-ordered to the page order below, since `inArray`
     // doesn't preserve it.
     const hydrated = pageIds.length
-      ? await db._query.postsToOrganizations.findMany({
-          where: and(
-            eq(postsToOrganizations.organizationId, org.id),
-            inArray(postsToOrganizations.postId, pageIds),
-          ),
+      ? await db.query.postsToOrganizations.findMany({
+          where: {
+            organizationId: org.id,
+            postId: { in: pageIds },
+          },
           with: {
             post: {
               with: {
