@@ -22,6 +22,7 @@ import { twMerge } from 'tailwind-merge';
 import { tv } from 'tailwind-variants';
 import type { VariantProps } from 'tailwind-variants';
 
+import { cn } from '../lib/utils';
 import { composeTailwindRenderProps, focusRing } from '../utils';
 
 export const Label = (props: LabelProps) => {
@@ -126,8 +127,11 @@ const CONSTRAINED_INPUT_TYPES = new Set([
   'password',
 ]);
 
+const isAlwaysLTR = (type: string | undefined) =>
+  CONSTRAINED_INPUT_TYPES.has(type ?? '');
+
 const inputDir = (type: string | undefined) =>
-  CONSTRAINED_INPUT_TYPES.has(type ?? '') ? undefined : 'auto';
+  CONSTRAINED_INPUT_TYPES.has(type ?? '') ? 'ltr' : 'auto';
 
 export const Input = ({
   ref,
@@ -183,7 +187,12 @@ export const InputWithIcon = ({
           className,
         })}
       />
-      <span className="absolute start-3 top-1/2 -translate-y-1/2">
+      <span
+        className={cn(
+          isAlwaysLTR(props.type) ? 'left-3' : 'start-3',
+          'absolute top-1/2 -translate-y-1/2',
+        )}
+      >
         {props.icon}
       </span>
     </span>
