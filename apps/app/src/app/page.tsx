@@ -1,5 +1,6 @@
 'use client';
 
+import { shouldRedirectToOnboarding } from '@/utils/onboarding';
 import { trpc } from '@op/api/client';
 import { useAuthUser } from '@op/hooks';
 import { useRouter } from 'next/navigation';
@@ -16,11 +17,11 @@ const MainPage = () => {
       return <ComingSoonScreen />;
     }
 
-    // if (!account?.onboardedAt) {
-    //   router.push('/start');
-    //
-    //   return;
-    // }
+    if (shouldRedirectToOnboarding(account)) {
+      router.push('/start');
+
+      return null;
+    }
   }
 
   return null;
