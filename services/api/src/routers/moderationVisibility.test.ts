@@ -32,6 +32,7 @@ describe.concurrent('moderation read visibility', () => {
     onTestFinished: (fn: () => void | Promise<void>) => void,
     itemType: ModerationItemType,
     itemId: string,
+    status: ModerationFlagStatus = ModerationFlagStatus.FLAGGED,
   ) => {
     onTestFinished(async () => {
       await db
@@ -41,7 +42,7 @@ describe.concurrent('moderation read visibility', () => {
     return db.insert(moderationFlags).values({
       itemType,
       itemId,
-      status: ModerationFlagStatus.FLAGGED,
+      status,
       source: ModerationSource.AUTOMATED,
       reason: 'integration-test verdict',
     });
@@ -211,6 +212,63 @@ describe.concurrent('moderation read visibility', () => {
       await expect(
         otherCaller.posts.getPost({ postId: post.id }),
       ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+    });
+
+    it('keeps a contested (disputed) post hidden from outsiders: contesting a verdict must not resurface it', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const hostData = new TestOrganizationDataManager(
+        `${task.id}-dhost`,
+        onTestFinished,
+      );
+      const outsiderData = new TestOrganizationDataManager(
+        `${task.id}-dout`,
+        onTestFinished,
+      );
+
+      const { organization, organizationProfile, adminUser } =
+        await hostData.createOrganization({ users: { admin: 1 } });
+      const { adminUser: outsider } = await outsiderData.createOrganization({
+        users: { admin: 1 },
+      });
+
+      const adminCaller = await createAuthenticatedCaller(adminUser.email);
+      const post = await adminCaller.organization.createPost({
+        id: organization.id,
+        content: 'Org post that will be contested.',
+      });
+      onTestFinished(async () => {
+        await db.delete(posts).where(inArray(posts.id, [post.id]));
+      });
+
+      // The owner already contested the verdict, so the flag sits in `disputed`
+      // awaiting admin review — but the item was deemed inappropriate to reach
+      // that state, so it stays hidden from outsiders meanwhile.
+      await flagItem(
+        onTestFinished,
+        ModerationItemType.POST,
+        post.id,
+        ModerationFlagStatus.DISPUTED,
+      );
+
+      const outsiderCaller = await createAuthenticatedCaller(outsider.email);
+      const outsiderAfter = await outsiderCaller.organization.listPosts({
+        slug: organizationProfile.slug,
+      });
+      expect(outsiderAfter.items.map((item) => item.post.id)).not.toContain(
+        post.id,
+      );
+
+      // The org admin still sees it, marked flagged.
+      const adminAfter = await adminCaller.organization.listPosts({
+        slug: organizationProfile.slug,
+      });
+      const adminPost = adminAfter.items.find(
+        (item) => item.post.id === post.id,
+      );
+      expect(adminPost).toBeDefined();
+      expect(adminPost?.post.isFlagged).toBe(true);
     });
   });
 
