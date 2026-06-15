@@ -1,9 +1,13 @@
 'use client';
 
-import type { OrganizationUser } from '@/utils/UserProvider';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
-import type { Organization, Post, PostToOrganization } from '@op/api/encoders';
+import type {
+  CommonUser,
+  Organization,
+  Post,
+  PostToOrganization,
+} from '@op/api/encoders';
 import { useInfiniteScroll } from '@op/hooks';
 import { HorizontalList, HorizontalListItem } from '@op/ui/HorizontalList';
 import { SkeletonLine } from '@op/ui/Skeleton';
@@ -28,7 +32,7 @@ export type ProfileFeedRenderProps = {
   posts: PostToOrganization[];
   isEmpty: boolean;
   // Absent for public (signed-out) viewers; the feed itself is public.
-  user?: OrganizationUser;
+  user?: CommonUser;
   infiniteScrollRef: RefObject<HTMLElement | null>;
   shouldShowTrigger: boolean;
   isFetchingNextPage: boolean;

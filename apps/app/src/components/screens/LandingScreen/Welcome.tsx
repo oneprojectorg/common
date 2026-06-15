@@ -1,12 +1,12 @@
 'use client';
 
-import type { OrganizationUser } from '@/utils/UserProvider';
+import type { CommonUser } from '@op/api/encoders';
 import { Header1 } from '@op/ui/Header';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
 
-export const Welcome = ({ user }: { user: OrganizationUser }) => {
+export const Welcome = ({ user }: { user: CommonUser }) => {
   const searchParams = useSearchParams();
   const t = useTranslations();
 

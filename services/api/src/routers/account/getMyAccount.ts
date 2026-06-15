@@ -16,7 +16,7 @@ export const getMyAccount = router({
         return null;
       }
 
-      const { id, email } = ctx.user;
+      const { id } = ctx.user;
 
       const user = await cache({
         type: 'user',
@@ -33,15 +33,10 @@ export const getMyAccount = router({
       });
 
       if (!user) {
-        // Backfill accounts predating the signup trigger; without an email
-        // there is nothing to create from.
-        if (!email) {
-          return null;
-        }
-
+        // if there is no user but the user is authenticated, create one
         const newUserWithRelations = await createUserByAuthId({
           authUserId: id,
-          email,
+          email: ctx.user.email!,
         });
 
         if (!newUserWithRelations) {

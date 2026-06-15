@@ -1,10 +1,15 @@
 'use client';
 
 import { getPublicUrl } from '@/utils';
-import { OrganizationUser, useUser } from '@/utils/UserProvider';
+import { useUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
 import { trpc } from '@op/api/client';
-import type { Organization, Post, PostAttachment } from '@op/api/encoders';
+import type {
+  CommonUser,
+  Organization,
+  Post,
+  PostAttachment,
+} from '@op/api/encoders';
 import { useRelativeTime } from '@op/hooks';
 import { REACTION_OPTIONS } from '@op/types';
 import { AvatarSkeleton } from '@op/ui/Avatar';
@@ -206,7 +211,7 @@ const PostMenu = ({
 }: {
   organization?: Organization | null;
   post: Post;
-  user?: OrganizationUser;
+  user?: CommonUser;
 }) => {
   const t = useTranslations();
   const { getPermissionsForProfile } = useUser();
@@ -346,7 +351,7 @@ export const PostItem = ({
 }: {
   post: Post;
   organization: Organization | null;
-  user?: OrganizationUser;
+  user?: CommonUser;
   withLinks: boolean;
   onReactionClick: (postId: string, emoji: string) => void;
   onCommentClick?: (post: Post, organization: Organization | null) => void;
@@ -422,7 +427,7 @@ export const PostItemOnDetailPage = ({
 }: {
   post: Post;
   organization: Organization | null;
-  user?: OrganizationUser;
+  user?: CommonUser;
   withLinks: boolean;
   onReactionClick: (postId: string, emoji: string) => void;
   commentCount: number;

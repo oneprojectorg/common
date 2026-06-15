@@ -1,6 +1,7 @@
 'use client';
 
-import { RouterOutput, trpc } from '@op/api/client';
+import { trpc } from '@op/api/client';
+import type { CommonUser } from '@op/api/encoders';
 import type { Permission } from 'access-zones';
 import { useRouter } from 'next/navigation';
 import posthog from 'posthog-js';
@@ -30,17 +31,9 @@ const defaultPermissions = AccessZones.reduce<CommonZonePermissions>(
   {} as CommonZonePermissions,
 );
 
-// Type for the user data returned by getMyAccount
-// You can refine this type by importing the correct type from your trpc/encoders if available
-// import type { User } from '@op/api/encoders';
-
-export type OrganizationUser = NonNullable<
-  RouterOutput['account']['getMyAccount']
->;
-
 interface UserContextValue {
   // Absent for public (no-session) visitors.
-  user?: OrganizationUser;
+  user?: CommonUser;
   getPermissionsForProfile: (profileId: string) => CommonZonePermissions;
 }
 
@@ -51,7 +44,7 @@ export const UserProviderSuspense = ({
   initialUser,
 }: {
   children: React.ReactNode;
-  initialUser: OrganizationUser | null;
+  initialUser: CommonUser | null;
 }) => {
   const router = useRouter();
   // Use initialUser as initialData to avoid redundant client-side fetch.
@@ -124,7 +117,7 @@ export const UserProvider = ({
   initialUser,
 }: {
   children: React.ReactNode;
-  initialUser: OrganizationUser | null;
+  initialUser: CommonUser | null;
 }) => {
   return (
     <Suspense fallback={null}>
