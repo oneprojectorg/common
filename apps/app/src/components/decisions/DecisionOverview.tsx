@@ -85,7 +85,7 @@ function DecisionOverviewContent({
       />
       {/* 12-col grid mirroring the Figma layout grid: sidebar spans 4 cols,
           body spans 7 starting at col 6. Stacks to one column below md. */}
-      <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-12 px-6 py-12 md:grid-cols-12 md:gap-x-6">
+      <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-12 px-4 py-6 md:grid-cols-12 md:gap-x-6 md:px-6 md:py-12">
         {/* TODO: phases timeline lands here in a follow-up PR */}
         <div className="flex flex-col gap-4 md:col-span-4">
           <Header3 className="text-sm text-neutral-gray4">
@@ -126,7 +126,7 @@ const OverviewHero = ({
     // Gradient stands in until overview header images exist — same radial
     // gradient as the results page hero.
     <section className="grid w-full grid-cols-1 justify-center gap-12 bg-redPurple md:grid-cols-12">
-      <div className="mx-auto flex flex-col items-center gap-4 px-6 pt-16 pb-8 text-center text-neutral-offWhite sm:py-24 md:col-span-6 md:col-start-4">
+      <div className="mx-auto flex flex-col items-center gap-4 px-4 pt-16 pb-8 text-center text-neutral-offWhite sm:py-24 md:col-span-6 md:col-start-4 md:px-6">
         <div className="flex flex-col items-center gap-2">
           <h1 className="font-serif text-title-xl font-light sm:text-title-xxl">
             <bdi>{headline}</bdi>
