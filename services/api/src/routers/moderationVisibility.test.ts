@@ -7,7 +7,9 @@ import {
   Visibility,
   moderationFlags,
   posts,
+  postsToOrganizations,
   proposals,
+  users,
 } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -144,6 +146,70 @@ describe.concurrent('moderation read visibility', () => {
       const outsiderCaller = await createAuthenticatedCaller(outsider.email);
       await expect(
         outsiderCaller.posts.getPost({ postId: post.id }),
+      ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
+    });
+
+    it('covers every user type for a flagged post: author + org admin see it, other members do not', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestOrganizationDataManager(task.id, onTestFinished);
+      const { organization, adminUser, memberUsers } =
+        await testData.createOrganization({ users: { admin: 1, member: 2 } });
+      const author = memberUsers[0];
+      const otherMember = memberUsers[1];
+      if (!author || !otherMember) {
+        throw new Error('Expected two member users');
+      }
+
+      // The author exception keys on `posts.profileId === getCurrentProfileId`,
+      // which returns the user's *current* profile — resolve it rather than
+      // assuming it equals their personal profileId.
+      const [authorRow] = await db
+        .select({ currentProfileId: users.currentProfileId })
+        .from(users)
+        .where(eq(users.authUserId, author.authUserId));
+      const authorProfileId = authorRow?.currentProfileId ?? author.profileId;
+
+      // A post authored by `author` (its `profileId`) and posted to the org, so
+      // the three audiences are distinct: the author, an org admin, and an
+      // unrelated member. createPostInOrganization leaves `profileId` null, so
+      // insert directly to control authorship.
+      const [post] = await db
+        .insert(posts)
+        .values({
+          content: 'Authored post that will be flagged.',
+          profileId: authorProfileId,
+        })
+        .returning();
+      if (!post) {
+        throw new Error('Failed to insert post');
+      }
+      onTestFinished(async () => {
+        await db.delete(posts).where(inArray(posts.id, [post.id]));
+      });
+      await db
+        .insert(postsToOrganizations)
+        .values({ postId: post.id, organizationId: organization.id });
+
+      await flagItem(onTestFinished, ModerationItemType.POST, post.id);
+
+      // Author (owner) sees their own flagged post.
+      const authorCaller = await createAuthenticatedCaller(author.email);
+      const authorView = await authorCaller.posts.getPost({ postId: post.id });
+      expect(authorView.id).toBe(post.id);
+      expect(authorView.isFlagged).toBe(true);
+
+      // Org admin (non-author) sees it too.
+      const adminCaller = await createAuthenticatedCaller(adminUser.email);
+      const adminView = await adminCaller.posts.getPost({ postId: post.id });
+      expect(adminView.id).toBe(post.id);
+      expect(adminView.isFlagged).toBe(true);
+
+      // A non-author, non-admin member cannot.
+      const otherCaller = await createAuthenticatedCaller(otherMember.email);
+      await expect(
+        otherCaller.posts.getPost({ postId: post.id }),
       ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
     });
   });
