@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type {
   CommonUser,
@@ -31,8 +31,7 @@ type DiscussionModalState = {
 export type ProfileFeedRenderProps = {
   posts: PostToOrganization[];
   isEmpty: boolean;
-  // Absent for public (signed-out) viewers; the feed itself is public.
-  user?: CommonUser;
+  user: CommonUser;
   infiniteScrollRef: RefObject<HTMLElement | null>;
   shouldShowTrigger: boolean;
   isFetchingNextPage: boolean;
@@ -51,7 +50,7 @@ export const ProfileFeedProvider = ({
   limit?: number;
   children: (props: ProfileFeedRenderProps) => React.ReactNode;
 }) => {
-  const { user } = useUser();
+  const { user } = useRequiredUser();
   const {
     data: paginatedData,
     fetchNextPage,

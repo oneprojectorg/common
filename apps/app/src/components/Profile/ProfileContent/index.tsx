@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/utils/UserProvider';
+import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { type Organization, ProcessStatus } from '@op/api/encoders';
 import { formatToUrl } from '@op/common/validation';
@@ -302,8 +302,8 @@ export const OrganizationProfileGrid = ({
   profile: Organization;
 }) => {
   const t = useTranslations();
-  const { user } = useUser();
-  const isOrg = user?.currentProfile?.type === 'org';
+  const { user } = useRequiredUser();
+  const isOrg = user.currentProfile?.type === 'org';
 
   return (
     <ProfileGridWrapper>
