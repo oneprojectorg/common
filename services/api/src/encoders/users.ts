@@ -64,7 +64,10 @@ const profileUserWithPermissionsEncoder = profileUserWithProfileSchema.extend({
  */
 export const userEncoder = createSelectSchema(users).extend({
   onboardedAt: z.string().nullish(),
-  authUser: createSelectSchema(authUsers).nullish(),
+  // Callers project different subsets of the auth user (e.g. getMyAccount only
+  // selects `isAnonymous`), so keep every column optional. `.nullish()` already
+  // covers an absent relation; `.partial()` covers a present-but-partial row.
+  authUser: createSelectSchema(authUsers).partial().nullish(),
   avatarImage: storageItemEncoder.nullish(),
   organizationUsers: organizationUserWithPermissionsEncoder.array().nullish(),
   profileUsers: profileUserWithPermissionsEncoder.array().nullish(),
