@@ -126,16 +126,17 @@ export const getPost = async ({
   // `organizationUsers`, not `profileUsers`) or — for org-feed posts, which
   // carry no governing profile and link to the org only via
   // `postsToOrganizations` — the post's organizations directly.
-  if (flaggedItemIds.has(post.id)) {
-    const isAuthor = post.profileId === actorProfileId;
-    if (!isAuthor) {
-      const user = { id: authUserId };
-      const orgRows = await db
-        .select({ organizationId: postsToOrganizations.organizationId })
-        .from(postsToOrganizations)
-        .where(eq(postsToOrganizations.postId, post.id));
+  const isAuthor = post.profileId === actorProfileId;
+  if (flaggedItemIds.has(post.id) && !isAuthor) {
+    const user = { id: authUserId };
+    const orgRows = await db
+      .select({ organizationId: postsToOrganizations.organizationId })
+      .from(postsToOrganizations)
+      .where(eq(postsToOrganizations.postId, post.id));
 
-      const roleSets = await Promise.all([
+    // The caller's roles across every entity that governs the post.
+    const governingRoles = (
+      await Promise.all([
         ...profileIdsToAuthorize.map((pid) =>
           getProfileAccessRolesWithOrgFallback({ user, profileId: pid }),
         ),
@@ -144,13 +145,11 @@ export const getPost = async ({
             (orgUser) => orgUser?.roles ?? [],
           ),
         ),
-      ]);
-      const isAdmin = roleSets.some((roles) =>
-        checkPermission({ profile: permission.ADMIN }, roles),
-      );
-      if (!isAdmin) {
-        return null;
-      }
+      ])
+    ).flat();
+
+    if (!checkPermission({ profile: permission.ADMIN }, governingRoles)) {
+      return null;
     }
   }
 
