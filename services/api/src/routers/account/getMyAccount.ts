@@ -1,5 +1,5 @@
 import { cache } from '@op/cache';
-import { CommonError, createUserByAuthId, getUserByAuthId } from '@op/common';
+import { CommonError, getUserByAuthId } from '@op/common';
 import { z } from 'zod';
 
 import { userEncoder } from '../../encoders';
@@ -33,17 +33,8 @@ export const getMyAccount = router({
       });
 
       if (!user) {
-        // if there is no user but the user is authenticated, create one
-        const newUserWithRelations = await createUserByAuthId({
-          authUserId: id,
-          email: ctx.user.email!,
-        });
-
-        if (!newUserWithRelations) {
-          throw new CommonError('Could not create user');
-        }
-
-        return userEncoder.parse(newUserWithRelations);
+        // This should never happen, but if it does throw an error so we can investigate.
+        throw new CommonError('Common user not found');
       }
 
       return userEncoder.parse(user);

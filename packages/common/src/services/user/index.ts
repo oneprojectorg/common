@@ -204,28 +204,6 @@ export const getUserByAuthId = async ({
   return userWithPermissions;
 };
 
-export const createUserByAuthId = async ({
-  authUserId,
-  email,
-}: {
-  authUserId: string;
-  email: string;
-}) => {
-  const [newUser] = await db
-    .insert(users)
-    .values({
-      authUserId,
-      email,
-    })
-    .returning();
-
-  if (!newUser) {
-    throw new Error('Could not create user');
-  }
-
-  return await getUserByAuthId({ authUserId, includePermissions: false });
-};
-
 export const getUserWithProfiles = async ({
   authUserId,
   includeRoles = false,
