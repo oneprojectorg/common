@@ -139,6 +139,7 @@ export function ProposalCardTitle({
           className,
           'transition-colors hover:text-primary-teal',
         )}
+        dir="auto"
       >
         {titleText}
       </Link>
@@ -430,6 +431,7 @@ export function ProposalCardPreview({
   return (
     <p
       className={cn('line-clamp-3 text-base text-neutral-charcoal', className)}
+      dir="auto"
     >
       {displayText}
     </p>

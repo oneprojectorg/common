@@ -88,7 +88,11 @@ export const CollaborativeEditor = forwardRef<
 
     return (
       <div className={className}>
-        <StyledRichTextContent editor={editor} placeholder={placeholder} />
+        <StyledRichTextContent
+          dir={editor?.isEmpty ? undefined : 'auto'}
+          editor={editor}
+          placeholder={placeholder}
+        />
       </div>
     );
   },
