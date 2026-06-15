@@ -301,6 +301,7 @@ function renderField(
         <CollaborativeTextField
           fragmentName={key}
           title={schema.title}
+          required={field.required}
           description={schema.description}
           placeholder={placeholder}
           multiline={format === 'long-text'}
@@ -364,7 +365,11 @@ function renderField(
 
       return (
         <div className="flex flex-col gap-2">
-          <FieldHeader title={schema.title} description={schema.description} />
+          <FieldHeader
+            title={schema.title}
+            description={schema.description}
+            required={field.required}
+          />
           <CollaborativeDropdownField
             options={options}
             initialValue={(draft[key] as string | null) ?? null}

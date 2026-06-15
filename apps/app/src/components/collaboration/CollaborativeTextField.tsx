@@ -14,6 +14,7 @@ import { CollaborativeEditor } from './CollaborativeEditor';
  * @param fragmentName - Yjs fragment name (required). Each field in the
  *   proposal schema maps to a unique fragment in the shared Y.Doc.
  * @param title - Optional label rendered above the editor.
+ * @param required - When true, renders a red asterisk next to the title.
  * @param description - Optional description rendered below the title.
  * @param placeholder - Placeholder text shown when the editor is empty.
  * @param multiline - When true, renders a taller editor suitable for long text.
@@ -25,6 +26,7 @@ import { CollaborativeEditor } from './CollaborativeEditor';
 interface CollaborativeTextFieldProps {
   fragmentName: string;
   title?: string;
+  required?: boolean;
   description?: string;
   placeholder?: string;
   multiline?: boolean;
@@ -43,6 +45,7 @@ interface CollaborativeTextFieldProps {
 export function CollaborativeTextField({
   fragmentName,
   title,
+  required,
   description,
   placeholder = 'Start typing...',
   multiline = false,
@@ -97,6 +100,12 @@ export function CollaborativeTextField({
           {title && (
             <span className="font-serif text-title-sm14 text-neutral-charcoal">
               {title}
+              {required && (
+                <span className="text-functional-red" aria-hidden="true">
+                  {' '}
+                  *
+                </span>
+              )}
             </span>
           )}
           {description && (
