@@ -325,8 +325,8 @@ export const listProposals = async ({
   // the same builder can be used for the v2 relational findMany (where Drizzle
   // passes an aliased `table`) and the plain count query (which passes the
   // schema table). See `buildBaseConditions` above for the same pattern.
-  const buildWhereClause = (t: typeof proposals): SQL => {
-    let clause: SQL = buildBaseConditions(t, input);
+  const buildWhereClause = (proposalsTable: typeof proposals): SQL => {
+    let clause: SQL = buildBaseConditions(proposalsTable, input);
 
     // Explicit scope (proposalIds or votedByProfileId): constrain the entire
     // query to that ID set so the draft branch can't independently surface
@@ -334,13 +334,13 @@ export const listProposals = async ({
     if (explicitScopeIds !== undefined) {
       const explicitScopeFilter =
         explicitScopeIds.length > 0
-          ? inArray(t.id, explicitScopeIds)
+          ? inArray(proposalsTable.id, explicitScopeIds)
           : sql`false`;
       clause = and(clause, explicitScopeFilter)!;
     }
 
     if (categoryProposalIds.length > 0) {
-      clause = and(clause, inArray(t.id, categoryProposalIds))!;
+      clause = and(clause, inArray(proposalsTable.id, categoryProposalIds))!;
     }
 
     // Phase scoping applies separately to non-drafts and drafts. Non-drafts
@@ -352,8 +352,8 @@ export const listProposals = async ({
     const phaseScopedNonDraftIdFilter =
       phaseProposalIds.length > 0
         ? and(
-            ne(t.status, ProposalStatus.DRAFT),
-            inArray(t.id, phaseProposalIds),
+            ne(proposalsTable.status, ProposalStatus.DRAFT),
+            inArray(proposalsTable.id, phaseProposalIds),
           )!
         : sql`false`;
 
@@ -370,7 +370,10 @@ export const listProposals = async ({
     // ownership filter is needed here.
     const draftFilter =
       phaseDraftIds.length > 0
-        ? and(eq(t.status, ProposalStatus.DRAFT), inArray(t.id, phaseDraftIds))!
+        ? and(
+            eq(proposalsTable.status, ProposalStatus.DRAFT),
+            inArray(proposalsTable.id, phaseDraftIds),
+          )!
         : sql`false`;
 
     // Non-draft proposals: phase-scoped, plus the HIDDEN visibility filter
@@ -383,9 +386,9 @@ export const listProposals = async ({
       : and(
           phaseScopedNonDraftIdFilter,
           or(
-            eq(t.visibility, Visibility.VISIBLE),
+            eq(proposalsTable.visibility, Visibility.VISIBLE),
             inArray(
-              t.profileId,
+              proposalsTable.profileId,
               db
                 .select({ profileId: profileUsers.profileId })
                 .from(profileUsers)
@@ -404,9 +407,9 @@ export const listProposals = async ({
     const moderationFilter = canManageProposals
       ? undefined
       : or(
-          noActiveModerationFlag('proposal', t.id),
+          noActiveModerationFlag('proposal', proposalsTable.id),
           inArray(
-            t.profileId,
+            proposalsTable.profileId,
             db
               .select({ profileId: profileUsers.profileId })
               .from(profileUsers)
