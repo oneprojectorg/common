@@ -1,5 +1,6 @@
 'use client';
 
+import { useUser } from '@/utils/UserProvider';
 import { Button } from '@op/ui/Button';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { ReactNode } from 'react';
@@ -51,6 +52,7 @@ export function ProposalViewLayout({
 }) {
   const t = useTranslations();
   const router = useRouter();
+  const { user } = useUser();
   const revisionRequestLabel = t('Revision request');
 
   return (
@@ -82,26 +84,32 @@ export function ProposalViewLayout({
               {t('Edit')}
             </Button>
           )}
-          <Button
-            surface="outline"
-            color={isLiked ? 'verified' : 'secondary'}
-            size="small"
-            onPress={onLike}
-            isDisabled={isLoading}
-          >
-            <LuHeart className="size-4" />
-            {isLiked ? t('Liked') : t('Like')}
-          </Button>
-          <Button
-            surface="outline"
-            color={isFollowing ? 'verified' : 'secondary'}
-            size="small"
-            onPress={onFollow}
-          >
-            <LuBookmark className="size-4" />
+          {/* Like/Follow are user-scoped writes gated at the API — only offer
+              them to a signed-in viewer. */}
+          {user ? (
+            <>
+              <Button
+                surface="outline"
+                color={isLiked ? 'verified' : 'secondary'}
+                size="small"
+                onPress={onLike}
+                isDisabled={isLoading}
+              >
+                <LuHeart className="size-4" />
+                {isLiked ? t('Liked') : t('Like')}
+              </Button>
+              <Button
+                surface="outline"
+                color={isFollowing ? 'verified' : 'secondary'}
+                size="small"
+                onPress={onFollow}
+              >
+                <LuBookmark className="size-4" />
 
-            {isFollowing ? t('Following') : t('Follow')}
-          </Button>
+                {isFollowing ? t('Following') : t('Follow')}
+              </Button>
+            </>
+          ) : null}
           {revisionToggle && (
             <TooltipTrigger>
               <Button
@@ -124,7 +132,9 @@ export function ProposalViewLayout({
           )}
           <div className="hidden gap-4 sm:flex">
             <LocaleChooser />
-            <UserAvatarMenu />
+            {/* Required-user leaf: only mount when a session exists so anonymous
+                visitors can still read the proposal. */}
+            {user ? <UserAvatarMenu /> : null}
           </div>
         </div>
       </div>
