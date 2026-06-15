@@ -119,6 +119,7 @@ export function CollaborativeTextField({
         placeholder={placeholder}
         onEditorReady={handleEditorReady}
         editorClassName={multiline ? 'min-h-32' : 'min-h-8'}
+        required={required}
       />
       {maxLength != null && (
         <div className="flex justify-end">

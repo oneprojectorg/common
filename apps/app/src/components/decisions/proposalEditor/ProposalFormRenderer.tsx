@@ -376,6 +376,7 @@ function renderField(
             onChange={(value) => onFieldChange(key, value)}
             fragmentName={key}
             allowEmpty={!field.required}
+            required={field.required}
           />
         </div>
       );
