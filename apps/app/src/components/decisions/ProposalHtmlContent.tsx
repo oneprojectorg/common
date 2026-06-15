@@ -25,6 +25,7 @@ export function ProposalHtmlContent({ html }: { html: string }) {
   if (!hasEmbeds) {
     return (
       <div
+        dir="auto"
         className={viewerProseStyles}
         dangerouslySetInnerHTML={{ __html: html }}
       />
@@ -32,7 +33,7 @@ export function ProposalHtmlContent({ html }: { html: string }) {
   }
 
   return (
-    <div className={viewerProseStyles}>
+    <div dir="auto" className={viewerProseStyles}>
       {segments.map((segment, i) => {
         if (segment.type === 'embed') {
           return <LinkPreview key={i} url={segment.url} className="my-4" />;

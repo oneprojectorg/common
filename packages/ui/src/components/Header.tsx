@@ -5,41 +5,65 @@ import { cn } from '../lib/utils';
 export const Header1 = ({
   children,
   className,
+  dir,
 }: {
   children: React.ReactNode;
   className?: string;
+  dir?: 'ltr' | 'rtl' | 'auto';
 }) => {
-  return <h1 className={cn(headingClasses.h1, className)}>{children}</h1>;
+  return (
+    <h1 dir={dir} className={cn(headingClasses.h1, className)}>
+      {children}
+    </h1>
+  );
 };
 
 export const Header2 = ({
   children,
   className,
+  dir,
 }: {
   children: React.ReactNode;
   className?: string;
+  dir?: 'ltr' | 'rtl' | 'auto';
 }) => {
-  return <h2 className={cn(headingClasses.h2, className)}>{children}</h2>;
+  return (
+    <h2 dir={dir} className={cn(headingClasses.h2, className)}>
+      {children}
+    </h2>
+  );
 };
 
 export const Header3 = ({
   children,
   className,
+  dir,
 }: {
   children: React.ReactNode;
   className?: string;
+  dir?: 'ltr' | 'rtl' | 'auto';
 }) => {
-  return <h3 className={cn(headingClasses.h3, className)}>{children}</h3>;
+  return (
+    <h3 dir={dir} className={cn(headingClasses.h3, className)}>
+      {children}
+    </h3>
+  );
 };
 
 export const Header4 = ({
   children,
   className,
+  dir,
 }: {
   children: React.ReactNode;
   className?: string;
+  dir?: 'ltr' | 'rtl' | 'auto';
 }) => {
-  return <h4 className={cn(headingClasses.h4, className)}>{children}</h4>;
+  return (
+    <h4 dir={dir} className={cn(headingClasses.h4, className)}>
+      {children}
+    </h4>
+  );
 };
 
 export const GradientHeader = ({

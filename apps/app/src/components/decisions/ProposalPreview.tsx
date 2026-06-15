@@ -131,7 +131,7 @@ export function ProposalPreview({
           </div>
         )}
 
-        <Header1 className="font-serif text-title-lg">
+        <Header1 dir="auto" className="font-serif text-title-lg">
           {title || t('Untitled Proposal')}
         </Header1>
 
