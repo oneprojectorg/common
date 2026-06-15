@@ -1,3 +1,4 @@
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProfileRelationshipType } from '@op/api/encoders';
 import { toast } from '@op/ui/Toast';
@@ -53,6 +54,11 @@ export function useRelationshipMutations({
 }: UseRelationshipMutationsOptions) {
   const utils = trpc.useUtils();
 
+  // Relationships are scoped to the signed-in viewer. For anonymous visitors
+  // there's nothing to fetch (and the API rejects the call), so skip the query
+  // and treat the viewer as having no relationships.
+  const { user } = useUser();
+
   // Query key for relationship data
   const relationshipQueryKey = {
     types: [ProfileRelationshipType.LIKES, ProfileRelationshipType.FOLLOWING],
@@ -60,7 +66,9 @@ export function useRelationshipMutations({
 
   // Get user's likes and follows
   const { data: userRelationships, isLoading: isLoadingRelationships } =
-    trpc.profile.getRelationships.useQuery(relationshipQueryKey);
+    trpc.profile.getRelationships.useQuery(relationshipQueryKey, {
+      enabled: !!user,
+    });
 
   // Check if current user has liked/followed this profile
   const isLiked = Boolean(

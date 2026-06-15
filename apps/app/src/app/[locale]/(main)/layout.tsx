@@ -1,5 +1,6 @@
 import { UserProvider } from '@/utils/UserProvider';
 import { getUser } from '@/utils/getUser';
+import { shouldRedirectToOnboarding } from '@/utils/onboarding';
 import { SidebarLayout, SidebarProvider } from '@op/ui/Sidebar';
 import { redirect } from 'next/navigation';
 import Script from 'next/script';
@@ -17,7 +18,7 @@ export const dynamic = 'force-dynamic';
 const AppRoot = async ({ children }: { children: React.ReactNode }) => {
   const user = await getUser();
 
-  if (!user?.onboardedAt) {
+  if (shouldRedirectToOnboarding(user)) {
     redirect('/en/start');
   }
 

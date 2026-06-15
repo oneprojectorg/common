@@ -1,6 +1,7 @@
 'use client';
 
 import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
+import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
 import { Button, ButtonLink } from '@op/ui/Button';
@@ -21,6 +22,7 @@ export function ProposalCardActions({
   proposal: Proposal;
 }) {
   const t = useTranslations();
+  const { user } = useUser();
 
   // Subscribe to the individual proposal data which gets optimistically updated
   const { data: currentProposal } = trpc.decision.getProposal.useQuery(
@@ -47,6 +49,12 @@ export function ProposalCardActions({
       },
     ],
   });
+
+  // Like/Follow are user-scoped writes gated at the API — anonymous visitors
+  // can read the proposal but aren't offered these actions.
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="flex w-full items-center gap-4 sm:w-auto">

@@ -64,6 +64,9 @@ export const getUserByAuthId = async ({
   const user = await db._query.users.findFirst({
     where: (table, { eq }) => eq(table.authUserId, authUserId),
     with: {
+      authUser: {
+        columns: { isAnonymous: true },
+      },
       avatarImage: true,
       organizationUsers: {
         with: {

@@ -3,7 +3,6 @@
 import { trpc } from '@op/api/client';
 import type { CommonUser } from '@op/api/encoders';
 import type { Permission } from 'access-zones';
-import { useRouter } from 'next/navigation';
 import posthog from 'posthog-js';
 import React, { Suspense, createContext, useContext } from 'react';
 
@@ -46,7 +45,6 @@ export const UserProviderSuspense = ({
   children: React.ReactNode;
   initialUser: CommonUser | null;
 }) => {
-  const router = useRouter();
   // Use initialUser as initialData to avoid redundant client-side fetch.
   // staleTime prevents immediate background revalidation — the server already
   // fetched fresh data for this layout render, so there's no need to re-fetch
@@ -62,10 +60,6 @@ export const UserProviderSuspense = ({
   // full-page navigation (fresh tree, null initialUser), so inside a mounted
   // tree a null refetch is a transient cookie/token race, not a sign-out.
   const user = account ?? initialUser ?? undefined;
-
-  if (user && !user.onboardedAt) {
-    router.push('/start');
-  }
 
   if (user) {
     // We are only identifying One Project users by email.
