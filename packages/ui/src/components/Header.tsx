@@ -5,7 +5,7 @@ import { cn } from '../lib/utils';
 export const Header1 = ({
   children,
   className,
-  dir,
+  dir = 'auto',
 }: {
   children: React.ReactNode;
   className?: string;
@@ -21,7 +21,7 @@ export const Header1 = ({
 export const Header2 = ({
   children,
   className,
-  dir,
+  dir = 'auto',
 }: {
   children: React.ReactNode;
   className?: string;
@@ -37,7 +37,7 @@ export const Header2 = ({
 export const Header3 = ({
   children,
   className,
-  dir,
+  dir = 'auto',
 }: {
   children: React.ReactNode;
   className?: string;
@@ -53,7 +53,7 @@ export const Header3 = ({
 export const Header4 = ({
   children,
   className,
-  dir,
+  dir = 'auto',
 }: {
   children: React.ReactNode;
   className?: string;
