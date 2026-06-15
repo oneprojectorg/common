@@ -120,21 +120,21 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
     return response;
   }
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !(request.nextUrl.pathname === '/')
-  ) {
-    // no user, redirect to login with the original path preserved
-    const url = request.nextUrl.clone();
-
-    url.pathname = '/login';
-    if (pathname !== '/') {
-      url.searchParams.set('redirect', pathname);
-    }
-
-    return NextResponse.redirect(url);
-  }
+  // if (
+  //   !user &&
+  //   !request.nextUrl.pathname.startsWith('/login') &&
+  //   !(request.nextUrl.pathname === '/')
+  // ) {
+  //   // no user, redirect to login with the original path preserved
+  //   const url = request.nextUrl.clone();
+  //
+  //   url.pathname = '/login';
+  //   if (pathname !== '/') {
+  //     url.searchParams.set('redirect', pathname);
+  //   }
+  //
+  //   return NextResponse.redirect(url);
+  // }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
   // If you're creating a new response object with NextResponse.next() make sure to:

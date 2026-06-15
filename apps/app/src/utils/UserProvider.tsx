@@ -63,9 +63,9 @@ export const UserProviderSuspense = ({
   // tree a null refetch is a transient cookie/token race, not a sign-out.
   const user = account ?? initialUser ?? undefined;
 
-  if (user && !user.onboardedAt) {
-    router.push('/start');
-  }
+  // if (user && !user.onboardedAt) {
+  //   router.push('/start');
+  // }
 
   if (user) {
     // We are only identifying One Project users by email.

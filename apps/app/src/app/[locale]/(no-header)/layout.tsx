@@ -7,9 +7,9 @@ export const dynamic = 'force-dynamic';
 const Layout = async ({ children }: { children: React.ReactNode }) => {
   const user = await getUser();
 
-  if (!user?.onboardedAt) {
-    redirect('/en/start');
-  }
+  // if (!user?.onboardedAt) {
+  //   redirect('/en/start');
+  // }
 
   return <UserProvider initialUser={user}>{children}</UserProvider>;
 };

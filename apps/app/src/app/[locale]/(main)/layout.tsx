@@ -17,9 +17,9 @@ export const dynamic = 'force-dynamic';
 const AppRoot = async ({ children }: { children: React.ReactNode }) => {
   const user = await getUser();
 
-  if (!user?.onboardedAt) {
-    redirect('/en/start');
-  }
+  // if (!user?.onboardedAt) {
+  //   redirect('/en/start');
+  // }
 
   return (
     <div className="flex size-full max-h-full flex-col">

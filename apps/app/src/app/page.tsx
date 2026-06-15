@@ -16,11 +16,11 @@ const MainPage = () => {
       return <ComingSoonScreen />;
     }
 
-    if (!account?.onboardedAt) {
-      router.push('/start');
-
-      return;
-    }
+    // if (!account?.onboardedAt) {
+    //   router.push('/start');
+    //
+    //   return;
+    // }
   }
 
   return null;
