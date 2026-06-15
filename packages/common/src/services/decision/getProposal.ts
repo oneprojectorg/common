@@ -102,7 +102,9 @@ export const getProposal = async ({
     throw new NotFoundError('Proposal', profileId);
   }
 
-  await assertInstanceProfileAccess({
+  // Reuse the resolved instance-profile user (drives the instance-admin check
+  // below) instead of re-fetching it per gate.
+  const instanceProfileUser = await assertInstanceProfileAccess({
     user,
     instance: proposal.processInstance,
     profilePermissions: { decisions: permission.READ },
@@ -112,15 +114,38 @@ export const getProposal = async ({
     ],
   });
 
-  // Draft proposals are only visible to users with proposal-level access
-  // (the creator and invited collaborators who have a profileUsers record).
-  if (proposal.status === ProposalStatus.DRAFT) {
+  // Draft, hidden, and flagged proposals are all restricted beyond plain
+  // instance read access, and to the same axes of access (proposal-level
+  // access and instance-admin). Resolve the caller's standing once and apply
+  // the three gates together rather than re-checking per gate. NotFoundError
+  // (never Unauthorized) throughout, so a restricted proposal's existence never
+  // leaks. `isFlagged` also rides on the response so the owner/admin UI can
+  // render the "Flagged" indicator.
+  const isFlagged = await hasActiveModerationFlag('proposal', proposal.id);
+  const isDraft = proposal.status === ProposalStatus.DRAFT;
+  const isHidden = proposal.visibility === Visibility.HIDDEN;
+
+  if (isDraft || isHidden || isFlagged) {
+    // Proposal-level access = the creator + invited collaborators (a
+    // profileUsers record on the proposal's own profile). Only fetched for a
+    // restricted proposal — a plain visible proposal never needs it.
     const proposalProfileUser = await getProfileAccessUser({
       user,
       profileId: proposal.profileId,
     });
+    const hasProposalAccess = Boolean(proposalProfileUser);
+    const isInstanceAdmin = checkPermission(
+      { profile: permission.ADMIN },
+      instanceProfileUser?.roles ?? [],
+    );
 
-    if (!proposalProfileUser) {
+    // Drafts are visible only to proposal-level access (not instance admins);
+    // hidden and flagged proposals are visible to that audience OR instance
+    // admins.
+    const visibleToCaller = isDraft
+      ? hasProposalAccess
+      : hasProposalAccess || isInstanceAdmin;
+    if (!visibleToCaller) {
       throw new NotFoundError('Proposal', profileId);
     }
   }
@@ -192,51 +217,6 @@ export const getProposal = async ({
       },
     ]),
   ]);
-
-  // Hidden proposals are only visible to admins on the instance's profile and
-  // users with proposal-level access (creator and invited collaborators tracked
-  // via the proposal profile's profileUsers).
-  // Throw NotFoundError rather than UnauthorizedError to avoid leaking existence.
-  if (proposal.visibility === Visibility.HIDDEN) {
-    const instanceProfileId = proposal.processInstance.profileId;
-    if (!instanceProfileId) {
-      throw new NotFoundError('Proposal', profileId);
-    }
-    const [proposalProfileUser, instanceProfileUser] = await Promise.all([
-      getProfileAccessUser({ user, profileId: proposal.profileId }),
-      getProfileAccessUser({ user, profileId: instanceProfileId }),
-    ]);
-    const canManageProposals = checkPermission(
-      { profile: permission.ADMIN },
-      instanceProfileUser?.roles ?? [],
-    );
-    if (!proposalProfileUser && !canManageProposals) {
-      throw new NotFoundError('Proposal', profileId);
-    }
-  }
-
-  // Moderation gate: a proposal with an active flag is visible only to those
-  // with proposal-level access (creator + invited collaborators) and instance
-  // admins — same audience as HIDDEN visibility. NotFoundError, not
-  // Unauthorized, so existence doesn't leak. `isFlagged` rides on the result
-  // so the UI can render the "Flagged" indicator for that audience.
-  const isFlagged = await hasActiveModerationFlag('proposal', proposal.id);
-  if (isFlagged) {
-    const instanceProfileId = proposal.processInstance.profileId;
-    const [proposalProfileUser, instanceProfileUser] = await Promise.all([
-      getProfileAccessUser({ user, profileId: proposal.profileId }),
-      instanceProfileId
-        ? getProfileAccessUser({ user, profileId: instanceProfileId })
-        : undefined,
-    ]);
-    const canManageProposals = checkPermission(
-      { profile: permission.ADMIN },
-      instanceProfileUser?.roles ?? [],
-    );
-    if (!proposalProfileUser && !canManageProposals) {
-      throw new NotFoundError('Proposal', profileId);
-    }
-  }
 
   // Generate signed URLs for attachments
   let attachmentsWithUrls = proposal.attachments ?? [];
