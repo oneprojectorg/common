@@ -9,5 +9,4 @@ import type { CommonUser } from '@op/api/encoders';
  */
 export const shouldRedirectToOnboarding = (
   user: CommonUser | null | undefined,
-): boolean =>
-  Boolean(user && !user.authUser?.isAnonymous && !user.onboardedAt);
+): boolean => Boolean(user && !user.authUser?.isAnonymous && !user.onboardedAt);

@@ -214,6 +214,17 @@ export const cookieDomains = [
 // PostHog config. Eventually to be moved to env vars
 export const posthogUIHost = 'https://eu.posthog.com';
 
+// TEMPORARY: env-flag gate for the anonymous sign-in rollout. The PostHog
+// `anonymous_signin` flag governs client UI (e.g. DecisionActionBar), but the
+// proxy middleware runs in the Edge runtime where PostHog flag evaluation isn't
+// viable, so the login-redirect gate there reads this env flag instead. On by
+// default in development and e2e to match useFeatureFlag/getServerFeatureFlag.
+// Remove this (and the proxy gate) once anonymous sign-in is permanently on.
+export const anonymousSigninEnabled =
+  process.env.NODE_ENV === 'development' ||
+  process.env.NEXT_PUBLIC_E2E === 'true' ||
+  process.env.ANONYMOUS_SIGNIN_ENABLED === 'true';
+
 export const allowedEmailDomains = ['oneproject.org', 'team.oneproject.org'];
 
 export const genericEmail = 'support@oneproject.org';

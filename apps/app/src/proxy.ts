@@ -1,5 +1,6 @@
 import {
   OPURLConfig,
+  anonymousSigninEnabled,
   cookieOptionsDomain,
   isOnPreviewAppDomain,
 } from '@op/core';
@@ -120,21 +121,26 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
     return response;
   }
 
-  // if (
-  //   !user &&
-  //   !request.nextUrl.pathname.startsWith('/login') &&
-  //   !(request.nextUrl.pathname === '/')
-  // ) {
-  //   // no user, redirect to login with the original path preserved
-  //   const url = request.nextUrl.clone();
-  //
-  //   url.pathname = '/login';
-  //   if (pathname !== '/') {
-  //     url.searchParams.set('redirect', pathname);
-  //   }
-  //
-  //   return NextResponse.redirect(url);
-  // }
+  // TEMPORARY: while anonymous sign-in is behind a flag, keep forcing login for
+  // logged-out visitors. Once `anonymousSigninEnabled` is true this gate is
+  // skipped so anonymous users can reach the app. Remove this block (and the
+  // env flag) when anonymous sign-in is permanently on.
+  if (
+    !anonymousSigninEnabled &&
+    !user &&
+    !request.nextUrl.pathname.startsWith('/login') &&
+    !(request.nextUrl.pathname === '/')
+  ) {
+    // no user, redirect to login with the original path preserved
+    const url = request.nextUrl.clone();
+
+    url.pathname = '/login';
+    if (pathname !== '/') {
+      url.searchParams.set('redirect', pathname);
+    }
+
+    return NextResponse.redirect(url);
+  }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
   // If you're creating a new response object with NextResponse.next() make sure to:
