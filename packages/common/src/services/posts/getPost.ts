@@ -13,7 +13,7 @@ import {
   getOrgAccessUser,
   getProfileAccessRolesWithOrgFallback,
 } from '../access';
-import { getActivelyFlaggedItemIds } from '../moderation/moderationVisibility';
+import { hasActiveModerationFlag } from '../moderation/moderationVisibility';
 import {
   getItemsWithReactionsAndComments,
   postModerationFilter,
@@ -115,10 +115,6 @@ export const getPost = async ({
     },
   });
 
-  // Resolve the flag state once (reused below for the gate and for the
-  // `isFlagged` decoration, so the moderation_flags table is hit a single time).
-  const flaggedItemIds = await getActivelyFlaggedItemIds('post', [post.id]);
-
   // Moderation gate: a post with an active flag is visible only to its author
   // and admins of the entities that govern it. Returns null (same as a missing
   // post) so existence doesn't leak. Admin standing comes from two places: a
@@ -127,7 +123,7 @@ export const getPost = async ({
   // carry no governing profile and link to the org only via
   // `postsToOrganizations` — the post's organizations directly.
   const isAuthor = post.profileId === actorProfileId;
-  if (flaggedItemIds.has(post.id) && !isAuthor) {
+  if ((await hasActiveModerationFlag('post', post.id)) && !isAuthor) {
     const user = { id: authUserId };
     const orgRows = await db
       .select({ organizationId: postsToOrganizations.organizationId })
@@ -156,7 +152,6 @@ export const getPost = async ({
   const itemsWithReactionsAndComments = await getItemsWithReactionsAndComments({
     items: [{ post }],
     profileId: actorProfileId,
-    flaggedItemIds,
   });
 
   return itemsWithReactionsAndComments[0]?.post ?? null;

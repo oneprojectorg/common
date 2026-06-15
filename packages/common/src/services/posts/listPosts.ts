@@ -258,14 +258,9 @@ export const getItemsWithReactionsAndComments = async <
 >({
   items,
   profileId,
-  flaggedItemIds,
 }: {
   items: T[];
   profileId?: string;
-  /** Precomputed set of actively-flagged post ids. When the caller already
-   *  resolved the flag state (e.g. `getPost`'s moderation gate), pass it here
-   *  to avoid re-querying `moderation_flags`. */
-  flaggedItemIds?: Set<string>;
 }): Promise<Array<T & { post: T['post'] & EnhancedPostFields }>> => {
   // Get all post IDs to fetch comment counts
   const postIds = items.map((item) => item.post.id).filter(Boolean);
@@ -273,8 +268,7 @@ export const getItemsWithReactionsAndComments = async <
   // Flagged posts only reach enrichment for their author or an admin (the read
   // filters drop them for everyone else), so this decorates exactly the people
   // who should see the "Flagged" indicator.
-  const flaggedIds =
-    flaggedItemIds ?? (await getActivelyFlaggedItemIds('post', postIds));
+  const flaggedIds = await getActivelyFlaggedItemIds('post', postIds);
 
   // Fetch comment counts for all posts in a single query
   const commentCountMap: Record<string, number> = {};

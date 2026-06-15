@@ -52,26 +52,28 @@ export const listAllRelatedOrganizationPosts = async (
   const profileId = await getCurrentProfileId(authUserId);
 
   // Fetch posts for all organizations with pagination
-  const result = await db._query.postsToOrganizations.findMany({
-    where: (table) => {
-      // Filter to top-level posts (no parentPostId) the reader may see —
-      // flagged posts drop out unless the reader authored them.
-      const topLevelPostFilter = exists(
-        db
-          .select({ id: posts.id })
-          .from(posts)
-          .where(
-            and(
-              eq(posts.id, table.postId),
-              isNull(posts.parentPostId),
-              postModerationFilter(posts, profileId),
+  const result = await db.query.postsToOrganizations.findMany({
+    where: {
+      RAW: (table) => {
+        // Filter to top-level posts (no parentPostId) the reader may see —
+        // flagged posts drop out unless the reader authored them.
+        const topLevelPostFilter = exists(
+          db
+            .select({ id: posts.id })
+            .from(posts)
+            .where(
+              and(
+                eq(posts.id, table.postId),
+                isNull(posts.parentPostId),
+                postModerationFilter(posts, profileId),
+              ),
             ),
-          ),
-      );
+        );
 
-      return cursorCondition
-        ? and(cursorCondition, topLevelPostFilter)
-        : topLevelPostFilter;
+        return cursorCondition
+          ? and(cursorCondition, topLevelPostFilter)!
+          : topLevelPostFilter;
+      },
     },
     with: {
       post: {
@@ -98,7 +100,7 @@ export const listAllRelatedOrganizationPosts = async (
         },
       },
     },
-    orderBy: (table, { desc }) => desc(table.createdAt),
+    orderBy: { createdAt: 'desc' as const },
     limit: limit + 1, // Fetch one extra to check hasMore
   });
 
@@ -139,27 +141,29 @@ export const listRelatedOrganizationPosts = async (
   const actorProfileId = await getCurrentProfileId(user.id);
 
   // Fetch posts for all related organizations
-  const result = await db._query.postsToOrganizations.findMany({
-    where: (table) => {
-      // Filter to top-level posts (no parentPostId) the reader may see —
-      // flagged posts drop out unless the reader authored them.
-      const topLevelPostFilter = exists(
-        db
-          .select({ id: posts.id })
-          .from(posts)
-          .where(
-            and(
-              eq(posts.id, table.postId),
-              isNull(posts.parentPostId),
-              postModerationFilter(posts, actorProfileId),
+  const result = await db.query.postsToOrganizations.findMany({
+    where: {
+      RAW: (table) => {
+        // Filter to top-level posts (no parentPostId) the reader may see —
+        // flagged posts drop out unless the reader authored them.
+        const topLevelPostFilter = exists(
+          db
+            .select({ id: posts.id })
+            .from(posts)
+            .where(
+              and(
+                eq(posts.id, table.postId),
+                isNull(posts.parentPostId),
+                postModerationFilter(posts, actorProfileId),
+              ),
             ),
-          ),
-      );
+        );
 
-      return and(
-        inArray(postsToOrganizations.organizationId, orgIds),
-        topLevelPostFilter,
-      );
+        return and(
+          inArray(table.organizationId, orgIds),
+          topLevelPostFilter,
+        )!;
+      },
     },
     with: {
       post: {
@@ -181,7 +185,7 @@ export const listRelatedOrganizationPosts = async (
         },
       },
     },
-    orderBy: (table, { desc }) => desc(table.createdAt),
+    orderBy: { createdAt: 'desc' as const },
   });
 
   return result;
