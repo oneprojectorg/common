@@ -159,10 +159,7 @@ export const listRelatedOrganizationPosts = async (
             ),
         );
 
-        return and(
-          inArray(table.organizationId, orgIds),
-          topLevelPostFilter,
-        )!;
+        return and(inArray(table.organizationId, orgIds), topLevelPostFilter)!;
       },
     },
     with: {
