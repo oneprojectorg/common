@@ -10,7 +10,7 @@ import { type SQL, and, desc, eq, isNull, or, sql } from 'drizzle-orm';
 import {
   assertProfileTypeAccess,
   getCurrentProfileId,
-  getProfileAccessUserWithOrgFallback,
+  getProfileAccessRolesWithOrgFallback,
 } from '../access';
 import { noActiveModerationFlag } from '../moderation/moderationVisibility';
 import { getItemsWithReactionsAndComments } from './listPosts';
@@ -94,15 +94,15 @@ export const getPosts = async (input: GetPostsInput) => {
   // governing profile; everyone else has them filtered out in SQL (so a
   // flagged comment doesn't leak into a thread, and pagination stays correct).
   const actorProfileId = await getCurrentProfileId(authUserId);
-  const governingProfileUser = profileIdsToAuthorize[0]
-    ? await getProfileAccessUserWithOrgFallback({
+  const governingRoles = profileIdsToAuthorize[0]
+    ? await getProfileAccessRolesWithOrgFallback({
         user: { id: authUserId },
         profileId: profileIdsToAuthorize[0],
       })
-    : undefined;
+    : [];
   const isProfileAdmin = checkPermission(
     { profile: permission.ADMIN },
-    governingProfileUser?.roles ?? [],
+    governingRoles,
   );
   const moderationCondition = (table: typeof postsTable): SQL | undefined =>
     isProfileAdmin

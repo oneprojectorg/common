@@ -230,38 +230,28 @@ export const getProfileAccessUser = memoize(
 );
 
 /**
- * An access user carrying normalized roles — either a profile-level or an
- * org-level grant. {@link getProfileAccessUserWithOrgFallback} returns one of
- * these so callers can `checkPermission(..., user?.roles ?? [])` uniformly.
- */
-export type AccessUserWithRoles =
-  | ProfileUserWithNormalizedRoles
-  | OrgUserWithNormalizedRoles;
-
-/**
- * Resolve the caller's access user for a profile, falling back to the org's
- * access user when that profile is an organization's profile. Mirrors
- * {@link getProfileAccessUser}'s shape (returns the resolved user with
- * normalized roles, or `undefined`) so callers can both `checkPermission` on it
- * and reuse the roles without a second fetch — the same built-in-fallback shape
- * as `assertInstanceProfileAccess` / `resolveInstanceAccess`.
+ * Resolve the caller's normalized roles on a profile, falling back to their
+ * org-level roles when that profile is an organization's profile. The same
+ * built-in-fallback shape as `assertInstanceProfileAccess` /
+ * `resolveInstanceAccess`, returning just the roles (every caller only
+ * `checkPermission`s on them). Empty when the caller has no grant.
  *
  * Why it's needed: org grants live on `organizationUsers`, not `profileUsers`,
  * so a `getProfileAccessUser` lookup on an org's profile never sees an org
- * admin/member. Prefer the profile-level user when present (matching
+ * admin/member. Prefer the profile-level grant when present (matching
  * `resolveInstanceAccess`); fall back to the org only when the profile carries
  * no grant of its own.
  */
-export const getProfileAccessUserWithOrgFallback = async ({
+export const getProfileAccessRolesWithOrgFallback = async ({
   user,
   profileId,
 }: {
   user?: AccessUser;
   profileId: string;
-}): Promise<AccessUserWithRoles | undefined> => {
+}): Promise<NormalizedRole[]> => {
   const profileUser = await getProfileAccessUser({ user, profileId });
   if (profileUser) {
-    return profileUser;
+    return profileUser.roles;
   }
 
   const [org] = await db
@@ -269,10 +259,11 @@ export const getProfileAccessUserWithOrgFallback = async ({
     .from(organizations)
     .where(eq(organizations.profileId, profileId));
   if (!org?.id) {
-    return undefined;
+    return [];
   }
 
-  return getOrgAccessUser({ user, organizationId: org.id });
+  const orgUser = await getOrgAccessUser({ user, organizationId: org.id });
+  return orgUser?.roles ?? [];
 };
 
 /**

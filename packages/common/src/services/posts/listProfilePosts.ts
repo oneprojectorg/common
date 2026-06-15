@@ -17,7 +17,7 @@ import {
   type AccessUser,
   assertProfileTypeAccess,
   getCurrentProfileId,
-  getProfileAccessUserWithOrgFallback,
+  getProfileAccessRolesWithOrgFallback,
 } from '../access';
 import { noActiveModerationFlag } from '../moderation/moderationVisibility';
 import { getItemsWithReactionsAndComments } from './listPosts';
@@ -67,13 +67,13 @@ export const listProfilePosts = async ({
   // The caller's profile + admin standing on this profile drive the
   // moderation filter below: flagged posts stay visible to their author and
   // to profile admins, hidden from everyone else.
-  const [actorProfileId, profileUser] = await Promise.all([
+  const [actorProfileId, governingRoles] = await Promise.all([
     user ? getCurrentProfileId(user.id) : undefined,
-    getProfileAccessUserWithOrgFallback({ user, profileId }),
+    getProfileAccessRolesWithOrgFallback({ user, profileId }),
   ]);
   const isProfileAdmin = checkPermission(
     { profile: permission.ADMIN },
-    profileUser?.roles ?? [],
+    governingRoles,
   );
 
   // Filter top-level posts at the SQL level so pagination doesn't under-fetch

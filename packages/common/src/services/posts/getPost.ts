@@ -11,7 +11,7 @@ import {
   assertProfileTypeAccess,
   getCurrentProfileId,
   getOrgAccessUser,
-  getProfileAccessUserWithOrgFallback,
+  getProfileAccessRolesWithOrgFallback,
 } from '../access';
 import {
   getActivelyFlaggedItemIds,
@@ -141,16 +141,18 @@ export const getPost = async ({
         .from(postsToOrganizations)
         .where(eq(postsToOrganizations.postId, post.id));
 
-      const adminChecks = [
+      const roleSets = await Promise.all([
         ...profileIdsToAuthorize.map((pid) =>
-          getProfileAccessUserWithOrgFallback({ user, profileId: pid }),
+          getProfileAccessRolesWithOrgFallback({ user, profileId: pid }),
         ),
         ...orgRows.map(({ organizationId }) =>
-          getOrgAccessUser({ user, organizationId }),
+          getOrgAccessUser({ user, organizationId }).then(
+            (orgUser) => orgUser?.roles ?? [],
+          ),
         ),
-      ];
-      const isAdmin = (await Promise.all(adminChecks)).some((accessUser) =>
-        checkPermission({ profile: permission.ADMIN }, accessUser?.roles ?? []),
+      ]);
+      const isAdmin = roleSets.some((roles) =>
+        checkPermission({ profile: permission.ADMIN }, roles),
       );
       if (!isAdmin) {
         return null;
