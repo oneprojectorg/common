@@ -52,12 +52,7 @@ const CurrentPhasePage = async ({
   const { decisionProfile, instanceId, ownerSlug } = await loadDecision(slug);
 
   return (
-    // On mobile the Overview / Current Phase toggle floats below the sticky
-    // header (DecisionInstanceHeader renders centerSlot as an overlay), so the
-    // page content needs top clearance for it. Route-scoped on purpose: the
-    // legacy /decisions/[slug] page renders the same phase components without
-    // the toggle and must not get this space.
-    <div className="pt-16 md:pt-0">
+    <div className="bg-neutral-offWhite pt-8 md:pt-0">
       <Suspense fallback={<DecisionContentSkeleton />}>
         <CurrentPhaseView
           instanceId={instanceId}
