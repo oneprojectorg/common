@@ -257,16 +257,23 @@ export const createPost = async (input: CreatePostServiceInput) => {
 
   // Access gate and moderation gate are independent and must both pass before
   // any row is written, so run them in parallel. Decision profiles get a
-  // decision-permission gate: top-level posts (targetProfileId set) require
-  // ADMIN; comments (parentPostId only) require SUBMIT_PROPOSALS. Org/individual
+  // decision-permission gate: a top-level update posted *on the decision
+  // profile itself* requires ADMIN; everything else that resolves through a
+  // decision (comments / replies — parentPostId — and top-level comments on
+  // a proposal profile, which resolvePostRoots walks up to the parent
+  // decision) requires SUBMIT_PROPOSALS. Branch on `targetProfileId ===
+  // rootProfileId` so a proposal target (where rootProfileId is the parent
+  // decision, not the proposal) takes the comment path. Org/individual
   // profile types fall through (no policy = lenient — callers on those paths
   // layer their own membership checks).
+  const isTopLevelDecisionUpdate =
+    !!targetProfileId && targetProfileId === rootProfileId;
   await Promise.all([
     assertProfileTypeAccess({
       user: { id: authUserId },
       profileIds: rootProfileId ? [rootProfileId] : [],
       policies: {
-        [EntityType.DECISION]: targetProfileId
+        [EntityType.DECISION]: isTopLevelDecisionUpdate
           ? { decisions: permission.ADMIN }
           : { decisions: decisionPermission.SUBMIT_PROPOSALS },
       },
