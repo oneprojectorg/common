@@ -2,7 +2,7 @@
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
-import { ButtonLink } from '@op/ui/Button';
+import { Button, ButtonLink } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
 import { IconButton } from '@op/ui/IconButton';
 import { MegaphoneIcon } from '@op/ui/MegaphoneIcon';
@@ -102,9 +102,18 @@ export const DecisionInstanceHeader = ({
           </ButtonLink>
         )}
         <LocaleChooser />
-        {/* TODO(public decision view): render a Login / upgrade-account CTA
-            for signed-out visitors here once anonymous sessions ship. */}
-        {user ? <UserAvatarMenu /> : null}
+        {user && !user.isAnonymous ? (
+          <UserAvatarMenu />
+        ) : (
+          // Native nav: /login is outside the [locale] tree, so a RAC link 404s at /en/login.
+          <Button
+            color="primary"
+            size="small"
+            onPress={() => window.location.assign('/login')}
+          >
+            {t('Log in')}
+          </Button>
+        )}
       </div>
 
       {centerSlot ? (
