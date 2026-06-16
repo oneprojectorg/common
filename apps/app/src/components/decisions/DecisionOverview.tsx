@@ -2,6 +2,7 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
+import { type ProcessPhase } from '@op/api/encoders';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2, Header3 } from '@op/ui/Header';
@@ -12,6 +13,7 @@ import { LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { DecisionPhaseTimeline } from './DecisionPhaseTimeline';
 import { useCreateProposal } from './useCreateProposal';
 
 interface DecisionOverviewProps {
@@ -86,6 +88,17 @@ function DecisionOverviewContent({
     currentPhase?.rules?.proposals?.submit === true &&
     instance.access?.submitProposals === true;
 
+  const phases: ProcessPhase[] = (instance.instanceData?.phases ?? []).map(
+    (p) => ({
+      id: p.phaseId,
+      name: p.name || '',
+      description: p.description,
+      phase: { startDate: p.startDate, endDate: p.endDate },
+      advancementMethod: p.rules?.advancement?.method,
+      config: { allowProposals: p.rules?.proposals?.submit },
+    }),
+  );
+
   return (
     <div className="flex w-full flex-col">
       <OverviewHero
@@ -98,16 +111,17 @@ function DecisionOverviewContent({
       {/* 12-col grid mirroring the Figma layout grid: sidebar spans 4 cols,
           body spans 7 starting at col 6. Stacks to one column below md. */}
       <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-12 px-4 py-6 md:grid-cols-12 md:gap-x-6 md:px-6 md:py-12">
-        {/* TODO: phases timeline lands here in a follow-up PR */}
         <div className="flex flex-col gap-4 md:col-span-4">
           <Header3 className="text-sm text-neutral-gray4">
             {t('Process Overview')}
           </Header3>
-          <div className="flex flex-col gap-6">
-            <div className="h-24 rounded border bg-neutral-offWhite" />
-            <div className="h-24 rounded border bg-neutral-offWhite" />
-            <div className="h-24 rounded border bg-neutral-offWhite" />
-          </div>
+          <DecisionPhaseTimeline
+            phases={phases}
+            currentStateId={instance.currentStateId ?? ''}
+            instanceId={instanceId}
+            isAdmin={instance.access?.admin}
+            decisionSlug={decisionSlug}
+          />
         </div>
         <div className="min-w-0 md:col-span-7 md:col-start-6">
           <OverviewAbout
