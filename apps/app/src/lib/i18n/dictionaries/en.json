@@ -367,6 +367,8 @@
   "Reported": "Reported",
   "Proposal reported for moderation review": "Proposal reported for moderation review",
   "Could not report this proposal. Please try again.": "Could not report this proposal. Please try again.",
+  "Report this proposal": "Report this proposal",
+  "This proposal will be sent to an independent moderation service for review. It stays visible while the review is in progress. If it violates Common's Code of Conduct, it will be hidden and the author will be notified.": "This proposal will be sent to an independent moderation service for review. It stays visible while the review is in progress. If it violates Common's Code of Conduct, it will be hidden and the author will be notified.",
   "Selected": "Selected",
   "Reject from shortlist": "Reject from shortlist",
   "Shortlist for voting": "Shortlist for voting",
