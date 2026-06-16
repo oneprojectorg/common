@@ -1336,7 +1336,6 @@
   "It feels like it's built for a different type of organization than mine": "It feels like it's built for a different type of organization than mine",
   "Any specific features we should fix, improve or keep? Any features we should add? We actually read these!": "Any specific features we should fix, improve or keep? Any features we should add? We actually read these!",
   "Go to the platform": "Go to the platform",
-  "Go to the current phase": "Go to the current phase",
   "Now open!": "Now open!",
   "{count, plural, =1 {1 follower} other {# followers}}": "{count, plural, =1 {1 follower} other {# followers}}",
   "{count, plural, =1 {1 relationship} other {# relationships}}": "{count, plural, =1 {1 relationship} other {# relationships}}",
