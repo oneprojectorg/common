@@ -13,6 +13,7 @@ import {
 import { Events, event } from '@op/events';
 import { CreatePostInput } from '@op/types';
 import { waitUntil } from '@vercel/functions';
+import type { AccessZonePermission } from 'access-zones';
 import { permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
@@ -26,6 +27,33 @@ import { resolvePostRoots } from './resolvePostRoots';
 interface CreatePostServiceInput extends CreatePostInput {
   authUserId: string;
 }
+
+// Decision profiles use two distinct write policies:
+//
+//   - A top-level update posted *on the decision profile itself* (a
+//     decision-wide announcement) requires ADMIN.
+//   - Every other write that resolves through the decision — a comment or
+//     reply on an existing post (parentPostId set), or a top-level comment
+//     on a proposal profile (proposals carry no permissions of their own;
+//     resolvePostRoots walks them up to the parent decision) — only
+//     requires SUBMIT_PROPOSALS.
+//
+// resolvePostRoots preserves the target as the root only when the target
+// itself is the gated profile. Every other path (proposal target, or
+// parentPostId-only) ends up with target !== root, so equality cleanly
+// separates the announcement case from everything else.
+const getDecisionPostPermission = ({
+  targetProfileId,
+  rootProfileId,
+}: {
+  targetProfileId: string | null | undefined;
+  rootProfileId: string | null;
+}): AccessZonePermission => {
+  if (targetProfileId && targetProfileId === rootProfileId) {
+    return { decisions: permission.ADMIN };
+  }
+  return { decisions: decisionPermission.SUBMIT_PROPOSALS };
+};
 
 const sendPostCommentNotification = async (
   parentPostId: string,
@@ -255,27 +283,21 @@ export const createPost = async (input: CreatePostServiceInput) => {
     }),
   ]);
 
-  // Access gate and moderation gate are independent and must both pass before
-  // any row is written, so run them in parallel. Decision profiles get a
-  // decision-permission gate: a top-level update posted *on the decision
-  // profile itself* requires ADMIN; everything else that resolves through a
-  // decision (comments / replies — parentPostId — and top-level comments on
-  // a proposal profile, which resolvePostRoots walks up to the parent
-  // decision) requires SUBMIT_PROPOSALS. Branch on `targetProfileId ===
-  // rootProfileId` so a proposal target (where rootProfileId is the parent
-  // decision, not the proposal) takes the comment path. Org/individual
-  // profile types fall through (no policy = lenient — callers on those paths
-  // layer their own membership checks).
-  const isTopLevelDecisionUpdate =
-    !!targetProfileId && targetProfileId === rootProfileId;
+  // Access gate and moderation gate are independent and must both pass
+  // before any row is written, so run them in parallel. Decision profiles
+  // get a decision-permission gate via getDecisionPostPermission — see its
+  // doc for the announcement-vs-comment split. Org/individual profile types
+  // fall through (no policy = lenient — callers on those paths layer their
+  // own membership checks).
   await Promise.all([
     assertProfileTypeAccess({
       user: { id: authUserId },
       profileIds: rootProfileId ? [rootProfileId] : [],
       policies: {
-        [EntityType.DECISION]: isTopLevelDecisionUpdate
-          ? { decisions: permission.ADMIN }
-          : { decisions: decisionPermission.SUBMIT_PROPOSALS },
+        [EntityType.DECISION]: getDecisionPostPermission({
+          targetProfileId,
+          rootProfileId,
+        }),
       },
     }),
     // Block disallowed text before any row is written.
