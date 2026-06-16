@@ -57,6 +57,7 @@ export const ProcessBuilderFooter = ({
   const storeData = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId],
   );
+  const dirtyFields = useProcessBuilderStore((s) => s.dirty[decisionProfileId]);
   const clearInstance = useProcessBuilderStore((s) => s.clearInstance);
   const displayName =
     storeData?.name || decisionProfile?.name || t('New process');
@@ -96,15 +97,19 @@ export const ProcessBuilderFooter = ({
     if (isDraft) {
       setIsLaunchModalOpen(true);
     } else {
+      // Send only edited fields — a full snapshot would overwrite other
+      // admins' saved changes. Cleared name/steward are invalid, so they
+      // coalesce to undefined (server keeps its value); cleared
+      // description is valid and goes through.
       updateInstance.mutate({
         instanceId,
-        name: storeData?.name || undefined,
-        description: storeData?.description || undefined,
-        stewardProfileId: storeData?.stewardProfileId || undefined,
-        phases: storeData?.phases,
-        proposalTemplate: storeData?.proposalTemplate,
-        rubricTemplate: storeData?.rubricTemplate,
-        config: storeData?.config,
+        name: dirtyFields?.name || undefined,
+        description: dirtyFields?.description,
+        stewardProfileId: dirtyFields?.stewardProfileId || undefined,
+        phases: dirtyFields?.phases,
+        proposalTemplate: dirtyFields?.proposalTemplate,
+        rubricTemplate: dirtyFields?.rubricTemplate,
+        config: dirtyFields?.config,
       });
     }
   };

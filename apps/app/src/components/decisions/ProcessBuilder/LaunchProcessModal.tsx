@@ -30,6 +30,7 @@ export const LaunchProcessModal = ({
   const instanceData = useProcessBuilderStore(
     (s) => s.instances[decisionProfileId],
   );
+  const clearInstance = useProcessBuilderStore((s) => s.clearInstance);
 
   const { data: invites, isLoading: invitesLoading } =
     trpc.profile.listProfileInvites.useQuery(
@@ -50,6 +51,8 @@ export const LaunchProcessModal = ({
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation({
     onSuccess: async (data) => {
       onOpenChange(false);
+      // Leftover dirty fields would otherwise overlay the published instance
+      clearInstance(decisionProfileId);
       await utils.decision.getDecisionBySlug.invalidate();
       router.push(`/decisions/${data.slug}`);
     },

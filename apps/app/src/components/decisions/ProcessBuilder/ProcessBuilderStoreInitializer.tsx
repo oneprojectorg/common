@@ -12,25 +12,16 @@ import {
  * validation (and other consumers) have data immediately — even before
  * the user visits any individual section.
  *
- * Merge strategy depends on instance status:
- * - Draft: server data is used directly (localStorage is ignored to avoid
- *   stale edits overwriting already-saved data).
- * - Non-draft: server data is the base layer, localStorage edits overlay
- *   on top for keys with a defined, non-empty value (since non-draft
- *   processes do not save to the API on every edit).
- *
- * Note: `isDraft` is evaluated once from the server component at page load.
- * This assumes launching a process triggers a navigation/reload so the
- * value cannot go stale during a session.
+ * Server data is the base; the user's own unsaved edits (`dirty`)
+ * overlay on top. Safe because `dirty` only ever holds unsaved or
+ * failed edits — confirmed saves remove their fields from it.
  */
 export function ProcessBuilderStoreInitializer({
   decisionProfileId,
   serverData,
-  isDraft,
 }: {
   decisionProfileId: string;
   serverData: ProcessBuilderInstanceData;
-  isDraft: boolean;
 }) {
   const serverDataRef = useRef(serverData);
   serverDataRef.current = serverData;
@@ -50,42 +41,23 @@ export function ProcessBuilderStoreInitializer({
       }
       hasSeeded.current = true;
 
-      const existing =
-        useProcessBuilderStore.getState().instances[decisionProfileId];
-
+      const store = useProcessBuilderStore.getState();
       const base = serverDataRef.current;
 
-      // For drafts, prefer server data — localStorage may contain stale
-      // edits from a previous session that have already been saved.
-      // For non-draft (launched) processes, overlay localStorage on top
-      // since edits are only buffered locally until explicitly saved.
-      let data: ProcessBuilderInstanceData;
-      if (isDraft) {
-        data = base;
-      } else {
-        // Filter out empty/undefined localStorage values, then overlay
-        // on top of server data so local edits take precedence.
-        const { config: localConfig, ...localRest } = existing ?? {};
-        const filtered = Object.fromEntries(
-          Object.entries(localRest).filter(
-            ([, v]) => v !== undefined && v !== '',
-          ),
-        );
-        data = {
-          ...base,
-          ...filtered,
-          config: { ...base.config, ...localConfig },
-        };
-      }
+      // Overlay the user's own unsaved edits on top of server data.
+      const dirtyFields = store.dirty[decisionProfileId];
+      const data: ProcessBuilderInstanceData = {
+        ...base,
+        ...dirtyFields,
+        config: { ...base.config, ...dirtyFields?.config },
+      };
 
-      useProcessBuilderStore
-        .getState()
-        .setInstanceData(decisionProfileId, data);
+      store.seedInstance(decisionProfileId, data);
     });
 
     void useProcessBuilderStore.persist.rehydrate();
     return unsubscribe;
-  }, [decisionProfileId, isDraft]);
+  }, [decisionProfileId]);
 
   return null;
 }

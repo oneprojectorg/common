@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { ProcessStatus } from '@op/api/encoders';
 import { useDebouncedCallback } from '@op/hooks';
 import { toast } from '@op/ui/Toast';
 import {
@@ -53,16 +54,26 @@ export function useProcessBuilderAutosave(): AutosaveActions & {
 export function ProcessBuilderAutosaveProvider({
   decisionProfileId,
   instanceId,
-  isDraft,
+  isDraft: isDraftInitial,
   children,
 }: {
   decisionProfileId: string;
   instanceId: string;
+  /** SSR snapshot, used only until the live query resolves — the status
+   *  can change mid-session (another tab/admin launches the process). */
   isDraft: boolean;
   children: React.ReactNode;
 }) {
   const t = useTranslations();
   const utils = trpc.useUtils();
+
+  // Already cached by section queries — no extra request.
+  const { data: liveInstance } = trpc.decision.getInstance.useQuery({
+    instanceId,
+  });
+  const isDraft = liveInstance
+    ? liveInstance.status === ProcessStatus.DRAFT
+    : isDraftInitial;
   const setInstanceData = useProcessBuilderStore((s) => s.setInstanceData);
   const setProposalTemplateSchema = useProcessBuilderStore(
     (s) => s.setProposalTemplateSchema,
@@ -72,6 +83,7 @@ export function ProcessBuilderAutosaveProvider({
   );
   const setSaveStatus = useProcessBuilderStore((s) => s.setSaveStatus);
   const markSaved = useProcessBuilderStore((s) => s.markSaved);
+  const clearDirtyFields = useProcessBuilderStore((s) => s.clearDirtyFields);
   const currentStatus = useProcessBuilderStore((s) =>
     s.getSaveState(decisionProfileId),
   );
@@ -125,14 +137,24 @@ export function ProcessBuilderAutosaveProvider({
         ...payload,
       });
       inflightRef.current = promise;
-      promise.catch(() => {
-        // Handled by the mutation's onError callback (toast + status).
-        // This catch only prevents unhandled promise rejection warnings.
-      });
+      promise
+        .then(() => {
+          // Keep the persisted dirty map holding unsaved/failed edits only.
+          clearDirtyFields(decisionProfileId, payload);
+        })
+        .catch(() => {
+          // Error toasted by onError. Restore the payload so the next save
+          // retries it (newer edits win); no scheduled retry — a rejecting
+          // payload would loop.
+          dirtyFieldsRef.current = {
+            ...payload,
+            ...dirtyFieldsRef.current,
+            config: { ...payload.config, ...dirtyFieldsRef.current.config },
+          };
+        });
     } else {
-      // Published: data is only in the store (localStorage) until the user
-      // clicks "Update Process". Don't show a save indicator — it would be
-      // misleading since nothing has been persisted to the server yet.
+      // Published: edits stay in the persisted dirty map until "Update
+      // Process". No save indicator — nothing reached the server yet.
     }
   }, AUTOSAVE_DEBOUNCE_MS);
   debouncedSaveRef.current = () => debouncedSave.isPending();

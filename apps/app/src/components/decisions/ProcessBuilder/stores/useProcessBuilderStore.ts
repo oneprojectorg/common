@@ -1,15 +1,20 @@
 /**
  * Process Builder Store
  *
- * Manages form state for the Process Builder with localStorage persistence.
- * This store acts as a client-side cache for in-progress form data, allowing
- * users to navigate away and return without losing their work.
+ * Manages form state for the Process Builder.
  *
  * ## Data Flow
- * 1. Form components read initial values from this store (after hydration)
- * 2. Auto-save writes debounced form values back to this store
- * 3. Store persists to localStorage automatically via Zustand middleware
- * 4. On form submission, data is sent to the API
+ * 1. `ProcessBuilderStoreInitializer` seeds `instances` with server data
+ *    overlaid with dirty fields
+ * 2. Form components read from `instances` (after hydration)
+ * 3. Edit setters update `instances` AND record the fields in `dirty`
+ * 4. Only edited fields are sent to the API — draft autosave via its own
+ *    debounce accumulator, "Update Process" via the `dirty` map
+ *
+ * ## Persistence
+ * Only `dirty` is persisted (`partialize`); `instances` is an in-memory
+ * view re-seeded from the server each load. Persisting more than the
+ * user's own edits lets stale data shadow other admins' saved changes.
  *
  * ## Hydration
  * This store uses `skipHydration: true` to prevent race conditions in SSR.
@@ -27,7 +32,8 @@
  *
  * ## Structure
  * Data is keyed by `decisionId` to support multiple concurrent drafts:
- * - `instances[decisionId]` - Form data aligned with backend InstanceData
+ * - `instances[decisionId]` - In-memory merged view aligned with backend InstanceData
+ * - `dirty[decisionId]` - Locally-edited fields not yet confirmed saved (persisted)
  * - `saveStates[decisionId]` - UI save indicator state
  */
 import type { InstanceData, InstancePhaseData } from '@op/api/encoders';
@@ -70,12 +76,19 @@ interface SaveState {
 // ============ Store Interface ============
 
 interface ProcessBuilderState {
-  // Instance data keyed by decisionId
+  // In-memory merged view (server data + local edits), keyed by decisionId.
+  // NOT persisted — re-seeded from the server on every editor load.
   instances: Record<string, ProcessBuilderInstanceData>;
+  // Locally-edited fields keyed by decisionId. The only persisted slice.
+  dirty: Record<string, Partial<ProcessBuilderInstanceData>>;
   // Save state keyed by decisionId
   saveStates: Record<string, SaveState>;
 
-  // Actions for instance data
+  // Seeds the in-memory view with server-derived data WITHOUT marking
+  // anything dirty. Replaces the instance entry wholesale.
+  seedInstance: (decisionId: string, data: ProcessBuilderInstanceData) => void;
+
+  // Actions for instance data (user edits — mark fields dirty)
   setInstanceData: (
     decisionId: string,
     data: Partial<ProcessBuilderInstanceData>,
@@ -119,6 +132,13 @@ interface ProcessBuilderState {
   getSaveState: (decisionId: string) => SaveState;
 
   // Cleanup actions
+  clearDirty: (decisionId: string) => void;
+  /** Removes confirmed-saved fields — `dirty` must only ever hold
+   *  unsaved or failed edits, or seeding would overlay stale data. */
+  clearDirtyFields: (
+    decisionId: string,
+    fields: Partial<ProcessBuilderInstanceData>,
+  ) => void;
   clearInstance: (decisionId: string) => void;
   reset: () => void;
 }
@@ -129,20 +149,46 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
   persist(
     (set, get) => ({
       instances: {},
+      dirty: {},
       saveStates: {},
+
+      seedInstance: (decisionId, data) =>
+        set((state) => ({
+          instances: {
+            ...state.instances,
+            [decisionId]: data,
+          },
+        })),
 
       // Instance data actions
       setInstanceData: (decisionId, data) =>
         set((state) => {
           const existing = state.instances[decisionId];
+          const existingDirty = state.dirty[decisionId];
+          const { config, ...rest } = data;
+
+          // No `config: undefined` entry — it would keep the dirty map
+          // non-empty after everything is confirmed saved.
+          const dirtyEntry: Partial<ProcessBuilderInstanceData> = {
+            ...existingDirty,
+            ...rest,
+          };
+          if (config || existingDirty?.config) {
+            dirtyEntry.config = { ...existingDirty?.config, ...config };
+          }
+
           return {
             instances: {
               ...state.instances,
               [decisionId]: {
                 ...existing,
                 ...data,
-                config: { ...existing?.config, ...data.config },
+                config: { ...existing?.config, ...config },
               },
+            },
+            dirty: {
+              ...state.dirty,
+              [decisionId]: dirtyEntry,
             },
           };
         }),
@@ -179,6 +225,13 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
                 phases: updatedPhases,
               },
             },
+            dirty: {
+              ...state.dirty,
+              [decisionId]: {
+                ...state.dirty[decisionId],
+                phases: updatedPhases,
+              },
+            },
           };
         }),
 
@@ -197,6 +250,13 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
               proposalTemplate: template,
             },
           },
+          dirty: {
+            ...state.dirty,
+            [decisionId]: {
+              ...state.dirty[decisionId],
+              proposalTemplate: template,
+            },
+          },
         })),
 
       getProposalTemplateSchema: (decisionId) =>
@@ -209,6 +269,13 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
             ...state.instances,
             [decisionId]: {
               ...state.instances[decisionId],
+              rubricTemplate: template,
+            },
+          },
+          dirty: {
+            ...state.dirty,
+            [decisionId]: {
+              ...state.dirty[decisionId],
               rubricTemplate: template,
             },
           },
@@ -244,12 +311,60 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
         get().saveStates[decisionId] ?? DEFAULT_SAVE_STATE,
 
       // Cleanup actions
+      clearDirty: (decisionId) =>
+        set((state) => {
+          const { [decisionId]: _, ...restDirty } = state.dirty;
+          return { dirty: restDirty };
+        }),
+
+      clearDirtyFields: (decisionId, fields) =>
+        set((state) => {
+          const existing = state.dirty[decisionId];
+          if (!existing) {
+            return state;
+          }
+
+          const { config: savedConfig, ...savedRest } = fields;
+          const remaining: Partial<ProcessBuilderInstanceData> = {
+            ...existing,
+          };
+          for (const key of Object.keys(savedRest)) {
+            delete remaining[key as keyof ProcessBuilderInstanceData];
+          }
+
+          // Config is accumulated per sub-key, so clear at that granularity
+          if (savedConfig && remaining.config) {
+            const remainingConfig = { ...remaining.config };
+            for (const key of Object.keys(savedConfig)) {
+              delete remainingConfig[key as keyof typeof remainingConfig];
+            }
+            if (Object.keys(remainingConfig).length > 0) {
+              remaining.config = remainingConfig;
+            } else {
+              delete remaining.config;
+            }
+          }
+
+          if (Object.keys(remaining).length === 0) {
+            const { [decisionId]: _, ...restDirty } = state.dirty;
+            return { dirty: restDirty };
+          }
+          return {
+            dirty: {
+              ...state.dirty,
+              [decisionId]: remaining,
+            },
+          };
+        }),
+
       clearInstance: (decisionId) =>
         set((state) => {
           const { [decisionId]: _, ...restInstances } = state.instances;
-          const { [decisionId]: __, ...restSaveStates } = state.saveStates;
+          const { [decisionId]: __, ...restDirty } = state.dirty;
+          const { [decisionId]: ___, ...restSaveStates } = state.saveStates;
           return {
             instances: restInstances,
+            dirty: restDirty,
             saveStates: restSaveStates,
           };
         }),
@@ -257,6 +372,7 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
       reset: () =>
         set({
           instances: {},
+          dirty: {},
           saveStates: {},
         }),
     }),
@@ -264,6 +380,11 @@ export const useProcessBuilderStore = create<ProcessBuilderState>()(
       name: 'process-builder',
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
+      // v0 persisted full snapshots, which shadowed other admins' saved
+      // changes — discard them on migration.
+      version: 1,
+      partialize: (state) => ({ dirty: state.dirty }),
+      migrate: () => ({ dirty: {} }),
     },
   ),
 );
