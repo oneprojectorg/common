@@ -1,34 +1,36 @@
 import {
   accessTierGatingCell,
   describeAccessTierGating,
-  expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 describeAccessTierGating('posts.getPosts', {
-  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
-    const caller = await callers.noJwt();
-    await expectFailsAccessTierGate(caller.posts.getPosts({}), 'none');
-  }),
+  noJwt: accessTierGatingCell(
+    'admits no-JWT past the tier gate',
+    async ({ callers }) => {
+      const caller = await callers.noJwt();
+      await expectPassesAccessTierGate(caller.posts.getPosts({}));
+    },
+  ),
 
   anonJwt: accessTierGatingCell(
-    'rejects anon-JWT caller',
+    'admits anon-JWT past the tier gate',
     async ({ callers }) => {
       const caller = await callers.anonJwt();
-      await expectFailsAccessTierGate(caller.posts.getPosts({}), 'anon');
+      await expectPassesAccessTierGate(caller.posts.getPosts({}));
     },
   ),
 
   userJwt: accessTierGatingCell(
-    'rejects user-JWT caller',
+    'admits out-of-network user-JWT past the tier gate',
     async ({ callers }) => {
       const caller = await callers.userJwt();
-      await expectFailsAccessTierGate(caller.posts.getPosts({}), 'user');
+      await expectPassesAccessTierGate(caller.posts.getPosts({}));
     },
   ),
 
   networkJwt: accessTierGatingCell(
-    'admits network-JWT caller',
+    'admits network-JWT past the tier gate',
     async ({ callers }) => {
       const caller = await callers.networkJwt();
       await expectPassesAccessTierGate(caller.posts.getPosts({}));

@@ -12,18 +12,18 @@ describeAccessTierGating('account.getUserProfiles', {
   }),
 
   anonJwt: accessTierGatingCell(
-    'rejects anon-JWT caller',
+    'admits anon-JWT past the tier gate',
     async ({ callers }) => {
       const caller = await callers.anonJwt();
-      await expectFailsAccessTierGate(caller.account.getUserProfiles(), 'anon');
+      await expectPassesAccessTierGate(caller.account.getUserProfiles());
     },
   ),
 
   userJwt: accessTierGatingCell(
-    'rejects user-JWT caller',
+    'admits out-of-network user-JWT past the tier gate',
     async ({ callers }) => {
       const caller = await callers.userJwt();
-      await expectFailsAccessTierGate(caller.account.getUserProfiles(), 'user');
+      await expectPassesAccessTierGate(caller.account.getUserProfiles());
     },
   ),
 

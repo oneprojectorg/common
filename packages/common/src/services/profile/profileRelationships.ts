@@ -8,7 +8,7 @@ import {
 } from '@op/db/schema';
 import { alias } from 'drizzle-orm/pg-core';
 
-import { ValidationError } from '../../utils/error';
+import { UnauthorizedError, ValidationError } from '../../utils/error';
 import { getCurrentProfileId } from '../access';
 
 export const addRelationship = async ({
@@ -94,7 +94,7 @@ export const getRelationships = async ({
   sourceProfileId?: string;
   relationshipTypes?: string[];
   profileType?: string;
-  authUserId: string;
+  authUserId?: string;
 }): Promise<
   Array<{
     relationshipType: string;
@@ -175,11 +175,12 @@ export const getRelationships = async ({
   if (sourceProfileId) {
     conditions.push(eq(profileRelationships.sourceProfileId, sourceProfileId));
   } else if (!targetProfileId) {
-    // Only resolve currentProfileId when needed as fallback (avoids extra DB query)
-    const currentProfileId = await getCurrentProfileId(authUserId);
-    if (!currentProfileId) {
-      throw new ValidationError('You must be logged in to view relationships');
+    if (!authUserId) {
+      throw new UnauthorizedError(
+        'You must be logged in to view your relationships',
+      );
     }
+    const currentProfileId = await getCurrentProfileId(authUserId);
     conditions.push(eq(profileRelationships.sourceProfileId, currentProfileId));
   }
 

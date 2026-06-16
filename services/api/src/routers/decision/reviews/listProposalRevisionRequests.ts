@@ -6,10 +6,10 @@ import {
 import { ProposalReviewRequestState } from '@op/db/schema';
 import { z } from 'zod';
 
-import { networkAuthenticatedProcedure, router } from '../../../trpcFactory';
+import { authenticatedProcedure, router } from '../../../trpcFactory';
 
 export const listProposalRevisionRequestsRouter = router({
-  listProposalRevisionRequests: networkAuthenticatedProcedure()
+  listProposalRevisionRequests: authenticatedProcedure()
     .input(
       z.object({
         proposalId: z.uuid(),

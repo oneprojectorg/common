@@ -9,9 +9,10 @@ import { appRouter } from '../..';
 import { TestReviewsDataManager } from '../../../test/helpers/TestReviewsDataManager';
 import {
   accessTierGatingCell,
-  describeDecisionAccessTierGating,
+  describeAccessTierGating,
   expectFailsAccessTierGate,
-} from '../../../test/helpers/gating/decision';
+  expectPassesAccessTierGate,
+} from '../../../test/helpers/gating';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -208,73 +209,54 @@ describe.concurrent('listProposalRevisionRequests', () => {
   });
 });
 
-describeDecisionAccessTierGating('listProposalRevisionRequests', {
-  noJwtNonPublic: accessTierGatingCell(
-    'rejects no-JWT caller on non-public instance',
-    async ({ task, onTestFinished, callers }) => {
-      const testData = new TestReviewsDataManager(task.id, onTestFinished);
-      await testData.createContext();
+describeAccessTierGating('listProposalRevisionRequests', {
+  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
+    const caller = await callers.noJwt();
 
-      const caller = await callers.noJwt();
+    await expectFailsAccessTierGate(
+      caller.decision.listProposalRevisionRequests({
+        proposalId: crypto.randomUUID(),
+      }),
+      'none',
+    );
+  }),
 
-      await expectFailsAccessTierGate(
-        caller.decision.listProposalRevisionRequests({
-          proposalId: crypto.randomUUID(),
-        }),
-        'none',
-      );
-    },
-  ),
-
-  anonJwtNonPublic: accessTierGatingCell(
-    'rejects anon-JWT caller on non-public instance',
-    async ({ task, onTestFinished, callers }) => {
-      const testData = new TestReviewsDataManager(task.id, onTestFinished);
-      await testData.createContext();
-
+  anonJwt: accessTierGatingCell(
+    'admits anon-JWT past the tier gate',
+    async ({ callers }) => {
       const caller = await callers.anonJwt();
 
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.decision.listProposalRevisionRequests({
           proposalId: crypto.randomUUID(),
         }),
-        'anon',
       );
     },
   ),
 
-  userJwtNonPublic: accessTierGatingCell(
-    'rejects user-JWT caller on non-public instance',
-    async ({ task, onTestFinished, callers }) => {
-      const testData = new TestReviewsDataManager(task.id, onTestFinished);
-      await testData.createContext();
-
+  userJwt: accessTierGatingCell(
+    'admits out-of-network user-JWT past the tier gate',
+    async ({ callers }) => {
       const caller = await callers.userJwt();
 
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.decision.listProposalRevisionRequests({
           proposalId: crypto.randomUUID(),
         }),
-        'user',
       );
     },
   ),
 
-  networkJwtNonPublic: accessTierGatingCell(
-    'admits network-JWT caller on non-public instance',
-    async ({ task, onTestFinished, callers }) => {
-      const testData = new TestReviewsDataManager(task.id, onTestFinished);
-      const context = await testData.createContext();
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller past the tier gate',
+    async ({ callers }) => {
+      const caller = await callers.networkJwt();
 
-      const caller = await callers.networkJwt(context.defaultReviewer.email);
-
-      await expect(
+      await expectPassesAccessTierGate(
         caller.decision.listProposalRevisionRequests({
           proposalId: crypto.randomUUID(),
         }),
-      ).rejects.not.toMatchObject({
-        cause: { name: 'UnauthorizedError' },
-      });
+      );
     },
   ),
 });

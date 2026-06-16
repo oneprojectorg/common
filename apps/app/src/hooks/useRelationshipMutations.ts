@@ -54,9 +54,6 @@ export function useRelationshipMutations({
 }: UseRelationshipMutationsOptions) {
   const utils = trpc.useUtils();
 
-  // Relationships are scoped to the signed-in viewer. For anonymous visitors
-  // there's nothing to fetch (and the API rejects the call), so skip the query
-  // and treat the viewer as having no relationships.
   const { user } = useUser();
 
   // Query key for relationship data

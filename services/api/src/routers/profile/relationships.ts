@@ -8,7 +8,11 @@ import { ProfileRelationshipType, proposals } from '@op/db/schema';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
-import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
+import {
+  networkAuthenticatedProcedure,
+  openProcedure,
+  router,
+} from '../../trpcFactory';
 import {
   trackProposalFollowed,
   trackProposalLiked,
@@ -118,7 +122,7 @@ export const profileRelationshipRouter = router({
       });
     }),
 
-  getRelationships: networkAuthenticatedProcedure({
+  getRelationships: openProcedure({
     rateLimit: { windowSize: 10, maxRequests: 100 },
   })
     .input(getRelationshipsInputSchema)
@@ -181,7 +185,7 @@ export const profileRelationshipRouter = router({
         sourceProfileId,
         relationshipTypes: types,
         profileType,
-        authUserId: ctx.user.id,
+        authUserId: ctx.user?.id,
       });
 
       for (const relationship of allRelationships) {

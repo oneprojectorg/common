@@ -4,18 +4,18 @@ import { getPostsSchema } from '@op/types';
 import { z } from 'zod';
 
 import { postsEncoder } from '../../encoders';
-import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
+import { openProcedure, router } from '../../trpcFactory';
 
 const outputSchema = z.array(postsEncoder);
 
 export const getPosts = router({
-  getPosts: networkAuthenticatedProcedure()
+  getPosts: openProcedure()
     .input(getPostsSchema)
     .output(outputSchema)
     .query(async ({ input, ctx }) => {
       const posts = await getPostsService({
         ...input,
-        authUserId: ctx.user.id,
+        authUserId: ctx.user?.id,
       });
 
       const channels: ChannelName[] = [];
