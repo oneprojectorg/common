@@ -88,6 +88,31 @@ export function ProcessBuilderAutosaveProvider({
     s.getSaveState(decisionProfileId),
   );
 
+  // Unsaved published-process edits live only in memory — warn before the
+  // page unloads. In-app navigation is client-side and never triggers this.
+  useEffect(() => {
+    const warnUnsaved = (e: BeforeUnloadEvent) => {
+      if (isDraft) {
+        return;
+      }
+      const dirty = useProcessBuilderStore.getState().dirty[decisionProfileId];
+      if (dirty && Object.keys(dirty).length > 0) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('beforeunload', warnUnsaved);
+    return () => window.removeEventListener('beforeunload', warnUnsaved);
+  }, [decisionProfileId, isDraft]);
+
+  // Drop the store persisted by versions that used localStorage
+  useEffect(() => {
+    try {
+      localStorage.removeItem('process-builder');
+    } catch {
+      // localStorage unavailable — nothing to clean
+    }
+  }, []);
+
   // Tracks the in-flight mutation promise so flushPendingChanges can await it.
   const inflightRef = useRef<Promise<unknown> | null>(null);
 

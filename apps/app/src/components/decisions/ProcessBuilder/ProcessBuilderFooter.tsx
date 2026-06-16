@@ -59,6 +59,9 @@ export const ProcessBuilderFooter = ({
   );
   const dirtyFields = useProcessBuilderStore((s) => s.dirty[decisionProfileId]);
   const clearInstance = useProcessBuilderStore((s) => s.clearInstance);
+  // Published edits stay local until "Update Process" — surface that
+  const hasUnsavedChanges =
+    !isDraft && !!dirtyFields && Object.keys(dirtyFields).length > 0;
   const displayName =
     storeData?.name || decisionProfile?.name || t('New process');
 
@@ -156,6 +159,11 @@ export const ProcessBuilderFooter = ({
             )}
             {/* Desktop action buttons */}
             <div className="flex shrink-0 items-center gap-2">
+              {hasUnsavedChanges && (
+                <span className="text-sm text-neutral-gray4">
+                  {t('Unsaved changes')}
+                </span>
+              )}
               {hasNext && (
                 <Button color="secondary" onPress={goNext}>
                   {t('Next')}

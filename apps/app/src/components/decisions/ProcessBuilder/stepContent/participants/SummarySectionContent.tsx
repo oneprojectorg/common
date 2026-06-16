@@ -1,10 +1,9 @@
 'use client';
 
 import { Skeleton } from '@op/ui/Skeleton';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense } from 'react';
 
 import type { SectionProps } from '../../contentRegistry';
-import { useProcessBuilderStore } from '../../stores/useProcessBuilderStore';
 import { SummarySectionInner } from './SummarySectionInner';
 
 function SummarySkeleton() {
@@ -34,24 +33,6 @@ function SummarySkeleton() {
 }
 
 export default function SummarySectionContent(props: SectionProps) {
-  const [hasHydrated, setHasHydrated] = useState(() =>
-    useProcessBuilderStore.persist.hasHydrated(),
-  );
-
-  useEffect(() => {
-    const unsubscribe = useProcessBuilderStore.persist.onFinishHydration(() => {
-      setHasHydrated(true);
-    });
-
-    void useProcessBuilderStore.persist.rehydrate();
-
-    return unsubscribe;
-  }, []);
-
-  if (!hasHydrated) {
-    return <SummarySkeleton />;
-  }
-
   return (
     <Suspense fallback={<SummarySkeleton />}>
       <SummarySectionInner {...props} />

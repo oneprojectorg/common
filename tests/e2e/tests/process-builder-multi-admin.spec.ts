@@ -71,22 +71,6 @@ test.describe('Process Builder multi-admin editing', () => {
     const nameField = (page: typeof pageB) =>
       page.getByRole('textbox', { name: 'Process Name' });
 
-    // The persistence contract: an edit lands in localStorage as a dirty
-    // field. Polling it beats arbitrary timeouts for "has the form watcher
-    // propagated the edit into the store buffer".
-    const hasDirtyField = (page: typeof pageB, field: string) =>
-      page.evaluate(
-        ({ profileId, key }) => {
-          const raw = localStorage.getItem('process-builder');
-          if (!raw) {
-            return false;
-          }
-          const parsed = JSON.parse(raw);
-          return parsed?.state?.dirty?.[profileId]?.[key] !== undefined;
-        },
-        { profileId: instance.profileId, key: field },
-      );
-
     // 3. Admin B opens the editor BEFORE admin A makes any changes.
     //    (Pre-fix, this stamped a full snapshot into B's localStorage.)
     await pageB.goto(editUrl);
@@ -107,11 +91,8 @@ test.describe('Process Builder multi-admin editing', () => {
     await nameInputA.fill(newName);
     await expect(nameInputA).toHaveValue(newName);
 
-    await expect
-      .poll(() => hasDirtyField(authenticatedPage, 'name'), {
-        timeout: 6_000,
-      })
-      .toBe(true);
+    // The form watcher writes edits to the store in an effect, which has
+    // flushed by the time the filled value is observable.
 
     const footer = authenticatedPage.getByRole('contentinfo');
     const saveResponse = authenticatedPage.waitForResponse(
@@ -151,9 +132,7 @@ test.describe('Process Builder multi-admin editing', () => {
     });
     await expect(descriptionInputB).toBeVisible({ timeout: 6_000 });
     await descriptionInputB.fill(newDescription);
-    await expect
-      .poll(() => hasDirtyField(pageB, 'description'), { timeout: 6_000 })
-      .toBe(true);
+    await expect(descriptionInputB).toHaveValue(newDescription);
 
     const footerB = pageB.getByRole('contentinfo');
     const saveResponseB = pageB.waitForResponse(

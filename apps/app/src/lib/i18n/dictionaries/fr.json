@@ -1315,5 +1315,6 @@
   "<bdi>{authorName}</bdi>'s Post": "Publication de <bdi>{authorName}</bdi>",
   "Drag a file or link here to add it": "Glissez un fichier ou un lien ici pour l'ajouter",
   "Failed to load proposals": "Échec du chargement des propositions",
-  "Thank you for participating. Your voice helps shape how we invest in our community.": "Merci de votre participation. Votre voix contribue à façonner la manière dont nous investissons dans notre communauté."
+  "Thank you for participating. Your voice helps shape how we invest in our community.": "Merci de votre participation. Votre voix contribue à façonner la manière dont nous investissons dans notre communauté.",
+  "Unsaved changes": "Modifications non enregistrées"
 }

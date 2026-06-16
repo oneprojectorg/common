@@ -117,8 +117,8 @@ export function OverviewSectionForm({
     });
   };
 
-  // Prefer store (localStorage buffer) over API data — the store is written
-  // synchronously on every save, so it's always the freshest source.
+  // Prefer the store's merged view over API data — saveChanges writes it
+  // synchronously on every edit, so it's always the freshest source.
   const initialStewardProfileId =
     instanceData?.stewardProfileId ?? instance.steward?.id ?? '';
   const initialName = instanceData?.name ?? decisionName ?? '';

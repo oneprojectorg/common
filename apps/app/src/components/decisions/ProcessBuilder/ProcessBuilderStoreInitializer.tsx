@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 
 import {
   type ProcessBuilderInstanceData,
@@ -8,9 +8,10 @@ import {
 } from './stores/useProcessBuilderStore';
 
 /**
- * Seeds the Zustand store with server-fetched instance data so that
- * validation (and other consumers) have data immediately — even before
- * the user visits any individual section.
+ * Seeds the Zustand store with server-fetched instance data. Rendered
+ * before the editor sections, and seeds during render (guarded by a ref)
+ * so every later sibling sees the data on its first render — no
+ * hydration gate or skeleton needed.
  *
  * Server data is the base; the user's own unsaved edits (`dirty`)
  * overlay on top. Safe because `dirty` only ever holds unsaved or
@@ -23,41 +24,19 @@ export function ProcessBuilderStoreInitializer({
   decisionProfileId: string;
   serverData: ProcessBuilderInstanceData;
 }) {
-  const serverDataRef = useRef(serverData);
-  serverDataRef.current = serverData;
+  const seededFor = useRef<string | null>(null);
 
-  // Guard against re-seeding when other components call rehydrate(),
-  // which re-fires all onFinishHydration listeners. Without this,
-  // navigating between sections would overwrite user edits with stale
-  // server data from the initial page load.
-  const hasSeeded = useRef(false);
+  if (seededFor.current !== decisionProfileId) {
+    seededFor.current = decisionProfileId;
 
-  useEffect(() => {
-    hasSeeded.current = false;
-
-    const unsubscribe = useProcessBuilderStore.persist.onFinishHydration(() => {
-      if (hasSeeded.current) {
-        return;
-      }
-      hasSeeded.current = true;
-
-      const store = useProcessBuilderStore.getState();
-      const base = serverDataRef.current;
-
-      // Overlay the user's own unsaved edits on top of server data.
-      const dirtyFields = store.dirty[decisionProfileId];
-      const data: ProcessBuilderInstanceData = {
-        ...base,
-        ...dirtyFields,
-        config: { ...base.config, ...dirtyFields?.config },
-      };
-
-      store.seedInstance(decisionProfileId, data);
+    const store = useProcessBuilderStore.getState();
+    const dirtyFields = store.dirty[decisionProfileId];
+    store.seedInstance(decisionProfileId, {
+      ...serverData,
+      ...dirtyFields,
+      config: { ...serverData.config, ...dirtyFields?.config },
     });
-
-    void useProcessBuilderStore.persist.rehydrate();
-    return unsubscribe;
-  }, [decisionProfileId]);
+  }
 
   return null;
 }

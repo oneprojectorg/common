@@ -1315,5 +1315,6 @@
   "Resource options": "خيارات المورد",
   "Remove file": "إزالة الملف",
   "File is too large (max {size} MB)": "الملف كبير جدًا (الحد الأقصى {size} ميغابايت)",
-  "Drag a file or link here to add it": "اسحب ملفًا أو رابطًا هنا لإضافته"
+  "Drag a file or link here to add it": "اسحب ملفًا أو رابطًا هنا لإضافته",
+  "Unsaved changes": "تغييرات غير محفوظة"
 }
