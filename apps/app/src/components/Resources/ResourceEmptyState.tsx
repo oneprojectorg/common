@@ -1,35 +1,52 @@
-import { EmptyState } from '@op/ui/EmptyState';
-import { LuFolderOpen, LuLock } from 'react-icons/lu';
+'use client';
 
-import { TranslatedText } from '@/components/TranslatedText';
+import { Button } from '@op/ui/Button';
+import { EmptyState } from '@op/ui/EmptyState';
+import { LuLeaf, LuLock, LuPlus } from 'react-icons/lu';
+
+import { useTranslations } from '@/lib/i18n';
 
 type Variant = 'admin-empty' | 'member-empty' | 'no-access';
 
-export const ResourceEmptyState = ({ variant }: { variant: Variant }) => {
+export const ResourceEmptyState = ({
+  variant,
+  onAddResource,
+}: {
+  variant: Variant;
+  onAddResource?: () => void;
+}) => {
+  const t = useTranslations();
+
   if (variant === 'no-access') {
     return (
       <EmptyState icon={<LuLock />}>
-        <TranslatedText text="You don't have access to this resource collection" />
-      </EmptyState>
-    );
-  }
-
-  if (variant === 'admin-empty') {
-    return (
-      <EmptyState icon={<LuFolderOpen />}>
-        <p className="text-sm">
-          <TranslatedText text="No resources yet" />
-        </p>
-        <p className="text-sm text-neutral-gray4">
-          <TranslatedText text="Add your first resource" />
-        </p>
+        {t("You don't have access to this resource collection")}
       </EmptyState>
     );
   }
 
   return (
-    <EmptyState icon={<LuFolderOpen />}>
-      <TranslatedText text="No resources yet" />
-    </EmptyState>
+    <div className="rounded-lg border border-neutral-gray1">
+      <EmptyState className="p-6" icon={<LuLeaf className="size-6" />}>
+        <p className="text-base text-neutral-black">
+          {t('No resources added')}
+        </p>
+        {variant === 'admin-empty' ? (
+          <>
+            <p className="max-w-72 text-center text-base text-neutral-charcoal">
+              {t(
+                'Share documents, guidelines, and links to help participants through the process.',
+              )}
+            </p>
+            {onAddResource ? (
+              <Button color="primary" onPress={onAddResource}>
+                <LuPlus className="size-4" />
+                {t('Add a resource')}
+              </Button>
+            ) : null}
+          </>
+        ) : null}
+      </EmptyState>
+    </div>
   );
 };
