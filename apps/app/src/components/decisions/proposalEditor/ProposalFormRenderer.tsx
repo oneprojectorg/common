@@ -364,7 +364,7 @@ function renderField(
       }
 
       return (
-        <div className="flex flex-col gap-2">
+        <div data-testid={`field-${key}`} className="flex flex-col gap-2">
           <FieldHeader
             title={schema.title}
             description={schema.description}
