@@ -158,6 +158,30 @@ describe('createHiveProvider', () => {
     expect(ref.providerRecordId).toBe('hive-task-1');
   });
 
+  it('submitForReview sends the default publisher id as user_id, overridable via config', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(ok({ task_id: 't' }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const submit = (provider: ReturnType<typeof createHiveProvider>) =>
+      provider.submitForReview!({
+        itemType: 'post',
+        itemId: '11111111-1111-4111-8111-111111111111',
+        roundId: ROUND_ID,
+        content: 'hello',
+        callbackUrl: 'https://us/webhook',
+      });
+
+    await submit(createHiveProvider({ apiKey: 'k' }));
+    expect(
+      (fetchMock.mock.calls[0][1].body as URLSearchParams).get('user_id'),
+    ).toBe('oneproject');
+
+    await submit(createHiveProvider({ apiKey: 'k', publisherId: 'acme' }));
+    expect(
+      (fetchMock.mock.calls[1][1].body as URLSearchParams).get('user_id'),
+    ).toBe('acme');
+  });
+
   it('planReviewRefs matches the refs submitForReview creates (text + each media)', () => {
     const provider = createHiveProvider({ apiKey: 'k' });
 

@@ -29,7 +29,12 @@ export const getModerationProvider = (): ModerationProvider | null => {
 
   switch (vendor) {
     case 'hive':
-      return createHiveProvider({ apiKey });
+      // MODERATION_HIVE_PUBLISHER_ID overrides the `user_id` Hive requires on
+      // every submission; falls back to the adapter's default when unset.
+      return createHiveProvider({
+        apiKey,
+        publisherId: process.env.MODERATION_HIVE_PUBLISHER_ID,
+      });
     case 'lasso':
       return createLassoProvider({ apiToken: apiKey, webhookSigningKey });
     case 'checkstep':

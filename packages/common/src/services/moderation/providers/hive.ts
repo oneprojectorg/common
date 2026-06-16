@@ -37,8 +37,9 @@ const DEFAULT_URL = 'https://api.thehive.ai/api/v2/task/sync';
 // submit content + a callback_url, the verdict arrives later via webhook.
 const DEFAULT_ASYNC_URL = 'https://api.hivemoderation.com/api/v1/task/async';
 // Publisher id Hive requires on every submission; we moderate on behalf of the
-// platform rather than per-end-user, so a constant suffices.
-const PUBLISHER_ID = 'oneproject';
+// platform rather than per-end-user. Overridable via MODERATION_HIVE_PUBLISHER_ID
+// (see provider.ts); this default applies when that env var is unset.
+const DEFAULT_PUBLISHER_ID = 'oneproject';
 // Hive returns integer severity 0-3 per class; normalize onto our 0-1 scale.
 const HIVE_MAX_SCORE = 3;
 // Hive's sync text endpoint caps submissions at 1024 chars and asks callers to
@@ -155,10 +156,12 @@ export const createHiveProvider = ({
   apiKey,
   apiUrl = DEFAULT_URL,
   asyncUrl = DEFAULT_ASYNC_URL,
+  publisherId = DEFAULT_PUBLISHER_ID,
 }: {
   apiKey: string;
   apiUrl?: string;
   asyncUrl?: string;
+  publisherId?: string;
 }): ModerationProvider => {
   const scoreChunk = async (chunk: string): Promise<ModerationScores> => {
     const response = await moderationFetch(
@@ -194,7 +197,7 @@ export const createHiveProvider = ({
         'content-type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        user_id: PUBLISHER_ID,
+        user_id: publisherId,
         post_id: postId,
         callback_url: callbackUrl,
         ...fields,
