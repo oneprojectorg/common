@@ -35,13 +35,24 @@ test.describe('Decisions', () => {
       name: 'Start a proposal',
     });
     await expect(submitButton).toBeVisible({ timeout: 15_000 });
+
+    // Bind the response waiter before clicking so we don't miss a fast response,
+    // and so the test fails fast with a clear signal if the mutation never fires
+    // (e.g. when React Aria's onPress handler hasn't bound yet on a slow CI run).
+    const createProposalResponse = authenticatedPage.waitForResponse(
+      (resp) =>
+        resp.url().includes('decision.createProposal') && resp.ok(),
+      { timeout: 30_000 },
+    );
+
     await submitButton.click();
+    await createProposalResponse;
 
     // 6. Wait for navigation to the proposal edit page
     // The URL pattern is /decisions/{slug}/proposal/{profileId}/edit
-    await expect(authenticatedPage).toHaveURL(
+    await authenticatedPage.waitForURL(
       new RegExp(`/decisions/${instance.slug}/proposal/[^/]+/edit`),
-      { timeout: 15000 },
+      { timeout: 15_000 },
     );
 
     // 7. Verify we're on the proposal editor page

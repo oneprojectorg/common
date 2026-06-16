@@ -265,15 +265,10 @@ test.describe('Proposal Submit Validation', () => {
     // Step 5: Fill Summary → re-submit → 3 dynamic errors remain
     // =========================================================================
 
-    // Locate by the exact field title label, then find the ProseMirror
-    // editor within the same field wrapper (the parent flex container).
-    const summaryLabel = authenticatedPage.getByText('Summary', {
-      exact: true,
-    });
-    const summaryEditor = summaryLabel
-      .locator('..')
-      .locator('..')
+    const summaryEditor = authenticatedPage
+      .getByTestId('field-summary')
       .locator('.ProseMirror');
+    await expect(summaryEditor).toBeVisible({ timeout: 10_000 });
     await summaryEditor.click();
     await authenticatedPage.keyboard.type('A brief summary of the proposal');
 
@@ -297,13 +292,10 @@ test.describe('Proposal Submit Validation', () => {
     // Step 6: Fill Details → re-submit → 2 dynamic errors remain
     // =========================================================================
 
-    const detailsLabel = authenticatedPage.getByText('Details', {
-      exact: true,
-    });
-    const detailsEditor = detailsLabel
-      .locator('..')
-      .locator('..')
+    const detailsEditor = authenticatedPage
+      .getByTestId('field-details')
       .locator('.ProseMirror');
+    await expect(detailsEditor).toBeVisible({ timeout: 10_000 });
     await detailsEditor.click();
     await authenticatedPage.keyboard.type(
       'Full details and justification for this proposal',
@@ -329,12 +321,7 @@ test.describe('Proposal Submit Validation', () => {
     // Step 7: Select Priority Level → re-submit → 1 dynamic error remains
     // =========================================================================
 
-    // Scope to the field wrapper by finding the label, then going up to
-    // the parent container that holds both label and the Select button.
-    const priorityLabel = authenticatedPage.getByText('Priority Level', {
-      exact: true,
-    });
-    const priorityField = priorityLabel.locator('..').locator('..');
+    const priorityField = authenticatedPage.getByTestId('field-priority');
     await priorityField.getByRole('button', { name: 'Select option' }).click();
     await authenticatedPage.getByRole('option', { name: 'High' }).click();
 
@@ -356,8 +343,7 @@ test.describe('Proposal Submit Validation', () => {
     // Step 8: Select Region → re-submit → no errors, proposal submits
     // =========================================================================
 
-    const regionLabel = authenticatedPage.getByText('Region', { exact: true });
-    const regionField = regionLabel.locator('..').locator('..');
+    const regionField = authenticatedPage.getByTestId('field-region');
     await regionField.getByRole('button', { name: 'Select option' }).click();
     await authenticatedPage.getByRole('option', { name: 'North' }).click();
 
