@@ -21,24 +21,19 @@ export function FieldHeader({
     return null;
   }
 
-  const titleNode = title && (
-    <Header4 className="font-light">
-      {title}
-      {required && <RequiredAsterisk />}
-    </Header4>
-  );
-
   return (
     <div className={`flex flex-col ${className}`}>
-      {titleNode &&
-        (badge ? (
-          <div className="flex items-baseline justify-between gap-2">
-            {titleNode}
+      {title && (
+        <div className="flex items-baseline justify-between gap-2">
+          <Header4 className="font-light">
+            {title}
+            {required && <RequiredAsterisk />}
+          </Header4>
+          {badge && (
             <span className="shrink-0 text-xs text-neutral-gray4">{badge}</span>
-          </div>
-        ) : (
-          titleNode
-        ))}
+          )}
+        </div>
+      )}
       {description && (
         <p className="text-sm text-neutral-charcoal">{description}</p>
       )}
