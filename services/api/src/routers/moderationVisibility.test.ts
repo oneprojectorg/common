@@ -214,7 +214,7 @@ describe.concurrent('moderation read visibility', () => {
       ).rejects.toMatchObject({ cause: { name: 'NotFoundError' } });
     });
 
-    it('keeps a contested (disputed) post hidden from outsiders: contesting a verdict must not resurface it', async ({
+    it('keeps a contested (disputed) post visible to everyone: contesting a verdict resurfaces it until an admin re-rules', async ({
       task,
       onTestFinished,
     }) => {
@@ -242,9 +242,9 @@ describe.concurrent('moderation read visibility', () => {
         await db.delete(posts).where(inArray(posts.id, [post.id]));
       });
 
-      // The owner already contested the verdict, so the flag sits in `disputed`
-      // awaiting admin review — but the item was deemed inappropriate to reach
-      // that state, so it stays hidden from outsiders meanwhile.
+      // The owner contested the verdict, so the flag sits in `disputed` awaiting
+      // admin re-review. Only a *passed verdict* (`flagged`/`confirmed`) hides;
+      // `disputed` does not — the post resurfaces for everyone meanwhile.
       await flagItem(
         onTestFinished,
         ModerationItemType.POST,
@@ -252,23 +252,17 @@ describe.concurrent('moderation read visibility', () => {
         ModerationFlagStatus.DISPUTED,
       );
 
+      // The outsider sees it again, and with no "Flagged" indicator (disputed
+      // isn't a hiding status, so it doesn't decorate `isFlagged`).
       const outsiderCaller = await createAuthenticatedCaller(outsider.email);
       const outsiderAfter = await outsiderCaller.organization.listPosts({
         slug: organizationProfile.slug,
       });
-      expect(outsiderAfter.items.map((item) => item.post.id)).not.toContain(
-        post.id,
-      );
-
-      // The org admin still sees it, marked flagged.
-      const adminAfter = await adminCaller.organization.listPosts({
-        slug: organizationProfile.slug,
-      });
-      const adminPost = adminAfter.items.find(
+      const outsiderPost = outsiderAfter.items.find(
         (item) => item.post.id === post.id,
       );
-      expect(adminPost).toBeDefined();
-      expect(adminPost?.post.isFlagged).toBe(true);
+      expect(outsiderPost).toBeDefined();
+      expect(outsiderPost?.post.isFlagged).toBe(false);
     });
   });
 

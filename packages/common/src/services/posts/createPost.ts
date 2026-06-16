@@ -21,7 +21,6 @@ import { CommonError } from '../../utils';
 import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
 import { decisionPermission } from '../decision/permissions';
 import { sendCommentNotificationEmail } from '../email';
-import { assertTextContentModerated } from '../moderation';
 import { resolvePostRoots } from './resolvePostRoots';
 
 interface CreatePostServiceInput extends CreatePostInput {
@@ -283,26 +282,25 @@ export const createPost = async (input: CreatePostServiceInput) => {
     }),
   ]);
 
-  // Access gate and moderation gate are independent and must both pass
-  // before any row is written, so run them in parallel. Decision profiles
-  // get a decision-permission gate via getDecisionPostPermission — see its
-  // doc for the announcement-vs-comment split. Org/individual profile types
-  // fall through (no policy = lenient — callers on those paths layer their
-  // own membership checks).
-  await Promise.all([
-    assertProfileTypeAccess({
-      user: { id: authUserId },
-      profileIds: rootProfileId ? [rootProfileId] : [],
-      policies: {
-        [EntityType.DECISION]: getDecisionPostPermission({
-          targetProfileId,
-          rootProfileId,
-        }),
-      },
-    }),
-    // Block disallowed text before any row is written.
-    assertTextContentModerated(content),
-  ]);
+  // Access gate: must pass before any row is written. Decision profiles get a
+  // decision-permission gate via getDecisionPostPermission — see its doc for
+  // the announcement-vs-comment split. Org/individual profile types fall
+  // through (no policy = lenient — callers on those paths layer their own
+  // membership checks).
+  //
+  // Content moderation is NOT a sync gate here: the post is written and shown
+  // immediately, and the `content/submitted` event below drives async provider
+  // review, which hides the post if a verdict comes back disallowed.
+  await assertProfileTypeAccess({
+    user: { id: authUserId },
+    profileIds: rootProfileId ? [rootProfileId] : [],
+    policies: {
+      [EntityType.DECISION]: getDecisionPostPermission({
+        targetProfileId,
+        rootProfileId,
+      }),
+    },
+  });
 
   // postsToProfiles inheritance for comments is purely a feed/discovery
   // index now — auth is pinned on rootProfileId above. We still pre-read
