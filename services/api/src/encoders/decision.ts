@@ -618,6 +618,12 @@ export const proposalFilterSchema = z
     votedByProfileId: z.uuid().optional(),
     /** When set to 'results', all proposals are returned as non-editable */
     phase: z.enum(['results']).optional(),
+    /**
+     * Pagination cursor handed back from the previous page's `next`. Encodes
+     * the offset to skip — populated automatically by
+     * `useSuspenseInfiniteQuery`. When set, overrides `offset`.
+     */
+    cursor: z.string().nullish(),
   })
   .extend(paginationInputSchema.shape);
 

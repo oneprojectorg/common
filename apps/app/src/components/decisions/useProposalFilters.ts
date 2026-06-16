@@ -4,6 +4,38 @@ import { ProposalFilter, ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
+/**
+ * Items for the `ResponsiveSelect` that surfaces proposal filters. Shared by
+ * `ProposalsList` and `ManualSelectionToolbar` so the labels and disabled
+ * rules stay in lockstep.
+ */
+export const useProposalFilterItems = ({
+  hasVoted,
+  currentProfileId,
+}: {
+  hasVoted: boolean;
+  currentProfileId: string | undefined;
+}) => {
+  const t = useTranslations();
+  return [
+    { id: ProposalFilter.ALL, label: t('All proposals') },
+    {
+      id: ProposalFilter.MY_PROPOSALS,
+      label: t('My proposals'),
+      isDisabled: !currentProfileId,
+    },
+    {
+      id: ProposalFilter.SHORTLISTED,
+      label: t('Shortlisted proposals'),
+    },
+    ...(hasVoted
+      ? [{ id: ProposalFilter.MY_BALLOT, label: t('My ballot') }]
+      : []),
+  ];
+};
+
 export function useProposalFilters({
   proposals,
   currentProfileId,

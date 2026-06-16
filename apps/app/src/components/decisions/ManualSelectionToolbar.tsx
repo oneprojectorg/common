@@ -6,6 +6,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
 import { ResponsiveSelect } from './ResponsiveSelect';
+import { useProposalFilterItems } from './useProposalFilters';
 
 interface Category {
   id: string;
@@ -37,6 +38,13 @@ export const ManualSelectionToolbar = ({
 }: ManualSelectionToolbarProps) => {
   const t = useTranslations();
   const { proposalFilter, selectedCategory, sortOrder } = filters;
+  // ManualSelectionToolbar never surfaces "My ballot" — only the live
+  // proposal-list view does. Pass hasVoted={false} so the shared helper
+  // returns the toolbar-appropriate three items.
+  const filterItems = useProposalFilterItems({
+    hasVoted: false,
+    currentProfileId,
+  });
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
@@ -53,18 +61,7 @@ export const ManualSelectionToolbar = ({
             onChange({ proposalFilter: key });
           }}
           aria-label={t('Filter proposals')}
-          items={[
-            { id: ProposalFilter.ALL, label: t('All proposals') },
-            {
-              id: ProposalFilter.MY_PROPOSALS,
-              label: t('My proposals'),
-              isDisabled: !currentProfileId,
-            },
-            {
-              id: ProposalFilter.SHORTLISTED,
-              label: t('Shortlisted proposals'),
-            },
-          ]}
+          items={filterItems}
         />
         <ResponsiveSelect
           selectedKey={selectedCategory}

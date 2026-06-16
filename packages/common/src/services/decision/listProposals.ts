@@ -56,6 +56,13 @@ export interface ListProposalsInput {
   phase?: 'results';
   limit?: number;
   offset?: number;
+  /**
+   * Pagination cursor returned from a previous page's `next`. When provided,
+   * overrides {@link offset}. The cursor is an opaque string that today encodes
+   * the offset, which keeps this offset-based service compatible with tRPC's
+   * `useSuspenseInfiniteQuery`.
+   */
+  cursor?: string | null;
   orderBy?: 'createdAt' | 'updatedAt' | 'status' | 'votes';
   dir?: 'asc' | 'desc';
   skipAccessCheck?: boolean; // For trusted contexts like background jobs
@@ -291,10 +298,14 @@ export const listProposals = async ({
       total: 0,
       hasMore: false,
       canManageProposals: false,
+      next: null,
     };
   }
 
-  const { limit = 20, offset = 0, orderBy = 'createdAt', dir = 'desc' } = input;
+  const { limit = 20, orderBy = 'createdAt', dir = 'desc' } = input;
+  // Cursor wins over offset when both are present so paginated callers don't
+  // accidentally hold offset state across page transitions.
+  const offset = decodeProposalCursor(input.cursor) ?? input.offset ?? 0;
 
   // Resolve category-scoped proposal IDs up front so the same ID set is
   // available to both the count and data queries when assembling conditions.
@@ -316,6 +327,7 @@ export const listProposals = async ({
         total: 0,
         hasMore: false,
         canManageProposals,
+        next: null,
       };
     }
   }
@@ -573,10 +585,30 @@ export const listProposals = async ({
     };
   });
 
+  const total = Number(count);
+  const hasMore = offset + limit < total;
+
   return {
     proposals: proposalsWithCounts,
-    total: Number(count),
-    hasMore: offset + limit < Number(count),
+    total,
+    hasMore,
     canManageProposals,
+    next: hasMore ? encodeProposalCursor(offset + limit) : null,
   };
+};
+
+/**
+ * Cursors are opaque on the wire; today they encode the next offset. Stays a
+ * single helper so the encode/decode pair never drifts.
+ */
+const encodeProposalCursor = (offset: number) => String(offset);
+
+const decodeProposalCursor = (
+  cursor: string | null | undefined,
+): number | undefined => {
+  if (!cursor) {
+    return undefined;
+  }
+  const parsed = Number(cursor);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : undefined;
 };

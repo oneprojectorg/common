@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import {
@@ -15,11 +14,9 @@ import {
   ProposalReviewRequestState,
   SUPPORTED_LOCALES,
   type SupportedLocale,
-  getLocationFieldMapView,
   isVotingEligible,
-  templateCollectsLocation,
 } from '@op/common/client';
-import { useIntersectionObserver } from '@op/hooks';
+import { useInfiniteScroll } from '@op/hooks';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
@@ -31,11 +28,16 @@ import { Modal } from '@op/ui/Modal';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { toast } from '@op/ui/Toast';
-import { cn } from '@op/ui/utils';
 import { useLocale } from 'next-intl';
-import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LuArrowDownToLine, LuLayoutGrid, LuLeaf, LuMap } from 'react-icons/lu';
+import {
+  type RefObject,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { LuArrowDownToLine, LuLeaf } from 'react-icons/lu';
 
 import { usePathname, useRouter, useTranslations } from '@/lib/i18n';
 
@@ -55,20 +57,16 @@ import {
   ProposalCardReviseAction,
 } from './ProposalCard';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
-import {
-  PROPOSAL_VIEWS,
-  ProposalViewToggle,
-  type ProposalView,
-} from './ProposalViewToggle';
-import { ProposalsMapView } from './ProposalsMapView';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { TranslateBanner } from './TranslateBanner';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
 import { VotingProposalCard } from './VotingProposalCard';
-import { DEFAULT_LOCATION_FIELD_MAP_VIEW } from './location/mapConfig';
 import { useProposalExport } from './useProposalExport';
-import { useProposalFilters } from './useProposalFilters';
+import {
+  useProposalFilterItems,
+  useProposalFilters,
+} from './useProposalFilters';
 
 const ProposalCardSkeleton = () => {
   return (
@@ -580,17 +578,7 @@ const Proposals = ({
   );
 };
 
-export const ProposalsList = ({
-  slug,
-  instanceId,
-  decisionSlug,
-  decisionProfileId,
-  permissions,
-  initialFilter,
-  phase,
-  currentPhase,
-  proposalsHidden,
-}: {
+export interface ProposalsListProps {
   slug: string;
   instanceId: string;
   /** Decision profile slug for building proposal links */
@@ -607,13 +595,131 @@ export const ProposalsList = ({
   currentPhase?: InstancePhaseData;
   /** When true, new proposals are hidden by default in the current phase. */
   proposalsHidden?: boolean;
+}
+
+/**
+ * Page size matches the prior single-page render so a decision with ≤ this
+ * many proposals never needs to hit the sentinel.
+ */
+const PROPOSALS_PAGE_LIMIT = 50;
+
+type ProposalQueryParams = {
+  processInstanceId: string;
+  categoryId?: string;
+  submittedByProfileId?: string;
+  status?: ProposalStatus;
+  dir: 'asc' | 'desc';
+  limit: number;
+  phase?: 'results';
+};
+
+type ProposalsLoaderRenderProps = {
+  allProposals: Proposal[];
+  isFetchingNextPage: boolean;
+  shouldShowTrigger: boolean;
+  infiniteScrollRef: RefObject<HTMLDivElement | null>;
+};
+
+const useProposalsScrollHelpers = ({
+  fetchNextPage,
+  hasNextPage,
+  isFetchingNextPage,
+}: {
+  fetchNextPage: () => unknown;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
 }) => {
-  const isReviewPhase = currentPhase?.rules?.proposals?.review === true;
-  const isVotingPhase = currentPhase?.rules?.voting?.submit === true;
-  const t = useTranslations();
-  const { user } = useUser();
-  const router = useRouter();
-  const pathname = usePathname();
+  const stableFetchNextPage = useCallback(() => {
+    fetchNextPage();
+  }, [fetchNextPage]);
+
+  const { ref, shouldShowTrigger } = useInfiniteScroll<HTMLDivElement>(
+    stableFetchNextPage,
+    {
+      hasNextPage,
+      isFetchingNextPage,
+      threshold: 0.1,
+      rootMargin: '50px',
+    },
+  );
+
+  return { infiniteScrollRef: ref, shouldShowTrigger };
+};
+
+const CurrentPhaseProposalsLoader = ({
+  queryParams,
+  children,
+}: {
+  queryParams: ProposalQueryParams;
+  children: (data: ProposalsLoaderRenderProps) => React.ReactNode;
+}) => {
+  const [paginatedData, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
+    trpc.decision.listProposals.useSuspenseInfiniteQuery(queryParams, {
+      getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+      staleTime: 30 * 1000,
+    });
+
+  const allProposals = useMemo(
+    () => paginatedData.pages.flatMap((page) => page.proposals),
+    [paginatedData.pages],
+  );
+
+  const { infiniteScrollRef, shouldShowTrigger } = useProposalsScrollHelpers({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  });
+
+  return children({
+    allProposals,
+    isFetchingNextPage,
+    shouldShowTrigger,
+    infiniteScrollRef,
+  });
+};
+
+const ResultsPhaseProposalsLoader = ({
+  queryParams,
+  children,
+}: {
+  queryParams: ProposalQueryParams;
+  children: (data: ProposalsLoaderRenderProps) => React.ReactNode;
+}) => {
+  const [paginatedData, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
+    trpc.decision.listAllProposals.useSuspenseInfiniteQuery(
+      {
+        processInstanceId: queryParams.processInstanceId,
+        dir: queryParams.dir,
+        limit: queryParams.limit,
+        categoryId: queryParams.categoryId,
+      },
+      {
+        getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+        staleTime: 30 * 1000,
+      },
+    );
+
+  const allProposals = useMemo(
+    () => paginatedData.pages.flatMap((page) => page.items),
+    [paginatedData.pages],
+  );
+
+  const { infiniteScrollRef, shouldShowTrigger } = useProposalsScrollHelpers({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  });
+
+  return children({
+    allProposals,
+    isFetchingNextPage,
+    shouldShowTrigger,
+    infiniteScrollRef,
+  });
+};
+
+export const ProposalsList = (props: ProposalsListProps) => {
+  const { instanceId, phase } = props;
 
   const [selectedCategory, setSelectedCategory] = useState(
     () =>
@@ -627,94 +733,15 @@ export const ProposalsList = ({
         new URLSearchParams(window.location.search).get('sort')) ||
       'newest',
   );
-  // `grid` is the default, so it clears the param rather than persisting it.
-  const [view, setView] = useQueryState(
-    'view',
-    parseAsStringLiteral(PROPOSAL_VIEWS).withDefault('grid'),
-  );
 
-  // Get current user's profile ID for "My Proposals" filter
-  const currentProfileId = user?.currentProfile?.id;
-  const [[categoriesData, voteStatus, instance]] = trpc.useSuspenseQueries(
-    (t) => [
-      t.decision.getCategories({
-        processInstanceId: instanceId,
-      }),
-      t.decision.getVotingStatus({
-        processInstanceId: instanceId,
-      }),
-      t.decision.getInstance({ instanceId }),
-    ],
-  );
-
-  const categories = categoriesData.categories;
-
-  // Map browse mode is offered only when the process collects a location and
-  // the GIS flag is on. The map fits the proposal markers; this default view
-  // (`x-map-default`) is the fallback camera for when none have a location.
-  const gisMapsEnabled = useFeatureFlag('gis_maps');
-  const proposalTemplate = instance.instanceData?.proposalTemplate;
-  const hasLocationField =
-    gisMapsEnabled && templateCollectsLocation(proposalTemplate);
-  const mapView =
-    getLocationFieldMapView(proposalTemplate) ??
-    DEFAULT_LOCATION_FIELD_MAP_VIEW;
-  // Ignore a stale `?view=map` when this process has no map.
-  const effectiveView: ProposalView = hasLocationField ? view : 'grid';
-  const isMapMode = hasLocationField && effectiveView === 'map';
-
-  // Determine if we're in ballot view (user has voted)
-  const hasVoted = voteStatus?.hasVoted || false;
-  const selectedProposalIds =
-    voteStatus?.voteSubmission?.selectedProposalIds || [];
-
-  // Export hook
-  const {
-    startExport,
-    isExporting,
-    isDownloadReady,
-    downloadUrl,
-    downloadFileName,
-  } = useProposalExport();
-
-  // Helper function to update URL params
-  const updateURLParams = (updates: Record<string, string | null>) => {
-    const params = new URLSearchParams(window.location.search);
-
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value === null || value === 'all-categories' || value === 'all') {
-        params.delete(key);
-      } else {
-        params.set(key, value);
-      }
-    });
-
-    const newUrl = `${pathname}?${params.toString()}`;
-    router.replace(newUrl, { scroll: false });
-  };
-
-  const handleViewChange = (next: ProposalView) => {
-    void setView(next);
-  };
-
-  // Build query parameters, ensuring consistent structure
-  const queryParams = useMemo(() => {
-    const params: {
-      processInstanceId: string;
-      categoryId?: string;
-      submittedByProfileId?: string;
-      status?: ProposalStatus;
-      dir: 'asc' | 'desc';
-      limit: number;
-      phase?: 'results';
-    } = {
+  const queryParams = useMemo<ProposalQueryParams>(() => {
+    const params: ProposalQueryParams = {
       processInstanceId: instanceId,
       dir: sortOrder === 'newest' ? 'desc' : 'asc',
-      limit: 50,
+      limit: PROPOSALS_PAGE_LIMIT,
       phase,
     };
 
-    // Only include categoryId if it's not "all-categories"
     if (selectedCategory !== 'all-categories') {
       params.categoryId = selectedCategory;
     }
@@ -722,55 +749,66 @@ export const ProposalsList = ({
     return params;
   }, [instanceId, selectedCategory, sortOrder, phase]);
 
-  // Split per phase — TS can't unify the two procedures' output shapes
-  // inside one useSuspenseQueries call.
-  const [[resultsProposals]] = trpc.useSuspenseQueries((t) => [
-    ...(phase === 'results'
-      ? [
-          t.decision.listAllProposals({
-            processInstanceId: queryParams.processInstanceId,
-            dir: queryParams.dir,
-            limit: queryParams.limit,
-            categoryId: queryParams.categoryId,
-          }),
-        ]
-      : []),
-  ]);
-  const [[phaseProposals]] = trpc.useSuspenseQueries((t) => [
-    ...(phase === 'results' ? [] : [t.decision.listProposals(queryParams)]),
-  ]);
-
-  const allProposals =
-    phase === 'results'
-      ? (resultsProposals?.items ?? [])
-      : (phaseProposals?.proposals ?? []);
-  const canManageProposals = permissions?.admin ?? false;
-
-  const { data: revisionRequestsData } =
-    trpc.decision.listProposalsRevisionRequests.useQuery(
-      { states: [ProposalReviewRequestState.REQUESTED] },
-      { enabled: !!isReviewPhase },
-    );
-
-  const revisionRequestIdByProposalId = new Map<string, string>(
-    revisionRequestsData?.revisionRequests.map(
-      ({ proposal, revisionRequest }) => [proposal.id, revisionRequest.id],
-    ),
+  const renderContent = (data: ProposalsLoaderRenderProps) => (
+    <ProposalsListContent
+      {...props}
+      {...data}
+      selectedCategory={selectedCategory}
+      setSelectedCategory={setSelectedCategory}
+      sortOrder={sortOrder}
+      setSortOrder={setSortOrder}
+    />
   );
 
-  // --- Translation state ---
+  if (phase === 'results') {
+    return (
+      <ResultsPhaseProposalsLoader queryParams={queryParams}>
+        {renderContent}
+      </ResultsPhaseProposalsLoader>
+    );
+  }
+
+  return (
+    <CurrentPhaseProposalsLoader queryParams={queryParams}>
+      {renderContent}
+    </CurrentPhaseProposalsLoader>
+  );
+};
+
+type ProposalsListContentProps = ProposalsListProps &
+  ProposalsLoaderRenderProps & {
+    selectedCategory: string;
+    setSelectedCategory: (value: string) => void;
+    sortOrder: string;
+    setSortOrder: (value: string) => void;
+  };
+
+/**
+ * Bundles the translate-proposals/-decision mutations, the in-page translation
+ * state, and the banner attribution strings so {@link ProposalsListContent}
+ * stays focused on layout and filtering.
+ */
+// fallow-ignore-next-line complexity
+const useProposalsTranslation = ({
+  allProposals,
+  decisionProfileId,
+}: {
+  allProposals: Proposal[];
+  decisionProfileId?: string | null;
+}) => {
+  const t = useTranslations();
   const locale = useLocale();
   const supportedLocale = (SUPPORTED_LOCALES as readonly string[]).includes(
     locale,
   )
     ? (locale as SupportedLocale)
     : null;
+
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [translationState, setTranslationState] = useState<{
     translations: Record<string, ProposalTranslation>;
     sourceLocale: string;
   } | null>(null);
-
   const setDecisionTranslation = useSetDecisionTranslation();
 
   const translateBatchMutation =
@@ -787,7 +825,6 @@ export const ProposalsList = ({
     trpc.translation.translateDecision.useMutation({
       onSuccess: (data) => {
         if (data.sourceLocale) {
-          // Set translationState from decision result when no proposals were translated
           setTranslationState((prev) =>
             prev ? prev : { translations: {}, sourceLocale: data.sourceLocale },
           );
@@ -818,8 +855,8 @@ export const ProposalsList = ({
     if (!supportedLocale) {
       return;
     }
-    const profileIds = allProposals?.map((p) => p.profileId);
-    if (profileIds?.length) {
+    const profileIds = allProposals.map((p) => p.profileId);
+    if (profileIds.length) {
       translateBatchMutation.mutate({
         profileIds,
         targetLocale: supportedLocale,
@@ -848,15 +885,12 @@ export const ProposalsList = ({
     () => new Intl.DisplayNames([locale], { type: 'language' }),
     [locale],
   );
-  const getLanguageName = (langCode: string) =>
-    languageNames.of(langCode) ?? langCode;
-
   const sourceLanguageName = translationState
-    ? getLanguageName(
+    ? (languageNames.of(
         translationState.sourceLocale.toLowerCase().split('-')[0] ?? '',
-      )
+      ) ?? '')
     : '';
-  const targetLanguageName = getLanguageName(locale);
+  const targetLanguageName = languageNames.of(locale) ?? locale;
 
   const showBanner =
     !!supportedLocale &&
@@ -864,20 +898,257 @@ export const ProposalsList = ({
     !bannerDismissed &&
     !translationState;
 
-  // Use the custom hook for filtering proposals
+  return {
+    translationState,
+    showBanner,
+    sourceLanguageName,
+    targetLanguageName,
+    handleTranslate,
+    handleViewOriginal,
+    dismissBanner: () => setBannerDismissed(true),
+    isTranslating: translateBatchMutation.isPending,
+  };
+};
+
+/**
+ * `useTranslations` requires a literal key, so we keep the per-filter labels in
+ * a small lookup that returns the rendered string. Avoids the four-way nested
+ * ternary the JSX used to inline.
+ */
+const useProposalFilterLabel = (filter: ProposalFilter) => {
+  const t = useTranslations();
+  switch (filter) {
+    case ProposalFilter.MY_BALLOT:
+      return t('My ballot');
+    case ProposalFilter.MY_PROPOSALS:
+      return t('My proposals');
+    case ProposalFilter.SHORTLISTED:
+      return t('Shortlisted proposals');
+    default:
+      return t('All proposals');
+  }
+};
+
+const ProposalsListHeader = ({
+  hideFilters,
+  proposalFilter,
+  count,
+}: {
+  hideFilters: boolean;
+  proposalFilter: ProposalFilter;
+  count: number;
+}) => {
+  const t = useTranslations();
+  const label = useProposalFilterLabel(proposalFilter);
+
+  return (
+    <span className="font-serif text-title-base text-neutral-black">
+      {hideFilters ? (
+        t('My proposals')
+      ) : (
+        <>
+          {label} <Bullet /> {count}
+        </>
+      )}
+    </span>
+  );
+};
+
+// fallow-ignore-next-line complexity
+const ProposalsFilterBar = ({
+  hasVoted,
+  currentProfileId,
+  proposalFilter,
+  setProposalFilter,
+  categories,
+  selectedCategory,
+  onSelectCategory,
+  sortOrder,
+  onSelectSort,
+  canManageProposals,
+  isExporting,
+  isDownloadReady,
+  downloadUrl,
+  downloadFileName,
+  onExport,
+}: {
+  hasVoted: boolean;
+  currentProfileId: string | undefined;
+  proposalFilter: ProposalFilter;
+  setProposalFilter: (filter: ProposalFilter) => void;
+  categories: { id: string; name: string }[];
+  selectedCategory: string;
+  onSelectCategory: (category: string) => void;
+  sortOrder: string;
+  onSelectSort: (sort: string) => void;
+  canManageProposals: boolean;
+  isExporting: boolean;
+  isDownloadReady: boolean;
+  downloadUrl?: string | null;
+  downloadFileName?: string | null;
+  onExport: () => void;
+}) => {
+  const t = useTranslations();
+  const filterItems = useProposalFilterItems({ hasVoted, currentProfileId });
+
+  return (
+    <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
+      <ResponsiveSelect
+        selectedKey={proposalFilter}
+        onSelectionChange={(key) => {
+          if (key === ProposalFilter.MY_PROPOSALS && !currentProfileId) {
+            return;
+          }
+          setProposalFilter(key);
+        }}
+        aria-label={t('Filter proposals')}
+        items={filterItems}
+      />
+      <ResponsiveSelect
+        selectedKey={selectedCategory}
+        onSelectionChange={onSelectCategory}
+        aria-label={t('Filter proposals by category')}
+        items={[
+          { id: 'all-categories', label: t('All categories') },
+          ...categories.map((category) => ({
+            id: category.id,
+            label: category.name,
+          })),
+        ]}
+      />
+      <ResponsiveSelect
+        selectedKey={sortOrder}
+        onSelectionChange={onSelectSort}
+        aria-label={t('Sort proposals')}
+        className="min-w-32"
+        items={[
+          { id: 'newest', label: t('Newest First') },
+          { id: 'oldest', label: t('Oldest First') },
+        ]}
+      />
+      {canManageProposals ? (
+        isDownloadReady && downloadUrl ? (
+          <ButtonLink
+            href={downloadUrl}
+            download={downloadFileName ?? undefined}
+            color="secondary"
+            size="small"
+          >
+            <LuArrowDownToLine className="size-4" />
+            {t('Click to download')}
+          </ButtonLink>
+        ) : (
+          <Button
+            onPress={onExport}
+            isDisabled={isExporting}
+            color="secondary"
+            size="small"
+          >
+            <LuArrowDownToLine className="size-4" />
+            {isExporting ? t('Exporting...') : t('Export')}
+          </Button>
+        )
+      ) : null}
+    </div>
+  );
+};
+
+// fallow-ignore-next-line complexity
+const ProposalsListContent = ({
+  slug,
+  instanceId,
+  decisionSlug,
+  decisionProfileId,
+  permissions,
+  initialFilter,
+  currentPhase,
+  proposalsHidden,
+  allProposals,
+  isFetchingNextPage,
+  shouldShowTrigger,
+  infiniteScrollRef,
+  selectedCategory,
+  setSelectedCategory,
+  sortOrder,
+  setSortOrder,
+}: ProposalsListContentProps) => {
+  const isReviewPhase = currentPhase?.rules?.proposals?.review === true;
+  const isVotingPhase = currentPhase?.rules?.voting?.submit === true;
+  const t = useTranslations();
+  const { user } = useUser();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const currentProfileId = user?.currentProfile?.id;
+  const [[categoriesData, voteStatus]] = trpc.useSuspenseQueries((t) => [
+    t.decision.getCategories({
+      processInstanceId: instanceId,
+    }),
+    t.decision.getVotingStatus({
+      processInstanceId: instanceId,
+    }),
+  ]);
+
+  const categories = categoriesData.categories;
+
+  const hasVoted = voteStatus?.hasVoted || false;
+  const selectedProposalIds =
+    voteStatus?.voteSubmission?.selectedProposalIds || [];
+
+  const {
+    startExport,
+    isExporting,
+    isDownloadReady,
+    downloadUrl,
+    downloadFileName,
+  } = useProposalExport();
+
+  const updateURLParams = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(window.location.search);
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === 'all-categories' || value === 'all') {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    });
+
+    const newUrl = `${pathname}?${params.toString()}`;
+    router.replace(newUrl, { scroll: false });
+  };
+
+  const canManageProposals = permissions?.admin ?? false;
+
+  const { data: revisionRequestsData } =
+    trpc.decision.listProposalsRevisionRequests.useQuery(
+      { states: [ProposalReviewRequestState.REQUESTED] },
+      { enabled: !!isReviewPhase },
+    );
+
+  const revisionRequestIdByProposalId = new Map<string, string>(
+    revisionRequestsData?.revisionRequests.map(
+      ({ proposal, revisionRequest }) => [proposal.id, revisionRequest.id],
+    ),
+  );
+
+  const translation = useProposalsTranslation({
+    allProposals,
+    decisionProfileId,
+  });
+
   const {
     filteredProposals: proposals,
     proposalFilter,
     setProposalFilter,
   } = useProposalFilters({
-    proposals: allProposals || [],
+    proposals: allProposals,
     currentProfileId,
     votedProposalIds: selectedProposalIds,
     hasVoted,
     initialFilter,
   });
 
-  // Sync URL with filter changes (both manual and automatic), skipping initial render
   const isFirstFilterSync = useRef(true);
   useEffect(() => {
     if (isFirstFilterSync.current) {
@@ -887,7 +1158,6 @@ export const ProposalsList = ({
     updateURLParams({ filter: proposalFilter });
   }, [proposalFilter]);
 
-  // Handle export
   const handleExport = () => {
     startExport(
       {
@@ -901,243 +1171,94 @@ export const ProposalsList = ({
     );
   };
 
-  const hideFilters = proposalsHidden && !canManageProposals;
-
-  // The filter bar pins at top-14 (56px). A zero-height sentinel at its natural
-  // top is observed against the viewport shrunk by that offset; once the
-  // sentinel scrolls past it the bar is pinned. initialIsIntersecting avoids a
-  // one-frame "stuck" flash on mount. Drives the full-width borders via the
-  // data-stuck attribute on the bar below.
-  const { ref: filterSentinelRef, isIntersecting } =
-    useIntersectionObserver<HTMLDivElement>({
-      rootMargin: '-56px 0px 0px 0px',
-      initialIsIntersecting: true,
-    });
-  const isFilterBarStuck = !isIntersecting;
+  const hideFilters = !!proposalsHidden && !canManageProposals;
 
   return (
-    <div
-      className={cn(
-        'relative flex flex-col gap-6 pb-12',
-        // On mobile the map view is edge-to-edge and flush to the bottom.
-        isMapMode && 'max-sm:pb-0',
-      )}
-    >
-      {/* Sentinel at the filter bar's pre-pin top — drives the JS "stuck"
-          detection that toggles data-stuck on the bar below. */}
-      <div
-        ref={filterSentinelRef}
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-px"
-      />
-      {/* Filters Bar — sticks beneath the decision nav while the list/map
-          scroll under it (the process banner scrolls away above). Once pinned,
-          its border extends to full page width via the before/after lines. */}
-      <div
-        data-stuck={isFilterBarStuck || undefined}
-        className={cn(
-          'sticky top-14 z-20 flex flex-wrap items-center justify-between gap-4 border-b border-neutral-gray1 bg-white py-3',
-          // Once pinned, extend the bar's borders to the full page width. The bar
-          // sits in the centered content column, so two full-bleed pseudo-element
-          // lines stand in: ::after carries the bottom border to the page edges
-          // and ::before replaces the nav's border at the seam. data-stuck is
-          // toggled in JS (IntersectionObserver on the sentinel above).
-          "before:pointer-events-none before:absolute before:top-0 before:left-1/2 before:w-screen before:-translate-x-1/2 before:border-t before:border-neutral-gray1 before:opacity-0 before:content-['']",
-          "after:pointer-events-none after:absolute after:-bottom-px after:left-1/2 after:w-screen after:-translate-x-1/2 after:border-b after:border-neutral-gray1 after:opacity-0 after:content-['']",
-          'data-[stuck=true]:before:opacity-100 data-[stuck=true]:after:opacity-100',
-          // On mobile the map view is edge-to-edge, so break the bar out to full
-          // width too (restoring the container's 1rem gutter) — otherwise the map
-          // peeks past the bar's sides as it scrolls beneath the sticky bar.
-          isMapMode &&
-            'max-sm:ml-[calc(50%_-_50vw)] max-sm:w-screen max-sm:px-4',
-        )}
-      >
+    <div className="flex flex-col gap-6 pb-12">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <span className="font-serif text-title-base text-neutral-black">
-            {hideFilters ? (
-              t('My proposals')
-            ) : (
-              <>
-                {proposalFilter === ProposalFilter.MY_BALLOT
-                  ? t('My ballot')
-                  : proposalFilter === ProposalFilter.MY_PROPOSALS
-                    ? t('My proposals')
-                    : proposalFilter === ProposalFilter.SHORTLISTED
-                      ? t('Shortlisted proposals')
-                      : t('All proposals')}{' '}
-                <Bullet /> {proposals?.length ?? 0}
-              </>
-            )}
-          </span>
+          <ProposalsListHeader
+            hideFilters={hideFilters}
+            proposalFilter={proposalFilter}
+            count={proposals?.length ?? 0}
+          />
         </div>
         {!hideFilters && (
-          <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
-            <ResponsiveSelect
-              selectedKey={proposalFilter}
-              onSelectionChange={(key) => {
-                // If selecting "My proposals" but no current profile, ignore
-                if (key === ProposalFilter.MY_PROPOSALS && !currentProfileId) {
-                  return;
-                }
-                setProposalFilter(key);
-              }}
-              aria-label={t('Filter proposals')}
-              items={[
-                { id: ProposalFilter.ALL, label: t('All proposals') },
-                {
-                  id: ProposalFilter.MY_PROPOSALS,
-                  label: t('My proposals'),
-                  isDisabled: !currentProfileId,
-                },
-                {
-                  id: ProposalFilter.SHORTLISTED,
-                  label: t('Shortlisted proposals'),
-                },
-                ...(hasVoted
-                  ? [
-                      {
-                        id: ProposalFilter.MY_BALLOT,
-                        label: t('My ballot'),
-                      },
-                    ]
-                  : []),
-              ]}
-            />
-            <ResponsiveSelect
-              selectedKey={selectedCategory}
-              onSelectionChange={(category) => {
-                setSelectedCategory(category);
-                updateURLParams({ category });
-              }}
-              aria-label={t('Filter proposals by category')}
-              items={[
-                { id: 'all-categories', label: t('All categories') },
-                ...categories.map((category) => ({
-                  id: category.id,
-                  label: category.name,
-                })),
-              ]}
-            />
-            <ResponsiveSelect
-              selectedKey={sortOrder}
-              onSelectionChange={(sort) => {
-                setSortOrder(sort);
-                updateURLParams({ sort });
-              }}
-              aria-label={t('Sort proposals')}
-              className="min-w-32"
-              items={[
-                { id: 'newest', label: t('Newest First') },
-                { id: 'oldest', label: t('Oldest First') },
-              ]}
-            />
-            {canManageProposals ? (
-              isDownloadReady && downloadUrl ? (
-                <ButtonLink
-                  href={downloadUrl}
-                  download={downloadFileName}
-                  color="secondary"
-                  size="small"
-                >
-                  <LuArrowDownToLine className="size-4" />
-                  {t('Click to download')}
-                </ButtonLink>
-              ) : (
-                <Button
-                  onPress={handleExport}
-                  isDisabled={isExporting}
-                  color="secondary"
-                  size="small"
-                >
-                  <LuArrowDownToLine className="size-4" />
-                  {isExporting ? t('Exporting...') : t('Export')}
-                </Button>
-              )
-            ) : null}
-            {hasLocationField && (
-              <div className="hidden items-center gap-4 sm:flex">
-                <span aria-hidden className="h-6 w-px bg-neutral-gray2" />
-                <ProposalViewToggle
-                  value={effectiveView}
-                  onChange={handleViewChange}
-                />
-              </div>
-            )}
-          </div>
+          <ProposalsFilterBar
+            hasVoted={hasVoted}
+            currentProfileId={currentProfileId}
+            proposalFilter={proposalFilter}
+            setProposalFilter={setProposalFilter}
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onSelectCategory={(category) => {
+              setSelectedCategory(category);
+              updateURLParams({ category });
+            }}
+            sortOrder={sortOrder}
+            onSelectSort={(sort) => {
+              setSortOrder(sort);
+              updateURLParams({ sort });
+            }}
+            canManageProposals={canManageProposals}
+            isExporting={isExporting}
+            isDownloadReady={isDownloadReady}
+            downloadUrl={downloadUrl}
+            downloadFileName={downloadFileName}
+            onExport={handleExport}
+          />
         )}
       </div>
 
-      {/* Translation attribution */}
-      {translationState && (
+      {translation.translationState && (
         <p className="text-sm text-neutral-gray3">
-          {t('Translated from {language}', { language: sourceLanguageName })}{' '}
+          {t('Translated from {language}', {
+            language: translation.sourceLanguageName,
+          })}{' '}
           &middot;{' '}
-          <Link onPress={handleViewOriginal} className="text-sm font-semibold">
+          <Link
+            onPress={translation.handleViewOriginal}
+            className="text-sm font-semibold"
+          >
             {t('View original')}
           </Link>
         </p>
       )}
 
       <ProposalTranslationProvider
-        translations={translationState?.translations ?? {}}
+        translations={translation.translationState?.translations ?? {}}
       >
-        {isMapMode ? (
-          <ProposalsMapView
-            proposals={proposals ?? []}
-            instanceId={instanceId}
-            slug={slug}
-            decisionSlug={decisionSlug}
-            mapView={mapView}
-          />
-        ) : (
-          <Proposals
-            proposals={proposals}
-            instanceId={instanceId}
-            slug={slug}
-            decisionSlug={decisionSlug}
-            permissions={permissions}
-            votedProposalIds={selectedProposalIds}
-            hasFilter={selectedCategory !== 'all-categories'}
-            isVotingPhase={isVotingPhase}
-            proposalsHidden={proposalsHidden}
-            revisionRequestIdByProposalId={revisionRequestIdByProposalId}
-          />
-        )}
+        <Proposals
+          proposals={proposals}
+          instanceId={instanceId}
+          slug={slug}
+          decisionSlug={decisionSlug}
+          permissions={permissions}
+          votedProposalIds={selectedProposalIds}
+          hasFilter={selectedCategory !== 'all-categories'}
+          isVotingPhase={isVotingPhase}
+          proposalsHidden={proposalsHidden}
+          revisionRequestIdByProposalId={revisionRequestIdByProposalId}
+        />
       </ProposalTranslationProvider>
 
-      {showBanner && (
-        <TranslateBanner
-          onTranslate={handleTranslate}
-          onDismiss={() => setBannerDismissed(true)}
-          isTranslating={translateBatchMutation.isPending}
-          languageName={targetLanguageName}
-        />
+      {shouldShowTrigger && (
+        <div
+          ref={infiniteScrollRef}
+          className="flex justify-center py-4"
+          data-testid="proposals-infinite-scroll-sentinel"
+        >
+          {isFetchingNextPage ? <ProposalListSkeletonGrid /> : null}
+        </div>
       )}
 
-      {/* Mobile-only view switch, sticky at the bottom of the screen. Reads
-          "Map" while listing, "List" while showing the map. */}
-      {hasLocationField && (
-        <div className="fixed inset-x-0 bottom-6 z-40 flex justify-center sm:hidden">
-          <Button
-            color="secondary"
-            onPress={() =>
-              handleViewChange(effectiveView === 'map' ? 'grid' : 'map')
-            }
-            className="shadow-lg"
-          >
-            {effectiveView === 'map' ? (
-              <>
-                <LuLayoutGrid className="size-4" />
-                {t('List')}
-              </>
-            ) : (
-              <>
-                <LuMap className="size-4" />
-                {t('Map')}
-              </>
-            )}
-          </Button>
-        </div>
+      {translation.showBanner && (
+        <TranslateBanner
+          onTranslate={translation.handleTranslate}
+          onDismiss={translation.dismissBanner}
+          isTranslating={translation.isTranslating}
+          languageName={translation.targetLanguageName}
+        />
       )}
     </div>
   );
