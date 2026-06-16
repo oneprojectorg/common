@@ -230,6 +230,43 @@ export const getProfileAccessUser = memoize(
 );
 
 /**
+ * Resolve the caller's normalized roles on a profile, falling back to their
+ * org-level roles when that profile is an organization's profile. The same
+ * built-in-fallback shape as `assertInstanceProfileAccess` /
+ * `resolveInstanceAccess`, returning just the roles (every caller only
+ * `checkPermission`s on them). Empty when the caller has no grant.
+ *
+ * Why it's needed: org grants live on `organizationUsers`, not `profileUsers`,
+ * so a `getProfileAccessUser` lookup on an org's profile never sees an org
+ * admin/member. Prefer the profile-level grant when present (matching
+ * `resolveInstanceAccess`); fall back to the org only when the profile carries
+ * no grant of its own.
+ */
+export const getProfileAccessRolesWithOrgFallback = async ({
+  user,
+  profileId,
+}: {
+  user?: AccessUser;
+  profileId: string;
+}): Promise<NormalizedRole[]> => {
+  const profileUser = await getProfileAccessUser({ user, profileId });
+  if (profileUser) {
+    return profileUser.roles;
+  }
+
+  const [org] = await db
+    .select({ id: organizations.id })
+    .from(organizations)
+    .where(eq(organizations.profileId, profileId));
+  if (!org?.id) {
+    return [];
+  }
+
+  const orgUser = await getOrgAccessUser({ user, organizationId: org.id });
+  return orgUser?.roles ?? [];
+};
+
+/**
  * Asserts profile-level access, falling back to org-level access if the user
  * doesn't have a profileUser role on the given profile.
  *

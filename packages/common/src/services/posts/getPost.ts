@@ -1,10 +1,23 @@
 import { db } from '@op/db/client';
-import { EntityType, postsToProfiles } from '@op/db/schema';
-import { permission } from 'access-zones';
+import {
+  EntityType,
+  postsToOrganizations,
+  postsToProfiles,
+} from '@op/db/schema';
+import { checkPermission, permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
-import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
-import { getItemsWithReactionsAndComments } from './listPosts';
+import {
+  assertProfileTypeAccess,
+  getCurrentProfileId,
+  getOrgAccessUser,
+  getProfileAccessRolesWithOrgFallback,
+} from '../access';
+import { hasActiveModerationFlag } from '../moderation/moderationVisibility';
+import {
+  getItemsWithReactionsAndComments,
+  postModerationFilter,
+} from './listPosts';
 
 export const getPost = async ({
   postId,
@@ -22,6 +35,8 @@ export const getPost = async ({
   if (maxDepth > 2) {
     maxDepth = 2;
   }
+
+  const actorProfileId = await getCurrentProfileId(authUserId);
 
   const post = await db.query.posts.findFirst({
     where: { id: postId },
@@ -44,6 +59,12 @@ export const getPost = async ({
       ...(includeChildren && maxDepth > 0
         ? {
             childPosts: {
+              // Flagged comments are hidden from the thread for everyone but
+              // their author. (Admins review them via the moderation queue,
+              // not inline.) Filtered in SQL so the `limit` isn't distorted.
+              where: {
+                RAW: (table) => postModerationFilter(table, actorProfileId),
+              },
               limit: 50,
               orderBy: { createdAt: 'desc' as const },
               with: {
@@ -86,8 +107,6 @@ export const getPost = async ({
           .where(eq(postsToProfiles.postId, postId))
       ).map((a) => a.profileId);
 
-  const actorProfileId = await getCurrentProfileId(authUserId);
-
   await assertProfileTypeAccess({
     user: { id: authUserId },
     profileIds: profileIdsToAuthorize,
@@ -95,6 +114,40 @@ export const getPost = async ({
       [EntityType.DECISION]: { decisions: permission.READ },
     },
   });
+
+  // Moderation gate: a post with an active flag is visible only to its author
+  // and admins of the entities that govern it. Returns null (same as a missing
+  // post) so existence doesn't leak. Admin standing comes from two places: a
+  // governing profile (with org fallback, since org admins' roles live on
+  // `organizationUsers`, not `profileUsers`) or — for org-feed posts, which
+  // carry no governing profile and link to the org only via
+  // `postsToOrganizations` — the post's organizations directly.
+  const isAuthor = post.profileId === actorProfileId;
+  if ((await hasActiveModerationFlag('post', post.id)) && !isAuthor) {
+    const user = { id: authUserId };
+    const orgRows = await db
+      .select({ organizationId: postsToOrganizations.organizationId })
+      .from(postsToOrganizations)
+      .where(eq(postsToOrganizations.postId, post.id));
+
+    // The caller's roles across every entity that governs the post.
+    const governingRoles = (
+      await Promise.all([
+        ...profileIdsToAuthorize.map((pid) =>
+          getProfileAccessRolesWithOrgFallback({ user, profileId: pid }),
+        ),
+        ...orgRows.map(({ organizationId }) =>
+          getOrgAccessUser({ user, organizationId }).then(
+            (orgUser) => orgUser?.roles ?? [],
+          ),
+        ),
+      ])
+    ).flat();
+
+    if (!checkPermission({ profile: permission.ADMIN }, governingRoles)) {
+      return null;
+    }
+  }
 
   const itemsWithReactionsAndComments = await getItemsWithReactionsAndComments({
     items: [{ post }],

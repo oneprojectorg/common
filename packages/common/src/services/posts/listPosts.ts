@@ -1,10 +1,18 @@
-import { and, count, db, eq, inArray, isNotNull } from '@op/db/client';
 import {
-  organizations,
-  posts,
-  postsToOrganizations,
-  profiles,
-} from '@op/db/schema';
+  and,
+  count,
+  db,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  isNull,
+  or,
+  sql,
+} from '@op/db/client';
+import { posts, postsToOrganizations, profiles } from '@op/db/schema';
+import { checkPermission, permission } from 'access-zones';
+import type { SQL } from 'drizzle-orm';
 
 import {
   NotFoundError,
@@ -12,7 +20,27 @@ import {
   encodeCursor,
   getGenericCursorCondition,
 } from '../../utils';
-import { getCurrentProfileId } from '../access';
+import { getCurrentProfileId, getOrgAccessUser } from '../access';
+import {
+  getActivelyFlaggedItemIds,
+  noActiveModerationFlag,
+} from '../moderation/moderationVisibility';
+
+/**
+ * SQL filter for post/comment reads: the row carries no active moderation flag,
+ * or `actorProfileId` authored it. Pass the (possibly aliased) posts table the
+ * surrounding query builds against. Admins skip moderation entirely, so callers
+ * compose that exception themselves:
+ * `isAdmin ? undefined : postModerationFilter(table, actorProfileId)`.
+ */
+export const postModerationFilter = (
+  table: typeof posts,
+  actorProfileId: string | undefined,
+): SQL =>
+  or(
+    noActiveModerationFlag('post', table.id),
+    actorProfileId ? eq(table.profileId, actorProfileId) : sql`false`,
+  )!;
 
 export const listPosts = async ({
   authUserId,
@@ -51,8 +79,8 @@ export const listPosts = async ({
       throw new NotFoundError('Organization', slug);
     }
 
-    const org = await db._query.organizations.findFirst({
-      where: (_, { eq }) => eq(organizations.profileId, profileId),
+    const org = await db.query.organizations.findFirst({
+      where: { profileId },
     });
 
     if (!org) {
@@ -63,46 +91,105 @@ export const listPosts = async ({
       throw new NotFoundError('Organization', profileId);
     }
 
-    const result = await db._query.postsToOrganizations.findMany({
-      where: cursorCondition
-        ? and(eq(postsToOrganizations.organizationId, org.id), cursorCondition)
-        : (table, { eq }) => eq(table.organizationId, org.id),
-      with: {
-        post: {
-          where: (table, { isNull }) => isNull(table.parentPostId), // Only show top-level posts
+    // The caller's profile + org-admin standing drive the moderation filter:
+    // flagged posts stay visible to their author and to admins of the org, and
+    // are hidden from everyone else (filtered in SQL). Org-admin roles live on
+    // `organizationUsers` (not `profileUsers`), so resolve them via
+    // `getOrgAccessUser` — a `getProfileAccessUser` lookup on the org's profile
+    // never sees them and would hide flagged posts from admins too.
+    const [actorProfileId, orgUser] = await Promise.all([
+      getCurrentProfileId(authUserId),
+      getOrgAccessUser({ user: { id: authUserId }, organizationId: org.id }),
+    ]);
+    const isOrgAdmin = checkPermission(
+      { profile: permission.ADMIN },
+      orgUser?.roles ?? [],
+    );
+
+    // Page the post ids on the join itself (top-level + moderation filters on
+    // the paginated root), so a flagged or comment row never occupies a page
+    // slot or distorts hasMore/nextCursor. A nested relational `with` would
+    // LEFT JOIN and null the relation while still consuming the slot — see
+    // listProfilePosts for the same two-stage pattern.
+    const moderationFilter = isOrgAdmin
+      ? undefined
+      : postModerationFilter(posts, actorProfileId);
+
+    const pageRows = await db
+      .select({
+        postId: postsToOrganizations.postId,
+        createdAt: postsToOrganizations.createdAt,
+      })
+      .from(postsToOrganizations)
+      .innerJoin(
+        posts,
+        and(
+          eq(posts.id, postsToOrganizations.postId),
+          isNull(posts.parentPostId), // Only show top-level posts
+          moderationFilter,
+        ),
+      )
+      .where(
+        cursorCondition
+          ? and(
+              eq(postsToOrganizations.organizationId, org.id),
+              cursorCondition,
+            )
+          : eq(postsToOrganizations.organizationId, org.id),
+      )
+      .orderBy(
+        desc(postsToOrganizations.createdAt),
+        desc(postsToOrganizations.postId),
+      )
+      .limit(limit + 1);
+
+    const hasMore = pageRows.length > limit;
+    const pageItems = pageRows.slice(0, limit);
+    const pageIds = pageItems.map((row) => row.postId);
+
+    // Hydrate the paged ids (the moderation/top-level filtering already
+    // happened above). Re-ordered to the page order below, since `inArray`
+    // doesn't preserve it.
+    const hydrated = pageIds.length
+      ? await db.query.postsToOrganizations.findMany({
+          where: {
+            organizationId: org.id,
+            postId: { in: pageIds },
+          },
           with: {
-            attachments: {
+            post: {
               with: {
-                storageObject: true,
+                attachments: {
+                  with: {
+                    storageObject: true,
+                  },
+                },
+                reactions: {
+                  with: {
+                    profile: true,
+                  },
+                },
               },
             },
-            reactions: {
+            organization: {
               with: {
-                profile: true,
+                profile: {
+                  with: {
+                    avatarImage: true,
+                  },
+                },
               },
             },
           },
-        },
-        organization: {
-          with: {
-            profile: {
-              with: {
-                avatarImage: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: (table, { desc }) => desc(table.createdAt),
-      limit: limit + 1, // Fetch one extra to check hasMore
-    });
+        })
+      : [];
 
-    // Filter out any items where post is null (due to parentPostId filtering)
-    const filteredResult = result.filter((item) => item.post !== null);
+    const byPostId = new Map(hydrated.map((row) => [row.postId, row]));
+    const items = pageIds
+      .map((id) => byPostId.get(id))
+      .filter((row): row is NonNullable<typeof row> => row != null);
 
-    const hasMore = filteredResult.length > limit;
-    const items = filteredResult.slice(0, limit);
-    const lastItem = items[items.length - 1];
+    const lastItem = pageItems[pageItems.length - 1];
     const nextCursor =
       hasMore && lastItem && lastItem.createdAt
         ? encodeCursor({
@@ -111,7 +198,6 @@ export const listPosts = async ({
           })
         : null;
 
-    const actorProfileId = await getCurrentProfileId(authUserId);
     // Transform items to include reaction counts, user's reactions, and comment counts
     const itemsWithReactionsAndComments =
       await getItemsWithReactionsAndComments({
@@ -150,6 +236,10 @@ type EnhancedPostFields = {
   >;
   userReaction: string | null;
   commentCount: number;
+  /** True when an active moderation flag hides this post from general readers.
+   *  Only the author and admins ever receive a flagged post (the read filters
+   *  exclude it for everyone else), so this drives their "Flagged" indicator. */
+  isFlagged: boolean;
 };
 
 /**
@@ -174,6 +264,11 @@ export const getItemsWithReactionsAndComments = async <
 }): Promise<Array<T & { post: T['post'] & EnhancedPostFields }>> => {
   // Get all post IDs to fetch comment counts
   const postIds = items.map((item) => item.post.id).filter(Boolean);
+
+  // Flagged posts only reach enrichment for their author or an admin (the read
+  // filters drop them for everyone else), so this decorates exactly the people
+  // who should see the "Flagged" indicator.
+  const flaggedIds = await getActivelyFlaggedItemIds('post', postIds);
 
   // Fetch comment counts for all posts in a single query
   const commentCountMap: Record<string, number> = {};
@@ -254,6 +349,7 @@ export const getItemsWithReactionsAndComments = async <
         reactionUsers, // Add user data grouped by reaction type
         userReaction,
         commentCount,
+        isFlagged: flaggedIds.has(item.post.id),
       },
     };
   });

@@ -12,6 +12,13 @@ import {
   encodeCursor,
   getGenericCursorCondition,
 } from '../../utils';
+import { postModerationFilter } from './listPosts';
+
+// Cross-org aggregate feeds hide flagged posts from general readers but keep
+// them visible to their author. Admin visibility lives in the per-org and
+// per-profile views (listPosts/getPosts), which resolve a single governing
+// profile to check; an aggregate feed spans many orgs with no single governing
+// profile, so it filters on author identity alone (no admin exception).
 
 export interface ListAllPostsOptions {
   limit?: number;
@@ -40,52 +47,62 @@ export const listAllRelatedOrganizationPosts = async (
       })
     : undefined;
 
+  // Resolve the reader's profile first so the moderation filter (author
+  // exception) can run inside the SQL where clause below.
+  const profileId = await getCurrentProfileId(authUserId);
+
   // Fetch posts for all organizations with pagination
-  const [result, profileId] = await Promise.all([
-    db._query.postsToOrganizations.findMany({
-      where: (table) => {
-        // Filter to only include top-level posts (no parentPostId)
+  const result = await db.query.postsToOrganizations.findMany({
+    where: {
+      RAW: (table) => {
+        // Filter to top-level posts (no parentPostId) the reader may see —
+        // flagged posts drop out unless the reader authored them.
         const topLevelPostFilter = exists(
           db
             .select({ id: posts.id })
             .from(posts)
-            .where(and(eq(posts.id, table.postId), isNull(posts.parentPostId))),
+            .where(
+              and(
+                eq(posts.id, table.postId),
+                isNull(posts.parentPostId),
+                postModerationFilter(posts, profileId),
+              ),
+            ),
         );
 
         return cursorCondition
-          ? and(cursorCondition, topLevelPostFilter)
+          ? and(cursorCondition, topLevelPostFilter)!
           : topLevelPostFilter;
       },
-      with: {
-        post: {
-          with: {
-            attachments: {
-              with: {
-                storageObject: true,
-              },
-            },
-            reactions: {
-              with: {
-                profile: true,
-              },
+    },
+    with: {
+      post: {
+        with: {
+          attachments: {
+            with: {
+              storageObject: true,
             },
           },
-        },
-        organization: {
-          with: {
-            profile: {
-              with: {
-                avatarImage: true,
-              },
+          reactions: {
+            with: {
+              profile: true,
             },
           },
         },
       },
-      orderBy: (table, { desc }) => desc(table.createdAt),
-      limit: limit + 1, // Fetch one extra to check hasMore
-    }),
-    getCurrentProfileId(authUserId),
-  ]);
+      organization: {
+        with: {
+          profile: {
+            with: {
+              avatarImage: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' as const },
+    limit: limit + 1, // Fetch one extra to check hasMore
+  });
 
   const hasMore = result.length > limit;
   const items = result.slice(0, limit);
@@ -121,21 +138,29 @@ export const listRelatedOrganizationPosts = async (
   const orgIds = organizations?.map((org: any) => org.id) ?? [];
   orgIds.push(organizationId); // Add our own org so we see our own posts
 
-  // Fetch posts for all related organizations
-  const result = await db._query.postsToOrganizations.findMany({
-    where: (table) => {
-      // Filter to only include top-level posts (no parentPostId)
-      const topLevelPostFilter = exists(
-        db
-          .select({ id: posts.id })
-          .from(posts)
-          .where(and(eq(posts.id, table.postId), isNull(posts.parentPostId))),
-      );
+  const actorProfileId = await getCurrentProfileId(user.id);
 
-      return and(
-        inArray(postsToOrganizations.organizationId, orgIds),
-        topLevelPostFilter,
-      );
+  // Fetch posts for all related organizations
+  const result = await db.query.postsToOrganizations.findMany({
+    where: {
+      RAW: (table) => {
+        // Filter to top-level posts (no parentPostId) the reader may see —
+        // flagged posts drop out unless the reader authored them.
+        const topLevelPostFilter = exists(
+          db
+            .select({ id: posts.id })
+            .from(posts)
+            .where(
+              and(
+                eq(posts.id, table.postId),
+                isNull(posts.parentPostId),
+                postModerationFilter(posts, actorProfileId),
+              ),
+            ),
+        );
+
+        return and(inArray(table.organizationId, orgIds), topLevelPostFilter)!;
+      },
     },
     with: {
       post: {
@@ -157,7 +182,7 @@ export const listRelatedOrganizationPosts = async (
         },
       },
     },
-    orderBy: (table, { desc }) => desc(table.createdAt),
+    orderBy: { createdAt: 'desc' as const },
   });
 
   return result;

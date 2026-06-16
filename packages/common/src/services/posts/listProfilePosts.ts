@@ -4,7 +4,7 @@ import {
   posts as postsTable,
   postsToProfiles,
 } from '@op/db/schema';
-import { permission } from 'access-zones';
+import { checkPermission, permission } from 'access-zones';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
 import {
@@ -17,8 +17,12 @@ import {
   type AccessUser,
   assertProfileTypeAccess,
   getCurrentProfileId,
+  getProfileAccessRolesWithOrgFallback,
 } from '../access';
-import { getItemsWithReactionsAndComments } from './listPosts';
+import {
+  getItemsWithReactionsAndComments,
+  postModerationFilter,
+} from './listPosts';
 
 export const listProfilePosts = async ({
   user,
@@ -62,11 +66,23 @@ export const listProfilePosts = async ({
       })
     : undefined;
 
+  // The caller's profile + admin standing on this profile drive the
+  // moderation filter below: flagged posts stay visible to their author and
+  // to profile admins, hidden from everyone else.
+  const [actorProfileId, governingRoles] = await Promise.all([
+    user ? getCurrentProfileId(user.id) : undefined,
+    getProfileAccessRolesWithOrgFallback({ user, profileId }),
+  ]);
+  const isProfileAdmin = checkPermission(
+    { profile: permission.ADMIN },
+    governingRoles,
+  );
+
   // Filter top-level posts at the SQL level so pagination doesn't under-fetch
   // when comments inherit profile associations from their parent. A relational
   // `where: { post: { parentPostId: isNull } }` produces a LEFT JOIN that
   // returns nulls for filtered rows — paginating on those rows silently drops
-  // pages.
+  // pages. The moderation filter rides on the same join for the same reason.
   const pageRows = await db
     .select({
       postId: postsToProfiles.postId,
@@ -78,6 +94,9 @@ export const listProfilePosts = async ({
       and(
         eq(postsTable.id, postsToProfiles.postId),
         isNull(postsTable.parentPostId),
+        isProfileAdmin
+          ? undefined
+          : postModerationFilter(postsTable, actorProfileId),
       ),
     )
     .where(
@@ -117,7 +136,6 @@ export const listProfilePosts = async ({
         })
       : null;
 
-  const actorProfileId = user ? await getCurrentProfileId(user.id) : undefined;
   const itemsWithReactions = await getItemsWithReactionsAndComments({
     items: orderedPosts.map((post) => ({ post })),
     profileId: actorProfileId,

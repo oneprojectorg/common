@@ -28,6 +28,10 @@ const basePostsEncoder = createSelectSchema(posts)
       .optional(),
     userReaction: z.string().nullish(),
     commentCount: z.number(),
+    // True only on posts the read filters let through to their author or an
+    // admin while an active moderation flag hides them from everyone else;
+    // drives the "Flagged" indicator. Absent on legacy/unenriched payloads.
+    isFlagged: z.boolean().optional(),
     profile: profileWithAvatarEncoder.nullish(),
   })
   .strip();

@@ -17,6 +17,7 @@ import type { ReactNode } from 'react';
 import {
   LuBookmark,
   LuCircleCheck,
+  LuFlag,
   LuHeart,
   LuMessageCircle,
 } from 'react-icons/lu';
@@ -108,6 +109,15 @@ export function ProposalPreview({
           <div className="flex items-center gap-1 text-sm text-functional-green">
             <LuCircleCheck className="size-4" />
             <span>{t('Selected')}</span>
+          </div>
+        )}
+
+        {/* Only the author (+ collaborators) and admins ever receive a flagged
+            proposal — everyone else has it filtered out server-side. */}
+        {proposal.isFlagged && (
+          <div className="flex items-center gap-1 text-sm text-functional-red">
+            <LuFlag className="size-4" />
+            <span>{t('Flagged')}</span>
           </div>
         )}
 

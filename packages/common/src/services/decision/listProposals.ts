@@ -20,6 +20,10 @@ import {
   getCurrentProfileId,
   resolveAccessUserIds,
 } from '../access';
+import {
+  getActivelyFlaggedItemIds,
+  noActiveModerationFlag,
+} from '../moderation/moderationVisibility';
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import {
@@ -321,8 +325,8 @@ export const listProposals = async ({
   // the same builder can be used for the v2 relational findMany (where Drizzle
   // passes an aliased `table`) and the plain count query (which passes the
   // schema table). See `buildBaseConditions` above for the same pattern.
-  const buildWhereClause = (t: typeof proposals): SQL => {
-    let clause: SQL = buildBaseConditions(t, input);
+  const buildWhereClause = (proposalsTable: typeof proposals): SQL => {
+    let clause: SQL = buildBaseConditions(proposalsTable, input);
 
     // Explicit scope (proposalIds or votedByProfileId): constrain the entire
     // query to that ID set so the draft branch can't independently surface
@@ -330,13 +334,13 @@ export const listProposals = async ({
     if (explicitScopeIds !== undefined) {
       const explicitScopeFilter =
         explicitScopeIds.length > 0
-          ? inArray(t.id, explicitScopeIds)
+          ? inArray(proposalsTable.id, explicitScopeIds)
           : sql`false`;
       clause = and(clause, explicitScopeFilter)!;
     }
 
     if (categoryProposalIds.length > 0) {
-      clause = and(clause, inArray(t.id, categoryProposalIds))!;
+      clause = and(clause, inArray(proposalsTable.id, categoryProposalIds))!;
     }
 
     // Phase scoping applies separately to non-drafts and drafts. Non-drafts
@@ -348,8 +352,8 @@ export const listProposals = async ({
     const phaseScopedNonDraftIdFilter =
       phaseProposalIds.length > 0
         ? and(
-            ne(t.status, ProposalStatus.DRAFT),
-            inArray(t.id, phaseProposalIds),
+            ne(proposalsTable.status, ProposalStatus.DRAFT),
+            inArray(proposalsTable.id, phaseProposalIds),
           )!
         : sql`false`;
 
@@ -366,7 +370,10 @@ export const listProposals = async ({
     // ownership filter is needed here.
     const draftFilter =
       phaseDraftIds.length > 0
-        ? and(eq(t.status, ProposalStatus.DRAFT), inArray(t.id, phaseDraftIds))!
+        ? and(
+            eq(proposalsTable.status, ProposalStatus.DRAFT),
+            inArray(proposalsTable.id, phaseDraftIds),
+          )!
         : sql`false`;
 
     // Non-draft proposals: phase-scoped, plus the HIDDEN visibility filter
@@ -379,9 +386,9 @@ export const listProposals = async ({
       : and(
           phaseScopedNonDraftIdFilter,
           or(
-            eq(t.visibility, Visibility.VISIBLE),
+            eq(proposalsTable.visibility, Visibility.VISIBLE),
             inArray(
-              t.profileId,
+              proposalsTable.profileId,
               db
                 .select({ profileId: profileUsers.profileId })
                 .from(profileUsers)
@@ -390,7 +397,31 @@ export const listProposals = async ({
           )!,
         )!;
 
-    return and(clause, or(draftFilter, nonDraftVisibilityFilter)!)!;
+    // Items with an active moderation flag are hidden from everyone except
+    // members of the proposal's own profile (creator + invited collaborators);
+    // instance admins (canManageProposals) skip the filter entirely. The owner
+    // audience is proposal.profileId membership — the same set getProposal
+    // grants the flagged proposal to — so the list and detail views agree
+    // (keying on submittedByProfileId alone would diverge for group-owned
+    // proposals). Applied in SQL so pagination stays correct.
+    const moderationFilter = canManageProposals
+      ? undefined
+      : or(
+          noActiveModerationFlag('proposal', proposalsTable.id),
+          inArray(
+            proposalsTable.profileId,
+            db
+              .select({ profileId: profileUsers.profileId })
+              .from(profileUsers)
+              .where(inArray(profileUsers.authUserId, accessUserIds)),
+          ),
+        )!;
+
+    return and(
+      clause,
+      or(draftFilter, nonDraftVisibilityFilter)!,
+      moderationFilter,
+    )!;
   };
 
   const { includeVoteCounts = false } = input;
@@ -468,8 +499,8 @@ export const listProposals = async ({
     .map((proposal) => proposal.profileId)
     .filter((id): id is string => Boolean(id));
 
-  const [relationshipData, documentContentMap, selectedIds] = await Promise.all(
-    [
+  const [relationshipData, documentContentMap, selectedIds, flaggedIds] =
+    await Promise.all([
       getProposalRelationshipData({ profileIds, currentProfileId }),
       getProposalDocumentsContent(
         proposalList.map((proposal) => {
@@ -486,8 +517,13 @@ export const listProposals = async ({
         }),
       ),
       getSelectedProposalIds(processInstanceId),
-    ],
-  );
+      // Flagged items reach this point only for their creator or an admin —
+      // decorate them so the UI can render the "Flagged" indicator.
+      getActivelyFlaggedItemIds(
+        'proposal',
+        proposalList.map((proposal) => proposal.id),
+      ),
+    ]);
 
   const hasAdminPermission = checkPermission(
     { profile: permission.ADMIN },
@@ -526,6 +562,7 @@ export const listProposals = async ({
       commentsCount: relationshipInfo?.commentsCount || 0,
       isEditable,
       isSelected: selectedIds.has(proposal.id),
+      isFlagged: flaggedIds.has(proposal.id),
       documentContent: documentContentMap.get(proposal.id),
       proposalTemplate,
       ...(includeVoteCounts && {

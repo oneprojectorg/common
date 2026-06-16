@@ -1242,6 +1242,7 @@
   "View public results page": "عرض صفحة النتائج العامة",
   "<bdi>{authorName}</bdi>'s Post": "منشور <bdi>{authorName}</bdi>",
   "No comments yet.": "لا توجد تعليقات بعد.",
+  "Flagged": "تم الإبلاغ عنها",
   "Selected": "محدد",
   "Maybe later": "ربما لاحقًا",
   "Submit & view results": "إرسال وعرض النتائج",
