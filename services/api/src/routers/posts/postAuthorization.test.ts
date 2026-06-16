@@ -847,6 +847,70 @@ describe.concurrent('proposal post authorization', () => {
     expect(comment.parentPostId).toBe(proposalPost.id);
     expect(comment.content).toBe('Member comment on proposal post.');
   });
+
+  // ProposalComments.tsx posts a "comment on a proposal" as a top-level
+  // post with profileId = proposal.profileId and no parentPostId. The
+  // service-layer dispatch must not fall through to the decision-ADMIN
+  // policy here — proposal targets always walk up to the parent decision
+  // via resolvePostRoots, so the gate for a non-admin participant with
+  // SUBMIT_PROPOSALS must pass on this exact call shape.
+  it('allows a decision member to post a top-level comment on a proposal profile (proposal-comments UI path)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Proposal E', description: 'desc' },
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const comment = await memberCaller.posts.createPost({
+      content: 'Member top-level comment on proposal profile.',
+      profileId: proposal.profileId,
+    });
+
+    expect(comment.parentPostId).toBeNull();
+    expect(comment.content).toBe(
+      'Member top-level comment on proposal profile.',
+    );
+  });
+
+  it('still rejects an outsider from posting a top-level comment on a proposal profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Proposal F', description: 'desc' },
+    });
+
+    const outsiderCaller = await createOutsiderCaller(testData);
+
+    await expect(
+      outsiderCaller.posts.createPost({
+        content: 'Outsider top-level comment on proposal — should fail.',
+        profileId: proposal.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+  });
 });
 
 // Pin the schema contract introduced by resolvePostRoots: every new post must
