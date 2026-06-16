@@ -130,8 +130,16 @@ const CONSTRAINED_INPUT_TYPES = new Set([
 const isAlwaysLTR = (type: string | undefined) =>
   CONSTRAINED_INPUT_TYPES.has(type ?? '');
 
+// Constrained types (email/url/number/etc) are always Latin → force LTR.
+// Free-text inputs use `unicode-bidi: plaintext` instead of `dir="auto"`:
+// auto resolves an empty input to LTR (ignoring the placeholder), which
+// left-aligns RTL placeholders; plaintext lets an empty field inherit the
+// locale direction and a filled field follow its own content.
 const inputDir = (type: string | undefined) =>
-  CONSTRAINED_INPUT_TYPES.has(type ?? '') ? 'ltr' : 'auto';
+  isAlwaysLTR(type) ? 'ltr' : undefined;
+
+const bidiClass = (type: string | undefined) =>
+  isAlwaysLTR(type) ? undefined : '[unicode-bidi:plaintext]';
 
 export const Input = ({
   ref,
@@ -160,7 +168,11 @@ export const Input = ({
       dir={inputDir(props.type)}
       ref={ref}
       {...props}
-      className={inputStyles({ ...props, size, className })}
+      className={inputStyles({
+        ...props,
+        size,
+        className: cn(bidiClass(props.type), className),
+      })}
     />
   );
 };
@@ -184,7 +196,7 @@ export const InputWithIcon = ({
           ...props,
           size,
           hasIcon: true,
-          className,
+          className: cn(bidiClass(props.type), className),
         })}
       />
       <span
@@ -231,10 +243,12 @@ export const TextArea = ({
 } & TextAreaVariantProps) => {
   return (
     <RACTextArea
-      dir="auto"
       ref={ref}
       {...props}
-      className={textAreaStyles({ variant, className })}
+      className={textAreaStyles({
+        variant,
+        className: cn('[unicode-bidi:plaintext]', className),
+      })}
     />
   );
 };
