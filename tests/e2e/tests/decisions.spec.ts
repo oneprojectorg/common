@@ -40,8 +40,7 @@ test.describe('Decisions', () => {
     // and so the test fails fast with a clear signal if the mutation never fires
     // (e.g. when React Aria's onPress handler hasn't bound yet on a slow CI run).
     const createProposalResponse = authenticatedPage.waitForResponse(
-      (resp) =>
-        resp.url().includes('decision.createProposal') && resp.ok(),
+      (resp) => resp.url().includes('decision.createProposal') && resp.ok(),
       { timeout: 30_000 },
     );
 
