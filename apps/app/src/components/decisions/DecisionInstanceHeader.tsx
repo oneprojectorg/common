@@ -102,12 +102,14 @@ export const DecisionInstanceHeader = ({
           </ButtonLink>
         )}
         <LocaleChooser />
-        {user ? (
+        {user && !user.isAnonymous ? (
           <UserAvatarMenu />
         ) : (
-          // `/login` lives outside the [locale] route tree, so a RAC
-          // ButtonLink would client-navigate through next-intl and land on
-          // the dead `/en/login`. A native navigation keeps the path locale-free.
+          // Shown to both no-session and anonymous visitors so the latter can
+          // upgrade to a real account. `/login` lives outside the [locale]
+          // route tree, so a RAC ButtonLink would client-navigate through
+          // next-intl and land on the dead `/en/login`; a native navigation
+          // keeps the path locale-free.
           <Button
             color="primary"
             size="small"

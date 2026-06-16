@@ -37,7 +37,15 @@ export const listAllUsersRouter = router({
       });
 
       return {
-        items: items.map((user) => userEncoder.parse(user)),
+        // The list already loads the `authUser` relation (for `lastSignInAt`),
+        // so read `isAnonymous` from it — no extra query, and there's no
+        // per-user session available here.
+        items: items.map((user) =>
+          userEncoder.parse({
+            ...user,
+            isAnonymous: Boolean(user.authUser?.isAnonymous),
+          }),
+        ),
         next,
         total,
       };

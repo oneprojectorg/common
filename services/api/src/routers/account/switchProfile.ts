@@ -10,7 +10,7 @@ import type { Profile } from '@op/db/schema';
 import { assertAccess, permission } from 'access-zones';
 import { z } from 'zod';
 
-import { userEncoder } from '../../encoders';
+import { encodeUser, userEncoder } from '../../encoders';
 import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 export const switchProfile = router({
@@ -67,6 +67,6 @@ export const switchProfile = router({
         params: [id],
       });
 
-      return userEncoder.parse(result[0]);
+      return encodeUser({ user: result[0], authUser: ctx.user });
     }),
 });

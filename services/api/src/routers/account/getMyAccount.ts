@@ -2,7 +2,7 @@ import { cache } from '@op/cache';
 import { CommonError, getUserByAuthId } from '@op/common';
 import { z } from 'zod';
 
-import { userEncoder } from '../../encoders';
+import { encodeUser, userEncoder } from '../../encoders';
 import { openProcedure, router } from '../../trpcFactory';
 
 export const getMyAccount = router({
@@ -37,6 +37,6 @@ export const getMyAccount = router({
         throw new CommonError('Common user not found');
       }
 
-      return userEncoder.parse(user);
+      return encodeUser({ user, authUser: ctx.user });
     }),
 });

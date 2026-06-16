@@ -64,9 +64,14 @@ const profileUserWithPermissionsEncoder = profileUserWithProfileSchema.extend({
  */
 export const userEncoder = createSelectSchema(users).extend({
   onboardedAt: z.string().nullish(),
-  // Callers project different subsets of the auth user (e.g. getMyAccount only
-  // selects `isAnonymous`), so keep every column optional. `.nullish()` already
-  // covers an absent relation; `.partial()` covers a present-but-partial row.
+  // Whether the underlying auth identity is an anonymous sign-in. Sourced by
+  // every producer from the Supabase session (`ctx.user.is_anonymous`) — or the
+  // admin's own auth fetch for cross-user procedures — so it never depends on
+  // loading the `authUser` relation.
+  isAnonymous: z.boolean(),
+  // The `authUser` relation is loaded only by the platform-admin user list
+  // (for `lastSignInAt`); callers project different column subsets, so keep
+  // every column optional. `.nullish()` covers procedures that don't load it.
   authUser: createSelectSchema(authUsers).partial().nullish(),
   avatarImage: storageItemEncoder.nullish(),
   organizationUsers: organizationUserWithPermissionsEncoder.array().nullish(),
@@ -77,3 +82,19 @@ export const userEncoder = createSelectSchema(users).extend({
 });
 
 export type CommonUser = z.infer<typeof userEncoder>;
+
+/**
+ * Encode a DB user row into a `CommonUser`, deriving the required `isAnonymous`
+ * flag from the caller's Supabase auth identity (`ctx.user`, or an admin
+ * `getUserById` result) rather than the DB `authUser` relation. Centralizes the
+ * "read it from the live session, never query `authUser` for it" rule so every
+ * producer of the caller's-own (or an admin-fetched) account stays consistent.
+ */
+export const encodeUser = ({
+  user,
+  authUser,
+}: {
+  user: Record<string, unknown>;
+  authUser: { is_anonymous?: boolean | null };
+}): CommonUser =>
+  userEncoder.parse({ ...user, isAnonymous: Boolean(authUser.is_anonymous) });
