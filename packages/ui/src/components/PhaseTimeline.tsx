@@ -5,7 +5,6 @@ import { LuArrowRight, LuCheck, LuPlay } from 'react-icons/lu';
 import { cn } from '../lib/utils';
 import { formatDateRange } from '../utils/formatting';
 import { Button } from './Button';
-import { IconButton } from './IconButton';
 import type { Phase } from './PhaseStepper';
 
 type PhaseState = 'completed' | 'current' | 'upcoming';
@@ -28,9 +27,8 @@ export interface PhaseTimelineProps {
   advanceablePhaseId?: string;
   advanceLabel?: string;
   onAdvance?: (phaseId: string) => void;
-  /** Invoked by the current phase's arrow affordance (e.g. navigate to it). */
-  onNavigate?: (phaseId: string) => void;
-  navigateAriaLabel?: string;
+  /** Destination for the current phase card (its whole row links here). */
+  href?: string;
 }
 
 /**
@@ -39,7 +37,8 @@ export interface PhaseTimelineProps {
  * phase (plus the admin "advanceable" flag):
  *
  * - completed (before current): compact, green rail + check + dates + name
- * - current: filled teal card, dates + optional "Now open!" tag + name + arrow
+ * - current: filled teal card linking to `href`, dates + optional "Now open!"
+ *   tag + name + arrow
  * - upcoming: compact, gray rail + dates + name
  * - upcoming + advanceable: off-white card with an Advance button
  *
@@ -56,8 +55,7 @@ export function PhaseTimeline({
   advanceablePhaseId,
   advanceLabel = 'Advance',
   onAdvance,
-  onNavigate,
-  navigateAriaLabel,
+  href,
 }: PhaseTimelineProps) {
   const currentPhaseIndex = phases.findIndex(
     (phase) => phase.id === currentPhaseId,
@@ -82,23 +80,20 @@ export function PhaseTimeline({
           isAdvanceable={phase.id === advanceablePhaseId}
           advanceLabel={advanceLabel}
           onAdvance={onAdvance}
-          onNavigate={onNavigate}
-          navigateAriaLabel={navigateAriaLabel}
+          href={href}
         />
       ))}
     </ol>
   );
 }
 
-const PhaseDates = ({
-  phase,
-  locale,
-  className,
-}: {
+interface PhaseContentProps {
   phase: Phase;
   locale?: string;
   className?: string;
-}) => {
+}
+
+const PhaseDates = ({ phase, locale, className }: PhaseContentProps) => {
   if (!phase.startDate && !phase.endDate) {
     return null;
   }
@@ -110,17 +105,21 @@ const PhaseDates = ({
   );
 };
 
-const PhaseName = ({
-  phase,
-  className,
-}: {
-  phase: Phase;
-  className?: string;
-}) => (
+const PhaseName = ({ phase, className }: PhaseContentProps) => (
   <p className={cn('font-serif text-title-base font-light', className)}>
     <bdi>{phase.name}</bdi>
   </p>
 );
+
+type PhaseRowProps = Pick<
+  PhaseTimelineProps,
+  'locale' | 'nowOpenLabel' | 'advanceLabel' | 'onAdvance' | 'href'
+> & {
+  phase: Phase;
+  state: PhaseState;
+  isNowOpen: boolean;
+  isAdvanceable: boolean;
+};
 
 const PhaseRow = ({
   phase,
@@ -131,26 +130,14 @@ const PhaseRow = ({
   isAdvanceable,
   advanceLabel,
   onAdvance,
-  onNavigate,
-  navigateAriaLabel,
-}: {
-  phase: Phase;
-  state: PhaseState;
-  locale?: string;
-  isNowOpen: boolean;
-  nowOpenLabel: string;
-  isAdvanceable: boolean;
-  advanceLabel: string;
-  onAdvance?: (phaseId: string) => void;
-  onNavigate?: (phaseId: string) => void;
-  navigateAriaLabel?: string;
-}) => {
+  href,
+}: PhaseRowProps) => {
   if (state === 'completed') {
     return (
       <li className="flex flex-col gap-2 border-l border-functional-green-100 px-4 py-2">
         <div className="flex items-center gap-2">
           <span className="flex size-4 items-center justify-center rounded-full bg-functional-greenWhite text-functional-green">
-            <LuCheck className="size-3" />
+            <LuCheck className="size-3" aria-hidden />
           </span>
           <PhaseDates
             phase={phase}
@@ -165,33 +152,28 @@ const PhaseRow = ({
 
   if (state === 'current') {
     return (
-      <li className="flex items-center justify-between gap-4 rounded-xl bg-primary-tealWhite p-4">
-        <div className="flex min-w-0 flex-col gap-4">
-          <div className="flex items-center gap-4">
-            <PhaseDates
-              phase={phase}
-              locale={locale}
-              className="text-primary-tealBlack"
-            />
-            {isNowOpen ? (
-              <span className="rounded bg-primary-tealBlack px-1.5 py-1 text-sm text-neutral-offWhite">
-                {nowOpenLabel}
-              </span>
-            ) : null}
+      <li>
+        <a
+          className="flex items-center justify-between gap-4 rounded-xl bg-primary-100 p-4 transition hover:bg-primary-200"
+          href={href}
+        >
+          <div className="flex min-w-0 flex-col gap-4">
+            <div className="flex items-center gap-4">
+              <PhaseDates
+                phase={phase}
+                locale={locale}
+                className="text-primary-tealBlack"
+              />
+              {isNowOpen ? (
+                <span className="rounded-md bg-primary-tealBlack px-1.5 py-1 text-sm text-neutral-offWhite">
+                  {nowOpenLabel}
+                </span>
+              ) : null}
+            </div>
+            <PhaseName phase={phase} className="text-primary-tealBlack" />
           </div>
-          <PhaseName phase={phase} className="text-primary-tealBlack" />
-        </div>
-        {onNavigate ? (
-          <IconButton
-            aria-label={navigateAriaLabel ?? phase.name}
-            onPress={() => onNavigate(phase.id)}
-            size="small"
-            variant="ghost"
-            className="shrink-0 text-primary-tealBlack"
-          >
-            <LuArrowRight className="size-4" />
-          </IconButton>
-        ) : null}
+          <LuArrowRight className="size-4 shrink-0" aria-hidden />
+        </a>
       </li>
     );
   }
@@ -214,7 +196,7 @@ const PhaseRow = ({
           onPress={() => onAdvance?.(phase.id)}
           className="shrink-0"
         >
-          <LuPlay className="size-4 fill-current" />
+          <LuPlay className="size-4 fill-current" aria-hidden />
           {advanceLabel}
         </Button>
       </li>

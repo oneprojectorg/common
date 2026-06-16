@@ -15,7 +15,6 @@ const meta: Meta<typeof PhaseTimeline> = {
       options: ['collect', 'review', 'vote', 'results'],
     },
     onAdvance: { action: 'onAdvance' },
-    onNavigate: { action: 'onNavigate' },
   },
 };
 
@@ -49,6 +48,7 @@ export const Default: Story = {
     phases,
     currentPhaseId: 'review',
     nowOpenPhaseId: 'review',
+    href: '#',
   },
   render: (args) => (
     <div className="max-w-[340px]">
@@ -71,6 +71,7 @@ export const AdminAdvanceable: Story = {
     currentPhaseId: 'review',
     nowOpenPhaseId: 'review',
     advanceablePhaseId: 'vote',
+    href: '#',
   },
   render: (args) => (
     <div className="max-w-[340px]">
