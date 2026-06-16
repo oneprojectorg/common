@@ -4,7 +4,7 @@ permissions:
   contents: read
 
 on:
-  pull_request:
+  pull_request_target:
   workflow_dispatch:
 
 concurrency:
@@ -41,6 +41,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Setup Node.js
@@ -133,6 +134,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Setup Node.js
@@ -253,6 +255,8 @@ jobs:
     if: ${{ always() && !cancelled() }}
 
     steps:
+      # merge-reports only stitches together blob artifacts; it must not run
+      # fork code, so it stays on the base ref (no PR head checkout).
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -339,6 +343,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Setup Node.js
@@ -467,7 +472,7 @@ jobs:
 
       - name: Detect a11y baseline deviation
         id: a11y-diff
-        if: ${{ github.event_name == 'pull_request' && !cancelled() }}
+        if: ${{ github.event_name == 'pull_request_target' && !cancelled() }}
         run: |
           if [ ! -f tests/e2e/a11y-baseline/diff.md ]; then
             echo "has-changes=false" >> "$GITHUB_OUTPUT"
@@ -487,14 +492,14 @@ jobs:
           fi
 
       - name: Post sticky PR comment
-        if: ${{ github.event_name == 'pull_request' && !cancelled() && steps.a11y-diff.outputs.has-changes == 'true' }}
+        if: ${{ github.event_name == 'pull_request_target' && !cancelled() && steps.a11y-diff.outputs.has-changes == 'true' }}
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: a11y-baseline
           path: tests/e2e/a11y-baseline/diff.md
 
       - name: Remove sticky PR comment when no deviation
-        if: ${{ github.event_name == 'pull_request' && !cancelled() && steps.a11y-diff.outputs.has-changes == 'false' }}
+        if: ${{ github.event_name == 'pull_request_target' && !cancelled() && steps.a11y-diff.outputs.has-changes == 'false' }}
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: a11y-baseline
