@@ -395,6 +395,8 @@
   "Reported": "রিপোর্ট করা হয়েছে",
   "Proposal reported for moderation review": "প্রস্তাবটি মডারেশন পর্যালোচনার জন্য রিপোর্ট করা হয়েছে",
   "Could not report this proposal. Please try again.": "এই প্রস্তাবটি রিপোর্ট করা যায়নি। আবার চেষ্টা করুন।",
+  "Report this proposal": "এই প্রস্তাবটি রিপোর্ট করুন",
+  "This proposal will be sent to an independent moderation service for review. It stays visible while the review is in progress. If it violates Common's Code of Conduct, it will be hidden and the author will be notified.": "এই প্রস্তাবটি পর্যালোচনার জন্য একটি স্বাধীন মডারেশন পরিষেবায় পাঠানো হবে। পর্যালোচনা চলাকালীন এটি দৃশ্যমান থাকে। এটি Common-এর আচরণবিধি লঙ্ঘন করলে, এটি লুকানো হবে এবং লেখককে জানানো হবে।",
   "Selected": "নির্বাচিত",
   "Reject from shortlist": "শর্টলিস্ট থেকে প্রত্যাখ্যান করুন",
   "Shortlist for voting": "ভোটের জন্য শর্টলিস্ট",

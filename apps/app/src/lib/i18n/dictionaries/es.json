@@ -395,6 +395,8 @@
   "Reported": "Reportada",
   "Proposal reported for moderation review": "Propuesta reportada para revisión de moderación",
   "Could not report this proposal. Please try again.": "No se pudo reportar esta propuesta. Inténtalo de nuevo.",
+  "Report this proposal": "Reportar esta propuesta",
+  "This proposal will be sent to an independent moderation service for review. It stays visible while the review is in progress. If it violates Common's Code of Conduct, it will be hidden and the author will be notified.": "Esta propuesta se enviará a un servicio de moderación independiente para su revisión. Permanece visible mientras la revisión está en curso. Si infringe el Código de Conducta de Common, se ocultará y se notificará al autor.",
   "Selected": "Seleccionado",
   "Reject from shortlist": "Rechazar de la preselección",
   "Shortlist for voting": "Preseleccionar para votación",

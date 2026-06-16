@@ -347,6 +347,8 @@
   "Reported": "La soo sheegay",
   "Proposal reported for moderation review": "Soo-jeedinta waxaa loo gudbiyay dib-u-eegis hufnaaneed",
   "Could not report this proposal. Please try again.": "Lama soo sheegi karin soo-jeedintan. Fadlan isku day mar kale.",
+  "Report this proposal": "Soo sheeg soo-jeedintan",
+  "This proposal will be sent to an independent moderation service for review. It stays visible while the review is in progress. If it violates Common's Code of Conduct, it will be hidden and the author will be notified.": "Soo-jeedintan waxaa loo diri doonaa adeeg madax-bannaan oo dib-u-eegis ah. Way muuqataa inta dib-u-eegistu socoto. Haddii ay jebiso Xeerka Anshaxa ee Common, waa la qarin doonaa oo qoraaga ayaa la ogeysiin doonaa.",
   "Selected": "La doortay",
   "Reject from shortlist": "Ka diid liiska gaaban",
   "Shortlist for voting": "U soo gaabi codaynta",

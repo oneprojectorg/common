@@ -1248,6 +1248,8 @@
   "Reported": "تم الإبلاغ",
   "Proposal reported for moderation review": "تم الإبلاغ عن المقترح لمراجعة الإشراف",
   "Could not report this proposal. Please try again.": "تعذّر الإبلاغ عن هذا المقترح. يرجى المحاولة مرة أخرى.",
+  "Report this proposal": "الإبلاغ عن هذا المقترح",
+  "This proposal will be sent to an independent moderation service for review. It stays visible while the review is in progress. If it violates Common's Code of Conduct, it will be hidden and the author will be notified.": "سيتم إرسال هذا المقترح إلى خدمة إشراف مستقلة للمراجعة. ويظل مرئيًا أثناء سير المراجعة. وإذا انتهك مدونة سلوك Common، فسيتم إخفاؤه وإشعار صاحبه.",
   "Selected": "محدد",
   "Maybe later": "ربما لاحقًا",
   "Submit & view results": "إرسال وعرض النتائج",
