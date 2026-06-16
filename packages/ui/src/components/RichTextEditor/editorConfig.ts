@@ -26,9 +26,23 @@ export const viewerProseStyles = [
 ].join(' ');
 
 /**
+ * Placeholder hint shown once when the editor is empty. Targets the
+ * Placeholder extension's `is-editor-empty` class (root-empty only), so it
+ * never repeats per block. Inert unless the Placeholder extension is active
+ * (i.e. a `placeholder` was passed), since `data-placeholder` is absent otherwise.
+ */
+const placeholderStyles = [
+  '[&_.is-editor-empty:first-child]:before:pointer-events-none',
+  '[&_.is-editor-empty:first-child]:before:float-start',
+  '[&_.is-editor-empty:first-child]:before:h-0',
+  '[&_.is-editor-empty:first-child]:before:text-neutral-gray3',
+  '[&_.is-editor-empty:first-child]:before:content-[attr(data-placeholder)]',
+].join(' ');
+
+/**
  * Styles applied to the editor element
  */
-export const baseEditorStyles = `${viewerProseStyles} outline-hidden placeholder:text-neutral-gray2`;
+export const baseEditorStyles = `${viewerProseStyles} outline-hidden placeholder:text-neutral-gray2 ${placeholderStyles}`;
 
 /**
  * Base extensions shared by both editor and viewer
