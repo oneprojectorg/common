@@ -74,14 +74,18 @@ test.describe('Process Builder multi-admin editing', () => {
     // 3. Admin B opens the editor BEFORE admin A makes any changes.
     //    (Pre-fix, this stamped a full snapshot into B's localStorage.)
     await pageB.goto(editUrl);
-    await expect(pageB.getByRole('heading', { name: 'Process Settings' })).toBeVisible({
+    await expect(
+      pageB.getByRole('heading', { name: 'Process Settings' }),
+    ).toBeVisible({
       timeout: 18_000,
     });
     await expect(nameField(pageB)).toBeVisible({ timeout: 12_000 });
 
     // 4. Admin A renames the process and clicks "Update Process".
     await authenticatedPage.goto(editUrl);
-    await expect(authenticatedPage.getByRole('heading', { name: 'Process Settings' })).toBeVisible({
+    await expect(
+      authenticatedPage.getByRole('heading', { name: 'Process Settings' }),
+    ).toBeVisible({
       timeout: 18_000,
     });
 
@@ -118,7 +122,9 @@ test.describe('Process Builder multi-admin editing', () => {
     // 6. Admin B revisits the editor and must see A's saved name.
     //    Pre-fix: B's stale localStorage snapshot shadowed it.
     await pageB.goto(editUrl);
-    await expect(pageB.getByRole('heading', { name: 'Process Settings' })).toBeVisible({
+    await expect(
+      pageB.getByRole('heading', { name: 'Process Settings' }),
+    ).toBeVisible({
       timeout: 18_000,
     });
     await expect(nameField(pageB)).toHaveValue(newName, { timeout: 12_000 });
