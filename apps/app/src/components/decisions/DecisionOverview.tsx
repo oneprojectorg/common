@@ -64,7 +64,7 @@ function DecisionOverviewContent({
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
 
   const overview = instance.instanceData?.overview;
-  const headline = overview?.headline ?? instance.name;
+  const headline = overview?.headline || instance.name;
 
   // Same gate as StandardDecisionPage: the phase must accept proposals and
   // the viewer must have submit access.
