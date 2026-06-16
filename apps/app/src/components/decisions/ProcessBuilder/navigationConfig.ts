@@ -15,6 +15,7 @@ export type StepId = (typeof STEPS)[number]['id'];
 
 export const SECTIONS_BY_STEP = {
   general: [
+    { id: 'processSettings', labelKey: 'Process Settings' },
     { id: 'overview', labelKey: 'Overview' },
     { id: 'phases', labelKey: 'Phases' },
     { id: 'proposalCategories', labelKey: 'Proposal Categories' },
@@ -54,7 +55,7 @@ export const DEFAULT_NAVIGATION_CONFIG: NavigationConfig = {
     summary: true,
   },
   sections: {
-    general: ['overview', 'phases', 'proposalCategories'],
+    general: ['processSettings', 'overview', 'phases', 'proposalCategories'],
     template: ['templateEditor'],
     reviews: ['criteria'],
     participants: ['roles', 'participants'],
@@ -76,6 +77,11 @@ export type SidebarItem =
   | { id: string; labelKey: string; parentStepId?: StepId; isDynamic: true };
 
 export const SIDEBAR_ITEMS: SidebarItem[] = [
+  {
+    id: 'processSettings',
+    labelKey: 'Process Settings',
+    parentStepId: 'general',
+  },
   { id: 'overview', labelKey: 'Overview', parentStepId: 'general' },
   { id: 'phases', labelKey: 'Phases', parentStepId: 'general' },
   {

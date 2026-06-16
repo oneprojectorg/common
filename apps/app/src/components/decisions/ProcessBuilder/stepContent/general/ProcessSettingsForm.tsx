@@ -16,7 +16,7 @@ import type { SectionProps } from '@/components/decisions/ProcessBuilder/content
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
 import { getFieldErrorMessage, useAppForm } from '@/components/form/utils';
 
-const createOverviewValidator = (t: TranslateFn) =>
+const createProcessSettingsValidator = (t: TranslateFn) =>
   z.object({
     stewardProfileId: z.string(),
     name: z
@@ -31,15 +31,17 @@ const createOverviewValidator = (t: TranslateFn) =>
   });
 
 // Form data type
-type OverviewFormData = z.infer<ReturnType<typeof createOverviewValidator>>;
+type ProcessSettingsFormData = z.infer<
+  ReturnType<typeof createProcessSettingsValidator>
+>;
 
 // Watches form values and triggers debounced save on changes
 function FormValueWatcher({
   values,
   onValuesChange,
 }: {
-  values: OverviewFormData;
-  onValuesChange: (values: OverviewFormData) => void;
+  values: ProcessSettingsFormData;
+  onValuesChange: (values: ProcessSettingsFormData) => void;
 }) {
   const isInitialMount = useRef(true);
   const previousValues = useRef<string | null>(null);
@@ -65,7 +67,7 @@ function FormValueWatcher({
 }
 
 // Form component - only rendered after Zustand hydration is complete
-export function OverviewSectionForm({
+export function ProcessSettingsForm({
   decisionProfileId,
   instanceId,
   decisionName,
@@ -102,7 +104,7 @@ export function OverviewSectionForm({
   // Only the process owner can change the steward
   const isProcessOwner = userProfiles?.some((p) => p.id === instance.owner?.id);
 
-  const handleValuesChange = (values: OverviewFormData) => {
+  const handleValuesChange = (values: ProcessSettingsFormData) => {
     saveChanges({
       name: values.name,
       description: values.description,
@@ -136,8 +138,8 @@ export function OverviewSectionForm({
       isPrivate: instanceData?.config?.isPrivate ?? false,
     },
     validators: {
-      onBlur: createOverviewValidator(t),
-      onChange: createOverviewValidator(t),
+      onBlur: createProcessSettingsValidator(t),
+      onChange: createProcessSettingsValidator(t),
     },
   });
 
@@ -153,19 +155,19 @@ export function OverviewSectionForm({
           selector={(state) => state.values}
           children={(values) => (
             <FormValueWatcher
-              values={values as OverviewFormData}
+              values={values as ProcessSettingsFormData}
               onValuesChange={handleValuesChange}
             />
           )}
         />
 
         <div className="mx-auto w-full space-y-8 p-4 md:max-w-160 md:p-8">
-          {/* Process Overview Section */}
+          {/* Process Settings Section */}
           <section className="space-y-6">
             <div>
               <div className="flex items-center justify-between">
                 <Header2 className="font-serif text-title-sm">
-                  {t('Process Overview')}
+                  {t('Process Settings')}
                 </Header2>
                 <SaveStatusIndicator
                   status={autosaveStatus.status}

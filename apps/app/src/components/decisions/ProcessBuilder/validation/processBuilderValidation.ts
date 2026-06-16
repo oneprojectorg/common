@@ -22,7 +22,7 @@ export interface ValidationSummary {
 
 const nonEmptyString = z.string().trim().min(1);
 
-const overviewSchema = z.object({
+const processSettingsSchema = z.object({
   name: nonEmptyString,
   description: nonEmptyString,
 });
@@ -96,7 +96,9 @@ function validateTemplateEditor(
 }
 
 const SECTION_VALIDATORS: Record<SectionId, SectionValidator> = {
-  overview: (data) => overviewSchema.safeParse(data).success,
+  processSettings: (data) => processSettingsSchema.safeParse(data).success,
+  // Overview content (headline, description, body) is optional
+  overview: () => true,
   phases: (data) => phasesSchema.safeParse(data).success,
   proposalCategories: () => true,
   templateEditor: validateTemplateEditor,
@@ -129,7 +131,7 @@ const LAUNCH_CHECKLIST: ChecklistItem[] = [
   {
     id: 'processNameDescription',
     labelKey: 'Process name & description',
-    validate: (data) => overviewSchema.safeParse(data).success,
+    validate: (data) => processSettingsSchema.safeParse(data).success,
   },
   {
     id: 'atLeastOnePhase',
