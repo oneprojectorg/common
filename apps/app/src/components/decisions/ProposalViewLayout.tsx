@@ -7,6 +7,7 @@ import { ReactNode } from 'react';
 import {
   LuArrowLeft,
   LuBookmark,
+  LuFlag,
   LuHeart,
   LuPencil,
   LuStickyNote,
@@ -24,8 +25,11 @@ export function ProposalViewLayout({
   title,
   onLike,
   onFollow,
+  onReport,
   isLiked = false,
   isFollowing = false,
+  isReporting = false,
+  isReported = false,
   isLoading = false,
   editHref,
   canEdit = false,
@@ -36,8 +40,13 @@ export function ProposalViewLayout({
   title?: string;
   onLike?: () => void;
   onFollow?: () => void;
+  onReport?: () => void;
   isLiked?: boolean;
   isFollowing?: boolean;
+  /** Disables the Report button while the report mutation is in flight. */
+  isReporting?: boolean;
+  /** Reflects a successful report this session — the button reads "Reported". */
+  isReported?: boolean;
   isLoading?: boolean;
   editHref?: string;
   canEdit?: boolean;
@@ -88,6 +97,18 @@ export function ProposalViewLayout({
               them to a signed-in viewer. */}
           {user ? (
             <>
+              {onReport && (
+                <Button
+                  surface="outline"
+                  color="secondary"
+                  size="small"
+                  onPress={onReport}
+                  isDisabled={isReporting || isReported}
+                >
+                  <LuFlag className="size-4" />
+                  {isReported ? t('Reported') : t('Report')}
+                </Button>
+              )}
               <Button
                 surface="outline"
                 color={isLiked ? 'verified' : 'secondary'}

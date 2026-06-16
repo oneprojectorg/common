@@ -12,6 +12,7 @@ import {
   type SupportedLocale,
 } from '@op/common/client';
 import { SplitPane } from '@op/ui/SplitPane';
+import { toast } from '@op/ui/Toast';
 import { useLocale } from 'next-intl';
 import { useQueryStates } from 'nuqs';
 import { type ReactNode, useCallback, useState } from 'react';
@@ -67,6 +68,24 @@ export function ProposalView({
   } = useRelationshipMutations({
     targetProfileId: currentProposal.profileId,
   });
+
+  // Report → send the proposal for async moderation review. The endpoint
+  // records a pending flag and submits it to the provider; the proposal stays
+  // visible until a verdict confirms it. Idempotent on an item's open flag.
+  const reportMutation = trpc.moderation.flagItem.useMutation({
+    onSuccess: () => {
+      toast.success({ message: t('Proposal reported for moderation review') });
+    },
+    onError: () => {
+      toast.error({
+        message: t('Could not report this proposal. Please try again.'),
+      });
+    },
+  });
+
+  const handleReport = useCallback(() => {
+    reportMutation.mutate({ itemType: 'proposal', itemId: currentProposal.id });
+  }, [reportMutation, currentProposal.id]);
 
   // Check if current user can edit (submitter or org admin)
   const canEdit = currentProposal.isEditable ?? false;
@@ -198,8 +217,11 @@ export function ProposalView({
       backHref={backHref}
       onLike={handleLike}
       onFollow={handleFollow}
+      onReport={handleReport}
       isLiked={isLikedByUser}
       isFollowing={isFollowedByUser}
+      isReporting={reportMutation.isPending}
+      isReported={reportMutation.isSuccess}
       isLoading={isLoading}
       editHref={editHref}
       canEdit={canEdit}

@@ -312,7 +312,7 @@ export function ProposalCardStatus({
   className?: string;
 }) {
   const t = useTranslations();
-  const { status, visibility, isSelected } = proposal;
+  const { status, visibility, isSelected, isFlagged } = proposal;
 
   // DRAFT wins over HIDDEN: a draft created in a hidden-by-default phase
   // should still read as "Draft" to its author, not "Hidden".
@@ -324,6 +324,22 @@ export function ProposalCardStatus({
           className={cn('text-sm text-nowrap text-neutral-charcoal', className)}
         >
           {t('Draft')}
+        </span>
+      </>
+    );
+  }
+
+  // A flagged proposal is hidden from members pending/after a moderation
+  // verdict; surface it here (above the visibility/selection states) so the
+  // author sees the moderation state right in the listing.
+  if (isFlagged) {
+    return (
+      <>
+        <Bullet />
+        <span
+          className={cn('text-sm text-nowrap text-functional-red', className)}
+        >
+          {t('Flagged')}
         </span>
       </>
     );
