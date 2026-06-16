@@ -4,37 +4,50 @@ import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
 import { type ProcessPhase } from '@op/api/encoders';
-import { isLastPhase } from '@op/common/client';
-import { cn } from '@op/ui/utils';
 import { type ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
 import { DecisionStepperBar } from '@/components/decisions/DecisionStepperBar';
-import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
 
-interface DecisionHeaderProps {
+interface DecisionHeaderBaseProps {
   instanceId: string;
-  children?: ReactNode;
   /** Decision profile slug for building the edit link */
   decisionSlug?: string;
   /** Whether the current user has admin access to this decision */
   isAdmin?: boolean;
-  /** Whether the current user can read decision updates */
-  canReadUpdates?: boolean;
-  /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
-  useLegacy?: boolean;
-  /** Profile slug for back button — required when useLegacy is true */
-  slug?: string;
   /** Title from the decision profile */
   profileName?: string;
+}
+
+interface StandardDecisionHeaderProps extends DecisionHeaderBaseProps {
+  useLegacy?: false;
+  /** Whether the current user can read decision updates */
+  canReadUpdates?: boolean;
   /** Center-column content, e.g. the Overview / Current Phase toggle */
   centerSlot?: ReactNode;
   /** Whether to render the phase stepper below the header bar (default true) */
   showStepper?: boolean;
 }
 
+/** Legacy getInstance endpoint (for the /profile/[slug]/decisions/[id] route). */
+interface LegacyDecisionHeaderProps extends DecisionHeaderBaseProps {
+  useLegacy: true;
+  /** Profile slug for the back button */
+  slug: string;
+}
+
+type DecisionHeaderProps =
+  | StandardDecisionHeaderProps
+  | LegacyDecisionHeaderProps;
+
+/**
+ * Header bar + optional phase stepper for a decision. Render inside a
+ * DecisionTranslationProvider — the stepper relies on it for phase-name
+ * translations. Decorative/hero backgrounds are owned by the page (e.g. the
+ * results hero); the header bar itself renders on white.
+ */
 export function DecisionHeader(props: DecisionHeaderProps) {
   const { instanceId } = props;
 
@@ -52,14 +65,13 @@ export function DecisionHeader(props: DecisionHeaderProps) {
 
 function DecisionHeaderContent({
   instanceId,
-  children,
   decisionSlug,
   isAdmin,
   canReadUpdates,
   profileName,
   centerSlot,
   showStepper = true,
-}: DecisionHeaderProps) {
+}: StandardDecisionHeaderProps) {
   const t = useTranslations();
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
 
@@ -76,18 +88,8 @@ function DecisionHeaderContent({
     advancementMethod: p.rules?.advancement?.method,
   }));
 
-  const isResultsView =
-    isLastPhase(instance.currentStateId, instancePhases) &&
-    instance.selectionsAreConfirmed === true;
-
   return (
-    <div
-      className={cn(
-        isResultsView
-          ? 'bg-redPurple text-neutral-offWhite'
-          : 'bg-neutral-offWhite text-gray-700',
-      )}
-    >
+    <>
       <DecisionInstanceHeader
         backTo={{ href: '/decisions' }}
         title={
@@ -102,30 +104,25 @@ function DecisionHeaderContent({
         canReadUpdates={canReadUpdates}
         centerSlot={centerSlot}
       />
-      <DecisionTranslationProvider>
-        {showStepper ? (
-          <DecisionStepperBar
-            phases={phases}
-            currentStateId={instance.currentStateId || ''}
-            instanceId={instanceId}
-            isAdmin={isAdmin}
-          />
-        ) : null}
-
-        {children}
-      </DecisionTranslationProvider>
-    </div>
+      {showStepper ? (
+        <DecisionStepperBar
+          phases={phases}
+          currentStateId={instance.currentStateId || ''}
+          instanceId={instanceId}
+          isAdmin={isAdmin}
+        />
+      ) : null}
+    </>
   );
 }
 
 function LegacyDecisionHeaderContent({
   instanceId,
-  children,
   decisionSlug,
   isAdmin,
   slug,
   profileName,
-}: DecisionHeaderProps) {
+}: LegacyDecisionHeaderProps) {
   const [instance] = trpc.decision.getLegacyInstance.useSuspenseQuery({
     instanceId,
   });
@@ -149,25 +146,19 @@ function LegacyDecisionHeaderContent({
   });
 
   return (
-    <div className="bg-redPurple text-neutral-offWhite">
+    <>
       <DecisionInstanceHeader
-        backTo={{
-          href: slug ? `/profile/${slug}?tab=decisions` : '/decisions',
-        }}
+        backTo={{ href: `/profile/${slug}?tab=decisions` }}
         title={profileName || instance.name || instance.process?.name || ''}
         decisionSlug={decisionSlug}
         isAdmin={isAdmin}
       />
-      <DecisionTranslationProvider>
-        <DecisionStepperBar
-          phases={phases}
-          currentStateId={instance.currentStateId || ''}
-          instanceId={instanceId}
-          isAdmin={isAdmin}
-        />
-
-        {children}
-      </DecisionTranslationProvider>
-    </div>
+      <DecisionStepperBar
+        phases={phases}
+        currentStateId={instance.currentStateId || ''}
+        instanceId={instanceId}
+        isAdmin={isAdmin}
+      />
+    </>
   );
 }

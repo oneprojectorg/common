@@ -44,16 +44,11 @@ const DecisionOverviewPage = async ({
   params: Promise<{ slug: string }>;
 }) => {
   const { slug } = await params;
-  const { decisionProfile, instanceId, ownerSlug } = await loadDecision(slug);
+  const { instanceId } = await loadDecision(slug);
 
   return (
     <Suspense fallback={<DecisionContentSkeleton />}>
-      <DecisionOverviewSuspense
-        instanceId={instanceId}
-        slug={ownerSlug}
-        decisionSlug={slug}
-        decisionProfileId={decisionProfile.id}
-      />
+      <DecisionOverviewSuspense instanceId={instanceId} decisionSlug={slug} />
     </Suspense>
   );
 };

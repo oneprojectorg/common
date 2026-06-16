@@ -10,6 +10,7 @@ import { Suspense, cache } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
+import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
 
 // cache() dedupes the read across generateMetadata + page render (one request),
 // so the resolver and its "viewed" event fire once and the data hydrates.
@@ -80,15 +81,18 @@ const DecisionInstancePageContent = async ({
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <Suspense fallback={<DecisionHeaderSkeleton />}>
-        <DecisionHeader instanceId={instanceId} slug={slug} useLegacy>
-          <Suspense fallback={<Skeleton className="h-96" />}>
-            <DecisionStateRouter
-              instanceId={instanceId}
-              slug={slug}
-              useLegacy
-            />
-          </Suspense>
-        </DecisionHeader>
+        <div className="bg-neutral-offWhite text-gray-700">
+          <DecisionTranslationProvider>
+            <DecisionHeader instanceId={instanceId} slug={slug} useLegacy />
+            <Suspense fallback={<Skeleton className="h-96" />}>
+              <DecisionStateRouter
+                instanceId={instanceId}
+                slug={slug}
+                useLegacy
+              />
+            </Suspense>
+          </DecisionTranslationProvider>
+        </div>
       </Suspense>
     </HydrationBoundary>
   );

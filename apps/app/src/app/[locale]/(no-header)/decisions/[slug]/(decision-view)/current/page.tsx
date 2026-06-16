@@ -52,15 +52,17 @@ const CurrentPhasePage = async ({
   const { decisionProfile, instanceId, ownerSlug } = await loadDecision(slug);
 
   return (
-    <Suspense fallback={<DecisionContentSkeleton />}>
-      <CurrentPhaseView
-        instanceId={instanceId}
-        ownerSlug={ownerSlug}
-        decisionSlug={slug}
-        decisionProfileId={decisionProfile.id}
-        isAdmin={decisionProfile.processInstance?.access?.admin}
-      />
-    </Suspense>
+    <div className="bg-neutral-offWhite pt-8 md:pt-0">
+      <Suspense fallback={<DecisionContentSkeleton />}>
+        <CurrentPhaseView
+          instanceId={instanceId}
+          ownerSlug={ownerSlug}
+          decisionSlug={slug}
+          decisionProfileId={decisionProfile.id}
+          isAdmin={decisionProfile.processInstance?.access?.admin}
+        />
+      </Suspense>
+    </div>
   );
 };
 
