@@ -46,7 +46,9 @@ test.describe('Proposal template — multi-select category', () => {
       .getByRole('menuitem', { name: 'Decision-making process' })
       .click();
     await page.waitForURL(/\/decisions\/[^/]+\/edit/, { timeout: 12_000 });
-    await expect(page.getByText('Process Overview')).toBeVisible({
+    await expect(
+      page.getByRole('heading', { name: 'Process Settings' }),
+    ).toBeVisible({
       timeout: 36_000,
     });
 
@@ -103,11 +105,14 @@ test.describe('Proposal template — multi-select category', () => {
     await page.getByRole('menuitem', { name: 'Short text' }).click();
     await fieldSaved;
 
-    // 6. Positive control: Overview was left blank, so its section MUST show the
-    //    incomplete dot. This proves the selector matches real indicators, so the
-    //    assertion below is meaningful rather than a never-matching selector.
-    const overviewNav = sidebarNav.getByRole('button', { name: 'Overview' });
-    await expect(overviewNav.locator('span.bg-primary-teal')).toHaveCount(1);
+    // 6. Positive control: Process Settings was left blank (no name/description
+    //    entered), so its section MUST show the incomplete dot. This proves the
+    //    selector matches real indicators, so the assertion below is meaningful
+    //    rather than a never-matching selector.
+    const settingsNav = sidebarNav.getByRole('button', {
+      name: 'Process Settings',
+    });
+    await expect(settingsNav.locator('span.bg-primary-teal')).toHaveCount(1);
 
     // 7. The Proposal Template section must NOT show the incomplete dot.
     const templateNav = sidebarNav.getByRole('button', {
