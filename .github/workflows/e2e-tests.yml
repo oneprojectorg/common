@@ -17,6 +17,10 @@ jobs:
     name: Build E2E
     runs-on: blacksmith-4vcpu-ubuntu-2204
     timeout-minutes: 15
+    # Fork PRs route through the `fork-ci` environment so a maintainer must
+    # approve before `secrets.TIPTAP_PRO_TOKEN` is materialised on the runner.
+    # Internal PRs (and pushes) evaluate to an empty string and skip the gate.
+    environment: ${{ github.event.pull_request.head.repo.fork == true && 'fork-ci' || '' }}
 
     env:
       TIPTAP_PRO_TOKEN: ${{ secrets.TIPTAP_PRO_TOKEN }}
@@ -94,6 +98,10 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     timeout-minutes: 30
     needs: build
+    # Fork PRs route through the `fork-ci` environment so a maintainer must
+    # approve before `secrets.TIPTAP_PRO_TOKEN` is materialised on the runner.
+    # Internal PRs (and pushes) evaluate to an empty string and skip the gate.
+    environment: ${{ github.event.pull_request.head.repo.fork == true && 'fork-ci' || '' }}
 
     strategy:
       fail-fast: false
@@ -301,6 +309,10 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+    # Fork PRs route through the `fork-ci` environment so a maintainer must
+    # approve before `secrets.TIPTAP_PRO_TOKEN` is materialised on the runner.
+    # Internal PRs (and pushes) evaluate to an empty string and skip the gate.
+    environment: ${{ github.event.pull_request.head.repo.fork == true && 'fork-ci' || '' }}
 
     env:
       # Tiptap Pro registry authentication
