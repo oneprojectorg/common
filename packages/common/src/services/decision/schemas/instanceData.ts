@@ -43,12 +43,21 @@ export interface PhaseInstanceData {
   settings?: Record<string, unknown>;
 }
 
+/** Public-facing overview content (headline, short description, rich text body) */
+export interface InstanceOverview {
+  headline?: string;
+  description?: string;
+  /** Rich text body as an HTML string (TipTap getHTML output) */
+  body?: string;
+}
+
 /**
  * Instance data stored in processInstances table for new DecisionSchemaDefinition-based instances.
- * This structure must match instanceDataNewEncoder in the API encoders.
+ * This structure must match instanceDataWithSchemaEncoder in the API encoders.
  */
 export interface DecisionInstanceData {
   config?: ProcessConfig;
+  overview?: InstanceOverview;
   fieldValues?: Record<string, unknown>;
   templateId?: string;
   templateVersion?: string;

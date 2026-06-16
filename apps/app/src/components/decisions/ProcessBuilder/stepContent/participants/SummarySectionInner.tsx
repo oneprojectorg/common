@@ -41,7 +41,7 @@ export function SummarySectionInner({
   const [, setSectionParam] = useQueryState('section', { history: 'push' });
 
   const checklistSectionMap: Record<string, string> = {
-    processNameDescription: 'overview',
+    processNameDescription: 'processSettings',
     atLeastOnePhase: 'phases',
     phaseDetails: 'phases',
     proposalTemplate: 'templateEditor',

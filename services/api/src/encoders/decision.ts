@@ -193,9 +193,41 @@ export const instancePhaseDataEncoder = z.object({
   settings: z.record(z.string(), z.unknown()).optional(),
 });
 
+/**
+ * Public-facing overview content (headline, short description, rich text body).
+ *
+ * Output encoder: permissive (no length caps) so already-stored rows always
+ * read back — a cap here, combined with the `.catch(undefined)` on the read
+ * path, would silently drop the entire overview if any field were over-length.
+ * Length is enforced only on the input encoder below.
+ */
+const instanceOverviewEncoder = z.object({
+  headline: z.string().optional(),
+  description: z.string().optional(),
+  /** Rich text body as an HTML string (TipTap getHTML output) */
+  body: z.string().optional(),
+});
+
+/**
+ * Input encoder: enforces length caps as an abuse/runaway-storage guard on
+ * writes. The body cap is generous because images are currently inlined as
+ * base64 (editor feature behind a flag, internal testing only) — a single
+ * image easily exceeds tens of KB. Tighten it once images move to the
+ * app-wide upload→URL flow, which keeps stored HTML small.
+ */
+const instanceOverviewInputEncoder = z.object({
+  headline: z.string().max(200).optional(),
+  description: z.string().max(500).optional(),
+  body: z.string().max(5_000_000).optional(),
+});
+
 /** Instance data encoder for new schema format */
 const instanceDataWithSchemaEncoder = z.object({
   config: processConfigEncoder.optional(),
+  // Stored rows may hold overview shapes from older builds; degrade to no
+  // overview instead of failing the whole instance/list response. The
+  // update input schema (below) stays strict.
+  overview: instanceOverviewEncoder.optional().catch(undefined),
   fieldValues: z.record(z.string(), z.unknown()).optional(),
   templateId: z.string().optional(),
   templateVersion: z.string().optional(),
@@ -452,6 +484,8 @@ export const updateDecisionInstanceInputSchema = z.object({
   stewardProfileId: z.string().uuid().optional(),
   /** Process-level configuration (e.g., hideBudget, categories) */
   config: processConfigEncoder.optional(),
+  /** Public-facing overview content (headline, short description, rich text body) */
+  overview: instanceOverviewInputEncoder.optional(),
   /** Phase overrides for dates, rules, and settings */
   phases: z.array(instancePhaseDataInputEncoder).optional(),
   /** Proposal template (JSON Schema) */

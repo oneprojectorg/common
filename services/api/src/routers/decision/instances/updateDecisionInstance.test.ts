@@ -2,8 +2,8 @@ import {
   type DecisionInstanceData,
   type RubricTemplateSchema,
 } from '@op/common';
-import { db } from '@op/db/client';
-import { ProcessStatus } from '@op/db/schema';
+import { db, eq } from '@op/db/client';
+import { ProcessStatus, processInstances } from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '../..';
@@ -242,6 +242,179 @@ describe.concurrent('updateDecisionInstance', () => {
     const instanceData = dbInstance!.instanceData as DecisionInstanceData;
     expect(instanceData.config?.hideBudget).toBe(true);
     expect(result.processInstance.id).toBe(instance.instance.id);
+  });
+
+  it('should round-trip overview content through update and getInstance', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const overview = {
+      headline: `Overview headline ${task.id}`,
+      description: 'A short description for the overview page',
+      body: '<p>Overview body text</p>',
+    };
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      overview,
+    });
+
+    // Round-trip through getInstance — this also guards the encoder: if
+    // `overview` were dropped from instanceDataWithSchemaEncoder, zod would
+    // strip it from the response and the editor would initialize empty.
+    const fetched = await caller.decision.getInstance({
+      instanceId: instance.instance.id,
+    });
+
+    expect(fetched.instanceData?.overview).toEqual(overview);
+  });
+
+  it('should preserve sibling instanceData and overview fields when updating overview', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Seed unrelated instanceData and a full overview
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      config: { hideBudget: true },
+    });
+    const body = '<p>Body</p>';
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      overview: { headline: 'Original headline', description: 'Desc', body },
+    });
+
+    // Partial overview update — only the headline changes
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      overview: { headline: 'New headline' },
+    });
+
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+    const instanceData = dbInstance!.instanceData as DecisionInstanceData;
+
+    // Sibling instanceData fields survive overview updates
+    expect(instanceData.config?.hideBudget).toBe(true);
+    expect(instanceData.phases.length).toBeGreaterThan(0);
+
+    // Unspecified overview fields are preserved by the merge
+    expect(instanceData.overview?.headline).toBe('New headline');
+    expect(instanceData.overview?.description).toBe('Desc');
+    expect(instanceData.overview?.body).toEqual(body);
+  });
+
+  it('should clear overview headline and description with empty strings', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      overview: { headline: 'To be cleared', description: 'Also cleared' },
+    });
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      overview: { headline: '', description: '' },
+    });
+
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+    const instanceData = dbInstance!.instanceData as DecisionInstanceData;
+
+    expect(instanceData.overview?.headline).toBe('');
+    expect(instanceData.overview?.description).toBe('');
+  });
+
+  it('should tolerate legacy-shaped stored overview when reading an instance', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Plant an overview shape written by an older build (body as a TipTap JSON
+    // doc instead of the current HTML string) directly in the database
+    const dbInstance = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+    const legacyInstanceData = {
+      ...(dbInstance!.instanceData as DecisionInstanceData),
+      overview: {
+        headline: 'Legacy headline',
+        body: { type: 'doc', content: [{ type: 'paragraph' }] },
+      },
+    };
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: legacyInstanceData as unknown as DecisionInstanceData,
+      })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // The read must not fail — the malformed overview degrades to undefined
+    // instead of breaking the whole instance (and any list containing it)
+    const fetched = await caller.decision.getInstance({
+      instanceId: instance.instance.id,
+    });
+
+    expect(fetched.id).toBe(instance.instance.id);
+    expect(fetched.instanceData?.overview).toBeUndefined();
   });
 
   it('should update phase settings', async ({ task, onTestFinished }) => {

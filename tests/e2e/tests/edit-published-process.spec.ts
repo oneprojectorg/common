@@ -33,7 +33,9 @@ test.describe('Edit Published Process', () => {
     });
 
     // 3. Wait for the editor to load
-    await expect(authenticatedPage.getByText('Process Overview')).toBeVisible({
+    await expect(
+      authenticatedPage.getByRole('heading', { name: 'Process Settings' }),
+    ).toBeVisible({
       timeout: 18_000,
     });
 
@@ -85,12 +87,14 @@ test.describe('Edit Published Process', () => {
       authenticatedPage.getByText('Untitled field', { exact: true }).first(),
     ).toBeVisible({ timeout: 6_000 });
 
-    // 9. Navigate away to Overview and back to verify criterion survives
-    const overviewButton = sidebarNav.getByRole('button', {
-      name: 'Overview',
+    // 9. Navigate away to Process Settings and back to verify criterion survives
+    const processSettingsButton = sidebarNav.getByRole('button', {
+      name: 'Process Settings',
     });
-    await overviewButton.click();
-    await expect(authenticatedPage.getByText('Process Overview')).toBeVisible({
+    await processSettingsButton.click();
+    await expect(
+      authenticatedPage.getByRole('heading', { name: 'Process Settings' }),
+    ).toBeVisible({
       timeout: 12_000,
     });
 
@@ -217,7 +221,9 @@ test.describe('Edit Published Process', () => {
     });
 
     // 3. Wait for the editor to load
-    await expect(authenticatedPage.getByText('Process Overview')).toBeVisible({
+    await expect(
+      authenticatedPage.getByRole('heading', { name: 'Process Settings' }),
+    ).toBeVisible({
       timeout: 18_000,
     });
 
@@ -245,12 +251,14 @@ test.describe('Edit Published Process', () => {
       { timeout: 6_000 },
     );
 
-    // 7. Navigate away to Overview
-    const overviewButton = sidebarNav.getByRole('button', {
-      name: 'Overview',
+    // 7. Navigate away to Process Settings
+    const settingsButton = sidebarNav.getByRole('button', {
+      name: 'Process Settings',
     });
-    await overviewButton.click();
-    await expect(authenticatedPage.getByText('Process Overview')).toBeVisible({
+    await settingsButton.click();
+    await expect(
+      authenticatedPage.getByRole('heading', { name: 'Process Settings' }),
+    ).toBeVisible({
       timeout: 12_000,
     });
 

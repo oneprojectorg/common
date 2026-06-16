@@ -1,6 +1,7 @@
+import Placeholder from '@tiptap/extension-placeholder';
 import type { Content, Editor, Extensions } from '@tiptap/react';
 import { useEditor } from '@tiptap/react';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { cn } from '../../lib/utils';
 import { baseEditorStyles, defaultEditorExtensions } from './editorConfig';
@@ -8,6 +9,7 @@ import { baseEditorStyles, defaultEditorExtensions } from './editorConfig';
 export function useRichTextEditor({
   extensions = defaultEditorExtensions,
   content = '',
+  placeholder,
   editorClassName = '',
   onUpdate,
   onChange,
@@ -17,6 +19,7 @@ export function useRichTextEditor({
 }: {
   extensions?: Extensions;
   content?: Content;
+  placeholder?: string;
   editorClassName?: string;
   onUpdate?: (content: string) => void;
   onChange?: (content: string) => void;
@@ -25,8 +28,19 @@ export function useRichTextEditor({
   /** When true, sets `aria-required` on the editable region for assistive tech. */
   required?: boolean;
 }) {
+  // Append the Placeholder extension only when a placeholder is provided, so
+  // editors that don't ask for one are unaffected. Styling lives in
+  // baseEditorStyles and renders the hint once when the editor is empty.
+  const resolvedExtensions = useMemo(
+    () =>
+      placeholder
+        ? [...extensions, Placeholder.configure({ placeholder })]
+        : extensions,
+    [extensions, placeholder],
+  );
+
   const editor = useEditor({
-    extensions,
+    extensions: resolvedExtensions,
     content,
     editable,
     editorProps: {

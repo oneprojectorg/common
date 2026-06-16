@@ -109,6 +109,7 @@ export const ProcessBuilderFooter = ({
         name: dirtyFields?.name || undefined,
         description: dirtyFields?.description,
         stewardProfileId: dirtyFields?.stewardProfileId || undefined,
+        overview: dirtyFields?.overview,
         phases: dirtyFields?.phases,
         proposalTemplate: dirtyFields?.proposalTemplate,
         rubricTemplate: dirtyFields?.rubricTemplate,

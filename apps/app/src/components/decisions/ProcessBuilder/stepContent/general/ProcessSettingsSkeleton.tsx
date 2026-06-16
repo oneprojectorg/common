@@ -1,6 +1,6 @@
 import { Skeleton } from '@op/ui/Skeleton';
 
-export function OverviewSectionSkeleton() {
+export function ProcessSettingsSkeleton() {
   return (
     <div className="mx-auto w-full max-w-160 space-y-8 p-4 md:p-8">
       {/* Process Stewardship Section */}

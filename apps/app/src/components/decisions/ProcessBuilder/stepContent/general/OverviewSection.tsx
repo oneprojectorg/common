@@ -1,15 +1,157 @@
 'use client';
 
-import { Suspense } from 'react';
+import { trpc } from '@op/api/client';
+import { RichTextEditor } from '@op/ui/RichTextEditor';
+import { Skeleton } from '@op/ui/Skeleton';
+import type { Editor } from '@tiptap/react';
+import { Suspense, useRef, useState } from 'react';
 
-import type { SectionProps } from '../../contentRegistry';
-import { OverviewSectionForm } from './OverviewSectionForm';
-import { OverviewSectionSkeleton } from './OverviewSectionSkeleton';
+import { useTranslations } from '@/lib/i18n';
+
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { ErrorMessage } from '@/components/ErrorMessage';
+import { RichTextEditorBubbleMenu } from '@/components/RichTextEditor';
+import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
+import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
+import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
+import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
+
+import { OverviewTextField } from './OverviewTextField';
+
+// Must match the server-side caps in instanceOverviewInputEncoder
+const HEADLINE_MAX_LENGTH = 200;
+const DESCRIPTION_MAX_LENGTH = 500;
 
 export default function OverviewSection(props: SectionProps) {
   return (
-    <Suspense fallback={<OverviewSectionSkeleton />}>
-      <OverviewSectionForm {...props} />
-    </Suspense>
+    <ErrorBoundary fallback={<ErrorMessage />}>
+      <Suspense fallback={<OverviewSectionSkeleton />}>
+        <OverviewSectionContent {...props} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
+
+// Public-facing overview page editor: headline and short description inputs
+// above a divider, with a rich text body describing the process below it.
+function OverviewSectionContent({
+  decisionProfileId,
+  instanceId,
+}: SectionProps) {
+  const t = useTranslations();
+
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
+
+  const storeOverview = useProcessBuilderStore(
+    (s) => s.instances[decisionProfileId]?.overview,
+  );
+  const { saveChanges, autosaveStatus } = useProcessBuilderAutosave();
+
+  // Prefer store (localStorage buffer) over API data — the store is written
+  // synchronously on every save, so it's always the freshest source.
+  // Captured once on mount; local state is the source of truth afterwards.
+  const initialOverview = useRef({
+    headline:
+      storeOverview?.headline ??
+      instance.instanceData?.overview?.headline ??
+      '',
+    description:
+      storeOverview?.description ??
+      instance.instanceData?.overview?.description ??
+      '',
+    body: storeOverview?.body ?? instance.instanceData?.overview?.body ?? '',
+  }).current;
+
+  const [headline, setHeadline] = useState(initialOverview.headline);
+  const [description, setDescription] = useState(initialOverview.description);
+  // The editor owns body state; track the latest HTML so headline/description
+  // saves don't clobber it.
+  const bodyRef = useRef(initialOverview.body);
+
+  // Editor instance, captured once ready, so the bubble menu can attach.
+  const [editor, setEditor] = useState<Editor | null>(null);
+
+  const saveOverview = (patch: {
+    headline?: string;
+    description?: string;
+    body?: string;
+  }) => {
+    saveChanges({
+      overview: {
+        headline,
+        description,
+        body: bodyRef.current,
+        ...patch,
+      },
+    });
+  };
+
+  return (
+    <div className="size-full [scrollbar-gutter:stable]">
+      <div className="mx-auto flex w-full max-w-xl flex-col gap-4 p-4 md:px-0 md:py-6">
+        <div className="flex justify-end">
+          <SaveStatusIndicator
+            status={autosaveStatus.status}
+            savedAt={autosaveStatus.savedAt}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <OverviewTextField
+            variant="headline"
+            value={headline}
+            maxLength={HEADLINE_MAX_LENGTH}
+            placeholder={t('Add a headline')}
+            onChange={(value) => {
+              setHeadline(value);
+              saveOverview({ headline: value });
+            }}
+          />
+          <OverviewTextField
+            variant="description"
+            value={description}
+            maxLength={DESCRIPTION_MAX_LENGTH}
+            placeholder={t(
+              'Add a short description — one or two lines that sit under the headline.',
+            )}
+            onChange={(value) => {
+              setDescription(value);
+              saveOverview({ description: value });
+            }}
+          />
+        </div>
+
+        <hr className="border-neutral-gray1" />
+
+        <RichTextEditor
+          content={initialOverview.body}
+          placeholder={t('overview_body_placeholder')}
+          editorClassName="min-h-40"
+          onChange={(html) => {
+            bodyRef.current = html;
+            saveOverview({ body: html });
+          }}
+          onEditorReady={setEditor}
+        />
+
+        <RichTextEditorBubbleMenu editor={editor} />
+      </div>
+    </div>
+  );
+}
+
+function OverviewSectionSkeleton() {
+  return (
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-6 p-4 md:px-0 md:py-6">
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-5 w-full" />
+      </div>
+      <hr className="border-neutral-gray1" />
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-3/4" />
+      </div>
+    </div>
   );
 }

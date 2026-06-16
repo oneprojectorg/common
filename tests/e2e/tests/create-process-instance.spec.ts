@@ -48,11 +48,13 @@ test.describe('Create Process Instance', () => {
     });
 
     // 2. Wait for the process builder editor to load
-    await expect(authenticatedPage.getByText('Process Overview')).toBeVisible({
+    await expect(
+      authenticatedPage.getByRole('heading', { name: 'Process Settings' }),
+    ).toBeVisible({
       timeout: 36_000,
     });
 
-    // ── Step 1: General – Overview ──────────────────────────────────────
+    // ── Step 1: General – Process Settings ──────────────────────────────
 
     // 3. Select the steward (current user — the first option in the dropdown)
     const stewardSelect = authenticatedPage.getByLabel(

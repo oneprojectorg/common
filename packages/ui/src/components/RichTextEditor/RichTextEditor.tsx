@@ -34,7 +34,7 @@ export const RichTextEditor = forwardRef<
     {
       extensions,
       content = '',
-      placeholder: _placeholder = 'Start writing...',
+      placeholder,
       onUpdate,
       onChange,
       onEditorReady,
@@ -46,6 +46,7 @@ export const RichTextEditor = forwardRef<
     const editor = useRichTextEditor({
       extensions,
       content,
+      placeholder,
       editorClassName,
       onUpdate,
       onChange,
@@ -74,7 +75,7 @@ export const RichTextEditor = forwardRef<
 
     return (
       <div className={className}>
-        <StyledRichTextContent editor={editor} placeholder={_placeholder} />
+        <StyledRichTextContent editor={editor} />
       </div>
     );
   },
