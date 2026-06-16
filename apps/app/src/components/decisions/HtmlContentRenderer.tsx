@@ -6,8 +6,8 @@ import { useMemo } from 'react';
 import { LinkPreview } from '../LinkPreview';
 
 /**
- * Renders pre-generated HTML content for a proposal, replacing the read-only
- * TipTap editor with zero JS overhead for the prose content.
+ * Renders pre-generated HTML content (proposals, overview, etc.), replacing the
+ * read-only TipTap editor with zero JS overhead for the prose content.
  *
  * Typography styles are shared with the TipTap editor via `viewerProseStyles`.
  *
@@ -15,7 +15,7 @@ import { LinkPreview } from '../LinkPreview';
  * replaced with `LinkPreview` components rendered within the same React tree,
  * preserving access to tRPC and other providers.
  */
-export function ProposalHtmlContent({ html }: { html: string }) {
+export function HtmlContentRenderer({ html }: { html: string }) {
   const segments = useMemo(() => splitHtmlSegments(html), [html]);
 
   const hasEmbeds = segments.some((s) => s.type === 'embed');

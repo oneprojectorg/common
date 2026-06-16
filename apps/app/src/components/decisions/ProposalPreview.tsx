@@ -28,9 +28,9 @@ import { Link as NavLink } from '@/lib/i18n/routing';
 import { ProfileAvatar } from '../ProfileAvatar';
 import { BudgetDisplay, formatBudget } from './BudgetDisplay';
 import { DocumentNotAvailable } from './DocumentNotAvailable';
+import { HtmlContentRenderer } from './HtmlContentRenderer';
 import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { ProposalContentRenderer } from './ProposalContentRenderer';
-import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { resolveProposalSystemFields } from './proposalContentUtils';
 
 export type ProposalTranslation = {
@@ -245,7 +245,7 @@ export function ProposalPreview({
 
       {/* Proposal Content */}
       {legacyHtml ? (
-        <ProposalHtmlContent html={legacyHtml} />
+        <HtmlContentRenderer html={legacyHtml} />
       ) : htmlContent && proposalTemplate ? (
         <ProposalContentRenderer
           proposalTemplate={proposalTemplate}
