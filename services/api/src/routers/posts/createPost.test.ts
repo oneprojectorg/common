@@ -26,11 +26,12 @@ describeAccessTierGating('posts.createPost', {
   ),
 
   userJwt: accessTierGatingCell(
-    'admits user-JWT caller (service layer enforces decision permissions)',
+    'rejects user-JWT caller',
     async ({ callers }) => {
       const caller = await callers.userJwt();
-      await expectPassesAccessTierGate(
+      await expectFailsAccessTierGate(
         caller.posts.createPost({ content: 'x' }),
+        'user',
       );
     },
   ),

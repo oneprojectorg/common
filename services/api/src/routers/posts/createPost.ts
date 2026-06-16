@@ -4,13 +4,13 @@ import { createPostSchema } from '@op/types';
 import { waitUntil } from '@vercel/functions';
 
 import { postsEncoder } from '../../encoders';
-import { authenticatedConfirmedProcedure, router } from '../../trpcFactory';
+import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 import { trackProposalCommented } from '../../utils/analytics';
 
 const outputSchema = postsEncoder;
 
 export const createPost = router({
-  createPost: authenticatedConfirmedProcedure()
+  createPost: networkAuthenticatedProcedure()
     .input(createPostSchema)
     .output(outputSchema)
     .mutation(async ({ input, ctx }) => {
