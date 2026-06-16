@@ -287,6 +287,7 @@ function renderField(
           <ReadonlyTextField
             title={schema.title}
             description={schema.description}
+            required={field.required}
             content={
               mode === 'preview-version' ? (previewContent ?? null) : null
             }
@@ -300,6 +301,7 @@ function renderField(
         <CollaborativeTextField
           fragmentName={key}
           title={schema.title}
+          required={field.required}
           description={schema.description}
           placeholder={placeholder}
           multiline={format === 'long-text'}
@@ -355,6 +357,7 @@ function renderField(
             value={selectedOption?.label ?? null}
             title={schema.title}
             description={schema.description}
+            required={field.required}
             placeholder={t('Select option')}
           />
         );
@@ -362,13 +365,18 @@ function renderField(
 
       return (
         <div className="flex flex-col gap-2">
-          <FieldHeader title={schema.title} description={schema.description} />
+          <FieldHeader
+            title={schema.title}
+            description={schema.description}
+            required={field.required}
+          />
           <CollaborativeDropdownField
             options={options}
             initialValue={(draft[key] as string | null) ?? null}
             onChange={(value) => onFieldChange(key, value)}
             fragmentName={key}
             allowEmpty={!field.required}
+            required={field.required}
           />
         </div>
       );

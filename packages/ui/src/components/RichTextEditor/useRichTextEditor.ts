@@ -13,6 +13,7 @@ export function useRichTextEditor({
   onChange,
   onEditorReady,
   editable = true,
+  required = false,
 }: {
   extensions?: Extensions;
   content?: Content;
@@ -21,6 +22,8 @@ export function useRichTextEditor({
   onChange?: (content: string) => void;
   onEditorReady?: (editor: Editor) => void;
   editable?: boolean;
+  /** When true, sets `aria-required` on the editable region for assistive tech. */
+  required?: boolean;
 }) {
   const editor = useEditor({
     extensions,
@@ -32,6 +35,7 @@ export function useRichTextEditor({
           baseEditorStyles,
           editorClassName || (editable ? 'min-h-96' : ''),
         ),
+        ...(required ? { 'aria-required': 'true' } : {}),
       },
     },
     onUpdate: ({ editor }) => {

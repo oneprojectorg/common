@@ -101,6 +101,7 @@ export const Select = <T extends object, M extends SelectionMode = 'single'>({
   return (
     <AriaSelect
       {...props}
+      isRequired={isRequired}
       isInvalid={!!errorMessage && errorMessage.length > 0}
       className={cn('flex flex-col gap-1', props.className)}
     >

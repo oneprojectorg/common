@@ -25,12 +25,14 @@ export function ReadonlyTitleField({ value }: { value: string | null }) {
 export function ReadonlyTextField({
   title,
   description,
+  required,
   content,
   placeholder,
   multiline,
 }: {
   title?: string;
   description?: string;
+  required?: boolean;
   content: JSONContent | null;
   placeholder: string;
   multiline: boolean;
@@ -44,7 +46,11 @@ export function ReadonlyTextField({
 
   return (
     <div className="flex flex-col gap-4">
-      <FieldHeader title={title} description={description} />
+      <FieldHeader
+        title={title}
+        description={description}
+        required={required}
+      />
       {content ? (
         <RichTextViewer
           key={contentKey}
@@ -68,11 +74,13 @@ export function ReadonlyDropdownField({
   value,
   title,
   description,
+  required,
   placeholder,
 }: {
   value: string | null;
   title?: string;
   description?: string;
+  required?: boolean;
   placeholder: string;
 }) {
   const content = (
@@ -87,7 +95,11 @@ export function ReadonlyDropdownField({
 
   return (
     <div className="flex flex-col gap-2">
-      <FieldHeader title={title} description={description} />
+      <FieldHeader
+        title={title}
+        description={description}
+        required={required}
+      />
       {content}
     </div>
   );

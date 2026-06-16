@@ -20,6 +20,8 @@ interface CollaborativeDropdownFieldProps {
   placeholder?: string;
   /** When true, prepends a "None" option that clears the selection back to null. */
   allowEmpty?: boolean;
+  /** When true, sets `aria-required` on the select for assistive tech. */
+  required?: boolean;
 }
 
 /**
@@ -33,6 +35,7 @@ export function CollaborativeDropdownField({
   fragmentName,
   placeholder,
   allowEmpty = false,
+  required = false,
 }: CollaborativeDropdownFieldProps) {
   const t = useTranslations();
   const { ydoc } = useCollaborativeDoc();
@@ -82,6 +85,7 @@ export function CollaborativeDropdownField({
     <Select
       variant="pill"
       size="medium"
+      isRequired={required}
       placeholder={placeholder ?? t('Select option')}
       selectedKey={selectedValue}
       onSelectionChange={handleSelectionChange}
