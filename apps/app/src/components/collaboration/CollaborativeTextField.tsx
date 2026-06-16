@@ -1,5 +1,6 @@
 'use client';
 
+import { RequiredAsterisk } from '@op/ui/RequiredAsterisk';
 import { cn } from '@op/ui/utils';
 import Placeholder from '@tiptap/extension-placeholder';
 import type { Editor } from '@tiptap/react';
@@ -100,12 +101,7 @@ export function CollaborativeTextField({
           {title && (
             <span className="font-serif text-title-sm14 text-neutral-charcoal">
               {title}
-              {required && (
-                <span className="text-functional-red" aria-hidden="true">
-                  {' '}
-                  *
-                </span>
-              )}
+              {required && <RequiredAsterisk />}
             </span>
           )}
           {description && (

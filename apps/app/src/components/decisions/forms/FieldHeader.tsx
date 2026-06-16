@@ -1,4 +1,5 @@
 import { Header4 } from '@op/ui/Header';
+import { RequiredAsterisk } from '@op/ui/RequiredAsterisk';
 
 /** Renders title + description header for a form field. */
 export function FieldHeader({
@@ -20,30 +21,23 @@ export function FieldHeader({
     return null;
   }
 
-  const titleContent = title ? (
-    required ? (
-      <>
-        {title}
-        <span className="text-functional-red" aria-hidden="true">
-          {' '}
-          *
-        </span>
-      </>
-    ) : (
-      title
-    )
-  ) : undefined;
+  const titleNode = title && (
+    <Header4 className="font-light">
+      {title}
+      {required && <RequiredAsterisk />}
+    </Header4>
+  );
 
   return (
     <div className={`flex flex-col ${className}`}>
-      {titleContent &&
+      {titleNode &&
         (badge ? (
           <div className="flex items-baseline justify-between gap-2">
-            <Header4 className="font-light">{titleContent}</Header4>
+            {titleNode}
             <span className="shrink-0 text-xs text-neutral-gray4">{badge}</span>
           </div>
         ) : (
-          <Header4 className="font-light">{titleContent}</Header4>
+          titleNode
         ))}
       {description && (
         <p className="text-sm text-neutral-charcoal">{description}</p>
