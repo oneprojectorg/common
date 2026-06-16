@@ -1,8 +1,9 @@
 import {
   accessRoleMinimalSchema,
+  organizationUserSchema,
   profileUserWithProfileSchema,
 } from '@op/common/client';
-import { authUsers, organizationUsers, users } from '@op/db/schema';
+import { authUsers, users } from '@op/db/schema';
 import type { ZonePermissions } from 'access-zones';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
@@ -44,9 +45,7 @@ const roleJunctionSchema = z.object({
 
 // Extended organization user schema that includes permissions and role data
 // Used when returning user data with full organizational context
-const organizationUserWithPermissionsEncoder = createSelectSchema(
-  organizationUsers,
-).extend({
+const organizationUserWithPermissionsEncoder = organizationUserSchema.extend({
   organization: organizationsEncoder.nullish(),
   permissions: zonePermissionsSchema.nullish(),
   roles: z.array(roleJunctionSchema).nullish(),
@@ -62,16 +61,29 @@ const profileUserWithPermissionsEncoder = profileUserWithProfileSchema.extend({
  * Complete user data encoder with all relational data
  * Includes avatar, organization memberships, roles, and profile information
  */
-export const userEncoder = createSelectSchema(users).extend({
-  onboardedAt: z.string().nullish(),
-  isAnonymous: z.boolean(),
-  avatarImage: storageItemEncoder.nullish(),
-  organizationUsers: organizationUserWithPermissionsEncoder.array().nullish(),
-  profileUsers: profileUserWithPermissionsEncoder.array().nullish(),
-  currentOrganization: organizationsWithProfileEncoder.nullish(),
-  currentProfile: baseProfileEncoder.nullish(),
-  profile: baseProfileEncoder.nullish(),
-});
+export const userEncoder = createSelectSchema(users)
+  .pick({
+    id: true,
+    authUserId: true,
+    name: true,
+    email: true,
+    lastOrgId: true,
+    profileId: true,
+    currentProfileId: true,
+    tos: true,
+    privacy: true,
+    createdAt: true,
+  })
+  .extend({
+    onboardedAt: z.string().nullish(),
+    isAnonymous: z.boolean(),
+    avatarImage: storageItemEncoder.nullish(),
+    organizationUsers: organizationUserWithPermissionsEncoder.array().nullish(),
+    profileUsers: profileUserWithPermissionsEncoder.array().nullish(),
+    currentOrganization: organizationsWithProfileEncoder.nullish(),
+    currentProfile: baseProfileEncoder.nullish(),
+    profile: baseProfileEncoder.nullish(),
+  });
 
 export type CommonUser = z.infer<typeof userEncoder>;
 

@@ -48,6 +48,10 @@ export {
   accessRoleMinimalSchema,
   type AccessRoleMinimal,
 } from './services/access/schemas/accessRole';
+export {
+  organizationUserSchema,
+  type OrganizationUserBase,
+} from './services/organization/schemas/organizationUser';
 export * from './services/decision/types';
 export {
   attachmentSummarySchema,
