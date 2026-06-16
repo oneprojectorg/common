@@ -285,14 +285,11 @@ export function ProposalCardCategory({
   return (
     <>
       <Bullet />
-      <div className="flex flex-wrap items-center gap-1">
+      <div className="flex max-w-full min-w-0 flex-wrap items-center gap-1">
         {displayCategories.map((displayCategory) => (
           <Chip
             key={displayCategory}
-            className={cn(
-              'max-w-96 min-w-6 overflow-hidden text-nowrap overflow-ellipsis',
-              className,
-            )}
+            className={cn('block max-w-full min-w-0 truncate', className)}
           >
             {displayCategory}
           </Chip>
