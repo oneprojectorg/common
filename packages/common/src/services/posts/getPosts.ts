@@ -3,10 +3,12 @@ import {
   EntityType,
   posts as postsTable,
   postsToProfiles,
+  profiles as profilesTable,
 } from '@op/db/schema';
 import { checkPermission, permission } from 'access-zones';
-import { type SQL, and, desc, eq, isNull, sql } from 'drizzle-orm';
+import { type SQL, and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
+import { UnauthorizedError } from '../../utils';
 import {
   assertProfileTypeAccess,
   getCurrentProfileId,
@@ -83,6 +85,23 @@ export const getPosts = async (input: GetPostsInput) => {
           return rows.map((p) => p.profileId);
         })()
       : [];
+
+  // Proposal posts are gated on the parent decision via `listProposalPosts`
+  // (decision.listProposalPosts), because the READ grant lives on the parent
+  // decision profile, never on the proposal. assertProfileTypeAccess below
+  // leniently passes the PROPOSAL type (it's not in the policy), so reject it
+  // here rather than leak it — proposals must never be read through this
+  // context-blind endpoint.
+  if (profileIdsToAuthorize.length > 0) {
+    const gatedProfiles = await db
+      .select({ type: profilesTable.type })
+      .from(profilesTable)
+      .where(inArray(profilesTable.id, profileIdsToAuthorize));
+
+    if (gatedProfiles.some((profile) => profile.type === EntityType.PROPOSAL)) {
+      throw new UnauthorizedError('You do not have access to these posts');
+    }
+  }
 
   await assertProfileTypeAccess({
     user: { id: authUserId },

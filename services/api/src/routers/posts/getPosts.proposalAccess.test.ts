@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import {
+  createAuthenticatedCaller,
   createIsolatedSession,
   createTestContextWithSession,
 } from '../../test/supabase-utils';
@@ -12,19 +13,19 @@ import { createCallerFactory } from '../../trpcFactory';
 const createCaller = createCallerFactory(appRouter);
 
 /**
- * Regression: `getPosts` authorizes with `assertProfileTypeAccess({ DECISION:
- * READ })`. A proposal's profile is type PROPOSAL, which is NOT in that policy,
- * so the check lenient-passes (no authorization at all). The READ grant lives
- * on the parent decision profile, never on the proposal — so a caller who
- * cannot read the decision must not be able to read its proposal's posts.
+ * A proposal's profile is type PROPOSAL. `posts.getPosts` authorizes with
+ * `assertProfileTypeAccess({ DECISION: READ })`, which leniently passes
+ * (i.e. does NOT authorize) any type outside that policy — so before the fix
+ * it leaked private proposal posts to any network member. The READ grant for a
+ * proposal lives on its parent decision profile, never on the proposal itself.
  *
- * FAILS against current code: an unrelated network member (a confirmed account
- * with no grant on the decision) reads a private proposal's discussion post.
- * Should pass once proposal reads are gated on the parent decision's READ (as
- * `getProposal` does via `assertInstanceProfileAccess`).
+ * The fix moves proposal posts onto `decision.listProposalPosts`, gated on
+ * the parent decision via `assertInstanceProfileAccess` (as `getProposal`
+ * does), and makes `posts.getPosts` reject PROPOSAL-typed profiles outright so
+ * the leak can't reappear through that context-blind endpoint.
  */
 describe('posts.getPosts — proposal post access', () => {
-  it('does not leak a proposal post to a network member unrelated to the decision', async ({
+  it('gates proposal posts on the parent decision, not the proposal profile', async ({
     task,
     onTestFinished,
   }) => {
@@ -56,16 +57,39 @@ describe('posts.getPosts — proposal post access', () => {
     });
 
     const { session } = await createIsolatedSession(outsider.email);
-    const caller = createCaller(await createTestContextWithSession(session));
+    const outsiderCaller = createCaller(
+      await createTestContextWithSession(session),
+    );
 
-    const result = await caller.posts.getPosts({
+    // The dedicated reader gates on the parent decision: an outsider who can't
+    // read the decision is denied its proposal's posts.
+    await expect(
+      outsiderCaller.decision.listProposalPosts({
+        profileId: proposal.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    // And the context-blind posts.getPosts now rejects PROPOSAL-typed profiles
+    // outright rather than leniently passing (and leaking) them.
+    await expect(
+      outsiderCaller.posts.getPosts({
+        profileId: proposal.profileId,
+        parentPostId: null,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    // A member granted access to the decision instance reads the proposal's
+    // posts through the dedicated reader.
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    const result = await memberCaller.decision.listProposalPosts({
       profileId: proposal.profileId,
-      parentPostId: null,
     });
 
-    // The outsider cannot read the private decision, so its proposal's posts
-    // must not be visible to them.
-    expect(result.map((p) => p.id)).not.toContain(post.id);
-    expect(result).toHaveLength(0);
+    expect(result.items.map((p) => p.id)).toContain(post.id);
   });
 });

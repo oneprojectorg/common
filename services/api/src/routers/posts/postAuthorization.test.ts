@@ -553,7 +553,7 @@ describe.concurrent('non-decision (organization) post authorization', () => {
   });
 });
 
-describe.concurrent('listProfilePosts authorization and pagination', () => {
+describe.concurrent('decision.listPosts authorization and pagination', () => {
   it('allows a member to read paginated updates on a decision profile', async ({
     task,
     onTestFinished,
@@ -581,7 +581,7 @@ describe.concurrent('listProfilePosts authorization and pagination', () => {
     });
     const memberCaller = await createAuthenticatedCaller(member.email);
 
-    const page = await memberCaller.posts.listProfilePosts({
+    const page = await memberCaller.decision.listPosts({
       profileId: instance.profileId,
       limit: 10,
     });
@@ -604,14 +604,14 @@ describe.concurrent('listProfilePosts authorization and pagination', () => {
     const outsiderCaller = await createOutsiderCaller(testData);
 
     await expect(
-      outsiderCaller.posts.listProfilePosts({
+      outsiderCaller.decision.listPosts({
         profileId: instance.profileId,
         limit: 10,
       }),
     ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
   });
 
-  it('rejects listProfilePosts on non-decision (org) profiles', async ({
+  it('rejects decision.listPosts on non-decision (org) profiles', async ({
     task,
     onTestFinished,
   }) => {
@@ -625,7 +625,7 @@ describe.concurrent('listProfilePosts authorization and pagination', () => {
     });
 
     await expect(
-      ownerCaller.posts.listProfilePosts({
+      ownerCaller.decision.listPosts({
         profileId: setup.organization.profileId,
         limit: 10,
       }),
@@ -656,14 +656,14 @@ describe.concurrent('listProfilePosts authorization and pagination', () => {
       await new Promise((resolve) => setTimeout(resolve, 5));
     }
 
-    const firstPage = await adminCaller.posts.listProfilePosts({
+    const firstPage = await adminCaller.decision.listPosts({
       profileId: instance.profileId,
       limit: 2,
     });
     expect(firstPage.items).toHaveLength(2);
     expect(firstPage.next).toBeTruthy();
 
-    const secondPage = await adminCaller.posts.listProfilePosts({
+    const secondPage = await adminCaller.decision.listPosts({
       profileId: instance.profileId,
       limit: 2,
       cursor: firstPage.next,
@@ -726,7 +726,7 @@ describe.concurrent('listProfilePosts authorization and pagination', () => {
     let cursor: string | null | undefined = undefined;
     let pages = 0;
     do {
-      const page = await memberCaller.posts.listProfilePosts({
+      const page = await memberCaller.decision.listPosts({
         profileId: instance.profileId,
         limit: 2,
         cursor,
@@ -1033,7 +1033,7 @@ describe.concurrent('getPosts pagination', () => {
     task,
     onTestFinished,
   }) => {
-    // Same regression as the listProfilePosts test, against the getPosts
+    // Same regression as the decision.listPosts test, against the getPosts
     // profileId branch (called by ProposalView). Comments inherit
     // postsToProfiles rows from their parent; a relational `with: { post: ... }`
     // filter would LEFT JOIN and silently shrink pages. SQL-level innerJoin

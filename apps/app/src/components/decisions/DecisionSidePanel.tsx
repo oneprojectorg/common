@@ -210,7 +210,7 @@ const UpdatesTabContent = ({
   const utils = trpc.useUtils();
 
   const handlePostSuccess = useCallback(() => {
-    void utils.posts.listProfilePosts.invalidate({
+    void utils.decision.listPosts.invalidate({
       profileId: decisionProfileId,
     });
   }, [utils, decisionProfileId]);
@@ -250,7 +250,7 @@ const UpdatesFeed = ({ decisionProfileId }: { decisionProfileId: string }) => {
   const { user } = useUser();
 
   const [paginatedData, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
-    trpc.posts.listProfilePosts.useSuspenseInfiniteQuery(
+    trpc.decision.listPosts.useSuspenseInfiniteQuery(
       { profileId: decisionProfileId, limit: UPDATES_PAGE_SIZE },
       {
         getNextPageParam: (lastPage) => lastPage.next ?? undefined,

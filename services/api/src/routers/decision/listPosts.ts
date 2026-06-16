@@ -13,9 +13,9 @@ const inputSchema = z.object({
   cursor: z.string().nullish(),
 });
 
-export const listProfilePosts = router({
+export const listPostsRouter = router({
   /** Lists a decision profile's update posts (public on a public decision). */
-  listProfilePosts: openProcedure()
+  listPosts: openProcedure()
     .input(inputSchema)
     .output(
       z.object({
