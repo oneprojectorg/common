@@ -105,11 +105,7 @@ export const DecisionInstanceHeader = ({
         {user && !user.isAnonymous ? (
           <UserAvatarMenu />
         ) : (
-          // Shown to both no-session and anonymous visitors so the latter can
-          // upgrade to a real account. `/login` lives outside the [locale]
-          // route tree, so a RAC ButtonLink would client-navigate through
-          // next-intl and land on the dead `/en/login`; a native navigation
-          // keeps the path locale-free.
+          // Native nav: /login is outside the [locale] tree, so a RAC link 404s at /en/login.
           <Button
             color="primary"
             size="small"

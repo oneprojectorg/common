@@ -35,8 +35,6 @@ export const updateUserProfileRouter = router({
         user: targetUserData.user,
       });
 
-      // The target user's auth identity is already fetched above, so derive
-      // `isAnonymous` from it rather than re-querying the `authUser` relation.
       return encodeUser({ user: result, authUser: targetUserData.user });
     }),
 });

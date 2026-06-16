@@ -64,14 +64,9 @@ const profileUserWithPermissionsEncoder = profileUserWithProfileSchema.extend({
  */
 export const userEncoder = createSelectSchema(users).extend({
   onboardedAt: z.string().nullish(),
-  // Whether the underlying auth identity is an anonymous sign-in. Sourced by
-  // every producer from the Supabase session (`ctx.user.is_anonymous`) — or the
-  // admin's own auth fetch for cross-user procedures — so it never depends on
-  // loading the `authUser` relation.
+  // Populated by encodeUser from the auth session, not the authUser relation.
   isAnonymous: z.boolean(),
-  // The `authUser` relation is loaded only by the platform-admin user list
-  // (for `lastSignInAt`); callers project different column subsets, so keep
-  // every column optional. `.nullish()` covers procedures that don't load it.
+  // Loaded only by the platform-admin user list (for lastSignInAt).
   authUser: createSelectSchema(authUsers).partial().nullish(),
   avatarImage: storageItemEncoder.nullish(),
   organizationUsers: organizationUserWithPermissionsEncoder.array().nullish(),
@@ -84,11 +79,8 @@ export const userEncoder = createSelectSchema(users).extend({
 export type CommonUser = z.infer<typeof userEncoder>;
 
 /**
- * Encode a DB user row into a `CommonUser`, deriving the required `isAnonymous`
- * flag from the caller's Supabase auth identity (`ctx.user`, or an admin
- * `getUserById` result) rather than the DB `authUser` relation. Centralizes the
- * "read it from the live session, never query `authUser` for it" rule so every
- * producer of the caller's-own (or an admin-fetched) account stays consistent.
+ * Encode a DB user row into a `CommonUser`, taking `isAnonymous` from the
+ * Supabase auth identity (`ctx.user` or an admin `getUserById` result).
  */
 export const encodeUser = ({
   user,
