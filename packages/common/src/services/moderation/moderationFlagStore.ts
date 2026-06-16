@@ -1,4 +1,4 @@
-import { and, db, eq, inArray } from '@op/db/client';
+import { type DbClient, and, db, eq, inArray } from '@op/db/client';
 import { type ModerationFlag, moderationFlags } from '@op/db/schema';
 
 import { CommonError } from '../../utils';
@@ -116,8 +116,11 @@ export const createPendingFlag = async ({
  *  round exists to resolve it) and the open-flag idempotency check would
  *  swallow every retry. A flag that has already moved past `pending` is left
  *  untouched. */
-export const deletePendingFlag = async (flagId: string): Promise<void> => {
-  await db
+export const deletePendingFlag = async (
+  flagId: string,
+  executor: DbClient = db,
+): Promise<void> => {
+  await executor
     .delete(moderationFlags)
     .where(
       and(

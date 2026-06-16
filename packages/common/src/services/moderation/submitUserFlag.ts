@@ -1,3 +1,4 @@
+import { db } from '@op/db/client';
 import type { ModerationFlag } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
@@ -95,8 +96,14 @@ export const submitUserFlag = async (
           submissionMediaIdsFromRefs(refs),
         ),
       rollback: async (flag) => {
-        await deletePendingFlag(flag.id);
-        await clearSubmissions(input.itemType, input.itemId);
+        // One transaction so the undo can't half-apply: either the pending
+        // flag and its submission rows both go, or neither does and the
+        // original error propagates for retry. A partial rollback would either
+        // strand the flag `pending` forever or leave orphan submission rows.
+        await db.transaction(async (tx) => {
+          await deletePendingFlag(flag.id, tx);
+          await clearSubmissions(input.itemType, input.itemId, tx);
+        });
       },
     },
   );

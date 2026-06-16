@@ -106,7 +106,9 @@ export const assertModerationItemAccess = async ({
       throw new NotFoundError('Proposal', itemId);
     }
 
-    await assertInstanceProfileAccess({
+    // Reuse the resolved instance-profile user for the instance-admin check
+    // below instead of re-fetching it, mirroring getProposal.
+    const instanceProfileUser = await assertInstanceProfileAccess({
       user,
       instance: proposal.processInstance,
       profilePermissions: { decisions: permission.READ },
@@ -116,24 +118,27 @@ export const assertModerationItemAccess = async ({
       ],
     });
 
-    // HIDDEN proposals are visible only to proposal-level members (creator +
-    // invited collaborators) and instance admins — mirror getProposal so a
-    // hidden proposal's text/attachments can't be shipped to the vendor by an
-    // instance member who only has read on the process. (DRAFT is deliberately
-    // not gated here: drafts are reportable.)
-    if (proposal.visibility === Visibility.HIDDEN) {
-      const instanceProfileId = proposal.processInstance.profileId;
-      const [proposalProfileUser, instanceProfileUser] = await Promise.all([
-        getProfileAccessUser({ user, profileId: proposal.profileId }),
-        instanceProfileId
-          ? getProfileAccessUser({ user, profileId: instanceProfileId })
-          : undefined,
-      ]);
-      const canManageProposals = checkPermission(
+    // HIDDEN proposals, and proposals with an active moderation flag, are
+    // restricted beyond plain instance read — visible only to proposal-level
+    // members (creator + invited collaborators) or instance admins. Mirror
+    // getProposal's gate so restricted text/attachments can't be shipped to the
+    // vendor by an instance member who only has read on the process, and so
+    // this gate (not submitUserFlag's idempotency shortcut) is what enforces it
+    // for an already-flagged proposal. (DRAFT is deliberately not gated here:
+    // drafts are reportable.)
+    const isRestricted =
+      proposal.visibility === Visibility.HIDDEN ||
+      (await hasActiveModerationFlag('proposal', proposal.id));
+    if (isRestricted) {
+      const proposalProfileUser = await getProfileAccessUser({
+        user,
+        profileId: proposal.profileId,
+      });
+      const isInstanceAdmin = checkPermission(
         { profile: permission.ADMIN },
         instanceProfileUser?.roles ?? [],
       );
-      if (!proposalProfileUser && !canManageProposals) {
+      if (!proposalProfileUser && !isInstanceAdmin) {
         throw new NotFoundError('Proposal', itemId);
       }
     }

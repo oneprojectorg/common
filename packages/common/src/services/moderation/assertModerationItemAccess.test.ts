@@ -191,6 +191,46 @@ describe('assertModerationItemAccess — proposal', () => {
       }),
     ).resolves.toBeUndefined();
   });
+
+  it('hides an already-flagged VISIBLE proposal from a non-member non-admin', async () => {
+    proposalFindFirst.mockResolvedValue({
+      id: PROPOSAL_ID,
+      profileId: 'prop-profile',
+      visibility: 'public',
+      processInstance: { profileId: 'instance-profile' },
+    } as never);
+    // Visible, but an active flag restricts it like getProposal does — no
+    // proposal-level access, no instance-admin roles (beforeEach default).
+    vi.mocked(hasActiveModerationFlag).mockResolvedValue(true);
+    await expect(
+      assertModerationItemAccess({
+        itemType: 'proposal',
+        itemId: PROPOSAL_ID,
+        user,
+      }),
+    ).rejects.toThrow();
+  });
+
+  it('lets a proposal-level member flag an already-flagged VISIBLE proposal', async () => {
+    proposalFindFirst.mockResolvedValue({
+      id: PROPOSAL_ID,
+      profileId: 'prop-profile',
+      visibility: 'public',
+      processInstance: { profileId: 'instance-profile' },
+    } as never);
+    vi.mocked(hasActiveModerationFlag).mockResolvedValue(true);
+    // getProfileAccessUser (proposal profile) returns a member.
+    vi.mocked(getProfileAccessUser).mockResolvedValueOnce({
+      roles: [],
+    } as never);
+    await expect(
+      assertModerationItemAccess({
+        itemType: 'proposal',
+        itemId: PROPOSAL_ID,
+        user,
+      }),
+    ).resolves.toBeUndefined();
+  });
 });
 
 describe('assertModerationItemAccess — user', () => {

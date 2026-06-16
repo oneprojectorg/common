@@ -1,4 +1,4 @@
-import { and, db, eq, ne, notInArray, or } from '@op/db/client';
+import { type DbClient, and, db, eq, ne, notInArray, or } from '@op/db/client';
 import { moderationSubmissions } from '@op/db/schema';
 
 import { decodeContentRef } from './contentRef';
@@ -179,8 +179,9 @@ export const recordSubmissionVerdict = async ({
 export const clearSubmissions = async (
   itemType: ModerationItemType,
   itemId: string,
+  executor: DbClient = db,
 ): Promise<void> => {
-  await db
+  await executor
     .delete(moderationSubmissions)
     .where(
       and(
