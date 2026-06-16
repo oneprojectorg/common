@@ -20,6 +20,7 @@ import { ensureProposalTaxonomyTerms } from './proposalTaxonomy';
 import { schemaValidator } from './schemaValidator';
 import type {
   DecisionInstanceData,
+  InstanceOverview,
   PhaseOverride,
 } from './schemas/instanceData';
 import type { ProcessConfig } from './schemas/types';
@@ -36,6 +37,7 @@ export const updateDecisionInstance = async ({
   status,
   stewardProfileId,
   config,
+  overview,
   phases,
   proposalTemplate,
   rubricTemplate,
@@ -48,6 +50,8 @@ export const updateDecisionInstance = async ({
   stewardProfileId?: string;
   /** Process-level configuration (e.g., hideBudget) */
   config?: ProcessConfig;
+  /** Public-facing overview content (headline, short description, rich text body) */
+  overview?: InstanceOverview;
   /** Optional phase overrides (dates and settings) */
   phases?: PhaseOverride[];
   /** Proposal template (JSON Schema) */
@@ -130,14 +134,16 @@ export const updateDecisionInstance = async ({
     updateData.stewardProfileId = stewardProfileId;
   }
 
-  // Apply config, phase overrides, and/or template updates to existing instanceData
+  // Apply config, overview, phase overrides, and/or template updates to existing instanceData
   const hasConfigUpdate = config !== undefined;
+  const hasOverviewUpdate = overview !== undefined;
   const hasPhaseUpdates = phases && phases.length > 0;
   const hasProposalTemplateUpdate = proposalTemplate !== undefined;
   const hasRubricTemplateUpdate = rubricTemplate !== undefined;
 
   if (
     hasConfigUpdate ||
+    hasOverviewUpdate ||
     hasPhaseUpdates ||
     hasProposalTemplateUpdate ||
     hasRubricTemplateUpdate
@@ -164,6 +170,14 @@ export const updateDecisionInstance = async ({
         ...existingInstanceData.config,
         ...config,
         ...(config?.categories ? { categories: normalizedCategories } : {}),
+      };
+    }
+
+    // Apply overview updates (merge with existing overview)
+    if (hasOverviewUpdate) {
+      updatedInstanceData.overview = {
+        ...existingInstanceData.overview,
+        ...overview,
       };
     }
 
