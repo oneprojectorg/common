@@ -10,7 +10,7 @@ import { LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { ProposalHtmlContent } from './ProposalHtmlContent';
+import { HtmlContentRenderer } from './HtmlContentRenderer';
 import { decisionOverviewMock } from './decisionOverviewMock';
 
 interface DecisionOverviewProps {
@@ -179,7 +179,7 @@ const OverviewAbout = ({
     <section className="flex flex-col gap-4">
       <Header2 className="font-serif">{t('About the process')}</Header2>
       {html ? (
-        <ProposalHtmlContent html={html} />
+        <HtmlContentRenderer html={html} />
       ) : fallbackText ? (
         // The description is plain text (entity-encoded for some orgs, same as
         // DecisionActionBar) — decode and render as text, not HTML.
