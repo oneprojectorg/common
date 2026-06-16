@@ -64,10 +64,7 @@ const profileUserWithPermissionsEncoder = profileUserWithProfileSchema.extend({
  */
 export const userEncoder = createSelectSchema(users).extend({
   onboardedAt: z.string().nullish(),
-  // Callers project different subsets of the auth user (e.g. getMyAccount only
-  // selects `isAnonymous`), so keep every column optional. `.nullish()` already
-  // covers an absent relation; `.partial()` covers a present-but-partial row.
-  authUser: createSelectSchema(authUsers).partial().nullish(),
+  isAnonymous: z.boolean(),
   avatarImage: storageItemEncoder.nullish(),
   organizationUsers: organizationUserWithPermissionsEncoder.array().nullish(),
   profileUsers: profileUserWithPermissionsEncoder.array().nullish(),
@@ -77,3 +74,21 @@ export const userEncoder = createSelectSchema(users).extend({
 });
 
 export type CommonUser = z.infer<typeof userEncoder>;
+
+// Platform-admin list entry: shared fields plus last sign-in (admin-only).
+export const adminUserEncoder = userEncoder.extend({
+  lastSignInAt: createSelectSchema(authUsers).shape.lastSignInAt.nullish(),
+});
+
+/**
+ * Encode a DB user row into a `CommonUser`, taking `isAnonymous` from the
+ * Supabase auth identity (`ctx.user` or an admin `getUserById` result).
+ */
+export const encodeUser = ({
+  user,
+  authUser,
+}: {
+  user: Record<string, unknown>;
+  authUser: { is_anonymous?: boolean | null };
+}): CommonUser =>
+  userEncoder.parse({ ...user, isAnonymous: Boolean(authUser.is_anonymous) });

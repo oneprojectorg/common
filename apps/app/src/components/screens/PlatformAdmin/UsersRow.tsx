@@ -33,9 +33,7 @@ export const UsersRowCells = ({ user }: { user: User }) => {
   const [isAddToOrgModalOpen, setIsAddToOrgModalOpen] = useState(false);
   const createdAt = user.createdAt ? new Date(user.createdAt) : null;
   const relativeCreatedAt = createdAt ? useRelativeTime(createdAt) : null;
-  const lastSignInAt = user.authUser?.lastSignInAt
-    ? new Date(user.authUser.lastSignInAt)
-    : null;
+  const lastSignInAt = user.lastSignInAt ? new Date(user.lastSignInAt) : null;
   const relativeLastSignIn = lastSignInAt
     ? useRelativeTime(lastSignInAt)
     : null;
