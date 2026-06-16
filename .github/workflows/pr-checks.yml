@@ -1,7 +1,10 @@
 name: Checks
 
 on:
-  pull_request:
+  pull_request_target:
+
+permissions:
+  contents: read
 
 jobs:
   typecheck:
@@ -19,6 +22,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Setup Node.js
