@@ -3,7 +3,6 @@ import accountRouter from './account';
 import { contentRouter } from './content';
 import { decisionRouter } from './decision';
 import individualRouter from './individual';
-import { moderationRouter } from './moderation';
 import { organizationRouter } from './organization';
 import { platformRouter } from './platform';
 import { postsRouter } from './posts';
@@ -21,7 +20,6 @@ export const appRouter = router({
   content: contentRouter,
   posts: postsRouter,
   decision: decisionRouter,
-  moderation: moderationRouter,
   platform: platformRouter,
   resources: resourcesRouter,
   translation: translationRouter,
