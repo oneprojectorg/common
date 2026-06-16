@@ -46,6 +46,7 @@
     "./OptionMenu": "./src/components/OptionMenu.tsx",
     "./Pagination": "./src/components/Pagination.tsx",
     "./PhaseStepper": "./src/components/PhaseStepper.tsx",
+    "./PhaseTimeline": "./src/components/PhaseTimeline.tsx",
     "./Popover": "./src/components/Popover.tsx",
     "./ProfileItem": "./src/components/ProfileItem.tsx",
     "./RadioGroup": "./src/components/RadioGroup.tsx",
