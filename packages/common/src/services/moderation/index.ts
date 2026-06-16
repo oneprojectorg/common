@@ -1,6 +1,8 @@
 export * from './applyModerationVerdict';
+export * from './assertModerationItemAccess';
 export * from './assertTextContentModerated';
 export * from './contentRef';
+export * from './flagItem';
 export * from './handleModerationWebhook';
 export * from './moderateTextContent';
 export * from './moderationCallback';
@@ -14,5 +16,6 @@ export * from './resolveModeration';
 export * from './resolveModerationMedia';
 export * from './reviewContentAsync';
 export * from './submissionAggregate';
+export * from './submitUserFlag';
 export * from './types';
 export * from './utils';
