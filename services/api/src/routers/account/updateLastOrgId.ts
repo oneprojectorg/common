@@ -1,7 +1,7 @@
 import { switchUserOrganization } from '@op/common';
 import { z } from 'zod';
 
-import { userEncoder } from '../../encoders';
+import { encodeUser, userEncoder } from '../../encoders';
 import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
 export const switchOrganization = router({
@@ -18,6 +18,6 @@ export const switchOrganization = router({
         organizationId: input.organizationId,
       });
 
-      return userEncoder.parse(result);
+      return encodeUser({ user: result, authUser: ctx.user });
     }),
 });

@@ -1,7 +1,7 @@
 import { listAllUsers } from '@op/common';
 import { z } from 'zod';
 
-import { userEncoder } from '../../../encoders/';
+import { adminUserEncoder } from '../../../encoders/';
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { commonProcedure, router } from '../../../trpcFactory';
@@ -21,7 +21,7 @@ export const listAllUsersRouter = router({
     )
     .output(
       z.object({
-        items: z.array(userEncoder),
+        items: z.array(adminUserEncoder),
         next: z.string().nullish(),
         total: z.number(),
       }),
@@ -37,7 +37,13 @@ export const listAllUsersRouter = router({
       });
 
       return {
-        items: items.map((user) => userEncoder.parse(user)),
+        items: items.map((user) =>
+          adminUserEncoder.parse({
+            ...user,
+            isAnonymous: Boolean(user.authUser?.isAnonymous),
+            lastSignInAt: user.authUser?.lastSignInAt ?? null,
+          }),
+        ),
         next,
         total,
       };

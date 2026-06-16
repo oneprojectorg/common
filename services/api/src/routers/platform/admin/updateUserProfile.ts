@@ -2,7 +2,7 @@ import { NotFoundError, updateUserProfile } from '@op/common';
 import { createSBServiceClient } from '@op/supabase/server';
 import { z } from 'zod';
 
-import { userEncoder } from '../../../encoders';
+import { encodeUser, userEncoder } from '../../../encoders';
 import { withAuthenticatedPlatformAdmin } from '../../../middlewares/withAuthenticatedPlatformAdmin';
 import withRateLimited from '../../../middlewares/withRateLimited';
 import { commonProcedure, router } from '../../../trpcFactory';
@@ -35,6 +35,6 @@ export const updateUserProfileRouter = router({
         user: targetUserData.user,
       });
 
-      return userEncoder.parse(result);
+      return encodeUser({ user: result, authUser: targetUserData.user });
     }),
 });

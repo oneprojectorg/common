@@ -1,6 +1,6 @@
 import { updateUserProfile as updateUserProfileService } from '@op/common';
 
-import { userEncoder } from '../../encoders';
+import { encodeUser, userEncoder } from '../../encoders';
 import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 import { updateUserProfileDataSchema } from '../shared/profile';
 
@@ -18,7 +18,7 @@ const updateUserProfile = router({
         user,
       });
 
-      return userEncoder.parse(result);
+      return encodeUser({ user: result, authUser: user });
     }),
 });
 
