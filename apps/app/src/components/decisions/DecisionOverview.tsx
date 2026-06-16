@@ -11,7 +11,6 @@ import { LuTriangleAlert } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalHtmlContent } from './ProposalHtmlContent';
-import { decisionOverviewMock } from './decisionOverviewMock';
 
 interface DecisionOverviewProps {
   instanceId: string;
@@ -23,9 +22,10 @@ interface DecisionOverviewProps {
  * header + view toggle come from the (decision-view) layout; this renders the
  * hero, the phases sidebar slot, and the About body.
  *
- * Overview content (headline, subhead, About HTML) is mocked
- * until `instanceData.overview` exists on the API — swap at the `overview`
- * read below.
+ * Overview content (headline, description, body HTML) comes from
+ * `instanceData.overview`, authored in the process builder's Overview tab.
+ * Falls back to the instance name/description for processes authored before
+ * that tab was filled in.
  */
 export function DecisionOverviewSuspense({
   instanceId,
@@ -63,8 +63,8 @@ function DecisionOverviewContent({
   const t = useTranslations();
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
 
-  const overview = decisionOverviewMock;
-  const headline = overview.headline ?? instance.name;
+  const overview = instance.instanceData?.overview;
+  const headline = overview?.headline ?? instance.name;
 
   // Same gate as StandardDecisionPage: the phase must accept proposals and
   // the viewer must have submit access.
@@ -79,7 +79,7 @@ function DecisionOverviewContent({
     <div className="flex w-full flex-col">
       <OverviewHero
         headline={headline}
-        subhead={overview.subhead}
+        subhead={overview?.description}
         decisionSlug={decisionSlug}
         canSubmitProposal={canSubmitProposal}
       />
@@ -99,7 +99,7 @@ function DecisionOverviewContent({
         </div>
         <div className="min-w-0 md:col-span-7 md:col-start-6">
           <OverviewAbout
-            html={overview.body}
+            html={overview?.body}
             fallbackText={instance.description ?? undefined}
           />
         </div>
