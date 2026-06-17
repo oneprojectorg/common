@@ -99,7 +99,7 @@ function DecisionOverviewContent({
         </div>
         <div className="min-w-0 md:col-span-7 md:col-start-6">
           <OverviewAbout
-            html={overview?.body}
+            content={overview?.body}
             fallbackText={instance.description ?? undefined}
           />
         </div>
@@ -161,25 +161,25 @@ const OverviewHero = ({
 };
 
 const OverviewAbout = ({
-  html,
+  content,
   fallbackText,
 }: {
   /** TipTap-generated HTML from the overview content. */
-  html?: string;
+  content?: string;
   /** Plain-text process description shown when no overview content exists. */
   fallbackText?: string;
 }) => {
   const t = useTranslations();
 
-  if (!html && !fallbackText) {
+  if (!content && !fallbackText) {
     return null;
   }
 
   return (
     <section className="flex flex-col gap-4">
       <Header2 className="font-serif">{t('About the process')}</Header2>
-      {html ? (
-        <ProposalHtmlContent html={html} />
+      {content ? (
+        <ProposalHtmlContent html={content} />
       ) : fallbackText ? (
         // The description is plain text (entity-encoded for some orgs, same as
         // DecisionActionBar) — decode and render as text, not HTML.
