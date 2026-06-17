@@ -395,7 +395,7 @@ export const listProposals = async ({
     if (ballotFilterIds !== undefined) {
       const ballotFilter =
         ballotFilterIds.length > 0
-          ? inArray(t.id, ballotFilterIds)
+          ? inArray(proposalsTable.id, ballotFilterIds)
           : sql`false`;
       clause = and(clause, ballotFilter)!;
     }
