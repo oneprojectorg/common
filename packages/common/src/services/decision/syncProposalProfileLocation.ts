@@ -35,14 +35,9 @@ import { normalizeLocation } from './proposalDataSchema';
 export async function syncProposalProfileLocation(
   tx: DbClient,
   proposalProfileId: string,
-  proposalData: unknown,
+  proposalData: Record<string, unknown> | null | undefined,
 ): Promise<void> {
-  const raw =
-    proposalData && typeof proposalData === 'object'
-      ? (proposalData as Record<string, unknown>).location
-      : undefined;
-
-  const location = normalizeLocation(raw);
+  const location = normalizeLocation(proposalData?.location);
 
   // Clear any existing link up front so a moved pin re-points cleanly to the
   // (possibly different) location row below.

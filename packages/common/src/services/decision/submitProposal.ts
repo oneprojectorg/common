@@ -182,7 +182,8 @@ export const submitProposal = async ({
     await syncProposalProfileLocation(
       tx,
       existingProposal.profileId,
-      proposalDataUpdate ?? existingProposal.proposalData,
+      proposalDataUpdate ??
+        (existingProposal.proposalData as Record<string, unknown>),
     );
 
     // Re-tag the proposal with its location's boundary category (if any).
