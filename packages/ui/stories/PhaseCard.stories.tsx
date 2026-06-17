@@ -27,6 +27,36 @@ const wrap: Decorator = (Story) => (
   </ol>
 );
 
+/** All four treatments composed in a single <code>\<ol\></code>, as a consumer would. */
+export const Timeline: StoryObj = {
+  render: () => (
+    <ol className="flex max-w-[340px] flex-col gap-6">
+      <PhaseCard
+        state="completed"
+        name="Collect Ideas"
+        startDate="2026-07-01"
+        endDate="2026-07-31"
+      />
+      <PhaseCard
+        state="current"
+        name="Review"
+        startDate="2026-08-01"
+        endDate="2026-09-15"
+        isNowOpen
+        href="#"
+      />
+      <PhaseCard
+        state="upcoming"
+        name="Vote"
+        startDate="2026-09-16"
+        endDate="2026-11-31"
+        isAdvanceable
+      />
+      <PhaseCard state="upcoming" name="Share Results" endDate="2026-12-18" />
+    </ol>
+  ),
+};
+
 export const Completed: Story = {
   args: {
     state: 'completed',
@@ -67,34 +97,4 @@ export const Advanceable: Story = {
     isAdvanceable: true,
   },
   decorators: [wrap],
-};
-
-/** All four treatments composed in a single <ol>, as a consumer would. */
-export const Timeline: StoryObj = {
-  render: () => (
-    <ol className="flex max-w-[340px] flex-col gap-6">
-      <PhaseCard
-        state="completed"
-        name="Collect Ideas"
-        startDate="2026-07-01"
-        endDate="2026-07-31"
-      />
-      <PhaseCard
-        state="current"
-        name="Review"
-        startDate="2026-08-01"
-        endDate="2026-09-15"
-        isNowOpen
-        href="#"
-      />
-      <PhaseCard
-        state="upcoming"
-        name="Vote"
-        startDate="2026-09-16"
-        endDate="2026-11-31"
-        isAdvanceable
-      />
-      <PhaseCard state="upcoming" name="Share Results" endDate="2026-12-18" />
-    </ol>
-  ),
 };
