@@ -29,17 +29,11 @@ import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { toast } from '@op/ui/Toast';
 import { useLocale } from 'next-intl';
-import {
-  type RefObject,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
+import { type RefObject, useCallback, useMemo, useState } from 'react';
 import { LuArrowDownToLine, LuLeaf } from 'react-icons/lu';
 
-import { usePathname, useRouter, useTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
 import { useSetDecisionTranslation } from './DecisionTranslationContext';
@@ -63,10 +57,7 @@ import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
 import { VotingProposalCard } from './VotingProposalCard';
 import { useProposalExport } from './useProposalExport';
-import {
-  useProposalFilterItems,
-  useProposalFilterState,
-} from './useProposalFilters';
+import { useProposalFilterItems } from './useProposalFilters';
 
 const ProposalCardSkeleton = () => {
   return (
@@ -600,6 +591,8 @@ export interface ProposalsListProps {
 // Matches the prior single-page render, so smaller decisions never hit the sentinel.
 const PROPOSALS_PAGE_LIMIT = 50;
 
+const PROPOSAL_FILTER_VALUES = Object.values(ProposalFilter);
+
 type ProposalQueryParams = {
   processInstanceId: string;
   categoryId?: string;
@@ -723,23 +716,25 @@ export const ProposalsList = (props: ProposalsListProps) => {
   });
   const hasVoted = voteStatus?.hasVoted || false;
 
-  const { proposalFilter, setProposalFilter } = useProposalFilterState({
-    hasVoted,
-    initialFilter,
-  });
-
-  const [selectedCategory, setSelectedCategory] = useState(
-    () =>
-      (typeof window !== 'undefined' &&
-        new URLSearchParams(window.location.search).get('category')) ||
-      'all-categories',
+  // URL is the source of truth for the filters (nuqs). The filter param is left
+  // without a default so an absent value can fall back to the ballot-aware
+  // default below — and derive straight to "My ballot" once the user has voted.
+  const [selectedCategory, setSelectedCategory] = useQueryState(
+    'category',
+    parseAsString.withDefault('all-categories'),
   );
-  const [sortOrder, setSortOrder] = useState(
-    () =>
-      (typeof window !== 'undefined' &&
-        new URLSearchParams(window.location.search).get('sort')) ||
-      'newest',
+  const [sortOrder, setSortOrder] = useQueryState(
+    'sort',
+    parseAsString.withDefault('newest'),
   );
+  const [filterParam, setProposalFilter] = useQueryState(
+    'filter',
+    parseAsStringLiteral(PROPOSAL_FILTER_VALUES),
+  );
+  const proposalFilter =
+    filterParam ??
+    initialFilter ??
+    (hasVoted ? ProposalFilter.MY_BALLOT : ProposalFilter.ALL);
 
   const queryParams = useMemo<ProposalQueryParams>(() => {
     const params: ProposalQueryParams = {
@@ -1102,8 +1097,6 @@ const ProposalsListContent = ({
   const isVotingPhase = currentPhase?.rules?.voting?.submit === true;
   const t = useTranslations();
   const { user } = useUser();
-  const router = useRouter();
-  const pathname = usePathname();
 
   const currentProfileId = user?.currentProfile?.id;
   const [[categoriesData, voteStatus]] = trpc.useSuspenseQueries((t) => [
@@ -1129,21 +1122,6 @@ const ProposalsListContent = ({
     downloadFileName,
   } = useProposalExport();
 
-  const updateURLParams = (updates: Record<string, string | null>) => {
-    const params = new URLSearchParams(window.location.search);
-
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value === null || value === 'all-categories' || value === 'all') {
-        params.delete(key);
-      } else {
-        params.set(key, value);
-      }
-    });
-
-    const newUrl = `${pathname}?${params.toString()}`;
-    router.replace(newUrl, { scroll: false });
-  };
-
   const canManageProposals = permissions?.admin ?? false;
 
   const { data: revisionRequestsData } =
@@ -1162,15 +1140,6 @@ const ProposalsListContent = ({
     allProposals,
     decisionProfileId,
   });
-
-  const isFirstFilterSync = useRef(true);
-  useEffect(() => {
-    if (isFirstFilterSync.current) {
-      isFirstFilterSync.current = false;
-      return;
-    }
-    updateURLParams({ filter: proposalFilter });
-  }, [proposalFilter]);
 
   const handleExport = () => {
     startExport(
@@ -1207,15 +1176,9 @@ const ProposalsListContent = ({
             setProposalFilter={setProposalFilter}
             categories={categories}
             selectedCategory={selectedCategory}
-            onSelectCategory={(category) => {
-              setSelectedCategory(category);
-              updateURLParams({ category });
-            }}
+            onSelectCategory={setSelectedCategory}
             sortOrder={sortOrder}
-            onSelectSort={(sort) => {
-              setSortOrder(sort);
-              updateURLParams({ sort });
-            }}
+            onSelectSort={setSortOrder}
             canManageProposals={canManageProposals}
             isExporting={isExporting}
             isDownloadReady={isDownloadReady}
