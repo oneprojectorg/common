@@ -156,6 +156,9 @@ export const allProposalsFilterSchema = z.object({
   processInstanceId: z.uuid(),
   status: z.enum(ProposalStatus).optional(),
   categoryId: z.string().optional(),
+  submittedByProfileId: z.uuid().optional(),
+  // Restrict to the caller's ballot (self-only); used by the "My ballot" filter.
+  votedByProfileId: z.uuid().optional(),
   dir: z.enum(['asc', 'desc']).optional(),
   orderBy: z.enum(['createdAt', 'updatedAt']).optional(),
   cursor: z.string().nullish(),
@@ -180,6 +183,8 @@ export type AllProposalsListItem = z.infer<typeof allProposalsListItemSchema>;
 /** Response from `decision.listAllProposals`. */
 export const allProposalsListSchema = z.object({
   items: z.array(allProposalsListItemSchema),
+  // Full count of all matching proposals, independent of cursor pagination.
+  total: z.number(),
   next: z.string().nullable(),
 });
 

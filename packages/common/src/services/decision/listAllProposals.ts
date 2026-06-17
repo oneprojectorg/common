@@ -1,4 +1,5 @@
 import {
+  SQL,
   and,
   db,
   eq,
@@ -7,15 +8,20 @@ import {
   isNull,
   notInArray,
   or,
+  sql,
 } from '@op/db/client';
 import {
   ProposalStatus,
   Visibility,
-  proposalCategories,
+  decisionsVoteProposals,
+  decisionsVoteSubmissions,
   profileUsers,
+  proposalCategories,
+  proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
+import { count as countFn } from 'drizzle-orm';
 
 import {
   UnauthorizedError,
@@ -95,68 +101,122 @@ export const listAllProposals = async ({
     profileRoles,
   );
 
-  const proposalList = await db.query.proposals.findMany({
-    where: {
-      RAW: (table) =>
+  // Resolve the caller's ballot up front so "My ballot" filters in SQL.
+  // Ballots are private: a caller can only request their own.
+  let votedProposalIds: string[] | undefined;
+  if (input.votedByProfileId) {
+    if (currentProfileId !== input.votedByProfileId) {
+      throw new UnauthorizedError('You can only view your own ballot');
+    }
+    const votedRows = await db
+      .select({ proposalId: decisionsVoteProposals.proposalId })
+      .from(decisionsVoteSubmissions)
+      .innerJoin(
+        decisionsVoteProposals,
+        eq(
+          decisionsVoteSubmissions.id,
+          decisionsVoteProposals.voteSubmissionId,
+        ),
+      )
+      .where(
         and(
-          eq(table.processInstanceId, processInstanceId),
-          status ? eq(table.status, status) : undefined,
-          categoryId
-            ? exists(
-                db
-                  .select({ id: proposalCategories.proposalId })
-                  .from(proposalCategories)
-                  .where(
-                    and(
-                      eq(proposalCategories.proposalId, table.id),
-                      eq(proposalCategories.taxonomyTermId, categoryId),
-                    ),
-                  ),
-              )
-            : undefined,
-          notInArray(table.status, [
-            ProposalStatus.DRAFT,
-            ProposalStatus.REJECTED,
-            ProposalStatus.DUPLICATE,
-          ]),
-          isNull(table.deletedAt),
-          isAdmin ? undefined : eq(table.visibility, Visibility.VISIBLE),
-          // Items with an active moderation flag are hidden from everyone
-          // except members of the proposal's own profile (the same audience
-          // getProposal grants it to, so list and detail agree); admins skip
-          // the filter.
-          isAdmin
-            ? undefined
-            : or(
-                noActiveModerationFlag('proposal', table.id),
-                inArray(
-                  table.profileId,
-                  db
-                    .select({ profileId: profileUsers.profileId })
-                    .from(profileUsers)
-                    .where(inArray(profileUsers.authUserId, accessUserIds)),
+          eq(decisionsVoteSubmissions.processInstanceId, processInstanceId),
+          eq(
+            decisionsVoteSubmissions.submittedByProfileId,
+            input.votedByProfileId,
+          ),
+        ),
+      );
+    votedProposalIds = votedRows.map((row) => row.proposalId);
+  }
+
+  // Shared filter for both the data and count queries. Parameterized on the
+  // table reference so it works against the relational `RAW` alias and the
+  // plain schema table — the same pattern as `listProposals`.
+  const buildBaseConditions = (t: typeof proposals): SQL =>
+    and(
+      eq(t.processInstanceId, processInstanceId),
+      status ? eq(t.status, status) : undefined,
+      input.submittedByProfileId
+        ? eq(t.submittedByProfileId, input.submittedByProfileId)
+        : undefined,
+      votedProposalIds
+        ? votedProposalIds.length > 0
+          ? inArray(t.id, votedProposalIds)
+          : sql`false`
+        : undefined,
+      categoryId
+        ? exists(
+            db
+              .select({ id: proposalCategories.proposalId })
+              .from(proposalCategories)
+              .where(
+                and(
+                  eq(proposalCategories.proposalId, t.id),
+                  eq(proposalCategories.taxonomyTermId, categoryId),
                 ),
               ),
-          getCursorCondition({
-            column: table[orderBy],
-            cursor: decodedCursor,
-            direction: dir,
-          }),
-        )!,
-    },
-    with: {
-      submittedBy: {
-        with: {
-          avatarImage: true,
-        },
-      },
-      profile: true,
-    },
-    limit: limit + 1, // Fetch one extra to check whether there's a next page.
-    orderBy: (table, { asc, desc }) =>
-      dir === 'asc' ? asc(table[orderBy]) : desc(table[orderBy]),
-  });
+          )
+        : undefined,
+      notInArray(t.status, [
+        ProposalStatus.DRAFT,
+        ProposalStatus.REJECTED,
+        ProposalStatus.DUPLICATE,
+      ]),
+      isNull(t.deletedAt),
+      isAdmin ? undefined : eq(t.visibility, Visibility.VISIBLE),
+      // Items with an active moderation flag are hidden from everyone
+      // except members of the proposal's own profile (the same audience
+      // getProposal grants it to, so list and detail agree); admins skip
+      // the filter.
+      isAdmin
+        ? undefined
+        : or(
+            noActiveModerationFlag('proposal', t.id),
+            inArray(
+              t.profileId,
+              db
+                .select({ profileId: profileUsers.profileId })
+                .from(profileUsers)
+                .where(inArray(profileUsers.authUserId, accessUserIds)),
+            ),
+          ),
+    )!;
 
+  // `total` counts every match (cursor condition lives only on the data query)
+  // so the listing can show the full proposal count regardless of pagination.
+  const [proposalList, countResult] = await Promise.all([
+    db.query.proposals.findMany({
+      where: {
+        RAW: (table) =>
+          and(
+            buildBaseConditions(table),
+            getCursorCondition({
+              column: table[orderBy],
+              cursor: decodedCursor,
+              direction: dir,
+            }),
+          )!,
+      },
+      with: {
+        submittedBy: {
+          with: {
+            avatarImage: true,
+          },
+        },
+        profile: true,
+      },
+      limit: limit + 1, // Fetch one extra to check whether there's a next page.
+      orderBy: (table, { asc, desc }) =>
+        dir === 'asc' ? asc(table[orderBy]) : desc(table[orderBy]),
+    }),
+    db
+      .select({ count: countFn() })
+      .from(proposals)
+      .where(buildBaseConditions(proposals)),
+  ]);
+
+  const total = Number(countResult[0]?.count ?? 0);
   const hasMore = proposalList.length > limit;
   const pageItems = hasMore ? proposalList.slice(0, limit) : proposalList;
 
@@ -227,5 +287,5 @@ export const listAllProposals = async ({
       ? encodeCursor<{ value: string | Date }>({ value: cursorValue })
       : null;
 
-  return { items, next };
+  return { items, total, next };
 };

@@ -65,7 +65,7 @@ import { VotingProposalCard } from './VotingProposalCard';
 import { useProposalExport } from './useProposalExport';
 import {
   useProposalFilterItems,
-  useProposalFilters,
+  useProposalFilterState,
 } from './useProposalFilters';
 
 const ProposalCardSkeleton = () => {
@@ -604,6 +604,7 @@ type ProposalQueryParams = {
   processInstanceId: string;
   categoryId?: string;
   submittedByProfileId?: string;
+  votedByProfileId?: string;
   status?: ProposalStatus;
   dir: 'asc' | 'desc';
   limit: number;
@@ -612,6 +613,8 @@ type ProposalQueryParams = {
 
 type ProposalsLoaderRenderProps = {
   allProposals: Proposal[];
+  /** Full server-side proposal count, independent of how many pages are loaded. */
+  total: number;
   isFetchingNextPage: boolean;
   shouldShowTrigger: boolean;
   infiniteScrollRef: RefObject<HTMLDivElement | null>;
@@ -619,6 +622,7 @@ type ProposalsLoaderRenderProps = {
 
 const useProposalsLoaderRenderProps = (
   allProposals: Proposal[],
+  total: number,
   {
     fetchNextPage,
     hasNextPage,
@@ -645,6 +649,7 @@ const useProposalsLoaderRenderProps = (
 
   return {
     allProposals,
+    total,
     isFetchingNextPage,
     shouldShowTrigger,
     infiniteScrollRef: ref,
@@ -668,8 +673,9 @@ const CurrentPhaseProposalsLoader = ({
     () => paginatedData.pages.flatMap((page) => page.proposals),
     [paginatedData.pages],
   );
+  const total = paginatedData.pages[0]?.total ?? 0;
 
-  return children(useProposalsLoaderRenderProps(allProposals, query));
+  return children(useProposalsLoaderRenderProps(allProposals, total, query));
 };
 
 const ResultsPhaseProposalsLoader = ({
@@ -686,6 +692,9 @@ const ResultsPhaseProposalsLoader = ({
         dir: queryParams.dir,
         limit: queryParams.limit,
         categoryId: queryParams.categoryId,
+        status: queryParams.status,
+        submittedByProfileId: queryParams.submittedByProfileId,
+        votedByProfileId: queryParams.votedByProfileId,
       },
       {
         getNextPageParam: (lastPage) => lastPage.next ?? undefined,
@@ -697,12 +706,26 @@ const ResultsPhaseProposalsLoader = ({
     () => paginatedData.pages.flatMap((page) => page.items),
     [paginatedData.pages],
   );
+  const total = paginatedData.pages[0]?.total ?? 0;
 
-  return children(useProposalsLoaderRenderProps(allProposals, query));
+  return children(useProposalsLoaderRenderProps(allProposals, total, query));
 };
 
 export const ProposalsList = (props: ProposalsListProps) => {
-  const { instanceId, phase } = props;
+  const { instanceId, phase, initialFilter } = props;
+
+  const { user } = useUser();
+  const currentProfileId = user?.currentProfile?.id;
+
+  const [voteStatus] = trpc.decision.getVotingStatus.useSuspenseQuery({
+    processInstanceId: instanceId,
+  });
+  const hasVoted = voteStatus?.hasVoted || false;
+
+  const { proposalFilter, setProposalFilter } = useProposalFilterState({
+    hasVoted,
+    initialFilter,
+  });
 
   const [selectedCategory, setSelectedCategory] = useState(
     () =>
@@ -729,13 +752,34 @@ export const ProposalsList = (props: ProposalsListProps) => {
       params.categoryId = selectedCategory;
     }
 
+    // Filter in SQL so pagination and the total count stay accurate per filter.
+    if (proposalFilter === ProposalFilter.MY_PROPOSALS && currentProfileId) {
+      params.submittedByProfileId = currentProfileId;
+    } else if (proposalFilter === ProposalFilter.SHORTLISTED) {
+      params.status = ProposalStatus.APPROVED;
+    } else if (
+      proposalFilter === ProposalFilter.MY_BALLOT &&
+      currentProfileId
+    ) {
+      params.votedByProfileId = currentProfileId;
+    }
+
     return params;
-  }, [instanceId, selectedCategory, sortOrder, phase]);
+  }, [
+    instanceId,
+    selectedCategory,
+    sortOrder,
+    phase,
+    proposalFilter,
+    currentProfileId,
+  ]);
 
   const renderContent = (data: ProposalsLoaderRenderProps) => (
     <ProposalsListContent
       {...props}
       {...data}
+      proposalFilter={proposalFilter}
+      setProposalFilter={setProposalFilter}
       selectedCategory={selectedCategory}
       setSelectedCategory={setSelectedCategory}
       sortOrder={sortOrder}
@@ -760,6 +804,8 @@ export const ProposalsList = (props: ProposalsListProps) => {
 
 type ProposalsListContentProps = ProposalsListProps &
   ProposalsLoaderRenderProps & {
+    proposalFilter: ProposalFilter;
+    setProposalFilter: (filter: ProposalFilter) => void;
     selectedCategory: string;
     setSelectedCategory: (value: string) => void;
     sortOrder: string;
@@ -1034,13 +1080,15 @@ const ProposalsListContent = ({
   decisionSlug,
   decisionProfileId,
   permissions,
-  initialFilter,
   currentPhase,
   proposalsHidden,
   allProposals,
+  total,
   isFetchingNextPage,
   shouldShowTrigger,
   infiniteScrollRef,
+  proposalFilter,
+  setProposalFilter,
   selectedCategory,
   setSelectedCategory,
   sortOrder,
@@ -1111,18 +1159,6 @@ const ProposalsListContent = ({
     decisionProfileId,
   });
 
-  const {
-    filteredProposals: proposals,
-    proposalFilter,
-    setProposalFilter,
-  } = useProposalFilters({
-    proposals: allProposals,
-    currentProfileId,
-    votedProposalIds: selectedProposalIds,
-    hasVoted,
-    initialFilter,
-  });
-
   const isFirstFilterSync = useRef(true);
   useEffect(() => {
     if (isFirstFilterSync.current) {
@@ -1154,7 +1190,9 @@ const ProposalsListContent = ({
           <ProposalsListHeader
             hideFilters={hideFilters}
             proposalFilter={proposalFilter}
-            count={proposals?.length ?? 0}
+            // Filtering happens in SQL, so `total` is the accurate full count
+            // for whichever filter is active.
+            count={total}
           />
         </div>
         {!hideFilters && (
@@ -1203,7 +1241,7 @@ const ProposalsListContent = ({
         translations={translation.translationState?.translations ?? {}}
       >
         <Proposals
-          proposals={proposals}
+          proposals={allProposals}
           instanceId={instanceId}
           slug={slug}
           decisionSlug={decisionSlug}

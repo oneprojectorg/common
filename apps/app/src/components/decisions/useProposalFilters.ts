@@ -33,6 +33,38 @@ export const useProposalFilterItems = ({
   ];
 };
 
+// Filter selection state: default, plus auto-switching to "My ballot" the
+// moment a user finishes voting. Server-filtered callers (the paginated
+// listing) use this directly; in-memory callers compose it via
+// `useProposalFilters` below.
+export function useProposalFilterState({
+  hasVoted,
+  initialFilter,
+}: {
+  hasVoted: boolean;
+  initialFilter?: ProposalFilter;
+}): {
+  proposalFilter: ProposalFilter;
+  setProposalFilter: (filter: ProposalFilter) => void;
+} {
+  const defaultFilter: ProposalFilter =
+    initialFilter || (hasVoted ? ProposalFilter.MY_BALLOT : ProposalFilter.ALL);
+
+  const [proposalFilter, setProposalFilter] =
+    useState<ProposalFilter>(defaultFilter);
+
+  // Switch to "My ballot" when the user JUST voted (hasVoted false -> true).
+  const prevHasVotedRef = useRef(hasVoted);
+  useEffect(() => {
+    if (!prevHasVotedRef.current && hasVoted) {
+      setProposalFilter(ProposalFilter.MY_BALLOT);
+    }
+    prevHasVotedRef.current = hasVoted;
+  }, [hasVoted]);
+
+  return { proposalFilter, setProposalFilter };
+}
+
 export function useProposalFilters({
   proposals,
   currentProfileId,
@@ -50,23 +82,10 @@ export function useProposalFilters({
   proposalFilter: ProposalFilter;
   setProposalFilter: (filter: ProposalFilter) => void;
 } {
-  // Set default filter based on initialFilter or hasVoted status
-  const defaultFilter: ProposalFilter =
-    initialFilter || (hasVoted ? ProposalFilter.MY_BALLOT : ProposalFilter.ALL);
-
-  const [proposalFilter, setProposalFilter] =
-    useState<ProposalFilter>(defaultFilter);
-
-  // Track previous hasVoted state to detect when user just voted
-  const prevHasVotedRef = useRef(hasVoted);
-
-  // Automatically switch to 'my-ballot' when user JUST completed voting (transition from false to true)
-  useEffect(() => {
-    if (!prevHasVotedRef.current && hasVoted) {
-      setProposalFilter(ProposalFilter.MY_BALLOT);
-    }
-    prevHasVotedRef.current = hasVoted;
-  }, [hasVoted]);
+  const { proposalFilter, setProposalFilter } = useProposalFilterState({
+    hasVoted,
+    initialFilter,
+  });
 
   const filteredProposals = useMemo(() => {
     if (!proposals) {
