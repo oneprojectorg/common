@@ -30,10 +30,6 @@ export const listProfilePosts = async ({
   limit?: number;
   cursor?: string | null;
 }) => {
-  // Polymorphic, fail-CLOSED authorization: the server resolves the profile's
-  // type and dispatches to its authorizer (decision gates on the profile
-  // itself; proposal gates on the parent decision). An unsupported type is
-  // denied — never leniently passed the way assertProfileTypeAccess would.
   await assertPostReadAccess({ user, profileId });
 
   const decodedCursor = cursor ? decodeCursor(cursor) : undefined;

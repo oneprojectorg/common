@@ -201,11 +201,9 @@ describe.concurrent('decision-profile post authorization', () => {
     task,
     onTestFinished,
   }) => {
-    // Decision profile feeds are served exclusively by the polymorphic
-    // `posts.listProfilePosts` reader. getPosts gates off an explicit DECISION
-    // profileId for every caller — so callers can't read (or leak) a decision
-    // feed through this context-blind endpoint. Feed-read authorization is
-    // covered by the `listProfilePosts authorization and pagination` block.
+    // getPosts gates off an explicit DECISION profileId for every caller; the
+    // decision feed lives on listProfilePosts. The gate routes by type, not
+    // access, so even an authorized member is rejected here.
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,
@@ -219,8 +217,6 @@ describe.concurrent('decision-profile post authorization', () => {
       profileId: instance.profileId,
     });
 
-    // Even a fully-authorized member is rejected: the gate routes by type, not
-    // by access — the decision feed lives on listProfilePosts now.
     const member = await testData.createMemberUser({
       organization: setup.organization,
       instanceProfileIds: [instance.profileId],
@@ -1026,12 +1022,10 @@ describe.concurrent('getPosts pagination', () => {
     task,
     onTestFinished,
   }) => {
-    // Same regression as the listProfilePosts test, against the getPosts
-    // profileId branch — exercised here on an ORG profile, since getPosts now
-    // serves only org/individual feeds (decision/proposal route to
-    // listProfilePosts). Comments inherit postsToProfiles rows from their
-    // parent; a relational `with: { post: ... }` filter would LEFT JOIN and
-    // silently shrink pages. SQL-level innerJoin keeps offset pagination honest.
+    // getPosts profileId branch, on an ORG profile (getPosts now serves only
+    // org/individual feeds). Comments inherit postsToProfiles rows from their
+    // parent; the SQL-level innerJoin keeps offset pagination honest where a
+    // relational `with: { post: ... }` LEFT JOIN would silently shrink pages.
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
     const orgProfileId = setup.organization.profileId;

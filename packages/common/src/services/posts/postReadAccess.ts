@@ -9,17 +9,11 @@ import {
   assertProfileTypeAccess,
 } from '../access';
 
-/**
- * Asserts a caller's READ access to a profile's posts, dispatching on the
- * profile's *server-resolved* type.
- *
- * This is the fail-CLOSED counterpart to `assertProfileTypeAccess`'s policy
- * map: there, a type absent from the map passes unchecked (fail-open), which
- * is how proposal posts leaked. Here, a type with no registered authorizer is
- * DENIED. The type is read from the DB row, never taken from the caller — a
- * client-supplied type would let a caller pick the lenient path for a profile
- * of a different type, reintroducing the leak.
- */
+// Fail-closed counterpart to assertProfileTypeAccess's policy map: a type with
+// no registered authorizer is denied (the map passes such types unchecked,
+// which is how proposal posts leaked). The type is resolved from the DB row,
+// never taken from the caller — a client-supplied type could pick a lenient
+// path for a profile of a different type and reintroduce the leak.
 export type PostReadAuthorizer = (args: {
   user: AccessUser | undefined;
   profileId: string;

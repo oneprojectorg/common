@@ -86,15 +86,11 @@ export const getPosts = async (input: GetPostsInput) => {
         })()
       : [];
 
-  // Decision and proposal *profile feeds* are served by the polymorphic
-  // `listProfilePosts` reader (which resolves the type and gates each one
-  // fail-CLOSED). This context-blind endpoint must not serve them:
-  //   - PROPOSAL is rejected on BOTH paths (top-level feed AND reply threads):
-  //     its READ grant lives on the parent decision, but assertProfileTypeAccess
-  //     below leniently passes the type and would leak it.
-  //   - DECISION is rejected only for the explicit-`profileId` feed path, so
-  //     callers route to listProfilePosts. Reply threads (parentPostId) keep
-  //     flowing through here and stay correctly gated by DECISION: READ below.
+  // Decision and proposal profile feeds are served by listProfilePosts.
+  // PROPOSAL is rejected on every path (assertProfileTypeAccess below would
+  // leniently pass — and leak — it); DECISION is rejected only for the explicit
+  // profileId feed, so reply threads (parentPostId) keep flowing through here
+  // gated by DECISION: READ.
   if (profileIdsToAuthorize.length > 0) {
     const gatedProfiles = await db
       .select({ type: profilesTable.type })
