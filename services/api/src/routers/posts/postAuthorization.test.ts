@@ -197,6 +197,55 @@ describe.concurrent('decision-profile post authorization', () => {
     ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
   });
 
+  it('allows a member, and rejects an outsider, reading an update comment thread through getPosts', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // The comment thread (DiscussionModal) reads replies via
+    // getPosts({ parentPostId }). It resolves to the decision via rootProfileId
+    // and stays gated by DECISION: READ — the gate must not reject this path.
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const update = await adminCaller.posts.createPost({
+      content: 'Admin update.',
+      profileId: instance.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const comment = await memberCaller.posts.createPost({
+      content: 'Member comment.',
+      parentPostId: update.id,
+    });
+
+    const thread = await memberCaller.posts.getPosts({
+      parentPostId: update.id,
+      limit: 50,
+      offset: 0,
+      includeChildren: false,
+    });
+    expect(thread.map((p) => p.id)).toContain(comment.id);
+
+    const outsiderCaller = await createOutsiderCaller(testData);
+    await expect(
+      outsiderCaller.posts.getPosts({
+        parentPostId: update.id,
+        limit: 50,
+        offset: 0,
+        includeChildren: false,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+  });
+
   it('rejects reading a decision profile feed through getPosts (routed to listProfilePosts)', async ({
     task,
     onTestFinished,
@@ -835,6 +884,60 @@ describe.concurrent('proposal post authorization', () => {
 
     expect(comment.parentPostId).toBe(proposalPost.id);
     expect(comment.content).toBe('Member comment on proposal post.');
+  });
+
+  it('allows a member, and rejects an outsider, reading a proposal comment thread through getPosts', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // A proposal post pins rootProfileId to the parent decision, so reading its
+    // comment thread via getPosts({ parentPostId }) resolves to the decision and
+    // is gated by DECISION: READ — the PROPOSAL clause must not over-reject it.
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Proposal D', description: 'desc' },
+    });
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const proposalPost = await adminCaller.posts.createPost({
+      content: 'Admin update on proposal.',
+      profileId: proposal.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const comment = await memberCaller.posts.createPost({
+      content: 'Member comment on proposal post.',
+      parentPostId: proposalPost.id,
+    });
+
+    const thread = await memberCaller.posts.getPosts({
+      parentPostId: proposalPost.id,
+      limit: 50,
+      offset: 0,
+      includeChildren: false,
+    });
+    expect(thread.map((p) => p.id)).toContain(comment.id);
+
+    const outsiderCaller = await createOutsiderCaller(testData);
+    await expect(
+      outsiderCaller.posts.getPosts({
+        parentPostId: proposalPost.id,
+        limit: 50,
+        offset: 0,
+        includeChildren: false,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
   });
 
   // ProposalComments.tsx posts a "comment on a proposal" as a top-level

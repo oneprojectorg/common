@@ -86,11 +86,14 @@ export const getPosts = async (input: GetPostsInput) => {
         })()
       : [];
 
-  // Decision and proposal profile feeds are served by listProfilePosts.
-  // PROPOSAL is rejected on every path (assertProfileTypeAccess below would
-  // leniently pass — and leak — it); DECISION is rejected only for the explicit
-  // profileId feed, so reply threads (parentPostId) keep flowing through here
-  // gated by DECISION: READ.
+  // Decision and proposal profile feeds are served by listProfilePosts, so
+  // reject them here when read as an explicit-profileId feed. Comment threads
+  // (parentPostId) keep flowing through this endpoint: they resolve to the
+  // parent's rootProfileId — for a proposal that's the parent DECISION, so the
+  // comment is gated by DECISION: READ below, not rejected. The PROPOSAL clause
+  // only bites when a PROPOSAL profile is the resolved gate (the profileId feed,
+  // or a legacy post with no rootProfileId), where assertProfileTypeAccess would
+  // otherwise leniently pass — and leak — it.
   if (profileIdsToAuthorize.length > 0) {
     const gatedProfiles = await db
       .select({ type: profilesTable.type })
