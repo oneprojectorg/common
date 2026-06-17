@@ -27,23 +27,18 @@ export function ProposalComments({
   // Proposal posts are gated on the parent decision, so they're read through
   // listProfilePosts rather than getPosts (which would leak the PROPOSAL type).
   const { data: commentsData, isLoading: commentsLoading } =
-    trpc.posts.listProfilePosts.useQuery(
-      {
-        profileId: proposal.profileId ?? '',
-        limit: 50,
-      },
-      { enabled: Boolean(proposal.profileId) },
-    );
+    trpc.posts.listProfilePosts.useQuery({
+      profileId: proposal.profileId,
+      limit: 50,
+    });
 
   const comments = commentsData?.items ?? [];
   const { handleReactionClick } = usePostFeedActions();
 
   const scrollToComments = useCallback(() => {
-    if (proposal.profileId) {
-      void utils.posts.listProfilePosts.invalidate({
-        profileId: proposal.profileId,
-      });
-    }
+    void utils.posts.listProfilePosts.invalidate({
+      profileId: proposal.profileId,
+    });
 
     setTimeout(() => {
       containerRef.current?.scrollIntoView({
