@@ -91,10 +91,6 @@ export const submitProposal = async ({
   // created by the DB trigger links back to a concrete document revision.
   const parsed = parseProposalData(existingProposal.proposalData);
 
-  // Validate the submitted proposal against its template (throws on invalid).
-  // Content moderation is NOT a sync gate on submit: the `content/submitted`
-  // event emitted by the submit router drives async provider review, which
-  // hides the proposal if the verdict comes back disallowed.
   if (proposalTemplate) {
     await validateProposalAgainstTemplate(
       proposalTemplate,
