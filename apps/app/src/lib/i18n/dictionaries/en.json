@@ -1352,5 +1352,19 @@
   "This action cannot be undone.": "This action cannot be undone.",
   "File is too large (max {size} MB)": "File is too large (max {size} MB)",
   "Drag a file or link here to add it": "Drag a file or link here to add it",
-  "Unsaved changes": "Unsaved changes"
+  "Unsaved changes": "Unsaved changes",
+  "Your idea was submitted.": "Your idea was submitted.",
+  "Want to follow what happens next?": "Want to follow what happens next?",
+  "Continue as a guest": "Continue as a guest",
+  "Stay anonymous. React to comments with emoji.": "Stay anonymous. React to comments with emoji.",
+  "I agree to the Terms of Service and Privacy Policy": "I agree to the Terms of Service and Privacy Policy",
+  "Continue as guest": "Continue as guest",
+  "With an account": "With an account",
+  "Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.": "Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.",
+  "Create account": "Create account",
+  "Already have an account?": "Already have an account?",
+  "Create an account": "Create an account",
+  "Already have an account? <login>Log in</login>": "Already have an account? <login>Log in</login>",
+  "A code was sent to {email}. Type the code below to create your profile.": "A code was sent to {email}. Type the code below to create your profile.",
+  "Create profile": "Create profile"
 }

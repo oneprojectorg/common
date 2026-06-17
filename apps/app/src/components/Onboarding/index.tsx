@@ -5,7 +5,7 @@ import { trpc } from '@op/api/client';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { StepperProgressIndicator } from '@op/ui/Stepper';
 import { toast } from '@op/ui/Toast';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
 
@@ -33,6 +33,7 @@ import {
   PrivacyPolicyForm,
   validator as PrivacyPolicyFormValidator,
 } from './PrivacyPolicyForm';
+import { PromoteOnboardingFlow } from './PromoteOnboardingFlow';
 import { ToSForm, validator as ToSFormValidator } from './ToSForm';
 import { organizationFormValidator as OrganizationDetailsFormValidator } from './shared/organizationValidation';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
@@ -81,6 +82,12 @@ export const OnboardingFlow = () => {
   const createJoinRequest = trpc.profile.createJoinRequest.useMutation();
   const completeOnboarding = trpc.account.completeOnboarding.useMutation();
   const createOrganization = trpc.organization.create.useMutation();
+
+  // Promote flow: an anonymous visitor who just upgraded to a full account (see
+  // PromoteAccountModal/LinkAccountPanel). They skip organization joining
+  // entirely — that journey lives in PromoteOnboardingFlow.
+  const searchParams = useSearchParams();
+  const isPromoteFlow = searchParams.get('promote') === '1';
 
   // Handle hydration detection
   React.useEffect(() => {
@@ -280,6 +287,10 @@ export const OnboardingFlow = () => {
 
   if (isSubmitting) {
     return <LoadingSpinner />;
+  }
+
+  if (isPromoteFlow) {
+    return <PromoteOnboardingFlow hasHydrated={hasHydrated} />;
   }
 
   if (createOrgMode) {

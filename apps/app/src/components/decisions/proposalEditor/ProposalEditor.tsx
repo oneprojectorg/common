@@ -192,7 +192,14 @@ function ProposalEditorInner({
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations();
+  const { user } = useRequiredUser();
   const utils = trpc.useUtils();
+
+  // After an anonymous visitor submits their idea, send them back to the
+  // decision page with ?promote=1 so PromoteAccountModal offers them an upgrade.
+  // A full account has nothing to promote. `isAnonymous` is the session-derived
+  // flag (see PromoteAccountModal / onboarding.ts), not the stale DB relation.
+  const isAnonymous = Boolean(user?.isAnonymous);
   const { ydoc, provider, isSynced } = useCollaborativeDoc();
   const versionPreview = useOptionalVersionPreview();
 
@@ -338,13 +345,19 @@ function ProposalEditorInner({
         },
       });
 
+      let didSubmitDraft = false;
       if (isDraft) {
         await submitProposalMutation.mutateAsync({
           proposalId: proposal.id,
         });
+        didSubmitDraft = true;
       }
 
-      router.push(backHref);
+      router.push(
+        didSubmitDraft && isAnonymous
+          ? `${backHref}?promote=1&proposal=${proposal.profileId}`
+          : backHref,
+      );
     } catch (error) {
       console.error('Failed to update proposal:', error);
     } finally {
@@ -355,6 +368,9 @@ function ProposalEditorInner({
     collaborationDocId,
     proposal,
     isDraft,
+    isAnonymous,
+    backHref,
+    router,
     submitProposalMutation,
     updateProposalMutation,
     draftRef,

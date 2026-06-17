@@ -4,15 +4,26 @@ import { getSafeRedirectPath } from '@op/common/client';
 import { useAuthUser } from '@op/hooks';
 import { useSearchParams } from 'next/navigation';
 
+import { LinkAccountPanel } from '@/components/LinkAccountPanel';
 import { LoginPanel } from '@/components/LoginPanel';
 
 const LoginPage = () => {
   const user = useAuthUser();
   const searchParams = useSearchParams();
   const redirectParam = getSafeRedirectPath(searchParams.get('redirect'));
+  const isLinkMode = searchParams.get('link') === '1';
 
   if (!user || user.isFetching || user.isPending) {
     return null;
+  }
+
+  // Link mode: an anonymous visitor upgrading to a full account. They already
+  // have a session, so the walled-garden / signed-in paths below would bounce
+  // them. The dedicated panel links the new identity onto the anon user rather
+  // than creating a separate account. This must come before the walled-garden
+  // check below, which would otherwise send the upgrading visitor to LoginPanel.
+  if (isLinkMode && user.data?.user?.is_anonymous) {
+    return <LinkAccountPanel />;
   }
 
   // An anonymous session is not "signed in" for our purposes: the walled-garden
