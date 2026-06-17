@@ -601,31 +601,26 @@ export const instanceFilterSchema = z
   })
   .extend(paginationInputSchema.shape);
 
-export const proposalFilterSchema = z
-  .object({
-    processInstanceId: z.uuid(),
-    submittedByProfileId: z.uuid().optional(),
-    status: z.enum(ProposalStatus).optional(),
-    categoryId: z.string().optional(),
-    dir: z.enum(['asc', 'desc']).optional(),
-    /** Phase ID to scope proposals to. Defaults to the current phase when omitted. */
-    phaseId: z.string().optional(),
-    /**
-     * Restrict results to proposals voted on by this profile. Bypasses phase
-     * scoping so a user's ballot remains accessible after the process moves
-     * past the voting phase.
-     */
-    votedByProfileId: z.uuid().optional(),
-    /** When set to 'results', all proposals are returned as non-editable */
-    phase: z.enum(['results']).optional(),
-    /**
-     * Pagination cursor handed back from the previous page's `next`. Encodes
-     * the offset to skip — populated automatically by
-     * `useSuspenseInfiniteQuery`. When set, overrides `offset`.
-     */
-    cursor: z.string().nullish(),
-  })
-  .extend(paginationInputSchema.shape);
+export const proposalFilterSchema = z.object({
+  processInstanceId: z.uuid(),
+  submittedByProfileId: z.uuid().optional(),
+  status: z.enum(ProposalStatus).optional(),
+  categoryId: z.string().optional(),
+  dir: z.enum(['asc', 'desc']).optional(),
+  /** Phase ID to scope proposals to. Defaults to the current phase when omitted. */
+  phaseId: z.string().optional(),
+  /**
+   * Restrict results to proposals voted on by this profile. Bypasses phase
+   * scoping so a user's ballot remains accessible after the process moves
+   * past the voting phase.
+   */
+  votedByProfileId: z.uuid().optional(),
+  /** When set to 'results', all proposals are returned as non-editable */
+  phase: z.enum(['results']).optional(),
+  /** Keyset pagination cursor from the previous page's `next`. */
+  cursor: z.string().nullish(),
+  limit: z.number().min(1).max(100).prefault(20),
+});
 
 // Decision Profile Encoder (profile with processInstance)
 export const decisionProfileEncoder = baseProfileEncoder.extend({

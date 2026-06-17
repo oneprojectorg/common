@@ -597,10 +597,7 @@ export interface ProposalsListProps {
   proposalsHidden?: boolean;
 }
 
-/**
- * Page size matches the prior single-page render so a decision with ≤ this
- * many proposals never needs to hit the sentinel.
- */
+// Matches the prior single-page render, so smaller decisions never hit the sentinel.
 const PROPOSALS_PAGE_LIMIT = 50;
 
 type ProposalQueryParams = {
@@ -620,15 +617,18 @@ type ProposalsLoaderRenderProps = {
   infiniteScrollRef: RefObject<HTMLDivElement | null>;
 };
 
-const useProposalsScrollHelpers = ({
-  fetchNextPage,
-  hasNextPage,
-  isFetchingNextPage,
-}: {
-  fetchNextPage: () => unknown;
-  hasNextPage: boolean;
-  isFetchingNextPage: boolean;
-}) => {
+const useProposalsLoaderRenderProps = (
+  allProposals: Proposal[],
+  {
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  }: {
+    fetchNextPage: () => unknown;
+    hasNextPage: boolean;
+    isFetchingNextPage: boolean;
+  },
+): ProposalsLoaderRenderProps => {
   const stableFetchNextPage = useCallback(() => {
     fetchNextPage();
   }, [fetchNextPage]);
@@ -643,7 +643,12 @@ const useProposalsScrollHelpers = ({
     },
   );
 
-  return { infiniteScrollRef: ref, shouldShowTrigger };
+  return {
+    allProposals,
+    isFetchingNextPage,
+    shouldShowTrigger,
+    infiniteScrollRef: ref,
+  };
 };
 
 const CurrentPhaseProposalsLoader = ({
@@ -653,7 +658,7 @@ const CurrentPhaseProposalsLoader = ({
   queryParams: ProposalQueryParams;
   children: (data: ProposalsLoaderRenderProps) => React.ReactNode;
 }) => {
-  const [paginatedData, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
+  const [paginatedData, query] =
     trpc.decision.listProposals.useSuspenseInfiniteQuery(queryParams, {
       getNextPageParam: (lastPage) => lastPage.next ?? undefined,
       staleTime: 30 * 1000,
@@ -664,18 +669,7 @@ const CurrentPhaseProposalsLoader = ({
     [paginatedData.pages],
   );
 
-  const { infiniteScrollRef, shouldShowTrigger } = useProposalsScrollHelpers({
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  });
-
-  return children({
-    allProposals,
-    isFetchingNextPage,
-    shouldShowTrigger,
-    infiniteScrollRef,
-  });
+  return children(useProposalsLoaderRenderProps(allProposals, query));
 };
 
 const ResultsPhaseProposalsLoader = ({
@@ -685,7 +679,7 @@ const ResultsPhaseProposalsLoader = ({
   queryParams: ProposalQueryParams;
   children: (data: ProposalsLoaderRenderProps) => React.ReactNode;
 }) => {
-  const [paginatedData, { fetchNextPage, hasNextPage, isFetchingNextPage }] =
+  const [paginatedData, query] =
     trpc.decision.listAllProposals.useSuspenseInfiniteQuery(
       {
         processInstanceId: queryParams.processInstanceId,
@@ -704,18 +698,7 @@ const ResultsPhaseProposalsLoader = ({
     [paginatedData.pages],
   );
 
-  const { infiniteScrollRef, shouldShowTrigger } = useProposalsScrollHelpers({
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  });
-
-  return children({
-    allProposals,
-    isFetchingNextPage,
-    shouldShowTrigger,
-    infiniteScrollRef,
-  });
+  return children(useProposalsLoaderRenderProps(allProposals, query));
 };
 
 export const ProposalsList = (props: ProposalsListProps) => {
@@ -783,11 +766,6 @@ type ProposalsListContentProps = ProposalsListProps &
     setSortOrder: (value: string) => void;
   };
 
-/**
- * Bundles the translate-proposals/-decision mutations, the in-page translation
- * state, and the banner attribution strings so {@link ProposalsListContent}
- * stays focused on layout and filtering.
- */
 // fallow-ignore-next-line complexity
 const useProposalsTranslation = ({
   allProposals,
@@ -910,11 +888,7 @@ const useProposalsTranslation = ({
   };
 };
 
-/**
- * `useTranslations` requires a literal key, so we keep the per-filter labels in
- * a small lookup that returns the rendered string. Avoids the four-way nested
- * ternary the JSX used to inline.
- */
+// useTranslations needs literal keys, so map each filter to its label here.
 const useProposalFilterLabel = (filter: ProposalFilter) => {
   const t = useTranslations();
   switch (filter) {

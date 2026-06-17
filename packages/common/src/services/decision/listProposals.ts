@@ -13,7 +13,12 @@ import type { User } from '@op/supabase/lib';
 import { type NormalizedRole, checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
-import { UnauthorizedError } from '../../utils';
+import {
+  UnauthorizedError,
+  decodeCursor,
+  encodeCursor,
+  getCursorCondition,
+} from '../../utils';
 import {
   assertInstanceProfileAccess,
   getCurrentProfileId,
@@ -55,13 +60,7 @@ export interface ListProposalsInput {
   proposalIds?: string[];
   phase?: 'results';
   limit?: number;
-  offset?: number;
-  /**
-   * Pagination cursor returned from a previous page's `next`. When provided,
-   * overrides {@link offset}. The cursor is an opaque string that today encodes
-   * the offset, which keeps this offset-based service compatible with tRPC's
-   * `useSuspenseInfiniteQuery`.
-   */
+  // Keyset pagination cursor from a previous page's `next` (see `getCursorCondition`).
   cursor?: string | null;
   orderBy?: 'createdAt' | 'updatedAt' | 'status' | 'votes';
   dir?: 'asc' | 'desc';
@@ -303,9 +302,9 @@ export const listProposals = async ({
   }
 
   const { limit = 20, orderBy = 'createdAt', dir = 'desc' } = input;
-  // Cursor wins over offset when both are present so paginated callers don't
-  // accidentally hold offset state across page transitions.
-  const offset = decodeProposalCursor(input.cursor) ?? input.offset ?? 0;
+  const decodedCursor = input.cursor
+    ? decodeCursor<{ value: string | Date; id: string }>(input.cursor)
+    : undefined;
 
   // Resolve category-scoped proposal IDs up front so the same ID set is
   // available to both the count and data queries when assembling conditions.
@@ -452,9 +451,26 @@ export const listProposals = async ({
       AND ${decisionsVoteSubmissions.processInstanceId} = ${input.processInstanceId}
     )`;
 
-  const [proposalList, countResult] = await Promise.all([
+  const [rawProposalList, countResult] = await Promise.all([
     db.query.proposals.findMany({
-      where: { RAW: (table) => buildWhereClause(table)! },
+      // Cursor condition lives only on the data query — the count query must
+      // still see every matching row so `total` stays the full result size.
+      // `votes` orders by a computed aggregate, so keyset pagination doesn't
+      // apply there (and no caller paginates it).
+      where: {
+        RAW: (table) =>
+          and(
+            buildWhereClause(table),
+            orderBy === 'votes'
+              ? undefined
+              : getCursorCondition({
+                  column: table[orderBy] ?? table.createdAt,
+                  tieBreakerColumn: table.id,
+                  cursor: decodedCursor,
+                  direction: dir,
+                }),
+          )!,
+      },
       with: {
         submittedBy: {
           with: {
@@ -463,8 +479,8 @@ export const listProposals = async ({
         },
         profile: true,
       },
-      limit,
-      offset,
+      // Fetch one extra to detect whether a next page exists.
+      limit: limit + 1,
       ...(includeVoteCounts && {
         extras: {
           voteCount: (table, { sql: sqlOp }) =>
@@ -497,6 +513,11 @@ export const listProposals = async ({
   ]);
 
   const count = countResult[0]?.count || 0;
+
+  const hasMore = rawProposalList.length > limit;
+  const proposalList = hasMore
+    ? rawProposalList.slice(0, limit)
+    : rawProposalList;
 
   type ProposalListItem = (typeof proposalList)[number];
 
@@ -585,30 +606,25 @@ export const listProposals = async ({
     };
   });
 
-  const total = Number(count);
-  const hasMore = offset + limit < total;
+  // Keyset cursor off the last row's sort value + id tiebreak, mirroring
+  // `getCursorCondition` above. `votes` sorts by a computed aggregate, so it
+  // can't keyset — it's always returned as a single page.
+  const lastItem = proposalsWithCounts[proposalsWithCounts.length - 1];
+  const cursorValue =
+    lastItem && orderBy !== 'votes' ? lastItem[orderBy] : null;
+  const next =
+    hasMore && lastItem && cursorValue
+      ? encodeCursor<{ value: string | Date; id: string }>({
+          value: cursorValue,
+          id: lastItem.id,
+        })
+      : null;
 
   return {
     proposals: proposalsWithCounts,
-    total,
+    total: Number(count),
     hasMore,
     canManageProposals,
-    next: hasMore ? encodeProposalCursor(offset + limit) : null,
+    next,
   };
-};
-
-/**
- * Cursors are opaque on the wire; today they encode the next offset. Stays a
- * single helper so the encode/decode pair never drifts.
- */
-const encodeProposalCursor = (offset: number) => String(offset);
-
-const decodeProposalCursor = (
-  cursor: string | null | undefined,
-): number | undefined => {
-  if (!cursor) {
-    return undefined;
-  }
-  const parsed = Number(cursor);
-  return Number.isInteger(parsed) && parsed >= 0 ? parsed : undefined;
 };

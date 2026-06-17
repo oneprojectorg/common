@@ -38,9 +38,7 @@ export const ManualSelectionToolbar = ({
 }: ManualSelectionToolbarProps) => {
   const t = useTranslations();
   const { proposalFilter, selectedCategory, sortOrder } = filters;
-  // ManualSelectionToolbar never surfaces "My ballot" — only the live
-  // proposal-list view does. Pass hasVoted={false} so the shared helper
-  // returns the toolbar-appropriate three items.
+  // hasVoted=false: the toolbar never surfaces "My ballot" (only the live list does).
   const filterItems = useProposalFilterItems({
     hasVoted: false,
     currentProfileId,

@@ -141,11 +141,7 @@ export const proposalListSchema = z.object({
   total: z.number(),
   hasMore: z.boolean(),
   canManageProposals: z.boolean().prefault(false),
-  /**
-   * Cursor for the next page when {@link hasMore} is true. The cursor encodes
-   * the offset to skip on the next fetch, so it pairs naturally with
-   * `useSuspenseInfiniteQuery`. `null` when there are no further pages.
-   */
+  // Cursor for the next page, or `null` when there are no further pages.
   next: z.string().nullable(),
 });
 

@@ -6,11 +6,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-/**
- * Items for the `ResponsiveSelect` that surfaces proposal filters. Shared by
- * `ProposalsList` and `ManualSelectionToolbar` so the labels and disabled
- * rules stay in lockstep.
- */
+// Filter items for the proposal `ResponsiveSelect`, shared by ProposalsList and
+// ManualSelectionToolbar so labels and disabled rules stay in lockstep.
 export const useProposalFilterItems = ({
   hasVoted,
   currentProfileId,
