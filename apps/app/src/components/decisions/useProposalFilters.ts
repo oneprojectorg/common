@@ -33,10 +33,8 @@ export const useProposalFilterItems = ({
   ];
 };
 
-// Filter selection state: default, plus auto-switching to "My ballot" the
-// moment a user finishes voting. Server-filtered callers (the paginated
-// listing) use this directly; in-memory callers compose it via
-// `useProposalFilters` below.
+// Filter selection state + auto-switch to "My ballot" once the user votes.
+// Composed by `useProposalFilters` (the in-memory candidate-list path).
 export function useProposalFilterState({
   hasVoted,
   initialFilter,

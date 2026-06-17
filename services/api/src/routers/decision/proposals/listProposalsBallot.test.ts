@@ -1,6 +1,5 @@
 import { db } from '@op/db/client';
 import {
-  ProcessStatus,
   ProposalStatus,
   decisionsVoteProposals,
   decisionsVoteSubmissions,
@@ -9,7 +8,6 @@ import { TRPCError } from '@trpc/server';
 import { describe, expect, it } from 'vitest';
 
 import { TestDecisionsDataManager } from '../../../test/helpers/TestDecisionsDataManager';
-import { schemaWithPipeline } from '../../../test/helpers/pipelineSchemas';
 import { createAuthenticatedCaller } from '../../../test/supabase-utils';
 
 /**
@@ -275,72 +273,5 @@ describe.concurrent('listProposals: votedByProfileId (ballot filter)', () => {
         votedByProfileId: voter.profileId,
       }),
     ).rejects.toThrowError(TRPCError);
-  });
-
-  it('intersects the ballot with the active phase when scopeBallotToPhase is set', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-
-    const setup = await testData.createDecisionSetup({
-      processSchema: schemaWithPipeline,
-      instanceCount: 1,
-      status: ProcessStatus.PUBLISHED,
-    });
-
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
-
-    const voter = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
-    });
-
-    // Admin submits 3 proposals; the submission→review pipeline keeps 2.
-    const submitted = [];
-    for (let i = 1; i <= 3; i++) {
-      submitted.push(
-        await testData.createProposal({
-          userEmail: setup.userEmail,
-          processInstanceId: instance.instance.id,
-          proposalData: { title: `Proposal ${i} ${task.id}` },
-          status: ProposalStatus.SUBMITTED,
-        }),
-      );
-    }
-
-    // The voter's ballot covers all three submitted proposals.
-    await seedBallot({
-      processInstanceId: instance.instance.id,
-      voterProfileId: voter.profileId,
-      proposalIds: submitted.map((p) => p.id),
-    });
-
-    await testData.advancePhase({
-      instanceId: instance.instance.id,
-      fromPhaseId: 'submission',
-      toPhaseId: 'review',
-    });
-
-    const voterCaller = await createAuthenticatedCaller(voter.email);
-
-    // Whole ballot ignores phase scoping → all three voted proposals.
-    const wholeBallot = await voterCaller.decision.listProposals({
-      processInstanceId: instance.instance.id,
-      votedByProfileId: voter.profileId,
-    });
-    expect(wholeBallot.total).toBe(3);
-
-    // Phase-scoped ballot intersects with the review phase (pipeline limit 2).
-    const phaseScoped = await voterCaller.decision.listProposals({
-      processInstanceId: instance.instance.id,
-      votedByProfileId: voter.profileId,
-      scopeBallotToPhase: true,
-    });
-    expect(phaseScoped.total).toBe(2);
-    expect(phaseScoped.proposals).toHaveLength(2);
   });
 });

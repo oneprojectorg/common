@@ -610,17 +610,11 @@ export const proposalFilterSchema = z.object({
   /** Phase ID to scope proposals to. Defaults to the current phase when omitted. */
   phaseId: z.string().optional(),
   /**
-   * Restrict results to proposals voted on by this profile. By default bypasses
-   * phase scoping so a user's whole ballot stays accessible after the process
-   * moves past the voting phase. Pair with `scopeBallotToPhase` to keep it
-   * phase-scoped instead.
+   * Restrict results to proposals voted on by this profile. Bypasses phase
+   * scoping so a user's ballot remains accessible after the process moves
+   * past the voting phase.
    */
   votedByProfileId: z.uuid().optional(),
-  /**
-   * Intersect the `votedByProfileId` ballot with the active phase instead of
-   * bypassing phase scoping. Used by the listing's "My ballot" filter.
-   */
-  scopeBallotToPhase: z.boolean().optional(),
   /** When set to 'results', all proposals are returned as non-editable */
   phase: z.enum(['results']).optional(),
   /** Keyset pagination cursor from the previous page's `next`. */

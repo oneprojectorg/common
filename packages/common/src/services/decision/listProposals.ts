@@ -47,18 +47,11 @@ export interface ListProposalsInput {
   /** Scope results to a specific phase. Defaults to the current phase when omitted. */
   phaseId?: string;
   /**
-   * Restrict results to proposals voted on by this profile. By default this
-   * bypasses phase resolution so a ballot stays accessible after the process
-   * advances past the voting phase (the standalone My Ballot view). Set
-   * `scopeBallotToPhase` to intersect it with the active phase instead.
+   * Restrict results to proposals voted on by this profile. Bypasses phase
+   * resolution so a ballot remains accessible after the process advances past
+   * the voting phase.
    */
   votedByProfileId?: string;
-  /**
-   * When true, the `votedByProfileId` ballot is intersected with the active
-   * phase scope instead of replacing it — used by the in-page listing's "My
-   * ballot" filter so it behaves like the other phase-scoped filters.
-   */
-  scopeBallotToPhase?: boolean;
   /**
    * Internal override: skip phase resolution and use this exact set of IDs.
    * Not exposed on the tRPC schema — public callers should use phaseId or
@@ -81,42 +74,6 @@ export interface ListProposalsInput {
 }
 
 /**
- * Loads the proposal IDs on a profile's ballot for this instance. Ballots are
- * private — a caller may only request their own (skipped for trusted contexts).
- */
-const resolveBallotProposalIds = async ({
-  processInstanceId,
-  votedByProfileId,
-  currentProfileId,
-  skipAccessCheck,
-}: {
-  processInstanceId: string;
-  votedByProfileId: string;
-  currentProfileId: string | undefined;
-  skipAccessCheck: boolean;
-}): Promise<string[]> => {
-  if (!skipAccessCheck && currentProfileId !== votedByProfileId) {
-    throw new UnauthorizedError('You can only view your own ballot');
-  }
-
-  const votedRows = await db
-    .select({ proposalId: decisionsVoteProposals.proposalId })
-    .from(decisionsVoteSubmissions)
-    .innerJoin(
-      decisionsVoteProposals,
-      eq(decisionsVoteSubmissions.id, decisionsVoteProposals.voteSubmissionId),
-    )
-    .where(
-      and(
-        eq(decisionsVoteSubmissions.processInstanceId, processInstanceId),
-        eq(decisionsVoteSubmissions.submittedByProfileId, votedByProfileId),
-      ),
-    );
-
-  return votedRows.map((row) => row.proposalId);
-};
-
-/**
  * Resolves a caller-provided "explicit scope" for the listProposals query.
  *
  * Explicit scope means the caller knows the exact set of proposal IDs they
@@ -125,10 +82,9 @@ const resolveBallotProposalIds = async ({
  *
  * 1. `proposalIds` (internal-only) — used by trusted callers that already
  *    have the IDs in hand.
- * 2. `votedByProfileId` without `scopeBallotToPhase` (public) — surfaces a
- *    user's whole ballot regardless of the current phase (the standalone My
- *    Ballot view). The phase-scoped listing filter instead keeps phase
- *    resolution and applies the ballot as an additive filter.
+ * 2. `votedByProfileId` (public) — surfaces a user's ballot regardless of
+ *    the current phase. Subject to a self-only auth check: a caller can only
+ *    request their own ballot. The check is skipped for trusted contexts.
  *
  * Returns `undefined` when no explicit scope was requested (caller will fall
  * back to phase scoping).
@@ -146,16 +102,33 @@ const resolveExplicitScope = async ({
     return input.proposalIds;
   }
 
-  if (!input.votedByProfileId || input.scopeBallotToPhase) {
+  if (!input.votedByProfileId) {
     return undefined;
   }
 
-  return resolveBallotProposalIds({
-    processInstanceId: input.processInstanceId,
-    votedByProfileId: input.votedByProfileId,
-    currentProfileId,
-    skipAccessCheck,
-  });
+  // Ballots are private: a caller can only request their own ballot.
+  if (!skipAccessCheck && currentProfileId !== input.votedByProfileId) {
+    throw new UnauthorizedError('You can only view your own ballot');
+  }
+
+  const votedRows = await db
+    .select({ proposalId: decisionsVoteProposals.proposalId })
+    .from(decisionsVoteSubmissions)
+    .innerJoin(
+      decisionsVoteProposals,
+      eq(decisionsVoteSubmissions.id, decisionsVoteProposals.voteSubmissionId),
+    )
+    .where(
+      and(
+        eq(decisionsVoteSubmissions.processInstanceId, input.processInstanceId),
+        eq(
+          decisionsVoteSubmissions.submittedByProfileId,
+          input.votedByProfileId,
+        ),
+      ),
+    );
+
+  return votedRows.map((row) => row.proposalId);
 };
 
 // Shared function to build WHERE conditions for both count and data queries.
@@ -221,7 +194,7 @@ export const listProposals = async ({
   // parallel. The row is reused for the phase-resolution context (instead of
   // re-reading inside getInstanceContext), the access checks, and template
   // resolution.
-  const [instanceRows, explicitScopeIds, ballotFilterIds] = await Promise.all([
+  const [instanceRows, explicitScopeIds] = await Promise.all([
     db
       .select({
         id: processInstances.id,
@@ -235,16 +208,6 @@ export const listProposals = async ({
       .where(eq(processInstances.id, processInstanceId))
       .limit(1),
     resolveExplicitScope({ input, currentProfileId, skipAccessCheck }),
-    // Phase-scoped "My ballot": resolve the ballot to intersect with phase
-    // scoping (the whole-ballot case is handled by resolveExplicitScope).
-    input.votedByProfileId && input.scopeBallotToPhase
-      ? resolveBallotProposalIds({
-          processInstanceId,
-          votedByProfileId: input.votedByProfileId,
-          currentProfileId,
-          skipAccessCheck,
-        })
-      : Promise.resolve(undefined),
   ]);
 
   const instance = instanceRows[0];
@@ -390,16 +353,6 @@ export const listProposals = async ({
       clause = and(clause, inArray(proposalsTable.id, categoryProposalIds))!;
     }
 
-    // Phase-scoped "My ballot": intersect with the caller's ballot while
-    // leaving phase scoping intact (unlike the whole-ballot explicit scope).
-    if (ballotFilterIds !== undefined) {
-      const ballotFilter =
-        ballotFilterIds.length > 0
-          ? inArray(proposalsTable.id, ballotFilterIds)
-          : sql`false`;
-      clause = and(clause, ballotFilter)!;
-    }
-
     // Phase scoping applies separately to non-drafts and drafts. Non-drafts
     // are resolved via transition snapshots + a strict `createdAt` window;
     // drafts use a half-open `createdAt` window only (they're never attached
@@ -500,10 +453,8 @@ export const listProposals = async ({
 
   const [rawProposalList, countResult] = await Promise.all([
     db.query.proposals.findMany({
-      // Cursor condition lives only on the data query — the count query must
-      // still see every matching row so `total` stays the full result size.
-      // `votes` orders by a computed aggregate, so keyset pagination doesn't
-      // apply there (and no caller paginates it).
+      // Cursor lives only on the data query so `total` stays the full count.
+      // `votes` sorts by a computed aggregate, so it can't keyset (never paginated).
       where: {
         RAW: (table) =>
           and(
@@ -653,9 +604,8 @@ export const listProposals = async ({
     };
   });
 
-  // Keyset cursor off the last row's sort value + id tiebreak, mirroring
-  // `getCursorCondition` above. `votes` sorts by a computed aggregate, so it
-  // can't keyset — it's always returned as a single page.
+  // Keyset cursor off the last row's sort value + id tiebreak (votes can't
+  // keyset, so it stays a single page).
   const lastItem = proposalsWithCounts[proposalsWithCounts.length - 1];
   const cursorValue =
     lastItem && orderBy !== 'votes' ? lastItem[orderBy] : null;

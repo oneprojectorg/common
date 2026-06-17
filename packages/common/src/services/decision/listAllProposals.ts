@@ -101,8 +101,7 @@ export const listAllProposals = async ({
     profileRoles,
   );
 
-  // Resolve the caller's ballot up front so "My ballot" filters in SQL.
-  // Ballots are private: a caller can only request their own.
+  // Ballots are private — a caller may only request their own.
   let votedProposalIds: string[] | undefined;
   if (input.votedByProfileId) {
     if (currentProfileId !== input.votedByProfileId) {
@@ -130,9 +129,8 @@ export const listAllProposals = async ({
     votedProposalIds = votedRows.map((row) => row.proposalId);
   }
 
-  // Shared filter for both the data and count queries. Parameterized on the
-  // table reference so it works against the relational `RAW` alias and the
-  // plain schema table — the same pattern as `listProposals`.
+  // Shared by the data and count queries; param'd on the table ref so it works
+  // for both the relational `RAW` alias and the plain schema table.
   const buildBaseConditions = (t: typeof proposals): SQL =>
     and(
       eq(t.processInstanceId, processInstanceId),
@@ -183,8 +181,7 @@ export const listAllProposals = async ({
           ),
     )!;
 
-  // `total` counts every match (cursor condition lives only on the data query)
-  // so the listing can show the full proposal count regardless of pagination.
+  // Cursor lives only on the data query, so `total` stays the full match count.
   const [proposalList, countResult] = await Promise.all([
     db.query.proposals.findMany({
       where: {
@@ -208,8 +205,7 @@ export const listAllProposals = async ({
         profile: true,
       },
       limit: limit + 1, // Fetch one extra to check whether there's a next page.
-      // `id` tie-break keeps pagination stable when rows share the sort value —
-      // without it, same-timestamp rows at a page boundary are skipped.
+      // `id` tie-break: without it, rows sharing the sort value are skipped at page boundaries.
       orderBy: (table, { asc, desc }) =>
         dir === 'asc'
           ? [asc(table[orderBy]), asc(table.id)]

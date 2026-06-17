@@ -53,7 +53,6 @@ type ProposalQueryParams = {
   categoryId?: string;
   submittedByProfileId?: string;
   votedByProfileId?: string;
-  scopeBallotToPhase?: boolean;
   status?: ProposalStatus;
   dir: 'asc' | 'desc';
   limit: number;
@@ -171,9 +170,8 @@ export const ProposalsList = (props: ProposalsListProps) => {
   });
   const hasVoted = voteStatus?.hasVoted || false;
 
-  // URL is the source of truth for the filters (nuqs). The filter param is left
-  // without a default so an absent value can fall back to the ballot-aware
-  // default below — and derive straight to "My ballot" once the user has voted.
+  // nuqs holds the filters in the URL. `filter` has no default so an absent
+  // value can fall back to the ballot-aware default derived below.
   const [selectedCategory, setSelectedCategory] = useQueryState(
     'category',
     parseAsString.withDefault('all-categories'),
@@ -190,9 +188,8 @@ export const ProposalsList = (props: ProposalsListProps) => {
     filterParam ??
     initialFilter ??
     (hasVoted ? ProposalFilter.MY_BALLOT : ProposalFilter.ALL);
-  // "My proposals"/"My ballot" only constrain the query when we know the
-  // caller's profile. For anonymous or stale-link visitors, fall back to ALL so
-  // the header can't claim a personal filter while the query returns everything.
+  // "My proposals"/"My ballot" need a profile; for anonymous/stale-link visitors
+  // fall back to ALL so the label can't claim a filter the query didn't apply.
   const requiresProfile =
     requestedFilter === ProposalFilter.MY_PROPOSALS ||
     requestedFilter === ProposalFilter.MY_BALLOT;
@@ -221,9 +218,6 @@ export const ProposalsList = (props: ProposalsListProps) => {
       currentProfileId
     ) {
       params.votedByProfileId = currentProfileId;
-      // Keep the in-page ballot filter consistent with the other phase-scoped
-      // filters; the standalone My Ballot view omits this for the whole ballot.
-      params.scopeBallotToPhase = true;
     }
 
     return params;
@@ -264,6 +258,7 @@ export const ProposalsList = (props: ProposalsListProps) => {
   );
 };
 
+// TODO: trim props — move filter state to a shared nuqs hook + extract an export button (follow-up).
 type ProposalsListContentProps = ProposalsListProps &
   ProposalsLoaderRenderProps & {
     proposalFilter: ProposalFilter;
@@ -365,8 +360,7 @@ const ProposalsListContent = ({
           <ProposalsListHeader
             hideFilters={hideFilters}
             proposalFilter={proposalFilter}
-            // Filtering happens in SQL, so `total` is the accurate full count
-            // for whichever filter is active.
+            // Server-side filtering makes `total` accurate for the active filter.
             count={total}
           />
         </div>
