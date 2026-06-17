@@ -6,6 +6,7 @@ import { LuArrowRight, LuCheck, LuPlay } from 'react-icons/lu';
 import { cn } from '../lib/utils';
 import { formatDateRange } from '../utils/formatting';
 import { Button } from './Button';
+import { Chip } from './Chip';
 
 export type PhaseCardState = 'completed' | 'current' | 'upcoming';
 
@@ -84,7 +85,7 @@ export function PhaseCard({
       <li className={className}>
         <Link
           href={href}
-          className="flex items-center justify-between gap-4 rounded-xl bg-primary-100 p-4 transition hover:bg-primary-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="flex items-center justify-between gap-4 rounded-xl bg-primary-100 p-4 text-primary-tealBlack transition hover:bg-primary-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           <div className="flex min-w-0 flex-col gap-4">
             <div className="flex items-center gap-4">
@@ -92,15 +93,14 @@ export function PhaseCard({
                 startDate={startDate}
                 endDate={endDate}
                 locale={locale}
-                className="text-primary-tealBlack"
               />
               {isNowOpen ? (
-                <span className="rounded-md bg-primary-tealBlack px-1.5 py-1 text-sm text-neutral-offWhite">
+                <Chip className="bg-primary-tealBlack px-1.5 py-0.75 text-sm text-neutral-offWhite">
                   {nowOpenLabel}
-                </span>
+                </Chip>
               ) : null}
             </div>
-            <PhaseName name={name} className="text-primary-tealBlack" />
+            <PhaseName name={name} />
           </div>
           <LuArrowRight className="size-4 shrink-0" aria-hidden />
         </Link>
@@ -172,7 +172,7 @@ const PhaseDates = ({
   }
 
   return (
-    <span className={cn('text-sm', className)}>
+    <span className={cn('text-base', className)}>
       {formatDateRange(startDate, endDate, locale)}
     </span>
   );
@@ -185,7 +185,9 @@ const PhaseName = ({
   name: string;
   className?: string;
 }) => (
-  <p className={cn('font-serif text-xl font-light', className)}>
+  <p
+    className={cn('font-serif text-xl/5 font-light tracking-tight', className)}
+  >
     <bdi>{name}</bdi>
   </p>
 );
