@@ -1,6 +1,7 @@
 'use client';
 
 import { FieldError } from '@op/ui/Field';
+import { Header4 } from '@op/ui/Header';
 import { useRef } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -34,7 +35,7 @@ export function FieldConfigLocation({
 
   return (
     <div className="space-y-2">
-      <h4 className="text-sm text-neutral-charcoal">{t('Map view')}</h4>
+      <Header4>{t('Map view')}</Header4>
       <p className="text-sm text-neutral-gray4">
         {t(
           'Pan and zoom to set the starting map position participants see before they add a location.',

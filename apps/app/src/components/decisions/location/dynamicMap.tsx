@@ -1,5 +1,6 @@
 'use client';
 
+import { Skeleton } from '@op/ui/Skeleton';
 import dynamic from 'next/dynamic';
 
 /**
@@ -9,7 +10,5 @@ import dynamic from 'next/dynamic';
  */
 export const MapCanvas = dynamic(() => import('./MapCanvas'), {
   ssr: false,
-  loading: () => (
-    <div className="h-44 sm:h-80 w-full animate-pulse border border-neutral-gray1 bg-neutral-gray1" />
-  ),
+  loading: () => <Skeleton className="h-44 w-full sm:h-80" />,
 });
