@@ -17,7 +17,7 @@ import {
   getItemsWithReactionsAndComments,
   postModerationFilter,
 } from './listPosts';
-import { assertPostReadAccess } from './postReadAccess';
+import { assertPostReadAccess } from './access';
 
 export const listProfilePosts = async ({
   user,
