@@ -43,8 +43,8 @@ export interface ProposalsListProps {
   proposalsHidden?: boolean;
 }
 
-// Matches the prior single-page render, so smaller decisions never hit the sentinel.
-const PROPOSALS_PAGE_LIMIT = 50;
+// A multiple of three so a full page fills the three-per-row grid evenly.
+const PROPOSALS_PAGE_LIMIT = 51;
 
 const PROPOSAL_FILTER_VALUES = Object.values(ProposalFilter);
 
@@ -420,7 +420,7 @@ const ProposalsListContent = ({
       {shouldShowTrigger && (
         <div
           ref={infiniteScrollRef}
-          className="flex justify-center py-4"
+          className="py-4"
           data-testid="proposals-infinite-scroll-sentinel"
         >
           {isFetchingNextPage ? <ProposalListSkeletonGrid /> : null}
