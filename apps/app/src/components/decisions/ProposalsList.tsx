@@ -605,6 +605,7 @@ type ProposalQueryParams = {
   categoryId?: string;
   submittedByProfileId?: string;
   votedByProfileId?: string;
+  scopeBallotToPhase?: boolean;
   status?: ProposalStatus;
   dir: 'asc' | 'desc';
   limit: number;
@@ -762,6 +763,9 @@ export const ProposalsList = (props: ProposalsListProps) => {
       currentProfileId
     ) {
       params.votedByProfileId = currentProfileId;
+      // Keep the in-page ballot filter consistent with the other phase-scoped
+      // filters; the standalone My Ballot view omits this for the whole ballot.
+      params.scopeBallotToPhase = true;
     }
 
     return params;
