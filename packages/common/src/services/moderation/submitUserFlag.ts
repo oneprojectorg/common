@@ -37,7 +37,7 @@ export interface SubmitUserFlagInput {
  */
 export const submitUserFlag = async (
   input: SubmitUserFlagInput,
-): Promise<{ flag: ModerationFlag; created: boolean }> => {
+): Promise<{ flag: ModerationFlag }> => {
   await assertModerationItemAccess({
     itemType: input.itemType,
     itemId: input.itemId,
@@ -51,7 +51,7 @@ export const submitUserFlag = async (
   // open-flag check, so this is a fast path, not the correctness boundary.
   const existing = await findOpenModerationFlag(input.itemType, input.itemId);
   if (existing) {
-    return { flag: existing, created: false };
+    return { flag: existing };
   }
 
   const provider = getModerationProvider();

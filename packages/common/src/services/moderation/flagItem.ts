@@ -73,10 +73,10 @@ export interface FlagItemDeps {
 export const flagItem = async (
   input: FlagItemInput,
   deps: FlagItemDeps,
-): Promise<{ flag: ModerationFlag; created: boolean }> => {
+): Promise<{ flag: ModerationFlag }> => {
   const existing = await deps.findOpenFlag(input.itemType, input.itemId);
   if (existing) {
-    return { flag: existing, created: false };
+    return { flag: existing };
   }
 
   const { flag, created } = await deps.createPendingFlag({
@@ -89,7 +89,7 @@ export const flagItem = async (
   // Lost the insert race to a concurrent report: that report owns the round
   // (and the rollback if its submit fails) — don't submit a duplicate.
   if (!created) {
-    return { flag, created: false };
+    return { flag };
   }
 
   if (deps.submitForReview && deps.planRefs) {
@@ -126,5 +126,5 @@ export const flagItem = async (
     }
   }
 
-  return { flag, created: true };
+  return { flag };
 };

@@ -1,7 +1,11 @@
-import { getCurrentProfileId, submitUserFlag } from '@op/common';
+import {
+  UnauthorizedError,
+  getCurrentProfileId,
+  submitUserFlag,
+} from '@op/common';
 import { z } from 'zod';
 
-import { authenticatedProcedure, router } from '../../trpcFactory';
+import { openProcedure, router } from '../../trpcFactory';
 
 const flagItemInputSchema = z.object({
   itemType: z.enum(['proposal', 'post', 'user']),
@@ -11,7 +15,6 @@ const flagItemInputSchema = z.object({
 
 const flagItemOutputSchema = z.object({
   flagId: z.uuid(),
-  created: z.boolean(),
 });
 
 export const moderationRouter = router({
@@ -20,15 +23,22 @@ export const moderationRouter = router({
   // Tighter than the default rate limit: each call signs attachment URLs and
   // makes outbound provider submissions, and nobody legitimately reports five
   // items in a minute.
-  flagItem: authenticatedProcedure({
+  flagItem: openProcedure({
     rateLimit: { windowSize: 60, maxRequests: 5 },
   })
     .input(flagItemInputSchema)
     .output(flagItemOutputSchema)
     .mutation(async ({ ctx, input }) => {
+      // openProcedure resolves an optional user; reporting records the reporter
+      // and ships the item's content to the provider, so fail closed without a
+      // session rather than letting an anonymous caller flag content.
+      if (!ctx.user) {
+        throw new UnauthorizedError('Must be signed in to report content');
+      }
+
       const flaggedByProfileId = await getCurrentProfileId(ctx.user.id);
 
-      const { flag, created } = await submitUserFlag({
+      const { flag } = await submitUserFlag({
         itemType: input.itemType,
         itemId: input.itemId,
         flaggedByProfileId,
@@ -36,6 +46,6 @@ export const moderationRouter = router({
         user: ctx.user,
       });
 
-      return { flagId: flag.id, created };
+      return { flagId: flag.id };
     }),
 });
