@@ -4,7 +4,7 @@ import type { ProposalTemplateSchema } from '@op/common/client';
 import { viewerProseStyles } from '@op/ui/RichTextEditor';
 import { useMemo } from 'react';
 
-import { ProposalHtmlContent } from './ProposalHtmlContent';
+import { HtmlContentRenderer } from './HtmlContentRenderer';
 import { compileProposalSchema } from './forms/proposal';
 import type { FieldDescriptor } from './forms/types';
 
@@ -100,7 +100,7 @@ function ViewField({
         </div>
       )}
       {html ? (
-        <ProposalHtmlContent html={html} />
+        <HtmlContentRenderer html={html} />
       ) : (
         <div className={viewerProseStyles}>
           <p className="text-neutral-gray3 italic">—</p>
