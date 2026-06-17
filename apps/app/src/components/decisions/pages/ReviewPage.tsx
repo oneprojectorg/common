@@ -15,7 +15,8 @@ import { TranslatedText } from '@/components/TranslatedText';
 import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
-import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
+import { ProposalListSkeleton } from '../ProposalListSkeleton';
+import { ProposalsList } from '../ProposalsList';
 import { ReviewProgressStats } from '../Review/ReviewProgressStats';
 import { ReviewAssignmentsList } from '../ReviewAssignmentsList';
 

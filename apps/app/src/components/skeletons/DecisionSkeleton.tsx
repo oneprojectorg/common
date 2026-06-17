@@ -1,6 +1,6 @@
 import { Skeleton } from '@op/ui/Skeleton';
 
-import { ProposalListSkeleton } from '../decisions/ProposalsList';
+import { ProposalListSkeleton } from '../decisions/ProposalListSkeleton';
 
 /**
  * Skeleton for decision page headers.
