@@ -1,5 +1,6 @@
 'use client';
 
+import { Link } from 'react-aria-components';
 import { LuArrowRight, LuCheck, LuPlay } from 'react-icons/lu';
 
 import { cn } from '../lib/utils';
@@ -81,9 +82,9 @@ export function PhaseCard({
   if (state === 'current') {
     return (
       <li className={className}>
-        <a
-          className="flex items-center justify-between gap-4 rounded-xl bg-primary-100 p-4 transition hover:bg-primary-200"
+        <Link
           href={href}
+          className="flex items-center justify-between gap-4 rounded-xl bg-primary-100 p-4 transition hover:bg-primary-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           <div className="flex min-w-0 flex-col gap-4">
             <div className="flex items-center gap-4">
@@ -102,7 +103,7 @@ export function PhaseCard({
             <PhaseName name={name} className="text-primary-tealBlack" />
           </div>
           <LuArrowRight className="size-4 shrink-0" aria-hidden />
-        </a>
+        </Link>
       </li>
     );
   }
@@ -185,7 +186,7 @@ const PhaseName = ({
   name: string;
   className?: string;
 }) => (
-  <p className={cn('font-serif text-title-base font-light', className)}>
+  <p className={cn('font-serif text-xl font-light', className)}>
     <bdi>{name}</bdi>
   </p>
 );
