@@ -63,7 +63,7 @@ describe('flagItem', () => {
     expect(deps.recordRound.mock.invocationCallOrder[0]).toBeLessThan(
       deps.submitForReview.mock.invocationCallOrder[0] ?? 0,
     );
-    expect(result).toEqual({ flag: pendingRow, created: true });
+    expect(result).toEqual({ flag: pendingRow });
   });
 
   it('is idempotent: returns the existing open flag without creating or submitting', async () => {
@@ -75,7 +75,7 @@ describe('flagItem', () => {
     expect(deps.createPendingFlag).not.toHaveBeenCalled();
     expect(deps.submitForReview).not.toHaveBeenCalled();
     expect(deps.recordRound).not.toHaveBeenCalled();
-    expect(result).toEqual({ flag: pendingRow, created: false });
+    expect(result).toEqual({ flag: pendingRow });
   });
 
   it('does not submit or roll back when a concurrent report won the insert race', async () => {
@@ -91,7 +91,7 @@ describe('flagItem', () => {
     // the existing flag.
     expect(deps.recordRound).not.toHaveBeenCalled();
     expect(deps.submitForReview).not.toHaveBeenCalled();
-    expect(result).toEqual({ flag: pendingRow, created: false });
+    expect(result).toEqual({ flag: pendingRow });
   });
 
   it('rolls back the pending flag and rethrows when the provider submit fails', async () => {
@@ -113,7 +113,7 @@ describe('flagItem', () => {
 
     expect(deps.recordRound).not.toHaveBeenCalled();
     expect(deps.submitForReview).not.toHaveBeenCalled();
-    expect(result).toEqual({ flag: pendingRow, created: true });
+    expect(result).toEqual({ flag: pendingRow });
   });
 
   it('skips the provider entirely when async review is not configured', async () => {
@@ -123,6 +123,6 @@ describe('flagItem', () => {
       createPendingFlag: deps.createPendingFlag,
     });
 
-    expect(result).toEqual({ flag: pendingRow, created: true });
+    expect(result).toEqual({ flag: pendingRow });
   });
 });
