@@ -87,6 +87,7 @@ export * from './syncProposalProfileLocation';
 export * from './syncProposalBoundaryTag';
 export * from './linkBoundaryToCategory';
 export * from './resolveBoundary';
+export * from './reverseGeocode';
 export * from './templateLocation';
 export * from './resolveProposalTemplate';
 export * from './getProposalTemplateFieldOrder';
