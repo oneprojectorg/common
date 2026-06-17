@@ -24,8 +24,6 @@ export function ProposalComments({
   const utils = trpc.useUtils();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Proposal posts are gated on the parent decision, so they're read through
-  // listProfilePosts rather than getPosts (which would leak the PROPOSAL type).
   const { data: commentsData, isLoading: commentsLoading } =
     trpc.posts.listProfilePosts.useQuery({
       profileId: proposal.profileId,
