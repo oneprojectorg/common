@@ -197,10 +197,13 @@ describe.concurrent('decision-profile post authorization', () => {
     ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
   });
 
-  it('rejects an outsider from reading the updates feed', async ({
+  it('allows a member, and rejects an outsider, reading an update comment thread through getPosts', async ({
     task,
     onTestFinished,
   }) => {
+    // The comment thread (DiscussionModal) reads replies via
+    // getPosts({ parentPostId }). It resolves to the decision via rootProfileId
+    // and stays gated by DECISION: READ — the gate must not reject this path.
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,
@@ -208,12 +211,34 @@ describe.concurrent('decision-profile post authorization', () => {
     });
     const instance = requireFirstInstance(setup.instances);
 
-    const outsiderCaller = await createOutsiderCaller(testData);
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const update = await adminCaller.posts.createPost({
+      content: 'Admin update.',
+      profileId: instance.profileId,
+    });
 
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const comment = await memberCaller.posts.createPost({
+      content: 'Member comment.',
+      parentPostId: update.id,
+    });
+
+    const thread = await memberCaller.posts.getPosts({
+      parentPostId: update.id,
+      limit: 50,
+      offset: 0,
+      includeChildren: false,
+    });
+    expect(thread.map((p) => p.id)).toContain(comment.id);
+
+    const outsiderCaller = await createOutsiderCaller(testData);
     await expect(
       outsiderCaller.posts.getPosts({
-        profileId: instance.profileId,
-        parentPostId: null,
+        parentPostId: update.id,
         limit: 50,
         offset: 0,
         includeChildren: false,
@@ -221,10 +246,13 @@ describe.concurrent('decision-profile post authorization', () => {
     ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
   });
 
-  it('allows a member to read the updates feed', async ({
+  it('rejects reading a decision profile feed through getPosts (routed to listProfilePosts)', async ({
     task,
     onTestFinished,
   }) => {
+    // getPosts gates off an explicit DECISION profileId for every caller; the
+    // decision feed lives on listProfilePosts. The gate routes by type, not
+    // access, so even an authorized member is rejected here.
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,
@@ -234,7 +262,7 @@ describe.concurrent('decision-profile post authorization', () => {
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     await adminCaller.posts.createPost({
-      content: 'Admin update for member to read.',
+      content: 'Admin update.',
       profileId: instance.profileId,
     });
 
@@ -242,18 +270,28 @@ describe.concurrent('decision-profile post authorization', () => {
       organization: setup.organization,
       instanceProfileIds: [instance.profileId],
     });
-
     const memberCaller = await createAuthenticatedCaller(member.email);
-    const result = await memberCaller.posts.getPosts({
-      profileId: instance.profileId,
-      parentPostId: null,
-      limit: 50,
-      offset: 0,
-      includeChildren: false,
-    });
 
-    expect(result).toHaveLength(1);
-    expect(result[0]?.content).toBe('Admin update for member to read.');
+    await expect(
+      memberCaller.posts.getPosts({
+        profileId: instance.profileId,
+        parentPostId: null,
+        limit: 50,
+        offset: 0,
+        includeChildren: false,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    const outsiderCaller = await createOutsiderCaller(testData);
+    await expect(
+      outsiderCaller.posts.getPosts({
+        profileId: instance.profileId,
+        parentPostId: null,
+        limit: 50,
+        offset: 0,
+        includeChildren: false,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
   it('rejects an outsider from fetching an update by postId directly', async ({
@@ -848,6 +886,60 @@ describe.concurrent('proposal post authorization', () => {
     expect(comment.content).toBe('Member comment on proposal post.');
   });
 
+  it('allows a member, and rejects an outsider, reading a proposal comment thread through getPosts', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // A proposal post pins rootProfileId to the parent decision, so reading its
+    // comment thread via getPosts({ parentPostId }) resolves to the decision and
+    // is gated by DECISION: READ — the PROPOSAL clause must not over-reject it.
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = requireFirstInstance(setup.instances);
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Proposal D', description: 'desc' },
+    });
+
+    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
+    const proposalPost = await adminCaller.posts.createPost({
+      content: 'Admin update on proposal.',
+      profileId: proposal.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+    const comment = await memberCaller.posts.createPost({
+      content: 'Member comment on proposal post.',
+      parentPostId: proposalPost.id,
+    });
+
+    const thread = await memberCaller.posts.getPosts({
+      parentPostId: proposalPost.id,
+      limit: 50,
+      offset: 0,
+      includeChildren: false,
+    });
+    expect(thread.map((p) => p.id)).toContain(comment.id);
+
+    const outsiderCaller = await createOutsiderCaller(testData);
+    await expect(
+      outsiderCaller.posts.getPosts({
+        parentPostId: proposalPost.id,
+        limit: 50,
+        offset: 0,
+        includeChildren: false,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
+  });
+
   // ProposalComments.tsx posts a "comment on a proposal" as a top-level
   // post with profileId = proposal.profileId and no parentPostId. The
   // service-layer dispatch must not fall through to the decision-ADMIN
@@ -1033,37 +1125,28 @@ describe.concurrent('getPosts pagination', () => {
     task,
     onTestFinished,
   }) => {
-    // Same regression as the listProfilePosts test, against the getPosts
-    // profileId branch (called by ProposalView). Comments inherit
-    // postsToProfiles rows from their parent; a relational `with: { post: ... }`
-    // filter would LEFT JOIN and silently shrink pages. SQL-level innerJoin
-    // keeps offset pagination honest.
+    // getPosts profileId branch, on an ORG profile (getPosts now serves only
+    // org/individual feeds). Comments inherit postsToProfiles rows from their
+    // parent; the SQL-level innerJoin keeps offset pagination honest where a
+    // relational `with: { post: ... }` LEFT JOIN would silently shrink pages.
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instance = requireFirstInstance(setup.instances);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const orgProfileId = setup.organization.profileId;
 
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
-    const member = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
-    });
-    const memberCaller = await createAuthenticatedCaller(member.email);
+    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
 
     const updateIds: string[] = [];
     for (let i = 0; i < 3; i++) {
-      const update = await adminCaller.posts.createPost({
+      const update = await ownerCaller.posts.createPost({
         content: `Update ${i}.`,
-        profileId: instance.profileId,
+        profileId: orgProfileId,
       });
       updateIds.push(update.id);
-      await memberCaller.posts.createPost({
+      await ownerCaller.posts.createPost({
         content: `Comment ${i}.a`,
         parentPostId: update.id,
       });
-      await memberCaller.posts.createPost({
+      await ownerCaller.posts.createPost({
         content: `Comment ${i}.b`,
         parentPostId: update.id,
       });
@@ -1075,8 +1158,8 @@ describe.concurrent('getPosts pagination', () => {
     let offset = 0;
     let pages = 0;
     while (true) {
-      const page = await memberCaller.posts.getPosts({
-        profileId: instance.profileId,
+      const page = await ownerCaller.posts.getPosts({
+        profileId: orgProfileId,
         parentPostId: null,
         limit,
         offset,

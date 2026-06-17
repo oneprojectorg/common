@@ -24,15 +24,12 @@ export function ProposalComments({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { data: commentsData, isLoading: commentsLoading } =
-    trpc.posts.getPosts.useQuery({
-      profileId: proposal.profileId || undefined,
-      parentPostId: null,
+    trpc.posts.listProfilePosts.useQuery({
+      profileId: proposal.profileId,
       limit: 50,
-      offset: 0,
-      includeChildren: false,
     });
 
-  const comments = commentsData || [];
+  const comments = commentsData?.items ?? [];
   const { handleReactionClick } = usePostFeedActions();
 
   const scrollToComments = useCallback(() => {

@@ -1,24 +1,19 @@
 import { db } from '@op/db/client';
-import {
-  EntityType,
-  posts as postsTable,
-  postsToProfiles,
-} from '@op/db/schema';
+import { posts as postsTable, postsToProfiles } from '@op/db/schema';
 import { checkPermission, permission } from 'access-zones';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
 import {
-  UnauthorizedError,
   decodeCursor,
   encodeCursor,
   getGenericCursorCondition,
 } from '../../utils';
 import {
   type AccessUser,
-  assertProfileTypeAccess,
   getCurrentProfileId,
   getProfileAccessRolesWithOrgFallback,
 } from '../access';
+import { assertPostReadAccess } from './access';
 import {
   getItemsWithReactionsAndComments,
   postModerationFilter,
@@ -35,24 +30,7 @@ export const listProfilePosts = async ({
   limit?: number;
   cursor?: string | null;
 }) => {
-  // Scoped to decision profiles: assertProfileTypeAccess leniently passes
-  // ungated types, which would leak org/individual posts to public callers.
-  const profile = await db.query.profiles.findFirst({
-    where: { id: profileId },
-    columns: { type: true },
-  });
-
-  if (profile?.type !== EntityType.DECISION) {
-    throw new UnauthorizedError('You do not have access to these posts');
-  }
-
-  await assertProfileTypeAccess({
-    user,
-    profileIds: [profileId],
-    policies: {
-      [EntityType.DECISION]: { decisions: permission.READ },
-    },
-  });
+  await assertPostReadAccess({ user, profileId });
 
   const decodedCursor = cursor ? decodeCursor(cursor) : undefined;
 

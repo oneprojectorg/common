@@ -3,10 +3,12 @@ import {
   EntityType,
   posts as postsTable,
   postsToProfiles,
+  profiles as profilesTable,
 } from '@op/db/schema';
 import { checkPermission, permission } from 'access-zones';
-import { type SQL, and, desc, eq, isNull, sql } from 'drizzle-orm';
+import { type SQL, and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
+import { UnauthorizedError } from '../../utils';
 import {
   assertProfileTypeAccess,
   getCurrentProfileId,
@@ -83,6 +85,30 @@ export const getPosts = async (input: GetPostsInput) => {
           return rows.map((p) => p.profileId);
         })()
       : [];
+
+  // Decision and proposal profile feeds are served by listProfilePosts, so
+  // reject them here when read as an explicit-profileId feed. Comment threads
+  // (parentPostId) keep flowing through this endpoint: they resolve to the
+  // parent's rootProfileId — for a proposal that's the parent DECISION, so the
+  // comment is gated by DECISION: READ below, not rejected. The PROPOSAL clause
+  // only bites when a PROPOSAL profile is the resolved gate (the profileId feed,
+  // or a legacy post with no rootProfileId), where assertProfileTypeAccess would
+  // otherwise leniently pass — and leak — it.
+  if (profileIdsToAuthorize.length > 0) {
+    const gatedProfiles = await db
+      .select({ type: profilesTable.type })
+      .from(profilesTable)
+      .where(inArray(profilesTable.id, profileIdsToAuthorize));
+
+    const rejectsThroughThisEndpoint = gatedProfiles.some(
+      (profile) =>
+        profile.type === EntityType.PROPOSAL ||
+        (profileId && profile.type === EntityType.DECISION),
+    );
+    if (rejectsThroughThisEndpoint) {
+      throw new UnauthorizedError('You do not have access to these posts');
+    }
+  }
 
   await assertProfileTypeAccess({
     user: { id: authUserId },
