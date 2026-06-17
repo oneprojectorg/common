@@ -731,10 +731,18 @@ export const ProposalsList = (props: ProposalsListProps) => {
     'filter',
     parseAsStringLiteral(PROPOSAL_FILTER_VALUES),
   );
-  const proposalFilter =
+  const requestedFilter =
     filterParam ??
     initialFilter ??
     (hasVoted ? ProposalFilter.MY_BALLOT : ProposalFilter.ALL);
+  // "My proposals"/"My ballot" only constrain the query when we know the
+  // caller's profile. For anonymous or stale-link visitors, fall back to ALL so
+  // the header can't claim a personal filter while the query returns everything.
+  const requiresProfile =
+    requestedFilter === ProposalFilter.MY_PROPOSALS ||
+    requestedFilter === ProposalFilter.MY_BALLOT;
+  const proposalFilter =
+    requiresProfile && !currentProfileId ? ProposalFilter.ALL : requestedFilter;
 
   const queryParams = useMemo<ProposalQueryParams>(() => {
     const params: ProposalQueryParams = {
