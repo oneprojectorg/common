@@ -13,11 +13,11 @@ import {
   getCurrentProfileId,
   getProfileAccessRolesWithOrgFallback,
 } from '../access';
+import { assertPostReadAccess } from './access';
 import {
   getItemsWithReactionsAndComments,
   postModerationFilter,
 } from './listPosts';
-import { assertPostReadAccess } from './access';
 
 export const listProfilePosts = async ({
   user,
