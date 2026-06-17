@@ -1,7 +1,7 @@
 import { resolveBoundary } from '@op/common';
 import { z } from 'zod';
 
-import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
+import { authenticatedProcedure, router } from '../../trpcFactory';
 
 const resolveBoundaryInputSchema = z.object({
   lat: z.number().min(-90).max(90),
@@ -19,7 +19,7 @@ const resolveBoundaryOutputSchema = z.object({
 });
 
 export const resolveBoundaryRouter = router({
-  resolveBoundary: networkAuthenticatedProcedure()
+  resolveBoundary: authenticatedProcedure()
     .input(resolveBoundaryInputSchema)
     .output(resolveBoundaryOutputSchema)
     .query(async ({ input }) => {

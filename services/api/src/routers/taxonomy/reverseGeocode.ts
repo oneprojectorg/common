@@ -1,7 +1,7 @@
 import { reverseGeocodeLocation } from '@op/common';
 import { z } from 'zod';
 
-import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
+import { authenticatedProcedure, router } from '../../trpcFactory';
 
 /**
  * A single reverse-geocoded place. Mirrors the `getGeoNames` result shape so
@@ -19,7 +19,7 @@ const ReverseGeoNameSchema = z.object({
 });
 
 export const reverseGeocode = router({
-  reverseGeocode: networkAuthenticatedProcedure()
+  reverseGeocode: authenticatedProcedure()
     .input(
       z.object({
         lat: z.number().min(-90).max(90),
