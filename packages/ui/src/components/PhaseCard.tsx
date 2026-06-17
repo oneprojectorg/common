@@ -128,11 +128,10 @@ export function PhaseCard({
         </div>
         <Button
           color="secondary"
-          size="small"
           onPress={() => onAdvance?.()}
           className="shrink-0"
         >
-          <LuPlay className="size-4 fill-current" aria-hidden />
+          <LuPlay className="size-4" aria-hidden />
           {advanceLabel}
         </Button>
       </li>
