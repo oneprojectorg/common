@@ -26,7 +26,7 @@ export interface GetPostsInput {
   offset?: number;
   includeChildren?: boolean;
   maxDepth?: number;
-  authUserId: string;
+  authUserId?: string;
 }
 
 export const getPosts = async (input: GetPostsInput) => {
@@ -111,7 +111,7 @@ export const getPosts = async (input: GetPostsInput) => {
   }
 
   await assertProfileTypeAccess({
-    user: { id: authUserId },
+    user: authUserId ? { id: authUserId } : undefined,
     profileIds: profileIdsToAuthorize,
     policies: {
       [EntityType.DECISION]: { decisions: permission.READ },
@@ -121,13 +121,15 @@ export const getPosts = async (input: GetPostsInput) => {
   // Flagged posts/comments stay visible to their author and to admins of the
   // governing profile; everyone else has them filtered out in SQL (so a
   // flagged comment doesn't leak into a thread, and pagination stays correct).
-  const actorProfileId = await getCurrentProfileId(authUserId);
-  const governingRoles = profileIdsToAuthorize[0]
-    ? await getProfileAccessRolesWithOrgFallback({
-        user: { id: authUserId },
-        profileId: profileIdsToAuthorize[0],
-      })
-    : [];
+  const [actorProfileId, governingRoles] = await Promise.all([
+    authUserId ? getCurrentProfileId(authUserId) : undefined,
+    profileIdsToAuthorize[0]
+      ? getProfileAccessRolesWithOrgFallback({
+          user: authUserId ? { id: authUserId } : undefined,
+          profileId: profileIdsToAuthorize[0],
+        })
+      : [],
+  ]);
   const isProfileAdmin = checkPermission(
     { profile: permission.ADMIN },
     governingRoles,

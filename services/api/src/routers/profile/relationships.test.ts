@@ -114,32 +114,32 @@ describeAccessTierGating('profile.removeRelationship', {
 });
 
 describeAccessTierGating('profile.getRelationships', {
-  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
-    const caller = await callers.noJwt();
-    await expectFailsAccessTierGate(
-      caller.profile.getRelationships({ types: ['following'] }),
-      'none',
-    );
-  }),
+  noJwt: accessTierGatingCell(
+    'admits no-JWT past the tier gate',
+    async ({ callers }) => {
+      const caller = await callers.noJwt();
+      await expectPassesAccessTierGate(
+        caller.profile.getRelationships({ types: ['following'] }),
+      );
+    },
+  ),
 
   anonJwt: accessTierGatingCell(
-    'rejects anon-JWT caller',
+    'admits anon-JWT past the tier gate',
     async ({ callers }) => {
       const caller = await callers.anonJwt();
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.profile.getRelationships({ types: ['following'] }),
-        'anon',
       );
     },
   ),
 
   userJwt: accessTierGatingCell(
-    'rejects user-JWT caller',
+    'admits out-of-network user-JWT past the tier gate',
     async ({ callers }) => {
       const caller = await callers.userJwt();
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.profile.getRelationships({ types: ['following'] }),
-        'user',
       );
     },
   ),

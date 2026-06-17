@@ -130,7 +130,7 @@ export function authenticatedProcedure(opts?: RateLimitedProcedureOptions) {
 /**
  * Public-capable procedure: resolves an optional `ctx.user` but never rejects
  * at the middleware layer — authorization is fully the service layer's job.
- * Not used yet. Default rate limit is 10 requests per 10 seconds.
+ * Default rate limit is 10 requests per 10 seconds.
  */
 export function openProcedure(opts?: RateLimitedProcedureOptions) {
   const rateLimit = opts?.rateLimit ?? DEFAULT_RATE_LIMIT;
