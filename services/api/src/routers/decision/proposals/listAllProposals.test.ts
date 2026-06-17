@@ -10,7 +10,7 @@ import {
   taxonomyTerms,
 } from '@op/db/schema';
 import { TRPCError } from '@trpc/server';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
@@ -486,6 +486,62 @@ describe.concurrent('listAllProposals', () => {
     }
     expect(returnedIds).not.toContain(outOne.id);
     expect(returnedIds).not.toContain(outTwo.id);
+  });
+
+  it('does not skip rows that share a boundary timestamp across pages', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const created = [];
+    for (let i = 1; i <= 5; i++) {
+      created.push(
+        await testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: `Same-ts ${i} ${task.id}` },
+          status: ProposalStatus.SUBMITTED,
+        }),
+      );
+    }
+    const allIds = created.map((p) => p.id);
+
+    // Force every proposal to share one createdAt so pagination must rely on
+    // the id tie-breaker; without it, page 2+ skips same-timestamp rows.
+    await db
+      .update(proposals)
+      .set({ createdAt: '2020-01-01T00:00:00.000Z' })
+      .where(inArray(proposals.id, allIds));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const seen: string[] = [];
+    let cursor: string | null = null;
+    // Bounded loop: at limit 2 over 5 rows it takes 3 pages; cap at 6 to avoid
+    // hanging if pagination ever regressed into a loop.
+    for (let page = 0; page < 6; page++) {
+      const result = await caller.decision.listAllProposals({
+        processInstanceId: instance.instance.id,
+        limit: 2,
+        cursor,
+      });
+      seen.push(...result.items.map((p) => p.id));
+      expect(result.total).toBe(5);
+      if (!result.next) {
+        break;
+      }
+      cursor = result.next;
+    }
+
+    expect(seen.sort()).toEqual([...allIds].sort());
   });
 
   it('filters by submittedByProfileId with an accurate total', async ({

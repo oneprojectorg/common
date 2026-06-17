@@ -65,7 +65,7 @@ export const listAllProposals = async ({
   const dir = input.dir ?? 'desc';
 
   const decodedCursor = input.cursor
-    ? decodeCursor<{ value: string | Date }>(input.cursor)
+    ? decodeCursor<{ value: string | Date; id: string }>(input.cursor)
     : undefined;
 
   // The caller's own grants unioned with public grants — used by the
@@ -193,6 +193,7 @@ export const listAllProposals = async ({
             buildBaseConditions(table),
             getCursorCondition({
               column: table[orderBy],
+              tieBreakerColumn: table.id,
               cursor: decodedCursor,
               direction: dir,
             }),
@@ -207,8 +208,12 @@ export const listAllProposals = async ({
         profile: true,
       },
       limit: limit + 1, // Fetch one extra to check whether there's a next page.
+      // `id` tie-break keeps pagination stable when rows share the sort value —
+      // without it, same-timestamp rows at a page boundary are skipped.
       orderBy: (table, { asc, desc }) =>
-        dir === 'asc' ? asc(table[orderBy]) : desc(table[orderBy]),
+        dir === 'asc'
+          ? [asc(table[orderBy]), asc(table.id)]
+          : [desc(table[orderBy]), desc(table.id)],
     }),
     db
       .select({ count: countFn() })
@@ -283,8 +288,11 @@ export const listAllProposals = async ({
   const lastItem = items[items.length - 1];
   const cursorValue = lastItem ? lastItem[orderBy] : null;
   const next =
-    hasMore && cursorValue
-      ? encodeCursor<{ value: string | Date }>({ value: cursorValue })
+    hasMore && lastItem && cursorValue
+      ? encodeCursor<{ value: string | Date; id: string }>({
+          value: cursorValue,
+          id: lastItem.id,
+        })
       : null;
 
   return { items, total, next };
