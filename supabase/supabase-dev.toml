@@ -65,7 +65,9 @@ enable_manual_linking = false
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
-enable_confirmations = false
+# Require email confirmation so changing an anonymous user's email (the
+# anon→account upgrade) sends a verification code instead of applying silently.
+enable_confirmations = true
 secure_password_change = false
 max_frequency = "1s"
 otp_length = 6
@@ -78,6 +80,12 @@ content_path = "./supabase/templates/confirm.html"
 [auth.email.template.magic_link]
 subject = "Your login code"
 content_path = "./supabase/templates/magiclink.html"
+
+# Email-change confirmation carries {{ .Token }} so verifyOtp({type:'email_change'})
+# can confirm the code entered on the "Create profile" screen.
+[auth.email.template.email_change]
+subject = "Confirm your email"
+content_path = "./supabase/templates/email_change.html"
 
 [auth.sms]
 enable_signup = true
