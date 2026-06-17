@@ -21,7 +21,6 @@ export function ProposalComments({
 }) {
   const t = useTranslations();
   const { user } = useUser();
-  const utils = trpc.useUtils();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { data: commentsData, isLoading: commentsLoading } =
@@ -34,10 +33,6 @@ export function ProposalComments({
   const { handleReactionClick } = usePostFeedActions();
 
   const scrollToComments = useCallback(() => {
-    void utils.posts.listProfilePosts.invalidate({
-      profileId: proposal.profileId,
-    });
-
     setTimeout(() => {
       containerRef.current?.scrollIntoView({
         behavior: 'smooth',
@@ -45,7 +40,7 @@ export function ProposalComments({
         inline: 'nearest',
       });
     }, 100);
-  }, [proposal.profileId, utils]);
+  }, []);
 
   return (
     <div ref={containerRef}>
