@@ -5,7 +5,7 @@ import type { LocationData, MapDefaultView } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { FieldError } from '@op/ui/Field';
 import type { LngLat } from '@op/ui/Map';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { LuLocate } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -42,7 +42,6 @@ export function LocationMapField({
   onChange,
 }: LocationMapFieldProps) {
   const t = useTranslations();
-  const utils = trpc.useUtils();
   const [center, setCenter] = useState<LngLat>(
     value
       ? { lng: value.lng, lat: value.lat }
@@ -50,41 +49,57 @@ export function LocationMapField({
   );
   // Bumped on every direct map placement to clear the search box.
   const [searchResetToken, setSearchResetToken] = useState(0);
+  // Coordinate awaiting reverse geocoding after a direct map placement.
+  const [pendingGeocode, setPendingGeocode] = useState<LngLat | null>(null);
 
   const { isWithinArea, boundaryName } = useProjectAreaCheck(
     value ? { lng: value.lng, lat: value.lat } : null,
   );
 
+  // Reverse-geocode a freshly-placed pin through react-query, which caches by
+  // coordinate and surfaces failures as query state (so no try/catch is needed).
+  const reverseGeocodeQuery = trpc.taxonomy.reverseGeocode.useQuery(
+    { lat: pendingGeocode?.lat ?? 0, lng: pendingGeocode?.lng ?? 0 },
+    { enabled: pendingGeocode != null, staleTime: 60_000 },
+  );
+
   const placeFromCoordinates = useCallback(
-    async (lngLat: LngLat) => {
+    (lngLat: LngLat) => {
       // The user placed the pin directly — clear any stale search result.
       setSearchResetToken((token) => token + 1);
 
       // Commit the dropped coordinate immediately so the controlled marker
       // sticks at the new spot instead of snapping back to its prior position
-      // while reverse geocoding is in flight.
+      // while reverse geocoding is in flight; the query below then enriches it.
       onChange({ lat: lngLat.lat, lng: lngLat.lng });
-
-      try {
-        const { geoname } = await utils.taxonomy.reverseGeocode.fetch({
-          lat: lngLat.lat,
-          lng: lngLat.lng,
-        });
-        // Enrich the already-committed pin with the resolved address/place.
-        onChange({
-          lat: lngLat.lat,
-          lng: lngLat.lng,
-          address: geoname?.address,
-          placeId: geoname?.placeId,
-          placeLat: geoname?.lat,
-          placeLng: geoname?.lng,
-        });
-      } catch {
-        // Reverse geocoding failed — the bare coordinate is already committed.
-      }
+      setPendingGeocode(lngLat);
     },
-    [onChange, utils],
+    [onChange],
   );
+
+  // Once reverse geocoding settles, enrich the already-committed pin with the
+  // resolved address/place. A failed or empty lookup leaves the bare coordinate
+  // as-is. `data` always matches `pendingGeocode` (the query is keyed on it).
+  useEffect(() => {
+    if (pendingGeocode == null || !reverseGeocodeQuery.isSuccess) {
+      return;
+    }
+    const { geoname } = reverseGeocodeQuery.data;
+    onChange({
+      lat: pendingGeocode.lat,
+      lng: pendingGeocode.lng,
+      address: geoname?.address,
+      placeId: geoname?.placeId,
+      placeLat: geoname?.lat,
+      placeLng: geoname?.lng,
+    });
+    setPendingGeocode(null);
+  }, [
+    pendingGeocode,
+    reverseGeocodeQuery.isSuccess,
+    reverseGeocodeQuery.data,
+    onChange,
+  ]);
 
   const handleSelect = useCallback(
     (location: LocationData) => {
@@ -104,7 +119,7 @@ export function LocationMapField({
         lat: position.coords.latitude,
       };
       setCenter(lngLat);
-      void placeFromCoordinates(lngLat);
+      placeFromCoordinates(lngLat);
     });
   }, [placeFromCoordinates]);
 
