@@ -3,10 +3,12 @@ import {
   EntityType,
   posts as postsTable,
   postsToProfiles,
+  profiles as profilesTable,
 } from '@op/db/schema';
 import { checkPermission, permission } from 'access-zones';
-import { type SQL, and, desc, eq, isNull, sql } from 'drizzle-orm';
+import { type SQL, and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
+import { UnauthorizedError } from '../../utils';
 import {
   assertProfileTypeAccess,
   getCurrentProfileId,
@@ -83,6 +85,31 @@ export const getPosts = async (input: GetPostsInput) => {
           return rows.map((p) => p.profileId);
         })()
       : [];
+
+  // Decision and proposal *profile feeds* are served by the polymorphic
+  // `listProfilePosts` reader (which resolves the type and gates each one
+  // fail-CLOSED). This context-blind endpoint must not serve them:
+  //   - PROPOSAL is rejected on BOTH paths (top-level feed AND reply threads):
+  //     its READ grant lives on the parent decision, but assertProfileTypeAccess
+  //     below leniently passes the type and would leak it.
+  //   - DECISION is rejected only for the explicit-`profileId` feed path, so
+  //     callers route to listProfilePosts. Reply threads (parentPostId) keep
+  //     flowing through here and stay correctly gated by DECISION: READ below.
+  if (profileIdsToAuthorize.length > 0) {
+    const gatedProfiles = await db
+      .select({ type: profilesTable.type })
+      .from(profilesTable)
+      .where(inArray(profilesTable.id, profileIdsToAuthorize));
+
+    const rejectsThroughThisEndpoint = gatedProfiles.some(
+      (profile) =>
+        profile.type === EntityType.PROPOSAL ||
+        (profileId && profile.type === EntityType.DECISION),
+    );
+    if (rejectsThroughThisEndpoint) {
+      throw new UnauthorizedError('You do not have access to these posts');
+    }
+  }
 
   await assertProfileTypeAccess({
     user: { id: authUserId },

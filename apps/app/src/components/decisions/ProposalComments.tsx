@@ -21,21 +21,31 @@ export function ProposalComments({
 }) {
   const t = useTranslations();
   const { user } = useUser();
+  const utils = trpc.useUtils();
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // A proposal's posts are gated on the parent decision, so they're served by
+  // the polymorphic `posts.listProfilePosts` reader rather than `posts.getPosts`
+  // (which leniently passes — and would leak — the PROPOSAL profile type).
   const { data: commentsData, isLoading: commentsLoading } =
-    trpc.posts.getPosts.useQuery({
-      profileId: proposal.profileId || undefined,
-      parentPostId: null,
-      limit: 50,
-      offset: 0,
-      includeChildren: false,
-    });
+    trpc.posts.listProfilePosts.useQuery(
+      {
+        profileId: proposal.profileId ?? '',
+        limit: 50,
+      },
+      { enabled: Boolean(proposal.profileId) },
+    );
 
-  const comments = commentsData || [];
+  const comments = commentsData?.items ?? [];
   const { handleReactionClick } = usePostFeedActions();
 
   const scrollToComments = useCallback(() => {
+    if (proposal.profileId) {
+      void utils.posts.listProfilePosts.invalidate({
+        profileId: proposal.profileId,
+      });
+    }
+
     setTimeout(() => {
       containerRef.current?.scrollIntoView({
         behavior: 'smooth',
@@ -43,7 +53,7 @@ export function ProposalComments({
         inline: 'nearest',
       });
     }, 100);
-  }, []);
+  }, [proposal.profileId, utils]);
 
   return (
     <div ref={containerRef}>

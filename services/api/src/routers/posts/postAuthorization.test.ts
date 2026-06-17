@@ -197,34 +197,15 @@ describe.concurrent('decision-profile post authorization', () => {
     ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
   });
 
-  it('rejects an outsider from reading the updates feed', async ({
+  it('rejects reading a decision profile feed through getPosts (routed to listProfilePosts)', async ({
     task,
     onTestFinished,
   }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instance = requireFirstInstance(setup.instances);
-
-    const outsiderCaller = await createOutsiderCaller(testData);
-
-    await expect(
-      outsiderCaller.posts.getPosts({
-        profileId: instance.profileId,
-        parentPostId: null,
-        limit: 50,
-        offset: 0,
-        includeChildren: false,
-      }),
-    ).rejects.toMatchObject({ cause: { name: 'AccessControlException' } });
-  });
-
-  it('allows a member to read the updates feed', async ({
-    task,
-    onTestFinished,
-  }) => {
+    // Decision profile feeds are served exclusively by the polymorphic
+    // `posts.listProfilePosts` reader. getPosts gates off an explicit DECISION
+    // profileId for every caller — so callers can't read (or leak) a decision
+    // feed through this context-blind endpoint. Feed-read authorization is
+    // covered by the `listProfilePosts authorization and pagination` block.
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({
       instanceCount: 1,
@@ -234,26 +215,38 @@ describe.concurrent('decision-profile post authorization', () => {
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     await adminCaller.posts.createPost({
-      content: 'Admin update for member to read.',
+      content: 'Admin update.',
       profileId: instance.profileId,
     });
 
+    // Even a fully-authorized member is rejected: the gate routes by type, not
+    // by access — the decision feed lives on listProfilePosts now.
     const member = await testData.createMemberUser({
       organization: setup.organization,
       instanceProfileIds: [instance.profileId],
     });
-
     const memberCaller = await createAuthenticatedCaller(member.email);
-    const result = await memberCaller.posts.getPosts({
-      profileId: instance.profileId,
-      parentPostId: null,
-      limit: 50,
-      offset: 0,
-      includeChildren: false,
-    });
 
-    expect(result).toHaveLength(1);
-    expect(result[0]?.content).toBe('Admin update for member to read.');
+    await expect(
+      memberCaller.posts.getPosts({
+        profileId: instance.profileId,
+        parentPostId: null,
+        limit: 50,
+        offset: 0,
+        includeChildren: false,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    const outsiderCaller = await createOutsiderCaller(testData);
+    await expect(
+      outsiderCaller.posts.getPosts({
+        profileId: instance.profileId,
+        parentPostId: null,
+        limit: 50,
+        offset: 0,
+        includeChildren: false,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
   it('rejects an outsider from fetching an update by postId directly', async ({
@@ -1034,36 +1027,29 @@ describe.concurrent('getPosts pagination', () => {
     onTestFinished,
   }) => {
     // Same regression as the listProfilePosts test, against the getPosts
-    // profileId branch (called by ProposalView). Comments inherit
-    // postsToProfiles rows from their parent; a relational `with: { post: ... }`
-    // filter would LEFT JOIN and silently shrink pages. SQL-level innerJoin
-    // keeps offset pagination honest.
+    // profileId branch — exercised here on an ORG profile, since getPosts now
+    // serves only org/individual feeds (decision/proposal route to
+    // listProfilePosts). Comments inherit postsToProfiles rows from their
+    // parent; a relational `with: { post: ... }` filter would LEFT JOIN and
+    // silently shrink pages. SQL-level innerJoin keeps offset pagination honest.
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({
-      instanceCount: 1,
-      grantAccess: true,
-    });
-    const instance = requireFirstInstance(setup.instances);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const orgProfileId = setup.organization.profileId;
 
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
-    const member = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [instance.profileId],
-    });
-    const memberCaller = await createAuthenticatedCaller(member.email);
+    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
 
     const updateIds: string[] = [];
     for (let i = 0; i < 3; i++) {
-      const update = await adminCaller.posts.createPost({
+      const update = await ownerCaller.posts.createPost({
         content: `Update ${i}.`,
-        profileId: instance.profileId,
+        profileId: orgProfileId,
       });
       updateIds.push(update.id);
-      await memberCaller.posts.createPost({
+      await ownerCaller.posts.createPost({
         content: `Comment ${i}.a`,
         parentPostId: update.id,
       });
-      await memberCaller.posts.createPost({
+      await ownerCaller.posts.createPost({
         content: `Comment ${i}.b`,
         parentPostId: update.id,
       });
@@ -1075,8 +1061,8 @@ describe.concurrent('getPosts pagination', () => {
     let offset = 0;
     let pages = 0;
     while (true) {
-      const page = await memberCaller.posts.getPosts({
-        profileId: instance.profileId,
+      const page = await ownerCaller.posts.getPosts({
+        profileId: orgProfileId,
         parentPostId: null,
         limit,
         offset,
