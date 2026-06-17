@@ -191,8 +191,14 @@
   --color-primary-50: var(--op-primary-50);
   --color-primary-100: var(--op-primary-100);
   --color-primary-200: var(--op-primary-200);
+  --color-primary-300: var(--op-primary-300);
+  --color-primary-400: var(--op-primary-400);
+  --color-primary-500: var(--op-primary-500);
   --color-primary-600: var(--op-primary-600);
   --color-primary-700: var(--op-primary-700);
+  --color-primary-800: var(--op-primary-800);
+  --color-primary-900: var(--op-primary-900);
+  --color-primary-950: var(--op-primary-950);
 
   --color-primary-yellow-500: var(--op-primary-yellow-500);
   --color-primary-orange-50: var(--op-primary-orange-50);
