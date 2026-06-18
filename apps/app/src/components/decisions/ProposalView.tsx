@@ -198,6 +198,7 @@ export function ProposalView({
       backHref={backHref}
       onLike={handleLike}
       onFollow={handleFollow}
+      reportProposalId={proposalId}
       isLiked={isLikedByUser}
       isFollowing={isFollowedByUser}
       isLoading={isLoading}

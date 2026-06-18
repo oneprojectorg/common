@@ -117,7 +117,7 @@ export function ProposalPreview({
         {proposal.isFlagged && (
           <div className="flex items-center gap-1 text-sm text-functional-red">
             <LuFlag className="size-4" />
-            <span>{t('Flagged')}</span>
+            <span>{t('Hidden from members after a moderation review')}</span>
           </div>
         )}
 

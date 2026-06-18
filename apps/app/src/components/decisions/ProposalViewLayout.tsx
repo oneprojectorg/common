@@ -17,6 +17,7 @@ import { useRouter } from '@/lib/i18n/routing';
 
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
+import { ReportProposalDialog } from './ReportProposalDialog';
 
 export function ProposalViewLayout({
   children,
@@ -29,6 +30,7 @@ export function ProposalViewLayout({
   isLoading = false,
   editHref,
   canEdit = false,
+  reportProposalId,
   revisionToggle,
 }: {
   children: ReactNode;
@@ -41,6 +43,9 @@ export function ProposalViewLayout({
   isLoading?: boolean;
   editHref?: string;
   canEdit?: boolean;
+  /** When set, renders the "Report" action (opens the report dialog) for the
+   *  proposal with this id. */
+  reportProposalId?: string;
   /**
    * When provided, renders a sticky-note toggle button in the header with an
    * orange indicator dot. `isActive` reflects the aria-pressed state.
@@ -88,6 +93,9 @@ export function ProposalViewLayout({
               them to a signed-in viewer. */}
           {user ? (
             <>
+              {reportProposalId && (
+                <ReportProposalDialog proposalId={reportProposalId} />
+              )}
               <Button
                 surface="outline"
                 color={isLiked ? 'verified' : 'secondary'}
