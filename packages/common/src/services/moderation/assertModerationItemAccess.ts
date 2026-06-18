@@ -1,11 +1,5 @@
-import { db, eq } from '@op/db/client';
-import {
-  EntityType,
-  Visibility,
-  posts,
-  postsToProfiles,
-  users,
-} from '@op/db/schema';
+import { db } from '@op/db/client';
+import { EntityType, Visibility } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
@@ -20,13 +14,18 @@ import { hasActiveModerationFlag } from './moderationVisibility';
 import type { ModerationItemType } from './types';
 
 /**
- * Asserts the reporter can actually see the item they're flagging, and that it
+ * Asserts the caller can actually see the item they're flagging, and that it
  * exists. Flagging ships the item's text and signed attachment URLs to the
  * external moderation provider, so it must be gated like reading the item —
- * otherwise an authenticated session could exfiltrate restricted content (or
- * probe for ids) by flagging it. Mirrors the read-path checks: posts gate like
- * `getPost`, proposals like `getProposal`; user profiles are platform-visible,
- * so a user item only needs to exist.
+ * otherwise a caller could exfiltrate restricted content (or probe for ids) by
+ * flagging it. Mirrors the read-path checks: posts gate like `getPost`,
+ * proposals like `getProposal`; user profiles are platform-visible, so a user
+ * item only needs to exist.
+ *
+ * `user` is optional: a sessionless caller resolves to public grants only (via
+ * the `GLOBAL_USER_PUBLIC` fallback in the access helpers), so they can flag a
+ * publicly readable item but are denied anything restricted — exactly the read
+ * path's behavior for an anonymous visitor.
  *
  * Two intentional carve-outs from the read path:
  *  - DRAFT proposals are NOT gated here — drafts are reportable.
@@ -40,18 +39,17 @@ export const assertModerationItemAccess = async ({
 }: {
   itemType: ModerationItemType;
   itemId: string;
-  user: User;
+  user?: User;
 }): Promise<void> => {
   if (itemType === 'post') {
-    const [post] = await db
-      .select({
-        id: posts.id,
-        profileId: posts.profileId,
-        rootProfileId: posts.rootProfileId,
-      })
-      .from(posts)
-      .where(eq(posts.id, itemId))
-      .limit(1);
+    const post = await db.query.posts.findFirst({
+      where: { id: itemId },
+      columns: {
+        id: true,
+        profileId: true,
+        rootProfileId: true,
+      },
+    });
     if (!post) {
       throw new NotFoundError('Post', itemId);
     }
@@ -61,10 +59,10 @@ export const assertModerationItemAccess = async ({
     const profileIds = post.rootProfileId
       ? [post.rootProfileId]
       : (
-          await db
-            .select({ profileId: postsToProfiles.profileId })
-            .from(postsToProfiles)
-            .where(eq(postsToProfiles.postId, itemId))
+          await db.query.postsToProfiles.findMany({
+            where: { postId: itemId },
+            columns: { profileId: true },
+          })
         ).map((row) => row.profileId);
 
     await assertProfileTypeAccess({
@@ -79,12 +77,23 @@ export const assertModerationItemAccess = async ({
     // root-profile admins (see getPost's gate); the same audience may flag it,
     // so a non-owner can't ship hidden content to the vendor by re-flagging.
     if (await hasActiveModerationFlag('post', post.id)) {
-      const actorProfileId = await getCurrentProfileId(user.id);
-      const isAuthor = post.profileId === actorProfileId;
+      // Restricted to the author + root-profile admins. A sessionless caller is
+      // neither, so they're denied — hidden content can't be shipped to the
+      // vendor by flagging it. getCurrentProfileId is memoized per request, so
+      // this shares submitUserFlag's lookup.
+      const actorProfileId = user
+        ? await getCurrentProfileId(user.id)
+        : undefined;
+      const isAuthor =
+        actorProfileId !== undefined && post.profileId === actorProfileId;
       if (!isAuthor) {
-        const rootProfileUser = post.rootProfileId
-          ? await getProfileAccessUser({ user, profileId: post.rootProfileId })
-          : undefined;
+        const rootProfileUser =
+          user && post.rootProfileId
+            ? await getProfileAccessUser({
+                user,
+                profileId: post.rootProfileId,
+              })
+            : undefined;
         const isAdmin = checkPermission(
           { profile: permission.ADMIN },
           rootProfileUser?.roles ?? [],
@@ -147,11 +156,10 @@ export const assertModerationItemAccess = async ({
 
   // itemType === 'user': profiles are platform-visible, so existence is the
   // only gate — a nonexistent id must not create a queue entry or an email.
-  const [row] = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.id, itemId))
-    .limit(1);
+  const row = await db.query.users.findFirst({
+    where: { id: itemId },
+    columns: { id: true },
+  });
   if (!row) {
     throw new NotFoundError('User', itemId);
   }

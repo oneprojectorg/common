@@ -325,39 +325,46 @@ export const assertInstanceProfileAccess = async ({
   return profileUser;
 };
 
-export const getCurrentProfileId = async (authUserId: string) => {
-  const validatedAuthUserId = validateAuthUserId(authUserId);
-  const { user } =
-    (await getUserSession({ authUserId: validatedAuthUserId })) ?? {};
+// Memoized per request (keyed by authUserId): the current profile is stable
+// within a request, so callers that each resolve it independently — e.g.
+// submitUserFlag and the assertModerationItemAccess gate it invokes — share a
+// single lookup instead of re-hitting getUserSession + the org fallback.
+export const getCurrentProfileId = memoize(
+  async (authUserId: string) => {
+    const validatedAuthUserId = validateAuthUserId(authUserId);
+    const { user } =
+      (await getUserSession({ authUserId: validatedAuthUserId })) ?? {};
 
-  if (!user) {
-    throw new UnauthorizedError("You don't have access to do this");
-  }
-
-  // Primary: use currentProfileId if available
-  if (user.currentProfileId) {
-    return user.currentProfileId;
-  }
-
-  // Fallback: if lastOrgId exists but currentProfileId doesn't, convert it
-  if (user.lastOrgId) {
-    try {
-      const [org] = await db
-        .select({ profileId: organizations.profileId })
-        .from(organizations)
-        .where(eq(organizations.id, user.lastOrgId))
-        .limit(1);
-
-      if (org) {
-        return org.profileId;
-      }
-    } catch (error) {
-      console.error('Error converting lastOrgId to profileId:', error);
+    if (!user) {
+      throw new UnauthorizedError("You don't have access to do this");
     }
-  }
 
-  throw new UnauthorizedError("You don't have access to do this");
-};
+    // Primary: use currentProfileId if available
+    if (user.currentProfileId) {
+      return user.currentProfileId;
+    }
+
+    // Fallback: if lastOrgId exists but currentProfileId doesn't, convert it
+    if (user.lastOrgId) {
+      try {
+        const [org] = await db
+          .select({ profileId: organizations.profileId })
+          .from(organizations)
+          .where(eq(organizations.id, user.lastOrgId))
+          .limit(1);
+
+        if (org) {
+          return org.profileId;
+        }
+      } catch (error) {
+        console.error('Error converting lastOrgId to profileId:', error);
+      }
+    }
+
+    throw new UnauthorizedError("You don't have access to do this");
+  },
+  (authUserId) => authUserId,
+);
 
 export const getIndividualProfileId = async (authUserId: string) => {
   const validatedAuthUserId = validateAuthUserId(authUserId);

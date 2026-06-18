@@ -13,8 +13,9 @@ export interface FlagItemInput {
   /** Identifies this submission round; encoded into every ref sent to the
    *  provider, and verdicts must match it. */
   roundId: string;
-  /** The profile raising the report. */
-  flaggedByProfileId: string;
+  /** The profile raising the report, or `null` for an anonymous (sessionless)
+   *  report. */
+  flaggedByProfileId: string | null;
   reason?: string;
   /** Content shipped to the provider for the async verdict. */
   content: string;
@@ -32,7 +33,7 @@ export interface FlagItemDeps {
   createPendingFlag: (input: {
     itemType: ModerationItemType;
     itemId: string;
-    flaggedByProfileId: string;
+    flaggedByProfileId: string | null;
     reason?: string;
   }) => Promise<{ flag: ModerationFlag; created: boolean }>;
   submitForReview?: (

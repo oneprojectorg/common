@@ -5,14 +5,12 @@ import {
 } from '../../test/helpers/gating';
 
 // flagItem is an `openProcedure`: the tier gate admits every caller (including
-// no-JWT) and authorization is fully the service/handler layer's job. A
-// syntactically valid uuid that exists nowhere lets the authenticated tiers get
-// past the gate and 404 at the service, which counts as passing; the no-JWT
-// caller also passes the gate and is then failed closed by the handler with an
-// `UnauthorizedError` (not an `AccessTierError`), which still counts as passing
-// the gate. Item-level authorization (existence + read access before anything
-// ships to the provider) is the service layer's job — see
-// assertModerationItemAccess.
+// no-JWT) and authorization is fully the service layer's job — a sessionless
+// caller is held to public visibility and may flag a publicly readable item. A
+// syntactically valid uuid that exists nowhere lets every tier (no-JWT
+// included) get past the gate and 404 at the service, which counts as passing.
+// Item-level authorization (existence + read access before anything ships to
+// the provider) is the service layer's job — see assertModerationItemAccess.
 const input = {
   itemType: 'post' as const,
   itemId: '11111111-1111-4111-8111-111111111111',

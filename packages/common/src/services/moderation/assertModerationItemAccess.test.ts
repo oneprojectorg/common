@@ -3,21 +3,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Boundary mocks: this gate is pure orchestration over the DB + access
 // helpers, so we drive those and assert the allow/deny decisions. @op/db/schema
 // is left real (EntityType.DECISION / Visibility.HIDDEN are value comparisons).
-const selectChain = { resolve: vi.fn() };
-
 vi.mock('@op/db/client', () => ({
   db: {
-    // db.select({...}).from(t).where(c).limit(n) → Promise<rows>
-    select: () => ({
-      from: () => ({
-        where: () => ({
-          limit: () => selectChain.resolve(),
-        }),
-      }),
-    }),
-    query: { proposals: { findFirst: vi.fn() } },
+    query: {
+      posts: { findFirst: vi.fn() },
+      postsToProfiles: { findMany: vi.fn() },
+      users: { findFirst: vi.fn() },
+      proposals: { findFirst: vi.fn() },
+    },
   },
-  eq: vi.fn(),
 }));
 
 vi.mock('../access', () => ({
@@ -47,6 +41,9 @@ const POST_ID = '11111111-1111-4111-8111-111111111111';
 const PROPOSAL_ID = '22222222-2222-4222-8222-222222222222';
 const USER_ID = '33333333-3333-4333-8333-333333333333';
 
+const postsFindFirst = vi.mocked(db.query.posts.findFirst);
+const postsToProfilesFindMany = vi.mocked(db.query.postsToProfiles.findMany);
+const usersFindFirst = vi.mocked(db.query.users.findFirst);
 const proposalFindFirst = vi.mocked(db.query.proposals.findFirst);
 
 beforeEach(() => {
@@ -55,29 +52,34 @@ beforeEach(() => {
   vi.mocked(getProfileAccessUser).mockResolvedValue(undefined);
   vi.mocked(assertProfileTypeAccess).mockResolvedValue(undefined);
   vi.mocked(assertInstanceProfileAccess).mockResolvedValue(undefined as never);
+  postsToProfilesFindMany.mockResolvedValue([] as never);
 });
 
 describe('assertModerationItemAccess — post', () => {
   it('throws NotFound when the post does not exist', async () => {
-    selectChain.resolve.mockResolvedValue([]);
+    postsFindFirst.mockResolvedValue(undefined as never);
     await expect(
       assertModerationItemAccess({ itemType: 'post', itemId: POST_ID, user }),
     ).rejects.toThrow();
   });
 
   it('passes a readable, unflagged post', async () => {
-    selectChain.resolve.mockResolvedValue([
-      { id: POST_ID, profileId: 'author', rootProfileId: 'root' },
-    ]);
+    postsFindFirst.mockResolvedValue({
+      id: POST_ID,
+      profileId: 'author',
+      rootProfileId: 'root',
+    } as never);
     await expect(
       assertModerationItemAccess({ itemType: 'post', itemId: POST_ID, user }),
     ).resolves.toBeUndefined();
   });
 
   it('propagates a read-access denial (assertProfileTypeAccess throws)', async () => {
-    selectChain.resolve.mockResolvedValue([
-      { id: POST_ID, profileId: 'author', rootProfileId: 'root' },
-    ]);
+    postsFindFirst.mockResolvedValue({
+      id: POST_ID,
+      profileId: 'author',
+      rootProfileId: 'root',
+    } as never);
     vi.mocked(assertProfileTypeAccess).mockRejectedValue(
       new Error('Unauthorized'),
     );
@@ -87,9 +89,11 @@ describe('assertModerationItemAccess — post', () => {
   });
 
   it('lets the author flag their own already-flagged post', async () => {
-    selectChain.resolve.mockResolvedValue([
-      { id: POST_ID, profileId: 'author-profile', rootProfileId: 'root' },
-    ]);
+    postsFindFirst.mockResolvedValue({
+      id: POST_ID,
+      profileId: 'author-profile',
+      rootProfileId: 'root',
+    } as never);
     vi.mocked(hasActiveModerationFlag).mockResolvedValue(true);
     vi.mocked(getCurrentProfileId).mockResolvedValue('author-profile');
     await expect(
@@ -98,15 +102,44 @@ describe('assertModerationItemAccess — post', () => {
   });
 
   it('hides an already-flagged post from a non-author non-admin', async () => {
-    selectChain.resolve.mockResolvedValue([
-      { id: POST_ID, profileId: 'author-profile', rootProfileId: 'root' },
-    ]);
+    postsFindFirst.mockResolvedValue({
+      id: POST_ID,
+      profileId: 'author-profile',
+      rootProfileId: 'root',
+    } as never);
     vi.mocked(hasActiveModerationFlag).mockResolvedValue(true);
     vi.mocked(getCurrentProfileId).mockResolvedValue('someone-else');
     // getProfileAccessUser → undefined (no admin roles) from beforeEach.
     await expect(
       assertModerationItemAccess({ itemType: 'post', itemId: POST_ID, user }),
     ).rejects.toThrow();
+  });
+
+  it('lets a sessionless caller flag a publicly readable post', async () => {
+    postsFindFirst.mockResolvedValue({
+      id: POST_ID,
+      profileId: 'author',
+      rootProfileId: 'root',
+    } as never);
+    // assertProfileTypeAccess resolves (public READ) from beforeEach.
+    await expect(
+      assertModerationItemAccess({ itemType: 'post', itemId: POST_ID }),
+    ).resolves.toBeUndefined();
+    // No session → no author/profile lookup.
+    expect(getCurrentProfileId).not.toHaveBeenCalled();
+  });
+
+  it('hides an already-flagged post from a sessionless caller', async () => {
+    postsFindFirst.mockResolvedValue({
+      id: POST_ID,
+      profileId: 'author-profile',
+      rootProfileId: 'root',
+    } as never);
+    vi.mocked(hasActiveModerationFlag).mockResolvedValue(true);
+    await expect(
+      assertModerationItemAccess({ itemType: 'post', itemId: POST_ID }),
+    ).rejects.toThrow();
+    expect(getCurrentProfileId).not.toHaveBeenCalled();
   });
 });
 
@@ -235,16 +268,23 @@ describe('assertModerationItemAccess — proposal', () => {
 
 describe('assertModerationItemAccess — user', () => {
   it('passes when the user exists', async () => {
-    selectChain.resolve.mockResolvedValue([{ id: USER_ID }]);
+    usersFindFirst.mockResolvedValue({ id: USER_ID } as never);
     await expect(
       assertModerationItemAccess({ itemType: 'user', itemId: USER_ID, user }),
     ).resolves.toBeUndefined();
   });
 
   it('throws NotFound when the user does not exist', async () => {
-    selectChain.resolve.mockResolvedValue([]);
+    usersFindFirst.mockResolvedValue(undefined as never);
     await expect(
       assertModerationItemAccess({ itemType: 'user', itemId: USER_ID, user }),
     ).rejects.toThrow();
+  });
+
+  it('lets a sessionless caller flag an existing user (platform-visible)', async () => {
+    usersFindFirst.mockResolvedValue({ id: USER_ID } as never);
+    await expect(
+      assertModerationItemAccess({ itemType: 'user', itemId: USER_ID }),
+    ).resolves.toBeUndefined();
   });
 });

@@ -2,6 +2,7 @@ import { db } from '@op/db/client';
 import type { ModerationFlag } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
+import { getCurrentProfileId } from '../access';
 import { assertModerationItemAccess } from './assertModerationItemAccess';
 import { flagItem } from './flagItem';
 import { getModerationCallbackUrl } from './moderationCallback';
@@ -23,10 +24,14 @@ import type { ModerationItemType } from './types';
 export interface SubmitUserFlagInput {
   itemType: ModerationItemType;
   itemId: string;
-  flaggedByProfileId: string;
   reason?: string;
-  /** The reporting user; must be able to read the item they're flagging. */
-  user: User;
+  /**
+   * The reporting user, or `undefined` for a sessionless caller. Either way the
+   * caller must be able to *read* the item they're flagging — a sessionless
+   * caller is held to public visibility (see {@link assertModerationItemAccess}).
+   * A sessionless report records a `null` reporter.
+   */
+  user?: User;
 }
 
 /**
@@ -38,6 +43,15 @@ export interface SubmitUserFlagInput {
 export const submitUserFlag = async (
   input: SubmitUserFlagInput,
 ): Promise<{ flag: ModerationFlag }> => {
+  // Resolve the reporter's profile (memoized per request, so the access gate's
+  // own getCurrentProfileId call reuses it) alongside the open-flag lookup —
+  // they're independent, and the open flag is the idempotency shortcut below. A
+  // sessionless report has no reporter profile.
+  const [flaggedByProfileId, existing] = await Promise.all([
+    input.user ? getCurrentProfileId(input.user.id) : Promise.resolve(null),
+    findOpenModerationFlag(input.itemType, input.itemId),
+  ]);
+
   await assertModerationItemAccess({
     itemType: input.itemType,
     itemId: input.itemId,
@@ -49,7 +63,6 @@ export const submitUserFlag = async (
   // per attachment — wasted work on the hot case (many users reporting the
   // same already-flagged item). `flagItem` still does its own authoritative
   // open-flag check, so this is a fast path, not the correctness boundary.
-  const existing = await findOpenModerationFlag(input.itemType, input.itemId);
   if (existing) {
     return { flag: existing };
   }
@@ -69,7 +82,7 @@ export const submitUserFlag = async (
       itemType: input.itemType,
       itemId: input.itemId,
       roundId,
-      flaggedByProfileId: input.flaggedByProfileId,
+      flaggedByProfileId,
       reason: input.reason,
       content,
       media,
