@@ -666,6 +666,84 @@
 }
 
 /* ============================================
+ * Proposals filter bar — full-width borders once pinned
+ *
+ * The decision-page filter bar lives inside the centered max-w-6xl content
+ * column, so its border is capped at the content width. Once it pins beneath
+ * the (full-width) decision nav we want its bottom border to span the page and
+ * a matching top line to stand in for the nav's now-occluded border.
+ *
+ * CSS-only "stuck" detection via scroll-driven animations: a zero-height
+ * sentinel at the bar's pre-pin top defines a view-timeline; the bar runs a
+ * steps animation on it that flips --proposals-filter-stuck 0 -> 1 exactly when
+ * it pins. Two full-bleed pseudo-elements consume that as their opacity.
+ *
+ * Wrapped in @supports so browsers without animation-timeline (e.g. Safari/iOS)
+ * keep the in-flow content-width border instead of falling back to a time-based
+ * timeline (which would jump straight to the pinned state).
+ * ============================================ */
+
+@supports (animation-timeline: scroll()) {
+  @property --proposals-filter-stuck {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: 0;
+  }
+
+  @keyframes proposals-filter-stuck {
+    to {
+      --proposals-filter-stuck: 1;
+    }
+  }
+
+  .proposals-filter-scope {
+    position: relative;
+    timeline-scope: --proposals-filter-sentinel;
+  }
+
+  /* Marker at the bar's natural (pre-pin) top. Absolute so it adds no flex gap
+     yet still scrolls with the document. */
+  .proposals-filter-sentinel {
+    position: absolute;
+    top: 0;
+    inset-inline: 0;
+    height: 1px;
+    view-timeline: --proposals-filter-sentinel block;
+    view-timeline-inset: 3.5rem auto; /* matches the bar's top-14 (56px) */
+  }
+
+  .proposals-filter-bar {
+    animation: proposals-filter-stuck steps(1, jump-start) both;
+    animation-timeline: --proposals-filter-sentinel;
+    animation-range: exit; /* fires as the sentinel clears the inset top edge */
+  }
+
+  /* Full-width lines, anchored to the (sticky => positioned) bar. */
+  .proposals-filter-bar::before,
+  .proposals-filter-bar::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    width: 100vw;
+    transform: translateX(-50%);
+    opacity: var(--proposals-filter-stuck);
+    pointer-events: none;
+  }
+
+  .proposals-filter-bar::before {
+    /* stand-in for the nav's occluded bottom border */
+    top: -1px;
+    border-top: 1px solid var(--color-neutral-gray-1);
+  }
+
+  .proposals-filter-bar::after {
+    /* full-width bottom border */
+    bottom: -1px;
+    border-bottom: 1px solid var(--color-neutral-gray-1);
+  }
+}
+
+/* ============================================
  * Tiptap Collaboration Cursor Styles
  * Renders other users' cursor positions and selections
  * ============================================ */

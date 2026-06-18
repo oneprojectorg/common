@@ -903,14 +903,18 @@ export const ProposalsList = ({
   return (
     <div
       className={cn(
-        'flex flex-col gap-6 pb-12',
+        'proposals-filter-scope flex flex-col gap-6 pb-12',
         // On mobile the map view is edge-to-edge and flush to the bottom.
         isMapMode && 'max-sm:pb-0',
       )}
     >
+      {/* Sentinel marking the filter bar's pre-pin top — drives the CSS-only
+          "stuck" detection (see .proposals-filter-* in shared-styles.css). */}
+      <div aria-hidden className="proposals-filter-sentinel" />
       {/* Filters Bar — sticks beneath the decision nav while the list/map
-          scroll under it (the process banner scrolls away above). */}
-      <div className="sticky top-14 z-20 flex flex-wrap items-center justify-between gap-4 border-b border-neutral-gray1 bg-white py-3">
+          scroll under it (the process banner scrolls away above). Once pinned,
+          its border extends to full page width via .proposals-filter-bar. */}
+      <div className="proposals-filter-bar sticky top-14 z-20 flex flex-wrap items-center justify-between gap-4 border-b border-neutral-gray1 bg-white py-3">
         <div className="flex items-center gap-4">
           <span className="font-serif text-title-base text-neutral-black">
             {hideFilters ? (
