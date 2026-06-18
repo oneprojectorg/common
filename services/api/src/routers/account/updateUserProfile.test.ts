@@ -26,13 +26,10 @@ describeAccessTierGating('account.updateUserProfile', {
   ),
 
   userJwt: accessTierGatingCell(
-    'rejects user-JWT caller',
+    'admits user-JWT caller',
     async ({ callers }) => {
       const caller = await callers.userJwt();
-      await expectFailsAccessTierGate(
-        caller.account.updateUserProfile({}),
-        'user',
-      );
+      await expectPassesAccessTierGate(caller.account.updateUserProfile({}));
     },
   ),
 

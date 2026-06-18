@@ -34,16 +34,15 @@ describeAccessTierGating('account.uploadImage', {
   ),
 
   userJwt: accessTierGatingCell(
-    'rejects user-JWT caller',
+    'admits user-JWT caller',
     async ({ callers }) => {
       const caller = await callers.userJwt();
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.account.uploadImage({
           file: 'x',
           fileName: 'x',
           mimeType: 'image/png',
         }),
-        'user',
       );
     },
   ),
