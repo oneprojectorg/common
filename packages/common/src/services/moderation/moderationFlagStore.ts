@@ -86,7 +86,7 @@ export const createPendingFlag = async ({
 }: {
   itemType: ModerationItemType;
   itemId: string;
-  flaggedByProfileId: string;
+  flaggedByProfileId: string | null;
   reason?: string;
 }): Promise<{ flag: ModerationFlag; created: boolean }> => {
   const [inserted] = await db
