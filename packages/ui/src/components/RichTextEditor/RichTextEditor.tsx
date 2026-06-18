@@ -1,5 +1,6 @@
 'use client';
 
+import type { JSONContent } from '@tiptap/core';
 import type { Content, Editor, Extensions } from '@tiptap/react';
 import { forwardRef, useImperativeHandle } from 'react';
 
@@ -26,6 +27,8 @@ export const RichTextEditor = forwardRef<
     placeholder?: string;
     onUpdate?: (content: string) => void;
     onChange?: (content: string) => void;
+    /** Emits the editor's JSON doc on every update (for JSON-stored content). */
+    onChangeJSON?: (content: JSONContent) => void;
     onEditorReady?: (editor: Editor) => void;
     className?: string;
     editorClassName?: string;
@@ -38,6 +41,7 @@ export const RichTextEditor = forwardRef<
       placeholder,
       onUpdate,
       onChange,
+      onChangeJSON,
       onEditorReady,
       className = '',
       editorClassName = '',
@@ -51,6 +55,7 @@ export const RichTextEditor = forwardRef<
       editorClassName,
       onUpdate,
       onChange,
+      onChangeJSON,
       onEditorReady,
     });
 

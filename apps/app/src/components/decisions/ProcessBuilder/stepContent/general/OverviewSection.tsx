@@ -71,9 +71,6 @@ function OverviewSectionContent({
 
   // Editor instance, captured once ready, so the bubble menu can attach.
   const [editor, setEditor] = useState<Editor | null>(null);
-  // A ref to the same editor, read at call time inside onChange so we always
-  // pull the live JSON doc (the onChange closure can be captured stale).
-  const editorRef = useRef<Editor | null>(null);
 
   const saveOverview = (patch: {
     headline?: string;
@@ -131,20 +128,14 @@ function OverviewSectionContent({
           content={initialOverview.body}
           placeholder={t('overview_body_placeholder')}
           editorClassName="min-h-40"
-          onChange={() => {
-            // Persist the TipTap JSON doc (not HTML) so the overview can be
-            // rendered via the static React renderer. Read from the ref so the
-            // value is always live even if this closure was captured early.
-            const json = editorRef.current?.getJSON();
-            if (json) {
-              bodyRef.current = json;
-              saveOverview({ body: json });
-            }
+          onChangeJSON={(json) => {
+            // Persist the TipTap JSON doc so the overview renders via the
+            // static React renderer. tiptap hands us the live editor's JSON, so
+            // no stale-closure workaround is needed.
+            bodyRef.current = json;
+            saveOverview({ body: json });
           }}
-          onEditorReady={(e) => {
-            editorRef.current = e;
-            setEditor(e);
-          }}
+          onEditorReady={setEditor}
         />
 
         <RichTextEditorBubbleMenu editor={editor} />
