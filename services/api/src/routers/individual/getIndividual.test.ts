@@ -26,12 +26,11 @@ describeAccessTierGating('individual.getTermsByProfile', {
   ),
 
   userJwt: accessTierGatingCell(
-    'rejects user-JWT caller',
+    'admits user-JWT caller',
     async ({ callers }) => {
       const caller = await callers.userJwt();
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.individual.getTermsByProfile({ profileId: 'x' }),
-        'user',
       );
     },
   ),
