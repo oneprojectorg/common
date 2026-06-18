@@ -17,6 +17,8 @@ export const DEFAULT_MAP_CENTER: LngLat = { lng: -82.9371, lat: 39.9686 };
 /**
  * Starting camera for the Location field's "Map view" config before an admin
  * has positioned it: the whole globe, centered on Columbus, OH.
+ *
+ * TODO: A better UX would be to geolocate and center the map on the user.
  */
 export const DEFAULT_LOCATION_FIELD_MAP_VIEW: MapDefaultView = {
   center: { lng: -82.9988, lat: 39.9612 },
