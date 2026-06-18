@@ -1,4 +1,8 @@
-import { createClient } from '@op/api/serverClient';
+import {
+  HydrationBoundary,
+  createServerUtils,
+  dehydrate,
+} from '@op/api/server';
 import { logger } from '@op/logging';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
@@ -49,29 +53,20 @@ const DecisionOverviewPage = async ({
 }) => {
   const { slug } = await params;
   const { instanceId } = await loadDecision(slug);
+  const { utils, queryClient } = await createServerUtils();
 
-  // Render the overview body on the server (RSC) from its TipTap JSON, so the
-  // prose ships as HTML with no client JS (only embed leaves are client
-  // islands). Best-effort: on failure the slot is null and the client query +
-  // error boundary in DecisionOverviewSuspense still drive the page.
-  //
-  // TODO: this getInstance call duplicates the client useSuspenseQuery in
-  // DecisionOverviewContent (two fetches per load) and can diverge — if this
-  // server fetch fails while the client succeeds, the body slot is null even
-  // though the body exists. Fetch the instance once here and pass it down to
-  // DecisionOverview, dropping the client suspense query.
+  // One server fetch renders the body as RSC and seeds the cache the client
+  // useSuspenseQuery hydrates from (no second fetch, no divergence). Body is
+  // best-effort: on failure the cache stays empty, so the client refetches and
+  // its APIErrorBoundary drives the error UX.
   let aboutSlot: ReactNode = null;
   try {
-    const client = await createClient();
-    const instance = await client.decision.getInstance({ instanceId });
+    const instance = await utils.decision.getInstance.fetch({ instanceId });
     const body = instance.instanceData?.overview?.body;
     if (body) {
       aboutSlot = <RichTextRenderer content={body} />;
     }
   } catch (error) {
-    // Best-effort: log for observability, then fall back to null. The client
-    // suspense query + APIErrorBoundary in DecisionOverviewSuspense remain the
-    // safety net, so a server-side fetch hiccup degrades rather than 500s.
     logger.warn('Failed to server-render decision overview body', {
       instanceId,
       error: error instanceof Error ? error.message : String(error),
@@ -80,13 +75,15 @@ const DecisionOverviewPage = async ({
   }
 
   return (
-    <Suspense fallback={<DecisionContentSkeleton />}>
-      <DecisionOverviewSuspense
-        instanceId={instanceId}
-        decisionSlug={slug}
-        aboutSlot={aboutSlot}
-      />
-    </Suspense>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <Suspense fallback={<DecisionContentSkeleton />}>
+        <DecisionOverviewSuspense
+          instanceId={instanceId}
+          decisionSlug={slug}
+          aboutSlot={aboutSlot}
+        />
+      </Suspense>
+    </HydrationBoundary>
   );
 };
 
