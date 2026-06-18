@@ -1,7 +1,7 @@
 'use client';
 
-import { IconButton } from '@op/ui/IconButton';
-import { cn } from '@op/ui/utils';
+import { Button } from '@op/ui/Button';
+import { ButtonGroup } from '@op/ui/ButtonGroup';
 import { LuLayoutGrid, LuMap } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -16,8 +16,9 @@ interface ProposalViewToggleProps {
 
 /**
  * Desktop-only segmented control switching the proposals list between the grid
- * and the map browse view. (The Figma toggle has a third "list" option that we
- * intentionally omit — only grid and map are offered.)
+ * and the map browse view, built on the shared `ButtonGroup` (selected/unselected
+ * colors come from its `aria-pressed` styling). The Figma toggle has a third
+ * "list" option that we intentionally omit — only grid and map are offered.
  */
 export function ProposalViewToggle({
   value,
@@ -32,30 +33,20 @@ export function ProposalViewToggle({
   ] as const;
 
   return (
-    <div
-      role="group"
-      aria-label={t('Proposal view')}
-      className={cn(
-        'inline-flex items-center gap-0.5 rounded-md border border-neutral-gray2 p-0.5',
-        className,
-      )}
-    >
-      {options.map(({ id, label, Icon }) => {
-        const isSelected = value === id;
-        return (
-          <IconButton
-            key={id}
-            size="medium"
-            variant={isSelected ? 'solid' : 'ghost'}
-            aria-label={label}
-            aria-pressed={isSelected}
-            onPress={() => onChange(id)}
-            className={cn(!isSelected && 'bg-transparent text-neutral-gray4')}
-          >
-            <Icon className="size-4" aria-hidden />
-          </IconButton>
-        );
-      })}
-    </div>
+    <ButtonGroup aria-label={t('Proposal view')} className={className}>
+      {options.map(({ id, label, Icon }) => (
+        <Button
+          key={id}
+          color="secondary"
+          size="small"
+          aria-label={label}
+          aria-pressed={value === id}
+          onPress={() => onChange(id)}
+          className="size-8 p-0"
+        >
+          <Icon className="size-4" aria-hidden />
+        </Button>
+      ))}
+    </ButtonGroup>
   );
 }
