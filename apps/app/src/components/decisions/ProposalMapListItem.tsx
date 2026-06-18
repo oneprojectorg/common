@@ -62,7 +62,7 @@ export function ProposalMapListItem({
           className={cn(
             'min-w-0 transition-colors',
             isActive
-              ? 'border-neutral-gray2 bg-neutral-gray1'
+              ? 'border-neutral-gray2 bg-neutral-offWhite'
               : 'hover:bg-neutral-offWhite',
           )}
         >
