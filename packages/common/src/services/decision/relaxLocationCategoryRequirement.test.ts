@@ -17,7 +17,11 @@ function template(options: {
   if (category === 'single') {
     properties.category = { type: ['string', 'null'], 'x-format': 'dropdown' };
   } else if (category === 'multi') {
-    properties.category = { type: 'array', 'x-format': 'dropdown', minItems: 1 };
+    properties.category = {
+      type: 'array',
+      'x-format': 'dropdown',
+      minItems: 1,
+    };
   }
 
   return {
@@ -30,7 +34,10 @@ function template(options: {
 describe('relaxLocationCategoryRequirement', () => {
   it('drops category from required for a location + single-select template', () => {
     const result = relaxLocationCategoryRequirement(
-      template({ category: 'single', required: ['title', 'location', 'category'] }),
+      template({
+        category: 'single',
+        required: ['title', 'location', 'category'],
+      }),
     );
 
     expect(result.required).toEqual(['title', 'location']);
@@ -38,7 +45,10 @@ describe('relaxLocationCategoryRequirement', () => {
 
   it('drops both required and minItems for a location + multi-select template', () => {
     const result = relaxLocationCategoryRequirement(
-      template({ category: 'multi', required: ['title', 'location', 'category'] }),
+      template({
+        category: 'multi',
+        required: ['title', 'location', 'category'],
+      }),
     );
 
     expect(result.required).toEqual(['title', 'location']);
