@@ -645,8 +645,8 @@ export const ProposalsList = ({
   const categories = categoriesData.categories;
 
   // Map browse mode is offered only when the process collects a location and
-  // the GIS flag is on; the camera reuses the process's configured default view
-  // (`x-map-default`), the same one the proposal submission form opens at.
+  // the GIS flag is on. The map fits the proposal markers; this default view
+  // (`x-map-default`) is the fallback camera for when none have a location.
   const gisMapsEnabled = useFeatureFlag('gis_maps');
   const proposalTemplate = instance.instanceData?.proposalTemplate;
   const hasLocationField =

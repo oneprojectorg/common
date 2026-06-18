@@ -19,7 +19,8 @@ interface ProposalsMapViewProps {
   slug: string;
   /** Decision profile slug for building proposal links. */
   decisionSlug?: string;
-  /** Camera for the map — the process's configured default view. */
+  /** Fallback camera — the process's default view, used only when no proposal
+   * has a location to fit. */
   mapView: MapDefaultView;
 }
 
@@ -30,8 +31,9 @@ interface ProposalsMapViewProps {
  * mobile it shows just the map (the list is the regular grid, toggled
  * separately) and tapping a marker navigates straight to the proposal.
  *
- * The map opens at the process's default view (`x-map-default`) — it does not
- * fit to the markers — so it matches the proposal submission form.
+ * The map fits all proposal markers (with a buffer), re-fitting as the set is
+ * filtered, and falls back to the process's default view (`x-map-default`) only
+ * when no proposal has a location.
  */
 export function ProposalsMapView({
   proposals,
