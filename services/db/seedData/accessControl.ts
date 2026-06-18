@@ -27,7 +27,16 @@ const ACCESS_ZONE_IDS = {
 const ACCESS_ROLE_IDS = {
   ADMIN: '00000000-0000-4000-8000-000000000011',
   MEMBER: '00000000-0000-4000-8000-000000000012',
+  PUBLIC_PARTICIPANT: '00000000-0000-4000-8000-000000000013',
 } as const;
+
+/**
+ * Name of the stable global "Public Participant" role. Runtime code identifies
+ * global roles by name (the ids here are for seeds/tests), so this is the
+ * canonical identifier the access layer keys the public grant on. Global roles
+ * cannot be renamed via the API.
+ */
+export const PUBLIC_PARTICIPANT_ROLE_NAME = 'Public Participant';
 
 // Access zones data
 export const ACCESS_ZONES = [
@@ -60,6 +69,12 @@ export const ACCESS_ROLES = [
     name: 'Admin',
     description: null,
   },
+  {
+    id: ACCESS_ROLE_IDS.PUBLIC_PARTICIPANT,
+    name: PUBLIC_PARTICIPANT_ROLE_NAME,
+    description:
+      'Read-only public access to a profile’s decisions/proposals. Never granted by hand — anchored on the GLOBAL_USER_PUBLIC row for the one public process.',
+  },
 ];
 
 // Role name to ID mapping for convenient access (avoids string references)
@@ -71,6 +86,10 @@ export const ROLES = {
   MEMBER: {
     id: ACCESS_ROLE_IDS.MEMBER,
     name: 'Member',
+  },
+  PUBLIC_PARTICIPANT: {
+    id: ACCESS_ROLE_IDS.PUBLIC_PARTICIPANT,
+    name: PUBLIC_PARTICIPANT_ROLE_NAME,
   },
 } as const;
 
@@ -137,5 +156,12 @@ export const ACCESS_ROLE_PERMISSIONS = [
       PERMISSIONS.UPDATE |
       DECISION_BITS.SUBMIT_PROPOSALS |
       DECISION_BITS.VOTE,
+  },
+  // Public Participant gets read-only access to the decisions zone (global,
+  // profileId IS NULL) — "public = read decisions/proposals" applies uniformly.
+  {
+    accessRoleId: ACCESS_ROLE_IDS.PUBLIC_PARTICIPANT,
+    accessZoneId: ACCESS_ZONE_IDS.DECISIONS,
+    permission: PERMISSIONS.READ,
   },
 ];

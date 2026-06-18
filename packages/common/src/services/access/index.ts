@@ -1,7 +1,14 @@
 import { cache } from '@op/cache';
 import { GLOBAL_USER_PUBLIC } from '@op/core';
-import { db, eq } from '@op/db/client';
-import { organizations, users } from '@op/db/schema';
+import { and, db, eq, isNull } from '@op/db/client';
+import {
+  accessRoles,
+  organizations,
+  profileUserToAccessRoles,
+  profileUsers,
+  users,
+} from '@op/db/schema';
+import { PUBLIC_PARTICIPANT_ROLE_NAME } from '@op/db/seedData/accessControl';
 import type { User } from '@op/supabase/lib';
 import type { AccessZonePermissionInput, NormalizedRole } from 'access-zones';
 import { checkPermission } from 'access-zones';
@@ -231,21 +238,123 @@ export const getProfileAccessUser = memoize(
 );
 
 /**
- * The caller's effective roles on a profile (own grant ∪ public grant), without
- * the join-table identity row. Empty when no grant matched — so `roles.length
- * > 0` means "has at least one effective role", slightly tighter than the old
- * presence check, which also held for a row with zero effective roles.
- *
- * No org fallback — see {@link getProfileAccessRolesWithOrgFallback} for that.
+ * The Public Participant grant on a profile, resolved as role junctions ready
+ * for {@link getNormalizedRoles}. Detected by the stable global Public
+ * Participant *role* (by name, `profileId IS NULL`) granted on the profile —
+ * not by the {@link GLOBAL_USER_PUBLIC} sentinel row the grant is currently
+ * anchored on. The cheap path (no public grant, i.e. almost every profile) is a
+ * single indexed existence check; the role's permissions are only loaded when a
+ * grant is actually present. Empty when the profile has no public grant.
  */
-export const getProfileAccessRoles = async ({
-  user,
-  profileId,
-}: {
-  user?: AccessUser;
-  profileId: string;
-}): Promise<NormalizedRole[]> =>
-  (await getProfileAccessUser({ user, profileId }))?.roles ?? [];
+const getPublicParticipantRoleJunctions = async (profileId: string) => {
+  const grant = await db
+    .select({ profileUserId: profileUserToAccessRoles.profileUserId })
+    .from(profileUserToAccessRoles)
+    .innerJoin(
+      profileUsers,
+      eq(profileUserToAccessRoles.profileUserId, profileUsers.id),
+    )
+    .innerJoin(
+      accessRoles,
+      eq(profileUserToAccessRoles.accessRoleId, accessRoles.id),
+    )
+    .where(
+      and(
+        eq(profileUsers.profileId, profileId),
+        eq(accessRoles.name, PUBLIC_PARTICIPANT_ROLE_NAME),
+        isNull(accessRoles.profileId),
+      ),
+    )
+    .limit(1);
+
+  if (grant.length === 0) {
+    return [];
+  }
+
+  const publicRole = await db.query.accessRoles.findFirst({
+    where: {
+      name: PUBLIC_PARTICIPANT_ROLE_NAME,
+      profileId: { isNull: true },
+    },
+    with: {
+      zonePermissions: {
+        where: zonePermissionsWhere(profileId),
+        with: {
+          accessZone: true,
+        },
+      },
+    },
+  });
+
+  return publicRole ? [{ accessRole: publicRole }] : [];
+};
+
+/**
+ * Resolve the caller's *effective* normalized roles on a profile — their own
+ * grant unioned with any public grant — without leaking the join-table identity
+ * row. This is the honest shape for an access decision: roles are an aggregate
+ * (own ∪ public), so they describe what the caller may do regardless of who
+ * they are. Empty when no grant (own or public) matched, so `roles.length > 0`
+ * is exactly the old `Boolean(getProfileAccessUser(...))` presence check.
+ *
+ * The caller's own grant is keyed on their own `authUserId` — identity is always
+ * the requester, so there's no sentinel substitution and no synthetic identity
+ * to fabricate for the anonymous-on-a-public-process case. The public grant is
+ * detected by the Public Participant role (see
+ * {@link getPublicParticipantRoleJunctions}), so this path doesn't go through
+ * `resolveAccessUserIds`.
+ *
+ * No org fallback — for org-profile lookups that should fall back to org-level
+ * grants, use {@link getProfileAccessRolesWithOrgFallback} instead.
+ */
+export const getProfileAccessRoles = memoize(
+  async ({
+    user,
+    profileId,
+  }: {
+    user?: AccessUser;
+    profileId: string;
+  }): Promise<NormalizedRole[]> => {
+    // Anonymous / no-JWT callers (and the public sentinel itself) have no "own"
+    // grant — they get exactly the public roles below.
+    const ownAuthUserId =
+      user?.id && user.id !== GLOBAL_USER_PUBLIC ? user.id : undefined;
+
+    const ownRow = ownAuthUserId
+      ? await db.query.profileUsers.findFirst({
+          where: {
+            profileId,
+            authUserId: ownAuthUserId,
+          },
+          with: {
+            roles: {
+              with: {
+                accessRole: {
+                  with: {
+                    zonePermissions: {
+                      where: zonePermissionsWhere(profileId),
+                      with: {
+                        accessZone: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        })
+      : undefined;
+
+    const publicRoleJunctions =
+      await getPublicParticipantRoleJunctions(profileId);
+
+    return getNormalizedRoles(
+      [...(ownRow?.roles ?? []), ...publicRoleJunctions],
+      { profileId },
+    );
+  },
+  ({ profileId, user }) => `${profileId}:${user?.id ?? 'public'}`,
+);
 
 /**
  * Resolve the caller's normalized roles on a profile, falling back to their
