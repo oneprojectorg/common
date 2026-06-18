@@ -195,12 +195,13 @@ export const instancePhaseDataEncoder = z.object({
 });
 
 /**
- * Generous byte budget for the overview body, applied on writes only. Large
+ * Generous size budget (string length / serialized JSON length) for the
+ * overview body, applied on writes only. Large
  * because images are currently inlined as base64 (editor feature behind a flag,
  * internal testing only) — a single image easily exceeds tens of KB. Tighten it
  * once images move to the app-wide upload→URL flow.
  */
-const MAX_OVERVIEW_BODY_BYTES = 5_000_000;
+const MAX_OVERVIEW_BODY_SIZE = 5_000_000;
 
 /**
  * A stored TipTap JSON doc — a `doc`-rooted object (what `editor.getJSON()`
@@ -225,11 +226,11 @@ const overviewBodyEncoder = z.union([
 ]);
 
 const overviewBodyInputEncoder = z.union([
-  z.string().max(MAX_OVERVIEW_BODY_BYTES),
+  z.string().max(MAX_OVERVIEW_BODY_SIZE),
   z
     .custom<JSONContent>(isRichTextDoc)
     .refine(
-      (doc) => JSON.stringify(doc).length <= MAX_OVERVIEW_BODY_BYTES,
+      (doc) => JSON.stringify(doc).length <= MAX_OVERVIEW_BODY_SIZE,
       'Overview body is too large',
     ),
 ]);
