@@ -6,11 +6,15 @@ import { permission } from 'access-zones';
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAccess } from '../assert';
 import { decisionPermission } from './permissions';
-import { normalizeLocation, parseProposalData } from './proposalDataSchema';
+import {
+  normalizeLocation,
+  normalizeProposalCategories,
+  parseProposalData,
+} from './proposalDataSchema';
 import { resolveBoundary } from './resolveBoundary';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
-import { syncProposalBoundaryTag } from './syncProposalBoundaryTag';
+import { setProposalCategories } from './setProposalCategories';
 import { syncProposalProfileLocation } from './syncProposalProfileLocation';
 import { templateCollectsLocation } from './templateLocation';
 import { checkProposalsAllowed } from './utils/proposal';
@@ -150,15 +154,30 @@ export const submitProposal = async ({
       return null;
     });
 
+  // The authoritative category set for location templates — manual selections
+  // plus the location's council district, already filled into the assembled
+  // data. Persisted to BOTH proposalData.category (the read/display source) and
+  // the proposalCategories junction (the filter source) so they stay in sync.
+  const categoryLabels =
+    assembledData && templateCollectsLocation(proposalTemplate)
+      ? normalizeProposalCategories(assembledData.category)
+      : null;
+
   // Update proposal status to submitted and re-query with profile
   const updatedProposal = await db.transaction(async (tx) => {
     const proposalDataUpdate =
-      collaborationDocVersionId != null || location
+      collaborationDocVersionId != null || location || categoryLabels
         ? {
             ...(existingProposal.proposalData as Record<string, unknown>),
             ...(location ? { location } : {}),
             ...(collaborationDocVersionId != null
               ? { collaborationDocVersionId }
+              : {}),
+            ...(categoryLabels
+              ? {
+                  category:
+                    categoryLabels.length > 0 ? categoryLabels : undefined,
+                }
               : {}),
           }
         : undefined;
@@ -186,12 +205,13 @@ export const submitProposal = async ({
         (existingProposal.proposalData as Record<string, unknown>),
     );
 
-    // Re-tag the proposal with its location's boundary category (if any).
-    await syncProposalBoundaryTag(
-      tx,
-      submittedProposal.id,
-      proposalDataUpdate ?? existingProposal.proposalData,
-    );
+    // Persist the proposal's categories — including the location's council
+    // district, already filled into the validated data — through the normal
+    // category link. Only location-collecting templates re-link on submit;
+    // others keep the category links written during draft autosave.
+    if (categoryLabels) {
+      await setProposalCategories(tx, submittedProposal.id, categoryLabels);
+    }
 
     const proposal = await tx.query.proposals.findFirst({
       where: { id: submittedProposal.id },

@@ -74,6 +74,7 @@ export {
 } from './services/decision/getProposalTemplateFieldOrder';
 export { getProposalFragmentNames } from './services/decision/getProposalFragmentNames';
 export { assembleProposalData } from './services/decision/assembleProposalData';
+export { relaxLocationCategoryRequirement } from './services/decision/relaxLocationCategoryRequirement';
 export {
   SchemaValidator,
   schemaValidator,

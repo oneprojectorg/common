@@ -17,6 +17,7 @@ import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertInstanceProfileAccess, getCurrentProfileId } from '../access';
 import { assertGlobalRole } from '../assert';
 import { generateUniqueProfileSlug } from '../profile/utils';
+import { withBoundaryCategoryLabel } from './boundaryCategory';
 import { decisionPermission } from './permissions';
 import { processProposalContent } from './proposalContentProcessor';
 import {
@@ -24,7 +25,6 @@ import {
   parseProposalData,
 } from './proposalDataSchema';
 import type { DecisionInstanceData } from './schemas/instanceData';
-import { syncProposalBoundaryTag } from './syncProposalBoundaryTag';
 import { syncProposalProfileLocation } from './syncProposalProfileLocation';
 import { assertInstancePhase } from './utils/instance';
 import { checkProposalsAllowed } from './utils/proposal';
@@ -98,8 +98,13 @@ export const createProposal = async ({
   // Extract title from proposal data
   const proposalTitle = extractTitleFromProposalData(data.proposalData);
 
-  // Pre-fetch category terms if specified to avoid lookup inside transaction
-  const categoryLabels = [...new Set(parsedProposalData.category)];
+  // Pre-fetch category terms if specified to avoid lookup inside transaction.
+  // Include the location's council-district category (if any) so it is linked
+  // through the normal category pipeline — no separate boundary-tagging pass.
+  const categoryLabels = await withBoundaryCategoryLabel(
+    [...new Set(parsedProposalData.category)],
+    data.proposalData,
+  );
   let categoryTermIds: string[] = [];
 
   if (categoryLabels.length > 0) {
@@ -197,10 +202,7 @@ export const createProposal = async ({
         proposalData: {
           ...data.proposalData,
           collaborationDocId,
-          category:
-            parsedProposalData.category.length > 0
-              ? parsedProposalData.category
-              : undefined,
+          category: categoryLabels.length > 0 ? categoryLabels : undefined,
         },
         submittedByProfileId: profileId,
         profileId: proposalProfile.id,
@@ -230,9 +232,6 @@ export const createProposal = async ({
         })),
       );
     }
-
-    // Auto-tag the proposal with its location's boundary category (if any).
-    await syncProposalBoundaryTag(tx, insertedProposal.id, data.proposalData);
 
     // Link attachments to proposal if provided
     if (data.attachmentIds && data.attachmentIds.length > 0) {

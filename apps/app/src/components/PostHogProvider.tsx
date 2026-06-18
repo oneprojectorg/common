@@ -16,7 +16,6 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       capture_exceptions: true,
       // Tracing headers set to `false` because it breaks CORS requests
       __add_tracing_headers: false,
-      // debug: process.env.NODE_ENV === 'development',
     });
   }, []);
 

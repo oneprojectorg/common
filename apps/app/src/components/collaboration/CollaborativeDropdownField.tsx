@@ -22,18 +22,6 @@ interface CollaborativeDropdownFieldProps {
   allowEmpty?: boolean;
   /** When true, sets `aria-required` on the select for assistive tech. */
   required?: boolean;
-  /**
-   * A value to auto-apply through this field's single writer (e.g. a
-   * boundary-resolved council district). `undefined` means "no auto-resolution
-   * settled yet — don't touch the selection"; `null` means "resolved to no
-   * value". When the auto value changes, the previously auto-applied value is
-   * swapped out; a value the user chose manually is otherwise preserved.
-   *
-   * Routing this through the field (rather than a second collaborative writer
-   * on the same fragment) keeps a single writer per fragment — two writers race
-   * under Yjs and duplicate the stored text.
-   */
-  autoValue?: string | null;
 }
 
 /**
@@ -48,7 +36,6 @@ export function CollaborativeDropdownField({
   placeholder,
   allowEmpty = false,
   required = false,
-  autoValue,
 }: CollaborativeDropdownFieldProps) {
   const t = useTranslations();
   const { ydoc } = useCollaborativeDoc();
@@ -76,33 +63,6 @@ export function CollaborativeDropdownField({
     lastEmittedValueRef.current = selectedValue;
     onChangeRef.current?.(selectedValue);
   }, [selectedValue]);
-
-  // Apply an externally-resolved value (e.g. a council district) through this
-  // field's own writer, so the fragment has a single writer. Swaps out the
-  // previously auto-applied value; leaves a manually chosen value otherwise.
-  const appliedAutoRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (autoValue === undefined) {
-      return;
-    }
-    const previous = appliedAutoRef.current;
-    if (autoValue === previous) {
-      return;
-    }
-
-    let next: string | null;
-    if (autoValue) {
-      next = autoValue;
-    } else {
-      // Resolved to nothing: only clear the value we previously auto-applied.
-      next = selectedValue === previous ? null : selectedValue;
-    }
-
-    appliedAutoRef.current = autoValue;
-    if (next !== selectedValue) {
-      setSelectedValue(next);
-    }
-  }, [autoValue, selectedValue]);
 
   if (options.length === 0) {
     return null;

@@ -1,6 +1,7 @@
 import { getTipTapClient } from '@op/collab';
 
 import { assembleProposalData } from './assembleProposalData';
+import { fillCategoryFromBoundary } from './boundaryCategory';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
 import { parseProposalData } from './proposalDataSchema';
 import { schemaValidator } from './schemaValidator';
@@ -53,8 +54,16 @@ export async function validateProposalAgainstTemplate(
       ...(shouldInjectTitle ? { title } : {}),
     };
 
-    schemaValidator.assertProposalData(proposalTemplate, validationData);
-    return validationData;
+    // Auto-fill the council-district category from the location's boundary
+    // before validating — the server-side replacement for the former
+    // client-side auto-select. From here on the district is a normal category.
+    const finalData = await fillCategoryFromBoundary(
+      proposalTemplate,
+      validationData,
+    );
+
+    schemaValidator.assertProposalData(proposalTemplate, finalData);
+    return finalData;
   }
 
   schemaValidator.assertProposalData(proposalTemplate, {

@@ -1,7 +1,6 @@
 'use client';
 
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import { trpc } from '@op/api/client';
 import {
   formatProposalCategories,
   parseCategoryFragmentValue,
@@ -175,8 +174,6 @@ function renderField(
   previewVersionFragmentContents: Record<string, JSONContent | null>,
   onEditorFocus?: (editor: Editor) => void,
   onEditorBlur?: (editor: Editor) => void,
-  /** Boundary-resolved district to auto-apply to the category field. */
-  autoCategoryValue?: string | null,
 ): React.ReactNode {
   const { key, format, schema } = field;
   const isReadonlyMode = mode !== 'edit-collaborative';
@@ -242,7 +239,6 @@ function renderField(
             onChange={(value) => onFieldChange('category', value)}
             fragmentName="category"
             placeholder={t('Select category')}
-            autoValue={autoCategoryValue}
           />
         </div>
       );
@@ -256,7 +252,6 @@ function renderField(
         fragmentName="category"
         placeholder={t('Select category')}
         allowEmpty={!field.required}
-        autoValue={autoCategoryValue}
       />
     );
   }
@@ -434,42 +429,6 @@ function renderField(
 }
 
 // ---------------------------------------------------------------------------
-// District → category resolution
-// ---------------------------------------------------------------------------
-
-/**
- * Resolves a location's pin to its containing council district. Returns the
- * district name, `null` when the pin falls outside every boundary (or there is
- * no pin), and `undefined` while the lookup is still in flight — meaning "not
- * settled yet, don't touch the category".
- *
- * The result is handed to the category field as its `autoValue`, so the field
- * applies it through its own single writer. We deliberately do NOT write the
- * `category` fragment here: a second collaborative writer on the same fragment
- * races with the field's writer under Yjs and duplicates the stored text.
- */
-function useResolvedDistrict(
-  location: ProposalDraftFields['location'] | null | undefined,
-): string | null | undefined {
-  const point = location ? { lat: location.lat, lng: location.lng } : null;
-
-  const boundaryQuery = trpc.decision.resolveBoundary.useQuery(
-    { lat: point?.lat ?? 0, lng: point?.lng ?? 0 },
-    { enabled: point != null, staleTime: 60_000 },
-  );
-
-  // Only report a settled lookup: no point at all, or a finished query. While
-  // fetching, return undefined so the field leaves the current category alone.
-  const settled =
-    point == null || (boundaryQuery.isSuccess && !boundaryQuery.isFetching);
-  if (!settled) {
-    return undefined;
-  }
-
-  return point != null ? (boundaryQuery.data?.boundary?.name ?? null) : null;
-}
-
-// ---------------------------------------------------------------------------
 // ProposalFormRenderer
 // ---------------------------------------------------------------------------
 
@@ -501,24 +460,10 @@ export function ProposalFormRenderer({
   const titleField = fields.find((f) => f.key === 'title');
   const categoryField = fields.find((f) => f.key === 'category');
   const budgetField = fields.find((f) => f.key === 'budget');
-  // The location field lives behind the `gis_maps` flag. Filtering it out here
-  // also leaves `locationField` undefined, so no district is auto-resolved.
+  // The location field lives behind the `gis_maps` flag.
   const dynamicFields = fields.filter(
     (f) => !f.isSystem && (gisMapsEnabled || f.format !== 'location'),
   );
-  const locationField = dynamicFields.find((f) => f.format === 'location');
-
-  // Resolve the pin's council district and hand it to the category field as its
-  // `autoValue` (the field is the single writer of the `category` fragment).
-  // `undefined` means "don't auto-apply" — no location field, or not in edit.
-  const locationDraft = locationField
-    ? ((draft[locationField.key] as ProposalDraftFields['location']) ?? null)
-    : null;
-  const resolvedDistrict = useResolvedDistrict(locationDraft);
-  const autoCategoryValue =
-    mode === 'edit-collaborative' && categoryField && locationField
-      ? resolvedDistrict
-      : undefined;
 
   const render = (field: FieldDescriptor) =>
     renderField(
@@ -530,7 +475,6 @@ export function ProposalFormRenderer({
       previewVersionFragmentContents,
       onEditorFocus,
       onEditorBlur,
-      autoCategoryValue,
     );
 
   return (

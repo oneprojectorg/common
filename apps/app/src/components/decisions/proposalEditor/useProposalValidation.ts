@@ -2,6 +2,7 @@ import {
   type SchemaValidationResult,
   assembleProposalData,
   getProposalFragmentNames,
+  relaxLocationCategoryRequirement,
   schemaValidator,
 } from '@op/common/client';
 import type { ProposalTemplateSchema } from '@op/common/client';
@@ -75,6 +76,11 @@ function extractFragmentTexts(
  * the same JSON Schema used by the backend. This gives immediate
  * feedback without a server round-trip.
  *
+ * The one divergence from the backend schema: for location-collecting
+ * templates the category requirement is relaxed (see
+ * `relaxLocationCategoryRequirement`), because the server fills the category
+ * from the location's district and is the authority on that requirement.
+ *
  * @param ydoc - The shared Yjs document from `useCollaborativeDoc()`.
  * @param template - The proposal template schema from the process instance.
  * @returns An object with a `validate` function that returns
@@ -88,7 +94,11 @@ export function useProposalValidation(
     const fragmentNames = getProposalFragmentNames(template);
     const fragmentTexts = extractFragmentTexts(ydoc, fragmentNames);
     const data = assembleProposalData(template, fragmentTexts);
-    return schemaValidator.validate(template, data);
+    // For location-collecting templates the category is auto-derived from the
+    // pin's district on the server, so don't block submit on a category the
+    // user never selects. The server remains the authority on the requirement.
+    const validationTemplate = relaxLocationCategoryRequirement(template);
+    return schemaValidator.validate(validationTemplate, data);
   }, [ydoc, template]);
 
   return { validate };
