@@ -1,11 +1,11 @@
 import { updateUserProfile as updateUserProfileService } from '@op/common';
 
 import { encodeUser, userEncoder } from '../../encoders';
-import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
+import { authenticatedConfirmedProcedure, router } from '../../trpcFactory';
 import { updateUserProfileDataSchema } from '../shared/profile';
 
 const updateUserProfile = router({
-  updateUserProfile: networkAuthenticatedProcedure({
+  updateUserProfile: authenticatedConfirmedProcedure({
     rateLimit: { windowSize: 10, maxRequests: 3 },
   })
     .input(updateUserProfileDataSchema)

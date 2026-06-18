@@ -26,12 +26,11 @@ describeAccessTierGating('account.completeOnboarding', {
   ),
 
   userJwt: accessTierGatingCell(
-    'rejects user-JWT caller',
+    'admits user-JWT caller',
     async ({ callers }) => {
       const caller = await callers.userJwt();
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.account.completeOnboarding({ tos: false, privacy: false }),
-        'user',
       );
     },
   ),
