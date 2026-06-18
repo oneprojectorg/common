@@ -101,6 +101,8 @@ describe('createCheckstepProvider', () => {
     expect(body.id).toBe(
       `proposal:33333333-3333-4333-8333-333333333333:${ROUND_ID}`,
     );
+    // Checkstep requires the account-side complex type on every submission.
+    expect(body.type).toBe('comment');
     expect(body.callback_url).toBe('https://us/webhook');
     // Each media kind gets its proper field type; `other` (PDF) is dropped.
     expect(body.fields).toContainEqual({

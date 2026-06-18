@@ -35,6 +35,11 @@ const checkstepWebhookSchema = z.object({
 });
 
 const DEFAULT_API_URL = 'https://api.checkstep.com/api/v2';
+// Checkstep requires a top-level `type` (the account-side "complex type") on
+// every ingestion request and 422s submissions that omit it. We funnel all of
+// our content kinds through a single configured complex type so the dashboard
+// stays minimal — tags/id encode the item kind for downstream queries.
+const CONTENT_TYPE = 'comment';
 // Reject webhooks whose signed `x-auth-date` is older/newer than this — a
 // captured request can't be replayed indefinitely. Generous enough to absorb
 // clock skew and provider retry delays.
@@ -148,6 +153,7 @@ const contentBody = (
   callbackUrl?: string,
 ) => ({
   id: contentId,
+  type: CONTENT_TYPE,
   fields: [
     { id: 'text', type: 'text', src: content },
     ...media.flatMap((item, index) => {
