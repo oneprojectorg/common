@@ -30,7 +30,11 @@ export const DecisionActionBar = ({
   const { slug } = useParams<{ slug: string }>();
 
   const { createProposal: handleCreateProposal, isCreating } =
-    useCreateProposal({ instanceId, decisionSlug: slug });
+    useCreateProposal({
+      instanceId,
+      getRedirectHref: (proposal) =>
+        `/decisions/${slug}/proposal/${proposal.profileId}/edit`,
+    });
 
   return (
     <div className="flex w-full justify-center">

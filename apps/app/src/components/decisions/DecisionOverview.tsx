@@ -128,7 +128,8 @@ const OverviewHero = ({
   const currentPhaseHref = `/decisions/${decisionSlug}/current`;
   const { createProposal, isCreating } = useCreateProposal({
     instanceId,
-    decisionSlug,
+    getRedirectHref: (proposal) =>
+      `/decisions/${decisionSlug}/proposal/${proposal.profileId}/edit`,
   });
 
   return (
