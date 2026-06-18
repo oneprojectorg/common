@@ -190,8 +190,15 @@
    * ============================================ */
   --color-primary-50: var(--op-primary-50);
   --color-primary-100: var(--op-primary-100);
+  --color-primary-200: var(--op-primary-200);
+  --color-primary-300: var(--op-primary-300);
+  --color-primary-400: var(--op-primary-400);
+  --color-primary-500: var(--op-primary-500);
   --color-primary-600: var(--op-primary-600);
   --color-primary-700: var(--op-primary-700);
+  --color-primary-800: var(--op-primary-800);
+  --color-primary-900: var(--op-primary-900);
+  --color-primary-950: var(--op-primary-950);
 
   --color-primary-yellow-500: var(--op-primary-yellow-500);
   --color-primary-orange-50: var(--op-primary-orange-50);
@@ -259,15 +266,22 @@
    *   - functional-yellowWhite borrows the orange-50 tint
    *   - status-green / status-greenBg share the functional green scale
    * ============================================ */
-  --color-primary: var(--op-primary-600);
+  --color-primary: var(--color-primary-600);
   --color-primary-teal: var(--color-primary-600);
   --color-primary-tealBlack: var(--color-primary-700);
   --color-primary-tealWhite: var(--color-primary-50);
   --color-teal: var(--color-primary-600);
   --color-teal-50: var(--color-primary-50);
   --color-teal-100: var(--color-primary-100);
-  --color-teal-200: var(--color-primary-100);
-  --color-teal-300: var(--color-primary-100);
+  --color-teal-200: var(--color-primary-200);
+  --color-teal-300: var(--color-primary-300);
+  --color-teal-400: var(--color-primary-400);
+  --color-teal-500: var(--color-primary-500);
+  --color-teal-600: var(--color-primary-600);
+  --color-teal-700: var(--color-primary-700);
+  --color-teal-800: var(--color-primary-800);
+  --color-teal-900: var(--color-primary-900);
+  --color-teal-950: var(--color-primary-950);
 
   --color-primary-yellow: var(--color-primary-yellow-500);
   --color-primary-orange1: var(--color-primary-orange-500);

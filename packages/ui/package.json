@@ -45,6 +45,7 @@
     "./NumberField": "./src/components/NumberField.tsx",
     "./OptionMenu": "./src/components/OptionMenu.tsx",
     "./Pagination": "./src/components/Pagination.tsx",
+    "./PhaseCard": "./src/components/PhaseCard.tsx",
     "./PhaseStepper": "./src/components/PhaseStepper.tsx",
     "./Popover": "./src/components/Popover.tsx",
     "./ProfileItem": "./src/components/ProfileItem.tsx",
