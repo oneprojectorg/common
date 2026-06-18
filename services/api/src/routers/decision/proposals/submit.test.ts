@@ -466,11 +466,16 @@ describe.concurrent('submitProposal', () => {
         'x-field-order': ['title', 'budget'],
         properties: {
           title: { type: 'string', 'x-format': 'short-text' },
+          // Mirror the schema the template builder (BudgetFieldConfig) actually
+          // produces: the `maximum` constraint lives on the money OBJECT, not on
+          // the nested `amount`. AJV only enforces `maximum` on numbers, so the
+          // validator must push the constraint down onto `amount`.
           budget: {
             type: 'object',
             'x-format': 'money',
+            maximum: 10000,
             properties: {
-              amount: { type: 'number', maximum: 10000 },
+              amount: { type: 'number' },
               currency: { type: 'string', default: 'USD' },
             },
           },

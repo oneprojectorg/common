@@ -1,8 +1,9 @@
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import type { JSONSchema7 } from 'json-schema';
+import type { JSONSchema7, JSONSchema7Definition } from 'json-schema';
 
 import { ValidationError } from '../../utils';
+import type { XFormatPropertySchema } from './types';
 
 export interface SchemaValidationResult {
   valid: boolean;
@@ -54,7 +55,7 @@ export class SchemaValidator {
    * Validate data against a JSON Schema
    */
   validate(schema: JSONSchema7, data: unknown): SchemaValidationResult {
-    const validate = this.ajv.compile(schema);
+    const validate = this.ajv.compile(this.normalizeMoneyConstraints(schema));
     const valid = validate(data);
 
     if (valid) {
@@ -124,6 +125,69 @@ export class SchemaValidator {
    */
   assertRubricData(rubricTemplate: JSONSchema7, rubricData: unknown): void {
     this.validateDataOrThrow(rubricTemplate, rubricData, 'Rubric');
+  }
+
+  /**
+   * Push money-field `minimum`/`maximum` constraints down onto the nested
+   * `amount` sub-property so Ajv actually enforces them.
+   *
+   * Money fields (`x-format: 'money'`) are stored as objects
+   * (`{ amount, currency }`), but the template builder and form renderer keep
+   * the budget cap on the *object* (`schema.maximum`). Ajv's `minimum`/`maximum`
+   * keywords only apply to numeric instances, so a cap left on the object is
+   * silently ignored — letting over-budget proposals pass validation. Moving
+   * the constraint onto the numeric `amount` makes Ajv enforce it.
+   */
+  private normalizeMoneyConstraints(schema: JSONSchema7): JSONSchema7 {
+    const properties = schema.properties;
+    if (!properties) {
+      return schema;
+    }
+
+    let changed = false;
+    const nextProperties: Record<string, JSONSchema7Definition> = {};
+
+    for (const [key, propSchema] of Object.entries(properties)) {
+      if (typeof propSchema !== 'object') {
+        nextProperties[key] = propSchema;
+        continue;
+      }
+
+      const xFormat = (propSchema as XFormatPropertySchema)['x-format'];
+      const hasNumericBound =
+        typeof propSchema.minimum === 'number' ||
+        typeof propSchema.maximum === 'number';
+
+      if (xFormat !== 'money' || !propSchema.properties || !hasNumericBound) {
+        nextProperties[key] = propSchema;
+        continue;
+      }
+
+      const { minimum, maximum, ...rest } = propSchema;
+      const amountSchema =
+        typeof propSchema.properties.amount === 'object'
+          ? propSchema.properties.amount
+          : { type: 'number' as const };
+
+      nextProperties[key] = {
+        ...rest,
+        properties: {
+          ...propSchema.properties,
+          amount: {
+            ...amountSchema,
+            ...(typeof minimum === 'number' ? { minimum } : {}),
+            ...(typeof maximum === 'number' ? { maximum } : {}),
+          },
+        },
+      };
+      changed = true;
+    }
+
+    if (!changed) {
+      return schema;
+    }
+
+    return { ...schema, properties: nextProperties };
   }
 
   /**
