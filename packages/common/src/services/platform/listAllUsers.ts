@@ -1,5 +1,4 @@
-import { GLOBAL_USER_IDS } from '@op/core';
-import { and, count, db, ilike, notInArray } from '@op/db/client';
+import { and, count, db, ilike } from '@op/db/client';
 import { users } from '@op/db/schema';
 import type { SQL } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
@@ -8,6 +7,7 @@ import {
   type SortDir,
   decodeCursor,
   encodeCursor,
+  excludeGlobalUsers,
   getGenericCursorCondition,
 } from '../../utils/db';
 
@@ -29,7 +29,6 @@ export const listAllUsers = async ({
 }) => {
   const decodedCursor = cursor ? decodeCursor(cursor) : undefined;
   const hasSearch = !!(query && query.length >= 2);
-  const sentinelIds = [...GLOBAL_USER_IDS];
 
   // Filter shared by the paginated query and the total count: exclude the
   // sentinel users and, when searching, match the email. The cursor condition
@@ -38,7 +37,7 @@ export const listAllUsers = async ({
     authUserId: AnyPgColumn;
     email: AnyPgColumn;
   }): SQL[] => {
-    const conds: SQL[] = [notInArray(table.authUserId, sentinelIds)];
+    const conds: SQL[] = [excludeGlobalUsers(table.authUserId)];
     if (hasSearch) {
       conds.push(ilike(table.email, `%${query}%`));
     }

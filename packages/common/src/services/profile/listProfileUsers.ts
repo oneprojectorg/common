@@ -7,6 +7,7 @@ import {
   type SortDir,
   decodeCursor,
   encodeCursor,
+  excludeGlobalUsers,
 } from '../../utils/db';
 import { assertProfile, assertProfileAdmin } from '../assert';
 import type {
@@ -125,7 +126,10 @@ export const listProfileUsers = async ({
   const cursorCondition = buildCursorCondition();
 
   // Combine all conditions
-  const baseCondition = eq(profileUsers.profileId, profileId);
+  const baseCondition = and(
+    eq(profileUsers.profileId, profileId),
+    excludeGlobalUsers(profileUsers.authUserId),
+  );
   const conditions = [baseCondition, searchFilter, cursorCondition].filter(
     Boolean,
   );
