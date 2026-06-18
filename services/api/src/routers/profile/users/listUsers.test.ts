@@ -1,3 +1,6 @@
+import { GLOBAL_USER_PUBLIC } from '@op/core';
+import { db, eq } from '@op/db/client';
+import { profileUsers } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -211,6 +214,52 @@ describe.concurrent('profile.users.listUsers', () => {
       expect(resultDesc.items[resultDesc.items.length - 1]?.email).toBe(
         adminUser.email,
       );
+    });
+  });
+
+  describe('global sentinel exclusion', () => {
+    it('should exclude the GLOBAL_USER_PUBLIC sentinel participant', async ({
+      task,
+      onTestFinished,
+    }) => {
+      const testData = new TestProfileUserDataManager(task.id, onTestFinished);
+      const { profile, adminUser, memberUsers } = await testData.createProfile({
+        users: { admin: 1, member: 1 },
+      });
+
+      // Simulate the public-access grant: a real profile_users row anchored on
+      // the GLOBAL_USER_PUBLIC sentinel (its auth.users + public.users rows are
+      // seeded by seedGlobalUsers). Without the notInArray filter this leaks as
+      // a ghost "Unknown" participant on the Manage Participants screen.
+      const [sentinelRow] = await db
+        .insert(profileUsers)
+        .values({
+          authUserId: GLOBAL_USER_PUBLIC,
+          profileId: profile.id,
+        })
+        .returning();
+
+      // Explicit cleanup in case the profile-cascade ordering changes.
+      onTestFinished(async () => {
+        if (sentinelRow) {
+          await db
+            .delete(profileUsers)
+            .where(eq(profileUsers.id, sentinelRow.id));
+        }
+      });
+
+      const { session } = await createIsolatedSession(adminUser.email);
+      const caller = createCaller(await createTestContextWithSession(session));
+
+      const result = await caller.listUsers({
+        profileId: profile.id,
+      });
+
+      // Only the two real members are returned; the sentinel is filtered out.
+      expect(result.items).toHaveLength(2);
+      const emails = result.items.map((u) => u.email);
+      expect(emails).toContain(adminUser.email);
+      expect(emails).toContain(memberUsers[0]?.email);
     });
   });
 

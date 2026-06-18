@@ -1,10 +1,21 @@
-import { SQL, and, eq, gt, lt, or, sql } from 'drizzle-orm';
-import { PgColumn } from 'drizzle-orm/pg-core';
+import { GLOBAL_USER_IDS } from '@op/core';
+import { SQL, and, eq, gt, lt, notInArray, or, sql } from 'drizzle-orm';
+import { AnyPgColumn, PgColumn } from 'drizzle-orm/pg-core';
 
 import { CommonError } from './error';
 
 /** Standard sort direction type for database queries */
 export type SortDir = 'asc' | 'desc';
+
+/**
+ * Excludes the global access-control sentinel users (e.g. GLOBAL_USER_PUBLIC)
+ * from a user/member listing. The public-access grant is anchored on real
+ * `users` / `profile_users` rows for these sentinels, so any query that
+ * surfaces those rows to people (or counts them) must drop them or they leak
+ * as ghost participants. Pass the query's `authUserId` column.
+ */
+export const excludeGlobalUsers = (authUserIdColumn: AnyPgColumn): SQL =>
+  notInArray(authUserIdColumn, [...GLOBAL_USER_IDS]);
 
 /** Generic paginated result type for cursor-based pagination */
 export type PaginatedResult<T> = {
