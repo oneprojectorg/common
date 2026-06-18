@@ -17,8 +17,7 @@ interface ProposalViewToggleProps {
 /**
  * Desktop-only segmented control switching the proposals list between the grid
  * and the map browse view, built on the shared `ButtonGroup` (selected/unselected
- * colors come from its `aria-pressed` styling). The Figma toggle has a third
- * "list" option that we intentionally omit — only grid and map are offered.
+ * colors come from its `aria-pressed` styling).
  */
 export function ProposalViewToggle({
   value,
