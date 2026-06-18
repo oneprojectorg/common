@@ -56,6 +56,7 @@
     "./RequiredAsterisk": "./src/components/RequiredAsterisk.tsx",
     "./StatusDot": "./src/components/StatusDot.tsx",
     "./RichTextEditor": "./src/components/RichTextEditor/index.ts",
+    "./RichTextEditor/editorConfig": "./src/components/RichTextEditor/editorConfig.ts",
     "./Sortable": "./src/components/Sortable/index.ts",
     "./SplitPane": "./src/components/SplitPane.tsx",
     "./Surface": "./src/components/Surface.tsx",
