@@ -32,7 +32,7 @@ export const DecisionActionBar = ({
   const { createProposal: handleCreateProposal, isCreating } =
     useCreateProposal({
       instanceId,
-      getRedirectHref: (proposal) =>
+      navigateTo: (proposal) =>
         `/decisions/${slug}/proposal/${proposal.profileId}/edit`,
     });
 

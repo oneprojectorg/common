@@ -19,11 +19,11 @@ import { useRouter, useTranslations } from '@/lib/i18n';
  */
 export function useCreateProposal({
   instanceId,
-  getRedirectHref,
+  navigateTo,
 }: {
   instanceId: string;
   /** Builds the post-create destination from the new draft proposal. */
-  getRedirectHref: (proposal: { profileId: string }) => string;
+  navigateTo: (proposal: { profileId: string }) => string;
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -58,7 +58,7 @@ export function useCreateProposal({
           proposalData: {}, // Empty draft - user will fill in via edit page
         });
 
-        router.push(getRedirectHref(proposal));
+        router.push(navigateTo(proposal));
       } catch (error) {
         toast.error({
           title: t('Failed to create proposal'),
