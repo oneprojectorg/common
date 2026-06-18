@@ -1259,6 +1259,7 @@
   "These {numProposals} proposals will move on to the {phaseName} phase": "{numProposals, plural, one {Cette # proposition passera à la phase {phaseName}} other {Ces # propositions passeront à la phase {phaseName}}}",
   "PROPOSALS TO ADVANCE": "PROPOSITIONS À FAIRE AVANCER",
   "Advance": "Avancer",
+  "Now open!": "Ouvert maintenant !",
   "Advancing": "En cours",
   "Advance proposal": "Faire avancer la proposition",
   "Advancing proposal": "Proposition en cours",
