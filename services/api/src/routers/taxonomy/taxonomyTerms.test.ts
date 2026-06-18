@@ -26,12 +26,11 @@ describeAccessTierGating('taxonomy.getTerms', {
   ),
 
   userJwt: accessTierGatingCell(
-    'rejects user-JWT caller',
+    'admits user-JWT caller',
     async ({ callers }) => {
       const caller = await callers.userJwt();
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.taxonomy.getTerms({ name: 'xxx' }),
-        'user',
       );
     },
   ),
