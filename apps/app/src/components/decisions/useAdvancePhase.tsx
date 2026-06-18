@@ -15,7 +15,7 @@ import { useRouter, useTranslations } from '@/lib/i18n';
 interface UseAdvancePhaseArgs {
   instanceId?: string;
   /** Phase the process is currently in (the one being advanced out of). */
-  currentStateId: string;
+  currentPhaseId: string;
   /** Phase the process advances into. Undefined when there is no next phase. */
   nextPhaseId?: string;
   /** Translated names used in the confirmation copy. */
@@ -42,7 +42,7 @@ interface UseAdvancePhaseResult {
  */
 export function useAdvancePhase({
   instanceId,
-  currentStateId,
+  currentPhaseId,
   nextPhaseId,
   currentPhaseName,
   nextPhaseName,
@@ -72,13 +72,13 @@ export function useAdvancePhase({
   const getTrackingProps = useCallback(
     () => ({
       process_instance_id: instanceId,
-      from_phase_id: currentStateId,
+      from_phase_id: currentPhaseId,
       to_phase_id: nextPhaseId,
       before_end_date: currentPhaseEndDate
         ? isBeforeEndOfDayLocal(new Date(), currentPhaseEndDate)
         : null,
     }),
-    [instanceId, currentStateId, nextPhaseId, currentPhaseEndDate],
+    [instanceId, currentPhaseId, nextPhaseId, currentPhaseEndDate],
   );
 
   const requestAdvance = useCallback(() => {
@@ -94,7 +94,7 @@ export function useAdvancePhase({
     transitionInitiatedRef.current = true;
     transitionMutation.mutate({
       instanceId,
-      fromPhaseId: currentStateId,
+      fromPhaseId: currentPhaseId,
     });
   };
 

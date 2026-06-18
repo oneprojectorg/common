@@ -59,7 +59,7 @@ export function DecisionProcessStepper({
 
   const { requestAdvance, advanceConfirm } = useAdvancePhase({
     instanceId,
-    currentStateId,
+    currentPhaseId: currentStateId,
     nextPhaseId,
     currentPhaseName,
     nextPhaseName,
