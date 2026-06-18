@@ -1,5 +1,6 @@
 'use client';
 
+import { match } from '@op/core';
 import { Link } from 'react-aria-components';
 import { LuArrowRight, LuCheck, LuPlay } from 'react-icons/lu';
 
@@ -35,18 +36,16 @@ export interface PhaseCardProps {
  * advanceable.
  */
 export function PhaseCard(props: PhaseCardProps) {
-  switch (props.state) {
-    case 'completed':
-      return <CompletedPhaseCard {...props} />;
-    case 'current':
-      return <CurrentPhaseCard {...props} />;
-    case 'upcoming':
-      return props.isAdvanceable ? (
+  return match(props.state, {
+    completed: () => <CompletedPhaseCard {...props} />,
+    current: () => <CurrentPhaseCard {...props} />,
+    upcoming: () =>
+      props.isAdvanceable ? (
         <AdvanceablePhaseCard {...props} />
       ) : (
         <UpcomingPhaseCard {...props} />
-      );
-  }
+      ),
+  });
 }
 
 /** Fields shared by every treatment. */
