@@ -3,7 +3,7 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
-import { type ReactNode } from 'react';
+import { type ReactNode, Suspense } from 'react';
 
 import { getServerFeatureFlag } from '@/lib/getServerFeatureFlag';
 import { redirect } from '@/lib/i18n/routing';
@@ -60,10 +60,19 @@ const DecisionViewLayout = async ({
           centerSlot={<DecisionViewToggle decisionSlug={slug} />}
         />
         {children}
-        <DecisionSidePanel
-          decisionProfileId={decisionProfile.id}
-          access={access}
-        />
+        {/*
+         * Like the header's updates toggle, the side panel reads the `panel`
+         * search param (nuqs/useSearchParams). It lives in this layout, which
+         * Next prerenders as the route's static shell (see loading.tsx), so the
+         * read would happen outside a request scope and throw. Suspense defers
+         * it out of the shell; the panel is closed by default, so null fallback.
+         */}
+        <Suspense fallback={null}>
+          <DecisionSidePanel
+            decisionProfileId={decisionProfile.id}
+            access={access}
+          />
+        </Suspense>
       </DecisionTranslationProvider>
     </HydrationBoundary>
   );
