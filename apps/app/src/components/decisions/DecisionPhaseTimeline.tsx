@@ -55,7 +55,7 @@ export function DecisionPhaseTimeline({
 
   const { requestAdvance, advanceConfirm } = useAdvancePhase({
     instanceId,
-    currentStateId,
+    currentPhaseId: currentStateId,
     nextPhaseId,
     currentPhaseName: currentPhase ? phaseName(currentPhase) : '',
     nextPhaseName: nextPhase ? phaseName(nextPhase) : '',
