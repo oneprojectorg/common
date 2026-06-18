@@ -29,122 +29,111 @@ export interface PhaseCardProps {
 }
 
 /**
- * A single phase row in the decision Overview timeline. Renders one of four
- * treatments by `state` (+ the `isAdvanceable` flag):
- *
- * - completed: compact, green rail + check + dates + name
- * - current: filled teal card linking to `href`, dates + optional "Now open!"
- *   tag + name + arrow
- * - upcoming: compact, gray rail + dates + name
- * - upcoming + advanceable: off-white card with an Advance button
- *
- * Presentational only and self-contained as an `<li>`; the consumer owns the
- * `<ol>`, the completed/current/upcoming derivation, and which phase is now
- * open or advanceable.
+ * A single phase row (`<li>`) in the decision Overview timeline. Dispatches to
+ * one of four self-contained treatments; the consumer owns the `<ol>`, the
+ * completed/current/upcoming derivation, and which phase is now open or
+ * advanceable.
  */
-export function PhaseCard({
+export function PhaseCard(props: PhaseCardProps) {
+  switch (props.state) {
+    case 'completed':
+      return <CompletedPhaseCard {...props} />;
+    case 'current':
+      return <CurrentPhaseCard {...props} />;
+    case 'upcoming':
+      return props.isAdvanceable ? (
+        <AdvanceablePhaseCard {...props} />
+      ) : (
+        <UpcomingPhaseCard {...props} />
+      );
+  }
+}
+
+/** Fields shared by every treatment. */
+type PhaseContentProps = Pick<
+  PhaseCardProps,
+  'name' | 'startDate' | 'endDate' | 'locale' | 'className'
+>;
+
+/** Completed: compact, green rail + check + dates + name. */
+const CompletedPhaseCard = ({
   name,
   startDate,
   endDate,
   locale,
-  state,
+  className,
+}: PhaseContentProps) => (
+  <li
+    className={cn(
+      'flex flex-col gap-2 border-l border-functional-green-100 px-4 py-2',
+      className,
+    )}
+  >
+    <div className="flex items-center gap-2">
+      <span className="flex size-4 items-center justify-center rounded-full bg-functional-greenWhite text-functional-green">
+        <LuCheck className="size-3" aria-hidden />
+      </span>
+      <PhaseDates
+        startDate={startDate}
+        endDate={endDate}
+        locale={locale}
+        className="text-neutral-charcoal"
+      />
+    </div>
+    <PhaseName name={name} className="text-neutral-black" />
+  </li>
+);
+
+/** Current: filled teal card linking to `href`, optional "Now open!" tag + arrow. */
+const CurrentPhaseCard = ({
+  name,
+  startDate,
+  endDate,
+  locale,
   className,
   isNowOpen,
   nowOpenLabel = 'Now open!',
-  isAdvanceable,
+  href,
+}: PhaseContentProps &
+  Pick<PhaseCardProps, 'isNowOpen' | 'nowOpenLabel' | 'href'>) => (
+  <li className={className}>
+    <Link
+      href={href}
+      className="flex items-center justify-between gap-4 rounded-xl bg-primary-100 p-4 text-primary-tealBlack transition hover:bg-primary-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+    >
+      <div className="flex min-w-0 flex-col gap-4">
+        <div className="flex items-center gap-4">
+          <PhaseDates startDate={startDate} endDate={endDate} locale={locale} />
+          {isNowOpen ? (
+            <Chip className="bg-primary-tealBlack px-1.5 py-0.75 text-sm text-neutral-offWhite">
+              {nowOpenLabel}
+            </Chip>
+          ) : null}
+        </div>
+        <PhaseName name={name} />
+      </div>
+      <LuArrowRight className="size-4 shrink-0" aria-hidden />
+    </Link>
+  </li>
+);
+
+/** Upcoming + advanceable: off-white card with an Advance button. */
+const AdvanceablePhaseCard = ({
+  name,
+  startDate,
+  endDate,
+  locale,
+  className,
   advanceLabel = 'Advance',
   onAdvance,
-  href,
-}: PhaseCardProps) {
-  if (state === 'completed') {
-    return (
-      <li
-        className={cn(
-          'flex flex-col gap-2 border-l border-functional-green-100 px-4 py-2',
-          className,
-        )}
-      >
-        <div className="flex items-center gap-2">
-          <span className="flex size-4 items-center justify-center rounded-full bg-functional-greenWhite text-functional-green">
-            <LuCheck className="size-3" aria-hidden />
-          </span>
-          <PhaseDates
-            startDate={startDate}
-            endDate={endDate}
-            locale={locale}
-            className="text-neutral-charcoal"
-          />
-        </div>
-        <PhaseName name={name} className="text-neutral-black" />
-      </li>
-    );
-  }
-
-  if (state === 'current') {
-    return (
-      <li className={className}>
-        <Link
-          href={href}
-          className="flex items-center justify-between gap-4 rounded-xl bg-primary-100 p-4 text-primary-tealBlack transition hover:bg-primary-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        >
-          <div className="flex min-w-0 flex-col gap-4">
-            <div className="flex items-center gap-4">
-              <PhaseDates
-                startDate={startDate}
-                endDate={endDate}
-                locale={locale}
-              />
-              {isNowOpen ? (
-                <Chip className="bg-primary-tealBlack px-1.5 py-0.75 text-sm text-neutral-offWhite">
-                  {nowOpenLabel}
-                </Chip>
-              ) : null}
-            </div>
-            <PhaseName name={name} />
-          </div>
-          <LuArrowRight className="size-4 shrink-0" aria-hidden />
-        </Link>
-      </li>
-    );
-  }
-
-  // upcoming
-  if (isAdvanceable) {
-    return (
-      <li
-        className={cn(
-          'flex items-center justify-between gap-4 rounded-xl bg-neutral-offWhite p-4',
-          className,
-        )}
-      >
-        <div className="flex min-w-0 flex-col gap-2">
-          <PhaseDates
-            startDate={startDate}
-            endDate={endDate}
-            locale={locale}
-            className="text-neutral-charcoal"
-          />
-          <PhaseName name={name} className="text-neutral-black" />
-        </div>
-        <Button
-          color="secondary"
-          onPress={() => onAdvance?.()}
-          className="shrink-0"
-        >
-          <LuPlay className="size-4" aria-hidden />
-          {advanceLabel}
-        </Button>
-      </li>
-    );
-  }
-
-  return (
-    <li
-      className={cn(
-        'flex flex-col gap-2 border-l border-neutral-gray1 px-4 py-2',
-        className,
-      )}
-    >
+}: PhaseContentProps & Pick<PhaseCardProps, 'advanceLabel' | 'onAdvance'>) => (
+  <li
+    className={cn(
+      'flex items-center justify-between gap-4 rounded-xl bg-neutral-offWhite p-4',
+      className,
+    )}
+  >
+    <div className="flex min-w-0 flex-col gap-2">
       <PhaseDates
         startDate={startDate}
         endDate={endDate}
@@ -152,9 +141,41 @@ export function PhaseCard({
         className="text-neutral-charcoal"
       />
       <PhaseName name={name} className="text-neutral-black" />
-    </li>
-  );
-}
+    </div>
+    <Button
+      color="secondary"
+      onPress={() => onAdvance?.()}
+      className="shrink-0"
+    >
+      <LuPlay className="size-4" aria-hidden />
+      {advanceLabel}
+    </Button>
+  </li>
+);
+
+/** Upcoming: compact, gray rail + dates + name. */
+const UpcomingPhaseCard = ({
+  name,
+  startDate,
+  endDate,
+  locale,
+  className,
+}: PhaseContentProps) => (
+  <li
+    className={cn(
+      'flex flex-col gap-2 border-l border-neutral-gray1 px-4 py-2',
+      className,
+    )}
+  >
+    <PhaseDates
+      startDate={startDate}
+      endDate={endDate}
+      locale={locale}
+      className="text-neutral-charcoal"
+    />
+    <PhaseName name={name} className="text-neutral-black" />
+  </li>
+);
 
 const PhaseDates = ({
   startDate,
