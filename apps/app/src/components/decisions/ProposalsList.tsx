@@ -19,6 +19,7 @@ import {
   isVotingEligible,
   templateCollectsLocation,
 } from '@op/common/client';
+import { useIntersectionObserver } from '@op/hooks';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
@@ -900,21 +901,40 @@ export const ProposalsList = ({
 
   const hideFilters = proposalsHidden && !canManageProposals;
 
+  // The filter bar pins at top-14 (56px). A zero-height sentinel at its natural
+  // top is observed against the viewport shrunk by that offset; once the
+  // sentinel scrolls past it the bar is pinned. initialIsIntersecting avoids a
+  // one-frame "stuck" flash on mount. Drives the full-width borders in CSS via
+  // data-stuck (see .proposals-filter-bar in shared-styles.css).
+  const { ref: filterSentinelRef, isIntersecting } =
+    useIntersectionObserver<HTMLDivElement>({
+      rootMargin: '-56px 0px 0px 0px',
+      initialIsIntersecting: true,
+    });
+  const isFilterBarStuck = !isIntersecting;
+
   return (
     <div
       className={cn(
-        'proposals-filter-scope flex flex-col gap-6 pb-12',
+        'relative flex flex-col gap-6 pb-12',
         // On mobile the map view is edge-to-edge and flush to the bottom.
         isMapMode && 'max-sm:pb-0',
       )}
     >
-      {/* Sentinel marking the filter bar's pre-pin top — drives the CSS-only
-          "stuck" detection (see .proposals-filter-* in shared-styles.css). */}
-      <div aria-hidden className="proposals-filter-sentinel" />
+      {/* Sentinel at the filter bar's pre-pin top — drives the JS "stuck"
+          detection that toggles data-stuck on the bar below. */}
+      <div
+        ref={filterSentinelRef}
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-px"
+      />
       {/* Filters Bar — sticks beneath the decision nav while the list/map
           scroll under it (the process banner scrolls away above). Once pinned,
           its border extends to full page width via .proposals-filter-bar. */}
-      <div className="proposals-filter-bar sticky top-14 z-20 flex flex-wrap items-center justify-between gap-4 border-b border-neutral-gray1 bg-white py-3">
+      <div
+        data-stuck={isFilterBarStuck || undefined}
+        className="proposals-filter-bar sticky top-14 z-20 flex flex-wrap items-center justify-between gap-4 border-b border-neutral-gray1 bg-white py-3"
+      >
         <div className="flex items-center gap-4">
           <span className="font-serif text-title-base text-neutral-black">
             {hideFilters ? (

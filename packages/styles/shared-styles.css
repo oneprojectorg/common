@@ -673,74 +673,41 @@
  * the (full-width) decision nav we want its bottom border to span the page and
  * a matching top line to stand in for the nav's now-occluded border.
  *
- * CSS-only "stuck" detection via scroll-driven animations: a zero-height
- * sentinel at the bar's pre-pin top defines a view-timeline; the bar runs a
- * steps animation on it that flips --proposals-filter-stuck 0 -> 1 exactly when
- * it pins. Two full-bleed pseudo-elements consume that as their opacity.
- *
- * Wrapped in @supports so browsers without animation-timeline (e.g. Safari/iOS)
- * keep the in-flow content-width border instead of falling back to a time-based
- * timeline (which would jump straight to the pinned state).
+ * "Stuck" is detected in JS (IntersectionObserver on a sentinel) which toggles
+ * data-stuck on the bar; these full-bleed 1px lines react to it — ::after
+ * extends the bar's border to the page edges, ::before stands in for the nav's
+ * border at the seam. Anchored to the bar (position: sticky => positioned).
  * ============================================ */
 
-@supports (animation-timeline: scroll()) {
-  @property --proposals-filter-stuck {
-    syntax: "<number>";
-    inherits: true;
-    initial-value: 0;
-  }
+.proposals-filter-bar::before,
+.proposals-filter-bar::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+}
 
-  @keyframes proposals-filter-stuck {
-    to {
-      --proposals-filter-stuck: 1;
-    }
-  }
+.proposals-filter-bar[data-stuck="true"]::before,
+.proposals-filter-bar[data-stuck="true"]::after {
+  opacity: 1;
+}
 
-  .proposals-filter-scope {
-    position: relative;
-    timeline-scope: --proposals-filter-sentinel;
-  }
+.proposals-filter-bar::before {
+  /* Stand-in for the nav's bottom border, which the pinned bar overlaps by ~1px
+     and so masks in the content column. Sits at the bar's top edge (top: 0) so
+     it coincides with the real nav border still showing at the page edges —
+     otherwise the two lines render 1px apart as a double border. */
+  top: 0;
+  border-top: 1px solid var(--color-neutral-gray-1);
+}
 
-  /* Marker at the bar's natural (pre-pin) top. Absolute so it adds no flex gap
-     yet still scrolls with the document. */
-  .proposals-filter-sentinel {
-    position: absolute;
-    top: 0;
-    inset-inline: 0;
-    height: 1px;
-    view-timeline: --proposals-filter-sentinel block;
-    view-timeline-inset: 3.5rem auto; /* matches the bar's top-14 (56px) */
-  }
-
-  .proposals-filter-bar {
-    animation: proposals-filter-stuck steps(1, jump-start) both;
-    animation-timeline: --proposals-filter-sentinel;
-    animation-range: exit; /* fires as the sentinel clears the inset top edge */
-  }
-
-  /* Full-width lines, anchored to the (sticky => positioned) bar. */
-  .proposals-filter-bar::before,
-  .proposals-filter-bar::after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    width: 100vw;
-    transform: translateX(-50%);
-    opacity: var(--proposals-filter-stuck);
-    pointer-events: none;
-  }
-
-  .proposals-filter-bar::before {
-    /* stand-in for the nav's occluded bottom border */
-    top: -1px;
-    border-top: 1px solid var(--color-neutral-gray-1);
-  }
-
-  .proposals-filter-bar::after {
-    /* full-width bottom border */
-    bottom: -1px;
-    border-bottom: 1px solid var(--color-neutral-gray-1);
-  }
+.proposals-filter-bar::after {
+  /* full-width bottom border */
+  bottom: -1px;
+  border-bottom: 1px solid var(--color-neutral-gray-1);
 }
 
 /* ============================================
