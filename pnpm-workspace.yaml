@@ -24,6 +24,10 @@ catalog:
   '@tiptap/pm': ^3.15.3
   '@tiptap/react': ^3.15.3
   '@tiptap/starter-kit': ^3.15.3
+  # Pinned exact to match the resolved tiptap suite (3.17.1): static-renderer's
+  # peerDeps demand an exact core/pm match, and a caret floats it to a newer
+  # major-minor that skews against the suite. Bump in lockstep with the suite.
+  '@tiptap/static-renderer': 3.17.1
   '@tiptap/extension-blockquote': ^3.15.3
   '@tiptap/extension-bubble-menu': ^3.15.3
   '@tiptap/extension-bullet-list': ^3.15.3
