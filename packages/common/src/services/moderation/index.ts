@@ -11,6 +11,7 @@ export * from './moderationVisibility';
 export * from './provider';
 export * from './recordModerationVerdict';
 export * from './resolveModeration';
+export * from './resolveModerationItemText';
 export * from './resolveModerationMedia';
 export * from './reviewContentAsync';
 export * from './submissionAggregate';

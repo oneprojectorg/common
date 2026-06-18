@@ -213,7 +213,13 @@ export const createLassoProvider = ({
     const payload = lassoWebhookSchema.parse(JSON.parse(rawBody));
     const verdicts: ModerationVerdict[] = [];
     for (const action of payload.actions) {
+      // Lasso batches many action kinds per delivery; we only derive verdicts
+      // from content status changes. Log the rest at debug so unexpected
+      // payload shapes are visible without alarming on the routine ones.
       if (action.action_type !== 'ChangeStatus' || action.type !== 'content') {
+        console.debug(
+          `[lasso] skipping non-content-status action: action_type=${action.action_type} type=${action.type}`,
+        );
         continue;
       }
       const contentId = action.content?.id ?? action.id;
