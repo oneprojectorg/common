@@ -16,7 +16,12 @@ export type JsonSchema = JSONSchema7;
  * properties. Describes **how** a field should be presented/coerced, while
  * JSON Schema keywords (`type`, `enum`, etc.) describe the data shape.
  */
-export type XFormat = 'short-text' | 'long-text' | 'money' | 'dropdown';
+export type XFormat =
+  | 'short-text'
+  | 'long-text'
+  | 'text'
+  | 'money'
+  | 'dropdown';
 
 /** JSON Schema 7 property extended with `x-format` vendor extension. */
 export interface XFormatPropertySchema extends JSONSchema7 {

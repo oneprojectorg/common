@@ -167,7 +167,7 @@ export function TemplateEditorContent({
       {
         id: 'title',
         label: t('Proposal title'),
-        fieldType: 'short_text' as const,
+        fieldType: 'text' as const,
       },
       ...(hasCategories
         ? [

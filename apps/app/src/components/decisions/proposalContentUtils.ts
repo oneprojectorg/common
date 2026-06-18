@@ -13,7 +13,7 @@ import { type JSONContent, generateText } from '@tiptap/core';
 type DocumentContent = NonNullable<Proposal['documentContent']>;
 
 /** `x-format` values that represent rich-text editor content suitable for preview. */
-const TEXT_FORMATS = new Set<XFormat>(['short-text', 'long-text']);
+const TEXT_FORMATS = new Set<XFormat>(['short-text', 'long-text', 'text']);
 
 /**
  * Extracts a plain-text preview from proposal document content.

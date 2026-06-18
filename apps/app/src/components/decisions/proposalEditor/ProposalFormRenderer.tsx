@@ -279,7 +279,8 @@ function renderField(
 
   switch (format) {
     case 'short-text':
-    case 'long-text': {
+    case 'long-text':
+    case 'text': {
       const placeholder = t('Start typing...');
 
       if (isReadonlyMode) {
@@ -292,7 +293,7 @@ function renderField(
               mode === 'preview-version' ? (previewContent ?? null) : null
             }
             placeholder={placeholder}
-            multiline={format === 'long-text'}
+            multiline={format !== 'short-text'}
           />
         );
       }
@@ -304,7 +305,7 @@ function renderField(
           required={field.required}
           description={schema.description}
           placeholder={placeholder}
-          multiline={format === 'long-text'}
+          multiline={format !== 'short-text'}
           maxLength={schema.maxLength}
           onChange={(html) => onFieldChange(key, html)}
           onEditorFocus={onEditorFocus}
