@@ -50,10 +50,12 @@ export async function validateProposalAgainstTemplate(
     };
 
     schemaValidator.assertProposalData(proposalTemplate, validationData);
-  } else {
-    schemaValidator.assertProposalData(proposalTemplate, {
-      ...storedProposalData,
-      ...(shouldInjectTitle ? { title } : {}),
-    });
+    return;
   }
+
+  const legacyData = {
+    ...storedProposalData,
+    ...(shouldInjectTitle ? { title } : {}),
+  };
+  schemaValidator.assertProposalData(proposalTemplate, legacyData);
 }

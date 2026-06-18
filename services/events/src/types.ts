@@ -2,7 +2,30 @@ import { ProposalFilter } from '@op/core';
 import { ProposalStatus } from '@op/db/schema';
 import { z } from 'zod';
 
+// Mirrors the db `moderation_item_type` enum values; kept as a plain string
+// union so it flows cleanly through the service layer without enum coercion.
+const moderationItemType = z.enum(['proposal', 'post', 'user']);
+
 export const Events = {
+  // Carries only the item ref: the workflow resolves the item's current text
+  // and attachments itself at review time. Snapshotting content into the
+  // event was wrong for collab-doc proposals (their prose lives in TipTap
+  // fragments, not proposalData) and would review stale text after edits.
+  contentSubmitted: {
+    name: 'content/submitted' as const,
+    schema: z.object({
+      itemType: moderationItemType,
+      itemId: z.string().uuid(),
+    }),
+  },
+  contentFlagged: {
+    name: 'content/flagged' as const,
+    schema: z.object({
+      itemType: moderationItemType,
+      itemId: z.string().uuid(),
+      moderationFlagId: z.string().uuid(),
+    }),
+  },
   postReactionAdded: {
     name: 'post/reaction-added' as const,
     schema: z.object({

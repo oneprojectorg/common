@@ -72,6 +72,28 @@ export const getResourceSignedUrl = async (
   });
 };
 
+// External services (e.g. the moderation provider) fetch on their own
+// schedule — possibly hours after submission and across our retries — so the
+// 15-min read URLs above would routinely expire under them. 24h matches the
+// attachment-signing TTL used elsewhere (e.g. getProposal).
+const EXTERNAL_SIGNED_URL_TTL_SECONDS = 24 * 60 * 60;
+
+/** Uncached, long-lived signed URL for handing to an external service. Not
+ *  for list views — use {@link getResourceSignedUrl} there, where the cache
+ *  prevents per-row sign requests. */
+export const getExternalResourceSignedUrl = async (
+  filePath: string,
+): Promise<string | null> => {
+  const { data, error } = await supabase()
+    .storage.from(STORAGE_BUCKET)
+    .createSignedUrl(filePath, EXTERNAL_SIGNED_URL_TTL_SECONDS);
+
+  if (error || !data?.signedUrl) {
+    return null;
+  }
+  return data.signedUrl;
+};
+
 export const deleteResourceObject = async (filePath: string): Promise<void> => {
   const sb = supabase();
   const { error } = await sb.storage.from(STORAGE_BUCKET).remove([filePath]);

@@ -5,20 +5,14 @@ import type { Column, SQL } from 'drizzle-orm';
 import type { ModerationItemType } from './types';
 
 /**
- * Flag statuses that hide an item from general reads: the provider deemed it
- * disallowed (`flagged`), an admin upheld that (`confirmed`), or the owner
- * contested it but the verdict still stands while awaiting admin review
- * (`disputed`). `disputed` keeps hiding because a flag only reaches it after
- * the item was already deemed inappropriate — contesting must not surface the
- * item again until an admin clears it. A `pending` user report doesn't hide
- * anything (the verdict isn't in), and `dismissed` flags are resolved in the
- * item's favor.
+ * Flag statuses that hide an item from general reads — only a *passed verdict*:
+ * the provider deemed it disallowed (`flagged`) or an admin upheld that
+ * (`confirmed`). Everything else stays visible: a `pending` user report (the
+ * verdict isn't in yet), a `disputed` flag (the owner contested it, so it's
+ * back in question and surfaces again until an admin re-rules), and a
+ * `dismissed` flag (resolved in the item's favor).
  */
-export const HIDING_MODERATION_STATUSES = [
-  'flagged',
-  'confirmed',
-  'disputed',
-] as const;
+export const HIDING_MODERATION_STATUSES = ['flagged', 'confirmed'] as const;
 
 /**
  * SQL condition: the row has no active (hiding) moderation flag. Embeds a

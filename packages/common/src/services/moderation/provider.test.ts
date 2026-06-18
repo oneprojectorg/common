@@ -29,12 +29,13 @@ describe('getModerationProvider', () => {
     expect(getModerationProvider()).toBeNull();
   });
 
-  it('builds a hive provider (pure classifier, no submitForReview)', () => {
+  it('builds a hive provider with async review (Moderation Dashboard)', () => {
     process.env.MODERATION_PROVIDER = 'hive';
     process.env.MODERATION_API_KEY = 'k';
     const provider = getModerationProvider();
     expect(provider).not.toBeNull();
-    expect(provider!.submitForReview).toBeUndefined();
+    expect(provider!.submitForReview).toBeInstanceOf(Function);
+    expect(provider!.parseWebhook).toBeInstanceOf(Function);
   });
 
   it('builds a lasso provider with submitForReview', () => {
