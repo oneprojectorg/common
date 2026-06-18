@@ -10,12 +10,11 @@ import {
   proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import { checkPermission, permission } from 'access-zones';
+import { type NormalizedRole, checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
 import { UnauthorizedError } from '../../utils';
 import {
-  type ProfileUserWithNormalizedRoles,
   assertInstanceProfileAccess,
   getCurrentProfileId,
   resolveAccessUserIds,
@@ -249,13 +248,13 @@ export const listProposals = async ({
   // only on the instance row (already fetched), so there's no ordering
   // dependency — the auth check still throws on failure, just slightly later.
   const accessPromise: Promise<{
-    profileUser: ProfileUserWithNormalizedRoles | undefined;
+    profileRoles: NormalizedRole[];
     canManageProposals: boolean;
   }> = (async () => {
     if (skipAccessCheck) {
-      return { profileUser: undefined, canManageProposals: false };
+      return { profileRoles: [], canManageProposals: false };
     }
-    const profileUser = await assertInstanceProfileAccess({
+    const profileRoles = await assertInstanceProfileAccess({
       user,
       instance,
       profilePermissions: [
@@ -268,17 +267,17 @@ export const listProposals = async ({
       ],
     });
     return {
-      profileUser,
+      profileRoles,
       canManageProposals: checkPermission(
         { profile: permission.ADMIN },
-        profileUser?.roles ?? [],
+        profileRoles,
       ),
     };
   })();
 
   const [
     { phaseProposalIds, phaseDraftIds },
-    { profileUser, canManageProposals },
+    { profileRoles, canManageProposals },
   ] = await Promise.all([phaseIdsPromise, accessPromise]);
 
   // For trusted contexts (skipAccessCheck), drafts are never returned and phase
@@ -527,7 +526,7 @@ export const listProposals = async ({
 
   const hasAdminPermission = checkPermission(
     { profile: permission.ADMIN },
-    profileUser?.roles ?? [],
+    profileRoles,
   );
 
   const proposalsWithCounts = proposalList.map((proposal: ProposalListItem) => {

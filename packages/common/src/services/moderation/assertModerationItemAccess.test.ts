@@ -51,7 +51,9 @@ beforeEach(() => {
   vi.mocked(hasActiveModerationFlag).mockResolvedValue(false);
   vi.mocked(getProfileAccessUser).mockResolvedValue(undefined);
   vi.mocked(assertProfileTypeAccess).mockResolvedValue(undefined);
-  vi.mocked(assertInstanceProfileAccess).mockResolvedValue(undefined as never);
+  // assertInstanceProfileAccess now returns the caller's instance roles
+  // (NormalizedRole[]) directly — no instance-admin grant by default.
+  vi.mocked(assertInstanceProfileAccess).mockResolvedValue([]);
   postsToProfilesFindMany.mockResolvedValue([] as never);
 });
 

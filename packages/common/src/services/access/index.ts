@@ -230,6 +230,26 @@ export const getProfileAccessUser = memoize(
 );
 
 /**
+ * Resolve the caller's *effective* normalized roles on a profile — their own
+ * grant unioned with any public grant — without leaking the join-table identity
+ * row. This is the honest shape for an access decision: roles are an aggregate
+ * (own ∪ public), so they describe what the caller may do regardless of who
+ * they are. Empty when no grant (own or public) matched, so `roles.length > 0`
+ * is exactly the old `Boolean(getProfileAccessUser(...))` presence check.
+ *
+ * No org fallback — for org-profile lookups that should fall back to org-level
+ * grants, use {@link getProfileAccessRolesWithOrgFallback} instead.
+ */
+export const getProfileAccessRoles = async ({
+  user,
+  profileId,
+}: {
+  user?: AccessUser;
+  profileId: string;
+}): Promise<NormalizedRole[]> =>
+  (await getProfileAccessUser({ user, profileId }))?.roles ?? [];
+
+/**
  * Resolve the caller's normalized roles on a profile, falling back to their
  * org-level roles when that profile is an organization's profile. The same
  * built-in-fallback shape as `assertInstanceProfileAccess` /
@@ -283,7 +303,7 @@ export const assertInstanceProfileAccess = async ({
   instance: { profileId: string | null; ownerProfileId: string | null };
   profilePermissions: AccessZonePermissionInput;
   orgFallbackPermissions: AccessZonePermissionInput;
-}): Promise<ProfileUserWithNormalizedRoles | undefined> => {
+}): Promise<NormalizedRole[]> => {
   if (!instance.profileId) {
     throw new UnauthorizedError("You don't have access to do this");
   }
@@ -322,7 +342,10 @@ export const assertInstanceProfileAccess = async ({
     }
   }
 
-  return profileUser;
+  // The caller's profile-level roles (empty when they have no profile grant and
+  // were admitted via the org fallback above). Roles only — never the
+  // identity row, which could be the GLOBAL_USER_PUBLIC sentinel's.
+  return profileUser?.roles ?? [];
 };
 
 // Memoized per request (keyed by authUserId): the current profile is stable

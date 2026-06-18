@@ -3,13 +3,10 @@ import {
   decisionProcessSurveyResponses,
   decisionProcessSurveySubmitters,
 } from '@op/db/schema';
-import { collapseRoles, permission } from 'access-zones';
+import { type NormalizedRole, collapseRoles, permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
-import {
-  type ProfileUserWithNormalizedRoles,
-  getIndividualProfileId,
-} from '../access';
+import { getIndividualProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
 import { fromDecisionBitField } from './permissions';
 
@@ -48,7 +45,7 @@ async function authorizeSurveyAccess({
 }): Promise<{
   profileId: string;
   processInstance: ProcessInstanceForSurvey;
-  profileUser: ProfileUserWithNormalizedRoles;
+  profileUser: { roles: NormalizedRole[] };
 }> {
   const [profileId, processInstance] = await Promise.all([
     getIndividualProfileId(authUserId),
@@ -89,7 +86,7 @@ function getSurveyMeta({
 }: {
   processInstance: ProcessInstanceForSurvey;
   submittedByProfileId: string;
-  profileUser: ProfileUserWithNormalizedRoles;
+  profileUser: { roles: NormalizedRole[] };
   locale: string;
 }) {
   const roles = profileUser.roles.map((role) => ({

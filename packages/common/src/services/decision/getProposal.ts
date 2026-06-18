@@ -18,7 +18,7 @@ import { createSBServiceClient } from '@op/supabase/server';
 import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
-import { assertInstanceProfileAccess, getProfileAccessUser } from '../access';
+import { assertInstanceProfileAccess, getProfileAccessRoles } from '../access';
 import { hasActiveModerationFlag } from '../moderation/moderationVisibility';
 import { generateProposalHtml } from './generateProposalHtml';
 import {
@@ -102,9 +102,9 @@ export const getProposal = async ({
     throw new NotFoundError('Proposal', profileId);
   }
 
-  // Reuse the resolved instance-profile user (drives the instance-admin check
-  // below) instead of re-fetching it per gate.
-  const instanceProfileUser = await assertInstanceProfileAccess({
+  // Reuse the resolved instance-profile roles (drive the instance-admin check
+  // below) instead of re-fetching them per gate.
+  const instanceRoles = await assertInstanceProfileAccess({
     user,
     instance: proposal.processInstance,
     profilePermissions: { decisions: permission.READ },
@@ -129,14 +129,14 @@ export const getProposal = async ({
     // Proposal-level access = the creator + invited collaborators (a
     // profileUsers record on the proposal's own profile). Only fetched for a
     // restricted proposal — a plain visible proposal never needs it.
-    const proposalProfileUser = await getProfileAccessUser({
+    const proposalRoles = await getProfileAccessRoles({
       user,
       profileId: proposal.profileId,
     });
-    const hasProposalAccess = Boolean(proposalProfileUser);
+    const hasProposalAccess = proposalRoles.length > 0;
     const isInstanceAdmin = checkPermission(
       { profile: permission.ADMIN },
-      instanceProfileUser?.roles ?? [],
+      instanceRoles,
     );
 
     // Drafts are visible only to proposal-level access (not instance admins);
@@ -276,12 +276,10 @@ export const getPermissionsOnProposal = async ({
   user: User | undefined;
   proposal: Proposal & { processInstance: ProcessInstance };
 }): Promise<{ access: DecisionRolePermissions }> => {
-  const profileUser = await getProfileAccessUser({
+  const roles = await getProfileAccessRoles({
     user,
     profileId: proposal.profileId,
   });
-
-  const roles = profileUser?.roles ?? [];
 
   // Compute decision access from combined role bitfields
   const combinedDecisionBits = roles.reduce(

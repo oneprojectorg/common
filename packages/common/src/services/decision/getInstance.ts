@@ -9,7 +9,6 @@ import {
   type AccessUser,
   assertInstanceProfileAccess,
   getOrgAccessUser,
-  getProfileAccessUser,
 } from '../access';
 import type { DecisionRolePermissions } from './permissions';
 import { fromDecisionBitField } from './permissions';
@@ -39,14 +38,14 @@ const getRolesDecisionBits = (roles: NormalizedRole[]): number =>
 const resolveInstanceAccess = async (
   user: AccessUser | undefined,
   instance: { profileId: string; ownerProfileId: string | null },
-  profileUser: Awaited<ReturnType<typeof getProfileAccessUser>>,
+  profileRoles: NormalizedRole[],
 ): Promise<DecisionRolePermissions> => {
-  if (profileUser) {
+  if (profileRoles.length > 0) {
     // Profile admins bypass decision-zone role checks — they have full access
-    if (checkPermission({ profile: permission.ADMIN }, profileUser.roles)) {
+    if (checkPermission({ profile: permission.ADMIN }, profileRoles)) {
       return ALL_TRUE_ACCESS;
     }
-    return fromDecisionBitField(getRolesDecisionBits(profileUser.roles));
+    return fromDecisionBitField(getRolesDecisionBits(profileRoles));
   }
 
   // Fall back to org-level roles
@@ -96,8 +95,8 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       throw new NotFoundError('Process instance', instanceId);
     }
 
-    // Assert read access and reuse the profile-access user it resolves.
-    const profileUser = await assertInstanceProfileAccess({
+    // Assert read access and reuse the profile-level roles it resolves.
+    const profileRoles = await assertInstanceProfileAccess({
       user,
       instance,
       profilePermissions: { decisions: permission.READ },
@@ -115,7 +114,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
         profileId: instance.profileId,
         ownerProfileId: instance.ownerProfileId,
       },
-      profileUser,
+      profileRoles,
     );
 
     // Calculate proposal and participant counts

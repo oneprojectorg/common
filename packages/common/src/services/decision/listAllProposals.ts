@@ -77,7 +77,7 @@ export const listAllProposals = async ({
     throw new UnauthorizedError('User does not have access to this process');
   }
 
-  const profileUser = await assertInstanceProfileAccess({
+  const profileRoles = await assertInstanceProfileAccess({
     user,
     instance,
     profilePermissions: [
@@ -92,7 +92,7 @@ export const listAllProposals = async ({
 
   const isAdmin = checkPermission(
     { decisions: permission.ADMIN },
-    profileUser?.roles ?? [],
+    profileRoles,
   );
 
   const proposalList = await db.query.proposals.findMany({

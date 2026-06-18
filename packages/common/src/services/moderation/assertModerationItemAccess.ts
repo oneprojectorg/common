@@ -115,9 +115,9 @@ export const assertModerationItemAccess = async ({
       throw new NotFoundError('Proposal', itemId);
     }
 
-    // Reuse the resolved instance-profile user for the instance-admin check
-    // below instead of re-fetching it, mirroring getProposal.
-    const instanceProfileUser = await assertInstanceProfileAccess({
+    // Reuse the resolved instance-profile roles for the instance-admin check
+    // below instead of re-fetching them, mirroring getProposal.
+    const instanceRoles = await assertInstanceProfileAccess({
       user,
       instance: proposal.processInstance,
       profilePermissions: { decisions: permission.READ },
@@ -145,7 +145,7 @@ export const assertModerationItemAccess = async ({
       });
       const isInstanceAdmin = checkPermission(
         { profile: permission.ADMIN },
-        instanceProfileUser?.roles ?? [],
+        instanceRoles,
       );
       if (!proposalProfileUser && !isInstanceAdmin) {
         throw new NotFoundError('Proposal', itemId);

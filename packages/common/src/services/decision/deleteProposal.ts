@@ -9,7 +9,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { getProfileAccessUser, getUserSession } from '../access';
+import { getProfileAccessRoles, getUserSession } from '../access';
 
 export const deleteProposal = async ({
   proposalId,
@@ -45,27 +45,27 @@ export const deleteProposal = async ({
     }
 
     // Check permissions on proposal's profile and instance's profile in parallel
-    const [proposalProfileUser, instanceProfileUser] = await Promise.all([
-      getProfileAccessUser({
+    const [proposalRoles, instanceRoles] = await Promise.all([
+      getProfileAccessRoles({
         user: { id: user.id },
         profileId: existingProposal.profileId,
       }),
       processInstance.profileId
-        ? getProfileAccessUser({
+        ? getProfileAccessRoles({
             user: { id: user.id },
             profileId: processInstance.profileId,
           })
-        : undefined,
+        : [],
     ]);
 
     const hasProposalAdmin = checkPermission(
       { profile: permission.ADMIN },
-      proposalProfileUser?.roles ?? [],
+      proposalRoles,
     );
 
     const hasInstanceAdmin = checkPermission(
       { decisions: permission.ADMIN },
-      instanceProfileUser?.roles ?? [],
+      instanceRoles,
     );
 
     // Only the submitter, proposal admin, or instance admin can delete
