@@ -55,6 +55,15 @@ const ProgressInPortal = (props: ProgressComponentProps) => (
   </Portal>
 );
 
+// Warms the cache for the organization-search step. Rendered only on the
+// org-search branch — the promote flow skips that step entirely, so prefetching
+// there would fire a network-tier request the upgraded user never needs (and
+// can't make), surfacing a spurious 403.
+const PrefetchDomainOrganizations = () => {
+  void trpc.account.listMatchingDomainOrganizations.usePrefetchQuery();
+  return null;
+};
+
 const processOrgInputs = (data: OrgCreationFormValues) => ({
   ...data,
   website: data.website ?? '',
@@ -68,7 +77,6 @@ export const OnboardingFlow = () => {
   const [invitesComplete, setInvitesComplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createOrgMode, setCreateOrgMode] = useState(false);
-  void trpc.account.listMatchingDomainOrganizations.usePrefetchQuery();
   const {
     personalDetails,
     organizationDetails,
@@ -317,12 +325,18 @@ export const OnboardingFlow = () => {
   }
 
   return (
-    <MultiStepForm
-      steps={[PersonalDetailsForm, OrganizationSearchStep]}
-      schemas={[PersonalDetailsFormValidator, OrganizationSearchStepValidator]}
-      ProgressComponent={ProgressInPortal}
-      getStepValues={getStepValues}
-      hasHydrated={hasHydrated}
-    />
+    <>
+      <PrefetchDomainOrganizations />
+      <MultiStepForm
+        steps={[PersonalDetailsForm, OrganizationSearchStep]}
+        schemas={[
+          PersonalDetailsFormValidator,
+          OrganizationSearchStepValidator,
+        ]}
+        ProgressComponent={ProgressInPortal}
+        getStepValues={getStepValues}
+        hasHydrated={hasHydrated}
+      />
+    </>
   );
 };
