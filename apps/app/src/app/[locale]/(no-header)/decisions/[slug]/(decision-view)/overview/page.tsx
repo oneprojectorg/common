@@ -54,6 +54,12 @@ const DecisionOverviewPage = async ({
   // prose ships as HTML with no client JS (only embed leaves are client
   // islands). Best-effort: on failure the slot is null and the client query +
   // error boundary in DecisionOverviewSuspense still drive the page.
+  //
+  // TODO: this getInstance call duplicates the client useSuspenseQuery in
+  // DecisionOverviewContent (two fetches per load) and can diverge — if this
+  // server fetch fails while the client succeeds, the body slot is null even
+  // though the body exists. Fetch the instance once here and pass it down to
+  // DecisionOverview, dropping the client suspense query.
   let aboutSlot: ReactNode = null;
   try {
     const client = await createClient();
