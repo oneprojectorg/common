@@ -8,7 +8,7 @@ import { Header1 } from '@op/ui/Header';
 import { Modal } from '@op/ui/Modal';
 import { useQueryState } from 'nuqs';
 import { useState } from 'react';
-import { LuUser, LuUserPlus } from 'react-icons/lu';
+import { LuUserRoundMinus, LuUserRoundPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -82,60 +82,74 @@ const PromoteAccountModalContent = ({
   };
 
   return (
-    <div className="flex flex-col gap-6 p-8">
-      <div className="flex flex-col items-center gap-3 text-center">
+    <div className="flex flex-col gap-6 p-8 sm:px-12 sm:pt-12">
+      <div className="flex flex-col items-center gap-4 text-center">
         <CheckIcon />
-        <Header1 className="sm:text-title-base">
-          {t('Your idea was submitted.')}
-        </Header1>
-        <p className="text-neutral-gray4">
-          {t('Want to follow what happens next?')}
-        </p>
+        <div className="flex flex-col gap-2">
+          <Header1 className="text-neutral-black">
+            {t('Your idea was submitted.')}
+          </Header1>
+          <p className="text-sm text-neutral-charcoal">
+            {t('Want to follow what happens next?')}
+          </p>
+        </div>
       </div>
 
-      <section className="flex flex-col gap-3 rounded-lg border p-4">
-        <div className="flex items-center gap-2">
-          <LuUser className="size-5 text-neutral-charcoal" aria-hidden />
-          <span className="font-medium">{t('Continue as a guest')}</span>
-        </div>
-        <p className="text-sm text-neutral-gray4">
-          {t('Stay anonymous. React to comments with emoji.')}
-        </p>
-        {/* TODO(anon-upgrade): accepting this only gates the button — it does not
-            persist ToS/privacy acceptance for the anonymous account anywhere.
-            Either record it for the anon user or drop the checkbox on the guest
-            path. */}
-        <Checkbox isSelected={agreed} onChange={setAgreed}>
-          <span className="text-sm">
-            {t('I agree to the Terms of Service and Privacy Policy')}
-          </span>
-        </Checkbox>
-        <Button
-          color="secondary"
-          className="w-full"
-          isDisabled={!agreed}
-          onPress={onContinueAsGuest}
-        >
-          {t('Continue as guest')}
-        </Button>
-      </section>
+      <div className="flex flex-col gap-4">
+        <section className="flex flex-col gap-2.5 rounded-xl border border-neutral-gray1 bg-white p-4 text-left">
+          <div className="flex items-center gap-1">
+            <LuUserRoundMinus
+              className="size-4 text-neutral-charcoal"
+              aria-hidden
+            />
+            <span className="font-serif text-title-sm text-neutral-charcoal">
+              {t('Continue as a guest')}
+            </span>
+          </div>
+          <p className="text-sm text-neutral-charcoal">
+            {t('Stay anonymous. React to comments with emoji.')}
+          </p>
+          {/* TODO(anon-upgrade): accepting this only gates the button — it does
+              not persist ToS/privacy acceptance for the anonymous account
+              anywhere. Either record it for the anon user or drop the checkbox
+              on the guest path. */}
+          <Checkbox isSelected={agreed} onChange={setAgreed}>
+            <span className="text-sm">
+              {t('I agree to the Terms of Service and Privacy Policy')}
+            </span>
+          </Checkbox>
+          <Button
+            color="secondary"
+            className="w-full"
+            isDisabled={!agreed}
+            onPress={onContinueAsGuest}
+          >
+            {t('Continue as guest')}
+          </Button>
+        </section>
 
-      <section className="flex flex-col gap-3 rounded-lg border p-4">
-        <div className="flex items-center gap-2">
-          <LuUserPlus className="size-5 text-neutral-charcoal" aria-hidden />
-          <span className="font-medium">{t('With an account')}</span>
-        </div>
-        <p className="text-sm text-neutral-gray4">
-          {t(
-            'Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.',
-          )}
-        </p>
-        <Button className="w-full" onPress={goToLogin}>
-          {t('Create account')}
-        </Button>
-      </section>
+        <section className="flex flex-col gap-2.5 rounded-xl border border-neutral-gray1 bg-neutral-off-white p-4 text-left">
+          <div className="flex items-center gap-1">
+            <LuUserRoundPlus
+              className="size-4 text-neutral-charcoal"
+              aria-hidden
+            />
+            <span className="font-serif text-title-sm text-neutral-charcoal">
+              {t('With an account')}
+            </span>
+          </div>
+          <p className="text-sm text-neutral-charcoal">
+            {t(
+              'Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.',
+            )}
+          </p>
+          <Button className="w-full" onPress={goToLogin}>
+            {t('Create account')}
+          </Button>
+        </section>
+      </div>
 
-      <p className="text-center text-sm text-neutral-gray4">
+      <p className="text-center text-sm text-neutral-charcoal">
         {t('Already have an account?')}{' '}
         <button
           type="button"

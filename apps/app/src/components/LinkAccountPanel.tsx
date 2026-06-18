@@ -14,6 +14,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import {
   AuthCodeField,
+  AuthDivider,
   AuthEmailField,
   AuthGoogleButton,
   AuthPanelShell,
@@ -221,72 +222,94 @@ export const LinkAccountPanel = () => {
     );
   })();
 
-  return (
-    <AuthPanelShell title={title} subtitle={subtitle}>
-      {!errorMessage && (
-        <div className="flex flex-col gap-8">
-          {!loginSuccess && <AuthGoogleButton onPress={handleGoogle} />}
-
-          {!loginSuccess ? (
-            <AuthEmailField
-              label={t('Email')}
-              value={email}
-              isDisabled={isSubmitting}
-              onChange={(val) => {
-                setEmailIsValid(emailParser.safeParse(val).success);
-                setEmail(val);
-              }}
-              onSubmit={() => {
-                void requestEmailCode();
-              }}
-            />
-          ) : (
-            <AuthCodeField
-              value={token}
-              isDisabled={isSubmitting}
-              onChange={setToken}
-              onSubmit={handleTokenSubmit}
-            />
-          )}
-        </div>
-      )}
-
-      <section className="flex flex-col gap-6">
+  if (errorMessage) {
+    return (
+      <AuthPanelShell title={title} subtitle={subtitle}>
         <Button
-          type="button"
           className="flex w-full items-center justify-center"
-          isDisabled={
-            isSubmitting ||
-            (!loginSuccess && !emailIsValid) ||
-            (!!token && !isValidOtpLength(token))
-          }
-          onPress={async () => {
-            if (!loginSuccess) {
-              void requestEmailCode();
-            } else if (isValidOtpLength(token)) {
-              await handleTokenSubmit();
-            }
+          onPress={() => {
+            setLinkError(undefined);
+            setTokenError(undefined);
           }}
         >
-          {isSubmitting ? (
-            <LoadingSpinner />
-          ) : loginSuccess ? (
-            t('Create profile')
-          ) : (
-            t('Continue')
-          )}
+          {t('Try again')}
         </Button>
+      </AuthPanelShell>
+    );
+  }
 
-        {loginSuccess && (
+  // OTP entry ("Email sent!") — code field, then the Create profile / Go back
+  // stack (figma: 24px between field and buttons, 12px between buttons).
+  if (loginSuccess) {
+    return (
+      <AuthPanelShell title={title} subtitle={subtitle}>
+        <div className="flex flex-col gap-6">
+          <AuthCodeField
+            value={token}
+            isDisabled={isSubmitting}
+            onChange={setToken}
+            onSubmit={handleTokenSubmit}
+          />
+          <div className="flex flex-col gap-3">
+            <Button
+              type="button"
+              className="flex w-full items-center justify-center"
+              isDisabled={isSubmitting || !isValidOtpLength(token)}
+              onPress={async () => {
+                if (isValidOtpLength(token)) {
+                  await handleTokenSubmit();
+                }
+              }}
+            >
+              {isSubmitting ? <LoadingSpinner /> : t('Create profile')}
+            </Button>
+            <Button
+              color="secondary"
+              className="flex w-full items-center justify-center"
+              onPress={goBack}
+            >
+              {t('Go back')}
+            </Button>
+          </div>
+        </div>
+      </AuthPanelShell>
+    );
+  }
+
+  // Create account (email entry) — email + Continue grouped (figma: 16px), then
+  // the "or" divider, then Google last.
+  return (
+    <AuthPanelShell title={title} subtitle={subtitle}>
+      <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-4">
+          <AuthEmailField
+            label={t('Email')}
+            value={email}
+            isDisabled={isSubmitting}
+            onChange={(val) => {
+              setEmailIsValid(emailParser.safeParse(val).success);
+              setEmail(val);
+            }}
+            onSubmit={() => {
+              void requestEmailCode();
+            }}
+          />
           <Button
-            color="secondary"
+            type="button"
             className="flex w-full items-center justify-center"
-            onPress={goBack}
+            isDisabled={isSubmitting || !emailIsValid}
+            onPress={() => {
+              void requestEmailCode();
+            }}
           >
-            {t('Go back')}
+            {isSubmitting ? <LoadingSpinner /> : t('Continue')}
           </Button>
-        )}
-      </section>
+        </div>
+
+        <AuthDivider />
+
+        <AuthGoogleButton onPress={handleGoogle} />
+      </div>
     </AuthPanelShell>
   );
 };
