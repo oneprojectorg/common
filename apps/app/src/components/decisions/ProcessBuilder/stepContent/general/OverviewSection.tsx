@@ -3,6 +3,7 @@
 import { trpc } from '@op/api/client';
 import { RichTextEditor } from '@op/ui/RichTextEditor';
 import { Skeleton } from '@op/ui/Skeleton';
+import type { JSONContent } from '@tiptap/core';
 import type { Editor } from '@tiptap/react';
 import { Suspense, useRef, useState } from 'react';
 
@@ -64,17 +65,20 @@ function OverviewSectionContent({
 
   const [headline, setHeadline] = useState(initialOverview.headline);
   const [description, setDescription] = useState(initialOverview.description);
-  // The editor owns body state; track the latest HTML so headline/description
+  // The editor owns body state; track the latest JSON doc so headline/description
   // saves don't clobber it.
-  const bodyRef = useRef(initialOverview.body);
+  const bodyRef = useRef<string | JSONContent>(initialOverview.body);
 
   // Editor instance, captured once ready, so the bubble menu can attach.
   const [editor, setEditor] = useState<Editor | null>(null);
+  // A ref to the same editor, read at call time inside onChange so we always
+  // pull the live JSON doc (the onChange closure can be captured stale).
+  const editorRef = useRef<Editor | null>(null);
 
   const saveOverview = (patch: {
     headline?: string;
     description?: string;
-    body?: string;
+    body?: string | JSONContent;
   }) => {
     saveChanges({
       overview: {
@@ -127,11 +131,20 @@ function OverviewSectionContent({
           content={initialOverview.body}
           placeholder={t('overview_body_placeholder')}
           editorClassName="min-h-40"
-          onChange={(html) => {
-            bodyRef.current = html;
-            saveOverview({ body: html });
+          onChange={() => {
+            // Persist the TipTap JSON doc (not HTML) so the overview can be
+            // rendered via the static React renderer. Read from the ref so the
+            // value is always live even if this closure was captured early.
+            const json = editorRef.current?.getJSON();
+            if (json) {
+              bodyRef.current = json;
+              saveOverview({ body: json });
+            }
           }}
-          onEditorReady={setEditor}
+          onEditorReady={(e) => {
+            editorRef.current = e;
+            setEditor(e);
+          }}
         />
 
         <RichTextEditorBubbleMenu editor={editor} />

@@ -1,6 +1,6 @@
 'use client';
 
-import type { Editor, Extensions } from '@tiptap/react';
+import type { Content, Editor, Extensions } from '@tiptap/react';
 import { forwardRef, useImperativeHandle } from 'react';
 
 import { RichTextEditorSkeleton } from './RichTextEditorSkeleton';
@@ -21,7 +21,8 @@ export const RichTextEditor = forwardRef<
   RichTextEditorRef,
   {
     extensions?: Extensions;
-    content?: string;
+    /** HTML string or a TipTap JSON doc (the editor seeds from either). */
+    content?: Content;
     placeholder?: string;
     onUpdate?: (content: string) => void;
     onChange?: (content: string) => void;

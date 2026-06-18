@@ -4,6 +4,7 @@ import {
   proposalSchema,
   rubricTemplateSchema,
 } from '@op/common/client';
+import type { JSONContent } from '@op/common/client';
 import type { PhaseRules as CommonPhaseRules } from '@op/common/src/services/decision';
 import {
   ProcessStatus,
@@ -194,6 +195,37 @@ export const instancePhaseDataEncoder = z.object({
 });
 
 /**
+ * Generous byte budget for the overview body, applied on writes only. Large
+ * because images are currently inlined as base64 (editor feature behind a flag,
+ * internal testing only) — a single image easily exceeds tens of KB. Tighten it
+ * once images move to the app-wide upload→URL flow.
+ */
+const MAX_OVERVIEW_BODY_BYTES = 5_000_000;
+
+/** A stored TipTap JSON doc — a plain object (not a string or array). */
+const isRichTextDoc = (val: unknown): val is JSONContent =>
+  typeof val === 'object' && val !== null && !Array.isArray(val);
+
+/**
+ * Rich text body. New content is a TipTap JSON doc; legacy rows hold an HTML
+ * string until backfilled. Both shapes are accepted on read and write.
+ */
+const overviewBodyEncoder = z.union([
+  z.string(),
+  z.custom<JSONContent>(isRichTextDoc),
+]);
+
+const overviewBodyInputEncoder = z.union([
+  z.string().max(MAX_OVERVIEW_BODY_BYTES),
+  z
+    .custom<JSONContent>(isRichTextDoc)
+    .refine(
+      (doc) => JSON.stringify(doc).length <= MAX_OVERVIEW_BODY_BYTES,
+      'Overview body is too large',
+    ),
+]);
+
+/**
  * Public-facing overview content (headline, short description, rich text body).
  *
  * Output encoder: permissive (no length caps) so already-stored rows always
@@ -204,21 +236,17 @@ export const instancePhaseDataEncoder = z.object({
 const instanceOverviewEncoder = z.object({
   headline: z.string().optional(),
   description: z.string().optional(),
-  /** Rich text body as an HTML string (TipTap getHTML output) */
-  body: z.string().optional(),
+  body: overviewBodyEncoder.optional(),
 });
 
 /**
  * Input encoder: enforces length caps as an abuse/runaway-storage guard on
- * writes. The body cap is generous because images are currently inlined as
- * base64 (editor feature behind a flag, internal testing only) — a single
- * image easily exceeds tens of KB. Tighten it once images move to the
- * app-wide upload→URL flow, which keeps stored HTML small.
+ * writes.
  */
 const instanceOverviewInputEncoder = z.object({
   headline: z.string().max(200).optional(),
   description: z.string().max(500).optional(),
-  body: z.string().max(5_000_000).optional(),
+  body: overviewBodyInputEncoder.optional(),
 });
 
 /** Instance data encoder for new schema format */

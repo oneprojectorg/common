@@ -7,16 +7,22 @@ import { EmptyState } from '@op/ui/EmptyState';
 import { Header2, Header3 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import he from 'he';
+import type { ReactNode } from 'react';
 import { LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { useCreateProposal } from './useCreateProposal';
 
 interface DecisionOverviewProps {
   instanceId: string;
   decisionSlug: string;
+  /**
+   * The "About" body, pre-rendered on the server (RSC) from the overview's
+   * TipTap JSON via RichTextRenderer, so the prose ships as server HTML with no
+   * client JS. Null when there's no body (falls back to the plain description).
+   */
+  aboutSlot?: ReactNode;
 }
 
 /**
@@ -32,6 +38,7 @@ interface DecisionOverviewProps {
 export function DecisionOverviewSuspense({
   instanceId,
   decisionSlug,
+  aboutSlot,
 }: DecisionOverviewProps) {
   const t = useTranslations();
 
@@ -53,6 +60,7 @@ export function DecisionOverviewSuspense({
       <DecisionOverviewContent
         instanceId={instanceId}
         decisionSlug={decisionSlug}
+        aboutSlot={aboutSlot}
       />
     </APIErrorBoundary>
   );
@@ -61,6 +69,7 @@ export function DecisionOverviewSuspense({
 function DecisionOverviewContent({
   instanceId,
   decisionSlug,
+  aboutSlot,
 }: DecisionOverviewProps) {
   const t = useTranslations();
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
@@ -102,7 +111,7 @@ function DecisionOverviewContent({
         </div>
         <div className="min-w-0 md:col-span-7 md:col-start-6">
           <OverviewAbout
-            content={overview?.body}
+            bodySlot={aboutSlot}
             fallbackText={instance.description ?? undefined}
           />
         </div>
@@ -173,25 +182,25 @@ const OverviewHero = ({
 };
 
 const OverviewAbout = ({
-  content,
+  bodySlot,
   fallbackText,
 }: {
-  /** TipTap-generated HTML from the overview content. */
-  content?: string;
-  /** Plain-text process description shown when no overview content exists. */
+  /** Server-rendered overview body (RSC). Null when there's no body. */
+  bodySlot?: ReactNode;
+  /** Plain-text process description shown when no overview body exists. */
   fallbackText?: string;
 }) => {
   const t = useTranslations();
 
-  if (!content && !fallbackText) {
+  if (!bodySlot && !fallbackText) {
     return null;
   }
 
   return (
     <section className="flex flex-col gap-4">
       <Header2 className="font-serif">{t('About the process')}</Header2>
-      {content ? (
-        <ProposalHtmlContent html={content} />
+      {bodySlot ? (
+        bodySlot
       ) : fallbackText ? (
         // The description is plain text (entity-encoded for some orgs, same as
         // DecisionActionBar) — decode and render as text, not HTML.
