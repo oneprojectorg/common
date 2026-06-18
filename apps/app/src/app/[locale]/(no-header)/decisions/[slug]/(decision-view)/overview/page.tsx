@@ -1,4 +1,5 @@
 import { createClient } from '@op/api/serverClient';
+import { logger } from '@op/logging';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
@@ -61,7 +62,14 @@ const DecisionOverviewPage = async ({
     if (body) {
       aboutSlot = <RichTextRenderer content={body} />;
     }
-  } catch {
+  } catch (error) {
+    // Best-effort: log for observability, then fall back to null. The client
+    // suspense query + APIErrorBoundary in DecisionOverviewSuspense remain the
+    // safety net, so a server-side fetch hiccup degrades rather than 500s.
+    logger.warn('Failed to server-render decision overview body', {
+      instanceId,
+      error: error instanceof Error ? error.message : String(error),
+    });
     aboutSlot = null;
   }
 

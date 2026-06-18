@@ -202,9 +202,18 @@ export const instancePhaseDataEncoder = z.object({
  */
 const MAX_OVERVIEW_BODY_BYTES = 5_000_000;
 
-/** A stored TipTap JSON doc — a plain object (not a string or array). */
+/**
+ * A stored TipTap JSON doc — a `doc`-rooted object (what `editor.getJSON()`
+ * always produces). Requiring `type === 'doc'` rejects arbitrary objects at the
+ * write boundary, so a misrouted value can't silently store and then render
+ * blank; on read, a non-doc object degrades via the body's `.catch(undefined)`.
+ */
 const isRichTextDoc = (val: unknown): val is JSONContent =>
-  typeof val === 'object' && val !== null && !Array.isArray(val);
+  typeof val === 'object' &&
+  val !== null &&
+  !Array.isArray(val) &&
+  'type' in val &&
+  val.type === 'doc';
 
 /**
  * Rich text body. New content is a TipTap JSON doc; legacy rows hold an HTML
@@ -236,7 +245,9 @@ const overviewBodyInputEncoder = z.union([
 const instanceOverviewEncoder = z.object({
   headline: z.string().optional(),
   description: z.string().optional(),
-  body: overviewBodyEncoder.optional(),
+  // Scope the read-path degradation to `body` alone: a malformed stored body
+  // becomes undefined without taking headline/description down with it.
+  body: overviewBodyEncoder.optional().catch(undefined),
 });
 
 /**

@@ -416,7 +416,7 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(instanceData.overview?.description).toBe('');
   });
 
-  it('should degrade a malformed stored overview body to undefined when reading', async ({
+  it('should degrade a malformed stored overview body without dropping sibling fields', async ({
     task,
     onTestFinished,
   }) => {
@@ -454,14 +454,16 @@ describe.concurrent('updateDecisionInstance', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    // The read must not fail — the malformed overview degrades to undefined
-    // instead of breaking the whole instance (and any list containing it)
+    // The read must not fail. The malformed body degrades to undefined, but the
+    // body-scoped `.catch` keeps headline/description intact (and the whole
+    // instance, and any list containing it, still reads).
     const fetched = await caller.decision.getInstance({
       instanceId: instance.instance.id,
     });
 
     expect(fetched.id).toBe(instance.instance.id);
-    expect(fetched.instanceData?.overview).toBeUndefined();
+    expect(fetched.instanceData?.overview?.headline).toBe('Corrupt body');
+    expect(fetched.instanceData?.overview?.body).toBeUndefined();
   });
 
   it('should update phase settings', async ({ task, onTestFinished }) => {
