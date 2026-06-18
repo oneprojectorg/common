@@ -72,6 +72,29 @@ describe('static renderer × serverExtensions', () => {
     expect(html).toContain('src="https://img.test/a.png"');
   });
 
+  it('renders an h4 as <h4>, not falling back to <h1>', () => {
+    // The editor allows heading levels 1-4; serverExtensions must too, or
+    // TipTap's renderHTML falls back to levels[0] and an H4 renders as H1.
+    const doc: JSONContent = {
+      type: 'doc',
+      content: [
+        {
+          type: 'heading',
+          attrs: { level: 4 },
+          content: [{ type: 'text', text: 'Sub-subheading' }],
+        },
+      ],
+    };
+
+    const html = renderToHTMLString({
+      content: doc,
+      extensions: serverExtensions,
+    });
+
+    expect(html).toContain('<h4');
+    expect(html).not.toContain('<h1');
+  });
+
   it('renders the iframely node as its placeholder div (carrying the src)', () => {
     const doc: JSONContent = {
       type: 'doc',

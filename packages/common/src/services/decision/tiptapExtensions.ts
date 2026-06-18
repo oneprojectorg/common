@@ -91,8 +91,11 @@ export const serverExtensions = [
   StarterKit.configure({
     heading: false,
   }),
+  // Must match the editor (@op/ui editorConfig allows 1-4). TipTap's
+  // Heading.renderHTML falls back to levels[0] for any out-of-range level, so a
+  // narrower list here silently renders a stored H4 as H1.
   StyledHeading.configure({
-    levels: [1, 2, 3],
+    levels: [1, 2, 3, 4],
   }),
   TextAlign.configure({
     types: ['heading', 'paragraph'],
