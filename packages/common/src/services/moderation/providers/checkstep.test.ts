@@ -102,6 +102,8 @@ describe('createCheckstepProvider', () => {
       `proposal:33333333-3333-4333-8333-333333333333:${ROUND_ID}`,
     );
     expect(body.callback_url).toBe('https://us/webhook');
+    // Required top-level complex type; our account defines only `comment`.
+    expect(body.type).toBe('comment');
     // Each media kind gets its proper field type; `other` (PDF) is dropped.
     expect(body.fields).toContainEqual({
       id: 'media-0',

@@ -141,6 +141,14 @@ const CHECKSTEP_FIELD_TYPE: Partial<
   audio: 'audio',
 };
 
+// Checkstep requires a top-level `type` (its "complex type") on every content
+// submission, and ships no preconfigured values — each must be created in the
+// account. Ours defines a single complex type, `comment`, so every submission
+// uses it. The real item kind (proposal/post/user) is preserved in the encoded
+// `id`, which is what routes the verdict back, so collapsing onto one complex
+// type here is lossless.
+const COMPLEX_TYPE = 'comment';
+
 const contentBody = (
   contentId: string,
   content: string,
@@ -148,11 +156,14 @@ const contentBody = (
   callbackUrl?: string,
 ) => ({
   id: contentId,
+  type: COMPLEX_TYPE,
   fields: [
     { id: 'text', type: 'text', src: content },
     ...media.flatMap((item, index) => {
-      const type = CHECKSTEP_FIELD_TYPE[item.kind];
-      return type ? [{ id: `media-${index}`, type, src: item.url }] : [];
+      const fieldType = CHECKSTEP_FIELD_TYPE[item.kind];
+      return fieldType
+        ? [{ id: `media-${index}`, type: fieldType, src: item.url }]
+        : [];
     }),
   ],
   ...(callbackUrl ? { callback_url: callbackUrl } : {}),
