@@ -8,7 +8,7 @@ import {
   assertInstanceProfileAccess,
   assertProfileTypeAccess,
   getCurrentProfileId,
-  getProfileAccessUser,
+  getProfileAccessRoles,
 } from '../access';
 import { hasActiveModerationFlag } from './moderationVisibility';
 import type { ModerationItemType } from './types';
@@ -87,16 +87,16 @@ export const assertModerationItemAccess = async ({
       const isAuthor =
         actorProfileId !== undefined && post.profileId === actorProfileId;
       if (!isAuthor) {
-        const rootProfileUser =
+        const rootProfileRoles =
           user && post.rootProfileId
-            ? await getProfileAccessUser({
+            ? await getProfileAccessRoles({
                 user,
                 profileId: post.rootProfileId,
               })
-            : undefined;
+            : [];
         const isAdmin = checkPermission(
           { profile: permission.ADMIN },
-          rootProfileUser?.roles ?? [],
+          rootProfileRoles,
         );
         if (!isAdmin) {
           throw new NotFoundError('Post', itemId);
@@ -139,7 +139,7 @@ export const assertModerationItemAccess = async ({
       proposal.visibility === Visibility.HIDDEN ||
       (await hasActiveModerationFlag('proposal', proposal.id));
     if (isRestricted) {
-      const proposalProfileUser = await getProfileAccessUser({
+      const proposalRoles = await getProfileAccessRoles({
         user,
         profileId: proposal.profileId,
       });
@@ -147,7 +147,7 @@ export const assertModerationItemAccess = async ({
         { profile: permission.ADMIN },
         instanceRoles,
       );
-      if (!proposalProfileUser && !isInstanceAdmin) {
+      if (proposalRoles.length === 0 && !isInstanceAdmin) {
         throw new NotFoundError('Proposal', itemId);
       }
     }
