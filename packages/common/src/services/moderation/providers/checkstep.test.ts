@@ -7,6 +7,17 @@ const ok = (body: unknown) => ({
   ok: true,
   status: 200,
   json: async () => body,
+  text: async () => JSON.stringify(body),
+});
+
+// Checkstep acks an async submit with a success status and an empty body.
+const okEmpty = () => ({
+  ok: true,
+  status: 202,
+  json: async () => {
+    throw new SyntaxError('Unexpected end of JSON input');
+  },
+  text: async () => '',
 });
 
 const ROUND_ID = '99999999-9999-4999-8999-999999999999';
@@ -118,6 +129,30 @@ describe('createCheckstepProvider', () => {
     expect(
       body.fields.some((f: { src: string }) => f.src === 'https://cdn/doc.pdf'),
     ).toBe(false);
+  });
+
+  it('submitForReview tolerates an empty ack body and falls back to the content ref', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okEmpty());
+    vi.stubGlobal('fetch', fetchMock);
+
+    const ref = await createCheckstepProvider({ apiKey: 'k' }).submitForReview!(
+      {
+        itemType: 'proposal',
+        itemId: '33333333-3333-4333-8333-333333333333',
+        roundId: ROUND_ID,
+        content: 'review me',
+        media: [],
+        callbackUrl: 'https://us/webhook',
+      },
+    );
+
+    // No `id` in the (empty) response → fall back to our content ref.
+    expect(ref.providerRecordId).toBe(
+      `proposal:33333333-3333-4333-8333-333333333333:${ROUND_ID}`,
+    );
+    expect(ref.submittedRefs).toEqual([
+      `proposal:33333333-3333-4333-8333-333333333333:${ROUND_ID}`,
+    ]);
   });
 
   it('parseWebhook maps a flagging decision to a flagged verdict for our item', () => {

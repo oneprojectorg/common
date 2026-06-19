@@ -127,7 +127,15 @@ const post = async (
     throw new Error(`Moderation provider returned ${response.status}`);
   }
 
-  return response.json();
+  // Checkstep acks an async submission with a success status but an empty body,
+  // so `response.json()` would throw "Unexpected end of JSON input". Read the
+  // text and only parse when there's something there — both callers tolerate a
+  // missing `id`/`violations`.
+  const text = await response.text();
+  if (!text.trim()) {
+    return {};
+  }
+  return JSON.parse(text);
 };
 
 // Checkstep field types we can express per media kind. `other` (PDFs/docs)
