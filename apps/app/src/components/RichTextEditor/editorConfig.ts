@@ -6,10 +6,16 @@ import StarterKit from '@tiptap/starter-kit';
 import { IframelyExtension } from '../decisions/IframelyExtension';
 import { SlashCommands } from '../decisions/SlashCommands';
 
-/** Base extensions from @op/ui, minus StarterKit (we configure it ourselves) */
+/**
+ * Base extensions from @op/ui, minus StarterKit and Link.
+ *
+ * StarterKit is stripped because each context configures it differently
+ * (e.g. collaborative mode disables undo/redo). Link is stripped because
+ * editor and viewer need different `openOnClick` / `linkOnPaste` settings.
+ */
 function getBaseExtensions(): AnyExtension[] {
   return defaultEditorExtensions.filter(
-    (ext) => ext.name !== 'starterKit',
+    (ext) => ext.name !== 'starterKit' && ext.name !== 'link',
   ) as AnyExtension[];
 }
 
@@ -32,6 +38,8 @@ export function getProposalExtensions(
 
   const extensions: AnyExtension[] = [
     StarterKit.configure({
+      heading: false,
+      link: false,
       undoRedo: collaborative ? false : undefined,
     }),
     ...getBaseExtensions(),
@@ -54,7 +62,10 @@ export function getProposalExtensions(
 /** Viewer extensions for read-only proposal display */
 export function getViewerExtensions(): AnyExtension[] {
   return [
-    StarterKit,
+    StarterKit.configure({
+      heading: false,
+      link: false,
+    }),
     ...getBaseExtensions(),
     Link.configure({
       openOnClick: true,

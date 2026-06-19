@@ -3,7 +3,6 @@ import Heading from '@tiptap/extension-heading';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
-import Underline from '@tiptap/extension-underline';
 import StarterKit from '@tiptap/starter-kit';
 
 /**
@@ -68,6 +67,7 @@ const IframelyServerNode = Node.create({
 export const serverExtensions = [
   StarterKit.configure({
     heading: false,
+    link: false,
   }),
   Heading.configure({
     levels: [1, 2, 3],
@@ -79,7 +79,6 @@ export const serverExtensions = [
     inline: true,
     allowBase64: true,
   }),
-  Underline,
   Link.configure({
     openOnClick: false,
   }),
