@@ -6,6 +6,20 @@ export const tsvector = customType<{ data: string }>({
   },
 });
 
+/**
+ * PostGIS MultiPolygon geometry in WGS84 (SRID 4326).
+ *
+ * Drizzle's built-in `geometry()` only models `point`, so polygon boundaries
+ * use this custom type. The column is opaque to the ORM — it is written and
+ * read via raw `sql` PostGIS functions (`ST_GeomFromGeoJSON`, `ST_Contains`,
+ * etc.), so we surface it as a string (the WKT/EWKB Postgres returns).
+ */
+export const multiPolygon = customType<{ data: string }>({
+  dataType() {
+    return 'geometry(MultiPolygon,4326)';
+  },
+});
+
 // `text` column pinned to byte-order collation. The `fractional-indexing`
 // package mixes upper/lowercase ASCII (e.g. "Zz" sorts before "a0" by byte but
 // AFTER "a0" under `en_US.utf8`, Supabase's default). Without `COLLATE "C"`

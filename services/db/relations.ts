@@ -846,4 +846,19 @@ export const relations = defineRelations(schema, (r) => ({
       alias: 'moderationFlag_flaggedBy',
     }),
   },
+
+  /**
+   * Decision boundary relations
+   *
+   * A boundary links to the proposal category (taxonomy term) it auto-tags.
+   * `taxonomyTermId` is nullable, so the term relation is optional.
+   */
+  decisionBoundaries: {
+    // @ts-expect-error - taxonomyTerms self-referential parentId breaks inference
+    taxonomyTerm: r.one.taxonomyTerms({
+      from: r.decisionBoundaries.taxonomyTermId,
+      // @ts-expect-error - see above
+      to: r.taxonomyTerms.id,
+    }),
+  },
 }));
