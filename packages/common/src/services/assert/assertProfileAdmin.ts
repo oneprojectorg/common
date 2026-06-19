@@ -19,7 +19,7 @@ export async function assertProfileAdmin({
 }: {
   user?: AccessUser;
   profileId: string;
-}): Promise<{ roles: NormalizedRole[] }> {
+}): Promise<NormalizedRole[]> {
   return assertProfileAccess({
     user,
     profileId,

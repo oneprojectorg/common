@@ -45,7 +45,7 @@ async function authorizeSurveyAccess({
 }): Promise<{
   profileId: string;
   processInstance: ProcessInstanceForSurvey;
-  profileUser: { roles: NormalizedRole[] };
+  roles: NormalizedRole[];
 }> {
   const [profileId, processInstance] = await Promise.all([
     getIndividualProfileId(authUserId),
@@ -69,32 +69,32 @@ async function authorizeSurveyAccess({
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  const profileUser = await assertProfileAccess({
+  const roles = await assertProfileAccess({
     user: { id: authUserId },
     profileId: processInstance.profileId,
     permissions: { decisions: permission.READ },
   });
 
-  return { profileId, processInstance, profileUser };
+  return { profileId, processInstance, roles };
 }
 
 function getSurveyMeta({
   processInstance,
   submittedByProfileId,
-  profileUser,
+  roles: profileRoles,
   locale,
 }: {
   processInstance: ProcessInstanceForSurvey;
   submittedByProfileId: string;
-  profileUser: { roles: NormalizedRole[] };
+  roles: NormalizedRole[];
   locale: string;
 }) {
-  const roles = profileUser.roles.map((role) => ({
+  const roles = profileRoles.map((role) => ({
     id: role.id,
     name: role.name,
   }));
 
-  const decisionsBits = collapseRoles(profileUser.roles)['decisions'] ?? 0;
+  const decisionsBits = collapseRoles(profileRoles)['decisions'] ?? 0;
 
   return {
     roles,
@@ -116,16 +116,15 @@ export const submitProcessSurveyResponse = async ({
     throw new UnauthorizedError('User must be authenticated');
   }
 
-  const { profileId, processInstance, profileUser } =
-    await authorizeSurveyAccess({
-      authUserId,
-      processInstanceId,
-    });
+  const { profileId, processInstance, roles } = await authorizeSurveyAccess({
+    authUserId,
+    processInstanceId,
+  });
 
   const meta = getSurveyMeta({
     processInstance,
     submittedByProfileId: profileId,
-    profileUser,
+    roles,
     locale,
   });
 

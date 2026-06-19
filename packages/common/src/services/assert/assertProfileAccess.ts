@@ -14,7 +14,9 @@ import { type AccessUser, getProfileAccessRoles } from '../access';
  *
  * Roles are the honest shape for an access decision: an anonymous caller on a
  * public process has access without any identity row to fabricate, so this
- * returns `{ roles }` rather than a synthetic profile-access user.
+ * returns the bare `NormalizedRole[]` — matching {@link
+ * assertInstanceProfileAccess} and {@link getProfileAccessRoles} — rather than a
+ * synthetic profile-access user.
  *
  * @param notMemberMessage - Optional message for the thrown exception when the
  *   caller has no role on the profile. Defaults to 'Not authorized'.
@@ -32,7 +34,7 @@ export async function assertProfileAccess({
   profileId: string;
   permissions: AccessZonePermissionInput;
   notMemberMessage?: string;
-}): Promise<{ roles: NormalizedRole[] }> {
+}): Promise<NormalizedRole[]> {
   const roles = await getProfileAccessRoles({ user, profileId });
 
   if (roles.length === 0) {
@@ -43,5 +45,5 @@ export async function assertProfileAccess({
     throw new UnauthorizedError('Not authorized');
   }
 
-  return { roles };
+  return roles;
 }
