@@ -42,6 +42,7 @@ yarn-error.log*
 .DS_Store
 *.pem
 .trees
+.claude/worktrees
 
 # Ralph
 scripts/prd.json
