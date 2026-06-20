@@ -65,9 +65,18 @@ export function Map({
   children,
 }: MapProps) {
   const mapRef = useRef<MapRef>(null);
+  // The initial center is already applied via `initialViewState`, so skip the
+  // first effect run — otherwise the map flies from the initial center to the
+  // same point on mount (a pointless 3s animation).
+  const hasMountedRef = useRef(false);
 
   // Recenter when the controlled `center` changes (search / use-my-location).
   useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+
     mapRef.current?.flyTo({
       center: [center.lng, center.lat],
       essential: true,

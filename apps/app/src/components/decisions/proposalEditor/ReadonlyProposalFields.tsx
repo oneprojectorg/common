@@ -105,37 +105,6 @@ export function ReadonlyDropdownField({
   );
 }
 
-/** Read-only location field used by proposal preview modes. */
-export function ReadonlyLocationField({
-  value,
-  title,
-  description,
-  placeholder,
-}: {
-  /** Preformatted coordinates, e.g. `"12.34, 56.78"`. */
-  value: string | null;
-  title?: string;
-  description?: string;
-  placeholder: string;
-}) {
-  const content = (
-    <Button variant="pill" color="pill" className="justify-start text-start">
-      {value ?? placeholder}
-    </Button>
-  );
-
-  if (!title && !description) {
-    return content;
-  }
-
-  return (
-    <div className="flex flex-col gap-2">
-      <FieldHeader title={title} description={description} />
-      {content}
-    </div>
-  );
-}
-
 /** Read-only budget field used by proposal preview modes. */
 export function ReadonlyBudgetField({
   value,

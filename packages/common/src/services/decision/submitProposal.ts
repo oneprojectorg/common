@@ -210,7 +210,11 @@ export const submitProposal = async ({
     // category link. Only location-collecting templates re-link on submit;
     // others keep the category links written during draft autosave.
     if (categoryLabels) {
-      await setProposalCategories(tx, submittedProposal.id, categoryLabels);
+      await setProposalCategories({
+        tx,
+        proposalId: submittedProposal.id,
+        labels: categoryLabels,
+      });
     }
 
     const proposal = await tx.query.proposals.findFirst({

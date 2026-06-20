@@ -115,7 +115,14 @@ export function normalizeProposalCategories(raw: unknown): string[] {
 
   const values = Array.isArray(raw) ? raw : [];
 
-  return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+  return [
+    ...new Set(
+      values
+        .filter((value): value is string => typeof value === 'string')
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ),
+  ];
 }
 
 export function parseCategoryFragmentValue(value: string): string[] {

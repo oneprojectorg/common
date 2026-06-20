@@ -58,7 +58,7 @@ export function MapMarker({
         <defs>
           <radialGradient id={gradientId} cx="89.17%" cy="4.38%" r="91.78%">
             <stop offset="0%" stopColor="var(--op-functional-green-500)" />
-            <stop offset="100%" stopColor="#446FCC" />
+            <stop offset="100%" stopColor="var(--op-brand-blue)" />
           </radialGradient>
         </defs>
         {/* Lucide map-pin copy/pasted to achieve faithful parity with design (circle coloration) */}

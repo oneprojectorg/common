@@ -68,10 +68,22 @@ const reverseGeocodePoint = async ({
   }
 };
 
+// ~1.1m at the equator. Pins within this radius reverse-geocode to the same
+// place, so we collapse them onto one cache key — otherwise an attacker could
+// vary a coordinate by sub-meter deltas to bypass the cache and run up billable
+// Google calls.
+const GEOCODE_CACHE_PRECISION = 5;
+
+const roundCoordinate = (value: number): number => {
+  const factor = 10 ** GEOCODE_CACHE_PRECISION;
+  return Math.round(value * factor) / factor;
+};
+
 /**
  * Reverse-geocodes a coordinate to its nearest place via the Google Geocoding
  * API, or null when the point has no address (open water, etc.). Results are
- * cached by coordinate. Powers the location picker's pin-drop enrichment.
+ * cached by coordinate (rounded to ~1m). Powers the location picker's pin-drop
+ * enrichment.
  */
 export async function reverseGeocodeLocation({
   lat,
@@ -80,9 +92,15 @@ export async function reverseGeocodeLocation({
   lat: number;
   lng: number;
 }): Promise<ReverseGeoName | null> {
+  const roundedLat = roundCoordinate(lat);
+  const roundedLng = roundCoordinate(lng);
+
   return cache({
     type: 'reverseGeocode',
-    params: [lat, lng],
-    fetch: () => reverseGeocodePoint({ lat, lng }),
+    params: [roundedLat, roundedLng],
+    // Cache the null (open water, deserts) too, so repeated lookups of an
+    // addressless point don't re-hit the billable API.
+    options: { storeNulls: true },
+    fetch: () => reverseGeocodePoint({ lat: roundedLat, lng: roundedLng }),
   });
 }

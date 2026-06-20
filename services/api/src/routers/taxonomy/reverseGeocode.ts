@@ -19,6 +19,11 @@ const ReverseGeoNameSchema = z.object({
 });
 
 export const reverseGeocode = router({
+  // Open to any authenticated caller (including anonymous participants) so the
+  // location picker can enrich a dropped pin with its address. No per-resource
+  // scope to assert: it reverse-geocodes a coordinate against a global
+  // provider. Billable-API abuse is bounded by the coordinate-rounded result
+  // cache (see reverseGeocodeLocation) and the procedure rate limit.
   reverseGeocode: authenticatedProcedure()
     .input(
       z.object({

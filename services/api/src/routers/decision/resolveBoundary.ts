@@ -19,6 +19,11 @@ const resolveBoundaryOutputSchema = z.object({
 });
 
 export const resolveBoundaryRouter = router({
+  // Open to any authenticated caller (including anonymous participants) so the
+  // location picker can show the live council-district badge while composing a
+  // proposal. Boundaries are deployment-global, so there is no per-resource
+  // scope to assert; the input is just a coordinate. Abuse is bounded by the
+  // procedure rate limit.
   resolveBoundary: authenticatedProcedure()
     .input(resolveBoundaryInputSchema)
     .output(resolveBoundaryOutputSchema)

@@ -1,4 +1,4 @@
-import { type DbClient, and, eq } from '@op/db/client';
+import { type DbClient, and, eq, inArray } from '@op/db/client';
 import { proposalCategories, taxonomies, taxonomyTerms } from '@op/db/schema';
 
 /**
@@ -11,16 +11,25 @@ import { proposalCategories, taxonomies, taxonomyTerms } from '@op/db/schema';
  * set (manual selections plus any boundary-derived district) — there is no
  * separate boundary-tagging pass.
  */
-export async function setProposalCategories(
-  tx: DbClient,
-  proposalId: string,
-  labels: string[],
-): Promise<void> {
+export async function setProposalCategories({
+  tx,
+  proposalId,
+  labels,
+}: {
+  tx: DbClient;
+  proposalId: string;
+  labels: string[];
+}): Promise<void> {
   await tx
     .delete(proposalCategories)
     .where(eq(proposalCategories.proposalId, proposalId));
 
-  if (labels.length === 0) {
+  // Dedupe + drop blanks up front so the lookup and the insert stay in sync.
+  const trimmedLabels = [
+    ...new Set(labels.map((label) => label.trim()).filter(Boolean)),
+  ];
+
+  if (trimmedLabels.length === 0) {
     return;
   }
 
@@ -33,26 +42,25 @@ export async function setProposalCategories(
     return;
   }
 
+  // One query for all labels instead of a findFirst per label (the old N+1 held
+  // the write transaction open across N sequential round-trips).
+  const terms = await tx._query.taxonomyTerms.findMany({
+    where: and(
+      inArray(taxonomyTerms.label, trimmedLabels),
+      eq(taxonomyTerms.taxonomyId, proposalTaxonomy.id),
+    ),
+  });
+
+  const termIdByLabel = new Map(terms.map((term) => [term.label, term.id]));
+
   const taxonomyTermIds: string[] = [];
-
-  for (const label of labels) {
-    if (!label.trim()) {
-      continue;
-    }
-
-    const taxonomyTerm = await tx._query.taxonomyTerms.findFirst({
-      where: and(
-        eq(taxonomyTerms.label, label.trim()),
-        eq(taxonomyTerms.taxonomyId, proposalTaxonomy.id),
-      ),
-    });
-
-    if (!taxonomyTerm) {
+  for (const label of trimmedLabels) {
+    const taxonomyTermId = termIdByLabel.get(label);
+    if (!taxonomyTermId) {
       console.warn(`No taxonomy term found for category: ${label}`);
       continue;
     }
-
-    taxonomyTermIds.push(taxonomyTerm.id);
+    taxonomyTermIds.push(taxonomyTermId);
   }
 
   if (taxonomyTermIds.length > 0) {

@@ -205,7 +205,7 @@ export const updateProposal = async ({
 
     // Mirror the resolved category set (manual + district) into the junction.
     if (categoryLabels) {
-      await setProposalCategories(tx, proposalId, categoryLabels);
+      await setProposalCategories({ tx, proposalId, labels: categoryLabels });
     }
 
     const proposal = await tx.query.proposals.findFirst({

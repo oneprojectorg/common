@@ -83,15 +83,22 @@ async function main(): Promise<void> {
   const { decisionBoundaries, taxonomies, taxonomyTerms } =
     await import('@op/db/schema');
 
+  // The transaction executor handed to `db.transaction((tx) => …)`.
+  type TxClient = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
   /**
    * Ensure the proposal category term for `label`. Mirrors
    * `ensureProposalTaxonomyTerms` (same slugify options) so the term URI is
-   * identical to the one an admin-created category would produce.
+   * identical to the one an admin-created category would produce. Runs on the
+   * caller's transaction so a later failure rolls the term back too.
    */
-  async function ensureCategoryTerm(label: string): Promise<string> {
+  async function ensureCategoryTerm(
+    tx: TxClient,
+    label: string,
+  ): Promise<string> {
     const termUri = slugify(label, { lower: true, strict: true, trim: true });
 
-    const [existing] = await db
+    const [existing] = await tx
       .select({ id: taxonomyTerms.id })
       .from(taxonomyTerms)
       .where(eq(taxonomyTerms.termUri, termUri))
@@ -101,7 +108,7 @@ async function main(): Promise<void> {
       return existing.id;
     }
 
-    const [taxonomy] = await db
+    const [taxonomy] = await tx
       .select({ id: taxonomies.id })
       .from(taxonomies)
       .where(eq(taxonomies.name, 'proposal'))
@@ -110,7 +117,7 @@ async function main(): Promise<void> {
     let taxonomyId = taxonomy?.id;
 
     if (!taxonomyId) {
-      const [created] = await db
+      const [created] = await tx
         .insert(taxonomies)
         .values({
           name: 'proposal',
@@ -121,7 +128,7 @@ async function main(): Promise<void> {
       taxonomyId = created!.id;
     }
 
-    const [term] = await db
+    const [term] = await tx
       .insert(taxonomyTerms)
       .values({
         taxonomyId,
@@ -155,7 +162,6 @@ async function main(): Promise<void> {
     }
 
     const name = rawName.trim();
-    const taxonomyTermId = await ensureCategoryTerm(name);
     const geomJson = JSON.stringify(feature.geometry);
     // ST_MakeValid repairs self-intersecting/ill-formed source polygons (else
     // ST_Contains is unreliable); CollectionExtract(_, 3) keeps only polygonal
@@ -163,24 +169,32 @@ async function main(): Promise<void> {
     const boundarySql = sql`ST_SetSRID(ST_Multi(ST_CollectionExtract(ST_MakeValid(ST_GeomFromGeoJSON(${geomJson})), 3)), 4326)`;
     const metadata = feature.properties ?? null;
 
-    // Manual upsert keyed on the case-insensitive name (the unique index is on
-    // lower(name), an expression index, so ON CONFLICT can't target it cleanly).
-    const [existingBoundary] = await db
-      .select({ id: decisionBoundaries.id })
-      .from(decisionBoundaries)
-      .where(sql`lower(${decisionBoundaries.name}) = ${name.toLowerCase()}`)
-      .limit(1);
+    // One transaction per feature: the category term and the boundary upsert
+    // commit together, so a failure can't leave an orphaned term or a
+    // half-written feature. Re-running is still idempotent (matched features
+    // update in place).
+    await db.transaction(async (tx) => {
+      const taxonomyTermId = await ensureCategoryTerm(tx, name);
 
-    if (existingBoundary) {
-      await db
-        .update(decisionBoundaries)
-        .set({ name, taxonomyTermId, boundary: boundarySql, metadata })
-        .where(eq(decisionBoundaries.id, existingBoundary.id));
-    } else {
-      await db
-        .insert(decisionBoundaries)
-        .values({ name, taxonomyTermId, boundary: boundarySql, metadata });
-    }
+      // Manual upsert keyed on the case-insensitive name (the unique index is on
+      // lower(name), an expression index, so ON CONFLICT can't target it cleanly).
+      const [existingBoundary] = await tx
+        .select({ id: decisionBoundaries.id })
+        .from(decisionBoundaries)
+        .where(sql`lower(${decisionBoundaries.name}) = ${name.toLowerCase()}`)
+        .limit(1);
+
+      if (existingBoundary) {
+        await tx
+          .update(decisionBoundaries)
+          .set({ name, taxonomyTermId, boundary: boundarySql, metadata })
+          .where(eq(decisionBoundaries.id, existingBoundary.id));
+      } else {
+        await tx
+          .insert(decisionBoundaries)
+          .values({ name, taxonomyTermId, boundary: boundarySql, metadata });
+      }
+    });
 
     imported += 1;
   }

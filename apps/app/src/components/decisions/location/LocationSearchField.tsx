@@ -2,6 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import type { LocationData } from '@op/common/client';
+import { useDebounce } from '@op/hooks';
 import { ComboBox, ComboBoxItem } from '@op/ui/ComboBox';
 import { useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
@@ -30,10 +31,13 @@ interface LocationSearchFieldProps {
 export function LocationSearchField({ onSelect }: LocationSearchFieldProps) {
   const t = useTranslations();
   const [query, setQuery] = useState('');
+  // Debounce so we hit Google Places once the user pauses, not on every
+  // keystroke (each call is billable + rate-limited).
+  const [debouncedQuery] = useDebounce(query, 300);
 
   const { data } = trpc.taxonomy.getGeoNames.useQuery(
-    { q: query },
-    { enabled: query.length >= 2, placeholderData: (prev) => prev },
+    { q: debouncedQuery },
+    { enabled: debouncedQuery.length >= 2, placeholderData: (prev) => prev },
   );
 
   const items: GeoOption[] = (data?.geonames ?? []).map((geoname) => ({
