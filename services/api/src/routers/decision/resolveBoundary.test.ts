@@ -1,19 +1,18 @@
 import {
   accessTierGatingCell,
   describeAccessTierGating,
-  expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
 const input = { lat: 40.7128, lng: -74.006 };
 
+// resolveBoundary is an `openProcedure`: public, unauthenticated viewers must be
+// able to resolve a proposal's boundary to render it on the map, so every tier
+// — including no-JWT — is admitted past the gate.
 describeAccessTierGating('decision.resolveBoundary', {
-  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
+  noJwt: accessTierGatingCell('admits no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();
-    await expectFailsAccessTierGate(
-      caller.decision.resolveBoundary(input),
-      'none',
-    );
+    await expectPassesAccessTierGate(caller.decision.resolveBoundary(input));
   }),
 
   anonJwt: accessTierGatingCell(

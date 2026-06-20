@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ValidationError } from '../../utils/error';
 import { assertProfileAccess } from '../assert';
-import { resolveBoundary } from './resolveBoundary';
+import { hasDecisionBoundaries, resolveBoundary } from './resolveBoundary';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { setProposalCategories } from './setProposalCategories';
 import { submitProposal } from './submitProposal';
@@ -49,6 +49,7 @@ vi.mock('../assert', () => ({
 
 vi.mock('./resolveBoundary', () => ({
   resolveBoundary: vi.fn(),
+  hasDecisionBoundaries: vi.fn(),
 }));
 
 vi.mock('./resolveProposalTemplate', () => ({
@@ -71,6 +72,7 @@ const mockFindFirst = vi.mocked(db.query.proposals.findFirst);
 const mockTransaction = vi.mocked(db.transaction);
 const mockAssertProfileAccess = vi.mocked(assertProfileAccess);
 const mockResolveBoundary = vi.mocked(resolveBoundary);
+const mockHasDecisionBoundaries = vi.mocked(hasDecisionBoundaries);
 const mockResolveProposalTemplate = vi.mocked(resolveProposalTemplate);
 const mockValidateProposalAgainstTemplate = vi.mocked(
   validateProposalAgainstTemplate,
@@ -163,6 +165,8 @@ describe('submitProposal — location/boundary enforcement', () => {
       location: LOCATION,
     });
     mockResolveBoundary.mockResolvedValue(null);
+    // Boundaries ARE configured, so an unmatched pin is out-of-area.
+    mockHasDecisionBoundaries.mockResolvedValue(true);
 
     await expect(
       submitProposal({
@@ -238,6 +242,57 @@ describe('submitProposal — location/boundary enforcement', () => {
       lat: LOCATION.lat,
       lng: LOCATION.lng,
     });
+    expect(result).toEqual(submitted);
+  });
+
+  it('allows any location when no boundaries are configured (pin can go anywhere)', async () => {
+    mockFindFirst.mockResolvedValue(
+      draftProposal({
+        collaborationDocId: 'doc-1',
+        location: LOCATION,
+      }) as never,
+    );
+    mockValidateProposalAgainstTemplate.mockResolvedValue({
+      location: LOCATION,
+    });
+    // The pin matches no boundary, but none are configured, so it's allowed.
+    mockResolveBoundary.mockResolvedValue(null);
+    mockHasDecisionBoundaries.mockResolvedValue(false);
+
+    mockGetTipTapClient.mockReturnValue({
+      createVersion: vi.fn().mockResolvedValue({ version: 7 }),
+    } as never);
+    const submitted = {
+      id: PROPOSAL_ID,
+      status: ProposalStatus.SUBMITTED,
+      profile: { name: 'Test Project' },
+    };
+    mockTransaction.mockImplementation((async (
+      cb: (tx: unknown) => Promise<unknown>,
+    ) => {
+      const tx = {
+        update: () => ({
+          set: () => ({
+            where: () => ({
+              returning: async () => [submitted],
+            }),
+          }),
+        }),
+        query: { proposals: { findFirst: async () => submitted } },
+      };
+      return cb(tx);
+    }) as never);
+    mockSyncProposalProfileLocation.mockResolvedValue(undefined as never);
+    mockSetProposalCategories.mockResolvedValue(undefined as never);
+
+    const result = await submitProposal({
+      data: { proposalId: PROPOSAL_ID },
+      authUserId: AUTH_USER_ID,
+    });
+
+    // Boundary existence was checked, the out-of-area throw was skipped, and the
+    // submit completed.
+    expect(mockHasDecisionBoundaries).toHaveBeenCalled();
     expect(result).toEqual(submitted);
   });
 });

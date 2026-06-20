@@ -16,8 +16,9 @@ interface ProjectAreaCheck {
  * containing boundary's name for the district badge.
  *
  * No point, or a still-resolving lookup, reports in-area so the picker never
- * flashes an error prematurely; only a settled "no containing boundary" result
- * marks the point out-of-area.
+ * flashes an error prematurely. A settled result marks the point out-of-area
+ * only when boundaries are actually configured — with no boundaries, every
+ * point is in-area (the pin can go anywhere).
  */
 export function useProjectAreaCheck(point: LngLat | null): ProjectAreaCheck {
   const enabled = point != null;
@@ -30,9 +31,10 @@ export function useProjectAreaCheck(point: LngLat | null): ProjectAreaCheck {
   const isResolving = enabled && query.isFetching;
   const hasResult = enabled && query.isSuccess && !query.isFetching;
   const boundary = query.data?.boundary ?? null;
+  const boundariesConfigured = query.data?.boundariesConfigured ?? false;
 
   return {
-    isWithinArea: !hasResult || boundary != null,
+    isWithinArea: !hasResult || boundary != null || !boundariesConfigured,
     boundaryName: boundary?.name ?? null,
     isResolving,
   };

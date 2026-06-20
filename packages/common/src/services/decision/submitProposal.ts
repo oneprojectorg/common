@@ -11,7 +11,7 @@ import {
   normalizeProposalCategories,
   parseProposalData,
 } from './proposalDataSchema';
-import { resolveBoundary } from './resolveBoundary';
+import { hasDecisionBoundaries, resolveBoundary } from './resolveBoundary';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import type { DecisionInstanceData } from './schemas/instanceData';
 import { setProposalCategories } from './setProposalCategories';
@@ -116,9 +116,10 @@ export const submitProposal = async ({
       assembledData ? assembledData.location : parsed.location,
     ) ?? null;
 
-  // When the template collects a location, it is mandatory and must fall inside
-  // a known boundary — this is the authoritative server-side enforcement of the
-  // picker's out-of-area check.
+  // When the template collects a location, it is mandatory. If boundaries are
+  // configured, the pin must fall inside one — the authoritative server-side
+  // enforcement of the picker's out-of-area check. When no boundaries exist,
+  // any location is valid (the pin can go anywhere).
   if (templateCollectsLocation(proposalTemplate)) {
     if (!location) {
       throw new ValidationError(
@@ -131,7 +132,7 @@ export const submitProposal = async ({
       lng: location.lng,
     });
 
-    if (!boundary) {
+    if (!boundary && (await hasDecisionBoundaries())) {
       throw new ValidationError(
         'The selected location is outside the project boundary. Choose a spot within the boundary.',
       );

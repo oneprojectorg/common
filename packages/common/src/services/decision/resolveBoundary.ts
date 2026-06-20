@@ -34,3 +34,17 @@ export async function resolveBoundary({
 
   return match ?? null;
 }
+
+/**
+ * Whether any boundaries are configured at all. When none exist, the location
+ * field places no restriction on where a pin can go (any spot is valid) — the
+ * out-of-area check only applies once boundaries have been imported.
+ */
+export async function hasDecisionBoundaries(): Promise<boolean> {
+  const [row] = await db
+    .select({ one: sql`1` })
+    .from(decisionBoundaries)
+    .limit(1);
+
+  return row != null;
+}

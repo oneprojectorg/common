@@ -18,7 +18,6 @@
   "main": "src/index.ts",
   "scripts": {
     "format:check": "oxfmt --check",
-    "import:boundaries": "tsx ./src/scripts/importBoundaries.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

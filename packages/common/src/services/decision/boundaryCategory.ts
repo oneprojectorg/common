@@ -10,7 +10,7 @@ import type { ProposalTemplateSchema } from './types';
 /**
  * Resolves the council-district category **label** for a proposal's location:
  * the boundary whose polygon contains the pin, when that boundary is linked to a
- * category. `boundary.name` is the category label (see `importBoundaries`).
+ * category. `boundary.name` is the category label (see `importBoundaries.sql`).
  *
  * Returns `null` when there is no location, no containing boundary, or the
  * boundary has no linked category. Never throws — a boundary lookup failure must
