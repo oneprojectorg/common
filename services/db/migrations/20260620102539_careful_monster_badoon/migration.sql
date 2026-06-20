@@ -1,0 +1,3 @@
+CREATE INDEX "posts_to_organizations_org_id_created_at_post_id_idx" ON "posts_to_organizations" ("organization_id","created_at" DESC NULLS LAST,"post_id" DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX "posts_to_profiles_profile_id_created_at_post_id_idx" ON "posts_to_profiles" ("profile_id","created_at" DESC NULLS LAST,"post_id" DESC NULLS LAST);--> statement-breakpoint
+DROP INDEX "posts_to_profiles_profile_id_idx";
