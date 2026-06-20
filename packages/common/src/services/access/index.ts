@@ -66,11 +66,10 @@ export const orgUserCacheKey = ({
 }): [string, string] => [organizationId, resolveAccessUserIds(user).join(':')];
 
 /**
- * Cache key for profile-access lookups. Mirrors {@link orgUserCacheKey}: the
- * resolved id set (own ∪ public) is part of the identity. NOTE:
- * {@link getProfileAccessUser} has no durable cache today, so this currently
- * only keys the request-scoped memo — but it keeps the shape in one place for
- * symmetry and if a durable profile-access cache is ever added.
+ * Cache key for the durable `profileUser` cache. Shared by the write site and
+ * every invalidator so the key shape can't drift — the resolved id set (own ∪
+ * public) is part of the identity, so a stale `[profileId, user.id]` key would
+ * miss and serve removed/demoted members their old roles until TTL.
  */
 export const profileUserCacheKey = ({
   user,
@@ -182,50 +181,61 @@ export const getProfileAccessUser = memoize(
   }): Promise<ProfileUserWithNormalizedRoles | undefined> => {
     const authUserIds = resolveAccessUserIds(user);
 
-    const profileUserRows = await db.query.profileUsers.findMany({
-      where: {
-        profileId,
-        authUserId: { in: authUserIds },
-      },
-      with: {
-        profile: {
-          with: {
-            avatarImage: true,
-          },
+    const getProfileUser = async () => {
+      const profileUserRows = await db.query.profileUsers.findMany({
+        where: {
+          profileId,
+          authUserId: { in: authUserIds },
         },
-        roles: {
-          with: {
-            accessRole: {
-              with: {
-                zonePermissions: {
-                  where: zonePermissionsWhere(profileId),
-                  with: {
-                    accessZone: true,
+        with: {
+          profile: {
+            with: {
+              avatarImage: true,
+            },
+          },
+          roles: {
+            with: {
+              accessRole: {
+                with: {
+                  zonePermissions: {
+                    where: zonePermissionsWhere(profileId),
+                    with: {
+                      accessZone: true,
+                    },
                   },
                 },
               },
             },
           },
         },
+      });
+
+      if (profileUserRows.length === 0) {
+        return undefined;
+      }
+
+      const { baseRow, normalizedRoles } = mergeGrantRows(
+        profileUserRows,
+        user,
+        profileId,
+      );
+
+      const { roles: _, ...profileUserWithoutRoles } = baseRow;
+      return {
+        ...profileUserWithoutRoles,
+        profile: baseRow.profile,
+        roles: normalizedRoles,
+      };
+    };
+
+    return cache({
+      type: 'profileUser',
+      params: profileUserCacheKey({ user, profileId }),
+      fetch: getProfileUser,
+      options: {
+        skipMemCache: true,
       },
     });
-
-    if (profileUserRows.length === 0) {
-      return undefined;
-    }
-
-    const { baseRow, normalizedRoles } = mergeGrantRows(
-      profileUserRows,
-      user,
-      profileId,
-    );
-
-    const { roles: _, ...profileUserWithoutRoles } = baseRow;
-    return {
-      ...profileUserWithoutRoles,
-      profile: baseRow.profile,
-      roles: normalizedRoles,
-    };
   },
   (args) => profileUserCacheKey(args).join(':'),
 );
