@@ -3,14 +3,27 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
-import { createClient } from '@op/api/serverClient';
 import { Skeleton } from '@op/ui/Skeleton';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { Suspense } from 'react';
+import { Suspense, cache } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { PostDetail } from '@/components/posts/PostDetailView';
+
+// Module-scoped cache() so generateMetadata and the page body share one
+// fetch per (postId, slug) pair within a request. .fetch() also populates
+// the shared queryClient, which HydrationBoundary then dehydrates — so the
+// client useSuspenseQuery hydrates without a second request.
+const fetchPost = cache(async (postId: string) => {
+  const { utils } = await createServerUtils();
+  return utils.posts.getPost.fetch({ postId, includeChildren: false });
+});
+
+const fetchOrganizationBySlug = cache(async (slug: string) => {
+  const { utils } = await createServerUtils();
+  return utils.organization.getBySlug.fetch({ slug });
+});
 
 export async function generateMetadata({
   params,
@@ -20,13 +33,10 @@ export async function generateMetadata({
   const { postId, slug, locale } = await params;
 
   try {
-    const [client, t] = await Promise.all([
-      createClient(),
+    const [t, post, organization] = await Promise.all([
       getTranslations({ locale }),
-    ]);
-    const [post, organization] = await Promise.all([
-      client.posts.getPost({ postId, includeChildren: false }),
-      client.organization.getBySlug({ slug }),
+      fetchPost(postId),
+      fetchOrganizationBySlug(slug),
     ]);
 
     if (!post) {
@@ -47,16 +57,15 @@ const PostDetailPage = async ({
   params: Promise<{ postId: string; slug: string }>;
 }) => {
   const { postId, slug } = await params;
-  const { utils, queryClient } = await createServerUtils();
+  const { queryClient } = await createServerUtils();
 
-  // Prefetch on the server so the client useSuspenseQuery hydrates without a
-  // second request. Swallow failures: this only warms the cache — the client
-  // suspense query refetches and its error boundary owns errors, so a failed
-  // warmup must not crash the route.
-  await Promise.all([
-    utils.posts.getPost.prefetch({ postId, includeChildren: false }),
-    utils.organization.getBySlug.prefetch({ slug }),
-  ]).catch(() => {});
+  // Shares the cache()-wrapped fetches with generateMetadata above, so each
+  // resolver runs once and the data hydrates. Swallow failures: this only
+  // warms the cache — the client suspense query refetches and its error
+  // boundary owns errors, so a failed warmup must not crash the route.
+  await Promise.all([fetchPost(postId), fetchOrganizationBySlug(slug)]).catch(
+    () => {},
+  );
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

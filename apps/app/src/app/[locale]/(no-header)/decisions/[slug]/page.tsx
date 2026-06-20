@@ -8,13 +8,20 @@ import { CommonError } from '@op/common';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { forbidden, notFound } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, cache } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionSidePanel } from '@/components/decisions/DecisionSidePanel';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
 import { DecisionContentSkeleton } from '@/components/skeletons/DecisionSkeleton';
+
+// Shared per-request fetch so generateMetadata and the page render hit the
+// resolver once instead of twice.
+const fetchDecisionBySlug = cache(async (slug: string) => {
+  const client = await createClient();
+  return client.decision.getDecisionBySlug({ slug });
+});
 
 export async function generateMetadata({
   params,
@@ -24,11 +31,10 @@ export async function generateMetadata({
   const { slug, locale } = await params;
 
   try {
-    const [client, t] = await Promise.all([
-      createClient(),
+    const [decisionProfile, t] = await Promise.all([
+      fetchDecisionBySlug(slug),
       getTranslations({ locale }),
     ]);
-    const decisionProfile = await client.decision.getDecisionBySlug({ slug });
     const name = decisionProfile?.name || t('Decision');
     const steward = decisionProfile?.processInstance?.owner?.name;
 
@@ -39,16 +45,11 @@ export async function generateMetadata({
 }
 
 const DecisionPageContent = async ({ slug }: { slug: string }) => {
-  const [client, { utils, queryClient }] = await Promise.all([
-    createClient(),
-    createServerUtils(),
-  ]);
+  const { utils, queryClient } = await createServerUtils();
 
   let decisionProfile;
   try {
-    decisionProfile = await client.decision.getDecisionBySlug({
-      slug,
-    });
+    decisionProfile = await fetchDecisionBySlug(slug);
   } catch (error) {
     const cause = error instanceof Error ? error.cause : null;
     if (cause instanceof CommonError && cause.statusCode === 403) {
