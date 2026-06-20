@@ -14,15 +14,9 @@ import React, { createContext, useState } from 'react';
 import { createLinks } from './links';
 import type { AppRouter } from './routers';
 
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: false,
-      gcTime: 1000 * 60 * 60 * 24, // 24 hours
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+// A module-level QueryClient is shared across every SSR render on the same
+// Node worker — two concurrent requests would read each other's cached
+// account data (24h gcTime). Instantiate per-provider via useState below.
 
 /**
  * Context for SSR-only cookies (encrypted, only available during SSR)
@@ -61,6 +55,19 @@ export function TRPCProvider({
   children: React.ReactNode;
   ssrCookies?: string;
 }) {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            retry: false,
+            gcTime: 1000 * 60 * 60 * 24, // 24 hours
+            refetchOnWindowFocus: false,
+          },
+        },
+      }),
+  );
+
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: createLinks(ssrCookies),
