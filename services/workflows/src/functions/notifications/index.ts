@@ -7,3 +7,5 @@ export * from './sendRevisionResubmittedNotification';
 export * from './sendRevisionRequestedNotification';
 export * from './sendDecisionUpdateNotification';
 export * from './sendContentFlaggedNotification';
+export * from './sendPostCommentNotification';
+export * from './sendProposalCommentNotification';

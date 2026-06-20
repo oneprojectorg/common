@@ -16,6 +16,34 @@ const safeEmailSchema = z
     message: 'Email must not contain CR or LF characters',
   });
 
+// Module-scope, pooled transport — without this, every send paid a fresh
+// TLS handshake and kept Vercel waitUntil alive through the full SMTP
+// round-trip.
+const createPooledTransporter = () => {
+  const { RESEND_PASSWORD } = process.env;
+  return nodemailer.createTransport({
+    host: 'smtp.resend.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: 'resend',
+      pass: RESEND_PASSWORD,
+    },
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100,
+  });
+};
+
+let cachedTransporter: ReturnType<typeof createPooledTransporter> | null = null;
+
+const getTransporter = () => {
+  if (!cachedTransporter) {
+    cachedTransporter = createPooledTransporter();
+  }
+  return cachedTransporter;
+};
+
 export const OPNodemailer = async ({
   to,
   from,
@@ -33,18 +61,6 @@ export const OPNodemailer = async ({
 }) => {
   const safeEmail = safeEmailSchema.parse(to);
 
-  const { RESEND_PASSWORD } = process.env;
-
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.resend.com',
-    port: 465,
-    secure: true,
-    auth: {
-      user: 'resend',
-      pass: RESEND_PASSWORD,
-    },
-  });
-
   const htmlString = await render(component(), renderOptions);
 
   const sendMailOptions = {
@@ -54,7 +70,7 @@ export const OPNodemailer = async ({
     html: htmlString,
   };
 
-  await transporter.sendMail(sendMailOptions);
+  await getTransporter().sendMail(sendMailOptions);
 };
 
 // Initialize Resend client
