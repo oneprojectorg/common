@@ -7,18 +7,20 @@ import {
 
 import { expect, test } from '../fixtures/index.js';
 
-const MOCK_DOC_ID = 'test-proposal-listing-doc';
-
 /**
- * Zero-padded so titles render with a stable shape — the regex assertion
- * `^Proposal \d{3}$` relies on it.
+ * Pre-seeded in the collab mock (@op/collab/testing). The proposal card title
+ * is rendered from this doc's `title` fragment — NOT from `proposalData.title`
+ * — so every card created against this doc renders the same title below.
  */
-const proposalTitle = (n: number) => `Proposal ${String(n).padStart(3, '0')}`;
+const MOCK_DOC_ID = 'test-proposal-listing-doc';
+const MOCK_PROPOSAL_TITLE = 'Community Garden Project';
 
 test.describe('Proposal Listing — Infinite Scroll', () => {
   /**
-   * The client requests proposals in pages of 50; create 55 so the first page
-   * leaves work for the infinite-scroll sentinel to fetch.
+   * The client requests proposals one page at a time (PAGE_LIMIT); create more
+   * than a page so the first page leaves work for the infinite-scroll sentinel
+   * to fetch. Cards all share MOCK_PROPOSAL_TITLE (title comes from the seeded
+   * collab doc), so we count the title links rather than asserting per-title.
    */
   test('loads remaining proposals when scrolling past the first page', async ({
     authenticatedPage,
@@ -39,8 +41,9 @@ test.describe('Proposal Listing — Infinite Scroll', () => {
       schema: process.processSchema,
     });
 
-    const TOTAL_PROPOSALS = 55;
-    const PAGE_LIMIT = 50;
+    // Keep in sync with PROPOSALS_PAGE_LIMIT in ProposalsList.tsx.
+    const PAGE_LIMIT = 51;
+    const TOTAL_PROPOSALS = PAGE_LIMIT + 4;
 
     for (let i = 1; i <= TOTAL_PROPOSALS; i++) {
       await createProposal({
@@ -50,7 +53,7 @@ test.describe('Proposal Listing — Infinite Scroll', () => {
         email: org.adminUser.email,
         status: ProposalStatus.SUBMITTED,
         proposalData: {
-          title: proposalTitle(i),
+          title: `Proposal ${i}`,
           collaborationDocId: MOCK_DOC_ID,
         },
       });
@@ -65,7 +68,7 @@ test.describe('Proposal Listing — Infinite Scroll', () => {
     });
 
     const proposalLink = authenticatedPage.getByRole('link', {
-      name: /^Proposal \d{3}$/,
+      name: MOCK_PROPOSAL_TITLE,
     });
 
     // First page lands at PAGE_LIMIT — not the full TOTAL_PROPOSALS — otherwise
