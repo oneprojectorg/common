@@ -1,7 +1,7 @@
 import { hasDecisionBoundaries, resolveBoundary } from '@op/common';
 import { z } from 'zod';
 
-import { openProcedure, router } from '../../trpcFactory';
+import { authenticatedProcedure, router } from '../../trpcFactory';
 
 const resolveBoundaryInputSchema = z.object({
   lat: z.number().min(-90).max(90),
@@ -23,12 +23,13 @@ const resolveBoundaryOutputSchema = z.object({
 });
 
 export const resolveBoundaryRouter = router({
-  // Open (no JWT required): public, unauthenticated visitors viewing a proposal
-  // need to see it on the map, and the read-only map view resolves the
-  // containing boundary for the district badge. Boundaries are deployment-global
-  // public data with no per-resource scope; the input is just a coordinate.
-  // Abuse is bounded by the procedure rate limit.
-  resolveBoundary: openProcedure()
+  // Only the editable location picker calls this — to flag out-of-area pin
+  // placements live as a participant composes a proposal. Composing requires an
+  // authenticated session (anonymous Supabase sessions included), so this stays
+  // at `authenticatedProcedure`. Read-only proposal views show the district from
+  // the persisted category, so they need no boundary lookup. Boundaries are
+  // deployment-global with no per-resource scope; the input is just a coordinate.
+  resolveBoundary: authenticatedProcedure()
     .input(resolveBoundaryInputSchema)
     .output(resolveBoundaryOutputSchema)
     .query(async ({ input }) => {

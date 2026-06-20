@@ -10,7 +10,6 @@ import { LuLocate } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { CouncilDistrictBadge } from './CouncilDistrictBadge';
 import { LocationSearchField } from './LocationSearchField';
 import { MapCanvas } from './dynamicMap';
 import { DEFAULT_MAP_CENTER, MAP_STYLE_URL } from './mapConfig';
@@ -52,7 +51,7 @@ export function LocationMapField({
   // Coordinate awaiting reverse geocoding after a direct map placement.
   const [pendingGeocode, setPendingGeocode] = useState<LngLat | null>(null);
 
-  const { isWithinArea, boundaryName } = useProjectAreaCheck(
+  const { isWithinArea } = useProjectAreaCheck(
     value ? { lng: value.lng, lat: value.lat } : null,
   );
 
@@ -168,7 +167,6 @@ export function LocationMapField({
                 {t('This address is outside the allowed proposal area.')}
               </span>
             )}
-            {value && <CouncilDistrictBadge boundaryName={boundaryName} />}
           </div>
           <Button
             variant="icon"
