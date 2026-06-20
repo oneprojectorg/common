@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import {
   formatProposalCategories,
   parseCategoryFragmentValue,
@@ -15,19 +16,25 @@ import type { TranslateFn } from '@/lib/i18n';
 import {
   CollaborativeBudgetField,
   CollaborativeDropdownField,
+  CollaborativeLocationField,
   CollaborativeMultiSelectField,
   CollaborativeTextField,
   CollaborativeTitleField,
 } from '../../collaboration';
 import { FieldHeader } from '../forms/FieldHeader';
 import type { FieldDescriptor } from '../forms/types';
+import { LocationMapView } from '../location/LocationMapView';
 import {
   ReadonlyBudgetField,
   ReadonlyDropdownField,
   ReadonlyTextField,
   ReadonlyTitleField,
 } from './ReadonlyProposalFields';
-import { getFragmentText, parsePreviewBudget } from './proposalPreviewContent';
+import {
+  getFragmentText,
+  parsePreviewBudget,
+  parsePreviewLocation,
+} from './proposalPreviewContent';
 import type { ProposalDraftFields } from './useProposalDraft';
 
 // ---------------------------------------------------------------------------
@@ -339,6 +346,38 @@ function renderField(
       );
     }
 
+    case 'location': {
+      if (isReadonlyMode) {
+        const location =
+          mode === 'preview-version'
+            ? parsePreviewLocation(previewContent)
+            : ((draft[key] as ProposalDraftFields['location']) ?? undefined);
+
+        return (
+          <div className="flex flex-col gap-2">
+            <FieldHeader
+              title={schema.title}
+              description={schema.description}
+            />
+            <LocationMapView value={location ?? null} />
+          </div>
+        );
+      }
+
+      return (
+        <div className="flex flex-col gap-2">
+          <FieldHeader title={schema.title} description={schema.description} />
+          <CollaborativeLocationField
+            initialValue={
+              (draft[key] as ProposalDraftFields['location']) ?? null
+            }
+            defaultMapView={schema['x-map-default']}
+            onChange={(value) => onFieldChange(key, value)}
+          />
+        </div>
+      );
+    }
+
     case 'dropdown': {
       const options = extractOptions(schema);
 
@@ -415,12 +454,16 @@ export function ProposalFormRenderer({
   previewVersionFragmentContents = {},
 }: ProposalFormRendererProps) {
   const t = useTranslations();
+  const gisMapsEnabled = useFeatureFlag('gis_maps');
   const formGapClass = mode === 'preview-template' ? 'gap-4' : 'gap-8';
 
   const titleField = fields.find((f) => f.key === 'title');
   const categoryField = fields.find((f) => f.key === 'category');
   const budgetField = fields.find((f) => f.key === 'budget');
-  const dynamicFields = fields.filter((f) => !f.isSystem);
+  // The location field lives behind the `gis_maps` flag.
+  const dynamicFields = fields.filter(
+    (f) => !f.isSystem && (gisMapsEnabled || f.format !== 'location'),
+  );
 
   const render = (field: FieldDescriptor) =>
     renderField(

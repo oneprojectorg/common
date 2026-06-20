@@ -20,7 +20,8 @@ export default function GlobalError({
         api_host: '/stats',
         ui_host: posthogUIHost,
         capture_exceptions: true,
-        __add_tracing_headers: true,
+        // Tracing headers set to `false` because it breaks CORS requests
+        __add_tracing_headers: false,
       });
     }
   }, []);

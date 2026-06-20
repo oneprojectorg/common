@@ -28,6 +28,31 @@ export const budgetValueSchema = z
   .nullish();
 
 /**
+ * Location stored in proposalData (WGS84 / SRID 4326).
+ *
+ * Two granularities live here:
+ * - `lat`/`lng` — the proposal's exact pin, unique to this submission and what
+ *   the UI renders.
+ * - `placeId`/`address`/`placeLat`/`placeLng` — the geocoded place (Google).
+ *   `placeLat`/`placeLng` are the canonical place coordinate, which the
+ *   deduplicated `locations` row stores so every proposal at the same place
+ *   agrees on one point (see `syncProposalProfileLocation`).
+ */
+export const locationValueSchema = z
+  .object({
+    lat: z.number().min(-90).max(90),
+    lng: z.number().min(-180).max(180),
+    address: z.string().optional(),
+    placeId: z.string().optional(),
+    placeLat: z.number().min(-90).max(90).optional(),
+    placeLng: z.number().min(-180).max(180).optional(),
+  })
+  .nullish();
+
+/** Canonical location shape stored in proposalData. */
+export type LocationData = NonNullable<z.infer<typeof locationValueSchema>>;
+
+/**
  * Canonical budget shape — an alias for `MoneyAmount`.
  * @deprecated Prefer `MoneyAmount` for new code.
  */
@@ -48,6 +73,7 @@ export const proposalDataSchema = z
     content: z.string().nullish(), // backward compatibility
     category: categoryValueSchema,
     budget: budgetValueSchema,
+    location: locationValueSchema,
     attachmentIds: z
       .array(z.string())
       .nullish()
@@ -89,7 +115,14 @@ export function normalizeProposalCategories(raw: unknown): string[] {
 
   const values = Array.isArray(raw) ? raw : [];
 
-  return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+  return [
+    ...new Set(
+      values
+        .filter((value): value is string => typeof value === 'string')
+        .map((value) => value.trim())
+        .filter(Boolean),
+    ),
+  ];
 }
 
 export function parseCategoryFragmentValue(value: string): string[] {
@@ -118,6 +151,16 @@ export function formatProposalCategories(
  */
 export function normalizeBudget(raw: unknown): BudgetData | undefined {
   const result = budgetValueSchema.safeParse(raw);
+  return result.success ? (result.data ?? undefined) : undefined;
+}
+
+/**
+ * Normalize a raw location value into `LocationData` using
+ * `locationValueSchema`. Returns `undefined` for absent or malformed values —
+ * never throws.
+ */
+export function normalizeLocation(raw: unknown): LocationData | undefined {
+  const result = locationValueSchema.safeParse(raw);
   return result.success ? (result.data ?? undefined) : undefined;
 }
 
@@ -154,6 +197,7 @@ export function parseProposalData(proposalData: unknown): ProposalData {
     content: (raw.content as string) ?? undefined,
     category: normalizeProposalCategories(raw.category),
     budget: normalizeBudget(raw.budget),
+    location: normalizeLocation(raw.location),
     attachmentIds: (raw.attachmentIds as string[]) ?? [],
     collaborationDocId: (raw.collaborationDocId as string) ?? undefined,
     collaborationDocVersionId:

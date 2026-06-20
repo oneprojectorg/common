@@ -36,7 +36,15 @@ import {
 
 export type { ProposalTemplateSchema };
 
-export type FieldType = 'short_text' | 'long_text' | 'dropdown';
+export type FieldType = 'short_text' | 'long_text' | 'dropdown' | 'location';
+
+/**
+ * The fixed property key used for the single location field. Unlike other
+ * dynamic fields (random ids), location uses a well-known key so the server
+ * can project it onto the proposal profile's location relation and the
+ * builder can enforce a single instance per template.
+ */
+export const LOCATION_FIELD_KEY = 'location';
 
 export const DEFAULT_TEXT_FIELD_MAX_LENGTH: Record<
   Extract<FieldType, 'short_text' | 'long_text'>,
@@ -71,6 +79,7 @@ const X_FORMAT_TO_FIELD_TYPE: Record<string, FieldType> = {
   'short-text': 'short_text',
   'long-text': 'long_text',
   dropdown: 'dropdown',
+  location: 'location',
 };
 
 // ---------------------------------------------------------------------------
@@ -112,6 +121,20 @@ export function createFieldJsonSchema(type: FieldType): ProposalTemplateSchema {
           ],
         },
         'dropdown',
+      );
+    case 'location':
+      // `additionalProperties` is intentionally left unset so an `address`
+      // string can be added later without a schema migration.
+      return withXFormat(
+        {
+          type: 'object',
+          properties: {
+            lat: { type: 'number', minimum: -90, maximum: 90 },
+            lng: { type: 'number', minimum: -180, maximum: 180 },
+          },
+          required: ['lat', 'lng'],
+        },
+        'location',
       );
   }
 }
@@ -492,6 +515,10 @@ export function ensureLockedFields(
     currentRequired.add('category');
   } else {
     currentRequired.delete('category');
+  }
+  // The location field is always required when present
+  if (properties[LOCATION_FIELD_KEY]) {
+    currentRequired.add(LOCATION_FIELD_KEY);
   }
   result = {
     ...result,

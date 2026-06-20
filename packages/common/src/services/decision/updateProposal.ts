@@ -1,13 +1,10 @@
 import { getTipTapClient } from '@op/collab';
-import { type DbClient, and, db, eq } from '@op/db/client';
+import { db, eq } from '@op/db/client';
 import {
   ProposalStatus,
   type Visibility,
   profiles,
-  proposalCategories,
   proposals,
-  taxonomies,
-  taxonomyTerms,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
@@ -20,6 +17,7 @@ import {
 } from '../../utils';
 import { assertInstanceProfileAccess, getProfileAccessUser } from '../access';
 import { assertUserByAuthId } from '../assert';
+import { withBoundaryCategoryLabel } from './boundaryCategory';
 import type {
   CheckpointVersion,
   ProposalDataInput,
@@ -27,61 +25,9 @@ import type {
 import { parseProposalData } from './proposalDataSchema';
 import { resolveProposalTemplate } from './resolveProposalTemplate';
 import { type DecisionInstanceData, isLastPhase } from './schemas/instanceData';
+import { setProposalCategories } from './setProposalCategories';
+import { syncProposalProfileLocation } from './syncProposalProfileLocation';
 import { validateProposalAgainstTemplate } from './validateProposalAgainstTemplate';
-
-async function updateProposalCategoryLink(
-  db: DbClient,
-  proposalId: string,
-  newCategoryLabels: string[],
-): Promise<void> {
-  await db
-    .delete(proposalCategories)
-    .where(eq(proposalCategories.proposalId, proposalId));
-
-  if (newCategoryLabels.length === 0) {
-    return;
-  }
-
-  const proposalTaxonomy = await db._query.taxonomies.findFirst({
-    where: eq(taxonomies.name, 'proposal'),
-  });
-
-  if (!proposalTaxonomy) {
-    console.warn('No "proposal" taxonomy found, skipping category linking');
-    return;
-  }
-
-  const taxonomyTermIds: string[] = [];
-
-  for (const categoryLabel of newCategoryLabels) {
-    if (!categoryLabel.trim()) {
-      continue;
-    }
-
-    const taxonomyTerm = await db._query.taxonomyTerms.findFirst({
-      where: and(
-        eq(taxonomyTerms.label, categoryLabel.trim()),
-        eq(taxonomyTerms.taxonomyId, proposalTaxonomy.id),
-      ),
-    });
-
-    if (!taxonomyTerm) {
-      console.warn(`No taxonomy term found for category: ${categoryLabel}`);
-      continue;
-    }
-
-    taxonomyTermIds.push(taxonomyTerm.id);
-  }
-
-  if (taxonomyTermIds.length > 0) {
-    await db.insert(proposalCategories).values(
-      taxonomyTermIds.map((taxonomyTermId) => ({
-        proposalId,
-        taxonomyTermId,
-      })),
-    );
-  }
-}
 
 export interface UpdateProposalInput {
   title?: string;
@@ -192,7 +138,18 @@ export const updateProposal = async ({
   } = data;
 
   const updatedProposal = await db.transaction(async (tx) => {
-    const proposalDataWithVersion =
+    // Resolve the full category set (manual selections plus the location's
+    // council district) once, so it persists to BOTH proposalData.category (the
+    // read/display source) and the proposalCategories junction (the filter
+    // source) — keeping them in sync, as createProposal already does.
+    const categoryLabels = data.proposalData
+      ? await withBoundaryCategoryLabel(
+          parseProposalData(data.proposalData).category,
+          data.proposalData,
+        )
+      : null;
+
+    const baseProposalData =
       collaborationDocVersionId !== null
         ? {
             ...(proposalFields.proposalData ??
@@ -200,6 +157,14 @@ export const updateProposal = async ({
             collaborationDocVersionId,
           }
         : proposalFields.proposalData;
+
+    const proposalDataWithVersion =
+      baseProposalData && categoryLabels
+        ? {
+            ...baseProposalData,
+            category: categoryLabels.length > 0 ? categoryLabels : undefined,
+          }
+        : baseProposalData;
 
     const [updatedProposalRow] = await tx
       .update(proposals)
@@ -218,6 +183,16 @@ export const updateProposal = async ({
       throw new CommonError('Failed to update proposal');
     }
 
+    // Keep the profile's location relation in sync whenever proposalData is
+    // written; status/visibility-only updates leave it untouched.
+    if (proposalDataWithVersion) {
+      await syncProposalProfileLocation(
+        tx,
+        existingProposal.profileId,
+        proposalDataWithVersion,
+      );
+    }
+
     if (nextTitle !== undefined) {
       await tx
         .update(profiles)
@@ -228,10 +203,9 @@ export const updateProposal = async ({
         .where(eq(profiles.id, existingProposal.profileId));
     }
 
-    // Update category link if proposal data was updated
-    if (data.proposalData) {
-      const newCategoryLabels = parseProposalData(data.proposalData).category;
-      await updateProposalCategoryLink(tx, proposalId, newCategoryLabels);
+    // Mirror the resolved category set (manual + district) into the junction.
+    if (categoryLabels) {
+      await setProposalCategories({ tx, proposalId, labels: categoryLabels });
     }
 
     const proposal = await tx.query.proposals.findFirst({

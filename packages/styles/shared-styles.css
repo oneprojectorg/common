@@ -398,7 +398,7 @@
   background-image: radial-gradient(
     91.78% 91.78% at 89.17% 4.38%,
     var(--op-functional-green-500) 0%,
-    #446FCC 100%
+    var(--op-brand-blue) 100%
   );
 }
 

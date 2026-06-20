@@ -22,8 +22,8 @@ import { taxonomyTerms } from './taxonomies.sql';
  *
  * Each boundary is linked to a proposal category (`taxonomyTermId`) by name, so
  * a proposal whose location falls inside the boundary is auto-tagged with that
- * category (see `syncProposalBoundaryTag`). The polygon is matched against a
- * proposal's pin via `ST_Contains`.
+ * category (see `boundaryCategory` / `resolveBoundary`). The polygon is matched
+ * against a proposal's pin via `ST_Contains`.
  *
  * Deployment-global for now — boundaries are not yet scoped per client/org.
  */

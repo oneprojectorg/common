@@ -24,6 +24,7 @@ export interface SidebarFieldItem {
 interface TemplateEditorSidebarProps {
   fields: SidebarFieldItem[];
   onAddField: (type: FieldType) => void;
+  disabledTypes?: FieldType[];
   side?: 'left' | 'right';
 }
 
@@ -57,6 +58,7 @@ export function FieldListTrigger() {
 export function TemplateEditorSidebar({
   fields,
   onAddField,
+  disabledTypes,
   side,
 }: TemplateEditorSidebarProps) {
   const t = useTranslations();
@@ -67,7 +69,11 @@ export function TemplateEditorSidebar({
       className="border-e"
       side={side}
     >
-      <SidebarContent fields={fields} onAddField={onAddField} />
+      <SidebarContent
+        fields={fields}
+        onAddField={onAddField}
+        disabledTypes={disabledTypes}
+      />
     </Sidebar>
   );
 }
@@ -78,6 +84,7 @@ export function TemplateEditorSidebar({
 function SidebarContent({
   fields,
   onAddField,
+  disabledTypes,
 }: Omit<TemplateEditorSidebarProps, 'side'>) {
   const t = useTranslations();
   const { setOpen, isMobile } = useSidebar();
@@ -93,7 +100,10 @@ function SidebarContent({
     <nav className="flex flex-col gap-2 p-4">
       {/* Add field button - hidden on mobile (shown at bottom instead) */}
       <div className="hidden md:block">
-        <AddFieldMenu onAddField={handleAddField} />
+        <AddFieldMenu
+          onAddField={handleAddField}
+          disabledTypes={disabledTypes}
+        />
       </div>
 
       <div className="mt-2 md:mt-4">

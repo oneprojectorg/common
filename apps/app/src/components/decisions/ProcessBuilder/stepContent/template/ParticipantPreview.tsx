@@ -15,6 +15,7 @@ const EMPTY_DRAFT: ProposalDraftFields = {
   title: '',
   category: [],
   budget: null,
+  location: null,
 };
 
 /**

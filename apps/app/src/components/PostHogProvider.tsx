@@ -14,7 +14,8 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       capture_pageview: false, // We capture pageviews manually
       capture_pageleave: true,
       capture_exceptions: true,
-      __add_tracing_headers: true,
+      // Tracing headers set to `false` because it breaks CORS requests
+      __add_tracing_headers: false,
     });
   }, []);
 

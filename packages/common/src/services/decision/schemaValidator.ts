@@ -31,6 +31,7 @@ export class SchemaValidator {
     // so Ajv's strict mode doesn't reject them during schema compilation
     this.ajv.addKeyword('x-field-order');
     this.ajv.addKeyword('x-format');
+    this.ajv.addKeyword('x-map-default');
   }
 
   /**

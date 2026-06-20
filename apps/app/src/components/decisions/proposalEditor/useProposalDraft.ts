@@ -1,9 +1,11 @@
 import { trpc } from '@op/api/client';
 import {
   type BudgetData,
+  type LocationData,
   type Proposal,
   type ProposalDataInput,
   normalizeBudget,
+  normalizeLocation,
   normalizeProposalCategories,
   parseProposalData,
 } from '@op/common/client';
@@ -20,6 +22,7 @@ export interface ProposalDraftFields extends Record<string, unknown> {
   title: string;
   category: string[];
   budget: BudgetData | null;
+  location: LocationData | null;
 }
 
 /**
@@ -48,11 +51,13 @@ export function useProposalDraft({
       title: proposal.profile.name ?? '',
       category: parsedProposalData?.category ?? [],
       budget: parsedProposalData?.budget ?? null,
+      location: parsedProposalData?.location ?? null,
     }),
     [
       proposal.profile.name,
       parsedProposalData?.category,
       parsedProposalData?.budget,
+      parsedProposalData?.location,
     ],
   );
 
@@ -86,6 +91,7 @@ export function useProposalDraft({
         category:
           nextDraft.category.length > 0 ? nextDraft.category : undefined,
         budget: nextDraft.budget ?? undefined,
+        location: nextDraft.location ?? undefined,
       };
     },
     [proposal?.proposalData, collaborationDocId],
@@ -113,28 +119,44 @@ export function useProposalDraft({
 
   /**
    * Handles a single field change. Updates the draft state for system
-   * fields (title, category, budget) and triggers debounced autosave.
+   * fields (title, category, budget, location) and triggers a debounced
+   * autosave — but only when the value actually changed.
    *
-   * Dynamic field values are managed exclusively by Yjs — calling this
-   * for dynamic fields is a no-op for persistence but still triggers
-   * autosave of the current system field snapshot.
+   * Collaborative fields emit their current value via `onChange` on mount.
+   * Without the change guard below, merely opening the editor would fire an
+   * autosave that re-persists the (possibly stale/divergent) fragment state,
+   * churning the proposal's location and category on every open. Dynamic
+   * fields live exclusively in Yjs and never affect the system snapshot, so
+   * they never trigger an autosave here.
    */
   const handleFieldChange = useCallback(
     (key: string, value: unknown) => {
       setDraft((prev) => {
         const next = { ...prev };
+        let systemFieldChanged = false;
 
         if (key === 'title') {
           next.title = typeof value === 'string' ? value : '';
+          systemFieldChanged = next.title !== prev.title;
         } else if (key === 'category') {
           next.category = normalizeProposalCategories(value);
+          systemFieldChanged =
+            JSON.stringify(next.category) !== JSON.stringify(prev.category);
         } else if (key === 'budget') {
           next.budget = normalizeBudget(value) ?? null;
+          systemFieldChanged =
+            JSON.stringify(next.budget) !== JSON.stringify(prev.budget);
+        } else if (key === 'location') {
+          next.location = normalizeLocation(value) ?? null;
+          systemFieldChanged =
+            JSON.stringify(next.location) !== JSON.stringify(prev.location);
         }
         // Dynamic fields are Yjs-only — we don't store them in draft state.
 
         draftRef.current = next;
-        debouncedAutoSave(next);
+        if (systemFieldChanged) {
+          debouncedAutoSave(next);
+        }
         return next;
       });
     },

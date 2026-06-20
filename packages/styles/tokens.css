@@ -78,6 +78,11 @@
   --op-functional-green-900: hsla(104, 43.7%, 20.2%, 1);   /* #294A1D */
   --op-functional-green-950: hsla(105.5, 56.9%, 10%, 1);   /* #12280B */
 
+  /* Blue endpoint of the BlueGreen brand gradient (pairs with green-500 in the
+   * `bg-blueGreen` utility and the map marker). Single source of truth for the
+   * value so the utility and the marker can't drift. */
+  --op-brand-blue: hsla(221, 57.1%, 53.3%, 1); /* #446FCC */
+
   /* ============================================
    * Data Visualization
    * ============================================ */

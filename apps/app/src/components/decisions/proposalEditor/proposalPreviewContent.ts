@@ -1,5 +1,5 @@
-import { normalizeBudget } from '@op/common/client';
-import type { BudgetData } from '@op/common/client';
+import { normalizeBudget, normalizeLocation } from '@op/common/client';
+import type { BudgetData, LocationData } from '@op/common/client';
 import { generateText } from '@tiptap/core';
 import type { JSONContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -40,5 +40,24 @@ export function parsePreviewBudget(
     return normalizeBudget(JSON.parse(raw));
   } catch {
     return normalizeBudget(raw);
+  }
+}
+
+/**
+ * Parses preview location content into normalized location data when possible.
+ */
+export function parsePreviewLocation(
+  content: JSONContent | null | undefined,
+): LocationData | undefined {
+  const raw = getFragmentText(content);
+
+  if (!raw) {
+    return undefined;
+  }
+
+  try {
+    return normalizeLocation(JSON.parse(raw));
+  } catch {
+    return undefined;
   }
 }

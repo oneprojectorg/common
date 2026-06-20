@@ -47,12 +47,14 @@ interface FieldCardProps {
   onNewComplete?: (fieldId: string) => void;
 }
 
+// Location is excluded: it's single-instance with a fixed key, so existing
+// fields can't switch to it (and it can't switch away).
 const FIELD_TYPE_OPTIONS = FIELD_CATEGORIES.flatMap((category) =>
   category.types.map((type) => ({
     type,
     labelKey: FIELD_TYPE_REGISTRY[type].labelKey,
   })),
-);
+).filter((option) => option.type !== 'location');
 
 /**
  * A collapsible card representing a form field in the builder.
@@ -90,6 +92,7 @@ export function FieldCard({
 
   const Icon = getFieldIcon(field.fieldType);
   const ConfigComponent = getFieldConfigComponent(field.fieldType);
+  const isLocation = field.fieldType === 'location';
 
   // Only trigger validation when focus leaves the card entirely,
   // not when moving between inputs within the card.
@@ -148,19 +151,21 @@ export function FieldCard({
               className="min-w-0 flex-1"
               isRequired
             />
-            <Select
-              label={t('Type')}
-              selectedKey={field.fieldType}
-              onSelectionChange={handleTypeChange}
-              buttonClassName="bg-white"
-              className="w-40"
-            >
-              {FIELD_TYPE_OPTIONS.map((opt) => (
-                <SelectItem key={opt.type} id={opt.type}>
-                  {t(opt.labelKey)}
-                </SelectItem>
-              ))}
-            </Select>
+            {!isLocation && (
+              <Select
+                label={t('Type')}
+                selectedKey={field.fieldType}
+                onSelectionChange={handleTypeChange}
+                buttonClassName="bg-white"
+                className="w-40"
+              >
+                {FIELD_TYPE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.type} id={opt.type}>
+                    {t(opt.labelKey)}
+                  </SelectItem>
+                ))}
+              </Select>
+            )}
           </div>
 
           {/* Description */}
@@ -203,7 +208,8 @@ export function FieldCard({
               <span className="text-neutral-charcoal">{t('Required?')}</span>
               <ToggleButton
                 size="small"
-                isSelected={field.required}
+                isSelected={isLocation || field.required}
+                isDisabled={isLocation}
                 onChange={(isSelected) =>
                   onUpdateRequired?.(field.id, isSelected)
                 }

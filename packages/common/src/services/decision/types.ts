@@ -16,11 +16,28 @@ export type JsonSchema = JSONSchema7;
  * properties. Describes **how** a field should be presented/coerced, while
  * JSON Schema keywords (`type`, `enum`, etc.) describe the data shape.
  */
-export type XFormat = 'short-text' | 'long-text' | 'money' | 'dropdown';
+export type XFormat =
+  | 'short-text'
+  | 'long-text'
+  | 'money'
+  | 'dropdown'
+  | 'location';
+
+/**
+ * Default map camera persisted on a `location` field via the `x-map-default`
+ * vendor extension. Defines the starting center/zoom a participant sees before
+ * they search an address or drop a pin.
+ */
+export interface MapDefaultView {
+  center: { lng: number; lat: number };
+  zoom: number;
+}
 
 /** JSON Schema 7 property extended with `x-format` vendor extension. */
 export interface XFormatPropertySchema extends JSONSchema7 {
   'x-format'?: XFormat;
+  /** Default map camera for `location` fields (see {@link MapDefaultView}). */
+  'x-map-default'?: MapDefaultView;
 }
 
 /** JSON Schema 7 extended with proposal template vendor extensions. */

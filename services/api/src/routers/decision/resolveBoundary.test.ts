@@ -5,34 +5,33 @@ import {
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
-describeAccessTierGating('taxonomy.getGeoNames', {
+const input = { lat: 40.7128, lng: -74.006 };
+
+// resolveBoundary is an `authenticatedProcedure`: only the editable picker calls
+// it (composing a proposal requires a session — anonymous Supabase included), so
+// any authenticated tier is admitted and only a no-JWT caller is rejected.
+describeAccessTierGating('decision.resolveBoundary', {
   noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
     const caller = await callers.noJwt();
     await expectFailsAccessTierGate(
-      caller.taxonomy.getGeoNames({ q: 'xx' }),
+      caller.decision.resolveBoundary(input),
       'none',
     );
   }),
 
   anonJwt: accessTierGatingCell(
-    'rejects anon-JWT caller',
+    'admits anon-JWT caller',
     async ({ callers }) => {
       const caller = await callers.anonJwt();
-      await expectFailsAccessTierGate(
-        caller.taxonomy.getGeoNames({ q: 'xx' }),
-        'anon',
-      );
+      await expectPassesAccessTierGate(caller.decision.resolveBoundary(input));
     },
   ),
 
   userJwt: accessTierGatingCell(
-    'rejects user-JWT caller',
+    'admits user-JWT caller',
     async ({ callers }) => {
       const caller = await callers.userJwt();
-      await expectFailsAccessTierGate(
-        caller.taxonomy.getGeoNames({ q: 'xx' }),
-        'user',
-      );
+      await expectPassesAccessTierGate(caller.decision.resolveBoundary(input));
     },
   ),
 
@@ -40,9 +39,7 @@ describeAccessTierGating('taxonomy.getGeoNames', {
     'admits network-JWT caller',
     async ({ callers }) => {
       const caller = await callers.networkJwt();
-      await expectPassesAccessTierGate(
-        caller.taxonomy.getGeoNames({ q: 'xx' }),
-      );
+      await expectPassesAccessTierGate(caller.decision.resolveBoundary(input));
     },
   ),
 });

@@ -2,7 +2,7 @@ import { cache } from '@op/cache';
 import { logger } from '@op/logging';
 import { z } from 'zod';
 
-import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
+import { authenticatedProcedure, router } from '../../trpcFactory';
 
 const GeoNameSchema = z.object({
   id: z.string(),
@@ -89,7 +89,13 @@ const getGeonames = async ({ q }: { q: string }) => {
 };
 
 export const getGeoNames = router({
-  getGeoNames: networkAuthenticatedProcedure()
+  // Open to any authenticated caller (including anonymous participants) so the
+  // proposal location picker's address search works for everyone who can reach
+  // the picker — matches `reverseGeocode` and `resolveBoundary`. There is no
+  // per-resource scope to assert: it forward-geocodes a free-text query against
+  // a global provider. Billable-API abuse is bounded by the result cache, the
+  // client-side debounce, and the procedure rate limit.
+  getGeoNames: authenticatedProcedure()
     .input(
       z.object({
         q: z.string().min(2).max(255),
