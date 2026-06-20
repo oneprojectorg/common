@@ -105,13 +105,14 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
       },
     },
   );
-  // Do not run code between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-  // IMPORTANT: DO NOT REMOVE auth.getUser()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Do not run code between createServerClient and the auth check. A simple
+  // mistake could make it very hard to debug issues with users being randomly
+  // logged out. We use getClaims() — local JWKS verification — to drop the
+  // GoTrue round-trip from every navigation; for asymmetric JWTs no network
+  // hop is made, and for symmetric JWTs the SDK transparently falls back to
+  // getUser().
+  const { data: claims } = await supabase.auth.getClaims();
+  const user = claims?.claims ?? null;
 
   // Reroute when the locale prefix is missing — for both logged-in users and
   // anonymous visitors on non-root paths. Public links like `/columbus` need
