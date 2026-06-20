@@ -1,5 +1,5 @@
 import { and, db, eq, exists, inArray, isNull } from '@op/db/client';
-import { posts, postsToOrganizations } from '@op/db/schema';
+import { posts } from '@op/db/schema';
 import type { User } from '@supabase/supabase-js';
 
 import {
@@ -36,16 +36,7 @@ export const listAllRelatedOrganizationPosts = async (
 ) => {
   const { limit = 20, cursor } = options;
 
-  // Build cursor condition for pagination
-  const cursorCondition = cursor
-    ? getGenericCursorCondition({
-        columns: {
-          id: postsToOrganizations.postId,
-          date: postsToOrganizations.createdAt,
-        },
-        cursor: decodeCursor(cursor),
-      })
-    : undefined;
+  const decodedCursor = cursor ? decodeCursor(cursor) : undefined;
 
   // Resolve the reader's profile first so the moderation filter (author
   // exception) can run inside the SQL where clause below.
@@ -54,7 +45,20 @@ export const listAllRelatedOrganizationPosts = async (
   // Fetch posts for all organizations with pagination
   const result = await db.query.postsToOrganizations.findMany({
     where: {
+      // The RAW callback's `table` is the aliased base table that the v2
+      // relational query uses in the generated FROM clause. Building the
+      // cursor condition from the un-aliased schema reference makes Postgres
+      // error with "invalid reference to FROM-clause entry", failing every
+      // page request past the first and keeping the infinite-scroll trigger
+      // in retry-storm.
       RAW: (table) => {
+        const cursorCondition = decodedCursor
+          ? getGenericCursorCondition({
+              columns: { id: table.postId, date: table.createdAt },
+              cursor: decodedCursor,
+            })
+          : undefined;
+
         // Filter to top-level posts (no parentPostId) the reader may see —
         // flagged posts drop out unless the reader authored them.
         const topLevelPostFilter = exists(
