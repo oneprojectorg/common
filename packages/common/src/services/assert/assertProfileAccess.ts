@@ -1,21 +1,21 @@
-import { type AccessZonePermissionInput, checkPermission } from 'access-zones';
+import {
+  type AccessZonePermissionInput,
+  type NormalizedRole,
+  checkPermission,
+} from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
-import {
-  type AccessUser,
-  type ProfileUserWithNormalizedRoles,
-  getProfileAccessUser,
-} from '../access';
+import { type AccessUser, getProfileAccessRoles } from '../access';
 
 /**
- * Fetches the user's roles on a profile and asserts the given permissions,
- * returning the resolved profile-access user so callers can reuse it.
+ * Asserts the caller's effective roles on a profile satisfy `permissions`,
+ * returning those roles. Bare `NormalizedRole[]`, matching {@link
+ * assertInstanceProfileAccess} and {@link getProfileAccessRoles}.
  *
- * @param notMemberMessage - Optional message for the thrown exception when the
- *   user has no role on the profile. Defaults to 'Not authorized'.
- * @throws UnauthorizedError if the user is not a member of the profile or their
- *   roles don't satisfy the permissions — every denial throws the same
- *   exception type (only the message differs when `notMemberMessage` is given).
+ * @param notMemberMessage - Message thrown when the caller has no role.
+ *   Defaults to 'Not authorized'.
+ * @throws UnauthorizedError on any denial (only the message differs when
+ *   `notMemberMessage` is given).
  */
 export async function assertProfileAccess({
   user,
@@ -27,16 +27,16 @@ export async function assertProfileAccess({
   profileId: string;
   permissions: AccessZonePermissionInput;
   notMemberMessage?: string;
-}): Promise<ProfileUserWithNormalizedRoles> {
-  const profileUser = await getProfileAccessUser({ user, profileId });
+}): Promise<NormalizedRole[]> {
+  const roles = await getProfileAccessRoles({ user, profileId });
 
-  if (!profileUser) {
+  if (roles.length === 0) {
     throw new UnauthorizedError(notMemberMessage ?? 'Not authorized');
   }
 
-  if (!checkPermission(permissions, profileUser.roles)) {
+  if (!checkPermission(permissions, roles)) {
     throw new UnauthorizedError('Not authorized');
   }
 
-  return profileUser;
+  return roles;
 }

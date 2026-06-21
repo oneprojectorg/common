@@ -17,7 +17,7 @@ vi.mock('@op/db/client', () => ({
 vi.mock('../access', () => ({
   assertProfileTypeAccess: vi.fn(),
   assertInstanceProfileAccess: vi.fn(),
-  getProfileAccessUser: vi.fn(),
+  getProfileAccessRoles: vi.fn(),
   getCurrentProfileId: vi.fn(),
 }));
 
@@ -31,7 +31,7 @@ import {
   assertInstanceProfileAccess,
   assertProfileTypeAccess,
   getCurrentProfileId,
-  getProfileAccessUser,
+  getProfileAccessRoles,
 } from '../access';
 import { assertModerationItemAccess } from './assertModerationItemAccess';
 import { hasActiveModerationFlag } from './moderationVisibility';
@@ -49,9 +49,10 @@ const proposalFindFirst = vi.mocked(db.query.proposals.findFirst);
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(hasActiveModerationFlag).mockResolvedValue(false);
-  vi.mocked(getProfileAccessUser).mockResolvedValue(undefined);
+  vi.mocked(getProfileAccessRoles).mockResolvedValue([]);
   vi.mocked(assertProfileTypeAccess).mockResolvedValue(undefined);
-  vi.mocked(assertInstanceProfileAccess).mockResolvedValue(undefined as never);
+  // Instance roles default to none (no instance-admin grant).
+  vi.mocked(assertInstanceProfileAccess).mockResolvedValue([]);
   postsToProfilesFindMany.mockResolvedValue([] as never);
 });
 
@@ -109,7 +110,7 @@ describe('assertModerationItemAccess — post', () => {
     } as never);
     vi.mocked(hasActiveModerationFlag).mockResolvedValue(true);
     vi.mocked(getCurrentProfileId).mockResolvedValue('someone-else');
-    // getProfileAccessUser → undefined (no admin roles) from beforeEach.
+    // getProfileAccessRoles → [] (no admin roles) from beforeEach.
     await expect(
       assertModerationItemAccess({ itemType: 'post', itemId: POST_ID, user }),
     ).rejects.toThrow();
@@ -212,10 +213,8 @@ describe('assertModerationItemAccess — proposal', () => {
       visibility: 'hidden',
       processInstance: { profileId: 'instance-profile' },
     } as never);
-    // First getProfileAccessUser call (proposal profile) returns a member.
-    vi.mocked(getProfileAccessUser).mockResolvedValueOnce({
-      roles: [],
-    } as never);
+    // Proposal-profile lookup resolves a member (≥1 role).
+    vi.mocked(getProfileAccessRoles).mockResolvedValueOnce([{}] as never);
     await expect(
       assertModerationItemAccess({
         itemType: 'proposal',
@@ -252,10 +251,8 @@ describe('assertModerationItemAccess — proposal', () => {
       processInstance: { profileId: 'instance-profile' },
     } as never);
     vi.mocked(hasActiveModerationFlag).mockResolvedValue(true);
-    // getProfileAccessUser (proposal profile) returns a member.
-    vi.mocked(getProfileAccessUser).mockResolvedValueOnce({
-      roles: [],
-    } as never);
+    // Proposal-profile lookup resolves a member (≥1 role).
+    vi.mocked(getProfileAccessRoles).mockResolvedValueOnce([{}] as never);
     await expect(
       assertModerationItemAccess({
         itemType: 'proposal',

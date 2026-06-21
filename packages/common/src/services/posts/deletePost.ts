@@ -12,7 +12,7 @@ import { UnauthorizedError } from '../../utils';
 import {
   assertInstanceProfileAccess,
   getCurrentProfileId,
-  getProfileAccessUser,
+  getProfileAccessRoles,
 } from '../access';
 
 export interface DeletePostByIdOptions {
@@ -69,11 +69,11 @@ export const deletePostById = async (options: DeletePostByIdOptions) => {
   // preserving the legitimate self-delete path for individual and decision-
   // instance authors.
   if (post.profileId && post.profileId === currentProfileId) {
-    const profileUser = await getProfileAccessUser({
+    const roles = await getProfileAccessRoles({
       user,
       profileId: post.profileId,
     });
-    if (profileUser) {
+    if (roles.length > 0) {
       await db.delete(posts).where(eq(posts.id, postId));
       return;
     }

@@ -170,7 +170,8 @@ export const getOrgAccessUser = memoize(
   (args) => orgUserCacheKey(args).join(':'),
 );
 
-// gets a user's access for a specific profile
+// Don't import directly — use getProfileAccessRoles. Exported only so role
+// mutations can call .invalidate on the memoized cache.
 export const getProfileAccessUser = memoize(
   async ({
     user,
@@ -230,6 +231,23 @@ export const getProfileAccessUser = memoize(
 );
 
 /**
+ * The caller's effective roles on a profile (own grant ∪ public grant), without
+ * the join-table identity row. Empty when no grant matched — so `roles.length
+ * > 0` means "has at least one effective role", slightly tighter than the old
+ * presence check, which also held for a row with zero effective roles.
+ *
+ * No org fallback — see {@link getProfileAccessRolesWithOrgFallback} for that.
+ */
+export const getProfileAccessRoles = async ({
+  user,
+  profileId,
+}: {
+  user?: AccessUser;
+  profileId: string;
+}): Promise<NormalizedRole[]> =>
+  (await getProfileAccessUser({ user, profileId }))?.roles ?? [];
+
+/**
  * Resolve the caller's normalized roles on a profile, falling back to their
  * org-level roles when that profile is an organization's profile. The same
  * built-in-fallback shape as `assertInstanceProfileAccess` /
@@ -283,20 +301,17 @@ export const assertInstanceProfileAccess = async ({
   instance: { profileId: string | null; ownerProfileId: string | null };
   profilePermissions: AccessZonePermissionInput;
   orgFallbackPermissions: AccessZonePermissionInput;
-}): Promise<ProfileUserWithNormalizedRoles | undefined> => {
+}): Promise<NormalizedRole[]> => {
   if (!instance.profileId) {
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  const profileUser = await getProfileAccessUser({
+  const profileRoles = await getProfileAccessRoles({
     user,
     profileId: instance.profileId,
   });
 
-  const hasProfileAccess = checkPermission(
-    profilePermissions,
-    profileUser?.roles ?? [],
-  );
+  const hasProfileAccess = checkPermission(profilePermissions, profileRoles);
 
   if (!hasProfileAccess) {
     if (!instance.ownerProfileId) {
@@ -322,7 +337,8 @@ export const assertInstanceProfileAccess = async ({
     }
   }
 
-  return profileUser;
+  // Profile-level roles only (empty when admitted via the org fallback).
+  return profileRoles;
 };
 
 // Memoized per request (keyed by authUserId): the current profile is stable

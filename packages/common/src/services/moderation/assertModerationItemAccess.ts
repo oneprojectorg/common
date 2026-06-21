@@ -8,7 +8,7 @@ import {
   assertInstanceProfileAccess,
   assertProfileTypeAccess,
   getCurrentProfileId,
-  getProfileAccessUser,
+  getProfileAccessRoles,
 } from '../access';
 import { hasActiveModerationFlag } from './moderationVisibility';
 import type { ModerationItemType } from './types';
@@ -73,30 +73,27 @@ export const assertModerationItemAccess = async ({
       },
     });
 
-    // An already-flagged post is hidden from everyone but its author and the
-    // root-profile admins (see getPost's gate); the same audience may flag it,
-    // so a non-owner can't ship hidden content to the vendor by re-flagging.
+    // An already-flagged post is restricted to its author + root-profile admins
+    // (see getPost's gate); only that audience may flag it, so hidden content
+    // can't be shipped to the vendor by re-flagging. A sessionless caller is
+    // neither. getCurrentProfileId is memoized, sharing submitUserFlag's lookup.
     if (await hasActiveModerationFlag('post', post.id)) {
-      // Restricted to the author + root-profile admins. A sessionless caller is
-      // neither, so they're denied — hidden content can't be shipped to the
-      // vendor by flagging it. getCurrentProfileId is memoized per request, so
-      // this shares submitUserFlag's lookup.
       const actorProfileId = user
         ? await getCurrentProfileId(user.id)
         : undefined;
       const isAuthor =
         actorProfileId !== undefined && post.profileId === actorProfileId;
       if (!isAuthor) {
-        const rootProfileUser =
+        const rootProfileRoles =
           user && post.rootProfileId
-            ? await getProfileAccessUser({
+            ? await getProfileAccessRoles({
                 user,
                 profileId: post.rootProfileId,
               })
-            : undefined;
+            : [];
         const isAdmin = checkPermission(
           { profile: permission.ADMIN },
-          rootProfileUser?.roles ?? [],
+          rootProfileRoles,
         );
         if (!isAdmin) {
           throw new NotFoundError('Post', itemId);
@@ -115,9 +112,8 @@ export const assertModerationItemAccess = async ({
       throw new NotFoundError('Proposal', itemId);
     }
 
-    // Reuse the resolved instance-profile user for the instance-admin check
-    // below instead of re-fetching it, mirroring getProposal.
-    const instanceProfileUser = await assertInstanceProfileAccess({
+    // Reused for the instance-admin check below, mirroring getProposal.
+    const instanceRoles = await assertInstanceProfileAccess({
       user,
       instance: proposal.processInstance,
       profilePermissions: { decisions: permission.READ },
@@ -127,27 +123,23 @@ export const assertModerationItemAccess = async ({
       ],
     });
 
-    // HIDDEN proposals, and proposals with an active moderation flag, are
-    // restricted beyond plain instance read — visible only to proposal-level
-    // members (creator + invited collaborators) or instance admins. Mirror
-    // getProposal's gate so restricted text/attachments can't be shipped to the
-    // vendor by an instance member who only has read on the process, and so
-    // this gate (not submitUserFlag's idempotency shortcut) is what enforces it
-    // for an already-flagged proposal. (DRAFT is deliberately not gated here:
-    // drafts are reportable.)
+    // HIDDEN or already-flagged proposals are restricted beyond plain instance
+    // read — visible only to proposal-level members or instance admins (mirrors
+    // getProposal), so restricted content can't be shipped to the vendor by an
+    // instance member with only process read. DRAFT stays reportable.
     const isRestricted =
       proposal.visibility === Visibility.HIDDEN ||
       (await hasActiveModerationFlag('proposal', proposal.id));
     if (isRestricted) {
-      const proposalProfileUser = await getProfileAccessUser({
+      const proposalRoles = await getProfileAccessRoles({
         user,
         profileId: proposal.profileId,
       });
       const isInstanceAdmin = checkPermission(
         { profile: permission.ADMIN },
-        instanceProfileUser?.roles ?? [],
+        instanceRoles,
       );
-      if (!proposalProfileUser && !isInstanceAdmin) {
+      if (proposalRoles.length === 0 && !isInstanceAdmin) {
         throw new NotFoundError('Proposal', itemId);
       }
     }

@@ -15,7 +15,7 @@ import {
   UnauthorizedError,
   ValidationError,
 } from '../../utils';
-import { assertInstanceProfileAccess, getProfileAccessUser } from '../access';
+import { assertInstanceProfileAccess, getProfileAccessRoles } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
 import type {
@@ -86,14 +86,14 @@ export const updateProposal = async ({
     });
   } else {
     // Data updates require profile-level update permission on the proposal's profile
-    const proposalProfileUser = await getProfileAccessUser({
+    const proposalRoles = await getProfileAccessRoles({
       user: { id: user.id },
       profileId: existingProposal.profileId,
     });
 
     const hasProposalUpdate = checkPermission(
       { profile: permission.UPDATE },
-      proposalProfileUser?.roles ?? [],
+      proposalRoles,
     );
 
     if (!hasProposalUpdate) {
