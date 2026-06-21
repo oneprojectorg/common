@@ -9,7 +9,7 @@ import {
   organizationUserToAccessRoles,
   organizationUsers,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import type { ClaimsUser } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
 
@@ -45,13 +45,13 @@ export interface InviteUsersToOrganizationInput {
   organizationId: string;
   personalMessage?: string;
 
-  user: User;
+  user: ClaimsUser;
 }
 
 export interface InviteNewUsersInput {
   emails: string[];
   personalMessage?: string;
-  user: User;
+  user: ClaimsUser;
 }
 
 /**

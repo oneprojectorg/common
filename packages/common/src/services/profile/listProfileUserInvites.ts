@@ -1,6 +1,6 @@
 import { db, sql } from '@op/db/client';
 import { profiles } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
+import type { ClaimsUser } from '@op/supabase/lib';
 
 import { assertProfile, assertProfileAdmin } from '../assert';
 
@@ -14,7 +14,7 @@ export const listProfileUserInvites = async ({
   query,
 }: {
   profileId: string;
-  user: User;
+  user: ClaimsUser;
   query?: string;
 }) => {
   // Check existence before access so a nonexistent profile is a 404

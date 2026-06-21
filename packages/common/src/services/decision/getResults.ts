@@ -6,7 +6,7 @@ import {
   decisionsVoteSubmissions,
   processInstances,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import { ClaimsUser } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
@@ -37,7 +37,7 @@ export const getLatestResultWithProposals = async ({
   cursor,
 }: {
   processInstanceId: string;
-  user: User;
+  user: ClaimsUser;
   limit?: number;
   cursor?: string | null;
 }): Promise<PaginatedResult<ResultProposalItem> | null> => {

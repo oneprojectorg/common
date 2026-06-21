@@ -7,7 +7,7 @@ import {
   proposalReviewAssignments,
   proposalReviews,
 } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
+import type { ClaimsUser } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { count } from 'drizzle-orm';
 
@@ -26,7 +26,7 @@ export async function submitReview({
   assignmentId: string;
   reviewData: RubricReviewData;
   overallComment?: string | null;
-  user: User;
+  user: ClaimsUser;
 }): Promise<{ review: ProposalReview; processInstanceId: string }> {
   const context = await assertReviewAssignmentContext({
     assignmentId,

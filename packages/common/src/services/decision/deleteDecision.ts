@@ -1,6 +1,6 @@
 import { db, eq } from '@op/db/client';
 import { profiles } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import { ClaimsUser } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError } from '../../utils';
@@ -11,7 +11,7 @@ export const deleteDecision = async ({
   user,
 }: {
   instanceId: string;
-  user: User;
+  user: ClaimsUser;
 }) => {
   const instance = await db.query.processInstances.findFirst({
     where: { id: instanceId },

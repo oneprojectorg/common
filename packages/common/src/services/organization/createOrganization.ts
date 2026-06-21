@@ -11,7 +11,7 @@ import {
   profiles,
   users,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import { ClaimsUser } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
 
 import { CommonError, NotFoundError } from '../../utils';
@@ -96,7 +96,7 @@ export const createOrganization = async ({
       orgAvatarImageId?: string;
       orgBannerImageId?: string;
     };
-  user: User;
+  user: ClaimsUser;
   db?: DbClient;
 }) => {
   const orgInputs = OrganizationInputParser.parse({

@@ -6,7 +6,7 @@ import {
   organizationUserToAccessRoles,
   organizationUsers,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import { ClaimsUser } from '@op/supabase/lib';
 import { eq } from 'drizzle-orm';
 
 import { CommonError, ValidationError } from '../../../utils';
@@ -23,7 +23,7 @@ export const updateProfileJoinRequest = async ({
   requestId,
   status,
 }: {
-  user: User;
+  user: ClaimsUser;
   /** The ID of the join profile request to update */
   requestId: string;
   status: JoinProfileRequestStatus.APPROVED | JoinProfileRequestStatus.REJECTED;

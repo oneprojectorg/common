@@ -1,7 +1,7 @@
 import { invalidate } from '@op/cache';
 import { and, db, eq, inArray } from '@op/db/client';
 import { profileUserToAccessRoles } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
+import type { ClaimsUser } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils/error';
@@ -25,7 +25,7 @@ export const updateProfileUserRoles = async ({
 }: {
   profileUserId: string;
   roleIds: string[];
-  user: User;
+  user: ClaimsUser;
 }) => {
   if (roleIds.length === 0) {
     throw new CommonError('At least one role must be specified');

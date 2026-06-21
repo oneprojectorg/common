@@ -9,7 +9,7 @@ import {
   proposalReviewRequests,
   proposals,
 } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
+import type { ClaimsUser } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { and, eq, sql } from 'drizzle-orm';
 
@@ -33,7 +33,7 @@ export async function submitRevisionResponse({
 }: {
   revisionRequestId: string;
   resubmitComment?: string;
-  user: User;
+  user: ClaimsUser;
 }): Promise<ProposalReviewRequest & { processInstanceId: string }> {
   const [request, dbUser] = await Promise.all([
     db.query.proposalReviewRequests.findFirst({

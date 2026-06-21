@@ -8,7 +8,7 @@ import {
   organizationsWhereWeWork,
   profiles,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import { ClaimsUser } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 import pMap from 'p-map';
 
@@ -31,7 +31,7 @@ export const updateOrganization = async ({
       orgAvatarImageId?: string;
       orgBannerImageId?: string;
     };
-  user: User;
+  user: ClaimsUser;
 }) => {
   const organizationId = id;
   if (!organizationId) {

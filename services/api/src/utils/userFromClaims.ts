@@ -1,22 +1,13 @@
-import type { JwtPayload, User } from '@op/supabase/lib';
+import type { ClaimsUser, JwtPayload } from '@op/supabase/lib';
 
 /**
- * Project the verified JWT payload onto the `User` shape that downstream code
- * (services, encoders, analytics) already consumes. Only the fields actually
- * present in the JWT — id (sub), email, phone, app_metadata, user_metadata,
- * is_anonymous, role, aud — are populated. Server-side timestamps such as
- * `confirmed_at`, `email_confirmed_at`, and `last_sign_in_at` are intentionally
- * absent: a caller that needs them MUST go through `getCachedAuthUser`
- * (authoritative) instead of `getCachedAuthClaims` (local-verify).
- *
- * `created_at` is required by `User` but is not in the JWT. We derive it from
- * the JWT `iat` (issued-at) timestamp so the shape is satisfied without
- * fabricating a misleading "account created at" value — the field is read by
- * no consumer along claims-based code paths today.
+ * Project the verified JWT payload onto the {@link ClaimsUser} shape that
+ * downstream code (services, encoders, analytics) consumes on the
+ * `authenticatedProcedure` / `openProcedure` paths.
  */
-export const userFromClaims = (claims: JwtPayload): User => {
-  // `iat`, `sub`, `role`, `aud` are typed as required on JwtPayload, so no
-  // runtime guards. `email`/`phone`/`*_metadata`/`is_anonymous` are typed as
+export const userFromClaims = (claims: JwtPayload): ClaimsUser => {
+  // `sub`, `role`, `aud` are typed as required on JwtPayload, so no runtime
+  // guards. `email`/`phone`/`*_metadata`/`is_anonymous` are typed as
   // `[key: string]: any` extras, so they DO need shape validation against a
   // signature-valid-but-malformed JWT.
   const aud = Array.isArray(claims.aud) ? (claims.aud[0] ?? '') : claims.aud;
@@ -33,7 +24,6 @@ export const userFromClaims = (claims: JwtPayload): User => {
       typeof claims.is_anonymous === 'boolean'
         ? claims.is_anonymous
         : undefined,
-    created_at: new Date(claims.iat * 1000).toISOString(),
   };
 };
 

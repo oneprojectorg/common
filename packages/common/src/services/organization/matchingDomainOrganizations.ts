@@ -1,7 +1,11 @@
 import { db } from '@op/db/client';
-import { User } from '@op/supabase/lib';
+import { ClaimsUser } from '@op/supabase/lib';
 
-export const matchingDomainOrganizations = async ({ user }: { user: User }) => {
+export const matchingDomainOrganizations = async ({
+  user,
+}: {
+  user: ClaimsUser;
+}) => {
   if (!user?.email) {
     return [];
   }

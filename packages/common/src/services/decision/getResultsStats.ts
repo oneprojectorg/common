@@ -5,7 +5,7 @@ import {
   processInstances,
   proposals,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import { ClaimsUser } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
@@ -17,7 +17,7 @@ export const getResultsStats = async ({
   user,
 }: {
   instanceId: string;
-  user: User;
+  user: ClaimsUser;
 }): Promise<{
   membersVoted: number;
   proposalsFunded: number;

@@ -1,6 +1,6 @@
 import { db, desc, eq } from '@op/db/client';
 import { ProposalStatus, organizations, processInstances } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import { ClaimsUser } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
@@ -11,7 +11,7 @@ export const listLegacyInstances = async ({
   user,
 }: {
   ownerProfileId: string;
-  user: User;
+  user: ClaimsUser;
 }) => {
   const org = await db
     .select({ id: organizations.id })

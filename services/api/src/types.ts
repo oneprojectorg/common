@@ -1,7 +1,7 @@
 import type { ChannelName } from '@op/common/realtime';
 import type { db } from '@op/db/client';
 import type { tables } from '@op/db/tables';
-import type { User } from '@op/supabase/lib';
+import type { ClaimsUser, User } from '@op/supabase/lib';
 import type { MiddlewareFunction } from '@trpc/server/unstable-core-do-not-import';
 import type { SerializeOptions } from 'cookie';
 
@@ -25,14 +25,24 @@ export interface TContext {
   isServerSideCall?: boolean;
 }
 
+/** Context produced by the authoritative auth path (confirmed / network /
+ * platform-admin middlewares). `user` is the full Supabase `User`, including
+ * server-side timestamps like `last_sign_in_at` and `confirmed_at`. */
 export interface TContextWithUser {
   user: User;
 }
 
-/** Context after optional user resolution: `user` is the resolved Supabase
- * identity, or `undefined` when the caller has no valid session. */
+/** Context produced by the local-verify auth path (`withResolvedUser` →
+ * `withAuthenticatedUser`). `user` is a {@link ClaimsUser}: only the fields
+ * carried in the JWT, with server-side timestamps deliberately absent. */
+export interface TContextWithClaimsUser {
+  user: ClaimsUser;
+}
+
+/** Context after optional user resolution on the local-verify path: `user` is
+ * a {@link ClaimsUser}, or `undefined` when the caller has no valid session. */
 export interface TContextWithMaybeUser {
-  user?: User;
+  user?: ClaimsUser;
 }
 
 export interface TContextWithAnalytics {

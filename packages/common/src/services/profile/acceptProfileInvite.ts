@@ -4,7 +4,7 @@ import {
   profileUserToAccessRoles,
   profileUsers,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import { ClaimsUser } from '@op/supabase/lib';
 
 import {
   CommonError,
@@ -21,7 +21,7 @@ export const acceptProfileInvite = async ({
   user,
 }: {
   inviteId: string;
-  user: User;
+  user: ClaimsUser;
 }) => {
   // 1. Find the invite
   const invite = await db.query.profileInvites.findFirst({

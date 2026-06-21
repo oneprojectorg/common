@@ -8,11 +8,13 @@ import { userFromClaims } from '../utils/userFromClaims';
  * no valid session. Performs no authorization.
  *
  * Identity is established by verifying the caller's JWT locally against the
- * project JWKS — no GoTrue HTTPS round-trip on the common path. Stricter
- * middlewares ({@link withConfirmedUser}, {@link withNetworkAuthenticatedUser},
- * {@link withAuthenticatedPlatformAdmin}) still call the authoritative
- * `getCachedAuthUser` because they need server-side fields (`confirmed_at`,
- * `last_sign_in_at`) that the JWT does not carry.
+ * project JWKS — no GoTrue HTTPS round-trip on the common path. `ctx.user`
+ * therefore has the narrower {@link ClaimsUser} shape — server-side
+ * timestamps such as `confirmed_at` and `last_sign_in_at` are not present.
+ * Stricter middlewares ({@link withConfirmedUser},
+ * {@link withNetworkAuthenticatedUser}, {@link withAuthenticatedPlatformAdmin})
+ * still call the authoritative `getCachedAuthUser` and surface a full
+ * Supabase `User` because they read those fields.
  */
 const withResolvedUser: MiddlewareBuilderBase<TContextWithMaybeUser> = async ({
   ctx,

@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
 import { JoinProfileRequestStatus, joinProfileRequests } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import { ClaimsUser } from '@op/supabase/lib';
 import { and, eq } from 'drizzle-orm';
 
 import {
@@ -29,7 +29,7 @@ export const listProfileJoinRequests = async ({
   limit = 10,
   dir = 'desc',
 }: {
-  user: User;
+  user: ClaimsUser;
   targetProfileId: string;
   status?: JoinProfileRequestStatus;
   cursor?: string | null;

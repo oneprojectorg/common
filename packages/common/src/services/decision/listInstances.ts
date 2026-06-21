@@ -1,6 +1,6 @@
 import { and, asc, db, desc, eq, sql } from '@op/db/client';
 import { ProcessStatus, processInstances } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import { ClaimsUser } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
@@ -16,7 +16,7 @@ export interface ListInstancesInput {
   offset?: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'name' | 'status';
   orderDirection?: 'asc' | 'desc';
-  user: User;
+  user: ClaimsUser;
   authUserId: string;
 }
 

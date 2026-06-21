@@ -1,7 +1,7 @@
 import { invalidate } from '@op/cache';
 import { and, db, eq } from '@op/db/client';
 import { organizationUsers } from '@op/db/schema';
-import type { User } from '@supabase/supabase-js';
+import type { ClaimsUser } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
@@ -11,7 +11,7 @@ import { assertOrgAccess } from '../assert';
 export interface DeleteOrganizationUserParams {
   organizationUserId: string;
   organizationId: string;
-  user: User;
+  user: ClaimsUser;
 }
 
 export async function deleteOrganizationUser({

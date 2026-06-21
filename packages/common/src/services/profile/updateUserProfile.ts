@@ -6,7 +6,7 @@ import {
   profiles,
   users,
 } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
+import type { ClaimsUser } from '@op/supabase/lib';
 
 import { generateUniqueProfileSlug } from './utils';
 
@@ -23,7 +23,7 @@ export interface UpdateUserProfileInput {
 
 export interface UpdateUserProfileParams {
   input: UpdateUserProfileInput;
-  user: User;
+  user: ClaimsUser;
   db?: typeof db; // Make db optional since we can use the imported client
 }
 

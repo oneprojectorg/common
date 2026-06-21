@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
 import { attachments, proposalAttachments } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
+import type { ClaimsUser } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { CommonError } from '../../utils';
@@ -34,7 +34,7 @@ export async function uploadProposalAttachment({
   user,
 }: {
   input: UploadProposalAttachmentInput;
-  user: User;
+  user: ClaimsUser;
 }): Promise<UploadProposalAttachmentResult> {
   const { fileName, mimeType, fileSize, storageObjectId, proposalId } = input;
 

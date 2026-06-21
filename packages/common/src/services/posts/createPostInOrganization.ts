@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
 import { attachments, posts, postsToOrganizations } from '@op/db/schema';
-import type { User } from '@supabase/supabase-js';
+import type { ClaimsUser } from '@op/supabase/lib';
 
 import { getOrgAccessUser } from '../';
 import { CommonError, UnauthorizedError } from '../../utils/error';
@@ -9,7 +9,7 @@ export interface CreatePostInOrganizationOptions {
   id: string;
   content: string;
   attachmentIds?: string[];
-  user: User;
+  user: ClaimsUser;
 }
 
 export const createPostInOrganization = async (

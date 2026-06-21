@@ -1,6 +1,6 @@
 import { cache } from '@op/cache';
 import { db } from '@op/db/client';
-import { User } from '@op/supabase/lib';
+import { ClaimsUser } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
@@ -18,7 +18,7 @@ export const getProcessCategories = async ({
   user,
 }: {
   processInstanceId: string;
-  user: User | undefined;
+  user: ClaimsUser | undefined;
 }): Promise<ProcessCategory[]> => {
   try {
     // The DB load is viewer-independent, so cache it under `[id, 'categories']`.

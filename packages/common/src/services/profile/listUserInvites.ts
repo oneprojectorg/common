@@ -1,6 +1,6 @@
 import { and, count, countDistinct, db, inArray, ne } from '@op/db/client';
 import { ProposalStatus, proposals } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
+import type { ClaimsUser } from '@op/supabase/lib';
 
 /**
  * List invites for the current user by email.
@@ -11,7 +11,7 @@ export const listUserInvites = async ({
   entityType,
   pending,
 }: {
-  user: User;
+  user: ClaimsUser;
   entityType?: string;
   pending?: boolean;
 }) => {

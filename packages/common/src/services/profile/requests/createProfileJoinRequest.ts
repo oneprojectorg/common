@@ -4,7 +4,7 @@ import {
   joinProfileRequests,
   organizations,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import { ClaimsUser } from '@op/supabase/lib';
 
 import { CommonError, ValidationError } from '../../../utils';
 import { assertGlobalRole } from '../../assert';
@@ -23,7 +23,7 @@ export const createProfileJoinRequest = async ({
   requestProfileId,
   targetProfileId,
 }: {
-  user: User;
+  user: ClaimsUser;
   requestProfileId: string;
   targetProfileId: string;
 }): Promise<JoinProfileRequestWithProfiles> => {
@@ -146,7 +146,7 @@ type Organization = typeof organizations.$inferSelect;
  * Returns the org if the user's email domain matches, null otherwise.
  */
 async function findDomainMatchedOrg(
-  user: User,
+  user: ClaimsUser,
   targetProfileId: string,
 ): Promise<Organization | null> {
   const userEmailDomain = user.email?.split('@')[1]?.toLowerCase();
@@ -169,7 +169,7 @@ async function findDomainMatchedOrg(
 }
 
 async function performAutoJoin(
-  user: User,
+  user: ClaimsUser,
   organization: Organization,
   roleId: string,
   db: DbClient,

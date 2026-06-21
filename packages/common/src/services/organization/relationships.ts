@@ -7,7 +7,7 @@ import {
   organizationRelationships,
   organizationUserToAccessRoles,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import { ClaimsUser } from '@op/supabase/lib';
 import { relationshipMap } from '@op/types';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
@@ -45,7 +45,7 @@ export const addRelationship = async ({
   to,
   relationships,
 }: {
-  user: User;
+  user: ClaimsUser;
   from: string;
   to: string;
   relationships: Array<string>;
@@ -159,7 +159,7 @@ export const getRelatedOrganizations = async ({
   orgId,
   pending = null,
 }: {
-  user: User;
+  user: ClaimsUser;
   orgId: string;
   pending?: boolean | null;
 }) => {
@@ -261,7 +261,7 @@ export const getDirectedRelationships = async ({
   to,
   pending = null,
 }: {
-  user: User;
+  user: ClaimsUser;
   from: string;
   to?: string;
   pending?: boolean | null;
@@ -337,7 +337,7 @@ export const getPendingRelationships = async ({
   user,
   orgId,
 }: {
-  user: User;
+  user: ClaimsUser;
   orgId: string;
 }) => {
   const orgUser = await getOrgAccessUser({ user, organizationId: orgId });
@@ -458,7 +458,7 @@ export const approveRelationship = async ({
   sourceOrganizationId,
   user,
 }: {
-  user: User;
+  user: ClaimsUser;
   targetOrganizationId: string;
   sourceOrganizationId: string;
 }) => {
@@ -503,7 +503,7 @@ export const declineRelationship = async ({
   ids,
   user,
 }: {
-  user: User;
+  user: ClaimsUser;
   targetOrganizationId: string;
   ids: string[];
 }) => {

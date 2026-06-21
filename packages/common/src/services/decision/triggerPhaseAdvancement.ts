@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
 import { ProcessStatus } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
+import type { ClaimsUser } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import {
@@ -17,7 +17,7 @@ import type { DecisionInstanceData } from './schemas/instanceData';
 
 export interface TriggerPhaseAdvancementInput {
   instanceId: string;
-  user: User;
+  user: ClaimsUser;
   /**
    * The phase the caller observed as current. If provided, the transition only
    * proceeds when the instance is actually on this phase. If the instance has

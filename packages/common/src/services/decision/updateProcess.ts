@@ -1,6 +1,6 @@
 import { db, eq } from '@op/db/client';
 import { decisionProcesses } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import { ClaimsUser } from '@op/supabase/lib';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
@@ -21,7 +21,7 @@ export const updateProcess = async ({
 }: {
   processId: string;
   data: UpdateProcessInput;
-  user: User;
+  user: ClaimsUser;
 }) => {
   try {
     const dbUser = await assertUserByAuthId(user.id);

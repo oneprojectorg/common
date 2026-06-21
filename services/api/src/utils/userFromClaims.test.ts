@@ -15,7 +15,7 @@ const baseClaims: JwtPayload = {
 };
 
 describe('userFromClaims', () => {
-  it('maps the standard authenticated payload onto User fields', () => {
+  it('maps the standard authenticated payload onto ClaimsUser fields', () => {
     const user = userFromClaims({
       ...baseClaims,
       email: 'user@oneproject.org',
@@ -33,7 +33,6 @@ describe('userFromClaims', () => {
     expect(user.aud).toBe('authenticated');
     expect(user.role).toBe('authenticated');
     expect(user.is_anonymous).toBe(false);
-    expect(user.created_at).toBe(new Date(1_700_000_000 * 1000).toISOString());
   });
 
   it('preserves is_anonymous=true for anonymous sign-ins', () => {

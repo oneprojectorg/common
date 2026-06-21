@@ -3,7 +3,7 @@ import { OPURLConfig } from '@op/core';
 import { db } from '@op/db/client';
 import { ProcessStatus, allowList, profileInvites } from '@op/db/schema';
 import { Events, event } from '@op/events';
-import { User } from '@op/supabase/lib';
+import { ClaimsUser } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
 
@@ -100,7 +100,7 @@ export const inviteUsersToProfile = async ({
   profileId: string;
   requesterProfileId: string;
   personalMessage?: string;
-  user: User;
+  user: ClaimsUser;
 }) => {
   if (invitations.length === 0) {
     throw new CommonError('At least one invitation is required');

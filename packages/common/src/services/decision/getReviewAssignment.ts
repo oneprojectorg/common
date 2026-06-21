@@ -5,7 +5,7 @@ import {
   postsToProfiles,
   profileRelationships,
 } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
+import type { ClaimsUser } from '@op/supabase/lib';
 import { count as countFn } from 'drizzle-orm';
 
 import { ValidationError } from '../../utils';
@@ -28,7 +28,7 @@ export async function getReviewAssignment({
   user,
 }: {
   assignmentId: string;
-  user: User;
+  user: ClaimsUser;
 }): Promise<ReviewAssignmentExtended> {
   const { assignment, instance, review, revisionRequest, rubricTemplate } =
     await assertReviewAssignmentContext({

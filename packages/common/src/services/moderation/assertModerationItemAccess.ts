@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
 import { EntityType, Visibility } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
+import type { ClaimsUser } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
@@ -39,7 +39,7 @@ export const assertModerationItemAccess = async ({
 }: {
   itemType: ModerationItemType;
   itemId: string;
-  user?: User;
+  user?: ClaimsUser;
 }): Promise<void> => {
   if (itemType === 'post') {
     const post = await db.query.posts.findFirst({

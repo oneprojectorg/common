@@ -1,7 +1,7 @@
 import { invalidate } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { profiles } from '@op/db/schema';
-import type { User } from '@supabase/supabase-js';
+import type { ClaimsUser } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
@@ -13,7 +13,7 @@ export async function deleteOrganization({
   user,
 }: {
   organizationProfileId: string;
-  user: User;
+  user: ClaimsUser;
 }) {
   // First, find the organization by its profile ID to get the organization ID
   const organization = await db.query.organizations.findFirst({

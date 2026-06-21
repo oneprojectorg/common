@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
 import type { ModerationFlag } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
+import type { ClaimsUser } from '@op/supabase/lib';
 
 import { getCurrentProfileId } from '../access';
 import { assertModerationItemAccess } from './assertModerationItemAccess';
@@ -31,7 +31,7 @@ export interface SubmitUserFlagInput {
    * caller is held to public visibility (see {@link assertModerationItemAccess}).
    * A sessionless report records a `null` reporter.
    */
-  user?: User;
+  user?: ClaimsUser;
 }
 
 /**

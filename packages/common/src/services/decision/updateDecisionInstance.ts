@@ -8,7 +8,7 @@ import {
   profiles,
 } from '@op/db/schema';
 import { Events, event } from '@op/events';
-import type { User } from '@op/supabase/lib';
+import type { ClaimsUser } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
 
@@ -58,7 +58,7 @@ export const updateDecisionInstance = async ({
   proposalTemplate?: Record<string, unknown>;
   /** Rubric template (JSON Schema defining evaluation criteria) */
   rubricTemplate?: RubricTemplateSchema;
-  user: User;
+  user: ClaimsUser;
 }) => {
   // Fetch existing instance
   const existingInstance = await db.query.processInstances.findFirst({

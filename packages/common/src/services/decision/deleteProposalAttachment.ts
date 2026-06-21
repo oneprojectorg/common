@@ -1,6 +1,6 @@
 import { and, db, eq } from '@op/db/client';
 import { proposalAttachments } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
+import type { ClaimsUser } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { CommonError } from '../../utils';
@@ -18,7 +18,7 @@ export async function deleteProposalAttachment({
 }: {
   attachmentId: string;
   proposalId: string;
-  user: User;
+  user: ClaimsUser;
 }) {
   // Fetch link and proposal in parallel
   const [existingLink, proposal] = await Promise.all([

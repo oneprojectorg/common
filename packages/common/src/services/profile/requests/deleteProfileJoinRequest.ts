@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
 import { JoinProfileRequestStatus, joinProfileRequests } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
+import type { ClaimsUser } from '@op/supabase/lib';
 import { eq } from 'drizzle-orm';
 
 import { UnauthorizedError, ValidationError } from '../../../utils';
@@ -15,7 +15,7 @@ export const deleteProfileJoinRequest = async ({
   user,
   requestId,
 }: {
-  user: User;
+  user: ClaimsUser;
   /** The ID of the join profile request to delete */
   requestId: string;
 }): Promise<JoinProfileRequestWithProfiles> => {

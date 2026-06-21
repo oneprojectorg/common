@@ -6,7 +6,7 @@ import {
   processInstances,
   profileUsers,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import { ClaimsUser } from '@op/supabase/lib';
 import { collapseRoles } from 'access-zones';
 
 import {
@@ -33,7 +33,7 @@ export const listDecisionProfiles = async ({
   ownerProfileId,
   stewardProfileId,
 }: {
-  user: User;
+  user: ClaimsUser;
   search?: string;
   status?: ProcessStatus[];
   limit?: number;

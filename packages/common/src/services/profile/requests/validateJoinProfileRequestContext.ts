@@ -6,7 +6,7 @@ import {
   profiles,
   users,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import type { ClaimsUser } from '@op/supabase/lib';
 import { and, eq, inArray } from 'drizzle-orm';
 
 import { UnauthorizedError, ValidationError } from '../../../utils';
@@ -21,7 +21,7 @@ export const validateJoinProfileRequestContext = async ({
   requestProfileId,
   targetProfileId,
 }: {
-  user: User;
+  user: ClaimsUser;
   requestProfileId: string;
   targetProfileId: string;
 }): Promise<JoinProfileRequestContext> => {

@@ -1,6 +1,6 @@
 import { and, db, eq, isNull } from '@op/db/client';
 import { profileInvites } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
+import type { ClaimsUser } from '@op/supabase/lib';
 
 import { CommonError, NotFoundError } from '../../utils/error';
 import { assertProfileAdmin } from '../assert';
@@ -16,7 +16,7 @@ export const updateProfileInvite = async ({
 }: {
   inviteId: string;
   accessRoleId: string;
-  user: User;
+  user: ClaimsUser;
 }) => {
   // Fetch invite and validate role in parallel (independent queries)
   const [invite, role] = await Promise.all([

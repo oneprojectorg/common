@@ -1,7 +1,7 @@
 import { invalidate } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { profileUsers } from '@op/db/schema';
-import type { User } from '@op/supabase/lib';
+import type { ClaimsUser } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils/error';
 import { getProfileAccessUser, getUserSession } from '../access';
@@ -15,7 +15,7 @@ export const removeProfileUser = async ({
   user,
 }: {
   profileUserId: string;
-  user: User;
+  user: ClaimsUser;
 }) => {
   const targetProfileUser = await assertProfileUser(profileUserId);
 
