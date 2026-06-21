@@ -105,14 +105,19 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
       },
     },
   );
+  // IMPORTANT: DO NOT REMOVE this auth call.
   // Do not run code between createServerClient and the auth check. A simple
   // mistake could make it very hard to debug issues with users being randomly
   // logged out. We use getClaims() — local JWKS verification — to drop the
-  // GoTrue round-trip from every navigation; for asymmetric JWTs no network
-  // hop is made, and for symmetric JWTs the SDK transparently falls back to
-  // getUser().
-  const { data: claims } = await supabase.auth.getClaims();
-  const user = claims?.claims ?? null;
+  // GoTrue user-lookup round-trip from every navigation; for asymmetric JWTs
+  // the JWT signature is verified against the project JWKS (one cached fetch
+  // per GoTrueClient instance), and for symmetric JWTs the SDK transparently
+  // falls back to getUser(). Crucially, getClaims() — like getUser() — still
+  // calls _useSession() under the hood, which refreshes expired access tokens
+  // and writes the refreshed cookies via the cookie adapter above; removing
+  // it would break session refresh.
+  const { data: authData } = await supabase.auth.getClaims();
+  const isAuthenticated = Boolean(authData?.claims);
 
   // Reroute when the locale prefix is missing — for both logged-in users and
   // anonymous visitors on non-root paths. Public links like `/columbus` need
@@ -123,7 +128,7 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   const shouldRouteI18n =
     pathnameIsMissingLocale &&
     !pathname.startsWith('/api') &&
-    (user || pathname !== '/');
+    (isAuthenticated || pathname !== '/');
   if (shouldRouteI18n) {
     const handleI18nRouting = createMiddleware(routing);
 

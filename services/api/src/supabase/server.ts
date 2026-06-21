@@ -11,6 +11,7 @@ import type {
 } from '@op/supabase/lib';
 import type { Database } from '@op/supabase/types';
 import 'server-only';
+
 import type { TContext } from '../types';
 
 const useUrl = OPURLConfig('APP');
@@ -20,7 +21,8 @@ const authClaimsCache = new WeakMap<TContext, Promise<ClaimsResponse>>();
 
 export type ClaimsResponse =
   | { data: { claims: JwtPayload }; error: null }
-  | { data: null; error: AuthError | null };
+  | { data: null; error: AuthError }
+  | { data: null; error: null }; // no session — `getClaims()` returns this when no JWT cookie is present
 
 /**
  * Authoritative auth lookup. Performs an HTTPS round-trip to GoTrue
@@ -56,6 +58,8 @@ export function getCachedAuthClaims(ctx: TContext): Promise<ClaimsResponse> {
   if (!promise) {
     const supabase = createSBAdminClient(ctx);
     promise = supabase.auth.getClaims().then((result) => {
+      // We deliberately drop `header` and `signature` from the SDK's getClaims
+      // result — downstream consumers only need the verified JWT payload.
       if (result.data) {
         return { data: { claims: result.data.claims }, error: null };
       }

@@ -15,29 +15,25 @@ import type { JwtPayload, User } from '@op/supabase/lib';
  * no consumer along claims-based code paths today.
  */
 export const userFromClaims = (claims: JwtPayload): User => {
-  const issuedAt =
-    typeof claims.iat === 'number'
-      ? new Date(claims.iat * 1000).toISOString()
-      : '';
+  // `iat`, `sub`, `role`, `aud` are typed as required on JwtPayload, so no
+  // runtime guards. `email`/`phone`/`*_metadata`/`is_anonymous` are typed as
+  // `[key: string]: any` extras, so they DO need shape validation against a
+  // signature-valid-but-malformed JWT.
   const aud = Array.isArray(claims.aud) ? (claims.aud[0] ?? '') : claims.aud;
-  const appMetadata = isRecord(claims.app_metadata) ? claims.app_metadata : {};
-  const userMetadata = isRecord(claims.user_metadata)
-    ? claims.user_metadata
-    : {};
 
   return {
     id: claims.sub,
     aud,
-    role: typeof claims.role === 'string' ? claims.role : undefined,
+    role: claims.role,
     email: typeof claims.email === 'string' ? claims.email : undefined,
     phone: typeof claims.phone === 'string' ? claims.phone : undefined,
-    app_metadata: appMetadata,
-    user_metadata: userMetadata,
+    app_metadata: isRecord(claims.app_metadata) ? claims.app_metadata : {},
+    user_metadata: isRecord(claims.user_metadata) ? claims.user_metadata : {},
     is_anonymous:
       typeof claims.is_anonymous === 'boolean'
         ? claims.is_anonymous
         : undefined,
-    created_at: issuedAt,
+    created_at: new Date(claims.iat * 1000).toISOString(),
   };
 };
 

@@ -67,4 +67,21 @@ describe('userFromClaims', () => {
 
     expect(user.aud).toBe('authenticated');
   });
+
+  it('maps an empty aud array to an empty string', () => {
+    const user = userFromClaims({
+      ...baseClaims,
+      aud: [],
+    });
+
+    expect(user.aud).toBe('');
+  });
+
+  it('leaves is_anonymous undefined when the claim is absent', () => {
+    // Encoders downstream (e.g. encoders/users.ts) coerce via Boolean(), so an
+    // undefined value must not get normalized to `false` here.
+    const user = userFromClaims(baseClaims);
+
+    expect(user.is_anonymous).toBeUndefined();
+  });
 });
