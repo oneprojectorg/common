@@ -1,11 +1,20 @@
 import { appRouter, createContext } from '@op/api';
-import { API_TRPC_PTH, originUrlMatcher } from '@op/core';
+import {
+  API_TRPC_PTH,
+  CSRF_HEADER,
+  OPURLConfig,
+  csrfRejection,
+  originUrlMatcher,
+} from '@op/core';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { NextRequest } from 'next/server';
 
 export const maxDuration = 120;
 
 const EXPOSED_HEADERS = 'x-request-id';
+const ALLOWED_HEADERS = `Content-Type, Authorization, trpc-batch-mode, ${CSRF_HEADER}`;
+
+const { IS_DEVELOPMENT } = OPURLConfig('API');
 
 const isAllowedOrigin = (origin: string | null): boolean => {
   if (!origin) {
@@ -15,7 +24,18 @@ const isAllowedOrigin = (origin: string | null): boolean => {
   return originUrlMatcher.test(origin);
 };
 
+// Permissive predicate in dev so callers from localhost:3100 work; the
+// custom-header requirement still applies, which is the load-bearing
+// part of the CSRF defense.
+const isCsrfOriginAllowed = (origin: string): boolean =>
+  IS_DEVELOPMENT || originUrlMatcher.test(origin);
+
 const handler = async (req: NextRequest) => {
+  const reason = csrfRejection(req, { isOriginAllowed: isCsrfOriginAllowed });
+  if (reason) {
+    return new Response(`Forbidden: ${reason}`, { status: 403 });
+  }
+
   const response = await fetchRequestHandler({
     endpoint: `/${API_TRPC_PTH}`,
     req,
@@ -34,10 +54,7 @@ const handler = async (req: NextRequest) => {
     'Access-Control-Allow-Methods',
     'GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS',
   );
-  response.headers.set(
-    'Access-Control-Allow-Headers',
-    'Content-Type, Authorization, trpc-batch-mode',
-  );
+  response.headers.set('Access-Control-Allow-Headers', ALLOWED_HEADERS);
   response.headers.set('Access-Control-Allow-Credentials', 'true');
   response.headers.set('Access-Control-Expose-Headers', EXPOSED_HEADERS);
 
@@ -49,8 +66,7 @@ const optionsHandler = async (req: NextRequest) => {
   const headers: Record<string, string> = {
     'Access-Control-Allow-Methods':
       'GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS',
-    'Access-Control-Allow-Headers':
-      'Content-Type, Authorization, trpc-batch-mode',
+    'Access-Control-Allow-Headers': ALLOWED_HEADERS,
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Expose-Headers': EXPOSED_HEADERS,
   };
