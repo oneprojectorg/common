@@ -230,15 +230,12 @@ export const getProfileAccessUser = memoize(
 );
 
 /**
- * Resolve the caller's *effective* normalized roles on a profile — their own
- * grant unioned with any public grant — without leaking the join-table identity
- * row. This is the honest shape for an access decision: roles are an aggregate
- * (own ∪ public), so they describe what the caller may do regardless of who
- * they are. Empty when no grant (own or public) matched, so `roles.length > 0`
- * is exactly the old `Boolean(getProfileAccessUser(...))` presence check.
+ * The caller's effective roles on a profile (own grant ∪ public grant), without
+ * the join-table identity row. Empty when no grant matched — so `roles.length
+ * > 0` means "has at least one effective role", slightly tighter than the old
+ * presence check, which also held for a row with zero effective roles.
  *
- * No org fallback — for org-profile lookups that should fall back to org-level
- * grants, use {@link getProfileAccessRolesWithOrgFallback} instead.
+ * No org fallback — see {@link getProfileAccessRolesWithOrgFallback} for that.
  */
 export const getProfileAccessRoles = async ({
   user,
@@ -342,9 +339,8 @@ export const assertInstanceProfileAccess = async ({
     }
   }
 
-  // The caller's profile-level roles (empty when they have no profile grant and
-  // were admitted via the org fallback above). Roles only — never the
-  // identity row, which could be the GLOBAL_USER_PUBLIC sentinel's.
+  // Profile-level roles only (empty when admitted via the org fallback) — never
+  // the identity row, which could be the GLOBAL_USER_PUBLIC sentinel's.
   return profileUser?.roles ?? [];
 };
 

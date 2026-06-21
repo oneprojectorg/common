@@ -4,14 +4,10 @@ import type { AccessUser } from '../access';
 import { assertProfileAccess } from './assertProfileAccess';
 
 /**
- * Asserts that a user has admin permission on a profile, returning the
- * resolved roles so callers can reuse them.
+ * {@link assertProfileAccess} for the common `{ profile: permission.ADMIN }`
+ * check. Returns the caller's roles.
  *
- * Thin wrapper around {@link assertProfileAccess} for the common
- * `{ profile: permission.ADMIN }` check.
- *
- * @throws UnauthorizedError if the user doesn't have admin permission
- *   (including when the user is not a member of the profile)
+ * @throws UnauthorizedError if the user lacks admin permission.
  */
 export async function assertProfileAdmin({
   user,

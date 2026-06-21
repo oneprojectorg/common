@@ -8,21 +8,14 @@ import { UnauthorizedError } from '../../utils';
 import { type AccessUser, getProfileAccessRoles } from '../access';
 
 /**
- * Resolves the caller's *effective* roles on a profile (their own grant unioned
- * with any public grant) and asserts the given permissions, returning the
- * roles so callers can reuse them.
+ * Asserts the caller's effective roles on a profile satisfy `permissions`,
+ * returning those roles. Bare `NormalizedRole[]`, matching {@link
+ * assertInstanceProfileAccess} and {@link getProfileAccessRoles}.
  *
- * Roles are the honest shape for an access decision: an anonymous caller on a
- * public process has access without any identity row to fabricate, so this
- * returns the bare `NormalizedRole[]` — matching {@link
- * assertInstanceProfileAccess} and {@link getProfileAccessRoles} — rather than a
- * synthetic profile-access user.
- *
- * @param notMemberMessage - Optional message for the thrown exception when the
- *   caller has no role on the profile. Defaults to 'Not authorized'.
- * @throws UnauthorizedError if the caller has no role on the profile or their
- *   roles don't satisfy the permissions — every denial throws the same
- *   exception type (only the message differs when `notMemberMessage` is given).
+ * @param notMemberMessage - Message thrown when the caller has no role.
+ *   Defaults to 'Not authorized'.
+ * @throws UnauthorizedError on any denial (only the message differs when
+ *   `notMemberMessage` is given).
  */
 export async function assertProfileAccess({
   user,

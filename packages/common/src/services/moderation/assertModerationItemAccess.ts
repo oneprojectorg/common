@@ -73,14 +73,11 @@ export const assertModerationItemAccess = async ({
       },
     });
 
-    // An already-flagged post is hidden from everyone but its author and the
-    // root-profile admins (see getPost's gate); the same audience may flag it,
-    // so a non-owner can't ship hidden content to the vendor by re-flagging.
+    // An already-flagged post is restricted to its author + root-profile admins
+    // (see getPost's gate); only that audience may flag it, so hidden content
+    // can't be shipped to the vendor by re-flagging. A sessionless caller is
+    // neither. getCurrentProfileId is memoized, sharing submitUserFlag's lookup.
     if (await hasActiveModerationFlag('post', post.id)) {
-      // Restricted to the author + root-profile admins. A sessionless caller is
-      // neither, so they're denied — hidden content can't be shipped to the
-      // vendor by flagging it. getCurrentProfileId is memoized per request, so
-      // this shares submitUserFlag's lookup.
       const actorProfileId = user
         ? await getCurrentProfileId(user.id)
         : undefined;
@@ -115,8 +112,7 @@ export const assertModerationItemAccess = async ({
       throw new NotFoundError('Proposal', itemId);
     }
 
-    // Reuse the resolved instance-profile roles for the instance-admin check
-    // below instead of re-fetching them, mirroring getProposal.
+    // Reused for the instance-admin check below, mirroring getProposal.
     const instanceRoles = await assertInstanceProfileAccess({
       user,
       instance: proposal.processInstance,
@@ -127,14 +123,10 @@ export const assertModerationItemAccess = async ({
       ],
     });
 
-    // HIDDEN proposals, and proposals with an active moderation flag, are
-    // restricted beyond plain instance read — visible only to proposal-level
-    // members (creator + invited collaborators) or instance admins. Mirror
-    // getProposal's gate so restricted text/attachments can't be shipped to the
-    // vendor by an instance member who only has read on the process, and so
-    // this gate (not submitUserFlag's idempotency shortcut) is what enforces it
-    // for an already-flagged proposal. (DRAFT is deliberately not gated here:
-    // drafts are reportable.)
+    // HIDDEN or already-flagged proposals are restricted beyond plain instance
+    // read — visible only to proposal-level members or instance admins (mirrors
+    // getProposal), so restricted content can't be shipped to the vendor by an
+    // instance member with only process read. DRAFT stays reportable.
     const isRestricted =
       proposal.visibility === Visibility.HIDDEN ||
       (await hasActiveModerationFlag('proposal', proposal.id));
