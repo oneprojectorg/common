@@ -170,7 +170,8 @@ export const getOrgAccessUser = memoize(
   (args) => orgUserCacheKey(args).join(':'),
 );
 
-// gets a user's access for a specific profile
+// Don't import directly — use getProfileAccessRoles. Exported only so role
+// mutations can call .invalidate on the memoized cache.
 export const getProfileAccessUser = memoize(
   async ({
     user,
@@ -305,15 +306,12 @@ export const assertInstanceProfileAccess = async ({
     throw new UnauthorizedError("You don't have access to do this");
   }
 
-  const profileUser = await getProfileAccessUser({
+  const profileRoles = await getProfileAccessRoles({
     user,
     profileId: instance.profileId,
   });
 
-  const hasProfileAccess = checkPermission(
-    profilePermissions,
-    profileUser?.roles ?? [],
-  );
+  const hasProfileAccess = checkPermission(profilePermissions, profileRoles);
 
   if (!hasProfileAccess) {
     if (!instance.ownerProfileId) {
@@ -339,9 +337,8 @@ export const assertInstanceProfileAccess = async ({
     }
   }
 
-  // Profile-level roles only (empty when admitted via the org fallback) — never
-  // the identity row, which could be the GLOBAL_USER_PUBLIC sentinel's.
-  return profileUser?.roles ?? [];
+  // Profile-level roles only (empty when admitted via the org fallback).
+  return profileRoles;
 };
 
 // Memoized per request (keyed by authUserId): the current profile is stable
