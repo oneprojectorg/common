@@ -73,6 +73,10 @@ export {
   type ProposalTemplateFieldOrder,
 } from './services/decision/getProposalTemplateFieldOrder';
 export { getProposalFragmentNames } from './services/decision/getProposalFragmentNames';
+export {
+  templateCollectsLocation,
+  getLocationFieldMapView,
+} from './services/decision/templateLocation';
 export { assembleProposalData } from './services/decision/assembleProposalData';
 export { relaxLocationCategoryRequirement } from './services/decision/relaxLocationCategoryRequirement';
 export {

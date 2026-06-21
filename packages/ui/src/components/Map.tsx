@@ -17,6 +17,15 @@ export interface LngLat {
   lat: number;
 }
 
+/** A bounding box as `[[swLng, swLat], [neLng, neLat]]`. */
+export type MapBounds = [[number, number], [number, number]];
+
+/** Default pixel buffer kept around fitted `bounds`. */
+const DEFAULT_BOUNDS_PADDING = 48;
+
+/** Cap fitted zoom so a single/tightly-clustered set doesn't slam to street level. */
+const BOUNDS_FIT_MAX_ZOOM = 15;
+
 export interface MapProps {
   /** Full map style URL (e.g. a MapTiler `style.json?key=...`). */
   styleUrl: string;
@@ -29,6 +38,14 @@ export interface MapProps {
   center: LngLat;
   /** Initial zoom level. */
   zoom?: number;
+  /**
+   * When set, the camera fits these bounds (with `boundsPadding`) instead of
+   * `center`/`zoom`, and re-fits whenever they change (e.g. a filtered marker
+   * set). Pass `null` to fall back to `center`/`zoom`.
+   */
+  bounds?: MapBounds | null;
+  /** Pixel buffer kept around `bounds` when fitting. Defaults to 48. */
+  boundsPadding?: number;
   /** Disable user pan/zoom/rotate interactions (camera becomes static). */
   interactive?: boolean;
   /** Show the +/- zoom control. Defaults to on. */
@@ -56,6 +73,8 @@ export function Map({
   styleUrl,
   center,
   zoom = 14,
+  bounds,
+  boundsPadding = DEFAULT_BOUNDS_PADDING,
   interactive = true,
   showZoomControl = true,
   onClick,
@@ -70,8 +89,25 @@ export function Map({
   // same point on mount (a pointless 3s animation).
   const hasMountedRef = useRef(false);
 
-  // Recenter when the controlled `center` changes (search / use-my-location).
+  // Fit the camera to `bounds` whenever they change (e.g. the marker set is
+  // filtered). Takes precedence over `center`/`zoom`.
   useEffect(() => {
+    if (!bounds) {
+      return;
+    }
+    mapRef.current?.fitBounds(bounds, {
+      padding: boundsPadding,
+      maxZoom: BOUNDS_FIT_MAX_ZOOM,
+      duration: 1000,
+    });
+  }, [bounds, boundsPadding]);
+
+  // Recenter when the controlled `center` changes (search / use-my-location).
+  // Skipped while `bounds` drives the camera so the two don't fight.
+  useEffect(() => {
+    if (bounds) {
+      return;
+    }
     if (!hasMountedRef.current) {
       hasMountedRef.current = true;
       return;
@@ -82,18 +118,28 @@ export function Map({
       essential: true,
       duration: 3000,
     });
-  }, [center.lng, center.lat]);
+  }, [center.lng, center.lat, bounds]);
 
   return (
     <div className={cn('relative h-44 w-full sm:h-80', className)}>
       <MapLibreMap
         ref={mapRef}
         mapStyle={styleUrl}
-        initialViewState={{
-          longitude: center.lng,
-          latitude: center.lat,
-          zoom,
-        }}
+        initialViewState={
+          bounds
+            ? {
+                bounds,
+                fitBoundsOptions: {
+                  padding: boundsPadding,
+                  maxZoom: BOUNDS_FIT_MAX_ZOOM,
+                },
+              }
+            : {
+                longitude: center.lng,
+                latitude: center.lat,
+                zoom,
+              }
+        }
         interactive={interactive}
         aria-label={ariaLabel}
         style={{ width: '100%', height: '100%' }}

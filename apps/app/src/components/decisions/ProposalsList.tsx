@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import {
@@ -14,8 +15,11 @@ import {
   ProposalReviewRequestState,
   SUPPORTED_LOCALES,
   type SupportedLocale,
+  getLocationFieldMapView,
   isVotingEligible,
+  templateCollectsLocation,
 } from '@op/common/client';
+import { useIntersectionObserver } from '@op/hooks';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Checkbox } from '@op/ui/Checkbox';
 import { Dialog, DialogTrigger } from '@op/ui/Dialog';
@@ -27,9 +31,11 @@ import { Modal } from '@op/ui/Modal';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { toast } from '@op/ui/Toast';
+import { cn } from '@op/ui/utils';
 import { useLocale } from 'next-intl';
+import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LuArrowDownToLine, LuLeaf } from 'react-icons/lu';
+import { LuArrowDownToLine, LuLayoutGrid, LuLeaf, LuMap } from 'react-icons/lu';
 
 import { usePathname, useRouter, useTranslations } from '@/lib/i18n';
 
@@ -49,11 +55,18 @@ import {
   ProposalCardReviseAction,
 } from './ProposalCard';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
+import {
+  PROPOSAL_VIEWS,
+  ProposalViewToggle,
+  type ProposalView,
+} from './ProposalViewToggle';
+import { ProposalsMapView } from './ProposalsMapView';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { TranslateBanner } from './TranslateBanner';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
 import { VotingProposalCard } from './VotingProposalCard';
+import { DEFAULT_LOCATION_FIELD_MAP_VIEW } from './location/mapConfig';
 import { useProposalExport } from './useProposalExport';
 import { useProposalFilters } from './useProposalFilters';
 
@@ -614,19 +627,41 @@ export const ProposalsList = ({
         new URLSearchParams(window.location.search).get('sort')) ||
       'newest',
   );
+  // `grid` is the default, so it clears the param rather than persisting it.
+  const [view, setView] = useQueryState(
+    'view',
+    parseAsStringLiteral(PROPOSAL_VIEWS).withDefault('grid'),
+  );
 
   // Get current user's profile ID for "My Proposals" filter
   const currentProfileId = user?.currentProfile?.id;
-  const [[categoriesData, voteStatus]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getCategories({
-      processInstanceId: instanceId,
-    }),
-    t.decision.getVotingStatus({
-      processInstanceId: instanceId,
-    }),
-  ]);
+  const [[categoriesData, voteStatus, instance]] = trpc.useSuspenseQueries(
+    (t) => [
+      t.decision.getCategories({
+        processInstanceId: instanceId,
+      }),
+      t.decision.getVotingStatus({
+        processInstanceId: instanceId,
+      }),
+      t.decision.getInstance({ instanceId }),
+    ],
+  );
 
   const categories = categoriesData.categories;
+
+  // Map browse mode is offered only when the process collects a location and
+  // the GIS flag is on. The map fits the proposal markers; this default view
+  // (`x-map-default`) is the fallback camera for when none have a location.
+  const gisMapsEnabled = useFeatureFlag('gis_maps');
+  const proposalTemplate = instance.instanceData?.proposalTemplate;
+  const hasLocationField =
+    gisMapsEnabled && templateCollectsLocation(proposalTemplate);
+  const mapView =
+    getLocationFieldMapView(proposalTemplate) ??
+    DEFAULT_LOCATION_FIELD_MAP_VIEW;
+  // Ignore a stale `?view=map` when this process has no map.
+  const effectiveView: ProposalView = hasLocationField ? view : 'grid';
+  const isMapMode = hasLocationField && effectiveView === 'map';
 
   // Determine if we're in ballot view (user has voted)
   const hasVoted = voteStatus?.hasVoted || false;
@@ -656,6 +691,10 @@ export const ProposalsList = ({
 
     const newUrl = `${pathname}?${params.toString()}`;
     router.replace(newUrl, { scroll: false });
+  };
+
+  const handleViewChange = (next: ProposalView) => {
+    void setView(next);
   };
 
   // Build query parameters, ensuring consistent structure
@@ -864,10 +903,55 @@ export const ProposalsList = ({
 
   const hideFilters = proposalsHidden && !canManageProposals;
 
+  // The filter bar pins at top-14 (56px). A zero-height sentinel at its natural
+  // top is observed against the viewport shrunk by that offset; once the
+  // sentinel scrolls past it the bar is pinned. initialIsIntersecting avoids a
+  // one-frame "stuck" flash on mount. Drives the full-width borders via the
+  // data-stuck attribute on the bar below.
+  const { ref: filterSentinelRef, isIntersecting } =
+    useIntersectionObserver<HTMLDivElement>({
+      rootMargin: '-56px 0px 0px 0px',
+      initialIsIntersecting: true,
+    });
+  const isFilterBarStuck = !isIntersecting;
+
   return (
-    <div className="flex flex-col gap-6 pb-12">
-      {/* Filters Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div
+      className={cn(
+        'relative flex flex-col gap-6 pb-12',
+        // On mobile the map view is edge-to-edge and flush to the bottom.
+        isMapMode && 'max-sm:pb-0',
+      )}
+    >
+      {/* Sentinel at the filter bar's pre-pin top — drives the JS "stuck"
+          detection that toggles data-stuck on the bar below. */}
+      <div
+        ref={filterSentinelRef}
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-px"
+      />
+      {/* Filters Bar — sticks beneath the decision nav while the list/map
+          scroll under it (the process banner scrolls away above). Once pinned,
+          its border extends to full page width via the before/after lines. */}
+      <div
+        data-stuck={isFilterBarStuck || undefined}
+        className={cn(
+          'sticky top-14 z-20 flex flex-wrap items-center justify-between gap-4 border-b border-neutral-gray1 bg-white py-3',
+          // Once pinned, extend the bar's borders to the full page width. The bar
+          // sits in the centered content column, so two full-bleed pseudo-element
+          // lines stand in: ::after carries the bottom border to the page edges
+          // and ::before replaces the nav's border at the seam. data-stuck is
+          // toggled in JS (IntersectionObserver on the sentinel above).
+          "before:pointer-events-none before:absolute before:top-0 before:left-1/2 before:w-screen before:-translate-x-1/2 before:border-t before:border-neutral-gray1 before:opacity-0 before:content-['']",
+          "after:pointer-events-none after:absolute after:-bottom-px after:left-1/2 after:w-screen after:-translate-x-1/2 after:border-b after:border-neutral-gray1 after:opacity-0 after:content-['']",
+          'data-[stuck=true]:before:opacity-100 data-[stuck=true]:after:opacity-100',
+          // On mobile the map view is edge-to-edge, so break the bar out to full
+          // width too (restoring the container's 1rem gutter) — otherwise the map
+          // peeks past the bar's sides as it scrolls beneath the sticky bar.
+          isMapMode &&
+            'max-sm:ml-[calc(50%_-_50vw)] max-sm:w-screen max-sm:px-4',
+        )}
+      >
         <div className="flex items-center gap-4">
           <span className="font-serif text-title-base text-neutral-black">
             {hideFilters ? (
@@ -970,6 +1054,15 @@ export const ProposalsList = ({
                 </Button>
               )
             ) : null}
+            {hasLocationField && (
+              <div className="hidden items-center gap-4 sm:flex">
+                <span aria-hidden className="h-6 w-px bg-neutral-gray2" />
+                <ProposalViewToggle
+                  value={effectiveView}
+                  onChange={handleViewChange}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -988,18 +1081,28 @@ export const ProposalsList = ({
       <ProposalTranslationProvider
         translations={translationState?.translations ?? {}}
       >
-        <Proposals
-          proposals={proposals}
-          instanceId={instanceId}
-          slug={slug}
-          decisionSlug={decisionSlug}
-          permissions={permissions}
-          votedProposalIds={selectedProposalIds}
-          hasFilter={selectedCategory !== 'all-categories'}
-          isVotingPhase={isVotingPhase}
-          proposalsHidden={proposalsHidden}
-          revisionRequestIdByProposalId={revisionRequestIdByProposalId}
-        />
+        {isMapMode ? (
+          <ProposalsMapView
+            proposals={proposals ?? []}
+            instanceId={instanceId}
+            slug={slug}
+            decisionSlug={decisionSlug}
+            mapView={mapView}
+          />
+        ) : (
+          <Proposals
+            proposals={proposals}
+            instanceId={instanceId}
+            slug={slug}
+            decisionSlug={decisionSlug}
+            permissions={permissions}
+            votedProposalIds={selectedProposalIds}
+            hasFilter={selectedCategory !== 'all-categories'}
+            isVotingPhase={isVotingPhase}
+            proposalsHidden={proposalsHidden}
+            revisionRequestIdByProposalId={revisionRequestIdByProposalId}
+          />
+        )}
       </ProposalTranslationProvider>
 
       {showBanner && (
@@ -1009,6 +1112,32 @@ export const ProposalsList = ({
           isTranslating={translateBatchMutation.isPending}
           languageName={targetLanguageName}
         />
+      )}
+
+      {/* Mobile-only view switch, sticky at the bottom of the screen. Reads
+          "Map" while listing, "List" while showing the map. */}
+      {hasLocationField && (
+        <div className="fixed inset-x-0 bottom-6 z-40 flex justify-center sm:hidden">
+          <Button
+            color="secondary"
+            onPress={() =>
+              handleViewChange(effectiveView === 'map' ? 'grid' : 'map')
+            }
+            className="shadow-lg"
+          >
+            {effectiveView === 'map' ? (
+              <>
+                <LuLayoutGrid className="size-4" />
+                {t('List')}
+              </>
+            ) : (
+              <>
+                <LuMap className="size-4" />
+                {t('Map')}
+              </>
+            )}
+          </Button>
+        </div>
       )}
     </div>
   );

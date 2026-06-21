@@ -7,7 +7,7 @@ import { Header1 } from '@op/ui/Header';
 import { IconButton } from '@op/ui/IconButton';
 import { MegaphoneIcon } from '@op/ui/MegaphoneIcon';
 import { useQueryState } from 'nuqs';
-import { type ReactNode } from 'react';
+import { type ReactNode, Suspense } from 'react';
 import { LuArrowLeft, LuSettings } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -86,10 +86,20 @@ export const DecisionInstanceHeader = ({
       </div>
 
       <div className="flex items-center justify-end gap-2 md:gap-4">
-        <DecisionUpdatesToggle
-          ariaLabel={t('Toggle updates panel')}
-          canReadUpdates={canReadUpdates}
-        />
+        {/*
+         * The toggle reads the `panel` search param via nuqs (useSearchParams).
+         * When this header renders inside the decision-view layout — which Next
+         * prerenders as the route's static shell because of its loading.tsx —
+         * that read happens outside a request scope and throws. The Suspense
+         * boundary defers it out of the shell. Fallback is null because the
+         * toggle is non-critical chrome and may itself render null.
+         */}
+        <Suspense fallback={null}>
+          <DecisionUpdatesToggle
+            ariaLabel={t('Toggle updates panel')}
+            canReadUpdates={canReadUpdates}
+          />
+        </Suspense>
         {isAdmin && decisionSlug && (
           <ButtonLink
             href={`/decisions/${decisionSlug}/edit`}
