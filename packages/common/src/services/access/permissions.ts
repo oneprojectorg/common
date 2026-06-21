@@ -12,6 +12,7 @@ import { and, eq } from 'drizzle-orm';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAdmin } from '../assert';
+import { profileUserCacheKey } from './index';
 
 export async function invalidateProfileUserCacheForRole(roleId: string) {
   const affectedUsers = await db
@@ -30,7 +31,12 @@ export async function invalidateProfileUserCacheForRole(roleId: string) {
     await Promise.all([
       invalidateMultiple({
         type: 'profileUser',
-        paramsList: affectedUsers.map((u) => [u.profileId, u.authUserId]),
+        paramsList: affectedUsers.map((u) =>
+          profileUserCacheKey({
+            user: { id: u.authUserId },
+            profileId: u.profileId,
+          }),
+        ),
       }),
       invalidateMultiple({
         type: 'user',

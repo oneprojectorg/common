@@ -4,7 +4,11 @@ import { profileUsers } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, ValidationError } from '../../utils/error';
-import { getProfileAccessUser, getUserSession } from '../access';
+import {
+  getProfileAccessUser,
+  getUserSession,
+  profileUserCacheKey,
+} from '../access';
 import { assertProfileAdmin, assertProfileUser } from '../assert';
 
 /**
@@ -39,7 +43,10 @@ export const removeProfileUser = async ({
   await Promise.all([
     invalidate({
       type: 'profileUser',
-      params: [deletedUser.profileId, deletedUser.authUserId],
+      params: profileUserCacheKey({
+        user: { id: deletedUser.authUserId },
+        profileId: deletedUser.profileId,
+      }),
     }),
     invalidate({
       type: 'user',
