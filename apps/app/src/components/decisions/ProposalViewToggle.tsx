@@ -6,7 +6,8 @@ import { LuLayoutGrid, LuMap } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-export type ProposalView = 'grid' | 'map';
+export const PROPOSAL_VIEWS = ['grid', 'map'] as const;
+export type ProposalView = (typeof PROPOSAL_VIEWS)[number];
 
 interface ProposalViewToggleProps {
   value: ProposalView;

@@ -5,7 +5,7 @@ import type { MapDefaultView } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { FieldError } from '@op/ui/Field';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
@@ -27,9 +27,9 @@ interface ProposalsMapViewProps {
 /**
  * The map browse view for a process's proposals. On desktop it shows the list
  * (left) beside a sticky map (right); hovering a row or marker drives a single
- * shared active state, and clicking a marker scrolls its row into view. On
- * mobile it shows just the map (the list is the regular grid, toggled
- * separately) and tapping a marker navigates straight to the proposal.
+ * shared active state, and clicking a marker opens the proposal. On mobile it
+ * shows just the map (the list is the regular grid, toggled separately) and
+ * tapping a marker likewise opens the proposal.
  *
  * The map fits all proposal markers (with a buffer), re-fitting as the set is
  * filtered, and falls back to the process's default view (`x-map-default`) only
@@ -47,7 +47,6 @@ export function ProposalsMapView({
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
 
   const [activeId, setActiveId] = useState<string | null>(null);
-  const itemRefs = useRef(new Map<string, HTMLLIElement>());
 
   const hrefFor = useCallback(
     (proposal: Proposal) =>
@@ -70,21 +69,16 @@ export function ProposalsMapView({
     [proposals],
   );
 
+  // Clicking a marker opens the proposal on every breakpoint; on desktop the
+  // shared active state is still driven by hover (see `onMarkerHover`).
   const handleMarkerClick = useCallback(
     (id: string) => {
-      if (isMobile) {
-        const proposal = proposals.find((p) => p.id === id);
-        if (proposal) {
-          router.push(hrefFor(proposal));
-        }
-        return;
+      const proposal = proposals.find((p) => p.id === id);
+      if (proposal) {
+        router.push(hrefFor(proposal));
       }
-      setActiveId(id);
-      itemRefs.current
-        .get(id)
-        ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     },
-    [isMobile, proposals, router, hrefFor],
+    [proposals, router, hrefFor],
   );
 
   if (!MAP_STYLE_URL) {
@@ -133,13 +127,6 @@ export function ProposalsMapView({
             isActive={activeId === proposal.id}
             onActivate={() => setActiveId(proposal.id)}
             onDeactivate={() => setActiveId(null)}
-            setRef={(el) => {
-              if (el) {
-                itemRefs.current.set(proposal.id, el);
-              } else {
-                itemRefs.current.delete(proposal.id);
-              }
-            }}
           />
         ))}
       </ul>

@@ -24,16 +24,13 @@ interface ProposalMapListItemProps {
   onActivate: () => void;
   /** Called when the pointer leaves the row. */
   onDeactivate: () => void;
-  /** Registers the row element so a marker click can scroll it into view. */
-  setRef: (el: HTMLLIElement | null) => void;
 }
 
 /**
  * A compact, single-column proposal card for the map browse view's list column.
  * The whole row is one link to the proposal — every inner piece is rendered
  * non-link (`withLink={false}`, no `viewHref`) so there are no nested anchors.
- * Hovering syncs the active state with the matching map marker; the registered
- * ref lets a marker click scroll this row into view.
+ * Hovering syncs the active state with the matching map marker.
  */
 export function ProposalMapListItem({
   proposal,
@@ -41,16 +38,9 @@ export function ProposalMapListItem({
   isActive,
   onActivate,
   onDeactivate,
-  setRef,
 }: ProposalMapListItemProps) {
   return (
-    <li
-      ref={setRef}
-      onMouseEnter={onActivate}
-      onMouseLeave={onDeactivate}
-      // Keep the row clear of the sticky filter bar when scrolled into view.
-      className="scroll-mt-28"
-    >
+    <li onMouseEnter={onActivate} onMouseLeave={onDeactivate}>
       <Link
         href={href}
         // The whole card is one link; keep it from imposing anchor link styling

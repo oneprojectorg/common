@@ -666,51 +666,6 @@
 }
 
 /* ============================================
- * Proposals filter bar — full-width borders once pinned
- *
- * The decision-page filter bar lives inside the centered max-w-6xl content
- * column, so its border is capped at the content width. Once it pins beneath
- * the (full-width) decision nav we want its bottom border to span the page and
- * a matching top line to stand in for the nav's now-occluded border.
- *
- * "Stuck" is detected in JS (IntersectionObserver on a sentinel) which toggles
- * data-stuck on the bar; these full-bleed 1px lines react to it — ::after
- * extends the bar's border to the page edges, ::before stands in for the nav's
- * border at the seam. Anchored to the bar (position: sticky => positioned).
- * ============================================ */
-
-.proposals-filter-bar::before,
-.proposals-filter-bar::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  width: 100vw;
-  transform: translateX(-50%);
-  opacity: 0;
-  pointer-events: none;
-}
-
-.proposals-filter-bar[data-stuck="true"]::before,
-.proposals-filter-bar[data-stuck="true"]::after {
-  opacity: 1;
-}
-
-.proposals-filter-bar::before {
-  /* Stand-in for the nav's bottom border, which the pinned bar overlaps by ~1px
-     and so masks in the content column. Sits at the bar's top edge (top: 0) so
-     it coincides with the real nav border still showing at the page edges —
-     otherwise the two lines render 1px apart as a double border. */
-  top: 0;
-  border-top: 1px solid var(--color-neutral-gray-1);
-}
-
-.proposals-filter-bar::after {
-  /* full-width bottom border */
-  bottom: -1px;
-  border-bottom: 1px solid var(--color-neutral-gray-1);
-}
-
-/* ============================================
  * Tiptap Collaboration Cursor Styles
  * Renders other users' cursor positions and selections
  * ============================================ */

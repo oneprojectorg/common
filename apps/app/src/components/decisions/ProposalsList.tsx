@@ -33,6 +33,7 @@ import { Surface } from '@op/ui/Surface';
 import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
 import { useLocale } from 'next-intl';
+import { parseAsStringLiteral, useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LuArrowDownToLine, LuLayoutGrid, LuLeaf, LuMap } from 'react-icons/lu';
 
@@ -54,7 +55,11 @@ import {
   ProposalCardReviseAction,
 } from './ProposalCard';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
-import { ProposalViewToggle, type ProposalView } from './ProposalViewToggle';
+import {
+  PROPOSAL_VIEWS,
+  ProposalViewToggle,
+  type ProposalView,
+} from './ProposalViewToggle';
 import { ProposalsMapView } from './ProposalsMapView';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { TranslateBanner } from './TranslateBanner';
@@ -622,11 +627,10 @@ export const ProposalsList = ({
         new URLSearchParams(window.location.search).get('sort')) ||
       'newest',
   );
-  const [view, setView] = useState<ProposalView>(() =>
-    typeof window !== 'undefined' &&
-    new URLSearchParams(window.location.search).get('view') === 'map'
-      ? 'map'
-      : 'grid',
+  // `grid` is the default, so it clears the param rather than persisting it.
+  const [view, setView] = useQueryState(
+    'view',
+    parseAsStringLiteral(PROPOSAL_VIEWS).withDefault('grid'),
   );
 
   // Get current user's profile ID for "My Proposals" filter
@@ -690,9 +694,7 @@ export const ProposalsList = ({
   };
 
   const handleViewChange = (next: ProposalView) => {
-    setView(next);
-    // `grid` is the default, so drop the param rather than persist it.
-    updateURLParams({ view: next === 'grid' ? null : next });
+    void setView(next);
   };
 
   // Build query parameters, ensuring consistent structure
@@ -904,8 +906,8 @@ export const ProposalsList = ({
   // The filter bar pins at top-14 (56px). A zero-height sentinel at its natural
   // top is observed against the viewport shrunk by that offset; once the
   // sentinel scrolls past it the bar is pinned. initialIsIntersecting avoids a
-  // one-frame "stuck" flash on mount. Drives the full-width borders in CSS via
-  // data-stuck (see .proposals-filter-bar in shared-styles.css).
+  // one-frame "stuck" flash on mount. Drives the full-width borders via the
+  // data-stuck attribute on the bar below.
   const { ref: filterSentinelRef, isIntersecting } =
     useIntersectionObserver<HTMLDivElement>({
       rootMargin: '-56px 0px 0px 0px',
@@ -930,10 +932,25 @@ export const ProposalsList = ({
       />
       {/* Filters Bar — sticks beneath the decision nav while the list/map
           scroll under it (the process banner scrolls away above). Once pinned,
-          its border extends to full page width via .proposals-filter-bar. */}
+          its border extends to full page width via the before/after lines. */}
       <div
         data-stuck={isFilterBarStuck || undefined}
-        className="proposals-filter-bar sticky top-14 z-20 flex flex-wrap items-center justify-between gap-4 border-b border-neutral-gray1 bg-white py-3"
+        className={cn(
+          'sticky top-14 z-20 flex flex-wrap items-center justify-between gap-4 border-b border-neutral-gray1 bg-white py-3',
+          // Once pinned, extend the bar's borders to the full page width. The bar
+          // sits in the centered content column, so two full-bleed pseudo-element
+          // lines stand in: ::after carries the bottom border to the page edges
+          // and ::before replaces the nav's border at the seam. data-stuck is
+          // toggled in JS (IntersectionObserver on the sentinel above).
+          "before:pointer-events-none before:absolute before:top-0 before:left-1/2 before:w-screen before:-translate-x-1/2 before:border-t before:border-neutral-gray1 before:opacity-0 before:content-['']",
+          "after:pointer-events-none after:absolute after:-bottom-px after:left-1/2 after:w-screen after:-translate-x-1/2 after:border-b after:border-neutral-gray1 after:opacity-0 after:content-['']",
+          'data-[stuck=true]:before:opacity-100 data-[stuck=true]:after:opacity-100',
+          // On mobile the map view is edge-to-edge, so break the bar out to full
+          // width too (restoring the container's 1rem gutter) — otherwise the map
+          // peeks past the bar's sides as it scrolls beneath the sticky bar.
+          isMapMode &&
+            'max-sm:ml-[calc(50%_-_50vw)] max-sm:w-screen max-sm:px-4',
+        )}
       >
         <div className="flex items-center gap-4">
           <span className="font-serif text-title-base text-neutral-black">
