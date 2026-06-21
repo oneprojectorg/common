@@ -1379,6 +1379,9 @@ importers:
       typescript:
         specifier: 5.7.3
         version: 5.7.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.0.18(@edge-runtime/vm@5.0.0)(@opentelemetry/api@1.9.0)(@types/node@22.13.14)(happy-dom@20.5.3)(jiti@2.6.1)(jsdom@27.1.0)(lightningcss@1.30.2)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
 
   services/collab:
     dependencies:

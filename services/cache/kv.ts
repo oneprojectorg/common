@@ -7,6 +7,26 @@ import { cacheMetrics } from './metrics';
 
 const REDIS_URL = process.env.REDIS_URL;
 
+// Outer race timeout: how long `cache()` is willing to wait on Redis before
+// falling through to the source. Sized for the 99th-percentile Redis call.
+const REDIS_RACE_TIMEOUT_MS = 300;
+
+// Per-command socket timeout: aborts individual Redis commands so a stuck
+// socket fails fast instead of hanging until REDIS_RACE_TIMEOUT_MS.
+const REDIS_COMMAND_TIMEOUT_MS = 50;
+
+// Sentinel for `Promise.race` — distinguishes the race timeout from a
+// legitimate `null` returned by Redis (cache miss).
+const RACE_TIMEOUT: unique symbol = Symbol('cache.race-timeout');
+
+// Discriminated result of an attempted Redis read. `cache()` uses it to
+// record `hit` / `miss` / `timeout` separately so a Redis slowdown does
+// not masquerade as a cold cache.
+type RedisGetResult =
+  | { status: 'hit'; data: unknown }
+  | { status: 'miss' }
+  | { status: 'timeout' };
+
 // Create Redis client only if REDIS_URL is provided
 let redis: ReturnType<typeof createClient> | null = null;
 
@@ -145,23 +165,37 @@ export const cache = async <T>({
   }
 
   // fall back to Redis cache
-
-  // set null if we don't get a response fast enough
-  const timeout = new Promise((resolve) => {
-    setTimeout(() => resolve(null), 300);
+  //
+  // Two timeouts cover Redis slowness, in order of likelihood:
+  //   1. `tryGetFromRedis` applies a per-command socket timeout
+  //      (REDIS_COMMAND_TIMEOUT_MS) so a stuck connection fails fast.
+  //   2. The outer Promise.race below is the belt-and-suspenders fallback
+  //      (REDIS_RACE_TIMEOUT_MS) for anything the client doesn't abort —
+  //      including a fully saturated event loop.
+  //
+  // Whichever fires, the outcome is recorded as a `cache.timeouts` event
+  // and NOT as a `cache.misses` — those two signals are different (Redis
+  // is slow vs Redis is cold) and need separate dashboards.
+  const raceTimeout = new Promise<typeof RACE_TIMEOUT>((resolve) => {
+    setTimeout(() => resolve(RACE_TIMEOUT), REDIS_RACE_TIMEOUT_MS);
   });
 
-  const data = (await Promise.race([get(cacheKey), timeout])) as Awaited<T>;
+  const raced = await Promise.race([tryGetFromRedis(cacheKey), raceTimeout]);
 
-  if (data) {
+  if (raced === RACE_TIMEOUT) {
+    cacheMetrics.recordTimeout({ layer: 'race', keyType: type });
+  } else if (raced.status === 'hit') {
     cacheMetrics.recordHit({ type: 'kv', source: 'redis', keyType: type });
-    memCache.set(cacheKey, { createdAt: Date.now(), data });
-    return data;
+    memCache.set(cacheKey, { createdAt: Date.now(), data: raced.data });
+    return raced.data as Awaited<T>;
+  } else if (raced.status === 'timeout') {
+    cacheMetrics.recordTimeout({ layer: 'command', keyType: type });
+  } else {
+    cacheMetrics.recordMiss(type);
   }
 
   // finally retrieve the data from the DB
   const newData = await fetch();
-  cacheMetrics.recordMiss(type);
 
   const shouldSkipCache = options.skipCacheWrite?.(newData) ?? false;
 
@@ -221,25 +255,43 @@ export const invalidateMultiple = async ({
   );
 };
 
-export const get = async (key: string) => {
+// Internal: returns a discriminated result so `cache()` can split hit / miss
+// / timeout into different metrics. Public `get()` still maps everything
+// non-hit to `null` for back-compat.
+const tryGetFromRedis = async (key: string): Promise<RedisGetResult> => {
   if (!redis) {
-    return null;
+    return { status: 'miss' };
   }
 
-  try {
-    const data = await redis.get(key);
+  const signal = AbortSignal.timeout(REDIS_COMMAND_TIMEOUT_MS);
 
-    if (data) {
-      return JSON.parse(data);
+  try {
+    const data = await redis.withAbortSignal(signal).get(key);
+
+    if (!data) {
+      return { status: 'miss' };
     }
 
-    return null;
+    return { status: 'hit', data: JSON.parse(data) };
   } catch (e) {
+    if (signal.aborted) {
+      // The per-command socket timeout fired — surface as a timeout so the
+      // caller records it separately from a true cache miss. We don't log
+      // here because timeouts are an expected (counted) signal at high
+      // load; a log line per event would be too noisy.
+      return { status: 'timeout' };
+    }
+
     logger.error('CACHE: error getting from Redis', { error: e });
     cacheMetrics.recordError('get');
 
-    return null;
+    return { status: 'miss' };
   }
+};
+
+export const get = async (key: string) => {
+  const result = await tryGetFromRedis(key);
+  return result.status === 'hit' ? result.data : null;
 };
 
 // const DEFAULT_TTL = 3600 * 24 * 30; // 3600 * 24 = 1 day
@@ -249,14 +301,22 @@ export const set = async (key: string, data: unknown, ttl?: number) => {
     return;
   }
 
+  const signal = AbortSignal.timeout(REDIS_COMMAND_TIMEOUT_MS);
+
   try {
     const serializedData = JSON.stringify(data);
+    const scopedRedis = redis.withAbortSignal(signal);
     if (data === null) {
-      await redis.del(key);
+      await scopedRedis.del(key);
     } else {
-      await redis.setEx(key, ttl || DEFAULT_TTL, serializedData);
+      await scopedRedis.setEx(key, ttl || DEFAULT_TTL, serializedData);
     }
   } catch (e) {
+    if (signal.aborted) {
+      cacheMetrics.recordTimeout({ layer: 'command' });
+      return;
+    }
+
     logger.error('CACHE: error setting to Redis', { error: e });
     cacheMetrics.recordError('set');
   }

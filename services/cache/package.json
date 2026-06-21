@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "format:check": "oxfmt --check",
+    "test": "vitest run",
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
@@ -16,6 +17,7 @@
   },
   "devDependencies": {
     "@op/typescript-config": "workspace:*",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "vitest": "catalog:"
   }
 }
