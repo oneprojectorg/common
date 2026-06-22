@@ -7,10 +7,14 @@ export const GrowingFacePile = ({
   children,
   items,
   maxItems = 20,
+  totalCount,
 }: {
   children?: ReactNode;
   items: Array<ReactNode>;
   maxItems?: number;
+  // When set, the "+N" bubble counts everyone beyond the rendered faces
+  // (totalCount - rendered), so a few avatars can still convey a large total.
+  totalCount?: number;
 }) => {
   const facePileRef = useRef<HTMLDivElement>(null);
   const [numItems, setNumItems] = useState(maxItems);
@@ -39,11 +43,16 @@ export const GrowingFacePile = ({
 
   const renderedItems = items.slice(0, numItems);
 
-  if (items.length > numItems) {
+  const overflowCount =
+    totalCount !== undefined
+      ? totalCount - renderedItems.length
+      : items.length - numItems;
+
+  if (overflowCount > 0) {
     renderedItems.push(
       <Avatar className="bg-neutral-charcoal text-sm text-neutral-offWhite">
         <span className="align-super">+</span>
-        {items.length - numItems}
+        {overflowCount}
       </Avatar>,
     );
   }

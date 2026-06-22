@@ -35,7 +35,7 @@ export function StandardDecisionPage({
   const t = useTranslations();
   const translation = useDecisionTranslation();
 
-  const [[instance, { submitters }]] = trpc.useSuspenseQueries((t) => [
+  const [[instance, { submitters, total }]] = trpc.useSuspenseQueries((t) => [
     t.decision.getInstance({ instanceId }),
     t.decision.listProposalSubmitters({ processInstanceId: instanceId }),
   ]);
@@ -82,7 +82,7 @@ export function StandardDecisionPage({
           variant="standard"
         />
 
-        <MemberParticipationFacePile submitters={submitters} />
+        <MemberParticipationFacePile submitters={submitters} total={total} />
 
         <DecisionActionBar
           instanceId={instanceId}

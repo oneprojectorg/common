@@ -184,15 +184,22 @@ export function ProposalPreview({
               <>
                 <ProfileAvatar
                   profile={proposal.submittedBy}
+                  withLink={!proposal.submittedBy.isAnonymous}
                   className="size-8"
                 />
                 <div className="flex flex-col">
-                  <NavLink
-                    href={`/profile/${proposal.submittedBy.slug}`}
-                    className="text-base text-neutral-black hover:no-underline"
-                  >
-                    {proposal.submittedBy.name || proposal.submittedBy.slug}
-                  </NavLink>
+                  {proposal.submittedBy.isAnonymous ? (
+                    <span className="text-base text-neutral-black">
+                      {proposal.submittedBy.name || proposal.submittedBy.slug}
+                    </span>
+                  ) : (
+                    <NavLink
+                      href={`/profile/${proposal.submittedBy.slug}`}
+                      className="text-base text-neutral-black hover:no-underline"
+                    >
+                      {proposal.submittedBy.name || proposal.submittedBy.slug}
+                    </NavLink>
+                  )}
                   {!isDraft && (
                     <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-charcoal">
                       <span>

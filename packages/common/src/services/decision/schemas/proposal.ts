@@ -108,7 +108,9 @@ export const proposalSchema = z.object({
   createdAt: z.string().nullish(),
   updatedAt: z.string().nullish(),
   profileId: z.string().uuid(),
-  submittedBy: proposalProfileSchema.optional(),
+  submittedBy: proposalProfileSchema
+    .extend({ isAnonymous: z.boolean().optional() })
+    .optional(),
   profile: proposalProfileSchema,
   decisionCount: z.number().optional(),
   likesCount: z.number().optional(),
@@ -205,6 +207,7 @@ export type ProposalSubmitter = z.infer<typeof proposalSubmitterSchema>;
 
 export const proposalSubmittersListSchema = z.object({
   submitters: z.array(proposalSubmitterSchema),
+  total: z.number(),
 });
 
 export type ProposalSubmittersList = z.infer<

@@ -232,6 +232,8 @@ export function ProposalCardAuthor({
     return null;
   }
 
+  const linkToProfile = withLink && !proposal.submittedBy.isAnonymous;
+
   return (
     <>
       <Avatar
@@ -247,7 +249,7 @@ export function ProposalCardAuthor({
           />
         ) : null}
       </Avatar>
-      {withLink ? (
+      {linkToProfile ? (
         <Link
           href={`/profile/${proposal.submittedBy.slug}`}
           className="max-w-32 truncate text-base text-nowrap text-neutral-charcoal"

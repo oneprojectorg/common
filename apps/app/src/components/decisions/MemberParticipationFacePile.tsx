@@ -15,12 +15,14 @@ type Submitter = {
 
 export const MemberParticipationFacePile = ({
   submitters,
+  total,
 }: {
   submitters: Submitter[];
+  total: number;
 }) => {
   const t = useTranslations();
 
-  if (submitters.length === 0) {
+  if (total === 0) {
     return null;
   }
 
@@ -28,6 +30,7 @@ export const MemberParticipationFacePile = ({
     <div className="flex items-center justify-center gap-2">
       <GrowingFacePile
         maxItems={20}
+        totalCount={total}
         items={submitters.map((submitter) => (
           <Link
             key={submitter.slug}
@@ -52,7 +55,7 @@ export const MemberParticipationFacePile = ({
         <span className="w-fit text-sm text-neutral-charcoal">
           {t(
             '{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}',
-            { count: submitters.length },
+            { count: total },
           )}
         </span>
       </GrowingFacePile>

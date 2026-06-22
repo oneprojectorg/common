@@ -2,7 +2,9 @@ import { db, eq } from '@op/db/client';
 import {
   ProcessStatus,
   ProposalStatus,
+  objectsInStorage,
   profileUsers,
+  profiles,
   users,
 } from '@op/db/schema';
 import { randomUUID } from 'node:crypto';
@@ -17,8 +19,39 @@ import {
 import { schemaWithoutPipeline } from '../../../test/helpers/pipelineSchemas';
 import {
   createAuthenticatedCaller,
+  createIsolatedTestClient,
   createTestUser,
 } from '../../../test/supabase-utils';
+
+/** Gives a profile an avatar so it qualifies for the face pile. */
+async function giveProfileAvatar(profileId: string): Promise<void> {
+  const [storageObject] = await db
+    .insert(objectsInStorage)
+    .values({ bucketId: 'assets', name: `face-pile-test/${profileId}` })
+    .returning();
+
+  await db
+    .update(profiles)
+    .set({ avatarImageId: storageObject!.id })
+    .where(eq(profiles.id, profileId));
+}
+
+/** Looks up the individual profile a submitter is displayed as. */
+async function profileForAuthUser(
+  authUserId: string,
+): Promise<{ id: string; slug: string }> {
+  const [row] = await db
+    .select({ id: profiles.id, slug: profiles.slug })
+    .from(users)
+    .innerJoin(profiles, eq(profiles.id, users.profileId))
+    .where(eq(users.authUserId, authUserId));
+
+  if (!row) {
+    throw new Error(`No individual profile for auth user ${authUserId}`);
+  }
+
+  return row;
+}
 
 describe.concurrent('listProposalSubmitters', () => {
   it('deduplicates submitters across multiple proposals by the same author', async ({
@@ -55,7 +88,7 @@ describe.concurrent('listProposalSubmitters', () => {
       processInstanceId: instanceId,
     });
 
-    expect(result.submitters).toHaveLength(1);
+    expect(result.total).toBe(1);
   });
 
   it('excludes submitters whose only proposal is a draft', async ({
@@ -89,7 +122,7 @@ describe.concurrent('listProposalSubmitters', () => {
       processInstanceId: instanceId,
     });
 
-    expect(result.submitters).toHaveLength(0);
+    expect(result.total).toBe(0);
   });
 
   it('includes invited collaborators on the same proposal', async ({
@@ -150,7 +183,118 @@ describe.concurrent('listProposalSubmitters', () => {
       processInstanceId: instanceId,
     });
 
-    expect(result.submitters).toHaveLength(2);
+    expect(result.total).toBe(2);
+  });
+
+  it('counts anonymous submitters in the total but keeps them out of the face pile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Proposal ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    // An anonymous account collaborates on the proposal. Give it an avatar so
+    // the only reason it stays out of the pile is its anonymity.
+    const anonClient = createIsolatedTestClient();
+    const { data: anon, error } = await anonClient.auth.signInAnonymously();
+    if (error || !anon.user) {
+      throw new Error(`Failed to sign in anonymously: ${error?.message}`);
+    }
+    testData.trackAuthUserForCleanup(anon.user.id);
+    const anonProfile = await profileForAuthUser(anon.user.id);
+    testData.trackProfileForCleanup(anonProfile.id);
+    await giveProfileAvatar(anonProfile.id);
+
+    await db.insert(profileUsers).values({
+      profileId: proposal.profileId,
+      authUserId: anon.user.id,
+    });
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+
+    const result = await caller.decision.listProposalSubmitters({
+      processInstanceId: instanceId,
+    });
+
+    // Owner + anonymous collaborator both count toward the total.
+    expect(result.total).toBe(2);
+    // ...but the anonymous account is never a face, even with an avatar.
+    expect(result.submitters.some((s) => s.slug === anonProfile.slug)).toBe(
+      false,
+    );
+  });
+
+  it('shows registered submitters with an avatar as faces and omits those without', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      processSchema: schemaWithoutPipeline,
+      instanceCount: 1,
+      status: ProcessStatus.PUBLISHED,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Owner submits but has no avatar → counted, never a face.
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Proposal ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    // A registered collaborator with an avatar → the one face shown.
+    const collaboratorEmail = `${task.id}-collab-${randomUUID()}@oneproject.org`;
+    const collabAuth = await createTestUser(collaboratorEmail).then(
+      (res) => res.user,
+    );
+    if (!collabAuth) {
+      throw new Error('Failed to create collaborator auth user');
+    }
+    testData.trackAuthUserForCleanup(collabAuth.id);
+    const collabProfile = await profileForAuthUser(collabAuth.id);
+    testData.trackProfileForCleanup(collabProfile.id);
+    await giveProfileAvatar(collabProfile.id);
+
+    await db.insert(profileUsers).values({
+      profileId: proposal.profileId,
+      authUserId: collabAuth.id,
+      email: collaboratorEmail,
+    });
+
+    await testData.advancePhase({
+      instanceId,
+      fromPhaseId: 'submission',
+      toPhaseId: 'review',
+    });
+
+    const result = await caller.decision.listProposalSubmitters({
+      processInstanceId: instanceId,
+    });
+
+    expect(result.total).toBe(2);
+    expect(result.submitters).toHaveLength(1);
+    expect(result.submitters[0]?.slug).toBe(collabProfile.slug);
+    expect(result.submitters[0]?.avatarImage).not.toBeNull();
   });
 });
 
