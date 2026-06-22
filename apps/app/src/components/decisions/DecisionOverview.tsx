@@ -8,12 +8,16 @@ import { EmptyState } from '@op/ui/EmptyState';
 import { Header2, Header3 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import he from 'he';
-import type { ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import { LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { DecisionPhaseTimeline } from './DecisionPhaseTimeline';
+import {
+  OverviewPinnedResourcesSuspense,
+  PinnedResourcesSkeleton,
+} from './OverviewPinnedResources';
 import { useCreateProposal } from './useCreateProposal';
 
 interface DecisionOverviewProps {
@@ -78,6 +82,7 @@ function DecisionOverviewContent({
 
   const overview = instance.instanceData?.overview;
   const headline = overview?.headline || instance.name;
+  const profileId = instance.profileId;
 
   // Same gate as StandardDecisionPage: the phase must accept proposals and
   // the viewer must have submit access.
@@ -111,17 +116,29 @@ function DecisionOverviewContent({
       {/* 12-col grid mirroring the Figma layout grid: sidebar spans 4 cols,
           body spans 7 starting at col 6. Stacks to one column below md. */}
       <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-12 px-4 py-6 md:grid-cols-12 md:gap-x-6 md:px-6 md:py-12">
-        <div className="flex flex-col gap-4 md:col-span-4">
-          <Header3 className="text-sm text-neutral-gray4">
-            {t('Process Overview')}
-          </Header3>
-          <DecisionPhaseTimeline
-            phases={phases}
-            currentStateId={instance.currentStateId ?? ''}
-            instanceId={instanceId}
-            isAdmin={instance.access?.admin}
-            decisionSlug={decisionSlug}
-          />
+        <div className="flex flex-col gap-8 md:col-span-4">
+          <div className="flex flex-col gap-4">
+            <Header3 className="text-sm text-neutral-gray4">
+              {t('Process Overview')}
+            </Header3>
+            <DecisionPhaseTimeline
+              phases={phases}
+              currentStateId={instance.currentStateId ?? ''}
+              instanceId={instanceId}
+              isAdmin={instance.access?.admin}
+              decisionSlug={decisionSlug}
+            />
+          </div>
+          {/* Pinned resources sit below the phase timeline. They're a
+              non-critical sidebar extra, so a load failure quietly renders
+              nothing rather than tripping the page-level error boundary. */}
+          {profileId ? (
+            <APIErrorBoundary fallbacks={{ default: () => null }}>
+              <Suspense fallback={<PinnedResourcesSkeleton />}>
+                <OverviewPinnedResourcesSuspense profileId={profileId} />
+              </Suspense>
+            </APIErrorBoundary>
+          ) : null}
         </div>
         <div className="min-w-0 md:col-span-7 md:col-start-6">
           <OverviewAbout

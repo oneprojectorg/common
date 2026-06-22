@@ -74,6 +74,35 @@ const DecisionOverviewPage = async ({
     aboutSlot = null;
   }
 
+  // Seed the pinned-resources queries (collections for the decision profile,
+  // then each collection's resources) into the same cache, so the sidebar's
+  // client useSuspenseQuery hydrates from server HTML with no client waterfall.
+  // getInstance is already cached above, so this re-fetch is a cache hit.
+  // Best-effort and independent of the body: on failure these caches stay empty
+  // and the client refetches under its own boundary.
+  try {
+    const { profileId } = await utils.decision.getInstance.fetch({
+      instanceId,
+    });
+    if (profileId) {
+      const collections = await utils.resources.collections.list.fetch({
+        profileId,
+      });
+      await Promise.all(
+        collections.items.map((collection) =>
+          utils.resources.listByCollection.fetch({
+            collectionId: collection.id,
+          }),
+        ),
+      );
+    }
+  } catch (error) {
+    logger.warn('Failed to server-render decision pinned resources', {
+      instanceId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <Suspense fallback={<DecisionContentSkeleton />}>

@@ -15,6 +15,23 @@ export const hostnameForDisplay = (
   }
 };
 
+// Hosts whose links are a playable video — drive the Play icon on resource
+// cards. Matched against the bare hostname (with `www.` stripped) and its
+// subdomains, so `m.youtube.com` and `player.vimeo.com` both count.
+const VIDEO_HOSTS = ['youtube.com', 'youtu.be', 'vimeo.com', 'loom.com'];
+
+export const isVideoUrl = (url: string | null): boolean => {
+  if (!url) {
+    return false;
+  }
+  try {
+    const host = new URL(url).hostname.replace(/^www\./i, '').toLowerCase();
+    return VIDEO_HOSTS.some((v) => host === v || host.endsWith(`.${v}`));
+  } catch {
+    return false;
+  }
+};
+
 export const getExtension = (fileName: string | null): string | null => {
   if (!fileName) {
     return null;
