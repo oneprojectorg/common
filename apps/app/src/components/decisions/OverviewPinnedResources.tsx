@@ -79,7 +79,7 @@ export const PinnedResourcesError = () => {
         <Header3 className="font-sans text-sm text-neutral-gray4">
           {t('Pinned Resources')}
         </Header3>
-        <p className="text-sm text-neutral-charcoal">
+        <p className="text-neutral-charcoal">
           {t("Couldn't load pinned resources.")}
         </p>
       </section>
