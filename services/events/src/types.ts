@@ -117,4 +117,20 @@ export const Events = {
       authorProfileId: z.string().uuid(),
     }),
   },
+  commentPosted: {
+    name: 'comment/posted' as const,
+    schema: z.object({
+      postId: z.string().uuid(),
+      parentPostId: z.string().uuid(),
+      authorProfileId: z.string().uuid(),
+    }),
+  },
+  proposalCommentPosted: {
+    name: 'proposalComment/posted' as const,
+    schema: z.object({
+      postId: z.string().uuid(),
+      proposalId: z.string().uuid(),
+      authorProfileId: z.string().uuid(),
+    }),
+  },
 } as const;
