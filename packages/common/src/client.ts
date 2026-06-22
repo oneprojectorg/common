@@ -139,6 +139,13 @@ const SAFE_REDIRECT_PATH_RE = new RegExp(
   `^/(?:${SUPPORTED_LOCALES.join('|')}|info)(?:[/?#]|$)`,
 );
 
+// A login page is itself under a locale prefix (e.g. `/en/login`), so it
+// passes the whitelist above. Redirecting back to it after a successful login
+// would bounce an authenticated user straight onto another login screen — an
+// infinite loop. Reject any login target (bare `/login` or locale-prefixed)
+// explicitly so it never qualifies as a safe redirect.
+const LOGIN_PATH_RE = /^\/(?:[a-z]{2}\/)?login(?:[/?#]|$)/;
+
 /**
  * Validate a relative redirect path and return its safe canonical (decoded)
  * form. Accepts both already-decoded paths (the common case after
@@ -165,7 +172,15 @@ export function getSafeRedirectPath(path: string | null): string | null {
       return null;
     }
   }
-  return SAFE_REDIRECT_PATH_RE.test(candidate) ? candidate : null;
+  if (!SAFE_REDIRECT_PATH_RE.test(candidate)) {
+    return null;
+  }
+  // Never redirect back onto a login page — that would loop an authenticated
+  // user back to where they started.
+  if (LOGIN_PATH_RE.test(candidate)) {
+    return null;
+  }
+  return candidate;
 }
 
 export function isSafeRedirectPath(path: string | null): path is string {
