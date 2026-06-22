@@ -5,7 +5,7 @@ import type { ResourceInCollection } from '@op/api/encoders';
 import { sanitizeUrl } from '@op/core/utils';
 import { Surface } from '@op/ui/Surface';
 import type { ComponentType } from 'react';
-import { LuGlobe, LuPlay } from 'react-icons/lu';
+import { LuLink, LuPlay } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -21,7 +21,7 @@ const iconForResource = (
   if (resource.type === 'document') {
     return iconComponentForMime(resource.attachment?.mimeType ?? null);
   }
-  return isVideoUrl(resource.linkUrl) ? LuPlay : LuGlobe;
+  return isVideoUrl(resource.linkUrl) ? LuPlay : LuLink;
 };
 
 const hrefForResource = (
