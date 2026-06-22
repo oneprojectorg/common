@@ -1,37 +1,3 @@
-import { match } from '@op/core/utils';
-import type { ComponentType } from 'react';
-import {
-  LuFile,
-  LuFileSpreadsheet,
-  LuFileText,
-  LuImage,
-  LuPresentation,
-} from 'react-icons/lu';
-
-// Map a MIME type to its icon component. Lives here (not in ResourceCard) so
-// server components can call it — importing a function from a 'use client'
-// module hands back a client reference, not the function itself.
-export const iconComponentForMime = (
-  mime: string | null,
-): ComponentType<{ className?: string }> => {
-  if (!mime) {
-    return LuFile;
-  }
-  if (mime.startsWith('image/')) {
-    return LuImage;
-  }
-  return match(mime, {
-    'application/pdf': () => LuFileText,
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-      () => LuFileText,
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': () =>
-      LuFileSpreadsheet,
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation':
-      () => LuPresentation,
-    _: () => LuFile,
-  });
-};
-
 // Display-friendly hostname: drop leading `www.` and (optionally) cap the
 // length so it fits in a card subtitle / fallback title field.
 export const hostnameForDisplay = (
