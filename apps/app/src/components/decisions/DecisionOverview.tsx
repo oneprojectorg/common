@@ -3,6 +3,7 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { type ProcessPhase } from '@op/api/encoders';
+import { Separator } from '@op/sense/Separator';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2, Header3 } from '@op/ui/Header';
@@ -117,7 +118,7 @@ function DecisionOverviewContent({
           body spans 7 starting at col 6. Stacks to one column below md. */}
       <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-12 px-4 py-6 md:grid-cols-12 md:gap-x-6 md:px-6 md:py-12">
         <div className="flex flex-col gap-8 md:col-span-4">
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             <Header3 className="text-sm text-neutral-gray4">
               {t('Process Overview')}
             </Header3>
@@ -135,6 +136,7 @@ function DecisionOverviewContent({
           {profileId ? (
             <APIErrorBoundary fallbacks={{ default: () => null }}>
               <Suspense fallback={<PinnedResourcesSkeleton />}>
+                <Separator />
                 <OverviewPinnedResourcesSuspense profileId={profileId} />
               </Suspense>
             </APIErrorBoundary>
