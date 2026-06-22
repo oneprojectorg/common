@@ -1,6 +1,7 @@
 import { OPURLConfig } from '@op/core';
 import { logger } from '@op/logging';
 import { waitUntil } from '@vercel/functions';
+import { LRUCache } from 'lru-cache';
 import { createClient } from 'redis';
 
 import { cacheMetrics } from './metrics';
@@ -115,9 +116,36 @@ const getCacheKey = (
   }`;
 };
 
-// TODO: replace with something like an LRU cache
-const memCache = new Map<string, { createdAt: number; data: unknown }>();
+// In-process L1 cache (memcache → Redis → fetch). Bounded by both a per-entry
+// TTL and a total memory budget with LRU eviction, so a long-lived server
+// process can't grow this unbounded. A `null` data field is a deliberately
+// cached negative result (see `storeNulls`); the wrapper object is always
+// truthy so `cache()` can tell a cached null apart from a miss.
+type MemCacheEntry = { data: unknown };
 const MEMCACHE_EXPIRE = 2 * 60 * 1000;
+// Total memory budget for the L1 cache (~200 MB), measured by the approximate
+// serialized byte size of each entry's data (see `estimateEntrySize`). A
+// single entry larger than this budget is simply not cached (lru-cache skips
+// items whose size exceeds `maxEntrySize`, which defaults to `maxSize`).
+const MEMCACHE_MAX_BYTES = 200 * 1024 * 1024;
+
+// Approximate an entry's in-memory footprint by its serialized JSON byte
+// length. lru-cache requires a positive integer, and a throw here would break
+// the cache write, so non-serializable values fall back to a nominal cost.
+const estimateEntrySize = (entry: MemCacheEntry): number => {
+  try {
+    const json = JSON.stringify(entry.data);
+    return json ? Buffer.byteLength(json) : 1;
+  } catch {
+    return 1;
+  }
+};
+
+const memCache = new LRUCache<string, MemCacheEntry>({
+  maxSize: MEMCACHE_MAX_BYTES,
+  ttl: MEMCACHE_EXPIRE,
+  sizeCalculation: estimateEntrySize,
+});
 
 /**
  * Caches values into a tiered structure: memcache → Redis → fetch function.
@@ -153,15 +181,16 @@ export const cache = async <T>({
 }): Promise<Awaited<T>> => {
   const cacheKey = getCacheKey(type, appKey, params);
   const { ttl, skipMemCache = false, storeNulls = false } = options;
+  // The LRU's per-entry TTL replaces the manual `createdAt` expiry check. A
+  // caller-supplied `ttl` (ms) overrides the default on write.
+  const memTtl = ttl ?? MEMCACHE_EXPIRE;
 
-  // try memcache first
+  // try memcache first — the LRU returns `undefined` for entries that have
+  // expired or been evicted, so a stale read simply falls through to Redis.
   const cachedVal = !skipMemCache ? memCache.get(cacheKey) : undefined;
   if (cachedVal) {
-    const memCacheExpire = ttl ? ttl : MEMCACHE_EXPIRE;
-    if (Date.now() - cachedVal.createdAt < memCacheExpire) {
-      cacheMetrics.recordHit({ type: 'memory', keyType: type });
-      return cachedVal.data as Awaited<T>;
-    }
+    cacheMetrics.recordHit({ type: 'memory', keyType: type });
+    return cachedVal.data as Awaited<T>;
   }
 
   // fall back to Redis cache
@@ -186,7 +215,7 @@ export const cache = async <T>({
     cacheMetrics.recordTimeout({ layer: 'race', keyType: type });
   } else if (raced.status === 'hit') {
     cacheMetrics.recordHit({ type: 'kv', source: 'redis', keyType: type });
-    memCache.set(cacheKey, { createdAt: Date.now(), data: raced.data });
+    memCache.set(cacheKey, { data: raced.data }, { ttl: memTtl });
     return raced.data as Awaited<T>;
   } else if (raced.status === 'timeout') {
     cacheMetrics.recordTimeout({ layer: 'command', keyType: type });
@@ -200,13 +229,13 @@ export const cache = async <T>({
   const shouldSkipCache = options.skipCacheWrite?.(newData) ?? false;
 
   if (newData && !shouldSkipCache) {
-    memCache.set(cacheKey, { createdAt: Date.now(), data: newData });
+    memCache.set(cacheKey, { data: newData }, { ttl: memTtl });
     // don't cache if we couldn't find the record (?)
     // TTL in redis is in seconds
     waitUntil(set(cacheKey, newData, ttl ? ttl / 1000 : 72 * 60 * 60)); // 72h default cache
   } else if (storeNulls && !shouldSkipCache) {
     // This allows us to store negative values in the memcache to improve rejections as well (and avoid DB calls for repeated rejections)
-    memCache.set(cacheKey, { createdAt: Date.now(), data: null });
+    memCache.set(cacheKey, { data: null }, { ttl: memTtl });
   }
 
   return newData;
@@ -227,7 +256,7 @@ export const invalidate = async ({
 
   // TODO: support invalidating entire trees
   if (data) {
-    memCache.set(cacheKey, { createdAt: Date.now(), data });
+    memCache.set(cacheKey, { data });
     set(cacheKey, data);
   } else {
     memCache.delete(cacheKey);

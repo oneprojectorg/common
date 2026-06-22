@@ -13,6 +13,7 @@
     "@op/core": "workspace:*",
     "@op/logging": "workspace:*",
     "@vercel/functions": "^2.1.0",
+    "lru-cache": "^11.2.2",
     "redis": "^5.5.5"
   },
   "devDependencies": {

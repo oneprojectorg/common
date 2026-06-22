@@ -192,6 +192,46 @@ describe('cache() — Redis tier metrics', () => {
   });
 });
 
+describe('cache() — in-process LRU (L1)', () => {
+  beforeEach(() => {
+    fakeRedis.get.mockReset();
+    fakeRedis.setEx.mockReset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('serves a repeat read from the L1 LRU without re-consulting Redis or fetch', async () => {
+    fakeRedis.get.mockResolvedValue(null);
+    fakeRedis.setEx.mockResolvedValue('OK');
+
+    const fetcher = vi.fn().mockResolvedValue('db-value');
+
+    // First read: Redis miss → fetch → populates L1.
+    const first = await cache({
+      type: 'platform',
+      params: ['lru-1'],
+      fetch: fetcher,
+    });
+    expect(first).toBe('db-value');
+    expect(fetcher).toHaveBeenCalledOnce();
+
+    const redisGetsAfterFirst = fakeRedis.get.mock.calls.length;
+
+    // Second read of the same key: should hit the in-process LRU and skip
+    // both the fetch function and Redis entirely.
+    const second = await cache({
+      type: 'platform',
+      params: ['lru-1'],
+      fetch: fetcher,
+    });
+    expect(second).toBe('db-value');
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(fakeRedis.get.mock.calls.length).toBe(redisGetsAfterFirst);
+  });
+});
+
 describe('get()', () => {
   beforeEach(() => {
     fakeRedis.get.mockReset();
