@@ -212,7 +212,7 @@ const ResourcePreviewFallback = ({ icon }: { icon: ReactNode }) => (
   </div>
 );
 
-const iconComponentForMime = (
+export const iconComponentForMime = (
   mime: string | null,
 ): React.ComponentType<{ className?: string }> => {
   if (!mime) {
