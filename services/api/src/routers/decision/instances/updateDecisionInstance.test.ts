@@ -265,7 +265,16 @@ describe.concurrent('updateDecisionInstance', () => {
     const overview = {
       headline: `Overview headline ${task.id}`,
       description: 'A short description for the overview page',
-      body: '<p>Overview body text</p>',
+      // New bodies are TipTap JSON docs (editor.getJSON()).
+      body: {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: 'Overview body text' }],
+          },
+        ],
+      },
     };
 
     await caller.decision.updateDecisionInstance({
@@ -276,6 +285,43 @@ describe.concurrent('updateDecisionInstance', () => {
     // Round-trip through getInstance — this also guards the encoder: if
     // `overview` were dropped from instanceDataWithSchemaEncoder, zod would
     // strip it from the response and the editor would initialize empty.
+    const fetched = await caller.decision.getInstance({
+      instanceId: instance.instance.id,
+    });
+
+    expect(fetched.instanceData?.overview).toEqual(overview);
+  });
+
+  it('should round-trip a legacy HTML string overview body', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Bodies written before the JSON migration are HTML strings; they must
+    // still read and write unchanged (the renderer falls back to HTML).
+    const overview = {
+      headline: `Legacy body ${task.id}`,
+      body: '<p>Overview body text</p>',
+    };
+
+    await caller.decision.updateDecisionInstance({
+      instanceId: instance.instance.id,
+      overview,
+    });
+
     const fetched = await caller.decision.getInstance({
       instanceId: instance.instance.id,
     });
@@ -370,7 +416,7 @@ describe.concurrent('updateDecisionInstance', () => {
     expect(instanceData.overview?.description).toBe('');
   });
 
-  it('should tolerate legacy-shaped stored overview when reading an instance', async ({
+  it('should degrade a malformed stored overview body without dropping sibling fields', async ({
     task,
     onTestFinished,
   }) => {
@@ -386,35 +432,38 @@ describe.concurrent('updateDecisionInstance', () => {
       throw new Error('No instance created');
     }
 
-    // Plant an overview shape written by an older build (body as a TipTap JSON
-    // doc instead of the current HTML string) directly in the database
+    // Plant a corrupt overview shape (body is neither an HTML string nor a
+    // JSON doc — here a number) directly in the database. Both string and
+    // object bodies are valid now, so this is the genuinely-malformed case.
     const dbInstance = await db.query.processInstances.findFirst({
       where: { id: instance.instance.id },
     });
-    const legacyInstanceData = {
+    const corruptInstanceData = {
       ...(dbInstance!.instanceData as DecisionInstanceData),
       overview: {
-        headline: 'Legacy headline',
-        body: { type: 'doc', content: [{ type: 'paragraph' }] },
+        headline: 'Corrupt body',
+        body: 12345,
       },
     };
     await db
       .update(processInstances)
       .set({
-        instanceData: legacyInstanceData as unknown as DecisionInstanceData,
+        instanceData: corruptInstanceData as unknown as DecisionInstanceData,
       })
       .where(eq(processInstances.id, instance.instance.id));
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    // The read must not fail — the malformed overview degrades to undefined
-    // instead of breaking the whole instance (and any list containing it)
+    // The read must not fail. The malformed body degrades to undefined, but the
+    // body-scoped `.catch` keeps headline/description intact (and the whole
+    // instance, and any list containing it, still reads).
     const fetched = await caller.decision.getInstance({
       instanceId: instance.instance.id,
     });
 
     expect(fetched.id).toBe(instance.instance.id);
-    expect(fetched.instanceData?.overview).toBeUndefined();
+    expect(fetched.instanceData?.overview?.headline).toBe('Corrupt body');
+    expect(fetched.instanceData?.overview?.body).toBeUndefined();
   });
 
   it('should update phase settings', async ({ task, onTestFinished }) => {

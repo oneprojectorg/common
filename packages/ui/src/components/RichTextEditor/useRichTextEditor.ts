@@ -1,3 +1,4 @@
+import type { JSONContent } from '@tiptap/core';
 import Placeholder from '@tiptap/extension-placeholder';
 import type { Content, Editor, Extensions } from '@tiptap/react';
 import { useEditor } from '@tiptap/react';
@@ -13,6 +14,7 @@ export function useRichTextEditor({
   editorClassName = '',
   onUpdate,
   onChange,
+  onChangeJSON,
   onEditorReady,
   editable = true,
   required = false,
@@ -23,6 +25,8 @@ export function useRichTextEditor({
   editorClassName?: string;
   onUpdate?: (content: string) => void;
   onChange?: (content: string) => void;
+  /** Emits the editor's JSON doc on every update (for JSON-stored content). */
+  onChangeJSON?: (content: JSONContent) => void;
   onEditorReady?: (editor: Editor) => void;
   editable?: boolean;
   /** When true, sets `aria-required` on the editable region for assistive tech. */
@@ -56,6 +60,7 @@ export function useRichTextEditor({
       const html = editor.getHTML();
       onUpdate?.(html);
       onChange?.(html);
+      onChangeJSON?.(editor.getJSON());
     },
     immediatelyRender: false,
   });

@@ -1,5 +1,8 @@
 import { serverExtensions } from '@op/common/client';
-import { viewerProseStyles } from '@op/ui/RichTextEditor';
+// Import from the editorConfig subpath (not the RichTextEditor barrel) so this
+// server component doesn't pull the client editor (useRichTextEditor/useEffect)
+// into the RSC graph — viewerProseStyles is a plain style string.
+import { viewerProseStyles } from '@op/ui/RichTextEditor/editorConfig';
 import type { JSONContent } from '@tiptap/core';
 import { renderToReactElement } from '@tiptap/static-renderer/pm/react';
 

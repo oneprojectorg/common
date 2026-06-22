@@ -2,6 +2,7 @@
  * Instance data creation helpers for DecisionSchemaDefinition templates.
  */
 import type { UiSchema } from '@rjsf/utils';
+import type { JSONContent } from '@tiptap/core';
 import type { JSONSchema7 } from 'json-schema';
 
 import { CommonError, ValidationError } from '../../../utils';
@@ -47,8 +48,12 @@ export interface PhaseInstanceData {
 export interface InstanceOverview {
   headline?: string;
   description?: string;
-  /** Rich text body as an HTML string (TipTap getHTML output) */
-  body?: string;
+  /**
+   * Rich text body. New content is a TipTap JSON doc (`editor.getJSON()`),
+   * which the static renderer consumes directly. Legacy rows hold an HTML
+   * string (`editor.getHTML()`) until backfilled; both shapes are read.
+   */
+  body?: string | JSONContent;
 }
 
 /**

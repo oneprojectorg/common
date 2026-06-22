@@ -85,6 +85,9 @@ export {
   type SchemaValidationResult,
 } from './services/decision/schemaValidator';
 export { serverExtensions } from './services/decision/tiptapExtensions';
+// Re-exported so API encoders / app consumers can type stored rich-text bodies
+// (TipTap JSON docs) without taking a direct @tiptap/core dependency.
+export type { JSONContent } from '@tiptap/core';
 export {
   getRubricScoringInfo,
   OVERALL_RECOMMENDATION_KEY,

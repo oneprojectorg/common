@@ -1,8 +1,16 @@
+import {
+  HydrationBoundary,
+  createServerUtils,
+  dehydrate,
+} from '@op/api/server';
+import { logger } from '@op/logging';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import type { ReactNode } from 'react';
 import { Suspense } from 'react';
 
 import { DecisionOverviewSuspense } from '@/components/decisions/DecisionOverview';
+import { RichTextRenderer } from '@/components/decisions/RichTextRenderer';
 import { DecisionContentSkeleton } from '@/components/skeletons/DecisionSkeleton';
 
 import { loadDecision } from '../loadDecision';
@@ -45,11 +53,37 @@ const DecisionOverviewPage = async ({
 }) => {
   const { slug } = await params;
   const { instanceId } = await loadDecision(slug);
+  const { utils, queryClient } = await createServerUtils();
+
+  // One server fetch renders the body as RSC and seeds the cache the client
+  // useSuspenseQuery hydrates from (no second fetch, no divergence). Body is
+  // best-effort: on failure the cache stays empty, so the client refetches and
+  // its APIErrorBoundary drives the error UX.
+  let aboutSlot: ReactNode = null;
+  try {
+    const instance = await utils.decision.getInstance.fetch({ instanceId });
+    const body = instance.instanceData?.overview?.body;
+    if (body) {
+      aboutSlot = <RichTextRenderer content={body} />;
+    }
+  } catch (error) {
+    logger.warn('Failed to server-render decision overview body', {
+      instanceId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    aboutSlot = null;
+  }
 
   return (
-    <Suspense fallback={<DecisionContentSkeleton />}>
-      <DecisionOverviewSuspense instanceId={instanceId} decisionSlug={slug} />
-    </Suspense>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <Suspense fallback={<DecisionContentSkeleton />}>
+        <DecisionOverviewSuspense
+          instanceId={instanceId}
+          decisionSlug={slug}
+          aboutSlot={aboutSlot}
+        />
+      </Suspense>
+    </HydrationBoundary>
   );
 };
 
