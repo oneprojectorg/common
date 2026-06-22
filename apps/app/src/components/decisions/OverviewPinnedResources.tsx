@@ -3,9 +3,9 @@ import { createServerUtils } from '@op/api/server';
 import { logger } from '@op/logging';
 import { Separator } from '@op/sense/Separator';
 import { Header3 } from '@op/ui/Header';
-import { getTranslations } from 'next-intl/server';
 
 import { PinnedResourceCard } from '@/components/Resources/PinnedResourceCard';
+import { TranslatedText } from '@/components/TranslatedText';
 
 type ServerUtils = Awaited<ReturnType<typeof createServerUtils>>['utils'];
 
@@ -29,8 +29,6 @@ export const OverviewPinnedResources = async ({
   profileId: string;
   utils: ServerUtils;
 }) => {
-  const t = await getTranslations();
-
   let items;
   try {
     const collections = await utils.resources.collections.list.fetch({
@@ -59,7 +57,7 @@ export const OverviewPinnedResources = async ({
       <Separator />
       <section className="flex flex-col gap-4">
         <Header3 className="text-sm text-neutral-gray4">
-          {t('Pinned Resources')}
+          <TranslatedText text="Pinned Resources" />
         </Header3>
         <div className="flex flex-col gap-2">
           {items.map((resource) => (
@@ -70,9 +68,12 @@ export const OverviewPinnedResources = async ({
               resource={resource}
               signedUrl={resource.signedUrl}
               addedLabel={
-                resource.createdAt
-                  ? t('Added {date}', { date: formatDate(resource.createdAt) })
-                  : null
+                resource.createdAt ? (
+                  <TranslatedText
+                    text="Added {date}"
+                    values={{ date: formatDate(resource.createdAt) }}
+                  />
+                ) : null
               }
             />
           ))}

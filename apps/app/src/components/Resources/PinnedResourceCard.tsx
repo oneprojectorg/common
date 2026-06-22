@@ -1,7 +1,7 @@
 import type { ResourceInCollection } from '@op/api/encoders';
 import { sanitizeUrl } from '@op/core/utils';
 import { Surface } from '@op/ui/Surface';
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import { LuLink, LuPlay } from 'react-icons/lu';
 
 import { iconComponentForMime, isVideoUrl } from './utils';
@@ -36,7 +36,7 @@ export const PinnedResourceCard = ({
 }: {
   resource: ResourceInCollection;
   signedUrl?: string | null;
-  addedLabel: string | null;
+  addedLabel: ReactNode;
 }) => {
   const Icon = iconForResource(resource);
   const href = hrefForResource(resource, signedUrl);
