@@ -29,20 +29,21 @@ export interface MapCanvasProps {
 const BOUNDARY_SOURCE_ID = 'decision-boundaries';
 
 // MapLibre paint expressions take CSS color strings, not Tailwind tokens, so
-// we inline the literal value of `--op-primary-600` (the `primary-teal` brand
-// token). Pinned here as a single source of truth — if the token ever shifts,
-// update this constant in lockstep.
-const PRIMARY_TEAL = '#387582';
+// we inline the literal values of the brand teal tokens. Pinned here as the
+// single source of truth — if a token ever shifts, update the constant in
+// lockstep.
+const PRIMARY_TEAL = '#387582'; // --op-primary-600 / primary-teal
+const PRIMARY_TEAL_50 = '#F1F9FA'; // --op-primary-50 / primary-teal-50
 
-// Brand teal at low opacity for the fill and full opacity for the outline, so
-// the valid area is legible without overwhelming the underlying basemap.
+// Boundary fill in primary-teal-50 (per design) with the outline at full
+// primary-teal. The fill opacity of 0.64 matches the Figma spec.
 const BOUNDARY_FILL_LAYER: LayerProps = {
   id: 'decision-boundaries-fill',
   type: 'fill',
   source: BOUNDARY_SOURCE_ID,
   paint: {
-    'fill-color': PRIMARY_TEAL,
-    'fill-opacity': 0.12,
+    'fill-color': PRIMARY_TEAL_50,
+    'fill-opacity': 0.64,
   },
 };
 
