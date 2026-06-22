@@ -10,8 +10,9 @@ import { TranslatedText } from '@/components/TranslatedText';
 type ServerUtils = Awaited<ReturnType<typeof createServerUtils>>['utils'];
 
 /**
- * Read-only "Pinned Resources" list for the decision overview sidebar, rendered
- * entirely on the server (no client JS, no realtime — read-mostly content).
+ * Read-only "Pinned Resources" list for the decision overview sidebar. The data
+ * fetch and list render on the server (no client query, no realtime — read-mostly
+ * content); only the translated label strings are client islands (TranslatedText).
  *
  * There is no dedicated pin flag — this surfaces the decision profile's resource
  * collection(s), the same data the side-panel Resources manager edits. Multiple
