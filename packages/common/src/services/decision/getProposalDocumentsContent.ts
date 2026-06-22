@@ -7,13 +7,27 @@ import type { ProposalTemplateSchema } from './types';
 
 /**
  * Proposal document content can be either TipTap JSON or legacy HTML.
- * Failed TipTap fetches throw — callers rely on Suspense to retry while
- * loading and ErrorBoundary to render a fallback when the fetch ultimately
- * fails.
+ *
+ * How a failed TipTap fetch is handled depends on `onFetchError`:
+ * - `'throw'` (default): the error propagates. Used by single-proposal reads
+ *   (e.g. the proposal viewer) so the client can rely on Suspense to retry
+ *   while loading and an ErrorBoundary to render a fallback when the fetch
+ *   ultimately fails — instead of flashing an inline error.
+ * - `'omit'`: the failing proposal is left out of the returned map (its
+ *   `documentContent` is undefined). Used by list reads so a single
+ *   unavailable document can't break the entire list.
  */
 export type ProposalDocumentContent =
   | { type: 'json'; fragments: TipTapFragmentResponse }
   | { type: 'html'; content: string };
+
+export interface GetProposalDocumentsContentOptions {
+  /**
+   * What to do when a TipTap document fetch fails.
+   * Defaults to `'throw'`.
+   */
+  onFetchError?: 'throw' | 'omit';
+}
 
 /**
  * Fetch document contents for proposals, handling both TipTap collaboration docs
@@ -32,7 +46,9 @@ export async function getProposalDocumentsContent(
     proposalTemplate?: ProposalTemplateSchema | null;
     collaborationDocVersionId?: number;
   }>,
+  options: GetProposalDocumentsContentOptions = {},
 ): Promise<Map<string, ProposalDocumentContent>> {
+  const { onFetchError = 'throw' } = options;
   const documentContentMap = new Map<string, ProposalDocumentContent>();
 
   const proposalsWithCollabDoc: Array<{
@@ -76,21 +92,35 @@ export async function getProposalDocumentsContent(
           ? getProposalFragmentNames(proposalTemplate)
           : ['default'];
 
-        const fragments = await client.getDocumentFragments(
-          collaborationDocId,
-          fragmentNames,
-          collaborationDocVersionId != null
-            ? { version: collaborationDocVersionId }
-            : undefined,
-        );
+        try {
+          const fragments = await client.getDocumentFragments(
+            collaborationDocId,
+            fragmentNames,
+            collaborationDocVersionId != null
+              ? { version: collaborationDocVersionId }
+              : undefined,
+          );
 
-        return { id, fragments };
+          return { id, fragments };
+        } catch (error) {
+          if (onFetchError === 'throw') {
+            throw error;
+          }
+
+          console.warn('Failed to fetch TipTap document', {
+            collaborationDocId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          return { id, fragments: undefined };
+        }
       },
       { concurrency: 10 },
     );
 
     for (const { id, fragments } of results) {
-      documentContentMap.set(id, { type: 'json', fragments });
+      if (fragments) {
+        documentContentMap.set(id, { type: 'json', fragments });
+      }
     }
   }
 

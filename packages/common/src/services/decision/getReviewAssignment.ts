@@ -49,15 +49,19 @@ export async function getReviewAssignment({
         profileId: assignment.proposal.profileId,
         viewerProfileId: assignment.reviewerProfileId,
       }),
-      getProposalDocumentsContent([
-        {
-          id: proposalSnapshot.id,
-          proposalData: proposalSnapshot.proposalData,
-          proposalTemplate,
-          collaborationDocVersionId:
-            proposalSnapshot.proposalData.collaborationDocVersionId,
-        },
-      ]),
+      getProposalDocumentsContent(
+        [
+          {
+            id: proposalSnapshot.id,
+            proposalData: proposalSnapshot.proposalData,
+            proposalTemplate,
+            collaborationDocVersionId:
+              proposalSnapshot.proposalData.collaborationDocVersionId,
+          },
+        ],
+        // Tolerate an unavailable document rather than failing the review view.
+        { onFetchError: 'omit' },
+      ),
       getProposalAttachmentsWithSignedUrls(proposalSnapshot.id),
     ]);
 

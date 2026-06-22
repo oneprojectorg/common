@@ -120,6 +120,8 @@ export async function translateProposals({
       proposalTemplate:
         templateByProcessId.get(p.processInstance.processId) ?? null,
     })),
+    // A single unavailable document must not break the whole batch.
+    { onFetchError: 'omit' },
   );
 
   // 4. Build translatable entries for all proposals

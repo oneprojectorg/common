@@ -545,6 +545,8 @@ export const listProposals = async ({
                 : parsed.collaborationDocVersionId,
           };
         }),
+        // A single unavailable document must not break the whole list.
+        { onFetchError: 'omit' },
       ),
       getSelectedProposalIds(processInstanceId),
       // Flagged items reach this point only for their creator or an admin —
