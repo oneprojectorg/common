@@ -43,25 +43,6 @@ export const PinnedResourceCard = ({
   const t = useTranslations();
   const Icon = iconForResource(resource);
   const href = hrefForResource(resource, signedUrl);
-  const added = resource.createdAt
-    ? t('Added {date}', { date: formatDate(resource.createdAt) })
-    : null;
-
-  const body = (
-    <div className="flex items-center gap-2">
-      <div className="flex size-8 shrink-0 items-center justify-center rounded-sm bg-primary-tealWhite group-hover:bg-white">
-        <Icon className="size-4 text-neutral-black" />
-      </div>
-      <div className="flex min-w-0 flex-col gap-0.5">
-        <p className="truncate text-base text-neutral-black">
-          {resource.title}
-        </p>
-        {added ? (
-          <p className="truncate text-sm text-neutral-gray4">{added}</p>
-        ) : null}
-      </div>
-    </div>
-  );
 
   return (
     <a
@@ -71,7 +52,21 @@ export const PinnedResourceCard = ({
       aria-label={resource.title}
       className="group block rounded-lg border p-2 outline-none hover:bg-primary-tealWhite focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2"
     >
-      {body}
+      <div className="flex items-center gap-2">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-sm bg-primary-tealWhite group-hover:bg-white">
+          <Icon className="size-4 text-neutral-black" />
+        </div>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <p className="truncate text-base text-neutral-black">
+            {resource.title}
+          </p>
+          {resource.createdAt ? (
+            <p className="truncate text-sm text-neutral-gray4">
+              {t('Added {date}', { date: formatDate(resource.createdAt) })}
+            </p>
+          ) : null}
+        </div>
+      </div>
     </a>
   );
 };
