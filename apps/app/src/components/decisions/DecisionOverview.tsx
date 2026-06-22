@@ -192,22 +192,28 @@ const OverviewAbout = ({
 }) => {
   const t = useTranslations();
 
-  if (!bodySlot && !fallbackText) {
+  // Prefer the server-rendered body; otherwise fall back to the plain-text
+  // description (entity-encoded for some orgs, same as DecisionActionBar —
+  // decode and render as text, not HTML).
+  let body: ReactNode = null;
+  if (bodySlot) {
+    body = bodySlot;
+  } else if (fallbackText) {
+    body = (
+      <p dir="auto" className="text-base">
+        {he.decode(fallbackText)}
+      </p>
+    );
+  }
+
+  if (!body) {
     return null;
   }
 
   return (
     <section className="flex flex-col gap-4">
       <Header2 className="font-serif">{t('About the process')}</Header2>
-      {bodySlot ? (
-        bodySlot
-      ) : fallbackText ? (
-        // The description is plain text (entity-encoded for some orgs, same as
-        // DecisionActionBar) — decode and render as text, not HTML.
-        <p dir="auto" className="text-base">
-          {he.decode(fallbackText)}
-        </p>
-      ) : null}
+      {body}
     </section>
   );
 };
