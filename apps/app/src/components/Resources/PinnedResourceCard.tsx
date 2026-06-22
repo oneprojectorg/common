@@ -24,6 +24,16 @@ const iconForResource = (
   return isVideoUrl(resource.linkUrl) ? LuPlay : LuGlobe;
 };
 
+const hrefForResource = (
+  resource: ResourceInCollection,
+  signedUrl?: string | null,
+): string | null => {
+  if (resource.type === 'document') {
+    return signedUrl ?? null;
+  }
+  return resource.linkUrl ? sanitizeUrl(resource.linkUrl) : null;
+};
+
 export const PinnedResourceCard = ({
   resource,
   signedUrl,
@@ -33,12 +43,7 @@ export const PinnedResourceCard = ({
 }) => {
   const t = useTranslations();
   const Icon = iconForResource(resource);
-  const href =
-    resource.type === 'document'
-      ? (signedUrl ?? null)
-      : resource.linkUrl
-        ? sanitizeUrl(resource.linkUrl)
-        : null;
+  const href = hrefForResource(resource, signedUrl);
   const added = resource.createdAt
     ? t('Added {date}', { date: formatDate(resource.createdAt) })
     : null;
