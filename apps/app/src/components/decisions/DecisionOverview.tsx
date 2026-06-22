@@ -2,15 +2,17 @@
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
-import { ButtonLink } from '@op/ui/Button';
+import { Button, ButtonLink } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2, Header3 } from '@op/ui/Header';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import he from 'he';
 import { LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { ProposalHtmlContent } from './ProposalHtmlContent';
+import { useCreateProposal } from './useCreateProposal';
 
 interface DecisionOverviewProps {
   instanceId: string;
@@ -80,6 +82,7 @@ function DecisionOverviewContent({
       <OverviewHero
         headline={headline}
         subhead={overview?.description}
+        instanceId={instanceId}
         decisionSlug={decisionSlug}
         canSubmitProposal={canSubmitProposal}
       />
@@ -111,16 +114,23 @@ function DecisionOverviewContent({
 const OverviewHero = ({
   headline,
   subhead,
+  instanceId,
   decisionSlug,
   canSubmitProposal,
 }: {
   headline: string;
   subhead?: string;
+  instanceId: string;
   decisionSlug: string;
   canSubmitProposal: boolean;
 }) => {
   const t = useTranslations();
   const currentPhaseHref = `/decisions/${decisionSlug}/current`;
+  const { createProposal, isCreating } = useCreateProposal({
+    instanceId,
+    navigateTo: (proposal) =>
+      `/decisions/${decisionSlug}/proposal/${proposal.profileId}/edit`,
+  });
 
   return (
     // Gradient stands in until overview header images exist — same radial
@@ -146,13 +156,15 @@ const OverviewHero = ({
             {t('Browse proposals')}
           </ButtonLink>
           {canSubmitProposal ? (
-            <ButtonLink
+            <Button
               color="primary"
-              href={currentPhaseHref}
               className="w-auto"
+              isDisabled={isCreating}
+              onPress={createProposal}
             >
+              {isCreating ? <LoadingSpinner /> : null}
               {t('Submit a proposal')}
-            </ButtonLink>
+            </Button>
           ) : null}
         </div>
       </div>
