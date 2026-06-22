@@ -513,7 +513,12 @@ const ProposalsListContent = ({
             decisionSlug={decisionSlug}
             permissions={permissions}
             votedProposalIds={selectedProposalIds}
-            hasFilter={selectedCategory !== 'all-categories'}
+            // True for any active filter (category OR All/Mine/Shortlisted) so an
+            // empty result reads "none match your filters", not "none yet".
+            hasFilter={
+              selectedCategory !== 'all-categories' ||
+              proposalFilter !== ProposalFilter.ALL
+            }
             isVotingPhase={isVotingPhase}
             proposalsHidden={proposalsHidden}
             revisionRequestIdByProposalId={revisionRequestIdByProposalId}

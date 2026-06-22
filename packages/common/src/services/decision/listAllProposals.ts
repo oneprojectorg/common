@@ -283,8 +283,10 @@ export const listAllProposals = async ({
 
   const lastItem = items[items.length - 1];
   const cursorValue = lastItem ? lastItem[orderBy] : null;
+  // `!= null` (not a truthy check) so a falsy-but-valid sort value — e.g. a
+  // rubric score of 0 — still produces a cursor instead of silently ending.
   const next =
-    hasMore && lastItem && cursorValue
+    hasMore && lastItem && cursorValue != null
       ? encodeCursor<{ value: string | Date; id: string }>({
           value: cursorValue,
           id: lastItem.id,
