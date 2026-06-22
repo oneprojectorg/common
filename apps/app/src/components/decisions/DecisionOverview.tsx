@@ -117,8 +117,8 @@ function DecisionOverviewContent({
       {/* 12-col grid mirroring the Figma layout grid: sidebar spans 4 cols,
           body spans 7 starting at col 6. Stacks to one column below md. */}
       <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-12 px-4 py-6 md:grid-cols-12 md:gap-x-6 md:px-6 md:py-12">
-        <div className="flex flex-col gap-8 md:col-span-4">
-          <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-6 md:col-span-4">
+          <div className="flex flex-col gap-4">
             <Header3 className="font-sans text-sm text-neutral-gray4">
               {t('Process Overview')}
             </Header3>

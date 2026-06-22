@@ -44,21 +44,19 @@ export const OverviewPinnedResourcesSuspense = ({
   }
 
   return (
-    <section className="flex flex-col gap-4">
+    <section className="flex flex-col gap-2">
       <Header3 className="font-sans text-sm text-neutral-gray4">
         {t('Pinned Resources')}
       </Header3>
-      <div className="flex flex-col gap-2">
-        {items.map((resource) => (
-          <PinnedResourceCard
-            // A resource can sit in more than one collection, so scope the key
-            // by collection to stay unique across the flattened list.
-            key={`${resource.collectionId}:${resource.id}`}
-            resource={resource}
-            signedUrl={resource.signedUrl}
-          />
-        ))}
-      </div>
+      {items.map((resource) => (
+        <PinnedResourceCard
+          // A resource can sit in more than one collection, so scope the key
+          // by collection to stay unique across the flattened list.
+          key={`${resource.collectionId}:${resource.id}`}
+          resource={resource}
+          signedUrl={resource.signedUrl}
+        />
+      ))}
     </section>
   );
 };
