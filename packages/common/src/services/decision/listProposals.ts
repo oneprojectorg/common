@@ -13,7 +13,12 @@ import type { User } from '@op/supabase/lib';
 import { type NormalizedRole, checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
-import { UnauthorizedError } from '../../utils';
+import {
+  UnauthorizedError,
+  decodeCursor,
+  encodeCursor,
+  getCursorCondition,
+} from '../../utils';
 import {
   assertInstanceProfileAccess,
   getCurrentProfileId,
@@ -55,7 +60,8 @@ export interface ListProposalsInput {
   proposalIds?: string[];
   phase?: 'results';
   limit?: number;
-  offset?: number;
+  // Keyset pagination cursor from a previous page's `next` (see `getCursorCondition`).
+  cursor?: string | null;
   orderBy?: 'createdAt' | 'updatedAt' | 'status' | 'votes';
   dir?: 'asc' | 'desc';
   skipAccessCheck?: boolean; // For trusted contexts like background jobs
@@ -122,7 +128,7 @@ const resolveExplicitScope = async ({
       ),
     );
 
-  return votedRows.map((r) => r.proposalId);
+  return votedRows.map((row) => row.proposalId);
 };
 
 // Shared function to build WHERE conditions for both count and data queries.
@@ -291,10 +297,14 @@ export const listProposals = async ({
       total: 0,
       hasMore: false,
       canManageProposals: false,
+      next: null,
     };
   }
 
-  const { limit = 20, offset = 0, orderBy = 'createdAt', dir = 'desc' } = input;
+  const { limit = 20, orderBy = 'createdAt', dir = 'desc' } = input;
+  const decodedCursor = input.cursor
+    ? decodeCursor<{ value: string | Date; id: string }>(input.cursor)
+    : undefined;
 
   // Resolve category-scoped proposal IDs up front so the same ID set is
   // available to both the count and data queries when assembling conditions.
@@ -316,6 +326,7 @@ export const listProposals = async ({
         total: 0,
         hasMore: false,
         canManageProposals,
+        next: null,
       };
     }
   }
@@ -440,9 +451,24 @@ export const listProposals = async ({
       AND ${decisionsVoteSubmissions.processInstanceId} = ${input.processInstanceId}
     )`;
 
-  const [proposalList, countResult] = await Promise.all([
+  const [rawProposalList, countResult] = await Promise.all([
     db.query.proposals.findMany({
-      where: { RAW: (table) => buildWhereClause(table)! },
+      // Cursor lives only on the data query so `total` stays the full count.
+      // `votes` sorts by a computed aggregate, so it can't keyset (never paginated).
+      where: {
+        RAW: (table) =>
+          and(
+            buildWhereClause(table),
+            orderBy === 'votes'
+              ? undefined
+              : getCursorCondition({
+                  column: table[orderBy] ?? table.createdAt,
+                  tieBreakerColumn: table.id,
+                  cursor: decodedCursor,
+                  direction: dir,
+                }),
+          )!,
+      },
       with: {
         submittedBy: {
           with: {
@@ -451,8 +477,8 @@ export const listProposals = async ({
         },
         profile: true,
       },
-      limit,
-      offset,
+      // Fetch one extra to detect whether a next page exists.
+      limit: limit + 1,
       ...(includeVoteCounts && {
         extras: {
           voteCount: (table, { sql: sqlOp }) =>
@@ -485,6 +511,11 @@ export const listProposals = async ({
   ]);
 
   const count = countResult[0]?.count || 0;
+
+  const hasMore = rawProposalList.length > limit;
+  const proposalList = hasMore
+    ? rawProposalList.slice(0, limit)
+    : rawProposalList;
 
   type ProposalListItem = (typeof proposalList)[number];
 
@@ -573,10 +604,26 @@ export const listProposals = async ({
     };
   });
 
+  // Keyset cursor off the last row's sort value + id tiebreak (votes can't
+  // keyset, so it stays a single page).
+  const lastItem = proposalsWithCounts[proposalsWithCounts.length - 1];
+  const cursorValue =
+    lastItem && orderBy !== 'votes' ? lastItem[orderBy] : null;
+  // `!= null` (not a truthy check) so a falsy-but-valid sort value — e.g. a
+  // rubric score of 0 — still produces a cursor instead of silently ending.
+  const next =
+    hasMore && lastItem && cursorValue != null
+      ? encodeCursor<{ value: string | Date; id: string }>({
+          value: cursorValue,
+          id: lastItem.id,
+        })
+      : null;
+
   return {
     proposals: proposalsWithCounts,
     total: Number(count),
-    hasMore: offset + limit < Number(count),
+    hasMore,
     canManageProposals,
+    next,
   };
 };

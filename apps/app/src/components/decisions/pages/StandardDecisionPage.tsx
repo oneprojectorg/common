@@ -16,7 +16,8 @@ import { useDecisionTranslation } from '../DecisionTranslationContext';
 import { HiddenProposalsBanner } from '../HiddenProposalsBanner';
 import { ManualSelectionList } from '../ManualSelectionList';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
-import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
+import { ProposalListSkeleton } from '../ProposalListSkeleton';
+import { ProposalsList } from '../ProposalsList';
 
 export function StandardDecisionPage({
   instanceId,

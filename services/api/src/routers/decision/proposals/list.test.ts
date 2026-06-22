@@ -459,7 +459,7 @@ describe.concurrent('listProposals', () => {
     expect(result.proposals[0]?.visibility).toBe(Visibility.HIDDEN);
   });
 
-  it('should support pagination with limit and offset', async ({
+  it('should support cursor pagination with limit and next', async ({
     task,
     onTestFinished,
   }) => {
@@ -499,23 +499,28 @@ describe.concurrent('listProposals', () => {
     const page1 = await caller.decision.listProposals({
       processInstanceId: instance.instance.id,
       limit: 2,
-      offset: 0,
     });
 
     expect(page1.proposals).toHaveLength(2);
     expect(page1.total).toBe(3);
     expect(page1.hasMore).toBe(true);
+    expect(page1.next).not.toBeNull();
 
-    // Second page
+    // Second page, following the cursor
     const page2 = await caller.decision.listProposals({
       processInstanceId: instance.instance.id,
       limit: 2,
-      offset: 2,
+      cursor: page1.next,
     });
 
     expect(page2.proposals).toHaveLength(1);
     expect(page2.total).toBe(3);
     expect(page2.hasMore).toBe(false);
+    expect(page2.next).toBeNull();
+
+    // Pages must not overlap.
+    const page1Ids = page1.proposals.map((p) => p.id);
+    expect(page1Ids).not.toContain(page2.proposals[0]?.id);
   });
 
   it('should return parsed proposalData with correct structure for new and legacy proposals', async ({

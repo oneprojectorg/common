@@ -29,7 +29,8 @@ import {
   hasSurveySkipCookie,
   setSurveySkipCookie,
 } from '../ProcessSurveyModal';
-import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
+import { ProposalListSkeleton } from '../ProposalListSkeleton';
+import { ProposalsList } from '../ProposalsList';
 import { ResultsList } from '../ResultsList';
 import { ResultsStats } from '../ResultsStats';
 

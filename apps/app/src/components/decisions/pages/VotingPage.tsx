@@ -11,7 +11,8 @@ import { DecisionActionBar } from '../DecisionActionBar';
 import { DecisionHero } from '../DecisionHero';
 import { useDecisionTranslation } from '../DecisionTranslationContext';
 import { MemberParticipationFacePile } from '../MemberParticipationFacePile';
-import { ProposalListSkeleton, ProposalsList } from '../ProposalsList';
+import { ProposalListSkeleton } from '../ProposalListSkeleton';
+import { ProposalsList } from '../ProposalsList';
 
 export function VotingPage({
   instanceId,

@@ -3,11 +3,14 @@ import {
   ProcessStatus,
   ProposalStatus,
   Visibility,
+  decisionsVoteProposals,
+  decisionsVoteSubmissions,
   proposalCategories,
   proposals,
   taxonomyTerms,
 } from '@op/db/schema';
-import { eq } from 'drizzle-orm';
+import { TRPCError } from '@trpc/server';
+import { eq, inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
@@ -30,6 +33,45 @@ const createCaller = createCallerFactory(appRouter);
 async function createAuthenticatedCaller(email: string) {
   const { session } = await createIsolatedSession(email);
   return createCaller(await createTestContextWithSession(session));
+}
+
+// Directly seeds a vote submission + join rows so ballot tests stay focused on
+// the `votedByProfileId` filter rather than the voting business logic.
+async function seedBallot({
+  processInstanceId,
+  voterProfileId,
+  proposalIds,
+}: {
+  processInstanceId: string;
+  voterProfileId: string;
+  proposalIds: string[];
+}) {
+  const [submission] = await db
+    .insert(decisionsVoteSubmissions)
+    .values({
+      processInstanceId,
+      submittedByProfileId: voterProfileId,
+      voteData: {
+        schemaVersion: '1.0.0',
+        schemaType: 'simple',
+        submissionMetadata: { timestamp: new Date().toISOString() },
+        validationSignature: 'test-signature',
+      },
+    })
+    .returning({ id: decisionsVoteSubmissions.id });
+
+  if (!submission) {
+    throw new Error('Failed to seed vote submission');
+  }
+
+  if (proposalIds.length > 0) {
+    await db.insert(decisionsVoteProposals).values(
+      proposalIds.map((proposalId) => ({
+        voteSubmissionId: submission.id,
+        proposalId,
+      })),
+    );
+  }
 }
 
 describe.concurrent('listAllProposals', () => {
@@ -409,6 +451,9 @@ describe.concurrent('listAllProposals', () => {
     });
     expect(page1.items).toHaveLength(2);
     expect(page1.next).not.toBeNull();
+    // `total` is the full category-scoped count, not the page size, and stays
+    // stable across pages so the listing header can show it on the first page.
+    expect(page1.total).toBe(5);
 
     const page2 = await caller.decision.listAllProposals({
       processInstanceId: instance.instance.id,
@@ -418,6 +463,7 @@ describe.concurrent('listAllProposals', () => {
     });
     expect(page2.items).toHaveLength(2);
     expect(page2.next).not.toBeNull();
+    expect(page2.total).toBe(5);
 
     const page3 = await caller.decision.listAllProposals({
       processInstanceId: instance.instance.id,
@@ -427,6 +473,7 @@ describe.concurrent('listAllProposals', () => {
     });
     expect(page3.items).toHaveLength(1);
     expect(page3.next).toBeNull();
+    expect(page3.total).toBe(5);
 
     const returnedIds = [
       ...page1.items.map((p) => p.id),
@@ -439,6 +486,217 @@ describe.concurrent('listAllProposals', () => {
     }
     expect(returnedIds).not.toContain(outOne.id);
     expect(returnedIds).not.toContain(outTwo.id);
+  });
+
+  it('does not skip rows that share a boundary timestamp across pages', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const created = [];
+    for (let i = 1; i <= 5; i++) {
+      created.push(
+        await testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: `Same-ts ${i} ${task.id}` },
+          status: ProposalStatus.SUBMITTED,
+        }),
+      );
+    }
+    const allIds = created.map((p) => p.id);
+
+    // Force every proposal to share one createdAt so pagination must rely on
+    // the id tie-breaker; without it, page 2+ skips same-timestamp rows.
+    await db
+      .update(proposals)
+      .set({ createdAt: '2020-01-01T00:00:00.000Z' })
+      .where(inArray(proposals.id, allIds));
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+    const seen: string[] = [];
+    let cursor: string | null = null;
+    // Bounded loop: at limit 2 over 5 rows it takes 3 pages; cap at 6 to avoid
+    // hanging if pagination ever regressed into a loop.
+    for (let page = 0; page < 6; page++) {
+      const result = await caller.decision.listAllProposals({
+        processInstanceId: instance.instance.id,
+        limit: 2,
+        cursor,
+      });
+      seen.push(...result.items.map((p) => p.id));
+      expect(result.total).toBe(5);
+      if (!result.next) {
+        break;
+      }
+      cursor = result.next;
+    }
+
+    expect(seen.sort()).toEqual([...allIds].sort());
+  });
+
+  it('filters by submittedByProfileId with an accurate total', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const [mine, other] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
+
+    // 3 from `mine`, 2 from `other` — all submitted.
+    const mineIds: string[] = [];
+    for (let i = 1; i <= 3; i++) {
+      const proposal = await testData.createProposal({
+        userEmail: mine.email,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: `Mine ${i} ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      });
+      mineIds.push(proposal.id);
+    }
+    for (let i = 1; i <= 2; i++) {
+      await testData.createProposal({
+        userEmail: other.email,
+        processInstanceId: instance.instance.id,
+        proposalData: { title: `Other ${i} ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      });
+    }
+
+    const caller = await createAuthenticatedCaller(mine.email);
+    const result = await caller.decision.listAllProposals({
+      processInstanceId: instance.instance.id,
+      submittedByProfileId: mine.profileId,
+    });
+
+    expect(result.total).toBe(3);
+    expect(result.items.map((p) => p.id).sort()).toEqual([...mineIds].sort());
+  });
+
+  it('filters by votedByProfileId (own ballot) with an accurate total, paginated', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const voter = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+
+    // Five submitted proposals; the voter's ballot covers three of them.
+    const created = [];
+    for (let i = 1; i <= 5; i++) {
+      created.push(
+        await testData.createProposal({
+          userEmail: setup.userEmail,
+          processInstanceId: instance.instance.id,
+          proposalData: { title: `Candidate ${i} ${task.id}` },
+          status: ProposalStatus.SUBMITTED,
+        }),
+      );
+    }
+    const ballotIds = created.slice(0, 3).map((p) => p.id);
+    await seedBallot({
+      processInstanceId: instance.instance.id,
+      voterProfileId: voter.profileId,
+      proposalIds: ballotIds,
+    });
+
+    const caller = await createAuthenticatedCaller(voter.email);
+    const page1 = await caller.decision.listAllProposals({
+      processInstanceId: instance.instance.id,
+      votedByProfileId: voter.profileId,
+      limit: 2,
+    });
+    // total is the full ballot size regardless of the page limit.
+    expect(page1.total).toBe(3);
+    expect(page1.items).toHaveLength(2);
+    expect(page1.next).not.toBeNull();
+
+    const page2 = await caller.decision.listAllProposals({
+      processInstanceId: instance.instance.id,
+      votedByProfileId: voter.profileId,
+      limit: 2,
+      cursor: page1.next,
+    });
+    expect(page2.total).toBe(3);
+    expect(page2.items).toHaveLength(1);
+    expect(page2.next).toBeNull();
+
+    const returnedIds = [
+      ...page1.items.map((p) => p.id),
+      ...page2.items.map((p) => p.id),
+    ].sort();
+    expect(returnedIds).toEqual([...ballotIds].sort());
+  });
+
+  it('rejects a caller requesting another member’s ballot', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const [voter, snoop] = await Promise.all([
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+      testData.createMemberUser({
+        organization: setup.organization,
+        instanceProfileIds: [instance.profileId],
+      }),
+    ]);
+
+    const snoopCaller = await createAuthenticatedCaller(snoop.email);
+    await expect(
+      snoopCaller.decision.listAllProposals({
+        processInstanceId: instance.instance.id,
+        votedByProfileId: voter.profileId,
+      }),
+    ).rejects.toThrowError(TRPCError);
   });
 });
 

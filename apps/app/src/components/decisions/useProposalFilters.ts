@@ -4,6 +4,65 @@ import { ProposalFilter, ProposalStatus } from '@op/api/encoders';
 import type { Proposal } from '@op/common/client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { useTranslations } from '@/lib/i18n';
+
+// Filter items for the proposal `ResponsiveSelect`, shared by ProposalsList and
+// ManualSelectionToolbar so labels and disabled rules stay in lockstep.
+export const useProposalFilterItems = ({
+  hasVoted,
+  currentProfileId,
+}: {
+  hasVoted: boolean;
+  currentProfileId: string | undefined;
+}) => {
+  const t = useTranslations();
+  return [
+    { id: ProposalFilter.ALL, label: t('All proposals') },
+    {
+      id: ProposalFilter.MY_PROPOSALS,
+      label: t('My proposals'),
+      isDisabled: !currentProfileId,
+    },
+    {
+      id: ProposalFilter.SHORTLISTED,
+      label: t('Shortlisted proposals'),
+    },
+    ...(hasVoted
+      ? [{ id: ProposalFilter.MY_BALLOT, label: t('My ballot') }]
+      : []),
+  ];
+};
+
+// Filter selection state + auto-switch to "My ballot" once the user votes.
+// Composed by `useProposalFilters` (the in-memory candidate-list path).
+export function useProposalFilterState({
+  hasVoted,
+  initialFilter,
+}: {
+  hasVoted: boolean;
+  initialFilter?: ProposalFilter;
+}): {
+  proposalFilter: ProposalFilter;
+  setProposalFilter: (filter: ProposalFilter) => void;
+} {
+  const defaultFilter: ProposalFilter =
+    initialFilter || (hasVoted ? ProposalFilter.MY_BALLOT : ProposalFilter.ALL);
+
+  const [proposalFilter, setProposalFilter] =
+    useState<ProposalFilter>(defaultFilter);
+
+  // Switch to "My ballot" when the user JUST voted (hasVoted false -> true).
+  const prevHasVotedRef = useRef(hasVoted);
+  useEffect(() => {
+    if (!prevHasVotedRef.current && hasVoted) {
+      setProposalFilter(ProposalFilter.MY_BALLOT);
+    }
+    prevHasVotedRef.current = hasVoted;
+  }, [hasVoted]);
+
+  return { proposalFilter, setProposalFilter };
+}
+
 export function useProposalFilters({
   proposals,
   currentProfileId,
@@ -21,23 +80,10 @@ export function useProposalFilters({
   proposalFilter: ProposalFilter;
   setProposalFilter: (filter: ProposalFilter) => void;
 } {
-  // Set default filter based on initialFilter or hasVoted status
-  const defaultFilter: ProposalFilter =
-    initialFilter || (hasVoted ? ProposalFilter.MY_BALLOT : ProposalFilter.ALL);
-
-  const [proposalFilter, setProposalFilter] =
-    useState<ProposalFilter>(defaultFilter);
-
-  // Track previous hasVoted state to detect when user just voted
-  const prevHasVotedRef = useRef(hasVoted);
-
-  // Automatically switch to 'my-ballot' when user JUST completed voting (transition from false to true)
-  useEffect(() => {
-    if (!prevHasVotedRef.current && hasVoted) {
-      setProposalFilter(ProposalFilter.MY_BALLOT);
-    }
-    prevHasVotedRef.current = hasVoted;
-  }, [hasVoted]);
+  const { proposalFilter, setProposalFilter } = useProposalFilterState({
+    hasVoted,
+    initialFilter,
+  });
 
   const filteredProposals = useMemo(() => {
     if (!proposals) {

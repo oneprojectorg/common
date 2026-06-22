@@ -11,586 +11,36 @@ import {
 } from '@op/api/encoders';
 import {
   type Proposal,
-  type ProposalTranslation,
   ProposalReviewRequestState,
-  SUPPORTED_LOCALES,
-  type SupportedLocale,
   getLocationFieldMapView,
-  isVotingEligible,
   templateCollectsLocation,
 } from '@op/common/client';
-import { useIntersectionObserver } from '@op/hooks';
-import { Button, ButtonLink } from '@op/ui/Button';
-import { Checkbox } from '@op/ui/Checkbox';
-import { Dialog, DialogTrigger } from '@op/ui/Dialog';
-import { EmptyState } from '@op/ui/EmptyState';
-import { FooterBar } from '@op/ui/FooterBar';
-import { Header3 } from '@op/ui/Header';
+import { useInfiniteScroll, useIntersectionObserver } from '@op/hooks';
+import { Button } from '@op/ui/Button';
 import { Link } from '@op/ui/Link';
-import { Modal } from '@op/ui/Modal';
-import { Skeleton } from '@op/ui/Skeleton';
-import { Surface } from '@op/ui/Surface';
-import { toast } from '@op/ui/Toast';
 import { cn } from '@op/ui/utils';
-import { useLocale } from 'next-intl';
-import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LuArrowDownToLine, LuLayoutGrid, LuLeaf, LuMap } from 'react-icons/lu';
+import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
+import { type RefObject, useCallback, useMemo } from 'react';
+import { LuLayoutGrid, LuMap } from 'react-icons/lu';
 
-import { usePathname, useRouter, useTranslations } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
-import { Bullet } from '../Bullet';
-import { useSetDecisionTranslation } from './DecisionTranslationContext';
-import {
-  ProposalCard,
-  ProposalCardActions,
-  ProposalCardContent,
-  ProposalCardFooter,
-  ProposalCardHeader,
-  ProposalCardMenu,
-  ProposalCardMeta,
-  ProposalCardMetrics,
-  ProposalCardOwnerActions,
-  ProposalCardPreview,
-  ProposalCardReviseAction,
-} from './ProposalCard';
+import { ProposalListSkeletonGrid } from './ProposalListSkeleton';
 import { ProposalTranslationProvider } from './ProposalTranslationContext';
 import {
   PROPOSAL_VIEWS,
-  ProposalViewToggle,
   type ProposalView,
+  ProposalViewToggle,
 } from './ProposalViewToggle';
+import { ProposalsFilterBar, ProposalsListHeader } from './ProposalsFilterBar';
+import { ProposalsGrid } from './ProposalsGrid';
 import { ProposalsMapView } from './ProposalsMapView';
-import { ResponsiveSelect } from './ResponsiveSelect';
 import { TranslateBanner } from './TranslateBanner';
-import { VoteSubmissionModal } from './VoteSubmissionModal';
-import { VoteSuccessModal } from './VoteSuccessModal';
-import { VotingProposalCard } from './VotingProposalCard';
 import { DEFAULT_LOCATION_FIELD_MAP_VIEW } from './location/mapConfig';
 import { useProposalExport } from './useProposalExport';
-import { useProposalFilters } from './useProposalFilters';
+import { useProposalsTranslation } from './useProposalsTranslation';
 
-const ProposalCardSkeleton = () => {
-  return (
-    <Surface className="relative w-full min-w-80 space-y-3 p-4 pb-4">
-      {/* Header with title and budget skeleton */}
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-6 w-3/4" />
-        <Skeleton className="h-5 w-1/2" />
-      </div>
-
-      {/* Author and category skeleton */}
-      <div className="flex items-center gap-2">
-        <Skeleton className="size-6 rounded-full" />
-        <Skeleton className="h-4 w-24" />
-        <Skeleton className="size-1 rounded-full" />
-        <Skeleton className="h-6 w-16 rounded-full" />
-      </div>
-
-      {/* Description skeleton */}
-      <div className="space-y-2">
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-2/3" />
-      </div>
-
-      {/* Footer with engagement skeleton */}
-      <div className="flex flex-col justify-between gap-4">
-        <div className="flex w-full items-center justify-between gap-4">
-          <Skeleton className="h-4 w-12" />
-          <Skeleton className="h-4 w-16" />
-          <Skeleton className="h-4 w-16" />
-        </div>
-        <Skeleton className="h-8 w-full" />
-      </div>
-    </Surface>
-  );
-};
-
-{
-  /* Proposals Grid Skeleton */
-}
-export const ProposalListSkeletonGrid = () => (
-  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-    {Array.from({ length: 6 }).map((_, index) => (
-      <ProposalCardSkeleton key={index} />
-    ))}
-  </div>
-);
-
-export const ProposalListSkeleton = () => {
-  return (
-    <div className="flex flex-col gap-6">
-      {/* Filters Bar Skeleton */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-6 w-40" />
-        </div>
-        <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
-          <Skeleton className="h-10 w-32" />
-          <Skeleton className="h-10 w-32" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-      </div>
-
-      <ProposalListSkeletonGrid />
-    </div>
-  );
-};
-
-const NoProposalsFound = ({ hasFilter }: { hasFilter: boolean }) => {
-  const t = useTranslations();
-
-  return (
-    <EmptyState icon={<LuLeaf className="size-6" />}>
-      <Header3 className="font-serif !text-title-base font-light text-neutral-black">
-        {hasFilter
-          ? t('No proposals found matching the current filters.')
-          : t('No proposals yet')}
-      </Header3>
-      <p className="text-base text-neutral-charcoal">
-        {hasFilter
-          ? t('Try adjusting your filter selection above.')
-          : t('You could be the first one to submit a proposal')}
-      </p>
-    </EmptyState>
-  );
-};
-
-const HiddenProposalsEmptyState = () => {
-  const t = useTranslations();
-
-  return (
-    <EmptyState icon={<LuLeaf className="size-6" />}>
-      <p className="text-base text-neutral-charcoal">
-        {t("You'll see your proposal here once you submit.")}
-      </p>
-    </EmptyState>
-  );
-};
-
-interface ProposalsProps {
-  proposals?: Proposal[];
-  instanceId: string;
-  slug: string;
-  /** Decision profile slug for building proposal links */
-  decisionSlug?: string;
-  permissions?: DecisionAccess | null;
-  votedProposalIds?: string[];
-  hasFilter: boolean;
-  /** When true, the current phase has voting enabled — always show voting UI */
-  isVotingPhase?: boolean;
-  /** When true, new proposals are hidden by default in the current phase. */
-  proposalsHidden?: boolean;
-}
-
-const VotingProposalsList = ({
-  proposals,
-  instanceId,
-  slug,
-  decisionSlug,
-  permissions,
-  votedProposalIds = [],
-  hasFilter,
-  proposalsHidden,
-}: ProposalsProps) => {
-  const canVote = permissions?.vote ?? false;
-  const canManageProposals = permissions?.admin ?? false;
-  const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const t = useTranslations();
-
-  const numSelected = selectedProposalIds.length;
-
-  // Get voting status for this user and process
-  const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery({
-    processInstanceId: instanceId,
-  });
-
-  const utils = trpc.useUtils();
-
-  // Determine voting state
-  const hasVoted = voteStatus?.hasVoted || false;
-  const isReadOnly = hasVoted || !canVote;
-  const maxVotesPerMember = voteStatus?.votingConfiguration?.maxVotesPerMember;
-
-  const toggleProposal = (proposalId: string) => {
-    setSelectedProposalIds((prev) => {
-      const isSelected = prev.includes(proposalId);
-
-      if (isSelected) {
-        return prev.filter((id) => id !== proposalId);
-      }
-      if (maxVotesPerMember === undefined || prev.length < maxVotesPerMember) {
-        return [...prev, proposalId];
-      }
-      return prev;
-    });
-  };
-
-  const isProposalSelected = (proposalId: string) =>
-    selectedProposalIds.includes(proposalId);
-
-  // Get selected proposals for the modal
-  const selectedProposals =
-    proposals?.filter((p) => selectedProposalIds.includes(p.id)) || [];
-
-  // Handle successful vote submission
-  const handleVoteSuccess = () => {
-    setSelectedProposalIds([]);
-    setShowSuccessModal(true); // Show success modal
-    utils.decision.getVotingStatus.invalidate({
-      processInstanceId: instanceId,
-    });
-  };
-
-  if (!proposals || proposals.length === 0) {
-    if (proposalsHidden && !hasFilter) {
-      return <HiddenProposalsEmptyState />;
-    }
-    return <NoProposalsFound hasFilter={hasFilter} />;
-  }
-
-  return (
-    <>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {proposals.map((proposal) => {
-          const isSelected = isProposalSelected(proposal.id);
-          const isEligibleForVote = isVotingEligible(proposal.status);
-          const isVotedFor = votedProposalIds.includes(proposal.id);
-          const showCheckbox = !isReadOnly || isVotedFor;
-
-          const proposalHref = decisionSlug
-            ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
-            : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
-
-          // Ballot view: after voting, show a simpler card with clickable title
-          if (isEligibleForVote && isReadOnly) {
-            return (
-              <VotingProposalCard
-                key={proposal.id}
-                proposalId={proposal.id}
-                isSelected={isVotedFor}
-                isVotedFor={isVotedFor}
-              >
-                <ProposalCardContent>
-                  <ProposalCardHeader
-                    proposal={proposal}
-                    viewHref={proposalHref}
-                    menu={
-                      isVotedFor ? (
-                        <Checkbox
-                          isSelected={true}
-                          shape="circle"
-                          borderColor="light"
-                          className="[&[data-disabled]_svg]:!text-white"
-                          aria-label={t('Selected proposal')}
-                          isDisabled
-                        />
-                      ) : undefined
-                    }
-                  />
-                  <ProposalCardMeta proposal={proposal} />
-                  <ProposalCardPreview proposal={proposal} />
-                </ProposalCardContent>
-              </VotingProposalCard>
-            );
-          }
-
-          // Active voting view: interactive cards with selection
-          if (isEligibleForVote) {
-            return (
-              <VotingProposalCard
-                key={proposal.id}
-                proposalId={proposal.id}
-                isVotingEnabled={true}
-                isReadOnly={isReadOnly}
-                isSelected={isSelected}
-                isVotedFor={isVotedFor}
-                onToggle={toggleProposal}
-              >
-                <ProposalCardContent>
-                  <ProposalCardHeader
-                    proposal={proposal}
-                    menu={
-                      (canManageProposals ||
-                        proposal.isEditable ||
-                        showCheckbox) && (
-                        <div className="flex items-center gap-2">
-                          {(canManageProposals || proposal.isEditable) && (
-                            <ProposalCardMenu
-                              proposal={proposal}
-                              canManage={canManageProposals}
-                            />
-                          )}
-                          {showCheckbox && (
-                            <div onClick={(e) => e.stopPropagation()}>
-                              <Checkbox
-                                isSelected={isSelected}
-                                onChange={() => {
-                                  toggleProposal(proposal.id);
-                                }}
-                                shape="circle"
-                                borderColor="light"
-                                aria-label={
-                                  isSelected
-                                    ? t('Deselect proposal')
-                                    : t('Select proposal')
-                                }
-                              />
-                            </div>
-                          )}
-                        </div>
-                      )
-                    }
-                  />
-                  <ProposalCardMeta withLink={false} proposal={proposal} />
-                  <ProposalCardPreview proposal={proposal} />
-                </ProposalCardContent>
-                <ProposalCardFooter>
-                  <ButtonLink
-                    href={proposalHref}
-                    color="secondary"
-                    className="w-full"
-                  >
-                    {t('Read full proposal')}
-                  </ButtonLink>
-                </ProposalCardFooter>
-              </VotingProposalCard>
-            );
-          } else {
-            return (
-              <ProposalCard key={proposal.id} proposal={proposal}>
-                <div className="flex h-full flex-col justify-between gap-3 space-y-3">
-                  <ProposalCardContent>
-                    <ProposalCardHeader
-                      proposal={proposal}
-                      menu={
-                        (canManageProposals || proposal.isEditable) && (
-                          <ProposalCardMenu
-                            proposal={proposal}
-                            canManage={canManageProposals}
-                          />
-                        )
-                      }
-                    />
-                    <ProposalCardMeta proposal={proposal} />
-                    <ProposalCardPreview proposal={proposal} />
-                  </ProposalCardContent>
-                </div>
-                <ProposalCardContent>
-                  <ProposalCardFooter>
-                    <ButtonLink
-                      href={proposalHref}
-                      color="secondary"
-                      className="w-full"
-                    >
-                      {t('Read full proposal')}
-                    </ButtonLink>
-                  </ProposalCardFooter>
-                </ProposalCardContent>
-              </ProposalCard>
-            );
-          }
-        })}
-      </div>
-
-      {canVote && !isReadOnly && (
-        <FooterBar position="fixed" className="bg-neutral-offWhite/95">
-          <FooterBar.Start>
-            <span className="text-base text-neutral-black">
-              {maxVotesPerMember !== undefined
-                ? t.rich(
-                    '<highlight>{numSelected}</highlight> of {max, plural, one {# proposal} other {# proposals}} selected',
-                    {
-                      numSelected,
-                      max: maxVotesPerMember,
-                      highlight: (chunks: React.ReactNode) => (
-                        <span className="text-primary-teal">{chunks}</span>
-                      ),
-                    },
-                  )
-                : t.rich(
-                    '<highlight>{numSelected, plural, one {# proposal} other {# proposals}}</highlight> selected',
-                    {
-                      numSelected,
-                      highlight: (chunks: React.ReactNode) => (
-                        <span className="text-primary-teal">{chunks}</span>
-                      ),
-                    },
-                  )}
-            </span>
-          </FooterBar.Start>
-          <FooterBar.Center />
-          <FooterBar.End>
-            <DialogTrigger>
-              <Button isDisabled={numSelected === 0} variant="primary">
-                {t('Submit my votes')}
-              </Button>
-
-              <Modal isDismissable>
-                <Dialog className="h-full">
-                  <VoteSubmissionModal
-                    selectedProposals={selectedProposals}
-                    instanceId={instanceId}
-                    onSuccess={handleVoteSuccess}
-                  />
-                </Dialog>
-              </Modal>
-            </DialogTrigger>
-          </FooterBar.End>
-        </FooterBar>
-      )}
-
-      <VoteSuccessModal
-        isOpen={showSuccessModal}
-        onClose={() => setShowSuccessModal(false)}
-        instanceId={instanceId}
-      />
-    </>
-  );
-};
-
-const ViewProposalsList = ({
-  proposals,
-  instanceId,
-  slug,
-  decisionSlug,
-  permissions,
-  hasFilter,
-  proposalsHidden,
-  revisionRequestIdByProposalId,
-}: ProposalsProps & {
-  revisionRequestIdByProposalId?: Map<string, string>;
-}) => {
-  const canManageProposals = permissions?.admin ?? false;
-  if (!proposals || proposals.length === 0) {
-    if (proposalsHidden && !hasFilter) {
-      return <HiddenProposalsEmptyState />;
-    }
-    return <NoProposalsFound hasFilter={hasFilter} />;
-  }
-
-  return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {proposals.map((proposal) => {
-        const isDraft = proposal.status === ProposalStatus.DRAFT;
-        const isEditable = Boolean(proposal.isEditable);
-        const showMenu = canManageProposals;
-        const revisionRequestId = revisionRequestIdByProposalId?.get(
-          proposal.id,
-        );
-        const hasRevisionRequest = revisionRequestId !== undefined;
-        // Use new route structure if decisionSlug is provided, otherwise fallback to legacy route
-        const editHref = decisionSlug
-          ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}/edit`
-          : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}/edit`;
-        const reviseHref = revisionRequestId
-          ? `${editHref}?reviewRevision=${revisionRequestId}`
-          : editHref;
-        const viewHref = decisionSlug
-          ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
-          : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`;
-
-        return (
-          <ProposalCard key={proposal.id} proposal={proposal}>
-            <div className="flex h-full flex-col justify-between gap-3 space-y-3">
-              <ProposalCardContent>
-                <ProposalCardHeader
-                  proposal={proposal}
-                  viewHref={viewHref}
-                  menu={
-                    showMenu && (
-                      <ProposalCardMenu
-                        proposal={proposal}
-                        canManage={canManageProposals}
-                      />
-                    )
-                  }
-                />
-                <ProposalCardMeta
-                  proposal={proposal}
-                  revisionRequested={hasRevisionRequest}
-                />
-                <ProposalCardPreview proposal={proposal} />
-              </ProposalCardContent>
-            </div>
-            <ProposalCardContent>
-              <ProposalCardFooter>
-                {hasRevisionRequest ? (
-                  <>
-                    <ProposalCardMetrics proposal={proposal} />
-                    <ProposalCardReviseAction editHref={reviseHref} />
-                  </>
-                ) : isDraft ? (
-                  <ProposalCardOwnerActions
-                    proposal={proposal}
-                    editHref={editHref}
-                  />
-                ) : isEditable ? (
-                  <>
-                    <ProposalCardMetrics proposal={proposal} />
-                    <ProposalCardOwnerActions
-                      proposal={proposal}
-                      editHref={editHref}
-                    />
-                  </>
-                ) : (
-                  <>
-                    <ProposalCardMetrics proposal={proposal} />
-                    <ProposalCardActions proposal={proposal} />
-                  </>
-                )}
-              </ProposalCardFooter>
-            </ProposalCardContent>
-          </ProposalCard>
-        );
-      })}
-    </div>
-  );
-};
-
-const Proposals = ({
-  revisionRequestIdByProposalId,
-  ...props
-}: ProposalsProps & {
-  revisionRequestIdByProposalId?: Map<string, string>;
-}) => {
-  const { instanceId, isVotingPhase } = props;
-
-  // Get voting status for this user and process
-  const { data: voteStatus } = trpc.decision.getVotingStatus.useQuery({
-    processInstanceId: instanceId,
-  });
-
-  // Use the phase capability passed from the router, falling back to the
-  // voting status endpoint for backwards compatibility
-  const isVotingEnabled =
-    isVotingPhase || !!voteStatus?.votingConfiguration?.allowDecisions;
-
-  if (isVotingEnabled) {
-    return <VotingProposalsList {...props} />;
-  }
-
-  return (
-    <ViewProposalsList
-      {...props}
-      revisionRequestIdByProposalId={revisionRequestIdByProposalId}
-    />
-  );
-};
-
-export const ProposalsList = ({
-  slug,
-  instanceId,
-  decisionSlug,
-  decisionProfileId,
-  permissions,
-  initialFilter,
-  phase,
-  currentPhase,
-  proposalsHidden,
-}: {
+export interface ProposalsListProps {
   slug: string;
   instanceId: string;
   /** Decision profile slug for building proposal links */
@@ -607,33 +57,260 @@ export const ProposalsList = ({
   currentPhase?: InstancePhaseData;
   /** When true, new proposals are hidden by default in the current phase. */
   proposalsHidden?: boolean;
+}
+
+// A multiple of three so a full page fills the three-per-row grid evenly.
+const PROPOSALS_PAGE_LIMIT = 51;
+
+const PROPOSAL_FILTER_VALUES = Object.values(ProposalFilter);
+
+type ProposalQueryParams = {
+  processInstanceId: string;
+  categoryId?: string;
+  submittedByProfileId?: string;
+  votedByProfileId?: string;
+  status?: ProposalStatus;
+  dir: 'asc' | 'desc';
+  limit: number;
+  phase?: 'results';
+};
+
+type ProposalsLoaderRenderProps = {
+  allProposals: Proposal[];
+  /** Full server-side proposal count, independent of how many pages are loaded. */
+  total: number;
+  isFetchingNextPage: boolean;
+  shouldShowTrigger: boolean;
+  infiniteScrollRef: RefObject<HTMLDivElement | null>;
+};
+
+const useProposalsLoaderRenderProps = (
+  allProposals: Proposal[],
+  total: number,
+  {
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  }: {
+    fetchNextPage: () => unknown;
+    hasNextPage: boolean;
+    isFetchingNextPage: boolean;
+  },
+): ProposalsLoaderRenderProps => {
+  const stableFetchNextPage = useCallback(() => {
+    fetchNextPage();
+  }, [fetchNextPage]);
+
+  const { ref, shouldShowTrigger } = useInfiniteScroll<HTMLDivElement>(
+    stableFetchNextPage,
+    {
+      hasNextPage,
+      isFetchingNextPage,
+      threshold: 0.1,
+      rootMargin: '50px',
+    },
+  );
+
+  return {
+    allProposals,
+    total,
+    isFetchingNextPage,
+    shouldShowTrigger,
+    infiniteScrollRef: ref,
+  };
+};
+
+const CurrentPhaseProposalsLoader = ({
+  queryParams,
+  children,
+}: {
+  queryParams: ProposalQueryParams;
+  children: (data: ProposalsLoaderRenderProps) => React.ReactNode;
 }) => {
+  const [paginatedData, query] =
+    trpc.decision.listProposals.useSuspenseInfiniteQuery(queryParams, {
+      getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+      staleTime: 30 * 1000,
+    });
+
+  const allProposals = useMemo(
+    () => paginatedData.pages.flatMap((page) => page.proposals),
+    [paginatedData.pages],
+  );
+  const total = paginatedData.pages[0]?.total ?? 0;
+
+  return children(useProposalsLoaderRenderProps(allProposals, total, query));
+};
+
+const ResultsPhaseProposalsLoader = ({
+  queryParams,
+  children,
+}: {
+  queryParams: ProposalQueryParams;
+  children: (data: ProposalsLoaderRenderProps) => React.ReactNode;
+}) => {
+  const [paginatedData, query] =
+    trpc.decision.listAllProposals.useSuspenseInfiniteQuery(
+      {
+        processInstanceId: queryParams.processInstanceId,
+        dir: queryParams.dir,
+        limit: queryParams.limit,
+        categoryId: queryParams.categoryId,
+        status: queryParams.status,
+        submittedByProfileId: queryParams.submittedByProfileId,
+        votedByProfileId: queryParams.votedByProfileId,
+      },
+      {
+        getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+        staleTime: 30 * 1000,
+      },
+    );
+
+  const allProposals = useMemo(
+    () => paginatedData.pages.flatMap((page) => page.items),
+    [paginatedData.pages],
+  );
+  const total = paginatedData.pages[0]?.total ?? 0;
+
+  return children(useProposalsLoaderRenderProps(allProposals, total, query));
+};
+
+export const ProposalsList = (props: ProposalsListProps) => {
+  const { instanceId, phase, initialFilter } = props;
+
+  const { user } = useUser();
+  const currentProfileId = user?.currentProfile?.id;
+
+  const [voteStatus] = trpc.decision.getVotingStatus.useSuspenseQuery({
+    processInstanceId: instanceId,
+  });
+  const hasVoted = voteStatus?.hasVoted || false;
+
+  // nuqs holds the filters in the URL. `filter` has no default so an absent
+  // value can fall back to the ballot-aware default derived below.
+  const [selectedCategory, setSelectedCategory] = useQueryState(
+    'category',
+    parseAsString.withDefault('all-categories'),
+  );
+  const [sortOrder, setSortOrder] = useQueryState(
+    'sort',
+    parseAsString.withDefault('newest'),
+  );
+  const [filterParam, setProposalFilter] = useQueryState(
+    'filter',
+    parseAsStringLiteral(PROPOSAL_FILTER_VALUES),
+  );
+  const requestedFilter =
+    filterParam ??
+    initialFilter ??
+    (hasVoted ? ProposalFilter.MY_BALLOT : ProposalFilter.ALL);
+  // "My proposals"/"My ballot" need a profile; for anonymous/stale-link visitors
+  // fall back to ALL so the label can't claim a filter the query didn't apply.
+  const requiresProfile =
+    requestedFilter === ProposalFilter.MY_PROPOSALS ||
+    requestedFilter === ProposalFilter.MY_BALLOT;
+  const proposalFilter =
+    requiresProfile && !currentProfileId ? ProposalFilter.ALL : requestedFilter;
+
+  const queryParams = useMemo<ProposalQueryParams>(() => {
+    const params: ProposalQueryParams = {
+      processInstanceId: instanceId,
+      dir: sortOrder === 'newest' ? 'desc' : 'asc',
+      limit: PROPOSALS_PAGE_LIMIT,
+      phase,
+    };
+
+    if (selectedCategory !== 'all-categories') {
+      params.categoryId = selectedCategory;
+    }
+
+    // Filter in SQL so pagination and the total count stay accurate per filter.
+    if (proposalFilter === ProposalFilter.MY_PROPOSALS && currentProfileId) {
+      params.submittedByProfileId = currentProfileId;
+    } else if (proposalFilter === ProposalFilter.SHORTLISTED) {
+      params.status = ProposalStatus.APPROVED;
+    } else if (
+      proposalFilter === ProposalFilter.MY_BALLOT &&
+      currentProfileId
+    ) {
+      params.votedByProfileId = currentProfileId;
+    }
+
+    return params;
+  }, [
+    instanceId,
+    selectedCategory,
+    sortOrder,
+    phase,
+    proposalFilter,
+    currentProfileId,
+  ]);
+
+  const renderContent = (data: ProposalsLoaderRenderProps) => (
+    <ProposalsListContent
+      {...props}
+      {...data}
+      proposalFilter={proposalFilter}
+      setProposalFilter={setProposalFilter}
+      selectedCategory={selectedCategory}
+      setSelectedCategory={setSelectedCategory}
+      sortOrder={sortOrder}
+      setSortOrder={setSortOrder}
+    />
+  );
+
+  if (phase === 'results') {
+    return (
+      <ResultsPhaseProposalsLoader queryParams={queryParams}>
+        {renderContent}
+      </ResultsPhaseProposalsLoader>
+    );
+  }
+
+  return (
+    <CurrentPhaseProposalsLoader queryParams={queryParams}>
+      {renderContent}
+    </CurrentPhaseProposalsLoader>
+  );
+};
+
+// TODO: trim props — move filter state to a shared nuqs hook + extract an export button (follow-up).
+type ProposalsListContentProps = ProposalsListProps &
+  ProposalsLoaderRenderProps & {
+    proposalFilter: ProposalFilter;
+    setProposalFilter: (filter: ProposalFilter) => void;
+    selectedCategory: string;
+    setSelectedCategory: (value: string) => void;
+    sortOrder: string;
+    setSortOrder: (value: string) => void;
+  };
+
+// fallow-ignore-next-line complexity
+const ProposalsListContent = ({
+  slug,
+  instanceId,
+  decisionSlug,
+  decisionProfileId,
+  permissions,
+  currentPhase,
+  proposalsHidden,
+  allProposals,
+  total,
+  isFetchingNextPage,
+  shouldShowTrigger,
+  infiniteScrollRef,
+  proposalFilter,
+  setProposalFilter,
+  selectedCategory,
+  setSelectedCategory,
+  sortOrder,
+  setSortOrder,
+}: ProposalsListContentProps) => {
   const isReviewPhase = currentPhase?.rules?.proposals?.review === true;
   const isVotingPhase = currentPhase?.rules?.voting?.submit === true;
   const t = useTranslations();
   const { user } = useUser();
-  const router = useRouter();
-  const pathname = usePathname();
 
-  const [selectedCategory, setSelectedCategory] = useState(
-    () =>
-      (typeof window !== 'undefined' &&
-        new URLSearchParams(window.location.search).get('category')) ||
-      'all-categories',
-  );
-  const [sortOrder, setSortOrder] = useState(
-    () =>
-      (typeof window !== 'undefined' &&
-        new URLSearchParams(window.location.search).get('sort')) ||
-      'newest',
-  );
-  // `grid` is the default, so it clears the param rather than persisting it.
-  const [view, setView] = useQueryState(
-    'view',
-    parseAsStringLiteral(PROPOSAL_VIEWS).withDefault('grid'),
-  );
-
-  // Get current user's profile ID for "My Proposals" filter
   const currentProfileId = user?.currentProfile?.id;
   const [[categoriesData, voteStatus, instance]] = trpc.useSuspenseQueries(
     (t) => [
@@ -649,6 +326,12 @@ export const ProposalsList = ({
 
   const categories = categoriesData.categories;
 
+  // `grid` is the default, so it clears the param rather than persisting it.
+  const [view, setView] = useQueryState(
+    'view',
+    parseAsStringLiteral(PROPOSAL_VIEWS).withDefault('grid'),
+  );
+
   // Map browse mode is offered only when the process collects a location and
   // the GIS flag is on. The map fits the proposal markers; this default view
   // (`x-map-default`) is the fallback camera for when none have a location.
@@ -663,12 +346,14 @@ export const ProposalsList = ({
   const effectiveView: ProposalView = hasLocationField ? view : 'grid';
   const isMapMode = hasLocationField && effectiveView === 'map';
 
-  // Determine if we're in ballot view (user has voted)
+  const handleViewChange = (next: ProposalView) => {
+    void setView(next);
+  };
+
   const hasVoted = voteStatus?.hasVoted || false;
   const selectedProposalIds =
     voteStatus?.voteSubmission?.selectedProposalIds || [];
 
-  // Export hook
   const {
     startExport,
     isExporting,
@@ -677,73 +362,6 @@ export const ProposalsList = ({
     downloadFileName,
   } = useProposalExport();
 
-  // Helper function to update URL params
-  const updateURLParams = (updates: Record<string, string | null>) => {
-    const params = new URLSearchParams(window.location.search);
-
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value === null || value === 'all-categories' || value === 'all') {
-        params.delete(key);
-      } else {
-        params.set(key, value);
-      }
-    });
-
-    const newUrl = `${pathname}?${params.toString()}`;
-    router.replace(newUrl, { scroll: false });
-  };
-
-  const handleViewChange = (next: ProposalView) => {
-    void setView(next);
-  };
-
-  // Build query parameters, ensuring consistent structure
-  const queryParams = useMemo(() => {
-    const params: {
-      processInstanceId: string;
-      categoryId?: string;
-      submittedByProfileId?: string;
-      status?: ProposalStatus;
-      dir: 'asc' | 'desc';
-      limit: number;
-      phase?: 'results';
-    } = {
-      processInstanceId: instanceId,
-      dir: sortOrder === 'newest' ? 'desc' : 'asc',
-      limit: 50,
-      phase,
-    };
-
-    // Only include categoryId if it's not "all-categories"
-    if (selectedCategory !== 'all-categories') {
-      params.categoryId = selectedCategory;
-    }
-
-    return params;
-  }, [instanceId, selectedCategory, sortOrder, phase]);
-
-  // Split per phase — TS can't unify the two procedures' output shapes
-  // inside one useSuspenseQueries call.
-  const [[resultsProposals]] = trpc.useSuspenseQueries((t) => [
-    ...(phase === 'results'
-      ? [
-          t.decision.listAllProposals({
-            processInstanceId: queryParams.processInstanceId,
-            dir: queryParams.dir,
-            limit: queryParams.limit,
-            categoryId: queryParams.categoryId,
-          }),
-        ]
-      : []),
-  ]);
-  const [[phaseProposals]] = trpc.useSuspenseQueries((t) => [
-    ...(phase === 'results' ? [] : [t.decision.listProposals(queryParams)]),
-  ]);
-
-  const allProposals =
-    phase === 'results'
-      ? (resultsProposals?.items ?? [])
-      : (phaseProposals?.proposals ?? []);
   const canManageProposals = permissions?.admin ?? false;
 
   const { data: revisionRequestsData } =
@@ -758,136 +376,11 @@ export const ProposalsList = ({
     ),
   );
 
-  // --- Translation state ---
-  const locale = useLocale();
-  const supportedLocale = (SUPPORTED_LOCALES as readonly string[]).includes(
-    locale,
-  )
-    ? (locale as SupportedLocale)
-    : null;
-  const [bannerDismissed, setBannerDismissed] = useState(false);
-  const [translationState, setTranslationState] = useState<{
-    translations: Record<string, ProposalTranslation>;
-    sourceLocale: string;
-  } | null>(null);
-
-  const setDecisionTranslation = useSetDecisionTranslation();
-
-  const translateBatchMutation =
-    trpc.translation.translateProposals.useMutation({
-      onSuccess: (data) => {
-        setTranslationState({
-          translations: data.translations,
-          sourceLocale: data.sourceLocale,
-        });
-      },
-    });
-
-  const translateDecisionMutation =
-    trpc.translation.translateDecision.useMutation({
-      onSuccess: (data) => {
-        if (data.sourceLocale) {
-          // Set translationState from decision result when no proposals were translated
-          setTranslationState((prev) =>
-            prev ? prev : { translations: {}, sourceLocale: data.sourceLocale },
-          );
-        }
-        if (
-          !data.headline &&
-          !data.phaseDescription &&
-          !data.additionalInfo &&
-          !data.description &&
-          data.phases.length === 0
-        ) {
-          return;
-        }
-        setDecisionTranslation({
-          headline: data.headline,
-          phaseDescription: data.phaseDescription,
-          additionalInfo: data.additionalInfo,
-          description: data.description,
-          phases: data.phases,
-        });
-      },
-      onError: () => {
-        toast.error({ message: t('Failed to translate content') });
-      },
-    });
-
-  const handleTranslate = useCallback(() => {
-    if (!supportedLocale) {
-      return;
-    }
-    const profileIds = allProposals?.map((p) => p.profileId);
-    if (profileIds?.length) {
-      translateBatchMutation.mutate({
-        profileIds,
-        targetLocale: supportedLocale,
-      });
-    }
-    if (decisionProfileId) {
-      translateDecisionMutation.mutate({
-        decisionProfileId,
-        targetLocale: supportedLocale,
-      });
-    }
-  }, [
-    translateBatchMutation,
-    translateDecisionMutation,
+  const translation = useProposalsTranslation({
     allProposals,
-    supportedLocale,
     decisionProfileId,
-  ]);
-
-  const handleViewOriginal = useCallback(() => {
-    setTranslationState(null);
-    setDecisionTranslation(null);
-  }, [setDecisionTranslation]);
-
-  const languageNames = useMemo(
-    () => new Intl.DisplayNames([locale], { type: 'language' }),
-    [locale],
-  );
-  const getLanguageName = (langCode: string) =>
-    languageNames.of(langCode) ?? langCode;
-
-  const sourceLanguageName = translationState
-    ? getLanguageName(
-        translationState.sourceLocale.toLowerCase().split('-')[0] ?? '',
-      )
-    : '';
-  const targetLanguageName = getLanguageName(locale);
-
-  const showBanner =
-    !!supportedLocale &&
-    supportedLocale !== 'en' &&
-    !bannerDismissed &&
-    !translationState;
-
-  // Use the custom hook for filtering proposals
-  const {
-    filteredProposals: proposals,
-    proposalFilter,
-    setProposalFilter,
-  } = useProposalFilters({
-    proposals: allProposals || [],
-    currentProfileId,
-    votedProposalIds: selectedProposalIds,
-    hasVoted,
-    initialFilter,
   });
 
-  // Sync URL with filter changes (both manual and automatic), skipping initial render
-  const isFirstFilterSync = useRef(true);
-  useEffect(() => {
-    if (isFirstFilterSync.current) {
-      isFirstFilterSync.current = false;
-      return;
-    }
-    updateURLParams({ filter: proposalFilter });
-  }, [proposalFilter]);
-
-  // Handle export
   const handleExport = () => {
     startExport(
       {
@@ -901,7 +394,7 @@ export const ProposalsList = ({
     );
   };
 
-  const hideFilters = proposalsHidden && !canManageProposals;
+  const hideFilters = !!proposalsHidden && !canManageProposals;
 
   // The filter bar pins at top-14 (56px). A zero-height sentinel at its natural
   // top is observed against the viewport shrunk by that offset; once the
@@ -931,129 +424,48 @@ export const ProposalsList = ({
         className="pointer-events-none absolute inset-x-0 top-0 h-px"
       />
       {/* Filters Bar — sticks beneath the decision nav while the list/map
-          scroll under it (the process banner scrolls away above). Once pinned,
-          its border extends to full page width via the before/after lines. */}
+          scroll under it. Once pinned, its border extends to the full page
+          width via the before/after full-bleed lines (toggled by data-stuck). */}
       <div
         data-stuck={isFilterBarStuck || undefined}
         className={cn(
           'sticky top-14 z-20 flex flex-wrap items-center justify-between gap-4 border-b border-neutral-gray1 bg-white py-3',
-          // Once pinned, extend the bar's borders to the full page width. The bar
-          // sits in the centered content column, so two full-bleed pseudo-element
-          // lines stand in: ::after carries the bottom border to the page edges
-          // and ::before replaces the nav's border at the seam. data-stuck is
-          // toggled in JS (IntersectionObserver on the sentinel above).
           "before:pointer-events-none before:absolute before:top-0 before:left-1/2 before:w-screen before:-translate-x-1/2 before:border-t before:border-neutral-gray1 before:opacity-0 before:content-['']",
           "after:pointer-events-none after:absolute after:-bottom-px after:left-1/2 after:w-screen after:-translate-x-1/2 after:border-b after:border-neutral-gray1 after:opacity-0 after:content-['']",
           'data-[stuck=true]:before:opacity-100 data-[stuck=true]:after:opacity-100',
           // On mobile the map view is edge-to-edge, so break the bar out to full
-          // width too (restoring the container's 1rem gutter) — otherwise the map
-          // peeks past the bar's sides as it scrolls beneath the sticky bar.
+          // width too (restoring the container's 1rem gutter).
           isMapMode &&
             'max-sm:ml-[calc(50%_-_50vw)] max-sm:w-screen max-sm:px-4',
         )}
       >
         <div className="flex items-center gap-4">
-          <span className="font-serif text-title-base text-neutral-black">
-            {hideFilters ? (
-              t('My proposals')
-            ) : (
-              <>
-                {proposalFilter === ProposalFilter.MY_BALLOT
-                  ? t('My ballot')
-                  : proposalFilter === ProposalFilter.MY_PROPOSALS
-                    ? t('My proposals')
-                    : proposalFilter === ProposalFilter.SHORTLISTED
-                      ? t('Shortlisted proposals')
-                      : t('All proposals')}{' '}
-                <Bullet /> {proposals?.length ?? 0}
-              </>
-            )}
-          </span>
+          <ProposalsListHeader
+            hideFilters={hideFilters}
+            proposalFilter={proposalFilter}
+            // Server-side filtering makes `total` accurate for the active filter.
+            count={total}
+          />
         </div>
         {!hideFilters && (
-          <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
-            <ResponsiveSelect
-              selectedKey={proposalFilter}
-              onSelectionChange={(key) => {
-                // If selecting "My proposals" but no current profile, ignore
-                if (key === ProposalFilter.MY_PROPOSALS && !currentProfileId) {
-                  return;
-                }
-                setProposalFilter(key);
-              }}
-              aria-label={t('Filter proposals')}
-              items={[
-                { id: ProposalFilter.ALL, label: t('All proposals') },
-                {
-                  id: ProposalFilter.MY_PROPOSALS,
-                  label: t('My proposals'),
-                  isDisabled: !currentProfileId,
-                },
-                {
-                  id: ProposalFilter.SHORTLISTED,
-                  label: t('Shortlisted proposals'),
-                },
-                ...(hasVoted
-                  ? [
-                      {
-                        id: ProposalFilter.MY_BALLOT,
-                        label: t('My ballot'),
-                      },
-                    ]
-                  : []),
-              ]}
+          <div className="flex items-center gap-4">
+            <ProposalsFilterBar
+              hasVoted={hasVoted}
+              currentProfileId={currentProfileId}
+              proposalFilter={proposalFilter}
+              setProposalFilter={setProposalFilter}
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+              sortOrder={sortOrder}
+              onSelectSort={setSortOrder}
+              canManageProposals={canManageProposals}
+              isExporting={isExporting}
+              isDownloadReady={isDownloadReady}
+              downloadUrl={downloadUrl}
+              downloadFileName={downloadFileName}
+              onExport={handleExport}
             />
-            <ResponsiveSelect
-              selectedKey={selectedCategory}
-              onSelectionChange={(category) => {
-                setSelectedCategory(category);
-                updateURLParams({ category });
-              }}
-              aria-label={t('Filter proposals by category')}
-              items={[
-                { id: 'all-categories', label: t('All categories') },
-                ...categories.map((category) => ({
-                  id: category.id,
-                  label: category.name,
-                })),
-              ]}
-            />
-            <ResponsiveSelect
-              selectedKey={sortOrder}
-              onSelectionChange={(sort) => {
-                setSortOrder(sort);
-                updateURLParams({ sort });
-              }}
-              aria-label={t('Sort proposals')}
-              className="min-w-32"
-              items={[
-                { id: 'newest', label: t('Newest First') },
-                { id: 'oldest', label: t('Oldest First') },
-              ]}
-            />
-            {canManageProposals ? (
-              isDownloadReady && downloadUrl ? (
-                <ButtonLink
-                  href={downloadUrl}
-                  download={downloadFileName}
-                  color="secondary"
-                  size="small"
-                >
-                  <LuArrowDownToLine className="size-4" />
-                  {t('Click to download')}
-                </ButtonLink>
-              ) : (
-                <Button
-                  onPress={handleExport}
-                  isDisabled={isExporting}
-                  color="secondary"
-                  size="small"
-                >
-                  <LuArrowDownToLine className="size-4" />
-                  {isExporting ? t('Exporting...') : t('Export')}
-                </Button>
-              )
-            ) : null}
             {hasLocationField && (
               <div className="hidden items-center gap-4 sm:flex">
                 <span aria-hidden className="h-6 w-px bg-neutral-gray2" />
@@ -1067,37 +479,46 @@ export const ProposalsList = ({
         )}
       </div>
 
-      {/* Translation attribution */}
-      {translationState && (
+      {translation.translationState && (
         <p className="text-sm text-neutral-gray3">
-          {t('Translated from {language}', { language: sourceLanguageName })}{' '}
+          {t('Translated from {language}', {
+            language: translation.sourceLanguageName,
+          })}{' '}
           &middot;{' '}
-          <Link onPress={handleViewOriginal} className="text-sm font-semibold">
+          <Link
+            onPress={translation.handleViewOriginal}
+            className="text-sm font-semibold"
+          >
             {t('View original')}
           </Link>
         </p>
       )}
 
       <ProposalTranslationProvider
-        translations={translationState?.translations ?? {}}
+        translations={translation.translationState?.translations ?? {}}
       >
         {isMapMode ? (
           <ProposalsMapView
-            proposals={proposals ?? []}
+            proposals={allProposals}
             instanceId={instanceId}
             slug={slug}
             decisionSlug={decisionSlug}
             mapView={mapView}
           />
         ) : (
-          <Proposals
-            proposals={proposals}
+          <ProposalsGrid
+            proposals={allProposals}
             instanceId={instanceId}
             slug={slug}
             decisionSlug={decisionSlug}
             permissions={permissions}
             votedProposalIds={selectedProposalIds}
-            hasFilter={selectedCategory !== 'all-categories'}
+            // True for any active filter (category OR All/Mine/Shortlisted) so an
+            // empty result reads "none match your filters", not "none yet".
+            hasFilter={
+              selectedCategory !== 'all-categories' ||
+              proposalFilter !== ProposalFilter.ALL
+            }
             isVotingPhase={isVotingPhase}
             proposalsHidden={proposalsHidden}
             revisionRequestIdByProposalId={revisionRequestIdByProposalId}
@@ -1105,12 +526,22 @@ export const ProposalsList = ({
         )}
       </ProposalTranslationProvider>
 
-      {showBanner && (
+      {!isMapMode && shouldShowTrigger && (
+        <div
+          ref={infiniteScrollRef}
+          className="py-4"
+          data-testid="proposals-infinite-scroll-sentinel"
+        >
+          {isFetchingNextPage ? <ProposalListSkeletonGrid /> : null}
+        </div>
+      )}
+
+      {translation.showBanner && (
         <TranslateBanner
-          onTranslate={handleTranslate}
-          onDismiss={() => setBannerDismissed(true)}
-          isTranslating={translateBatchMutation.isPending}
-          languageName={targetLanguageName}
+          onTranslate={translation.handleTranslate}
+          onDismiss={translation.dismissBanner}
+          isTranslating={translation.isTranslating}
+          languageName={translation.targetLanguageName}
         />
       )}
 
