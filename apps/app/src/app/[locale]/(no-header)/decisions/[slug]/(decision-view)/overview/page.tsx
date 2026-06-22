@@ -10,6 +10,7 @@ import type { ReactNode } from 'react';
 import { Suspense } from 'react';
 
 import { DecisionOverviewSuspense } from '@/components/decisions/DecisionOverview';
+import { OverviewPinnedResources } from '@/components/decisions/OverviewPinnedResources';
 import { RichTextRenderer } from '@/components/decisions/RichTextRenderer';
 import { DecisionContentSkeleton } from '@/components/skeletons/DecisionSkeleton';
 
@@ -56,10 +57,11 @@ const DecisionOverviewPage = async ({
   const { utils, queryClient } = await createServerUtils();
 
   // One server fetch seeds the cache the client useSuspenseQuery hydrates from
-  // (no second fetch, no divergence) and feeds both the RSC body and the
-  // pinned-resources seeding below. Best-effort: on failure the cache stays
-  // empty, so the client refetches and its APIErrorBoundary drives the error UX.
+  // (no second fetch, no divergence) and feeds the RSC body + pinned-resources
+  // slots below. Best-effort: on failure the cache stays empty, so the client
+  // refetches and its APIErrorBoundary drives the error UX.
   let aboutSlot: ReactNode = null;
+  let pinnedResourcesSlot: ReactNode = null;
   const instance = await utils.decision.getInstance
     .fetch({ instanceId })
     .catch((error) => {
@@ -76,30 +78,13 @@ const DecisionOverviewPage = async ({
       aboutSlot = <RichTextRenderer content={body} />;
     }
 
-    // Seed the pinned-resources queries (collections for the decision profile,
-    // then each collection's resources) into the same cache, so the sidebar
-    // hydrates from server HTML with no client waterfall. Independent
-    // best-effort: a failure here leaves the body intact and the client
-    // refetches those queries under its own boundary.
-    const { profileId } = instance;
-    if (profileId) {
-      try {
-        const collections = await utils.resources.collections.list.fetch({
-          profileId,
-        });
-        await Promise.all(
-          collections.items.map((collection) =>
-            utils.resources.listByCollection.fetch({
-              collectionId: collection.id,
-            }),
-          ),
-        );
-      } catch (error) {
-        logger.warn('Failed to server-render decision pinned resources', {
-          instanceId,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
+    // Pinned resources render fully on the server (no client JS, no realtime —
+    // read-mostly content). The component owns its own fetch + empty/error
+    // handling, so it just renders nothing when there's nothing to show.
+    if (instance.profileId) {
+      pinnedResourcesSlot = (
+        <OverviewPinnedResources profileId={instance.profileId} utils={utils} />
+      );
     }
   }
 
@@ -110,6 +95,7 @@ const DecisionOverviewPage = async ({
           instanceId={instanceId}
           decisionSlug={slug}
           aboutSlot={aboutSlot}
+          pinnedResourcesSlot={pinnedResourcesSlot}
         />
       </Suspense>
     </HydrationBoundary>

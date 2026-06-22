@@ -1,71 +1,83 @@
-'use client';
-
-import { trpc } from '@op/api/client';
+import { formatDate } from '@/utils/formatting';
+import { createServerUtils } from '@op/api/server';
+import { logger } from '@op/logging';
+import { Separator } from '@op/sense/Separator';
 import { Header3 } from '@op/ui/Header';
-import { Skeleton } from '@op/ui/Skeleton';
-
-import { useTranslations } from '@/lib/i18n';
+import { getTranslations } from 'next-intl/server';
 
 import { PinnedResourceCard } from '@/components/Resources/PinnedResourceCard';
 
-const STALE_TIME = 30 * 1000;
+type ServerUtils = Awaited<ReturnType<typeof createServerUtils>>['utils'];
 
 /**
- * Read-only "Pinned Resources" list for the decision overview sidebar. There is
- * no dedicated pin flag — this surfaces the decision profile's resource
+ * Read-only "Pinned Resources" list for the decision overview sidebar, rendered
+ * entirely on the server (no client JS, no realtime — read-mostly content).
+ *
+ * There is no dedicated pin flag — this surfaces the decision profile's resource
  * collection(s), the same data the side-panel Resources manager edits. Multiple
  * collections are flattened into one list (collections come back in sortKey
  * order, each list in item-sortKey order), with no headings to match the design.
+ *
+ * Owns its own leading Separator so the divider only renders when there's
+ * something to show. Best-effort: a fetch failure renders nothing rather than
+ * failing the page.
  */
-export const OverviewPinnedResourcesSuspense = ({
+export const OverviewPinnedResources = async ({
   profileId,
+  utils,
 }: {
   profileId: string;
+  utils: ServerUtils;
 }) => {
-  const t = useTranslations();
-  const [collections] = trpc.resources.collections.list.useSuspenseQuery(
-    { profileId },
-    { staleTime: STALE_TIME },
-  );
+  const t = await getTranslations();
 
-  const [lists] = trpc.useSuspenseQueries((tq) =>
-    collections.items.map((collection) =>
-      tq.resources.listByCollection(
-        { collectionId: collection.id },
-        { staleTime: STALE_TIME },
+  let items;
+  try {
+    const collections = await utils.resources.collections.list.fetch({
+      profileId,
+    });
+    const lists = await Promise.all(
+      collections.items.map((collection) =>
+        utils.resources.listByCollection.fetch({ collectionId: collection.id }),
       ),
-    ),
-  );
-
-  const items = lists.flatMap((list) => list.items);
+    );
+    items = lists.flatMap((list) => list.items);
+  } catch (error) {
+    logger.warn('Failed to server-render decision pinned resources', {
+      profileId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
 
   if (items.length === 0) {
     return null;
   }
 
   return (
-    <section className="flex flex-col gap-4">
-      <Header3 className="text-sm text-neutral-gray4">
-        {t('Pinned Resources')}
-      </Header3>
-      <div className="flex flex-col gap-2">
-        {items.map((resource) => (
-          <PinnedResourceCard
-            // A resource can sit in more than one collection, so scope the key
-            // by collection to stay unique across the flattened list.
-            key={`${resource.collectionId}:${resource.id}`}
-            resource={resource}
-            signedUrl={resource.signedUrl}
-          />
-        ))}
-      </div>
-    </section>
+    <>
+      <Separator />
+      <section className="flex flex-col gap-4">
+        <Header3 className="text-sm text-neutral-gray4">
+          {t('Pinned Resources')}
+        </Header3>
+        <div className="flex flex-col gap-2">
+          {items.map((resource) => (
+            <PinnedResourceCard
+              // A resource can sit in more than one collection, so scope the key
+              // by collection to stay unique across the flattened list.
+              key={`${resource.collectionId}:${resource.id}`}
+              resource={resource}
+              signedUrl={resource.signedUrl}
+              addedLabel={
+                resource.createdAt
+                  ? t('Added {date}', { date: formatDate(resource.createdAt) })
+                  : null
+              }
+            />
+          ))}
+        </div>
+      </section>
+    </>
   );
 };
-
-export const PinnedResourcesSkeleton = () => (
-  <div className="flex flex-col gap-2">
-    <Skeleton className="h-12 w-full rounded-lg" />
-    <Skeleton className="h-12 w-full rounded-lg" />
-  </div>
-);

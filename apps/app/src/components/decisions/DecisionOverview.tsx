@@ -3,22 +3,17 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { type ProcessPhase } from '@op/api/encoders';
-import { Separator } from '@op/sense/Separator';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2, Header3 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import he from 'he';
-import { Suspense, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { DecisionPhaseTimeline } from './DecisionPhaseTimeline';
-import {
-  OverviewPinnedResourcesSuspense,
-  PinnedResourcesSkeleton,
-} from './OverviewPinnedResources';
 import { useCreateProposal } from './useCreateProposal';
 
 interface DecisionOverviewProps {
@@ -30,6 +25,12 @@ interface DecisionOverviewProps {
    * client JS. Null when there's no body (falls back to the plain description).
    */
   aboutSlot?: ReactNode;
+  /**
+   * Pinned-resources sidebar list, rendered on the server (RSC). Null when the
+   * decision has no resources, no profile, or the fetch failed; it includes its
+   * own leading divider so it only shows when there's content.
+   */
+  pinnedResourcesSlot?: ReactNode;
 }
 
 /**
@@ -46,6 +47,7 @@ export function DecisionOverviewSuspense({
   instanceId,
   decisionSlug,
   aboutSlot,
+  pinnedResourcesSlot,
 }: DecisionOverviewProps) {
   const t = useTranslations();
 
@@ -68,6 +70,7 @@ export function DecisionOverviewSuspense({
         instanceId={instanceId}
         decisionSlug={decisionSlug}
         aboutSlot={aboutSlot}
+        pinnedResourcesSlot={pinnedResourcesSlot}
       />
     </APIErrorBoundary>
   );
@@ -77,13 +80,13 @@ function DecisionOverviewContent({
   instanceId,
   decisionSlug,
   aboutSlot,
+  pinnedResourcesSlot,
 }: DecisionOverviewProps) {
   const t = useTranslations();
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
 
   const overview = instance.instanceData?.overview;
   const headline = overview?.headline || instance.name;
-  const profileId = instance.profileId;
 
   // Same gate as StandardDecisionPage: the phase must accept proposals and
   // the viewer must have submit access.
@@ -130,17 +133,9 @@ function DecisionOverviewContent({
               decisionSlug={decisionSlug}
             />
           </div>
-          {/* Pinned resources sit below the phase timeline. They're a
-              non-critical sidebar extra, so a load failure quietly renders
-              nothing rather than tripping the page-level error boundary. */}
-          {profileId ? (
-            <APIErrorBoundary fallbacks={{ default: () => null }}>
-              <Suspense fallback={<PinnedResourcesSkeleton />}>
-                <Separator />
-                <OverviewPinnedResourcesSuspense profileId={profileId} />
-              </Suspense>
-            </APIErrorBoundary>
-          ) : null}
+          {/* Pinned resources (server-rendered slot from page.tsx). Renders
+              its own leading divider, or nothing when there's no content. */}
+          {pinnedResourcesSlot}
         </div>
         <div className="min-w-0 md:col-span-7 md:col-start-6">
           <OverviewAbout

@@ -2,23 +2,20 @@
 
 import { formatDate } from '@/utils/formatting';
 import type { ResourceInCollection } from '@op/api/encoders';
-import { match, sanitizeUrl } from '@op/core/utils';
+import { sanitizeUrl } from '@op/core/utils';
 import { Surface } from '@op/ui/Surface';
 import { cn } from '@op/ui/utils';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
-import {
-  LuFile,
-  LuFileSpreadsheet,
-  LuFileText,
-  LuGlobe,
-  LuImage,
-  LuPresentation,
-} from 'react-icons/lu';
+import { LuGlobe } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { getExtension, hostnameForDisplay } from './utils';
+import {
+  getExtension,
+  hostnameForDisplay,
+  iconComponentForMime,
+} from './utils';
 
 type LinkResource = Extract<ResourceInCollection, { type: 'link' }>;
 type DocumentResource = Extract<ResourceInCollection, { type: 'document' }>;
@@ -212,28 +209,7 @@ const ResourcePreviewFallback = ({ icon }: { icon: ReactNode }) => (
   </div>
 );
 
-export const iconComponentForMime = (
-  mime: string | null,
-): React.ComponentType<{ className?: string }> => {
-  if (!mime) {
-    return LuFile;
-  }
-  if (mime.startsWith('image/')) {
-    return LuImage;
-  }
-  return match(mime, {
-    'application/pdf': () => LuFileText,
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-      () => LuFileText,
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': () =>
-      LuFileSpreadsheet,
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation':
-      () => LuPresentation,
-    _: () => LuFile,
-  });
-};
-
-const documentIconForMime = (mime: string | null): ReactNode => {
+export const documentIconForMime = (mime: string | null): ReactNode => {
   const Icon = iconComponentForMime(mime);
   return <Icon className="size-10" />;
 };
