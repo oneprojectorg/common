@@ -45,7 +45,7 @@ export function ProposalComments({
   return (
     <div ref={containerRef}>
       <div className="border-t pt-8">
-        <Header3 className="mb-6">
+        <Header3 className="mb-6 font-sans">
           {t('Comments')} ({comments.length})
         </Header3>
 

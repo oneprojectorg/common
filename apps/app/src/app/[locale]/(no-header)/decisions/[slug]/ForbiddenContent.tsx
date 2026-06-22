@@ -91,7 +91,7 @@ const ForbiddenWithInviteCheck = () => {
                 processInstanceName: matchingInvite.profile?.name,
               })}
             </Header1>
-            <Header2 className="text-neutral-gray4">
+            <Header2 className="font-sans text-neutral-gray4">
               {t('A decision-making process stewarded by {stewardName}.', {
                 stewardName: steward?.name ?? '',
               })}

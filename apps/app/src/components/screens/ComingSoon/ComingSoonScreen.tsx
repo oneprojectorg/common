@@ -106,7 +106,7 @@ export const ComingSoonScreen = () => {
         </section>
         <FadeInWrapper>
           <section className="space-y-6">
-            <Header3 className="text-base">{t('Trusted by')}</Header3>
+            <Header3 className="font-sans text-base">{t('Trusted by')}</Header3>
             <LogoLoop
               logos={logos}
               speed={20}

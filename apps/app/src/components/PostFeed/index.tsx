@@ -399,7 +399,7 @@ export const PostItem = ({
       <FeedMain>
         <FeedHeader className="relative w-full justify-between">
           <div className="flex items-baseline gap-2">
-            <Header3 className="leading-3 font-semibold">
+            <Header3 className="font-sans leading-3 font-semibold">
               <PostDisplayName
                 displayName={displayName}
                 displaySlug={displaySlug}
@@ -477,7 +477,7 @@ export const PostItemOnDetailPage = ({
       <FeedMain>
         <FeedHeader className="relative w-full justify-between">
           <div className="flex items-baseline gap-2">
-            <Header3 className="leading-3 font-semibold">
+            <Header3 className="font-sans leading-3 font-semibold">
               <PostDisplayName
                 displayName={displayName}
                 displaySlug={displaySlug}
@@ -622,7 +622,7 @@ export const PostFeedSkeleton = ({
           <AvatarSkeleton className="!size-8 max-h-8 max-w-8 rounded-full" />
           <FeedMain>
             <FeedHeader className="w-1/2">
-              <Header3 className="w-full pb-1 leading-5 font-medium">
+              <Header3 className="w-full pb-1 font-sans leading-5 font-medium">
                 <Skeleton />
               </Header3>
               <Skeleton />

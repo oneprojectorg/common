@@ -82,7 +82,7 @@ export const AvatarUploader = ({
       </div>
 
       <div className="text-center">
-        <Header2 className="text-sm">{label}</Header2>
+        <Header2 className="font-sans text-sm">{label}</Header2>
       </div>
     </div>
   );

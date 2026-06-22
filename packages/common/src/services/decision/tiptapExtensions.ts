@@ -1,3 +1,4 @@
+import { headingClasses } from '@op/styles/constants';
 import { Node, mergeAttributes } from '@tiptap/core';
 import Heading from '@tiptap/extension-heading';
 import Image from '@tiptap/extension-image';
@@ -5,6 +6,27 @@ import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import StarterKit from '@tiptap/starter-kit';
+
+/**
+ * Server-side mirror of the `StyledHeading` extension in `@op/ui`. Bakes the
+ * shared `headingClasses` onto each rendered heading tag so `generateHTML()`
+ * output matches the live editor and the `Header1/2/3` design-system
+ * components exactly.
+ */
+const StyledHeading = Heading.extend({
+  renderHTML({ node, HTMLAttributes }) {
+    const level = node.attrs.level as 1 | 2 | 3;
+    const className =
+      headingClasses[`h${level}` as keyof typeof headingClasses];
+    return [
+      `h${level}`,
+      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
+        class: className,
+      }),
+      0,
+    ];
+  },
+});
 
 /**
  * Server-safe Iframely node extension for `generateHTML()`.
@@ -69,7 +91,7 @@ export const serverExtensions = [
   StarterKit.configure({
     heading: false,
   }),
-  Heading.configure({
+  StyledHeading.configure({
     levels: [1, 2, 3],
   }),
   TextAlign.configure({

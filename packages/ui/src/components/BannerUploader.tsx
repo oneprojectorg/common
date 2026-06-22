@@ -76,7 +76,7 @@ export const BannerUploader = ({
       </div>
 
       <div className="text-center">
-        <Header2 className="text-xs">{label}</Header2>
+        <Header2 className="font-sans text-xs">{label}</Header2>
         {error && <p className="mt-2 text-functional-red">{error}</p>}
       </div>
     </div>
