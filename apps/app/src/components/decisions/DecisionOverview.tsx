@@ -3,7 +3,6 @@
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { trpc } from '@op/api/client';
 import { type ProcessPhase } from '@op/api/encoders';
-import { Separator } from '@op/sense/Separator';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2, Header3 } from '@op/ui/Header';
@@ -136,7 +135,6 @@ function DecisionOverviewContent({
           {profileId ? (
             <APIErrorBoundary fallbacks={{ default: () => null }}>
               <Suspense fallback={<PinnedResourcesSkeleton />}>
-                <Separator />
                 <OverviewPinnedResourcesSuspense profileId={profileId} />
               </Suspense>
             </APIErrorBoundary>

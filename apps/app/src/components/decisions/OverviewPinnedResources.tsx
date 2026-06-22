@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { Separator } from '@op/sense/Separator';
 import { Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 
@@ -44,20 +45,25 @@ export const OverviewPinnedResourcesSuspense = ({
   }
 
   return (
-    <section className="flex flex-col gap-2">
-      <Header3 className="font-sans text-sm text-neutral-gray4">
-        {t('Pinned Resources')}
-      </Header3>
-      {items.map((resource) => (
-        <PinnedResourceCard
-          // A resource can sit in more than one collection, so scope the key
-          // by collection to stay unique across the flattened list.
-          key={`${resource.collectionId}:${resource.id}`}
-          resource={resource}
-          signedUrl={resource.signedUrl}
-        />
-      ))}
-    </section>
+    <>
+      {/* Divider lives here (not in the parent) so it renders only alongside
+          actual resources — an empty list returns null above, no orphan rule. */}
+      <Separator />
+      <section className="flex flex-col gap-2">
+        <Header3 className="font-sans text-sm text-neutral-gray4">
+          {t('Pinned Resources')}
+        </Header3>
+        {items.map((resource) => (
+          <PinnedResourceCard
+            // A resource can sit in more than one collection, so scope the key
+            // by collection to stay unique across the flattened list.
+            key={`${resource.collectionId}:${resource.id}`}
+            resource={resource}
+            signedUrl={resource.signedUrl}
+          />
+        ))}
+      </section>
+    </>
   );
 };
 
