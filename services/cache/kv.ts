@@ -124,10 +124,13 @@ const getCacheKey = (
 type MemCacheEntry = { data: unknown };
 const MEMCACHE_EXPIRE = 2 * 60 * 1000;
 // Total memory budget for the L1 cache (~200 MB), measured by the approximate
-// serialized byte size of each entry's data (see `estimateEntrySize`). A
-// single entry larger than this budget is simply not cached (lru-cache skips
-// items whose size exceeds `maxEntrySize`, which defaults to `maxSize`).
+// serialized byte size of each entry's data (see `estimateEntrySize`).
 const MEMCACHE_MAX_BYTES = 200 * 1024 * 1024;
+// Per-entry cap (~30 MB). An entry larger than this is simply not cached
+// (falls through to Redis) rather than being admitted and evicting most of the
+// cache to make room — without this, `maxEntrySize` would default to `maxSize`
+// and a single fat payload could thrash the whole L1.
+const MEMCACHE_MAX_ENTRY_BYTES = 30 * 1024 * 1024;
 
 // Approximate an entry's in-memory footprint by its serialized JSON byte
 // length. lru-cache requires a positive integer, and a throw here would break
@@ -143,6 +146,7 @@ const estimateEntrySize = (entry: MemCacheEntry): number => {
 
 const memCache = new LRUCache<string, MemCacheEntry>({
   maxSize: MEMCACHE_MAX_BYTES,
+  maxEntrySize: MEMCACHE_MAX_ENTRY_BYTES,
   ttl: MEMCACHE_EXPIRE,
   sizeCalculation: estimateEntrySize,
 });
@@ -182,8 +186,10 @@ export const cache = async <T>({
   const cacheKey = getCacheKey(type, appKey, params);
   const { ttl, skipMemCache = false, storeNulls = false } = options;
   // The LRU's per-entry TTL replaces the manual `createdAt` expiry check. A
-  // caller-supplied `ttl` (ms) overrides the default on write.
-  const memTtl = ttl ?? MEMCACHE_EXPIRE;
+  // caller-supplied `ttl` (ms) overrides the default on write. Use `||` (not
+  // `??`) so a falsy `ttl` of 0 falls back to the default rather than becoming
+  // an immortal entry — matching the Redis-side `ttl ? …` guard below.
+  const memTtl = ttl || MEMCACHE_EXPIRE;
 
   // try memcache first — the LRU returns `undefined` for entries that have
   // expired or been evicted, so a stale read simply falls through to Redis.
