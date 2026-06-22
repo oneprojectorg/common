@@ -44,9 +44,9 @@ const placeholderStyles = [
 
 /**
  * TipTap heading extension that bakes the design-system `headingClasses` onto
- * each rendered `<h1>/<h2>/<h3>` tag, keeping editor output visually identical
- * to the `Header1/2/3` components in `@op/ui`. Levels without a mapped class
- * (e.g. h4) render without a baked class.
+ * each rendered `<h1>`–`<h4>` tag, keeping editor output visually identical to
+ * the `Header1/2/3/4` components in `@op/ui`. Any level without a mapped class
+ * renders without a baked class.
  */
 export const StyledHeading = Heading.extend({
   renderHTML({ node, HTMLAttributes }) {
