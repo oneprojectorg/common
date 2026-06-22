@@ -1266,6 +1266,8 @@
   "Add a title": "Ku dar cinwaan",
   "Add a description": "Ku dar sharaxaad",
   "Added on {date}": "La daray {date}",
+  "Added {date}": "La daray {date}",
+  "Pinned Resources": "Kheyraadka la qodbay",
   "Link": "Xiriiriye",
   "Document": "Dukumeenti",
   "URL": "URL",

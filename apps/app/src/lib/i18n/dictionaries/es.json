@@ -131,6 +131,8 @@
   "Add a title": "Añade un título",
   "Add a description": "Añade una descripción",
   "Added on {date}": "Añadido el {date}",
+  "Added {date}": "Añadido el {date}",
+  "Pinned Resources": "Recursos fijados",
   "Link": "Enlace",
   "Document": "Documento",
   "URL": "URL",
