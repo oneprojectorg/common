@@ -6,16 +6,10 @@ import type { MiddlewareBuilderBase } from '../types';
 const withRateLimited = (opts = { windowSize: 10, maxRequests: 10 }) => {
   const withRateLimitedInner: MiddlewareBuilderBase = async ({ ctx, next }) => {
     // Trusted server-side calls and E2E (bursty test traffic) bypass rate limits.
-    //
-    // TEMP_DISABLE_RATE_LIMITING is a temporary load-testing toggle. Unlike E2E
-    // (which ALSO clamps the Postgres pool to max:1 in services/db, crippling any
-    // capacity measurement), this flag bypasses ONLY the limiter, leaving the
-    // prod-like pool intact. Remove this once load testing is done — left enabled
-    // it disables rate limiting entirely.
     if (
       ctx.isServerSideCall ||
       process.env.E2E ||
-      process.env.TEMP_DISABLE_RATE_LIMITING === 'true'
+      process.env.TEMP_DISABLE_RATE_LIMITING
     ) {
       return next({ ctx });
     }
