@@ -45,7 +45,7 @@ export const OverviewPinnedResourcesSuspense = ({
 
   return (
     <section className="flex flex-col gap-4">
-      <Header3 className="text-sm text-neutral-gray4">
+      <Header3 className="font-sans text-sm text-neutral-gray4">
         {t('Pinned Resources')}
       </Header3>
       <div className="flex flex-col gap-2">

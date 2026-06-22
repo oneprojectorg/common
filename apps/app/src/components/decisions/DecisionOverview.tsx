@@ -119,7 +119,7 @@ function DecisionOverviewContent({
       <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-12 px-4 py-6 md:grid-cols-12 md:gap-x-6 md:px-6 md:py-12">
         <div className="flex flex-col gap-8 md:col-span-4">
           <div className="flex flex-col gap-3">
-            <Header3 className="text-sm text-neutral-gray4">
+            <Header3 className="font-sans text-sm text-neutral-gray4">
               {t('Process Overview')}
             </Header3>
             <DecisionPhaseTimeline
