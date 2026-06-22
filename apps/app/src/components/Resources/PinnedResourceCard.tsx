@@ -3,7 +3,6 @@
 import { formatDate } from '@/utils/formatting';
 import type { ResourceInCollection } from '@op/api/encoders';
 import { sanitizeUrl } from '@op/core/utils';
-import { Surface } from '@op/ui/Surface';
 import type { ComponentType } from 'react';
 import { LuLink, LuPlay } from 'react-icons/lu';
 
@@ -27,11 +26,11 @@ const iconForResource = (
 const hrefForResource = (
   resource: ResourceInCollection,
   signedUrl?: string | null,
-): string | null => {
+): string | undefined => {
   if (resource.type === 'document') {
-    return signedUrl ?? null;
+    return signedUrl ?? undefined;
   }
-  return resource.linkUrl ? sanitizeUrl(resource.linkUrl) : null;
+  return resource.linkUrl ? sanitizeUrl(resource.linkUrl) : undefined;
 };
 
 export const PinnedResourceCard = ({
@@ -50,7 +49,7 @@ export const PinnedResourceCard = ({
 
   const body = (
     <div className="flex items-center gap-2">
-      <div className="flex size-8 shrink-0 items-center justify-center rounded-sm bg-primary-tealWhite">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-sm bg-primary-tealWhite group-hover:bg-white">
         <Icon className="size-4 text-neutral-black" />
       </div>
       <div className="flex min-w-0 flex-col gap-0.5">
@@ -65,20 +64,14 @@ export const PinnedResourceCard = ({
   );
 
   return (
-    <Surface className="rounded-lg p-2">
-      {href ? (
-        <a
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={resource.title}
-          className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2"
-        >
-          {body}
-        </a>
-      ) : (
-        body
-      )}
-    </Surface>
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={resource.title}
+      className="group block rounded-lg border p-2 outline-none hover:bg-primary-tealWhite focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2"
+    >
+      {body}
+    </a>
   );
 };
