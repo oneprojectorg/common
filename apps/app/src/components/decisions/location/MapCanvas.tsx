@@ -36,14 +36,14 @@ const PRIMARY_TEAL = '#387582'; // --op-primary-600 / primary-teal
 const PRIMARY_TEAL_50 = '#F1F9FA'; // --op-primary-50 / primary-teal-50
 
 // Boundary fill in primary-teal-50 (per design) with the outline at full
-// primary-teal. The fill opacity of 0.64 matches the Figma spec.
+// primary-teal. The fill opacity of 0.32 matches the Figma spec.
 const BOUNDARY_FILL_LAYER: LayerProps = {
   id: 'decision-boundaries-fill',
   type: 'fill',
   source: BOUNDARY_SOURCE_ID,
   paint: {
     'fill-color': PRIMARY_TEAL_50,
-    'fill-opacity': 0.64,
+    'fill-opacity': 0.32,
   },
 };
 
