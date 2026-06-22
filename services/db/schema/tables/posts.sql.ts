@@ -62,6 +62,13 @@ export const postsToOrganizations = pgTable(
     ...serviceRolePolicies,
     primaryKey({ columns: [table.organizationId, table.postId] }),
     index().on(table.postId),
+    // Feed sort: WHERE organization_id = ? ORDER BY created_at DESC, post_id DESC.
+    // Lets the org feed read the page straight from the index without a sort.
+    index('posts_to_organizations_org_id_created_at_post_id_idx').on(
+      table.organizationId,
+      table.createdAt.desc(),
+      table.postId.desc(),
+    ),
   ],
 );
 
@@ -84,9 +91,13 @@ export const postsToProfiles = pgTable(
     ...serviceRolePolicies,
     primaryKey({ columns: [table.postId, table.profileId] }),
     index('posts_to_profiles_post_id_idx').on(table.postId).concurrently(),
-    index('posts_to_profiles_profile_id_idx')
-      .on(table.profileId)
-      .concurrently(),
+    // Feed sort: WHERE profile_id = ? ORDER BY created_at DESC, post_id DESC.
+    // Supersedes the single-column profile_id idx (same leading column).
+    index('posts_to_profiles_profile_id_created_at_post_id_idx').on(
+      table.profileId,
+      table.createdAt.desc(),
+      table.postId.desc(),
+    ),
   ],
 );
 
