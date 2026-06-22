@@ -13,8 +13,10 @@ const REDIS_URL = process.env.REDIS_URL;
 const REDIS_RACE_TIMEOUT_MS = 300;
 
 // Per-command socket timeout: aborts individual Redis commands so a stuck
-// socket fails fast instead of hanging until REDIS_RACE_TIMEOUT_MS.
-const REDIS_COMMAND_TIMEOUT_MS = 50;
+// socket fails fast instead of hanging until REDIS_RACE_TIMEOUT_MS. Sized with
+// margin for network jitter / TLS; watch `cache.timeouts{layer:"command"}` to
+// confirm it isn't clipping successful commands.
+const REDIS_COMMAND_TIMEOUT_MS = 100;
 
 // Sentinel for `Promise.race` — distinguishes the race timeout from a
 // legitimate `null` returned by Redis (cache miss).
