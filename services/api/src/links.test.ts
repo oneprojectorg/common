@@ -1,4 +1,5 @@
 import { queryChannelRegistry } from '@op/common/realtime';
+import { QueryClient, type QueryKey } from '@tanstack/react-query';
 import { observable } from '@trpc/server/observable';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -176,5 +177,124 @@ describe('createChannelRegistrationLink', () => {
     });
 
     expect(registerQuery).not.toHaveBeenCalled();
+  });
+});
+
+// Uses a real `QueryClient` + the real registry so assertions run through React
+// Query's actual partial-match logic.
+describe('createChannelRegistrationLink — infinite query invalidation', () => {
+  // tRPC caches `useSuspenseInfiniteQuery` under `type: 'infinite'`.
+  function infiniteQueryKey(processInstanceId: string): QueryKey {
+    return [
+      ['decision', 'listProposals'],
+      {
+        input: { processInstanceId, dir: 'desc', limit: 51 },
+        type: 'infinite',
+      },
+    ];
+  }
+
+  function seedInfiniteQuery(client: QueryClient, queryKey: QueryKey) {
+    client.setQueryData(queryKey, {
+      pages: [{ proposals: [], total: 0 }],
+      pageParams: [undefined],
+    });
+  }
+
+  // Wire input carries `cursor`/`direction` (tRPC infinite) that the cached key
+  // strips — the registered key must strip them too to match.
+  function registerListProposals(processInstanceId: string) {
+    runLink({
+      isServer: false,
+      op: {
+        type: 'query',
+        path: 'decision.listProposals',
+        input: {
+          processInstanceId,
+          dir: 'desc',
+          limit: 51,
+          cursor: 'page-2-cursor',
+          direction: 'forward',
+        },
+      },
+      emitted: wrapResponseWithChannels({ proposals: [], total: 0 }, [
+        `decisionProposals:${processInstanceId}`,
+      ]),
+    });
+  }
+
+  it('invalidates a live infinite query via the local mutation path', async () => {
+    registerListProposals('inst-local');
+
+    const client = new QueryClient();
+    const key = infiniteQueryKey('inst-local');
+    seedInfiniteQuery(client, key);
+    expect(client.getQueryState(key)?.isInvalidated).toBe(false);
+
+    // What QueryInvalidationSubscriber does on a `mutation:added` event.
+    const keys = queryChannelRegistry.getQueryKeysForChannels([
+      'decisionProposals:inst-local',
+    ]);
+    await Promise.all(
+      keys.map((queryKey) => client.invalidateQueries({ queryKey })),
+    );
+
+    expect(client.getQueryState(key)?.isInvalidated).toBe(true);
+  });
+
+  it('invalidates a live infinite query via the realtime websocket path', async () => {
+    registerListProposals('inst-ws');
+
+    const client = new QueryClient();
+    const key = infiniteQueryKey('inst-ws');
+    seedInfiniteQuery(client, key);
+
+    // The websocket handler runs the same registry lookup + invalidation.
+    const keys = queryChannelRegistry.getQueryKeysForChannels([
+      'decisionProposals:inst-ws',
+    ]);
+    await Promise.all(
+      keys.map((queryKey) => client.invalidateQueries({ queryKey })),
+    );
+
+    expect(client.getQueryState(key)?.isInvalidated).toBe(true);
+  });
+
+  it('stays instance-scoped — does not over-invalidate other instances', async () => {
+    registerListProposals('inst-a');
+
+    const client = new QueryClient();
+    const keyA = infiniteQueryKey('inst-a');
+    const keyB = infiniteQueryKey('inst-b');
+    seedInfiniteQuery(client, keyA);
+    seedInfiniteQuery(client, keyB);
+
+    const keys = queryChannelRegistry.getQueryKeysForChannels([
+      'decisionProposals:inst-a',
+    ]);
+    await Promise.all(
+      keys.map((queryKey) => client.invalidateQueries({ queryKey })),
+    );
+
+    expect(client.getQueryState(keyA)?.isInvalidated).toBe(true);
+    expect(client.getQueryState(keyB)?.isInvalidated).toBe(false);
+  });
+
+  it('a `type: query` key does NOT match an infinite query', async () => {
+    const client = new QueryClient();
+    const key = infiniteQueryKey('inst-typed');
+    seedInfiniteQuery(client, key);
+
+    // Same input, but the `type` discriminator alone blocks the partial match.
+    const typedKey = [
+      ['decision', 'listProposals'],
+      {
+        input: { processInstanceId: 'inst-typed', dir: 'desc', limit: 51 },
+        type: 'query',
+      },
+    ];
+    await client.invalidateQueries({ queryKey: typedKey });
+
+    expect(client.getQueryState(key)?.isInvalidated).toBe(false);
   });
 });
