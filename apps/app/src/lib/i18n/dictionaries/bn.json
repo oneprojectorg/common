@@ -134,6 +134,7 @@
   "Added on {date}": "{date} এ যোগ করা হয়েছে",
   "Added {date}": "{date} এ যোগ করা হয়েছে",
   "Pinned Resources": "পিন করা রিসোর্স",
+  "Couldn't load pinned resources.": "পিন করা রিসোর্স লোড করা যায়নি।",
   "Link": "লিঙ্ক",
   "Document": "ডকুমেন্ট",
   "URL": "ইউআরএল",

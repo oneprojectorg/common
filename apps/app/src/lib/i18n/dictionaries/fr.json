@@ -134,6 +134,7 @@
   "Added on {date}": "Ajouté le {date}",
   "Added {date}": "Ajouté le {date}",
   "Pinned Resources": "Ressources épinglées",
+  "Couldn't load pinned resources.": "Impossible de charger les ressources épinglées.",
   "Link": "Lien",
   "Document": "Document",
   "URL": "URL",

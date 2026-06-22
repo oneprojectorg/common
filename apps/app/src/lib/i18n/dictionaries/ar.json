@@ -1328,6 +1328,7 @@
   "Added on {date}": "أُضيف في {date}",
   "Added {date}": "أُضيف {date}",
   "Pinned Resources": "الموارد المثبتة",
+  "Couldn't load pinned resources.": "تعذّر تحميل الموارد المثبتة.",
   "Link": "رابط",
   "Document": "مستند",
   "URL": "الرابط",

@@ -133,6 +133,7 @@
   "Added on {date}": "Añadido el {date}",
   "Added {date}": "Añadido el {date}",
   "Pinned Resources": "Recursos fijados",
+  "Couldn't load pinned resources.": "No se pudieron cargar los recursos fijados.",
   "Link": "Enlace",
   "Document": "Documento",
   "URL": "URL",

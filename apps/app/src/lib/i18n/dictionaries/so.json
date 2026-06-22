@@ -1268,6 +1268,7 @@
   "Added on {date}": "La daray {date}",
   "Added {date}": "La daray {date}",
   "Pinned Resources": "Kheyraadka la qodbay",
+  "Couldn't load pinned resources.": "Lama soo rari karin kheyraadka la qodbay.",
   "Link": "Xiriiriye",
   "Document": "Dukumeenti",
   "URL": "URL",

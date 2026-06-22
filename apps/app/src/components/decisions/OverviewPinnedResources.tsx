@@ -9,8 +9,6 @@ import { useTranslations } from '@/lib/i18n';
 
 import { PinnedResourceCard } from '@/components/Resources/PinnedResourceCard';
 
-const STALE_TIME = 30 * 1000;
-
 /**
  * Read-only "Pinned Resources" list for the decision overview sidebar. There is
  * no dedicated pin flag — this surfaces the decision profile's resource
@@ -24,17 +22,13 @@ export const OverviewPinnedResourcesSuspense = ({
   profileId: string;
 }) => {
   const t = useTranslations();
-  const [collections] = trpc.resources.collections.list.useSuspenseQuery(
-    { profileId },
-    { staleTime: STALE_TIME },
-  );
+  const [collections] = trpc.resources.collections.list.useSuspenseQuery({
+    profileId,
+  });
 
   const [lists] = trpc.useSuspenseQueries((tq) =>
     collections.items.map((collection) =>
-      tq.resources.listByCollection(
-        { collectionId: collection.id },
-        { staleTime: STALE_TIME },
-      ),
+      tq.resources.listByCollection({ collectionId: collection.id }),
     ),
   );
 
@@ -73,3 +67,22 @@ export const PinnedResourcesSkeleton = () => (
     <Skeleton className="h-12 w-full rounded-lg" />
   </div>
 );
+
+// Shown when the resource fetch errors. The endpoint shouldn't normally fail,
+// but surfacing a line beats silently dropping the whole section.
+export const PinnedResourcesError = () => {
+  const t = useTranslations();
+  return (
+    <>
+      <Separator />
+      <section className="flex flex-col gap-2">
+        <Header3 className="font-sans text-sm text-neutral-gray4">
+          {t('Pinned Resources')}
+        </Header3>
+        <p className="text-sm text-neutral-charcoal">
+          {t("Couldn't load pinned resources.")}
+        </p>
+      </section>
+    </>
+  );
+};

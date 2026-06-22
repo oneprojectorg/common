@@ -16,6 +16,7 @@ import { useTranslations } from '@/lib/i18n';
 import { DecisionPhaseTimeline } from './DecisionPhaseTimeline';
 import {
   OverviewPinnedResourcesSuspense,
+  PinnedResourcesError,
   PinnedResourcesSkeleton,
 } from './OverviewPinnedResources';
 import { useCreateProposal } from './useCreateProposal';
@@ -129,11 +130,13 @@ function DecisionOverviewContent({
               decisionSlug={decisionSlug}
             />
           </div>
-          {/* Pinned resources sit below the phase timeline. They're a
-              non-critical sidebar extra, so a load failure quietly renders
-              nothing rather than tripping the page-level error boundary. */}
+          {/* Pinned resources sit below the phase timeline. Their own boundary
+              keeps a load failure scoped to this section (a small message)
+              instead of tripping the page-level error boundary. */}
           {profileId ? (
-            <APIErrorBoundary fallbacks={{ default: () => null }}>
+            <APIErrorBoundary
+              fallbacks={{ default: () => <PinnedResourcesError /> }}
+            >
               <Suspense fallback={<PinnedResourcesSkeleton />}>
                 <OverviewPinnedResourcesSuspense profileId={profileId} />
               </Suspense>

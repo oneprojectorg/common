@@ -134,6 +134,7 @@
   "Added on {date}": "Adicionado em {date}",
   "Added {date}": "Adicionado em {date}",
   "Pinned Resources": "Recursos fixados",
+  "Couldn't load pinned resources.": "Não foi possível carregar os recursos fixados.",
   "Link": "Link",
   "Document": "Documento",
   "URL": "URL",
