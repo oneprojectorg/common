@@ -473,6 +473,10 @@ export const listProposals = async ({
         submittedBy: {
           with: {
             avatarImage: true,
+            profileUsers: {
+              columns: {},
+              with: { authUser: { columns: { isAnonymous: true } } },
+            },
           },
         },
         profile: true,
@@ -561,9 +565,23 @@ export const listProposals = async ({
   );
 
   const proposalsWithCounts = proposalList.map((proposal: ProposalListItem) => {
-    const submittedBy = Array.isArray(proposal.submittedBy)
+    const rawSubmittedBy = Array.isArray(proposal.submittedBy)
       ? proposal.submittedBy[0]
       : proposal.submittedBy;
+    const submittedBy = rawSubmittedBy
+      ? (() => {
+          const { profileUsers, ...author } = rawSubmittedBy;
+          return {
+            ...author,
+            isAnonymous: Boolean(
+              profileUsers?.some(
+                (pu: { authUser: { isAnonymous: boolean } | null }) =>
+                  pu.authUser?.isAnonymous,
+              ),
+            ),
+          };
+        })()
+      : rawSubmittedBy;
     const profile = Array.isArray(proposal.profile)
       ? proposal.profile[0]
       : proposal.profile;

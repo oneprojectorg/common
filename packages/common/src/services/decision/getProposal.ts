@@ -61,7 +61,10 @@ export const getProposal = async ({
 }): Promise<
   Omit<Proposal, 'proposalData'> & {
     proposalData: ProposalData;
-    submittedBy: Profile & { avatarImage: ObjectsInStorage | null };
+    submittedBy: Profile & {
+      avatarImage: ObjectsInStorage | null;
+      isAnonymous: boolean;
+    };
     processInstance: ProcessInstance;
     profile: Profile;
     commentsCount: number;
@@ -83,6 +86,10 @@ export const getProposal = async ({
       submittedBy: {
         with: {
           avatarImage: true,
+          profileUsers: {
+            columns: {},
+            with: { authUser: { columns: { isAnonymous: true } } },
+          },
         },
       },
       profile: true,
@@ -205,7 +212,11 @@ export const getProposal = async ({
           likesCount: Number(likes[0]?.count || 0),
           followersCount: Number(followers[0]?.count || 0),
         }))
-      : Promise.resolve({ commentsCount: 0, likesCount: 0, followersCount: 0 }),
+      : Promise.resolve({
+          commentsCount: 0,
+          likesCount: 0,
+          followersCount: 0,
+        }),
 
     // Fetch document content
     getProposalDocumentsContent([
@@ -257,8 +268,16 @@ export const getProposal = async ({
     };
   }
 
+  const { profileUsers, ...submittedByProfile } = proposal.submittedBy;
+
   return {
     ...proposal,
+    submittedBy: {
+      ...submittedByProfile,
+      isAnonymous: Boolean(
+        profileUsers?.some((pu) => pu.authUser?.isAnonymous),
+      ),
+    },
     proposalData: parsedProposalData,
     proposalTemplate,
     ...engagementCounts,

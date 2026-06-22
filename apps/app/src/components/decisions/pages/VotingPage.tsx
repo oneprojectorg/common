@@ -28,13 +28,12 @@ export function VotingPage({
   const locale = useLocale();
   const translation = useDecisionTranslation();
 
-  const [[instance, voteStatus, { submitters }]] = trpc.useSuspenseQueries(
-    (t) => [
+  const [[instance, voteStatus, { submitters, total }]] =
+    trpc.useSuspenseQueries((t) => [
       t.decision.getInstance({ instanceId }),
       t.decision.getVotingStatus({ processInstanceId: instanceId }),
       t.decision.listProposalSubmitters({ processInstanceId: instanceId }),
-    ],
-  );
+    ]);
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;
@@ -87,7 +86,7 @@ export function VotingPage({
           variant="standard"
         />
 
-        <MemberParticipationFacePile submitters={submitters} />
+        <MemberParticipationFacePile submitters={submitters} total={total} />
 
         <DecisionActionBar
           instanceId={instanceId}
