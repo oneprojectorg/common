@@ -39,6 +39,7 @@
     "@tiptap/extension-underline": "catalog:",
     "@tiptap/html": "catalog:",
     "@tiptap/starter-kit": "catalog:",
+    "@tiptap/static-renderer": "catalog:",
     "@vercel/functions": "^2.1.0",
     "access-zones": "catalog:",
     "ajv": "^8.17.1",

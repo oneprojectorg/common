@@ -81,6 +81,9 @@ catalogs:
     '@tiptap/starter-kit':
       specifier: ^3.15.3
       version: 3.17.1
+    '@tiptap/static-renderer':
+      specifier: 3.17.1
+      version: 3.17.1
     '@tiptap/suggestion':
       specifier: ^3.15.3
       version: 3.17.1
@@ -601,6 +604,9 @@ importers:
       '@tiptap/starter-kit':
         specifier: 'catalog:'
         version: 3.17.1
+      '@tiptap/static-renderer':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@tiptap/suggestion':
         specifier: 'catalog:'
         version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)
@@ -794,6 +800,9 @@ importers:
       '@tiptap/starter-kit':
         specifier: 'catalog:'
         version: 3.17.1
+      '@tiptap/static-renderer':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@vercel/functions':
         specifier: ^2.1.0
         version: 2.1.0
@@ -4983,6 +4992,14 @@ packages:
 
   '@tiptap/starter-kit@3.17.1':
     resolution: {integrity: sha512-3vBGqag9mwuQoWTrfQlULtHeoFs7k/2Q8CREf3Y79hv2fqAXTvTOKlWYPSgZhiGVMp6Dti7BDiE9Y1QpvAat2g==}
+
+  '@tiptap/static-renderer@3.17.1':
+    resolution: {integrity: sha512-Nf/+zIXmheALFnlzQKG4Lgdr+O4L/M4RlCJl06djFFsilGrM4RYi4BkEOCynesSRPhMa/8UJ8Q2CMSxQWceMnQ==}
+    peerDependencies:
+      '@tiptap/core': ^3.17.1
+      '@tiptap/pm': ^3.17.1
+      react: ^19.0.1
+      react-dom: ^19.0.1
 
   '@tiptap/suggestion@3.17.1':
     resolution: {integrity: sha512-a188uVYjlLsUiwK3Ki7KsaWVWC0u28KsqGEAqCk9ECYmtVY99Hrb+rcAwGpMjA7tn8WAwThOxiLISoMdpuqXwg==}
@@ -12952,6 +12969,13 @@ snapshots:
       '@tiptap/extension-underline': 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
       '@tiptap/extensions': 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)
       '@tiptap/pm': 3.17.1
+
+  '@tiptap/static-renderer@3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)':
+    dependencies:
+      '@tiptap/core': 3.17.1(@tiptap/pm@3.17.1)
+      '@tiptap/pm': 3.17.1
+      react: 19.2.1
+      react-dom: 19.2.1(react@19.2.1)
 
   '@tiptap/suggestion@3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)':
     dependencies:
