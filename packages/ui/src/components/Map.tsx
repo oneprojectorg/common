@@ -3,12 +3,21 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useRef } from 'react';
 import {
+  Layer,
+  type LayerProps,
   Map as MapLibreMap,
   type MapLayerMouseEvent,
   type MapRef,
   NavigationControl,
+  Source,
   type ViewStateChangeEvent,
 } from 'react-map-gl/maplibre';
+
+// Re-exported so feature code (e.g. the location picker's boundary overlay)
+// can compose MapLibre `Source`/`Layer` children without taking a direct
+// dependency on `react-map-gl` — the package only lives in `@op/ui`.
+export { Layer, Source };
+export type { LayerProps };
 
 import { cn } from '../lib/utils';
 

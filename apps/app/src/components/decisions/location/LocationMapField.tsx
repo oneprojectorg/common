@@ -55,6 +55,15 @@ export function LocationMapField({
     value ? { lng: value.lng, lat: value.lat } : null,
   );
 
+  // Boundaries are deployment-global and rarely change, so fetch the full set
+  // once and cache it long enough to survive a navigation between proposals.
+  // An empty list (no boundaries configured) just renders no overlay.
+  const boundaryShapesQuery = trpc.decision.listBoundaryShapes.useQuery(
+    undefined,
+    { staleTime: 5 * 60_000 },
+  );
+  const boundaries = boundaryShapesQuery.data?.boundaries;
+
   // Reverse-geocode a freshly-placed pin through react-query, which caches by
   // coordinate and surfaces failures as query state (so no try/catch is needed).
   const reverseGeocodeQuery = trpc.taxonomy.reverseGeocode.useQuery(
@@ -145,6 +154,7 @@ export function LocationMapField({
           zoom={value ? undefined : defaultMapView?.zoom}
           marker={value ? { lng: value.lng, lat: value.lat } : null}
           draggable
+          boundaries={boundaries}
           onMapClick={placeFromCoordinates}
           onMarkerDragEnd={placeFromCoordinates}
           ariaLabel={t('Project location map')}

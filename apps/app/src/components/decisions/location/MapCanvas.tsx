@@ -1,7 +1,9 @@
 'use client';
 
-import { Map, type LngLat } from '@op/ui/Map';
+import type { BoundaryShape } from '@op/api/encoders';
+import { Layer, type LayerProps, type LngLat, Map, Source } from '@op/ui/Map';
 import { MapMarker } from '@op/ui/MapMarker';
+import { useMemo } from 'react';
 
 export interface MapCanvasProps {
   styleUrl: string;
@@ -11,6 +13,11 @@ export interface MapCanvasProps {
   /** Pin position, or null for no marker. */
   marker?: LngLat | null;
   draggable?: boolean;
+  /**
+   * Decision boundaries rendered as a translucent teal overlay beneath the
+   * marker. Pass an empty array (or omit) to hide the overlay.
+   */
+  boundaries?: BoundaryShape[];
   onMapClick?: (lngLat: LngLat) => void;
   onMarkerDragEnd?: (lngLat: LngLat) => void;
   /** Called with the settled camera after the user pans or zooms. */
@@ -18,6 +25,30 @@ export interface MapCanvasProps {
   ariaLabel?: string;
   className?: string;
 }
+
+const BOUNDARY_SOURCE_ID = 'decision-boundaries';
+
+// Brand teal at low opacity for the fill and full opacity for the outline, so
+// the valid area is legible without overwhelming the underlying basemap.
+const BOUNDARY_FILL_LAYER: LayerProps = {
+  id: 'decision-boundaries-fill',
+  type: 'fill',
+  source: BOUNDARY_SOURCE_ID,
+  paint: {
+    'fill-color': '#387582',
+    'fill-opacity': 0.12,
+  },
+};
+
+const BOUNDARY_OUTLINE_LAYER: LayerProps = {
+  id: 'decision-boundaries-outline',
+  type: 'line',
+  source: BOUNDARY_SOURCE_ID,
+  paint: {
+    'line-color': '#387582',
+    'line-width': 1.5,
+  },
+};
 
 /**
  * The only module that imports `maplibre-gl` (via `@op/ui/Map`). It is loaded
@@ -32,12 +63,18 @@ export default function MapCanvas({
   zoom,
   marker,
   draggable = false,
+  boundaries,
   onMapClick,
   onMarkerDragEnd,
   onMoveEnd,
   ariaLabel,
   className,
 }: MapCanvasProps) {
+  const boundaryCollection = useMemo(
+    () => buildBoundaryFeatureCollection(boundaries),
+    [boundaries],
+  );
+
   return (
     <Map
       styleUrl={styleUrl}
@@ -48,6 +85,16 @@ export default function MapCanvas({
       ariaLabel={ariaLabel}
       className={className}
     >
+      {boundaryCollection && (
+        <Source
+          id={BOUNDARY_SOURCE_ID}
+          type="geojson"
+          data={boundaryCollection}
+        >
+          <Layer {...BOUNDARY_FILL_LAYER} />
+          <Layer {...BOUNDARY_OUTLINE_LAYER} />
+        </Source>
+      )}
       {marker && (
         <MapMarker
           longitude={marker.lng}
@@ -58,4 +105,35 @@ export default function MapCanvas({
       )}
     </Map>
   );
+}
+
+interface BoundaryFeatureCollection {
+  type: 'FeatureCollection';
+  features: {
+    type: 'Feature';
+    geometry: BoundaryShape['geometry'];
+    properties: { id: string; name: string };
+  }[];
+}
+
+/**
+ * Wraps the boundaries returned by `decision.listBoundaryShapes` as a GeoJSON
+ * `FeatureCollection` for the MapLibre `Source`. Returns `null` when there is
+ * nothing to render so the consumer can skip the `<Source>` entirely.
+ */
+function buildBoundaryFeatureCollection(
+  boundaries: BoundaryShape[] | undefined,
+): BoundaryFeatureCollection | null {
+  if (!boundaries || boundaries.length === 0) {
+    return null;
+  }
+
+  return {
+    type: 'FeatureCollection',
+    features: boundaries.map((boundary) => ({
+      type: 'Feature',
+      geometry: boundary.geometry,
+      properties: { id: boundary.id, name: boundary.name },
+    })),
+  };
 }
