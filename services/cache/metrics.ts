@@ -6,6 +6,7 @@ type SourceType = 'redis';
 
 let cacheHitCounter: Counter | null = null;
 let cacheMissCounter: Counter | null = null;
+let cacheTimeoutCounter: Counter | null = null;
 let cacheErrorCounter: Counter | null = null;
 
 function getHitCounter() {
@@ -28,6 +29,18 @@ function getMissCounter() {
     });
   }
   return cacheMissCounter;
+}
+
+function getTimeoutCounter() {
+  if (!cacheTimeoutCounter) {
+    const meter = metrics.getMeter('cache');
+    cacheTimeoutCounter = meter.createCounter('cache.timeouts', {
+      description:
+        'Number of cache fetches that fell through to the source because the cache layer was too slow. Split from cache.misses so a Redis slowdown does not masquerade as a cold cache.',
+      unit: '1',
+    });
+  }
+  return cacheTimeoutCounter;
 }
 
 function getErrorCounter() {
@@ -61,6 +74,23 @@ export const cacheMetrics = {
   recordMiss(type?: string) {
     getMissCounter().add(1, {
       ...(type && { type }),
+    });
+  },
+
+  recordTimeout({
+    layer,
+    keyType,
+  }: {
+    // `command` = the per-command Redis socket timeout (commands fail fast).
+    // `race`    = the outer Promise.race timeout in `cache()` (Redis was
+    //             slow enough that we gave up waiting and fell to the source).
+    layer: 'command' | 'race';
+    keyType?: string;
+  }) {
+    getTimeoutCounter().add(1, {
+      source: 'redis',
+      layer,
+      ...(keyType && { keyType }),
     });
   },
 
