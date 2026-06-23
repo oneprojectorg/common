@@ -214,7 +214,7 @@ export function RichTextEditorBubbleMenu({
       },
       {
         key: 'details',
-        label: t('Toggle'),
+        label: t('Collapsible'),
         icon: LuListCollapse,
         isActive: activeStates.details,
         // The Details extension has no toggleDetails — branch on active state
