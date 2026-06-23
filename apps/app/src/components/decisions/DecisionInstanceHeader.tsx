@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
@@ -143,11 +142,8 @@ const DecisionUpdatesToggle = ({
   canReadUpdates: boolean;
 }) => {
   const [panel, setPanel] = useQueryState('panel', panelStateParser);
-  const decisionUpdatesEnabled = useFeatureFlag('decision_updates');
 
-  // Show the entry point to anyone who can actually read updates;
-  // the feature flag lets us preview the panel for everyone else.
-  if (!decisionUpdatesEnabled && !canReadUpdates) {
+  if (!canReadUpdates) {
     return null;
   }
 
