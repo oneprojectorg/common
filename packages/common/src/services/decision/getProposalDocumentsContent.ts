@@ -14,9 +14,8 @@ import type { ProposalTemplateSchema } from './types';
  * propagating from the collaboration server (transient — it will appear), or
  * it is genuinely gone (permanent). The caller picks how to handle that via
  * `onFetchError`:
- * - `'throw'` (default): the error propagates.
- * - `'omit'`: the failing proposal is left out of the returned map (its
- *   `documentContent` is undefined). Used by list reads so a single
+ * - `'omit'` (default): the failing proposal is left out of the returned map
+ *   (its `documentContent` is undefined). Used by list reads so a single
  *   unavailable document can't break the entire list.
  * - `'unavailable'`: the proposal is mapped to `{ type: 'unavailable' }`.
  *   Used by the single-proposal viewer so the rest of the proposal still
@@ -32,9 +31,9 @@ export type ProposalDocumentContent =
 export interface GetProposalDocumentsContentOptions {
   /**
    * What to do when a TipTap document fetch fails.
-   * Defaults to `'throw'`.
+   * Defaults to `'omit'`.
    */
-  onFetchError?: 'throw' | 'omit' | 'unavailable';
+  onFetchError?: 'omit' | 'unavailable';
 }
 
 /**
@@ -56,7 +55,7 @@ export async function getProposalDocumentsContent(
   }>,
   options: GetProposalDocumentsContentOptions = {},
 ): Promise<Map<string, ProposalDocumentContent>> {
-  const { onFetchError = 'throw' } = options;
+  const { onFetchError = 'omit' } = options;
   const documentContentMap = new Map<string, ProposalDocumentContent>();
 
   const proposalsWithCollabDoc: Array<{
@@ -111,10 +110,6 @@ export async function getProposalDocumentsContent(
 
           return { id, fragments, failed: false as const };
         } catch (error) {
-          if (onFetchError === 'throw') {
-            throw error;
-          }
-
           console.warn('Failed to fetch TipTap document', {
             collaborationDocId,
             error: error instanceof Error ? error.message : String(error),
