@@ -98,4 +98,7 @@ const nodeMapping = {
     const src = node.attrs?.src;
     return src ? <LinkPreview url={src} className="my-4" /> : null;
   },
+  // Details/summary need no entry: they render via their renderHTML to a native
+  // `<details><summary>…` (collapsible with zero JS), styled by the shared
+  // `.details` CSS in @op/styles — the same block that styles the editor.
 };
