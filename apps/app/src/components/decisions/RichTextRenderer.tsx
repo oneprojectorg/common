@@ -67,8 +67,13 @@ export function RichTextRenderer({
         error: error instanceof Error ? error.message : String(error),
       },
     );
+    // Render each block as its own <p> so block breaks survive (a single <p>
+    // with newlines collapses them to spaces in HTML). prose spacing on the
+    // wrapper gives the blocks readable separation.
     const text = tiptapDocToPlainText(content);
-    body = text ? <p>{text}</p> : null;
+    body = text
+      ? text.split('\n').map((block, index) => <p key={index}>{block}</p>)
+      : null;
   }
 
   return <div className={viewerProseStyles}>{body}</div>;
