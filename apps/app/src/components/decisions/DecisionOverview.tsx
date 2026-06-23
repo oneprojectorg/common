@@ -30,6 +30,12 @@ interface DecisionOverviewProps {
    * client JS. Null when there's no body (falls back to the plain description).
    */
   aboutSlot?: ReactNode;
+  /**
+   * Whether the process is active, i.e. its first phase has begun. Computed
+   * server-side (RSC) on the page; the proposal CTAs stay hidden until then.
+   * See hasFirstPhaseStarted.
+   */
+  isActive: boolean;
 }
 
 /**
@@ -46,6 +52,7 @@ export function DecisionOverviewSuspense({
   instanceId,
   decisionSlug,
   aboutSlot,
+  isActive,
 }: DecisionOverviewProps) {
   const t = useTranslations();
 
@@ -68,6 +75,7 @@ export function DecisionOverviewSuspense({
         instanceId={instanceId}
         decisionSlug={decisionSlug}
         aboutSlot={aboutSlot}
+        isActive={isActive}
       />
     </APIErrorBoundary>
   );
@@ -77,6 +85,7 @@ function DecisionOverviewContent({
   instanceId,
   decisionSlug,
   aboutSlot,
+  isActive,
 }: DecisionOverviewProps) {
   const t = useTranslations();
   const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
@@ -113,6 +122,8 @@ function DecisionOverviewContent({
         instanceId={instanceId}
         decisionSlug={decisionSlug}
         canSubmitProposal={canSubmitProposal}
+        // Hidden until the first phase begins (computed server-side).
+        showCtas={isActive}
       />
       {/* 12-col grid mirroring the Figma layout grid: sidebar spans 4 cols,
           body spans 7 starting at col 6. Stacks to one column below md. */}
@@ -160,12 +171,14 @@ const OverviewHero = ({
   instanceId,
   decisionSlug,
   canSubmitProposal,
+  showCtas,
 }: {
   headline: string;
   subhead?: string;
   instanceId: string;
   decisionSlug: string;
   canSubmitProposal: boolean;
+  showCtas: boolean;
 }) => {
   const t = useTranslations();
   const currentPhaseHref = `/decisions/${decisionSlug}/current`;
@@ -190,26 +203,28 @@ const OverviewHero = ({
             </p>
           ) : null}
         </div>
-        <div className="align-stretch flex w-full flex-col gap-4 md:flex-row md:justify-center">
-          <ButtonLink
-            color="secondary"
-            href={currentPhaseHref}
-            className="w-auto"
-          >
-            {t('Browse proposals')}
-          </ButtonLink>
-          {canSubmitProposal ? (
-            <Button
-              color="primary"
+        {showCtas ? (
+          <div className="align-stretch flex w-full flex-col gap-4 md:flex-row md:justify-center">
+            <ButtonLink
+              color="secondary"
+              href={currentPhaseHref}
               className="w-auto"
-              isDisabled={!isReady || isCreating}
-              onPress={createProposal}
             >
-              {isCreating ? <LoadingSpinner /> : null}
-              {t('Submit a proposal')}
-            </Button>
-          ) : null}
-        </div>
+              {t('Browse proposals')}
+            </ButtonLink>
+            {canSubmitProposal ? (
+              <Button
+                color="primary"
+                className="w-auto"
+                isDisabled={!isReady || isCreating}
+                onPress={createProposal}
+              >
+                {isCreating ? <LoadingSpinner /> : null}
+                {t('Submit a proposal')}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </section>
   );

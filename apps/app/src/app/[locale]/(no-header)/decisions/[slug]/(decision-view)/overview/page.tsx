@@ -11,6 +11,7 @@ import { Suspense } from 'react';
 
 import { DecisionOverviewSuspense } from '@/components/decisions/DecisionOverview';
 import { RichTextRenderer } from '@/components/decisions/RichTextRenderer';
+import { hasFirstPhaseStarted } from '@/components/decisions/hasFirstPhaseStarted';
 import { DecisionContentSkeleton } from '@/components/skeletons/DecisionSkeleton';
 
 import { loadDecision } from '../loadDecision';
@@ -60,6 +61,10 @@ const DecisionOverviewPage = async ({
   // pinned-resources seeding below. Best-effort: on failure the cache stays
   // empty, so the client refetches and its APIErrorBoundary drives the error UX.
   let aboutSlot: ReactNode = null;
+  // The process is "active" once its first phase begins; default to active so a
+  // failed fetch keeps the CTAs visible (the client suspense read drives the
+  // error UX). Same gate as the view toggle in the layout.
+  let isActive = true;
   const instance = await utils.decision.getInstance
     .fetch({ instanceId })
     .catch((error) => {
@@ -71,6 +76,7 @@ const DecisionOverviewPage = async ({
     });
 
   if (instance) {
+    isActive = hasFirstPhaseStarted(instance.instanceData?.phases);
     const body = instance.instanceData?.overview?.body;
     if (body) {
       aboutSlot = <RichTextRenderer content={body} />;
@@ -110,6 +116,7 @@ const DecisionOverviewPage = async ({
           instanceId={instanceId}
           decisionSlug={slug}
           aboutSlot={aboutSlot}
+          isActive={isActive}
         />
       </Suspense>
     </HydrationBoundary>

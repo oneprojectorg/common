@@ -12,6 +12,7 @@ import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionSidePanel } from '@/components/decisions/DecisionSidePanel';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
 import { DecisionViewToggle } from '@/components/decisions/DecisionViewToggle';
+import { hasFirstPhaseStarted } from '@/components/decisions/hasFirstPhaseStarted';
 
 import { loadDecision } from './loadDecision';
 
@@ -43,7 +44,17 @@ const DecisionViewLayout = async ({
   const { decisionProfile, instanceId } = await loadDecision(slug);
   const { utils, queryClient } = await createServerUtils();
 
-  await utils.decision.getInstance.prefetch({ instanceId });
+  // Fetch (not prefetch) so we can read the phases server-side to gate the
+  // toggle, while still seeding the cache the client suspense reads hydrate
+  // from. The process is "active" once its first phase begins. Fail open if it
+  // throws — the child suspense reads drive the error UX.
+  let isActive = true;
+  try {
+    const instance = await utils.decision.getInstance.fetch({ instanceId });
+    isActive = hasFirstPhaseStarted(instance.instanceData?.phases);
+  } catch {
+    isActive = true;
+  }
 
   const access = decisionProfile.processInstance?.access;
 
@@ -57,7 +68,10 @@ const DecisionViewLayout = async ({
           canReadUpdates={access?.admin === true || access?.read === true}
           profileName={decisionProfile.name}
           showStepper={false}
-          centerSlot={<DecisionViewToggle decisionSlug={slug} />}
+          // Hidden until the first phase begins.
+          centerSlot={
+            isActive ? <DecisionViewToggle decisionSlug={slug} /> : undefined
+          }
         />
         {children}
         {/*
