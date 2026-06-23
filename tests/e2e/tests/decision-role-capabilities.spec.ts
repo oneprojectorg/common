@@ -207,8 +207,9 @@ test.describe('Decision Role Capabilities', () => {
       memberPage.getByRole('heading', { name: instance.name }),
     ).toBeVisible({ timeout: 15000 });
 
-    // The voting phase description confirms VotingPage rendered (not StandardDecisionPage).
-    await expect(memberPage.getByText('Members vote.')).toBeVisible({
+    await expect(
+      memberPage.getByText('TIME TO VOTE.').filter({ visible: true }),
+    ).toBeVisible({
       timeout: 10000,
     });
   });
@@ -235,9 +236,12 @@ test.describe('Decision Role Capabilities', () => {
       authenticatedPage.getByRole('heading', { name: instance.name }),
     ).toBeVisible({ timeout: 15000 });
 
-    // Submission phase description confirms StandardDecisionPage rendered, not VotingPage
     await expect(
-      authenticatedPage.getByText('Members submit proposals.'),
-    ).toBeVisible({ timeout: 10000 });
+      authenticatedPage
+        .getByText('SHARE YOUR IDEAS.')
+        .filter({ visible: true }),
+    ).toBeVisible({
+      timeout: 10000,
+    });
   });
 });
