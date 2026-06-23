@@ -1,3 +1,4 @@
+import { invalidate } from '@op/cache';
 import { Channels, deleteProposal as deleteProposalService } from '@op/common';
 import { z } from 'zod';
 
@@ -23,6 +24,11 @@ export const deleteProposalRouter = router({
       const result = await deleteProposalService({
         proposalId: input.proposalId,
         user,
+      });
+
+      await invalidate({
+        type: 'decision',
+        params: [result.processInstanceId, 'submitters'],
       });
 
       ctx.registerMutationChannels([

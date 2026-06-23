@@ -1,3 +1,4 @@
+import { invalidate } from '@op/cache';
 import { Channels, submitProposal } from '@op/common';
 import { proposalSchema } from '@op/common/client';
 import { Events, inngest } from '@op/events';
@@ -21,6 +22,11 @@ export const submitProposalRouter = router({
       const proposal = await submitProposal({
         data: input,
         authUserId: user.id,
+      });
+
+      await invalidate({
+        type: 'decision',
+        params: [proposal.processInstanceId, 'submitters'],
       });
 
       ctx.registerMutationChannels([

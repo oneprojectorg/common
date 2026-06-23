@@ -66,12 +66,11 @@ export const listProposalSubmitters = async ({
   // The face-pile data is viewer-independent — it's the set of submitters for
   // the instance's current-phase proposals, identical for everyone who passes
   // the READ gate above. Cache it on the instance id (gate stays outside the
-  // cache so a hit can never bypass authorization). Short TTL keeps the pile
-  // fresh as people submit without needing explicit invalidation wiring.
+  // cache so a hit can never bypass authorization). Mutations that change the
+  // submitter set invalidate this key; the default TTL is a fallback.
   return cache({
     type: 'decision',
     params: [processInstanceId, 'submitters'],
-    options: { ttl: 60 * 1000 },
     fetch: async () => {
       const phaseProposalIds = await getProposalIdsForPhase({ instance });
 
