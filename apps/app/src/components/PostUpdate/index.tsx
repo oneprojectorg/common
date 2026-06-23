@@ -592,7 +592,8 @@ const PostUpdateWithUser = ({
     }
   }, [content]);
 
-  if (!user?.currentProfile) {
+  // Anonymous accounts still get a `currentProfile`, so guard it explicitly.
+  if (!user?.currentProfile || user.isAnonymous) {
     return null;
   }
 
