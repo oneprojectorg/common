@@ -1,7 +1,7 @@
-import { createClient } from '@op/api/serverClient';
 import type { Metadata } from 'next';
 
 import { Profile } from '@/components/screens/Profile';
+import { fetchProfileBySlug } from '@/components/screens/Profile/cachedFetches';
 
 export async function generateMetadata({
   params,
@@ -11,8 +11,7 @@ export async function generateMetadata({
   const { slug } = await params;
 
   try {
-    const client = await createClient();
-    const profile = await client.profile.getBySlug({ slug });
+    const profile = await fetchProfileBySlug(slug);
     return profile.name ? { title: profile.name } : {};
   } catch {
     return {};

@@ -3,11 +3,8 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
-import { createClient } from '@op/api/serverClient';
-import { CommonError } from '@op/common';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { forbidden, notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
@@ -15,6 +12,8 @@ import { DecisionSidePanel } from '@/components/decisions/DecisionSidePanel';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
 import { DecisionContentSkeleton } from '@/components/skeletons/DecisionSkeleton';
+
+import { loadDecision } from './(decision-view)/loadDecision';
 
 export async function generateMetadata({
   params,
@@ -24,11 +23,10 @@ export async function generateMetadata({
   const { slug, locale } = await params;
 
   try {
-    const [client, t] = await Promise.all([
-      createClient(),
+    const [{ decisionProfile }, t] = await Promise.all([
+      loadDecision(slug),
       getTranslations({ locale }),
     ]);
-    const decisionProfile = await client.decision.getDecisionBySlug({ slug });
     const name = decisionProfile?.name || t('Decision');
     const steward = decisionProfile?.processInstance?.owner?.name;
 
@@ -39,37 +37,8 @@ export async function generateMetadata({
 }
 
 const DecisionPageContent = async ({ slug }: { slug: string }) => {
-  const [client, { utils, queryClient }] = await Promise.all([
-    createClient(),
-    createServerUtils(),
-  ]);
-
-  let decisionProfile;
-  try {
-    decisionProfile = await client.decision.getDecisionBySlug({
-      slug,
-    });
-  } catch (error) {
-    const cause = error instanceof Error ? error.cause : null;
-    if (cause instanceof CommonError && cause.statusCode === 403) {
-      forbidden();
-    }
-    if (cause instanceof CommonError && cause.statusCode === 404) {
-      notFound();
-    }
-    throw error;
-  }
-
-  if (!decisionProfile || !decisionProfile.processInstance) {
-    notFound();
-  }
-
-  const instanceId = decisionProfile.processInstance.id;
-  const ownerSlug = decisionProfile.processInstance.owner?.slug;
-
-  if (!ownerSlug) {
-    notFound();
-  }
+  const { decisionProfile, instanceId, ownerSlug } = await loadDecision(slug);
+  const { utils, queryClient } = await createServerUtils();
 
   // Prefetch the instance so the client-side useSuspenseQuery in
   // DecisionHeader and DecisionStateRouter resolves synchronously on hydration
