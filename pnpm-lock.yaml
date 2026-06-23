@@ -785,9 +785,6 @@ importers:
       '@tiptap/core':
         specifier: 'catalog:'
         version: 3.17.1(@tiptap/pm@3.17.1)
-      '@tiptap/extension-details':
-        specifier: 'catalog:'
-        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/extension-text-style@3.27.0(@tiptap/core@3.17.1(@tiptap/pm@3.17.1)))(@tiptap/pm@3.17.1)
       '@tiptap/extension-heading':
         specifier: 'catalog:'
         version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
