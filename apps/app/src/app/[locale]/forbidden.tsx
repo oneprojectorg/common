@@ -1,21 +1,19 @@
-import { UserProvider } from '@/utils/UserProvider';
-import { getUser } from '@/utils/getUser';
-import { SidebarProvider } from '@op/ui/Sidebar';
+import { Link } from '@/lib/i18n';
 
-import { SiteHeader } from '@/components/SiteHeader';
+import { CommonLogo } from '@/components/CommonLogo';
 import PageError from '@/components/screens/PageError';
 
-export default async function Forbidden() {
-  const user = await getUser();
-
+export default function Forbidden() {
   return (
     <div className="flex size-full flex-col">
-      <UserProvider initialUser={user}>
-        <SidebarProvider>
-          <SiteHeader />
-          <PageError reason="UNAUTHORIZED" />
-        </SidebarProvider>
-      </UserProvider>
+      <header className="flex items-center p-4">
+        <Link href="/">
+          <CommonLogo />
+        </Link>
+      </header>
+      <div className="flex flex-1 flex-col">
+        <PageError reason="UNAUTHORIZED" />
+      </div>
     </div>
   );
 }

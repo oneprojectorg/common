@@ -42,6 +42,11 @@ test.describe('Walled garden — unauthenticated access', () => {
         page.getByRole('button', { name: /Try again/i }),
       ).toHaveCount(0);
       await expect(page).not.toHaveURL(/\/login/);
+
+      // The full-page forbidden screen must not leak app chrome (search, etc.).
+      await expect(page.getByRole('combobox', { name: 'Search' })).toHaveCount(
+        0,
+      );
     });
   }
 });
