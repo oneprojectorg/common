@@ -43,19 +43,24 @@ const placeholderStyles = [
 ].join(' ');
 
 /**
- * Per-line placeholder hint (Notion-style "press / for commands…"). Targets
- * empty blocks that are NOT the whole-editor-empty node — the `:not(.is-editor-
- * empty)` keeps it from doubling with `placeholderStyles` on the doc-empty line.
+ * Per-line placeholder hint (Notion-style "press / for commands…"). Scoped to
+ * TOP-LEVEL empty paragraphs only (`& > p`): not headings, and not paragraphs
+ * nested in lists/blockquotes (a "press /" hint next to a list marker reads
+ * oddly and the float/caret interaction is janky there). `:not(.is-editor-empty)`
+ * keeps it from doubling with `placeholderStyles` on the whole-editor-empty line.
  * Opt-in: only added to the editor class (by `useRichTextEditor`) when a
  * `linePlaceholder` is passed, so existing single-placeholder editors are
  * unaffected.
  */
 export const linePlaceholderStyles = [
-  '[&_.is-empty:not(.is-editor-empty)]:before:pointer-events-none',
-  '[&_.is-empty:not(.is-editor-empty)]:before:float-start',
-  '[&_.is-empty:not(.is-editor-empty)]:before:h-0',
-  '[&_.is-empty:not(.is-editor-empty)]:before:text-neutral-gray3',
-  '[&_.is-empty:not(.is-editor-empty)]:before:content-[attr(data-placeholder)]',
+  // Absolute (not float) so the hint never displaces the caret — absolute with
+  // no offsets pins the ::before at the paragraph's text start (block made
+  // `relative`) and stays out of flow, so the caret sits at the true start.
+  '[&>p.is-empty:not(.is-editor-empty)]:relative',
+  '[&>p.is-empty:not(.is-editor-empty)]:before:pointer-events-none',
+  '[&>p.is-empty:not(.is-editor-empty)]:before:absolute',
+  '[&>p.is-empty:not(.is-editor-empty)]:before:text-neutral-gray3',
+  '[&>p.is-empty:not(.is-editor-empty)]:before:content-[attr(data-placeholder)]',
 ].join(' ');
 
 /**
