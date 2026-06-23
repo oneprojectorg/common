@@ -68,7 +68,6 @@ const TypeMap = {
   reverseGeocode: 'reverseGeocode',
   organization: 'org',
   allowList: 'allowList',
-  networkMembership: 'networkMembership',
   linkPreview: 'linkPreview',
   resourceSignedUrl: 'resourceSignedUrl',
   user: 'user',

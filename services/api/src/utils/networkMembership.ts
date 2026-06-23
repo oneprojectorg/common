@@ -10,7 +10,7 @@ export const getCachedNetworkMembership = (
   email?: string | null,
 ): Promise<boolean> =>
   cache<boolean>({
-    type: 'networkMembership',
+    type: 'allowList',
     params: [email?.toLowerCase()],
     fetch: () => isNetworkMember({ email }),
     options: {
