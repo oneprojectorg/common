@@ -3,7 +3,7 @@ import { Link } from '@/lib/i18n';
 import { CommonLogo } from '@/components/CommonLogo';
 import { LocaleChooser } from '@/components/LocaleChooser';
 import { LoginButton } from '@/components/LoginButton';
-import PageError from '@/components/screens/PageError';
+import { ForbiddenScreen } from '@/components/screens/ForbiddenScreen';
 
 export default function Forbidden() {
   return (
@@ -18,7 +18,7 @@ export default function Forbidden() {
         </div>
       </header>
       <div className="flex flex-1 flex-col">
-        <PageError reason="UNAUTHORIZED" />
+        <ForbiddenScreen />
       </div>
     </div>
   );
