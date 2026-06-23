@@ -2,6 +2,7 @@ import { Link } from '@/lib/i18n';
 
 import { CommonLogo } from '@/components/CommonLogo';
 import { LocaleChooser } from '@/components/LocaleChooser';
+import { LoginButton } from '@/components/LoginButton';
 import PageError from '@/components/screens/PageError';
 
 export default function Forbidden() {
@@ -11,7 +12,10 @@ export default function Forbidden() {
         <Link href="/">
           <CommonLogo />
         </Link>
-        <LocaleChooser />
+        <div className="flex items-center gap-2">
+          <LocaleChooser />
+          <LoginButton />
+        </div>
       </header>
       <div className="flex flex-1 flex-col">
         <PageError reason="UNAUTHORIZED" />

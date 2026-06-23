@@ -48,10 +48,11 @@ test.describe('Walled garden — unauthenticated access', () => {
         0,
       );
 
-      // ...but localization stays available.
+      // ...but localization and a way to log in stay available.
       await expect(
         page.getByRole('button', { name: 'Select language' }).first(),
       ).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
     });
   }
 });
