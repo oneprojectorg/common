@@ -13,6 +13,16 @@ interface OverviewTextFieldProps {
   maxLength: number;
 }
 
+function focusNext(current: HTMLElement) {
+  const focusables = Array.from(
+    document.querySelectorAll<HTMLElement>(
+      'textarea, input, [contenteditable="true"]',
+    ),
+  ).filter((el) => !el.hasAttribute('disabled'));
+  const i = focusables.indexOf(current);
+  focusables[i + 1]?.focus();
+}
+
 export function OverviewTextField({
   variant,
   value,
@@ -21,15 +31,25 @@ export function OverviewTextField({
   maxLength,
 }: OverviewTextFieldProps) {
   return (
-    <input
-      type="text"
+    <textarea
+      rows={1}
       value={value}
       maxLength={maxLength}
       onChange={(e) => onChange(e.target.value)}
+      onKeyDown={(e) => {
+        // These are single-line — block Enter (no newlines) and advance to the
+        // next field instead.
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          focusNext(e.currentTarget);
+        }
+      }}
       placeholder={placeholder}
       aria-label={placeholder}
       className={cn(
-        'w-full bg-transparent text-neutral-charcoal placeholder:text-neutral-gray3 focus:outline-none',
+        // field-sizing-content grows the textarea with its content so long
+        // headlines/descriptions wrap instead of getting cut off.
+        'field-sizing-content w-full resize-none overflow-hidden bg-transparent text-neutral-charcoal placeholder:text-neutral-gray3 focus:outline-none',
         variant === 'headline' && 'font-serif text-title-lg',
         variant === 'description' && 'text-base',
       )}
