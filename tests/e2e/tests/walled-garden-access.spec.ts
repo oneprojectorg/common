@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import {
   TEST_USER_DEFAULT_PASSWORD,
+  authenticateAnonymously,
   authenticateAsUser,
   createSupabaseAdminClient,
   createUser,
@@ -66,5 +67,25 @@ test.describe('Walled garden — authenticated non-members', () => {
     ).toBeVisible({ timeout: 15000 });
     await expect(page.getByRole('button', { name: /Go back/i })).toBeVisible();
     await expect(page).not.toHaveURL(/\/login/);
+  });
+});
+
+test.describe('Walled garden — anonymous sessions can log in', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  // Regression: an anonymous session is "signed in" to Supabase but not a
+  // member. The gate sends it to /login; /login must show the panel rather than
+  // bouncing it back into the app (which previously caused an infinite loop).
+  test('/login shows the panel for an anonymous visitor (no redirect loop)', async ({
+    page,
+  }) => {
+    await authenticateAnonymously(page);
+
+    await page.goto('/login');
+
+    await expect(page.getByLabel('Organization email')).toBeVisible({
+      timeout: 15000,
+    });
+    await expect(page).toHaveURL(/\/login/);
   });
 });

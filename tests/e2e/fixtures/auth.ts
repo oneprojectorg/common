@@ -167,16 +167,40 @@ function buildSessionCookies(session: Session) {
   return { cookies, storageKey, sessionJson };
 }
 
+async function signInAnonymouslyViaApi(): Promise<Session> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error(
+      'Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    );
+  }
+
+  const response = await fetch(`${supabaseUrl}/auth/v1/signup`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: supabaseAnonKey,
+    },
+    body: JSON.stringify({ data: {}, gotrue_meta_security: {} }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(
+      `Failed to sign in anonymously: ${response.status} - ${errorBody}`,
+    );
+  }
+
+  return (await response.json()) as Session;
+}
+
 /**
- * Authenticate a Playwright page as a given user.
- * Signs in via Supabase REST API, then sets session cookies and localStorage
- * so the app treats the browser as authenticated.
+ * Apply a session to a Playwright page via cookies + localStorage so the app
+ * treats the browser as authenticated.
  */
-export async function authenticateAsUser(
-  page: Page,
-  user: { email: string; password: string },
-) {
-  const session = await signInViaApi(user);
+async function applySession(page: Page, session: Session) {
   const { cookies, storageKey, sessionJson } = buildSessionCookies(session);
 
   await page.context().addCookies(cookies);
@@ -190,6 +214,28 @@ export async function authenticateAsUser(
     },
     { key: storageKey, value: sessionJson },
   );
+}
+
+/**
+ * Authenticate a Playwright page as a given user.
+ * Signs in via Supabase REST API, then sets session cookies and localStorage
+ * so the app treats the browser as authenticated.
+ */
+export async function authenticateAsUser(
+  page: Page,
+  user: { email: string; password: string },
+) {
+  const session = await signInViaApi(user);
+  await applySession(page, session);
+}
+
+/**
+ * Establish an anonymous Supabase session on the page (Supabase anonymous
+ * sign-in). The app treats this as a signed-in-but-not-a-member visitor.
+ */
+export async function authenticateAnonymously(page: Page) {
+  const session = await signInAnonymouslyViaApi();
+  await applySession(page, session);
 }
 
 /**
