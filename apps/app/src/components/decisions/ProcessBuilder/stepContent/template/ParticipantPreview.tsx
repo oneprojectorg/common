@@ -45,6 +45,7 @@ export function ParticipantPreview({
         <ProposalFormRenderer
           fields={fields}
           draft={EMPTY_DRAFT}
+          decisionProfileId={null}
           onFieldChange={() => {}}
           mode="preview-template"
         />

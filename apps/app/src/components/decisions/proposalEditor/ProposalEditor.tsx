@@ -374,6 +374,7 @@ function ProposalEditorInner({
       <ProposalFormRenderer
         fields={proposalFields}
         draft={draft}
+        decisionProfileId={instance.profileId ?? null}
         onFieldChange={handleFieldChange}
         onEditorFocus={onEditorFocus}
         onEditorBlur={onEditorBlur}

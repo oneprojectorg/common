@@ -18,6 +18,12 @@ import { useProjectAreaCheck } from './useProjectAreaCheck';
 interface LocationMapFieldProps {
   value: LocationData | null;
   /**
+   * Decision profile (== `processInstances.profileId`) that owns the boundary
+   * set. When `null` the boundary overlay and out-of-area check are skipped —
+   * legacy instances without a decision profile fall through cleanly.
+   */
+  profileId: string | null;
+  /**
    * Default map camera (from the template's location field) used to position
    * the map before the participant has chosen a location.
    */
@@ -37,6 +43,7 @@ interface LocationMapFieldProps {
  */
 export function LocationMapField({
   value,
+  profileId,
   defaultMapView,
   onChange,
 }: LocationMapFieldProps) {
@@ -53,7 +60,20 @@ export function LocationMapField({
 
   const { isWithinArea } = useProjectAreaCheck(
     value ? { lng: value.lng, lat: value.lat } : null,
+    profileId,
   );
+
+  // Boundaries are admin-managed and effectively immutable across a participant
+  // session, so cache the fetched set for the page lifetime — `staleTime` keeps
+  // react-query from re-fetching on tab focus / interval, and `gcTime` keeps
+  // the payload around across navigations between proposals. Skipped entirely
+  // when no decision profile is available (legacy instances) — the picker then
+  // renders without the overlay, matching the out-of-area check's behavior.
+  const boundaryShapesQuery = trpc.decision.listBoundaryShapes.useQuery(
+    { profileId: profileId ?? '' },
+    { enabled: profileId != null, staleTime: Infinity, gcTime: Infinity },
+  );
+  const boundaries = boundaryShapesQuery.data?.boundaries;
 
   // Reverse-geocode a freshly-placed pin through react-query, which caches by
   // coordinate and surfaces failures as query state (so no try/catch is needed).
@@ -145,6 +165,7 @@ export function LocationMapField({
           zoom={value ? undefined : defaultMapView?.zoom}
           marker={value ? { lng: value.lng, lat: value.lat } : null}
           draggable
+          boundaries={boundaries}
           onMapClick={placeFromCoordinates}
           onMarkerDragEnd={placeFromCoordinates}
           ariaLabel={t('Project location map')}

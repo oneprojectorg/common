@@ -1,5 +1,6 @@
 import { db, sql } from '@op/db/client';
 import { decisionBoundaries } from '@op/db/schema';
+import { and, eq } from 'drizzle-orm';
 
 export interface ResolvedBoundary {
   id: string;
@@ -9,16 +10,19 @@ export interface ResolvedBoundary {
 }
 
 /**
- * Returns the boundary whose polygon contains the given point, or null when the
- * point falls outside every boundary. Powers the live picker badge and the
- * proposal location validation. Boundaries are deployment-global for now.
+ * Returns the boundary whose polygon contains the given point within the given
+ * decision profile, or null when the point falls outside every boundary owned
+ * by that profile. Powers the live picker badge and the proposal location
+ * validation.
  */
 export async function resolveBoundary({
   lat,
   lng,
+  profileId,
 }: {
   lat: number;
   lng: number;
+  profileId: string;
 }): Promise<ResolvedBoundary | null> {
   const [match] = await db
     .select({
@@ -28,7 +32,10 @@ export async function resolveBoundary({
     })
     .from(decisionBoundaries)
     .where(
-      sql`ST_Contains(${decisionBoundaries.boundary}, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326))`,
+      and(
+        eq(decisionBoundaries.profileId, profileId),
+        sql`ST_Contains(${decisionBoundaries.boundary}, ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326))`,
+      ),
     )
     .limit(1);
 
@@ -36,14 +43,20 @@ export async function resolveBoundary({
 }
 
 /**
- * Whether any boundaries are configured at all. When none exist, the location
- * field places no restriction on where a pin can go (any spot is valid) — the
- * out-of-area check only applies once boundaries have been imported.
+ * Whether any boundaries are configured for the given decision profile. When
+ * none exist the picker places no restriction on where a pin can go (any spot
+ * is valid for that decision) — the out-of-area check only applies once the
+ * profile has imported its boundaries.
  */
-export async function hasDecisionBoundaries(): Promise<boolean> {
+export async function hasDecisionBoundaries({
+  profileId,
+}: {
+  profileId: string;
+}): Promise<boolean> {
   const [row] = await db
     .select({ one: sql`1` })
     .from(decisionBoundaries)
+    .where(eq(decisionBoundaries.profileId, profileId))
     .limit(1);
 
   return row != null;

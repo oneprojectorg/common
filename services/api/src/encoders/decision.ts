@@ -685,6 +685,36 @@ export const decisionProfileFilterSchema = z.object({
   stewardProfileId: z.uuid().optional(),
 });
 
+// ============================================================================
+// Decision boundary encoders
+// ============================================================================
+
+/**
+ * GeoJSON MultiPolygon for a persisted decision boundary. Boundaries are stored
+ * as `geometry(MultiPolygon, 4326)`, so `ST_AsGeoJSON` always emits a 2D
+ * MultiPolygon (no elevation). The schema mirrors that exact shape — any drift
+ * in the SQL emitter surfaces at the API boundary, not as a silent client-side
+ * render bug.
+ */
+const boundaryPositionEncoder = z.tuple([z.number(), z.number()]);
+const boundaryLinearRingEncoder = z.array(boundaryPositionEncoder);
+const boundaryPolygonEncoder = z.array(boundaryLinearRingEncoder);
+export const boundaryMultiPolygonEncoder = z.object({
+  type: z.literal('MultiPolygon'),
+  coordinates: z.array(boundaryPolygonEncoder),
+});
+
+/** A decision boundary's id, name, linked category term, and GeoJSON geometry. */
+export const boundaryShapeEncoder = z.object({
+  id: z.string(),
+  name: z.string(),
+  taxonomyTermId: z.string().nullable(),
+  geometry: boundaryMultiPolygonEncoder,
+});
+
+export type BoundaryMultiPolygon = z.infer<typeof boundaryMultiPolygonEncoder>;
+export type BoundaryShape = z.infer<typeof boundaryShapeEncoder>;
+
 // Type exports
 export type ProcessInstance = z.infer<typeof processInstanceWithSchemaEncoder>;
 export type DecisionProcess = z.infer<typeof decisionProcessWithSchemaEncoder>;

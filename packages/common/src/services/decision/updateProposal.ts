@@ -118,10 +118,14 @@ export const updateProposal = async ({
     );
 
     if (proposalTemplate) {
+      if (!processInstance.profileId) {
+        throw new NotFoundError('Decision profile');
+      }
       await validateProposalAgainstTemplate(
         proposalTemplate,
         data.proposalData,
         data.title ?? existingProposal.profile.name,
+        { profileId: processInstance.profileId },
       );
     }
   }
@@ -141,13 +145,19 @@ export const updateProposal = async ({
     // Resolve the full category set (manual selections plus the location's
     // council district) once, so it persists to BOTH proposalData.category (the
     // read/display source) and the proposalCategories junction (the filter
-    // source) — keeping them in sync, as createProposal already does.
-    const categoryLabels = data.proposalData
-      ? await withBoundaryCategoryLabel(
-          parseProposalData(data.proposalData).category,
-          data.proposalData,
-        )
-      : null;
+    // source) — keeping them in sync, as createProposal already does. Without a
+    // decision profile we can't scope the boundary lookup, so the manual
+    // category set passes through untouched.
+    const categoryLabels =
+      data.proposalData && processInstance.profileId
+        ? await withBoundaryCategoryLabel(
+            parseProposalData(data.proposalData).category,
+            data.proposalData,
+            { profileId: processInstance.profileId },
+          )
+        : data.proposalData
+          ? parseProposalData(data.proposalData).category
+          : null;
 
     const baseProposalData =
       collaborationDocVersionId !== null

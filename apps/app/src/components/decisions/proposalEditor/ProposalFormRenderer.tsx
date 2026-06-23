@@ -46,6 +46,13 @@ interface ProposalFormRendererProps {
   fields: FieldDescriptor[];
   /** Current draft values for system fields. */
   draft: ProposalDraftFields;
+  /**
+   * Decision profile (== `processInstances.profileId`) the proposal is being
+   * composed under. Threaded through to the location field so the boundary
+   * overlay / out-of-area check scope to the right decision. `null` for
+   * preview-template mode where no decision is in scope.
+   */
+  decisionProfileId: string | null;
   /** Called when any system field value changes. */
   onFieldChange: (key: string, value: unknown) => void;
   /** Called with the editor instance when a rich-text field gains focus. */
@@ -168,6 +175,7 @@ function getPreviewBudgetValue({
 function renderField(
   field: FieldDescriptor,
   draft: ProposalDraftFields,
+  decisionProfileId: string | null,
   onFieldChange: (key: string, value: unknown) => void,
   t: TranslateFn,
   mode: 'edit-collaborative' | 'preview-version' | 'preview-template',
@@ -371,6 +379,7 @@ function renderField(
             initialValue={
               (draft[key] as ProposalDraftFields['location']) ?? null
             }
+            profileId={decisionProfileId}
             defaultMapView={schema['x-map-default']}
             onChange={(value) => onFieldChange(key, value)}
           />
@@ -447,6 +456,7 @@ function renderField(
 export function ProposalFormRenderer({
   fields,
   draft,
+  decisionProfileId,
   onFieldChange,
   onEditorFocus,
   onEditorBlur,
@@ -469,6 +479,7 @@ export function ProposalFormRenderer({
     renderField(
       field,
       draft,
+      decisionProfileId,
       onFieldChange,
       t,
       mode,

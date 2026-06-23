@@ -24,7 +24,8 @@ import type { ProposalTemplateSchema } from './types';
 export async function validateProposalAgainstTemplate(
   proposalTemplate: ProposalTemplateSchema,
   proposalData: unknown,
-  title?: string,
+  title: string | undefined,
+  { profileId }: { profileId: string },
 ): Promise<Record<string, unknown> | null> {
   const parsed = parseProposalData(proposalData);
   const storedProposalData =
@@ -60,6 +61,7 @@ export async function validateProposalAgainstTemplate(
     const finalData = await fillCategoryFromBoundary(
       proposalTemplate,
       validationData,
+      { profileId },
     );
 
     schemaValidator.assertProposalData(proposalTemplate, finalData);
