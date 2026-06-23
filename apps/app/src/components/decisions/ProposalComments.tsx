@@ -32,6 +32,9 @@ export function ProposalComments({
   const comments = commentsData?.items ?? [];
   const { handleReactionClick } = usePostFeedActions();
 
+  // Visitors and anonymous accounts can't comment — hide the input.
+  const canComment = Boolean(user?.currentProfile) && !user?.isAnonymous;
+
   const scrollToComments = useCallback(() => {
     setTimeout(() => {
       containerRef.current?.scrollIntoView({
@@ -49,7 +52,7 @@ export function ProposalComments({
           {t('Comments')} ({comments.length})
         </Header3>
 
-        {!readOnly && (
+        {!readOnly && canComment && (
           <div className="mb-8">
             <Surface className="border-0 p-0 sm:border sm:p-4">
               <PostUpdate
