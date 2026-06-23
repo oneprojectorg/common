@@ -768,7 +768,9 @@
    * (Chrome 131+, Safari 18.2+); degrades to instant elsewhere (e.g. Firefox).
    * Editor-only `div.details` is intentionally left instant. */
   @supports selector(::details-content) {
-    details.details {
+    /* Must be on :root — `height: auto` only interpolates when interpolate-size
+     * is in effect via inheritance from the root, not when set on the element. */
+    :root {
       interpolate-size: allow-keywords;
     }
     details.details::details-content {
