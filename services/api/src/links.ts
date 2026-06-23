@@ -1,5 +1,10 @@
 import { queryChannelRegistry } from '@op/common/realtime';
-import { OPURLConfig, isOnPreviewAppDomain } from '@op/core';
+import {
+  CSRF_HEADER,
+  CSRF_HEADER_VALUE,
+  OPURLConfig,
+  isOnPreviewAppDomain,
+} from '@op/core';
 import { logger } from '@op/logging';
 import type { TRPCLink } from '@trpc/client';
 import {
@@ -88,6 +93,10 @@ function createFetchWithSSRCookies(encryptedCookies?: string) {
     options?: RequestInit,
   ): Promise<Response> => {
     const headers = new Headers(options?.headers);
+
+    // Required by the API's CSRF gate (forces a preflight on every
+    // mutating call, blocking cross-origin form-style CSRF posts).
+    headers.set(CSRF_HEADER, CSRF_HEADER_VALUE);
 
     // Add PostHog distinct_id if available
     const distinctId = getPostHogDistinctId();

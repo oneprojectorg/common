@@ -1,4 +1,4 @@
-import { OPURLConfig } from '@op/core';
+import { CSRF_HEADER, CSRF_HEADER_VALUE, OPURLConfig } from '@op/core';
 import {
   createTRPCProxyClient,
   loggerLink,
@@ -37,8 +37,12 @@ export const createTRPCVanillaClient = (headers?: Record<string, string>) => {
         transformer: superjson,
         headers,
         fetch(url, options) {
+          const merged = new Headers(options?.headers);
+          // Required by the API's CSRF gate — see packages/core/src/csrf.ts.
+          merged.set(CSRF_HEADER, CSRF_HEADER_VALUE);
           return fetch(url, {
             ...options,
+            headers: merged,
             credentials: 'include',
           });
         },
