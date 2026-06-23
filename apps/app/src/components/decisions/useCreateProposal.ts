@@ -3,9 +3,10 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import { useMount } from '@op/hooks';
 import { createSBBrowserClient } from '@op/supabase/client';
 import { toast } from '@op/ui/Toast';
-import { useEffect, useState, useTransition } from 'react';
+import { useTransition } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
@@ -28,17 +29,14 @@ export function useCreateProposal({
   const t = useTranslations();
   const router = useRouter();
   const { user } = useUser();
-  const [isReady, setIsReady] = useState(false);
+  // Gate the CTA until mount so React Aria's onPress handler is bound.
+  const { mounted } = useMount();
   const [isCreating, startCreating] = useTransition();
   const supabase = createSBBrowserClient();
   const utils = trpc.useUtils();
   const anonymousSigninEnabled = useFeatureFlag('anonymous_signin');
 
   const createProposalMutation = trpc.decision.createProposal.useMutation();
-
-  useEffect(() => {
-    setIsReady(true);
-  }, []);
 
   const createProposal = () => {
     startCreating(async () => {
@@ -73,5 +71,5 @@ export function useCreateProposal({
     });
   };
 
-  return { createProposal, isCreating, isReady };
+  return { createProposal, isCreating, isReady: !!mounted };
 }
