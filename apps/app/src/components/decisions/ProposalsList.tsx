@@ -131,6 +131,9 @@ const CurrentPhaseProposalsLoader = ({
     trpc.decision.listProposals.useSuspenseInfiniteQuery(queryParams, {
       getNextPageParam: (lastPage) => lastPage.next ?? undefined,
       staleTime: 30 * 1000,
+      // Force a client-side fetch so the query registers its invalidation
+      // channel via the client link. TODO: find a cleaner way to register.
+      refetchOnMount: 'always',
     });
 
   const allProposals = useMemo(
@@ -163,6 +166,7 @@ const ResultsPhaseProposalsLoader = ({
       {
         getNextPageParam: (lastPage) => lastPage.next ?? undefined,
         staleTime: 30 * 1000,
+        refetchOnMount: 'always',
       },
     );
 

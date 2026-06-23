@@ -21,6 +21,32 @@ type TRPCQueryKey = [
   { input?: unknown; type?: 'query' | 'infinite' }?,
 ];
 
+/**
+ * Build the key used to invalidate a query for a channel. `invalidateQueries`
+ * partial-matches, so this must mirror the shape tRPC caches under: drop `type`
+ * (matches both `query` and `infinite`) and strip `cursor`/`direction` (tRPC
+ * strips them from infinite keys). Remaining input stays for scoping.
+ *
+ * FIXME(interim): hand-mirroring tRPC's internal key shape is brittle and
+ * breaks silently if that shape drifts. The clean fix is to tag queries with
+ * their channels (e.g. React Query `meta`) and invalidate by predicate instead.
+ */
+function buildChannelQueryKey(path: string, input: unknown): TRPCQueryKey {
+  const splitPath = path.split('.');
+  if (input === null || typeof input !== 'object') {
+    return [splitPath];
+  }
+
+  const inputWithoutPagination: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(input)) {
+    if (key !== 'cursor' && key !== 'direction') {
+      inputWithoutPagination[key] = value;
+    }
+  }
+
+  return [splitPath, { input: inputWithoutPagination }];
+}
+
 const SSR_SECRETS_KEY_VAR = 'SSR_SECRETS_KEY';
 const isServer = typeof window === 'undefined';
 
@@ -110,10 +136,7 @@ export function createChannelRegistrationLink(): TRPCLink<AppRouter> {
       return observable((observer) => {
         // Build query key manually - getQueryKey() requires typed procedures, not raw op data
         // @see https://trpc.io/docs/v11/getQueryKey
-        const queryKey: TRPCQueryKey =
-          op.type === 'query'
-            ? [op.path.split('.'), { input: op.input, type: op.type }]
-            : [op.path.split('.')];
+        const queryKey = buildChannelQueryKey(op.path, op.input);
 
         const unsubscribe = next(op).subscribe({
           next(value) {
