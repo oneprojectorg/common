@@ -1,10 +1,12 @@
-import { serverExtensions } from '@op/common/client';
+import { serverExtensions, tiptapDocToPlainText } from '@op/common/client';
+import { logger } from '@op/logging';
 // Import from the editorConfig subpath (not the RichTextEditor barrel) so this
 // server component doesn't pull the client editor (useRichTextEditor/useEffect)
 // into the RSC graph — viewerProseStyles is a plain style string.
 import { viewerProseStyles } from '@op/ui/RichTextEditor/editorConfig';
 import type { JSONContent } from '@tiptap/core';
 import { renderToReactElement } from '@tiptap/static-renderer/pm/react';
+import type { ReactNode } from 'react';
 
 import { LinkPreview } from '../LinkPreview';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
@@ -28,8 +30,9 @@ import { ProposalHtmlContent } from './ProposalHtmlContent';
  * {@link LinkPreview} embed leaf is a client island within the rendered tree.
  *
  * Extensions are shared with `generateProposalHtml`'s `serverExtensions` so the
- * recognized node set can't drift between the two render paths (an unknown node
- * is silently dropped, so this single source of truth matters).
+ * recognized node set can't drift between the two render paths. An unregistered
+ * node type THROWS during the parse (`Node.fromJSON`), so the render is wrapped
+ * and degrades to plain text — one unsupported node can't crash the whole tab.
  */
 export function RichTextRenderer({
   content,
@@ -45,15 +48,30 @@ export function RichTextRenderer({
     return <ProposalHtmlContent html={content} />;
   }
 
-  return (
-    <div className={viewerProseStyles}>
-      {renderToReactElement({
-        content,
-        extensions: serverExtensions,
-        options: { nodeMapping },
-      })}
-    </div>
-  );
+  let body: ReactNode;
+  try {
+    body = renderToReactElement({
+      content,
+      extensions: serverExtensions,
+      options: { nodeMapping },
+    });
+  } catch (error) {
+    // `renderToReactElement` parses the JSON into a ProseMirror doc eagerly
+    // (Node.fromJSON), which throws on an unregistered node type. Without this
+    // guard the throw escapes into the server render and takes down the whole
+    // surrounding tab, not just the body. Degrade to plain text so a node the
+    // server doesn't recognize yet (deploy skew / rollback / drift) stays readable.
+    logger.warn(
+      'RichTextRenderer: static render failed, falling back to text',
+      {
+        error: error instanceof Error ? error.message : String(error),
+      },
+    );
+    const text = tiptapDocToPlainText(content);
+    body = text ? <p>{text}</p> : null;
+  }
+
+  return <div className={viewerProseStyles}>{body}</div>;
 }
 
 /**
