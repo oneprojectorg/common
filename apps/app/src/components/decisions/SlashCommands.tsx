@@ -23,8 +23,6 @@ import {
   LuType,
 } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
-
 export interface SlashCommandItem {
   title: string;
   description: string;
@@ -40,7 +38,6 @@ const SlashCommandsList = forwardRef<
     command: (item: SlashCommandItem) => void;
   }
 >((props, ref) => {
-  const t = useTranslations();
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const selectItem = (index: number) => {
@@ -110,7 +107,7 @@ const SlashCommandsList = forwardRef<
           </button>
         ))
       ) : (
-        <div className="item">{t('No result')}</div>
+        <div className="item">No results</div>
       )}
     </div>
   );
