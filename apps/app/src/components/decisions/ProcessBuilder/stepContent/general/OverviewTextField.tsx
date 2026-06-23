@@ -30,7 +30,9 @@ export function OverviewTextField({
   placeholder,
   maxLength,
 }: OverviewTextFieldProps) {
-  return (
+  const showCount = variant === 'headline';
+
+  const textarea = (
     <textarea
       rows={1}
       value={value}
@@ -49,10 +51,34 @@ export function OverviewTextField({
       className={cn(
         // field-sizing-content grows the textarea with its content so long
         // headlines/descriptions wrap instead of getting cut off.
-        'field-sizing-content w-full resize-none overflow-hidden bg-transparent text-neutral-charcoal placeholder:text-neutral-gray3 focus:outline-none',
+        'field-sizing-content resize-none overflow-hidden bg-transparent text-neutral-charcoal placeholder:text-neutral-gray3 focus:outline-none',
+        showCount ? 'min-w-0 flex-1' : 'w-full',
         variant === 'headline' && 'font-serif text-title-lg',
         variant === 'description' && 'text-base',
       )}
     />
+  );
+
+  if (!showCount) {
+    return textarea;
+  }
+
+  return (
+    <div className="flex items-end justify-between gap-2">
+      {textarea}
+      {/* Always rendered to reserve space; fades in once there's text. */}
+      <span
+        aria-hidden="true"
+        className={cn(
+          'shrink-0 text-sm transition-opacity',
+          value.length > 0 ? 'opacity-100' : 'opacity-0',
+          value.length >= maxLength
+            ? 'text-functional-red'
+            : 'text-neutral-charcoal',
+        )}
+      >
+        {value.length}/{maxLength}
+      </span>
+    </div>
   );
 }
