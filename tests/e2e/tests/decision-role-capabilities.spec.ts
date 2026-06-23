@@ -207,8 +207,17 @@ test.describe('Decision Role Capabilities', () => {
       memberPage.getByRole('heading', { name: instance.name }),
     ).toBeVisible({ timeout: 15000 });
 
-    // The voting phase description confirms VotingPage rendered (not StandardDecisionPage).
-    await expect(memberPage.getByText('Members vote.')).toBeVisible({
+    // The voting hero title is unique to VotingPage (StandardDecisionPage shows
+    // "SHARE YOUR IDEAS."), so it confirms the voting page rendered.
+    //
+    // STOPGAP: in some environments (seen on CI, not locally) the decision
+    // content subtree mounts twice — one copy hidden — so a bare
+    // getByText(...) matches two elements and trips strict mode. We scope to
+    // the visible copy until the double-render is fixed. See the
+    // double-render investigation for upgrade-anon-account.
+    await expect(
+      memberPage.getByText('TIME TO VOTE.').filter({ visible: true }),
+    ).toBeVisible({
       timeout: 10000,
     });
   });
@@ -235,9 +244,21 @@ test.describe('Decision Role Capabilities', () => {
       authenticatedPage.getByRole('heading', { name: instance.name }),
     ).toBeVisible({ timeout: 15000 });
 
-    // Submission phase description confirms StandardDecisionPage rendered, not VotingPage
+    // The submission hero title is unique to StandardDecisionPage (VotingPage
+    // shows "TIME TO VOTE."), confirming the standard page rendered, not the
+    // voting page.
+    //
+    // STOPGAP: in some environments (seen on CI, not locally) the decision
+    // content subtree mounts twice — one copy hidden — so a bare
+    // getByText(...) matches two elements and trips strict mode. We scope to
+    // the visible copy until the double-render is fixed. See the
+    // double-render investigation for upgrade-anon-account.
     await expect(
-      authenticatedPage.getByText('Members submit proposals.'),
-    ).toBeVisible({ timeout: 10000 });
+      authenticatedPage
+        .getByText('SHARE YOUR IDEAS.')
+        .filter({ visible: true }),
+    ).toBeVisible({
+      timeout: 10000,
+    });
   });
 });
