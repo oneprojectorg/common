@@ -12,7 +12,7 @@ import { isNetworkMember } from '@op/common';
  * would deserialize a stale object where a boolean is expected. `Boolean()`
  * guards against any unexpected cached shape.
  */
-export const getCachedNetworkMembership = async (
+export const getNetworkMembership = async (
   email?: string | null,
 ): Promise<boolean> =>
   Boolean(

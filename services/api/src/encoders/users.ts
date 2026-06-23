@@ -100,7 +100,7 @@ export const adminUserEncoder = userEncoder.extend({
  * Encode a DB user row into a `CommonUser`, taking `isAnonymous` from the
  * Supabase auth identity (`ctx.user` or an admin `getUserById` result).
  * `isNetworkMember` (closed-network / "walled garden" membership) must be
- * resolved by the caller from `ctx.user` (see `getCachedNetworkMembership`);
+ * resolved by the caller from `ctx.user` (see `getNetworkMembership`);
  * it defaults to `false` when omitted.
  */
 export const encodeUser = ({

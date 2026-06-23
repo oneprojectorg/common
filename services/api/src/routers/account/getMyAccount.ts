@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { encodeUser, userEncoder } from '../../encoders';
 import { openProcedure, router } from '../../trpcFactory';
-import { getCachedNetworkMembership } from '../../utils/networkMembership';
+import { getNetworkMembership } from '../../utils/networkMembership';
 
 export const getMyAccount = router({
   getMyAccount: openProcedure()
@@ -36,7 +36,7 @@ export const getMyAccount = router({
             skipMemCache: true,
           },
         }),
-        getCachedNetworkMembership(ctx.user.email),
+        getNetworkMembership(ctx.user.email),
       ]);
 
       if (!user) {
