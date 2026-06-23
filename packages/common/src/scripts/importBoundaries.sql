@@ -4,13 +4,15 @@
 --
 -- Usage:
 --   1. Edit the `params` CTE below: paste your GeoJSON (a Feature or
---      FeatureCollection) between the $$ … $$ markers, and set `name_property`
---      to the Feature property whose value is the boundary name + category label.
+--      FeatureCollection) between the $$ … $$ markers, set `name_property` to
+--      the Feature property whose value is the boundary name + category label,
+--      and set `profile_id` to the decision profile (== `processInstances.profile_id`)
+--      that should own these boundaries.
 --   2. Run the whole statement against the target database (psql, Studio, etc.).
 --
--- Requires PostGIS. Idempotent: re-running updates boundaries matched
--- case-insensitively by name (and their category terms) in place. Run inside a
--- transaction so a malformed geometry rolls the whole import back.
+-- Requires PostGIS. Idempotent within a profile: re-running updates boundaries
+-- matched by `(profile_id, lower(name))` (and their category terms) in place.
+-- Run inside a transaction so a malformed geometry rolls the whole import back.
 --
 -- The `RETURNING` at the end lists each boundary touched and whether it was
 -- newly inserted (true) or updated (false).
@@ -24,8 +26,9 @@
 
 WITH params AS (
   SELECT
-    $$PASTE_YOUR_GEOJSON_HERE$$::jsonb AS geojson,        -- a Feature or FeatureCollection
-    'NAME'                             AS name_property     -- property holding the boundary name
+    $$PASTE_YOUR_GEOJSON_HERE$$::jsonb           AS geojson,            -- a Feature or FeatureCollection
+    'NAME'                                       AS name_property,      -- property holding the boundary name
+    'PASTE_DECISION_PROFILE_ID_HERE'::uuid       AS profile_id          -- decision profile (== processInstances.profile_id) that owns these boundaries
 ),
 -- Ensure the 'proposal' taxonomy exists; DO UPDATE (no-op) so we always get the id back.
 proposal_taxonomy AS (
@@ -73,6 +76,7 @@ terms AS (
 ),
 boundaries AS (
   SELECT DISTINCT ON (lower(s.name))
+    (SELECT profile_id FROM params) AS profile_id,
     s.name,
     t.id AS taxonomy_term_id,
     ST_SetSRID(
@@ -84,9 +88,9 @@ boundaries AS (
   JOIN terms t ON t.term_uri = s.term_uri
   ORDER BY lower(s.name)
 )
-INSERT INTO decision_boundaries (name, taxonomy_term_id, boundary, metadata)
-SELECT name, taxonomy_term_id, boundary, metadata FROM boundaries
-ON CONFLICT (lower(name)) DO UPDATE
+INSERT INTO decision_boundaries (profile_id, name, taxonomy_term_id, boundary, metadata)
+SELECT profile_id, name, taxonomy_term_id, boundary, metadata FROM boundaries
+ON CONFLICT (profile_id, lower(name)) DO UPDATE
   SET name             = EXCLUDED.name,
       taxonomy_term_id = EXCLUDED.taxonomy_term_id,
       boundary         = EXCLUDED.boundary,
