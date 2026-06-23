@@ -1,4 +1,8 @@
-import { serverExtensions, tiptapDocToPlainText } from '@op/common/client';
+import {
+  sanitizeTiptapDoc,
+  serverExtensions,
+  tiptapDocToPlainText,
+} from '@op/common/client';
 import { logger } from '@op/logging';
 // Import from the editorConfig subpath (not the RichTextEditor barrel) so this
 // server component doesn't pull the client editor (useRichTextEditor/useEffect)
@@ -31,8 +35,10 @@ import { ProposalHtmlContent } from './ProposalHtmlContent';
  *
  * Extensions are shared with `generateProposalHtml`'s `serverExtensions` so the
  * recognized node set can't drift between the two render paths. An unregistered
- * node type THROWS during the parse (`Node.fromJSON`), so the render is wrapped
- * and degrades to plain text — one unsupported node can't crash the whole tab.
+ * node type THROWS during the parse (`Node.fromJSON`), so the doc is sanitized
+ * first (`sanitizeTiptapDoc` coerces unknown nodes/marks to known ones) — known
+ * content stays rich, only the unsupported pieces degrade. A try/catch backstop
+ * still falls back to whole-doc plain text for failures sanitizing can't prevent.
  */
 export function RichTextRenderer({
   content,
@@ -50,17 +56,18 @@ export function RichTextRenderer({
 
   let body: ReactNode;
   try {
+    // Sanitize first: coerce any node/mark the server schema doesn't know into a
+    // known shape, so the parse can't throw on an unsupported type (deploy skew /
+    // rollback / drift). Known content renders rich; only unknown pieces degrade.
     body = renderToReactElement({
-      content,
+      content: sanitizeTiptapDoc(content),
       extensions: serverExtensions,
       options: { nodeMapping },
     });
   } catch (error) {
-    // `renderToReactElement` parses the JSON into a ProseMirror doc eagerly
-    // (Node.fromJSON), which throws on an unregistered node type. Without this
-    // guard the throw escapes into the server render and takes down the whole
-    // surrounding tab, not just the body. Degrade to plain text so a node the
-    // server doesn't recognize yet (deploy skew / rollback / drift) stays readable.
+    // Backstop: sanitizing can't prevent every failure (e.g. a content-model
+    // violation from the coercion). Degrade the whole body to plain text rather
+    // than let the throw crash the surrounding tab.
     logger.warn(
       'RichTextRenderer: static render failed, falling back to text',
       {

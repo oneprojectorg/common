@@ -86,6 +86,7 @@ export {
 } from './services/decision/schemaValidator';
 export { serverExtensions } from './services/decision/tiptapExtensions';
 export { tiptapDocToPlainText } from './services/decision/tiptapDocToPlainText';
+export { sanitizeTiptapDoc } from './services/decision/sanitizeTiptapDoc';
 // Re-exported so API encoders / app consumers can type stored rich-text bodies
 // (TipTap JSON docs) without taking a direct @tiptap/core dependency.
 export type { JSONContent } from '@tiptap/core';
