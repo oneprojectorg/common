@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import type { DecisionAccess } from '@op/api/encoders';
@@ -47,7 +46,6 @@ export const DecisionSidePanel = ({
 }) => {
   const t = useTranslations();
   const [panel, setPanel] = useQueryState('panel', panelStateParser);
-  const decisionUpdatesEnabled = useFeatureFlag('decision_updates');
   // Sidebar's `side` is direction-aware (Arabic locale PR): `side="right"`
   // resolves to the visual left in RTL. The decision panel is meant to anchor
   // to the visual right regardless of reading direction, so flip the prop in
@@ -87,9 +85,7 @@ export const DecisionSidePanel = ({
   const canReadUpdates = canPostUpdate || access?.read === true;
   const activeTab: PanelTab = panel ?? 'updates';
 
-  // Mirror the toggle in DecisionInstanceHeader: anyone who can actually
-  // read updates sees the panel; the flag opens it up to everyone else.
-  if (!decisionUpdatesEnabled && !canReadUpdates) {
+  if (!canReadUpdates) {
     return null;
   }
 
