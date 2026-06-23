@@ -3,7 +3,7 @@ import {
   normalizeProposalCategories,
   schemaAllowsMultipleSelection,
 } from './proposalDataSchema';
-import { resolveBoundary } from './resolveBoundary';
+import { listBoundaryLabels, resolveBoundary } from './resolveBoundary';
 import { templateCollectsLocation } from './templateLocation';
 import type { ProposalTemplateSchema } from './types';
 
@@ -47,10 +47,11 @@ export async function resolveBoundaryCategoryLabel(
 }
 
 /**
- * Appends the location's district category label to a list of category labels
- * (deduplicated), so the boundary-derived category flows through the normal
- * category link. Returns the list unchanged when no district resolves in the
- * given profile's boundary set.
+ * Replaces any prior district category label with the location's new one. Strips
+ * every label in the profile's boundary set before appending the resolved
+ * district, so a pin moved into a different district doesn't leave the previous
+ * district tagged alongside the new one. Returns the list unchanged when no
+ * district resolves in the given profile's boundary set.
  */
 export async function withBoundaryCategoryLabel(
   labels: string[],
@@ -61,11 +62,20 @@ export async function withBoundaryCategoryLabel(
     profileId,
   });
 
-  if (!districtLabel || labels.includes(districtLabel)) {
+  if (!districtLabel) {
     return labels;
   }
 
-  return [...labels, districtLabel];
+  const boundaryLabels = await listBoundaryLabels({ profileId });
+  const withoutStaleDistricts = labels.filter(
+    (label) => !boundaryLabels.has(label),
+  );
+
+  if (withoutStaleDistricts.includes(districtLabel)) {
+    return withoutStaleDistricts;
+  }
+
+  return [...withoutStaleDistricts, districtLabel];
 }
 
 /**
@@ -94,12 +104,16 @@ export async function fillCategoryFromBoundary(
 
   if (schemaAllowsMultipleSelection(categorySchema)) {
     const existing = normalizeProposalCategories(data.category);
+    const boundaryLabels = await listBoundaryLabels({ profileId });
+    const withoutStaleDistricts = existing.filter(
+      (label) => !boundaryLabels.has(label),
+    );
 
-    if (existing.includes(districtLabel)) {
-      return data;
+    if (withoutStaleDistricts.includes(districtLabel)) {
+      return { ...data, category: withoutStaleDistricts };
     }
 
-    return { ...data, category: [...existing, districtLabel] };
+    return { ...data, category: [...withoutStaleDistricts, districtLabel] };
   }
 
   return { ...data, category: districtLabel };

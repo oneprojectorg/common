@@ -1,6 +1,6 @@
 import { db, sql } from '@op/db/client';
 import { decisionBoundaries } from '@op/db/schema';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNotNull } from 'drizzle-orm';
 
 export interface ResolvedBoundary {
   id: string;
@@ -60,4 +60,30 @@ export async function hasDecisionBoundaries({
     .limit(1);
 
   return row != null;
+}
+
+/**
+ * Returns the set of district-category labels in use for the given decision
+ * profile — every boundary whose `name` flows through to a `proposalCategories`
+ * link (i.e. has a non-null `taxonomyTermId`). Used by the location-tagging
+ * helpers to strip any previously-applied district label from a proposal's
+ * category set before tagging the new one, so a pin moved across districts
+ * doesn't leave both districts tagged.
+ */
+export async function listBoundaryLabels({
+  profileId,
+}: {
+  profileId: string;
+}): Promise<Set<string>> {
+  const rows = await db
+    .select({ name: decisionBoundaries.name })
+    .from(decisionBoundaries)
+    .where(
+      and(
+        eq(decisionBoundaries.profileId, profileId),
+        isNotNull(decisionBoundaries.taxonomyTermId),
+      ),
+    );
+
+  return new Set(rows.map((row) => row.name));
 }
