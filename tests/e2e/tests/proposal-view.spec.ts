@@ -654,16 +654,22 @@ test.describe('Proposal View', () => {
       `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`,
     );
 
-    // Title still renders (wait for client-side hydration)
+    // Title still renders (wait for client-side hydration). The document fetch
+    // failing no longer takes down the whole page — title/budget/metadata show
+    // regardless.
     await expect(
       authenticatedPage.getByRole('heading', {
         name: 'Missing Document Proposal',
       }),
     ).toBeVisible({ timeout: 30_000 });
 
-    // Fallback message shown instead of document content
+    // A failed fetch is treated as "unavailable" first: the viewer polls in
+    // case the document is still propagating, and only renders the fallback
+    // once the bounded wait elapses (so a still-syncing doc doesn't flash an
+    // error). The doc here is permanently missing, so the fallback appears
+    // after the poll window — wait past it.
     await expect(
       authenticatedPage.getByText('Content could not be loaded').first(),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 30_000 });
   });
 });
