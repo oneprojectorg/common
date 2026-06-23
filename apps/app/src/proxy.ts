@@ -1,6 +1,5 @@
 import {
   OPURLConfig,
-  anonymousSigninEnabled,
   cookieOptionsDomain,
   isOnPreviewAppDomain,
 } from '@op/core';
@@ -121,26 +120,11 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
     return response;
   }
 
-  // TEMPORARY: while anonymous sign-in is behind a flag, keep forcing login for
-  // logged-out visitors. Once `anonymousSigninEnabled` is true this gate is
-  // skipped so anonymous users can reach the app. Remove this block (and the
-  // env flag) when anonymous sign-in is permanently on.
-  if (
-    !anonymousSigninEnabled &&
-    !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !(request.nextUrl.pathname === '/')
-  ) {
-    // no user, redirect to login with the original path preserved
-    const url = request.nextUrl.clone();
-
-    url.pathname = '/login';
-    if (pathname !== '/') {
-      url.searchParams.set('redirect', pathname);
-    }
-
-    return NextResponse.redirect(url);
-  }
+  // Walled-garden access is no longer enforced here. The proxy only handles
+  // i18n routing and Supabase session refresh; the closed-network boundary is
+  // gated server-side in the `(main)` route group layout (which renders the
+  // walled-garden screen for non-members), so public surfaces stay reachable
+  // without a session.
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
   // If you're creating a new response object with NextResponse.next() make sure to:

@@ -8,6 +8,7 @@ import type { ZonePermissions } from 'access-zones';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
+import { getCachedNetworkMembership } from '../utils/networkMembership';
 import { permissionsSchema } from './access';
 import {
   organizationsEncoder,
@@ -77,6 +78,10 @@ export const userEncoder = createSelectSchema(users)
   .extend({
     onboardedAt: z.string().nullish(),
     isAnonymous: z.boolean(),
+    // Closed-network ("walled garden") membership. Authoritative only when set
+    // via `encodeUser` (the account read path that seeds RSC/client); other
+    // encoder consumers default to false.
+    isNetworkMember: z.boolean().default(false),
     avatarImage: storageItemEncoder.nullish(),
     organizationUsers: organizationUserWithPermissionsEncoder.array().nullish(),
     profileUsers: profileUserWithPermissionsEncoder.array().nullish(),
@@ -94,13 +99,21 @@ export const adminUserEncoder = userEncoder.extend({
 
 /**
  * Encode a DB user row into a `CommonUser`, taking `isAnonymous` from the
- * Supabase auth identity (`ctx.user` or an admin `getUserById` result).
+ * Supabase auth identity (`ctx.user` or an admin `getUserById` result) and
+ * resolving closed-network ("walled garden") membership from the user's email.
  */
-export const encodeUser = ({
+export const encodeUser = async ({
   user,
   authUser,
 }: {
   user: Record<string, unknown>;
   authUser: { is_anonymous?: boolean | null };
-}): CommonUser =>
-  userEncoder.parse({ ...user, isAnonymous: Boolean(authUser.is_anonymous) });
+}): Promise<CommonUser> => {
+  const email = typeof user.email === 'string' ? user.email : null;
+
+  return userEncoder.parse({
+    ...user,
+    isAnonymous: Boolean(authUser.is_anonymous),
+    isNetworkMember: await getCachedNetworkMembership(email),
+  });
+};

@@ -1,8 +1,8 @@
-import { cache } from '@op/cache';
-import { AccessTierError, getAllowListUser } from '@op/common';
+import { AccessTierError } from '@op/common';
 
 import { getCachedAuthUser } from '../supabase/server';
 import type { MiddlewareBuilderBase, TContextWithUser } from '../types';
+import { getCachedNetworkMembership } from '../utils/networkMembership';
 import { verifyAuthentication } from '../utils/verifyAuthentication';
 
 /**
@@ -19,21 +19,13 @@ const withNetworkAuthenticatedUser: MiddlewareBuilderBase<
 
   const user = verifyAuthentication(data);
 
-  // if the user is not a oneproject.org user, verify against the allow list
-  if (user.email?.toLowerCase().split('@')[1] !== 'oneproject.org') {
-    // Only allow users who are invited
-    const allowedUserEmail = await cache<ReturnType<typeof getAllowListUser>>({
-      type: 'allowList',
-      params: [user.email?.toLowerCase()],
-      fetch: () => getAllowListUser({ email: user.email?.toLowerCase() }),
-      options: {
-        ttl: 30 * 60 * 1000,
-      },
-    });
+  // Closed-network gate: admit only `@oneproject.org` accounts or allow-listed
+  // invitees (shared predicate, also used to stamp `isNetworkMember` on the
+  // account so RSC/client can gate the walled garden).
+  const isMember = await getCachedNetworkMembership(user.email);
 
-    if (!allowedUserEmail) {
-      throw new AccessTierError('user');
-    }
+  if (!isMember) {
+    throw new AccessTierError('user');
   }
 
   return next({
