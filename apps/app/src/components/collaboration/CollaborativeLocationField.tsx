@@ -11,6 +11,11 @@ import { useCollaborativeDoc } from './CollaborativeDocContext';
 
 interface CollaborativeLocationFieldProps {
   initialValue?: LocationData | null;
+  /**
+   * Decision profile (== `processInstances.profileId`) that owns the boundary
+   * set scoped to this picker. Passed through to {@link LocationMapField}.
+   */
+  profileId: string | null;
   /** Default map camera shown before a location is chosen (from the template). */
   defaultMapView?: MapDefaultView;
   onChange?: (location: LocationData | null) => void;
@@ -59,6 +64,7 @@ function parseLocationText(text: string): LocationData | null {
  */
 export function CollaborativeLocationField({
   initialValue = null,
+  profileId,
   defaultMapView,
   onChange,
 }: CollaborativeLocationFieldProps) {
@@ -127,6 +133,7 @@ export function CollaborativeLocationField({
   return (
     <LocationMapField
       value={location}
+      profileId={profileId}
       defaultMapView={defaultMapView}
       onChange={handleChange}
     />

@@ -184,6 +184,10 @@ describe('submitProposal — location/boundary enforcement', () => {
     expect(mockResolveBoundary).toHaveBeenCalledWith({
       lat: LOCATION.lat,
       lng: LOCATION.lng,
+      profileId: PROFILE_ID,
+    });
+    expect(mockHasDecisionBoundaries).toHaveBeenCalledWith({
+      profileId: PROFILE_ID,
     });
   });
 
@@ -241,6 +245,7 @@ describe('submitProposal — location/boundary enforcement', () => {
     expect(mockResolveBoundary).toHaveBeenCalledWith({
       lat: LOCATION.lat,
       lng: LOCATION.lng,
+      profileId: PROFILE_ID,
     });
     expect(result).toEqual(submitted);
   });

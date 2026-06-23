@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import {
   accessTierGatingCell,
   describeAccessTierGating,
@@ -5,7 +7,7 @@ import {
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
-const input = { lat: 40.7128, lng: -74.006 };
+const input = { lat: 40.7128, lng: -74.006, profileId: randomUUID() };
 
 // resolveBoundary is an `authenticatedProcedure`: only the editable picker calls
 // it (composing a proposal requires a session — anonymous Supabase included), so

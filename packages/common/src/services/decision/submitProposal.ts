@@ -108,6 +108,7 @@ export const submitProposal = async ({
       proposalTemplate,
       existingProposal.proposalData,
       existingProposal.profile.name,
+      { profileId: instance.profileId },
     );
   }
 
@@ -130,9 +131,13 @@ export const submitProposal = async ({
     const boundary = await resolveBoundary({
       lat: location.lat,
       lng: location.lng,
+      profileId: instance.profileId,
     });
 
-    if (!boundary && (await hasDecisionBoundaries())) {
+    if (
+      !boundary &&
+      (await hasDecisionBoundaries({ profileId: instance.profileId }))
+    ) {
       throw new ValidationError(
         'The selected location is outside the project boundary. Choose a spot within the boundary.',
       );

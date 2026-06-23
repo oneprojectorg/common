@@ -101,10 +101,14 @@ export const createProposal = async ({
   // Pre-fetch category terms if specified to avoid lookup inside transaction.
   // Include the location's council-district category (if any) so it is linked
   // through the normal category pipeline — no separate boundary-tagging pass.
-  const categoryLabels = await withBoundaryCategoryLabel(
-    [...new Set(parsedProposalData.category)],
-    data.proposalData,
-  );
+  // Without a decision profile (legacy instances) the boundary lookup is
+  // skipped and only the manual categories pass through.
+  const manualCategoryLabels = [...new Set(parsedProposalData.category)];
+  const categoryLabels = instance.profileId
+    ? await withBoundaryCategoryLabel(manualCategoryLabels, data.proposalData, {
+        profileId: instance.profileId,
+      })
+    : manualCategoryLabels;
   let categoryTermIds: string[] = [];
 
   if (categoryLabels.length > 0) {
