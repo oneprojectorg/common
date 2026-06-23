@@ -256,7 +256,7 @@ const instanceOverviewEncoder = z.object({
  * writes.
  */
 const instanceOverviewInputEncoder = z.object({
-  headline: z.string().max(200).optional(),
+  headline: z.string().max(50).optional(),
   description: z.string().max(500).optional(),
   body: overviewBodyInputEncoder.optional(),
 });
