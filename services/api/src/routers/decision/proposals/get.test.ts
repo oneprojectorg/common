@@ -491,7 +491,7 @@ describe.concurrent('getProposal', () => {
     });
   });
 
-  it('should throw when TipTap returns 404 so the client can suspend/retry', async ({
+  it('should mark documentContent unavailable when TipTap returns 404 so the client can poll', async ({
     task,
     onTestFinished,
   }) => {
@@ -518,11 +518,19 @@ describe.concurrent('getProposal', () => {
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
-    // TipTap fetch failures propagate so callers can suspend (retry) and
-    // fall back to ErrorBoundary instead of rendering a flashed error inline.
-    await expect(
-      caller.decision.getProposal({ profileId: proposal.profileId }),
-    ).rejects.toThrow();
+    // A failed TipTap fetch must not fail the whole read: the proposal still
+    // resolves and documentContent is marked unavailable so the client can
+    // poll (still syncing) and only show "content not found" after a bounded
+    // wait — instead of flashing an error inline.
+    const result = await caller.decision.getProposal({
+      profileId: proposal.profileId,
+    });
+
+    expect(result.proposalData).toMatchObject({
+      title: 'Missing Doc Proposal',
+    });
+    expect(result.documentContent).toEqual({ type: 'unavailable' });
+    expect(result.htmlContent).toBeUndefined();
   });
 
   it('should fetch the saved collaboration version for non-draft proposals', async ({

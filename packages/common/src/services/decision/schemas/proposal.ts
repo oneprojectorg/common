@@ -79,6 +79,11 @@ export const documentContentSchema = z.discriminatedUnion('type', [
     type: z.literal('html'),
     content: z.string(),
   }),
+  // The document fetch failed; the client polls and shows a bounded
+  // "content not found" fallback rather than flashing an error immediately.
+  z.object({
+    type: z.literal('unavailable'),
+  }),
 ]);
 
 export const proposalAccessSchema = z.object({

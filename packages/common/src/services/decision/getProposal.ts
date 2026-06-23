@@ -207,15 +207,22 @@ export const getProposal = async ({
         }))
       : Promise.resolve({ commentsCount: 0, likesCount: 0, followersCount: 0 }),
 
-    // Fetch document content
-    getProposalDocumentsContent([
-      {
-        id: proposal.id,
-        proposalData: proposal.proposalData,
-        proposalTemplate,
-        collaborationDocVersionId,
-      },
-    ]),
+    // Fetch document content. Mark a failed fetch as 'unavailable' rather
+    // than throwing: the proposal (title, budget, attachments) still renders
+    // while the client polls for the document and only shows a "content not
+    // found" state after a bounded wait — a still-syncing doc shouldn't flash
+    // an error.
+    getProposalDocumentsContent(
+      [
+        {
+          id: proposal.id,
+          proposalData: proposal.proposalData,
+          proposalTemplate,
+          collaborationDocVersionId,
+        },
+      ],
+      { onFetchError: 'unavailable' },
+    ),
   ]);
 
   // Generate signed URLs for attachments
