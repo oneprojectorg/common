@@ -10,7 +10,7 @@ const StartLayout = async ({ children }: { children: React.ReactNode }) => {
   const user = await getUser();
 
   // Onboarding is inside the walled garden.
-  assertWalledGardenAccess(user);
+  await assertWalledGardenAccess(user);
 
   return (
     <div className="relative flex h-svh w-full flex-col items-center justify-center font-sans">

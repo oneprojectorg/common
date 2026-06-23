@@ -1,5 +1,5 @@
 import { createClient } from '@op/api/serverClient';
-import { forbidden } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { cache } from 'react';
 
 /**
@@ -12,15 +12,14 @@ export const getUser = cache(async () => {
 });
 
 /**
- * For server components in walled-garden route groups: resolves a non-null user
- * or renders the forbidden screen. The `(main)` layout already gates the walled
- * garden, so this is a defensive fallback that also narrows the type to non-null.
+ * For server components in auth-gated route groups: resolves a non-null user
+ * or redirects to login (mirroring the middleware) if there is no session.
  */
 export const getRequiredUser = async () => {
   const user = await getUser();
 
   if (!user) {
-    forbidden();
+    redirect('/login');
   }
 
   return user;

@@ -19,6 +19,12 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   event.waitUntil(logger.flush());
   // i18n ROUTING
   const pathname = request.nextUrl.pathname;
+
+  // Expose the current path to Server Components (Next doesn't surface it to
+  // layouts otherwise) so the walled-garden gate can build /login?redirect=...
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-pathname', pathname);
+
   const pathnameIsMissingLocale = i18nConfig.locales.every(
     (locale) =>
       !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`,
@@ -37,7 +43,9 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
 
       // Only set cookie if it's different from current cookie value
       if (existingLocaleCookie !== currentLocale) {
-        localeResponse = NextResponse.next({ request });
+        localeResponse = NextResponse.next({
+          request: { headers: requestHeaders },
+        });
 
         // Set the locale cookie with proper domain options
         // Skip domain on preview URLs (use host-only cookies)
@@ -59,7 +67,7 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   let supabaseResponse =
     localeResponse ||
     NextResponse.next({
-      request,
+      request: { headers: requestHeaders },
     });
   // Skip domain on preview URLs (use host-only cookies)
   const shouldSetCookieDomain =

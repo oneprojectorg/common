@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 const AppRoot = async ({ children }: { children: React.ReactNode }) => {
   const user = await getUser();
 
-  assertWalledGardenAccess(user);
+  await assertWalledGardenAccess(user);
 
   if (shouldRedirectToOnboarding(user)) {
     redirect('/en/start');

@@ -26,10 +26,13 @@ test.describe('Walled garden — logged-out visitors', () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
   for (const path of WALLED_GARDEN_ROUTES) {
-    test(`${path} redirects to /login`, async ({ page }) => {
+    test(`${path} redirects to /login preserving the path`, async ({
+      page,
+    }) => {
       await page.goto(path);
 
-      await expect(page).toHaveURL(/\/login/, { timeout: 15000 });
+      await expect(page).toHaveURL(/\/login\?redirect=/, { timeout: 15000 });
+      expect(new URL(page.url()).searchParams.get('redirect')).toBe(path);
     });
   }
 });
