@@ -47,6 +47,11 @@ test.describe('Walled garden — unauthenticated access', () => {
       await expect(page.getByRole('combobox', { name: 'Search' })).toHaveCount(
         0,
       );
+
+      // ...but localization stays available.
+      await expect(
+        page.getByRole('button', { name: 'Select language' }).first(),
+      ).toBeVisible();
     });
   }
 });
