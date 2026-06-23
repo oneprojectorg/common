@@ -22,7 +22,7 @@ import {
   LuItalic,
   LuLink,
   LuList,
-  LuListCollapse,
+  LuChevronRight,
   LuListOrdered,
   LuQuote,
   LuSave,
@@ -215,7 +215,7 @@ export function RichTextEditorBubbleMenu({
       {
         key: 'details',
         label: t('Collapsible'),
-        icon: LuListCollapse,
+        icon: LuChevronRight,
         isActive: activeStates.details,
         // The Details extension has no toggleDetails — branch on active state
         toggle: () => {
