@@ -682,3 +682,80 @@
     @apply absolute -top-5 -start-px rounded-t rounded-ee px-1.5 py-0.5 text-xs font-semibold whitespace-nowrap text-white select-none;
   }
 }
+
+/* ============================================
+ * Details / summary (collapsible "FAQ" disclosure)
+ * One source of truth for BOTH render paths:
+ *  - Editor: @tiptap/extension-details' built-in node view renders
+ *    `div.details(.is-open) > button + div > (summary, div[data-type=detailsContent])`,
+ *    toggling `is-open` on the root and `hidden` on the content (collapse is automatic).
+ *  - Viewer: the static renderer emits a native `details.details[open] > summary +
+ *    div[data-type=detailsContent]` (collapsible with zero JS).
+ * The chevron lives on the editor's toggle <button> and the native <summary>::before.
+ * ============================================ */
+@layer components {
+  /* Shared, non-conflicting bits only. No `display` here: the editor sets it on
+   * `div.details`; the native viewer <details> is `block` by default. */
+  .details {
+    --rt-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
+  }
+  .details summary {
+    @apply py-2 font-serif text-lg text-neutral-black tracking-[-0.0125em];
+    list-style: none;
+  }
+  .details summary::-webkit-details-marker {
+    display: none;
+  }
+
+  /* The chevron glyph — the editor's toggle <button>, the viewer's native
+   * <summary>::before. (`content` is inert on the real <button>.) */
+  div.details > button,
+  details.details > summary::before {
+    @apply size-4 flex-none bg-neutral-gray3 transition-transform;
+    content: '';
+    -webkit-mask: var(--rt-chevron) center / contain no-repeat;
+    mask: var(--rt-chevron) center / contain no-repeat;
+  }
+  div.details.is-open > button,
+  details.details[open] > summary::before {
+    @apply rotate-90;
+  }
+
+  /* Editor (div.details): chevron in a left gutter, content in the column. */
+  div.details {
+    @apply flex items-start gap-2;
+  }
+  /* Highlight the details the caret is in. ProseMirror is one contentEditable
+   * host, so DOM :focus can't target an inner node — the `detailsFocus` plugin
+   * tags it with `is-focused`; gate on `.ProseMirror-focused` so it only paints
+   * while the editor is focused. */
+  div.details.is-focused {
+    @apply bg-neutral-gray1/60 shadow-[12px_0_0_2px_hsla(180,2.9%,93.1%,0.6),-8px_0_0_2px_hsla(180,2.9%,93.1%,0.6)];
+  }
+  div.details > button {
+    @apply mt-3 cursor-pointer border-0 p-0;
+  }
+  div.details > div {
+    @apply min-w-0 flex-1;
+  }
+  /* Drop the first child's top margin inside the body. `!` is required: prose's
+   * paragraph margins live in @layer utilities (later than components), so they
+   * win on layer order over a plain rule here regardless of specificity. */
+  .details [data-type='detailsContent'] > :first-child {
+    @apply mt-2!;
+  }
+
+  /* Viewer (native details.details): the chevron is an inline ::before so the
+   * summary's own inline content (text + <strong>/<em> spans) flows normally.
+   * (A flex summary turns every inline node into a flex item and the gap pushes
+   * the words apart.) */
+  details.details > summary {
+    @apply cursor-pointer;
+  }
+  details.details > summary::before {
+    @apply mr-2 inline-block align-middle;
+  }
+  details.details > [data-type='detailsContent'] {
+    @apply ps-6 pb-3;
+  }
+}
