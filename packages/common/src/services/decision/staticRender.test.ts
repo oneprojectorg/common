@@ -168,10 +168,53 @@ describe('static renderer × serverExtensions', () => {
       extensions: serverExtensions,
     });
 
-    // Assert the whole details subtree survives (recognized, not dropped). The
-    // app's nodeMapping swaps these for a design-system Collapsible; html-string
-    // here just guards schema coverage, like the iframely case above.
+    // Text survives (recognized, not dropped).
     expect(html).toContain('Question?');
     expect(html).toContain('Answer.');
+    // The native collapsible shape IS the feature — guard the structure the
+    // viewer CSS hooks onto, not just the text. `class="details"` styles it,
+    // `data-type="detailsContent"` is the body wrapper, `open` reflects attrs.
+    expect(html).toContain('<details');
+    expect(html).toContain('class="details"');
+    expect(html).toMatch(/<details[^>]*\sopen/);
+    expect(html).toContain('data-type="detailsContent"');
+    expect(html).toContain('<summary>Question?</summary>');
+  });
+
+  it('omits the `open` attribute when details is collapsed (open: false)', () => {
+    // The only custom attr with a renderHTML mapping: open ? { open: '' } : {}.
+    // Assert the false branch so a regression in either direction is caught.
+    const doc: JSONContent = {
+      type: 'doc',
+      content: [
+        {
+          type: 'details',
+          attrs: { open: false },
+          content: [
+            {
+              type: 'detailsSummary',
+              content: [{ type: 'text', text: 'Question?' }],
+            },
+            {
+              type: 'detailsContent',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: 'Answer.' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const html = renderToHTMLString({
+      content: doc,
+      extensions: serverExtensions,
+    });
+
+    expect(html).toContain('<details');
+    expect(html).not.toMatch(/<details[^>]*\sopen/);
   });
 });

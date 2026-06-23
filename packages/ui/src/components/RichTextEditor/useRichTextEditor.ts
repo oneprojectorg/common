@@ -25,8 +25,10 @@ export function useRichTextEditor({
   placeholder?: string;
   /**
    * Hint shown inside an empty Details summary. Only takes effect when the
-   * Details extension is present. Defaults to 'Summary'; pass a translated
-   * string from the app to localize it.
+   * Details extension is present. Defaults to 'Write something...' rather than
+   * 'Summary': "Summary" reads as jargon to writers who don't know the
+   * underlying <summary> HTML tag. Pass a translated string from the app to
+   * localize it.
    */
   summaryPlaceholder?: string;
   editorClassName?: string;
