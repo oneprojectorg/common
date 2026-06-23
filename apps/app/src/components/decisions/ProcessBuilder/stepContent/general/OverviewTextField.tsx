@@ -13,8 +13,6 @@ interface OverviewTextFieldProps {
   maxLength: number;
 }
 
-// ponytail: document-wide focusable scan, fine for this small page. Scope to a
-// container ref if it ever grabs the wrong element.
 function focusNext(current: HTMLElement) {
   const focusables = Array.from(
     document.querySelectorAll<HTMLElement>(
@@ -74,7 +72,7 @@ export function OverviewTextField({
         className={cn(
           'shrink-0 text-sm transition-opacity',
           value.length > 0 ? 'opacity-100' : 'opacity-0',
-          value.length === maxLength
+          value.length >= maxLength
             ? 'text-functional-red'
             : 'text-neutral-charcoal',
         )}
