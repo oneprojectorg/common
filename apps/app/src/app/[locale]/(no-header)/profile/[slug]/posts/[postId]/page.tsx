@@ -60,12 +60,8 @@ const PostDetailPage = async ({
   const { queryClient } = await createServerUtils();
 
   // Shares the cache()-wrapped fetches with generateMetadata above, so each
-  // resolver runs once and the data hydrates. Swallow failures: this only
-  // warms the cache — the client suspense query refetches and its error
-  // boundary owns errors, so a failed warmup must not crash the route.
-  await Promise.all([fetchPost(postId), fetchOrganizationBySlug(slug)]).catch(
-    () => {},
-  );
+  // resolver runs once and the data hydrates into HydrationBoundary.
+  await Promise.all([fetchPost(postId), fetchOrganizationBySlug(slug)]);
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

@@ -3,12 +3,9 @@ import {
   createServerUtils,
   dehydrate,
 } from '@op/api/server';
-import { createClient } from '@op/api/serverClient';
-import { CommonError } from '@op/common';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { forbidden, notFound } from 'next/navigation';
-import { Suspense, cache } from 'react';
+import { Suspense } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionSidePanel } from '@/components/decisions/DecisionSidePanel';
@@ -16,12 +13,7 @@ import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter'
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
 import { DecisionContentSkeleton } from '@/components/skeletons/DecisionSkeleton';
 
-// Shared per-request fetch so generateMetadata and the page render hit the
-// resolver once instead of twice.
-const fetchDecisionBySlug = cache(async (slug: string) => {
-  const client = await createClient();
-  return client.decision.getDecisionBySlug({ slug });
-});
+import { loadDecision } from './(decision-view)/loadDecision';
 
 export async function generateMetadata({
   params,
@@ -31,8 +23,8 @@ export async function generateMetadata({
   const { slug, locale } = await params;
 
   try {
-    const [decisionProfile, t] = await Promise.all([
-      fetchDecisionBySlug(slug),
+    const [{ decisionProfile }, t] = await Promise.all([
+      loadDecision(slug),
       getTranslations({ locale }),
     ]);
     const name = decisionProfile?.name || t('Decision');
@@ -45,32 +37,8 @@ export async function generateMetadata({
 }
 
 const DecisionPageContent = async ({ slug }: { slug: string }) => {
+  const { decisionProfile, instanceId, ownerSlug } = await loadDecision(slug);
   const { utils, queryClient } = await createServerUtils();
-
-  let decisionProfile;
-  try {
-    decisionProfile = await fetchDecisionBySlug(slug);
-  } catch (error) {
-    const cause = error instanceof Error ? error.cause : null;
-    if (cause instanceof CommonError && cause.statusCode === 403) {
-      forbidden();
-    }
-    if (cause instanceof CommonError && cause.statusCode === 404) {
-      notFound();
-    }
-    throw error;
-  }
-
-  if (!decisionProfile || !decisionProfile.processInstance) {
-    notFound();
-  }
-
-  const instanceId = decisionProfile.processInstance.id;
-  const ownerSlug = decisionProfile.processInstance.owner?.slug;
-
-  if (!ownerSlug) {
-    notFound();
-  }
 
   // Prefetch the instance so the client-side useSuspenseQuery in
   // DecisionHeader and DecisionStateRouter resolves synchronously on hydration
