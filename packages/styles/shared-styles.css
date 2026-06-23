@@ -748,12 +748,14 @@
   /* Viewer (native details.details): the chevron is an inline ::before so the
    * summary's own inline content (text + <strong>/<em> spans) flows normally.
    * (A flex summary turns every inline node into a flex item and the gap pushes
-   * the words apart.) */
+   * the words apart.) Hanging indent: pad the summary `ps-6` and pull the
+   * chevron back into that gutter with `-ms-6`, so wrapped lines align under the
+   * first line's text instead of under the chevron. */
   details.details > summary {
-    @apply cursor-pointer;
+    @apply cursor-pointer ps-6;
   }
   details.details > summary::before {
-    @apply mr-2 inline-block align-middle;
+    @apply -ms-6 me-2 inline-block align-middle;
   }
   details.details > [data-type='detailsContent'] {
     @apply ps-6 pb-3;
