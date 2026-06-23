@@ -26,11 +26,13 @@ export const MemberParticipationFacePile = ({
     return null;
   }
 
+  const hasSubmitters = submitters.length > 0;
+
   return (
     <div className="flex items-center justify-center gap-2">
       <GrowingFacePile
         maxItems={20}
-        totalCount={total}
+        totalCount={hasSubmitters ? total : undefined}
         items={submitters.map((submitter) => (
           <Link
             key={submitter.slug}
