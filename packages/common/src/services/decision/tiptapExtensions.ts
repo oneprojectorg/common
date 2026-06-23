@@ -78,6 +78,76 @@ const IframelyServerNode = Node.create({
 });
 
 /**
+ * Server-safe schema for the Details (collapsible) nodes — schema only, no React
+ * node view (mirrors `IframelyServerNode`). The static renderer uses this
+ * `renderHTML` directly (no nodeMapping override), emitting a native
+ * `<details class="details"><summary>…` that toggles with zero JS and is styled
+ * by the shared `.details` CSS in `@op/styles`. Content models mirror
+ * `@tiptap/extension-details`; `open` mirrors the editor's `persist: true` attr.
+ */
+const DetailsServerNode = Node.create({
+  name: 'details',
+  group: 'block',
+  content: 'detailsSummary detailsContent',
+  defining: true,
+  isolating: true,
+
+  addAttributes() {
+    return {
+      open: {
+        default: false,
+        parseHTML: (element) => element.hasAttribute('open'),
+        renderHTML: ({ open }) => (open ? { open: '' } : {}),
+      },
+    };
+  },
+
+  parseHTML() {
+    return [{ tag: 'details' }];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    // `class: 'details'` so the shared `.details` CSS (in @op/styles) styles the
+    // native viewer <details> the same way it styles the editor node view.
+    return [
+      'details',
+      mergeAttributes(HTMLAttributes, { class: 'details' }),
+      0,
+    ];
+  },
+});
+
+const DetailsSummaryServerNode = Node.create({
+  name: 'detailsSummary',
+  content: 'text*',
+
+  parseHTML() {
+    return [{ tag: 'summary' }];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    return ['summary', mergeAttributes(HTMLAttributes), 0];
+  },
+});
+
+const DetailsContentServerNode = Node.create({
+  name: 'detailsContent',
+  content: 'block+',
+
+  parseHTML() {
+    return [{ tag: 'div[data-type="detailsContent"]' }];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    return [
+      'div',
+      mergeAttributes(HTMLAttributes, { 'data-type': 'detailsContent' }),
+      0,
+    ];
+  },
+});
+
+/**
  * Server-side TipTap extensions for `generateHTML()`.
  *
  * These must match the editor/viewer extensions exactly (minus React-specific parts)
@@ -109,4 +179,7 @@ export const serverExtensions = [
     openOnClick: false,
   }),
   IframelyServerNode,
+  DetailsServerNode,
+  DetailsSummaryServerNode,
+  DetailsContentServerNode,
 ];

@@ -136,4 +136,42 @@ describe('static renderer × serverExtensions', () => {
       renderToHTMLString({ content: doc, extensions: serverExtensions }),
     ).toThrow();
   });
+
+  it('renders details/summary/content (the app maps these to a Collapsible)', () => {
+    const doc: JSONContent = {
+      type: 'doc',
+      content: [
+        {
+          type: 'details',
+          attrs: { open: true },
+          content: [
+            {
+              type: 'detailsSummary',
+              content: [{ type: 'text', text: 'Question?' }],
+            },
+            {
+              type: 'detailsContent',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: 'Answer.' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const html = renderToHTMLString({
+      content: doc,
+      extensions: serverExtensions,
+    });
+
+    // Assert the whole details subtree survives (recognized, not dropped). The
+    // app's nodeMapping swaps these for a design-system Collapsible; html-string
+    // here just guards schema coverage, like the iframely case above.
+    expect(html).toContain('Question?');
+    expect(html).toContain('Answer.');
+  });
 });
