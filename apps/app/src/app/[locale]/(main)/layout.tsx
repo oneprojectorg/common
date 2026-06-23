@@ -1,8 +1,9 @@
 import { UserProvider } from '@/utils/UserProvider';
 import { getUser } from '@/utils/getUser';
 import { shouldRedirectToOnboarding } from '@/utils/onboarding';
+import { assertWalledGardenAccess } from '@/utils/walledGarden';
 import { SidebarLayout, SidebarProvider } from '@op/ui/Sidebar';
-import { forbidden, redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import Script from 'next/script';
 
 import { SidebarNav } from '@/components/SidebarNav';
@@ -18,10 +19,7 @@ export const dynamic = 'force-dynamic';
 const AppRoot = async ({ children }: { children: React.ReactNode }) => {
   const user = await getUser();
 
-  // Non-members (no session, anonymous, or not allow-listed) get the walled-garden screen.
-  if (!user?.isNetworkMember) {
-    forbidden();
-  }
+  assertWalledGardenAccess(user);
 
   if (shouldRedirectToOnboarding(user)) {
     redirect('/en/start');
