@@ -72,8 +72,11 @@ export function OverviewTextField({
       <span
         aria-hidden="true"
         className={cn(
-          'shrink-0 text-sm text-neutral-charcoal transition-opacity',
+          'shrink-0 text-sm transition-opacity',
           value.length > 0 ? 'opacity-100' : 'opacity-0',
+          value.length === maxLength
+            ? 'text-functional-red'
+            : 'text-neutral-charcoal',
         )}
       >
         {value.length}/{maxLength}
