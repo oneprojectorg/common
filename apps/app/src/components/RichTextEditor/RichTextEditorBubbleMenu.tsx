@@ -21,6 +21,7 @@ import {
   LuHeading4,
   LuItalic,
   LuLink,
+  LuLink2,
   LuList,
   LuListOrdered,
   LuQuote,
@@ -60,6 +61,7 @@ export function RichTextEditorBubbleMenu({
 }: RichTextEditorBubbleMenuProps) {
   const t = useTranslations();
   const [isEditingLink, setIsEditingLink] = useState(false);
+  const [isEditingEmbed, setIsEditingEmbed] = useState(false);
 
   // Focusing the URL input blurs the editor, which hides the native
   // selection highlight — so while the link editor is open, an inline
@@ -106,6 +108,12 @@ export function RichTextEditorBubbleMenu({
   if (!editor || !activeStates) {
     return null;
   }
+
+  // The bubble menu is shared; only offer the embed button where the editor
+  // actually registered the Iframely extension (so `setIframely` exists).
+  const hasEmbed = editor.extensionManager.extensions.some(
+    (extension) => extension.name === 'iframely',
+  );
 
   const openLinkEditor = () => {
     const { from, to } = editor.state.selection;
@@ -223,7 +231,10 @@ export function RichTextEditorBubbleMenu({
         offset: 8,
         flip: true,
         shift: true,
-        onHide: () => closeLinkEditor(),
+        onHide: () => {
+          closeLinkEditor();
+          setIsEditingEmbed(false);
+        },
       }}
       className="z-50 rounded-lg border border-border bg-popover p-2 shadow-md"
     >
@@ -255,45 +266,84 @@ export function RichTextEditorBubbleMenu({
               <Separator orientation="horizontal" className="w-full" />
             </React.Fragment>
           ))}
-          {/* Controlled by isEditingLink so every dismissal path (outside
-              click, escape, trigger toggle) also clears the selection
-              highlight decoration */}
-          <Popover
-            open={isEditingLink}
-            onOpenChange={(open, eventDetails) => {
-              if (open) {
-                openLinkEditor();
-                return;
-              }
-              closeLinkEditor();
-              // Refocus the editor so the native selection highlight takes
-              // over from the cleared decoration — unless the user
-              // deliberately moved focus elsewhere
-              if (
-                eventDetails.reason !== 'outside-press' &&
-                eventDetails.reason !== 'focus-out'
-              ) {
-                editor.commands.focus();
-              }
-            }}
-          >
-            <PopoverTrigger
-              render={
-                <Toggle
-                  size="sm"
-                  pressed={isEditingLink || activeStates.link}
-                  aria-label={t('Add Link')}
-                  title={t('Add Link')}
-                  className="h-8 aria-pressed:bg-primary aria-pressed:text-white"
-                >
-                  <LuLink className="size-4" />
-                </Toggle>
-              }
-            />
-            <PopoverContent align="center" side="top">
-              <LinkEditor editor={editor} onClose={closeLinkEditor} />
-            </PopoverContent>
-          </Popover>
+          <div className="grid grid-cols-2 gap-2">
+            {/* Controlled by isEditingLink so every dismissal path (outside
+                click, escape, trigger toggle) also clears the selection
+                highlight decoration */}
+            <Popover
+              open={isEditingLink}
+              onOpenChange={(open, eventDetails) => {
+                if (open) {
+                  openLinkEditor();
+                  return;
+                }
+                closeLinkEditor();
+                // Refocus the editor so the native selection highlight takes
+                // over from the cleared decoration — unless the user
+                // deliberately moved focus elsewhere
+                if (
+                  eventDetails.reason !== 'outside-press' &&
+                  eventDetails.reason !== 'focus-out'
+                ) {
+                  editor.commands.focus();
+                }
+              }}
+            >
+              <PopoverTrigger
+                render={
+                  <Toggle
+                    size="sm"
+                    pressed={isEditingLink || activeStates.link}
+                    aria-label={t('Add Link')}
+                    title={t('Add Link')}
+                    className="h-8 aria-pressed:bg-primary aria-pressed:text-white"
+                  >
+                    <LuLink className="size-4" />
+                  </Toggle>
+                }
+              />
+              <PopoverContent align="center" side="top">
+                <LinkEditor editor={editor} onClose={closeLinkEditor} />
+              </PopoverContent>
+            </Popover>
+            {/* Embed (Iframely) — paste/enter a URL to insert a link preview.
+                Same icon as the proposal toolbar's embed button. */}
+            {hasEmbed && (
+              <Popover
+                open={isEditingEmbed}
+                onOpenChange={(open, eventDetails) => {
+                  setIsEditingEmbed(open);
+                  if (
+                    !open &&
+                    eventDetails.reason !== 'outside-press' &&
+                    eventDetails.reason !== 'focus-out'
+                  ) {
+                    editor.commands.focus();
+                  }
+                }}
+              >
+                <PopoverTrigger
+                  render={
+                    <Toggle
+                      size="sm"
+                      pressed={isEditingEmbed}
+                      aria-label={t('Embed Link Preview')}
+                      title={t('Embed Link Preview')}
+                      className="h-8 aria-pressed:bg-primary aria-pressed:text-white"
+                    >
+                      <LuLink2 className="size-4" />
+                    </Toggle>
+                  }
+                />
+                <PopoverContent align="center" side="top">
+                  <EmbedEditor
+                    editor={editor}
+                    onClose={() => setIsEditingEmbed(false)}
+                  />
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
         </div>
       </div>
     </BubbleMenu>
@@ -457,6 +507,82 @@ function LinkEditor({
           {t('Remove')}
         </Button>
       </div>
+    </form>
+  );
+}
+
+/**
+ * Inline embed form: enter a URL and insert an Iframely link-preview node.
+ * Mirrors {@link LinkEditor}; no selection-highlight decoration since the embed
+ * inserts a block node rather than wrapping the selected text.
+ */
+function EmbedEditor({
+  editor,
+  onClose,
+}: {
+  editor: Editor;
+  onClose: () => void;
+}) {
+  const t = useTranslations();
+  const [url, setUrl] = useState('');
+  const [isInvalid, setIsInvalid] = useState(false);
+
+  const applyEmbed = () => {
+    const raw = url.trim();
+
+    if (raw === '') {
+      onClose();
+      return;
+    }
+
+    // Same URL convention as the link editor: prefix https:// when no protocol
+    // is given, validate the format before inserting.
+    const src = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    if (!zodUrlRefine(src)) {
+      setIsInvalid(true);
+      return;
+    }
+
+    editor.chain().focus().setIframely({ src }).run();
+    onClose();
+  };
+
+  return (
+    <form
+      className="flex flex-col gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        applyEmbed();
+      }}
+    >
+      <Input
+        autoFocus
+        type="text"
+        inputMode="url"
+        placeholder={t('URL')}
+        aria-label={t('URL')}
+        aria-invalid={isInvalid || undefined}
+        value={url}
+        onChange={(e) => {
+          setUrl(e.target.value);
+          setIsInvalid(false);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            onClose();
+            editor.commands.focus();
+          }
+        }}
+        className="h-8 w-full"
+      />
+      {isInvalid && (
+        <p className="text-sm text-destructive">{t('Enter a valid URL')}</p>
+      )}
+      <Button type="submit" size="sm" variant="outline" className="w-full">
+        <LuLink2 />
+        {t('Embed Link Preview')}
+      </Button>
     </form>
   );
 }
