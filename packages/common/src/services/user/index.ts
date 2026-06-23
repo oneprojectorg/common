@@ -20,30 +20,9 @@ export interface User {
 /** Email domain whose accounts are always part of the closed network. */
 export const NETWORK_EMAIL_DOMAIN = 'oneproject.org';
 
-/**
- * Single source of truth for closed-network ("walled garden") membership: an
- * email belongs to the network when it is an `@oneproject.org` account or has
- * an invite allow-list entry. Used both by the API network gate
- * (`withNetworkAuthenticatedUser`) and the account encoder so RSC/client code
- * can read membership off the user. Callers should wrap this in a cache.
- */
-export const isNetworkMember = async ({
-  email,
-}: {
-  email?: string | null;
-}): Promise<boolean> => {
-  if (!email) {
-    return false;
-  }
-
-  if (email.toLowerCase().split('@')[1] === NETWORK_EMAIL_DOMAIN) {
-    return true;
-  }
-
-  const allowed = await getAllowListUser({ email: email.toLowerCase() });
-
-  return Boolean(allowed);
-};
+/** Whether an email is an `@oneproject.org` account (always a network member). */
+export const isNetworkEmailDomain = (email?: string | null): boolean =>
+  email?.toLowerCase().split('@')[1] === NETWORK_EMAIL_DOMAIN;
 
 /**
  * Fetch an allow list entry by email.

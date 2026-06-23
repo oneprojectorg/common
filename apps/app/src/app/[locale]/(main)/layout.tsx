@@ -12,18 +12,13 @@ import { AppLayout } from '@/components/layout/split/AppLayout';
 export const dynamic = 'force-dynamic';
 
 /**
- * Main app layout — the single front door for the "walled garden". Everything
- * under this route group is closed-network only; public surfaces (decision
- * views, public profiles) live in `(no-header)` and are not gated here.
- *
- * User data fetch is cached so child components can reuse it without extra requests.
+ * Main app layout — the front door for the walled garden. This route group is
+ * closed-network only; public surfaces live in `(no-header)`.
  */
 const AppRoot = async ({ children }: { children: React.ReactNode }) => {
   const user = await getUser();
 
-  // Not a network member (no session, anonymous, or not allow-listed) → show the
-  // walled-garden screen instead of letting the shell mount and then fail
-  // piecemeal on network-gated queries. Reuses the locale `forbidden` boundary.
+  // Non-members (no session, anonymous, or not allow-listed) get the walled-garden screen.
   if (!user?.isNetworkMember) {
     forbidden();
   }

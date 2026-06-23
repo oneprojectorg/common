@@ -19,9 +19,6 @@ const withNetworkAuthenticatedUser: MiddlewareBuilderBase<
 
   const user = verifyAuthentication(data);
 
-  // Closed-network gate: admit only `@oneproject.org` accounts or allow-listed
-  // invitees (shared predicate, also used to stamp `isNetworkMember` on the
-  // account so RSC/client can gate the walled garden).
   const isMember = await getNetworkMembership(user.email);
 
   if (!isMember) {

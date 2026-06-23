@@ -9,9 +9,7 @@ import { TranslatedText } from '@/components/TranslatedText';
 const StartLayout = async ({ children }: { children: React.ReactNode }) => {
   const user = await getUser();
 
-  // Onboarding lives inside the walled garden: only network members reach it.
-  // No-session, anonymous, and non-allow-listed visitors get the walled-garden
-  // screen, matching the `(main)` gate.
+  // Onboarding is inside the walled garden — only network members reach it.
   if (!user?.isNetworkMember) {
     forbidden();
   }

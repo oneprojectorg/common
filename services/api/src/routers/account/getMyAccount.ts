@@ -19,9 +19,7 @@ export const getMyAccount = router({
 
       const { id } = ctx.user;
 
-      // Fetch the account and its closed-network ("walled garden") membership
-      // concurrently — both are independent, cached lookups. Membership is
-      // derived from the resolved identity so RSC/client can gate off the account.
+      // Account and network membership are independent cached lookups.
       const [user, isNetworkMember] = await Promise.all([
         cache({
           type: 'user',

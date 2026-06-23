@@ -77,9 +77,7 @@ export const userEncoder = createSelectSchema(users)
   .extend({
     onboardedAt: z.string().nullish(),
     isAnonymous: z.boolean(),
-    // Closed-network ("walled garden") membership. Authoritative only when set
-    // via `encodeUser` (the account read path that seeds RSC/client); other
-    // encoder consumers default to false.
+    // Closed-network membership; authoritative only via `encodeUser`.
     isNetworkMember: z.boolean().default(false),
     avatarImage: storageItemEncoder.nullish(),
     organizationUsers: organizationUserWithPermissionsEncoder.array().nullish(),
@@ -97,11 +95,9 @@ export const adminUserEncoder = userEncoder.extend({
 });
 
 /**
- * Encode a DB user row into a `CommonUser`, taking `isAnonymous` from the
- * Supabase auth identity (`ctx.user` or an admin `getUserById` result).
- * `isNetworkMember` (closed-network / "walled garden" membership) must be
- * resolved by the caller from `ctx.user` (see `getNetworkMembership`);
- * it defaults to `false` when omitted.
+ * Encode a DB user row into a `CommonUser`. `isAnonymous` comes from the
+ * Supabase auth identity; `isNetworkMember` is resolved by the caller (see
+ * `getNetworkMembership`) and defaults to `false`.
  */
 export const encodeUser = ({
   user,
