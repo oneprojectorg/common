@@ -86,8 +86,10 @@ function sanitizeBlocks(nodes: JSONContent[]): JSONContent[] {
   return out;
 }
 
-export function sanitizeTiptapDoc(doc: JSONContent): JSONContent {
-  if (!doc.content) {
+export function sanitizeTiptapDoc(
+  doc: string | JSONContent,
+): string | JSONContent {
+  if (typeof doc === 'string' || !doc?.content) {
     return doc;
   }
 
