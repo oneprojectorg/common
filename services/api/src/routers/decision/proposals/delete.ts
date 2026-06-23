@@ -1,4 +1,6 @@
+import { invalidate } from '@op/cache';
 import { Channels, deleteProposal as deleteProposalService } from '@op/common';
+import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import { authenticatedProcedure, router } from '../../../trpcFactory';
@@ -24,6 +26,13 @@ export const deleteProposalRouter = router({
         proposalId: input.proposalId,
         user,
       });
+
+      waitUntil(
+        invalidate({
+          type: 'decision',
+          params: [result.processInstanceId, 'submitters'],
+        }),
+      );
 
       ctx.registerMutationChannels([
         Channels.decisionProposals(result.processInstanceId),

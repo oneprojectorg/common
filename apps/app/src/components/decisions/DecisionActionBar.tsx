@@ -29,12 +29,15 @@ export const DecisionActionBar = ({
   const t = useTranslations();
   const { slug } = useParams<{ slug: string }>();
 
-  const { createProposal: handleCreateProposal, isCreating } =
-    useCreateProposal({
-      instanceId,
-      navigateTo: (proposal) =>
-        `/decisions/${slug}/proposal/${proposal.profileId}/edit`,
-    });
+  const {
+    createProposal: handleCreateProposal,
+    isCreating,
+    isReady,
+  } = useCreateProposal({
+    instanceId,
+    navigateTo: (proposal) =>
+      `/decisions/${slug}/proposal/${proposal.profileId}/edit`,
+  });
 
   return (
     <div className="flex w-full justify-center">
@@ -74,7 +77,7 @@ export const DecisionActionBar = ({
           <Button
             color="primary"
             className="w-full"
-            isDisabled={isCreating}
+            isDisabled={!isReady || isCreating}
             onPress={handleCreateProposal}
           >
             {isCreating ? <LoadingSpinner /> : null}

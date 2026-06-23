@@ -3,6 +3,7 @@
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
+import { useMount } from '@op/hooks';
 import { createSBBrowserClient } from '@op/supabase/client';
 import { toast } from '@op/ui/Toast';
 import { useTransition } from 'react';
@@ -28,6 +29,8 @@ export function useCreateProposal({
   const t = useTranslations();
   const router = useRouter();
   const { user } = useUser();
+  // Gate the CTA until mount so React Aria's onPress handler is bound.
+  const { mounted } = useMount();
   const [isCreating, startCreating] = useTransition();
   const supabase = createSBBrowserClient();
   const utils = trpc.useUtils();
@@ -68,5 +71,5 @@ export function useCreateProposal({
     });
   };
 
-  return { createProposal, isCreating };
+  return { createProposal, isCreating, isReady: !!mounted };
 }

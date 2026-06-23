@@ -1,3 +1,4 @@
+import { cache } from '@op/cache';
 import { type SQL, and, db, eq, inArray, isNull, ne } from '@op/db/client';
 import {
   ProposalStatus,
@@ -62,63 +63,78 @@ export const listProposalSubmitters = async ({
     orgFallbackPermissions: { decisions: permission.READ },
   });
 
-  const phaseProposalIds = await getProposalIdsForPhase({ instance });
+  // The face-pile data is viewer-independent; the READ gate stays outside the
+  // cache so a hit can never bypass authorization.
+  return cache({
+    type: 'decision',
+    params: [processInstanceId, 'submitters'],
+    fetch: async () => {
+      const phaseProposalIds = await getProposalIdsForPhase({ instance });
 
-  if (phaseProposalIds.length === 0) {
-    return { submitters: [], total: 0 };
-  }
+      if (phaseProposalIds.length === 0) {
+        return { submitters: [], total: 0 };
+      }
 
-  const scope: SQL = and(
-    eq(proposals.processInstanceId, processInstanceId),
-    ne(proposals.status, ProposalStatus.DRAFT),
-    eq(proposals.visibility, Visibility.VISIBLE),
-    isNull(proposals.deletedAt),
-    inArray(proposals.id, phaseProposalIds),
-  )!;
+      const scope: SQL = and(
+        eq(proposals.processInstanceId, processInstanceId),
+        ne(proposals.status, ProposalStatus.DRAFT),
+        eq(proposals.visibility, Visibility.VISIBLE),
+        isNull(proposals.deletedAt),
+        inArray(proposals.id, phaseProposalIds),
+      )!;
 
-  // auth.users and public.users share the table name "users"; alias the auth
-  // table so joining both in one query doesn't collide on the "users" alias.
-  const submitterAuthUser = alias(authUsers, 'submitter_auth_user');
+      // auth.users and public.users share the table name "users"; alias the
+      // auth table so joining both in one query doesn't collide on the "users"
+      // alias.
+      const submitterAuthUser = alias(authUsers, 'submitter_auth_user');
 
-  const [faceRows, totalRows] = await Promise.all([
-    // Faces: registered (non-anonymous) accounts that uploaded an avatar.
-    db
-      .selectDistinct({
-        slug: profiles.slug,
-        name: profiles.name,
-        avatarName: objectsInStorage.name,
-      })
-      .from(proposals)
-      .innerJoin(profileUsers, eq(profileUsers.profileId, proposals.profileId))
-      .innerJoin(users, eq(users.authUserId, profileUsers.authUserId))
-      .innerJoin(
-        submitterAuthUser,
-        eq(submitterAuthUser.id, profileUsers.authUserId),
-      )
-      .innerJoin(profiles, eq(profiles.id, users.profileId))
-      .innerJoin(
-        objectsInStorage,
-        eq(profiles.avatarImageId, objectsInStorage.id),
-      )
-      .where(and(scope, eq(submitterAuthUser.isAnonymous, false)))
-      .limit(MAX_FACE_PILE_AVATARS),
+      const [faceRows, totalRows] = await Promise.all([
+        // Faces: registered (non-anonymous) accounts that uploaded an avatar.
+        db
+          .selectDistinct({
+            slug: profiles.slug,
+            name: profiles.name,
+            avatarName: objectsInStorage.name,
+          })
+          .from(proposals)
+          .innerJoin(
+            profileUsers,
+            eq(profileUsers.profileId, proposals.profileId),
+          )
+          .innerJoin(users, eq(users.authUserId, profileUsers.authUserId))
+          .innerJoin(
+            submitterAuthUser,
+            eq(submitterAuthUser.id, profileUsers.authUserId),
+          )
+          .innerJoin(profiles, eq(profiles.id, users.profileId))
+          .innerJoin(
+            objectsInStorage,
+            eq(profiles.avatarImageId, objectsInStorage.id),
+          )
+          .where(and(scope, eq(submitterAuthUser.isAnonymous, false)))
+          .limit(MAX_FACE_PILE_AVATARS),
 
-    // Total: every distinct submitter in scope, including anonymous accounts.
-    // A submitter is uniquely identified by authUserId, so the count needs no
-    // join to users/profiles.
-    db
-      .select({ value: countDistinct(profileUsers.authUserId) })
-      .from(proposals)
-      .innerJoin(profileUsers, eq(profileUsers.profileId, proposals.profileId))
-      .where(scope),
-  ]);
+        // Total: every distinct submitter in scope, including anonymous
+        // accounts. A submitter is uniquely identified by authUserId, so the
+        // count needs no join to users/profiles.
+        db
+          .select({ value: countDistinct(profileUsers.authUserId) })
+          .from(proposals)
+          .innerJoin(
+            profileUsers,
+            eq(profileUsers.profileId, proposals.profileId),
+          )
+          .where(scope),
+      ]);
 
-  return {
-    submitters: faceRows.map((row) => ({
-      slug: row.slug,
-      name: row.name ?? null,
-      avatarImage: row.avatarName ? { name: row.avatarName } : null,
-    })),
-    total: Number(totalRows[0]?.value ?? 0),
-  };
+      return {
+        submitters: faceRows.map((row) => ({
+          slug: row.slug,
+          name: row.name ?? null,
+          avatarImage: row.avatarName ? { name: row.avatarName } : null,
+        })),
+        total: Number(totalRows[0]?.value ?? 0),
+      };
+    },
+  });
 };

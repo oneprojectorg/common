@@ -169,7 +169,7 @@ const OverviewHero = ({
 }) => {
   const t = useTranslations();
   const currentPhaseHref = `/decisions/${decisionSlug}/current`;
-  const { createProposal, isCreating } = useCreateProposal({
+  const { createProposal, isCreating, isReady } = useCreateProposal({
     instanceId,
     navigateTo: (proposal) =>
       `/decisions/${decisionSlug}/proposal/${proposal.profileId}/edit`,
@@ -202,7 +202,7 @@ const OverviewHero = ({
             <Button
               color="primary"
               className="w-auto"
-              isDisabled={isCreating}
+              isDisabled={!isReady || isCreating}
               onPress={createProposal}
             >
               {isCreating ? <LoadingSpinner /> : null}
