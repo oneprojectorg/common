@@ -43,6 +43,22 @@ const placeholderStyles = [
 ].join(' ');
 
 /**
+ * Per-line placeholder hint (Notion-style "press / for commands…"). Targets
+ * empty blocks that are NOT the whole-editor-empty node — the `:not(.is-editor-
+ * empty)` keeps it from doubling with `placeholderStyles` on the doc-empty line.
+ * Opt-in: only added to the editor class (by `useRichTextEditor`) when a
+ * `linePlaceholder` is passed, so existing single-placeholder editors are
+ * unaffected.
+ */
+export const linePlaceholderStyles = [
+  '[&_.is-empty:not(.is-editor-empty)]:before:pointer-events-none',
+  '[&_.is-empty:not(.is-editor-empty)]:before:float-start',
+  '[&_.is-empty:not(.is-editor-empty)]:before:h-0',
+  '[&_.is-empty:not(.is-editor-empty)]:before:text-neutral-gray3',
+  '[&_.is-empty:not(.is-editor-empty)]:before:content-[attr(data-placeholder)]',
+].join(' ');
+
+/**
  * TipTap heading extension that bakes the design-system `headingClasses` onto
  * each rendered `<h1>`–`<h4>` tag, keeping editor output visually identical to
  * the `Header1/2/3/4` components in `@op/ui`. Any level without a mapped class
