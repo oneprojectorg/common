@@ -53,7 +53,7 @@ export function OverviewTextField({
       className={cn(
         // field-sizing-content grows the textarea with its content so long
         // headlines/descriptions wrap instead of getting cut off.
-        'field-sizing-content resize-none bg-transparent text-neutral-charcoal placeholder:text-neutral-gray3 focus:outline-none',
+        'field-sizing-content resize-none overflow-hidden bg-transparent text-neutral-charcoal placeholder:text-neutral-gray3 focus:outline-none',
         showCount ? 'min-w-0 flex-1' : 'w-full',
         variant === 'headline' && 'font-serif text-title-lg',
         variant === 'description' && 'text-base',
