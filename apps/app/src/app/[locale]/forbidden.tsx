@@ -13,7 +13,7 @@ export default async function Forbidden() {
       <UserProvider initialUser={user}>
         <SidebarProvider>
           <SiteHeader />
-          <PageError error={new Error('UNAUTHORIZED')} />
+          <PageError reason="UNAUTHORIZED" />
         </SidebarProvider>
       </UserProvider>
     </div>

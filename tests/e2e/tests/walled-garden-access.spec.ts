@@ -23,7 +23,10 @@ test.describe('Walled garden — unauthenticated access', () => {
     test(`${path} renders the forbidden screen for a logged-out visitor`, async ({
       page,
     }) => {
-      await page.goto(path);
+      const response = await page.goto(path);
+
+      // The walled-garden gate responds with a 403 (forbidden() in the layout).
+      expect(response?.status()).toBe(403);
 
       // The reused forbidden screen (PageError, UNAUTHORIZED → 403).
       await expect(

@@ -10,19 +10,28 @@ import { useEffect } from 'react';
 import { useTranslations } from '@/lib/i18n/routing';
 
 export interface ErrorProps {
-  error: Error & { digest?: string };
+  error?: Error & { digest?: string };
+  /**
+   * Explicit error kind. Prefer this over `error` when rendering from a Server
+   * Component (e.g. a `forbidden.tsx` boundary): an `Error` passed as a prop
+   * across the RSC boundary loses its `message` in production builds, so the
+   * `match` would otherwise fall through to the generic 500.
+   */
+  reason?: string;
 }
 
-export default function PageError({ error }: ErrorProps) {
+export default function PageError({ error, reason }: ErrorProps) {
   const t = useTranslations();
 
   useEffect(() => {
-    posthog.captureException(error, {
-      error_digest: error.digest,
-    });
+    if (error) {
+      posthog.captureException(error, {
+        error_digest: error.digest,
+      });
+    }
   }, [error]);
 
-  const errorData = match(error.message, {
+  const errorData = match(reason ?? error?.message ?? '', {
     UNAUTHORIZED: () => ({
       code: 403,
       description: (
@@ -53,7 +62,7 @@ export default function PageError({ error }: ErrorProps) {
     }),
   });
 
-  console.error('App Error:', error.message);
+  console.error('App Error:', reason ?? error?.message);
 
   return (
     <ClientOnly>
