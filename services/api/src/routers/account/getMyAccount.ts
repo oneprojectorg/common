@@ -19,28 +19,30 @@ export const getMyAccount = router({
 
       const { id } = ctx.user;
 
-      const user = await cache({
-        type: 'user',
-        params: [id],
-        fetch: async () => {
-          return await getUserByAuthId({
-            authUserId: id,
-            includePermissions: true,
-          });
-        },
-        options: {
-          skipMemCache: true,
-        },
-      });
+      // Fetch the account and its closed-network ("walled garden") membership
+      // concurrently — both are independent, cached lookups. Membership is
+      // derived from the resolved identity so RSC/client can gate off the account.
+      const [user, isNetworkMember] = await Promise.all([
+        cache({
+          type: 'user',
+          params: [id],
+          fetch: async () => {
+            return await getUserByAuthId({
+              authUserId: id,
+              includePermissions: true,
+            });
+          },
+          options: {
+            skipMemCache: true,
+          },
+        }),
+        getCachedNetworkMembership(ctx.user.email),
+      ]);
 
       if (!user) {
         // This should never happen, but if it does throw an error so we can investigate.
         throw new CommonError('Common user not found');
       }
-
-      // Closed-network ("walled garden") membership, derived from the resolved
-      // identity so RSC/client can gate the walled garden off the account.
-      const isNetworkMember = await getCachedNetworkMembership(ctx.user.email);
 
       return encodeUser({ user, authUser: ctx.user, isNetworkMember });
     }),
