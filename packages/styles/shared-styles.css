@@ -760,29 +760,4 @@
   details.details > [data-type='detailsContent'] {
     @apply ps-6 pb-3;
   }
-
-  /* Animate open/close on the viewer's native <details>. `display`/`hidden`
-   * isn't transitionable, so we animate `::details-content` height 0 -> auto
-   * (`interpolate-size` enables the auto keyframe) plus a discrete
-   * content-visibility transition. Gated on `@supports` for the pseudo-element
-   * (Chrome 131+, Safari 18.2+); degrades to instant elsewhere (e.g. Firefox).
-   * Editor-only `div.details` is intentionally left instant. */
-  @supports selector(::details-content) {
-    /* Must be on :root — `height: auto` only interpolates when interpolate-size
-     * is in effect via inheritance from the root, not when set on the element. */
-    :root {
-      interpolate-size: allow-keywords;
-    }
-    details.details::details-content {
-      height: 0;
-      overflow: hidden;
-      transition:
-        height 0.2s ease,
-        content-visibility 0.2s;
-      transition-behavior: allow-discrete;
-    }
-    details.details[open]::details-content {
-      height: auto;
-    }
-  }
 }
