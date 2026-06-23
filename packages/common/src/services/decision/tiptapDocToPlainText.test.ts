@@ -51,4 +51,34 @@ describe('tiptapDocToPlainText', () => {
 
     expect(tiptapDocToPlainText(doc)).toBe('still readable');
   });
+
+  it('splits a container node (details) so summary and body are separate blocks', () => {
+    // Without container-aware walking, a details node collapses its summary and
+    // body into one run ("Question?Answer."); each should be its own line.
+    const doc: JSONContent = {
+      type: 'doc',
+      content: [
+        {
+          type: 'details',
+          content: [
+            {
+              type: 'detailsSummary',
+              content: [{ type: 'text', text: 'Question?' }],
+            },
+            {
+              type: 'detailsContent',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: 'Answer.' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(tiptapDocToPlainText(doc)).toBe('Question?\nAnswer.');
+  });
 });
