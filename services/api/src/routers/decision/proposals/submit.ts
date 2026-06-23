@@ -24,10 +24,12 @@ export const submitProposalRouter = router({
         authUserId: user.id,
       });
 
-      await invalidate({
-        type: 'decision',
-        params: [proposal.processInstanceId, 'submitters'],
-      });
+      waitUntil(
+        invalidate({
+          type: 'decision',
+          params: [proposal.processInstanceId, 'submitters'],
+        }),
+      );
 
       ctx.registerMutationChannels([
         Channels.decisionProposals(proposal.processInstanceId),

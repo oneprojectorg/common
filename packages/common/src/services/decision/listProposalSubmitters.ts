@@ -63,11 +63,8 @@ export const listProposalSubmitters = async ({
     orgFallbackPermissions: { decisions: permission.READ },
   });
 
-  // The face-pile data is viewer-independent — it's the set of submitters for
-  // the instance's current-phase proposals, identical for everyone who passes
-  // the READ gate above. Cache it on the instance id (gate stays outside the
-  // cache so a hit can never bypass authorization). Mutations that change the
-  // submitter set invalidate this key; the default TTL is a fallback.
+  // The face-pile data is viewer-independent; the READ gate stays outside the
+  // cache so a hit can never bypass authorization.
   return cache({
     type: 'decision',
     params: [processInstanceId, 'submitters'],
