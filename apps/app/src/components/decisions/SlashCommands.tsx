@@ -9,6 +9,7 @@ import {
   LuHeading1,
   LuHeading2,
   LuHeading3,
+  LuHeading4,
   LuLink2,
   LuList,
   LuListOrdered,
@@ -147,6 +148,20 @@ const suggestionOptions: Partial<SuggestionOptions> = {
             .focus()
             .deleteRange(range)
             .setNode('heading', { level: 3 })
+            .run();
+        },
+      },
+      {
+        title: 'Heading 4',
+        description: 'Smaller section heading.',
+        searchTerms: ['subtitle', 'small'],
+        icon: LuHeading4,
+        command: ({ editor, range }) => {
+          editor
+            .chain()
+            .focus()
+            .deleteRange(range)
+            .setNode('heading', { level: 4 })
             .run();
         },
       },
