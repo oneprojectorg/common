@@ -1,7 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { isSafeRedirectPath } from '@op/common/client';
+import { getSafeRedirectPath } from '@op/common/client';
 import { APP_NAME, OPURLConfig } from '@op/core';
 import { useAuthUser, useMount } from '@op/hooks';
 import { createSBBrowserClient } from '@op/supabase/client';
@@ -42,7 +42,7 @@ export const LoginPanel = () => {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
   const isSignup = searchParams.get('signup');
-  const redirectParam = searchParams.get('redirect');
+  const redirectParam = getSafeRedirectPath(searchParams.get('redirect'));
 
   const {
     email,
@@ -60,7 +60,7 @@ export const LoginPanel = () => {
   const handleLogin = async () => {
     const callbackUrl = new URL('/api/auth/callback', location.origin);
 
-    if (isSafeRedirectPath(redirectParam)) {
+    if (redirectParam !== null) {
       callbackUrl.searchParams.set('redirect', redirectParam);
     }
 
@@ -117,7 +117,7 @@ export const LoginPanel = () => {
     });
 
     if (data.user && data.session && data.user.role === 'authenticated') {
-      if (isSafeRedirectPath(redirectParam)) {
+      if (redirectParam !== null) {
         window.location.href = redirectParam;
       } else {
         window.location.reload();

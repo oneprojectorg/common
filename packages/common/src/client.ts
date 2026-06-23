@@ -115,6 +115,8 @@ export {
 } from './services/resources/constants';
 
 // Translation constants (no server dependencies)
+import { SUPPORTED_LOCALES } from './services/translation/locales';
+
 export {
   SUPPORTED_LOCALES,
   LOCALE_TO_DEEPL,
@@ -131,20 +133,59 @@ export type {
 // the server-only utils barrel (which depends on drizzle).
 export { hasEmail } from './utils/email';
 
-const LOGIN_PATH_RE = /^\/(?:[a-z]{2}\/)?login(\/|$|\?)/;
+// Whitelist of safe redirect-path prefixes. Every legitimate app route lives
+// under a locale segment (en/es/fr/…) or under `/info`. Anything else —
+// `//evil`, `/\evil`, `/api/*`, `https://evil`, etc. — never matches and is
+// rejected. Adding a new top-level segment requires extending this list; a
+// missed update fails loudly (user lands on `/` after login).
+const SAFE_REDIRECT_PATH_RE = new RegExp(
+  `^/(?:${SUPPORTED_LOCALES.join('|')}|info)(?:[/?#]|$)`,
+);
+
+// A login page is itself under a locale prefix (e.g. `/en/login`), so it
+// passes the whitelist above. Redirecting back to it after a successful login
+// would bounce an authenticated user straight onto another login screen — an
+// infinite loop. Reject any login target (bare `/login` or locale-prefixed)
+// explicitly so it never qualifies as a safe redirect.
+const LOGIN_PATH_RE = /^\/(?:[a-z]{2}\/)?login(?:[/?#]|$)/;
+
+/**
+ * Validate a relative redirect path and return its safe canonical (decoded)
+ * form. Accepts both already-decoded paths (the common case after
+ * `searchParams.get`) and percent-encoded paths like `%2Fen%2Fprofile%2Fx`
+ * (which can arrive when the redirect param hasn't been URL-decoded). Returns
+ * `null` if the path is unsafe or doesn't target a known app route prefix.
+ *
+ * Callers should redirect to the **returned** string, not the original input —
+ * `redirect()` / `new URL()` don't decode percent sequences, so passing the
+ * encoded form lands the user on a literal-`%2F` path that won't route.
+ */
+export function getSafeRedirectPath(path: string | null): string | null {
+  if (path == null) {
+    return null;
+  }
+  // Decode percent-encoded paths once. We only decode when the input doesn't
+  // already look like a path so legitimate paths with embedded `%XX` sequences
+  // (e.g. `/foo%20bar`) are left alone.
+  let candidate = path;
+  if (candidate.startsWith('%')) {
+    try {
+      candidate = decodeURIComponent(candidate);
+    } catch {
+      return null;
+    }
+  }
+  if (!SAFE_REDIRECT_PATH_RE.test(candidate)) {
+    return null;
+  }
+  // Never redirect back onto a login page — that would loop an authenticated
+  // user back to where they started.
+  if (LOGIN_PATH_RE.test(candidate)) {
+    return null;
+  }
+  return candidate;
+}
 
 export function isSafeRedirectPath(path: string | null): path is string {
-  if (!path?.startsWith('/')) {
-    return false;
-  }
-  if (path.startsWith('//')) {
-    return false;
-  }
-  if (LOGIN_PATH_RE.test(path)) {
-    return false;
-  }
-  if (path.startsWith('/api/')) {
-    return false;
-  }
-  return true;
+  return getSafeRedirectPath(path) !== null;
 }

@@ -2,7 +2,7 @@
  * This route is used to handle the callback from OAuth providers.
  */
 import { createClient } from '@op/api/serverClient';
-import { isSafeRedirectPath } from '@op/common/client';
+import { getSafeRedirectPath } from '@op/common/client';
 import { OPURLConfig } from '@op/core';
 import { createSBServerClient } from '@op/supabase/server';
 import { NextResponse } from 'next/server';
@@ -67,9 +67,9 @@ export const GET = async (request: NextRequest) => {
     }
   }
 
-  const redirectPath = searchParams.get('redirect');
+  const redirectPath = getSafeRedirectPath(searchParams.get('redirect'));
 
-  if (isSafeRedirectPath(redirectPath)) {
+  if (redirectPath !== null) {
     return NextResponse.redirect(new URL(redirectPath, useUrl.ENV_URL));
   }
 
