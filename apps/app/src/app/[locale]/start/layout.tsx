@@ -1,9 +1,21 @@
+import { getUser } from '@/utils/getUser';
+import { forbidden } from 'next/navigation';
+
 import { Link } from '@/lib/i18n/routing';
 
 import { CommonLogo } from '@/components/CommonLogo';
 import { TranslatedText } from '@/components/TranslatedText';
 
-const StartLayout = ({ children }: { children: React.ReactNode }) => {
+const StartLayout = async ({ children }: { children: React.ReactNode }) => {
+  const user = await getUser();
+
+  // Onboarding lives inside the walled garden: only network members reach it.
+  // No-session, anonymous, and non-allow-listed visitors get the walled-garden
+  // screen, matching the `(main)` gate.
+  if (!user?.isNetworkMember) {
+    forbidden();
+  }
+
   return (
     <div className="relative flex h-svh w-full flex-col items-center justify-center font-sans">
       <div id="top-slot" className="absolute top-0 w-full" />
