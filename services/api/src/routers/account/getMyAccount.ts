@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { encodeUser, userEncoder } from '../../encoders';
 import { openProcedure, router } from '../../trpcFactory';
+import { getCachedNetworkMembership } from '../../utils/networkMembership';
 
 export const getMyAccount = router({
   getMyAccount: openProcedure()
@@ -37,6 +38,10 @@ export const getMyAccount = router({
         throw new CommonError('Common user not found');
       }
 
-      return encodeUser({ user, authUser: ctx.user });
+      // Closed-network ("walled garden") membership, derived from the resolved
+      // identity so RSC/client can gate the walled garden off the account.
+      const isNetworkMember = await getCachedNetworkMembership(ctx.user.email);
+
+      return encodeUser({ user, authUser: ctx.user, isNetworkMember });
     }),
 });

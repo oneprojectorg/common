@@ -8,7 +8,6 @@ import type { ZonePermissions } from 'access-zones';
 import { createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-import { getCachedNetworkMembership } from '../utils/networkMembership';
 import { permissionsSchema } from './access';
 import {
   organizationsEncoder,
@@ -99,21 +98,22 @@ export const adminUserEncoder = userEncoder.extend({
 
 /**
  * Encode a DB user row into a `CommonUser`, taking `isAnonymous` from the
- * Supabase auth identity (`ctx.user` or an admin `getUserById` result) and
- * resolving closed-network ("walled garden") membership from the user's email.
+ * Supabase auth identity (`ctx.user` or an admin `getUserById` result).
+ * `isNetworkMember` (closed-network / "walled garden" membership) must be
+ * resolved by the caller from `ctx.user` (see `getCachedNetworkMembership`);
+ * it defaults to `false` when omitted.
  */
-export const encodeUser = async ({
+export const encodeUser = ({
   user,
   authUser,
+  isNetworkMember,
 }: {
   user: Record<string, unknown>;
   authUser: { is_anonymous?: boolean | null };
-}): Promise<CommonUser> => {
-  const email = typeof user.email === 'string' ? user.email : null;
-
-  return userEncoder.parse({
+  isNetworkMember?: boolean;
+}): CommonUser =>
+  userEncoder.parse({
     ...user,
     isAnonymous: Boolean(authUser.is_anonymous),
-    isNetworkMember: await getCachedNetworkMembership(email),
+    isNetworkMember,
   });
-};
