@@ -17,13 +17,6 @@ export interface User {
   email: string;
 }
 
-/** Email domain whose accounts are always part of the closed network. */
-export const NETWORK_EMAIL_DOMAIN = 'oneproject.org';
-
-/** Whether an email is an `@oneproject.org` account (always a network member). */
-export const isNetworkEmailDomain = (email?: string | null): boolean =>
-  email?.toLowerCase().split('@')[1] === NETWORK_EMAIL_DOMAIN;
-
 /**
  * Fetch an allow list entry by email.
  */

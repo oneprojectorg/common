@@ -120,9 +120,6 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
     return response;
   }
 
-  // Walled-garden access is gated in the `(main)` layout, not here. The proxy
-  // only handles i18n routing and Supabase session refresh.
-
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
   // If you're creating a new response object with NextResponse.next() make sure to:
   // 1. Pass the request in it, like so:

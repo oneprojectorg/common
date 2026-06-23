@@ -1,7 +1,8 @@
 import { cache } from '@op/cache';
-import { getAllowListUser, isNetworkEmailDomain } from '@op/common';
+import { getAllowListUser } from '@op/common';
+import { allowedEmailDomains } from '@op/core';
 
-/** Cached closed-network ("walled garden") membership: `@oneproject.org` or an allow-list entry. */
+/** Cached closed-network ("walled garden") membership: a network email domain or an allow-list entry. */
 export const getNetworkMembership = async (
   email?: string | null,
 ): Promise<boolean> => {
@@ -9,7 +10,9 @@ export const getNetworkMembership = async (
     return false;
   }
 
-  if (isNetworkEmailDomain(email)) {
+  const domain = email.toLowerCase().split('@')[1];
+
+  if (domain && allowedEmailDomains.includes(domain)) {
     return true;
   }
 
