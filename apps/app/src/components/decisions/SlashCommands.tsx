@@ -3,13 +3,7 @@
 import { Extension } from '@tiptap/core';
 import { PluginKey } from '@tiptap/pm/state';
 import { Suggestion, SuggestionOptions } from '@tiptap/suggestion';
-import React, {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useState,
-} from 'react';
-import { createRoot } from 'react-dom/client';
+import type { ComponentType } from 'react';
 import {
   LuCode,
   LuHeading1,
@@ -27,93 +21,75 @@ export interface SlashCommandItem {
   title: string;
   description: string;
   searchTerms: string[];
-  icon: React.ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string }>;
   command: ({ editor, range }: { editor: any; range: any }) => void;
 }
 
-const SlashCommandsList = forwardRef<
-  { onKeyDown: (props: { event: KeyboardEvent }) => boolean },
-  {
-    items: SlashCommandItem[];
-    command: (item: SlashCommandItem) => void;
-  }
->((props, ref) => {
-  const [selectedIndex, setSelectedIndex] = useState(0);
+/**
+ * The state the React menu (`SlashCommandMenu`) renders from. The `@tiptap/
+ * suggestion` plugin writes to it via the controller; the menu subscribes. The
+ * menu renders in the React tree (NOT a detached `createRoot`), so it gets app
+ * providers, i18n, and design tokens — the createRoot approach had none.
+ */
+export interface SlashMenuSnapshot {
+  open: boolean;
+  items: SlashCommandItem[];
+  command: ((item: SlashCommandItem) => void) | null;
+  clientRect: (() => DOMRect | null) | null;
+}
 
-  const selectItem = (index: number) => {
-    const item = props.items[index];
-    if (item) {
-      props.command(item);
-    }
-  };
+export interface SlashMenuController {
+  subscribe: (listener: () => void) => () => void;
+  getSnapshot: () => SlashMenuSnapshot;
+  update: (partial: Partial<SlashMenuSnapshot>) => void;
+  /** The open menu registers its key handler; the suggestion delegates to it. */
+  setKeyHandler: (handler: ((event: KeyboardEvent) => boolean) | null) => void;
+  handleKeyDown: (event: KeyboardEvent) => boolean;
+}
 
-  const upHandler = () => {
-    setSelectedIndex(
-      (selectedIndex + props.items.length - 1) % props.items.length,
-    );
-  };
+const EMPTY_SNAPSHOT: SlashMenuSnapshot = {
+  open: false,
+  items: [],
+  command: null,
+  clientRect: null,
+};
 
-  const downHandler = () => {
-    setSelectedIndex((selectedIndex + 1) % props.items.length);
-  };
+function createSlashMenuController(): SlashMenuController {
+  let snapshot = EMPTY_SNAPSHOT;
+  const listeners = new Set<() => void>();
+  let keyHandler: ((event: KeyboardEvent) => boolean) | null = null;
 
-  const enterHandler = () => {
-    selectItem(selectedIndex);
-  };
-
-  useEffect(() => setSelectedIndex(0), [props.items]);
-
-  useImperativeHandle(ref, () => ({
-    onKeyDown: ({ event }) => {
-      if (event.key === 'ArrowUp') {
-        upHandler();
-        return true;
-      }
-
-      if (event.key === 'ArrowDown') {
-        downHandler();
-        return true;
-      }
-
-      if (event.key === 'Enter') {
-        enterHandler();
-        return true;
-      }
-
-      return false;
+  return {
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
     },
-  }));
+    getSnapshot: () => snapshot,
+    update: (partial) => {
+      snapshot = { ...snapshot, ...partial };
+      listeners.forEach((listener) => listener());
+    },
+    setKeyHandler: (handler) => {
+      keyHandler = handler;
+    },
+    handleKeyDown: (event) => keyHandler?.(event) ?? false,
+  };
+}
 
-  return (
-    <div className="z-[9999999] h-auto max-h-[330px] w-72 overflow-auto rounded-lg border bg-white p-1 shadow-md">
-      {props.items.length ? (
-        props.items.map((item, index) => (
-          <button
-            className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-start hover:bg-neutral-gray1 ${
-              index === selectedIndex
-                ? 'bg-neutral-gray1 text-neutral-black'
-                : 'text-neutral-charcoal'
-            }`}
-            key={index}
-            onClick={() => selectItem(index)}
-          >
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-md border bg-white">
-              <item.icon className="size-4" />
-            </div>
-            <div>
-              <p className="font-medium">{item.title}</p>
-              <p className="text-xs text-neutral-gray2">{item.description}</p>
-            </div>
-          </button>
-        ))
-      ) : (
-        <div className="item">No results</div>
-      )}
-    </div>
-  );
-});
-
-SlashCommandsList.displayName = 'SlashCommandsList';
+/**
+ * Read the per-editor slash controller off editor storage. Returns undefined
+ * when the editor doesn't have the SlashCommands extension — `SlashCommandMenu`
+ * uses that to no-op.
+ */
+export function getSlashMenuController(
+  editor: { storage?: Record<string, any> } | null | undefined,
+): SlashMenuController | undefined {
+  return editor?.storage?.['slash-commands']?.controller as
+    | SlashMenuController
+    | undefined;
+}
 
 const suggestionOptions: Partial<SuggestionOptions> = {
   items: ({ query }: { query: string }): SlashCommandItem[] => {
@@ -258,72 +234,40 @@ const suggestionOptions: Partial<SuggestionOptions> = {
     });
   },
 
+  // Render only writes to the per-editor controller; `SlashCommandMenu` (mounted
+  // in the React tree alongside the editor) subscribes and renders the menu.
+  // The controller is captured in `onStart` because `onKeyDown` props carry only
+  // `{ view, event, range }` — no `editor` to look it up from.
   render: () => {
-    let component: any;
-    let popup: any;
-    let root: any;
+    let controller: SlashMenuController | undefined;
 
     return {
       onStart: (props: any) => {
-        if (!props.clientRect) {
-          return;
-        }
-
-        popup = document.createElement('div');
-        popup.style.position = 'absolute';
-        popup.style.top = `${props.clientRect().bottom + 8}px`;
-        popup.style.left = `${props.clientRect().left}px`;
-        popup.style.zIndex = '9999999';
-        document.body.appendChild(popup);
-
-        root = createRoot(popup);
-        root.render(
-          <SlashCommandsList
-            ref={(ref) => {
-              component = ref;
-            }}
-            items={props.items}
-            command={props.command}
-          />,
-        );
+        controller = getSlashMenuController(props.editor);
+        controller?.update({
+          open: true,
+          items: props.items,
+          command: props.command,
+          clientRect: props.clientRect ?? null,
+        });
       },
 
-      onUpdate(props: any) {
-        if (!popup || !root) return;
-
-        if (props.clientRect) {
-          popup.style.top = `${props.clientRect().bottom + 8}px`;
-          popup.style.left = `${props.clientRect().left}px`;
-        }
-
-        root.render(
-          <SlashCommandsList
-            ref={(ref) => {
-              component = ref;
-            }}
-            items={props.items}
-            command={props.command}
-          />,
-        );
+      onUpdate: (props: any) => {
+        controller?.update({
+          items: props.items,
+          command: props.command,
+          clientRect: props.clientRect ?? null,
+        });
       },
 
-      onKeyDown(props: any) {
-        if (props.event.key === 'Escape') {
-          if (root) {
-            root.unmount();
-          }
-          popup?.remove();
-          return true;
-        }
+      // Delegate to the menu's key handler. Escape isn't handled there (returns
+      // false), so the suggestion plugin runs its own exit → `onExit` closes.
+      onKeyDown: (props: any) =>
+        controller?.handleKeyDown(props.event) ?? false,
 
-        return component?.onKeyDown?.(props) || false;
-      },
-
-      onExit() {
-        if (root) {
-          root.unmount();
-        }
-        popup?.remove();
+      onExit: () => {
+        controller?.update({ open: false });
+        controller = undefined;
       },
     };
   },
@@ -331,6 +275,10 @@ const suggestionOptions: Partial<SuggestionOptions> = {
 
 export const SlashCommands = Extension.create({
   name: 'slash-commands',
+
+  addStorage(): { controller: SlashMenuController } {
+    return { controller: createSlashMenuController() };
+  },
 
   addOptions() {
     return {

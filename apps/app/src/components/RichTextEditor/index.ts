@@ -14,6 +14,8 @@ export {
   type RichTextEditorBubbleMenuProps,
 } from './RichTextEditorBubbleMenu';
 
+export { SlashCommandMenu } from './SlashCommandMenu';
+
 // App-specific editor extensions
 export {
   getProposalExtensions,

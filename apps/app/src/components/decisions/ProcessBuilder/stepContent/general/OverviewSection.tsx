@@ -12,7 +12,10 @@ import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { ErrorMessage } from '@/components/ErrorMessage';
-import { RichTextEditorBubbleMenu } from '@/components/RichTextEditor';
+import {
+  RichTextEditorBubbleMenu,
+  SlashCommandMenu,
+} from '@/components/RichTextEditor';
 import { getProposalExtensions } from '@/components/RichTextEditor/editorConfig';
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
@@ -158,6 +161,7 @@ function OverviewSectionContent({
         />
 
         <RichTextEditorBubbleMenu editor={editor} />
+        <SlashCommandMenu editor={editor} />
       </div>
     </div>
   );
