@@ -462,6 +462,10 @@ function LinkEditor({
   return (
     <form
       className="flex flex-col gap-2"
+      // The popover is portaled, but React synthetic events still bubble through
+      // the React tree to the toolbar's `onMouseDown` preventDefault — which would
+      // cancel text selection/caret placement in this input. Stop it here.
+      onMouseDown={(e) => e.stopPropagation()}
       onSubmit={(e) => {
         e.preventDefault();
         applyLink();
@@ -550,6 +554,9 @@ function EmbedEditor({
   return (
     <form
       className="flex flex-col gap-2"
+      // Portaled, but synthetic mousedown still bubbles to the toolbar's
+      // preventDefault (see LinkEditor) — stop it so the input is selectable.
+      onMouseDown={(e) => e.stopPropagation()}
       onSubmit={(e) => {
         e.preventDefault();
         applyEmbed();
