@@ -6,11 +6,35 @@ import { parseProposalData } from './proposalDataSchema';
 import type { ProposalTemplateSchema } from './types';
 
 /**
- * Proposal document content can be either TipTap JSON or legacy HTML
+ * Proposal document content can be either TipTap JSON or legacy HTML, or a
+ * sentinel marking the document as temporarily unavailable.
+ *
+ * A failed TipTap fetch can mean two different things that look identical at
+ * the moment of the request (both surface as a 404): the document is still
+ * propagating from the collaboration server (transient — it will appear), or
+ * it is genuinely gone (permanent). The caller picks how to handle that via
+ * `onFetchError`:
+ * - `'omit'` (default): the failing proposal is left out of the returned map
+ *   (its `documentContent` is undefined). Used by list reads so a single
+ *   unavailable document can't break the entire list.
+ * - `'unavailable'`: the proposal is mapped to `{ type: 'unavailable' }`.
+ *   Used by the single-proposal viewer so the rest of the proposal still
+ *   renders while the client polls for the document, and only shows a
+ *   "content not found" state once a bounded wait elapses — instead of
+ *   flashing an error the instant a still-syncing document 404s.
  */
 export type ProposalDocumentContent =
   | { type: 'json'; fragments: TipTapFragmentResponse }
-  | { type: 'html'; content: string };
+  | { type: 'html'; content: string }
+  | { type: 'unavailable' };
+
+export interface GetProposalDocumentsContentOptions {
+  /**
+   * What to do when a TipTap document fetch fails.
+   * Defaults to `'omit'`.
+   */
+  onFetchError?: 'omit' | 'unavailable';
+}
 
 /**
  * Fetch document contents for proposals, handling both TipTap collaboration docs
@@ -29,7 +53,9 @@ export async function getProposalDocumentsContent(
     proposalTemplate?: ProposalTemplateSchema | null;
     collaborationDocVersionId?: number;
   }>,
+  options: GetProposalDocumentsContentOptions = {},
 ): Promise<Map<string, ProposalDocumentContent>> {
+  const { onFetchError = 'omit' } = options;
   const documentContentMap = new Map<string, ProposalDocumentContent>();
 
   const proposalsWithCollabDoc: Array<{
@@ -69,11 +95,11 @@ export async function getProposalDocumentsContent(
         proposalTemplate,
         collaborationDocVersionId,
       }) => {
-        try {
-          const fragmentNames = proposalTemplate
-            ? getProposalFragmentNames(proposalTemplate)
-            : ['default'];
+        const fragmentNames = proposalTemplate
+          ? getProposalFragmentNames(proposalTemplate)
+          : ['default'];
 
+        try {
           const fragments = await client.getDocumentFragments(
             collaborationDocId,
             fragmentNames,
@@ -82,21 +108,26 @@ export async function getProposalDocumentsContent(
               : undefined,
           );
 
-          return { id, fragments };
+          return { id, fragments, failed: false as const };
         } catch (error) {
           console.warn('Failed to fetch TipTap document', {
             collaborationDocId,
             error: error instanceof Error ? error.message : String(error),
           });
-          return { id, fragments: undefined };
+          return { id, fragments: undefined, failed: true as const };
         }
       },
       { concurrency: 10 },
     );
 
-    for (const { id, fragments } of results) {
+    for (const { id, fragments, failed } of results) {
       if (fragments) {
         documentContentMap.set(id, { type: 'json', fragments });
+      } else if (failed && onFetchError === 'unavailable') {
+        // Distinguish "couldn't fetch" from "no document": list reads omit
+        // the entry, but the viewer needs the sentinel to drive its poll +
+        // bounded "content not found" fallback.
+        documentContentMap.set(id, { type: 'unavailable' });
       }
     }
   }

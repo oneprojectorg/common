@@ -762,7 +762,7 @@ describe.concurrent('listProposals', () => {
     });
   });
 
-  it('should return undefined documentContent when TipTap fetch fails', async ({
+  it('should omit documentContent when a TipTap fetch fails so one bad doc does not break the list', async ({
     task,
     onTestFinished,
   }) => {
@@ -791,12 +791,13 @@ describe.concurrent('listProposals', () => {
       createAuthenticatedCaller(setup.userEmail),
     ]);
 
+    // A single unavailable document must not break the whole list: the list
+    // still resolves and the affected proposal's documentContent is undefined.
     const result = await caller.decision.listProposals({
       processInstanceId: instance.instance.id,
     });
 
     const foundProposal = result.proposals.find((p) => p.id === proposal.id);
-    // When TipTap fetch fails, documentContent should be undefined
     expect(foundProposal?.documentContent).toBeUndefined();
   });
 

@@ -14,7 +14,7 @@ import {
 import { SplitPane } from '@op/ui/SplitPane';
 import { useLocale } from 'next-intl';
 import { useQueryStates } from 'nuqs';
-import { type ReactNode, useCallback, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -25,6 +25,17 @@ import { ProposalViewLayout } from './ProposalViewLayout';
 import { RevisedOnBadge } from './Review/AuthorRevisionNote';
 import { TranslateBanner } from './TranslateBanner';
 import { proposalEditorReviewRevisionParser } from './proposalEditor/proposalEditorAsideParams';
+
+/** How often to re-fetch while the document is still propagating from TipTap. */
+const DOCUMENT_POLL_INTERVAL_MS = 2500;
+/**
+ * How long to keep polling for a missing document before treating it as
+ * truly not found. Bounds the "still loading" window so a genuinely absent
+ * document eventually surfaces an error instead of spinning forever.
+ */
+const DOCUMENT_POLL_TIMEOUT_MS = 20000;
+
+export type ProposalDocumentState = 'ready' | 'pending' | 'error';
 
 export function ProposalView({
   proposal: initialProposal,
@@ -40,12 +51,49 @@ export function ProposalView({
   const t = useTranslations();
   const locale = useLocale();
 
-  const { data: proposal } = trpc.decision.getProposal.useQuery({
-    profileId: initialProposal.profileId,
-  });
+  // When the document fetch failed server-side it comes back as
+  // `{ type: 'unavailable' }`. That can be transient (still syncing from the
+  // collaboration server), so poll until it resolves, and only after a bounded
+  // wait treat it as truly missing.
+  const [documentLoadTimedOut, setDocumentLoadTimedOut] = useState(false);
+
+  const { data: proposal } = trpc.decision.getProposal.useQuery(
+    {
+      profileId: initialProposal.profileId,
+    },
+    {
+      refetchInterval: (query) =>
+        query.state.data?.documentContent?.type === 'unavailable' &&
+        !documentLoadTimedOut
+          ? DOCUMENT_POLL_INTERVAL_MS
+          : false,
+    },
+  );
 
   // Safety check - fallback to initial data if query returns undefined
   const currentProposal = proposal || initialProposal;
+
+  const isDocumentUnavailable =
+    currentProposal.documentContent?.type === 'unavailable';
+
+  useEffect(() => {
+    if (!isDocumentUnavailable) {
+      setDocumentLoadTimedOut(false);
+      return;
+    }
+
+    const timer = setTimeout(
+      () => setDocumentLoadTimedOut(true),
+      DOCUMENT_POLL_TIMEOUT_MS,
+    );
+    return () => clearTimeout(timer);
+  }, [isDocumentUnavailable]);
+
+  const documentState: ProposalDocumentState = isDocumentUnavailable
+    ? documentLoadTimedOut
+      ? 'error'
+      : 'pending'
+    : 'ready';
 
   const { processInstanceId, id: proposalId } = currentProposal;
   useTrackPageView(
@@ -173,6 +221,7 @@ export function ProposalView({
       <ProposalPreview
         proposal={currentProposal}
         selection={selection}
+        documentState={documentState}
         translation={
           translatedHtmlContent
             ? {

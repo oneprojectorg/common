@@ -1,3 +1,4 @@
+import { mockCollab } from '@op/collab/testing';
 import {
   type DecisionInstanceData,
   advancePhase,
@@ -573,12 +574,19 @@ export class TestDecisionsDataManager {
   /**
    * Creates a proposal via the decision service and tracks its profile for cleanup.
    * If `description` is provided, removes `collaborationDocId` to simulate legacy proposals.
+   *
+   * Set `seedCollabDoc` to register an empty TipTap document for the proposal's
+   * generated `collaborationDocId`. Single-proposal reads (e.g. getProposal)
+   * propagate TipTap fetch failures, so tests that aren't exercising the
+   * doc-unavailable path should seed a fetchable doc — mirroring production,
+   * where a proposal's collaboration document always exists.
    */
   async createProposal({
     userEmail,
     processInstanceId,
     proposalData,
     status,
+    seedCollabDoc = false,
   }: {
     userEmail: string;
     processInstanceId: string;
@@ -588,6 +596,7 @@ export class TestDecisionsDataManager {
       collaborationDocId?: string;
     };
     status?: ProposalStatus;
+    seedCollabDoc?: boolean;
   }) {
     this.ensureCleanupRegistered();
 
@@ -616,6 +625,20 @@ export class TestDecisionsDataManager {
           return { ...rest, ...proposalData };
         })()
       : undefined;
+
+    // Register a fetchable (empty) doc so reads that propagate TipTap failures
+    // resolve. Legacy proposals have no collaborationDocId, so nothing to seed.
+    if (seedCollabDoc && !legacyProposalData) {
+      const { collaborationDocId } = proposal.proposalData as {
+        collaborationDocId?: string;
+      };
+      if (collaborationDocId) {
+        mockCollab.setDocResponse(collaborationDocId, {
+          type: 'doc',
+          content: [],
+        });
+      }
+    }
 
     if (nonDefaultStatus || legacyProposalData) {
       await db

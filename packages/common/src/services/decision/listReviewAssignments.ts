@@ -79,8 +79,11 @@ export async function listReviewAssignments({
     });
   }
 
-  const documentContentMap =
-    await getProposalDocumentsContent(docContentInputs);
+  const documentContentMap = await getProposalDocumentsContent(
+    docContentInputs,
+    // A single unavailable document must not break the whole list.
+    { onFetchError: 'omit' },
+  );
 
   const assignmentList = assignments.map((assignment) => {
     const proposalSnapshot = resolveAssignmentProposal(assignment);

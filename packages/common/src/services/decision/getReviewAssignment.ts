@@ -49,21 +49,27 @@ export async function getReviewAssignment({
         profileId: assignment.proposal.profileId,
         viewerProfileId: assignment.reviewerProfileId,
       }),
-      getProposalDocumentsContent([
-        {
-          id: proposalSnapshot.id,
-          proposalData: proposalSnapshot.proposalData,
-          proposalTemplate,
-          collaborationDocVersionId:
-            proposalSnapshot.proposalData.collaborationDocVersionId,
-        },
-      ]),
+      getProposalDocumentsContent(
+        [
+          {
+            id: proposalSnapshot.id,
+            proposalData: proposalSnapshot.proposalData,
+            proposalTemplate,
+            collaborationDocVersionId:
+              proposalSnapshot.proposalData.collaborationDocVersionId,
+          },
+        ],
+        // Tolerate an unavailable document rather than failing the review view.
+        { onFetchError: 'omit' },
+      ),
       getProposalAttachmentsWithSignedUrls(proposalSnapshot.id),
     ]);
 
   const documentContent = documentContentMap.get(proposalSnapshot.id);
 
-  if (!documentContent) {
+  // 'omit' keeps a failed fetch out of the map entirely, so a present entry is
+  // always real content here; guard 'unavailable' too for type-safety.
+  if (!documentContent || documentContent.type === 'unavailable') {
     throw new ValidationError(
       `Could not resolve document content for proposal ${proposalSnapshot.id}`,
     );

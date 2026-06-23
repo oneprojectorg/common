@@ -393,6 +393,7 @@ describe.concurrent('getProposal', () => {
       userEmail: submitter.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Co-authored Hidden Proposal' },
+      seedCollabDoc: true,
     });
 
     // Add the collaborator as a profileUser on the proposal's profile —
@@ -490,7 +491,7 @@ describe.concurrent('getProposal', () => {
     });
   });
 
-  it('should return undefined documentContent when TipTap returns 404', async ({
+  it('should mark documentContent unavailable when TipTap returns 404 so the client can poll', async ({
     task,
     onTestFinished,
   }) => {
@@ -517,16 +518,19 @@ describe.concurrent('getProposal', () => {
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
+    // A failed TipTap fetch must not fail the whole read: the proposal still
+    // resolves and documentContent is marked unavailable so the client can
+    // poll (still syncing) and only show "content not found" after a bounded
+    // wait — instead of flashing an error inline.
     const result = await caller.decision.getProposal({
       profileId: proposal.profileId,
     });
 
     expect(result.proposalData).toMatchObject({
       title: 'Missing Doc Proposal',
-      collaborationDocId: expect.any(String),
     });
-    // When TipTap fetch fails, documentContent is undefined (UI handles error state)
-    expect(result.documentContent).toBeUndefined();
+    expect(result.documentContent).toEqual({ type: 'unavailable' });
+    expect(result.htmlContent).toBeUndefined();
   });
 
   it('should fetch the saved collaboration version for non-draft proposals', async ({
@@ -1236,6 +1240,7 @@ describe.concurrent('getProposal', () => {
       userEmail: setup.userEmail,
       processInstanceId: instance.id,
       proposalData: { title: 'Org Admin Fallback Proposal' },
+      seedCollabDoc: true,
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -1267,6 +1272,7 @@ describe.concurrent('getProposal', () => {
       userEmail: setup.userEmail,
       processInstanceId: instance.id,
       proposalData: { title: 'Org Member Fallback Proposal' },
+      seedCollabDoc: true,
     });
 
     await db
@@ -1310,6 +1316,7 @@ describe.concurrent('getProposal', () => {
       userEmail: setup.userEmail,
       processInstanceId: instance.id,
       proposalData: { title: 'Cross-Org Profile Access Proposal' },
+      seedCollabDoc: true,
     });
 
     await db
@@ -1402,6 +1409,7 @@ describe.concurrent('getProposal', () => {
       proposalData: {
         title: 'Proposal With Attachments',
       },
+      seedCollabDoc: true,
     });
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -1469,6 +1477,7 @@ describe.concurrent('getProposal', () => {
       userEmail: submitter.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'My Draft Proposal' },
+      seedCollabDoc: true,
     });
 
     // Verify it's actually a draft
@@ -1565,6 +1574,7 @@ describe.concurrent('getProposal', () => {
       userEmail: submitter.email,
       processInstanceId: instance.instance.id,
       proposalData: { title: 'Public Submitted Proposal' },
+      seedCollabDoc: true,
     });
 
     const submitterCaller = await createAuthenticatedCaller(submitter.email);

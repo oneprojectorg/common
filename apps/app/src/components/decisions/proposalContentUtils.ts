@@ -76,9 +76,14 @@ export function getProposalContentPreview(
     }
   }
 
-  return (
-    getTextPreview({ content: documentContent.content, maxLines: 3 }) ?? ''
-  );
+  if (documentContent.type === 'html') {
+    return (
+      getTextPreview({ content: documentContent.content, maxLines: 3 }) ?? ''
+    );
+  }
+
+  // type === 'unavailable' — no text to preview.
+  return null;
 }
 
 /**

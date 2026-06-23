@@ -12,6 +12,7 @@ import {
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Header1, Header3 } from '@op/ui/Header';
 import { Link } from '@op/ui/Link';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import type { ReactNode } from 'react';
 import {
@@ -49,6 +50,14 @@ export type ProposalPreviewProps = {
   submissionMetaSuffix?: ReactNode;
   /** Rendered between the header section and the proposal body. */
   headerBanner?: ReactNode;
+  /**
+   * Drives the body region when the collaboration document can't be rendered
+   * yet. `'pending'` shows a loading state (still fetching/propagating),
+   * `'error'` shows the "content not found" fallback, `'ready'` (default)
+   * renders whatever content is present. Defaults to `'ready'` so callers that
+   * don't track document loading (e.g. the review pane) are unaffected.
+   */
+  documentState?: 'ready' | 'pending' | 'error';
 };
 
 export function ProposalPreview({
@@ -57,6 +66,7 @@ export function ProposalPreview({
   translation,
   submissionMetaSuffix,
   headerBanner,
+  documentState = 'ready',
 }: ProposalPreviewProps) {
   const t = useTranslations();
 
@@ -251,7 +261,13 @@ export function ProposalPreview({
       {headerBanner}
 
       {/* Proposal Content */}
-      {legacyHtml ? (
+      {documentState === 'pending' ? (
+        <div className="flex justify-center py-8">
+          <LoadingSpinner />
+        </div>
+      ) : documentState === 'error' ? (
+        <DocumentNotAvailable className="py-4" />
+      ) : legacyHtml ? (
         <ProposalHtmlContent html={legacyHtml} />
       ) : htmlContent && proposalTemplate ? (
         <ProposalContentRenderer
@@ -260,9 +276,7 @@ export function ProposalPreview({
           location={proposal.proposalData?.location}
           translatedMeta={translatedMeta}
         />
-      ) : (
-        <DocumentNotAvailable />
-      )}
+      ) : null}
 
       {/* Attachments Section */}
       {proposal.attachments && proposal.attachments.length > 0 && (
