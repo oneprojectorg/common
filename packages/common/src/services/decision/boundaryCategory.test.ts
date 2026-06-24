@@ -96,6 +96,18 @@ describe('fillCategoryFromBoundary', () => {
     expect(result.category).toEqual(['Parks', 'District 9']);
   });
 
+  it('strips a stale district label from a multi-select when the pin falls outside every boundary', async () => {
+    mockResolveBoundary.mockResolvedValue(null);
+
+    const result = await fillCategoryFromBoundary(
+      template('multi'),
+      { ...located, category: ['Parks', 'District 7'] },
+      scope,
+    );
+
+    expect(result.category).toEqual(['Parks']);
+  });
+
   it('is a no-op (no boundary lookup) when the template collects no location', async () => {
     const data = { ...located };
 
@@ -152,13 +164,22 @@ describe('withBoundaryCategoryLabel', () => {
     ).toEqual(['District 7']);
   });
 
-  it('returns the labels unchanged when no boundary matches', async () => {
+  it('returns the labels unchanged when the profile has no boundaries', async () => {
+    resetBoundaryMocks();
     mockResolveBoundary.mockResolvedValue(null);
     const labels = ['Parks'];
 
     expect(await withBoundaryCategoryLabel(labels, located, scope)).toBe(
       labels,
     );
+  });
+
+  it('strips a stale district label even when no new district resolves', async () => {
+    mockResolveBoundary.mockResolvedValue(null);
+
+    expect(
+      await withBoundaryCategoryLabel(['Parks', 'District 7'], located, scope),
+    ).toEqual(['Parks']);
   });
 
   it('strips a prior district label when the pin moved to a new district', async () => {

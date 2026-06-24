@@ -69,6 +69,11 @@ export async function hasDecisionBoundaries({
  * helpers to strip any previously-applied district label from a proposal's
  * category set before tagging the new one, so a pin moved across districts
  * doesn't leave both districts tagged.
+ *
+ * Reads from `db` directly — does NOT accept a `tx`. Boundary rows are not
+ * mutated by proposal writes, so a tx-less read from inside a proposal-write
+ * transaction is safe and intentional (matches `resolveBoundary` /
+ * `hasDecisionBoundaries` in this file).
  */
 export async function listBoundaryLabels({
   profileId,

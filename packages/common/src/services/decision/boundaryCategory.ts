@@ -50,28 +50,32 @@ export async function resolveBoundaryCategoryLabel(
  * Replaces any prior district category label with the location's new one. Strips
  * every label in the profile's boundary set before appending the resolved
  * district, so a pin moved into a different district doesn't leave the previous
- * district tagged alongside the new one. Returns the list unchanged when no
- * district resolves in the given profile's boundary set.
+ * district tagged alongside the new one. The strip also fires when the pin is
+ * cleared or falls outside every boundary, so a stale district label never
+ * outlives the location it was derived from. No-op (returns the input
+ * reference) when the profile has no boundaries — nothing to strip and nothing
+ * to add. Queries run in parallel so the common with-district write path adds
+ * no serial latency over the previous single-query implementation.
  */
 export async function withBoundaryCategoryLabel(
   labels: string[],
   proposalData: unknown,
   { profileId }: { profileId: string },
 ): Promise<string[]> {
-  const districtLabel = await resolveBoundaryCategoryLabel(proposalData, {
-    profileId,
-  });
+  const [districtLabel, boundaryLabels] = await Promise.all([
+    resolveBoundaryCategoryLabel(proposalData, { profileId }),
+    listBoundaryLabels({ profileId }),
+  ]);
 
-  if (!districtLabel) {
+  if (boundaryLabels.size === 0) {
     return labels;
   }
 
-  const boundaryLabels = await listBoundaryLabels({ profileId });
   const withoutStaleDistricts = labels.filter(
     (label) => !boundaryLabels.has(label),
   );
 
-  if (withoutStaleDistricts.includes(districtLabel)) {
+  if (!districtLabel || withoutStaleDistricts.includes(districtLabel)) {
     return withoutStaleDistricts;
   }
 
@@ -96,24 +100,36 @@ export async function fillCategoryFromBoundary(
     return data;
   }
 
-  const districtLabel = await resolveBoundaryCategoryLabel(data, { profileId });
-
-  if (!districtLabel) {
-    return data;
-  }
-
   if (schemaAllowsMultipleSelection(categorySchema)) {
     const existing = normalizeProposalCategories(data.category);
-    const boundaryLabels = await listBoundaryLabels({ profileId });
+    const [districtLabel, boundaryLabels] = await Promise.all([
+      resolveBoundaryCategoryLabel(data, { profileId }),
+      listBoundaryLabels({ profileId }),
+    ]);
+
+    if (boundaryLabels.size === 0) {
+      return data;
+    }
+
     const withoutStaleDistricts = existing.filter(
       (label) => !boundaryLabels.has(label),
     );
 
-    if (withoutStaleDistricts.includes(districtLabel)) {
+    if (!districtLabel || withoutStaleDistricts.includes(districtLabel)) {
       return { ...data, category: withoutStaleDistricts };
     }
 
     return { ...data, category: [...withoutStaleDistricts, districtLabel] };
+  }
+
+  // Single-select: only one value can ever hold; replace when a new district
+  // resolves, leave untouched otherwise. Stale-label cleanup for the
+  // pin-cleared single-select case isn't covered by this fix — only multi-
+  // select could exhibit the "both districts tagged" symptom this PR targets.
+  const districtLabel = await resolveBoundaryCategoryLabel(data, { profileId });
+
+  if (!districtLabel) {
+    return data;
   }
 
   return { ...data, category: districtLabel };
