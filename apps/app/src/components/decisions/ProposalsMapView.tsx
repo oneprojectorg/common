@@ -70,16 +70,24 @@ export function ProposalsMapView({
     [proposals],
   );
 
+  // O(1) lookup by proposal id — used by both the marker-click handler and
+  // the per-pin hovercard renderer, both of which would otherwise scan
+  // `proposals` on every call.
+  const proposalsById = useMemo(
+    () => new Map(proposals.map((proposal) => [proposal.id, proposal])),
+    [proposals],
+  );
+
   // Clicking a marker opens the proposal on every breakpoint; on desktop the
   // shared active state is still driven by hover (see `onMarkerHover`).
   const handleMarkerClick = useCallback(
     (id: string) => {
-      const proposal = proposals.find((p) => p.id === id);
+      const proposal = proposalsById.get(id);
       if (proposal) {
         router.push(hrefFor(proposal));
       }
     },
-    [proposals, router, hrefFor],
+    [proposalsById, router, hrefFor],
   );
 
   // Desktop-only: render the hovercard above the pin on hover, with a small
@@ -87,7 +95,7 @@ export function ProposalsMapView({
   // as plain tap-to-open — there's no hover analogue.
   const renderHovercard = useCallback(
     (id: string) => {
-      const proposal = proposals.find((p) => p.id === id);
+      const proposal = proposalsById.get(id);
       if (!proposal) {
         return null;
       }
@@ -95,7 +103,7 @@ export function ProposalsMapView({
         <ProposalMapHovercard proposal={proposal} href={hrefFor(proposal)} />
       );
     },
-    [proposals, hrefFor],
+    [proposalsById, hrefFor],
   );
 
   const map = (

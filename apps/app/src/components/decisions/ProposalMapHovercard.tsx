@@ -20,9 +20,9 @@ interface ProposalMapHovercardProps {
 }
 
 /**
- * The card that pops above a map pin on hover, showing the proposal's title,
- * author, and council district (the boundary-tagged category). The whole card
- * is one link to the proposal detail.
+ * The card that pops above a map pin on hover, showing the proposal's title
+ * and — on the row below — the author and council district (the boundary-
+ * tagged category) inline. The whole card is one link to the proposal.
  */
 export function ProposalMapHovercard({
   proposal,
@@ -35,42 +35,56 @@ export function ProposalMapHovercard({
   const titleText = title || proposal.profile.name || t('Untitled Proposal');
   // Council districts are stored on the proposal as a category — the
   // boundary-import job auto-tags each proposal with the boundary it falls
-  // inside (see `decision_boundaries.taxonomyTermId`). A proposal may have
-  // any number of categories; if none apply we just omit the row.
+  // inside (see `decision_boundaries.taxonomyTermId`).
   const districts = normalizeProposalCategories(category);
 
   return (
     <Link
       href={href}
-      // Compact card sized to the design — wide enough for a title line but
-      // capped so it doesn't blanket nearby pins. `block` strips link
-      // underline styling.
-      className="bg-neutral-white block w-64 max-w-[16rem] cursor-pointer rounded-md border border-neutral-gray2 p-3 text-neutral-black no-underline shadow-md hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-tealBlack"
+      // White card with a soft shadow and rounded corners — matches the
+      // Figma spec. `block` strips link underline styling.
+      className="block w-80 max-w-[20rem] cursor-pointer rounded-lg border border-neutral-gray1 bg-white p-4 text-neutral-black no-underline shadow-md hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-tealBlack"
     >
-      <div className="space-y-2">
-        <p className="line-clamp-2 font-serif text-title-sm text-neutral-black">
-          {titleText}
-        </p>
-        <HovercardAuthor author={proposal.submittedBy} />
-        <HovercardDistricts districts={districts} />
-      </div>
+      <p className="line-clamp-2 font-serif text-title-md text-neutral-black">
+        {titleText}
+      </p>
+      <HovercardMeta author={proposal.submittedBy} districts={districts} />
     </Link>
   );
 }
 
 type HovercardAuthorData = ProposalProfile & { isAnonymous?: boolean };
 
+function HovercardMeta({
+  author,
+  districts,
+}: {
+  author?: HovercardAuthorData;
+  districts: string[];
+}) {
+  // Avatar + name + district chip all live on the same row per the design.
+  // Each child returns null when it has nothing to show; `empty:hidden`
+  // collapses the row when both are absent so the title doesn't get a
+  // ghost margin.
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 empty:mt-0 empty:hidden">
+      <HovercardAuthor author={author} />
+      <HovercardDistricts districts={districts} />
+    </div>
+  );
+}
+
 function HovercardAuthor({ author }: { author?: HovercardAuthorData }) {
   if (!author || author.isAnonymous) {
     return null;
   }
   return (
-    <div className="flex items-center gap-2">
+    <span className="flex min-w-0 items-center gap-2">
       <HovercardAvatar author={author} />
       <span className="truncate text-sm text-neutral-charcoal">
         {author.name}
       </span>
-    </div>
+    </span>
   );
 }
 
@@ -79,7 +93,7 @@ function HovercardAvatar({ author }: { author: HovercardAuthorData }) {
   return (
     <Avatar
       placeholder={author.name || author.slug}
-      className="size-5 min-h-5 min-w-5"
+      className="size-6 min-h-6 min-w-6"
     >
       {avatarUrl ? (
         <Image src={avatarUrl} alt="" fill className="object-cover" />
@@ -101,12 +115,12 @@ function HovercardDistricts({ districts }: { districts: string[] }) {
     return null;
   }
   return (
-    <div className="flex flex-wrap gap-1">
+    <span className="flex min-w-0 flex-wrap items-center gap-1">
       {districts.map((district) => (
         <Chip key={district} className="block max-w-full truncate">
           {district}
         </Chip>
       ))}
-    </div>
+    </span>
   );
 }
