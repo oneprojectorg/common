@@ -1,4 +1,4 @@
-import { cache } from '@op/cache';
+import { cache, invalidate } from '@op/cache';
 import { createHash } from 'node:crypto';
 
 import type { TipTapClient, TipTapFragmentResponse } from './client';
@@ -61,5 +61,39 @@ export async function getCachedDocumentFragments({
     fetch: () =>
       client.getDocumentFragments(docId, fragmentNames, { version: versionId }),
     options: { ttl: COLLAB_CACHE_TTL_MS },
+  });
+}
+
+export interface InvalidateCachedDocumentFragmentsArgs {
+  docId: string;
+  /**
+   * The published version whose entry should be evicted. `undefined` is a
+   * no-op — the DRAFT path never wrote to the cache, so there's nothing to
+   * invalidate.
+   */
+  versionId: number | undefined;
+  fragmentNames: string[];
+}
+
+/**
+ * Evict the cached fragments for a published `(docId, versionId)` tuple.
+ * Used by the version-minting mutations (`submitProposal`, `updateProposal`,
+ * `submitRevisionResponse`) to drop the previous version's entry as soon as
+ * a fresh version supersedes it. Correctness doesn't depend on this — every
+ * new version produces a fresh cache key on the next read regardless — but
+ * it keeps Redis memory from accreting orphaned entries until they TTL out.
+ */
+export async function invalidateCachedDocumentFragments({
+  docId,
+  versionId,
+  fragmentNames,
+}: InvalidateCachedDocumentFragmentsArgs): Promise<void> {
+  if (versionId === undefined) {
+    return;
+  }
+
+  await invalidate({
+    type: 'collabDoc',
+    params: [docId, versionId, hashFragmentNames(fragmentNames)],
   });
 }

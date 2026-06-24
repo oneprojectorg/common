@@ -449,3 +449,13 @@ export async function getCachedDocumentFragments({
     versionId !== undefined ? { version: versionId } : undefined,
   );
 }
+
+/**
+ * Mock no-op: invalidation is purely a memory-hygiene optimization for the
+ * production cache layer, and tests don't have a Redis to clean up.
+ */
+export async function invalidateCachedDocumentFragments(_args: {
+  docId: string;
+  versionId: number | undefined;
+  fragmentNames: string[];
+}): Promise<void> {}

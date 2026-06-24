@@ -1,4 +1,4 @@
-import { getTipTapClient } from '@op/collab';
+import { getTipTapClient, invalidateCachedDocumentFragments } from '@op/collab';
 import { db, eq } from '@op/db/client';
 import {
   ProposalStatus,
@@ -7,6 +7,7 @@ import {
   proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { waitUntil } from '@vercel/functions';
 import { checkPermission, permission } from 'access-zones';
 
 import {
@@ -18,6 +19,7 @@ import {
 import { assertInstanceProfileAccess, getProfileAccessRoles } from '../access';
 import { assertUserByAuthId } from '../assert';
 import { withBoundaryCategoryLabel } from './boundaryCategory';
+import { getProposalFragmentNames } from './getProposalFragmentNames';
 import type {
   CheckpointVersion,
   ProposalDataInput,
@@ -229,6 +231,29 @@ export const updateProposal = async ({
 
     return proposal;
   });
+
+  // When a checkpoint mints a new TipTap version, evict the prior version's
+  // cached fragments. Best-effort and non-blocking.
+  if (collaborationDocVersionId !== null) {
+    const priorData = parseProposalData(existingProposal.proposalData);
+    const priorVersionId = priorData.collaborationDocVersionId;
+    if (priorVersionId !== undefined && priorData.collaborationDocId) {
+      const proposalTemplate = await resolveProposalTemplate(
+        processInstance.instanceData as DecisionInstanceData | null,
+        processInstance.processId,
+      );
+      const fragmentNames = proposalTemplate
+        ? getProposalFragmentNames(proposalTemplate)
+        : ['default'];
+      waitUntil(
+        invalidateCachedDocumentFragments({
+          docId: priorData.collaborationDocId,
+          versionId: priorVersionId,
+          fragmentNames,
+        }),
+      );
+    }
+  }
 
   return updatedProposal;
 };

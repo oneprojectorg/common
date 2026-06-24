@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { getCachedDocumentFragments } from './cache';
+import {
+  getCachedDocumentFragments,
+  invalidateCachedDocumentFragments,
+} from './cache';
 import type { TipTapClient, TipTapFragmentResponse } from './client';
 
 function makeFragments(text: string): TipTapFragmentResponse {
@@ -151,6 +154,159 @@ describe('getCachedDocumentFragments', () => {
     });
 
     expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops the cached entry on invalidate so the next read hits TipTap again', async () => {
+    const { client, spy } = makeClient(async () => makeFragments('cached'));
+    const docId = `invalidate-doc-${crypto.randomUUID()}`;
+
+    await getCachedDocumentFragments({
+      client,
+      docId,
+      versionId: 4,
+      fragmentNames: ['body'],
+    });
+    // Second read should be served from cache — sanity check before invalidate.
+    await getCachedDocumentFragments({
+      client,
+      docId,
+      versionId: 4,
+      fragmentNames: ['body'],
+    });
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    await invalidateCachedDocumentFragments({
+      docId,
+      versionId: 4,
+      fragmentNames: ['body'],
+    });
+
+    await getCachedDocumentFragments({
+      client,
+      docId,
+      versionId: 4,
+      fragmentNames: ['body'],
+    });
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
+
+  it('matches the cached entry regardless of fragment-name order', async () => {
+    const { client, spy } = makeClient(async () => makeFragments('cached'));
+    const docId = `invalidate-order-doc-${crypto.randomUUID()}`;
+
+    await getCachedDocumentFragments({
+      client,
+      docId,
+      versionId: 6,
+      fragmentNames: ['summary', 'body'],
+    });
+
+    // The caller spells fragments in a different order — invalidate must still
+    // hit the same key because the hash is order-independent.
+    await invalidateCachedDocumentFragments({
+      docId,
+      versionId: 6,
+      fragmentNames: ['body', 'summary'],
+    });
+
+    await getCachedDocumentFragments({
+      client,
+      docId,
+      versionId: 6,
+      fragmentNames: ['summary', 'body'],
+    });
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not evict other versions, fragment sets, or docs', async () => {
+    const { client, spy } = makeClient(async (docId, fragments, options) =>
+      makeFragments(
+        `${docId}@${options?.version ?? 'live'}#${fragments.join(',')}`,
+      ),
+    );
+    const docId = `invalidate-scope-doc-${crypto.randomUUID()}`;
+    const otherDocId = `invalidate-other-doc-${crypto.randomUUID()}`;
+
+    // Seed three distinct entries.
+    await getCachedDocumentFragments({
+      client,
+      docId,
+      versionId: 1,
+      fragmentNames: ['body'],
+    });
+    await getCachedDocumentFragments({
+      client,
+      docId,
+      versionId: 2,
+      fragmentNames: ['body'],
+    });
+    await getCachedDocumentFragments({
+      client,
+      docId,
+      versionId: 1,
+      fragmentNames: ['body', 'summary'],
+    });
+    await getCachedDocumentFragments({
+      client,
+      docId: otherDocId,
+      versionId: 1,
+      fragmentNames: ['body'],
+    });
+    expect(spy).toHaveBeenCalledTimes(4);
+
+    // Drop only (docId, 1, [body]).
+    await invalidateCachedDocumentFragments({
+      docId,
+      versionId: 1,
+      fragmentNames: ['body'],
+    });
+
+    // The invalidated key now refetches; everyone else is still warm.
+    await getCachedDocumentFragments({
+      client,
+      docId,
+      versionId: 1,
+      fragmentNames: ['body'],
+    });
+    await getCachedDocumentFragments({
+      client,
+      docId,
+      versionId: 2,
+      fragmentNames: ['body'],
+    });
+    await getCachedDocumentFragments({
+      client,
+      docId,
+      versionId: 1,
+      fragmentNames: ['body', 'summary'],
+    });
+    await getCachedDocumentFragments({
+      client,
+      docId: otherDocId,
+      versionId: 1,
+      fragmentNames: ['body'],
+    });
+    expect(spy).toHaveBeenCalledTimes(5);
+  });
+
+  it('is a no-op when versionId is undefined (no cache entry was written)', async () => {
+    await expect(
+      invalidateCachedDocumentFragments({
+        docId: `noop-${crypto.randomUUID()}`,
+        versionId: undefined,
+        fragmentNames: ['body'],
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('tolerates invalidating an entry that was never cached', async () => {
+    await expect(
+      invalidateCachedDocumentFragments({
+        docId: `unseeded-${crypto.randomUUID()}`,
+        versionId: 99,
+        fragmentNames: ['body'],
+      }),
+    ).resolves.toBeUndefined();
   });
 
   it('does not cache a thrown fetch — the next read re-tries TipTap', async () => {
