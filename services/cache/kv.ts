@@ -2,11 +2,9 @@ import { OPURLConfig } from '@op/core';
 import { logger } from '@op/logging';
 import { waitUntil } from '@vercel/functions';
 import { LRUCache } from 'lru-cache';
-import { createClient } from 'redis';
 
 import { cacheMetrics } from './metrics';
-
-const REDIS_URL = process.env.REDIS_URL;
+import { redisClient as redis } from './redisClient';
 
 // Outer race timeout: how long `cache()` is willing to wait on Redis before
 // falling through to the source. Sized for the 99th-percentile Redis call.
@@ -29,38 +27,6 @@ type RedisGetResult =
   | { status: 'hit'; data: unknown }
   | { status: 'miss' }
   | { status: 'timeout' };
-
-// Create Redis client only if REDIS_URL is provided
-let redis: ReturnType<typeof createClient> | null = null;
-
-if (REDIS_URL) {
-  redis = createClient({
-    url: REDIS_URL,
-    disableOfflineQueue: true,
-    socket: {
-      connectTimeout: 10_000,
-      keepAlive: false, // TCP keepalive
-      reconnectStrategy: (retries) => {
-        if (retries > 3) {
-          return false;
-        }
-
-        const jitter = Math.floor(Math.random() * 100);
-
-        return Math.min(retries * 500, 5_000) + jitter;
-      },
-    },
-  });
-
-  redis.on('error', (err) => {
-    logger.error('Redis Client Error', err);
-  });
-
-  // Connect to Redis
-  if (!redis.isOpen) {
-    redis.connect().catch(console.error);
-  }
-}
 
 const TypeMap = {
   search: 'search',
