@@ -71,15 +71,7 @@ export async function withBoundaryCategoryLabel(
     return labels;
   }
 
-  const withoutStaleDistricts = labels.filter(
-    (label) => !boundaryLabels.has(label),
-  );
-
-  if (!districtLabel || withoutStaleDistricts.includes(districtLabel)) {
-    return withoutStaleDistricts;
-  }
-
-  return [...withoutStaleDistricts, districtLabel];
+  return replaceDistrictLabel(labels, districtLabel, boundaryLabels);
 }
 
 /**
@@ -111,15 +103,10 @@ export async function fillCategoryFromBoundary(
       return data;
     }
 
-    const withoutStaleDistricts = existing.filter(
-      (label) => !boundaryLabels.has(label),
-    );
-
-    if (!districtLabel || withoutStaleDistricts.includes(districtLabel)) {
-      return { ...data, category: withoutStaleDistricts };
-    }
-
-    return { ...data, category: [...withoutStaleDistricts, districtLabel] };
+    return {
+      ...data,
+      category: replaceDistrictLabel(existing, districtLabel, boundaryLabels),
+    };
   }
 
   // Single-select: only one value can ever hold; replace when a new district
@@ -133,4 +120,25 @@ export async function fillCategoryFromBoundary(
   }
 
   return { ...data, category: districtLabel };
+}
+
+/**
+ * Strips every label in the profile's boundary set from `labels` and appends
+ * the resolved `districtLabel` (if any, and not already present). The shared
+ * tail of `withBoundaryCategoryLabel` and the multi-select branch of
+ * `fillCategoryFromBoundary`. Assumes the caller has already short-circuited
+ * the empty-boundary-set case.
+ */
+function replaceDistrictLabel(
+  labels: string[],
+  districtLabel: string | null,
+  boundaryLabels: Set<string>,
+): string[] {
+  const stripped = labels.filter((label) => !boundaryLabels.has(label));
+
+  if (!districtLabel || stripped.includes(districtLabel)) {
+    return stripped;
+  }
+
+  return [...stripped, districtLabel];
 }
