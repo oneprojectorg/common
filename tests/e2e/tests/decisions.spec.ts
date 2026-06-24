@@ -64,4 +64,59 @@ test.describe('Decisions', () => {
       authenticatedPage.getByRole('button', { name: 'Submit Proposal' }),
     ).toBeVisible({ timeout: 5000 });
   });
+
+  test('vanity URL `/[locale]/<slug>` renders the decision page', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const template = await getSeededTemplate();
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: template.processSchema,
+    });
+
+    // `/en/<slug>` is rewritten to `/en/decisions/<slug>` by next.config.mjs —
+    // the address bar keeps the vanity path while the rewritten route renders.
+    await authenticatedPage.goto(`/en/${instance.slug}`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    await expect(
+      authenticatedPage.getByRole('heading', { name: instance.name }),
+    ).toBeVisible({ timeout: 15000 });
+    await expect(authenticatedPage).toHaveURL(
+      new RegExp(`/en/${instance.slug}(?:[/?#]|$)`),
+    );
+  });
+
+  test('bare `/<slug>` redirects through the locale proxy and renders', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    const template = await getSeededTemplate();
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: template.processSchema,
+    });
+
+    // No locale in the URL — proxy.ts (next-intl) prefixes the detected
+    // locale, then the next.config rewrite swaps in the decisions route.
+    await authenticatedPage.goto(`/${instance.slug}`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    await expect(authenticatedPage).toHaveURL(
+      new RegExp(`/[a-z]{2}/${instance.slug}(?:[/?#]|$)`),
+      { timeout: 15000 },
+    );
+    await expect(
+      authenticatedPage.getByRole('heading', { name: instance.name }),
+    ).toBeVisible({ timeout: 15000 });
+  });
 });

@@ -135,6 +135,16 @@ const config = {
 
     return [
       ...previewApiRewrites,
+      // Vanity URL for decision processes: `/en/columbus` resolves to the same
+      // page as `/en/decisions/columbus`. The negative lookahead excludes
+      // top-level route names so `/en/admin`, `/en/decisions`, etc. continue to
+      // hit their real pages. Locale alternation mirrors SUPPORTED_LOCALES in
+      // @op/common/locales — keep them in sync.
+      {
+        source:
+          '/:locale(en|es|fr|pt|bn|so|ar)/:slug((?!admin|decisions|org|profile|search|start|api|info|login)[^/]+)',
+        destination: '/:locale/decisions/:slug',
+      },
       {
         source: '/assets/:path*',
         destination: `${process.env.S3_ASSET_ROOT}/:path*`,
