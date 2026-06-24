@@ -16,6 +16,12 @@ const { commentPosted } = Events;
 export const sendPostCommentNotification = inngest.createFunction(
   {
     id: 'sendPostCommentNotification',
+    // Cap per parent post so a hot thread can't fan out faster than the
+    // shared DB pool can absorb.
+    concurrency: {
+      limit: 5,
+      key: 'event.data.parentPostId',
+    },
     debounce: {
       key,
       period: '1m',
