@@ -16,6 +16,7 @@ import {
   getSlashMenuController,
   type SlashMenuSnapshot,
 } from '@/components/decisions/SlashCommands';
+import { useTranslations } from '@/lib/i18n';
 
 const EMPTY_SNAPSHOT: SlashMenuSnapshot = {
   open: false,
@@ -47,6 +48,7 @@ const MENU_MAX_HEIGHT = 360; // max-h-90
  * Mount next to the editor wherever SlashCommands is enabled; no-ops otherwise.
  */
 export function SlashCommandMenu({ editor }: { editor: Editor | null }) {
+  const t = useTranslations();
   const controller = getSlashMenuController(editor);
 
   const snapshot = useSyncExternalStore(
@@ -176,7 +178,7 @@ export function SlashCommandMenu({ editor }: { editor: Editor | null }) {
           </Item>
         ))
       ) : (
-        <div className="px-2 py-1 text-neutral-gray4">No results</div>
+        <div className="px-2 py-1 text-neutral-gray4">{t('No results')}</div>
       )}
     </div>,
     document.body,
