@@ -7,6 +7,7 @@ import {
   processInstances,
   proposals,
 } from '@op/db/schema';
+import { Events, outboxSend } from '@op/events';
 import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
@@ -299,6 +300,17 @@ export const submitVote = async ({
       );
 
       await tx.insert(decisionsVoteProposals).values(voteProposalEntries);
+
+      // Durable hand-off to the notification workflow: written in the same
+      // transaction as the submission so the event can't be lost even if
+      // Inngest is brown-out at request time. The drainer cron publishes it.
+      await outboxSend(tx, {
+        name: Events.voteSubmitted.name,
+        data: {
+          voteSubmissionId: voteSubmission.id,
+          processInstanceId: voteSubmission.processInstanceId,
+        },
+      });
 
       return {
         voteSubmission,

@@ -1,4 +1,4 @@
-import { Events, event } from '@op/events';
+import { Events, safeInngestSend } from '@op/events';
 
 import {
   type ApplyModerationVerdictResult,
@@ -38,10 +38,9 @@ export const recordModerationVerdict = (
     createFlag: createAutomatedFlag,
     markFlagged: markFlagFlagged,
     markDismissed: markFlagDismissed,
-    emitFlagged: async ({ itemType, itemId, moderationFlagId }) => {
-      await event.send({
+    emitFlagged: ({ itemType, itemId, moderationFlagId }) =>
+      safeInngestSend({
         name: Events.contentFlagged.name,
         data: { itemType, itemId, moderationFlagId },
-      });
-    },
+      }),
   });

@@ -1,7 +1,7 @@
 import { invalidate } from '@op/cache';
 import { Channels, submitProposal } from '@op/common';
 import { proposalSchema } from '@op/common/client';
-import { Events, inngest } from '@op/events';
+import { Events, safeInngestSend } from '@op/events';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -43,24 +43,15 @@ export const submitProposalRouter = router({
         }),
       );
 
-      // Send proposal submitted event for notification workflow
+      // Send proposal submitted event for notification workflow. Best-effort:
+      // notifications are nice-to-have, so a publish failure is logged but
+      // never blocks the response. The async moderation event
+      // (`content/submitted`) is durable — submitProposal writes it through
+      // the transactional outbox.
       waitUntil(
-        inngest.send({
+        safeInngestSend({
           name: Events.proposalSubmitted.name,
           data: { proposalId: proposal.id },
-        }),
-      );
-
-      // Submit the proposal for async moderation review. The workflow
-      // resolves the text (TipTap fragments + proposalData) and attachments
-      // itself — proposalData alone is empty for collab-doc proposals.
-      waitUntil(
-        inngest.send({
-          name: Events.contentSubmitted.name,
-          data: {
-            itemType: 'proposal',
-            itemId: proposal.id,
-          },
         }),
       );
 

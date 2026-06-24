@@ -6,6 +6,7 @@ import {
   profiles,
   proposals,
 } from '@op/db/schema';
+import { Events, outboxSend } from '@op/events';
 import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
@@ -225,6 +226,19 @@ export const updateProposal = async ({
 
     if (!proposal) {
       throw new CommonError('Failed to update proposal');
+    }
+
+    // Re-moderate edits to already-public proposals via the durable outbox.
+    // Drafts are first moderated on submit (see submitProposal), so editing
+    // a draft doesn't enqueue review of not-yet-public content.
+    if (proposal.status !== ProposalStatus.DRAFT) {
+      await outboxSend(tx, {
+        name: Events.contentSubmitted.name,
+        data: {
+          itemType: 'proposal',
+          itemId: proposal.id,
+        },
+      });
     }
 
     return proposal;

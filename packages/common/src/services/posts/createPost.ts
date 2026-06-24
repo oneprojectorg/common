@@ -1,7 +1,7 @@
 import { invalidate } from '@op/cache';
 import { db } from '@op/db/client';
 import { EntityType, attachments, posts, postsToProfiles } from '@op/db/schema';
-import { Events, event } from '@op/events';
+import { Events, outboxSend, safeInngestSend } from '@op/events';
 import { CreatePostInput } from '@op/types';
 import { waitUntil } from '@vercel/functions';
 import type { AccessZonePermission } from 'access-zones';
@@ -171,6 +171,17 @@ export const createPost = async (input: CreatePostServiceInput) => {
       await tx.insert(attachments).values(attachmentValues);
     }
 
+    // Durable moderation hand-off: written in the same transaction as the
+    // post insert so an Inngest brownout can never leave a post permanently
+    // un-moderated. The drainer cron publishes it.
+    await outboxSend(tx, {
+      name: Events.contentSubmitted.name,
+      data: {
+        itemType: 'post',
+        itemId: newPost.id,
+      },
+    });
+
     return newPost;
   });
 
@@ -183,61 +194,47 @@ export const createPost = async (input: CreatePostServiceInput) => {
     postKind = 'decisionUpdate';
   }
 
-  waitUntil(
-    (async () => {
-      // Async moderation pass (the sync gate already ran on write). Covers
-      // posts and comments alike. Isolated from the notification sends below
-      // so a failure on one side never suppresses the other.
-      try {
-        await event.send({
-          name: Events.contentSubmitted.name,
+  // Notifications: best-effort. safeInngestSend logs publish failures
+  // without blocking the response. Async moderation goes through the
+  // transactional outbox above — it doesn't need a live send here.
+  switch (postKind) {
+    case 'comment':
+      waitUntil(
+        safeInngestSend({
+          name: Events.commentPosted.name,
           data: {
-            itemType: 'post',
-            itemId: newPost.id,
+            postId: newPost.id,
+            parentPostId: parentPostId!,
+            authorProfileId: profileId,
           },
-        });
-      } catch (error) {
-        console.error('Failed to submit post for moderation review:', error);
-      }
-
-      try {
-        switch (postKind) {
-          case 'comment':
-            await event.send({
-              name: Events.commentPosted.name,
-              data: {
-                postId: newPost.id,
-                parentPostId: parentPostId!,
-                authorProfileId: profileId,
-              },
-            });
-            break;
-          case 'proposalComment':
-            await event.send({
-              name: Events.proposalCommentPosted.name,
-              data: {
-                postId: newPost.id,
-                proposalId: proposalId!,
-                authorProfileId: profileId,
-              },
-            });
-            break;
-          case 'decisionUpdate':
-            await event.send({
-              name: Events.decisionUpdatePosted.name,
-              data: {
-                postId: newPost.id,
-                targetProfileId: targetProfileId!,
-                authorProfileId: profileId,
-              },
-            });
-            break;
-        }
-      } catch (error) {
-        console.error('Failed to enqueue notification event:', error);
-      }
-    })(),
-  );
+        }),
+      );
+      break;
+    case 'proposalComment':
+      waitUntil(
+        safeInngestSend({
+          name: Events.proposalCommentPosted.name,
+          data: {
+            postId: newPost.id,
+            proposalId: proposalId!,
+            authorProfileId: profileId,
+          },
+        }),
+      );
+      break;
+    case 'decisionUpdate':
+      waitUntil(
+        safeInngestSend({
+          name: Events.decisionUpdatePosted.name,
+          data: {
+            postId: newPost.id,
+            targetProfileId: targetProfileId!,
+            authorProfileId: profileId,
+          },
+        }),
+      );
+      break;
+  }
 
   if (targetProfileId) {
     await invalidate({

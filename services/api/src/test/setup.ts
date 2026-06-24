@@ -76,6 +76,14 @@ vi.mock('@op/events', async () => {
     event: {
       send: mockSend,
     },
+    // Route safeInngestSend through the same mockSend so assertions on
+    // `event.send` keep working when production code is migrated to the
+    // safe wrapper.
+    safeInngestSend: (event: unknown) =>
+      mockSend(event).then(
+        () => undefined,
+        () => undefined,
+      ),
   };
 });
 

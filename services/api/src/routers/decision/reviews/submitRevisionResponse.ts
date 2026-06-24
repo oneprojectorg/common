@@ -1,6 +1,6 @@
 import { Channels, submitRevisionResponse } from '@op/common';
 import { proposalReviewRequestSchema } from '@op/common/client';
-import { Events, inngest } from '@op/events';
+import { Events, safeInngestSend } from '@op/events';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -27,9 +27,10 @@ export const submitRevisionResponseRouter = router({
         Channels.reviewAssignments(result.processInstanceId),
       ]);
 
-      // Send revision resubmitted event for notification workflow
+      // Send revision resubmitted event for notification workflow.
+      // Best-effort — publish failures are logged and swallowed.
       waitUntil(
-        inngest.send({
+        safeInngestSend({
           name: Events.reviewRevisionResubmitted.name,
           data: {
             assignmentId: result.assignmentId,

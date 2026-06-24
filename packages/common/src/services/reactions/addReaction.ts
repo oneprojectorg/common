@@ -1,6 +1,6 @@
 import { and, db, eq } from '@op/db/client';
 import { postReactions } from '@op/db/schema';
-import { Events, event } from '@op/events';
+import { Events, safeInngestSend } from '@op/events';
 import { waitUntil } from '@vercel/functions';
 
 export interface AddReactionOptions {
@@ -32,23 +32,16 @@ export const addReaction = async (options: AddReactionOptions) => {
   });
 
   // Defer to the platform's post-response work queue so notification
-  // dispatch can't delay or fail the user-facing mutation. The reaction
-  // is already persisted above.
+  // dispatch can't delay or fail the user-facing mutation. The reaction is
+  // already persisted above; safeInngestSend logs publish failures.
   waitUntil(
-    event
-      .send({
-        name: Events.postReactionAdded.name,
-        data: {
-          sourceProfileId: profileId,
-          postId,
-          reactionType,
-        },
-      })
-      .catch((error) => {
-        console.error(
-          '[addReaction] Failed to emit postReactionAdded event',
-          error,
-        );
-      }),
+    safeInngestSend({
+      name: Events.postReactionAdded.name,
+      data: {
+        sourceProfileId: profileId,
+        postId,
+        reactionType,
+      },
+    }),
   );
 };

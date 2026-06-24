@@ -1,6 +1,7 @@
 import { getTipTapClient } from '@op/collab';
 import { db, eq } from '@op/db/client';
 import { type ProcessInstance, ProposalStatus, proposals } from '@op/db/schema';
+import { Events, outboxSend } from '@op/events';
 import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
@@ -231,6 +232,17 @@ export const submitProposal = async ({
     if (!proposal) {
       throw new CommonError('Failed to submit proposal');
     }
+
+    // Persist the moderation event in the same transaction as the status
+    // flip. The drainer cron publishes it to Inngest, so an Inngest brownout
+    // never strands a submitted proposal in an un-moderated state.
+    await outboxSend(tx, {
+      name: Events.contentSubmitted.name,
+      data: {
+        itemType: 'proposal',
+        itemId: proposal.id,
+      },
+    });
 
     return proposal;
   });
