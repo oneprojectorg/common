@@ -678,7 +678,7 @@ test.describe('Proposal View', () => {
     ).toBeVisible({ timeout: 30_000 });
   });
 
-  test('shows reactions read-only to anonymous and logged-out viewers', async ({
+  test('hides write actions (reactions, like, follow) from anonymous and logged-out viewers', async ({
     authenticatedPage,
     org,
     browser,
@@ -728,10 +728,10 @@ test.describe('Proposal View', () => {
     const likeBadge = /👍\s*1/;
 
     // Every viewer sees the proposal, the comment, and the seeded like; only a
-    // signed-in member gets the add-reaction control.
-    const expectReactionView = async (
+    // signed-in member gets the write controls (add-reaction, Like, Follow).
+    const expectProposalView = async (
       page: Page,
-      { canReact }: { canReact: boolean },
+      { canInteract }: { canInteract: boolean },
     ) => {
       await page.goto(proposalUrl);
       await expect(
@@ -739,9 +739,15 @@ test.describe('Proposal View', () => {
       ).toBeVisible({ timeout: 30_000 });
       await expect(page.getByText(commentText)).toBeVisible();
       await expect(page.getByText(likeBadge)).toBeVisible();
-      await expect(
+
+      const writeControls = [
         page.getByRole('button', { name: 'Add reaction' }),
-      ).toHaveCount(canReact ? 1 : 0);
+        page.getByRole('button', { name: 'Like', exact: true }),
+        page.getByRole('button', { name: 'Follow', exact: true }),
+      ];
+      for (const control of writeControls) {
+        await expect(control).toHaveCount(canInteract ? 1 : 0);
+      }
     };
 
     // A clean context so the worker's auth doesn't leak in via newContext().
@@ -756,16 +762,16 @@ test.describe('Proposal View', () => {
       }
     };
 
-    // 1) Signed-in member: read-write (add-reaction control present).
-    await expectReactionView(authenticatedPage, { canReact: true });
+    // 1) Signed-in member: write controls present.
+    await expectProposalView(authenticatedPage, { canInteract: true });
 
     // 2) Anonymous account and 3) logged-out visitor: read-only.
     await withCleanPage(async (page) => {
       await authenticateAnonymously(page);
-      await expectReactionView(page, { canReact: false });
+      await expectProposalView(page, { canInteract: false });
     });
     await withCleanPage((page) =>
-      expectReactionView(page, { canReact: false }),
+      expectProposalView(page, { canInteract: false }),
     );
   });
 });
