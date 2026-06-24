@@ -171,7 +171,7 @@ export function SlashCommandMenu({ editor }: { editor: Editor | null }) {
                 </ItemMedia>
                 <ItemContent className="gap-0">
                   <ItemTitle className="text-base font-medium">
-                    {item.title}
+                    {t(item.title)}
                   </ItemTitle>
                 </ItemContent>
               </Item>
