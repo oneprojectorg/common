@@ -1,4 +1,8 @@
-import { type TipTapFragmentResponse, getTipTapClient } from '@op/collab';
+import {
+  type TipTapFragmentResponse,
+  getCachedDocumentFragments,
+  getTipTapClient,
+} from '@op/collab';
 import pMap from 'p-map';
 
 import { getProposalFragmentNames } from './getProposalFragmentNames';
@@ -100,13 +104,12 @@ export async function getProposalDocumentsContent(
           : ['default'];
 
         try {
-          const fragments = await client.getDocumentFragments(
-            collaborationDocId,
+          const fragments = await getCachedDocumentFragments({
+            client,
+            docId: collaborationDocId,
+            versionId: collaborationDocVersionId,
             fragmentNames,
-            collaborationDocVersionId != null
-              ? { version: collaborationDocVersionId }
-              : undefined,
-          );
+          });
 
           return { id, fragments, failed: false as const };
         } catch (error) {

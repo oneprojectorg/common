@@ -1,4 +1,4 @@
-import { getTipTapClient } from '@op/collab';
+import { getTipTapClient, invalidateCachedDocumentFragments } from '@op/collab';
 import { db } from '@op/db/client';
 import {
   ProposalReviewAssignmentStatus,
@@ -10,6 +10,7 @@ import {
   proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { waitUntil } from '@vercel/functions';
 import { and, eq, sql } from 'drizzle-orm';
 
 import {
@@ -19,7 +20,10 @@ import {
   ValidationError,
 } from '../../utils';
 import { assertUserByAuthId } from '../assert';
+import { getProposalFragmentNames } from './getProposalFragmentNames';
 import { parseProposalData } from './proposalDataSchema';
+import { resolveProposalTemplate } from './resolveProposalTemplate';
+import type { DecisionInstanceData } from './schemas/instanceData';
 
 /** Resubmits a proposal after the author addresses reviewer feedback. */
 export async function submitRevisionResponse({
@@ -37,7 +41,9 @@ export async function submitRevisionResponse({
       with: {
         assignment: {
           with: {
-            proposal: true,
+            proposal: {
+              with: { processInstance: true },
+            },
           },
         },
       },
@@ -168,6 +174,29 @@ export async function submitRevisionResponse({
 
     return resubmittedRequest;
   });
+
+  // Evict the prior version's cached fragments now that a new version
+  // supersedes them. Best-effort and non-blocking — the version-keyed cache
+  // would also rotate naturally on the next read, but active eviction keeps
+  // Redis memory from accreting orphaned entries.
+  const priorVersionId = proposalData.collaborationDocVersionId;
+  if (priorVersionId !== undefined) {
+    const instance = proposal.processInstance;
+    const proposalTemplate = await resolveProposalTemplate(
+      instance.instanceData as DecisionInstanceData | null,
+      instance.processId,
+    );
+    const fragmentNames = proposalTemplate
+      ? getProposalFragmentNames(proposalTemplate)
+      : ['default'];
+    waitUntil(
+      invalidateCachedDocumentFragments({
+        docId: proposalData.collaborationDocId,
+        versionId: priorVersionId,
+        fragmentNames,
+      }),
+    );
+  }
 
   return {
     ...updatedRequest,

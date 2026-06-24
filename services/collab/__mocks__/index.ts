@@ -427,3 +427,35 @@ export function createTipTapClient(_config?: unknown) {
 export function getTipTapClient() {
   return createTipTapClient();
 }
+
+/**
+ * Mock pass-through: routes straight to the seeded `getDocumentFragments` so
+ * tests assert against fixture data without touching the Redis cache layer.
+ */
+export async function getCachedDocumentFragments({
+  client,
+  docId,
+  versionId,
+  fragmentNames,
+}: {
+  client: ReturnType<typeof createTipTapClient>;
+  docId: string;
+  versionId: number | undefined;
+  fragmentNames: string[];
+}): Promise<TipTapFragmentResponse> {
+  return client.getDocumentFragments(
+    docId,
+    fragmentNames,
+    versionId !== undefined ? { version: versionId } : undefined,
+  );
+}
+
+/**
+ * Mock no-op: invalidation is purely a memory-hygiene optimization for the
+ * production cache layer, and tests don't have a Redis to clean up.
+ */
+export async function invalidateCachedDocumentFragments(_args: {
+  docId: string;
+  versionId: number | undefined;
+  fragmentNames: string[];
+}): Promise<void> {}

@@ -76,6 +76,7 @@ const TypeMap = {
   profile: 'profile',
   decision: 'decision',
   platform: 'platform',
+  collabDoc: 'collabDoc',
 };
 
 /** Allowed types for cache params - will be stringified for key generation */
