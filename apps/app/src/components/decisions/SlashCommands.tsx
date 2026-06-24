@@ -9,7 +9,6 @@ import {
   LuHeading1,
   LuHeading2,
   LuHeading3,
-  LuHeading4,
   LuLink2,
   LuList,
   LuListOrdered,
