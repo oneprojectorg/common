@@ -12,11 +12,12 @@ import type { CSSProperties } from 'react';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 
+import { useTranslations } from '@/lib/i18n';
+
 import {
   getSlashMenuController,
   type SlashMenuSnapshot,
 } from '@/components/decisions/SlashCommands';
-import { useTranslations } from '@/lib/i18n';
 
 const EMPTY_SNAPSHOT: SlashMenuSnapshot = {
   open: false,
