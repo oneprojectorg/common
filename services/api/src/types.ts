@@ -41,7 +41,7 @@ export interface TContextWithClaimsUser {
 
 /** Context after optional user resolution on the local-verify path: `user` is
  * a {@link ClaimsUser}, or `undefined` when the caller has no valid session. */
-export interface TContextWithMaybeUser {
+export interface TContextWithMaybeClaimsUser {
   user?: ClaimsUser;
 }
 

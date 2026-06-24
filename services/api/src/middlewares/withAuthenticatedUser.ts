@@ -3,7 +3,7 @@ import { AccessTierError } from '@op/common';
 import type {
   MiddlewareBuilderBeforeAfter,
   TContextWithClaimsUser,
-  TContextWithMaybeUser,
+  TContextWithMaybeClaimsUser,
 } from '../types';
 
 /**
@@ -13,7 +13,7 @@ import type {
  * resulting `ctx.user` is a {@link ClaimsUser}, not a full Supabase `User`.
  */
 const withAuthenticatedUser: MiddlewareBuilderBeforeAfter<
-  TContextWithMaybeUser,
+  TContextWithMaybeClaimsUser,
   TContextWithClaimsUser
 > = async ({ ctx, next }) => {
   if (!ctx.user) {

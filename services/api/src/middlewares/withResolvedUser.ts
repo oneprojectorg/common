@@ -1,5 +1,8 @@
 import { getCachedAuthClaims } from '../supabase/server';
-import type { MiddlewareBuilderBase, TContextWithMaybeUser } from '../types';
+import type {
+  MiddlewareBuilderBase,
+  TContextWithMaybeClaimsUser,
+} from '../types';
 import { userFromClaims } from '../utils/userFromClaims';
 
 /**
@@ -16,10 +19,9 @@ import { userFromClaims } from '../utils/userFromClaims';
  * still call the authoritative `getCachedAuthUser` and surface a full
  * Supabase `User` because they read those fields.
  */
-const withResolvedUser: MiddlewareBuilderBase<TContextWithMaybeUser> = async ({
-  ctx,
-  next,
-}) => {
+const withResolvedUser: MiddlewareBuilderBase<
+  TContextWithMaybeClaimsUser
+> = async ({ ctx, next }) => {
   const result = await getCachedAuthClaims(ctx);
 
   const user =
