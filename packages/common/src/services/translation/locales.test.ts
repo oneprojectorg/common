@@ -1,7 +1,7 @@
+import { SUPPORTED_LOCALES as MJS_LOCALES } from '@op/common/locales.mjs';
 import { describe, expect, it } from 'vitest';
 
 import { SUPPORTED_LOCALES } from './locales';
-import { SUPPORTED_LOCALES as MJS_LOCALES } from './locales.mjs';
 
 describe('SUPPORTED_LOCALES', () => {
   // Catches drift between the TS source and the `.mjs` build-time mirror that

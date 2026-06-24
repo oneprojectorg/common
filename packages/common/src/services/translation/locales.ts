@@ -2,9 +2,9 @@
  * Platform-supported locales matching the i18n dictionaries.
  *
  * Build-time consumers (e.g. `apps/app/next.config.mjs`) import the parallel
- * `locales.mjs` instead — vite-node fails to evaluate this `.ts` module if
- * it tries to import the `.mjs` sibling itself, so the two definitions are
- * kept in lockstep by `locales.test.ts`.
+ * `@op/common/locales.mjs` instead — kept in lockstep with the TS source by
+ * `locales.test.ts`. The `.mjs` mirror lives at the package root rather than
+ * here so it can't shadow `./locales` lookups inside the package.
  */
 export const SUPPORTED_LOCALES = [
   'en',
