@@ -35,7 +35,6 @@ export async function trackEvent({
     event,
     properties,
   });
-  await posthog.shutdown();
 }
 
 /**
@@ -70,7 +69,6 @@ export async function identifyUser({
     distinctId,
     properties,
   });
-  await posthog.shutdown();
 }
 
 /**
@@ -86,7 +84,6 @@ export async function trackEvents(events: AnalyticsEvent[]): Promise<void> {
       properties,
     });
   });
-  await posthog.shutdown();
 }
 
 /**
