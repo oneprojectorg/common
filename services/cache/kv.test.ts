@@ -62,7 +62,7 @@ process.env.REDIS_URL = 'redis://localhost:6379';
 
 // Imported AFTER the mocks so kv.ts picks up the fake redis client and the
 // mocked logger/metrics modules.
-const { cache, get, set } = await import('./kv');
+const { cache, get, getCacheKey, set } = await import('./kv');
 const { cacheMetrics } = await import('./metrics');
 
 function raceWithSignal<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
@@ -289,5 +289,32 @@ describe('set()', () => {
     await expect(set('k', { a: 1 })).resolves.toBeUndefined();
     expect(recordError).toHaveBeenCalledWith('set');
     expect(recordTimeout).not.toHaveBeenCalled();
+  });
+});
+
+describe('getCacheKey() — non-slug types use the full first param', () => {
+  // Regression for ONE-40 finding #31: before the slug-collapse default was
+  // inverted, `search` and `geonames` keys were collapsed to the last
+  // `/`-separated segment, so `food/coop` and `civic/coop` collided on the
+  // same Redis key and one user's result was served to another.
+  it('does not collide search queries that share a trailing /-segment', () => {
+    expect(getCacheKey('search', undefined, ['a/b'])).not.toBe(
+      getCacheKey('search', undefined, ['c/b']),
+    );
+  });
+
+  it('does not collide geonames queries that share a trailing /-segment', () => {
+    expect(getCacheKey('geonames', undefined, ['a/b'])).not.toBe(
+      getCacheKey('geonames', undefined, ['c/b']),
+    );
+  });
+
+  it('still collapses slug-based types (organization, profile) on rename', () => {
+    expect(getCacheKey('organization', undefined, ['old-slug/coop'])).toBe(
+      getCacheKey('organization', undefined, ['new-slug/coop']),
+    );
+    expect(getCacheKey('profile', undefined, ['old/handle'])).toBe(
+      getCacheKey('profile', undefined, ['new/handle']),
+    );
   });
 });
