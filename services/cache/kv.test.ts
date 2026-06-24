@@ -62,7 +62,7 @@ process.env.REDIS_URL = 'redis://localhost:6379';
 
 // Imported AFTER the mocks so kv.ts picks up the fake redis client and the
 // mocked logger/metrics modules.
-const { cache, get, set } = await import('./kv');
+const { cache, get, invalidate, set } = await import('./kv');
 const { cacheMetrics } = await import('./metrics');
 
 function raceWithSignal<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
@@ -279,15 +279,121 @@ describe('set()', () => {
 
   it('records a command timeout when setEx is too slow, does not throw', async () => {
     fakeRedis.setEx.mockImplementation(() => new Promise<string>(() => {}));
-    await expect(set('k', { a: 1 })).resolves.toBeUndefined();
+    await expect(set('k', { a: 1 }, 60)).resolves.toBeUndefined();
     expect(recordTimeout).toHaveBeenCalledWith({ layer: 'command' });
     expect(recordError).not.toHaveBeenCalled();
   });
 
   it('records an error when setEx rejects with a non-abort error', async () => {
     fakeRedis.setEx.mockRejectedValue(new Error('connection refused'));
-    await expect(set('k', { a: 1 })).resolves.toBeUndefined();
+    await expect(set('k', { a: 1 }, 60)).resolves.toBeUndefined();
     expect(recordError).toHaveBeenCalledWith('set');
     expect(recordTimeout).not.toHaveBeenCalled();
+  });
+});
+
+describe('cache() — per-type Redis TTL', () => {
+  beforeEach(() => {
+    fakeRedis.get.mockReset();
+    fakeRedis.setEx.mockReset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  // Each row pins one type to the per-type default the cache layer must
+  // apply on a write when the caller omits `options.ttl`. These guard
+  // against a regression of the old shared 72h default that the audit
+  // (ONE-40 #19) flagged as a multi-day staleness window on auth-shaped
+  // surfaces (user / orgUser / profileUser / organization).
+  it.each([
+    ['user', 5 * 60],
+    ['orgUser', 5 * 60],
+    ['profileUser', 5 * 60],
+    ['profile', 5 * 60],
+    ['organization', 10 * 60],
+    ['allowList', 5 * 60],
+    ['decision', 5 * 60],
+    ['platform', 5 * 60],
+    ['linkPreview', 60 * 60],
+    ['resourceSignedUrl', 10 * 60],
+    ['geonames', 24 * 60 * 60],
+    ['reverseGeocode', 24 * 60 * 60],
+    ['search', 30],
+  ] as const)(
+    'writes type %s with the per-type default ttl (%i seconds) when the caller omits ttl',
+    async (type, expectedTtl) => {
+      fakeRedis.get.mockResolvedValue(null);
+      fakeRedis.setEx.mockResolvedValue('OK');
+
+      await cache({
+        type,
+        // a fresh param per type keeps the L1 LRU from short-circuiting the write.
+        params: [`ttl-default-${type}`],
+        options: { skipMemCache: true },
+        fetch: async () => ({ ok: true }),
+      });
+
+      expect(fakeRedis.setEx).toHaveBeenCalledWith(
+        expect.any(String),
+        expectedTtl,
+        expect.any(String),
+      );
+    },
+  );
+
+  it('honors an explicit options.ttl (in ms) and ignores the per-type default', async () => {
+    fakeRedis.get.mockResolvedValue(null);
+    fakeRedis.setEx.mockResolvedValue('OK');
+
+    await cache({
+      type: 'user',
+      params: ['ttl-explicit'],
+      options: { skipMemCache: true, ttl: 90 * 1000 },
+      fetch: async () => ({ ok: true }),
+    });
+
+    expect(fakeRedis.setEx).toHaveBeenCalledWith(
+      expect.any(String),
+      90,
+      expect.any(String),
+    );
+  });
+});
+
+describe('invalidate() — per-type Redis TTL on data write', () => {
+  beforeEach(() => {
+    fakeRedis.setEx.mockReset();
+    fakeRedis.del.mockReset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('uses the per-type ttl when invalidating with data', async () => {
+    fakeRedis.setEx.mockResolvedValue('OK');
+
+    await invalidate({
+      type: 'organization',
+      params: ['invalidate-data'],
+      data: { ok: true },
+    });
+
+    expect(fakeRedis.setEx).toHaveBeenCalledWith(
+      expect.any(String),
+      10 * 60,
+      expect.any(String),
+    );
+  });
+
+  it('routes a no-data invalidate to redis.del (ttl irrelevant)', async () => {
+    fakeRedis.del.mockResolvedValue(1);
+
+    await invalidate({ type: 'user', params: ['invalidate-clear'] });
+
+    expect(fakeRedis.del).toHaveBeenCalledTimes(1);
+    expect(fakeRedis.setEx).not.toHaveBeenCalled();
   });
 });

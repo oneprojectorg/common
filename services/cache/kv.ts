@@ -78,6 +78,36 @@ const TypeMap = {
   platform: 'platform',
 };
 
+// Default Redis TTL (in seconds) by type for `cache()` writes when the caller
+// does not pass an explicit `options.ttl`. Each default caps the staleness
+// window of a missed invalidation, so the value should be tuned to the
+// underlying data's volatility — not to a single shared "default" that lies
+// to half the call sites. Override per call via `options.ttl` when a specific
+// surface needs something other than the type-wide default.
+const TTL_BY_TYPE: Record<keyof typeof TypeMap, number> = {
+  // Auth-shaped / membership: must refresh quickly so a missed invalidate
+  // never produces a multi-day staleness window on a permission change.
+  user: 5 * 60,
+  orgUser: 5 * 60,
+  profileUser: 5 * 60,
+  profile: 5 * 60,
+  organization: 10 * 60,
+  allowList: 5 * 60,
+  decision: 5 * 60,
+  platform: 5 * 60,
+  // External lookups: the upstream is the slow / expensive part, so cache
+  // longer than the live-data types above.
+  linkPreview: 60 * 60,
+  // Signed URLs: stay below the underlying URL's own expiry window.
+  resourceSignedUrl: 10 * 60,
+  // Coarse reference data: changes rarely, fine to keep for a day.
+  geonames: 24 * 60 * 60,
+  reverseGeocode: 24 * 60 * 60,
+  // User-typed search: cheap to recompute, must not show stale results
+  // moments after the underlying data changes.
+  search: 30,
+};
+
 /** Allowed types for cache params - will be stringified for key generation */
 type CacheParam = string | number | boolean | undefined | null | string[];
 type CacheParams = CacheParam[];
@@ -239,8 +269,10 @@ export const cache = async <T>({
   if (newData && !shouldSkipCache) {
     memCache.set(cacheKey, { data: newData }, { ttl: memTtl });
     // don't cache if we couldn't find the record (?)
-    // TTL in redis is in seconds
-    waitUntil(set(cacheKey, newData, ttl ? ttl / 1000 : 72 * 60 * 60)); // 72h default cache
+    // TTL in redis is in seconds; fall back to the per-type default so a
+    // forgotten `ttl` never silently inherits an unrelated cache's staleness
+    // window (see TTL_BY_TYPE).
+    waitUntil(set(cacheKey, newData, ttl ? ttl / 1000 : TTL_BY_TYPE[type]));
   } else if (storeNulls && !shouldSkipCache) {
     // This allows us to store negative values in the memcache to improve rejections as well (and avoid DB calls for repeated rejections)
     memCache.set(cacheKey, { data: null }, { ttl: memTtl });
@@ -265,10 +297,13 @@ export const invalidate = async ({
   // TODO: support invalidating entire trees
   if (data) {
     memCache.set(cacheKey, { data });
-    set(cacheKey, data);
+    set(cacheKey, data, TTL_BY_TYPE[type]);
   } else {
     memCache.delete(cacheKey);
-    set(cacheKey, null, 1000);
+    // ttl is unused on the delete path (set() routes null → redis.del) but
+    // the signature still requires a number; pass 0 so the value is
+    // unambiguously meaningless rather than masquerading as a real TTL.
+    set(cacheKey, null, 0);
   }
 };
 
@@ -331,9 +366,12 @@ export const get = async (key: string) => {
   return result.status === 'hit' ? result.data : null;
 };
 
-// const DEFAULT_TTL = 3600 * 24 * 30; // 3600 * 24 = 1 day
-const DEFAULT_TTL = 3600; // short TTL for testing
-export const set = async (key: string, data: unknown, ttl?: number) => {
+// Low-level write. `ttl` is in seconds and is required so each call site has
+// to pick a staleness window explicitly — there is no honest default at this
+// layer (the type-aware default lives in `cache()` / `invalidate()` via
+// TTL_BY_TYPE). Ignored when `data === null` because that path routes to
+// redis.del().
+export const set = async (key: string, data: unknown, ttl: number) => {
   if (!redis) {
     return;
   }
@@ -346,7 +384,7 @@ export const set = async (key: string, data: unknown, ttl?: number) => {
     if (data === null) {
       await scopedRedis.del(key);
     } else {
-      await scopedRedis.setEx(key, ttl || DEFAULT_TTL, serializedData);
+      await scopedRedis.setEx(key, ttl, serializedData);
     }
   } catch (e) {
     if (signal.aborted) {
