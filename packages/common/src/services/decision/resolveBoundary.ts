@@ -61,3 +61,32 @@ export async function hasDecisionBoundaries({
 
   return row != null;
 }
+
+/**
+ * Returns the set of district-category labels in use for the given decision
+ * profile — every boundary whose `name` flows through to a `proposalCategories`
+ * link (i.e. has a non-null `taxonomyTermId`). Used by the location-tagging
+ * helpers to strip any previously-applied district label from a proposal's
+ * category set before tagging the new one, so a pin moved across districts
+ * doesn't leave both districts tagged.
+ *
+ * Reads from `db` directly — does NOT accept a `tx`. Boundary rows are not
+ * mutated by proposal writes, so a tx-less read from inside a proposal-write
+ * transaction is safe and intentional (matches `resolveBoundary` /
+ * `hasDecisionBoundaries` in this file).
+ */
+export async function listBoundaryLabels({
+  profileId,
+}: {
+  profileId: string;
+}): Promise<Set<string>> {
+  const rows = await db.query.decisionBoundaries.findMany({
+    where: {
+      profileId,
+      taxonomyTermId: { isNotNull: true },
+    },
+    columns: { name: true },
+  });
+
+  return new Set(rows.map((row) => row.name));
+}

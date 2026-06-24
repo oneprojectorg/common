@@ -3,7 +3,7 @@ import {
   normalizeProposalCategories,
   schemaAllowsMultipleSelection,
 } from './proposalDataSchema';
-import { resolveBoundary } from './resolveBoundary';
+import { listBoundaryLabels, resolveBoundary } from './resolveBoundary';
 import { templateCollectsLocation } from './templateLocation';
 import type { ProposalTemplateSchema } from './types';
 
@@ -47,25 +47,31 @@ export async function resolveBoundaryCategoryLabel(
 }
 
 /**
- * Appends the location's district category label to a list of category labels
- * (deduplicated), so the boundary-derived category flows through the normal
- * category link. Returns the list unchanged when no district resolves in the
- * given profile's boundary set.
+ * Replaces any prior district category label with the location's new one. Strips
+ * every label in the profile's boundary set before appending the resolved
+ * district, so a pin moved into a different district doesn't leave the previous
+ * district tagged alongside the new one. The strip also fires when the pin is
+ * cleared or falls outside every boundary, so a stale district label never
+ * outlives the location it was derived from. No-op (returns the input
+ * reference) when the profile has no boundaries — nothing to strip and nothing
+ * to add. Queries run in parallel so the common with-district write path adds
+ * no serial latency over the previous single-query implementation.
  */
 export async function withBoundaryCategoryLabel(
   labels: string[],
   proposalData: unknown,
   { profileId }: { profileId: string },
 ): Promise<string[]> {
-  const districtLabel = await resolveBoundaryCategoryLabel(proposalData, {
-    profileId,
-  });
+  const [districtLabel, boundaryLabels] = await Promise.all([
+    resolveBoundaryCategoryLabel(proposalData, { profileId }),
+    listBoundaryLabels({ profileId }),
+  ]);
 
-  if (!districtLabel || labels.includes(districtLabel)) {
+  if (boundaryLabels.size === 0) {
     return labels;
   }
 
-  return [...labels, districtLabel];
+  return replaceDistrictLabel(labels, districtLabel, boundaryLabels);
 }
 
 /**
@@ -86,21 +92,53 @@ export async function fillCategoryFromBoundary(
     return data;
   }
 
+  if (schemaAllowsMultipleSelection(categorySchema)) {
+    const existing = normalizeProposalCategories(data.category);
+    const [districtLabel, boundaryLabels] = await Promise.all([
+      resolveBoundaryCategoryLabel(data, { profileId }),
+      listBoundaryLabels({ profileId }),
+    ]);
+
+    if (boundaryLabels.size === 0) {
+      return data;
+    }
+
+    return {
+      ...data,
+      category: replaceDistrictLabel(existing, districtLabel, boundaryLabels),
+    };
+  }
+
+  // Single-select: only one value can ever hold; replace when a new district
+  // resolves, leave untouched otherwise. Stale-label cleanup for the
+  // pin-cleared single-select case isn't covered by this fix — only multi-
+  // select could exhibit the "both districts tagged" symptom this PR targets.
   const districtLabel = await resolveBoundaryCategoryLabel(data, { profileId });
 
   if (!districtLabel) {
     return data;
   }
 
-  if (schemaAllowsMultipleSelection(categorySchema)) {
-    const existing = normalizeProposalCategories(data.category);
+  return { ...data, category: districtLabel };
+}
 
-    if (existing.includes(districtLabel)) {
-      return data;
-    }
+/**
+ * Strips every label in the profile's boundary set from `labels` and appends
+ * the resolved `districtLabel` (if any, and not already present). The shared
+ * tail of `withBoundaryCategoryLabel` and the multi-select branch of
+ * `fillCategoryFromBoundary`. Assumes the caller has already short-circuited
+ * the empty-boundary-set case.
+ */
+function replaceDistrictLabel(
+  labels: string[],
+  districtLabel: string | null,
+  boundaryLabels: Set<string>,
+): string[] {
+  const stripped = labels.filter((label) => !boundaryLabels.has(label));
 
-    return { ...data, category: [...existing, districtLabel] };
+  if (!districtLabel || stripped.includes(districtLabel)) {
+    return stripped;
   }
 
-  return { ...data, category: districtLabel };
+  return [...stripped, districtLabel];
 }

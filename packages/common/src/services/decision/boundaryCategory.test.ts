@@ -4,17 +4,25 @@ import {
   fillCategoryFromBoundary,
   withBoundaryCategoryLabel,
 } from './boundaryCategory';
-import { resolveBoundary } from './resolveBoundary';
+import { listBoundaryLabels, resolveBoundary } from './resolveBoundary';
 import type { ProposalTemplateSchema } from './types';
 
 vi.mock('./resolveBoundary', () => ({
   resolveBoundary: vi.fn(),
+  listBoundaryLabels: vi.fn(),
 }));
 
 const mockResolveBoundary = vi.mocked(resolveBoundary);
+const mockListBoundaryLabels = vi.mocked(listBoundaryLabels);
 
 const district = { id: 'b1', name: 'District 7', taxonomyTermId: 't7' };
 const located = { location: { lat: 39.96, lng: -82.99 } };
+
+function resetBoundaryMocks(labels: string[] = []): void {
+  mockResolveBoundary.mockReset();
+  mockListBoundaryLabels.mockReset();
+  mockListBoundaryLabels.mockResolvedValue(new Set(labels));
+}
 
 function template(
   category?: 'single' | 'multi',
@@ -35,7 +43,7 @@ function template(
 }
 
 describe('fillCategoryFromBoundary', () => {
-  beforeEach(() => mockResolveBoundary.mockReset());
+  beforeEach(() => resetBoundaryMocks(['District 7']));
 
   const scope = { profileId: 'profile-1' };
 
@@ -67,6 +75,37 @@ describe('fillCategoryFromBoundary', () => {
       scope,
     );
     expect(deduped.category).toEqual(['District 7']);
+  });
+
+  it('strips a prior district label when the pin moved to a new district', async () => {
+    mockResolveBoundary.mockResolvedValue({
+      id: 'b9',
+      name: 'District 9',
+      taxonomyTermId: 't9',
+    });
+    mockListBoundaryLabels.mockResolvedValue(
+      new Set(['District 7', 'District 9']),
+    );
+
+    const result = await fillCategoryFromBoundary(
+      template('multi'),
+      { ...located, category: ['Parks', 'District 7'] },
+      scope,
+    );
+
+    expect(result.category).toEqual(['Parks', 'District 9']);
+  });
+
+  it('strips a stale district label from a multi-select when the pin falls outside every boundary', async () => {
+    mockResolveBoundary.mockResolvedValue(null);
+
+    const result = await fillCategoryFromBoundary(
+      template('multi'),
+      { ...located, category: ['Parks', 'District 7'] },
+      scope,
+    );
+
+    expect(result.category).toEqual(['Parks']);
   });
 
   it('is a no-op (no boundary lookup) when the template collects no location', async () => {
@@ -111,7 +150,7 @@ describe('fillCategoryFromBoundary', () => {
 describe('withBoundaryCategoryLabel', () => {
   const scope = { profileId: 'profile-1' };
 
-  beforeEach(() => mockResolveBoundary.mockReset());
+  beforeEach(() => resetBoundaryMocks(['District 7']));
 
   it('appends the district label, deduplicated', async () => {
     mockResolveBoundary.mockResolvedValue(district);
@@ -125,12 +164,36 @@ describe('withBoundaryCategoryLabel', () => {
     ).toEqual(['District 7']);
   });
 
-  it('returns the labels unchanged when no boundary matches', async () => {
+  it('returns the labels unchanged when the profile has no boundaries', async () => {
+    resetBoundaryMocks();
     mockResolveBoundary.mockResolvedValue(null);
     const labels = ['Parks'];
 
     expect(await withBoundaryCategoryLabel(labels, located, scope)).toBe(
       labels,
     );
+  });
+
+  it('strips a stale district label even when no new district resolves', async () => {
+    mockResolveBoundary.mockResolvedValue(null);
+
+    expect(
+      await withBoundaryCategoryLabel(['Parks', 'District 7'], located, scope),
+    ).toEqual(['Parks']);
+  });
+
+  it('strips a prior district label when the pin moved to a new district', async () => {
+    mockResolveBoundary.mockResolvedValue({
+      id: 'b9',
+      name: 'District 9',
+      taxonomyTermId: 't9',
+    });
+    mockListBoundaryLabels.mockResolvedValue(
+      new Set(['District 7', 'District 9']),
+    );
+
+    expect(
+      await withBoundaryCategoryLabel(['Parks', 'District 7'], located, scope),
+    ).toEqual(['Parks', 'District 9']);
   });
 });
