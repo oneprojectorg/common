@@ -14,16 +14,9 @@ import {
 import { useTranslations } from '@/lib/i18n';
 
 import {
+  EMPTY_SNAPSHOT,
   getSlashMenuController,
-  type SlashMenuSnapshot,
 } from '@/components/decisions/SlashCommands';
-
-const EMPTY_SNAPSHOT: SlashMenuSnapshot = {
-  open: false,
-  items: [],
-  command: null,
-  clientRect: null,
-};
 
 const noopSubscribe = () => () => {};
 const getEmptySnapshot = () => EMPTY_SNAPSHOT;

@@ -47,7 +47,7 @@ export interface SlashMenuController {
   handleKeyDown: (event: KeyboardEvent) => boolean;
 }
 
-const EMPTY_SNAPSHOT: SlashMenuSnapshot = {
+export const EMPTY_SNAPSHOT: SlashMenuSnapshot = {
   open: false,
   items: [],
   command: null,
@@ -91,136 +91,137 @@ export function getSlashMenuController(
     | undefined;
 }
 
-const suggestionOptions: Partial<SuggestionOptions> = {
-  items: ({ query }: { query: string }): SlashCommandItem[] => {
-    const items: SlashCommandItem[] = [
-      {
-        title: 'Text',
-        description: 'Just start typing with plain text.',
-        searchTerms: ['p', 'paragraph'],
-        icon: LuType,
-        command: ({ editor, range }) => {
-          editor
-            .chain()
-            .focus()
-            .deleteRange(range)
-            .toggleNode('paragraph', 'paragraph')
-            .run();
-        },
-      },
-      {
-        title: 'Heading 1',
-        description: 'Big section heading.',
-        searchTerms: ['title', 'big', 'large'],
-        icon: LuHeading1,
-        command: ({ editor, range }) => {
-          editor
-            .chain()
-            .focus()
-            .deleteRange(range)
-            .setNode('heading', { level: 1 })
-            .run();
-        },
-      },
-      {
-        title: 'Heading 2',
-        description: 'Medium section heading.',
-        searchTerms: ['subtitle', 'medium'],
-        icon: LuHeading2,
-        command: ({ editor, range }) => {
-          editor
-            .chain()
-            .focus()
-            .deleteRange(range)
-            .setNode('heading', { level: 2 })
-            .run();
-        },
-      },
-      {
-        title: 'Heading 3',
-        description: 'Small section heading.',
-        searchTerms: ['subtitle', 'small'],
-        icon: LuHeading3,
-        command: ({ editor, range }) => {
-          editor
-            .chain()
-            .focus()
-            .deleteRange(range)
-            .setNode('heading', { level: 3 })
-            .run();
-        },
-      },
-      {
-        title: 'Bullet List',
-        description: 'Create a simple bullet list.',
-        searchTerms: ['unordered', 'point'],
-        icon: LuList,
-        command: ({ editor, range }) => {
-          editor.chain().focus().deleteRange(range).toggleBulletList().run();
-        },
-      },
-      {
-        title: 'Numbered List',
-        description: 'Create a list with numbering.',
-        searchTerms: ['ordered'],
-        icon: LuListOrdered,
-        command: ({ editor, range }) => {
-          editor.chain().focus().deleteRange(range).toggleOrderedList().run();
-        },
-      },
-      {
-        title: 'Quote',
-        description: 'Capture a quote.',
-        searchTerms: ['blockquote'],
-        icon: LuQuote,
-        command: ({ editor, range }) => {
-          editor
-            .chain()
-            .focus()
-            .deleteRange(range)
-            .toggleNode('paragraph', 'paragraph')
-            .toggleBlockquote()
-            .run();
-        },
-      },
-      {
-        title: 'Code',
-        description: 'Capture a code snippet.',
-        searchTerms: ['codeblock'],
-        icon: LuCode,
-        command: ({ editor, range }) => {
-          editor.chain().focus().deleteRange(range).toggleCodeBlock().run();
-        },
-      },
-      {
-        title: 'Divider',
-        description: 'Visually divide blocks.',
-        searchTerms: ['horizontal', 'rule', 'hr'],
-        icon: LuMinus,
-        command: ({ editor, range }) => {
-          editor.chain().focus().deleteRange(range).setHorizontalRule().run();
-        },
-      },
-      {
-        title: 'Link Embed',
-        description: 'Embed a link with preview.',
-        searchTerms: ['embed', 'preview', 'iframely', 'url'],
-        icon: LuLink2,
-        command: ({ editor, range }) => {
-          const url = window.prompt('Enter the URL to embed:');
-          if (url && url.trim()) {
-            editor
-              .chain()
-              .focus()
-              .deleteRange(range)
-              .setIframely({ src: url.trim() })
-              .run();
-          }
-        },
-      },
-    ];
+// Query-independent: built once at module load, not rebuilt on every keystroke.
+const SLASH_ITEMS: SlashCommandItem[] = [
+  {
+    title: 'Text',
+    description: 'Just start typing with plain text.',
+    searchTerms: ['p', 'paragraph'],
+    icon: LuType,
+    command: ({ editor, range }) => {
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .toggleNode('paragraph', 'paragraph')
+        .run();
+    },
+  },
+  {
+    title: 'Heading 1',
+    description: 'Big section heading.',
+    searchTerms: ['title', 'big', 'large'],
+    icon: LuHeading1,
+    command: ({ editor, range }) => {
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .setNode('heading', { level: 1 })
+        .run();
+    },
+  },
+  {
+    title: 'Heading 2',
+    description: 'Medium section heading.',
+    searchTerms: ['subtitle', 'medium'],
+    icon: LuHeading2,
+    command: ({ editor, range }) => {
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .setNode('heading', { level: 2 })
+        .run();
+    },
+  },
+  {
+    title: 'Heading 3',
+    description: 'Small section heading.',
+    searchTerms: ['subtitle', 'small'],
+    icon: LuHeading3,
+    command: ({ editor, range }) => {
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .setNode('heading', { level: 3 })
+        .run();
+    },
+  },
+  {
+    title: 'Bullet List',
+    description: 'Create a simple bullet list.',
+    searchTerms: ['unordered', 'point'],
+    icon: LuList,
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).toggleBulletList().run();
+    },
+  },
+  {
+    title: 'Numbered List',
+    description: 'Create a list with numbering.',
+    searchTerms: ['ordered'],
+    icon: LuListOrdered,
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).toggleOrderedList().run();
+    },
+  },
+  {
+    title: 'Quote',
+    description: 'Capture a quote.',
+    searchTerms: ['blockquote'],
+    icon: LuQuote,
+    command: ({ editor, range }) => {
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .toggleNode('paragraph', 'paragraph')
+        .toggleBlockquote()
+        .run();
+    },
+  },
+  {
+    title: 'Code',
+    description: 'Capture a code snippet.',
+    searchTerms: ['codeblock'],
+    icon: LuCode,
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).toggleCodeBlock().run();
+    },
+  },
+  {
+    title: 'Divider',
+    description: 'Visually divide blocks.',
+    searchTerms: ['horizontal', 'rule', 'hr'],
+    icon: LuMinus,
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).setHorizontalRule().run();
+    },
+  },
+  {
+    title: 'Link Embed',
+    description: 'Embed a link with preview.',
+    searchTerms: ['embed', 'preview', 'iframely', 'url'],
+    icon: LuLink2,
+    command: ({ editor, range }) => {
+      const url = window.prompt('Enter the URL to embed:');
+      if (url && url.trim()) {
+        editor
+          .chain()
+          .focus()
+          .deleteRange(range)
+          .setIframely({ src: url.trim() })
+          .run();
+      }
+    },
+  },
+];
 
-    return items.filter((item) => {
+const suggestionOptions: Partial<SuggestionOptions> = {
+  items: ({ query }: { query: string }): SlashCommandItem[] =>
+    SLASH_ITEMS.filter((item) => {
       if (typeof query === 'string' && query.length > 0) {
         const search = query.toLowerCase();
         return (
@@ -231,8 +232,7 @@ const suggestionOptions: Partial<SuggestionOptions> = {
         );
       }
       return true;
-    });
-  },
+    }),
 
   // Render only writes to the per-editor controller; `SlashCommandMenu` (mounted
   // in the React tree alongside the editor) subscribes and renders the menu.
