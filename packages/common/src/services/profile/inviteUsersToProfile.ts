@@ -330,15 +330,20 @@ export const inviteUsersToProfile = async ({
     });
   }
 
-  // Batch insert and send event in a single transaction
-  // If event.send fails, we rollback the DB inserts
+  // Commit the invite rows first, then notify outside the transaction.
+  // event.send is an HTTPS POST to Inngest — running it inside a
+  // db.transaction holds a pooled DB connection through the round-trip and
+  // pins ~10 sockets platform-wide during an Inngest brownout. Rows have
+  // notifiedAt=null until the Inngest workflow delivers, so a failed send
+  // here leaves the invite ready to be picked up again (the draft-publish
+  // flow re-emits queued invites; outside that, the caller can re-invite).
   if (preparedInvites.length > 0) {
-    await db.transaction(async (tx) => {
+    const insertedInvites = await db.transaction(async (tx) => {
       if (allowListEntries.length > 0) {
         await tx.insert(allowList).values(allowListEntries);
       }
 
-      const insertedInvites = await tx
+      return tx
         .insert(profileInvites)
         .values(
           preparedInvites.map((inv) => ({
@@ -352,18 +357,18 @@ export const inviteUsersToProfile = async ({
           })),
         )
         .returning({ id: profileInvites.id });
+    });
 
-      await sendInviteNotifications({
-        preparedInvites,
-        insertedInviteIds: insertedInvites,
-        isDraft,
-        adminRoleIds,
-        senderProfileId: requesterProfileId,
-        inviterName,
-        profileName,
-        inviteUrl,
-        personalMessage,
-      });
+    await sendInviteNotifications({
+      preparedInvites,
+      insertedInviteIds: insertedInvites,
+      isDraft,
+      adminRoleIds,
+      senderProfileId: requesterProfileId,
+      inviterName,
+      profileName,
+      inviteUrl,
+      personalMessage,
     });
 
     // Mark all as successful since transaction completed
