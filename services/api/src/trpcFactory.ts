@@ -1,3 +1,4 @@
+import { parseClientIp } from '@op/core';
 import { initTRPC } from '@trpc/server';
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { customAlphabet } from 'nanoid';
@@ -46,7 +47,11 @@ export const createContext = async ({
     registerQueryChannels: () => {},
     requestId,
     time: Date.now(),
-    ip: req.headers.get('X-Forwarded-For') || null,
+    // Parse the client IP through the safe XFF/x-real-ip resolver instead
+    // of reading the raw header. The raw value is attacker-controlled —
+    // anything to the left of the trusted proxy can be spoofed per request,
+    // which lets the caller rotate their rate-limit bucket at will.
+    ip: parseClientIp(req.headers),
     reqUrl: req.url,
     req,
   };

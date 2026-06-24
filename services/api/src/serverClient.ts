@@ -1,4 +1,9 @@
-import { CSRF_HEADER, CSRF_HEADER_VALUE, OPURLConfig } from '@op/core';
+import {
+  CSRF_HEADER,
+  CSRF_HEADER_VALUE,
+  OPURLConfig,
+  parseClientIp,
+} from '@op/core';
 import {
   createTRPCProxyClient,
   loggerLink,
@@ -105,7 +110,10 @@ export const createServerContext = cache(async (): Promise<TContext> => {
     registerQueryChannels: () => {},
     requestId,
     time: Date.now(),
-    ip: headersList.get('x-forwarded-for') || null,
+    // Server-side caller never has a real network hop, but we still route
+    // the lookup through the safe XFF/x-real-ip parser so the limiter sees
+    // the same trimmed value the public entrypoint produces.
+    ip: parseClientIp(headersList),
     reqUrl: headersList.get('x-url') || mockReq.url,
     req: mockReq,
     isServerSideCall: true,
