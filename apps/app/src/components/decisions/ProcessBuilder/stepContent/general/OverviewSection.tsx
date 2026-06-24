@@ -20,7 +20,7 @@ import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/st
 import { OverviewTextField } from './OverviewTextField';
 
 // Must match the server-side caps in instanceOverviewInputEncoder
-const HEADLINE_MAX_LENGTH = 200;
+const HEADLINE_MAX_LENGTH = 50;
 const DESCRIPTION_MAX_LENGTH = 500;
 
 export default function OverviewSection(props: SectionProps) {
