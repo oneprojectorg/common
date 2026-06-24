@@ -1,14 +1,5 @@
-// Platform-supported locales matching the i18n dictionaries.
-// Shared between TypeScript code and build-time scripts (e.g. next.config.mjs)
-// — mirrors the @op/core/previews.mjs pattern.
+// Build-time mirror of `SUPPORTED_LOCALES` in `locales.ts`. Imported by
+// `apps/app/next.config.mjs` (which cannot read the TS file). Kept in lockstep
+// with the TS source by `locales.test.ts` — update both lists together.
 
-/** @type {readonly ['en', 'es', 'fr', 'pt', 'bn', 'so', 'ar']} */
-export const SUPPORTED_LOCALES = Object.freeze([
-  'en',
-  'es',
-  'fr',
-  'pt',
-  'bn',
-  'so',
-  'ar',
-]);
+export const SUPPORTED_LOCALES = ['en', 'es', 'fr', 'pt', 'bn', 'so', 'ar'];

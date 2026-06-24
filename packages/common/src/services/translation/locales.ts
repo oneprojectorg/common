@@ -1,6 +1,20 @@
-import { SUPPORTED_LOCALES } from './locales.mjs';
-
-export { SUPPORTED_LOCALES };
+/**
+ * Platform-supported locales matching the i18n dictionaries.
+ *
+ * Build-time consumers (e.g. `apps/app/next.config.mjs`) import the parallel
+ * `locales.mjs` instead — vite-node fails to evaluate this `.ts` module if
+ * it tries to import the `.mjs` sibling itself, so the two definitions are
+ * kept in lockstep by `locales.test.ts`.
+ */
+export const SUPPORTED_LOCALES = [
+  'en',
+  'es',
+  'fr',
+  'pt',
+  'bn',
+  'so',
+  'ar',
+] as const;
 
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
