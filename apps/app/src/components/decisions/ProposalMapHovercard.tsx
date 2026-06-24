@@ -45,7 +45,7 @@ export function ProposalMapHovercard({
       // Figma spec. `block` strips link underline styling.
       className="block w-80 max-w-[20rem] cursor-pointer rounded-lg border border-neutral-gray1 bg-white p-4 text-neutral-black no-underline shadow-md hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-tealBlack"
     >
-      <p className="line-clamp-2 font-serif text-title-md text-neutral-black">
+      <p className="line-clamp-2 font-serif text-title-sm14 text-neutral-black">
         {titleText}
       </p>
       <HovercardMeta author={proposal.submittedBy} districts={districts} />
