@@ -168,6 +168,11 @@ const PostReactions = ({
   post: Post;
   onReactionClick: (postId: string, emoji: string) => void;
 }) => {
+  const { user } = useUser();
+
+  // Only signed-in members can react; anon and logged-out viewers are read-only.
+  const canReact = Boolean(user?.currentProfile) && !user?.isAnonymous;
+
   if (!post?.id) return null;
 
   const reactions = post.reactionCounts
@@ -191,6 +196,7 @@ const PostReactions = ({
     <ReactionsButton
       reactions={reactions}
       reactionOptions={REACTION_OPTIONS}
+      canReact={canReact}
       onReactionClick={(emoji) => onReactionClick(post.id!, emoji)}
       onAddReaction={(emoji) => onReactionClick(post.id!, emoji)}
     />

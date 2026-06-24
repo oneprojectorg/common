@@ -4,30 +4,30 @@ import {
   advancePhase,
   createDecisionInstance,
   createInstanceDataFromTemplate,
-  assertGlobalRole,
   createOrganization as createOrganizationService,
   createProposal as createProposalService,
   decisionPermission,
   getTemplate,
   joinOrganization,
 } from '@op/common';
-import { GLOBAL_USER_PUBLIC } from '@op/core';
 import { db } from '@op/db/client';
 import type { ProcessStatus } from '@op/db/schema';
 import {
   ProposalStatus,
-  accessRolePermissionsOnAccessZones,
   decisionProcesses,
   processInstances,
   profileUserToAccessRoles,
-  profileUsers,
   profiles,
   proposals,
   users,
 } from '@op/db/schema';
-import { PERMISSIONS, ROLES, ZONES } from '@op/db/seedData/accessControl';
+import { PERMISSIONS, ROLES } from '@op/db/seedData/accessControl';
 import type { User } from '@op/supabase/lib';
-import { grantDecisionProfileAccess, testMinimalSchema } from '@op/test';
+import {
+  grantDecisionProfileAccess,
+  makeDecisionPublic as makeDecisionPublicShared,
+  testMinimalSchema,
+} from '@op/test';
 import { eq, inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { z } from 'zod';
@@ -483,31 +483,7 @@ export class TestDecisionsDataManager {
       decisionPermission.VOTE,
   ): Promise<void> {
     this.ensureCleanupRegistered();
-
-    // Resolve the seeded global Public role by name (global roles are keyed by
-    // name in runtime code; the seed id is not referenced here).
-    const publicRole = await assertGlobalRole('Public');
-
-    const [publicMember] = await db
-      .insert(profileUsers)
-      .values({ profileId, authUserId: GLOBAL_USER_PUBLIC })
-      .returning();
-
-    if (!publicMember) {
-      throw new Error('Failed to create public profileUser');
-    }
-
-    await db.insert(profileUserToAccessRoles).values({
-      profileUserId: publicMember.id,
-      accessRoleId: publicRole.id,
-    });
-
-    await db.insert(accessRolePermissionsOnAccessZones).values({
-      accessRoleId: publicRole.id,
-      accessZoneId: ZONES.DECISIONS.id,
-      permission: permissionBits,
-      profileId,
-    });
+    await makeDecisionPublicShared({ profileId, permissionBits });
   }
 
   /**

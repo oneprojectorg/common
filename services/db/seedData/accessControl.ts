@@ -9,7 +9,7 @@ import { permission } from 'access-zones';
  * Duplicated from @op/common/src/services/decision/permissions.ts to avoid a
  * circular dependency (@op/db cannot depend on @op/common).
  */
-const DECISION_BITS = {
+export const DECISION_BITS = {
   INVITE_MEMBERS: 0b1_00000, // 32
   REVIEW: 0b10_00000, // 64
   SUBMIT_PROPOSALS: 0b100_00000, // 128

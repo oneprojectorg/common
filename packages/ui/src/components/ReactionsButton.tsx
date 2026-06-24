@@ -62,6 +62,8 @@ interface ReactionsButtonProps {
   onReactionClick?: (emoji: string) => void;
   onAddReaction?: (emoji: string) => void;
   className?: string;
+  /** When false, reactions render read-only and the add-reaction picker is hidden. */
+  canReact?: boolean;
 }
 
 // We'll import the actual reaction options from @op/types in the consumer component
@@ -152,12 +154,18 @@ export const ReactionsButton = ({
   onReactionClick,
   onAddReaction,
   className,
+  canReact = true,
 }: ReactionsButtonProps) => {
   if (reactions.length === 0) {
+    // Nothing to show, nothing to add.
+    if (!canReact) {
+      return null;
+    }
+
     return (
       <div className={reactionGroupStyle({ className })}>
         <MenuTrigger>
-          <ReactionButton size="icon" />
+          <ReactionButton size="icon" aria-label="Add reaction" />
           <Popover placement="bottom left">
             <ReactionPicker
               reactionOptions={reactionOptions}
@@ -180,20 +188,24 @@ export const ReactionsButton = ({
             count={reaction.count}
             active={reaction.isActive}
             users={reaction.users}
-            onPress={() => onReactionClick?.(reaction.emoji)}
+            onPress={
+              canReact ? () => onReactionClick?.(reaction.emoji) : undefined
+            }
           />
         ) : null,
       )}
-      <MenuTrigger>
-        <ReactionButton size="icon" />
-        <Popover placement="top left">
-          <ReactionPicker
-            reactionOptions={reactionOptions}
-            onReactionSelect={(emoji) => onAddReaction?.(emoji)}
-            existingReactions={reactions}
-          />
-        </Popover>
-      </MenuTrigger>
+      {canReact ? (
+        <MenuTrigger>
+          <ReactionButton size="icon" aria-label="Add reaction" />
+          <Popover placement="top left">
+            <ReactionPicker
+              reactionOptions={reactionOptions}
+              onReactionSelect={(emoji) => onAddReaction?.(emoji)}
+              existingReactions={reactions}
+            />
+          </Popover>
+        </MenuTrigger>
+      ) : null}
     </div>
   );
 };

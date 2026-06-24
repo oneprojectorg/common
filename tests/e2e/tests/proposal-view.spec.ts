@@ -4,6 +4,9 @@ import {
   ProcessStatus,
   ProposalStatus,
   decisionProcesses,
+  postReactions,
+  posts,
+  postsToProfiles,
   processInstances,
   profileUserToAccessRoles,
   profileUsers,
@@ -15,11 +18,12 @@ import {
   createDecisionInstance,
   createProposal,
   getSeededTemplate,
+  makeDecisionPublic,
 } from '@op/test';
 import { randomUUID } from 'node:crypto';
 
 import { transformFormDataToProcessSchema as cowopSchema } from '../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/cowop';
-import { expect, test } from '../fixtures/index.js';
+import { authenticateAnonymously, expect, test } from '../fixtures/index.js';
 
 /**
  * Any doc ID that doesn't contain "nonexistent" will return fixture content
@@ -671,5 +675,108 @@ test.describe('Proposal View', () => {
     await expect(
       authenticatedPage.getByText('Content could not be loaded').first(),
     ).toBeVisible({ timeout: 30_000 });
+  });
+
+  test('shows reactions read-only to anonymous and logged-out viewers', async ({
+    authenticatedPage,
+    org,
+    browser,
+  }) => {
+    const template = await getSeededTemplate();
+
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: template.processSchema,
+    });
+
+    const proposal = await createProposal({
+      processInstanceId: instance.instance.id,
+      submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      status: ProposalStatus.SUBMITTED,
+      proposalData: { title: 'Reactable Proposal' },
+    });
+
+    // Public decision so anonymous and logged-out visitors can read it.
+    await makeDecisionPublic({ profileId: instance.profileId });
+
+    // Reactions render per-comment; seed a top-level post + like on the proposal.
+    const commentText = 'Seeded comment carrying a like';
+    const [comment] = await db
+      .insert(posts)
+      .values({ content: commentText, profileId: org.organizationProfile.id })
+      .returning();
+    if (!comment) {
+      throw new Error('Failed to seed comment');
+    }
+    await db.insert(postsToProfiles).values({
+      postId: comment.id,
+      profileId: proposal.profileId,
+    });
+    await db.insert(postReactions).values({
+      postId: comment.id,
+      profileId: org.organizationProfile.id,
+      reactionType: 'like',
+    });
+
+    const proposalUrl = `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`;
+    const likeBadge = /👍\s*1/;
+    const addReactionButton = { role: 'button' as const, name: 'Add reaction' };
+
+    // 1) A signed-in member sees the like and can react (control present).
+    await authenticatedPage.goto(proposalUrl);
+    await expect(
+      authenticatedPage.getByRole('heading', { name: 'Reactable Proposal' }),
+    ).toBeVisible({ timeout: 30_000 });
+    await expect(authenticatedPage.getByText(commentText)).toBeVisible();
+    await expect(authenticatedPage.getByText(likeBadge)).toBeVisible();
+    await expect(
+      authenticatedPage.getByRole(addReactionButton.role, {
+        name: addReactionButton.name,
+      }),
+    ).toBeVisible();
+
+    // 2) Anonymous account: sees the like, no add-reaction control. Clean
+    //    session so the worker's auth doesn't leak in via newContext().
+    const anonContext = await browser.newContext({
+      storageState: { cookies: [], origins: [] },
+    });
+    const anonPage = await anonContext.newPage();
+    await authenticateAnonymously(anonPage);
+    await anonPage.goto(proposalUrl);
+    await expect(
+      anonPage.getByRole('heading', { name: 'Reactable Proposal' }),
+    ).toBeVisible({ timeout: 30_000 });
+    await expect(anonPage.getByText(commentText)).toBeVisible();
+    await expect(anonPage.getByText(likeBadge)).toBeVisible();
+    await expect(
+      anonPage.getByRole(addReactionButton.role, {
+        name: addReactionButton.name,
+      }),
+    ).toHaveCount(0);
+    await anonContext.close();
+
+    // 3) Logged-out visitor: same read-only treatment. Empty storageState since
+    //    browser.newContext() otherwise reuses the worker's session.
+    const guestContext = await browser.newContext({
+      storageState: { cookies: [], origins: [] },
+    });
+    const guestPage = await guestContext.newPage();
+    await guestPage.goto(proposalUrl);
+    await expect(
+      guestPage.getByRole('heading', { name: 'Reactable Proposal' }),
+    ).toBeVisible({ timeout: 30_000 });
+    await expect(guestPage.getByText(commentText)).toBeVisible();
+    await expect(guestPage.getByText(likeBadge)).toBeVisible();
+    await expect(
+      guestPage.getByRole(addReactionButton.role, {
+        name: addReactionButton.name,
+      }),
+    ).toHaveCount(0);
+    await guestContext.close();
   });
 });
