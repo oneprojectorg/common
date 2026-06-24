@@ -3,7 +3,7 @@
 import { useRequiredUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { ProposalFilter } from '@op/api/encoders';
-import type { Proposal } from '@op/common/client';
+import type { SelectionCandidate } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
@@ -69,13 +69,22 @@ export const ManualSelectionList = ({
     throw new Error('ManualSelectionList: instance has no currentStateId');
   }
 
-  // Non-suspense + placeholderData so category/sort changes don't blank
-  // the table while the server re-fetches.
-  const candidatesQuery = trpc.decision.listSelectionCandidates.useQuery(
-    { processInstanceId: instanceId, categoryId, sortOrder },
-    { placeholderData: (prev) => prev },
+  // useInfiniteQuery so category/sort changes don't blank the table while the
+  // server re-fetches, and so admins can page past the lean default page size
+  // (50). `votes` sort returns a single page — the vote count is a correlated
+  // subquery and can't keyset.
+  const candidatesQuery =
+    trpc.decision.listSelectionCandidates.useInfiniteQuery(
+      { processInstanceId: instanceId, categoryId, sortOrder },
+      {
+        getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+        placeholderData: (prev) => prev,
+      },
+    );
+  const loadedProposals = useMemo<SelectionCandidate[]>(
+    () => candidatesQuery.data?.pages.flatMap((page) => page.items) ?? [],
+    [candidatesQuery.data],
   );
-  const candidates = candidatesQuery.data;
 
   const [selectedIds, setSelectedIds] = useManualSelection(
     instanceId,
@@ -85,29 +94,29 @@ export const ManualSelectionList = ({
 
   // Resolve selected ids → proposals via a cache that accumulates across
   // refetches, so picks survive filter/sort changes that exclude them.
-  const [proposalCache, setProposalCache] = useState<Record<string, Proposal>>(
-    {},
-  );
+  const [proposalCache, setProposalCache] = useState<
+    Record<string, SelectionCandidate>
+  >({});
   useEffect(() => {
-    if (!candidates) return;
+    if (loadedProposals.length === 0) return;
     setProposalCache((prev) => {
       const next = { ...prev };
-      for (const p of candidates.proposals) next[p.id] = p;
+      for (const p of loadedProposals) next[p.id] = p;
       return next;
     });
-  }, [candidates]);
+  }, [loadedProposals]);
 
   const selectedProposals = useMemo(
     () =>
       selectedIds
         .map((id) => proposalCache[id])
-        .filter((p): p is Proposal => Boolean(p)),
+        .filter((p): p is SelectionCandidate => Boolean(p)),
     [selectedIds, proposalCache],
   );
 
   const { filteredProposals, proposalFilter, setProposalFilter } =
     useProposalFilters({
-      proposals: candidates?.proposals ?? [],
+      proposals: loadedProposals,
       currentProfileId: user.currentProfile?.id,
       votedProposalIds: EMPTY_VOTED_IDS,
       hasVoted: false,
@@ -203,14 +212,14 @@ export const ManualSelectionList = ({
     );
   }
 
-  if (!candidates) {
+  if (!candidatesQuery.data) {
     return null;
   }
 
   // Full pool empty → dead end, no toolbar. Any narrowing filter keeps
   // the toolbar (below) so the admin can loosen it.
   const isUnfiltered = !categoryId && proposalFilter === ProposalFilter.ALL;
-  if (isUnfiltered && candidates.proposals.length === 0) {
+  if (isUnfiltered && loadedProposals.length === 0) {
     return (
       <EmptyState icon={<LuLeaf className="size-6" />}>
         <Header3 className="font-serif font-light">
@@ -255,15 +264,31 @@ export const ManualSelectionList = ({
           </Header3>
         </EmptyState>
       ) : (
-        <SelectableProposalsTable
-          proposals={proposals}
-          selectedIds={selectedIds}
-          onToggle={toggleProposal}
-          getProposalHref={(p) =>
-            `/decisions/${decisionSlug}/proposal/${p.profileId}`
-          }
-          showVotes={isFinalPhase}
-        />
+        <>
+          <SelectableProposalsTable
+            proposals={proposals}
+            selectedIds={selectedIds}
+            onToggle={toggleProposal}
+            getProposalHref={(p) =>
+              `/decisions/${decisionSlug}/proposal/${p.profileId}`
+            }
+            showVotes={isFinalPhase}
+          />
+          {candidatesQuery.hasNextPage ? (
+            <div className="flex justify-center">
+              <Button
+                color="secondary"
+                size="small"
+                onPress={() => candidatesQuery.fetchNextPage()}
+                isDisabled={candidatesQuery.isFetchingNextPage}
+              >
+                {candidatesQuery.isFetchingNextPage
+                  ? t('Loading...')
+                  : t('Load More')}
+              </Button>
+            </div>
+          ) : null}
+        </>
       )}
 
       {isFinalPhase ? (

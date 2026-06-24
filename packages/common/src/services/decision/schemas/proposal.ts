@@ -197,6 +197,57 @@ export const allProposalsListSchema = z.object({
 
 export type AllProposalsList = z.infer<typeof allProposalsListSchema>;
 
+/**
+ * Leaner proposal shape for admin selection / reviewer queues — list views
+ * that render hundreds to thousands of rows. Drops the per-row TipTap doc
+ * payload (`documentContent` / `htmlContent`) and the resolved
+ * `proposalTemplate`; the detail / single-proposal endpoints still hydrate
+ * those when the user opens an individual proposal.
+ */
+export const selectionCandidateSchema = proposalSchema.omit({
+  decisionCount: true,
+  isEditable: true,
+  access: true,
+  attachments: true,
+  selectionRank: true,
+  allocated: true,
+  documentContent: true,
+  htmlContent: true,
+  proposalTemplate: true,
+});
+
+export type SelectionCandidate = z.infer<typeof selectionCandidateSchema>;
+
+/**
+ * Input schema for `decision.listSelectionCandidates`. Cursor pagination
+ * mirrors `listAllProposals`: pass `cursor` from the previous page's `next`.
+ * `votes` sort is a single page (the vote count is a correlated subquery so
+ * the cursor can't keyset it), so paginate with `newest` / `oldest` when an
+ * admin needs to walk past the top-voted slice.
+ */
+export const selectionCandidatesFilterSchema = z.object({
+  processInstanceId: z.uuid(),
+  categoryId: z.uuid().optional(),
+  sortOrder: z.enum(['votes', 'newest', 'oldest']).default('votes'),
+  cursor: z.string().nullish(),
+  limit: z.number().min(1).max(100).prefault(50),
+});
+
+export type SelectionCandidatesFilter = z.infer<
+  typeof selectionCandidatesFilterSchema
+>;
+
+/** Response from `decision.listSelectionCandidates`. */
+export const selectionCandidatesListSchema = z.object({
+  items: z.array(selectionCandidateSchema),
+  total: z.number(),
+  next: z.string().nullable(),
+});
+
+export type SelectionCandidatesList = z.infer<
+  typeof selectionCandidatesListSchema
+>;
+
 /** Minimal submitter profile shape used by the face-pile endpoint. */
 export const proposalSubmitterSchema = z.object({
   slug: z.string(),

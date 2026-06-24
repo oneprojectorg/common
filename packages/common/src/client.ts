@@ -16,12 +16,18 @@ export {
   allProposalsFilterSchema,
   allProposalsListItemSchema,
   allProposalsListSchema,
+  selectionCandidateSchema,
+  selectionCandidatesFilterSchema,
+  selectionCandidatesListSchema,
   type Proposal,
   type ProposalList,
   type ProposalProfile,
   type AllProposalsFilter,
   type AllProposalsListItem,
   type AllProposalsList,
+  type SelectionCandidate,
+  type SelectionCandidatesFilter,
+  type SelectionCandidatesList,
 } from './services/decision/schemas/proposal';
 export {
   adminDecisionInstanceSchema,

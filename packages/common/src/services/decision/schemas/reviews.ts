@@ -6,7 +6,11 @@ import {
 import { z } from 'zod';
 
 import type { RubricTemplateSchema } from '../types';
-import { proposalProfileSchema, proposalSchema } from './proposal';
+import {
+  proposalProfileSchema,
+  proposalSchema,
+  selectionCandidateSchema,
+} from './proposal';
 
 export {
   ProposalReviewAssignmentStatus,
@@ -80,6 +84,22 @@ export const proposalReviewAssignmentSchema = z.object({
   proposal: proposalSchema,
 });
 
+/**
+ * Leaner review-assignment shape used by `listReviewAssignments`. The reviewer
+ * queue can have hundreds of assignments, and the per-row TipTap fetch that
+ * hydrates `documentContent` / `htmlContent` on the full proposal shape
+ * dominated the response time. The single-assignment endpoint
+ * (`getReviewAssignment`) still returns the full {@link proposalSchema} shape
+ * when the reviewer opens an individual assignment.
+ */
+export const proposalReviewAssignmentListItemSchema = z.object({
+  id: z.uuid(),
+  processInstanceId: z.uuid(),
+  phaseId: z.string(),
+  status: z.enum(ProposalReviewAssignmentStatus),
+  proposal: selectionCandidateSchema,
+});
+
 // ── Revision request schemas ───────────────────────────────────────────
 
 export const proposalReviewRequestSchema = z.object({
@@ -115,8 +135,20 @@ export const reviewAssignmentExtendedSchema = z.object({
   revisionRequest: proposalReviewRequestSchema.nullable(),
 });
 
+/**
+ * Wrapper around {@link proposalReviewAssignmentListItemSchema}; same shape as
+ * {@link reviewAssignmentExtendedSchema} but with the lean proposal payload.
+ */
+export const reviewAssignmentListItemSchema = z.object({
+  assignment: proposalReviewAssignmentListItemSchema,
+  rubricTemplate: rubricTemplateSchema.nullable(),
+  review: proposalReviewSchema.nullable(),
+  revisionRequest: proposalReviewRequestSchema.nullable(),
+});
+
 export const reviewAssignmentListSchema = z.object({
-  assignments: z.array(reviewAssignmentExtendedSchema),
+  assignments: z.array(reviewAssignmentListItemSchema),
+  next: z.string().nullable(),
 });
 
 // ── Proposal-scoped revision request schemas ──────────────────────────
@@ -221,10 +253,16 @@ export type PhaseReviewProgress = z.infer<typeof phaseReviewProgressSchema>;
 export type ProposalReviewAssignment = z.infer<
   typeof proposalReviewAssignmentSchema
 >;
+export type ProposalReviewAssignmentListItem = z.infer<
+  typeof proposalReviewAssignmentListItemSchema
+>;
 export type ProposalReviewRequest = z.infer<typeof proposalReviewRequestSchema>;
 export type ProposalReview = z.infer<typeof proposalReviewSchema>;
 export type ReviewAssignmentExtended = z.infer<
   typeof reviewAssignmentExtendedSchema
+>;
+export type ReviewAssignmentListItem = z.infer<
+  typeof reviewAssignmentListItemSchema
 >;
 export type ReviewAssignmentList = z.infer<typeof reviewAssignmentListSchema>;
 export type ProposalRevisionRequestItem = z.infer<

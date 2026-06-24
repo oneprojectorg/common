@@ -15,6 +15,8 @@ export const listReviewAssignmentsRouter = router({
         processInstanceId: z.uuid(),
         status: z.enum(ProposalReviewAssignmentStatus).optional(),
         dir: z.enum(['asc', 'desc']).optional(),
+        cursor: z.string().nullish(),
+        limit: z.number().min(1).max(100).prefault(50),
       }),
     )
     .output(reviewAssignmentListSchema)
@@ -27,6 +29,8 @@ export const listReviewAssignmentsRouter = router({
         processInstanceId: input.processInstanceId,
         status: input.status,
         dir: input.dir,
+        cursor: input.cursor,
+        limit: input.limit,
         user: ctx.user,
       });
     }),

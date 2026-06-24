@@ -2,11 +2,13 @@
 
 import { trpc } from '@op/api/client';
 import { ProposalReviewAssignmentStatus } from '@op/common/client';
+import { Button } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
+import { useMemo } from 'react';
 import { LuLeaf } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -43,15 +45,25 @@ export function ReviewAssignmentsList({
     parseAsStringLiteral(SORT_DIRS).withDefault('desc'),
   );
 
-  const { data, isLoading } = trpc.decision.listReviewAssignments.useQuery({
-    processInstanceId,
-    ...(statusFilter && {
-      status: statusFilter as ProposalReviewAssignmentStatus,
-    }),
-    dir,
-  });
+  const assignmentsQuery = trpc.decision.listReviewAssignments.useInfiniteQuery(
+    {
+      processInstanceId,
+      ...(statusFilter && {
+        status: statusFilter as ProposalReviewAssignmentStatus,
+      }),
+      dir,
+    },
+    {
+      getNextPageParam: (lastPage) => lastPage.next ?? undefined,
+    },
+  );
 
-  const assignments = data?.assignments ?? [];
+  const assignments = useMemo(
+    () =>
+      assignmentsQuery.data?.pages.flatMap((page) => page.assignments) ?? [],
+    [assignmentsQuery.data],
+  );
+  const isLoading = assignmentsQuery.isLoading;
   const proposalIds = assignments.map((a) => a.assignment.proposal.id);
 
   const { data: aggregatesData } =
@@ -128,20 +140,36 @@ export function ReviewAssignmentsList({
           </p>
         </EmptyState>
       ) : (
-        <ProposalMasonry>
-          {assignments.map((item) => (
-            <ReviewAssignmentCard
-              key={item.assignment.id}
-              assignment={item}
-              viewHref={`/decisions/${decisionSlug}/reviews/${item.assignment.id}`}
-              reviewers={
-                aggregatesData?.items.find(
-                  (i) => i.proposal.id === item.assignment.proposal.id,
-                )?.aggregates.reviewers
-              }
-            />
-          ))}
-        </ProposalMasonry>
+        <>
+          <ProposalMasonry>
+            {assignments.map((item) => (
+              <ReviewAssignmentCard
+                key={item.assignment.id}
+                assignment={item}
+                viewHref={`/decisions/${decisionSlug}/reviews/${item.assignment.id}`}
+                reviewers={
+                  aggregatesData?.items.find(
+                    (i) => i.proposal.id === item.assignment.proposal.id,
+                  )?.aggregates.reviewers
+                }
+              />
+            ))}
+          </ProposalMasonry>
+          {assignmentsQuery.hasNextPage ? (
+            <div className="flex justify-center">
+              <Button
+                color="secondary"
+                size="small"
+                onPress={() => assignmentsQuery.fetchNextPage()}
+                isDisabled={assignmentsQuery.isFetchingNextPage}
+              >
+                {assignmentsQuery.isFetchingNextPage
+                  ? t('Loading...')
+                  : t('Load More')}
+              </Button>
+            </div>
+          ) : null}
+        </>
       )}
     </div>
   );

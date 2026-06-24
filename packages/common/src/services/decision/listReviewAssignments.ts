@@ -1,12 +1,14 @@
-import { db } from '@op/db/client';
+import { and, db, eq } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 
-import { UnauthorizedError } from '../../utils';
+import {
+  UnauthorizedError,
+  decodeCursor,
+  encodeCursor,
+  getCursorCondition,
+} from '../../utils';
 import { assertUserByAuthId } from '../assert';
-import { generateProposalHtml } from './generateProposalHtml';
 import { getInstance } from './getInstance';
-import { getProposalDocumentsContent } from './getProposalDocumentsContent';
-import { resolveProposalTemplate } from './resolveProposalTemplate';
 import {
   getActiveRevisionRequest,
   resolveAssignmentProposal,
@@ -17,24 +19,44 @@ import {
   reviewAssignmentListSchema,
 } from './schemas/reviews';
 
-/** Returns all authorized review assignments for the current reviewer in a process instance. */
+interface ListReviewAssignmentsInput {
+  processInstanceId: string;
+  status?: string;
+  dir?: 'asc' | 'desc';
+  /** Cursor returned by a prior page's `next`; opaque to callers. */
+  cursor?: string | null;
+  /** Max items in this page (1–100, default 50). */
+  limit?: number;
+  user: User;
+}
+
+/**
+ * Returns all authorized review assignments for the current reviewer in a
+ * process instance. The response uses the lean
+ * {@link ReviewAssignmentList} shape: the embedded proposal snapshot omits the
+ * per-row TipTap doc payload (`documentContent` / `htmlContent`) and the
+ * resolved `proposalTemplate`. The single-assignment endpoint
+ * (`getReviewAssignment`) still returns the full proposal when the reviewer
+ * opens an individual card.
+ *
+ * Pagination: keyset on `assignedAt + id` so a reviewer with hundreds of
+ * assignments can page through them without loading the full set per request.
+ */
 export async function listReviewAssignments({
   processInstanceId,
   status,
   dir = 'asc',
+  cursor,
+  limit = 50,
   user,
-}: {
-  processInstanceId: string;
-  status?: string;
-  dir?: 'asc' | 'desc';
-  user: User;
-}): Promise<ReviewAssignmentList> {
+}: ListReviewAssignmentsInput): Promise<ReviewAssignmentList> {
   const [instance, dbUser] = await Promise.all([
     getInstance({ instanceId: processInstanceId, user }),
     assertUserByAuthId(user.id),
   ]);
 
-  if (!dbUser.profileId) {
+  const reviewerProfileId = dbUser.profileId;
+  if (!reviewerProfileId) {
     throw new UnauthorizedError('User must have an active profile');
   }
 
@@ -42,70 +64,47 @@ export async function listReviewAssignments({
     throw new UnauthorizedError("You don't have access to review proposals");
   }
 
-  const assignments = await db.query.proposalReviewAssignments.findMany({
+  const decodedCursor = cursor
+    ? decodeCursor<{ value: string | Date; id: string }>(cursor)
+    : undefined;
+
+  const rawAssignments = await db.query.proposalReviewAssignments.findMany({
     where: {
-      processInstanceId,
-      reviewerProfileId: dbUser.profileId,
-      ...(status && { status }),
+      RAW: (table) =>
+        and(
+          eq(table.processInstanceId, processInstanceId),
+          eq(table.reviewerProfileId, reviewerProfileId),
+          status ? eq(table.status, status) : undefined,
+          getCursorCondition({
+            column: table.assignedAt,
+            tieBreakerColumn: table.id,
+            cursor: decodedCursor,
+            direction: dir,
+          }),
+        )!,
     },
     with: reviewAssignmentWithConfig,
-    orderBy: {
-      assignedAt: dir,
-    },
+    orderBy: (table, { asc, desc }) =>
+      dir === 'asc'
+        ? [asc(table.assignedAt), asc(table.id)]
+        : [desc(table.assignedAt), desc(table.id)],
+    // Fetch one extra to detect whether a next page exists.
+    limit: limit + 1,
   });
 
-  const proposalTemplate = await resolveProposalTemplate(
-    instance.instanceData,
-    instance.process.id,
-  );
+  const hasMore = rawAssignments.length > limit;
+  const pageAssignments = hasMore
+    ? rawAssignments.slice(0, limit)
+    : rawAssignments;
   const rubricTemplate = instance.instanceData.rubricTemplate ?? null;
 
-  const docContentInputs: Array<{
-    id: string;
-    proposalData: unknown;
-    proposalTemplate: typeof proposalTemplate;
-    collaborationDocVersionId?: number;
-  }> = [];
-
-  for (const assignment of assignments) {
+  const assignmentList = pageAssignments.map((assignment) => {
     const proposalSnapshot = resolveAssignmentProposal(assignment);
-
-    docContentInputs.push({
-      id: proposalSnapshot.id,
-      proposalData: proposalSnapshot.proposalData,
-      proposalTemplate,
-      collaborationDocVersionId:
-        proposalSnapshot.proposalData.collaborationDocVersionId,
-    });
-  }
-
-  const documentContentMap = await getProposalDocumentsContent(
-    docContentInputs,
-    // A single unavailable document must not break the whole list.
-    { onFetchError: 'omit' },
-  );
-
-  const assignmentList = assignments.map((assignment) => {
-    const proposalSnapshot = resolveAssignmentProposal(assignment);
-
-    const documentContent = documentContentMap.get(proposalSnapshot.id);
-
-    let htmlContent: Record<string, string> | undefined;
-    if (documentContent?.type === 'json') {
-      htmlContent = generateProposalHtml(documentContent.fragments);
-    } else if (documentContent?.type === 'html') {
-      htmlContent = { default: documentContent.content };
-    }
 
     return {
       assignment: {
         ...assignment,
-        proposal: {
-          ...proposalSnapshot,
-          proposalTemplate,
-          documentContent,
-          htmlContent,
-        },
+        proposal: proposalSnapshot,
       },
       rubricTemplate,
       review: assignment.reviews[0] ?? null,
@@ -113,7 +112,17 @@ export async function listReviewAssignments({
     };
   });
 
+  const lastAssignment = pageAssignments[pageAssignments.length - 1];
+  const next =
+    hasMore && lastAssignment?.assignedAt
+      ? encodeCursor<{ value: string | Date; id: string }>({
+          value: lastAssignment.assignedAt,
+          id: lastAssignment.id,
+        })
+      : null;
+
   return reviewAssignmentListSchema.parse({
     assignments: assignmentList,
+    next,
   });
 }
