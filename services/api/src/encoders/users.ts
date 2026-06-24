@@ -77,6 +77,8 @@ export const userEncoder = createSelectSchema(users)
   .extend({
     onboardedAt: z.string().nullish(),
     isAnonymous: z.boolean(),
+    // Closed-network membership; authoritative only via `encodeUser`.
+    isNetworkMember: z.boolean().default(false),
     avatarImage: storageItemEncoder.nullish(),
     organizationUsers: organizationUserWithPermissionsEncoder.array().nullish(),
     profileUsers: profileUserWithPermissionsEncoder.array().nullish(),
@@ -93,14 +95,21 @@ export const adminUserEncoder = userEncoder.extend({
 });
 
 /**
- * Encode a DB user row into a `CommonUser`, taking `isAnonymous` from the
- * Supabase auth identity (`ctx.user` or an admin `getUserById` result).
+ * Encode a DB user row into a `CommonUser`. `isAnonymous` comes from the
+ * Supabase auth identity; `isNetworkMember` is resolved by the caller (see
+ * `getNetworkMembership`) and defaults to `false`.
  */
 export const encodeUser = ({
   user,
   authUser,
+  isNetworkMember,
 }: {
   user: Record<string, unknown>;
   authUser: { is_anonymous?: boolean | null };
+  isNetworkMember?: boolean;
 }): CommonUser =>
-  userEncoder.parse({ ...user, isAnonymous: Boolean(authUser.is_anonymous) });
+  userEncoder.parse({
+    ...user,
+    isAnonymous: Boolean(authUser.is_anonymous),
+    isNetworkMember,
+  });

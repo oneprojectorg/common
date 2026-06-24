@@ -1,9 +1,17 @@
+import { getUser } from '@/utils/getUser';
+import { assertWalledGardenAccess } from '@/utils/walledGarden';
+
 import { Link } from '@/lib/i18n/routing';
 
 import { CommonLogo } from '@/components/CommonLogo';
 import { TranslatedText } from '@/components/TranslatedText';
 
-const StartLayout = ({ children }: { children: React.ReactNode }) => {
+const StartLayout = async ({ children }: { children: React.ReactNode }) => {
+  const user = await getUser();
+
+  // Onboarding is inside the walled garden.
+  await assertWalledGardenAccess(user);
+
   return (
     <div className="relative flex h-svh w-full flex-col items-center justify-center font-sans">
       <div id="top-slot" className="absolute top-0 w-full" />

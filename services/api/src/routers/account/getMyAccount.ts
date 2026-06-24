@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { encodeUser, userEncoder } from '../../encoders';
 import { openProcedure, router } from '../../trpcFactory';
+import { getNetworkMembership } from '../../utils/networkMembership';
 
 export const getMyAccount = router({
   getMyAccount: openProcedure()
@@ -18,25 +19,29 @@ export const getMyAccount = router({
 
       const { id } = ctx.user;
 
-      const user = await cache({
-        type: 'user',
-        params: [id],
-        fetch: async () => {
-          return await getUserByAuthId({
-            authUserId: id,
-            includePermissions: true,
-          });
-        },
-        options: {
-          skipMemCache: true,
-        },
-      });
+      // Account and network membership are independent cached lookups.
+      const [user, isNetworkMember] = await Promise.all([
+        cache({
+          type: 'user',
+          params: [id],
+          fetch: async () => {
+            return await getUserByAuthId({
+              authUserId: id,
+              includePermissions: true,
+            });
+          },
+          options: {
+            skipMemCache: true,
+          },
+        }),
+        getNetworkMembership(ctx.user.email),
+      ]);
 
       if (!user) {
         // This should never happen, but if it does throw an error so we can investigate.
         throw new CommonError('Common user not found');
       }
 
-      return encodeUser({ user, authUser: ctx.user });
+      return encodeUser({ user, authUser: ctx.user, isNetworkMember });
     }),
 });

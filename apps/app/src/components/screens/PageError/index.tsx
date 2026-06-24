@@ -3,11 +3,12 @@
 import { ClientOnly } from '@/utils/ClientOnly';
 import { match } from '@op/core';
 import { Button } from '@op/ui/Button';
-import { Header2 } from '@op/ui/Header';
 import posthog from 'posthog-js';
 import { useEffect } from 'react';
 
 import { useTranslations } from '@/lib/i18n/routing';
+
+import { StatusScreen } from '../StatusScreen';
 
 export interface ErrorProps {
   error: Error & { digest?: string };
@@ -57,15 +58,11 @@ export default function PageError({ error }: ErrorProps) {
 
   return (
     <ClientOnly>
-      <div className="flex size-full flex-col items-center justify-center gap-8">
-        <div className="flex flex-col items-center gap-4">
-          <Header2 className="font-serif text-[4rem] leading-[110%] font-light">
-            {errorData.code}
-          </Header2>
-          {errorData.description}
-        </div>
-        {errorData.actions}
-      </div>
+      <StatusScreen
+        code={errorData.code}
+        description={errorData.description}
+        actions={errorData.actions}
+      />
     </ClientOnly>
   );
 }
