@@ -1,6 +1,4 @@
 import { getVotingStatus, submitVote } from '@op/common';
-import { Events, inngest } from '@op/events';
-import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import {
@@ -26,7 +24,10 @@ export const votingRouter = router({
   })
     .input(submitVoteInput)
     .mutation(async ({ input, ctx }) => {
-      const result = await submitVote({
+      // submitVote enqueues the `vote/submitted` event through the
+      // transactional outbox, so we don't fire the notification from here —
+      // the drainer cron publishes it after the submission row commits.
+      return await submitVote({
         data: {
           processInstanceId: input.processInstanceId,
           selectedProposalIds: input.selectedProposalIds,
@@ -36,19 +37,6 @@ export const votingRouter = router({
         },
         authUserId: ctx.user.id,
       });
-
-      // Send vote submitted event for notification workflow
-      waitUntil(
-        inngest.send({
-          name: Events.voteSubmitted.name,
-          data: {
-            voteSubmissionId: result.id,
-            processInstanceId: result.processInstanceId,
-          },
-        }),
-      );
-
-      return result;
     }),
 
   // Get the caller's vote status with schema context. Open to public /

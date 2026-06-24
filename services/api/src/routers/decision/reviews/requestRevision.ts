@@ -1,6 +1,6 @@
 import { Channels, requestRevision } from '@op/common';
 import { proposalReviewRequestSchema } from '@op/common/client';
-import { Events, inngest } from '@op/events';
+import { Events, safeInngestSend } from '@op/events';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -27,9 +27,11 @@ export const requestRevisionRouter = router({
         Channels.reviewAssignments(result.processInstanceId),
       ]);
 
-      // Send revision requested event for notification workflow
+      // Send revision requested event for notification workflow. Best-effort
+      // — publish failures are logged and swallowed; the reviewer-side state
+      // change is the source of truth.
       waitUntil(
-        inngest.send({
+        safeInngestSend({
           name: Events.reviewRevisionRequested.name,
           data: {
             assignmentId: input.assignmentId,

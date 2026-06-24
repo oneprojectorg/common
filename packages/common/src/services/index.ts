@@ -1,4 +1,5 @@
 export * from './assert';
+export * from './events';
 export * from './moderation';
 export * from './terms';
 export * from './access';

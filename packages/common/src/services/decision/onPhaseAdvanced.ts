@@ -1,4 +1,4 @@
-import { Events, event } from '@op/events';
+import { Events, safeInngestSend } from '@op/events';
 
 import type { AdvancePhaseResult } from './advancePhase';
 import { processResults } from './processResults';
@@ -22,21 +22,14 @@ export async function onPhaseAdvanced(
 ): Promise<void> {
   const targetPhase = input.phases.find((p) => p.phaseId === input.toPhaseId);
 
-  event
-    .send({
-      name: Events.phaseTransitioned.name,
-      data: {
-        processInstanceId: input.instanceId,
-        fromPhaseId: input.fromPhaseId,
-        toPhaseId: input.toPhaseId,
-      },
-    })
-    .catch((err) => {
-      console.error(
-        `Failed to send phase transition event for instance ${input.instanceId}:`,
-        err,
-      );
-    });
+  void safeInngestSend({
+    name: Events.phaseTransitioned.name,
+    data: {
+      processInstanceId: input.instanceId,
+      fromPhaseId: input.fromPhaseId,
+      toPhaseId: input.toPhaseId,
+    },
+  });
 
   if (targetPhase?.rules?.proposals?.review) {
     await runGenerateReviewAssignments(input);

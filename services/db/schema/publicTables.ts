@@ -264,3 +264,6 @@ export {
   contentTranslations,
   type ContentTranslation,
 } from './tables/contentTranslations.sql';
+
+// Transactional outbox for must-deliver Inngest events
+export { eventOutbox, type EventOutboxRow } from './tables/eventOutbox.sql';

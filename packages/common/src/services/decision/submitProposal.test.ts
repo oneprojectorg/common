@@ -37,6 +37,14 @@ vi.mock('@op/db/client', () => ({
 vi.mock('@op/db/schema', () => ({
   ProposalStatus: { DRAFT: 'draft', SUBMITTED: 'submitted' },
   proposals: {},
+  eventOutbox: {},
+}));
+
+vi.mock('@op/events', () => ({
+  Events: {
+    contentSubmitted: { name: 'content/submitted' },
+  },
+  outboxSend: vi.fn().mockResolvedValue('outbox-row-id'),
 }));
 
 vi.mock('@op/collab', () => ({
