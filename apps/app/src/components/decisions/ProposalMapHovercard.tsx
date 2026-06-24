@@ -42,8 +42,12 @@ export function ProposalMapHovercard({
     <Link
       href={href}
       // White card with a soft shadow and rounded corners — matches the
-      // Figma spec. `block` strips link underline styling.
-      className="block w-80 max-w-[20rem] cursor-pointer rounded-lg border border-neutral-gray1 bg-white p-4 text-neutral-black no-underline shadow-md hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-tealBlack"
+      // Figma spec. `block` strips link underline styling; `w-fit` shrinks
+      // the card to its content (so a short title doesn't stretch the card)
+      // and the min/max-w pair clamps it between ~13rem and 20rem — long
+      // titles wrap at the max width instead of running off into a single
+      // long line.
+      className="block w-fit max-w-[20rem] min-w-[13.33rem] cursor-pointer rounded-lg border border-neutral-gray1 bg-white p-4 text-neutral-black no-underline shadow-md hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-tealBlack"
     >
       <p className="line-clamp-2 font-serif text-title-sm14 text-neutral-black">
         {titleText}
@@ -93,7 +97,7 @@ function HovercardAvatar({ author }: { author: HovercardAuthorData }) {
   return (
     <Avatar
       placeholder={author.name || author.slug}
-      className="size-6 min-h-6 min-w-6"
+      className="size-4 min-h-4 min-w-4"
     >
       {avatarUrl ? (
         <Image src={avatarUrl} alt="" fill className="object-cover" />
