@@ -1,6 +1,7 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
+import { userCanInteract } from '@/utils/userCanInteract';
 import { Button } from '@op/ui/Button';
 import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { ReactNode } from 'react';
@@ -89,9 +90,9 @@ export function ProposalViewLayout({
               {t('Edit')}
             </Button>
           )}
-          {/* Like/Follow are user-scoped writes gated at the API — only offer
-              them to a signed-in viewer. */}
-          {user ? (
+          {/* Report/Like/Follow are user-scoped writes gated at the API — only
+              offer them to a signed-in, non-anonymous member. */}
+          {userCanInteract(user) ? (
             <>
               {reportProposalId && (
                 <ReportProposalDialog proposalId={reportProposalId} />

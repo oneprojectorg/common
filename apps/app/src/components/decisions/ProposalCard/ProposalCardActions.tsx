@@ -2,6 +2,7 @@
 
 import { useRelationshipMutations } from '@/hooks/useRelationshipMutations';
 import { useUser } from '@/utils/UserProvider';
+import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
 import { Button, ButtonLink } from '@op/ui/Button';
@@ -52,7 +53,7 @@ export function ProposalCardActions({
 
   // Like/Follow are user-scoped writes gated at the API — anonymous visitors
   // can read the proposal but aren't offered these actions.
-  if (!user) {
+  if (!userCanInteract(user)) {
     return null;
   }
 
