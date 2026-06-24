@@ -2,6 +2,7 @@ import type {
   DecisionSchemaDefinition,
   ProposalTemplateSchema,
 } from '@op/common';
+import { GLOBAL_USER_PUBLIC } from '@op/core';
 import {
   EntityType,
   ProcessStatus,
@@ -16,7 +17,12 @@ import {
   proposals,
   users,
 } from '@op/db/schema';
-import { ROLES } from '@op/db/seedData/accessControl';
+import {
+  DECISION_BITS,
+  PERMISSIONS,
+  ROLES,
+  ZONES,
+} from '@op/db/seedData/accessControl';
 import { db, eq } from '@op/db/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'node:crypto';
@@ -396,6 +402,50 @@ export async function grantDecisionProfileAccess(
       accessRoleId: isAdmin ? ROLES.ADMIN.id : ROLES.MEMBER.id,
     });
   }
+}
+
+export interface MakeDecisionPublicOptions {
+  /** Decision (process instance) profile ID to open to the public. */
+  profileId: string;
+  /** Permission bits for the Public role (defaults to read + submit + vote). */
+  permissionBits?: number;
+}
+
+/**
+ * Grant the global "Public" role access on a decision profile via a per-profile
+ * override, mirroring the production "make a process public" flow so anonymous
+ * and no-session callers can read the decision.
+ */
+export async function makeDecisionPublic(
+  opts: MakeDecisionPublicOptions,
+): Promise<void> {
+  const {
+    profileId,
+    permissionBits = PERMISSIONS.READ |
+      DECISION_BITS.SUBMIT_PROPOSALS |
+      DECISION_BITS.VOTE,
+  } = opts;
+
+  const [publicMember] = await db
+    .insert(profileUsers)
+    .values({ profileId, authUserId: GLOBAL_USER_PUBLIC })
+    .returning();
+
+  if (!publicMember) {
+    throw new Error('Failed to create public profileUser');
+  }
+
+  await db.insert(profileUserToAccessRoles).values({
+    profileUserId: publicMember.id,
+    accessRoleId: ROLES.PUBLIC.id,
+  });
+
+  await db.insert(accessRolePermissionsOnAccessZones).values({
+    accessRoleId: ROLES.PUBLIC.id,
+    accessZoneId: ZONES.DECISIONS.id,
+    permission: permissionBits,
+    profileId,
+  });
 }
 
 /**

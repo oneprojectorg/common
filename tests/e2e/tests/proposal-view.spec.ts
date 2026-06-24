@@ -4,6 +4,9 @@ import {
   ProcessStatus,
   ProposalStatus,
   decisionProcesses,
+  postReactions,
+  posts,
+  postsToProfiles,
   processInstances,
   profileUserToAccessRoles,
   profileUsers,
@@ -15,11 +18,13 @@ import {
   createDecisionInstance,
   createProposal,
   getSeededTemplate,
+  makeDecisionPublic,
 } from '@op/test';
+import type { Page } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 
 import { transformFormDataToProcessSchema as cowopSchema } from '../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/cowop';
-import { expect, test } from '../fixtures/index.js';
+import { authenticateAnonymously, expect, test } from '../fixtures/index.js';
 
 /**
  * Any doc ID that doesn't contain "nonexistent" will return fixture content
@@ -671,5 +676,102 @@ test.describe('Proposal View', () => {
     await expect(
       authenticatedPage.getByText('Content could not be loaded').first(),
     ).toBeVisible({ timeout: 30_000 });
+  });
+
+  test('hides write actions (reactions, like, follow) from anonymous and logged-out viewers', async ({
+    authenticatedPage,
+    org,
+    browser,
+  }) => {
+    const template = await getSeededTemplate();
+
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: template.processSchema,
+    });
+
+    const proposal = await createProposal({
+      processInstanceId: instance.instance.id,
+      submittedByProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      status: ProposalStatus.SUBMITTED,
+      proposalData: { title: 'Reactable Proposal' },
+    });
+
+    // Public decision so anonymous and logged-out visitors can read it.
+    await makeDecisionPublic({ profileId: instance.profileId });
+
+    // Reactions render per-comment; seed a top-level post + like on the proposal.
+    const commentText = 'Seeded comment carrying a like';
+    const [comment] = await db
+      .insert(posts)
+      .values({ content: commentText, profileId: org.organizationProfile.id })
+      .returning();
+    if (!comment) {
+      throw new Error('Failed to seed comment');
+    }
+    await db.insert(postsToProfiles).values({
+      postId: comment.id,
+      profileId: proposal.profileId,
+    });
+    await db.insert(postReactions).values({
+      postId: comment.id,
+      profileId: org.organizationProfile.id,
+      reactionType: 'like',
+    });
+
+    const proposalUrl = `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`;
+    const likeBadge = /👍\s*1/;
+
+    // Every viewer sees the proposal, the comment, and the seeded like; only a
+    // signed-in member gets the write controls (add-reaction, Like, Follow).
+    const expectProposalView = async (
+      page: Page,
+      { canInteract }: { canInteract: boolean },
+    ) => {
+      await page.goto(proposalUrl);
+      await expect(
+        page.getByRole('heading', { name: 'Reactable Proposal' }),
+      ).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByText(commentText)).toBeVisible();
+      await expect(page.getByText(likeBadge)).toBeVisible();
+
+      const writeControls = [
+        page.getByRole('button', { name: 'Add reaction' }),
+        page.getByRole('button', { name: 'Like', exact: true }),
+        page.getByRole('button', { name: 'Follow', exact: true }),
+      ];
+      for (const control of writeControls) {
+        await expect(control).toHaveCount(canInteract ? 1 : 0);
+      }
+    };
+
+    // A clean context so the worker's auth doesn't leak in via newContext().
+    const withCleanPage = async (fn: (page: Page) => Promise<void>) => {
+      const context = await browser.newContext({
+        storageState: { cookies: [], origins: [] },
+      });
+      try {
+        await fn(await context.newPage());
+      } finally {
+        await context.close();
+      }
+    };
+
+    // 1) Signed-in member: write controls present.
+    await expectProposalView(authenticatedPage, { canInteract: true });
+
+    // 2) Anonymous account and 3) logged-out visitor: read-only.
+    await withCleanPage(async (page) => {
+      await authenticateAnonymously(page);
+      await expectProposalView(page, { canInteract: false });
+    });
+    await withCleanPage((page) =>
+      expectProposalView(page, { canInteract: false }),
+    );
   });
 });

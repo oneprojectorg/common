@@ -3,6 +3,7 @@
 import { getPublicUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
+import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type {
   CommonUser,
@@ -168,6 +169,9 @@ const PostReactions = ({
   post: Post;
   onReactionClick: (postId: string, emoji: string) => void;
 }) => {
+  const { user } = useUser();
+  const canReact = userCanInteract(user);
+
   if (!post?.id) return null;
 
   const reactions = post.reactionCounts
@@ -191,6 +195,7 @@ const PostReactions = ({
     <ReactionsButton
       reactions={reactions}
       reactionOptions={REACTION_OPTIONS}
+      canReact={canReact}
       onReactionClick={(emoji) => onReactionClick(post.id!, emoji)}
       onAddReaction={(emoji) => onReactionClick(post.id!, emoji)}
     />

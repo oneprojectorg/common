@@ -5,6 +5,7 @@ import { useUser } from '@/utils/UserProvider';
 import { analyzeError, useConnectionStatus } from '@/utils/connectionErrors';
 import { detectLinks } from '@/utils/linkDetection';
 import { createCommentsQueryKey } from '@/utils/queryKeys';
+import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type { Organization, Post } from '@op/api/encoders';
 import { Button } from '@op/ui/Button';
@@ -592,8 +593,7 @@ const PostUpdateWithUser = ({
     }
   }, [content]);
 
-  // Anonymous accounts still get a `currentProfile`, so guard it explicitly.
-  if (!user?.currentProfile || user.isAnonymous) {
+  if (!userCanInteract(user)) {
     return null;
   }
 

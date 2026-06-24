@@ -19,6 +19,7 @@ export {
   getSeededTemplate,
   grantDecisionProfileAccess,
   grantInstanceReviewerRole,
+  makeDecisionPublic,
   SEEDED_SIMPLE_VOTING_TEMPLATE_NAME,
   SEEDED_TEMPLATE_PROFILE_SLUG,
   testMinimalSchema,
@@ -32,6 +33,7 @@ export {
   type CreateProposalOptions,
   type CreateProposalResult,
   type GrantDecisionProfileAccessOptions,
+  type MakeDecisionPublicOptions,
 } from './decision-data';
 
 export {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useUser } from '@/utils/UserProvider';
+import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type { Proposal } from '@op/common/client';
 import { Header3 } from '@op/ui/Header';
@@ -32,8 +33,7 @@ export function ProposalComments({
   const comments = commentsData?.items ?? [];
   const { handleReactionClick } = usePostFeedActions();
 
-  // Visitors and anonymous accounts can't comment — hide the input.
-  const canComment = Boolean(user?.currentProfile) && !user?.isAnonymous;
+  const canComment = userCanInteract(user);
 
   const scrollToComments = useCallback(() => {
     setTimeout(() => {
