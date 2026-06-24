@@ -27,14 +27,11 @@ const withChannelMeta: MiddlewareBuilderBase = async ({ ctx, next }) => {
           registerMutationChannels: (channels: ChannelName[]) => {
             procedureChannels.push(...channels);
 
-            // Publish mutation events to realtime channels
-            for (const channel of channels) {
-              waitUntil(
-                realtime.publish(channel, {
-                  mutationId: ctx.requestId,
-                }),
-              );
-            }
+            // One batched broadcast per registration site; the service
+            // dedupes channels and retries transient failures.
+            waitUntil(
+              realtime.publishMany(channels, { mutationId: ctx.requestId }),
+            );
           },
         },
       });

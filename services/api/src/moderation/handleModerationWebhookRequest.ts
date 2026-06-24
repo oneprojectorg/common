@@ -37,11 +37,11 @@ export const handleModerationWebhookRequest = (
 
       // Realtime invalidation is strictly best-effort and runs *after* the
       // verdict has already committed. The whole block is wrapped (not just
-      // `publish`, which guards itself): the channel lookup is two DB queries
-      // for posts, and if it threw, the webhook would 500, the provider would
-      // retry, and the now-idempotent verdict would no-op — permanently
-      // losing the invalidation while the flag is correct in the DB. Clients
-      // would keep their stale view until a manual reload.
+      // `publishMany`, which guards itself): the channel lookup is two DB
+      // queries for posts, and if it threw, the webhook would 500, the
+      // provider would retry, and the now-idempotent verdict would no-op —
+      // permanently losing the invalidation while the flag is correct in the
+      // DB. Clients would keep their stale view until a manual reload.
       // Detach on a `flagged`-already row lands as `action: 'noop'`, but the
       // proposal did change (moderation_detached_at just flipped). Invalidate
       // on `detached` too so admin lists refetch and drop the item.
@@ -51,12 +51,7 @@ export const handleModerationWebhookRequest = (
             verdict.itemType,
             verdict.itemId,
           );
-          const mutationId = randomUUID();
-          await Promise.all(
-            channels.map((channel) =>
-              realtime.publish(channel, { mutationId }),
-            ),
-          );
+          await realtime.publishMany(channels, { mutationId: randomUUID() });
         } catch (error) {
           logger.error('[moderation-webhook] realtime invalidation failed', {
             error,

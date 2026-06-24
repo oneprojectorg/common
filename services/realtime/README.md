@@ -22,10 +22,17 @@ Provides channel-based pub/sub architecture using Supabase Realtime Broadcast:
 ```typescript
 import { Channels, realtime } from '@op/realtime/server';
 
-// Publish to user channel
+// Publish to a single channel
 await realtime.publish(Channels.user(userId), {
   mutationId: 'mutation-id',
 });
+
+// Or publish to many channels in one batched broadcast (deduped, retried
+// once on 429 / 5xx with a 3-second per-attempt timeout).
+await realtime.publishMany(
+  [Channels.user(userId), Channels.org(orgId)],
+  { mutationId: 'mutation-id' },
+);
 ```
 
 ### Client-side Subscription
