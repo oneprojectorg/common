@@ -2,7 +2,7 @@
 
 import { type LngLat, Map, type MapBounds } from '@op/ui/Map';
 import { MapMarker } from '@op/ui/MapMarker';
-import { useMemo } from 'react';
+import { type ReactNode, useMemo } from 'react';
 
 export interface ProposalMapPoint {
   id: string;
@@ -24,6 +24,13 @@ export interface ProposalsMapCanvasProps {
   onMarkerHover?: (id: string | null) => void;
   /** Fired when a marker is clicked/tapped. */
   onMarkerClick?: (id: string) => void;
+  /**
+   * Optional per-pin hovercard. When provided, the returned element is
+   * rendered above the pin while the cursor is over the pin or the card.
+   * Return `null` (or omit the prop entirely) to suppress the hovercard for
+   * a given marker — used by the mobile view, where hover has no analogue.
+   */
+  renderHovercard?: (id: string) => ReactNode;
   ariaLabel?: string;
   className?: string;
 }
@@ -47,6 +54,7 @@ export default function ProposalsMapCanvas({
   activeId,
   onMarkerHover,
   onMarkerClick,
+  renderHovercard,
   ariaLabel,
   className,
 }: ProposalsMapCanvasProps) {
@@ -62,20 +70,57 @@ export default function ProposalsMapCanvas({
       className={className}
     >
       {points.map((point) => (
-        <MapMarker
+        <ProposalPin
           key={point.id}
-          longitude={point.lng}
-          latitude={point.lat}
+          point={point}
           isActive={activeId === point.id}
-          onClick={onMarkerClick ? () => onMarkerClick(point.id) : undefined}
-          onMouseEnter={
-            onMarkerHover ? () => onMarkerHover(point.id) : undefined
-          }
-          onMouseLeave={onMarkerHover ? () => onMarkerHover(null) : undefined}
+          onMarkerHover={onMarkerHover}
+          onMarkerClick={onMarkerClick}
+          renderHovercard={renderHovercard}
         />
       ))}
     </Map>
   );
+}
+
+interface ProposalPinProps {
+  point: ProposalMapPoint;
+  isActive: boolean;
+  onMarkerHover?: (id: string | null) => void;
+  onMarkerClick?: (id: string) => void;
+  renderHovercard?: (id: string) => ReactNode;
+}
+
+function ProposalPin({
+  point,
+  isActive,
+  onMarkerHover,
+  onMarkerClick,
+  renderHovercard,
+}: ProposalPinProps) {
+  return (
+    <MapMarker
+      longitude={point.lng}
+      latitude={point.lat}
+      isActive={isActive}
+      onClick={bindCallback(onMarkerClick, point.id)}
+      onMouseEnter={bindCallback(onMarkerHover, point.id)}
+      onMouseLeave={bindCallback(onMarkerHover, null)}
+      hoverContent={renderHovercard?.(point.id)}
+    />
+  );
+}
+
+/**
+ * Pre-bind an optional callback with the given argument so the marker can
+ * pass `undefined` straight through (which it uses to skip its hover / click
+ * wiring and the matching CSS cursor change).
+ */
+function bindCallback<T>(
+  fn: ((arg: T) => void) | undefined,
+  arg: T,
+): (() => void) | undefined {
+  return fn ? () => fn(arg) : undefined;
 }
 
 /**

@@ -8,6 +8,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
+import { ProposalMapHovercard } from './ProposalMapHovercard';
 import { ProposalMapListItem } from './ProposalMapListItem';
 import { ProposalsMapCanvas } from './location/dynamicProposalsMap';
 import { useMapStyleUrl } from './location/mapConfig';
@@ -81,6 +82,22 @@ export function ProposalsMapView({
     [proposals, router, hrefFor],
   );
 
+  // Desktop-only: render the hovercard above the pin on hover, with a small
+  // dismiss delay so the cursor can transit from pin to card. Mobile is left
+  // as plain tap-to-open — there's no hover analogue.
+  const renderHovercard = useCallback(
+    (id: string) => {
+      const proposal = proposals.find((p) => p.id === id);
+      if (!proposal) {
+        return null;
+      }
+      return (
+        <ProposalMapHovercard proposal={proposal} href={hrefFor(proposal)} />
+      );
+    },
+    [proposals, hrefFor],
+  );
+
   const map = (
     <ProposalsMapCanvas
       styleUrl={styleUrl}
@@ -90,6 +107,7 @@ export function ProposalsMapView({
       activeId={activeId}
       onMarkerHover={isMobile ? undefined : setActiveId}
       onMarkerClick={handleMarkerClick}
+      renderHovercard={isMobile ? undefined : renderHovercard}
       ariaLabel={t('Map of proposals')}
       className="h-full sm:h-full"
     />
