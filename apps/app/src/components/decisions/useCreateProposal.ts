@@ -1,6 +1,5 @@
 'use client';
 
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useUser } from '@/utils/UserProvider';
 import { trpc } from '@op/api/client';
 import { useMount } from '@op/hooks';
@@ -15,16 +14,19 @@ import { useRouter, useTranslations } from '@/lib/i18n';
  * the caller builds from the created proposal. `isCreating` stays true through
  * the navigation so buttons can keep showing a pending state.
  *
- * Public (no-session) visitors are given an anonymous session first when the
- * `anonymous_signin` flag is on, so the draft has an account to attribute to.
+ * Public (no-session) visitors get an anonymous session first when the process
+ * grants them submit access, so the draft has an account to attribute to.
  */
 export function useCreateProposal({
   instanceId,
   navigateTo,
+  canSubmitProposal,
 }: {
   instanceId: string;
   /** Builds the post-create destination from the new draft proposal. */
   navigateTo: (proposal: { profileId: string }) => string;
+  /** Submit access for the viewer; permits anon sign-in for public visitors. */
+  canSubmitProposal: boolean;
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -34,7 +36,6 @@ export function useCreateProposal({
   const [isCreating, startCreating] = useTransition();
   const supabase = createSBBrowserClient();
   const utils = trpc.useUtils();
-  const anonymousSigninEnabled = useFeatureFlag('anonymous_signin');
 
   const createProposalMutation = trpc.decision.createProposal.useMutation();
 
@@ -44,7 +45,7 @@ export function useCreateProposal({
         // A public (no-session) visitor has no account to attribute the
         // proposal to, so give them an anonymous session before creating the
         // draft.
-        if (anonymousSigninEnabled && !user) {
+        if (canSubmitProposal && !user) {
           const { error } = await supabase.auth.signInAnonymously();
           if (error) {
             throw error;

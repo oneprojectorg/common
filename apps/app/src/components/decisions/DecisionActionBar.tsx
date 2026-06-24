@@ -37,6 +37,7 @@ export const DecisionActionBar = ({
     instanceId,
     navigateTo: (proposal) =>
       `/decisions/${slug}/proposal/${proposal.profileId}/edit`,
+    canSubmitProposal: showSubmitButton,
   });
 
   return (
