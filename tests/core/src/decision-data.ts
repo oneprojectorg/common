@@ -227,6 +227,8 @@ export interface CreateDecisionInstanceOptions {
   grantAdminAccess?: boolean;
   /** Optional override for proposalTemplate in instanceData (for testing legacy templates) */
   proposalTemplate?: ProposalTemplateSchema;
+  /** Optional explicit slug. When omitted, a unique `test-instance-<uuid>` slug is generated. */
+  slug?: string;
 }
 
 export interface CreateDecisionInstanceResult {
@@ -256,9 +258,10 @@ export async function createDecisionInstance(
     status = ProcessStatus.PUBLISHED,
     grantAdminAccess = true,
     proposalTemplate: proposalTemplateOverride,
+    slug,
   } = opts;
 
-  const instanceSlug = `test-instance-${randomUUID()}`;
+  const instanceSlug = slug ?? `test-instance-${randomUUID()}`;
   const firstPhaseId = schema.phases[0]?.id ?? 'submission';
 
   // 1. Create a profile for the process instance with DECISION type

@@ -64,4 +64,34 @@ test.describe('Decisions', () => {
       authenticatedPage.getByRole('button', { name: 'Submit Proposal' }),
     ).toBeVisible({ timeout: 5000 });
   });
+
+  test('vanity URL `/[locale]/columbus` renders the decision page', async ({
+    authenticatedPage,
+    org,
+  }) => {
+    // Seed a decision whose slug matches the `VANITY_DECISION_SLUGS` allowlist
+    // in `apps/app/next.config.mjs`. The rewrite turns `/en/columbus` into the
+    // existing `/en/decisions/columbus` route on the server while the URL bar
+    // keeps the vanity path.
+    const template = await getSeededTemplate();
+    const instance = await createDecisionInstance({
+      processId: template.id,
+      ownerProfileId: org.organizationProfile.id,
+      authUserId: org.adminUser.authUserId,
+      email: org.adminUser.email,
+      schema: template.processSchema,
+      slug: 'columbus',
+    });
+
+    await authenticatedPage.goto(`/en/${instance.slug}`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    await expect(
+      authenticatedPage.getByRole('heading', { name: instance.name }),
+    ).toBeVisible({ timeout: 15000 });
+    await expect(authenticatedPage).toHaveURL(
+      new RegExp(`/en/${instance.slug}(?:[/?#]|$)`),
+    );
+  });
 });
