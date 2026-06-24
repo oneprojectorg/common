@@ -1,4 +1,4 @@
-import { invalidate } from '@op/cache';
+import { invalidate, invalidateMultiple } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { profiles } from '@op/db/schema';
 import type { User } from '@supabase/supabase-js';
@@ -31,6 +31,15 @@ export async function deleteOrganization({
     permissions: { profile: permission.DELETE },
   });
 
+  // Snapshot every member's auth id BEFORE the delete, so we can bust each
+  // member's orgUser cache entry — the durable cache partitions entries by
+  // caller identity, so only invalidating the caller's key would leave every
+  // other member's cached access alive until the 72h TTL.
+  const orgMembers = await db.query.organizationUsers.findMany({
+    where: { organizationId: organization.id },
+    columns: { authUserId: true },
+  });
+
   // Delete the organization profile
   // The cascade delete will handle removing org data
   const [deletedOrganization] = await db
@@ -43,13 +52,25 @@ export async function deleteOrganization({
   }
 
   // Invalidate caches for the deleted organization
-  invalidate({ type: 'organization', params: [organizationProfileId] });
-  invalidate({ type: 'organization', params: [deletedOrganization.slug] });
-  invalidate({
-    type: 'orgUser',
-    params: orgUserCacheKey({ user, organizationId: organization.id }),
-  });
-  getOrgAccessUser.invalidate({ user, organizationId: organization.id });
+  await Promise.all([
+    invalidate({ type: 'organization', params: [organizationProfileId] }),
+    invalidate({ type: 'organization', params: [deletedOrganization.slug] }),
+    invalidateMultiple({
+      type: 'orgUser',
+      paramsList: orgMembers.map((member) =>
+        orgUserCacheKey({
+          user: { id: member.authUserId },
+          organizationId: organization.id,
+        }),
+      ),
+    }),
+  ]);
+  for (const member of orgMembers) {
+    getOrgAccessUser.invalidate({
+      user: { id: member.authUserId },
+      organizationId: organization.id,
+    });
+  }
 
   return { deletedId: organizationProfileId };
 }

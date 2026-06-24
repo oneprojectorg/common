@@ -126,11 +126,18 @@ export async function updateOrganizationUser({
     throw new NotFoundError('Organization user', organizationUserId);
   }
 
+  // Invalidate the TARGET user's cache, not the caller's — see
+  // `deleteOrganizationUser` for why passing the admin (the caller) here would
+  // leave the member's stale cached roles in place until the 72h TTL expires.
+  const targetAccessUser = { id: targetOrgUser.authUserId };
   await invalidate({
     type: 'orgUser',
-    params: orgUserCacheKey({ user, organizationId }),
+    params: orgUserCacheKey({
+      user: targetAccessUser,
+      organizationId,
+    }),
   });
-  getOrgAccessUser.invalidate({ user, organizationId });
+  getOrgAccessUser.invalidate({ user: targetAccessUser, organizationId });
 
   return {
     ...updatedUserWithRoles,
