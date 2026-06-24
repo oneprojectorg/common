@@ -2,12 +2,18 @@
 
 import { type LngLat, Map, type MapBounds } from '@op/ui/Map';
 import { MapMarker } from '@op/ui/MapMarker';
-import { useMemo } from 'react';
+import { type ReactNode, useMemo } from 'react';
 
 export interface ProposalMapPoint {
   id: string;
   lng: number;
   lat: number;
+  /**
+   * Optional hovercard rendered above the pin while it is active. The marker
+   * itself owns the open/close visibility (driven by `activeId`) — this is
+   * just the content. See {@link MapMarker} for the placement contract.
+   */
+  hoverCard?: ReactNode;
 }
 
 export interface ProposalsMapCanvasProps {
@@ -24,6 +30,8 @@ export interface ProposalsMapCanvasProps {
   onMarkerHover?: (id: string | null) => void;
   /** Fired when a marker is clicked/tapped. */
   onMarkerClick?: (id: string) => void;
+  /** Fires when the user starts zooming the camera. */
+  onZoomStart?: () => void;
   ariaLabel?: string;
   className?: string;
 }
@@ -47,6 +55,7 @@ export default function ProposalsMapCanvas({
   activeId,
   onMarkerHover,
   onMarkerClick,
+  onZoomStart,
   ariaLabel,
   className,
 }: ProposalsMapCanvasProps) {
@@ -58,6 +67,7 @@ export default function ProposalsMapCanvas({
       center={center}
       zoom={zoom}
       bounds={bounds}
+      onZoomStart={onZoomStart}
       ariaLabel={ariaLabel}
       className={className}
     >
@@ -72,6 +82,7 @@ export default function ProposalsMapCanvas({
             onMarkerHover ? () => onMarkerHover(point.id) : undefined
           }
           onMouseLeave={onMarkerHover ? () => onMarkerHover(null) : undefined}
+          hoverCard={point.hoverCard}
         />
       ))}
     </Map>

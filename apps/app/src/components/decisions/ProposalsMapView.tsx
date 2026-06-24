@@ -5,11 +5,13 @@ import type { MapDefaultView } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
 import { FieldError } from '@op/ui/Field';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { ProposalMapListItem } from './ProposalMapListItem';
+import { ProposalMapHoverCard } from './location/ProposalMapHoverCard';
+import type { ProposalMapPoint } from './location/ProposalsMapCanvas';
 import { ProposalsMapCanvas } from './location/dynamicProposalsMap';
 import { MAP_STYLE_URL } from './location/mapConfig';
 
@@ -23,6 +25,14 @@ interface ProposalsMapViewProps {
    * has a location to fit. */
   mapView: MapDefaultView;
 }
+
+/**
+ * How long we wait, after the cursor leaves a marker, before clearing the
+ * shared active state. Long enough for the cursor to transit the small gap
+ * between pin and hovercard; short enough to feel responsive when leaving the
+ * marker for good.
+ */
+const HOVER_DISMISS_DELAY_MS = 150;
 
 /**
  * The map browse view for a process's proposals. On desktop it shows the list
@@ -47,6 +57,44 @@ export function ProposalsMapView({
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
 
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Debounce clearing the active state so the cursor can transit from the pin
+  // to its hovercard without the card snapping closed. A pending close is
+  // cancelled whenever the cursor enters another hover target (pin or card).
+  const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cancelPendingDismiss = useCallback(() => {
+    if (dismissTimer.current) {
+      clearTimeout(dismissTimer.current);
+      dismissTimer.current = null;
+    }
+  }, []);
+
+  // Make sure the timer doesn't outlive the component (e.g. on navigation).
+  // `cancelPendingDismiss` is stable (memoized with empty deps), so this
+  // effect's cleanup fires exactly once, on unmount.
+  useEffect(() => cancelPendingDismiss, [cancelPendingDismiss]);
+
+  const handleMarkerHover = useCallback(
+    (id: string | null) => {
+      cancelPendingDismiss();
+      if (id === null) {
+        dismissTimer.current = setTimeout(() => {
+          setActiveId(null);
+          dismissTimer.current = null;
+        }, HOVER_DISMISS_DELAY_MS);
+        return;
+      }
+      setActiveId(id);
+    },
+    [cancelPendingDismiss],
+  );
+
+  // Pin-and-card pixel offsets stop being meaningful mid-zoom, so dismiss the
+  // active state immediately when the user starts zooming.
+  const handleZoomStart = useCallback(() => {
+    cancelPendingDismiss();
+    setActiveId(null);
+  }, [cancelPendingDismiss]);
 
   const hrefFor = useCallback(
     (proposal: Proposal) =>
@@ -54,19 +102,6 @@ export function ProposalsMapView({
         ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
         : `/profile/${slug}/decisions/${instanceId}/proposal/${proposal.profileId}`,
     [decisionSlug, slug, instanceId],
-  );
-
-  // One marker per proposal that has coordinates. Location is mandatory for
-  // these processes, so this is virtually every proposal (drafts may lack one).
-  const points = useMemo(
-    () =>
-      proposals.flatMap((proposal) => {
-        const location = parseProposalData(proposal.proposalData).location;
-        return location
-          ? [{ id: proposal.id, lng: location.lng, lat: location.lat }]
-          : [];
-      }),
-    [proposals],
   );
 
   // Clicking a marker opens the proposal on every breakpoint; on desktop the
@@ -79,6 +114,35 @@ export function ProposalsMapView({
       }
     },
     [proposals, router, hrefFor],
+  );
+
+  // One marker per proposal that has coordinates. Location is mandatory for
+  // these processes, so this is virtually every proposal (drafts may lack one).
+  // Mobile skips the hovercard payload — touch users never see it (the marker
+  // tap navigates straight to the proposal) and building it would only widen
+  // mobile bundles for no behavior change.
+  const points = useMemo<ProposalMapPoint[]>(
+    () =>
+      proposals.flatMap((proposal) => {
+        const location = parseProposalData(proposal.proposalData).location;
+        if (!location) {
+          return [];
+        }
+        return [
+          {
+            id: proposal.id,
+            lng: location.lng,
+            lat: location.lat,
+            hoverCard: isMobile ? undefined : (
+              <ProposalMapHoverCard
+                proposal={proposal}
+                href={hrefFor(proposal)}
+              />
+            ),
+          },
+        ];
+      }),
+    [proposals, isMobile, hrefFor],
   );
 
   if (!MAP_STYLE_URL) {
@@ -96,8 +160,9 @@ export function ProposalsMapView({
       zoom={mapView.zoom}
       points={points}
       activeId={activeId}
-      onMarkerHover={isMobile ? undefined : setActiveId}
+      onMarkerHover={isMobile ? undefined : handleMarkerHover}
       onMarkerClick={handleMarkerClick}
+      onZoomStart={isMobile ? undefined : handleZoomStart}
       ariaLabel={t('Map of proposals')}
       className="h-full sm:h-full"
     />
@@ -125,8 +190,8 @@ export function ProposalsMapView({
             proposal={proposal}
             href={hrefFor(proposal)}
             isActive={activeId === proposal.id}
-            onActivate={() => setActiveId(proposal.id)}
-            onDeactivate={() => setActiveId(null)}
+            onActivate={() => handleMarkerHover(proposal.id)}
+            onDeactivate={() => handleMarkerHover(null)}
           />
         ))}
       </ul>

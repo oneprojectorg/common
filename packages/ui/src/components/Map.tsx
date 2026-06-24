@@ -66,6 +66,12 @@ export interface MapProps {
    * panning or zooming. Use it to persist a chosen view.
    */
   onMoveEnd?: (view: { center: LngLat; zoom: number }) => void;
+  /**
+   * Fires when the user begins zooming. Use it to dismiss hover overlays
+   * (e.g. proposal hovercards) the moment the camera starts changing scale,
+   * since pixel offsets relative to a marker stop being meaningful mid-zoom.
+   */
+  onZoomStart?: () => void;
   /** Accessible label for the map region. */
   ariaLabel?: string;
   className?: string;
@@ -88,6 +94,7 @@ export function Map({
   showZoomControl = true,
   onClick,
   onMoveEnd,
+  onZoomStart,
   ariaLabel,
   className,
   children,
@@ -171,6 +178,7 @@ export function Map({
                 })
             : undefined
         }
+        onZoomStart={onZoomStart ? () => onZoomStart() : undefined}
       >
         {showZoomControl && (
           <NavigationControl position="bottom-right" showCompass={false} />
