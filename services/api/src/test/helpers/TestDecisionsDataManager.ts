@@ -6,7 +6,6 @@ import {
   createInstanceDataFromTemplate,
   createOrganization as createOrganizationService,
   createProposal as createProposalService,
-  decisionPermission,
   getTemplate,
   joinOrganization,
 } from '@op/common';
@@ -21,7 +20,7 @@ import {
   proposals,
   users,
 } from '@op/db/schema';
-import { PERMISSIONS, ROLES } from '@op/db/seedData/accessControl';
+import { ROLES } from '@op/db/seedData/accessControl';
 import type { User } from '@op/supabase/lib';
 import {
   grantDecisionProfileAccess,
@@ -464,23 +463,13 @@ export class TestDecisionsDataManager {
   }
 
   /**
-   * Makes a decision profile publicly accessible to no-JWT (public) visitors,
-   * mirroring the production "make a process public" runbook: the
-   * GLOBAL_USER_PUBLIC sentinel becomes a member of the profile holding the
-   * seeded global Public role, whose grant on this profile is a profile-scoped
-   * `decisions` permission override. READ + SUBMIT_PROPOSALS + VOTE are granted
-   * by default (the Columbus public value), so a public visitor resolves the
-   * same capabilities the access object exposes for a public process.
-   *
-   * The Public role is seeded with no default permissions; the override is
-   * scoped to `profileId`, so the grant never leaks to other decisions and the
-   * membership + override cascade away when the profile is deleted in cleanup.
+   * Opens a decision profile to public (no-JWT) visitors via the shared
+   * {@link makeDecisionPublicShared} helper, registering the profile for cleanup
+   * so the membership + permission override are torn down with it.
    */
   async makeDecisionPublic(
     profileId: string,
-    permissionBits: number = PERMISSIONS.READ |
-      decisionPermission.SUBMIT_PROPOSALS |
-      decisionPermission.VOTE,
+    permissionBits?: number,
   ): Promise<void> {
     this.ensureCleanupRegistered();
     await makeDecisionPublicShared({ profileId, permissionBits });

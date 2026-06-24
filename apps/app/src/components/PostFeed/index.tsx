@@ -3,6 +3,7 @@
 import { getPublicUrl } from '@/utils';
 import { useUser } from '@/utils/UserProvider';
 import { detectLinks, linkifyText } from '@/utils/linkDetection';
+import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type {
   CommonUser,
@@ -169,9 +170,7 @@ const PostReactions = ({
   onReactionClick: (postId: string, emoji: string) => void;
 }) => {
   const { user } = useUser();
-
-  // Only signed-in members can react; anon and logged-out viewers are read-only.
-  const canReact = Boolean(user?.currentProfile) && !user?.isAnonymous;
+  const canReact = userCanInteract(user);
 
   if (!post?.id) return null;
 

@@ -148,6 +148,29 @@ const ReactionPicker = ({
   );
 };
 
+const AddReactionMenu = ({
+  reactionOptions,
+  onAddReaction,
+  existingReactions,
+  placement,
+}: {
+  reactionOptions?: readonly ReactionOption[];
+  onAddReaction?: (emoji: string) => void;
+  existingReactions: Reaction[];
+  placement: 'top left' | 'bottom left';
+}) => (
+  <MenuTrigger>
+    <ReactionButton size="icon" aria-label="Add reaction" />
+    <Popover placement={placement}>
+      <ReactionPicker
+        reactionOptions={reactionOptions}
+        onReactionSelect={(emoji) => onAddReaction?.(emoji)}
+        existingReactions={existingReactions}
+      />
+    </Popover>
+  </MenuTrigger>
+);
+
 export const ReactionsButton = ({
   reactions = [],
   reactionOptions = DEFAULT_REACTION_OPTIONS,
@@ -157,23 +180,18 @@ export const ReactionsButton = ({
   canReact = true,
 }: ReactionsButtonProps) => {
   if (reactions.length === 0) {
-    // Nothing to show, nothing to add.
     if (!canReact) {
       return null;
     }
 
     return (
       <div className={reactionGroupStyle({ className })}>
-        <MenuTrigger>
-          <ReactionButton size="icon" aria-label="Add reaction" />
-          <Popover placement="bottom left">
-            <ReactionPicker
-              reactionOptions={reactionOptions}
-              onReactionSelect={(emoji) => onAddReaction?.(emoji)}
-              existingReactions={reactions}
-            />
-          </Popover>
-        </MenuTrigger>
+        <AddReactionMenu
+          reactionOptions={reactionOptions}
+          onAddReaction={onAddReaction}
+          existingReactions={reactions}
+          placement="bottom left"
+        />
       </div>
     );
   }
@@ -195,16 +213,12 @@ export const ReactionsButton = ({
         ) : null,
       )}
       {canReact ? (
-        <MenuTrigger>
-          <ReactionButton size="icon" aria-label="Add reaction" />
-          <Popover placement="top left">
-            <ReactionPicker
-              reactionOptions={reactionOptions}
-              onReactionSelect={(emoji) => onAddReaction?.(emoji)}
-              existingReactions={reactions}
-            />
-          </Popover>
-        </MenuTrigger>
+        <AddReactionMenu
+          reactionOptions={reactionOptions}
+          onAddReaction={onAddReaction}
+          existingReactions={reactions}
+          placement="top left"
+        />
       ) : null}
     </div>
   );

@@ -20,6 +20,7 @@ import {
   getSeededTemplate,
   makeDecisionPublic,
 } from '@op/test';
+import type { Page } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 
 import { transformFormDataToProcessSchema as cowopSchema } from '../../../apps/app/src/components/Profile/CreateDecisionProcessModal/schemas/cowop';
@@ -725,58 +726,46 @@ test.describe('Proposal View', () => {
 
     const proposalUrl = `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`;
     const likeBadge = /👍\s*1/;
-    const addReactionButton = { role: 'button' as const, name: 'Add reaction' };
 
-    // 1) A signed-in member sees the like and can react (control present).
-    await authenticatedPage.goto(proposalUrl);
-    await expect(
-      authenticatedPage.getByRole('heading', { name: 'Reactable Proposal' }),
-    ).toBeVisible({ timeout: 30_000 });
-    await expect(authenticatedPage.getByText(commentText)).toBeVisible();
-    await expect(authenticatedPage.getByText(likeBadge)).toBeVisible();
-    await expect(
-      authenticatedPage.getByRole(addReactionButton.role, {
-        name: addReactionButton.name,
-      }),
-    ).toBeVisible();
+    // Every viewer sees the proposal, the comment, and the seeded like; only a
+    // signed-in member gets the add-reaction control.
+    const expectReactionView = async (
+      page: Page,
+      { canReact }: { canReact: boolean },
+    ) => {
+      await page.goto(proposalUrl);
+      await expect(
+        page.getByRole('heading', { name: 'Reactable Proposal' }),
+      ).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByText(commentText)).toBeVisible();
+      await expect(page.getByText(likeBadge)).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: 'Add reaction' }),
+      ).toHaveCount(canReact ? 1 : 0);
+    };
 
-    // 2) Anonymous account: sees the like, no add-reaction control. Clean
-    //    session so the worker's auth doesn't leak in via newContext().
-    const anonContext = await browser.newContext({
-      storageState: { cookies: [], origins: [] },
+    // A clean context so the worker's auth doesn't leak in via newContext().
+    const withCleanPage = async (fn: (page: Page) => Promise<void>) => {
+      const context = await browser.newContext({
+        storageState: { cookies: [], origins: [] },
+      });
+      try {
+        await fn(await context.newPage());
+      } finally {
+        await context.close();
+      }
+    };
+
+    // 1) Signed-in member: read-write (add-reaction control present).
+    await expectReactionView(authenticatedPage, { canReact: true });
+
+    // 2) Anonymous account and 3) logged-out visitor: read-only.
+    await withCleanPage(async (page) => {
+      await authenticateAnonymously(page);
+      await expectReactionView(page, { canReact: false });
     });
-    const anonPage = await anonContext.newPage();
-    await authenticateAnonymously(anonPage);
-    await anonPage.goto(proposalUrl);
-    await expect(
-      anonPage.getByRole('heading', { name: 'Reactable Proposal' }),
-    ).toBeVisible({ timeout: 30_000 });
-    await expect(anonPage.getByText(commentText)).toBeVisible();
-    await expect(anonPage.getByText(likeBadge)).toBeVisible();
-    await expect(
-      anonPage.getByRole(addReactionButton.role, {
-        name: addReactionButton.name,
-      }),
-    ).toHaveCount(0);
-    await anonContext.close();
-
-    // 3) Logged-out visitor: same read-only treatment. Empty storageState since
-    //    browser.newContext() otherwise reuses the worker's session.
-    const guestContext = await browser.newContext({
-      storageState: { cookies: [], origins: [] },
-    });
-    const guestPage = await guestContext.newPage();
-    await guestPage.goto(proposalUrl);
-    await expect(
-      guestPage.getByRole('heading', { name: 'Reactable Proposal' }),
-    ).toBeVisible({ timeout: 30_000 });
-    await expect(guestPage.getByText(commentText)).toBeVisible();
-    await expect(guestPage.getByText(likeBadge)).toBeVisible();
-    await expect(
-      guestPage.getByRole(addReactionButton.role, {
-        name: addReactionButton.name,
-      }),
-    ).toHaveCount(0);
-    await guestContext.close();
+    await withCleanPage((page) =>
+      expectReactionView(page, { canReact: false }),
+    );
   });
 });
