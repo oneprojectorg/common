@@ -16,7 +16,7 @@ import { useTranslations } from '@/lib/i18n';
 import {
   EMPTY_SNAPSHOT,
   getSlashMenuController,
-} from '@/components/decisions/SlashCommands';
+} from '@/components/RichTextEditor/slashMenuController';
 
 const noopSubscribe = () => () => {};
 const getEmptySnapshot = () => EMPTY_SNAPSHOT;
