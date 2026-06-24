@@ -25,7 +25,10 @@ export function getProposalExtensions(
   options: EditorExtensionOptions = {},
 ): AnyExtension[] {
   const {
-    slashCommands = true,
+    // Opt-in: the slash menu only renders where a <SlashCommandMenu> is mounted
+    // (currently the Overview editor). Defaulting on would activate the trigger
+    // in editors with no menu — a dead, menu-less '/'.
+    slashCommands = false,
     linkEmbeds = true,
     collaborative = false,
   } = options;
