@@ -5,16 +5,34 @@
  * doubling the GoTrue round-trip per page nav (middleware + tRPC). The
  * exclusion list must stay broad enough to skip routes that have no
  * Supabase-cookie or locale-redirect dependency.
+ *
+ * The literal lives inline in `proxy.ts` (Next's static analyzer can't
+ * follow cross-file imports for `config.matcher`) and is mirrored in
+ * `proxyMatcher.ts` so we can exercise it here. `drift detection` below
+ * fails if the two get out of sync.
  */
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { PROXY_MATCHER_PATTERN } from './proxyMatcher';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const matcherRegex = new RegExp(`^${PROXY_MATCHER_PATTERN}$`);
 
 const matches = (path: string) => matcherRegex.test(path);
 
 describe('proxy matcher', () => {
+  it('drift detection — proxy.ts inline literal matches proxyMatcher.ts', () => {
+    const proxySource = readFileSync(resolve(__dirname, 'proxy.ts'), 'utf8');
+    // Re-escape backslashes so the needle matches the file's source text
+    // (`\\.` in the literal renders as `\.` in the parsed string).
+    const sourceLiteral = `'${PROXY_MATCHER_PATTERN.replace(/\\/g, '\\\\')}'`;
+    expect(proxySource).toContain(sourceLiteral);
+  });
+
   describe('walled-garden routes (must still match)', () => {
     const PROTECTED = [
       '/',

@@ -9,7 +9,6 @@ import createMiddleware from 'next-intl/middleware';
 import { NextFetchEvent, NextRequest, NextResponse } from 'next/server';
 
 import { i18nConfig, routing } from './lib/i18n';
-import { PROXY_MATCHER_PATTERN } from './proxyMatcher';
 
 const useUrl = OPURLConfig('APP');
 
@@ -144,6 +143,13 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   return supabaseResponse;
 }
 
+// Next.js statically analyzes `config.matcher` at build time and cannot
+// follow cross-file imports (fails with `Unknown identifier ... at
+// config.matcher[0]`), so the matcher pattern lives here as a plain string
+// literal. Categorized version + test fixture: see `proxyMatcher.ts` —
+// the two MUST stay in sync.
 export const config = {
-  matcher: [PROXY_MATCHER_PATTERN],
+  matcher: [
+    '/((?!_next/static|_next/image|api|assets|stats|waitlist|info|login|sitemap.xml|robots.txt|manifest.webmanifest|favicon.ico|health|_health|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|bmp|woff|woff2|ttf|otf|eot|pdf|json|xml|txt|css|js|map|mp4|webm|mp3|ogg|wav)$).*)',
+  ],
 };
