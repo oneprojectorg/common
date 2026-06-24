@@ -8,10 +8,13 @@ import {
   processInstances,
   profileUserToAccessRoles,
   profileUsers,
+  proposalCategories,
   proposals,
   stateTransitionHistory,
+  taxonomyTerms,
 } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
+import { randomUUID } from 'crypto';
 import { and, eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -1700,6 +1703,87 @@ describe.concurrent('listProposals', () => {
       textFragment('{"amount":500,"currency":"EUR"}'),
     );
     expect(fragments.category).toEqual(textFragment('Pinned Category'));
+  });
+});
+
+describe.concurrent('listProposals: categoryId filtering', () => {
+  // Pins the SQL EXISTS membership check against decision_categories. Before
+  // this refactor, the categoryId path materialized every proposalId in the
+  // category and shipped it back as IN (...) — a multi-KB list for a popular
+  // category. This test makes sure the EXISTS predicate is correctly
+  // correlated and survives pagination.
+  it('returns only proposals attached to the given category and paginates within them', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instanceId = setup.instances[0]!.instance.id;
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const termId = randomUUID();
+    await db.insert(taxonomyTerms).values({
+      id: termId,
+      termUri: `category-${termId}`,
+      label: `Category ${task.id}`,
+    });
+    onTestFinished(async () => {
+      await db.delete(taxonomyTerms).where(eq(taxonomyTerms.id, termId));
+    });
+
+    // Three in-category proposals (serial so each gets a distinct createdAt
+    // — cursor pagination orders by createdAt with an id tie-break).
+    const inCategory: Array<{ id: string }> = [];
+    for (let i = 0; i < 3; i++) {
+      const proposal = await testData.createProposal({
+        userEmail: setup.userEmail,
+        processInstanceId: instanceId,
+        proposalData: { title: `In-category ${i} ${task.id}` },
+        status: ProposalStatus.SUBMITTED,
+      });
+      await db
+        .insert(proposalCategories)
+        .values({ proposalId: proposal.id, taxonomyTermId: termId });
+      inCategory.push(proposal);
+    }
+
+    // One proposal NOT in the category — the EXISTS predicate must filter
+    // it out without leaking it via the pagination tie-breaker.
+    await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instanceId,
+      proposalData: { title: `Out ${task.id}` },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    const page1 = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      categoryId: termId,
+      limit: 2,
+    });
+    expect(page1.proposals).toHaveLength(2);
+    expect(page1.total).toBe(3);
+    expect(page1.hasMore).toBe(true);
+    expect(page1.next).not.toBeNull();
+
+    const page2 = await caller.decision.listProposals({
+      processInstanceId: instanceId,
+      categoryId: termId,
+      limit: 2,
+      cursor: page1.next,
+    });
+    expect(page2.proposals).toHaveLength(1);
+    expect(page2.total).toBe(3);
+    expect(page2.hasMore).toBe(false);
+
+    const returned = new Set([
+      ...page1.proposals.map((p) => p.id),
+      ...page2.proposals.map((p) => p.id),
+    ]);
+    expect(returned).toEqual(new Set(inCategory.map((p) => p.id)));
   });
 });
 

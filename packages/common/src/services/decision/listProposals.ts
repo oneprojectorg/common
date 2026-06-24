@@ -1,4 +1,16 @@
-import { SQL, and, db, eq, ilike, inArray, ne, or, sql } from '@op/db/client';
+import {
+  SQL,
+  and,
+  db,
+  eq,
+  exists,
+  ilike,
+  inArray,
+  isNull,
+  ne,
+  or,
+  sql,
+} from '@op/db/client';
 import {
   ProposalStatus,
   Visibility,
@@ -31,8 +43,9 @@ import {
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import {
-  getPhaseProposalAndDraftIds,
-  getProposalIdsForPhase,
+  type PhaseScope,
+  buildPhaseScopeSql,
+  resolvePhaseScope,
 } from './getProposalsForPhase';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
 import { parseProposalData } from './proposalDataSchema';
@@ -143,8 +156,14 @@ const buildBaseConditions = (
   const { processInstanceId, submittedByProfileId, status, search } = input;
 
   // processInstanceId is always present, so the array is non-empty and the
-  // final `and(...)` is guaranteed to return a SQL value.
-  const conditions: SQL[] = [eq(t.processInstanceId, processInstanceId)];
+  // final `and(...)` is guaranteed to return a SQL value. Soft-deleted rows
+  // are filtered here in SQL rather than relying on upstream id-materialization
+  // helpers — phase scoping now flows in as a correlated predicate, not as a
+  // pre-filtered ID list.
+  const conditions: SQL[] = [
+    eq(t.processInstanceId, processInstanceId),
+    isNull(t.deletedAt),
+  ];
 
   if (submittedByProfileId) {
     conditions.push(eq(t.submittedByProfileId, submittedByProfileId));
@@ -215,42 +234,18 @@ export const listProposals = async ({
     throw new UnauthorizedError('User does not have access to this process');
   }
 
-  // Resolve phase-scoped IDs for non-drafts and drafts. Drafts are phase-scoped
-  // via a `createdAt` window since they're never attached to transition
-  // snapshots. The combined resolver shares a single instance-context lookup
-  // and window resolution across both queries; we only fall back to it for
-  // authenticated callers that need both sets. These are IDs only — the
-  // findMany below hydrates full rows using them as filter input.
-  const phaseIdsPromise: Promise<{
-    phaseProposalIds: string[];
-    phaseDraftIds: string[];
-  }> = (async () => {
-    if (explicitScopeIds !== undefined) {
-      // Caller specified the exact ID set (proposalIds or votedByProfileId).
-      // Drafts can't appear in either: proposalIds is internal and
-      // votedByProfileId only matches submitted proposals on a ballot.
-      return { phaseProposalIds: explicitScopeIds, phaseDraftIds: [] };
-    }
-    if (skipAccessCheck) {
-      // Trusted contexts (background jobs) never surface drafts, so only
-      // resolve the non-draft phase set. Legacy instances and instances
-      // without a current phase fall back to all active non-drafts inside
-      // `getProposalIdsForPhase`.
-      const ids = await getProposalIdsForPhase({
-        instance,
-        phaseId: input.phaseId,
-      });
-      return { phaseProposalIds: ids, phaseDraftIds: [] };
-    }
-    const ids = await getPhaseProposalAndDraftIds({
-      instance,
-      phaseId: input.phaseId,
-      authUserIds: accessUserIds,
-    });
-    return { phaseProposalIds: ids.nonDraftIds, phaseDraftIds: ids.draftIds };
-  })();
+  // Resolve phase membership info once. When the caller supplied an explicit
+  // ID scope (proposalIds / votedByProfileId), phase resolution is bypassed
+  // entirely — the explicit IDs land directly in the WHERE clause below.
+  // Otherwise we get a `PhaseScope` describing the inbound transition ID and
+  // the createdAt window; `buildPhaseScopeSql` turns it into an SQL predicate
+  // that lands inline in the proposals query — no proposal-id materialization.
+  const phaseScopePromise: Promise<PhaseScope | null> =
+    explicitScopeIds !== undefined
+      ? Promise.resolve(null)
+      : resolvePhaseScope({ instance, phaseId: input.phaseId });
 
-  // Run access checks in parallel with the phase-IDs resolution. Both depend
+  // Run access checks in parallel with the phase-scope resolution. Both depend
   // only on the instance row (already fetched), so there's no ordering
   // dependency — the auth check still throws on failure, just slightly later.
   const accessPromise: Promise<{
@@ -281,22 +276,20 @@ export const listProposals = async ({
     };
   })();
 
-  const [
-    { phaseProposalIds, phaseDraftIds },
-    { profileRoles, canManageProposals },
-  ] = await Promise.all([phaseIdsPromise, accessPromise]);
+  const [phaseScope, { profileRoles, canManageProposals }] = await Promise.all([
+    phaseScopePromise,
+    accessPromise,
+  ]);
 
-  // For trusted contexts (skipAccessCheck), drafts are never returned and phase
-  // scoping is the only proposal-id filter — so an empty phase set means no results.
-  // For authenticated callers, drafts have their own phase-scoped ID set
-  // (`phaseDraftIds`) which may surface results even when `phaseProposalIds` is
-  // empty, so we cannot early-return here.
-  if (skipAccessCheck && phaseProposalIds.length === 0) {
+  // Unreached phase (instance hasn't entered it yet): drafts can't exist
+  // either, since their `createdAt` would have to fall in the phase window.
+  // Short-circuit both data and count queries.
+  if (phaseScope?.kind === 'unreached') {
     return {
       proposals: [],
       total: 0,
       hasMore: false,
-      canManageProposals: false,
+      canManageProposals,
       next: null,
     };
   }
@@ -306,30 +299,7 @@ export const listProposals = async ({
     ? decodeCursor<{ value: string | Date; id: string }>(input.cursor)
     : undefined;
 
-  // Resolve category-scoped proposal IDs up front so the same ID set is
-  // available to both the count and data queries when assembling conditions.
   const { categoryId } = input;
-  let categoryProposalIds: string[] = [];
-
-  if (categoryId) {
-    const proposalIdsInCategory = await db
-      .select({ proposalId: proposalCategories.proposalId })
-      .from(proposalCategories)
-      .where(eq(proposalCategories.taxonomyTermId, categoryId));
-
-    categoryProposalIds = proposalIdsInCategory.map((p) => p.proposalId);
-
-    if (categoryProposalIds.length === 0) {
-      // No proposals in this category, return empty result early
-      return {
-        proposals: [],
-        total: 0,
-        hasMore: false,
-        canManageProposals,
-        next: null,
-      };
-    }
-  }
 
   // Assemble the full WHERE clause. Parameterized on the table reference so
   // the same builder can be used for the v2 relational findMany (where Drizzle
@@ -349,42 +319,62 @@ export const listProposals = async ({
       clause = and(clause, explicitScopeFilter)!;
     }
 
-    if (categoryProposalIds.length > 0) {
-      clause = and(clause, inArray(proposalsTable.id, categoryProposalIds))!;
+    // Correlated EXISTS rather than a materialized ID list — keeps a popular
+    // category from shipping a multi-KB IN list back to Postgres on every page.
+    if (categoryId) {
+      clause = and(
+        clause,
+        exists(
+          db
+            .select({ id: proposalCategories.proposalId })
+            .from(proposalCategories)
+            .where(
+              and(
+                eq(proposalCategories.proposalId, proposalsTable.id),
+                eq(proposalCategories.taxonomyTermId, categoryId),
+              ),
+            ),
+        ),
+      )!;
     }
 
-    // Phase scoping applies separately to non-drafts and drafts. Non-drafts
-    // are resolved via transition snapshots + a strict `createdAt` window;
-    // drafts use a half-open `createdAt` window only (they're never attached
-    // to a snapshot). When the relevant ID set is empty (e.g. instance has no
-    // submitted proposals yet), each branch must short-circuit to false rather
-    // than emit an empty `IN ()`.
-    const phaseScopedNonDraftIdFilter =
-      phaseProposalIds.length > 0
-        ? and(
-            ne(proposalsTable.status, ProposalStatus.DRAFT),
-            inArray(proposalsTable.id, phaseProposalIds),
-          )!
-        : sql`false`;
+    // Phase scoping is null when an explicit scope was supplied — fall back
+    // to the bare status filter so the explicit IDs alone drive membership.
+    const phaseScopedNonDraftFilter = phaseScope
+      ? buildPhaseScopeSql({
+          t: proposalsTable,
+          scope: phaseScope,
+          variant: 'nonDraft',
+        })
+      : ne(proposalsTable.status, ProposalStatus.DRAFT);
 
     if (skipAccessCheck) {
-      // Trusted contexts get all phase-scoped non-draft proposals.
-      return and(clause, phaseScopedNonDraftIdFilter)!;
+      // Trusted contexts (background jobs) never surface drafts.
+      return and(clause, phaseScopedNonDraftFilter)!;
     }
 
     // Draft proposals are phase-scoped to their `createdAt` window: a draft
     // made in Phase 1 is only visible when viewing Phase 1, even after the
     // instance advances. Ownership scoping (creator + invited collaborators
-    // via `profileUsers`) is applied inside `getPhaseProposalAndDraftIds` via
-    // a subquery, so `phaseDraftIds` is already access-filtered — no further
-    // ownership filter is needed here.
-    const draftFilter =
-      phaseDraftIds.length > 0
-        ? and(
-            eq(proposalsTable.status, ProposalStatus.DRAFT),
-            inArray(proposalsTable.id, phaseDraftIds),
-          )!
-        : sql`false`;
+    // via `profileUsers`) is applied here via a subquery.
+    const draftFilter = phaseScope
+      ? and(
+          buildPhaseScopeSql({
+            t: proposalsTable,
+            scope: phaseScope,
+            variant: 'draft',
+          }),
+          inArray(
+            proposalsTable.profileId,
+            db
+              .select({ profileId: profileUsers.profileId })
+              .from(profileUsers)
+              .where(inArray(profileUsers.authUserId, accessUserIds)),
+          ),
+        )!
+      : // Explicit scope: drafts can't appear (proposalIds is internal and
+        // votedByProfileId only matches submitted proposals on a ballot).
+        sql`false`;
 
     // Non-draft proposals: phase-scoped, plus the HIDDEN visibility filter
     // for non-admins. Hidden proposals stay visible to the creator and any
@@ -392,9 +382,9 @@ export const listProposals = async ({
     // draft filter uses, so a collaborator's view of a co-authored proposal
     // doesn't change the moment it's submitted with HIDDEN visibility.
     const nonDraftVisibilityFilter = canManageProposals
-      ? phaseScopedNonDraftIdFilter
+      ? phaseScopedNonDraftFilter
       : and(
-          phaseScopedNonDraftIdFilter,
+          phaseScopedNonDraftFilter,
           or(
             eq(proposalsTable.visibility, Visibility.VISIBLE),
             inArray(

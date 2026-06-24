@@ -6,12 +6,14 @@ import {
   db as defaultDb,
   desc,
   eq,
+  exists,
   gt,
   gte,
   inArray,
   isNull,
   lt,
   ne,
+  sql,
 } from '@op/db/client';
 import type { Proposal } from '@op/db/schema';
 import {
@@ -119,113 +121,161 @@ async function resolvePhaseWindow(
   };
 }
 
-/** Proposal ids attached to a specific inbound transition, filtered to still-active rows. */
-async function attachmentIdsFor(
-  transitionHistoryId: string,
-  db: DbClient,
-): Promise<string[]> {
-  const rows = await db
-    .select({ id: decisionTransitionProposals.proposalId })
-    .from(decisionTransitionProposals)
-    .innerJoin(
-      proposals,
-      eq(decisionTransitionProposals.proposalId, proposals.id),
-    )
-    .where(
-      and(
-        eq(
-          decisionTransitionProposals.transitionHistoryId,
-          transitionHistoryId,
-        ),
-        ne(proposals.status, ProposalStatus.DRAFT),
-        isNull(proposals.deletedAt),
-      ),
-    );
-  return rows.map((r) => r.id);
-}
+/**
+ * The instance-relative scope a query should apply to find proposals visible
+ * in a phase.
+ *
+ * - `noPhase`: legacy instance or no resolvable phase. Phase membership is
+ *   not enforced; callers fall back to status + soft-delete filters only.
+ * - `unreached`: the instance has not entered this phase. The query must
+ *   return zero rows.
+ * - `visited`: phase is current or past. The query uses `inboundTransitionId`
+ *   (attachment EXISTS) ORed with the `[inboundAt, outboundAt)` `createdAt`
+ *   window — see `buildPhaseScopeSql`.
+ */
+export type PhaseScope =
+  | { kind: 'noPhase' }
+  | { kind: 'unreached' }
+  | {
+      kind: 'visited';
+      inboundTransitionId: string | undefined;
+      inboundAt: Date | undefined;
+      outboundAt: Date | undefined;
+    };
 
 /**
- * Proposal ids matching `predicate` whose `createdAt` falls inside the
- * phase's transition window. The inbound comparator (`'gt'` or `'gte'`) lets
- * callers choose strict or half-open semantics: non-drafts use `'gt'` because
- * the inbound boundary is covered by attachment snapshots, while drafts use
- * `'gte'` to ensure boundary timestamps land in exactly one phase. Callers
- * compose multiple constraints into a single `predicate` via `and(...)`.
+ * Resolves phase membership info once per request, in a single (bounded)
+ * `stateTransitionHistory` read. The returned scope is consumed by
+ * `buildPhaseScopeSql` to produce an SQL predicate that can be applied
+ * directly to a proposals query — no proposal-id materialization required.
+ *
+ * Legacy instances and instances without a resolvable phase (no `phaseId`
+ * passed and no `currentStateId` on the instance) skip phase scoping and
+ * return `{ kind: 'noPhase' }`.
  */
-async function getIdsCreatedDuringWindow({
-  instanceId,
-  predicate,
-  inboundAt,
-  outboundAt,
-  inboundComparator,
-  db,
-}: {
-  instanceId: string;
-  predicate: SQL | undefined;
-  inboundAt: Date | undefined;
-  outboundAt: Date | undefined;
-  inboundComparator: 'gt' | 'gte';
-  db: DbClient;
-}): Promise<string[]> {
-  const conditions: (SQL | undefined)[] = [
-    eq(proposals.processInstanceId, instanceId),
-    predicate,
-    isNull(proposals.deletedAt),
-  ];
-  if (inboundAt) {
-    const comparator = inboundComparator === 'gte' ? gte : gt;
-    conditions.push(comparator(proposals.createdAt, inboundAt.toISOString()));
-  }
-  if (outboundAt) {
-    conditions.push(lt(proposals.createdAt, outboundAt.toISOString()));
-  }
-
-  const rows = await db
-    .select({ id: proposals.id })
-    .from(proposals)
-    .where(and(...conditions));
-  return rows.map((r) => r.id);
-}
-
-async function getActiveIdsByPredicate({
-  instanceId,
-  predicate,
-  db,
-}: {
-  instanceId: string;
-  predicate: SQL | undefined;
-  db: DbClient;
-}): Promise<string[]> {
-  const rows = await db
-    .select({ id: proposals.id })
-    .from(proposals)
-    .where(
-      and(
-        eq(proposals.processInstanceId, instanceId),
-        predicate,
-        isNull(proposals.deletedAt),
-      ),
-    );
-  return rows.map((r) => r.id);
-}
-
-/**
- * Returns IDs of all active (non-deleted) non-draft proposals for an instance,
- * ignoring phase scoping. Use this for legacy instances or when the caller
- * has decided not to apply phase scoping (e.g. instance has no current phase).
- */
-async function getActiveNonDraftIdsForInstance({
-  instanceId,
+export async function resolvePhaseScope({
+  instance,
+  phaseId,
   db = defaultDb,
 }: {
-  instanceId: string;
+  instance: PhaseScopedInstance;
+  phaseId?: string;
   db?: DbClient;
-}): Promise<string[]> {
-  return getActiveIdsByPredicate({
-    instanceId,
-    predicate: ne(proposals.status, ProposalStatus.DRAFT),
+}): Promise<PhaseScope> {
+  const ctx = deriveInstanceContext(instance);
+  const resolvedPhaseId = ctx.isLegacy
+    ? undefined
+    : (phaseId ?? ctx.currentPhaseId);
+
+  if (!resolvedPhaseId) {
+    return { kind: 'noPhase' };
+  }
+
+  const phaseWindow = await resolvePhaseWindow(
+    instance.id,
+    resolvedPhaseId,
+    ctx.currentPhaseId,
     db,
-  });
+  );
+
+  if (phaseWindow.kind === 'unreached') {
+    return { kind: 'unreached' };
+  }
+
+  return {
+    kind: 'visited',
+    inboundTransitionId: phaseWindow.inbound?.id,
+    inboundAt: phaseWindow.inbound?.transitionedAt,
+    outboundAt: phaseWindow.outboundTransitionedAt,
+  };
+}
+
+/**
+ * SQL predicate that scopes a `proposals` query to a phase. Returns a
+ * standalone clause to be ANDed with the caller's `processInstanceId` and
+ * `deletedAt IS NULL` predicates — kept separate so callers can compose with
+ * additional filters (visibility, moderation, access) without duplicating
+ * phase logic.
+ *
+ * - `variant: 'nonDraft'` → `status != DRAFT AND ((EXISTS attachment) OR
+ *   createdAt ∈ (inboundAt, outboundAt))`. Non-drafts use strict `>` at the
+ *   inbound boundary because the attachment snapshot already covers it.
+ * - `variant: 'draft'` → `status == DRAFT AND createdAt ∈ [inboundAt,
+ *   outboundAt)`. Drafts have no attachment branch, so the inbound
+ *   comparator is `>=` to ensure boundary timestamps land in exactly one
+ *   phase. Access scoping (creator + collaborators) is the caller's
+ *   responsibility — apply it via `profileUsers` subquery.
+ *
+ * Pass the aliased proposals table reference for the v2 relational `RAW`
+ * callback, or the schema `proposals` table for plain queries. The same
+ * helper produces SQL that resolves to the right alias in either context.
+ */
+export function buildPhaseScopeSql({
+  t,
+  scope,
+  variant,
+}: {
+  t: typeof proposals;
+  scope: PhaseScope;
+  variant: 'nonDraft' | 'draft';
+}): SQL {
+  if (scope.kind === 'unreached') {
+    return sql`false`;
+  }
+
+  const statusFilter =
+    variant === 'nonDraft'
+      ? ne(t.status, ProposalStatus.DRAFT)
+      : eq(t.status, ProposalStatus.DRAFT);
+
+  if (scope.kind === 'noPhase') {
+    // Legacy / no-phase: status filter only.
+    return statusFilter;
+  }
+
+  const { inboundTransitionId, inboundAt, outboundAt } = scope;
+  const inboundComparator = variant === 'nonDraft' ? gt : gte;
+
+  const windowConditions: SQL[] = [];
+  if (inboundAt) {
+    windowConditions.push(
+      inboundComparator(t.createdAt, inboundAt.toISOString()),
+    );
+  }
+  if (outboundAt) {
+    windowConditions.push(lt(t.createdAt, outboundAt.toISOString()));
+  }
+  const windowSql: SQL =
+    windowConditions.length > 0 ? and(...windowConditions)! : sql`true`;
+
+  if (variant === 'draft') {
+    return and(statusFilter, windowSql)!;
+  }
+
+  // Non-drafts: attachment EXISTS (when an inbound transition exists) ORed
+  // with the createdAt window.
+  const attachmentSql = inboundTransitionId
+    ? exists(
+        defaultDb
+          .select({ id: decisionTransitionProposals.id })
+          .from(decisionTransitionProposals)
+          .where(
+            and(
+              eq(decisionTransitionProposals.proposalId, t.id),
+              eq(
+                decisionTransitionProposals.transitionHistoryId,
+                inboundTransitionId,
+              ),
+            ),
+          ),
+      )
+    : undefined;
+
+  const phaseMembership = attachmentSql
+    ? sql`(${attachmentSql} OR ${windowSql})`
+    : windowSql;
+
+  return and(statusFilter, phaseMembership)!;
 }
 
 /**
@@ -258,55 +308,28 @@ export async function getProposalIdsForPhase({
   phaseId?: string;
   db?: DbClient;
 }): Promise<string[]> {
-  const ctx = deriveInstanceContext(instance);
-  const instanceId = instance.id;
-  const resolvedPhaseId = ctx.isLegacy
-    ? undefined
-    : (phaseId ?? ctx.currentPhaseId);
+  const scope = await resolvePhaseScope({ instance, phaseId, db });
 
-  if (!resolvedPhaseId) {
-    return getActiveNonDraftIdsForInstance({ instanceId, db });
-  }
-
-  const nonDraftPredicate = ne(proposals.status, ProposalStatus.DRAFT);
-
-  const phaseWindow = await resolvePhaseWindow(
-    instanceId,
-    resolvedPhaseId,
-    ctx.currentPhaseId,
-    db,
-  );
-
-  if (phaseWindow.kind === 'unreached') {
+  if (scope.kind === 'unreached') {
     return [];
   }
 
-  const [proposalIdsAttachedToPhase, nonDraftProposalIdsCreatedInPhase] =
-    await Promise.all([
-      phaseWindow.inbound
-        ? attachmentIdsFor(phaseWindow.inbound.id, db)
-        : Promise.resolve<string[]>([]),
-      getIdsCreatedDuringWindow({
-        instanceId,
-        predicate: nonDraftPredicate,
-        inboundAt: phaseWindow.inbound?.transitionedAt,
-        outboundAt: phaseWindow.outboundTransitionedAt,
-        inboundComparator: 'gt',
-        db,
-      }),
-    ]);
-
-  return [
-    ...new Set([
-      ...proposalIdsAttachedToPhase,
-      ...nonDraftProposalIdsCreatedInPhase,
-    ]),
-  ];
+  const rows = await db
+    .select({ id: proposals.id })
+    .from(proposals)
+    .where(
+      and(
+        eq(proposals.processInstanceId, instance.id),
+        buildPhaseScopeSql({ t: proposals, scope, variant: 'nonDraft' }),
+        isNull(proposals.deletedAt),
+      ),
+    );
+  return rows.map((r) => r.id);
 }
 
 /**
  * Returns both the non-draft and draft IDs visible in a phase for an
- * authenticated caller, sharing a single phase-window resolution across
+ * authenticated caller, sharing a single phase-scope resolution across
  * both queries. Use this from `listProposals` (which needs both sets)
  * instead of calling the standalone resolvers separately, which would
  * issue duplicate `stateTransitionHistory` reads.
@@ -334,86 +357,44 @@ export async function getPhaseProposalAndDraftIds({
   authUserIds: string[];
   db?: DbClient;
 }): Promise<{ nonDraftIds: string[]; draftIds: string[] }> {
-  const ctx = deriveInstanceContext(instance);
-  const instanceId = instance.id;
+  const scope = await resolvePhaseScope({ instance, phaseId, db });
 
-  const nonDraftPredicate = ne(proposals.status, ProposalStatus.DRAFT);
-  const draftAccessPredicate = and(
-    eq(proposals.status, ProposalStatus.DRAFT),
-    inArray(
-      proposals.profileId,
-      db
-        .select({ profileId: profileUsers.profileId })
-        .from(profileUsers)
-        .where(inArray(profileUsers.authUserId, authUserIds)),
-    ),
-  );
-
-  const resolvedPhaseId = ctx.isLegacy
-    ? undefined
-    : (phaseId ?? ctx.currentPhaseId);
-
-  if (!resolvedPhaseId) {
-    const [nonDraftIds, draftIds] = await Promise.all([
-      getActiveIdsByPredicate({
-        instanceId,
-        predicate: nonDraftPredicate,
-        db,
-      }),
-      getActiveIdsByPredicate({
-        instanceId,
-        predicate: draftAccessPredicate,
-        db,
-      }),
-    ]);
-    return { nonDraftIds, draftIds };
-  }
-
-  const phaseWindow = await resolvePhaseWindow(
-    instanceId,
-    resolvedPhaseId,
-    ctx.currentPhaseId,
-    db,
-  );
-
-  if (phaseWindow.kind === 'unreached') {
+  if (scope.kind === 'unreached') {
     return { nonDraftIds: [], draftIds: [] };
   }
 
-  const [
-    proposalIdsAttachedToPhase,
-    nonDraftProposalIdsCreatedInPhase,
-    draftProposalIdsCreatedInPhase,
-  ] = await Promise.all([
-    phaseWindow.inbound
-      ? attachmentIdsFor(phaseWindow.inbound.id, db)
-      : Promise.resolve<string[]>([]),
-    getIdsCreatedDuringWindow({
-      instanceId,
-      predicate: nonDraftPredicate,
-      inboundAt: phaseWindow.inbound?.transitionedAt,
-      outboundAt: phaseWindow.outboundTransitionedAt,
-      inboundComparator: 'gt',
-      db,
-    }),
-    getIdsCreatedDuringWindow({
-      instanceId,
-      predicate: draftAccessPredicate,
-      inboundAt: phaseWindow.inbound?.transitionedAt,
-      outboundAt: phaseWindow.outboundTransitionedAt,
-      inboundComparator: 'gte',
-      db,
-    }),
+  const accessibleProfilesSubquery = db
+    .select({ profileId: profileUsers.profileId })
+    .from(profileUsers)
+    .where(inArray(profileUsers.authUserId, authUserIds));
+
+  const [nonDraftRows, draftRows] = await Promise.all([
+    db
+      .select({ id: proposals.id })
+      .from(proposals)
+      .where(
+        and(
+          eq(proposals.processInstanceId, instance.id),
+          buildPhaseScopeSql({ t: proposals, scope, variant: 'nonDraft' }),
+          isNull(proposals.deletedAt),
+        ),
+      ),
+    db
+      .select({ id: proposals.id })
+      .from(proposals)
+      .where(
+        and(
+          eq(proposals.processInstanceId, instance.id),
+          buildPhaseScopeSql({ t: proposals, scope, variant: 'draft' }),
+          inArray(proposals.profileId, accessibleProfilesSubquery),
+          isNull(proposals.deletedAt),
+        ),
+      ),
   ]);
 
   return {
-    nonDraftIds: [
-      ...new Set([
-        ...proposalIdsAttachedToPhase,
-        ...nonDraftProposalIdsCreatedInPhase,
-      ]),
-    ],
-    draftIds: draftProposalIdsCreatedInPhase,
+    nonDraftIds: nonDraftRows.map((r) => r.id),
+    draftIds: draftRows.map((r) => r.id),
   };
 }
 
@@ -446,15 +427,21 @@ export async function getProposalsForPhase({
     return [];
   }
 
-  const ids = await getProposalIdsForPhase({ instance, phaseId, db });
+  const scope = await resolvePhaseScope({ instance, phaseId, db });
 
-  if (ids.length === 0) {
+  if (scope.kind === 'unreached') {
     return [];
   }
 
   return db
     .select()
     .from(proposals)
-    .where(inArray(proposals.id, ids))
+    .where(
+      and(
+        eq(proposals.processInstanceId, instanceId),
+        buildPhaseScopeSql({ t: proposals, scope, variant: 'nonDraft' }),
+        isNull(proposals.deletedAt),
+      ),
+    )
     .orderBy(desc(proposals.createdAt));
 }
