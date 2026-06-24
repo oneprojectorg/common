@@ -28,8 +28,8 @@ export interface ResolveModerationInput {
  * caller must broadcast the invalidation — a tRPC route via
  * `registerMutationChannels(await getModerationItemChannels(...))`, anything
  * else via `realtime.publish` — or other users keep their stale view until a
- * manual reload. (The webhook path already does this in
- * `handleModerationWebhookRequest`.)
+ * manual reload. (The webhook path does this in the
+ * `applyModerationVerdict` workflow.)
  */
 export const resolveModeration = async ({
   flagId,

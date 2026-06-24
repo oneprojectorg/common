@@ -20,6 +20,7 @@
     "@op/emails": "workspace:*",
     "@op/events": "workspace:*",
     "@op/logging": "workspace:*",
+    "@op/realtime": "workspace:*",
     "@op/supabase": "workspace:*",
     "@op/types": "workspace:*",
     "drizzle-orm": "catalog:",

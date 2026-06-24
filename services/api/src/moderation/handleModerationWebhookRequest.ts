@@ -1,12 +1,10 @@
 import {
-  getModerationItemChannels,
   getModerationProvider,
+  getModerationProviderName,
   getModerationWebhookSecret,
   handleModerationWebhook,
-  recordModerationVerdict,
+  recordModerationWebhookDelivery,
 } from '@op/common';
-import { realtime } from '@op/realtime/server';
-import { randomUUID } from 'node:crypto';
 
 export interface ModerationWebhookRequest {
   rawBody: string;
@@ -15,15 +13,12 @@ export interface ModerationWebhookRequest {
 }
 
 /**
- * Wires the moderation webhook handler with the configured provider, shared
- * secret, and the DB-backed verdict recorder. The HTTP route (apps/api) reads
- * the raw request and delegates here, keeping vendor/DB logic in the API layer.
- *
- * When a verdict actually changes the item's state (flag created, confirmed,
- * or dismissed — anything but a no-op), an invalidation is published to the
- * item's realtime channels, exactly like a tRPC mutation would: every
- * subscribed client refetches and the item hides (or un-hides) immediately
- * instead of waiting for a manual reload.
+ * Wires the route's webhook handler with the configured provider, shared
+ * secret, and the inbox-backed delivery recorder. The HTTP route (apps/api)
+ * reads the raw request and delegates here, keeping vendor/DB logic in the API
+ * layer. Parsing and verdict application happen asynchronously in the
+ * `dispatchModerationWebhookDelivery` + `applyModerationVerdict` workflows so
+ * this call is constant-time wrt how many verdicts a delivery carries.
  */
 export const handleModerationWebhookRequest = (
   request: ModerationWebhookRequest,
@@ -31,36 +26,8 @@ export const handleModerationWebhookRequest = (
   handleModerationWebhook(request, {
     expectedSecret: getModerationWebhookSecret(),
     provider: getModerationProvider(),
-    applyVerdict: async (verdict) => {
-      const result = await recordModerationVerdict(verdict);
-
-      // Realtime invalidation is strictly best-effort and runs *after* the
-      // verdict has already committed. The whole block is wrapped (not just
-      // `publish`, which guards itself): the channel lookup is two DB queries
-      // for posts, and if it threw, the webhook would 500, the provider would
-      // retry, and the now-idempotent verdict would no-op — permanently
-      // losing the invalidation while the flag is correct in the DB. Clients
-      // would keep their stale view until a manual reload.
-      if (result.action !== 'noop') {
-        try {
-          const channels = await getModerationItemChannels(
-            verdict.itemType,
-            verdict.itemId,
-          );
-          const mutationId = randomUUID();
-          await Promise.all(
-            channels.map((channel) =>
-              realtime.publish(channel, { mutationId }),
-            ),
-          );
-        } catch (error) {
-          console.error(
-            '[moderation-webhook] realtime invalidation failed:',
-            error,
-          );
-        }
-      }
-
-      return result;
+    providerName: getModerationProviderName() ?? undefined,
+    recordDelivery: async (input) => {
+      await recordModerationWebhookDelivery(input);
     },
   });

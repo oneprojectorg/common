@@ -26,6 +26,53 @@ export const Events = {
       moderationFlagId: z.string().uuid(),
     }),
   },
+  // The webhook route emits this immediately after persisting the raw payload
+  // to `moderation_webhook_inbox`. The dispatch workflow loads the row, parses
+  // it via the provider adapter, and fans out one `moderationVerdictReceived`
+  // event per parsed verdict.
+  moderationWebhookReceived: {
+    name: 'moderation/webhook-received' as const,
+    schema: z.object({
+      inboxId: z.string().uuid(),
+    }),
+  },
+  // One parsed verdict from the inbox row. Consumed by the
+  // `applyModerationVerdictWorkflow` with `concurrency.key =
+  // event.data.concurrencyKey`, so verdicts for the same item serialize but
+  // verdicts for different items run in parallel — replacing the inline
+  // SELECT FOR UPDATE that previously serialized everything inside the HTTP
+  // request. `concurrencyKey` is pre-computed on the dispatch side so the
+  // workflow's key expression is a plain field path, not a CEL operator
+  // chain.
+  moderationVerdictReceived: {
+    name: 'moderation/verdict-received' as const,
+    schema: z.object({
+      inboxId: z.string().uuid(),
+      itemType: moderationItemType,
+      itemId: z.string().uuid(),
+      // `itemType:itemId` — the value Inngest's `concurrency.key` reads.
+      concurrencyKey: z.string(),
+      roundId: z.string().uuid(),
+      mediaId: z.string().optional(),
+      verdict: z.enum(['flagged', 'clear']),
+      externalRecordId: z.string().optional(),
+      reason: z.string().optional(),
+      // Mirrors `ModerationScores` (Partial<Record<ModerationCategory,
+      // number>>). Narrowing here, rather than accepting an unbounded
+      // record, keeps a vendor's new score category from silently flowing
+      // through to the flag store.
+      scores: z
+        .object({
+          profanity: z.number().optional(),
+          sexual: z.number().optional(),
+          hate: z.number().optional(),
+          violence: z.number().optional(),
+          harassment: z.number().optional(),
+          other: z.number().optional(),
+        })
+        .optional(),
+    }),
+  },
   postReactionAdded: {
     name: 'post/reaction-added' as const,
     schema: z.object({

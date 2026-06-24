@@ -1623,6 +1623,9 @@ importers:
       '@op/logging':
         specifier: workspace:*
         version: link:../../packages/logging
+      '@op/realtime':
+        specifier: workspace:*
+        version: link:../realtime
       '@op/supabase':
         specifier: workspace:*
         version: link:../supabase
