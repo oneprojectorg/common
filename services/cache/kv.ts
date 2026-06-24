@@ -91,6 +91,20 @@ const FULL_KEY_TYPES: ReadonlySet<keyof typeof TypeMap> = new Set([
   'resourceSignedUrl',
 ]);
 
+// Types whose value gates authorization (admin / role / membership). The L1
+// memCache is per-process, so an invalidate() on one Node instance only drops
+// the entry there — every other instance keeps serving the stale value until
+// its own L1 TTL expires (up to MEMCACHE_EXPIRE). For these types that window
+// is a privilege-escalation hole: a user who lost admin on instance A still
+// looks like an admin to instance B. Bypassing the L1 forces every read to
+// re-consult Redis, where invalidate() writes a tombstone that all instances
+// see immediately.
+const PERMISSION_SENSITIVE_TYPES: ReadonlySet<keyof typeof TypeMap> = new Set([
+  'user',
+  'orgUser',
+  'profileUser',
+]);
+
 const getCacheKey = (
   type: keyof typeof TypeMap,
   appKey: string | undefined,
@@ -160,7 +174,9 @@ const memCache = new LRUCache<string, MemCacheEntry>({
  * @param appKey - Application key (defaults to 'common')
  * @param params - Parameters used to build the cache key
  * @param fetch - Function to call on cache miss
- * @param options.skipMemCache - Skip in-memory cache layer
+ * @param options.skipMemCache - Skip in-memory cache layer (also forced on
+ *                                automatically for permission-sensitive types
+ *                                listed in PERMISSION_SENSITIVE_TYPES)
  * @param options.storeNulls - Cache null results to avoid repeated DB lookups
  * @param options.ttl - Time-to-live in milliseconds
  * @param options.skipCacheWrite - Predicate to conditionally skip caching based on result.
@@ -186,7 +202,17 @@ export const cache = async <T>({
   };
 }): Promise<Awaited<T>> => {
   const cacheKey = getCacheKey(type, appKey, params);
-  const { ttl, skipMemCache = false, storeNulls = false } = options;
+  const {
+    ttl,
+    skipMemCache: callerSkipMemCache = false,
+    storeNulls = false,
+  } = options;
+  // Permission-sensitive types are always bypassed at the L1 layer — the
+  // caller's `skipMemCache` is the opt-in, this set is the safety net so a
+  // future caller that forgets the flag cannot reintroduce the stale-admin
+  // window.
+  const skipMemCache =
+    callerSkipMemCache || PERMISSION_SENSITIVE_TYPES.has(type);
   // The LRU's per-entry TTL replaces the manual `createdAt` expiry check. A
   // caller-supplied `ttl` (ms) overrides the default on write. Use `||` (not
   // `??`) so a falsy `ttl` of 0 falls back to the default rather than becoming
@@ -223,7 +249,9 @@ export const cache = async <T>({
     cacheMetrics.recordTimeout({ layer: 'race', keyType: type });
   } else if (raced.status === 'hit') {
     cacheMetrics.recordHit({ type: 'kv', source: 'redis', keyType: type });
-    memCache.set(cacheKey, { data: raced.data }, { ttl: memTtl });
+    if (!skipMemCache) {
+      memCache.set(cacheKey, { data: raced.data }, { ttl: memTtl });
+    }
     return raced.data as Awaited<T>;
   } else if (raced.status === 'timeout') {
     cacheMetrics.recordTimeout({ layer: 'command', keyType: type });
@@ -237,11 +265,13 @@ export const cache = async <T>({
   const shouldSkipCache = options.skipCacheWrite?.(newData) ?? false;
 
   if (newData && !shouldSkipCache) {
-    memCache.set(cacheKey, { data: newData }, { ttl: memTtl });
+    if (!skipMemCache) {
+      memCache.set(cacheKey, { data: newData }, { ttl: memTtl });
+    }
     // don't cache if we couldn't find the record (?)
     // TTL in redis is in seconds
     waitUntil(set(cacheKey, newData, ttl ? ttl / 1000 : 72 * 60 * 60)); // 72h default cache
-  } else if (storeNulls && !shouldSkipCache) {
+  } else if (storeNulls && !shouldSkipCache && !skipMemCache) {
     // This allows us to store negative values in the memcache to improve rejections as well (and avoid DB calls for repeated rejections)
     memCache.set(cacheKey, { data: null }, { ttl: memTtl });
   }
@@ -261,13 +291,18 @@ export const invalidate = async ({
   data?: unknown;
 }) => {
   const cacheKey = getCacheKey(type, appKey, params);
+  const skipMemCache = PERMISSION_SENSITIVE_TYPES.has(type);
 
   // TODO: support invalidating entire trees
   if (data) {
-    memCache.set(cacheKey, { data });
+    if (!skipMemCache) {
+      memCache.set(cacheKey, { data });
+    }
     set(cacheKey, data);
   } else {
-    memCache.delete(cacheKey);
+    if (!skipMemCache) {
+      memCache.delete(cacheKey);
+    }
     set(cacheKey, null, 1000);
   }
 };
