@@ -53,6 +53,31 @@ async function profileForAuthUser(
   return row;
 }
 
+/**
+ * The face-pile only populates after proposals advance out of the submission
+ * phase. Tests in this file share that "advance + list" boundary, so factor
+ * it out once.
+ */
+async function listSubmittersAfterAdvancingPhase({
+  testData,
+  caller,
+  instanceId,
+}: {
+  testData: TestDecisionsDataManager;
+  caller: Awaited<ReturnType<typeof createAuthenticatedCaller>>;
+  instanceId: string;
+}) {
+  await testData.advancePhase({
+    instanceId,
+    fromPhaseId: 'submission',
+    toPhaseId: 'review',
+  });
+
+  return caller.decision.listProposalSubmitters({
+    processInstanceId: instanceId,
+  });
+}
+
 describe.concurrent('listProposalSubmitters', () => {
   it('deduplicates submitters across multiple proposals by the same author', async ({
     task,
@@ -78,17 +103,13 @@ describe.concurrent('listProposalSubmitters', () => {
       });
     }
 
-    await testData.advancePhase({
+    const result = await listSubmittersAfterAdvancingPhase({
+      testData,
+      caller,
       instanceId,
-      fromPhaseId: 'submission',
-      toPhaseId: 'review',
     });
 
-    const result = await caller.decision.listProposalSubmitters({
-      processInstanceId: instanceId,
-    });
-
-    expect(result.total).toBe(1);
+    expect(result.totalSubmitters).toBe(1);
   });
 
   it('excludes submitters whose only proposal is a draft', async ({
@@ -112,17 +133,13 @@ describe.concurrent('listProposalSubmitters', () => {
       proposalData: { title: `Draft ${task.id}` },
     });
 
-    await testData.advancePhase({
+    const result = await listSubmittersAfterAdvancingPhase({
+      testData,
+      caller,
       instanceId,
-      fromPhaseId: 'submission',
-      toPhaseId: 'review',
     });
 
-    const result = await caller.decision.listProposalSubmitters({
-      processInstanceId: instanceId,
-    });
-
-    expect(result.total).toBe(0);
+    expect(result.totalSubmitters).toBe(0);
   });
 
   it('includes invited collaborators on the same proposal', async ({
@@ -173,17 +190,13 @@ describe.concurrent('listProposalSubmitters', () => {
 
     await caller.decision.submitProposal({ proposalId: proposal.id });
 
-    await testData.advancePhase({
+    const result = await listSubmittersAfterAdvancingPhase({
+      testData,
+      caller,
       instanceId,
-      fromPhaseId: 'submission',
-      toPhaseId: 'review',
     });
 
-    const result = await caller.decision.listProposalSubmitters({
-      processInstanceId: instanceId,
-    });
-
-    expect(result.total).toBe(2);
+    expect(result.totalSubmitters).toBe(2);
   });
 
   it('counts anonymous submitters in the total but keeps them out of the face pile', async ({
@@ -223,22 +236,18 @@ describe.concurrent('listProposalSubmitters', () => {
       authUserId: anon.user.id,
     });
 
-    await testData.advancePhase({
+    const result = await listSubmittersAfterAdvancingPhase({
+      testData,
+      caller,
       instanceId,
-      fromPhaseId: 'submission',
-      toPhaseId: 'review',
-    });
-
-    const result = await caller.decision.listProposalSubmitters({
-      processInstanceId: instanceId,
     });
 
     // Owner + anonymous collaborator both count toward the total.
-    expect(result.total).toBe(2);
+    expect(result.totalSubmitters).toBe(2);
     // ...but the anonymous account is never a face, even with an avatar.
-    expect(result.submitters.some((s) => s.slug === anonProfile.slug)).toBe(
-      false,
-    );
+    expect(
+      result.sampleSubmitters.some((s) => s.slug === anonProfile.slug),
+    ).toBe(false);
   });
 
   it('shows registered submitters with an avatar as faces and omits those without', async ({
@@ -281,20 +290,16 @@ describe.concurrent('listProposalSubmitters', () => {
       email: collaboratorEmail,
     });
 
-    await testData.advancePhase({
+    const result = await listSubmittersAfterAdvancingPhase({
+      testData,
+      caller,
       instanceId,
-      fromPhaseId: 'submission',
-      toPhaseId: 'review',
     });
 
-    const result = await caller.decision.listProposalSubmitters({
-      processInstanceId: instanceId,
-    });
-
-    expect(result.total).toBe(2);
-    expect(result.submitters).toHaveLength(1);
-    expect(result.submitters[0]?.slug).toBe(collabProfile.slug);
-    expect(result.submitters[0]?.avatarImage).not.toBeNull();
+    expect(result.totalSubmitters).toBe(2);
+    expect(result.sampleSubmitters).toHaveLength(1);
+    expect(result.sampleSubmitters[0]?.slug).toBe(collabProfile.slug);
+    expect(result.sampleSubmitters[0]?.avatarImage).not.toBeNull();
   });
 });
 

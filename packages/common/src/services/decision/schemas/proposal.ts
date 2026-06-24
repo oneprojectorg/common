@@ -210,9 +210,18 @@ export const proposalSubmitterSchema = z.object({
 
 export type ProposalSubmitter = z.infer<typeof proposalSubmitterSchema>;
 
+// Anonymous-visible `decision.listProposalSubmitters` powers a 20-avatar
+// face-pile, so the sample never needs to exceed that. Cap on the server
+// (SQL `.limit()`) and re-assert in the wire schema so a regression in either
+// place fails loudly instead of streaming thousands of rows to public
+// callers (ONE-40 audit #23).
+export const PROPOSAL_SUBMITTER_FACE_PILE_MAX = 20;
+
 export const proposalSubmittersListSchema = z.object({
-  submitters: z.array(proposalSubmitterSchema),
-  total: z.number(),
+  sampleSubmitters: z
+    .array(proposalSubmitterSchema)
+    .max(PROPOSAL_SUBMITTER_FACE_PILE_MAX),
+  totalSubmitters: z.number(),
 });
 
 export type ProposalSubmittersList = z.infer<

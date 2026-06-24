@@ -35,10 +35,11 @@ export function StandardDecisionPage({
   const t = useTranslations();
   const translation = useDecisionTranslation();
 
-  const [[instance, { submitters, total }]] = trpc.useSuspenseQueries((t) => [
-    t.decision.getInstance({ instanceId }),
-    t.decision.listProposalSubmitters({ processInstanceId: instanceId }),
-  ]);
+  const [[instance, { sampleSubmitters, totalSubmitters }]] =
+    trpc.useSuspenseQueries((t) => [
+      t.decision.getInstance({ instanceId }),
+      t.decision.listProposalSubmitters({ processInstanceId: instanceId }),
+    ]);
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;
@@ -74,6 +75,10 @@ export function StandardDecisionPage({
     description;
 
   return (
+    // The hero / face-pile / action-bar header block is intentionally mirrored
+    // in VotingPage. Extracting a shared wrapper is a separate refactor —
+    // out of scope for the listProposalSubmitters cap.
+    // fallow-ignore-next-line code-duplication
     <div className="min-h-full pt-8">
       <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4">
         <DecisionHero
@@ -82,7 +87,10 @@ export function StandardDecisionPage({
           variant="standard"
         />
 
-        <MemberParticipationFacePile submitters={submitters} total={total} />
+        <MemberParticipationFacePile
+          sampleSubmitters={sampleSubmitters}
+          totalSubmitters={totalSubmitters}
+        />
 
         <DecisionActionBar
           instanceId={instanceId}

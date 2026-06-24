@@ -18,12 +18,11 @@ import { alias } from 'drizzle-orm/pg-core';
 import { UnauthorizedError } from '../../utils';
 import { assertInstanceProfileAccess } from '../access';
 import { getProposalIdsForPhase } from './getProposalsForPhase';
+import { PROPOSAL_SUBMITTER_FACE_PILE_MAX } from './schemas/proposal';
 
 export interface ListProposalSubmittersInput {
   processInstanceId: string;
 }
-
-const MAX_FACE_PILE_AVATARS = 20;
 
 /**
  * Returns unique submitter profiles for non-draft, visible proposals
@@ -64,15 +63,18 @@ export const listProposalSubmitters = async ({
   });
 
   // The face-pile data is viewer-independent; the READ gate stays outside the
-  // cache so a hit can never bypass authorization.
+  // cache so a hit can never bypass authorization. The `face-pile-v2` tag in
+  // the cache params namespaces the entry away from the prior `{submitters,
+  // total}` payload shape so a rolling deploy doesn't serve stale objects
+  // that fail the new output schema.
   return cache({
     type: 'decision',
-    params: [processInstanceId, 'submitters'],
+    params: [processInstanceId, 'face-pile-v2'],
     fetch: async () => {
       const phaseProposalIds = await getProposalIdsForPhase({ instance });
 
       if (phaseProposalIds.length === 0) {
-        return { submitters: [], total: 0 };
+        return { sampleSubmitters: [], totalSubmitters: 0 };
       }
 
       const scope: SQL = and(
@@ -112,7 +114,7 @@ export const listProposalSubmitters = async ({
             eq(profiles.avatarImageId, objectsInStorage.id),
           )
           .where(and(scope, eq(submitterAuthUser.isAnonymous, false)))
-          .limit(MAX_FACE_PILE_AVATARS),
+          .limit(PROPOSAL_SUBMITTER_FACE_PILE_MAX),
 
         // Total: every distinct submitter in scope, including anonymous
         // accounts. A submitter is uniquely identified by authUserId, so the
@@ -128,12 +130,12 @@ export const listProposalSubmitters = async ({
       ]);
 
       return {
-        submitters: faceRows.map((row) => ({
+        sampleSubmitters: faceRows.map((row) => ({
           slug: row.slug,
           name: row.name ?? null,
           avatarImage: row.avatarName ? { name: row.avatarName } : null,
         })),
-        total: Number(totalRows[0]?.value ?? 0),
+        totalSubmitters: Number(totalRows[0]?.value ?? 0),
       };
     },
   });
