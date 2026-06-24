@@ -1400,6 +1400,9 @@ importers:
 
   services/collab:
     dependencies:
+      '@op/cache':
+        specifier: workspace:*
+        version: link:../cache
       ky:
         specifier: ^1.8.1
         version: 1.14.2
@@ -1410,6 +1413,9 @@ importers:
       '@types/node':
         specifier: ^22.13.5
         version: 22.13.14
+      vitest:
+        specifier: 'catalog:'
+        version: 4.0.18(@edge-runtime/vm@5.0.0)(@opentelemetry/api@1.9.0)(@types/node@22.13.14)(happy-dom@20.5.3)(jiti@2.6.1)(jsdom@27.1.0)(lightningcss@1.30.2)(sass@1.85.1)(terser@5.39.0)(tsx@4.19.3)(yaml@2.7.0)
 
   services/db:
     dependencies:

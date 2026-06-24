@@ -427,3 +427,25 @@ export function createTipTapClient(_config?: unknown) {
 export function getTipTapClient() {
   return createTipTapClient();
 }
+
+/**
+ * Mock pass-through: routes straight to the seeded `getDocumentFragments` so
+ * tests assert against fixture data without touching the Redis cache layer.
+ */
+export async function getCachedDocumentFragments({
+  client,
+  docId,
+  versionId,
+  fragmentNames,
+}: {
+  client: ReturnType<typeof createTipTapClient>;
+  docId: string;
+  versionId: number | undefined;
+  fragmentNames: string[];
+}): Promise<TipTapFragmentResponse> {
+  return client.getDocumentFragments(
+    docId,
+    fragmentNames,
+    versionId !== undefined ? { version: versionId } : undefined,
+  );
+}
