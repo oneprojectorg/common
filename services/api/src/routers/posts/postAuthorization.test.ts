@@ -574,6 +574,71 @@ describe.concurrent('org-feed post authorization', () => {
     expect(comment.content).toBe('Member comment on org post.');
   });
 
+  it('rejects an outsider from commenting on a legacy postsToOrganizations post', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // Legacy org-feed posts (via `organization.createPost`) carry no
+    // `rootProfileId`, so the write gate resolves the org via the parent
+    // post's `postsToOrganizations` link and checks org membership.
+    // Outsiders must still be rejected.
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
+    const legacyPost = await ownerCaller.organization.createPost({
+      id: setup.organization.id,
+      content: 'Legacy org-feed post.',
+    });
+    // Legacy posts (profileId/rootProfileId null) escape the data manager's
+    // profile-cascade cleanup — delete the row directly.
+    onTestFinished(async () => {
+      await db.delete(posts).where(eq(posts.id, legacyPost.id));
+    });
+
+    const outsiderCaller = await createOutsiderCaller(testData);
+
+    await expect(
+      outsiderCaller.posts.createPost({
+        content: 'Outsider comment on legacy post — should fail.',
+        parentPostId: legacyPost.id,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('treats a comment as a comment even when profileId is also set', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // A misuse-but-valid input shape: a member sends both `profileId` (the
+    // org) AND `parentPostId`. resolvePostRoots prefers parentPostId, so the
+    // gate must too — otherwise targetProfileId === rootProfileId would
+    // route the call through the admin-only announcement gate and reject a
+    // member's comment.
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
+    const orgPost = await ownerCaller.posts.createPost({
+      content: 'Org-level post.',
+      profileId: setup.organization.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    const comment = await memberCaller.posts.createPost({
+      content: 'Member comment with both flags set.',
+      profileId: setup.organization.profileId,
+      parentPostId: orgPost.id,
+    });
+
+    expect(comment.parentPostId).toBe(orgPost.id);
+  });
+
   it('does not gate feed reads on non-decision profiles', async ({
     task,
     onTestFinished,

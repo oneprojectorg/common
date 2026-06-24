@@ -124,12 +124,14 @@ export const assertPostWriteAccess = async ({
     throw new NotFoundError('Profile', rootProfileId);
   }
 
-  // Top-level "announcement" on the gated profile vs. comment/reply.
-  // `resolvePostRoots` keeps `target === root` only for top-level writes on
-  // the gated profile itself; everything else (proposal targets walked up,
-  // parent-only comments) ends up with target !== root.
+  // Top-level "announcement" on the gated profile vs. comment/reply. A
+  // comment always has `rootPostId` set (the thread root). A real
+  // announcement has no parent and writes on the gated profile itself
+  // (target === root). Gating on `!rootPostId` defends against a caller
+  // who sets *both* `profileId` and `parentPostId` from being routed to
+  // the stricter admin gate by accident.
   const isAnnouncement =
-    !!targetProfileId && targetProfileId === rootProfileId;
+    !rootPostId && !!targetProfileId && targetProfileId === rootProfileId;
 
   switch (profile.type) {
     // Decision profile: announcement requires ADMIN; comments and writes
