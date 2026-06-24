@@ -62,7 +62,7 @@ process.env.REDIS_URL = 'redis://localhost:6379';
 
 // Imported AFTER the mocks so kv.ts picks up the fake redis client and the
 // mocked logger/metrics modules.
-const { cache, get, set } = await import('./kv');
+const { cache, get, invalidate, set } = await import('./kv');
 const { cacheMetrics } = await import('./metrics');
 
 function raceWithSignal<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
@@ -229,6 +229,95 @@ describe('cache() — in-process LRU (L1)', () => {
     expect(second).toBe('db-value');
     expect(fetcher).toHaveBeenCalledOnce();
     expect(fakeRedis.get.mock.calls.length).toBe(redisGetsAfterFirst);
+  });
+});
+
+describe('cache() — permission-sensitive types skip the L1 memCache', () => {
+  // Stale L1 entries on these types let an instance keep serving a value
+  // (admin / membership / role) for up to the L1 TTL after another instance
+  // invalidated it. We force every read for these types straight to Redis
+  // so the 1s Redis tombstone written by invalidate() is honored everywhere.
+  beforeEach(() => {
+    fakeRedis.get.mockReset();
+    fakeRedis.setEx.mockReset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it.each(['user', 'orgUser', 'profileUser'] as const)(
+    're-reads Redis on every cache() call for %s (never serves from L1)',
+    async (type) => {
+      fakeRedis.get.mockResolvedValue(JSON.stringify({ admin: true }));
+      fakeRedis.setEx.mockResolvedValue('OK');
+
+      const fetcher = vi.fn();
+      const params = [`${type}-skip-memcache`];
+
+      const first = await cache({ type, params, fetch: fetcher });
+      expect(first).toEqual({ admin: true });
+      const callsAfterFirst = fakeRedis.get.mock.calls.length;
+
+      const second = await cache({ type, params, fetch: fetcher });
+      expect(second).toEqual({ admin: true });
+      expect(fakeRedis.get.mock.calls.length).toBeGreaterThan(callsAfterFirst);
+    },
+  );
+
+  it.each(['user', 'orgUser', 'profileUser'] as const)(
+    'does not surface a memory-tier hit metric on a repeat read for %s',
+    async (type) => {
+      fakeRedis.get.mockResolvedValue(JSON.stringify({ ok: true }));
+      const recordHit = vi.spyOn(cacheMetrics, 'recordHit');
+
+      const params = [`${type}-no-memory-hit`];
+      const fetcher = vi.fn();
+      await cache({ type, params, fetch: fetcher });
+      await cache({ type, params, fetch: fetcher });
+
+      const memoryHits = recordHit.mock.calls.filter(
+        ([arg]) => arg.type === 'memory',
+      );
+      expect(memoryHits).toHaveLength(0);
+    },
+  );
+});
+
+describe('invalidate() — permission-sensitive types', () => {
+  beforeEach(() => {
+    fakeRedis.get.mockReset();
+    fakeRedis.setEx.mockReset();
+    fakeRedis.del.mockReset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('does not populate the L1 memCache when given data for user type', async () => {
+    fakeRedis.setEx.mockResolvedValue('OK');
+    // After invalidate writes the new value, a follow-up read must come from
+    // Redis (where we control the response) — not from the L1 invalidate just
+    // tried to seed.
+    fakeRedis.get.mockResolvedValue(JSON.stringify({ admin: false }));
+
+    await invalidate({
+      type: 'user',
+      params: ['authoritative-user'],
+      data: { admin: true },
+    });
+
+    const fetcher = vi.fn();
+    const result = await cache({
+      type: 'user',
+      params: ['authoritative-user'],
+      fetch: fetcher,
+    });
+
+    expect(result).toEqual({ admin: false });
+    expect(fakeRedis.get).toHaveBeenCalled();
+    expect(fetcher).not.toHaveBeenCalled();
   });
 });
 
