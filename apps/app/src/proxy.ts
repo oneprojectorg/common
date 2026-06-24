@@ -111,8 +111,17 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // only reroute if logged in and locale is missing. Otherwise we want to use the domain routing
-  if (user && pathnameIsMissingLocale && !pathname.startsWith('/api')) {
+  // Reroute when the locale prefix is missing — for both logged-in users and
+  // anonymous visitors on non-root paths. Public links like `/columbus` need
+  // locale detection so they resolve to `/en/columbus` and then the
+  // next.config rewrite dispatches to the decision page. The bare root `/` is
+  // preserved for anonymous visitors so `app/page.tsx` (ComingSoonScreen) keeps
+  // rendering instead of bouncing through the walled-garden gate.
+  const shouldRouteI18n =
+    pathnameIsMissingLocale &&
+    !pathname.startsWith('/api') &&
+    (user || pathname !== '/');
+  if (shouldRouteI18n) {
     const handleI18nRouting = createMiddleware(routing);
 
     const response = handleI18nRouting(request);

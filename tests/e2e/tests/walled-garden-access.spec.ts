@@ -35,6 +35,21 @@ test.describe('Walled garden — logged-out visitors', () => {
       expect(new URL(page.url()).searchParams.get('redirect')).toBe(path);
     });
   }
+
+  // Anonymous visit to a path with no locale prefix — the i18n proxy must add
+  // the locale before the walled-garden gate redirects to /login. Regression
+  // for the `user &&` guard that previously skipped locale handling for
+  // logged-out users.
+  test('/decisions (no locale) gets the locale prefix before /login redirect', async ({
+    page,
+  }) => {
+    await page.goto('/decisions');
+
+    await expect(page).toHaveURL(/\/login\?redirect=/, { timeout: 15000 });
+    expect(new URL(page.url()).searchParams.get('redirect')).toBe(
+      '/en/decisions',
+    );
+  });
 });
 
 test.describe('Walled garden — authenticated non-members', () => {
