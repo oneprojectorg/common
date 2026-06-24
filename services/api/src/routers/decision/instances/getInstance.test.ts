@@ -82,6 +82,70 @@ describe.concurrent('getInstance', () => {
     expect(result.access?.vote).toBe(true);
   });
 
+  it('should grant submit access to a no-JWT visitor on a public decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Make the decision public per the runbook: GLOBAL_USER_PUBLIC holds a
+    // Public role with a profile-scoped decisions READ+SUBMIT+VOTE override.
+    await testData.makeDecisionPublic(instance.profileId);
+
+    // No-JWT caller — substituted to GLOBAL_USER_PUBLIC by the access layer.
+    const publicCaller = createCaller(await createTestContextWithSession(null));
+    const result = await publicCaller.decision.getInstance({
+      instanceId: instance.instance.id,
+    });
+
+    // The access object reflects the public role's grant — this is what gates
+    // anonymous sign-in in useCreateProposal.
+    expect(result.access).toMatchObject({
+      submitProposals: true,
+      vote: true,
+      admin: false,
+    });
+  });
+
+  it('should deny a no-JWT visitor on a non-public decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // No make-public grant: GLOBAL_USER_PUBLIC has no access to this profile,
+    // so a no-JWT visitor is denied (no submit access is ever surfaced).
+    const publicCaller = createCaller(await createTestContextWithSession(null));
+
+    await expect(
+      publicCaller.decision.getInstance({
+        instanceId: instance.instance.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError', statusCode: 403 },
+    });
+  });
+
   it('should return NOT_FOUND for a non-existent instance', async ({
     task,
     onTestFinished,

@@ -186,6 +186,7 @@ const OverviewHero = ({
     instanceId,
     navigateTo: (proposal) =>
       `/decisions/${decisionSlug}/proposal/${proposal.profileId}/edit`,
+    canSubmitProposal,
   });
 
   return (

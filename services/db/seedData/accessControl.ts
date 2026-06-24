@@ -27,6 +27,7 @@ const ACCESS_ZONE_IDS = {
 const ACCESS_ROLE_IDS = {
   ADMIN: '00000000-0000-4000-8000-000000000011',
   MEMBER: '00000000-0000-4000-8000-000000000012',
+  PUBLIC: '00000000-0000-4000-8000-000000000013',
 } as const;
 
 // Access zones data
@@ -60,6 +61,14 @@ export const ACCESS_ROLES = [
     name: 'Admin',
     description: null,
   },
+  {
+    id: ACCESS_ROLE_IDS.PUBLIC,
+    name: 'Public',
+    // Global role with no default permissions — public participation is granted
+    // per-profile via an override row (see TestDecisionsDataManager.makeDecisionPublic
+    // and the "make a process public" runbook), so it never opens every decision.
+    description: null,
+  },
 ];
 
 // Role name to ID mapping for convenient access (avoids string references)
@@ -71,6 +80,10 @@ export const ROLES = {
   MEMBER: {
     id: ACCESS_ROLE_IDS.MEMBER,
     name: 'Member',
+  },
+  PUBLIC: {
+    id: ACCESS_ROLE_IDS.PUBLIC,
+    name: 'Public',
   },
 } as const;
 
