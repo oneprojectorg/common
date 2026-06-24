@@ -9,6 +9,7 @@ import createMiddleware from 'next-intl/middleware';
 import { NextFetchEvent, NextRequest, NextResponse } from 'next/server';
 
 import { i18nConfig, routing } from './lib/i18n';
+import { PROXY_MATCHER_PATTERN } from './proxyMatcher';
 
 const useUrl = OPURLConfig('APP');
 
@@ -144,17 +145,5 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
 }
 
 export const config = {
-  matcher: [
-    '/protected/:path*',
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
-     */
-    '/((?!_next/static|stats|api|waitlist|info|_next/image|favicon.ico|login|.*\\.(?:svg|png|jpg|jpeg|gif|webp|pdf)$).*)',
-    // '/(.*rss\\.xml)',
-    // '/((?!node/|auth/|_next/|_static/|_vercel|_axiom/|media/|[\\w-]+\\.\\w+|.*\\..*).*)',
-  ],
+  matcher: [PROXY_MATCHER_PATTERN],
 };
