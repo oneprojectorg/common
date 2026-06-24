@@ -215,9 +215,8 @@ test.describe('Decision Role Capabilities', () => {
     // getByText(...) matches two elements and trips strict mode. We scope to
     // the visible copy until the double-render is fixed. See the
     // double-render investigation for upgrade-anon-account.
-    await expect(
-      memberPage.getByText('TIME TO VOTE.').filter({ visible: true }),
-    ).toBeVisible({
+    // EXPERIMENT: sensitive to the double-render — exactly one copy expected.
+    await expect(memberPage.getByText('TIME TO VOTE.')).toHaveCount(1, {
       timeout: 10000,
     });
   });
@@ -253,12 +252,10 @@ test.describe('Decision Role Capabilities', () => {
     // getByText(...) matches two elements and trips strict mode. We scope to
     // the visible copy until the double-render is fixed. See the
     // double-render investigation for upgrade-anon-account.
-    await expect(
-      authenticatedPage
-        .getByText('SHARE YOUR IDEAS.')
-        .filter({ visible: true }),
-    ).toBeVisible({
-      timeout: 10000,
-    });
+    // EXPERIMENT: sensitive to the double-render — exactly one copy expected.
+    await expect(authenticatedPage.getByText('SHARE YOUR IDEAS.')).toHaveCount(
+      1,
+      { timeout: 10000 },
+    );
   });
 });

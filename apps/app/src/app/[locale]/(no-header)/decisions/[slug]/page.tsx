@@ -11,7 +11,6 @@ import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionSidePanel } from '@/components/decisions/DecisionSidePanel';
 import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
-import { PromoteAccountModal } from '@/components/decisions/PromoteAccountModal';
 import { DecisionContentSkeleton } from '@/components/skeletons/DecisionSkeleton';
 
 import { loadDecision } from './(decision-view)/loadDecision';
@@ -72,7 +71,6 @@ const DecisionPageContent = async ({ slug }: { slug: string }) => {
             decisionProfileId={decisionProfile.id}
             access={decisionProfile.processInstance.access}
           />
-          <PromoteAccountModal />
         </DecisionTranslationProvider>
       </div>
     </HydrationBoundary>
