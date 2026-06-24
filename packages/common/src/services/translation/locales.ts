@@ -1,13 +1,6 @@
-/** Platform-supported locales matching the i18n dictionaries. */
-export const SUPPORTED_LOCALES = [
-  'en',
-  'es',
-  'fr',
-  'pt',
-  'bn',
-  'so',
-  'ar',
-] as const;
+import { SUPPORTED_LOCALES } from './locales.mjs';
+
+export { SUPPORTED_LOCALES };
 
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 

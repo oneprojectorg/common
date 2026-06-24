@@ -1,4 +1,5 @@
 import analyzer from '@next/bundle-analyzer';
+import { SUPPORTED_LOCALES } from '@op/common/locales.mjs';
 import { getPreviewApiUrl } from '@op/core/previews';
 import { withPostHogConfig } from '@posthog/nextjs-config';
 import dotenv from 'dotenv';
@@ -41,6 +42,12 @@ dotenv.config({
 // Deployment environment variables (sourced from Vercel's injected env vars)
 const DEPLOY_ENV = process.env.VERCEL_ENV;
 const PREVIEW_BRANCH_URL = process.env.VERCEL_BRANCH_URL;
+
+// Decision-process slugs exposed at the vanity URL `/[locale]/<slug>`.
+// Keep this list narrow — each entry must match the `slug` column on a
+// public DECISION profile. Add a new entry only when a process is going live
+// on its vanity path.
+const VANITY_DECISION_SLUGS = ['columbus'];
 
 /** @type {import('next').NextConfig} */
 const config = {
@@ -136,13 +143,10 @@ const config = {
     return [
       ...previewApiRewrites,
       // Vanity URL for decision processes: `/en/columbus` resolves to the same
-      // page as `/en/decisions/columbus`. The negative lookahead excludes
-      // top-level route names so `/en/admin`, `/en/decisions`, etc. continue to
-      // hit their real pages. Locale alternation mirrors SUPPORTED_LOCALES in
-      // @op/common/locales — keep them in sync.
+      // page as `/en/decisions/columbus`. Allow-listed one slug at a time —
+      // extend `VANITY_DECISION_SLUGS` when adding a new vanity process.
       {
-        source:
-          '/:locale(en|es|fr|pt|bn|so|ar)/:slug((?!admin|decisions|org|profile|search|start|api|info|login)[^/]+)',
+        source: `/:locale(${SUPPORTED_LOCALES.join('|')})/:slug(${VANITY_DECISION_SLUGS.join('|')})`,
         destination: '/:locale/decisions/:slug',
       },
       {

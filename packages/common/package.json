@@ -13,6 +13,7 @@
     "./src/services/access": "./src/services/access/index.ts",
     "./src/services/decision": "./src/services/decision/index.ts",
     "./locales": "./src/services/translation/locales.ts",
+    "./locales.mjs": "./src/services/translation/locales.mjs",
     "./src/*": "./src/*"
   },
   "main": "src/index.ts",
