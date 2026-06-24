@@ -1,6 +1,6 @@
 import { db, sql } from '@op/db/client';
 import { decisionBoundaries } from '@op/db/schema';
-import { and, eq, isNotNull } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 export interface ResolvedBoundary {
   id: string;
@@ -80,15 +80,13 @@ export async function listBoundaryLabels({
 }: {
   profileId: string;
 }): Promise<Set<string>> {
-  const rows = await db
-    .select({ name: decisionBoundaries.name })
-    .from(decisionBoundaries)
-    .where(
-      and(
-        eq(decisionBoundaries.profileId, profileId),
-        isNotNull(decisionBoundaries.taxonomyTermId),
-      ),
-    );
+  const rows = await db.query.decisionBoundaries.findMany({
+    where: {
+      profileId,
+      taxonomyTermId: { isNotNull: true },
+    },
+    columns: { name: true },
+  });
 
   return new Set(rows.map((row) => row.name));
 }
