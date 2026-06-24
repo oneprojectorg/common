@@ -1,3 +1,4 @@
+import { cache } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { ProposalStatus, organizations } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
@@ -18,6 +19,14 @@ import type { DecisionInstanceData } from './schemas/instanceData';
 export interface GetInstanceInput {
   instanceId: string;
   user: User | undefined;
+  /**
+   * Skip the viewer-independent instance cache and fetch directly from the DB.
+   * Edit flows (e.g. ProcessBuilder autosave) pass `true` so the editor always
+   * reflects the writer's own changes immediately — the cache layer is read-
+   * only consistent across nodes, but a writer who just mutated should never
+   * see its own pre-mutation snapshot.
+   */
+  skipCache?: boolean;
 }
 
 const ALL_TRUE_ACCESS: DecisionRolePermissions = {
@@ -68,32 +77,68 @@ const resolveInstanceAccess = async (
   throw new UnauthorizedError("You don't have access to do this");
 };
 
-export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
-  try {
-    const instance = await db.query.processInstances.findFirst({
-      where: { id: instanceId },
-      with: {
-        process: true,
-        owner: true,
-        steward: true,
-        profile: {
-          columns: {
-            slug: true,
-          },
-        },
-        proposals: {
-          columns: {
-            id: true,
-            status: true,
-            submittedByProfileId: true,
-          },
+const loadInstanceFromDb = async (instanceId: string) => {
+  const instance = await db.query.processInstances.findFirst({
+    where: { id: instanceId },
+    with: {
+      process: true,
+      owner: true,
+      steward: true,
+      profile: {
+        columns: {
+          slug: true,
         },
       },
-    });
+      proposals: {
+        columns: {
+          id: true,
+          status: true,
+          submittedByProfileId: true,
+        },
+      },
+    },
+  });
 
-    if (!instance) {
+  if (!instance) {
+    return null;
+  }
+
+  const manualSelectionStatus = await resolveManualSelectionStatus({
+    instance: {
+      id: instance.id,
+      instanceData: instance.instanceData,
+      currentStateId: instance.currentStateId,
+    },
+  });
+
+  return {
+    instance,
+    selectionsAreConfirmed: manualSelectionStatus.selectionsAreConfirmed,
+  };
+};
+
+export const getInstance = async ({
+  instanceId,
+  user,
+  skipCache = false,
+}: GetInstanceInput) => {
+  try {
+    // The instance row + manualSelectionStatus are viewer-independent; the
+    // READ gate and user-specific access bits stay outside the cache so a hit
+    // can never bypass authorization or leak another viewer's permissions.
+    const loaded = skipCache
+      ? await loadInstanceFromDb(instanceId)
+      : await cache({
+          type: 'decision',
+          params: [instanceId, 'instance'],
+          fetch: () => loadInstanceFromDb(instanceId),
+        });
+
+    if (!loaded) {
       throw new NotFoundError('Process instance', instanceId);
     }
+
+    const { instance, selectionsAreConfirmed } = loaded;
 
     // Assert read access and reuse the profile-level roles it resolves.
     const profileRoles = await assertInstanceProfileAccess({
@@ -142,14 +187,6 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
         }
       : instanceData;
 
-    const manualSelectionStatus = await resolveManualSelectionStatus({
-      instance: {
-        id: instance.id,
-        instanceData: instance.instanceData,
-        currentStateId: instance.currentStateId,
-      },
-    });
-
     return {
       ...instance,
       slug: instance.profile?.slug ?? null,
@@ -157,7 +194,7 @@ export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
       proposalCount,
       participantCount,
       access,
-      selectionsAreConfirmed: manualSelectionStatus.selectionsAreConfirmed,
+      selectionsAreConfirmed,
     };
   } catch (error) {
     if (error instanceof NotFoundError || error instanceof UnauthorizedError) {

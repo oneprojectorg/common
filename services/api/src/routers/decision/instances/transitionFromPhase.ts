@@ -1,4 +1,8 @@
-import { Channels, triggerPhaseAdvancement } from '@op/common';
+import {
+  Channels,
+  invalidateDecisionInstance,
+  triggerPhaseAdvancement,
+} from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -25,6 +29,8 @@ export const transitionFromPhaseRouter = router({
         fromPhaseId: input.fromPhaseId,
         user: ctx.user,
       });
+
+      waitUntil(invalidateDecisionInstance(input.instanceId));
 
       ctx.registerMutationChannels([
         Channels.decisionInstance(input.instanceId),

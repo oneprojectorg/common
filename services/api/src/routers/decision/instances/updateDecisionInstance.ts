@@ -1,5 +1,9 @@
 import { trackPhaseEndDateChanged } from '@op/analytics';
-import { Channels, updateDecisionInstance } from '@op/common';
+import {
+  Channels,
+  invalidateDecisionInstance,
+  updateDecisionInstance,
+} from '@op/common';
 import { waitUntil } from '@vercel/functions';
 
 import {
@@ -19,6 +23,8 @@ export const updateDecisionInstanceRouter = router({
         ...input,
         user,
       });
+
+      waitUntil(invalidateDecisionInstance(input.instanceId));
 
       ctx.registerMutationChannels([
         Channels.decisionInstance(input.instanceId),

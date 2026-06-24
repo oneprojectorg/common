@@ -544,6 +544,13 @@ export const updateInstanceInputSchema = createInstanceInputSchema
 
 export const getInstanceInputSchema = z.object({
   instanceId: z.uuid(),
+  /**
+   * Edit-mode reads (ProcessBuilder autosave) bypass the viewer-independent
+   * instance cache so a writer always sees its own most recent mutation. Read-
+   * mode views (decision page, voting, results) leave this `false` (default) to
+   * benefit from the cache; invalidations on mutation keep them fresh.
+   */
+  forEdit: z.boolean().optional(),
 });
 
 export const createProposalInputSchema = z.object({

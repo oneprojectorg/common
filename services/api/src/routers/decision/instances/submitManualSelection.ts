@@ -1,4 +1,8 @@
-import { Channels, submitManualSelection } from '@op/common';
+import {
+  Channels,
+  invalidateDecisionInstance,
+  submitManualSelection,
+} from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -19,6 +23,8 @@ export const submitManualSelectionRouter = router({
         proposalIds: input.proposalIds,
         user: ctx.user,
       });
+
+      waitUntil(invalidateDecisionInstance(input.processInstanceId));
 
       ctx.registerMutationChannels([
         Channels.decisionInstance(input.processInstanceId),

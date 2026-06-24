@@ -5,6 +5,8 @@ import { openProcedure, router } from '../../../trpcFactory';
 
 const getCategoriesInputSchema = z.object({
   processInstanceId: z.uuid(),
+  /** See `getInstanceInputSchema.forEdit` — bypasses the categories cache. */
+  forEdit: z.boolean().optional(),
 });
 
 const processCategoryEncoder = z.object({
@@ -27,6 +29,7 @@ export const getCategoriesRouter = router({
       const categories = await getProcessCategories({
         processInstanceId: input.processInstanceId,
         user,
+        skipCache: input.forEdit,
       });
 
       return { categories };

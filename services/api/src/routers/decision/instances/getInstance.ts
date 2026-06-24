@@ -32,6 +32,7 @@ export const getLegacyInstanceRouter = router({
       const instance = await getInstance({
         instanceId: input.instanceId,
         user,
+        skipCache: input.forEdit,
       });
 
       return legacyProcessInstanceEncoder.parse({
@@ -73,6 +74,7 @@ export const getInstanceRouter = router({
       const instance = await getInstance({
         instanceId: input.instanceId,
         user,
+        skipCache: input.forEdit,
       });
 
       ctx.registerQueryChannels([Channels.decisionInstance(input.instanceId)]);
