@@ -1,10 +1,9 @@
 'use client';
 
+import { useForesight } from '@/hooks/useForesight';
 import { cn } from '@op/ui/utils';
 import type { AnchorHTMLAttributes } from 'react';
 import { useEffect, useRef } from 'react';
-
-import { useForesight } from '@/hooks/useForesight';
 
 import { NavLink, useRouter } from './routing';
 
@@ -25,11 +24,11 @@ import { NavLink, useRouter } from './routing';
 export const Link = ({
   children,
   className,
-  href,
   ...props
 }: AnchorHTMLAttributes<HTMLAnchorElement>) => {
   const router = useRouter();
   const cancelledRef = useRef(false);
+  const { href } = props;
 
   const { elementRef } = useForesight<HTMLAnchorElement>({
     callback: () => {
@@ -67,7 +66,6 @@ export const Link = ({
     // loose `AnchorHTMLAttributes` shape used across the app unchanged.
     <NavLink
       {...props}
-      href={href}
       ref={elementRef}
       className={cn('hover:underline', className)}
       prefetch={false}
