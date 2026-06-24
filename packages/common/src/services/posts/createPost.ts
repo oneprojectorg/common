@@ -1,48 +1,19 @@
 import { invalidate } from '@op/cache';
 import { db } from '@op/db/client';
-import { EntityType, attachments, posts, postsToProfiles } from '@op/db/schema';
+import { attachments, posts, postsToProfiles } from '@op/db/schema';
 import { Events, event } from '@op/events';
 import { CreatePostInput } from '@op/types';
 import { waitUntil } from '@vercel/functions';
-import type { AccessZonePermission } from 'access-zones';
-import { permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
 import { CommonError } from '../../utils';
-import { assertProfileTypeAccess, getCurrentProfileId } from '../access';
-import { decisionPermission } from '../decision/permissions';
+import { getCurrentProfileId } from '../access';
+import { assertPostWriteAccess } from './access';
 import { resolvePostRoots } from './resolvePostRoots';
 
 interface CreatePostServiceInput extends CreatePostInput {
   authUserId: string;
 }
-
-// Decision profiles use two distinct write policies:
-//
-//   - A top-level update posted *on the decision profile itself* (a
-//     decision-wide announcement) requires ADMIN.
-//   - Every other write that resolves through the decision — a comment or
-//     reply on an existing post (parentPostId set), or a top-level comment
-//     on a proposal profile (proposals carry no permissions of their own;
-//     resolvePostRoots walks them up to the parent decision) — only
-//     requires SUBMIT_PROPOSALS.
-//
-// resolvePostRoots preserves the target as the root only when the target
-// itself is the gated profile. Every other path (proposal target, or
-// parentPostId-only) ends up with target !== root, so equality cleanly
-// separates the announcement case from everything else.
-const getDecisionPostPermission = ({
-  targetProfileId,
-  rootProfileId,
-}: {
-  targetProfileId: string | null | undefined;
-  rootProfileId: string | null;
-}): AccessZonePermission => {
-  if (targetProfileId && targetProfileId === rootProfileId) {
-    return { decisions: permission.ADMIN };
-  }
-  return { decisions: decisionPermission.SUBMIT_PROPOSALS };
-};
 
 export const createPost = async (input: CreatePostServiceInput) => {
   const {
@@ -67,24 +38,19 @@ export const createPost = async (input: CreatePostServiceInput) => {
     }),
   ]);
 
-  // Access gate: must pass before any row is written. Decision profiles get a
-  // decision-permission gate via getDecisionPostPermission — see its doc for
-  // the announcement-vs-comment split. Org/individual profile types fall
-  // through (no policy = lenient — callers on those paths layer their own
-  // membership checks).
+  // Access gate: must pass before any row is written. Dispatches by the
+  // root profile type — DECISION is admitted via the existing
+  // announcement/comment split, ORG via org-admin standing, INDIVIDUAL/USER
+  // deny-by-default (no individual-post surface yet).
   //
   // Content moderation is async only: the post is written and shown
   // immediately, and the `content/submitted` event below drives async provider
   // review, which hides the post if a verdict comes back disallowed.
-  await assertProfileTypeAccess({
+  await assertPostWriteAccess({
     user: { id: authUserId },
-    profileIds: rootProfileId ? [rootProfileId] : [],
-    policies: {
-      [EntityType.DECISION]: getDecisionPostPermission({
-        targetProfileId,
-        rootProfileId,
-      }),
-    },
+    rootProfileId,
+    rootPostId,
+    targetProfileId,
   });
 
   // postsToProfiles inheritance for comments is purely a feed/discovery
