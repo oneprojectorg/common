@@ -169,6 +169,9 @@ export {
 } from './tables/moderationSubmissions.sql';
 export type { ModerationSubmission } from './tables/moderationSubmissions.sql';
 
+export { moderationWebhookInbox } from './tables/moderationWebhookInbox.sql';
+export type { ModerationWebhookInbox } from './tables/moderationWebhookInbox.sql';
+
 export {
   proposalHistory,
   proposalHistoryRelations,

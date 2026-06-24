@@ -1,148 +1,126 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { handleModerationWebhook } from './handleModerationWebhook';
-import type { ModerationProvider, ModerationVerdict } from './types';
+import {
+  deliveryIdFor,
+  handleModerationWebhook,
+} from './handleModerationWebhook';
+import type { ModerationProvider } from './types';
 
-const ROUND_ID = '99999999-9999-4999-8999-999999999999';
-
-const verdict: ModerationVerdict = {
-  itemType: 'post',
-  itemId: 'p1',
-  roundId: ROUND_ID,
-  verdict: 'flagged',
-};
-
-const provider = (parse: () => ModerationVerdict[]): ModerationProvider => ({
-  scoreText: async () => ({}),
-  parseWebhook: parse,
-});
+const noopProvider: ModerationProvider = { scoreText: async () => ({}) };
 
 const body = { rawBody: '{}', headers: {}, providedSecret: 'sekret' };
 
+const recorder = () => vi.fn(async () => undefined);
+
 describe('handleModerationWebhook', () => {
-  it('parses and applies the verdict on a valid secret', async () => {
-    const applyVerdict = vi.fn().mockResolvedValue(undefined);
+  it('records the delivery on a valid secret and 200s', async () => {
+    const recordDelivery = recorder();
     const result = await handleModerationWebhook(body, {
       expectedSecret: 'sekret',
-      provider: provider(() => [verdict]),
-      applyVerdict,
+      provider: noopProvider,
+      providerName: 'lasso',
+      recordDelivery,
     });
 
     expect(result.status).toBe(200);
-    expect(applyVerdict).toHaveBeenCalledWith(verdict);
+    expect(recordDelivery).toHaveBeenCalledWith({
+      provider: 'lasso',
+      deliveryId: deliveryIdFor(body.rawBody),
+      rawBody: body.rawBody,
+      headers: body.headers,
+    });
   });
 
-  it('rejects a bad secret with 401 and never parses or applies', async () => {
-    const parseWebhook = vi.fn();
-    const applyVerdict = vi.fn();
+  it('rejects a bad secret with 401 and never records', async () => {
+    const recordDelivery = recorder();
     const result = await handleModerationWebhook(
       { ...body, providedSecret: 'wrong' },
       {
         expectedSecret: 'sekret',
-        provider: { scoreText: async () => ({}), parseWebhook },
-        applyVerdict,
+        provider: noopProvider,
+        providerName: 'lasso',
+        recordDelivery,
       },
     );
 
     expect(result.status).toBe(401);
-    expect(parseWebhook).not.toHaveBeenCalled();
-    expect(applyVerdict).not.toHaveBeenCalled();
+    expect(recordDelivery).not.toHaveBeenCalled();
   });
 
   it('returns 503 when no provider is configured', async () => {
+    const recordDelivery = recorder();
     const result = await handleModerationWebhook(body, {
       expectedSecret: 'sekret',
       provider: null,
-      applyVerdict: vi.fn(),
+      recordDelivery,
     });
 
     expect(result.status).toBe(503);
+    expect(recordDelivery).not.toHaveBeenCalled();
   });
 
-  it('returns 400 when the payload cannot be parsed', async () => {
-    const applyVerdict = vi.fn();
-    const result = await handleModerationWebhook(body, {
-      expectedSecret: 'sekret',
-      provider: provider(() => {
-        throw new Error('bad payload');
-      }),
-      applyVerdict,
-    });
-
-    expect(result.status).toBe(400);
-    expect(applyVerdict).not.toHaveBeenCalled();
-  });
-
-  it('rejects with 401 when the vendor signature fails, before parsing', async () => {
-    const parseWebhook = vi.fn();
+  it('rejects with 401 when the vendor signature fails, before recording', async () => {
     const verifyWebhook = vi.fn().mockReturnValue(false);
-    const applyVerdict = vi.fn();
+    const recordDelivery = recorder();
     const result = await handleModerationWebhook(body, {
       expectedSecret: 'sekret',
-      provider: { scoreText: async () => ({}), parseWebhook, verifyWebhook },
-      applyVerdict,
+      provider: { scoreText: async () => ({}), verifyWebhook },
+      providerName: 'lasso',
+      recordDelivery,
     });
 
     expect(result.status).toBe(401);
     expect(verifyWebhook).toHaveBeenCalledWith({ rawBody: '{}', headers: {} });
-    expect(parseWebhook).not.toHaveBeenCalled();
-    expect(applyVerdict).not.toHaveBeenCalled();
+    expect(recordDelivery).not.toHaveBeenCalled();
   });
 
   it('proceeds when the vendor signature verifies', async () => {
-    const applyVerdict = vi.fn().mockResolvedValue(undefined);
+    const recordDelivery = recorder();
     const result = await handleModerationWebhook(body, {
       expectedSecret: 'sekret',
-      provider: {
-        scoreText: async () => ({}),
-        parseWebhook: () => [verdict],
-        verifyWebhook: () => true,
-      },
-      applyVerdict,
+      provider: { scoreText: async () => ({}), verifyWebhook: () => true },
+      providerName: 'lasso',
+      recordDelivery,
     });
 
     expect(result.status).toBe(200);
-    expect(applyVerdict).toHaveBeenCalledWith(verdict);
-  });
-
-  it('acknowledges a delivery carrying no verdicts without applying anything', async () => {
-    // e.g. Lasso's dashboard webhook also delivers tag/strike/list actions —
-    // a 200 stops the vendor from retrying them forever.
-    const applyVerdict = vi.fn();
-    const result = await handleModerationWebhook(body, {
-      expectedSecret: 'sekret',
-      provider: provider(() => []),
-      applyVerdict,
-    });
-
-    expect(result.status).toBe(200);
-    expect(applyVerdict).not.toHaveBeenCalled();
-  });
-
-  it('applies every verdict in a batched delivery', async () => {
-    const second: ModerationVerdict = { ...verdict, mediaId: '0' };
-    const applyVerdict = vi.fn().mockResolvedValue(undefined);
-    const result = await handleModerationWebhook(body, {
-      expectedSecret: 'sekret',
-      provider: provider(() => [verdict, second]),
-      applyVerdict,
-    });
-
-    expect(result.status).toBe(200);
-    expect(applyVerdict).toHaveBeenCalledTimes(2);
-    expect(applyVerdict).toHaveBeenNthCalledWith(1, verdict);
-    expect(applyVerdict).toHaveBeenNthCalledWith(2, second);
+    expect(recordDelivery).toHaveBeenCalledTimes(1);
   });
 
   it('rejects with 401 when no expected secret is configured', async () => {
-    const applyVerdict = vi.fn();
+    const recordDelivery = recorder();
     const result = await handleModerationWebhook(body, {
       expectedSecret: undefined,
-      provider: provider(() => [verdict]),
-      applyVerdict,
+      provider: noopProvider,
+      providerName: 'lasso',
+      recordDelivery,
     });
 
     expect(result.status).toBe(401);
-    expect(applyVerdict).not.toHaveBeenCalled();
+    expect(recordDelivery).not.toHaveBeenCalled();
+  });
+
+  it('falls back to "unknown" provider name when none is configured', async () => {
+    const recordDelivery = recorder();
+    await handleModerationWebhook(body, {
+      expectedSecret: 'sekret',
+      provider: noopProvider,
+      recordDelivery,
+    });
+
+    expect(recordDelivery).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: 'unknown' }),
+    );
+  });
+});
+
+describe('deliveryIdFor', () => {
+  it('returns a stable sha256 digest for the same body', () => {
+    expect(deliveryIdFor('{}')).toBe(deliveryIdFor('{}'));
+    expect(deliveryIdFor('{}')).toHaveLength(64);
+  });
+
+  it('differs for different bodies', () => {
+    expect(deliveryIdFor('{"a":1}')).not.toBe(deliveryIdFor('{"a":2}'));
   });
 });

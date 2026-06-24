@@ -1,7 +1,33 @@
 import { createCheckstepProvider } from './providers/checkstep';
 import { createHiveProvider } from './providers/hive';
 import { createLassoProvider } from './providers/lasso';
-import type { ModerationProvider } from './types';
+import type { ModerationProvider, ModerationVendor } from './types';
+
+const VENDORS: readonly ModerationVendor[] = [
+  'hive',
+  'lasso',
+  'checkstep',
+] as const;
+
+const isVendor = (value: string): value is ModerationVendor =>
+  (VENDORS as readonly string[]).includes(value);
+
+/** The configured vendor name, when one is set and recognized. Used by the
+ *  inbox layer to namespace `deliveryId` so the same body from two different
+ *  vendors (e.g. mid-migration) doesn't collide. Returns `null` when no
+ *  vendor is configured. Throws on an unrecognized value, matching
+ *  {@link getModerationProvider} — a typo must not silently get treated as
+ *  "off". */
+export const getModerationProviderName = (): ModerationVendor | null => {
+  const vendor = process.env.MODERATION_PROVIDER;
+  if (!vendor) {
+    return null;
+  }
+  if (!isVendor(vendor)) {
+    throw new Error(`Unknown MODERATION_PROVIDER: ${vendor}`);
+  }
+  return vendor;
+};
 
 /**
  * Resolves the moderation provider for the vendor named by `MODERATION_PROVIDER`
