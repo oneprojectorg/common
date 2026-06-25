@@ -14,13 +14,6 @@ export type ModerationCategory =
 
 export type ModerationScores = Partial<Record<ModerationCategory, number>>;
 
-export interface ModerationDecision {
-  passed: boolean;
-  scores: ModerationScores;
-  total: number;
-  threshold: number;
-}
-
 /** The moderation vendors we support; the active one is chosen by env. */
 export type ModerationVendor = 'hive' | 'lasso' | 'checkstep';
 
@@ -110,12 +103,11 @@ export interface ModerationVerdict {
 }
 
 /**
- * Scores text (sync gate), submits content for async review, and parses the
- * resulting webhook. `submitForReview`/`planReviewRefs`/`parseWebhook` are the
- * async half; a provider that only does the sync gate may omit them.
+ * Submits content for async review and parses the resulting webhook.
+ * `submitForReview`/`planReviewRefs`/`parseWebhook` form the async review path;
+ * `verifyWebhook` guards inbound callbacks for vendors that sign them.
  */
 export interface ModerationProvider {
-  scoreText(input: { content: string }): Promise<ModerationScores>;
   /**
    * The content-refs `submitForReview` will create for this submission,
    * computable without calling the provider. The round is recorded from these

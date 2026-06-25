@@ -4,7 +4,6 @@ import type { User } from '@supabase/supabase-js';
 
 import { getOrgAccessUser } from '../';
 import { CommonError, UnauthorizedError } from '../../utils/error';
-import { assertTextContentModerated } from '../moderation';
 
 export interface CreatePostInOrganizationOptions {
   id: string;
@@ -26,9 +25,6 @@ export const createPostInOrganization = async (
   if (!orgUser) {
     throw new UnauthorizedError();
   }
-
-  // Moderation gate: block disallowed text before any row is written.
-  await assertTextContentModerated(content);
 
   // Get all storage objects that were attached to the post
   const allStorageObjects =
@@ -78,6 +74,9 @@ export const createPostInOrganization = async (
 
   // Run attachments and join record in parallel
   await Promise.all(queryPromises);
+
+  // Org posts are intentionally not moderated (neither a sync gate nor the
+  // async `content/submitted` review path that decision/profile posts use).
 
   return {
     result: {

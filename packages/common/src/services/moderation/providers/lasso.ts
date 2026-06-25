@@ -6,15 +6,10 @@ import type {
   ModerationMediaItem,
   ModerationProvider,
   ModerationProviderReference,
-  ModerationScores,
   ModerationVerdict,
   ModerationWebhookInput,
 } from '../types';
-import {
-  type ModerationFetchOptions,
-  SYNC_GATE_FETCH,
-  moderationFetch,
-} from './moderationFetch';
+import { moderationFetch } from './moderationFetch';
 import { headerValue, timingSafeStringEqual } from './verify';
 
 const DEFAULT_API_URL = 'https://api.lassomoderation.com/api/v1';
@@ -39,10 +34,6 @@ const verifyLassoWebhook = (
     .digest('base64')}`;
   return timingSafeStringEqual(signature.trim(), expected);
 };
-// Lasso returns an allow/block verdict rather than per-category scores; a block
-// maps to a decisive score that meets the summed gate threshold on its own.
-const BLOCK_SCORE = 1;
-
 /** Lasso's verdict for a piece of content. */
 type LassoStatus = 'allowed' | 'flagged' | 'hidden';
 /** Verdicts where Lasso's rules acted on the content (i.e. it's disallowed). */
@@ -100,20 +91,15 @@ const post = async (
   url: string,
   apiToken: string,
   body: Record<string, unknown>,
-  fetchOptions?: ModerationFetchOptions,
 ): Promise<LassoResult> => {
-  const response = await moderationFetch(
-    url,
-    {
-      method: 'POST',
-      headers: {
-        authorization: `Bearer ${apiToken}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify(body),
+  const response = await moderationFetch(url, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${apiToken}`,
+      'content-type': 'application/json',
     },
-    fetchOptions,
-  );
+    body: JSON.stringify(body),
+  });
 
   if (!response.ok) {
     throw new Error(`Moderation provider returned ${response.status}`);
@@ -174,20 +160,6 @@ export const createLassoProvider = ({
           verifyLassoWebhook(input, webhookSigningKey),
       }
     : {}),
-
-  scoreText: async ({ content }) => {
-    const result = await post(
-      `${apiUrl}/content/sync`,
-      apiToken,
-      envelope(crypto.randomUUID(), content),
-      SYNC_GATE_FETCH,
-    );
-    const blocked = result.status
-      ? BLOCKING_STATUSES.includes(result.status)
-      : false;
-    const scores: ModerationScores = blocked ? { other: BLOCK_SCORE } : {};
-    return scores;
-  },
 
   // Lasso takes one combined task (text + media), so it's a single ref —
   // unless there's nothing to review (no text, no media, e.g. a `user`

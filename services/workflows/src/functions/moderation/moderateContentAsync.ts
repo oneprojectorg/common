@@ -12,8 +12,8 @@ import { Events, inngest } from '@op/events';
 const { contentSubmitted } = Events;
 
 /**
- * Async moderation pass. Runs after content is written (the synchronous gate
- * already blocked the obvious text cases on write). Resolves the item's
+ * Async moderation pass. Runs after content is written and shown; the verdict
+ * hides the item later if it comes back disallowed. Resolves the item's
  * current text and attachments — the event carries only the item ref, so
  * collab-doc proposals get their TipTap fragment text rather than an empty
  * proposalData snapshot — and submits both to the configured provider; the

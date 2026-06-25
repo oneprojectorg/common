@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { SYNC_GATE_FETCH, moderationFetch } from './moderationFetch';
+import { moderationFetch } from './moderationFetch';
 
 const res = (status: number) => ({
   ok: status >= 200 && status < 300,
@@ -78,15 +78,15 @@ describe('moderationFetch', () => {
     expect(firstSignal).not.toBe(secondSignal);
   });
 
-  it('honors a tighter retry budget (sync gate preset)', async () => {
+  it('honors a tighter retry budget via the retries option', async () => {
     const fetchMock = vi.fn().mockResolvedValue(res(503));
     vi.stubGlobal('fetch', fetchMock);
 
-    const error = await moderationFetch('https://x', init, SYNC_GATE_FETCH)
+    const error = await moderationFetch('https://x', init, { retries: 1 })
       .then(() => null)
       .catch((e) => e);
 
-    // SYNC_GATE_FETCH = 1 retry → 2 attempts, then the retryable error throws.
+    // 1 retry → 2 attempts, then the retryable error throws.
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(error).toBeInstanceOf(Error);
     expect(String((error as Error).message)).not.toContain('https://x');
