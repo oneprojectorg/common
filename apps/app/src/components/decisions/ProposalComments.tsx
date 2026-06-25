@@ -33,7 +33,11 @@ export function ProposalComments({
   const comments = commentsData?.items ?? [];
   const { handleReactionClick } = usePostFeedActions();
 
-  const readOnly = readOnlyProp || !userCanInteract(user);
+  // Mirror the server-side comment gate (`assertPostWriteAccess` →
+  // SUBMIT_PROPOSALS on the decision profile). Showing the post box to users
+  // who'd get rejected on submit surfaces as a "Not authorized" toast.
+  const canSubmitProposal = proposal.access?.submitProposals === true;
+  const readOnly = readOnlyProp || !userCanInteract(user) || !canSubmitProposal;
 
   const scrollToComments = useCallback(() => {
     setTimeout(() => {
