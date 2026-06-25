@@ -32,6 +32,7 @@ import { DiscussionModal } from '../DiscussionModal';
 import { FeedContent, FeedHeader, FeedItem, FeedMain } from '../Feed';
 import { LinkPreview } from '../LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
+import { usePostTranslation } from '../decisions/PostTranslationContext';
 import { DeletePost } from './DeletePost';
 
 const PostDisplayName = ({
@@ -380,7 +381,9 @@ export const PostItem = ({
   onCommentClick?: (post: Post, organization: Organization | null) => void;
   className?: string;
 }) => {
-  const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
+  const translation = usePostTranslation(post.id);
+  const displayContent = translation?.content ?? post?.content;
+  const { urls } = useMemo(() => detectLinks(displayContent), [displayContent]);
   const { displayPost, handleReactionClick } = useOptimisticReaction(
     post,
     onReactionClick,
@@ -419,7 +422,7 @@ export const PostItem = ({
         </FeedHeader>
         <FeedContent>
           <PostFlaggedIndicator post={post} />
-          <PostContent content={post?.content} />
+          <PostContent content={displayContent} />
           <PostAttachments attachments={post.attachments} />
           <PostUrls urls={urls} />
           <div className="flex items-center justify-between gap-2">

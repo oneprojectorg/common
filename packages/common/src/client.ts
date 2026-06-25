@@ -126,6 +126,8 @@ export {
 export type { SupportedLocale } from './services/translation/locales';
 export { parseTranslatedMeta } from './services/translation/parseTranslatedMeta';
 export type { ProposalTranslation } from './services/translation/translateProposal';
+export type { ResourceTranslation } from './services/translation/translateResources';
+export type { UpdateTranslation } from './services/translation/translateUpdates';
 export type {
   TranslatedFieldValue,
   TranslatedFields,

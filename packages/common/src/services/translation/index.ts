@@ -2,7 +2,11 @@ export { parseTranslatedMeta } from './parseTranslatedMeta';
 export { translateDecision } from './translateDecision';
 export { translateProposal } from './translateProposal';
 export { translateProposals } from './translateProposals';
+export { translateResources } from './translateResources';
+export { translateUpdates } from './translateUpdates';
 export type { ProposalTranslation } from './translateProposal';
+export type { ResourceTranslation } from './translateResources';
+export type { UpdateTranslation } from './translateUpdates';
 export type {
   TranslatedFieldValue,
   TranslatedFields,

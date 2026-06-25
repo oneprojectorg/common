@@ -14,6 +14,8 @@ import { useCallback, useMemo, useState } from 'react';
 import { useTranslations } from '@/lib/i18n';
 
 import { useSetDecisionTranslation } from './DecisionTranslationContext';
+import { useSetPostTranslations } from './PostTranslationContext';
+import { useSetResourceTranslations } from './ResourceTranslationContext';
 
 // fallow-ignore-next-line complexity
 export const useProposalsTranslation = ({
@@ -37,6 +39,8 @@ export const useProposalsTranslation = ({
     sourceLocale: string;
   } | null>(null);
   const setDecisionTranslation = useSetDecisionTranslation();
+  const setPostTranslations = useSetPostTranslations();
+  const setResourceTranslations = useSetResourceTranslations();
 
   const translateBatchMutation =
     trpc.translation.translateProposals.useMutation({
@@ -78,6 +82,30 @@ export const useProposalsTranslation = ({
       },
     });
 
+  const translateUpdatesMutation =
+    trpc.translation.translateUpdates.useMutation({
+      onSuccess: (data) => {
+        if (data.sourceLocale) {
+          setTranslationState((prev) =>
+            prev ? prev : { translations: {}, sourceLocale: data.sourceLocale },
+          );
+        }
+        setPostTranslations(data.translations);
+      },
+    });
+
+  const translateResourcesMutation =
+    trpc.translation.translateResources.useMutation({
+      onSuccess: (data) => {
+        if (data.sourceLocale) {
+          setTranslationState((prev) =>
+            prev ? prev : { translations: {}, sourceLocale: data.sourceLocale },
+          );
+        }
+        setResourceTranslations(data.translations);
+      },
+    });
+
   const handleTranslate = useCallback(() => {
     if (!supportedLocale) {
       return;
@@ -94,10 +122,20 @@ export const useProposalsTranslation = ({
         decisionProfileId,
         targetLocale: supportedLocale,
       });
+      translateUpdatesMutation.mutate({
+        decisionProfileId,
+        targetLocale: supportedLocale,
+      });
+      translateResourcesMutation.mutate({
+        decisionProfileId,
+        targetLocale: supportedLocale,
+      });
     }
   }, [
     translateBatchMutation,
     translateDecisionMutation,
+    translateUpdatesMutation,
+    translateResourcesMutation,
     allProposals,
     supportedLocale,
     decisionProfileId,
@@ -106,7 +144,9 @@ export const useProposalsTranslation = ({
   const handleViewOriginal = useCallback(() => {
     setTranslationState(null);
     setDecisionTranslation(null);
-  }, [setDecisionTranslation]);
+    setPostTranslations(null);
+    setResourceTranslations(null);
+  }, [setDecisionTranslation, setPostTranslations, setResourceTranslations]);
 
   const languageNames = useMemo(
     () => new Intl.DisplayNames([locale], { type: 'language' }),
