@@ -14,7 +14,7 @@ import { cn } from '../lib/utils';
 
 const SIDE_CLASSES: Record<SheetSide, string> = {
   bottom:
-    'inset-x-0 bottom-0 top-auto w-full max-h-[85svh] rounded-t-2xl entering:animate-in entering:slide-in-from-bottom exiting:animate-out exiting:slide-out-to-bottom',
+    'inset-x-0 bottom-0 top-auto w-full max-h-[calc(100svh-5rem)] rounded-t-2xl entering:animate-in entering:slide-in-from-bottom exiting:animate-out exiting:slide-out-to-bottom',
   left: 'inset-y-0 start-0 end-auto h-full max-w-xs w-full rounded-none entering:animate-in entering:slide-in-from-left exiting:animate-out exiting:slide-out-to-left',
   right:
     'inset-y-0 end-0 start-auto h-full max-w-xs w-full rounded-none entering:animate-in entering:slide-in-from-right exiting:animate-out exiting:slide-out-to-right',

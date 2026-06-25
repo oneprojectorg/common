@@ -44,7 +44,7 @@ export function ProposalEditorAside({
         side="bottom"
         className="sm:hidden"
       >
-        <div className="flex max-h-[85svh] flex-col bg-white">
+        <div className="flex max-h-[calc(100svh-5rem)] flex-col bg-white">
           <ProposalEditorAsideHeader title={title} onClose={onClose} />
           <SheetBody className={cn('pb-safe', bodyClassName)}>
             {children}
@@ -83,7 +83,7 @@ export function ProposalEditorAsideSkeleton({
         <div className={bodyClasses}>{children}</div>
       </aside>
 
-      <div className="fixed inset-x-0 bottom-0 z-[999999] max-h-[85svh] rounded-t-2xl bg-white shadow-xl sm:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-[999999] max-h-[calc(100svh-5rem)] rounded-t-2xl bg-white shadow-xl sm:hidden">
         <div className="flex h-editor-topbar shrink-0 items-center justify-between border-b border-neutral-gray1 px-6">
           <div className="h-4 w-36 animate-pulse rounded bg-neutral-gray1" />
           <div className="size-4 animate-pulse rounded bg-neutral-gray1" />
