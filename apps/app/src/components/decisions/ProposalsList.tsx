@@ -428,12 +428,12 @@ const ProposalsListContent = ({
         className="pointer-events-none absolute inset-x-0 top-0 h-px"
       />
       {/* Filters Bar — sticks beneath the decision nav while the list/map
-          scroll under it. Once pinned, its border extends to the full page
-          width via the before/after full-bleed lines (toggled by data-stuck). */}
+          scroll under it. Only once pinned, full-bleed top/bottom lines fade
+          in via the before/after pseudo-elements (toggled by data-stuck). */}
       <div
         data-stuck={isFilterBarStuck || undefined}
         className={cn(
-          'sticky top-14 z-20 flex flex-wrap items-center justify-between gap-4 border-b border-neutral-gray1 bg-white py-3',
+          'sticky top-14 z-20 flex flex-wrap items-center justify-between gap-4 bg-white py-3',
           "before:pointer-events-none before:absolute before:top-0 before:left-1/2 before:w-screen before:-translate-x-1/2 before:border-t before:border-neutral-gray1 before:opacity-0 before:content-['']",
           "after:pointer-events-none after:absolute after:-bottom-px after:left-1/2 after:w-screen after:-translate-x-1/2 after:border-b after:border-neutral-gray1 after:opacity-0 after:content-['']",
           'data-[stuck=true]:before:opacity-100 data-[stuck=true]:after:opacity-100',
