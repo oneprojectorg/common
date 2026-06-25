@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
+import { seedOrgFeedPost } from '../../test/helpers/seedOrgFeedPost';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -461,65 +462,49 @@ describe.concurrent('decision-profile post authorization', () => {
   });
 });
 
-// Org-feed writes are restricted to org admins (resolved via the org-admin
-// fallback on `organizationUsers`); regular org members and outsiders fail
-// closed at the service-layer write gate, independent of the procedure tier.
-// The feed-read and reaction tests below cover sibling endpoints
+// Org-feed writes via `posts.createPost` are comments only — gated on the
+// allow-list. Top-level org-profile writes go through
+// `organization.createPost` (unchanged by this PR, still on
+// `networkAuthenticatedProcedure` with org-membership gating). The
+// feed-read and reaction tests below cover sibling endpoints
 // (`posts.getPosts`, `organization.toggleReaction`) whose org-side authz is
 // out of scope for `assertPostWriteAccess` and is intentionally untouched.
 describe.concurrent('org-feed post authorization', () => {
-  it('admits the org admin (creator) posting on the org profile', async ({
+  it('rejects all top-level posts on the org profile via posts.createPost', async ({
     task,
     onTestFinished,
   }) => {
+    // Top-level shape (`profileId` set, no `parentPostId`) is rejected
+    // outright on this endpoint regardless of caller standing — admin,
+    // member, or outsider. `organization.createPost` is the production
+    // entry point for org-feed top-levels.
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
 
-    const caller = await createAuthenticatedCaller(setup.userEmail);
-    const post = await caller.posts.createPost({
-      content: 'Org admin update on the org profile.',
-      profileId: setup.organization.profileId,
-    });
-
-    expect(post.content).toBe('Org admin update on the org profile.');
-  });
-
-  it('rejects an outsider from posting a top-level update on an org profile', async ({
-    task,
-    onTestFinished,
-  }) => {
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
-
-    const outsiderCaller = await createOutsiderCaller(testData);
-
+    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
     await expect(
-      outsiderCaller.posts.createPost({
-        content: 'Outsider top-level post on org profile — should fail.',
+      ownerCaller.posts.createPost({
+        content: 'Owner top-level via posts.createPost — should fail.',
         profileId: setup.organization.profileId,
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
-  });
-
-  it('rejects a non-admin org member from posting on the org profile', async ({
-    task,
-    onTestFinished,
-  }) => {
-    // The Member role grants `profile: READ` only — not `profile: ADMIN` —
-    // so it must not satisfy the write gate even though the user is in the
-    // org. Pins that only admin standing (not membership) admits writes.
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
 
     const member = await testData.createMemberUser({
       organization: setup.organization,
       instanceProfileIds: [],
     });
     const memberCaller = await createAuthenticatedCaller(member.email);
-
     await expect(
       memberCaller.posts.createPost({
-        content: 'Member post on org profile — should fail.',
+        content: 'Member top-level via posts.createPost — should fail.',
+        profileId: setup.organization.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+
+    const outsiderCaller = await createOutsiderCaller(testData);
+    await expect(
+      outsiderCaller.posts.createPost({
+        content: 'Outsider top-level via posts.createPost — should fail.',
         profileId: setup.organization.profileId,
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
@@ -532,10 +517,10 @@ describe.concurrent('org-feed post authorization', () => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
 
-    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
-    const orgPost = await ownerCaller.posts.createPost({
+    const orgPost = await seedOrgFeedPost({
       content: 'Org-level post.',
-      profileId: setup.organization.profileId,
+      authorProfileId: setup.organization.profileId,
+      orgProfileId: setup.organization.profileId,
     });
 
     const outsiderCaller = await createOutsiderCaller(testData);
@@ -555,15 +540,16 @@ describe.concurrent('org-feed post authorization', () => {
     // Org-post comments gate on the allow-list specifically (not org
     // membership): anyone the team has curated into the allow-list can
     // comment on any org post, even if they're not a member of *that* org.
-    // Top-level posting on the org profile is still admin-only — that path
-    // is exercised in the announcement tests above.
+    // Top-level posting on the org profile via posts.createPost is denied
+    // (callers use organization.createPost); the consolidated denial test
+    // at the top of this block pins that.
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
 
-    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
-    const orgPost = await ownerCaller.posts.createPost({
+    const orgPost = await seedOrgFeedPost({
       content: 'Org-level post.',
-      profileId: setup.organization.profileId,
+      authorProfileId: setup.organization.profileId,
+      orgProfileId: setup.organization.profileId,
     });
 
     const allowListed = await testData.createMemberUser({
@@ -601,10 +587,10 @@ describe.concurrent('org-feed post authorization', () => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
 
-    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
-    const orgPost = await ownerCaller.posts.createPost({
+    const orgPost = await seedOrgFeedPost({
       content: 'Org-level post.',
-      profileId: setup.organization.profileId,
+      authorProfileId: setup.organization.profileId,
+      orgProfileId: setup.organization.profileId,
     });
 
     const member = await testData.createMemberUser({
@@ -660,15 +646,15 @@ describe.concurrent('org-feed post authorization', () => {
     // A misuse-but-valid input shape: a caller sends both `profileId` (the
     // org) AND `parentPostId`. resolvePostRoots prefers parentPostId, so the
     // gate must too — otherwise targetProfileId === rootProfileId would
-    // route the call through the admin-only announcement gate and reject a
+    // route the call through the top-level-org throw and reject a
     // legitimate comment.
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
 
-    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
-    const orgPost = await ownerCaller.posts.createPost({
+    const orgPost = await seedOrgFeedPost({
       content: 'Org-level post.',
-      profileId: setup.organization.profileId,
+      authorProfileId: setup.organization.profileId,
+      orgProfileId: setup.organization.profileId,
     });
 
     const allowListed = await testData.createMemberUser({
@@ -702,10 +688,10 @@ describe.concurrent('org-feed post authorization', () => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
 
-    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
-    await ownerCaller.posts.createPost({
+    await seedOrgFeedPost({
       content: 'Org post visible to outsider.',
-      profileId: setup.organization.profileId,
+      authorProfileId: setup.organization.profileId,
+      orgProfileId: setup.organization.profileId,
     });
 
     const outsiderCaller = await createOutsiderCaller(testData);
@@ -730,10 +716,10 @@ describe.concurrent('org-feed post authorization', () => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
 
-    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
-    const orgPost = await ownerCaller.posts.createPost({
+    const orgPost = await seedOrgFeedPost({
       content: 'Org post.',
-      profileId: setup.organization.profileId,
+      authorProfileId: setup.organization.profileId,
+      orgProfileId: setup.organization.profileId,
     });
 
     const outsiderCaller = await createOutsiderCaller(testData);
@@ -842,12 +828,13 @@ describe.concurrent('listProfilePosts authorization and pagination', () => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
 
-    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
-    await ownerCaller.posts.createPost({
+    await seedOrgFeedPost({
       content: 'Org-level update.',
-      profileId: setup.organization.profileId,
+      authorProfileId: setup.organization.profileId,
+      orgProfileId: setup.organization.profileId,
     });
 
+    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
     await expect(
       ownerCaller.posts.listProfilePosts({
         profileId: setup.organization.profileId,
@@ -1335,9 +1322,10 @@ describe.concurrent('getPosts pagination', () => {
 
     const updateIds: string[] = [];
     for (let i = 0; i < 3; i++) {
-      const update = await ownerCaller.posts.createPost({
+      const update = await seedOrgFeedPost({
         content: `Update ${i}.`,
-        profileId: orgProfileId,
+        authorProfileId: orgProfileId,
+        orgProfileId,
       });
       updateIds.push(update.id);
       await ownerCaller.posts.createPost({

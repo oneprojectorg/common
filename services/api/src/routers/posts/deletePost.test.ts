@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
+import { seedOrgFeedPost } from '../../test/helpers/seedOrgFeedPost';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -502,16 +503,16 @@ describe.concurrent('regression: account.switchOrganization spoof', () => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
 
-    const adminCaller = await createAuthenticatedCaller(setup.userEmail);
-    await adminCaller.account.switchOrganization({
-      organizationId: setup.organization.id,
-    });
-    // posts.createPost stamps posts.profileId from currentProfileId, so the
-    // resulting post has profileId = orgProfileId — the exact shape an
-    // attacker needs to exploit the fast-path.
-    const adminPost = await adminCaller.posts.createPost({
-      content: 'Org-profile post via posts.createPost.',
-      profileId: setup.organization.profileId,
+    // Modern shape an attacker would need to exploit the fast-path:
+    // posts.profileId = orgProfileId (matches the switched-in member's
+    // currentProfileId) and rootProfileId = orgProfileId. Top-level writes
+    // on the org profile via `posts.createPost` are now denied at the
+    // service layer (callers use `organization.createPost`), so seed the
+    // row directly to keep this delete-permission regression covered.
+    const adminPost = await seedOrgFeedPost({
+      content: 'Org-profile post (direct insert for fixture).',
+      authorProfileId: setup.organization.profileId,
+      orgProfileId: setup.organization.profileId,
     });
 
     const member = await testData.createMemberUser({
@@ -532,10 +533,10 @@ describe.concurrent('regression: account.switchOrganization spoof', () => {
 
   // Counterpart to the spoof test above: an admin (organizationUsers ADMIN)
   // who switched into the org SHOULD be able to delete an org-profile post
-  // authored by another admin. posts.createPost stamps posts.profileId from
-  // currentProfileId — for a switched-in admin that's the org profile — and
-  // the deleter's fast-path correctly skips (no profileUsers row on the org
-  // profile), falling through to assertInstanceProfileAccess's org fallback.
+  // authored by another admin. Modern shape (posts.profileId = orgProfileId,
+  // rootProfileId = orgProfileId) — the deleter's fast-path correctly skips
+  // (no profileUsers row on the org profile), falling through to
+  // assertInstanceProfileAccess's org fallback.
   it('lets an org admin delete an admin-authored org-profile post via the org-membership fallback', async ({
     task,
     onTestFinished,
@@ -543,13 +544,10 @@ describe.concurrent('regression: account.switchOrganization spoof', () => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
 
-    const firstAdminCaller = await createAuthenticatedCaller(setup.userEmail);
-    await firstAdminCaller.account.switchOrganization({
-      organizationId: setup.organization.id,
-    });
-    const adminPost = await firstAdminCaller.posts.createPost({
-      content: 'Org-profile post via posts.createPost.',
-      profileId: setup.organization.profileId,
+    const adminPost = await seedOrgFeedPost({
+      content: 'Org-profile post (direct insert for fixture).',
+      authorProfileId: setup.organization.profileId,
+      orgProfileId: setup.organization.profileId,
     });
 
     const secondAdmin = await testData.createMemberUser({

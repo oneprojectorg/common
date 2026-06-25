@@ -162,23 +162,16 @@ export const assertPostWriteAccess = async ({
       });
       return;
 
-    // Org profile: announcement requires `profile: ADMIN` (resolved via
-    // the org-admin fallback, since org roles live on `organizationUsers`).
-    // Comments are open to any allow-listed user — the team curates this
-    // list explicitly, so it's the right "can engage with org feeds" cohort
-    // and doesn't require per-org membership.
+    // Org profile: `posts.createPost` only services comments under
+    // existing org-feed posts here. Top-level writes on the org profile go
+    // through `organization.createPost` (unchanged by this PR, still on
+    // `networkAuthenticatedProcedure` with org-membership gating), so the
+    // announcement shape on this endpoint is unreachable from any UI path
+    // and is rejected outright. Comments are open to any allow-listed
+    // user — the team curates that list explicitly.
     case EntityType.ORG:
       if (isAnnouncement) {
-        await assertInstanceProfileAccess({
-          user,
-          instance: {
-            profileId: rootProfileId,
-            ownerProfileId: rootProfileId,
-          },
-          profilePermissions: { profile: permission.ADMIN },
-          orgFallbackPermissions: { profile: permission.ADMIN },
-        });
-        return;
+        throw new UnauthorizedError(WRITE_DENIED);
       }
       await assertOnAllowList(user);
       return;
