@@ -7,8 +7,10 @@ import { serverExtensions } from './tiptapExtensions';
 /**
  * The static renderer (`@tiptap/static-renderer`) is the foundation for SSR
  * rich-text rendering. It must recognize every node/mark in `serverExtensions`
- * — an unregistered type is silently dropped — so these assertions guard the
- * shared extension set against drift. Output is asserted structurally rather
+ * — an unregistered NODE type THROWS during the JSON→doc parse (see the last
+ * test); `RichTextRenderer` guards that with a plain-text fallback so it can't
+ * crash the whole surrounding tab. These assertions guard the shared extension
+ * set against drift. Output is asserted structurally rather
  * than byte-compared to `generateHTML`: both are "ours", but they use different
  * serializers, so exact-string parity would be brittle without adding value.
  *
@@ -113,5 +115,25 @@ describe('static renderer × serverExtensions', () => {
     // is recognized and its src round-trips, rather than being dropped).
     expect(html).toContain('data-iframely');
     expect(html).toContain('data-src="https://youtube.com/watch?v=x"');
+  });
+
+  it('throws on an unregistered node type (the failure RichTextRenderer falls back from)', () => {
+    // Node.fromJSON throws "Unknown node type" when a stored doc contains a type
+    // that isn't in serverExtensions (deploy skew / drift). RichTextRenderer
+    // wraps the render and degrades to plain text instead of letting the throw
+    // crash the whole surrounding tab.
+    const doc: JSONContent = {
+      type: 'doc',
+      content: [
+        {
+          type: 'someUnregisteredNode',
+          content: [{ type: 'text', text: 'x' }],
+        },
+      ],
+    };
+
+    expect(() =>
+      renderToHTMLString({ content: doc, extensions: serverExtensions }),
+    ).toThrow();
   });
 });

@@ -1,6 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import { sanitizeTiptapDoc } from '@op/common/client';
 import { RichTextEditor } from '@op/ui/RichTextEditor';
 import { Skeleton } from '@op/ui/Skeleton';
 import type { JSONContent } from '@tiptap/core';
@@ -125,7 +126,14 @@ function OverviewSectionContent({
         <hr className="border-neutral-gray1" />
 
         <RichTextEditor
-          content={initialOverview.body}
+          // Sanitize stored JSON so an unknown node type can't make TipTap blank
+          // the whole doc on load (and autosave the blank). HTML strings parse
+          // leniently, so only JSON needs it.
+          content={
+            typeof initialOverview.body === 'string'
+              ? initialOverview.body
+              : sanitizeTiptapDoc(initialOverview.body)
+          }
           placeholder={t('overview_body_placeholder')}
           editorClassName="min-h-40"
           onChangeJSON={(json) => {

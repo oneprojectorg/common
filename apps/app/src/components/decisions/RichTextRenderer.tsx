@@ -1,10 +1,16 @@
-import { serverExtensions } from '@op/common/client';
+import {
+  sanitizeTiptapDoc,
+  serverExtensions,
+  tiptapDocToPlainText,
+} from '@op/common/client';
+import { logger } from '@op/logging';
 // Import from the editorConfig subpath (not the RichTextEditor barrel) so this
 // server component doesn't pull the client editor (useRichTextEditor/useEffect)
 // into the RSC graph — viewerProseStyles is a plain style string.
 import { viewerProseStyles } from '@op/ui/RichTextEditor/editorConfig';
 import type { JSONContent } from '@tiptap/core';
 import { renderToReactElement } from '@tiptap/static-renderer/pm/react';
+import type { ReactNode } from 'react';
 
 import { LinkPreview } from '../LinkPreview';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
@@ -28,8 +34,11 @@ import { ProposalHtmlContent } from './ProposalHtmlContent';
  * {@link LinkPreview} embed leaf is a client island within the rendered tree.
  *
  * Extensions are shared with `generateProposalHtml`'s `serverExtensions` so the
- * recognized node set can't drift between the two render paths (an unknown node
- * is silently dropped, so this single source of truth matters).
+ * recognized node set can't drift between the two render paths. An unregistered
+ * node type THROWS during the parse (`Node.fromJSON`), so the doc is sanitized
+ * first (`sanitizeTiptapDoc` coerces unknown nodes/marks to known ones) — known
+ * content stays rich, only the unsupported pieces degrade. A try/catch backstop
+ * still falls back to whole-doc plain text for failures sanitizing can't prevent.
  */
 export function RichTextRenderer({
   content,
@@ -45,15 +54,36 @@ export function RichTextRenderer({
     return <ProposalHtmlContent html={content} />;
   }
 
-  return (
-    <div className={viewerProseStyles}>
-      {renderToReactElement({
-        content,
-        extensions: serverExtensions,
-        options: { nodeMapping },
-      })}
-    </div>
-  );
+  let body: ReactNode;
+  try {
+    // Sanitize first: coerce any node/mark the server schema doesn't know into a
+    // known shape, so the parse can't throw on an unsupported type (deploy skew /
+    // rollback / drift). Known content renders rich; only unknown pieces degrade.
+    body = renderToReactElement({
+      content: sanitizeTiptapDoc(content),
+      extensions: serverExtensions,
+      options: { nodeMapping },
+    });
+  } catch (error) {
+    // Backstop: sanitizing can't prevent every failure (e.g. a content-model
+    // violation from the coercion). Degrade the whole body to plain text rather
+    // than let the throw crash the surrounding tab.
+    logger.warn(
+      'RichTextRenderer: static render failed, falling back to text',
+      {
+        error: error instanceof Error ? error.message : String(error),
+      },
+    );
+    // Render each block as its own <p> so block breaks survive (a single <p>
+    // with newlines collapses them to spaces in HTML). prose spacing on the
+    // wrapper gives the blocks readable separation.
+    const text = tiptapDocToPlainText(content);
+    body = text
+      ? text.split('\n').map((block, index) => <p key={index}>{block}</p>)
+      : null;
+  }
+
+  return <div className={viewerProseStyles}>{body}</div>;
 }
 
 /**
