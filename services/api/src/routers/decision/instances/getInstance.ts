@@ -1,4 +1,5 @@
-import { Channels, getInstance } from '@op/common';
+import { cache } from '@op/cache';
+import { Channels, getInstance, loadDecisionInstance } from '@op/common';
 
 import {
   getInstanceInputSchema,
@@ -15,6 +16,20 @@ import {
 } from '../../../trpcFactory';
 
 /**
+ * Cache the viewer-independent portion of a decision instance read. Every
+ * mutation that touches `processInstances` invalidates the same `[id,
+ * 'instance']` params (see `invalidateDecisionInstance` in `@op/common`), so
+ * cached entries can't outlive an instance-level write. The per-user access
+ * computation stays outside the cache and runs on every read.
+ */
+const cachedLoadDecisionInstance = (instanceId: string) =>
+  cache({
+    type: 'decision',
+    params: [instanceId, 'instance'],
+    fetch: () => loadDecisionInstance({ instanceId }),
+  });
+
+/**
  * Legacy getInstance endpoint - uses legacy encoders with state-based format.
  * Used by the legacy route: /profile/[slug]/decisions/[id]
  * @deprecated Use the new decision system instead
@@ -29,10 +44,12 @@ export const getLegacyInstanceRouter = router({
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
 
+      const preloaded = await cachedLoadDecisionInstance(input.instanceId);
+
       const instance = await getInstance({
         instanceId: input.instanceId,
         user,
-        skipCache: input.forEdit,
+        preloaded,
       });
 
       return legacyProcessInstanceEncoder.parse({
@@ -71,10 +88,12 @@ export const getInstanceRouter = router({
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
 
+      const preloaded = await cachedLoadDecisionInstance(input.instanceId);
+
       const instance = await getInstance({
         instanceId: input.instanceId,
         user,
-        skipCache: input.forEdit,
+        preloaded,
       });
 
       ctx.registerQueryChannels([Channels.decisionInstance(input.instanceId)]);

@@ -1,4 +1,3 @@
-import { cache } from '@op/cache';
 import { db } from '@op/db/client';
 import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
@@ -13,15 +12,26 @@ export interface ProcessCategory {
   termUri: string;
 }
 
-const loadProcessCategoriesFromDb = async (
-  processInstanceId: string,
-): Promise<{
+export interface LoadedDecisionInstanceCategories {
+  /** Auth scope from the instance, used by the access check. `null` means the instance is missing. */
   instance: {
     profileId: string | null;
     ownerProfileId: string | null;
   } | null;
   categories: ProcessCategory[];
-}> => {
+}
+
+/**
+ * Viewer-independent load for `getProcessCategories`: the auth scope + the
+ * resolved categories list. Intended to be wrapped in `cache()` at the API
+ * layer. Returns `instance: null` when the row doesn't exist so callers can
+ * skip the access check and return an empty list.
+ */
+export const loadDecisionInstanceCategories = async ({
+  processInstanceId,
+}: {
+  processInstanceId: string;
+}): Promise<LoadedDecisionInstanceCategories> => {
   const instance = await db.query.processInstances.findFirst({
     where: { id: processInstanceId },
     with: {
@@ -83,24 +93,21 @@ const loadProcessCategoriesFromDb = async (
 export const getProcessCategories = async ({
   processInstanceId,
   user,
-  skipCache = false,
+  preloaded,
 }: {
   processInstanceId: string;
   user: User | undefined;
-  /** See `GetInstanceInput.skipCache` — edit flows bypass the categories cache. */
-  skipCache?: boolean;
+  /**
+   * Optional pre-loaded payload, typically returned by
+   * `loadDecisionInstanceCategories` and cached at the API layer. Omit to
+   * fetch fresh from the DB.
+   */
+  preloaded?: LoadedDecisionInstanceCategories;
 }): Promise<ProcessCategory[]> => {
   try {
-    // Categories are derived from the instance config and the global proposal
-    // taxonomy — both are viewer-independent, so cache them together. The READ
-    // gate stays outside the cache so a hit never bypasses authorization.
-    const loaded = skipCache
-      ? await loadProcessCategoriesFromDb(processInstanceId)
-      : await cache({
-          type: 'decision',
-          params: [processInstanceId, 'categories'],
-          fetch: () => loadProcessCategoriesFromDb(processInstanceId),
-        });
+    const loaded =
+      preloaded ??
+      (await loadDecisionInstanceCategories({ processInstanceId }));
 
     if (!loaded.instance) {
       return [];

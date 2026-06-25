@@ -253,8 +253,6 @@ export const legacyCreateProcessInputSchema = z.object({
 
 export const legacyGetInstanceInputSchema = z.object({
   instanceId: z.uuid(),
-  /** See `getInstanceInputSchema.forEdit` — bypasses the viewer-independent cache. */
-  forEdit: z.boolean().optional(),
 });
 
 // Pagination Schema (internal — used by legacyInstanceFilterSchema)

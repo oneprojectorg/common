@@ -1,8 +1,5 @@
-import {
-  Channels,
-  deleteProposal as deleteProposalService,
-  invalidateDecisionInstance,
-} from '@op/common';
+import { invalidate } from '@op/cache';
+import { Channels, deleteProposal as deleteProposalService } from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -30,10 +27,12 @@ export const deleteProposalRouter = router({
         user,
       });
 
-      // Deletion changes the cached instance snapshot (proposalCount +
-      // participantCount derive from non-draft proposals) and the submitters
-      // face-pile, so drop every cached projection for this instance.
-      waitUntil(invalidateDecisionInstance(result.processInstanceId));
+      waitUntil(
+        invalidate({
+          type: 'decision',
+          params: [result.processInstanceId, 'submitters'],
+        }),
+      );
 
       ctx.registerMutationChannels([
         Channels.decisionProposals(result.processInstanceId),

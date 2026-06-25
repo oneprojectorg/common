@@ -1,8 +1,5 @@
-import {
-  Channels,
-  invalidateDecisionInstance,
-  submitProposal,
-} from '@op/common';
+import { invalidate } from '@op/cache';
+import { Channels, submitProposal } from '@op/common';
 import { proposalSchema } from '@op/common/client';
 import { Events, inngest } from '@op/events';
 import { waitUntil } from '@vercel/functions';
@@ -27,10 +24,12 @@ export const submitProposalRouter = router({
         authUserId: user.id,
       });
 
-      // Submission changes the cached instance snapshot (proposalCount +
-      // participantCount derive from non-draft proposals) and the submitters
-      // face-pile, so drop every cached projection for this instance.
-      waitUntil(invalidateDecisionInstance(proposal.processInstanceId));
+      waitUntil(
+        invalidate({
+          type: 'decision',
+          params: [proposal.processInstanceId, 'submitters'],
+        }),
+      );
 
       ctx.registerMutationChannels([
         Channels.decisionProposals(proposal.processInstanceId),

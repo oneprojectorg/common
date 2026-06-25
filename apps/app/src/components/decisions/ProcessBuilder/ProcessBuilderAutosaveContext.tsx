@@ -67,12 +67,9 @@ export function ProcessBuilderAutosaveProvider({
   const t = useTranslations();
   const utils = trpc.useUtils();
 
-  // Already cached by section queries — no extra request. `forEdit` bypasses
-  // the server-side cache so autosave round-trips always read the writer's
-  // most recent mutation instead of a possibly-stale memcache snapshot.
+  // Already cached by section queries — no extra request.
   const { data: liveInstance } = trpc.decision.getInstance.useQuery({
     instanceId,
-    forEdit: true,
   });
   const isDraft = liveInstance
     ? liveInstance.status === ProcessStatus.DRAFT
@@ -142,10 +139,7 @@ export function ProcessBuilderAutosaveProvider({
       if (debouncedSaveRef.current?.()) {
         return;
       }
-      // No input — partial-match invalidation drops every cached getInstance
-      // call for this instance, including the `forEdit: true` editor read above
-      // and any `forEdit: false` reads warmed by other components on this page.
-      void utils.decision.getInstance.invalidate();
+      void utils.decision.getInstance.invalidate({ instanceId });
     },
   });
 

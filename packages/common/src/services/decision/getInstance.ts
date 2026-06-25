@@ -1,4 +1,3 @@
-import { cache } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { ProposalStatus, organizations } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
@@ -20,13 +19,14 @@ export interface GetInstanceInput {
   instanceId: string;
   user: User | undefined;
   /**
-   * Skip the viewer-independent instance cache and fetch directly from the DB.
-   * Edit flows (e.g. ProcessBuilder autosave) pass `true` so the editor always
-   * reflects the writer's own changes immediately — the cache layer is read-
-   * only consistent across nodes, but a writer who just mutated should never
-   * see its own pre-mutation snapshot.
+   * Optional pre-loaded payload, typically returned by `loadDecisionInstance`
+   * and cached at the API layer (see `services/api/src/routers/decision/
+   * instances/getInstance.ts`). When provided, the DB load and viewer-
+   * independent computation are skipped and only the per-user access bits are
+   * derived. Omit (or pass `undefined`) to fetch fresh from the DB — that's the
+   * path internal `@op/common` callers take.
    */
-  skipCache?: boolean;
+  preloaded?: LoadedDecisionInstance | null;
 }
 
 const ALL_TRUE_ACCESS: DecisionRolePermissions = {
@@ -77,8 +77,17 @@ const resolveInstanceAccess = async (
   throw new UnauthorizedError("You don't have access to do this");
 };
 
-const loadInstanceFromDb = async (instanceId: string) => {
-  const instance = await db.query.processInstances.findFirst({
+type LoadedInstanceRow = NonNullable<
+  Awaited<ReturnType<typeof fetchInstanceRow>>
+>;
+
+export interface LoadedDecisionInstance {
+  instance: LoadedInstanceRow;
+  selectionsAreConfirmed: boolean;
+}
+
+const fetchInstanceRow = (instanceId: string) =>
+  db.query.processInstances.findFirst({
     where: { id: instanceId },
     with: {
       process: true,
@@ -98,6 +107,20 @@ const loadInstanceFromDb = async (instanceId: string) => {
       },
     },
   });
+
+/**
+ * Viewer-independent load: the DB row + everything that doesn't depend on the
+ * caller. Intended to be wrapped in `cache()` at the API layer — keeping the
+ * cache call out of `@op/common` means the access check stays outside the
+ * cache, so a hit can never bypass authorization or share another viewer's
+ * permissions.
+ */
+export const loadDecisionInstance = async ({
+  instanceId,
+}: {
+  instanceId: string;
+}): Promise<LoadedDecisionInstance | null> => {
+  const instance = await fetchInstanceRow(instanceId);
 
   if (!instance) {
     return null;
@@ -120,19 +143,13 @@ const loadInstanceFromDb = async (instanceId: string) => {
 export const getInstance = async ({
   instanceId,
   user,
-  skipCache = false,
+  preloaded,
 }: GetInstanceInput) => {
   try {
-    // The instance row + manualSelectionStatus are viewer-independent; the
-    // READ gate and user-specific access bits stay outside the cache so a hit
-    // can never bypass authorization or leak another viewer's permissions.
-    const loaded = skipCache
-      ? await loadInstanceFromDb(instanceId)
-      : await cache({
-          type: 'decision',
-          params: [instanceId, 'instance'],
-          fetch: () => loadInstanceFromDb(instanceId),
-        });
+    const loaded =
+      preloaded !== undefined
+        ? preloaded
+        : await loadDecisionInstance({ instanceId });
 
     if (!loaded) {
       throw new NotFoundError('Process instance', instanceId);
