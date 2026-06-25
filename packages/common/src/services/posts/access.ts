@@ -167,6 +167,11 @@ export const assertPostWriteAccess = async ({
     // Comments are open to any allow-listed user — the team curates this
     // list explicitly, so it's the right "can engage with org feeds" cohort
     // and doesn't require per-org membership.
+    //
+    // Defense-in-depth: no UI path constructs the top-level shape on this
+    // endpoint today (production goes through `organization.createPost`),
+    // but admin-only here keeps the gate fail-closed against any direct
+    // API construction or future refactor that routes through here.
     case EntityType.ORG:
       if (isAnnouncement) {
         await assertInstanceProfileAccess({
