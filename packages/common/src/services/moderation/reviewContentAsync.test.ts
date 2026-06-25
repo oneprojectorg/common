@@ -26,7 +26,7 @@ describe('reviewContentAsync', () => {
 
   it('does nothing when the provider has no async capability', async () => {
     const recordRound = vi.fn();
-    const provider: ModerationProvider = { scoreText: async () => ({}) };
+    const provider: ModerationProvider = {};
     const result = await reviewContentAsync(item, { provider, recordRound });
     expect(result.submitted).toBe(false);
     expect(recordRound).not.toHaveBeenCalled();
@@ -37,7 +37,6 @@ describe('reviewContentAsync', () => {
     // ahead of the submit and verdicts would arrive for unrecorded tasks.
     const recordRound = vi.fn();
     const provider: ModerationProvider = {
-      scoreText: async () => ({}),
       submitForReview: vi
         .fn()
         .mockResolvedValue({ submittedRefs: ['post:p1'] }),
@@ -56,7 +55,6 @@ describe('reviewContentAsync', () => {
     const planReviewRefs = vi.fn().mockReturnValue(refs);
     const recordRound = vi.fn();
     const provider: ModerationProvider = {
-      scoreText: async () => ({}),
       planReviewRefs,
       submitForReview,
     };
@@ -87,7 +85,6 @@ describe('reviewContentAsync', () => {
     const submitForReview = vi.fn();
     const recordRound = vi.fn();
     const provider: ModerationProvider = {
-      scoreText: async () => ({}),
       planReviewRefs: () => [],
       submitForReview,
     };

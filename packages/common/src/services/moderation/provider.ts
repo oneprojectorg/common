@@ -7,7 +7,7 @@ import type { ModerationProvider } from './types';
  * Resolves the moderation provider for the vendor named by `MODERATION_PROVIDER`
  * (`hive` | `lasso` | `checkstep`), keyed by the single `MODERATION_API_KEY`.
  * One vendor is active at a time, so one key suffices — swap the key value when
- * switching vendors. The same vendor serves both the sync gate and async review.
+ * switching vendors. The vendor serves the async review path.
  *
  * `MODERATION_WEBHOOK_SIGNING_KEY` carries the vendor's webhook signing secret
  * (Checkstep: the platform signing key; Lasso: the dashboard webhook secret).

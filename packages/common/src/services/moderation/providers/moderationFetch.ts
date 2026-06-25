@@ -10,17 +10,6 @@ export interface ModerationFetchOptions {
   timeoutMs?: number;
 }
 
-/**
- * The synchronous gate blocks a user write, so it must stay snappy: one retry
- * and a short per-attempt timeout cap the worst-case block at a few seconds
- * during a provider brownout. The async review path leaves the budget at the
- * defaults, where a slower-but-surer result is fine.
- */
-export const SYNC_GATE_FETCH: ModerationFetchOptions = {
-  retries: 1,
-  timeoutMs: 3_000,
-};
-
 /** 429 and 5xx are transient; other 4xx (bad key/request) won't fix on retry. */
 const isRetryableStatus = (status: number): boolean =>
   status === 429 || status >= 500;

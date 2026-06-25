@@ -13,7 +13,6 @@ const verdict: ModerationVerdict = {
 };
 
 const provider = (parse: () => ModerationVerdict[]): ModerationProvider => ({
-  scoreText: async () => ({}),
   parseWebhook: parse,
 });
 
@@ -39,7 +38,7 @@ describe('handleModerationWebhook', () => {
       { ...body, providedSecret: 'wrong' },
       {
         expectedSecret: 'sekret',
-        provider: { scoreText: async () => ({}), parseWebhook },
+        provider: { parseWebhook },
         applyVerdict,
       },
     );
@@ -79,7 +78,7 @@ describe('handleModerationWebhook', () => {
     const applyVerdict = vi.fn();
     const result = await handleModerationWebhook(body, {
       expectedSecret: 'sekret',
-      provider: { scoreText: async () => ({}), parseWebhook, verifyWebhook },
+      provider: { parseWebhook, verifyWebhook },
       applyVerdict,
     });
 
@@ -94,7 +93,6 @@ describe('handleModerationWebhook', () => {
     const result = await handleModerationWebhook(body, {
       expectedSecret: 'sekret',
       provider: {
-        scoreText: async () => ({}),
         parseWebhook: () => [verdict],
         verifyWebhook: () => true,
       },

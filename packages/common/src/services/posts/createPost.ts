@@ -73,7 +73,7 @@ export const createPost = async (input: CreatePostServiceInput) => {
   // through (no policy = lenient — callers on those paths layer their own
   // membership checks).
   //
-  // Content moderation is NOT a sync gate here: the post is written and shown
+  // Content moderation is async only: the post is written and shown
   // immediately, and the `content/submitted` event below drives async provider
   // review, which hides the post if a verdict comes back disallowed.
   await assertProfileTypeAccess({
@@ -185,9 +185,9 @@ export const createPost = async (input: CreatePostServiceInput) => {
 
   waitUntil(
     (async () => {
-      // Async moderation pass (the sync gate already ran on write). Covers
-      // posts and comments alike. Isolated from the notification sends below
-      // so a failure on one side never suppresses the other.
+      // Async moderation pass. Covers posts and comments alike. Isolated from
+      // the notification sends below so a failure on one side never suppresses
+      // the other.
       try {
         await event.send({
           name: Events.contentSubmitted.name,

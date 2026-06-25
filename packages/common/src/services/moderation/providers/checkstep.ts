@@ -11,11 +11,7 @@ import type {
   ModerationVerdict,
   ModerationWebhookInput,
 } from '../types';
-import {
-  type ModerationFetchOptions,
-  SYNC_GATE_FETCH,
-  moderationFetch,
-} from './moderationFetch';
+import { moderationFetch } from './moderationFetch';
 import { headerValue, timingSafeStringEqual } from './verify';
 
 // External input driving DB writes: validate the shape instead of casting.
@@ -108,20 +104,15 @@ const post = async (
   url: string,
   apiKey: string,
   body: Record<string, unknown>,
-  fetchOptions?: ModerationFetchOptions,
 ): Promise<{ violations?: CheckstepViolation[]; id?: string }> => {
-  const response = await moderationFetch(
-    url,
-    {
-      method: 'POST',
-      headers: {
-        authorization: `Bearer ${apiKey}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify(body),
+  const response = await moderationFetch(url, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${apiKey}`,
+      'content-type': 'application/json',
     },
-    fetchOptions,
-  );
+    body: JSON.stringify(body),
+  });
 
   if (!response.ok) {
     throw new Error(`Moderation provider returned ${response.status}`);
@@ -230,16 +221,6 @@ export const createCheckstepProvider = ({
           verifyCheckstepWebhook(input, webhookSigningKey),
       }
     : {}),
-
-  scoreText: async ({ content }) => {
-    const result = await post(
-      `${apiUrl}/content/sync`,
-      apiKey,
-      contentBody(crypto.randomUUID(), content),
-      SYNC_GATE_FETCH,
-    );
-    return scoresFromViolations(result.violations);
-  },
 
   // Checkstep takes one combined task (text + media fields), so it's a
   // single ref — unless there's nothing to review (no text, no media, e.g. a
