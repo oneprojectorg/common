@@ -135,27 +135,27 @@
 
   --text-title-sm: 1rem;
   --text-title-sm--line-height: 130%;
-  --text-title-sm--font-weight: 300;
+  --text-title-sm--font-weight: 400;
   --text-title-sm--letter-spacing: -0.015rem;
 
   --text-title-xs: 0.875rem;
   --text-title-xs--line-height: 130%;
-  --text-title-xs--font-weight: 300;
+  --text-title-xs--font-weight: 400;
   --text-title-xs--letter-spacing: -0.01313rem;
 
   --text-title-xxs: 0.75rem;
   --text-title-xxs--line-height: 130%;
-  --text-title-xxs--font-weight: 300;
+  --text-title-xxs--font-weight: 400;
   --text-title-xxs--letter-spacing: -0.01125rem;
 
   --text-title-sm14: 0.875rem;
   --text-title-sm14--line-height: 130%;
-  --text-title-sm14--font-weight: 300;
+  --text-title-sm14--font-weight: 400;
   --text-title-sm14--letter-spacing: -0.01313rem;
 
   --text-title-sm12: 0.75rem;
   --text-title-sm12--line-height: 130%;
-  --text-title-sm12--font-weight: 300;
+  --text-title-sm12--font-weight: 400;
   --text-title-sm12--letter-spacing: -0.01125rem;
 
   /* Body sizes (override defaults with custom weights) */
