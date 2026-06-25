@@ -1,5 +1,5 @@
 import { db, eq } from '@op/db/client';
-import { posts } from '@op/db/schema';
+import { allowList, posts } from '@op/db/schema';
 import { ROLES } from '@op/db/seedData/accessControl';
 import { describe, expect, it } from 'vitest';
 
@@ -601,6 +601,18 @@ describe.concurrent('regression: legacy org post moderation', () => {
       organization: setup.organization,
       instanceProfileIds: [],
     });
+    // Org-post comments now require allow-list membership at the service
+    // layer — add the comment author so the delete path under test is
+    // reachable.
+    await db.insert(allowList).values({
+      email: member.email.toLowerCase(),
+      organizationId: setup.organization.id,
+    });
+    onTestFinished(async () => {
+      await db
+        .delete(allowList)
+        .where(eq(allowList.email, member.email.toLowerCase()));
+    });
     const memberCaller = await createAuthenticatedCaller(member.email);
     const comment = await memberCaller.posts.createPost({
       content: 'Member comment under legacy post.',
@@ -633,6 +645,18 @@ describe.concurrent('regression: legacy org post moderation', () => {
     const author = await testData.createMemberUser({
       organization: setup.organization,
       instanceProfileIds: [],
+    });
+    // Allow-list the comment author so they can create the setup row this
+    // test acts on. The bystander stays off the list — they're not the one
+    // commenting here, just the one attempting the delete.
+    await db.insert(allowList).values({
+      email: author.email.toLowerCase(),
+      organizationId: setup.organization.id,
+    });
+    onTestFinished(async () => {
+      await db
+        .delete(allowList)
+        .where(eq(allowList.email, author.email.toLowerCase()));
     });
     const authorCaller = await createAuthenticatedCaller(author.email);
     const comment = await authorCaller.posts.createPost({

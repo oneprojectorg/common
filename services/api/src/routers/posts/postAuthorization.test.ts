@@ -1,5 +1,10 @@
 import { db, eq } from '@op/db/client';
-import { postReactions, posts, postsToProfiles } from '@op/db/schema';
+import {
+  allowList,
+  postReactions,
+  posts,
+  postsToProfiles,
+} from '@op/db/schema';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
@@ -543,13 +548,56 @@ describe.concurrent('org-feed post authorization', () => {
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
-  it('admits an org member commenting on an org-feed post', async ({
+  it('admits an allow-listed user commenting on an org-feed post', async ({
     task,
     onTestFinished,
   }) => {
-    // Comments under an org post mirror the decision admin-vs-member split:
-    // posting top-level is admin-only, but commenting is open to any org
-    // member so the existing org-feed engagement model still works.
+    // Org-post comments gate on the allow-list specifically (not org
+    // membership): anyone the team has curated into the allow-list can
+    // comment on any org post, even if they're not a member of *that* org.
+    // Top-level posting on the org profile is still admin-only — that path
+    // is exercised in the announcement tests above.
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
+    const orgPost = await ownerCaller.posts.createPost({
+      content: 'Org-level post.',
+      profileId: setup.organization.profileId,
+    });
+
+    const allowListed = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+    });
+    await db.insert(allowList).values({
+      email: allowListed.email.toLowerCase(),
+      organizationId: setup.organization.id,
+    });
+    onTestFinished(async () => {
+      await db
+        .delete(allowList)
+        .where(eq(allowList.email, allowListed.email.toLowerCase()));
+    });
+
+    const caller = await createAuthenticatedCaller(allowListed.email);
+    const comment = await caller.posts.createPost({
+      content: 'Allow-listed user comment on org post.',
+      parentPostId: orgPost.id,
+    });
+
+    expect(comment.parentPostId).toBe(orgPost.id);
+    expect(comment.content).toBe('Allow-listed user comment on org post.');
+  });
+
+  it('rejects an org member who is NOT on the allow list from commenting on an org-feed post', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // Inverse of the test above — pins that the allow-list (not org
+    // membership) is the gate. A plain org member with no allow-list row
+    // must be rejected even though they belong to the org that owns the
+    // post.
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
 
@@ -565,13 +613,12 @@ describe.concurrent('org-feed post authorization', () => {
     });
     const memberCaller = await createAuthenticatedCaller(member.email);
 
-    const comment = await memberCaller.posts.createPost({
-      content: 'Member comment on org post.',
-      parentPostId: orgPost.id,
-    });
-
-    expect(comment.parentPostId).toBe(orgPost.id);
-    expect(comment.content).toBe('Member comment on org post.');
+    await expect(
+      memberCaller.posts.createPost({
+        content: 'Member-not-on-allow-list comment — should fail.',
+        parentPostId: orgPost.id,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
   it('rejects an outsider from commenting on a legacy postsToOrganizations post', async ({
@@ -610,11 +657,11 @@ describe.concurrent('org-feed post authorization', () => {
     task,
     onTestFinished,
   }) => {
-    // A misuse-but-valid input shape: a member sends both `profileId` (the
+    // A misuse-but-valid input shape: a caller sends both `profileId` (the
     // org) AND `parentPostId`. resolvePostRoots prefers parentPostId, so the
     // gate must too — otherwise targetProfileId === rootProfileId would
     // route the call through the admin-only announcement gate and reject a
-    // member's comment.
+    // legitimate comment.
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
 
@@ -624,14 +671,23 @@ describe.concurrent('org-feed post authorization', () => {
       profileId: setup.organization.profileId,
     });
 
-    const member = await testData.createMemberUser({
+    const allowListed = await testData.createMemberUser({
       organization: setup.organization,
       instanceProfileIds: [],
     });
-    const memberCaller = await createAuthenticatedCaller(member.email);
+    await db.insert(allowList).values({
+      email: allowListed.email.toLowerCase(),
+      organizationId: setup.organization.id,
+    });
+    onTestFinished(async () => {
+      await db
+        .delete(allowList)
+        .where(eq(allowList.email, allowListed.email.toLowerCase()));
+    });
 
-    const comment = await memberCaller.posts.createPost({
-      content: 'Member comment with both flags set.',
+    const caller = await createAuthenticatedCaller(allowListed.email);
+    const comment = await caller.posts.createPost({
+      content: 'Comment with both flags set.',
       profileId: setup.organization.profileId,
       parentPostId: orgPost.id,
     });
@@ -1264,6 +1320,18 @@ describe.concurrent('getPosts pagination', () => {
     const orgProfileId = setup.organization.profileId;
 
     const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
+    // Org-post comments are gated on the allow-list now — admin standing
+    // alone doesn't admit comment writes. Allow-list the owner so they can
+    // create the comment rows this pagination test relies on as fixture.
+    await db.insert(allowList).values({
+      email: setup.userEmail.toLowerCase(),
+      organizationId: setup.organization.id,
+    });
+    onTestFinished(async () => {
+      await db
+        .delete(allowList)
+        .where(eq(allowList.email, setup.userEmail.toLowerCase()));
+    });
 
     const updateIds: string[] = [];
     for (let i = 0; i < 3; i++) {

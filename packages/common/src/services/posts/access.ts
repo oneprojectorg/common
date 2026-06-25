@@ -1,5 +1,5 @@
 import { db } from '@op/db/client';
-import { EntityType, organizations, postsToOrganizations } from '@op/db/schema';
+import { EntityType, postsToOrganizations } from '@op/db/schema';
 import { permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
@@ -8,9 +8,10 @@ import {
   type AccessUser,
   assertInstanceProfileAccess,
   assertProfileTypeAccess,
-  getOrgAccessUser,
+  getUserSession,
 } from '../access';
 import { decisionPermission } from '../decision/permissions';
+import { getAllowListUser } from '../user';
 
 // Asserts a caller's READ access to a profile's posts, dispatching on the
 // profile's server-resolved type. Fail-closed: a type without a case is denied
@@ -74,6 +75,22 @@ export const assertPostReadAccess = async ({
 
 const WRITE_DENIED = 'You do not have access to write here';
 
+// Looks up the caller's allow-list entry. Org-post comments are gated on
+// this — an allow-listed user can comment on any org post, regardless of
+// the org their allow-list row points at. The check fails closed when the
+// caller has no resolvable email (anonymous / sentinel callers).
+const assertOnAllowList = async (user: AccessUser | undefined) => {
+  if (!user?.id) {
+    throw new UnauthorizedError(WRITE_DENIED);
+  }
+  const session = await getUserSession({ authUserId: user.id });
+  const email = session?.user?.email?.toLowerCase();
+  const allowListUser = email ? await getAllowListUser({ email }) : undefined;
+  if (!allowListUser) {
+    throw new UnauthorizedError(WRITE_DENIED);
+  }
+};
+
 // Asserts a caller's WRITE access for a new post, dispatching on the
 // server-resolved root profile type. Fail-closed: any type without an
 // explicit case is denied. Proposal targets never reach this dispatch —
@@ -91,9 +108,10 @@ export const assertPostWriteAccess = async ({
   rootPostId: string | null;
   targetProfileId?: string | null;
 }) => {
-  // Legacy postsToOrganizations branch: the only write that lands here is a
-  // reply under a legacy org-feed post. Org membership gates it the same
-  // way `createPostInOrganization` does — any role on the org.
+  // Legacy postsToOrganizations branch: the only write that lands here is
+  // a reply under a legacy org-feed post. Same allow-list gate as the
+  // modern ORG comment path below — the legacy postsToOrganizations row
+  // is only used to confirm the thread actually belongs to *some* org.
   if (!rootProfileId) {
     if (!rootPostId) {
       throw new UnauthorizedError(WRITE_DENIED);
@@ -103,15 +121,10 @@ export const assertPostWriteAccess = async ({
       .from(postsToOrganizations)
       .where(eq(postsToOrganizations.postId, rootPostId))
       .limit(1);
-    const orgUser = legacyLink
-      ? await getOrgAccessUser({
-          user,
-          organizationId: legacyLink.organizationId,
-        })
-      : undefined;
-    if (!orgUser) {
+    if (!legacyLink) {
       throw new UnauthorizedError(WRITE_DENIED);
     }
+    await assertOnAllowList(user);
     return;
   }
 
@@ -151,9 +164,10 @@ export const assertPostWriteAccess = async ({
 
     // Org profile: announcement requires `profile: ADMIN` (resolved via
     // the org-admin fallback, since org roles live on `organizationUsers`).
-    // Comments are open to any org member — the legacy org-feed engagement
-    // model and the DECISION admin/member split applied to ORG.
-    case EntityType.ORG: {
+    // Comments are open to any allow-listed user — the team curates this
+    // list explicitly, so it's the right "can engage with org feeds" cohort
+    // and doesn't require per-org membership.
+    case EntityType.ORG:
       if (isAnnouncement) {
         await assertInstanceProfileAccess({
           user,
@@ -166,18 +180,8 @@ export const assertPostWriteAccess = async ({
         });
         return;
       }
-      const [org] = await db
-        .select({ id: organizations.id })
-        .from(organizations)
-        .where(eq(organizations.profileId, rootProfileId));
-      const orgUser = org
-        ? await getOrgAccessUser({ user, organizationId: org.id })
-        : undefined;
-      if (!orgUser) {
-        throw new UnauthorizedError(WRITE_DENIED);
-      }
+      await assertOnAllowList(user);
       return;
-    }
 
     // INDIVIDUAL / USER profiles aren't a supported posting surface yet.
     default:
