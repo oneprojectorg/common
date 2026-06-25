@@ -86,7 +86,7 @@ export function ResponsiveSelect<T extends string>({
                   id={item.id}
                   selected={selectedKey === item.id}
                   isDisabled={item.isDisabled}
-                  className={`rounded-none px-6 py-4 ${index < items.length - 1 ? 'border-b border-neutral-gray1' : ''}`}
+                  className={`px-6 py-4 ${index === 0 ? 'rounded-t-2xl rounded-b-none' : 'rounded-none'} ${index < items.length - 1 ? 'border-b border-neutral-gray1' : ''}`}
                   onAction={() => {
                     onSelectionChange(item.id);
                     setIsOpen(false);
