@@ -28,7 +28,7 @@ export async function translateProposals({
 }: {
   profileIds: string[];
   targetLocale: SupportedLocale;
-  user: User;
+  user: User | undefined;
 }): Promise<{
   translations: Record<string, ProposalTranslation>;
   sourceLocale: string;

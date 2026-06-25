@@ -10,6 +10,7 @@ import {
   proposals,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
+import { waitUntil } from '@vercel/functions';
 import { and, eq, sql } from 'drizzle-orm';
 
 import {
