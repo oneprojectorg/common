@@ -1354,5 +1354,14 @@
   "Following {count, plural, =1 {# organization} other {# organizations}}": "Raacaya {count, plural, =1 {# urur} other {# ururo}}",
   "Member of {count, plural, =1 {# Organization} other {# Organizations}}": "Xubin ka ah {count, plural, =1 {# Urur} other {# Ururo}}",
   "{count, plural, =1 {1 member has submitted proposals} other {# members have submitted proposals}}": "{count, plural, =1 {1 xubin ayaa soo gudbisay soo jeedimo} other {# xubno ayaa soo gudbiyay soo jeedimo}}",
-  "Unsaved changes": "Isbedello aan la kaydin"
+  "Unsaved changes": "Isbedello aan la kaydin",
+  "Your idea was submitted.": "Fikradaada waa la gudbiyay.",
+  "Want to follow what happens next?": "Ma rabtaa inaad la socoto waxa xiga?",
+  "Continue as a guest": "Ku sii wad marti ahaan",
+  "Stay anonymous. React to comments with emoji.": "Sii ahow qarsoodi. Kaga jawaab faallooyinka adoo isticmaalaya emoji.",
+  "I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>.": "Waan ogolahay <tos>Shuruudaha Adeegga</tos> iyo <privacy>Xeerka Asturnaanta</privacy>.",
+  "Continue as guest": "Ku sii wad marti ahaan",
+  "With an account": "Adoo akoon leh",
+  "Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.": "Wax ka bedel fikradaada ka hor inta aan dib u eegista la bilaabin, ogeysiis hel marka ay u guurto marxaladda xigta, oo jeclow, faallo ka bixi, oo raac fikradaha kale.",
+  "Create account": "Abuur akoon"
 }

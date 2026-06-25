@@ -1352,5 +1352,14 @@
   "Remove file": "إزالة الملف",
   "File is too large (max {size} MB)": "الملف كبير جدًا (الحد الأقصى {size} ميغابايت)",
   "Drag a file or link here to add it": "اسحب ملفًا أو رابطًا هنا لإضافته",
-  "Unsaved changes": "تغييرات غير محفوظة"
+  "Unsaved changes": "تغييرات غير محفوظة",
+  "Your idea was submitted.": "تم إرسال فكرتك.",
+  "Want to follow what happens next?": "هل تريد متابعة ما سيحدث بعد ذلك؟",
+  "Continue as a guest": "المتابعة كضيف",
+  "Stay anonymous. React to comments with emoji.": "ابقَ مجهول الهوية. تفاعل مع التعليقات باستخدام الرموز التعبيرية.",
+  "I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>.": "أوافق على <tos>شروط الخدمة</tos> و<privacy>سياسة الخصوصية</privacy>.",
+  "Continue as guest": "المتابعة كضيف",
+  "With an account": "باستخدام حساب",
+  "Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.": "عدّل فكرتك قبل بدء المراجعة، واحصل على إشعار عند انتقالها إلى المرحلة التالية، وأعجب بالأفكار الأخرى وعلّق عليها وتابعها.",
+  "Create account": "إنشاء حساب"
 }

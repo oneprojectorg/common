@@ -4,15 +4,24 @@ import { getSafeRedirectPath } from '@op/common/client';
 import { useAuthUser } from '@op/hooks';
 import { useSearchParams } from 'next/navigation';
 
+import { LinkAccountPanel } from '@/components/LinkAccountPanel';
 import { LoginPanel } from '@/components/LoginPanel';
 
 const LoginPage = () => {
   const user = useAuthUser();
   const searchParams = useSearchParams();
   const redirectParam = getSafeRedirectPath(searchParams.get('redirect'));
+  const isLinkMode = searchParams.get('link') === '1';
 
   if (!user || user.isFetching || user.isPending) {
     return null;
+  }
+
+  // Link mode: an anonymous visitor upgrading to a full account. Must come
+  // before the checks below, which would otherwise bounce them to LoginPanel.
+  // LinkAccountPanel links the email onto the existing anon user.
+  if (isLinkMode && user.data?.user?.is_anonymous) {
+    return <LinkAccountPanel />;
   }
 
   // An anonymous session is not "signed in" for our purposes: the walled-garden

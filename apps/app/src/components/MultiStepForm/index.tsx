@@ -45,9 +45,10 @@ export const MultiStepForm: React.FC<{
   const goToStep = React.useCallback(
     (targetStep: number) => {
       setStep(targetStep);
-      const query = { step: targetStep.toString() };
 
-      const params = new URLSearchParams(query);
+      // Preserve existing query params (e.g. promote flag + redirect) across steps.
+      const params = new URLSearchParams(window.location.search);
+      params.set('step', targetStep.toString());
 
       // Navigate to the new URL
       router.push(`${window.location.pathname}?${params.toString()}`);

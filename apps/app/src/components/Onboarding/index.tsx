@@ -5,7 +5,7 @@ import { trpc } from '@op/api/client';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { StepperProgressIndicator } from '@op/ui/Stepper';
 import { toast } from '@op/ui/Toast';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
 
@@ -33,6 +33,7 @@ import {
   PrivacyPolicyForm,
   validator as PrivacyPolicyFormValidator,
 } from './PrivacyPolicyForm';
+import { PromoteOnboardingFlow } from './PromoteOnboardingFlow';
 import { ToSForm, validator as ToSFormValidator } from './ToSForm';
 import { organizationFormValidator as OrganizationDetailsFormValidator } from './shared/organizationValidation';
 import { useOnboardingFormStore } from './useOnboardingFormStore';
@@ -54,6 +55,13 @@ const ProgressInPortal = (props: ProgressComponentProps) => (
   </Portal>
 );
 
+// Prefetch for the org-search step. Only on the org-search branch: the promote
+// flow skips it, and prefetching there fires a network-tier 403 for the new user.
+const PrefetchDomainOrganizations = () => {
+  void trpc.account.listMatchingDomainOrganizations.usePrefetchQuery();
+  return null;
+};
+
 const processOrgInputs = (data: OrgCreationFormValues) => ({
   ...data,
   website: data.website ?? '',
@@ -67,7 +75,6 @@ export const OnboardingFlow = () => {
   const [invitesComplete, setInvitesComplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createOrgMode, setCreateOrgMode] = useState(false);
-  void trpc.account.listMatchingDomainOrganizations.usePrefetchQuery();
   const {
     personalDetails,
     organizationDetails,
@@ -81,6 +88,11 @@ export const OnboardingFlow = () => {
   const createJoinRequest = trpc.profile.createJoinRequest.useMutation();
   const completeOnboarding = trpc.account.completeOnboarding.useMutation();
   const createOrganization = trpc.organization.create.useMutation();
+
+  // Promote flow (just-upgraded anon visitor) skips org joining; that journey
+  // lives in PromoteOnboardingFlow.
+  const searchParams = useSearchParams();
+  const isPromoteFlow = searchParams.get('promote') === '1';
 
   // Handle hydration detection
   React.useEffect(() => {
@@ -282,6 +294,10 @@ export const OnboardingFlow = () => {
     return <LoadingSpinner />;
   }
 
+  if (isPromoteFlow) {
+    return <PromoteOnboardingFlow hasHydrated={hasHydrated} />;
+  }
+
   if (createOrgMode) {
     return (
       <MultiStepForm
@@ -306,12 +322,18 @@ export const OnboardingFlow = () => {
   }
 
   return (
-    <MultiStepForm
-      steps={[PersonalDetailsForm, OrganizationSearchStep]}
-      schemas={[PersonalDetailsFormValidator, OrganizationSearchStepValidator]}
-      ProgressComponent={ProgressInPortal}
-      getStepValues={getStepValues}
-      hasHydrated={hasHydrated}
-    />
+    <>
+      <PrefetchDomainOrganizations />
+      <MultiStepForm
+        steps={[PersonalDetailsForm, OrganizationSearchStep]}
+        schemas={[
+          PersonalDetailsFormValidator,
+          OrganizationSearchStepValidator,
+        ]}
+        ProgressComponent={ProgressInPortal}
+        getStepValues={getStepValues}
+        hasHydrated={hasHydrated}
+      />
+    </>
   );
 };
