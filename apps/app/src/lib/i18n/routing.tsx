@@ -1,8 +1,7 @@
-import { cn } from '@op/ui/utils';
 import { useTranslations as _useTranslations } from 'next-intl';
 import { createNavigation } from 'next-intl/navigation';
 import { defineRouting } from 'next-intl/routing';
-import type { AnchorHTMLAttributes, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 
 import { i18nConfig } from './config';
@@ -38,32 +37,12 @@ export const routing = defineRouting(i18nConfig);
 
 // Lightweight wrappers around Next.js' navigation APIs
 // that will consider the routing configuration
-const {
+export const {
   Link: NavLink,
   redirect,
   usePathname,
   useRouter,
 } = createNavigation(routing);
-
-const Link = ({
-  children,
-  className,
-  ...props
-}: AnchorHTMLAttributes<HTMLAnchorElement>) => {
-  return (
-    // @ts-ignore
-    <NavLink
-      {...props}
-      className={cn('hover:underline', className)}
-      // prefetch is safe with the webpack build (prod + e2e), which resolves the
-      // RSC client manifest correctly. Local `dev` still uses Turbopack, where
-      // cross-route prefetch can surface the manifest 500.
-      prefetch={true}
-    >
-      {children}
-    </NavLink>
-  );
-};
 
 // Periods are parsed as path separators by next-intl, so we need to replace
 // them with underscores both here and in request.ts's getConfig helper.
@@ -138,4 +117,5 @@ const useTranslations = (): TranslateFn => {
   }, [translateFn]);
 };
 
-export { Link, redirect, usePathname, useRouter, useTranslations };
+export { useTranslations };
+export { Link } from './Link';

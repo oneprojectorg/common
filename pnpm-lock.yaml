@@ -634,6 +634,9 @@ importers:
       immer:
         specifier: ^10.1.1
         version: 10.1.1
+      js.foresight:
+        specifier: ^4.2.0
+        version: 4.2.0
       next:
         specifier: 'catalog:'
         version: 16.2.6(@babel/core@7.28.5)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.2)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.85.1)
@@ -4253,6 +4256,11 @@ packages:
     cpu: [x64]
     os: [linux]
 
+  '@rollup/rollup-linux-x64-gnu@4.62.2':
+    resolution: {integrity: sha512-5BqxR/pshjey51iliyzTD5Xi3EN0aLmQ2lZ3lvefVV9c82BvrLo2/6OT55iifpWBufs6kdwWbuOKS841DrmK9A==}
+    cpu: [x64]
+    os: [linux]
+
   '@rollup/rollup-linux-x64-musl@4.30.1':
     resolution: {integrity: sha512-V9U8Ey2UqmQsBT+xTOeMzPzwDzyXmnAoO4edZhL7INkwQcaW1Ckv3WJX3qrrp/VHaDkEWIBWhRwP47r8cdrOow==}
     cpu: [x64]
@@ -7169,6 +7177,9 @@ packages:
     resolution: {integrity: sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA==}
     hasBin: true
 
+  js.foresight@4.2.0:
+    resolution: {integrity: sha512-Fcik6q/TrJcqCMC627ssvqbZAXW66M13lMZYVByUU0H92DtxmGc6j8YQ/vcTBIXkfgzUAvjxRSTPxXwnHwRA2A==}
+
   jsbi@4.3.2:
     resolution: {integrity: sha512-9fqMSQbhJykSeii05nxKl4m6Eqn2P6rOlYiS+C5Dr/HPIU/7yZxu5qzbs40tgaFORiw2Amd0mirjxatXYMkIew==}
 
@@ -8102,6 +8113,9 @@ packages:
   po-parser@2.1.1:
     resolution: {integrity: sha512-ECF4zHLbUItpUgE3OTtLKlPjeBN+fKEczj2zYjDfCGOzicNs0GK3Vg2IoAYwx7LH/XYw43fZQP6xnZ4TkNxSLQ==}
 
+  position-observer@1.0.3:
+    resolution: {integrity: sha512-iqzsYcYB7wo9kd3Juw4XaVPhlLCfKhZLv6TrH096reU6tIcXuftPkA41+nqQgnPGzVo5zTC4tJ7GnIRTxrnZbQ==}
+
   postcss-selector-parser@6.0.10:
     resolution: {integrity: sha512-IQ7TZdoaqbT+LCpShg46jnZVlhWD2w6iQYAcYXfHARZ7X1t/UGhhceQDs5X0cGqKvYlHNOuv7Oa1xmb0oQuA3w==}
     engines: {node: '>=4'}
@@ -8940,6 +8954,9 @@ packages:
 
   symbol-tree@3.2.4:
     resolution: {integrity: sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==}
+
+  tabbable@6.5.0:
+    resolution: {integrity: sha512-wieBHXygIm7OyQOu5hQlkk62/WyCFYGlWg7L6/ZCUZwx0o398Zkn4pVmMyfYhfMG8kGrj/Krt8eIk6UKC6VzwA==}
 
   tailwind-merge@3.4.0:
     resolution: {integrity: sha512-uSaO4gnW+b3Y2aWoWfFpX62vn2sR3skfhbjsEnaBI81WD1wBLlHZe5sWf0AqjksNdYTbGBEd0UasQMT3SNV15g==}
@@ -12218,6 +12235,9 @@ snapshots:
   '@rollup/rollup-linux-x64-gnu@4.30.1':
     optional: true
 
+  '@rollup/rollup-linux-x64-gnu@4.62.2':
+    optional: true
+
   '@rollup/rollup-linux-x64-musl@4.30.1':
     optional: true
 
@@ -15061,6 +15081,11 @@ snapshots:
     dependencies:
       argparse: 2.0.1
 
+  js.foresight@4.2.0:
+    dependencies:
+      position-observer: 1.0.3
+      tabbable: 6.5.0
+
   jsbi@4.3.2: {}
 
   jsbn@0.1.1: {}
@@ -16087,6 +16112,10 @@ snapshots:
       semver-compare: 1.0.0
 
   po-parser@2.1.1: {}
+
+  position-observer@1.0.3:
+    optionalDependencies:
+      '@rollup/rollup-linux-x64-gnu': 4.62.2
 
   postcss-selector-parser@6.0.10:
     dependencies:
@@ -17166,6 +17195,8 @@ snapshots:
 
   symbol-tree@3.2.4:
     optional: true
+
+  tabbable@6.5.0: {}
 
   tailwind-merge@3.4.0: {}
 
