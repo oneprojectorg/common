@@ -8,6 +8,7 @@ import { LuLink, LuPlay } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { useResourceTranslation } from '../decisions/DecisionTranslationContext';
 import { iconComponentForMime } from './ResourceCard';
 import { isVideoUrl } from './utils';
 
@@ -43,13 +44,15 @@ export const PinnedResourceCard = ({
   const t = useTranslations();
   const Icon = iconForResource(resource);
   const href = hrefForResource(resource, signedUrl);
+  const translation = useResourceTranslation(resource.id);
+  const displayTitle = translation?.title ?? resource.title;
 
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={resource.title}
+      aria-label={displayTitle}
       className="group block rounded-lg border p-2 outline-none hover:bg-primary-tealWhite focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2"
     >
       <div className="flex items-center gap-2">
@@ -58,7 +61,7 @@ export const PinnedResourceCard = ({
         </div>
         <div className="flex min-w-0 flex-col gap-0.5">
           <p className="truncate text-base text-neutral-black">
-            {resource.title}
+            {displayTitle}
           </p>
           {resource.createdAt ? (
             <p className="truncate text-sm text-neutral-gray4">
