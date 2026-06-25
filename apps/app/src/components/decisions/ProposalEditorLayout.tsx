@@ -1,5 +1,7 @@
 'use client';
 
+import { useUser } from '@/utils/UserProvider';
+import { userCanInteract } from '@/utils/userCanInteract';
 import type { ProposalReviewRequest } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { Header4 } from '@op/ui/Header';
@@ -62,10 +64,14 @@ export function ProposalEditorLayout({
 }: ProposalEditorLayoutProps) {
   const router = useRouter();
   const t = useTranslations();
+  const { user } = useUser();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isResubmitModalOpen, setIsResubmitModalOpen] = useState(false);
 
-  const canShare = access?.admin || access?.inviteMembers;
+  // Sharing is a write surface — only offer it to signed-in, non-anonymous
+  // members, on top of the existing admin/invite permission check.
+  const canShare =
+    userCanInteract(user) && (access?.admin || access?.inviteMembers);
   const isRevisionMode = Boolean(revisionRequest);
 
   return (

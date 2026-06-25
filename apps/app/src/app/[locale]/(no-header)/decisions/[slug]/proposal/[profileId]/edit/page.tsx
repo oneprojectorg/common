@@ -1,6 +1,7 @@
 'use client';
 
 import { useRequiredUser } from '@/utils/UserProvider';
+import { userCanInteract } from '@/utils/userCanInteract';
 import { trpc } from '@op/api/client';
 import type { ProcessInstance } from '@op/api/encoders';
 import {
@@ -159,30 +160,36 @@ export default function ProposalEditorLayout() {
     );
   };
 
+  // The version-history and revision-request controls are interactive editing
+  // surfaces — hide them from anonymous accounts and logged-out visitors.
+  const canInteract = userCanInteract(user);
+
   const revisionRequestLabel = t('Revision request');
-  const headerIcons = firstRevisionRequestId
-    ? [
-        <TooltipTrigger key="revision-request">
-          <Button
-            color="secondary"
-            variant="icon"
-            size="small"
-            onPress={toggleRevisionRequest}
-            aria-label={revisionRequestLabel}
-            aria-pressed={Boolean(reviewRevision)}
-            className="relative size-8 min-w-8 rounded-sm p-0"
-          >
-            <LuStickyNote className="size-4" />
-            <span
-              aria-hidden
-              className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-primary-orange2"
-            />
-          </Button>
-          <Tooltip>{revisionRequestLabel}</Tooltip>
-        </TooltipTrigger>,
-        ...asideHeaderIcons,
-      ]
-    : asideHeaderIcons;
+  const headerIcons = !canInteract
+    ? []
+    : firstRevisionRequestId
+      ? [
+          <TooltipTrigger key="revision-request">
+            <Button
+              color="secondary"
+              variant="icon"
+              size="small"
+              onPress={toggleRevisionRequest}
+              aria-label={revisionRequestLabel}
+              aria-pressed={Boolean(reviewRevision)}
+              className="relative size-8 min-w-8 rounded-sm p-0"
+            >
+              <LuStickyNote className="size-4" />
+              <span
+                aria-hidden
+                className="absolute -end-0.5 -top-0.5 size-1.5 rounded-full bg-primary-orange2"
+              />
+            </Button>
+            <Tooltip>{revisionRequestLabel}</Tooltip>
+          </TooltipTrigger>,
+          ...asideHeaderIcons,
+        ]
+      : asideHeaderIcons;
 
   const collaborationDocId = useMemo(() => {
     const { collaborationDocId: existingId } = parseProposalData(
