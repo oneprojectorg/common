@@ -5,9 +5,6 @@ export * from './getProcess';
 export * from './getTemplate';
 export * from './listProcesses';
 
-// Instance cache invalidation
-export * from './decisionCache';
-
 // Instance management
 export * from './createInstanceFromTemplate';
 export * from './duplicateInstance';

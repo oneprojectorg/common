@@ -1,8 +1,5 @@
-import {
-  Channels,
-  invalidateDecisionInstance,
-  submitManualSelection,
-} from '@op/common';
+import { invalidateMultiple } from '@op/cache';
+import { Channels, submitManualSelection } from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -24,7 +21,17 @@ export const submitManualSelectionRouter = router({
         user: ctx.user,
       });
 
-      waitUntil(invalidateDecisionInstance(input.processInstanceId));
+      // Drop the writer's own cached projections; other viewers' per-caller
+      // entries TTL out.
+      waitUntil(
+        invalidateMultiple({
+          type: 'decision',
+          paramsList: [
+            [input.processInstanceId, ctx.user.id, 'instance'],
+            [input.processInstanceId, ctx.user.id, 'categories'],
+          ],
+        }),
+      );
 
       ctx.registerMutationChannels([
         Channels.decisionInstance(input.processInstanceId),

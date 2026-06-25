@@ -8,7 +8,6 @@ import pMap from 'p-map';
 
 import { CommonError } from '../../utils';
 import { advancePhase } from './advancePhase';
-import { invalidateDecisionInstance } from './decisionCache';
 import { onPhaseAdvanced } from './onPhaseAdvanced';
 import type {
   DecisionInstanceData,
@@ -195,11 +194,6 @@ async function advanceInstanceTransitions({
       }
 
       result.processed++;
-
-      // Cron-driven advance: no router runs here, so invalidate the cached
-      // instance snapshot directly. The loop below re-fetches the row for the
-      // next iteration; the cache invalidation keeps external readers fresh.
-      await invalidateDecisionInstance(processInstanceId);
 
       await onPhaseAdvanced({
         instanceId: processInstanceId,

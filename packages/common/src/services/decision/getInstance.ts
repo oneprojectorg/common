@@ -18,15 +18,6 @@ import type { DecisionInstanceData } from './schemas/instanceData';
 export interface GetInstanceInput {
   instanceId: string;
   user: User | undefined;
-  /**
-   * Optional pre-loaded payload, typically returned by `loadDecisionInstance`
-   * and cached at the API layer (see `services/api/src/routers/decision/
-   * instances/getInstance.ts`). When provided, the DB load and viewer-
-   * independent computation are skipped and only the per-user access bits are
-   * derived. Omit (or pass `undefined`) to fetch fresh from the DB — that's the
-   * path internal `@op/common` callers take.
-   */
-  preloaded?: LoadedDecisionInstance | null;
 }
 
 const ALL_TRUE_ACCESS: DecisionRolePermissions = {
@@ -77,85 +68,32 @@ const resolveInstanceAccess = async (
   throw new UnauthorizedError("You don't have access to do this");
 };
 
-type LoadedInstanceRow = NonNullable<
-  Awaited<ReturnType<typeof fetchInstanceRow>>
->;
-
-export interface LoadedDecisionInstance {
-  instance: LoadedInstanceRow;
-  selectionsAreConfirmed: boolean;
-}
-
-const fetchInstanceRow = (instanceId: string) =>
-  db.query.processInstances.findFirst({
-    where: { id: instanceId },
-    with: {
-      process: true,
-      owner: true,
-      steward: true,
-      profile: {
-        columns: {
-          slug: true,
-        },
-      },
-      proposals: {
-        columns: {
-          id: true,
-          status: true,
-          submittedByProfileId: true,
-        },
-      },
-    },
-  });
-
-/**
- * Viewer-independent load: the DB row + everything that doesn't depend on the
- * caller. Intended to be wrapped in `cache()` at the API layer — keeping the
- * cache call out of `@op/common` means the access check stays outside the
- * cache, so a hit can never bypass authorization or share another viewer's
- * permissions.
- */
-export const loadDecisionInstance = async ({
-  instanceId,
-}: {
-  instanceId: string;
-}): Promise<LoadedDecisionInstance | null> => {
-  const instance = await fetchInstanceRow(instanceId);
-
-  if (!instance) {
-    return null;
-  }
-
-  const manualSelectionStatus = await resolveManualSelectionStatus({
-    instance: {
-      id: instance.id,
-      instanceData: instance.instanceData,
-      currentStateId: instance.currentStateId,
-    },
-  });
-
-  return {
-    instance,
-    selectionsAreConfirmed: manualSelectionStatus.selectionsAreConfirmed,
-  };
-};
-
-export const getInstance = async ({
-  instanceId,
-  user,
-  preloaded,
-}: GetInstanceInput) => {
+export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
   try {
-    const loaded =
-      preloaded !== undefined
-        ? preloaded
-        : await loadDecisionInstance({ instanceId });
+    const instance = await db.query.processInstances.findFirst({
+      where: { id: instanceId },
+      with: {
+        process: true,
+        owner: true,
+        steward: true,
+        profile: {
+          columns: {
+            slug: true,
+          },
+        },
+        proposals: {
+          columns: {
+            id: true,
+            status: true,
+            submittedByProfileId: true,
+          },
+        },
+      },
+    });
 
-    if (!loaded) {
+    if (!instance) {
       throw new NotFoundError('Process instance', instanceId);
     }
-
-    const { instance, selectionsAreConfirmed } = loaded;
 
     // Assert read access and reuse the profile-level roles it resolves.
     const profileRoles = await assertInstanceProfileAccess({
@@ -204,6 +142,14 @@ export const getInstance = async ({
         }
       : instanceData;
 
+    const manualSelectionStatus = await resolveManualSelectionStatus({
+      instance: {
+        id: instance.id,
+        instanceData: instance.instanceData,
+        currentStateId: instance.currentStateId,
+      },
+    });
+
     return {
       ...instance,
       slug: instance.profile?.slug ?? null,
@@ -211,7 +157,7 @@ export const getInstance = async ({
       proposalCount,
       participantCount,
       access,
-      selectionsAreConfirmed,
+      selectionsAreConfirmed: manualSelectionStatus.selectionsAreConfirmed,
     };
   } catch (error) {
     if (error instanceof NotFoundError || error instanceof UnauthorizedError) {

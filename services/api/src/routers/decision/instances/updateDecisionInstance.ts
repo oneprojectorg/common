@@ -1,9 +1,6 @@
 import { trackPhaseEndDateChanged } from '@op/analytics';
-import {
-  Channels,
-  invalidateDecisionInstance,
-  updateDecisionInstance,
-} from '@op/common';
+import { invalidateMultiple } from '@op/cache';
+import { Channels, updateDecisionInstance } from '@op/common';
 import { waitUntil } from '@vercel/functions';
 
 import {
@@ -24,7 +21,17 @@ export const updateDecisionInstanceRouter = router({
         user,
       });
 
-      waitUntil(invalidateDecisionInstance(input.instanceId));
+      // Drop the writer's own cached instance + categories projections so the
+      // next refetch sees fresh data. Other viewers' per-caller entries TTL out.
+      waitUntil(
+        invalidateMultiple({
+          type: 'decision',
+          paramsList: [
+            [input.instanceId, user.id, 'instance'],
+            [input.instanceId, user.id, 'categories'],
+          ],
+        }),
+      );
 
       ctx.registerMutationChannels([
         Channels.decisionInstance(input.instanceId),
