@@ -12,7 +12,7 @@ import { LuChevronDown } from 'react-icons/lu';
 const BOTTOM_SHEET_OVERLAY_CLASS =
   'p-0 items-end justify-center animate-in fade-in-0 duration-300';
 const BOTTOM_SHEET_CLASS =
-  'm-0 h-auto w-screen max-w-none animate-in rounded-t-2xl rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full';
+  'm-0 h-auto max-h-[calc(100svh-5rem)] w-screen max-w-none animate-in rounded-t-2xl rounded-b-none border-0 outline-0 duration-300 ease-out slide-in-from-bottom-full';
 
 interface SelectOption<T extends string> {
   id: T;
