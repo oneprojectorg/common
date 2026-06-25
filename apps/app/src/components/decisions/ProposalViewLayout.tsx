@@ -17,7 +17,7 @@ import { useTranslations } from '@/lib/i18n';
 import { useRouter } from '@/lib/i18n/routing';
 
 import { LocaleChooser } from '../LocaleChooser';
-import { UserAvatarMenu } from '../SiteHeader';
+import { HeaderUserMenu } from '../SiteHeader';
 import { ReportProposalDialog } from './ReportProposalDialog';
 
 export function ProposalViewLayout({
@@ -141,9 +141,7 @@ export function ProposalViewLayout({
           )}
           <div className="hidden gap-4 sm:flex">
             <LocaleChooser />
-            {/* Required-user leaf: only mount when a session exists so anonymous
-                visitors can still read the proposal. */}
-            {user ? <UserAvatarMenu /> : null}
+            <HeaderUserMenu />
           </div>
         </div>
       </div>

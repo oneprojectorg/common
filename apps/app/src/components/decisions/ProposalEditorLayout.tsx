@@ -140,7 +140,10 @@ export function ProposalEditorLayout({
                 </Button>
               )}
               <LocaleChooser />
-              <UserAvatarMenu className="hidden sm:block" />
+              {/* No avatar or login for visitors/anonymous. */}
+              {userCanInteract(user) ? (
+                <UserAvatarMenu className="hidden sm:block" />
+              ) : null}
             </>
           )}
         </div>
