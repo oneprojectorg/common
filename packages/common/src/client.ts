@@ -116,6 +116,17 @@ export {
   type AllowedResourceMimeType,
 } from './services/resources/constants';
 
+// Proposal attachment constants (no server dependencies). Surfaced here so
+// the proposal attachment UI ('use client') can import the same allowlist /
+// size cap the server enforces without dragging the full `@op/common` barrel
+// (and its server-only deps) into the client bundle.
+export {
+  ALLOWED_PROPOSAL_ATTACHMENT_MIME_TYPES,
+  MAX_PROPOSAL_ATTACHMENT_FILE_SIZE,
+  isAllowedProposalAttachmentMimeType,
+  type AllowedProposalAttachmentMimeType,
+} from './services/decision/proposalAttachmentStorage';
+
 // Translation constants (no server dependencies)
 import { SUPPORTED_LOCALES } from './services/translation/locales';
 

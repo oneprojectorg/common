@@ -7,10 +7,10 @@ import {
   ValidationError,
 } from '../../utils/error';
 import {
-  getStorageObjectByPath,
   getStorageObjectMimeType,
   getStorageObjectSize,
 } from '../../utils/storage';
+import { getStorageObjectByPath } from '../../utils/storageObject';
 import { getIndividualProfileId } from '../access';
 import {
   MAX_RESOURCE_FILE_SIZE,

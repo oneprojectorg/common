@@ -5,10 +5,10 @@ import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import {
-  getStorageObjectByPath,
   getStorageObjectMimeType,
   getStorageObjectSize,
 } from '../../utils/storage';
+import { getStorageObjectByPath } from '../../utils/storageObject';
 import { getCurrentProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
 import {
