@@ -1352,5 +1352,14 @@
   "Drag a file or link here to add it": "Arrastra un archivo o enlace aquí para añadirlo",
   "Failed to load proposals": "No se pudieron cargar las propuestas",
   "Thank you for participating. Your voice helps shape how we invest in our community.": "Gracias por participar. Tu voz ayuda a definir cómo invertimos en nuestra comunidad.",
-  "Unsaved changes": "Cambios sin guardar"
+  "Unsaved changes": "Cambios sin guardar",
+  "Your idea was submitted.": "Tu idea fue enviada.",
+  "Want to follow what happens next?": "¿Quieres seguir lo que pasa después?",
+  "Continue as a guest": "Continuar como invitado",
+  "Stay anonymous. React to comments with emoji.": "Mantente anónimo. Reacciona a los comentarios con emojis.",
+  "I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>.": "Acepto los <tos>Términos de servicio</tos> y la <privacy>Política de privacidad</privacy>.",
+  "Continue as guest": "Continuar como invitado",
+  "With an account": "Con una cuenta",
+  "Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.": "Edita tu idea antes de que comience la revisión, recibe notificaciones cuando pase a la siguiente fase, y dale me gusta, comenta y sigue otras ideas.",
+  "Create account": "Crear cuenta"
 }

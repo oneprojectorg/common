@@ -38,7 +38,11 @@ export const PromoteAccountModal = () => {
   };
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={(open) => (open ? null : close())}>
+    <Modal
+      isOpen={isOpen}
+      onOpenChange={(open) => (open ? null : close())}
+      className="sm:max-w-[29rem]"
+    >
       <PromoteAccountModalContent
         onContinueAsGuest={close}
         proposalId={proposalId}
@@ -80,7 +84,7 @@ const PromoteAccountModalContent = ({
           <Header1 className="text-neutral-black">
             {t('Your idea was submitted.')}
           </Header1>
-          <p className="text-sm text-neutral-charcoal">
+          <p className="text-base text-neutral-charcoal">
             {t('Want to follow what happens next?')}
           </p>
         </div>
@@ -97,16 +101,16 @@ const PromoteAccountModalContent = ({
               {t('Continue as a guest')}
             </span>
           </div>
-          <p className="text-sm text-neutral-charcoal">
+          <p className="text-base text-neutral-charcoal">
             {t('Stay anonymous. React to comments with emoji.')}
           </p>
           {/* TODO(anon-upgrade): this checkbox only gates the button; ToS/privacy
               acceptance isn't persisted for the anon account. Pending team
               decision on what accepting terms means for an anonymous user. */}
-          <Checkbox isSelected={agreed} onChange={setAgreed}>
+          <Checkbox size="small" isSelected={agreed} onChange={setAgreed}>
             <span className="text-sm">
               {t.rich(
-                'I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>',
+                'I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>.',
                 {
                   tos: (chunks: ReactNode) => (
                     <PolicyLink href="/info/tos">{chunks}</PolicyLink>
@@ -138,7 +142,7 @@ const PromoteAccountModalContent = ({
               {t('With an account')}
             </span>
           </div>
-          <p className="text-sm text-neutral-charcoal">
+          <p className="text-base text-neutral-charcoal">
             {t(
               'Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.',
             )}
@@ -149,16 +153,8 @@ const PromoteAccountModalContent = ({
         </section>
       </div>
 
-      <p className="text-center text-sm text-neutral-charcoal">
-        {t('Already have an account?')}{' '}
-        <button
-          type="button"
-          onClick={goToLogin}
-          className="text-primary-teal underline"
-        >
-          {t('Log in')}
-        </button>
-      </p>
+      {/* TODO(anon-upgrade): restore "Already have an account? Log in" once we
+          support linking an email that already belongs to a full account. */}
     </div>
   );
 };
