@@ -12,7 +12,10 @@ import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { ErrorMessage } from '@/components/ErrorMessage';
-import { RichTextEditorBubbleMenu } from '@/components/RichTextEditor';
+import {
+  RichTextEditorBubbleMenu,
+  SlashCommandMenu,
+} from '@/components/RichTextEditor';
 import { getProposalExtensions } from '@/components/RichTextEditor/editorConfig';
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
@@ -74,11 +77,11 @@ function OverviewSectionContent({
   // Editor instance, captured once ready, so the bubble menu can attach.
   const [editor, setEditor] = useState<Editor | null>(null);
 
-  // Match the proposal editor's extension set so link embeds (paste a YouTube /
-  // Vimeo / etc. URL → Iframely preview) work here too. Slash commands stay off:
-  // the overview editor has no slash menu, only the bubble menu.
+  // Match the proposal editor's extension set: link embeds (paste a YouTube /
+  // Vimeo / etc. URL → Iframely preview) plus the slash command menu, so blocks
+  // and embeds can be inserted with no selection (the bubble menu needs one).
   const extensions = useMemo(
-    () => getProposalExtensions({ slashCommands: false }),
+    () => getProposalExtensions({ slashCommands: true }),
     [],
   );
 
@@ -145,6 +148,7 @@ function OverviewSectionContent({
               : sanitizeTiptapDoc(initialOverview.body)
           }
           placeholder={t('overview_body_placeholder')}
+          linePlaceholder={t("Start typing or press '/' for more commands...")}
           editorClassName="min-h-40"
           onChangeJSON={(json) => {
             // Persist the TipTap JSON doc so the overview renders via the
@@ -157,6 +161,7 @@ function OverviewSectionContent({
         />
 
         <RichTextEditorBubbleMenu editor={editor} />
+        <SlashCommandMenu editor={editor} />
       </div>
     </div>
   );

@@ -43,6 +43,27 @@ const placeholderStyles = [
 ].join(' ');
 
 /**
+ * Per-line placeholder hint (Notion-style "press / for commands…"). Scoped to
+ * TOP-LEVEL empty paragraphs only (`& > p`): not headings, and not paragraphs
+ * nested in lists/blockquotes (a "press /" hint next to a list marker reads
+ * oddly and the float/caret interaction is janky there). `:not(.is-editor-empty)`
+ * keeps it from doubling with `placeholderStyles` on the whole-editor-empty line.
+ * Opt-in: only added to the editor class (by `useRichTextEditor`) when a
+ * `linePlaceholder` is passed, so existing single-placeholder editors are
+ * unaffected.
+ */
+export const linePlaceholderStyles = [
+  // Absolute (not float) so the hint never displaces the caret — absolute with
+  // no offsets pins the ::before at the paragraph's text start (block made
+  // `relative`) and stays out of flow, so the caret sits at the true start.
+  '[&>p.is-empty:not(.is-editor-empty)]:relative',
+  '[&>p.is-empty:not(.is-editor-empty)]:before:pointer-events-none',
+  '[&>p.is-empty:not(.is-editor-empty)]:before:absolute',
+  '[&>p.is-empty:not(.is-editor-empty)]:before:text-neutral-gray3',
+  '[&>p.is-empty:not(.is-editor-empty)]:before:content-[attr(data-placeholder)]',
+].join(' ');
+
+/**
  * TipTap heading extension that bakes the design-system `headingClasses` onto
  * each rendered `<h1>`–`<h4>` tag, keeping editor output visually identical to
  * the `Header1/2/3/4` components in `@op/ui`. Any level without a mapped class

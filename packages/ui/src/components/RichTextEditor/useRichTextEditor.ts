@@ -5,12 +5,17 @@ import { useEditor } from '@tiptap/react';
 import { useEffect, useMemo } from 'react';
 
 import { cn } from '../../lib/utils';
-import { baseEditorStyles, defaultEditorExtensions } from './editorConfig';
+import {
+  baseEditorStyles,
+  defaultEditorExtensions,
+  linePlaceholderStyles,
+} from './editorConfig';
 
 export function useRichTextEditor({
   extensions = defaultEditorExtensions,
   content = '',
   placeholder,
+  linePlaceholder,
   editorClassName = '',
   onUpdate,
   onChange,
@@ -22,6 +27,13 @@ export function useRichTextEditor({
   extensions?: Extensions;
   content?: Content;
   placeholder?: string;
+  /**
+   * Notion-style per-empty-line hint (e.g. "Start typing or press '/' for more
+   * commands…"). When set, the placeholder follows the cursor: the editor-level
+   * `placeholder` shows while the whole editor is empty, this shows on any other
+   * empty line. Opt-in — omit it and placeholder behavior is unchanged.
+   */
+  linePlaceholder?: string;
   editorClassName?: string;
   onUpdate?: (content: string) => void;
   onChange?: (content: string) => void;
@@ -32,16 +44,29 @@ export function useRichTextEditor({
   /** When true, sets `aria-required` on the editable region for assistive tech. */
   required?: boolean;
 }) {
-  // Append the Placeholder extension only when a placeholder is provided, so
-  // editors that don't ask for one are unaffected. Styling lives in
-  // baseEditorStyles and renders the hint once when the editor is empty.
-  const resolvedExtensions = useMemo(
-    () =>
-      placeholder
-        ? [...extensions, Placeholder.configure({ placeholder })]
-        : extensions,
-    [extensions, placeholder],
-  );
+  // Append the Placeholder extension only when a hint is asked for, so editors
+  // that don't ask for one are unaffected. With a `linePlaceholder` the config
+  // switches to the function form so the hint follows the cursor (editor-level
+  // text while empty, line-level text on any other empty line). Styling lives in
+  // baseEditorStyles (+ linePlaceholderStyles, added to the class below).
+  const resolvedExtensions = useMemo(() => {
+    if (!placeholder && !linePlaceholder) {
+      return extensions;
+    }
+
+    if (linePlaceholder) {
+      return [
+        ...extensions,
+        Placeholder.configure({
+          showOnlyCurrent: true,
+          placeholder: ({ editor }) =>
+            editor.isEmpty ? (placeholder ?? '') : linePlaceholder,
+        }),
+      ];
+    }
+
+    return [...extensions, Placeholder.configure({ placeholder })];
+  }, [extensions, placeholder, linePlaceholder]);
 
   const editor = useEditor({
     extensions: resolvedExtensions,
@@ -51,6 +76,7 @@ export function useRichTextEditor({
       attributes: {
         class: cn(
           baseEditorStyles,
+          linePlaceholder ? linePlaceholderStyles : '',
           editorClassName || (editable ? 'min-h-96' : ''),
         ),
         ...(required ? { 'aria-required': 'true' } : {}),

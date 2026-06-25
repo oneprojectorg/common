@@ -3,13 +3,6 @@
 import { Extension } from '@tiptap/core';
 import { PluginKey } from '@tiptap/pm/state';
 import { Suggestion, SuggestionOptions } from '@tiptap/suggestion';
-import React, {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useState,
-} from 'react';
-import { createRoot } from 'react-dom/client';
 import {
   LuCode,
   LuHeading1,
@@ -23,231 +16,144 @@ import {
   LuType,
 } from 'react-icons/lu';
 
-import { useTranslations } from '@/lib/i18n';
+import {
+  createSlashMenuController,
+  getSlashMenuController,
+  type SlashCommandItem,
+  type SlashMenuController,
+} from '@/components/RichTextEditor/slashMenuController';
 
-export interface SlashCommandItem {
-  title: string;
-  description: string;
-  searchTerms: string[];
-  icon: React.ComponentType<{ className?: string }>;
-  command: ({ editor, range }: { editor: any; range: any }) => void;
-}
-
-const SlashCommandsList = forwardRef<
-  { onKeyDown: (props: { event: KeyboardEvent }) => boolean },
+// Query-independent: built once at module load, not rebuilt on every keystroke.
+const SLASH_ITEMS: SlashCommandItem[] = [
   {
-    items: SlashCommandItem[];
-    command: (item: SlashCommandItem) => void;
-  }
->((props, ref) => {
-  const t = useTranslations();
-  const [selectedIndex, setSelectedIndex] = useState(0);
-
-  const selectItem = (index: number) => {
-    const item = props.items[index];
-    if (item) {
-      props.command(item);
-    }
-  };
-
-  const upHandler = () => {
-    setSelectedIndex(
-      (selectedIndex + props.items.length - 1) % props.items.length,
-    );
-  };
-
-  const downHandler = () => {
-    setSelectedIndex((selectedIndex + 1) % props.items.length);
-  };
-
-  const enterHandler = () => {
-    selectItem(selectedIndex);
-  };
-
-  useEffect(() => setSelectedIndex(0), [props.items]);
-
-  useImperativeHandle(ref, () => ({
-    onKeyDown: ({ event }) => {
-      if (event.key === 'ArrowUp') {
-        upHandler();
-        return true;
-      }
-
-      if (event.key === 'ArrowDown') {
-        downHandler();
-        return true;
-      }
-
-      if (event.key === 'Enter') {
-        enterHandler();
-        return true;
-      }
-
-      return false;
+    title: 'Text',
+    description: 'Just start typing with plain text.',
+    searchTerms: ['p', 'paragraph'],
+    icon: LuType,
+    command: ({ editor, range }) => {
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .toggleNode('paragraph', 'paragraph')
+        .run();
     },
-  }));
-
-  return (
-    <div className="z-[9999999] h-auto max-h-[330px] w-72 overflow-auto rounded-lg border bg-white p-1 shadow-md">
-      {props.items.length ? (
-        props.items.map((item, index) => (
-          <button
-            className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-start hover:bg-neutral-gray1 ${
-              index === selectedIndex
-                ? 'bg-neutral-gray1 text-neutral-black'
-                : 'text-neutral-charcoal'
-            }`}
-            key={index}
-            onClick={() => selectItem(index)}
-          >
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-md border bg-white">
-              <item.icon className="size-4" />
-            </div>
-            <div>
-              <p className="font-medium">{item.title}</p>
-              <p className="text-xs text-neutral-gray2">{item.description}</p>
-            </div>
-          </button>
-        ))
-      ) : (
-        <div className="item">{t('No result')}</div>
-      )}
-    </div>
-  );
-});
-
-SlashCommandsList.displayName = 'SlashCommandsList';
+  },
+  {
+    title: 'Heading 1',
+    description: 'Big section heading.',
+    searchTerms: ['title', 'big', 'large'],
+    icon: LuHeading1,
+    command: ({ editor, range }) => {
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .setNode('heading', { level: 1 })
+        .run();
+    },
+  },
+  {
+    title: 'Heading 2',
+    description: 'Medium section heading.',
+    searchTerms: ['subtitle', 'medium'],
+    icon: LuHeading2,
+    command: ({ editor, range }) => {
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .setNode('heading', { level: 2 })
+        .run();
+    },
+  },
+  {
+    title: 'Heading 3',
+    description: 'Small section heading.',
+    searchTerms: ['subtitle', 'small'],
+    icon: LuHeading3,
+    command: ({ editor, range }) => {
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .setNode('heading', { level: 3 })
+        .run();
+    },
+  },
+  {
+    title: 'Bullet List',
+    description: 'Create a simple bullet list.',
+    searchTerms: ['unordered', 'point'],
+    icon: LuList,
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).toggleBulletList().run();
+    },
+  },
+  {
+    title: 'Numbered List',
+    description: 'Create a list with numbering.',
+    searchTerms: ['ordered'],
+    icon: LuListOrdered,
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).toggleOrderedList().run();
+    },
+  },
+  {
+    title: 'Quote',
+    description: 'Capture a quote.',
+    searchTerms: ['blockquote'],
+    icon: LuQuote,
+    command: ({ editor, range }) => {
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .toggleNode('paragraph', 'paragraph')
+        .toggleBlockquote()
+        .run();
+    },
+  },
+  {
+    title: 'Code',
+    description: 'Capture a code snippet.',
+    searchTerms: ['codeblock'],
+    icon: LuCode,
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).toggleCodeBlock().run();
+    },
+  },
+  {
+    title: 'Divider',
+    description: 'Visually divide blocks.',
+    searchTerms: ['horizontal', 'rule', 'hr'],
+    icon: LuMinus,
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).setHorizontalRule().run();
+    },
+  },
+  {
+    title: 'Link Embed',
+    description: 'Embed a link with preview.',
+    searchTerms: ['embed', 'preview', 'iframely', 'url'],
+    icon: LuLink2,
+    command: ({ editor, range }) => {
+      const url = window.prompt('Enter the URL to embed:');
+      if (url && url.trim()) {
+        editor
+          .chain()
+          .focus()
+          .deleteRange(range)
+          .setIframely({ src: url.trim() })
+          .run();
+      }
+    },
+  },
+];
 
 const suggestionOptions: Partial<SuggestionOptions> = {
-  items: ({ query }: { query: string }): SlashCommandItem[] => {
-    const items: SlashCommandItem[] = [
-      {
-        title: 'Text',
-        description: 'Just start typing with plain text.',
-        searchTerms: ['p', 'paragraph'],
-        icon: LuType,
-        command: ({ editor, range }) => {
-          editor
-            .chain()
-            .focus()
-            .deleteRange(range)
-            .toggleNode('paragraph', 'paragraph')
-            .run();
-        },
-      },
-      {
-        title: 'Heading 1',
-        description: 'Big section heading.',
-        searchTerms: ['title', 'big', 'large'],
-        icon: LuHeading1,
-        command: ({ editor, range }) => {
-          editor
-            .chain()
-            .focus()
-            .deleteRange(range)
-            .setNode('heading', { level: 1 })
-            .run();
-        },
-      },
-      {
-        title: 'Heading 2',
-        description: 'Medium section heading.',
-        searchTerms: ['subtitle', 'medium'],
-        icon: LuHeading2,
-        command: ({ editor, range }) => {
-          editor
-            .chain()
-            .focus()
-            .deleteRange(range)
-            .setNode('heading', { level: 2 })
-            .run();
-        },
-      },
-      {
-        title: 'Heading 3',
-        description: 'Small section heading.',
-        searchTerms: ['subtitle', 'small'],
-        icon: LuHeading3,
-        command: ({ editor, range }) => {
-          editor
-            .chain()
-            .focus()
-            .deleteRange(range)
-            .setNode('heading', { level: 3 })
-            .run();
-        },
-      },
-      {
-        title: 'Bullet List',
-        description: 'Create a simple bullet list.',
-        searchTerms: ['unordered', 'point'],
-        icon: LuList,
-        command: ({ editor, range }) => {
-          editor.chain().focus().deleteRange(range).toggleBulletList().run();
-        },
-      },
-      {
-        title: 'Numbered List',
-        description: 'Create a list with numbering.',
-        searchTerms: ['ordered'],
-        icon: LuListOrdered,
-        command: ({ editor, range }) => {
-          editor.chain().focus().deleteRange(range).toggleOrderedList().run();
-        },
-      },
-      {
-        title: 'Quote',
-        description: 'Capture a quote.',
-        searchTerms: ['blockquote'],
-        icon: LuQuote,
-        command: ({ editor, range }) => {
-          editor
-            .chain()
-            .focus()
-            .deleteRange(range)
-            .toggleNode('paragraph', 'paragraph')
-            .toggleBlockquote()
-            .run();
-        },
-      },
-      {
-        title: 'Code',
-        description: 'Capture a code snippet.',
-        searchTerms: ['codeblock'],
-        icon: LuCode,
-        command: ({ editor, range }) => {
-          editor.chain().focus().deleteRange(range).toggleCodeBlock().run();
-        },
-      },
-      {
-        title: 'Divider',
-        description: 'Visually divide blocks.',
-        searchTerms: ['horizontal', 'rule', 'hr'],
-        icon: LuMinus,
-        command: ({ editor, range }) => {
-          editor.chain().focus().deleteRange(range).setHorizontalRule().run();
-        },
-      },
-      {
-        title: 'Link Embed',
-        description: 'Embed a link with preview.',
-        searchTerms: ['embed', 'preview', 'iframely', 'url'],
-        icon: LuLink2,
-        command: ({ editor, range }) => {
-          const url = window.prompt('Enter the URL to embed:');
-          if (url && url.trim()) {
-            editor
-              .chain()
-              .focus()
-              .deleteRange(range)
-              .setIframely({ src: url.trim() })
-              .run();
-          }
-        },
-      },
-    ];
-
-    return items.filter((item) => {
+  items: ({ query }: { query: string }): SlashCommandItem[] =>
+    SLASH_ITEMS.filter((item) => {
       if (typeof query === 'string' && query.length > 0) {
         const search = query.toLowerCase();
         return (
@@ -258,75 +164,42 @@ const suggestionOptions: Partial<SuggestionOptions> = {
         );
       }
       return true;
-    });
-  },
+    }),
 
+  // Render only writes to the per-editor controller; `SlashCommandMenu` (mounted
+  // in the React tree alongside the editor) subscribes and renders the menu.
+  // The controller is captured in `onStart` because `onKeyDown` props carry only
+  // `{ view, event, range }` — no `editor` to look it up from.
   render: () => {
-    let component: any;
-    let popup: any;
-    let root: any;
+    let controller: SlashMenuController | undefined;
 
     return {
       onStart: (props: any) => {
-        if (!props.clientRect) {
-          return;
-        }
-
-        popup = document.createElement('div');
-        popup.style.position = 'absolute';
-        popup.style.top = `${props.clientRect().bottom + 8}px`;
-        popup.style.left = `${props.clientRect().left}px`;
-        popup.style.zIndex = '9999999';
-        document.body.appendChild(popup);
-
-        root = createRoot(popup);
-        root.render(
-          <SlashCommandsList
-            ref={(ref) => {
-              component = ref;
-            }}
-            items={props.items}
-            command={props.command}
-          />,
-        );
+        controller = getSlashMenuController(props.editor);
+        controller?.update({
+          open: true,
+          items: props.items,
+          command: props.command,
+          clientRect: props.clientRect ?? null,
+        });
       },
 
-      onUpdate(props: any) {
-        if (!popup || !root) return;
-
-        if (props.clientRect) {
-          popup.style.top = `${props.clientRect().bottom + 8}px`;
-          popup.style.left = `${props.clientRect().left}px`;
-        }
-
-        root.render(
-          <SlashCommandsList
-            ref={(ref) => {
-              component = ref;
-            }}
-            items={props.items}
-            command={props.command}
-          />,
-        );
+      onUpdate: (props: any) => {
+        controller?.update({
+          items: props.items,
+          command: props.command,
+          clientRect: props.clientRect ?? null,
+        });
       },
 
-      onKeyDown(props: any) {
-        if (props.event.key === 'Escape') {
-          if (root) {
-            root.unmount();
-          }
-          popup?.remove();
-          return true;
-        }
+      // Delegate to the menu's key handler. Escape isn't handled there (returns
+      // false), so the suggestion plugin runs its own exit → `onExit` closes.
+      onKeyDown: (props: any) =>
+        controller?.handleKeyDown(props.event) ?? false,
 
-        return component?.onKeyDown?.(props) || false;
-      },
-
-      onExit() {
-        if (root) {
-          root.unmount();
-        }
-        popup?.remove();
+      onExit: () => {
+        controller?.update({ open: false });
+        controller = undefined;
       },
     };
   },
@@ -334,6 +207,10 @@ const suggestionOptions: Partial<SuggestionOptions> = {
 
 export const SlashCommands = Extension.create({
   name: 'slash-commands',
+
+  addStorage(): { controller: SlashMenuController } {
+    return { controller: createSlashMenuController() };
+  },
 
   addOptions() {
     return {
