@@ -182,6 +182,7 @@
   "Proposal options": "Opciones de propuesta",
   "Participants": "Participantes",
   "Summary": "Resumen",
+  "Write something...": "Escribe algo...",
   "View Details": "Ver detalles",
   "Edit Process": "Editar proceso",
   "Participate": "Participar",
@@ -1361,5 +1362,6 @@
   "Continue as guest": "Continuar como invitado",
   "With an account": "Con una cuenta",
   "Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.": "Edita tu idea antes de que comience la revisión, recibe notificaciones cuando pase a la siguiente fase, y dale me gusta, comenta y sigue otras ideas.",
-  "Create account": "Crear cuenta"
+  "Create account": "Crear cuenta",
+  "Collapsible": "Plegable"
 }

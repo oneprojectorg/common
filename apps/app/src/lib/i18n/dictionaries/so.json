@@ -137,6 +137,7 @@
   "Submit a proposal": "Gudbi soo jeedin",
   "Participants": "Ka qaybgalayaal",
   "Summary": "Kooban",
+  "Write something...": "Wax qor...",
   "View Details": "Eeg Faahfaahinta",
   "Edit Process": "Wax ka bedel Habka",
   "Participate": "Ka qaybgal",
@@ -1363,5 +1364,6 @@
   "Continue as guest": "Ku sii wad marti ahaan",
   "With an account": "Adoo akoon leh",
   "Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.": "Wax ka bedel fikradaada ka hor inta aan dib u eegista la bilaabin, ogeysiis hel marka ay u guurto marxaladda xigta, oo jeclow, faallo ka bixi, oo raac fikradaha kale.",
-  "Create account": "Abuur akoon"
+  "Create account": "Abuur akoon",
+  "Collapsible": "La laalaabi karo"
 }

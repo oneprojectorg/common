@@ -145,6 +145,7 @@ function OverviewSectionContent({
               : sanitizeTiptapDoc(initialOverview.body)
           }
           placeholder={t('overview_body_placeholder')}
+          summaryPlaceholder={t('Write something...')}
           editorClassName="min-h-40"
           onChangeJSON={(json) => {
             // Persist the TipTap JSON doc so the overview renders via the

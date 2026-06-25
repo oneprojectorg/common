@@ -183,6 +183,7 @@
   "Proposal options": "প্রস্তাব অপশন",
   "Participants": "অংশগ্রহণকারী",
   "Summary": "সারসংক্ষেপ",
+  "Write something...": "কিছু লিখুন...",
   "View Details": "বিস্তারিত দেখুন",
   "Edit Process": "প্রক্রিয়া সম্পাদনা করুন",
   "Participate": "অংশগ্রহণ করুন",
@@ -1364,5 +1365,6 @@
   "Continue as guest": "অতিথি হিসেবে চালিয়ে যান",
   "With an account": "অ্যাকাউন্ট দিয়ে",
   "Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.": "পর্যালোচনা শুরু হওয়ার আগে আপনার আইডিয়া সম্পাদনা করুন, এটি পরবর্তী ধাপে গেলে বিজ্ঞপ্তি পান, এবং অন্যান্য আইডিয়া পছন্দ করুন, মন্তব্য করুন ও অনুসরণ করুন।",
-  "Create account": "অ্যাকাউন্ট তৈরি করুন"
+  "Create account": "অ্যাকাউন্ট তৈরি করুন",
+  "Collapsible": "সংকোচনযোগ্য"
 }

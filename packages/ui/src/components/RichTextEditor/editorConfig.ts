@@ -1,6 +1,11 @@
 import { headingClasses } from '@op/styles/constants';
-import { mergeAttributes } from '@tiptap/core';
+import { Extension, mergeAttributes } from '@tiptap/core';
 import Blockquote from '@tiptap/extension-blockquote';
+import {
+  Details,
+  DetailsContent,
+  DetailsSummary,
+} from '@tiptap/extension-details';
 import Heading from '@tiptap/extension-heading';
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import Image from '@tiptap/extension-image';
@@ -8,6 +13,8 @@ import Link from '@tiptap/extension-link';
 import Strike from '@tiptap/extension-strike';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
+import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import StarterKit from '@tiptap/starter-kit';
 
 /**
@@ -26,6 +33,9 @@ export const viewerProseStyles = [
   '[&_blockquote]:font-normal',
   '[&_:is(h1,h2,h3)]:my-4',
   'leading-5 max-w-none break-words overflow-wrap-anywhere',
+  // Details/Summary (collapsible) chrome lives in one raw-CSS block in
+  // `@op/styles` (`.details` in shared-styles.css), shared by the editor's
+  // built-in node view AND the viewer's native <details>. Nothing here.
 ].join(' ');
 
 /**
@@ -40,6 +50,23 @@ const placeholderStyles = [
   '[&_.is-editor-empty:first-child]:before:h-0',
   '[&_.is-editor-empty:first-child]:before:text-neutral-gray3',
   '[&_.is-editor-empty:first-child]:before:content-[attr(data-placeholder)]',
+].join(' ');
+
+/**
+ * Per-node placeholder for an empty Details summary. Scoped to `summary.is-empty`
+ * (not the global `.is-empty`) so only the Details summary gets a hint — other
+ * empty blocks are unaffected. Requires `Placeholder.configure({ includeChildren:
+ * true })`, which `useRichTextEditor` wires when the Details extension is present.
+ */
+const detailsSummaryPlaceholderStyles = [
+  '[&_summary.is-empty]:before:pointer-events-none',
+  // float-start + h-0 pull the ::before out of the text flow so the caret sits
+  // at the start of the summary, not after the placeholder text.
+  '[&_summary.is-empty]:before:float-start',
+  '[&_summary.is-empty]:before:h-0',
+  '[&_summary.is-empty]:before:text-neutral-gray3',
+  '[&_summary.is-empty]:before:content-[attr(data-placeholder)]',
+  '[&_summary.is-empty]:before:font-serif',
 ].join(' ');
 
 /**
@@ -68,13 +95,49 @@ export const StyledHeading = Heading.extend({
 /**
  * Styles applied to the editor element
  */
-export const baseEditorStyles = `${viewerProseStyles} outline-hidden placeholder:text-neutral-gray2 ${placeholderStyles}`;
+export const baseEditorStyles = `${viewerProseStyles} outline-hidden placeholder:text-neutral-gray2 ${placeholderStyles} ${detailsSummaryPlaceholderStyles}`;
+
+/**
+ * Adds an `is-focused` class to the `details` node that currently contains the
+ * selection. ProseMirror is a single contentEditable host, so DOM `:focus`
+ * never lands inside an individual node — `:focus`/`:focus-within`/`:has(:focus)`
+ * can't target "the details the caret is in". This node decoration can. It's
+ * painted only while the editor is focused (CSS gates on `.ProseMirror-focused`).
+ */
+const DetailsFocus = Extension.create({
+  name: 'detailsFocus',
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: new PluginKey('detailsFocus'),
+        props: {
+          decorations(state) {
+            const { $from } = state.selection;
+            for (let depth = $from.depth; depth > 0; depth--) {
+              if ($from.node(depth).type.name === 'details') {
+                const pos = $from.before(depth);
+                return DecorationSet.create(state.doc, [
+                  Decoration.node(pos, pos + $from.node(depth).nodeSize, {
+                    class: 'is-focused',
+                  }),
+                ]);
+              }
+            }
+
+            return DecorationSet.empty;
+          },
+        },
+      }),
+    ];
+  },
+});
 
 /**
  * Base extensions shared by both editor and viewer
  */
 const baseExtensions = [
   StarterKit,
+  DetailsFocus,
   TextAlign.configure({
     types: ['heading', 'paragraph'],
   }),
@@ -89,6 +152,12 @@ const baseExtensions = [
   Strike,
   Blockquote,
   HorizontalRule,
+  // Vanilla Details extension — its built-in node view provides the toggle
+  // button + `is-open` class; all chrome is styled via `.details` CSS in
+  // @op/styles. `persist` stores the open state in the doc.
+  Details.configure({ persist: true, HTMLAttributes: { class: 'details' } }),
+  DetailsSummary,
+  DetailsContent,
 ];
 
 /**

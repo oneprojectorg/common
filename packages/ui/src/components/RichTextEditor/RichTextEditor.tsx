@@ -25,6 +25,8 @@ export const RichTextEditor = forwardRef<
     /** HTML string or a TipTap JSON doc (the editor seeds from either). */
     content?: Content;
     placeholder?: string;
+    /** Translated hint for an empty Details summary (see useRichTextEditor). */
+    summaryPlaceholder?: string;
     onUpdate?: (content: string) => void;
     onChange?: (content: string) => void;
     /** Emits the editor's JSON doc on every update (for JSON-stored content). */
@@ -39,6 +41,7 @@ export const RichTextEditor = forwardRef<
       extensions,
       content = '',
       placeholder,
+      summaryPlaceholder,
       onUpdate,
       onChange,
       onChangeJSON,
@@ -52,6 +55,7 @@ export const RichTextEditor = forwardRef<
       extensions,
       content,
       placeholder,
+      summaryPlaceholder,
       editorClassName,
       onUpdate,
       onChange,

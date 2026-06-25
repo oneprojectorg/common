@@ -11,6 +11,7 @@ export function useRichTextEditor({
   extensions = defaultEditorExtensions,
   content = '',
   placeholder,
+  summaryPlaceholder = 'Write something...',
   editorClassName = '',
   onUpdate,
   onChange,
@@ -22,6 +23,14 @@ export function useRichTextEditor({
   extensions?: Extensions;
   content?: Content;
   placeholder?: string;
+  /**
+   * Hint shown inside an empty Details summary. Only takes effect when the
+   * Details extension is present. Defaults to 'Write something...' rather than
+   * 'Summary': "Summary" reads as jargon to writers who don't know the
+   * underlying <summary> HTML tag. Pass a translated string from the app to
+   * localize it.
+   */
+  summaryPlaceholder?: string;
   editorClassName?: string;
   onUpdate?: (content: string) => void;
   onChange?: (content: string) => void;
@@ -32,16 +41,38 @@ export function useRichTextEditor({
   /** When true, sets `aria-required` on the editable region for assistive tech. */
   required?: boolean;
 }) {
-  // Append the Placeholder extension only when a placeholder is provided, so
-  // editors that don't ask for one are unaffected. Styling lives in
-  // baseEditorStyles and renders the hint once when the editor is empty.
-  const resolvedExtensions = useMemo(
-    () =>
-      placeholder
-        ? [...extensions, Placeholder.configure({ placeholder })]
-        : extensions,
-    [extensions, placeholder],
-  );
+  // Append a single Placeholder extension when a top-level placeholder is asked
+  // for OR the Details extension is present (it needs a per-node 'Summary' hint).
+  // There can only be one Placeholder extension — tiptap dedupes by name — so it
+  // serves both cases via the function form: the editor-empty hint comes from
+  // `placeholder`, the empty Details summary from `summaryPlaceholder`. Styling
+  // lives in baseEditorStyles (`placeholderStyles` + `detailsSummaryPlaceholderStyles`).
+  const resolvedExtensions = useMemo(() => {
+    const hasDetails = extensions.some((ext) => ext.name === 'detailsSummary');
+
+    if (!placeholder && !hasDetails) {
+      return extensions;
+    }
+
+    return [
+      ...extensions,
+      Placeholder.configure({
+        includeChildren: true,
+        // Show empty-node placeholders even when the caret isn't in the node, so
+        // the Details summary's "Summary" hint stays visible while unfocused.
+        // Safe: only `summary.is-empty` and `.is-editor-empty:first-child` are
+        // painted in CSS, so other empty blocks don't get a per-block hint.
+        showOnlyCurrent: false,
+        placeholder: ({ node }) => {
+          if (node.type.name === 'detailsSummary') {
+            return summaryPlaceholder;
+          }
+
+          return placeholder ?? '';
+        },
+      }),
+    ];
+  }, [extensions, placeholder, summaryPlaceholder]);
 
   const editor = useEditor({
     extensions: resolvedExtensions,

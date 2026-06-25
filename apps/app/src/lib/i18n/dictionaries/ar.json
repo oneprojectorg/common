@@ -137,6 +137,7 @@
   "Submit a proposal": "قدّم مقترحًا",
   "Participants": "المشاركون",
   "Summary": "الملخص",
+  "Write something...": "اكتب شيئًا...",
   "View Details": "عرض التفاصيل",
   "Edit Process": "تعديل العملية",
   "Participate": "شارك",
@@ -1361,5 +1362,6 @@
   "Continue as guest": "المتابعة كضيف",
   "With an account": "باستخدام حساب",
   "Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.": "عدّل فكرتك قبل بدء المراجعة، واحصل على إشعار عند انتقالها إلى المرحلة التالية، وأعجب بالأفكار الأخرى وعلّق عليها وتابعها.",
-  "Create account": "إنشاء حساب"
+  "Create account": "إنشاء حساب",
+  "Collapsible": "قابل للطي"
 }

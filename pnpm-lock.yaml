@@ -30,6 +30,9 @@ catalogs:
     '@tiptap/extension-collaboration-caret':
       specifier: ^3.15.3
       version: 3.17.1
+    '@tiptap/extension-details':
+      specifier: 3.17.1
+      version: 3.17.1
     '@tiptap/extension-document':
       specifier: ^3.15.3
       version: 3.17.1
@@ -1100,6 +1103,9 @@ importers:
       '@tiptap/extension-bubble-menu':
         specifier: 'catalog:'
         version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/pm@3.17.1)
+      '@tiptap/extension-details':
+        specifier: 'catalog:'
+        version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/extension-text-style@3.27.0(@tiptap/core@3.17.1(@tiptap/pm@3.17.1)))(@tiptap/pm@3.17.1)
       '@tiptap/extension-heading':
         specifier: 'catalog:'
         version: 3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
@@ -4882,6 +4888,13 @@ packages:
       '@tiptap/y-tiptap': ^3.0.2
       yjs: ^13
 
+  '@tiptap/extension-details@3.17.1':
+    resolution: {integrity: sha512-HcVEGBkpezuTAJ7TBE1g4/4kq+wuSgelvnYBSgo2rmM6xXlziGrnoFmjgTywEf16Pt+q/T3RQ+paV9jpP1WLxg==}
+    peerDependencies:
+      '@tiptap/core': ^3.17.1
+      '@tiptap/extension-text-style': ^3.17.1
+      '@tiptap/pm': ^3.17.1
+
   '@tiptap/extension-document@3.17.1':
     resolution: {integrity: sha512-F7Q5HoAU383HWFa6AXZQ5N6t6lTJzVjYM8z93XrtH/2GzDFwy1UmDSrsXqvgznedBLAOgCNVTNh9PjXpLoOUbg==}
     peerDependencies:
@@ -4976,6 +4989,11 @@ packages:
     resolution: {integrity: sha512-CyJbZf823dqPZ/1zwRsza5pk/NQwFZwILdFYLVkV88I4+Ua9YVztI9kmwTB6dJyuKT4kTc7nhQHdaa957alGZQ==}
     peerDependencies:
       '@tiptap/core': ^3.17.1
+
+  '@tiptap/extension-text-style@3.27.0':
+    resolution: {integrity: sha512-R4Paicrf8vG46RvSi5RljacJjNClwj280Xei81QyEAJYNE2Vfxmw+pvdg8XMBFPUhGwNJiBQhcdPhhH81mBcng==}
+    peerDependencies:
+      '@tiptap/core': 3.27.0
 
   '@tiptap/extension-text@3.17.1':
     resolution: {integrity: sha512-rGml96vokQbvPB+w6L3+WKyYJWwqELaLdFUr1WMgg+py5uNYGJYAExYNAbDb5biWJBrX9GgMlCaNeiJj849L1w==}
@@ -12838,6 +12856,12 @@ snapshots:
       '@tiptap/y-tiptap': 3.0.2(prosemirror-model@1.25.3)(prosemirror-state@1.4.3)(prosemirror-view@1.40.1)(y-protocols@1.0.7(yjs@13.6.29))(yjs@13.6.29)
       yjs: 13.6.29
 
+  '@tiptap/extension-details@3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))(@tiptap/extension-text-style@3.27.0(@tiptap/core@3.17.1(@tiptap/pm@3.17.1)))(@tiptap/pm@3.17.1)':
+    dependencies:
+      '@tiptap/core': 3.17.1(@tiptap/pm@3.17.1)
+      '@tiptap/extension-text-style': 3.27.0(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))
+      '@tiptap/pm': 3.17.1
+
   '@tiptap/extension-document@3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))':
     dependencies:
       '@tiptap/core': 3.17.1(@tiptap/pm@3.17.1)
@@ -12914,6 +12938,10 @@ snapshots:
       '@tiptap/core': 3.17.1(@tiptap/pm@3.17.1)
 
   '@tiptap/extension-text-align@3.17.1(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))':
+    dependencies:
+      '@tiptap/core': 3.17.1(@tiptap/pm@3.17.1)
+
+  '@tiptap/extension-text-style@3.27.0(@tiptap/core@3.17.1(@tiptap/pm@3.17.1))':
     dependencies:
       '@tiptap/core': 3.17.1(@tiptap/pm@3.17.1)
 

@@ -4,6 +4,7 @@
   "private": true,
   "license": "SEE LICENSE in /LICENSE",
   "type": "module",
+  "module": "./src/index.ts",
   "exports": {
     "./Accordion": "./src/components/ui/accordion.tsx",
     "./AutoSizeInput": "./src/components/AutoSizeInput.tsx",
@@ -87,7 +88,6 @@
     "./AlertBanner": "./src/components/AlertBanner.tsx",
     "./ui/table": "./src/components/ui/table.tsx"
   },
-  "module": "./src/index.ts",
   "scripts": {
     "build": "storybook build",
     "dev": "storybook dev -p 3600 --no-open",
@@ -105,6 +105,7 @@
     "@tiptap/core": "catalog:",
     "@tiptap/extension-blockquote": "catalog:",
     "@tiptap/extension-bubble-menu": "catalog:",
+    "@tiptap/extension-details": "catalog:",
     "@tiptap/extension-heading": "catalog:",
     "@tiptap/extension-horizontal-rule": "catalog:",
     "@tiptap/extension-image": "catalog:",
