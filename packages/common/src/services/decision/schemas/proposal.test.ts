@@ -19,13 +19,11 @@ describe('proposalSubmittersListSchema', () => {
     );
 
     const parsed = proposalSubmittersListSchema.parse({
-      sampleSubmitters: atCap,
+      submitters: atCap,
       totalSubmitters: 9999,
     });
 
-    expect(parsed.sampleSubmitters).toHaveLength(
-      PROPOSAL_SUBMITTER_FACE_PILE_MAX,
-    );
+    expect(parsed.submitters).toHaveLength(PROPOSAL_SUBMITTER_FACE_PILE_MAX);
     expect(parsed.totalSubmitters).toBe(9999);
   });
 
@@ -37,7 +35,7 @@ describe('proposalSubmittersListSchema', () => {
 
     expect(() =>
       proposalSubmittersListSchema.parse({
-        sampleSubmitters: overCap,
+        submitters: overCap,
         totalSubmitters: overCap.length,
       }),
     ).toThrow();

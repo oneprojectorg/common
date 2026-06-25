@@ -28,7 +28,7 @@ export function VotingPage({
   const locale = useLocale();
   const translation = useDecisionTranslation();
 
-  const [[instance, voteStatus, { sampleSubmitters, totalSubmitters }]] =
+  const [[instance, voteStatus, { submitters, totalSubmitters }]] =
     trpc.useSuspenseQueries((t) => [
       t.decision.getInstance({ instanceId }),
       t.decision.getVotingStatus({ processInstanceId: instanceId }),
@@ -91,7 +91,7 @@ export function VotingPage({
         />
 
         <MemberParticipationFacePile
-          sampleSubmitters={sampleSubmitters}
+          submitters={submitters}
           totalSubmitters={totalSubmitters}
         />
 

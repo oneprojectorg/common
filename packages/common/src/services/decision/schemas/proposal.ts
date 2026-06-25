@@ -218,7 +218,7 @@ export type ProposalSubmitter = z.infer<typeof proposalSubmitterSchema>;
 export const PROPOSAL_SUBMITTER_FACE_PILE_MAX = 20;
 
 export const proposalSubmittersListSchema = z.object({
-  sampleSubmitters: z
+  submitters: z
     .array(proposalSubmitterSchema)
     .max(PROPOSAL_SUBMITTER_FACE_PILE_MAX),
   totalSubmitters: z.number(),

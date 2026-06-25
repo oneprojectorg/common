@@ -35,11 +35,12 @@ export function StandardDecisionPage({
   const t = useTranslations();
   const translation = useDecisionTranslation();
 
-  const [[instance, { sampleSubmitters, totalSubmitters }]] =
-    trpc.useSuspenseQueries((t) => [
+  const [[instance, { submitters, totalSubmitters }]] = trpc.useSuspenseQueries(
+    (t) => [
       t.decision.getInstance({ instanceId }),
       t.decision.listProposalSubmitters({ processInstanceId: instanceId }),
-    ]);
+    ],
+  );
 
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;
@@ -88,7 +89,7 @@ export function StandardDecisionPage({
         />
 
         <MemberParticipationFacePile
-          sampleSubmitters={sampleSubmitters}
+          submitters={submitters}
           totalSubmitters={totalSubmitters}
         />
 
