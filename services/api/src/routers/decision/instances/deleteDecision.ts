@@ -3,7 +3,6 @@ import {
   deleteDecision,
   invalidateDecisionInstance,
 } from '@op/common';
-import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
 import { authenticatedConfirmedProcedure, router } from '../../../trpcFactory';
@@ -23,7 +22,7 @@ export const deleteDecisionRouter = router({
         user: ctx.user,
       });
 
-      waitUntil(invalidateDecisionInstance(input.instanceId));
+      await invalidateDecisionInstance(input.instanceId);
 
       ctx.registerMutationChannels([
         Channels.decisionInstance(input.instanceId),

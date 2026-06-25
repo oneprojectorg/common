@@ -30,7 +30,11 @@ export const transitionFromPhaseRouter = router({
         user: ctx.user,
       });
 
-      waitUntil(invalidateDecisionInstance(input.instanceId));
+      // Await — the client refetches `getInstance` immediately after this
+      // mutation lands (via the `Channels.decisionInstance` subscription), so
+      // the cache must be cleared before we respond or the refetch races back
+      // a stale snapshot.
+      await invalidateDecisionInstance(input.instanceId);
 
       ctx.registerMutationChannels([
         Channels.decisionInstance(input.instanceId),

@@ -266,10 +266,14 @@ export const invalidate = async ({
   // TODO: support invalidating entire trees
   if (data) {
     memCache.set(cacheKey, { data });
-    set(cacheKey, data);
+    await set(cacheKey, data);
   } else {
     memCache.delete(cacheKey);
-    set(cacheKey, null, 1000);
+    // Await the Redis del — callers that `await invalidate(...)` (rather than
+    // wrapping in `waitUntil`) rely on the entry being cleared before they
+    // return. Without this, a writer's response can race ahead of the Redis
+    // round-trip, letting a follow-up read serve the stale Redis copy.
+    await set(cacheKey, null, 1000);
   }
 };
 
