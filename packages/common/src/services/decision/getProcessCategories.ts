@@ -1,3 +1,4 @@
+import { cache } from '@op/cache';
 import { db } from '@op/db/client';
 import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
@@ -20,12 +21,19 @@ export const getProcessCategories = async ({
   user: User | undefined;
 }): Promise<ProcessCategory[]> => {
   try {
-    // Get the process instance with its process schema
-    const instance = await db.query.processInstances.findFirst({
-      where: { id: processInstanceId },
-      with: {
-        process: true,
-      },
+    // The DB load is viewer-independent, so cache it under `[id, 'categories']`.
+    // The access check stays outside the cache, so a hit can never bypass
+    // authorization.
+    const instance = await cache({
+      type: 'decision',
+      params: [processInstanceId, 'categories'],
+      fetch: () =>
+        db.query.processInstances.findFirst({
+          where: { id: processInstanceId },
+          with: {
+            process: true,
+          },
+        }),
     });
 
     if (!instance || !instance.process) {

@@ -1,4 +1,8 @@
-import { Channels, submitManualSelection } from '@op/common';
+import {
+  Channels,
+  invalidateDecisionInstance,
+  submitManualSelection,
+} from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -19,6 +23,12 @@ export const submitManualSelectionRouter = router({
         proposalIds: input.proposalIds,
         user: ctx.user,
       });
+
+      // Await — the client refetches `getInstance` immediately after this
+      // mutation lands (via the `Channels.decisionInstance` subscription), so
+      // the cache must be cleared before we respond or the refetch races back
+      // a stale snapshot.
+      await invalidateDecisionInstance(input.processInstanceId);
 
       ctx.registerMutationChannels([
         Channels.decisionInstance(input.processInstanceId),

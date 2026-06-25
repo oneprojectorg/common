@@ -1,5 +1,9 @@
 import { trackPhaseEndDateChanged } from '@op/analytics';
-import { Channels, updateDecisionInstance } from '@op/common';
+import {
+  Channels,
+  invalidateDecisionInstance,
+  updateDecisionInstance,
+} from '@op/common';
 import { waitUntil } from '@vercel/functions';
 
 import {
@@ -19,6 +23,12 @@ export const updateDecisionInstanceRouter = router({
         ...input,
         user,
       });
+
+      // Await — the client refetches `getInstance` immediately after this
+      // mutation lands (via the `Channels.decisionInstance` subscription), so
+      // the cache must be cleared before we respond or the refetch races back
+      // a stale snapshot.
+      await invalidateDecisionInstance(input.instanceId);
 
       ctx.registerMutationChannels([
         Channels.decisionInstance(input.instanceId),

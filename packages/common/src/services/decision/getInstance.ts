@@ -1,3 +1,4 @@
+import { cache } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { ProposalStatus, organizations } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
@@ -70,25 +71,33 @@ const resolveInstanceAccess = async (
 
 export const getInstance = async ({ instanceId, user }: GetInstanceInput) => {
   try {
-    const instance = await db.query.processInstances.findFirst({
-      where: { id: instanceId },
-      with: {
-        process: true,
-        owner: true,
-        steward: true,
-        profile: {
-          columns: {
-            slug: true,
+    // The DB load is viewer-independent, so cache it under `[id, 'instance']`.
+    // The access check + per-user access bits run on every call, outside the
+    // cache, so a hit can never bypass authorization.
+    const instance = await cache({
+      type: 'decision',
+      params: [instanceId, 'instance'],
+      fetch: () =>
+        db.query.processInstances.findFirst({
+          where: { id: instanceId },
+          with: {
+            process: true,
+            owner: true,
+            steward: true,
+            profile: {
+              columns: {
+                slug: true,
+              },
+            },
+            proposals: {
+              columns: {
+                id: true,
+                status: true,
+                submittedByProfileId: true,
+              },
+            },
           },
-        },
-        proposals: {
-          columns: {
-            id: true,
-            status: true,
-            submittedByProfileId: true,
-          },
-        },
-      },
+        }),
     });
 
     if (!instance) {
