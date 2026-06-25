@@ -8,6 +8,8 @@ import { LuLink, LuPlay } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { useDecisionTranslationOptional } from '@/components/decisions/DecisionTranslationContext';
+
 import { iconComponentForMime } from './ResourceCard';
 import { isVideoUrl } from './utils';
 
@@ -41,6 +43,9 @@ export const PinnedResourceCard = ({
   signedUrl?: string | null;
 }) => {
   const t = useTranslations();
+  const decisionTranslation = useDecisionTranslationOptional();
+  const title =
+    decisionTranslation?.resources[resource.id]?.title ?? resource.title;
   const Icon = iconForResource(resource);
   const href = hrefForResource(resource, signedUrl);
 
@@ -49,7 +54,7 @@ export const PinnedResourceCard = ({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={resource.title}
+      aria-label={title}
       className="group block rounded-lg border p-2 outline-none hover:bg-primary-tealWhite focus-visible:ring-2 focus-visible:ring-primary-teal focus-visible:ring-offset-2"
     >
       <div className="flex items-center gap-2">
@@ -57,9 +62,7 @@ export const PinnedResourceCard = ({
           <Icon className="size-4 text-neutral-black" />
         </div>
         <div className="flex min-w-0 flex-col gap-0.5">
-          <p className="truncate text-base text-neutral-black">
-            {resource.title}
-          </p>
+          <p className="truncate text-base text-neutral-black">{title}</p>
           {resource.createdAt ? (
             <p className="truncate text-sm text-neutral-gray4">
               {t('Added {date}', { date: formatDate(resource.createdAt) })}

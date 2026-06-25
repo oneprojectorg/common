@@ -18,10 +18,26 @@ import {
 
 import { useTranslations } from '@/lib/i18n';
 
+import { useDecisionTranslationOptional } from '@/components/decisions/DecisionTranslationContext';
+
 import { getExtension, hostnameForDisplay } from './utils';
 
 type LinkResource = Extract<ResourceInCollection, { type: 'link' }>;
 type DocumentResource = Extract<ResourceInCollection, { type: 'document' }>;
+
+// Returns the translated copy for a resource if the decision is currently
+// being viewed in a translated state; otherwise the original strings on the
+// resource. Used by every card variant so they stay in sync.
+const useTranslatedResourceCopy = (
+  resource: ResourceInCollection,
+): { title: string; description: string | null } => {
+  const decisionTranslation = useDecisionTranslationOptional();
+  const translated = decisionTranslation?.resources[resource.id];
+  return {
+    title: translated?.title ?? resource.title,
+    description: translated?.description ?? resource.description,
+  };
+};
 
 export const ResourceCard = ({
   resource,
@@ -52,6 +68,7 @@ const ResourceLinkCard = ({
   trailing?: ReactNode;
 }) => {
   const href = resource.linkUrl ? sanitizeUrl(resource.linkUrl) : null;
+  const { title, description } = useTranslatedResourceCopy(resource);
 
   // Thumbnail is resolved server-side during list hydration (resourceDTO),
   // so the card doesn't fan out N preview queries. `ogImageFailed` covers
@@ -70,8 +87,8 @@ const ResourceLinkCard = ({
 
   return (
     <ResourceCardShell
-      title={resource.title}
-      description={resource.description}
+      title={title}
+      description={description}
       subtitle={hostnameForDisplay(resource.linkUrl)}
       preview={preview}
       href={href}
@@ -90,6 +107,7 @@ const ResourceDocumentCard = ({
   trailing?: ReactNode;
 }) => {
   const t = useTranslations();
+  const { title, description } = useTranslatedResourceCopy(resource);
   const attachment = resource.attachment;
   const isImage = attachment?.mimeType.startsWith('image/') === true;
 
@@ -115,8 +133,8 @@ const ResourceDocumentCard = ({
 
   return (
     <ResourceCardShell
-      title={resource.title}
-      description={resource.description}
+      title={title}
+      description={description}
       subtitle={subtitle}
       preview={preview}
       href={signedUrl}

@@ -1,6 +1,13 @@
 'use client';
 
-import { createContext, useContext, useState } from 'react';
+import type { PostTranslation, ResourceTranslation } from '@op/common/client';
+import {
+  type Dispatch,
+  type SetStateAction,
+  createContext,
+  useContext,
+  useState,
+} from 'react';
 
 interface DecisionTranslation {
   headline?: string;
@@ -8,11 +15,13 @@ interface DecisionTranslation {
   additionalInfo?: string;
   description?: string;
   phases: Array<{ id: string; name: string }>;
+  posts: Record<string, PostTranslation>;
+  resources: Record<string, ResourceTranslation>;
 }
 
 interface DecisionTranslationContextValue {
   translation: DecisionTranslation | null;
-  setTranslation: (translation: DecisionTranslation | null) => void;
+  setTranslation: Dispatch<SetStateAction<DecisionTranslation | null>>;
 }
 
 const DecisionTranslationContext =
@@ -46,9 +55,19 @@ export function useDecisionTranslation(): DecisionTranslation | null {
   return ctx.translation;
 }
 
-export function useSetDecisionTranslation(): (
-  translation: DecisionTranslation | null,
-) => void {
+/**
+ * Optional variant for components like PostItem / ResourceCard that render
+ * both inside and outside a decision context. Returns null when no provider
+ * is mounted, so the caller can fall back to original content.
+ */
+export function useDecisionTranslationOptional(): DecisionTranslation | null {
+  const ctx = useContext(DecisionTranslationContext);
+  return ctx?.translation ?? null;
+}
+
+export function useSetDecisionTranslation(): Dispatch<
+  SetStateAction<DecisionTranslation | null>
+> {
   const ctx = useContext(DecisionTranslationContext);
   if (!ctx) {
     throw new Error(

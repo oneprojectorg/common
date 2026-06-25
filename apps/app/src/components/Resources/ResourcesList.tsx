@@ -10,6 +10,7 @@ import { LuUpload } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
+import { useDecisionTranslationOptional } from '@/components/decisions/DecisionTranslationContext';
 
 import { ResourceCard } from './ResourceCard';
 import { ResourceDropZone } from './ResourceDropZone';
@@ -26,6 +27,7 @@ export const ResourcesList = ({
   canManage: boolean;
 }) => {
   const t = useTranslations();
+  const decisionTranslation = useDecisionTranslationOptional();
   const utils = trpc.useUtils();
   const [deleteTarget, setDeleteTarget] = useState<ResourceInCollection | null>(
     null,
@@ -127,7 +129,10 @@ export const ResourcesList = ({
             items={items}
             onChange={handleReorder}
             dragTrigger="item"
-            getItemLabel={(resource) => resource.title}
+            getItemLabel={(resource) =>
+              decisionTranslation?.resources[resource.id]?.title ??
+              resource.title
+            }
             className="gap-4"
           >
             {(resource) => renderItem(resource)}
