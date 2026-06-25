@@ -20,10 +20,12 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   // i18n ROUTING
   const pathname = request.nextUrl.pathname;
 
-  // Expose the current path to Server Components (Next doesn't surface it to
-  // layouts otherwise) so the walled-garden gate can build /login?redirect=...
+  // Expose the current path (and query string) to Server Components (Next
+  // doesn't surface them to layouts otherwise) so the walled-garden gate can
+  // build /login?redirect=... and detect the promote onboarding (?promote=1).
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-pathname', pathname);
+  requestHeaders.set('x-search', request.nextUrl.search);
 
   const pathnameIsMissingLocale = i18nConfig.locales.every(
     (locale) =>
