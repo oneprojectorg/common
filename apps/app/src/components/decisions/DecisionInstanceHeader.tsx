@@ -2,7 +2,7 @@
 
 import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
-import { Button, ButtonLink } from '@op/ui/Button';
+import { ButtonLink } from '@op/ui/Button';
 import { Header1 } from '@op/ui/Header';
 import { IconButton } from '@op/ui/IconButton';
 import { MegaphoneIcon } from '@op/ui/MegaphoneIcon';
@@ -14,7 +14,7 @@ import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
 
 import { LocaleChooser } from '../LocaleChooser';
-import { UserAvatarMenu } from '../SiteHeader';
+import { HeaderUserMenu } from '../SiteHeader';
 import { panelStateParser } from './panelState';
 
 export const DecisionInstanceHeader = ({
@@ -119,18 +119,7 @@ export const DecisionInstanceHeader = ({
           </ButtonLink>
         )}
         <LocaleChooser />
-        {user && !user.isAnonymous ? (
-          <UserAvatarMenu />
-        ) : (
-          // Native nav: /login is outside the [locale] tree, so a RAC link 404s at /en/login.
-          <Button
-            color="primary"
-            size="small"
-            onPress={() => window.location.assign('/login')}
-          >
-            {t('Log in')}
-          </Button>
-        )}
+        <HeaderUserMenu />
       </div>
 
       {centerSlot ? (

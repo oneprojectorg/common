@@ -471,6 +471,32 @@ export const UserAvatarMenu = ({ className }: { className?: string }) => {
 };
 
 /**
+ * Account control for headers on public surfaces: signed-in, non-anonymous
+ * users get the avatar menu; logged-out visitors and anonymous accounts get a
+ * "Log in" button instead (they have no account menu to show).
+ */
+export const HeaderUserMenu = ({ className }: { className?: string }) => {
+  const t = useTranslations();
+  const { user } = useUser();
+
+  if (user && !user.isAnonymous) {
+    return <UserAvatarMenu className={className} />;
+  }
+
+  return (
+    // Native nav: /login is outside the [locale] tree, so a RAC link 404s at /en/login.
+    <Button
+      color="primary"
+      size="small"
+      className={className}
+      onPress={() => window.location.assign('/login')}
+    >
+      {t('Log in')}
+    </Button>
+  );
+};
+
+/**
  * Right-side header actions. Creating and the account menu are authed
  * features; signed-out visitors only get the locale chooser.
  */
