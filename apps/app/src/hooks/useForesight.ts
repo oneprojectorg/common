@@ -16,6 +16,12 @@ ForesightManager.initialize({
   defaultHitSlop: 50,
   positionHistorySize: 10,
   scrollMargin: 200,
+  // Foresight otherwise writes debug attributes (data-active, data-predicted,
+  // data-status) onto every registered element. Its `data-active` (= "tracked
+  // for prefetch") collides with the data-active our UI components use for
+  // selected state — e.g. a sense Tabs trigger rendered as a Link gets styled
+  // active on every tab. Off in prod; the foresight devtools can re-enable it.
+  setDataAttributes: false,
 });
 
 export function useForesight<T extends HTMLElement = HTMLElement>(
