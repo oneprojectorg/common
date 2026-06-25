@@ -115,7 +115,7 @@ export function ReviewAssignmentsList({
         <ReviewAssignmentListSkeletonGrid />
       ) : assignments.length === 0 ? (
         <EmptyState icon={<LuLeaf className="size-6" />}>
-          <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+          <Header3 className="font-serif !text-title-base text-neutral-black">
             {statusFilter
               ? t('No reviews found matching the current filters.')
               : t('No reviews assigned yet')}

@@ -22,7 +22,7 @@ export const NoVoteFound = () => {
   const t = useTranslations();
   return (
     <EmptyState icon={<LuLeaf className="size-6" />}>
-      <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+      <Header3 className="font-serif !text-title-base text-neutral-black">
         {t('You did not vote in this process.')}
       </Header3>
     </EmptyState>

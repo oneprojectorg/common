@@ -174,7 +174,7 @@ function ResultsPageContent({
                 fallbacks={{
                   404: () => (
                     <EmptyState icon={<LuLeaf className="size-6" />}>
-                      <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+                      <Header3 className="font-serif !text-title-base text-neutral-black">
                         {t('Results are still being processed.')}
                       </Header3>
                       <p className="text-base text-neutral-charcoal">

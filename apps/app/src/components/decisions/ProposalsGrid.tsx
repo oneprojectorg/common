@@ -82,7 +82,7 @@ const NoProposalsFound = ({ hasFilter }: { hasFilter: boolean }) => {
 
   return (
     <EmptyState icon={<LuLeaf className="size-6" />}>
-      <Header3 className="font-serif !text-title-base font-light text-neutral-black">
+      <Header3 className="font-serif !text-title-base text-neutral-black">
         {hasFilter
           ? t('No proposals found matching the current filters.')
           : t('No proposals yet')}

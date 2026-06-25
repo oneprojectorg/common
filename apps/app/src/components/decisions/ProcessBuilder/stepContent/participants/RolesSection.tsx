@@ -405,7 +405,7 @@ function RolesSectionContent({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <Header2 className="font-serif text-title-sm font-light">
+        <Header2 className="font-serif text-title-sm">
           {t('Roles & permissions')}
         </Header2>
         <Button
