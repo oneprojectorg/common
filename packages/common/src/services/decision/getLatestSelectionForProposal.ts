@@ -1,5 +1,5 @@
 import { db } from '@op/db/client';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
@@ -20,7 +20,7 @@ export const getLatestSelectionForProposal = async ({
   user,
 }: {
   proposalId: string;
-  user: ClaimsUser | undefined;
+  user: User | undefined;
 }): Promise<ProposalSelection | null> => {
   const proposal = await db.query.proposals.findFirst({
     where: { id: proposalId },

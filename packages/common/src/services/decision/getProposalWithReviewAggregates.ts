@@ -1,5 +1,5 @@
 import { db } from '@op/db/client';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { z } from 'zod';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
@@ -31,7 +31,7 @@ export type GetProposalWithReviewAggregatesInput = z.infer<
  * `aggregates.assignmentsCount` but are not surfaced in `reviews[]`.
  */
 export async function getProposalWithReviewAggregates(
-  input: GetProposalWithReviewAggregatesInput & { user: ClaimsUser },
+  input: GetProposalWithReviewAggregatesInput & { user: User },
 ): Promise<ProposalWithSubmittedReviews> {
   const { user, processInstanceId, proposalId } = input;
 

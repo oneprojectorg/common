@@ -5,7 +5,7 @@ import {
   proposals,
   taxonomyTerms,
 } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { count as countFn } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -65,7 +65,7 @@ export type ListProposalsWithReviewAggregatesInput = z.infer<
  * after the admin check.
  */
 export async function listProposalsWithReviewAggregates(
-  input: ListProposalsWithReviewAggregatesInput & { user: ClaimsUser },
+  input: ListProposalsWithReviewAggregatesInput & { user: User },
 ): Promise<ProposalsWithReviewAggregatesList> {
   const { user, processInstanceId } = input;
 

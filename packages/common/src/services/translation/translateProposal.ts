@@ -1,4 +1,4 @@
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import type { TranslatableEntry } from '@op/translation';
 
 import { getProposal } from '../decision/getProposal';
@@ -26,7 +26,7 @@ export async function translateProposal({
 }: {
   profileId: string;
   targetLocale: SupportedLocale;
-  user: ClaimsUser | undefined;
+  user: User;
 }): Promise<{
   translated: ProposalTranslation;
   sourceLocale: string;

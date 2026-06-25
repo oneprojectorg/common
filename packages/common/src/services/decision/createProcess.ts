@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
 import { decisionProcesses } from '@op/db/schema';
-import { ClaimsUser } from '@op/supabase/lib';
+import { User } from '@op/supabase/lib';
 
 import { CommonError, UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
@@ -18,7 +18,7 @@ export const createProcess = async ({
   user,
 }: {
   data: CreateProcessInput;
-  user: ClaimsUser;
+  user: User;
 }) => {
   try {
     const dbUser = await assertUserByAuthId(user.id);

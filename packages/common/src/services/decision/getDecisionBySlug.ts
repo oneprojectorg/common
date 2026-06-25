@@ -1,6 +1,6 @@
 import { and, countDistinct, db, eq, ne } from '@op/db/client';
 import { EntityType, ProposalStatus, proposals } from '@op/db/schema';
-import { ClaimsUser } from '@op/supabase/lib';
+import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
@@ -39,7 +39,7 @@ export const getDecisionBySlug = async ({
   user,
   slug,
 }: {
-  user: ClaimsUser | undefined;
+  user: User | undefined;
   slug: string;
 }): Promise<DecisionProfileItem> => {
   const profile = await db.query.profiles.findFirst({

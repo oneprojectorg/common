@@ -6,8 +6,7 @@ import {
   profiles,
   proposals,
 } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
-import { waitUntil } from '@vercel/functions';
+import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
 import {
@@ -46,7 +45,7 @@ export const updateProposal = async ({
 }: {
   proposalId: string;
   data: UpdateProposalInput;
-  user: ClaimsUser;
+  user: User;
 }) => {
   const dbUser = await assertUserByAuthId(user.id);
 

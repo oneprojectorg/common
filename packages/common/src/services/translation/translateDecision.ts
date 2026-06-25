@@ -1,6 +1,6 @@
 import { and, db, eq } from '@op/db/client';
 import { EntityType, processInstances, profiles } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import type { TranslatableEntry, TranslationResult } from '@op/translation';
 import type { JSONContent } from '@tiptap/core';
 import { generateHTML } from '@tiptap/html';
@@ -35,7 +35,7 @@ export async function translateDecision({
 }: {
   decisionProfileId: string;
   targetLocale: SupportedLocale;
-  user: ClaimsUser | undefined;
+  user: User;
 }): Promise<DecisionTranslationResult> {
   const instances = await db
     .select({

@@ -214,7 +214,6 @@ export class TestDecisionsDataManager {
       user_metadata: authUser.user_metadata,
       app_metadata: authUser.app_metadata,
       aud: authUser.aud,
-      created_at: authUser.created_at,
     };
 
     // 2. Create organization via service
@@ -592,7 +591,6 @@ export class TestDecisionsDataManager {
       user_metadata: authUser.user_metadata,
       app_metadata: authUser.app_metadata,
       aud: authUser.aud,
-      created_at: authUser.created_at,
     };
 
     return {

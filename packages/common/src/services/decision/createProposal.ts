@@ -10,7 +10,7 @@ import {
   proposalCategories,
   proposals,
 } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
@@ -40,7 +40,7 @@ export const createProposal = async ({
   user,
 }: {
   data: CreateProposalInput;
-  user: ClaimsUser;
+  user: User;
 }) => {
   const authUserId = user.id;
 

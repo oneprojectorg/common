@@ -1,7 +1,7 @@
 import type { ChannelName } from '@op/common/realtime';
 import type { db } from '@op/db/client';
 import type { tables } from '@op/db/tables';
-import type { ClaimsUser, User } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import type { MiddlewareFunction } from '@trpc/server/unstable-core-do-not-import';
 import type { SerializeOptions } from 'cookie';
 
@@ -25,24 +25,18 @@ export interface TContext {
   isServerSideCall?: boolean;
 }
 
-/** Context produced by the authoritative auth path (confirmed / network /
- * platform-admin middlewares). `user` is the full Supabase `User`, including
- * server-side timestamps like `last_sign_in_at` and `confirmed_at`. */
+/** Context after successful user authentication. `user` is our internal
+ * {@link User} shape — only the fields the verified JWT carries; callers that
+ * need authoritative server-side fields (`confirmed_at`, `last_sign_in_at`,
+ * ...) reach for the SDK's `UserResponse` directly. */
 export interface TContextWithUser {
   user: User;
 }
 
-/** Context produced by the local-verify auth path (`withResolvedUser` →
- * `withAuthenticatedUser`). `user` is a {@link ClaimsUser}: only the fields
- * carried in the JWT, with server-side timestamps deliberately absent. */
-export interface TContextWithClaimsUser {
-  user: ClaimsUser;
-}
-
-/** Context after optional user resolution on the local-verify path: `user` is
- * a {@link ClaimsUser}, or `undefined` when the caller has no valid session. */
-export interface TContextWithMaybeClaimsUser {
-  user?: ClaimsUser;
+/** Context after optional user resolution: `user` is the {@link User} shape,
+ * or `undefined` when the caller has no valid session. */
+export interface TContextWithMaybeUser {
+  user?: User;
 }
 
 export interface TContextWithAnalytics {

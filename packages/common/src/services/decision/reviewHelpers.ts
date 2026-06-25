@@ -3,7 +3,7 @@ import {
   type ProposalReviewRequest,
   ProposalReviewRequestState,
 } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 
 import { NotFoundError, UnauthorizedError, ValidationError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
@@ -97,7 +97,7 @@ export async function assertReviewAssignmentContext({
   user,
 }: {
   assignmentId: string;
-  user: ClaimsUser;
+  user: User;
 }) {
   const [assignment, dbUser] = await Promise.all([
     db.query.proposalReviewAssignments.findFirst({

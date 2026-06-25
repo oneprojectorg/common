@@ -1,8 +1,5 @@
 import { getCachedAuthClaims } from '../supabase/server';
-import type {
-  MiddlewareBuilderBase,
-  TContextWithMaybeClaimsUser,
-} from '../types';
+import type { MiddlewareBuilderBase, TContextWithMaybeUser } from '../types';
 import { userFromClaims } from '../utils/userFromClaims';
 
 /**
@@ -11,17 +8,18 @@ import { userFromClaims } from '../utils/userFromClaims';
  * no valid session. Performs no authorization.
  *
  * Identity is established by verifying the caller's JWT locally against the
- * project JWKS — no GoTrue HTTPS round-trip on the common path. `ctx.user`
- * therefore has the narrower {@link ClaimsUser} shape — server-side
- * timestamps such as `confirmed_at` and `last_sign_in_at` are not present.
- * Stricter middlewares ({@link withConfirmedUser},
- * {@link withNetworkAuthenticatedUser}, {@link withAuthenticatedPlatformAdmin})
- * still call the authoritative `getCachedAuthUser` and surface a full
- * Supabase `User` because they read those fields.
+ * project JWKS — no GoTrue HTTPS round-trip on the common path. Stricter
+ * middlewares ({@link withConfirmedUser}, {@link withNetworkAuthenticatedUser},
+ * {@link withAuthenticatedPlatformAdmin}) still call the authoritative
+ * `getCachedAuthUser` because they need to read server-side fields
+ * (`confirmed_at`, `last_sign_in_at`) the JWT does not carry — those reads
+ * happen inside the middleware (or in the two call sites that go directly
+ * through `UserResponse`), not via `ctx.user`.
  */
-const withResolvedUser: MiddlewareBuilderBase<
-  TContextWithMaybeClaimsUser
-> = async ({ ctx, next }) => {
+const withResolvedUser: MiddlewareBuilderBase<TContextWithMaybeUser> = async ({
+  ctx,
+  next,
+}) => {
   const result = await getCachedAuthClaims(ctx);
 
   const user =

@@ -13,7 +13,7 @@ import {
   postsToProfiles,
   profileRelationships,
 } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { createSBServiceClient } from '@op/supabase/server';
 import { checkPermission, permission } from 'access-zones';
 
@@ -58,7 +58,7 @@ export const getProposal = async ({
   user,
 }: {
   profileId: string;
-  user: ClaimsUser | undefined;
+  user: User | undefined;
 }): Promise<
   Omit<Proposal, 'proposalData'> & {
     proposalData: ProposalData;
@@ -300,7 +300,7 @@ export const getPermissionsOnProposal = async ({
   user,
   proposal,
 }: {
-  user: ClaimsUser | undefined;
+  user: User | undefined;
   proposal: Proposal & { processInstance: ProcessInstance };
 }): Promise<{ access: DecisionRolePermissions }> => {
   const roles = await getProfileAccessRoles({

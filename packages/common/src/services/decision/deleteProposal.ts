@@ -1,6 +1,6 @@
 import { db, eq } from '@op/db/client';
 import { ProcessInstance, proposals } from '@op/db/schema';
-import { ClaimsUser } from '@op/supabase/lib';
+import { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 
 import {
@@ -16,7 +16,7 @@ export const deleteProposal = async ({
   user,
 }: {
   proposalId: string;
-  user: ClaimsUser;
+  user: User;
 }) => {
   try {
     const [sessionUser, existingProposal] = await Promise.all([

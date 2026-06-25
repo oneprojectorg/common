@@ -1,7 +1,7 @@
 import { cache } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { ProposalStatus, organizations } from '@op/db/schema';
-import { ClaimsUser } from '@op/supabase/lib';
+import { User } from '@op/supabase/lib';
 import { checkPermission, collapseRoles, permission } from 'access-zones';
 import type { NormalizedRole } from 'access-zones';
 
@@ -18,7 +18,7 @@ import type { DecisionInstanceData } from './schemas/instanceData';
 
 export interface GetInstanceInput {
   instanceId: string;
-  user: ClaimsUser | undefined;
+  user: User | undefined;
 }
 
 const ALL_TRUE_ACCESS: DecisionRolePermissions = {

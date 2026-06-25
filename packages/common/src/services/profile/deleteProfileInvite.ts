@@ -1,6 +1,6 @@
 import { db, eq } from '@op/db/client';
 import { type ProfileInvite, profileInvites } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 
 import { NotFoundError } from '../../utils/error';
 import { assertProfileAdmin } from '../assert';
@@ -14,7 +14,7 @@ export const deleteProfileInvite = async ({
   user,
 }: {
   inviteId: string;
-  user: ClaimsUser;
+  user: User;
 }): Promise<ProfileInvite> => {
   // Find the invite
   const invite = await db.query.profileInvites.findFirst({

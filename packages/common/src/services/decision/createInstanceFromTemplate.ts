@@ -7,7 +7,7 @@ import {
   profileUsers,
   profiles,
 } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { randomUUID } from 'crypto';
 
 import { CommonError, UnauthorizedError } from '../../utils';
@@ -130,7 +130,7 @@ export const createDecisionInstance = async ({
 export type CreateInstanceFromTemplateOptions = {
   templateId: string;
   name: string;
-  user: ClaimsUser;
+  user: User;
 };
 
 /**

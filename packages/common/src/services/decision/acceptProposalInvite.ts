@@ -4,7 +4,7 @@ import {
   profileUserToAccessRoles,
   profileUsers,
 } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 
 import {
   CommonError,
@@ -23,7 +23,7 @@ export const acceptProposalInvite = async ({
   user,
 }: {
   profileId: string;
-  user: ClaimsUser;
+  user: User;
 }) => {
   const email = user.email;
   if (!email) {

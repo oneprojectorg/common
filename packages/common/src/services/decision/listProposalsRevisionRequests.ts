@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
 import type { ProposalReviewRequestState } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 
 import { UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
@@ -19,7 +19,7 @@ export async function listProposalsRevisionRequests({
   user,
 }: {
   states?: ProposalReviewRequestState[];
-  user: ClaimsUser;
+  user: User;
 }) {
   const commonUser = await assertUserByAuthId(user.id);
 

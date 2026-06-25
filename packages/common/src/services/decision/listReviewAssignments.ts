@@ -1,5 +1,5 @@
 import { db } from '@op/db/client';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 
 import { UnauthorizedError } from '../../utils';
 import { assertUserByAuthId } from '../assert';
@@ -27,7 +27,7 @@ export async function listReviewAssignments({
   processInstanceId: string;
   status?: string;
   dir?: 'asc' | 'desc';
-  user: ClaimsUser;
+  user: User;
 }): Promise<ReviewAssignmentList> {
   const [instance, dbUser] = await Promise.all([
     getInstance({ instanceId: processInstanceId, user }),

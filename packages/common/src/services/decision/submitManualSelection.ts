@@ -7,7 +7,7 @@ import {
   stateTransitionHistory,
 } from '@op/db/schema';
 import { Events, event } from '@op/events';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import {
@@ -30,7 +30,7 @@ import type {
 export interface SubmitManualSelectionInput {
   processInstanceId: string;
   proposalIds: string[];
-  user: ClaimsUser;
+  user: User;
 }
 
 /**

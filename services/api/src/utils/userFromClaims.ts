@@ -1,11 +1,10 @@
-import type { ClaimsUser, JwtPayload } from '@op/supabase/lib';
+import type { JwtPayload, User } from '@op/supabase/lib';
 
 /**
- * Project the verified JWT payload onto the {@link ClaimsUser} shape that
- * downstream code (services, encoders, analytics) consumes on the
- * `authenticatedProcedure` / `openProcedure` paths.
+ * Project the verified JWT payload onto the {@link User} shape that downstream
+ * code (services, encoders, analytics) consumes.
  */
-export const userFromClaims = (claims: JwtPayload): ClaimsUser => {
+export const userFromClaims = (claims: JwtPayload): User => {
   // `sub`, `role`, `aud` are typed as required on JwtPayload, so no runtime
   // guards. `email`/`phone`/`*_metadata`/`is_anonymous` are typed as
   // `[key: string]: any` extras, so they DO need shape validation against a

@@ -1,4 +1,4 @@
-import { ClaimsUser } from '@op/supabase/lib';
+import { User } from '@op/supabase/lib';
 
 import { JoinProfileRequestWithProfiles } from './types';
 import { validateJoinProfileRequestContext } from './validateJoinProfileRequestContext';
@@ -12,7 +12,7 @@ export const getProfileJoinRequest = async ({
   requestProfileId,
   targetProfileId,
 }: {
-  user: ClaimsUser;
+  user: User;
   requestProfileId: string;
   targetProfileId: string;
 }): Promise<JoinProfileRequestWithProfiles | null> => {

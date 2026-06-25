@@ -1,5 +1,5 @@
 import { db, sql } from '@op/db/client';
-import { ClaimsUser } from '@op/supabase/lib';
+import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { assertOrgAccess, assertOrganizationByProfileId } from '../assert';
@@ -9,7 +9,7 @@ export const getOrganizationUsers = async ({
   user,
 }: {
   profileId: string;
-  user: ClaimsUser;
+  user: User;
 }) => {
   // First, find the organization by profileId
   const organization = await assertOrganizationByProfileId(profileId);

@@ -15,7 +15,7 @@ const baseClaims: JwtPayload = {
 };
 
 describe('userFromClaims', () => {
-  it('maps the standard authenticated payload onto ClaimsUser fields', () => {
+  it('maps the standard authenticated payload onto User fields', () => {
     const user = userFromClaims({
       ...baseClaims,
       email: 'user@oneproject.org',

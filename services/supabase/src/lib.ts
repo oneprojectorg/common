@@ -5,20 +5,22 @@ import type {
   AuthOtpResponse,
   EmailOtpType,
   JwtPayload,
-  User,
+  User as SupabaseAuthUser,
   UserResponse,
 } from '@supabase/supabase-js';
 
 /**
- * Narrower auth identity returned by the local-verify (JWT claims) path: only
- * the fields a verified JWT actually carries. Server-side timestamps
- * (`created_at`, `confirmed_at`, `email_confirmed_at`, `last_sign_in_at`) are
- * intentionally absent. Service-layer functions that don't read those should
- * accept this type rather than the full {@link User}, so they can be called
- * from both authoritative and claims-based procedure tiers.
+ * Our auth identity: only the fields a verified Supabase JWT actually carries.
+ * Server-side timestamps (`created_at`, `confirmed_at`, `email_confirmed_at`,
+ * `last_sign_in_at`) and other authoritative-only fields (`identities`,
+ * `factors`, ...) are intentionally absent — they're not in the JWT and the
+ * vast majority of code paths shouldn't depend on them. The two production
+ * sites that historically need those wider fields (`verifyAuthentication`,
+ * `getPlatformStats`) reach for the SDK's `UserResponse` / direct
+ * `@supabase/supabase-js` import instead.
  */
-export type ClaimsUser = Pick<
-  User,
+export type User = Pick<
+  SupabaseAuthUser,
   | 'id'
   | 'aud'
   | 'role'
@@ -36,6 +38,5 @@ export {
   createServerClient,
   type EmailOtpType,
   type JwtPayload,
-  type User,
   type UserResponse,
 };

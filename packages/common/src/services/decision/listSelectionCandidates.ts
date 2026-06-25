@@ -1,6 +1,6 @@
 import { type DbClient, db as defaultDb, eq } from '@op/db/client';
 import { proposalCategories } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError } from '../../utils';
@@ -17,7 +17,7 @@ export interface SelectionCandidates {
 
 interface ListSelectionCandidatesInput {
   processInstanceId: string;
-  user: ClaimsUser;
+  user: User;
   /** Filter via the canonical `proposalCategories` join, not `proposalData.category`. */
   categoryId?: string;
   /**

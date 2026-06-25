@@ -1,13 +1,13 @@
 import { db, eq } from '@op/db/client';
 import { EntityType, profiles } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { z } from 'zod';
 
 import { NotFoundError } from '../../utils';
 
 export interface GetProfileParams {
   slug: string;
-  user?: ClaimsUser;
+  user?: User;
 }
 
 const profileResultSchema = z.object({

@@ -1,6 +1,6 @@
 import { type DbClient, db as defaultDb, eq } from '@op/db/client';
 import { accessRolePermissionsOnAccessZones, accessRoles } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { CommonError, NotFoundError, UnauthorizedError } from '../../utils';
@@ -27,7 +27,7 @@ export type DuplicateInstanceOptions = {
   name: string;
   stewardProfileId?: string;
   include: DuplicateInstanceIncludeFlags;
-  user: ClaimsUser;
+  user: User;
 };
 
 /**

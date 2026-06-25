@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
 import { type Organization, type Profile, organizations } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 
@@ -23,7 +23,7 @@ export const assertTargetProfileAdminAccess = async ({
   user,
   targetProfileId,
 }: {
-  user: ClaimsUser;
+  user: User;
   targetProfileId: string;
 }): Promise<TargetProfileAdminContext> => {
   const [targetProfile, organization] = await Promise.all([

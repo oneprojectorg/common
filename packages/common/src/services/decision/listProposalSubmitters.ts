@@ -10,7 +10,7 @@ import {
   proposals,
   users,
 } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 import { countDistinct } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
@@ -35,7 +35,7 @@ export const listProposalSubmitters = async ({
   user,
 }: {
   input: ListProposalSubmittersInput;
-  user: ClaimsUser | undefined;
+  user: User | undefined;
 }) => {
   const { processInstanceId } = input;
 

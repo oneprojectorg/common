@@ -1,6 +1,6 @@
 import { and, db, eq, gt, lt, or, sql } from '@op/db/client';
 import { profileUsers, profiles, users } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 
 import {
   type PaginatedResult,
@@ -44,7 +44,7 @@ export const listProfileUsers = async ({
   limit = 25,
 }: {
   profileId: string;
-  user: ClaimsUser;
+  user: User;
   orderBy?: ProfileUserOrderBy;
   dir?: SortDir;
   query?: string;

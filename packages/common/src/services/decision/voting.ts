@@ -7,7 +7,7 @@ import {
   processInstances,
   proposals,
 } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
 
@@ -340,7 +340,7 @@ export const getVotingStatus = async ({
   user,
 }: {
   data: GetVotingStatusInput;
-  user: ClaimsUser | undefined;
+  user: User | undefined;
 }): Promise<VotingStatusResult> => {
   try {
     // Public / anonymous callers have no individual profile (→ no ballot).

@@ -5,7 +5,7 @@ import {
   postsToOrganizations,
   postsToProfiles,
 } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';
@@ -17,7 +17,7 @@ import {
 
 export interface DeletePostByIdOptions {
   postId: string;
-  user: ClaimsUser;
+  user: User;
 }
 
 export const deletePostById = async (options: DeletePostByIdOptions) => {

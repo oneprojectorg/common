@@ -19,7 +19,7 @@ import {
   proposalCategories,
   proposals,
 } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
@@ -57,7 +57,7 @@ export const listAllProposals = async ({
   user,
 }: {
   input: AllProposalsFilter;
-  user: ClaimsUser | undefined;
+  user: User | undefined;
 }) => {
   const { processInstanceId, status, categoryId } = input;
   const limit = input.limit ?? 50;

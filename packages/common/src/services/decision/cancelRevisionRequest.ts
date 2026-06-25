@@ -6,7 +6,7 @@ import {
   proposalReviewAssignments,
   proposalReviewRequests,
 } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { eq } from 'drizzle-orm';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
@@ -20,7 +20,7 @@ export async function cancelRevisionRequest({
 }: {
   assignmentId: string;
   revisionRequestId: string;
-  user: ClaimsUser;
+  user: User;
 }): Promise<ProposalReviewRequest & { processInstanceId: string }> {
   const context = await assertReviewAssignmentContext({
     assignmentId,

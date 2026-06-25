@@ -1,6 +1,6 @@
 import { getTextPreview } from '@op/core';
 import { db } from '@op/db/client';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import type { TranslatableEntry } from '@op/translation';
 import { permission } from 'access-zones';
 
@@ -28,7 +28,7 @@ export async function translateProposals({
 }: {
   profileIds: string[];
   targetLocale: SupportedLocale;
-  user: ClaimsUser | undefined;
+  user: User;
 }): Promise<{
   translations: Record<string, ProposalTranslation>;
   sourceLocale: string;

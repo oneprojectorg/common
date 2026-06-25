@@ -1,7 +1,7 @@
 import { get, set } from '@op/cache';
 import { db, eq } from '@op/db/client';
 import { processInstances } from '@op/db/schema';
-import { ClaimsUser } from '@op/supabase/lib';
+import { User } from '@op/supabase/lib';
 import { createSBServerClient } from '@op/supabase/server';
 import { permission } from 'access-zones';
 
@@ -29,7 +29,7 @@ export const getExportStatus = async ({
   logger,
 }: {
   exportId: string;
-  user: ClaimsUser;
+  user: User;
   logger: { info: (message: string, meta?: any) => void };
 }): Promise<ExportStatusData | { status: 'not_found' }> => {
   // Get export data from cache

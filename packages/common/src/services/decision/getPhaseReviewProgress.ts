@@ -3,7 +3,7 @@ import {
   ProposalReviewAssignmentStatus,
   proposalReviewAssignments,
 } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 
 import { UnauthorizedError } from '../../utils';
 import { getInstance } from './getInstance';
@@ -20,7 +20,7 @@ const ACTIVE_ASSIGNMENT_STATUSES = Object.values(
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 export async function getPhaseReviewProgress(
-  input: InstancePhaseRef & { user: ClaimsUser },
+  input: InstancePhaseRef & { user: User },
 ): Promise<PhaseReviewProgress> {
   const { user, processInstanceId, phaseId } = input;
 

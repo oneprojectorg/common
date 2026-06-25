@@ -5,7 +5,7 @@ import {
   organizationUserToAccessRoles,
   organizationUsers,
 } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';
@@ -23,7 +23,7 @@ export interface UpdateOrganizationUserParams {
   organizationUserId: string;
   organizationId: string;
   data: UpdateOrganizationUserData;
-  user: ClaimsUser;
+  user: User;
 }
 
 export async function updateOrganizationUser({

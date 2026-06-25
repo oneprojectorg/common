@@ -9,7 +9,7 @@ import {
   proposalCategories,
   proposals,
 } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { type NormalizedRole, checkPermission, permission } from 'access-zones';
 import { count as countFn } from 'drizzle-orm';
 
@@ -167,7 +167,7 @@ export const listProposals = async ({
   user,
 }: {
   input: ListProposalsInput;
-  user: ClaimsUser | undefined;
+  user: User | undefined;
 }) => {
   const { processInstanceId, skipAccessCheck = false } = input;
 

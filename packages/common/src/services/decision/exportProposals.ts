@@ -3,7 +3,7 @@ import { ProposalFilter } from '@op/core';
 import { db, eq } from '@op/db/client';
 import { ProposalStatus, organizations, processInstances } from '@op/db/schema';
 import { Events, event } from '@op/events';
-import { ClaimsUser } from '@op/supabase/lib';
+import { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 import { randomUUID } from 'crypto';
 
@@ -25,7 +25,7 @@ export const exportProposals = async ({
   user,
 }: {
   input: ExportProposalsInput;
-  user: ClaimsUser;
+  user: User;
 }): Promise<{ exportId: string; organizationId: string }> => {
   const { processInstanceId } = input;
 

@@ -6,7 +6,7 @@ import {
   proposalReviewAssignments,
   proposalReviews,
 } from '@op/db/schema';
-import type { ClaimsUser } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { eq, ne } from 'drizzle-orm';
 
 import { ValidationError } from '../../utils';
@@ -28,7 +28,7 @@ export async function saveReviewDraft({
   assignmentId: string;
   reviewData: RubricReviewData;
   overallComment?: string | null;
-  user: ClaimsUser;
+  user: User;
 }): Promise<{ review: ProposalReview; processInstanceId: string }> {
   const context = await assertReviewAssignmentContext({
     assignmentId,
