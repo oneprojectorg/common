@@ -154,18 +154,32 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   return supabaseResponse;
 }
 
+// Next.js statically analyzes `config.matcher` at build time and cannot
+// follow cross-file imports (fails with `Unknown identifier ... at
+// config.matcher[0]`), so the matcher must be a plain string literal here.
+// Every path it catches triggers `auth.getUser()` in the proxy above,
+// doubling the GoTrue round-trip per page nav (middleware + tRPC); keep
+// the exclusion list broad enough to skip every route that doesn't need
+// Supabase cookie refresh or i18n-locale redirect.
+//
+// Skipped path prefixes (no-auth routes):
+//   - Next internals:         _next/static, _next/image
+//   - In-tree API + rewrites: api, assets, stats
+//   - Public landing pages:   waitlist, info, login
+//   - SEO/monitoring files:   sitemap.xml, robots.txt,
+//                              manifest.webmanifest, health, _health,
+//                              favicon.ico
+// Skipped file extensions:
+//   - images: svg, png, jpg, jpeg, gif, webp, avif, ico, bmp
+//   - fonts:  woff, woff2, ttf, otf, eot
+//   - docs:   pdf
+//   - text:   json, xml, txt
+//   - build:  css, js, map
+//   - media:  mp4, webm, mp3, ogg, wav
+//
+// `proxy.test.ts` reads this literal directly to exercise the regex.
 export const config = {
   matcher: [
-    '/protected/:path*',
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
-     */
-    '/((?!_next/static|stats|api|waitlist|info|_next/image|favicon.ico|login|.*\\.(?:svg|png|jpg|jpeg|gif|webp|pdf)$).*)',
-    // '/(.*rss\\.xml)',
-    // '/((?!node/|auth/|_next/|_static/|_vercel|_axiom/|media/|[\\w-]+\\.\\w+|.*\\..*).*)',
+    '/((?!_next/static|_next/image|api|assets|stats|waitlist|info|login|sitemap.xml|robots.txt|manifest.webmanifest|favicon.ico|health|_health|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|bmp|woff|woff2|ttf|otf|eot|pdf|json|xml|txt|css|js|map|mp4|webm|mp3|ogg|wav)$).*)',
   ],
 };
