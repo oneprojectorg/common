@@ -3,7 +3,6 @@
 import { useForesight } from '@/hooks/useForesight';
 import { cn } from '@op/ui/utils';
 import type { AnchorHTMLAttributes } from 'react';
-import { useEffect, useRef } from 'react';
 
 import { NavLink, useRouter } from './routing';
 
@@ -15,35 +14,18 @@ export const Link = ({
   ...props
 }: AnchorHTMLAttributes<HTMLAnchorElement>) => {
   const router = useRouter();
-  const cancelledRef = useRef(false);
   const { href } = props;
 
   const { elementRef } = useForesight<HTMLAnchorElement>({
     callback: () => {
-      if (!href || cancelledRef.current) {
+      if (!href) {
         return;
       }
-      const hrefStr = String(href);
-      // Recursive onInvalidate keeps the warmed prefetch fresh until unmount.
-      const refresh = () => {
-        if (cancelledRef.current) {
-          return;
-        }
-        // @ts-ignore — next-intl types prefetch against a route literal union.
-        router.prefetch(hrefStr, { onInvalidate: refresh });
-      };
-      refresh();
+      // @ts-ignore — next-intl types prefetch against a route literal union.
+      router.prefetch(href);
     },
-    name: typeof href === 'string' ? href : undefined,
+    name: href,
   });
-
-  // Cancel pending onInvalidate callbacks once the link is gone.
-  useEffect(() => {
-    cancelledRef.current = false;
-    return () => {
-      cancelledRef.current = true;
-    };
-  }, []);
 
   return (
     // @ts-ignore — next-intl's NavLink expects a route literal; we forward
