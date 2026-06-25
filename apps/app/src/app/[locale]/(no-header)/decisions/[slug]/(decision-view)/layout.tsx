@@ -1,8 +1,3 @@
-import {
-  HydrationBoundary,
-  createServerUtils,
-  dehydrate,
-} from '@op/api/server';
 import { type ReactNode, Suspense } from 'react';
 
 import { DecisionHeader } from '@/components/decisions/DecisionHeader';
@@ -17,9 +12,11 @@ import { loadDecision } from './loadDecision';
  * Shared shell for the overview and current-phase tabs. Living in a layout
  * means the header, the Overview / Current Phase toggle, and the updates side
  * panel persist across tab switches — the tab content is the only thing that
- * swaps, which is what makes the switch feel like a single page. The instance
- * is prefetched once here so both tabs' client suspense reads resolve from a
- * warm cache.
+ * swaps, which is what makes the switch feel like a single page. The header and
+ * toggle read everything they need from `loadDecision` (the single slug fetch,
+ * enriched with `access` + encoded `instanceData`), so the layout makes no
+ * separate `getInstance` call. The /current tab seeds its own `getInstance`
+ * cache in its page.
  */
 const DecisionViewLayout = async ({
   children,
@@ -31,53 +28,45 @@ const DecisionViewLayout = async ({
   const { slug } = await params;
 
   const { decisionProfile, instanceId } = await loadDecision(slug);
-  const { utils, queryClient } = await createServerUtils();
+  const instance = decisionProfile.processInstance;
 
-  // Fetch (not prefetch) so we can read the phases server-side to gate the
-  // toggle, while still seeding the cache the client suspense reads hydrate
-  // from. The process is "active" once its first phase begins. Fail open if it
-  // throws — the child suspense reads drive the error UX.
-  let isActive = true;
-  try {
-    const instance = await utils.decision.getInstance.fetch({ instanceId });
-    isActive = hasFirstPhaseStarted(instance.instanceData?.phases);
-  } catch {
-    isActive = true;
-  }
-
-  const access = decisionProfile.processInstance?.access;
+  // The process is "active" once its first phase begins — read from the phases
+  // loadDecision already returned (no separate getInstance fetch).
+  const isActive = hasFirstPhaseStarted(instance?.instanceData?.phases);
+  const access = instance?.access;
 
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <DecisionTranslationProvider>
-        <DecisionHeader
-          instanceId={instanceId}
-          decisionSlug={slug}
-          isAdmin={access?.admin}
-          canReadUpdates={access?.admin === true || access?.read === true}
-          profileName={decisionProfile.name}
-          showStepper={false}
-          // Hidden until the first phase begins.
-          centerSlot={
-            isActive ? <DecisionViewToggle decisionSlug={slug} /> : undefined
-          }
+    <DecisionTranslationProvider>
+      <DecisionHeader
+        instanceId={instanceId}
+        decisionSlug={slug}
+        isAdmin={access?.admin}
+        canReadUpdates={access?.admin === true || access?.read === true}
+        profileName={decisionProfile.name}
+        // Pass the instance so the header renders from props (no client
+        // getInstance query on this route).
+        processInstance={instance}
+        showStepper={false}
+        // Hidden until the first phase begins.
+        centerSlot={
+          isActive ? <DecisionViewToggle decisionSlug={slug} /> : undefined
+        }
+      />
+      {children}
+      {/*
+       * Like the header's updates toggle, the side panel reads the `panel`
+       * search param (nuqs/useSearchParams). It lives in this layout, which
+       * Next prerenders as the route's static shell (see loading.tsx), so the
+       * read would happen outside a request scope and throw. Suspense defers
+       * it out of the shell; the panel is closed by default, so null fallback.
+       */}
+      <Suspense fallback={null}>
+        <DecisionSidePanel
+          decisionProfileId={decisionProfile.id}
+          access={access}
         />
-        {children}
-        {/*
-         * Like the header's updates toggle, the side panel reads the `panel`
-         * search param (nuqs/useSearchParams). It lives in this layout, which
-         * Next prerenders as the route's static shell (see loading.tsx), so the
-         * read would happen outside a request scope and throw. Suspense defers
-         * it out of the shell; the panel is closed by default, so null fallback.
-         */}
-        <Suspense fallback={null}>
-          <DecisionSidePanel
-            decisionProfileId={decisionProfile.id}
-            access={access}
-          />
-        </Suspense>
-      </DecisionTranslationProvider>
-    </HydrationBoundary>
+      </Suspense>
+    </DecisionTranslationProvider>
   );
 };
 

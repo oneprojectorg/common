@@ -3,7 +3,11 @@
 import { useTrackPageView } from '@/hooks/useTrackPageView';
 import { getDecisionCommonProperties } from '@op/analytics/client-utils';
 import { trpc } from '@op/api/client';
-import { type ProcessPhase } from '@op/api/encoders';
+import {
+  type InstanceData,
+  type ProcessInstance,
+  type ProcessPhase,
+} from '@op/api/encoders';
 import { type ReactNode } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
@@ -29,6 +33,13 @@ interface StandardDecisionHeaderProps extends DecisionHeaderBaseProps {
   centerSlot?: ReactNode;
   /** Whether to render the phase stepper below the header bar (default true) */
   showStepper?: boolean;
+  /**
+   * When provided, the header renders from this prop instead of a client
+   * `getInstance` query — used by the (decision-view) layout, which already has
+   * the instance from loadDecision. Omitted by the canonical /decisions/[slug]
+   * page, which falls back to the query.
+   */
+  processInstance?: ProcessInstance;
 }
 
 /** Legacy getInstance endpoint (for the /profile/[slug]/decisions/[id] route). */
@@ -60,24 +71,25 @@ export function DecisionHeader(props: DecisionHeaderProps) {
   if (props.useLegacy) {
     return <LegacyDecisionHeaderContent {...props} />;
   }
+  if (props.processInstance) {
+    return (
+      <DecisionHeaderFromProps
+        {...props}
+        processInstance={props.processInstance}
+      />
+    );
+  }
   return <DecisionHeaderContent {...props} />;
 }
 
-function DecisionHeaderContent({
-  instanceId,
-  decisionSlug,
-  isAdmin,
-  canReadUpdates,
-  profileName,
-  centerSlot,
-  showStepper = true,
-}: StandardDecisionHeaderProps) {
-  const t = useTranslations();
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
-
-  const instancePhases = instance.instanceData?.phases ?? [];
-
-  const phases: ProcessPhase[] = instancePhases.map((p) => ({
+/**
+ * Maps the encoded instanceData phases to the ProcessPhase shape the stepper
+ * consumes. Shared by the query and prop header variants.
+ */
+function toProcessPhases(
+  instanceData: InstanceData | undefined,
+): ProcessPhase[] {
+  return (instanceData?.phases ?? []).map((p) => ({
     id: p.phaseId,
     name: p.name || '',
     description: p.description,
@@ -87,18 +99,29 @@ function DecisionHeaderContent({
     },
     advancementMethod: p.rules?.advancement?.method,
   }));
+}
 
+/** Presentational header bar + optional stepper, fed by either variant below. */
+function DecisionHeaderView({
+  instanceId,
+  decisionSlug,
+  isAdmin,
+  canReadUpdates,
+  centerSlot,
+  showStepper = true,
+  title,
+  phases,
+  currentStateId,
+}: StandardDecisionHeaderProps & {
+  title: string;
+  phases: ProcessPhase[];
+  currentStateId: string;
+}) {
   return (
     <>
       <DecisionInstanceHeader
         backTo={{ href: '/decisions' }}
-        title={
-          profileName ||
-          instance.name ||
-          instance.instanceData?.templateName ||
-          instance.process?.name ||
-          t('Untitled')
-        }
+        title={title}
         decisionSlug={decisionSlug}
         isAdmin={isAdmin}
         canReadUpdates={canReadUpdates}
@@ -107,12 +130,58 @@ function DecisionHeaderContent({
       {showStepper ? (
         <DecisionStepperBar
           phases={phases}
-          currentStateId={instance.currentStateId || ''}
+          currentStateId={currentStateId}
           instanceId={instanceId}
           isAdmin={isAdmin}
         />
       ) : null}
     </>
+  );
+}
+
+/** Query variant: canonical /decisions/[slug] page (no instance passed in). */
+function DecisionHeaderContent(props: StandardDecisionHeaderProps) {
+  const t = useTranslations();
+  const [instance] = trpc.decision.getInstance.useSuspenseQuery({
+    instanceId: props.instanceId,
+  });
+
+  return (
+    <DecisionHeaderView
+      {...props}
+      title={
+        props.profileName ||
+        instance.name ||
+        instance.instanceData?.templateName ||
+        instance.process?.name ||
+        t('Untitled')
+      }
+      phases={toProcessPhases(instance.instanceData)}
+      currentStateId={instance.currentStateId || ''}
+    />
+  );
+}
+
+/** Prop variant: (decision-view) layout passes the instance from loadDecision. */
+function DecisionHeaderFromProps(
+  props: StandardDecisionHeaderProps & { processInstance: ProcessInstance },
+) {
+  const t = useTranslations();
+  const { processInstance: instance } = props;
+
+  return (
+    <DecisionHeaderView
+      {...props}
+      title={
+        props.profileName ||
+        instance.name ||
+        instance.instanceData?.templateName ||
+        instance.process?.name ||
+        t('Untitled')
+      }
+      phases={toProcessPhases(instance.instanceData)}
+      currentStateId={instance.currentStateId || ''}
+    />
   );
 }
 
