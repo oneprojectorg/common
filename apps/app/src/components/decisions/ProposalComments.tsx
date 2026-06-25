@@ -15,7 +15,7 @@ import { PostUpdate } from '../PostUpdate';
 
 export function ProposalComments({
   proposal,
-  readOnly = false,
+  readOnly: readOnlyProp = false,
 }: {
   proposal: Proposal;
   readOnly?: boolean;
@@ -33,7 +33,7 @@ export function ProposalComments({
   const comments = commentsData?.items ?? [];
   const { handleReactionClick } = usePostFeedActions();
 
-  const canComment = userCanInteract(user);
+  const readOnly = readOnlyProp || !userCanInteract(user);
 
   const scrollToComments = useCallback(() => {
     setTimeout(() => {
@@ -52,7 +52,7 @@ export function ProposalComments({
           {t('Comments')} ({comments.length})
         </Header3>
 
-        {!readOnly && canComment && (
+        {!readOnly && (
           <div className="mb-8">
             <Surface className="border-0 p-0 sm:border sm:p-4">
               <PostUpdate
