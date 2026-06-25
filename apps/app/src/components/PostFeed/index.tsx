@@ -32,6 +32,7 @@ import { DiscussionModal } from '../DiscussionModal';
 import { FeedContent, FeedHeader, FeedItem, FeedMain } from '../Feed';
 import { LinkPreview } from '../LinkPreview';
 import { OrganizationAvatar } from '../OrganizationAvatar';
+import { usePostTranslation } from '../decisions/DecisionTranslationContext';
 import { DeletePost } from './DeletePost';
 
 const PostDisplayName = ({
@@ -371,6 +372,7 @@ export const PostItem = ({
   onReactionClick,
   onCommentClick,
   className,
+  translatedContent,
 }: {
   post: Post;
   organization: Organization | null;
@@ -379,12 +381,24 @@ export const PostItem = ({
   onReactionClick: (postId: string, emoji: string) => void;
   onCommentClick?: (post: Post, organization: Organization | null) => void;
   className?: string;
+  /**
+   * Override `post.content` with a translated version. Link detection still
+   * runs against the original text so URL previews remain stable across
+   * translations.
+   */
+  translatedContent?: string;
 }) => {
   const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);
   const { displayPost, handleReactionClick } = useOptimisticReaction(
     post,
     onReactionClick,
   );
+  // Fall back to the decision-scoped translation when no explicit override
+  // was supplied — keeps the side-panel "Updates" feed in sync with the
+  // translate banner without threading props through every consumer.
+  const contextTranslation = usePostTranslation(post?.id);
+  const displayContent =
+    translatedContent ?? contextTranslation?.content ?? post?.content;
 
   // For comments (posts without organization), show the post author
   // TODO: this is too complex. We need to refactor this
@@ -419,7 +433,7 @@ export const PostItem = ({
         </FeedHeader>
         <FeedContent>
           <PostFlaggedIndicator post={post} />
-          <PostContent content={post?.content} />
+          <PostContent content={displayContent} />
           <PostAttachments attachments={post.attachments} />
           <PostUrls urls={urls} />
           <div className="flex items-center justify-between gap-2">

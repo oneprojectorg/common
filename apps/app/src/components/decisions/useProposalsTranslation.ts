@@ -13,7 +13,11 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { useSetDecisionTranslation } from './DecisionTranslationContext';
+import {
+  useSetDecisionTranslation,
+  useSetPostTranslations,
+  useSetResourceTranslations,
+} from './DecisionTranslationContext';
 
 // fallow-ignore-next-line complexity
 export const useProposalsTranslation = ({
@@ -37,6 +41,8 @@ export const useProposalsTranslation = ({
     sourceLocale: string;
   } | null>(null);
   const setDecisionTranslation = useSetDecisionTranslation();
+  const setPostTranslations = useSetPostTranslations();
+  const setResourceTranslations = useSetResourceTranslations();
 
   const translateBatchMutation =
     trpc.translation.translateProposals.useMutation({
@@ -78,6 +84,39 @@ export const useProposalsTranslation = ({
       },
     });
 
+  // Translate the decision's "Updates" feed (top-level posts) so the side
+  // panel content matches the rest of the page when the user opts in.
+  const translatePostsMutation = trpc.translation.translatePosts.useMutation({
+    onSuccess: (data) => {
+      if (Object.keys(data.translations).length === 0) {
+        return;
+      }
+      if (data.sourceLocale) {
+        setTranslationState((prev) =>
+          prev ? prev : { translations: {}, sourceLocale: data.sourceLocale },
+        );
+      }
+      setPostTranslations(data.translations);
+    },
+  });
+
+  // Translate the decision's "Resources" tab — title/description on each
+  // resource. Same side panel surface as Updates.
+  const translateResourcesMutation =
+    trpc.translation.translateResources.useMutation({
+      onSuccess: (data) => {
+        if (Object.keys(data.translations).length === 0) {
+          return;
+        }
+        if (data.sourceLocale) {
+          setTranslationState((prev) =>
+            prev ? prev : { translations: {}, sourceLocale: data.sourceLocale },
+          );
+        }
+        setResourceTranslations(data.translations);
+      },
+    });
+
   const handleTranslate = useCallback(() => {
     if (!supportedLocale) {
       return;
@@ -94,10 +133,20 @@ export const useProposalsTranslation = ({
         decisionProfileId,
         targetLocale: supportedLocale,
       });
+      translatePostsMutation.mutate({
+        profileId: decisionProfileId,
+        targetLocale: supportedLocale,
+      });
+      translateResourcesMutation.mutate({
+        profileId: decisionProfileId,
+        targetLocale: supportedLocale,
+      });
     }
   }, [
     translateBatchMutation,
     translateDecisionMutation,
+    translatePostsMutation,
+    translateResourcesMutation,
     allProposals,
     supportedLocale,
     decisionProfileId,
@@ -106,7 +155,9 @@ export const useProposalsTranslation = ({
   const handleViewOriginal = useCallback(() => {
     setTranslationState(null);
     setDecisionTranslation(null);
-  }, [setDecisionTranslation]);
+    setPostTranslations({});
+    setResourceTranslations({});
+  }, [setDecisionTranslation, setPostTranslations, setResourceTranslations]);
 
   const languageNames = useMemo(
     () => new Intl.DisplayNames([locale], { type: 'language' }),

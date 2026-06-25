@@ -18,6 +18,7 @@ import {
 
 import { useTranslations } from '@/lib/i18n';
 
+import { useResourceTranslation } from '../decisions/DecisionTranslationContext';
 import { getExtension, hostnameForDisplay } from './utils';
 
 type LinkResource = Extract<ResourceInCollection, { type: 'link' }>;
@@ -27,19 +28,40 @@ export const ResourceCard = ({
   resource,
   signedUrl,
   trailing,
+  translatedTitle,
+  translatedDescription,
 }: {
   resource: ResourceInCollection;
   signedUrl?: string | null;
   trailing?: ReactNode;
+  /** Override `resource.title` with a translated version. */
+  translatedTitle?: string;
+  /** Override `resource.description` with a translated version. */
+  translatedDescription?: string;
 }) => {
+  // Pick up decision-scoped translations when no explicit override was passed.
+  const contextTranslation = useResourceTranslation(resource.id);
+  const effectiveTitle = translatedTitle ?? contextTranslation?.title;
+  const effectiveDescription =
+    translatedDescription ?? contextTranslation?.description;
+
   if (resource.type === 'link') {
-    return <ResourceLinkCard resource={resource} trailing={trailing} />;
+    return (
+      <ResourceLinkCard
+        resource={resource}
+        trailing={trailing}
+        translatedTitle={effectiveTitle}
+        translatedDescription={effectiveDescription}
+      />
+    );
   }
   return (
     <ResourceDocumentCard
       resource={resource}
       signedUrl={signedUrl ?? null}
       trailing={trailing}
+      translatedTitle={effectiveTitle}
+      translatedDescription={effectiveDescription}
     />
   );
 };
@@ -47,9 +69,13 @@ export const ResourceCard = ({
 const ResourceLinkCard = ({
   resource,
   trailing,
+  translatedTitle,
+  translatedDescription,
 }: {
   resource: LinkResource;
   trailing?: ReactNode;
+  translatedTitle?: string;
+  translatedDescription?: string;
 }) => {
   const href = resource.linkUrl ? sanitizeUrl(resource.linkUrl) : null;
 
@@ -70,8 +96,8 @@ const ResourceLinkCard = ({
 
   return (
     <ResourceCardShell
-      title={resource.title}
-      description={resource.description}
+      title={translatedTitle ?? resource.title}
+      description={translatedDescription ?? resource.description}
       subtitle={hostnameForDisplay(resource.linkUrl)}
       preview={preview}
       href={href}
@@ -84,10 +110,14 @@ const ResourceDocumentCard = ({
   resource,
   signedUrl,
   trailing,
+  translatedTitle,
+  translatedDescription,
 }: {
   resource: DocumentResource;
   signedUrl: string | null;
   trailing?: ReactNode;
+  translatedTitle?: string;
+  translatedDescription?: string;
 }) => {
   const t = useTranslations();
   const attachment = resource.attachment;
@@ -115,8 +145,8 @@ const ResourceDocumentCard = ({
 
   return (
     <ResourceCardShell
-      title={resource.title}
-      description={resource.description}
+      title={translatedTitle ?? resource.title}
+      description={translatedDescription ?? resource.description}
       subtitle={subtitle}
       preview={preview}
       href={signedUrl}
