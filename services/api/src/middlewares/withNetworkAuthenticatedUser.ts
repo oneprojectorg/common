@@ -1,8 +1,7 @@
-import { AccessTierError } from '@op/common';
+import { AccessTierError, getNetworkMembership } from '@op/common';
 
 import { getCachedAuthUser } from '../supabase/server';
 import type { MiddlewareBuilderBase, TContextWithUser } from '../types';
-import { getNetworkMembership } from '../utils/networkMembership';
 import { verifyAuthentication } from '../utils/verifyAuthentication';
 
 /**

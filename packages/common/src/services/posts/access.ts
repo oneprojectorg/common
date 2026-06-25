@@ -11,7 +11,7 @@ import {
   getUserSession,
 } from '../access';
 import { decisionPermission } from '../decision/permissions';
-import { getAllowListUser } from '../user';
+import { getNetworkMembership } from '../user';
 
 // Asserts a caller's READ access to a profile's posts, dispatching on the
 // profile's server-resolved type. Fail-closed: a type without a case is denied
@@ -75,18 +75,18 @@ export const assertPostReadAccess = async ({
 
 const WRITE_DENIED = 'You do not have access to write here';
 
-// Looks up the caller's allow-list entry. Org-post comments are gated on
-// this — an allow-listed user can comment on any org post, regardless of
-// the org their allow-list row points at. The check fails closed when the
-// caller has no resolvable email (anonymous / sentinel callers).
-const assertOnAllowList = async (user: AccessUser | undefined) => {
+// Asserts the caller is inside the walled garden (a network email domain
+// or an allow-list entry). Org-post comments are gated on this — anyone in
+// the walled garden can comment on any org post, regardless of per-org
+// membership. Fails closed when the caller has no resolvable email
+// (anonymous / sentinel callers).
+const assertOnWalledGarden = async (user: AccessUser | undefined) => {
   if (!user?.id) {
     throw new UnauthorizedError(WRITE_DENIED);
   }
   const session = await getUserSession({ authUserId: user.id });
-  const email = session?.user?.email?.toLowerCase();
-  const allowListUser = email ? await getAllowListUser({ email }) : undefined;
-  if (!allowListUser) {
+  const isMember = await getNetworkMembership(session?.user?.email);
+  if (!isMember) {
     throw new UnauthorizedError(WRITE_DENIED);
   }
 };
@@ -109,7 +109,7 @@ export const assertPostWriteAccess = async ({
   targetProfileId?: string | null;
 }) => {
   // Legacy postsToOrganizations branch: the only write that lands here is
-  // a reply under a legacy org-feed post. Same allow-list gate as the
+  // a reply under a legacy org-feed post. Same walled-garden gate as the
   // modern ORG comment path below — the legacy postsToOrganizations row
   // is only used to confirm the thread actually belongs to *some* org.
   if (!rootProfileId) {
@@ -124,7 +124,7 @@ export const assertPostWriteAccess = async ({
     if (!legacyLink) {
       throw new UnauthorizedError(WRITE_DENIED);
     }
-    await assertOnAllowList(user);
+    await assertOnWalledGarden(user);
     return;
   }
 
@@ -164,9 +164,8 @@ export const assertPostWriteAccess = async ({
 
     // Org profile: announcement requires `profile: ADMIN` (resolved via
     // the org-admin fallback, since org roles live on `organizationUsers`).
-    // Comments are open to any allow-listed user — the team curates this
-    // list explicitly, so it's the right "can engage with org feeds" cohort
-    // and doesn't require per-org membership.
+    // Comments are open to any walled-garden member — a network email
+    // domain or an allow-list entry — without requiring per-org membership.
     //
     // Defense-in-depth: no UI path constructs the top-level shape on this
     // endpoint today (production goes through `organization.createPost`),
@@ -185,7 +184,7 @@ export const assertPostWriteAccess = async ({
         });
         return;
       }
-      await assertOnAllowList(user);
+      await assertOnWalledGarden(user);
       return;
 
     // INDIVIDUAL / USER profiles aren't a supported posting surface yet.

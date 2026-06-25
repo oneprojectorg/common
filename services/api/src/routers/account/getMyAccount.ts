@@ -1,10 +1,9 @@
 import { cache } from '@op/cache';
-import { CommonError, getUserByAuthId } from '@op/common';
+import { CommonError, getNetworkMembership, getUserByAuthId } from '@op/common';
 import { z } from 'zod';
 
 import { encodeUser, userEncoder } from '../../encoders';
 import { openProcedure, router } from '../../trpcFactory';
-import { getNetworkMembership } from '../../utils/networkMembership';
 
 export const getMyAccount = router({
   getMyAccount: openProcedure()

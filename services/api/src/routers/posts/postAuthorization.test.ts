@@ -1,10 +1,6 @@
 import { db, eq } from '@op/db/client';
-import {
-  allowList,
-  postReactions,
-  posts,
-  postsToProfiles,
-} from '@op/db/schema';
+import { postReactions, posts, postsToProfiles } from '@op/db/schema';
+import { randomUUID } from 'crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
@@ -12,6 +8,7 @@ import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataMa
 import {
   createIsolatedSession,
   createTestContextWithSession,
+  createTestUser,
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
 
@@ -31,6 +28,27 @@ const createOutsiderCaller = async (testData: TestDecisionsDataManager) => {
     instanceProfileIds: [],
   });
   return createAuthenticatedCaller(outsider.email);
+};
+
+// Confirmed, signed-in user with a non-network email — i.e., NOT in the
+// walled garden (no allowedEmailDomains match, no allow-list entry). Used
+// to exercise the walled-garden denial path on `posts.createPost` org
+// comments. Cleanup is registered via the TestDecisionsDataManager so the
+// user / profile row gets torn down with the rest of the test data.
+const createNonNetworkCaller = async (testData: TestDecisionsDataManager) => {
+  const email = `non-network-${randomUUID()}@example.com`;
+  const { user } = await createTestUser(email);
+  if (!user) {
+    throw new Error(`Failed to create non-network user: ${email}`);
+  }
+  testData.trackAuthUserForCleanup(user.id);
+  const userRecord = await db.query.users.findFirst({
+    where: { authUserId: user.id },
+  });
+  if (userRecord?.profileId) {
+    testData.trackProfileForCleanup(userRecord.profileId);
+  }
+  return createAuthenticatedCaller(email);
 };
 
 const fetchPostRoots = async (postId: string) => {
@@ -525,7 +543,7 @@ describe.concurrent('org-feed post authorization', () => {
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
-  it('rejects an outsider from commenting on an org-feed post', async ({
+  it('rejects a non-walled-garden caller from commenting on an org-feed post', async ({
     task,
     onTestFinished,
   }) => {
@@ -538,66 +556,25 @@ describe.concurrent('org-feed post authorization', () => {
       profileId: setup.organization.profileId,
     });
 
-    const outsiderCaller = await createOutsiderCaller(testData);
+    const nonNetworkCaller = await createNonNetworkCaller(testData);
 
     await expect(
-      outsiderCaller.posts.createPost({
-        content: 'Outsider comment on org post — should fail.',
+      nonNetworkCaller.posts.createPost({
+        content: 'Non-network comment on org post — should fail.',
         parentPostId: orgPost.id,
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
-  it('admits an allow-listed user commenting on an org-feed post', async ({
+  it('admits a walled-garden caller commenting on an org-feed post', async ({
     task,
     onTestFinished,
   }) => {
-    // Org-post comments gate on the allow-list specifically (not org
-    // membership): anyone the team has curated into the allow-list can
-    // comment on any org post, even if they're not a member of *that* org.
-    // Top-level posting on the org profile is still admin-only — that path
-    // is exercised in the announcement tests above.
-    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
-    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
-
-    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
-    const orgPost = await ownerCaller.posts.createPost({
-      content: 'Org-level post.',
-      profileId: setup.organization.profileId,
-    });
-
-    const allowListed = await testData.createMemberUser({
-      organization: setup.organization,
-      instanceProfileIds: [],
-    });
-    await db.insert(allowList).values({
-      email: allowListed.email.toLowerCase(),
-      organizationId: setup.organization.id,
-    });
-    onTestFinished(async () => {
-      await db
-        .delete(allowList)
-        .where(eq(allowList.email, allowListed.email.toLowerCase()));
-    });
-
-    const caller = await createAuthenticatedCaller(allowListed.email);
-    const comment = await caller.posts.createPost({
-      content: 'Allow-listed user comment on org post.',
-      parentPostId: orgPost.id,
-    });
-
-    expect(comment.parentPostId).toBe(orgPost.id);
-    expect(comment.content).toBe('Allow-listed user comment on org post.');
-  });
-
-  it('rejects an org member who is NOT on the allow list from commenting on an org-feed post', async ({
-    task,
-    onTestFinished,
-  }) => {
-    // Inverse of the test above — pins that the allow-list (not org
-    // membership) is the gate. A plain org member with no allow-list row
-    // must be rejected even though they belong to the org that owns the
-    // post.
+    // Org-post comments gate on walled-garden membership (a network email
+    // domain or an allow-list entry), not on per-org membership: anyone
+    // inside the walled garden can comment on any org post. The
+    // `createMemberUser` helper produces a caller with a network email,
+    // which passes the gate without needing an allow-list row.
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
 
@@ -611,24 +588,25 @@ describe.concurrent('org-feed post authorization', () => {
       organization: setup.organization,
       instanceProfileIds: [],
     });
-    const memberCaller = await createAuthenticatedCaller(member.email);
 
-    await expect(
-      memberCaller.posts.createPost({
-        content: 'Member-not-on-allow-list comment — should fail.',
-        parentPostId: orgPost.id,
-      }),
-    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+    const caller = await createAuthenticatedCaller(member.email);
+    const comment = await caller.posts.createPost({
+      content: 'Walled-garden user comment on org post.',
+      parentPostId: orgPost.id,
+    });
+
+    expect(comment.parentPostId).toBe(orgPost.id);
+    expect(comment.content).toBe('Walled-garden user comment on org post.');
   });
 
-  it('rejects an outsider from commenting on a legacy postsToOrganizations post', async ({
+  it('rejects a non-walled-garden caller from commenting on a legacy postsToOrganizations post', async ({
     task,
     onTestFinished,
   }) => {
     // Legacy org-feed posts (via `organization.createPost`) carry no
     // `rootProfileId`, so the write gate resolves the org via the parent
-    // post's `postsToOrganizations` link and checks org membership.
-    // Outsiders must still be rejected.
+    // post's `postsToOrganizations` link and runs the same walled-garden
+    // check used on the modern path.
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 0 });
 
@@ -643,11 +621,11 @@ describe.concurrent('org-feed post authorization', () => {
       await db.delete(posts).where(eq(posts.id, legacyPost.id));
     });
 
-    const outsiderCaller = await createOutsiderCaller(testData);
+    const nonNetworkCaller = await createNonNetworkCaller(testData);
 
     await expect(
-      outsiderCaller.posts.createPost({
-        content: 'Outsider comment on legacy post — should fail.',
+      nonNetworkCaller.posts.createPost({
+        content: 'Non-network comment on legacy post — should fail.',
         parentPostId: legacyPost.id,
       }),
     ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
@@ -671,21 +649,12 @@ describe.concurrent('org-feed post authorization', () => {
       profileId: setup.organization.profileId,
     });
 
-    const allowListed = await testData.createMemberUser({
+    const member = await testData.createMemberUser({
       organization: setup.organization,
       instanceProfileIds: [],
     });
-    await db.insert(allowList).values({
-      email: allowListed.email.toLowerCase(),
-      organizationId: setup.organization.id,
-    });
-    onTestFinished(async () => {
-      await db
-        .delete(allowList)
-        .where(eq(allowList.email, allowListed.email.toLowerCase()));
-    });
 
-    const caller = await createAuthenticatedCaller(allowListed.email);
+    const caller = await createAuthenticatedCaller(member.email);
     const comment = await caller.posts.createPost({
       content: 'Comment with both flags set.',
       profileId: setup.organization.profileId,
@@ -1320,18 +1289,9 @@ describe.concurrent('getPosts pagination', () => {
     const orgProfileId = setup.organization.profileId;
 
     const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
-    // Org-post comments are gated on the allow-list now — admin standing
-    // alone doesn't admit comment writes. Allow-list the owner so they can
-    // create the comment rows this pagination test relies on as fixture.
-    await db.insert(allowList).values({
-      email: setup.userEmail.toLowerCase(),
-      organizationId: setup.organization.id,
-    });
-    onTestFinished(async () => {
-      await db
-        .delete(allowList)
-        .where(eq(allowList.email, setup.userEmail.toLowerCase()));
-    });
+    // Org-post comments are gated on walled-garden membership; the test
+    // owner is created with a network email by createDecisionSetup, so
+    // they pass without any extra setup.
 
     const updateIds: string[] = [];
     for (let i = 0; i < 3; i++) {
