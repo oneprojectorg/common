@@ -35,7 +35,7 @@ export async function translateDecision({
 }: {
   decisionProfileId: string;
   targetLocale: SupportedLocale;
-  user: User;
+  user: User | undefined;
 }): Promise<DecisionTranslationResult> {
   const instances = await db
     .select({

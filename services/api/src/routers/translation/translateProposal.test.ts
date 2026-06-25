@@ -1,6 +1,6 @@
 import { mockCollab } from '@op/collab/testing';
 import { db, eq } from '@op/db/client';
-import { contentTranslations, proposals } from '@op/db/schema';
+import { contentTranslations, ProposalStatus, proposals } from '@op/db/schema';
 import { like } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,7 +10,6 @@ import { TestTranslationDataManager } from '../../test/helpers/TestTranslationDa
 import {
   accessTierGatingCell,
   describeAccessTierGating,
-  expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 import {
@@ -45,42 +44,44 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
+// openProcedure admits every tier past the gate; service-layer fail-closed is
+// covered by the describe block below.
 describeAccessTierGating('translation.translateProposal', {
-  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
-    const caller = await callers.noJwt();
-    await expectFailsAccessTierGate(
-      caller.translation.translateProposal({
-        profileId: '00000000-0000-0000-0000-000000000000',
-        targetLocale: 'en',
-      }),
-      'none',
-    );
-  }),
-
-  anonJwt: accessTierGatingCell(
-    'rejects anon-JWT caller',
+  noJwt: accessTierGatingCell(
+    'admits no-JWT caller past the tier gate',
     async ({ callers }) => {
-      const caller = await callers.anonJwt();
-      await expectFailsAccessTierGate(
+      const caller = await callers.noJwt();
+      await expectPassesAccessTierGate(
         caller.translation.translateProposal({
           profileId: '00000000-0000-0000-0000-000000000000',
           targetLocale: 'en',
         }),
-        'anon',
+      );
+    },
+  ),
+
+  anonJwt: accessTierGatingCell(
+    'admits anon-JWT caller past the tier gate',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectPassesAccessTierGate(
+        caller.translation.translateProposal({
+          profileId: '00000000-0000-0000-0000-000000000000',
+          targetLocale: 'en',
+        }),
       );
     },
   ),
 
   userJwt: accessTierGatingCell(
-    'rejects user-JWT caller',
+    'admits out-of-network user-JWT caller past the tier gate',
     async ({ callers }) => {
       const caller = await callers.userJwt();
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.translation.translateProposal({
           profileId: '00000000-0000-0000-0000-000000000000',
           targetLocale: 'en',
         }),
-        'user',
       );
     },
   ),
@@ -102,6 +103,95 @@ describeAccessTierGating('translation.translateProposal', {
 describe('translation.translateProposal', () => {
   beforeEach(() => {
     mockTranslateText.mockClear();
+  });
+
+  it('should let a no-JWT visitor translate a proposal on a public decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Submitted (not draft): a draft is visible only to proposal-level
+    // grantees, so a public visitor must read a submitted proposal.
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Public Garden Project' },
+      status: ProposalStatus.SUBMITTED,
+    });
+
+    // Open the decision to visitors: GLOBAL_USER_PUBLIC gets the Public role
+    // (decisions READ), which a no-JWT caller resolves to via the sentinel.
+    await testData.makeDecisionPublic(instance.profileId);
+
+    const proposalId = proposal.id;
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(contentTranslations.contentKey, `proposal:${proposalId}:%`),
+        );
+    });
+
+    const visitorCaller = createCaller(
+      await createTestContextWithSession(null),
+    );
+
+    const result = await visitorCaller.translation.translateProposal({
+      profileId: proposal.profileId,
+      targetLocale: 'es',
+    });
+
+    expect(result.targetLocale).toBe('es');
+    expect(result.translated.title).toBe('[ES] Public Garden Project');
+  });
+
+  it('should reject a no-JWT visitor on a non-public proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Private Proposal' },
+    });
+
+    // No make-public grant: GLOBAL_USER_PUBLIC has no decisions:READ on this
+    // decision, so the service must fail closed past the open tier gate.
+    const visitorCaller = createCaller(
+      await createTestContextWithSession(null),
+    );
+
+    await expect(
+      visitorCaller.translation.translateProposal({
+        profileId: proposal.profileId,
+        targetLocale: 'es',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
   });
 
   it('should translate proposal title and body content', async ({

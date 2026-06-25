@@ -28,7 +28,7 @@ export async function translateProposals({
 }: {
   profileIds: string[];
   targetLocale: SupportedLocale;
-  user: User;
+  user: User | undefined;
 }): Promise<{
   translations: Record<string, ProposalTranslation>;
   sourceLocale: string;
@@ -92,7 +92,7 @@ export async function translateProposals({
     [...uniqueProcesses.values()].map(async (instance) => {
       // Assert the user has decisions:READ on each unique process instance
       await assertInstanceProfileAccess({
-        user: { id: user.id },
+        user: user ? { id: user.id } : undefined,
         instance,
         profilePermissions: [
           { decisions: permission.READ },

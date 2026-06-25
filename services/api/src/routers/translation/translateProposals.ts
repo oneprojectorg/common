@@ -1,10 +1,10 @@
 import { SUPPORTED_LOCALES, translateProposals } from '@op/common';
 import { z } from 'zod';
 
-import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
+import { openProcedure, router } from '../../trpcFactory';
 
 export const translateProposalsRouter = router({
-  translateProposals: networkAuthenticatedProcedure()
+  translateProposals: openProcedure()
     .input(
       z.object({
         profileIds: z.array(z.uuid()).min(1).max(100),

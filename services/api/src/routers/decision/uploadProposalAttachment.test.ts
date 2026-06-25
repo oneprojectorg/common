@@ -5,9 +5,10 @@ import { appRouter } from '..';
 import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataManager';
 import {
   accessTierGatingCell,
-  describeDecisionAccessTierGating,
+  describeAccessTierGating,
   expectFailsAccessTierGate,
-} from '../../test/helpers/gating/decision';
+  expectPassesAccessTierGate,
+} from '../../test/helpers/gating';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -180,9 +181,9 @@ describe.concurrent('uploadProposalAttachment', () => {
   });
 });
 
-describeDecisionAccessTierGating('uploadProposalAttachment', {
-  noJwtNonPublic: accessTierGatingCell(
-    'rejects no-JWT caller on non-public instance',
+describeAccessTierGating('uploadProposalAttachment', {
+  noJwt: accessTierGatingCell(
+    'rejects no-JWT caller',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const setup = await testData.createDecisionSetup({
@@ -213,8 +214,8 @@ describeDecisionAccessTierGating('uploadProposalAttachment', {
     },
   ),
 
-  anonJwtNonPublic: accessTierGatingCell(
-    'rejects anon-JWT caller on non-public instance',
+  anonJwt: accessTierGatingCell(
+    'admits anon-JWT past the tier gate',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const setup = await testData.createDecisionSetup({
@@ -228,25 +229,24 @@ describeDecisionAccessTierGating('uploadProposalAttachment', {
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
-        proposalData: { title: 'anon should bounce' },
+        proposalData: { title: 'anon gets past the gate' },
       });
 
       const caller = await callers.anonJwt();
 
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.decision.uploadProposalAttachment({
           file: VALID_PNG_BASE64,
           fileName: 'anon.png',
           mimeType: 'image/png',
           proposalId: proposal.id,
         }),
-        'anon',
       );
     },
   ),
 
-  userJwtNonPublic: accessTierGatingCell(
-    'rejects user-JWT caller on non-public instance',
+  userJwt: accessTierGatingCell(
+    'admits out-of-network user-JWT past the tier gate',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const setup = await testData.createDecisionSetup({
@@ -260,25 +260,24 @@ describeDecisionAccessTierGating('uploadProposalAttachment', {
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
-        proposalData: { title: 'anon should bounce' },
+        proposalData: { title: 'out-of-network user gets past the gate' },
       });
 
       const caller = await callers.userJwt();
 
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.decision.uploadProposalAttachment({
           file: VALID_PNG_BASE64,
-          fileName: 'anon.png',
+          fileName: 'user.png',
           mimeType: 'image/png',
           proposalId: proposal.id,
         }),
-        'user',
       );
     },
   ),
 
-  networkJwtNonPublic: accessTierGatingCell(
-    'admits network-JWT caller on non-public instance',
+  networkJwt: accessTierGatingCell(
+    'admits network-JWT caller',
     async ({ task, onTestFinished, callers }) => {
       const testData = new TestDecisionsDataManager(task.id, onTestFinished);
       const setup = await testData.createDecisionSetup({
