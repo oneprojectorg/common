@@ -57,7 +57,7 @@ describe.concurrent('assertProfileTypeAccess', () => {
         instanceCount: 1,
         grantAccess: true,
       });
-      const { profileId } = setup.instances[0]!;
+      const { profileId } = setup.instance;
 
       await expect(
         assertProfileTypeAccess({
@@ -116,7 +116,7 @@ describe.concurrent('assertProfileTypeAccess', () => {
         instanceCount: 1,
         grantAccess: true,
       });
-      const { profileId } = setup.instances[0]!;
+      const { profileId } = setup.instance;
 
       await expect(
         assertProfileTypeAccess({
@@ -136,7 +136,7 @@ describe.concurrent('assertProfileTypeAccess', () => {
         instanceCount: 1,
         grantAccess: false,
       });
-      const { profileId } = setup.instances[0]!;
+      const { profileId } = setup.instance;
       const member = await testData.createMemberUser({
         organization: setup.organization,
         instanceProfileIds: [profileId],
@@ -168,7 +168,7 @@ describe.concurrent('assertProfileTypeAccess', () => {
         instanceCount: 1,
         grantAccess: false,
       });
-      const { profileId } = setup.instances[0]!;
+      const { profileId } = setup.instance;
 
       await expect(
         assertProfileTypeAccess({
@@ -192,7 +192,7 @@ describe.concurrent('assertProfileTypeAccess', () => {
       });
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
-        processInstanceId: setup.instances[0]!.instance.id,
+        processInstanceId: setup.instance.instance.id,
         proposalData: { title: `Proposal ${task.id}` },
       });
 
@@ -216,7 +216,7 @@ describe.concurrent('assertProfileTypeAccess', () => {
       });
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
-        processInstanceId: setup.instances[0]!.instance.id,
+        processInstanceId: setup.instance.instance.id,
         proposalData: { title: `Proposal ${task.id}` },
       });
       const other = await testData.createMemberUser({
@@ -286,7 +286,7 @@ describe.concurrent('assertProfileTypeAccess', () => {
         instanceCount: 1,
         grantAccess: true,
       });
-      const { profileId: decisionProfileId } = setup.instances[0]!;
+      const { profileId: decisionProfileId } = setup.instance;
       const individualProfileId = await getIndividualProfileId(setup.user.id);
 
       await expect(
@@ -310,7 +310,7 @@ describe.concurrent('assertProfileTypeAccess', () => {
         instanceCount: 1,
         grantAccess: false,
       });
-      const { profileId: decisionProfileId } = setup.instances[0]!;
+      const { profileId: decisionProfileId } = setup.instance;
       // Member gets decision READ but no admin; expect to fail when policy
       // requires decisions.ADMIN on the decision profile.
       const member = await testData.createMemberUser({
@@ -342,7 +342,7 @@ describe.concurrent('assertProfileTypeAccess', () => {
         instanceCount: 1,
         grantAccess: true,
       });
-      const { profileId: decisionProfileId } = setup.instances[0]!;
+      const { profileId: decisionProfileId } = setup.instance;
 
       // ORG profile would reject this user (no profileUser row), but ORG is
       // not gated by the policy → only the DECISION check runs.

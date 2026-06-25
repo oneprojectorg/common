@@ -53,10 +53,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create multiple proposals and caller in parallel
     const [proposal1, proposal2, caller] = await Promise.all([
@@ -100,10 +97,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a member who will submit a proposal
     const memberUser = await testData.createMemberUser({
@@ -139,10 +133,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create proposal and non-admin member in parallel
     const [, memberUser] = await Promise.all([
@@ -177,10 +168,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a member who will submit a proposal
     const submitter = await testData.createMemberUser({
@@ -217,10 +205,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create visible and hidden proposals, admin caller, and non-admin member in parallel
     const [visibleProposal, hiddenProposal, adminCaller, memberUser] =
@@ -280,10 +265,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a member who will submit proposals
     const memberUser = await testData.createMemberUser({
@@ -342,10 +324,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a member who will submit a proposal and admin caller in parallel
     const [submitter, adminCaller] = await Promise.all([
@@ -390,10 +369,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const [submitter, collaborator, adminCaller] = await Promise.all([
       testData.createMemberUser({
@@ -470,10 +446,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create 3 proposals and caller in parallel
     const [, , , caller] = await Promise.all([
@@ -534,10 +507,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create proposals with different data formats in parallel
     const [newFormatProposal, legacyProposal, caller] = await Promise.all([
@@ -596,10 +566,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -623,10 +590,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a proposal
     await testData.createProposal({
@@ -675,10 +639,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const htmlDescription = '<p>This is <strong>rich</strong> content</p>';
 
@@ -716,10 +677,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create proposal first to get the API-generated collaborationDocId
     const proposal = await testData.createProposal({
@@ -773,10 +731,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Mock returns 404 by default for unknown docIds (no explicit setup needed)
 
@@ -812,10 +767,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create proposals first to get API-generated collaborationDocIds
     const [proposal1, proposal2] = await Promise.all([
@@ -888,10 +840,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create proposals first (collab and empty both get API-generated docIds)
     const [collabProposal, legacyProposal, emptyProposal] = await Promise.all([
@@ -979,10 +928,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // 1. Set legacy cowop process_schema on the decision process
     const cowopProcessSchema = cowopSchema({
@@ -1104,10 +1050,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create proposals via API (new schema — gets collaborationDocId)
     const [newSchemaProposal, legacyProposal] = await Promise.all([
@@ -1206,10 +1149,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a member who creates a draft proposal and a collaborator
     const [creator, collaborator] = await Promise.all([
@@ -1276,10 +1216,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a member who creates a draft proposal
     const member = await testData.createMemberUser({
@@ -1318,10 +1255,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create two members
     const [memberA, memberB] = await Promise.all([
@@ -1362,10 +1296,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a member who submits a proposal
     const submitter = await testData.createMemberUser({
@@ -1414,10 +1345,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a member who submits a proposal
     const submitter = await testData.createMemberUser({
@@ -1459,10 +1387,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a member who creates a draft proposal
     const creator = await testData.createMemberUser({
@@ -1514,10 +1439,7 @@ describe.concurrent('listProposals', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create two members
     const [memberA, memberB] = await Promise.all([
@@ -1625,7 +1547,7 @@ describe.concurrent('listProposals', () => {
       },
     });
 
-    const instance = setup.instances[0]!;
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -1714,7 +1636,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
     const caller = await createAuthenticatedCaller(userEmail);
 
@@ -1752,7 +1674,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
     const caller = await createAuthenticatedCaller(userEmail);
 
@@ -1789,7 +1711,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
     const caller = await createAuthenticatedCaller(userEmail);
 
@@ -1839,7 +1761,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
     const caller = await createAuthenticatedCaller(userEmail);
 
@@ -1890,7 +1812,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
     const caller = await createAuthenticatedCaller(userEmail);
 
@@ -1938,7 +1860,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
     const caller = await createAuthenticatedCaller(userEmail);
 
@@ -1986,7 +1908,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
     const caller = await createAuthenticatedCaller(userEmail);
 
@@ -2028,10 +1950,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       status: ProcessStatus.PUBLISHED,
       grantAccess: true,
     });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const [creator, otherMember] = await Promise.all([
       testData.createMemberUser({
@@ -2072,10 +1991,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       status: ProcessStatus.PUBLISHED,
       grantAccess: true,
     });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const [creator, collaborator] = await Promise.all([
       testData.createMemberUser({
@@ -2129,7 +2045,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
     const caller = await createAuthenticatedCaller(userEmail);
 
@@ -2186,7 +2102,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
     const caller = await createAuthenticatedCaller(userEmail);
 
@@ -2249,10 +2165,7 @@ describe.concurrent('listProposals: phase-scoped proposal visibility', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const [p1, p2, p3, caller] = await Promise.all([
       testData.createProposal({
@@ -2307,10 +2220,7 @@ describeDecisionAccessTierGating('listProposals', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.noJwt();
 
@@ -2330,10 +2240,7 @@ describeDecisionAccessTierGating('listProposals', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.anonJwt();
 
@@ -2353,10 +2260,7 @@ describeDecisionAccessTierGating('listProposals', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.userJwt();
 
@@ -2376,10 +2280,7 @@ describeDecisionAccessTierGating('listProposals', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.networkJwt(setup.userEmail);
 

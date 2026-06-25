@@ -17,16 +17,6 @@ const createAuthenticatedCaller = async (email: string) => {
   return createCaller(await createTestContextWithSession(session));
 };
 
-const requireFirstInstance = <T extends { profileId: string }>(
-  instances: T[],
-): T => {
-  const instance = instances[0];
-  if (!instance) {
-    throw new Error('No instance created');
-  }
-  return instance;
-};
-
 const createOutsiderCaller = async (testData: TestDecisionsDataManager) => {
   const outsiderSetup = await testData.createDecisionSetup({
     instanceCount: 0,
@@ -64,7 +54,7 @@ describe.concurrent('decision-profile post authorization', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
     const post = await caller.posts.createPost({
@@ -92,7 +82,7 @@ describe.concurrent('decision-profile post authorization', () => {
       instanceCount: 1,
       grantAccess: false,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const member = await testData.createMemberUser({
       organization: setup.organization,
@@ -126,7 +116,7 @@ describe.concurrent('decision-profile post authorization', () => {
       instanceCount: 1,
       grantAccess: false,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const outsiderCaller = await createOutsiderCaller(testData);
 
@@ -147,7 +137,7 @@ describe.concurrent('decision-profile post authorization', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const adminPost = await adminCaller.posts.createPost({
@@ -179,7 +169,7 @@ describe.concurrent('decision-profile post authorization', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const adminPost = await adminCaller.posts.createPost({
@@ -209,7 +199,7 @@ describe.concurrent('decision-profile post authorization', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const update = await adminCaller.posts.createPost({
@@ -258,7 +248,7 @@ describe.concurrent('decision-profile post authorization', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     await adminCaller.posts.createPost({
@@ -303,7 +293,7 @@ describe.concurrent('decision-profile post authorization', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const adminPost = await adminCaller.posts.createPost({
@@ -331,7 +321,7 @@ describe.concurrent('decision-profile post authorization', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const adminPost = await adminCaller.posts.createPost({
@@ -364,7 +354,7 @@ describe.concurrent('decision-profile post authorization', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const adminPost = await adminCaller.posts.createPost({
@@ -398,7 +388,7 @@ describe.concurrent('decision-profile post authorization', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const adminPost = await adminCaller.posts.createPost({
@@ -434,7 +424,7 @@ describe.concurrent('decision-profile post authorization', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const adminPost = await adminCaller.posts.createPost({
@@ -601,7 +591,7 @@ describe.concurrent('listProfilePosts authorization and pagination', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     await adminCaller.posts.createPost({
@@ -637,7 +627,7 @@ describe.concurrent('listProfilePosts authorization and pagination', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const outsiderCaller = await createOutsiderCaller(testData);
 
@@ -679,7 +669,7 @@ describe.concurrent('listProfilePosts authorization and pagination', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     // Sequential creates with a small delay so postsToProfiles.createdAt
@@ -730,7 +720,7 @@ describe.concurrent('listProfilePosts authorization and pagination', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const member = await testData.createMemberUser({
@@ -801,7 +791,7 @@ describe.concurrent('proposal post authorization', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
@@ -827,7 +817,7 @@ describe.concurrent('proposal post authorization', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
@@ -859,7 +849,7 @@ describe.concurrent('proposal post authorization', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
@@ -898,7 +888,7 @@ describe.concurrent('proposal post authorization', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
@@ -955,7 +945,7 @@ describe.concurrent('proposal post authorization', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
@@ -987,7 +977,7 @@ describe.concurrent('proposal post authorization', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
@@ -1020,7 +1010,7 @@ describe.concurrent('rootProfileId / rootPostId column writes', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
     const post = await caller.posts.createPost({
@@ -1042,7 +1032,7 @@ describe.concurrent('rootProfileId / rootPostId column writes', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.instance.id,
@@ -1084,7 +1074,7 @@ describe.concurrent('rootProfileId / rootPostId column writes', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const topLevel = await adminCaller.posts.createPost({

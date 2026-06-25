@@ -278,10 +278,7 @@ describe.concurrent('moderation read visibility', () => {
         grantAccess: true,
       });
 
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const [submitter, otherMember] = await Promise.all([
         testData.createMemberUser({

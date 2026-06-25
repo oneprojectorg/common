@@ -64,7 +64,7 @@ describe.concurrent('listProposalSubmitters', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
     const caller = await createAuthenticatedCaller(userEmail);
 
@@ -101,7 +101,7 @@ describe.concurrent('listProposalSubmitters', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
     const caller = await createAuthenticatedCaller(userEmail);
 
@@ -135,7 +135,7 @@ describe.concurrent('listProposalSubmitters', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
     const caller = await createAuthenticatedCaller(userEmail);
 
@@ -196,7 +196,7 @@ describe.concurrent('listProposalSubmitters', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const proposal = await testData.createProposal({
@@ -251,7 +251,7 @@ describe.concurrent('listProposalSubmitters', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     // Owner submits but has no avatar → counted, never a face.
@@ -307,10 +307,7 @@ describeDecisionAccessTierGating('listProposalSubmitters', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.noJwt();
 
@@ -330,10 +327,7 @@ describeDecisionAccessTierGating('listProposalSubmitters', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.anonJwt();
 
@@ -353,10 +347,7 @@ describeDecisionAccessTierGating('listProposalSubmitters', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.userJwt();
 
@@ -376,10 +367,7 @@ describeDecisionAccessTierGating('listProposalSubmitters', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.networkJwt(setup.userEmail);
 

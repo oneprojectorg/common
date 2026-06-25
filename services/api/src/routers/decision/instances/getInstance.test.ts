@@ -35,10 +35,7 @@ describe.concurrent('getInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
     const result = await caller.decision.getInstance({
@@ -61,10 +58,7 @@ describe.concurrent('getInstance', () => {
       grantAccess: false,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Member role has decisions.SUBMIT_PROPOSALS and decisions.VOTE but not admin
     const member = await testData.createMemberUser({
@@ -93,10 +87,7 @@ describe.concurrent('getInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Make the decision public per the runbook: GLOBAL_USER_PUBLIC holds a
     // Public role with a profile-scoped decisions READ+SUBMIT+VOTE override.
@@ -128,10 +119,7 @@ describe.concurrent('getInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // No make-public grant: GLOBAL_USER_PUBLIC has no access to this profile,
     // so a no-JWT visitor is denied (no submit access is ever surfaced).
@@ -173,10 +161,7 @@ describe.concurrent('getInstance', () => {
       grantAccess: false,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a user in a completely separate org — org-level fallback would grant READ
     // to members of the same org, so we must use a different org to test true unauthorized access
@@ -208,10 +193,7 @@ describe.concurrent('getInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const draftProposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -255,10 +237,7 @@ describeDecisionAccessTierGating('getInstance', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.noJwt();
 
@@ -276,10 +255,7 @@ describeDecisionAccessTierGating('getInstance', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.anonJwt();
 
@@ -297,10 +273,7 @@ describeDecisionAccessTierGating('getInstance', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.userJwt();
 
@@ -318,10 +291,7 @@ describeDecisionAccessTierGating('getInstance', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.networkJwt(setup.userEmail);
 
@@ -341,10 +311,7 @@ describeDecisionAccessTierGating('getLegacyInstance', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.noJwt();
 
@@ -363,10 +330,7 @@ describeDecisionAccessTierGating('getLegacyInstance', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.anonJwt();
 
@@ -385,10 +349,7 @@ describeDecisionAccessTierGating('getLegacyInstance', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.userJwt();
 
@@ -407,10 +368,7 @@ describeDecisionAccessTierGating('getLegacyInstance', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.networkJwt(setup.userEmail);
 

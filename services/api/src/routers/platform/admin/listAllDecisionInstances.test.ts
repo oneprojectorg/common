@@ -87,7 +87,7 @@ describe.concurrent('platform.admin.listAllDecisionInstances', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
 
     await Promise.all([
       testData.createProposal({
@@ -137,7 +137,7 @@ describe.concurrent('platform.admin.listAllDecisionInstances', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
 
     const { session } = await createIsolatedSession(setup.userEmail);
     const caller = createCaller(await createTestContextWithSession(session));

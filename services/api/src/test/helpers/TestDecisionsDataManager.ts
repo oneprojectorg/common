@@ -71,6 +71,12 @@ interface DecisionSetupOutput {
   organization: Record<string, unknown> & { id: string; profileId: string };
   process: EncodedDecisionProcess;
   instances: CreatedInstance[];
+  /**
+   * The first (and usually only) created instance, already narrowed.
+   * Throws if no instance was created (i.e. `instanceCount` was 0), so
+   * callers don't have to re-check `instances[0]` everywhere.
+   */
+  readonly instance: CreatedInstance;
 }
 
 interface MemberUserOutput {
@@ -295,6 +301,15 @@ export class TestDecisionsDataManager {
       organization: { ...organization, profileId: orgProfileId },
       process,
       instances,
+      get instance() {
+        const first = instances[0];
+        if (!first) {
+          throw new Error(
+            'createDecisionSetup: no instance available (instanceCount was 0)',
+          );
+        }
+        return first;
+      },
     };
   }
 

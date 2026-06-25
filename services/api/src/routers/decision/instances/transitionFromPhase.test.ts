@@ -41,10 +41,7 @@ async function createPublishedInstance(testData: TestDecisionsDataManager) {
     status: ProcessStatus.PUBLISHED,
   });
 
-  const instance = setup.instances[0];
-  if (!instance) {
-    throw new Error('No instance created');
-  }
+  const instance = setup.instance;
 
   return { setup, instance };
 }
@@ -131,10 +128,7 @@ describe('transitionFromPhase', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Instance is DRAFT by default — do not publish
     const caller = await createAuthenticatedCaller(setup.userEmail);
@@ -448,10 +442,7 @@ describeDecisionAccessTierGating('transitionFromPhase', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.noJwt();
 
@@ -472,10 +463,7 @@ describeDecisionAccessTierGating('transitionFromPhase', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.anonJwt();
 
@@ -496,10 +484,7 @@ describeDecisionAccessTierGating('transitionFromPhase', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.userJwt();
 
@@ -519,10 +504,7 @@ describeDecisionAccessTierGating('transitionFromPhase', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.networkJwt(setup.userEmail);
 

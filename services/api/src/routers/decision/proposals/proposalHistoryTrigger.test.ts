@@ -28,10 +28,7 @@ describe.concurrent('proposal history trigger', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a draft proposal, then submit it (draft → submitted)
     const proposal = await testData.createProposal({
@@ -66,10 +63,7 @@ describe.concurrent('proposal history trigger', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -113,10 +107,7 @@ describe.concurrent('proposal history trigger', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,

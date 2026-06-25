@@ -11,16 +11,6 @@ import { TestDecisionsDataManager } from './TestDecisionsDataManager';
 
 type OnTestFinished = (fn: () => void | Promise<void>) => void;
 
-export const requireFirstInstance = <T extends { profileId: string }>(
-  instances: T[],
-): T => {
-  const instance = instances[0];
-  if (!instance) {
-    throw new Error('No instance created');
-  }
-  return instance;
-};
-
 /**
  * Cleans up every resource + collection visible to any of the given profile
  * IDs. Resources are removed before collections so we don't leave orphan
@@ -98,7 +88,7 @@ export const setupInstance = async ({
     instanceCount: 1,
     grantAccess: true,
   });
-  const instance = requireFirstInstance(setup.instances);
+  const instance = setup.instance;
   registerResourcesCleanup(onTestFinished, [instance.profileId]);
 
   const adminCaller = await createAuthenticatedCaller(setup.userEmail);

@@ -38,10 +38,7 @@ describe.concurrent('uploadProposalAttachment', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -87,10 +84,7 @@ describe.concurrent('uploadProposalAttachment', () => {
       grantAccess: true,
     });
 
-    const instance = setupA.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setupA.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setupA.userEmail,
@@ -148,10 +142,7 @@ describe.concurrent('uploadProposalAttachment', () => {
       grantAccess: true,
     });
 
-    const instanceA = setupA.instances[0];
-    if (!instanceA) {
-      throw new Error('No instance created');
-    }
+    const instanceA = setupA.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setupA.userEmail,
@@ -190,10 +181,7 @@ describeAccessTierGating('uploadProposalAttachment', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
@@ -222,10 +210,7 @@ describeAccessTierGating('uploadProposalAttachment', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
@@ -253,10 +238,7 @@ describeAccessTierGating('uploadProposalAttachment', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
@@ -284,10 +266,7 @@ describeAccessTierGating('uploadProposalAttachment', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,

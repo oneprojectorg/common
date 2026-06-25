@@ -39,10 +39,7 @@ async function loadPublishedInstance(
     status: ProcessStatus.PUBLISHED,
   });
 
-  const instance = setup.instances[0];
-  if (!instance) {
-    throw new Error('No instance created');
-  }
+  const instance = setup.instance;
 
   const dbInstance = await db.query.processInstances.findFirst({
     where: { id: instance.instance.id },
@@ -185,10 +182,7 @@ describe.concurrent('advancePhase', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create + submit a proposal so it has a proposalHistory row
     const proposal = await testData.createProposal({

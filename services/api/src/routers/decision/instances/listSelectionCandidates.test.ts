@@ -43,10 +43,7 @@ async function seedInstance(testData: TestDecisionsDataManager): Promise<{
     instanceCount: 1,
     status: ProcessStatus.PUBLISHED,
   });
-  const instance = setup.instances[0];
-  if (!instance) {
-    throw new Error('No instance created');
-  }
+  const instance = setup.instance;
   const caller = await createAuthenticatedCaller(setup.userEmail);
   return {
     instanceId: instance.instance.id,
@@ -353,10 +350,7 @@ describe.concurrent('listSelectionCandidates', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const otherInstance = otherSetup.instances[0];
-    if (!otherInstance) {
-      throw new Error('No other instance created');
-    }
+    const otherInstance = otherSetup.instance;
 
     const proposal = await testData.createProposal({
       userEmail,
@@ -426,10 +420,7 @@ describeDecisionAccessTierGating('listSelectionCandidates', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.noJwt();
 
@@ -451,10 +442,7 @@ describeDecisionAccessTierGating('listSelectionCandidates', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.anonJwt();
 
@@ -476,10 +464,7 @@ describeDecisionAccessTierGating('listSelectionCandidates', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.userJwt();
 
@@ -501,10 +486,7 @@ describeDecisionAccessTierGating('listSelectionCandidates', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.networkJwt(setup.userEmail);
 

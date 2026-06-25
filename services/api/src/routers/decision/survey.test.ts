@@ -25,18 +25,6 @@ const createAuthenticatedCaller = async (email: string) => {
   return createCaller(await createTestContextWithSession(session));
 };
 
-const requireFirstInstance = <
-  T extends { profileId: string; instance: { id: string } },
->(
-  instances: T[],
-): { id: string; profileId: string } => {
-  const created = instances[0];
-  if (!created) {
-    throw new Error('No instance created');
-  }
-  return { id: created.instance.id, profileId: created.profileId };
-};
-
 const sampleInternalData = {
   wasAdmin: false,
   npsScore: 9,
@@ -52,7 +40,7 @@ describe.concurrent('process survey submission', () => {
   }) => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
     const setup = await testData.createDecisionSetup({ instanceCount: 1 });
-    const instance = requireFirstInstance(setup.instances);
+    const { instance } = setup.instance;
 
     const outsiderSetup = await testData.createDecisionSetup({
       instanceCount: 0,
@@ -87,7 +75,7 @@ describe.concurrent('process survey submission', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const { instance } = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -133,7 +121,7 @@ describe.concurrent('process survey submission', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const { instance } = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
     await caller.decision.submitProcessSurveyResponse({
@@ -160,7 +148,7 @@ describe.concurrent('process survey submission', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const { instance } = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -191,7 +179,7 @@ describeDecisionAccessTierGating('submitProcessSurveyResponse', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = requireFirstInstance(setup.instances);
+      const { instance } = setup.instance;
 
       const caller = await callers.noJwt();
 
@@ -214,7 +202,7 @@ describeDecisionAccessTierGating('submitProcessSurveyResponse', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = requireFirstInstance(setup.instances);
+      const { instance } = setup.instance;
 
       const caller = await callers.anonJwt();
 
@@ -237,7 +225,7 @@ describeDecisionAccessTierGating('submitProcessSurveyResponse', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = requireFirstInstance(setup.instances);
+      const { instance } = setup.instance;
 
       const caller = await callers.userJwt();
 
@@ -260,7 +248,7 @@ describeDecisionAccessTierGating('submitProcessSurveyResponse', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = requireFirstInstance(setup.instances);
+      const { instance } = setup.instance;
 
       const caller = await callers.networkJwt(setup.userEmail);
 
@@ -284,7 +272,7 @@ describeDecisionAccessTierGating('getProcessSurveyResponse', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = requireFirstInstance(setup.instances);
+      const { instance } = setup.instance;
 
       const caller = await callers.noJwt();
 
@@ -305,7 +293,7 @@ describeDecisionAccessTierGating('getProcessSurveyResponse', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = requireFirstInstance(setup.instances);
+      const { instance } = setup.instance;
 
       const caller = await callers.anonJwt();
 
@@ -326,7 +314,7 @@ describeDecisionAccessTierGating('getProcessSurveyResponse', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = requireFirstInstance(setup.instances);
+      const { instance } = setup.instance;
 
       const caller = await callers.userJwt();
 
@@ -347,7 +335,7 @@ describeDecisionAccessTierGating('getProcessSurveyResponse', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = requireFirstInstance(setup.instances);
+      const { instance } = setup.instance;
 
       const caller = await callers.networkJwt(setup.userEmail);
 

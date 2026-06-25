@@ -24,7 +24,7 @@ describe('posts.listProfilePosts — proposal post access', () => {
     const testData = new TestDecisionsDataManager(task.id, onTestFinished);
 
     const setup = await testData.createDecisionSetup({ instanceCount: 1 });
-    const instance = setup.instances[0]!;
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,

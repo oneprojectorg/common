@@ -38,7 +38,7 @@ describe.concurrent('getLatestSelectionForProposal', () => {
       grantAccess: true,
     });
 
-    const { instance } = setup.instances[0]!;
+    const { instance } = setup.instance;
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.id,
@@ -65,7 +65,7 @@ describe.concurrent('getLatestSelectionForProposal', () => {
       grantAccess: true,
     });
 
-    const { instance } = setup.instances[0]!;
+    const { instance } = setup.instance;
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.id,
@@ -122,7 +122,7 @@ describe.concurrent('getLatestSelectionForProposal', () => {
       grantAccess: true,
     });
 
-    const { instance } = setup.instances[0]!;
+    const { instance } = setup.instance;
     const [picked, skipped] = await Promise.all([
       testData.createProposal({
         userEmail: setup.userEmail,
@@ -173,7 +173,7 @@ describe.concurrent('getLatestSelectionForProposal', () => {
       grantAccess: true,
     });
 
-    const { instance } = setup.instances[0]!;
+    const { instance } = setup.instance;
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.id,
@@ -221,7 +221,7 @@ describe.concurrent('getLatestSelectionForProposal', () => {
       grantAccess: true,
     });
 
-    const { instance } = setup.instances[0]!;
+    const { instance } = setup.instance;
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.id,
@@ -268,7 +268,7 @@ describe.concurrent('getLatestSelectionForProposal', () => {
       grantAccess: true,
     });
 
-    const { instance } = setup.instances[0]!;
+    const { instance } = setup.instance;
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.id,
@@ -336,7 +336,7 @@ describe.concurrent('getLatestSelectionForProposal', () => {
       grantAccess: true,
     });
 
-    const { instance } = setup.instances[0]!;
+    const { instance } = setup.instance;
     const [keeper, dropped] = await Promise.all([
       testData.createProposal({
         userEmail: setup.userEmail,
@@ -439,7 +439,7 @@ describe.concurrent('getLatestSelectionForProposal', () => {
       grantAccess: true,
     });
 
-    const { instance } = setup.instances[0]!;
+    const { instance } = setup.instance;
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.id,
@@ -473,7 +473,7 @@ describe.concurrent('getLatestSelectionForProposal', () => {
       grantAccess: true,
     });
 
-    const { instance } = setup.instances[0]!;
+    const { instance } = setup.instance;
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.id,
@@ -526,7 +526,7 @@ describe.concurrent('getLatestSelectionForProposal', () => {
       grantAccess: true,
     });
 
-    const { instance, profileId } = setup.instances[0]!;
+    const { instance, profileId } = setup.instance;
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
       processInstanceId: instance.id,
@@ -584,10 +584,7 @@ describeDecisionAccessTierGating('getLatestSelectionForProposal', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
@@ -612,10 +609,7 @@ describeDecisionAccessTierGating('getLatestSelectionForProposal', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
@@ -640,10 +634,7 @@ describeDecisionAccessTierGating('getLatestSelectionForProposal', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
@@ -668,10 +659,7 @@ describeDecisionAccessTierGating('getLatestSelectionForProposal', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,

@@ -115,10 +115,7 @@ describe('translation.translateDecision', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Patch instanceData to add translatable phase content
     const instanceRecord = await db.query.processInstances.findFirst({
@@ -185,10 +182,7 @@ describe('translation.translateDecision', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const instanceRecord = await db.query.processInstances.findFirst({
       where: { id: instance.instance.id },
@@ -255,10 +249,7 @@ describe('translation.translateDecision', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Remove phase names from instanceData to produce an instance with no translatable content
     const instanceRecord = await db.query.processInstances.findFirst({
@@ -312,10 +303,7 @@ describe('translation.translateDecision', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const instanceRecord = await db.query.processInstances.findFirst({
       where: { id: instance.instance.id },
@@ -506,10 +494,7 @@ describe('translation.translateDecision', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Clean up any cache entries written before auth fails (runTranslateBatch runs
     // in parallel with the auth check and may write rows before rejection)
@@ -550,10 +535,7 @@ describe('translation.translateDecision', () => {
       grantAccess: false, // owner gets profile access, not the member
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Patch instance with some content so we get a non-empty result
     const instanceRecord = await db.query.processInstances.findFirst({

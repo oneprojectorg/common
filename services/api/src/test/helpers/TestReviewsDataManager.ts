@@ -67,11 +67,7 @@ export class TestReviewsDataManager {
       processSchema: testSimpleVotingSchema,
     });
 
-    const instance = setup.instances[0];
-
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const reviewerUser = await db.query.users.findFirst({
       where: {

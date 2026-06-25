@@ -278,10 +278,7 @@ describe.concurrent('listDecisionProfiles', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const draftProposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -371,9 +368,9 @@ describe.concurrent('listDecisionProfiles', () => {
     // Main user should only see the profile they have access to
     expect(result.items).toMatchObject([
       {
-        id: setup.instances[0]?.profileId,
+        id: setup.instance.profileId,
         processInstance: {
-          id: setup.instances[0]?.instance.id,
+          id: setup.instance.instance.id,
         },
       },
     ]);
