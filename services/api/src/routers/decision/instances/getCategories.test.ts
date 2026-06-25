@@ -133,10 +133,7 @@ describe.concurrent('getCategories permissions', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -158,10 +155,7 @@ describe.concurrent('getCategories permissions', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const memberUser = await testData.createMemberUser({
       organization: setup.organization,
@@ -188,10 +182,7 @@ describe.concurrent('getCategories permissions', () => {
       grantAccess: false,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // The admin user has org-level access (created the org) but no profile-level
     // access on the instance (grantAccess: false). The org fallback should allow access.
@@ -215,10 +206,7 @@ describe.concurrent('getCategories permissions', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a member user with no instance profile access
     const outsiderUser = await testData.createMemberUser({
@@ -253,10 +241,7 @@ describe.concurrent('getCategories permissions', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a member with org access but no instance profile access
     const memberUser = await testData.createMemberUser({
@@ -288,10 +273,7 @@ describe.concurrent('getCategories category matching', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Use unique labels per test to avoid (taxonomyId, termUri) unique constraint
     // collisions when tests run concurrently against the shared "proposal" taxonomy
@@ -347,10 +329,7 @@ describe.concurrent('getCategories category matching', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Only seed one matching term — "Water Access" exists but "Nonexistent" does not
     const { termRecords } = await seedProposalTaxonomy(
@@ -398,10 +377,7 @@ describe.concurrent('getCategories category matching', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Seed taxonomy so we can confirm it's not about missing taxonomy
     await seedProposalTaxonomy(['Digital Literacy'], onTestFinished);
@@ -428,10 +404,7 @@ describe.concurrent('getCategories category matching', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Seed taxonomy with terms that won't match our categories
     await seedProposalTaxonomy(['Urban Planning'], onTestFinished);
@@ -464,10 +437,7 @@ describe.concurrent('getCategories category matching', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // The termUri for "Health & Wellness" after conversion:
     // "health & wellness" -> "health--wellness" (& removed, spaces become -)
@@ -511,10 +481,7 @@ describeDecisionAccessTierGating('getCategories', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.noJwt();
 
@@ -534,10 +501,7 @@ describeDecisionAccessTierGating('getCategories', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.anonJwt();
 
@@ -557,10 +521,7 @@ describeDecisionAccessTierGating('getCategories', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.userJwt();
 
@@ -580,10 +541,7 @@ describeDecisionAccessTierGating('getCategories', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.networkJwt(setup.userEmail);
 

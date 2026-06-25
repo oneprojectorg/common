@@ -37,10 +37,7 @@ describe.concurrent('deleteProposalAttachment', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -94,10 +91,7 @@ describe.concurrent('deleteProposalAttachment', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -164,10 +158,7 @@ describe.concurrent('deleteProposalAttachment', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -216,10 +207,7 @@ describeDecisionAccessTierGating('deleteProposalAttachment', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
@@ -255,10 +243,7 @@ describeDecisionAccessTierGating('deleteProposalAttachment', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
@@ -293,10 +278,7 @@ describeDecisionAccessTierGating('deleteProposalAttachment', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
@@ -331,10 +313,7 @@ describeDecisionAccessTierGating('deleteProposalAttachment', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,

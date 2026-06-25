@@ -42,10 +42,7 @@ describe.concurrent('submitProposal', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -73,10 +70,7 @@ describe.concurrent('submitProposal', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -112,10 +106,7 @@ describe.concurrent('submitProposal', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -154,10 +145,7 @@ describe.concurrent('submitProposal', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -219,10 +207,7 @@ describe.concurrent('submitProposal', () => {
       },
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -293,10 +278,7 @@ describe.concurrent('submitProposal', () => {
       },
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a proposal with an empty title
     const proposal = await testData.createProposal({
@@ -342,10 +324,7 @@ describe.concurrent('submitProposal', () => {
       },
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -421,10 +400,7 @@ describe.concurrent('submitProposal', () => {
       },
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create proposal with only title — missing the UUID-keyed required fields
     const proposal = await testData.createProposal({
@@ -478,10 +454,7 @@ describe.concurrent('submitProposal', () => {
       },
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a proposal, then directly overwrite proposalData
     // with a budget that exceeds the template maximum
@@ -554,10 +527,7 @@ describe.concurrent('submitProposal', () => {
       },
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -621,10 +591,7 @@ describe.concurrent('submitProposal', () => {
       },
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -692,10 +659,7 @@ describe.concurrent('submitProposal', () => {
       },
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -763,10 +727,7 @@ describe.concurrent('submitProposal', () => {
       },
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -813,10 +774,7 @@ describe.concurrent('submitProposal', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Enable defaults.hidden on the initial phase
     const instanceRecord = await db.query.processInstances.findFirst({
@@ -886,10 +844,7 @@ describe.concurrent('submitProposal', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -926,10 +881,7 @@ describe.concurrent('submitProposal', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const instanceRecord = await db.query.processInstances.findFirst({
       where: { id: instance.instance.id },
@@ -990,10 +942,7 @@ describe.concurrent('submitProposal', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const instanceRecord = await db.query.processInstances.findFirst({
       where: { id: instance.instance.id },
@@ -1054,10 +1003,7 @@ describe.concurrent('submitProposal', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create the proposal first (while currentStateId is still valid), then
     // corrupt the instance to point at a phase that doesn't exist. We expect
@@ -1091,10 +1037,7 @@ describeDecisionAccessTierGating('submitProposal', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
@@ -1119,10 +1062,7 @@ describeDecisionAccessTierGating('submitProposal', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
@@ -1146,10 +1086,7 @@ describeDecisionAccessTierGating('submitProposal', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
@@ -1173,10 +1110,7 @@ describeDecisionAccessTierGating('submitProposal', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,

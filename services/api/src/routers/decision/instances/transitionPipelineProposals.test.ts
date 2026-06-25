@@ -28,7 +28,7 @@ describe.concurrent('Transition pipeline: join table population', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
 
     // Create and submit 3 proposals (submitted proposals are eligible for transition)
@@ -77,7 +77,7 @@ describe.concurrent('Transition pipeline: join table population', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
 
     // Submit 4 proposals; first pipeline limits to 3, second limits to 2
@@ -140,7 +140,7 @@ describe.concurrent('Transition pipeline: join table population', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
 
     // Create and submit 3 proposals (submitted proposals are eligible for transition)
@@ -188,7 +188,7 @@ describe.concurrent('Transition pipeline: join table population', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
 
     for (let i = 1; i <= 3; i++) {
@@ -252,7 +252,7 @@ describe.concurrent('Transition pipeline: join table population', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
 
     await testData.createProposal({

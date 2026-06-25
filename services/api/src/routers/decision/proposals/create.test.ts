@@ -19,10 +19,7 @@ describeDecisionAccessTierGating('createProposal', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.noJwt();
 
@@ -45,10 +42,7 @@ describeDecisionAccessTierGating('createProposal', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.anonJwt();
 
@@ -70,10 +64,7 @@ describeDecisionAccessTierGating('createProposal', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.userJwt();
 
@@ -95,10 +86,7 @@ describeDecisionAccessTierGating('createProposal', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.networkJwt(setup.userEmail);
 

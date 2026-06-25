@@ -38,7 +38,7 @@ describe.concurrent('getResultsStats', () => {
       grantAccess: true,
     });
 
-    const { instance } = setup.instances[0]!;
+    const { instance } = setup.instance;
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const result = await caller.decision.getResultsStats({
@@ -59,7 +59,7 @@ describe.concurrent('getResultsStats', () => {
       grantAccess: true,
     });
 
-    const { instance, profileId } = setup.instances[0]!;
+    const { instance, profileId } = setup.instance;
 
     const memberUser = await testData.createMemberUser({
       organization: setup.organization,
@@ -88,7 +88,7 @@ describe.concurrent('getResultsStats', () => {
       grantAccess: false,
     });
 
-    const { instance } = setup.instances[0]!;
+    const { instance } = setup.instance;
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const result = await caller.decision.getResultsStats({
@@ -109,7 +109,7 @@ describe.concurrent('getResultsStats', () => {
       grantAccess: false,
     });
 
-    const { instance } = setup.instances[0]!;
+    const { instance } = setup.instance;
 
     // Member has no profile-level access (instanceProfileIds: []),
     // but the org Member role has decisions: READ so the fallback should pass
@@ -138,7 +138,7 @@ describe.concurrent('getResultsStats', () => {
       grantAccess: false,
     });
 
-    const { instance, profileId } = setup.instances[0]!;
+    const { instance, profileId } = setup.instance;
 
     // Create a user in a different org, then grant them profile-level access
     // to the first setup's instance — they are NOT in setup's org
@@ -173,7 +173,7 @@ describe.concurrent('getResultsStats', () => {
       grantAccess: true,
     });
 
-    const { instance } = setup.instances[0]!;
+    const { instance } = setup.instance;
 
     // Create a proposal so we can reference it in result selections
     const proposal = await testData.createProposal({
@@ -230,7 +230,7 @@ describe.concurrent('getResultsStats', () => {
       grantAccess: false,
     });
 
-    const { instance } = setup.instances[0]!;
+    const { instance } = setup.instance;
 
     // Create a separate setup — this user belongs to a different organization
     const otherSetup = await testData.createDecisionSetup({
@@ -271,10 +271,7 @@ describeDecisionAccessTierGating('getResultsStats', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.noJwt();
 
@@ -293,10 +290,7 @@ describeDecisionAccessTierGating('getResultsStats', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.anonJwt();
 
@@ -315,10 +309,7 @@ describeDecisionAccessTierGating('getResultsStats', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.userJwt();
 
@@ -337,10 +328,7 @@ describeDecisionAccessTierGating('getResultsStats', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.networkJwt(setup.userEmail);
 

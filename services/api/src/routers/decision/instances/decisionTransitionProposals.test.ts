@@ -46,8 +46,8 @@ describe.concurrent('decisionTransitionProposals constraints', () => {
       }),
     ]);
 
-    const instanceA = setupA.instances[0]!;
-    const instanceB = setupB.instances[0]!;
+    const instanceA = setupA.instance;
+    const instanceB = setupB.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setupB.userEmail,
@@ -86,7 +86,7 @@ describe.concurrent('decisionTransitionProposals constraints', () => {
       instanceCount: 1,
     });
 
-    const instance = setup.instances[0]!;
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,

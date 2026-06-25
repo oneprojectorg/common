@@ -35,10 +35,7 @@ describe.concurrent('updateProposal visibility', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a proposal via router
     const proposal = await testData.createProposal({
@@ -69,10 +66,7 @@ describe.concurrent('updateProposal visibility', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a proposal via router
     const proposal = await testData.createProposal({
@@ -109,10 +103,7 @@ describe.concurrent('updateProposal visibility', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a proposal as the admin via router
     const proposal = await testData.createProposal({
@@ -151,10 +142,7 @@ describe.concurrent('updateProposal visibility', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create two proposals via router
     const visibleProposal = await testData.createProposal({
@@ -215,10 +203,7 @@ describe.concurrent('updateProposal visibility', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a non-admin member user who will submit a proposal
     const submitter = await testData.createMemberUser({
@@ -262,10 +247,7 @@ describe.concurrent('updateProposal visibility', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create two proposals via router
     await testData.createProposal({
@@ -310,10 +292,7 @@ describe.concurrent('updateProposal status', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -343,10 +322,7 @@ describe.concurrent('updateProposal status', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -374,10 +350,7 @@ describe.concurrent('updateProposal status', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -414,10 +387,7 @@ describe.concurrent('updateProposal status', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -459,10 +429,7 @@ describe.concurrent('updateProposal status', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -516,10 +483,7 @@ describe.concurrent('updateProposal validation', () => {
       },
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Proposal is created in DRAFT status by default
     const proposal = await testData.createProposal({
@@ -569,10 +533,7 @@ describe.concurrent('updateProposal validation', () => {
       },
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -613,10 +574,7 @@ describe.concurrent('updateProposal checkpointVersion', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -658,10 +616,7 @@ describe.concurrent('updateProposal checkpointVersion', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -702,10 +657,7 @@ describe.concurrent('updateProposal checkpointVersion', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Proposal is created in DRAFT status by default
     const proposal = await testData.createProposal({
@@ -741,10 +693,7 @@ describeDecisionAccessTierGating('updateProposal', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
@@ -772,10 +721,7 @@ describeDecisionAccessTierGating('updateProposal', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
@@ -802,10 +748,7 @@ describeDecisionAccessTierGating('updateProposal', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,
@@ -832,10 +775,7 @@ describeDecisionAccessTierGating('updateProposal', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
       const proposal = await testData.createProposal({
         userEmail: setup.userEmail,
         processInstanceId: instance.instance.id,

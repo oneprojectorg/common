@@ -315,11 +315,7 @@ describe.concurrent('account.listUserInvites', () => {
       grantAccess: true,
     });
     const invitee = await inviteData.createStandaloneUser();
-    const instance = setup.instances[0];
-
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const [submitter] = await db
       .select({ profileId: users.profileId })

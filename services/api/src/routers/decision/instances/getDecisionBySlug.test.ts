@@ -33,7 +33,7 @@ describe.concurrent('getDecisionBySlug', () => {
       grantAccess: true,
     });
 
-    const { slug, profileId } = setup.instances[0]!;
+    const { slug, profileId } = setup.instance;
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const result = await caller.decision.getDecisionBySlug({ slug });
@@ -58,7 +58,7 @@ describe.concurrent('getDecisionBySlug', () => {
       grantAccess: false,
     });
 
-    const { slug } = setup.instances[0]!;
+    const { slug } = setup.instance;
 
     // Create a different user who doesn't have access to the instance
     const otherUser = await testData.createMemberUser({
@@ -104,7 +104,7 @@ describe.concurrent('getDecisionBySlug', () => {
       grantAccess: true,
     });
 
-    const { slug } = setup.instances[0]!;
+    const { slug } = setup.instance;
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const result = await caller.decision.getDecisionBySlug({ slug });
@@ -125,10 +125,7 @@ describe.concurrent('getDecisionBySlug', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const draftProposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -172,10 +169,7 @@ describeDecisionAccessTierGating('getDecisionBySlug', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.noJwt();
 
@@ -193,10 +187,7 @@ describeDecisionAccessTierGating('getDecisionBySlug', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.anonJwt();
 
@@ -214,10 +205,7 @@ describeDecisionAccessTierGating('getDecisionBySlug', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.userJwt();
 
@@ -235,10 +223,7 @@ describeDecisionAccessTierGating('getDecisionBySlug', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.networkJwt(setup.userEmail);
 

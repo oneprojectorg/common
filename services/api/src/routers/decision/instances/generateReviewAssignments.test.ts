@@ -87,7 +87,7 @@ async function createReviewInstance(
 
   return {
     setup,
-    instance: setup.instances[0]!,
+    instance: setup.instance,
     creatorProfileId: userRecord!.profileId!,
   };
 }

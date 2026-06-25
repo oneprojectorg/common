@@ -29,16 +29,6 @@ const createOutsiderCaller = async (testData: TestDecisionsDataManager) => {
   return createAuthenticatedCaller(outsider.email);
 };
 
-const requireFirstInstance = <T extends { profileId: string }>(
-  instances: T[],
-): T => {
-  const instance = instances[0];
-  if (!instance) {
-    throw new Error('No instance created');
-  }
-  return instance;
-};
-
 const postExists = async (postId: string): Promise<boolean> => {
   const [row] = await db
     .select({ id: posts.id })
@@ -164,7 +154,7 @@ describe.concurrent('decision update post deletion (postsToProfiles)', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const update = await adminCaller.posts.createPost({
@@ -186,7 +176,7 @@ describe.concurrent('decision update post deletion (postsToProfiles)', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const firstAdminCaller = await createAuthenticatedCaller(setup.userEmail);
     const update = await firstAdminCaller.posts.createPost({
@@ -222,7 +212,7 @@ describe.concurrent('decision update post deletion (postsToProfiles)', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const update = await adminCaller.posts.createPost({
@@ -252,7 +242,7 @@ describe.concurrent('decision update post deletion (postsToProfiles)', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const update = await adminCaller.posts.createPost({
@@ -280,7 +270,7 @@ describe.concurrent('decision comment deletion', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const update = await adminCaller.posts.createPost({
@@ -313,7 +303,7 @@ describe.concurrent('decision comment deletion', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const update = await adminCaller.posts.createPost({
@@ -345,7 +335,7 @@ describe.concurrent('decision comment deletion', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const update = await adminCaller.posts.createPost({
@@ -387,7 +377,7 @@ describe.concurrent('decision comment deletion', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
     const update = await adminCaller.posts.createPost({
@@ -425,7 +415,7 @@ describe.concurrent('proposal comment deletion', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,
@@ -464,7 +454,7 @@ describe.concurrent('proposal comment deletion', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = requireFirstInstance(setup.instances);
+    const instance = setup.instance;
 
     const proposal = await testData.createProposal({
       userEmail: setup.userEmail,

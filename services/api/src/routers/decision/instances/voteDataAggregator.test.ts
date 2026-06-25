@@ -22,7 +22,7 @@ describe.concurrent('aggregateProposalMetrics', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
 
     const proposal = await testData.createProposal({

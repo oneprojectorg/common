@@ -85,7 +85,7 @@ describe.concurrent('listAllProposals', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
     const caller = await createAuthenticatedCaller(userEmail);
 
@@ -126,7 +126,7 @@ describe.concurrent('listAllProposals', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = setup.instances[0]!;
+    const instance = setup.instance;
 
     const memberUser = await testData.createMemberUser({
       organization: setup.organization,
@@ -190,7 +190,7 @@ describe.concurrent('listAllProposals', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = setup.instances[0]!;
+    const instance = setup.instance;
 
     const memberUser = await testData.createMemberUser({
       organization: setup.organization,
@@ -231,7 +231,7 @@ describe.concurrent('listAllProposals', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = setup.instances[0]!;
+    const instance = setup.instance;
 
     const memberUser = await testData.createMemberUser({
       organization: setup.organization,
@@ -278,7 +278,7 @@ describe.concurrent('listAllProposals', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = setup.instances[0]!;
+    const instance = setup.instance;
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
 
     const [visible, hidden] = await Promise.all([
@@ -322,7 +322,7 @@ describe.concurrent('listAllProposals', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = setup.instances[0]!;
+    const instance = setup.instance;
     const adminCaller = await createAuthenticatedCaller(setup.userEmail);
 
     const [submitted, draft, rejected, duplicate, hidden, deleted] =
@@ -397,7 +397,7 @@ describe.concurrent('listAllProposals', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = setup.instances[0]!;
+    const instance = setup.instance;
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
     const termId = randomUUID();
@@ -497,10 +497,7 @@ describe.concurrent('listAllProposals', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const created = [];
     for (let i = 1; i <= 5; i++) {
@@ -553,10 +550,7 @@ describe.concurrent('listAllProposals', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const [mine, other] = await Promise.all([
       testData.createMemberUser({
@@ -608,10 +602,7 @@ describe.concurrent('listAllProposals', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const voter = await testData.createMemberUser({
       organization: setup.organization,
@@ -674,10 +665,7 @@ describe.concurrent('listAllProposals', () => {
       instanceCount: 1,
       grantAccess: true,
     });
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const [voter, snoop] = await Promise.all([
       testData.createMemberUser({
@@ -709,10 +697,7 @@ describeDecisionAccessTierGating('listAllProposals', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.noJwt();
 
@@ -732,10 +717,7 @@ describeDecisionAccessTierGating('listAllProposals', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.anonJwt();
 
@@ -755,10 +737,7 @@ describeDecisionAccessTierGating('listAllProposals', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.userJwt();
 
@@ -778,10 +757,7 @@ describeDecisionAccessTierGating('listAllProposals', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.networkJwt(setup.userEmail);
 

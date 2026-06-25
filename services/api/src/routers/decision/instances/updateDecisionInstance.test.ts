@@ -36,10 +36,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -64,10 +61,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -100,10 +94,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -134,10 +125,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -169,10 +157,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -196,10 +181,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -222,10 +204,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -255,10 +234,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -303,10 +279,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -340,10 +313,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -390,10 +360,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -427,10 +394,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Plant a corrupt overview shape (body is neither an HTML string nor a
     // JSON doc — here a number) directly in the database. Both string and
@@ -474,10 +438,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -526,10 +487,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -571,10 +529,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a member user (non-admin)
     const memberUser = await testData.createMemberUser({
@@ -640,10 +595,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -667,10 +619,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -721,10 +670,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -765,10 +711,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -806,10 +749,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -932,10 +872,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -974,10 +911,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -1026,10 +960,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -1062,10 +993,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a member user and grant them admin access on the decision profile
     // (skip instanceProfileIds to avoid duplicate profileUsers rows)
@@ -1103,10 +1031,7 @@ describe.concurrent('updateDecisionInstance', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a member user and grant them admin access on the decision profile
     // (skip instanceProfileIds to avoid duplicate profileUsers rows)
@@ -1142,10 +1067,7 @@ describeDecisionAccessTierGating('updateDecisionInstance', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.noJwt();
 
@@ -1167,10 +1089,7 @@ describeDecisionAccessTierGating('updateDecisionInstance', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.anonJwt();
 
@@ -1192,10 +1111,7 @@ describeDecisionAccessTierGating('updateDecisionInstance', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.userJwt();
 
@@ -1216,10 +1132,7 @@ describeDecisionAccessTierGating('updateDecisionInstance', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.networkJwt(setup.userEmail);
 

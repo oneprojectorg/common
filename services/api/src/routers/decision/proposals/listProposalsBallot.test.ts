@@ -66,10 +66,7 @@ describe.concurrent('listProposals: votedByProfileId (ballot filter)', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a voter and a submitter; the submitter contributes 3 proposals,
     // the voter votes on 2 of them.
@@ -136,10 +133,7 @@ describe.concurrent('listProposals: votedByProfileId (ballot filter)', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const [voter, snoop] = await Promise.all([
       testData.createMemberUser({
@@ -186,10 +180,7 @@ describe.concurrent('listProposals: votedByProfileId (ballot filter)', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const voter = await testData.createMemberUser({
       organization: setup.organization,
@@ -241,10 +232,7 @@ describe.concurrent('listProposals: votedByProfileId (ballot filter)', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const voter = await testData.createMemberUser({
       organization: setup.organization,

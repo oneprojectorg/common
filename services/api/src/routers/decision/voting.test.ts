@@ -82,10 +82,7 @@ async function setupVotingInstance(
     processSchema: buildVotingSchema(opts.maxVotesPerMember),
   });
 
-  const instance = setup.instances[0];
-  if (!instance) {
-    throw new Error('No instance created');
-  }
+  const instance = setup.instance;
 
   const proposals = await Promise.all(
     Array.from({ length: opts.proposalCount }, (_, i) =>

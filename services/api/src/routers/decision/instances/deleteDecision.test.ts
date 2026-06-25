@@ -34,10 +34,7 @@ describe.concurrent('deleteDecision', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
@@ -69,10 +66,7 @@ describe.concurrent('deleteDecision', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a second user and grant them admin access on the instance profile
     const adminUser = await testData.createMemberUser({
@@ -110,10 +104,7 @@ describe.concurrent('deleteDecision', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a member user (non-admin) with access to the instance
     const memberUser = await testData.createMemberUser({
@@ -149,10 +140,7 @@ describe.concurrent('deleteDecision', () => {
       grantAccess: true,
     });
 
-    const instance = setup.instances[0];
-    if (!instance) {
-      throw new Error('No instance created');
-    }
+    const instance = setup.instance;
 
     // Create a completely separate user with no access
     const otherSetup = await testData.createDecisionSetup({
@@ -214,10 +202,7 @@ describeDecisionAccessTierGating('deleteDecision', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.noJwt();
 
@@ -236,10 +221,7 @@ describeDecisionAccessTierGating('deleteDecision', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.anonJwt();
 
@@ -258,10 +240,7 @@ describeDecisionAccessTierGating('deleteDecision', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.userJwt();
 
@@ -279,10 +258,7 @@ describeDecisionAccessTierGating('deleteDecision', {
         instanceCount: 1,
         grantAccess: true,
       });
-      const instance = setup.instances[0];
-      if (!instance) {
-        throw new Error('No instance created');
-      }
+      const instance = setup.instance;
 
       const caller = await callers.networkJwt(setup.userEmail);
 

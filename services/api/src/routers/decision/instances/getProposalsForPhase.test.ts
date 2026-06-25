@@ -29,7 +29,7 @@ describe.concurrent('getProposalsForPhase', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
 
     const [p1, p2] = await Promise.all([
@@ -65,7 +65,7 @@ describe.concurrent('getProposalsForPhase', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
 
     // Create and submit 3 proposals; pipeline limits to 2
@@ -99,7 +99,7 @@ describe.concurrent('getProposalsForPhase', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
 
     const [p1, p2] = await Promise.all([
@@ -139,7 +139,7 @@ describe.concurrent('getProposalsForPhase', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
 
     // Create and submit 3 proposals; pipeline limits to 2
@@ -177,7 +177,7 @@ describe.concurrent('getProposalsForPhase', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
 
     const result = await getProposalsForPhase({
       instanceId,
@@ -197,7 +197,7 @@ describe.concurrent('getProposalsForPhase', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
 
     const [p1, p2] = await Promise.all([
@@ -244,7 +244,7 @@ describe.concurrent('getProposalsForPhase', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
 
     // Create one submitted proposal and one draft (not submitted)
@@ -277,7 +277,7 @@ describe.concurrent('getProposalsForPhase', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
 
     const p1 = await testData.createProposal({
@@ -319,7 +319,7 @@ describe.concurrent('getProposalsForPhase', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
 
     const submissionPhaseProposal = await testData.createProposal({
@@ -375,7 +375,7 @@ describe.concurrent('getProposalsForPhase', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
 
     // Create 3 proposals in submission; pipeline will shortlist 2.
@@ -430,7 +430,7 @@ describe.concurrent('getProposalsForPhase', () => {
       instanceCount: 1,
       status: ProcessStatus.PUBLISHED,
     });
-    const instanceId = setup.instances[0]!.instance.id;
+    const instanceId = setup.instance.instance.id;
     const { userEmail } = setup;
 
     const [p1, p2] = await Promise.all([
