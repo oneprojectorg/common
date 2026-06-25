@@ -6,13 +6,14 @@ import { RichTextEditor } from '@op/ui/RichTextEditor';
 import { Skeleton } from '@op/ui/Skeleton';
 import type { JSONContent } from '@tiptap/core';
 import type { Editor } from '@tiptap/react';
-import { Suspense, useRef, useState } from 'react';
+import { Suspense, useMemo, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { ErrorMessage } from '@/components/ErrorMessage';
 import { RichTextEditorBubbleMenu } from '@/components/RichTextEditor';
+import { getProposalExtensions } from '@/components/RichTextEditor/editorConfig';
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
@@ -73,6 +74,14 @@ function OverviewSectionContent({
   // Editor instance, captured once ready, so the bubble menu can attach.
   const [editor, setEditor] = useState<Editor | null>(null);
 
+  // Match the proposal editor's extension set so link embeds (paste a YouTube /
+  // Vimeo / etc. URL → Iframely preview) work here too. Slash commands stay off:
+  // the overview editor has no slash menu, only the bubble menu.
+  const extensions = useMemo(
+    () => getProposalExtensions({ slashCommands: false }),
+    [],
+  );
+
   const saveOverview = (patch: {
     headline?: string;
     description?: string;
@@ -126,6 +135,7 @@ function OverviewSectionContent({
         <hr className="border-neutral-gray1" />
 
         <RichTextEditor
+          extensions={extensions}
           // Sanitize stored JSON so an unknown node type can't make TipTap blank
           // the whole doc on load (and autosave the blank). HTML strings parse
           // leniently, so only JSON needs it.
