@@ -55,10 +55,8 @@ const ProgressInPortal = (props: ProgressComponentProps) => (
   </Portal>
 );
 
-// Warms the cache for the organization-search step. Rendered only on the
-// org-search branch — the promote flow skips that step entirely, so prefetching
-// there would fire a network-tier request the upgraded user never needs (and
-// can't make), surfacing a spurious 403.
+// Prefetch for the org-search step. Only on the org-search branch: the promote
+// flow skips it, and prefetching there fires a network-tier 403 for the new user.
 const PrefetchDomainOrganizations = () => {
   void trpc.account.listMatchingDomainOrganizations.usePrefetchQuery();
   return null;
@@ -91,9 +89,8 @@ export const OnboardingFlow = () => {
   const completeOnboarding = trpc.account.completeOnboarding.useMutation();
   const createOrganization = trpc.organization.create.useMutation();
 
-  // Promote flow: an anonymous visitor who just upgraded to a full account (see
-  // PromoteAccountModal/LinkAccountPanel). They skip organization joining
-  // entirely — that journey lives in PromoteOnboardingFlow.
+  // Promote flow (just-upgraded anon visitor) skips org joining; that journey
+  // lives in PromoteOnboardingFlow.
   const searchParams = useSearchParams();
   const isPromoteFlow = searchParams.get('promote') === '1';
 

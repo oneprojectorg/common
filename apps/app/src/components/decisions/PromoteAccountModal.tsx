@@ -7,23 +7,18 @@ import { Checkbox } from '@op/ui/Checkbox';
 import { Header1 } from '@op/ui/Header';
 import { Modal } from '@op/ui/Modal';
 import { useQueryState } from 'nuqs';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { LuUserRoundMinus, LuUserRoundPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
 /**
- * Promote an anonymous visitor to a full account.
+ * Promote an anonymous visitor to a full account. Shown when `?promote=1` is on
+ * the URL (set by ProposalEditor after an anon visitor submits their idea).
  *
- * Shown when `?promote=1` is on the URL, which ProposalEditor sets after an
- * anonymous visitor submits their idea.
- *
- * "Create account" / "Log in" send the visitor to the real login page in
- * link mode (`/login?link=1`), which *links* an email identity (via OTP) onto
- * the current anonymous user instead of creating a separate account — so the
- * idea they just submitted stays theirs
- * (https://supabase.com/docs/guides/auth/auth-anonymous).
- * See LinkAccountPanel for the linking logic.
+ * "Create account" / "Log in" route to `/login?link=1`, which *links* an email
+ * identity onto the anon user (keeping their idea) rather than creating a new
+ * account. See LinkAccountPanel.
  */
 
 export const PromoteAccountModal = () => {
@@ -33,9 +28,8 @@ export const PromoteAccountModal = () => {
   // their own idea (the proposal view) after they finish creating an account.
   const [proposalId] = useQueryState('proposal');
 
-  // Only anonymous sign-ins can be promoted — a full account has nothing to
-  // upgrade, and a no-session visitor has no anon identity to attach an email
-  // to yet. (`isAnonymous` is the session-derived flag, same as onboarding.ts.)
+  // Only anonymous sign-ins can be promoted; a full account has nothing to
+  // upgrade. (`isAnonymous` is session-derived, same as onboarding.ts.)
   const isAnonymous = Boolean(user?.isAnonymous);
   const isOpen = isAnonymous && promote === '1';
 
@@ -63,16 +57,13 @@ const PromoteAccountModalContent = ({
   const t = useTranslations();
   const [agreed, setAgreed] = useState(false);
 
-  // Send them to the login page in link mode, returning to their idea once
-  // linked. The current path is the decision; appending /proposal/<id> targets
-  // the proposal view they just created (falls back to the decision page).
+  // Login in link mode, returning to the proposal once linked (falls back to the
+  // decision page).
   //
-  // TODO(anon-upgrade): "Create account" and "Already have an account? Log in"
-  // intentionally share this link-mode entry for now. Link mode can't attach an
-  // email/identity that already belongs to a full account, so an existing-account
-  // user routed here will hit the (raw) Supabase collision error in
-  // LinkAccountPanel. Productionize by routing "Log in" to normal /login and
-  // deciding what happens to the abandoned anonymous draft.
+  // TODO(anon-upgrade): "Create account" and "Log in" share this link-mode entry.
+  // An existing full account can't be linked, so that user hits the raw Supabase
+  // collision error in LinkAccountPanel — route "Log in" to /login and handle the
+  // abandoned anon draft.
   const goToLogin = () => {
     const base = window.location.pathname;
     const redirect = proposalId ? `${base}/proposal/${proposalId}` : base;
@@ -109,13 +100,22 @@ const PromoteAccountModalContent = ({
           <p className="text-sm text-neutral-charcoal">
             {t('Stay anonymous. React to comments with emoji.')}
           </p>
-          {/* TODO(anon-upgrade): accepting this only gates the button — it does
-              not persist ToS/privacy acceptance for the anonymous account
-              anywhere. Either record it for the anon user or drop the checkbox
-              on the guest path. */}
+          {/* TODO(anon-upgrade): this checkbox only gates the button; ToS/privacy
+              acceptance isn't persisted for the anon account. Pending team
+              decision on what accepting terms means for an anonymous user. */}
           <Checkbox isSelected={agreed} onChange={setAgreed}>
             <span className="text-sm">
-              {t('I agree to the Terms of Service and Privacy Policy')}
+              {t.rich(
+                'I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>',
+                {
+                  tos: (chunks: ReactNode) => (
+                    <PolicyLink href="/info/tos">{chunks}</PolicyLink>
+                  ),
+                  privacy: (chunks: ReactNode) => (
+                    <PolicyLink href="/info/privacy">{chunks}</PolicyLink>
+                  ),
+                },
+              )}
             </span>
           </Checkbox>
           <Button
@@ -162,3 +162,25 @@ const PromoteAccountModalContent = ({
     </div>
   );
 };
+
+// Opens a policy page in a new tab without toggling the consent checkbox it
+// sits inside (stop the press from reaching the surrounding React Aria
+// Checkbox).
+const PolicyLink = ({
+  href,
+  children,
+}: {
+  href: string;
+  children: ReactNode;
+}) => (
+  <a
+    href={href}
+    target="_blank"
+    rel="noreferrer"
+    className="text-primary-teal underline"
+    onClick={(e) => e.stopPropagation()}
+    onPointerDown={(e) => e.stopPropagation()}
+  >
+    {children}
+  </a>
+);

@@ -14,23 +14,16 @@ import {
 } from '../fixtures/index.js';
 
 /**
- * Anonymous-account upgrade ("promote") flow.
- *
- * An anonymous visitor on a public decision is offered an account upgrade
- * (PromoteAccountModal, shown via ?promote=1). Choosing "Create account" routes
- * to /login?link=1 (LinkAccountPanel), where entering an email *links* it onto
- * the existing anonymous user and sends them through a slimmed onboarding
- * (PromoteOnboardingFlow at /start?promote=1: personal details + ToS) before
- * returning them to the decision.
+ * Anonymous-account upgrade ("promote") flow: an anon visitor on a public
+ * decision upgrades via PromoteAccountModal → /login?link=1 (email link) →
+ * slimmed onboarding (/start?promote=1) → back to the decision.
  *
  * Regression guarded: the upgraded visitor is intentionally NOT a network
- * member, so /start's walled-garden gate used to `forbidden()` (403) right after
- * the email step. The gate now admits the promote flow (see walledGarden.ts /
- * start/layout.tsx).
+ * member, so /start's walled-garden gate used to 403 right after the email step;
+ * the gate now admits the promote flow.
  *
- * Note: the e2e Supabase has email confirmations disabled, so the email change
- * applies immediately and the OTP entry screen is skipped — entering the email
- * advances straight to /start, which is exactly where the 403 occurred.
+ * Note: e2e Supabase has email confirmations off, so the OTP screen is skipped
+ * and entering the email advances straight to /start — where the 403 occurred.
  */
 test.describe('Anonymous account upgrade (promote flow)', () => {
   // Start with no session; the test establishes an anonymous one itself.

@@ -21,19 +21,12 @@ import {
 } from './AuthPanel';
 
 /**
- * Account-upgrade panel for an anonymous visitor ("link mode").
+ * Account-upgrade panel for an anonymous visitor ("link mode"), reached via
+ * `/login?link=1` (see PromoteAccountModal). Instead of a brand-new account we
+ * *link* an email identity (via OTP) onto the existing anon user, so data they
+ * created while anonymous stays theirs. Normal login/signup lives in LoginPanel.
  *
- * Reached via `/login?link=1` (see PromoteAccountModal). The visitor already
- * has an anonymous Supabase session; instead of signing into a brand-new
- * account we *link* an email identity (via OTP) onto that existing anon user,
- * so any data they created while anonymous (e.g. a just-submitted idea) stays
- * theirs. See https://supabase.com/docs/guides/auth/auth-anonymous.
- *
- * TODO(anon-upgrade): Google identity linking is deferred to a follow-up PR;
- * for now the only upgrade path is email + OTP.
- *
- * Normal login/signup lives in LoginPanel; login/page.tsx routes here only when
- * the visitor is actually anonymous.
+ * TODO(anon-upgrade): Google identity linking is deferred; email + OTP only.
  */
 export const LinkAccountPanel = () => {
   const supabase = createSBBrowserClient();
@@ -44,9 +37,8 @@ export const LinkAccountPanel = () => {
   const redirectParam = searchParams.get('redirect');
 
   const [linkError, setLinkError] = useState<string | undefined>();
-  // Guards the async Supabase calls against double-submit and drives the
-  // button's loading state (the login query that LoginPanel leans on for this
-  // does not run in link mode).
+  // Guards against double-submit and drives the button loading state (link mode
+  // doesn't run the login query LoginPanel relies on for this).
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -70,21 +62,17 @@ export const LinkAccountPanel = () => {
     ? `/login?redirect=${encodeURIComponent(redirectParam)}`
     : '/login';
 
-  // After linking, route the freshly-upgraded account through onboarding (which
-  // skips org-joining for this flow) and hand it the page to return to.
-  // `redirectParam` carries the locale prefix that the locale-less /login route
-  // lacks — reuse it for the /start path.
+  // After linking, route through onboarding with the page to return to.
+  // `redirectParam` carries the locale prefix the locale-less /login route lacks.
   const goAfterLink = useCallback(() => {
     const dest = isSafeRedirectPath(redirectParam) ? redirectParam : '/';
     const locale = dest.split('/')[1] || 'en';
     window.location.href = `/${locale}/start?promote=1&redirect=${encodeURIComponent(dest)}`;
   }, [redirectParam]);
 
-  // Request the email code. `updateUser({ email })` attaches the email to the
-  // current anon user. When email confirmations are enabled it sends an
-  // email-change OTP (→ code-entry screen); when they're disabled (e.g. local
-  // dev autoconfirm) the change applies immediately with no email, so we just
-  // refresh the session and continue.
+  // `updateUser({ email })` attaches the email to the anon user. With email
+  // confirmations on it sends an OTP (→ code screen); with them off the change
+  // applies immediately, so we refresh the session and continue.
   const requestEmailCode = async () => {
     if (isSubmitting) {
       return;
@@ -104,9 +92,7 @@ export const LinkAccountPanel = () => {
       }
       // No pending change + email already set ⇒ applied immediately (no OTP).
       if (data.user?.email === email && !data.user?.new_email) {
-        // The email change applied immediately, but the current access token
-        // still carries the stale anonymous claims — refresh it so the app sees
-        // the upgraded (non-anonymous) identity before navigating.
+        // Refresh so the token drops its stale anonymous claims before we nav.
         await supabase.auth.refreshSession();
         goAfterLink();
         return;

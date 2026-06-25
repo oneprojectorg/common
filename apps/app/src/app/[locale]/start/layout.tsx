@@ -10,10 +10,8 @@ import { TranslatedText } from '@/components/TranslatedText';
 const StartLayout = async ({ children }: { children: React.ReactNode }) => {
   const user = await getUser();
 
-  // Layouts don't receive searchParams, so read the query string the proxy
-  // exposes via x-search to detect the promote (anon-upgrade) onboarding. That
-  // flow is run by intentionally non-member accounts, so admit them past the
-  // membership gate while still redirecting any no-session/anonymous visitor.
+  // Layouts don't get searchParams; read the query string the proxy exposes via
+  // x-search. The promote flow runs as non-members, so admit them past the gate.
   const search = (await headers()).get('x-search') ?? '';
   const isPromoteFlow = new URLSearchParams(search).get('promote') === '1';
 

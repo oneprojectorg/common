@@ -35,13 +35,10 @@ const ProgressInPortal = (props: ProgressComponentProps) => (
 );
 
 /**
- * Onboarding journey for an anonymous visitor who just upgraded to a full
- * account (see LinkAccountPanel / PromoteAccountModal). Reached at
- * `/start?promote=1`.
- *
- * Unlike the normal flow it skips organization joining/creation entirely:
- * personal details, accept ToS, then hard-navigate back to the decision they
- * came from so the now-authenticated tree mounts with a fresh cache.
+ * Onboarding for an anonymous visitor who just upgraded (see LinkAccountPanel /
+ * PromoteAccountModal), reached at `/start?promote=1`. Skips org joining:
+ * personal details, accept ToS, then hard-navigate back to the decision with a
+ * fresh cache.
  */
 export const PromoteOnboardingFlow = ({
   hasHydrated,

@@ -46,8 +46,7 @@ export const MultiStepForm: React.FC<{
     (targetStep: number) => {
       setStep(targetStep);
 
-      // Preserve any existing query params (e.g. the promote-flow flag and its
-      // return redirect) across step navigation — only the step changes.
+      // Preserve existing query params (e.g. promote flag + redirect) across steps.
       const params = new URLSearchParams(window.location.search);
       params.set('step', targetStep.toString());
 

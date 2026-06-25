@@ -12,10 +12,8 @@ import { forbidden, redirect } from 'next/navigation';
  * - A real account that isn't a network member → `forbidden()`: logging in as
  *   the same account won't help, so show the no-access screen.
  *
- * `allowNonMembers` lets a caller admit a real (non-anonymous) account that
- * isn't a network member — used by the promote/anon-upgrade onboarding (see
- * PromoteOnboardingFlow), which is reached by intentionally non-member accounts.
- * The no-session/anonymous redirect still applies.
+ * `allowNonMembers` admits a real (non-anonymous) account that isn't a network
+ * member — used by the promote/anon-upgrade onboarding. Anonymous still redirects.
  */
 export async function assertWalledGardenAccess(
   user: CommonUser | null | undefined,

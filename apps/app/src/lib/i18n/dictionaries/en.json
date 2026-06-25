@@ -1357,7 +1357,7 @@
   "Want to follow what happens next?": "Want to follow what happens next?",
   "Continue as a guest": "Continue as a guest",
   "Stay anonymous. React to comments with emoji.": "Stay anonymous. React to comments with emoji.",
-  "I agree to the Terms of Service and Privacy Policy": "I agree to the Terms of Service and Privacy Policy",
+  "I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>": "I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>",
   "Continue as guest": "Continue as guest",
   "With an account": "With an account",
   "Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.": "Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.",

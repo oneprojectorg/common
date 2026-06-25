@@ -17,11 +17,9 @@ const LoginPage = () => {
     return null;
   }
 
-  // Link mode: an anonymous visitor upgrading to a full account. They already
-  // have a session, so the walled-garden / signed-in paths below would bounce
-  // them. The dedicated panel links the new identity onto the anon user rather
-  // than creating a separate account. This must come before the walled-garden
-  // check below, which would otherwise send the upgrading visitor to LoginPanel.
+  // Link mode: an anonymous visitor upgrading to a full account. Must come
+  // before the checks below, which would otherwise bounce them to LoginPanel.
+  // LinkAccountPanel links the email onto the existing anon user.
   if (isLinkMode && user.data?.user?.is_anonymous) {
     return <LinkAccountPanel />;
   }
