@@ -19,10 +19,10 @@ import { useTranslations } from '@/lib/i18n';
  * anonymous visitor submits their idea.
  *
  * "Create account" / "Log in" send the visitor to the real login page in
- * link mode (`/login?link=1`), which reuses our existing auth methods (Google,
- * email OTP) but *links* the chosen identity onto the current anonymous user
- * instead of creating a separate account — so the idea they just submitted
- * stays theirs (https://supabase.com/docs/guides/auth/auth-anonymous).
+ * link mode (`/login?link=1`), which *links* an email identity (via OTP) onto
+ * the current anonymous user instead of creating a separate account — so the
+ * idea they just submitted stays theirs
+ * (https://supabase.com/docs/guides/auth/auth-anonymous).
  * See LinkAccountPanel for the linking logic.
  */
 

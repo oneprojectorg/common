@@ -14,9 +14,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import {
   AuthCodeField,
-  AuthDivider,
   AuthEmailField,
-  AuthGoogleButton,
   AuthPanelShell,
   isValidOtpLength,
   useAuthPanelStore,
@@ -27,10 +25,12 @@ import {
  *
  * Reached via `/login?link=1` (see PromoteAccountModal). The visitor already
  * has an anonymous Supabase session; instead of signing into a brand-new
- * account we *link* the chosen identity (Google or email OTP) onto that
- * existing anon user, so any data they created while anonymous (e.g. a
- * just-submitted idea) stays theirs.
- * See https://supabase.com/docs/guides/auth/auth-anonymous.
+ * account we *link* an email identity (via OTP) onto that existing anon user,
+ * so any data they created while anonymous (e.g. a just-submitted idea) stays
+ * theirs. See https://supabase.com/docs/guides/auth/auth-anonymous.
+ *
+ * TODO(anon-upgrade): Google identity linking is deferred to a follow-up PR;
+ * for now the only upgrade path is email + OTP.
  *
  * Normal login/signup lives in LoginPanel; login/page.tsx routes here only when
  * the visitor is actually anonymous.
@@ -79,25 +79,6 @@ export const LinkAccountPanel = () => {
     const locale = dest.split('/')[1] || 'en';
     window.location.href = `/${locale}/start?promote=1&redirect=${encodeURIComponent(dest)}`;
   }, [redirectParam]);
-
-  // Attach Google to the existing anon user instead of starting a new one.
-  const handleGoogle = async () => {
-    const callbackUrl = new URL('/api/auth/callback', location.origin);
-    if (isSafeRedirectPath(redirectParam)) {
-      callbackUrl.searchParams.set('redirect', redirectParam);
-    }
-
-    // TODO(anon-upgrade): linkIdentity fails if this Google identity already
-    // belongs to another account; we surface the raw Supabase error for now.
-    // Productionize with a friendly "that account already exists" path.
-    const { error } = await supabase.auth.linkIdentity({
-      provider: 'google',
-      options: { redirectTo: callbackUrl.toString() },
-    });
-    if (error) {
-      setLinkError(error.message);
-    }
-  };
 
   // Request the email code. `updateUser({ email })` attaches the email to the
   // current anon user. When email confirmations are enabled it sends an
@@ -276,39 +257,32 @@ export const LinkAccountPanel = () => {
     );
   }
 
-  // Create account (email entry) — email + Continue grouped (figma: 16px), then
-  // the "or" divider, then Google last.
+  // Create account (email entry) — email + Continue grouped (figma: 16px).
   return (
     <AuthPanelShell title={title} subtitle={subtitle}>
-      <div className="flex flex-col gap-8">
-        <div className="flex flex-col gap-4">
-          <AuthEmailField
-            label={t('Email')}
-            value={email}
-            isDisabled={isSubmitting}
-            onChange={(val) => {
-              setEmailIsValid(emailParser.safeParse(val).success);
-              setEmail(val);
-            }}
-            onSubmit={() => {
-              void requestEmailCode();
-            }}
-          />
-          <Button
-            type="button"
-            className="flex w-full items-center justify-center"
-            isDisabled={isSubmitting || !emailIsValid}
-            onPress={() => {
-              void requestEmailCode();
-            }}
-          >
-            {isSubmitting ? <LoadingSpinner /> : t('Continue')}
-          </Button>
-        </div>
-
-        <AuthDivider />
-
-        <AuthGoogleButton onPress={handleGoogle} />
+      <div className="flex flex-col gap-4">
+        <AuthEmailField
+          label={t('Email')}
+          value={email}
+          isDisabled={isSubmitting}
+          onChange={(val) => {
+            setEmailIsValid(emailParser.safeParse(val).success);
+            setEmail(val);
+          }}
+          onSubmit={() => {
+            void requestEmailCode();
+          }}
+        />
+        <Button
+          type="button"
+          className="flex w-full items-center justify-center"
+          isDisabled={isSubmitting || !emailIsValid}
+          onPress={() => {
+            void requestEmailCode();
+          }}
+        >
+          {isSubmitting ? <LoadingSpinner /> : t('Continue')}
+        </Button>
       </div>
     </AuthPanelShell>
   );
