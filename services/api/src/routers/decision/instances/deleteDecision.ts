@@ -1,5 +1,8 @@
-import { invalidateMultiple } from '@op/cache';
-import { Channels, deleteDecision } from '@op/common';
+import {
+  Channels,
+  deleteDecision,
+  invalidateDecisionInstance,
+} from '@op/common';
 import { waitUntil } from '@vercel/functions';
 import { z } from 'zod';
 
@@ -20,17 +23,7 @@ export const deleteDecisionRouter = router({
         user: ctx.user,
       });
 
-      // Drop the writer's own cached projections; other viewers' per-caller
-      // entries TTL out.
-      waitUntil(
-        invalidateMultiple({
-          type: 'decision',
-          paramsList: [
-            [input.instanceId, ctx.user.id, 'instance'],
-            [input.instanceId, ctx.user.id, 'categories'],
-          ],
-        }),
-      );
+      waitUntil(invalidateDecisionInstance(input.instanceId));
 
       ctx.registerMutationChannels([
         Channels.decisionInstance(input.instanceId),

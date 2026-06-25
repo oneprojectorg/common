@@ -1,5 +1,5 @@
 import { cache } from '@op/cache';
-import { Channels, getInstance } from '@op/common';
+import { Channels, getInstance, loadDecisionInstance } from '@op/common';
 
 import {
   getInstanceInputSchema,
@@ -15,12 +15,19 @@ import {
   router,
 } from '../../../trpcFactory';
 
-// `getInstance` returns viewer-specific `access` bits, so the cache key has to
-// include the caller — sharing a single key across users would leak one viewer's
-// permissions to the next. Writer-side invalidation (see `updateDecisionInstance`
-// etc.) drops the writer's own key; other viewers reconcile via this TTL.
-const INSTANCE_CACHE_TTL_MS = 5 * 60 * 1000;
-const callerKey = (userId: string | undefined) => userId ?? 'anon';
+/**
+ * Cache the viewer-independent portion of a decision instance read. Every
+ * mutation that touches `processInstances` invalidates the same `[id,
+ * 'instance']` params (see `invalidateDecisionInstance` in `@op/common`), so
+ * cached entries can't outlive an instance-level write. The per-user access
+ * computation stays outside the cache and runs on every read.
+ */
+const cachedLoadDecisionInstance = (instanceId: string) =>
+  cache({
+    type: 'decision',
+    params: [instanceId, 'instance'],
+    fetch: () => loadDecisionInstance({ instanceId }),
+  });
 
 /**
  * Legacy getInstance endpoint - uses legacy encoders with state-based format.
@@ -37,11 +44,12 @@ export const getLegacyInstanceRouter = router({
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
 
-      const instance = await cache({
-        type: 'decision',
-        params: [input.instanceId, callerKey(user?.id), 'instance'],
-        fetch: () => getInstance({ instanceId: input.instanceId, user }),
-        options: { ttl: INSTANCE_CACHE_TTL_MS },
+      const preloaded = await cachedLoadDecisionInstance(input.instanceId);
+
+      const instance = await getInstance({
+        instanceId: input.instanceId,
+        user,
+        preloaded,
       });
 
       return legacyProcessInstanceEncoder.parse({
@@ -80,11 +88,12 @@ export const getInstanceRouter = router({
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
 
-      const instance = await cache({
-        type: 'decision',
-        params: [input.instanceId, callerKey(user?.id), 'instance'],
-        fetch: () => getInstance({ instanceId: input.instanceId, user }),
-        options: { ttl: INSTANCE_CACHE_TTL_MS },
+      const preloaded = await cachedLoadDecisionInstance(input.instanceId);
+
+      const instance = await getInstance({
+        instanceId: input.instanceId,
+        user,
+        preloaded,
       });
 
       ctx.registerQueryChannels([Channels.decisionInstance(input.instanceId)]);

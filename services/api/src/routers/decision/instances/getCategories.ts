@@ -1,5 +1,8 @@
 import { cache } from '@op/cache';
-import { getProcessCategories } from '@op/common';
+import {
+  getProcessCategories,
+  loadDecisionInstanceCategories,
+} from '@op/common';
 import { z } from 'zod';
 
 import { openProcedure, router } from '../../../trpcFactory';
@@ -18,11 +21,18 @@ const getCategoriesOutputSchema = z.object({
   categories: z.array(processCategoryEncoder),
 });
 
-// Categories embed the per-caller access check (unauthorized callers throw),
-// so the cache key has to include the caller — see `getInstance` for the same
-// trade-off. Invalidated on instance writes alongside the instance cache.
-const CATEGORIES_CACHE_TTL_MS = 5 * 60 * 1000;
-const callerKey = (userId: string | undefined) => userId ?? 'anon';
+/**
+ * Cache the viewer-independent portion of the categories lookup — the auth
+ * scope + the resolved categories list. The access check is computed per
+ * request and stays outside the cache. Invalidated alongside the instance
+ * snapshot on any instance-level write.
+ */
+const cachedLoadDecisionInstanceCategories = (processInstanceId: string) =>
+  cache({
+    type: 'decision',
+    params: [processInstanceId, 'categories'],
+    fetch: () => loadDecisionInstanceCategories({ processInstanceId }),
+  });
 
 export const getCategoriesRouter = router({
   getCategories: openProcedure()
@@ -31,15 +41,14 @@ export const getCategoriesRouter = router({
     .query(async ({ ctx, input }) => {
       const { user } = ctx;
 
-      const categories = await cache({
-        type: 'decision',
-        params: [input.processInstanceId, callerKey(user?.id), 'categories'],
-        fetch: () =>
-          getProcessCategories({
-            processInstanceId: input.processInstanceId,
-            user,
-          }),
-        options: { ttl: CATEGORIES_CACHE_TTL_MS },
+      const preloaded = await cachedLoadDecisionInstanceCategories(
+        input.processInstanceId,
+      );
+
+      const categories = await getProcessCategories({
+        processInstanceId: input.processInstanceId,
+        user,
+        preloaded,
       });
 
       return { categories };
