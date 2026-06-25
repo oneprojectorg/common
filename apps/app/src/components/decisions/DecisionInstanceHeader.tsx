@@ -11,6 +11,7 @@ import { LuArrowLeft, LuSettings } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 import { Link } from '@/lib/i18n/routing';
+import { userCanInteract } from '@/utils/userCanInteract';
 
 import { LocaleChooser } from '../LocaleChooser';
 import { UserAvatarMenu } from '../SiteHeader';
@@ -43,25 +44,32 @@ export const DecisionInstanceHeader = ({
 }) => {
   const t = useTranslations();
   const { user } = useUser();
+  // Hide the Back link for users who can't interact (logged-out visitors and
+  // anonymous accounts) — they have nowhere meaningful to go "back" to.
+  const canInteract = userCanInteract(user);
 
   return (
     <header className="sticky top-0 z-10 grid grid-cols-[auto_1fr_auto] items-center border-b bg-white p-2 px-4 sm:grid-cols-3 md:px-6 md:py-3">
       <div className="flex min-w-0 items-center gap-3">
-        <Link
-          href={backTo.href}
-          className="flex shrink-0 items-center gap-2 text-base text-neutral-black hover:text-primary-tealBlack md:text-primary-teal"
-        >
-          <LuArrowLeft className="size-6 md:size-4 rtl:-scale-x-100" />
-          <span className="hidden md:flex">
-            {t('Back')} {backTo.label ? `${t('to')} ${backTo.label}` : ''}
-          </span>
-        </Link>
+        {canInteract && (
+          <Link
+            href={backTo.href}
+            className="flex shrink-0 items-center gap-2 text-base text-neutral-black hover:text-primary-tealBlack md:text-primary-teal"
+          >
+            <LuArrowLeft className="size-6 md:size-4 rtl:-scale-x-100" />
+            <span className="hidden md:flex">
+              {t('Back')} {backTo.label ? `${t('to')} ${backTo.label}` : ''}
+            </span>
+          </Link>
+        )}
         {centerSlot ? (
           <>
-            <span
-              aria-hidden
-              className="hidden h-6 w-px shrink-0 bg-neutral-gray2 md:block"
-            />
+            {canInteract && (
+              <span
+                aria-hidden
+                className="hidden h-6 w-px shrink-0 bg-neutral-gray2 md:block"
+              />
+            )}
             <Header1 className="hidden truncate font-serif text-title-sm text-neutral-charcoal sm:text-title-sm md:block">
               <bdi>{title}</bdi>
             </Header1>
