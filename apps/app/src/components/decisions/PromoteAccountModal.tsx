@@ -41,6 +41,7 @@ export const PromoteAccountModal = () => {
     <Modal
       isOpen={isOpen}
       onOpenChange={(open) => (open ? null : close())}
+      isDismissable={false}
       className="sm:max-w-[29rem]"
     >
       <PromoteAccountModalContent
