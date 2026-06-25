@@ -688,7 +688,7 @@ describe.concurrent('Profile Invite Integration Tests', () => {
 
   // This test modifies the global event.send mock, so it must run sequentially
   // to avoid race conditions with other tests
-  it.sequential('should rollback transaction when event.send fails', async ({
+  it.sequential('should commit invite rows when event.send fails (no rollback)', async ({
     task,
     onTestFinished,
   }) => {
@@ -699,19 +699,20 @@ describe.concurrent('Profile Invite Integration Tests', () => {
 
     // Create a new email that doesn't exist in the system
     const newEmail = `rollback-test-${task.id}@oneproject.org`;
-    // Track for defensive cleanup in case rollback fails
     testData.trackAllowListEmail(newEmail);
     testData.trackProfileInvite(newEmail, profile.id);
 
     const { session } = await createIsolatedSession(adminUser.email);
     const caller = createCaller(await createTestContextWithSession(session));
 
-    // Mock event.send to throw an error for this test only
+    // Mock event.send to throw an error for this test only. event.send runs
+    // OUTSIDE the db.transaction (the bug-fix from ONE-40 finding #28 — see
+    // inviteUsersToProfile.ts), so the inserts are already committed when
+    // this throws.
     vi.mocked(event.send).mockImplementationOnce(() => {
       throw new Error('Event send failed');
     });
 
-    // The invite should fail
     await expect(
       caller.invite({
         invitations: [{ email: newEmail, roleId: ROLES.MEMBER.id }],
@@ -722,7 +723,9 @@ describe.concurrent('Profile Invite Integration Tests', () => {
     // Restore the mock to default behavior
     vi.mocked(event.send).mockResolvedValue({ ids: ['mock-event-id'] });
 
-    // Verify NO profileInvites record was created (transaction rolled back)
+    // The invite row was committed before event.send ran. notifiedAt stays
+    // null until the Inngest workflow delivers (the existing idempotency
+    // gate), so a retried event.send won't re-send to already-notified rows.
     const invite = await db.query.profileInvites.findFirst({
       where: {
         profileId: profile.id,
@@ -730,14 +733,16 @@ describe.concurrent('Profile Invite Integration Tests', () => {
       },
     });
 
-    expect(invite).toBeUndefined();
+    expect(invite).toBeDefined();
+    expect(invite?.notifiedAt).toBeNull();
 
-    // Verify NO allowList entry was created (transaction rolled back)
+    // The allowList entry was committed in the same transaction as the
+    // invite row, so it also persists.
     const allowListEntry = await db.query.allowList.findFirst({
       where: { email: newEmail.toLowerCase() },
     });
 
-    expect(allowListEntry).toBeUndefined();
+    expect(allowListEntry).toBeDefined();
   });
 
   it('should reject duplicate emails in same batch via database constraint', async ({
