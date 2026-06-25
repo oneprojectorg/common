@@ -322,13 +322,14 @@ export const getPermissionsOnProposal = async ({
   }
 
   // The comment / post-write gate in `assertPostWriteAccess` walks proposal
-  // targets up to the parent decision via `resolvePostRoots` and requires
-  // `decisions: SUBMIT_PROPOSALS` on the decision profile — bits that live on
-  // `profileUsers` for the *decision* profile, not the proposal profile. Fold
-  // that bit into `access.submitProposals` so the frontend can mirror the
-  // server gate and hide the comment box for users who'd get rejected on
-  // submit. Leave the other bits (update / admin) on proposal-profile roles —
-  // editability and admin signal are separate concerns from comment access.
+  // targets up to the parent decision via `resolvePostRoots` and admits
+  // `{ profile: ADMIN }` OR `{ decisions: SUBMIT_PROPOSALS }` on the decision
+  // profile — bits that live on `profileUsers` for the *decision* profile,
+  // not the proposal profile. Mirror that OR on `access.submitProposals` so
+  // the frontend can mirror the server gate and hide the comment box only
+  // for callers who'd be rejected on submit. Leave the other bits
+  // (update / admin) on proposal-profile roles — editability and admin
+  // signal are separate concerns from comment access.
   if (proposal.processInstance.profileId) {
     const decisionRoles = await getProfileAccessRoles({
       user,
@@ -336,7 +337,10 @@ export const getPermissionsOnProposal = async ({
     });
     if (
       checkPermission(
-        { decisions: decisionPermission.SUBMIT_PROPOSALS },
+        [
+          { profile: permission.ADMIN },
+          { decisions: decisionPermission.SUBMIT_PROPOSALS },
+        ],
         decisionRoles,
       )
     ) {
