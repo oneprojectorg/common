@@ -135,7 +135,7 @@ function DecisionOverviewContent({
             </Header3>
             <DecisionPhaseTimeline
               phases={phases}
-              currentStateId={instance.currentStateId ?? ''}
+              currentStateId={isActive ? (instance.currentStateId ?? '') : ''}
               instanceId={instanceId}
               isAdmin={instance.access?.admin}
               decisionSlug={decisionSlug}
