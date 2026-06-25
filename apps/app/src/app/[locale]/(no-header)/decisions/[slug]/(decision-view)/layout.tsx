@@ -9,6 +9,8 @@ import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionSidePanel } from '@/components/decisions/DecisionSidePanel';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
 import { DecisionViewToggle } from '@/components/decisions/DecisionViewToggle';
+import { PostTranslationProvider } from '@/components/decisions/PostTranslationContext';
+import { ResourceTranslationProvider } from '@/components/decisions/ResourceTranslationContext';
 import { hasFirstPhaseStarted } from '@/components/decisions/hasFirstPhaseStarted';
 
 import { loadDecision } from './loadDecision';
@@ -50,32 +52,39 @@ const DecisionViewLayout = async ({
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <DecisionTranslationProvider>
-        <DecisionHeader
-          instanceId={instanceId}
-          decisionSlug={slug}
-          isAdmin={access?.admin}
-          canReadUpdates={access?.admin === true || access?.read === true}
-          profileName={decisionProfile.name}
-          showStepper={false}
-          // Hidden until the first phase begins.
-          centerSlot={
-            isActive ? <DecisionViewToggle decisionSlug={slug} /> : undefined
-          }
-        />
-        {children}
-        {/*
-         * Like the header's updates toggle, the side panel reads the `panel`
-         * search param (nuqs/useSearchParams). It lives in this layout, which
-         * Next prerenders as the route's static shell (see loading.tsx), so the
-         * read would happen outside a request scope and throw. Suspense defers
-         * it out of the shell; the panel is closed by default, so null fallback.
-         */}
-        <Suspense fallback={null}>
-          <DecisionSidePanel
-            decisionProfileId={decisionProfile.id}
-            access={access}
-          />
-        </Suspense>
+        <PostTranslationProvider>
+          <ResourceTranslationProvider>
+            <DecisionHeader
+              instanceId={instanceId}
+              decisionSlug={slug}
+              isAdmin={access?.admin}
+              canReadUpdates={access?.admin === true || access?.read === true}
+              profileName={decisionProfile.name}
+              showStepper={false}
+              // Hidden until the first phase begins.
+              centerSlot={
+                isActive ? (
+                  <DecisionViewToggle decisionSlug={slug} />
+                ) : undefined
+              }
+            />
+            {children}
+            {/*
+             * Like the header's updates toggle, the side panel reads the
+             * `panel` search param (nuqs/useSearchParams). It lives in this
+             * layout, which Next prerenders as the route's static shell (see
+             * loading.tsx), so the read would happen outside a request scope
+             * and throw. Suspense defers it out of the shell; the panel is
+             * closed by default, so null fallback.
+             */}
+            <Suspense fallback={null}>
+              <DecisionSidePanel
+                decisionProfileId={decisionProfile.id}
+                access={access}
+              />
+            </Suspense>
+          </ResourceTranslationProvider>
+        </PostTranslationProvider>
       </DecisionTranslationProvider>
     </HydrationBoundary>
   );

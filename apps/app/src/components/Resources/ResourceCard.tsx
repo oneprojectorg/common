@@ -18,6 +18,7 @@ import {
 
 import { useTranslations } from '@/lib/i18n';
 
+import { useResourceTranslation } from '../decisions/ResourceTranslationContext';
 import { getExtension, hostnameForDisplay } from './utils';
 
 type LinkResource = Extract<ResourceInCollection, { type: 'link' }>;
@@ -52,6 +53,7 @@ const ResourceLinkCard = ({
   trailing?: ReactNode;
 }) => {
   const href = resource.linkUrl ? sanitizeUrl(resource.linkUrl) : null;
+  const translation = useResourceTranslation(resource.id);
 
   // Thumbnail is resolved server-side during list hydration (resourceDTO),
   // so the card doesn't fan out N preview queries. `ogImageFailed` covers
@@ -70,8 +72,8 @@ const ResourceLinkCard = ({
 
   return (
     <ResourceCardShell
-      title={resource.title}
-      description={resource.description}
+      title={translation?.title ?? resource.title}
+      description={translation?.description ?? resource.description}
       subtitle={hostnameForDisplay(resource.linkUrl)}
       preview={preview}
       href={href}
@@ -90,6 +92,7 @@ const ResourceDocumentCard = ({
   trailing?: ReactNode;
 }) => {
   const t = useTranslations();
+  const translation = useResourceTranslation(resource.id);
   const attachment = resource.attachment;
   const isImage = attachment?.mimeType.startsWith('image/') === true;
 
@@ -115,8 +118,8 @@ const ResourceDocumentCard = ({
 
   return (
     <ResourceCardShell
-      title={resource.title}
-      description={resource.description}
+      title={translation?.title ?? resource.title}
+      description={translation?.description ?? resource.description}
       subtitle={subtitle}
       preview={preview}
       href={signedUrl}
