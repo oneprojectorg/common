@@ -35,7 +35,7 @@
     {
       "rule": "scrollable-region-focusable",
       "impact": "serious",
-      "route": "/info/privacy",
+      "route": "/privacy",
       "fingerprint": "section > div",
       "snippet": "<div class=\"mb-6 overflow-x-auto\">",
       "wcagCriteria": [

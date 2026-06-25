@@ -22,7 +22,7 @@ export const ToSContentShort = () => {
           movement for economic democracy to build core technology, mobilize
           catalytic resources, and show the world that a better system is
           possible today. You can see the full legal version of our terms of use{' '}
-          <a href="/info/tos" target="_blank">
+          <a href="/tos" target="_blank">
             here
           </a>
           .

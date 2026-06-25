@@ -113,10 +113,10 @@ const PromoteAccountModalContent = ({
                 'I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>.',
                 {
                   tos: (chunks: ReactNode) => (
-                    <PolicyLink href="/info/tos">{chunks}</PolicyLink>
+                    <PolicyLink href="/tos">{chunks}</PolicyLink>
                   ),
                   privacy: (chunks: ReactNode) => (
-                    <PolicyLink href="/info/privacy">{chunks}</PolicyLink>
+                    <PolicyLink href="/privacy">{chunks}</PolicyLink>
                   ),
                 },
               )}

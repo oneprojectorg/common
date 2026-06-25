@@ -131,8 +131,8 @@ const DOM_SETTLE_TIMEOUT_MS = 5_000;
 
 const PUBLIC_ROUTES: RouteScan[] = [
   { url: '/login', label: 'Login', auth: 'public' },
-  { url: '/info/privacy', label: 'Privacy policy', auth: 'public' },
-  { url: '/info/tos', label: 'Terms of service', auth: 'public' },
+  { url: '/privacy', label: 'Privacy policy', auth: 'public' },
+  { url: '/tos', label: 'Terms of service', auth: 'public' },
 ];
 
 const STATIC_AUTH_ROUTES: RouteScan[] = [

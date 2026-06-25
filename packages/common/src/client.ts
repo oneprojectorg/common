@@ -134,12 +134,13 @@ export type {
 export { hasEmail } from './utils/email';
 
 // Whitelist of safe redirect-path prefixes. Every legitimate app route lives
-// under a locale segment (en/es/fr/…) or under `/info`. Anything else —
-// `//evil`, `/\evil`, `/api/*`, `https://evil`, etc. — never matches and is
-// rejected. Adding a new top-level segment requires extending this list; a
-// missed update fails loudly (user lands on `/` after login).
+// under a locale segment (en/es/fr/…) or under the public legal pages (`/tos`,
+// `/privacy`). Anything else — `//evil`, `/\evil`, `/api/*`, `https://evil`,
+// etc. — never matches and is rejected. Adding a new top-level segment
+// requires extending this list; a missed update fails loudly (user lands on
+// `/` after login).
 const SAFE_REDIRECT_PATH_RE = new RegExp(
-  `^/(?:${SUPPORTED_LOCALES.join('|')}|info)(?:[/?#]|$)`,
+  `^/(?:${SUPPORTED_LOCALES.join('|')}|tos|privacy)(?:[/?#]|$)`,
 );
 
 // A login page is itself under a locale prefix (e.g. `/en/login`), so it

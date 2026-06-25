@@ -23,7 +23,7 @@ export const PrivacyPolicyContentShort = () => {
           catalytic resources, and show the world that a better system is
           possible today. You can view the full legal version of our privacy
           policy{' '}
-          <a href="/info/privacy" target="_blank">
+          <a href="/privacy" target="_blank">
             here
           </a>
           .

@@ -165,7 +165,7 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
 // Skipped path prefixes (no-auth routes):
 //   - Next internals:         _next/static, _next/image
 //   - In-tree API + rewrites: api, assets, stats
-//   - Public landing pages:   waitlist, info, login
+//   - Public landing pages:   waitlist, tos, privacy, login
 //   - SEO/monitoring files:   sitemap.xml, robots.txt,
 //                              manifest.webmanifest, health, _health,
 //                              favicon.ico
@@ -180,6 +180,6 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
 // `proxy.test.ts` reads this literal directly to exercise the regex.
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|api|assets|stats|waitlist|info|login|sitemap.xml|robots.txt|manifest.webmanifest|favicon.ico|health|_health|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|bmp|woff|woff2|ttf|otf|eot|pdf|json|xml|txt|css|js|map|mp4|webm|mp3|ogg|wav)$).*)',
+    '/((?!_next/static|_next/image|api|assets|stats|waitlist|tos|privacy|login|sitemap.xml|robots.txt|manifest.webmanifest|favicon.ico|health|_health|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|bmp|woff|woff2|ttf|otf|eot|pdf|json|xml|txt|css|js|map|mp4|webm|mp3|ogg|wav)$).*)',
   ],
 };

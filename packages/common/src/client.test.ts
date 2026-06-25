@@ -12,10 +12,10 @@ describe('isSafeRedirectPath', () => {
       '/bn/something',
       '/so/page',
       '/ar/page',
-      '/info/privacy',
-      '/info/tos',
+      '/privacy',
+      '/tos',
       '/en',
-      '/info',
+      '/privacy?foo=1',
       '/en/decisions/abc?tab=votes',
       '/en/decisions/abc#section',
     ])('accepts %s', (path) => {
@@ -36,7 +36,8 @@ describe('isSafeRedirectPath', () => {
       ['/api/anything', '/api/*'],
       ['/en2/foo', 'similar-looking but invalid locale'],
       ['/english/foo', 'invalid locale'],
-      ['/infoPrivacy', 'info-prefix without boundary'],
+      ['/tosfoo', 'tos-prefix without boundary'],
+      ['/privacyfoo', 'privacy-prefix without boundary'],
     ])('rejects %j (%s)', (path) => {
       expect(isSafeRedirectPath(path)).toBe(false);
     });
@@ -78,7 +79,7 @@ describe('isSafeRedirectPath', () => {
 
 describe('getSafeRedirectPath', () => {
   describe('returns the path unchanged when already decoded', () => {
-    it.each(['/en/profile/orpdm', '/fr/dashboard', '/info/privacy'])(
+    it.each(['/en/profile/orpdm', '/fr/dashboard', '/privacy'])(
       '%s',
       (path) => {
         expect(getSafeRedirectPath(path)).toBe(path);
@@ -94,7 +95,7 @@ describe('getSafeRedirectPath', () => {
     it.each([
       ['%2Fen%2Fprofile%2Forpdm', '/en/profile/orpdm'],
       ['%2Fes%2Fdashboard', '/es/dashboard'],
-      ['%2Finfo%2Fprivacy', '/info/privacy'],
+      ['%2Fprivacy', '/privacy'],
       ['%2Fen%2Fdecisions%2Fabc%3Ftab%3Dvotes', '/en/decisions/abc?tab=votes'],
     ])('%s -> %s', (input, expected) => {
       expect(getSafeRedirectPath(input)).toBe(expected);
