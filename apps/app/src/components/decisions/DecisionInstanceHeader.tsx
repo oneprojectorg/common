@@ -49,7 +49,7 @@ export const DecisionInstanceHeader = ({
   const canInteract = userCanInteract(user);
 
   return (
-    <header className="sticky top-0 z-10 grid grid-cols-[auto_1fr_auto] items-center border-b bg-white p-2 px-4 sm:grid-cols-3 md:px-6 md:py-3">
+    <header className="sticky top-0 z-10 grid min-h-14 grid-cols-[auto_1fr_auto] items-center border-b bg-white p-2 px-4 sm:grid-cols-3 md:px-6 md:py-3">
       <div className="flex min-w-0 items-center gap-3">
         {canInteract && (
           <Link
