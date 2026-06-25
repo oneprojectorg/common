@@ -1,7 +1,11 @@
 import type { ComponentType } from 'react';
 
+import type { TranslationKey } from '@/lib/i18n';
+
 export interface SlashCommandItem {
-  title: string;
+  // i18n key; the menu renders it through `t()`. Filtering still matches the
+  // English key + searchTerms (command-palette keywords).
+  title: TranslationKey;
   description: string;
   searchTerms: string[];
   icon: ComponentType<{ className?: string }>;
