@@ -7,6 +7,7 @@ import { proposalsRouter } from './proposals';
 import { resolveBoundaryRouter } from './resolveBoundary';
 import { resultsRouter } from './results';
 import { reviewsRouter } from './reviews';
+import { signProposalAttachmentUploadUrl } from './signProposalAttachmentUploadUrl';
 import { surveyRouter } from './survey';
 import { uploadProposalAttachment } from './uploadProposalAttachment';
 import { votingRouter } from './voting';
@@ -17,6 +18,7 @@ export const decisionRouter = mergeRouters(
   proposalsRouter,
   reviewsRouter,
   resultsRouter,
+  signProposalAttachmentUploadUrl,
   uploadProposalAttachment,
   deleteProposalAttachment,
   votingRouter,

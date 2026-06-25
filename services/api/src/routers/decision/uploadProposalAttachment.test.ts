@@ -1,4 +1,5 @@
 import { db } from '@op/db/client';
+import { Buffer } from 'node:buffer';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
@@ -12,6 +13,7 @@ import {
 import {
   createIsolatedSession,
   createTestContextWithSession,
+  supabaseTestAdminClient,
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
 
@@ -22,9 +24,24 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
-// Small valid PNG as base64 (1x1 pixel)
+// Small valid PNG as base64 (1x1 pixel). We decode it once and PUT the
+// raw bytes into Supabase storage in tests — same shape the production
+// client uses via the signed upload URL.
 const VALID_PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+const VALID_PNG_BUFFER = Buffer.from(VALID_PNG_BASE64, 'base64');
+
+async function uploadTestObject(storagePath: string): Promise<void> {
+  const { error } = await supabaseTestAdminClient.storage
+    .from('assets')
+    .upload(storagePath, VALID_PNG_BUFFER, {
+      contentType: 'image/png',
+      upsert: false,
+    });
+  if (error) {
+    throw new Error(`Test setup: failed to upload object: ${error.message}`);
+  }
+}
 
 describe.concurrent('uploadProposalAttachment', () => {
   it('should allow user with decisions:UPDATE permission to upload attachment to proposal', async ({
@@ -48,8 +65,14 @@ describe.concurrent('uploadProposalAttachment', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
+    const signed = await caller.decision.signProposalAttachmentUploadUrl({
+      proposalId: proposal.id,
+      fileName: 'test-image.png',
+    });
+    await uploadTestObject(signed.storagePath);
+
     const result = await caller.decision.uploadProposalAttachment({
-      file: VALID_PNG_BASE64,
+      storagePath: signed.storagePath,
       fileName: 'test-image.png',
       mimeType: 'image/png',
       proposalId: proposal.id,
@@ -106,8 +129,14 @@ describe.concurrent('uploadProposalAttachment', () => {
     const memberCaller = await createAuthenticatedCaller(member.email);
 
     // Non-owner member WITH proposal permissions should be able to upload
+    const signed = await memberCaller.decision.signProposalAttachmentUploadUrl({
+      proposalId: proposal.id,
+      fileName: 'member-upload.png',
+    });
+    await uploadTestObject(signed.storagePath);
+
     const result = await memberCaller.decision.uploadProposalAttachment({
-      file: VALID_PNG_BASE64,
+      storagePath: signed.storagePath,
       fileName: 'member-upload.png',
       mimeType: 'image/png',
       proposalId: proposal.id,
@@ -158,10 +187,11 @@ describe.concurrent('uploadProposalAttachment', () => {
 
     const nonOwnerCaller = await createAuthenticatedCaller(setupB.userEmail);
 
-    // User without proposal permissions should NOT be able to upload
+    // Auth is checked before the storage lookup, so a fake storagePath is fine.
     await expect(
       nonOwnerCaller.decision.uploadProposalAttachment({
-        file: VALID_PNG_BASE64,
+        storagePath:
+          'profile/00000000-0000-0000-0000-000000000000/proposals/fake.png',
         fileName: 'malicious.png',
         mimeType: 'image/png',
         proposalId: proposal.id,
@@ -192,7 +222,8 @@ describeAccessTierGating('uploadProposalAttachment', {
 
       await expectFailsAccessTierGate(
         caller.decision.uploadProposalAttachment({
-          file: VALID_PNG_BASE64,
+          storagePath:
+            'profile/00000000-0000-0000-0000-000000000000/proposals/no-jwt.png',
           fileName: 'no-jwt.png',
           mimeType: 'image/png',
           proposalId: proposal.id,
@@ -221,7 +252,8 @@ describeAccessTierGating('uploadProposalAttachment', {
 
       await expectPassesAccessTierGate(
         caller.decision.uploadProposalAttachment({
-          file: VALID_PNG_BASE64,
+          storagePath:
+            'profile/00000000-0000-0000-0000-000000000000/proposals/anon.png',
           fileName: 'anon.png',
           mimeType: 'image/png',
           proposalId: proposal.id,
@@ -249,7 +281,8 @@ describeAccessTierGating('uploadProposalAttachment', {
 
       await expectPassesAccessTierGate(
         caller.decision.uploadProposalAttachment({
-          file: VALID_PNG_BASE64,
+          storagePath:
+            'profile/00000000-0000-0000-0000-000000000000/proposals/user.png',
           fileName: 'user.png',
           mimeType: 'image/png',
           proposalId: proposal.id,
@@ -275,8 +308,14 @@ describeAccessTierGating('uploadProposalAttachment', {
 
       const caller = await callers.networkJwt(setup.userEmail);
 
+      const signed = await caller.decision.signProposalAttachmentUploadUrl({
+        proposalId: proposal.id,
+        fileName: 'common.png',
+      });
+      await uploadTestObject(signed.storagePath);
+
       const result = await caller.decision.uploadProposalAttachment({
-        file: VALID_PNG_BASE64,
+        storagePath: signed.storagePath,
         fileName: 'common.png',
         mimeType: 'image/png',
         proposalId: proposal.id,

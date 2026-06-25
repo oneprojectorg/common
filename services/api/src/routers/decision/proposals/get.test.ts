@@ -23,6 +23,7 @@ import {
   describeDecisionAccessTierGating,
   expectPassesAccessTierGate,
 } from '../../../test/helpers/gating/decision';
+import { uploadProposalAttachmentForTest } from '../../../test/helpers/proposalAttachmentTestUtils';
 import {
   createIsolatedSession,
   createTestContextWithSession,
@@ -1446,16 +1447,10 @@ describe.concurrent('getProposal', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
 
-    // Upload an attachment to the proposal
-    // Using a minimal valid base64 PNG (1x1 transparent pixel)
-    const minimalPngBase64 =
-      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
-
-    const uploadResult = await caller.decision.uploadProposalAttachment({
-      file: minimalPngBase64,
-      fileName: 'test-attachment.png',
-      mimeType: 'image/png',
+    const uploadResult = await uploadProposalAttachmentForTest({
+      caller,
       proposalId: proposal.id,
+      fileName: 'test-attachment.png',
     });
 
     expect(uploadResult.id).toBeDefined();

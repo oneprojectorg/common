@@ -1,6 +1,5 @@
 import { db } from '@op/db/client';
-import { attachments, objectsInStorage, resources } from '@op/db/schema';
-import { and, eq } from 'drizzle-orm';
+import { attachments, resources } from '@op/db/schema';
 
 import {
   ConflictError,
@@ -8,6 +7,7 @@ import {
   ValidationError,
 } from '../../utils/error';
 import {
+  getStorageObjectByPath,
   getStorageObjectMimeType,
   getStorageObjectSize,
 } from '../../utils/storage';
@@ -41,7 +41,7 @@ export type CreateDocumentInput = {
 export const createDocumentResource = async (
   input: CreateDocumentInput,
 ): Promise<ResourceInCollectionDTO> => {
-  const [{ collectionId, profileId }, addedByProfileId, [storageObject]] =
+  const [{ collectionId, profileId }, addedByProfileId, storageObject] =
     await Promise.all([
       resolveTargetCollection({
         authUserId: input.authUserId,
@@ -51,22 +51,10 @@ export const createDocumentResource = async (
         },
       }),
       getIndividualProfileId(input.authUserId),
-      // Resolve the storage object the client just uploaded into via the
-      // signed URL. We look it up by (bucket, name) because the client only
-      // knows the path it received from sign-upload — not the object UUID.
-      db
-        .select({
-          id: objectsInStorage.id,
-          metadata: objectsInStorage.metadata,
-        })
-        .from(objectsInStorage)
-        .where(
-          and(
-            eq(objectsInStorage.bucketId, STORAGE_BUCKET),
-            eq(objectsInStorage.name, input.storagePath),
-          ),
-        )
-        .limit(1),
+      getStorageObjectByPath({
+        bucketId: STORAGE_BUCKET,
+        path: input.storagePath,
+      }),
     ]);
 
   if (!storageObject) {

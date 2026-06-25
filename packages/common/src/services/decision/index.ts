@@ -99,6 +99,8 @@ export * from './getRubricScoringInfo';
 export * from './tiptapExtensions';
 
 // Proposal attachments
+export * from './proposalAttachmentStorage';
+export * from './signProposalAttachmentUploadUrl';
 export * from './uploadProposalAttachment';
 export * from './deleteProposalAttachment';
 

@@ -687,6 +687,7 @@
   "Resource added": "Resource added",
   "Resource deleted": "Resource deleted",
   "Could not add resource": "Could not add resource",
+  "Could not upload attachment": "Could not upload attachment",
   "Could not delete resource": "Could not delete resource",
   "Could not reorder resource": "Could not reorder resource",
   "Resource options": "Resource options",

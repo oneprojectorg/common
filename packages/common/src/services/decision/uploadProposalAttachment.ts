@@ -3,17 +3,28 @@ import { attachments, proposalAttachments } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
-import { CommonError } from '../../utils';
+import { CommonError, NotFoundError, ValidationError } from '../../utils';
+import {
+  getStorageObjectByPath,
+  getStorageObjectMimeType,
+  getStorageObjectSize,
+} from '../../utils/storage';
 import { getCurrentProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
+import {
+  MAX_PROPOSAL_ATTACHMENT_FILE_SIZE,
+  PROPOSAL_ATTACHMENT_BUCKET,
+  isAllowedProposalAttachmentMimeType,
+  proposalAttachmentPathPrefix,
+} from './proposalAttachmentStorage';
 
 export interface UploadProposalAttachmentInput {
-  /** Sanitized file name */
+  /** User-supplied display name; persisted on the attachment row. */
   fileName: string;
+  /** Client-declared MIME type; must match what storage recorded on PUT. */
   mimeType: string;
-  fileSize: number;
-  /** Supabase storage object ID from the upload */
-  storageObjectId: string;
+  /** Path of the storage object the client just uploaded into. */
+  storagePath: string;
   /** Links attachment to proposal */
   proposalId: string;
 }
@@ -26,8 +37,10 @@ export interface UploadProposalAttachmentResult {
 }
 
 /**
- * Creates an attachment record and optionally links it to a proposal.
- * The actual file upload to storage should be done before calling this.
+ * Records a proposal attachment that the client uploaded directly to storage
+ * via a signed URL (see {@link signProposalAttachmentUploadUrl}). The signed
+ * PUT bypasses the serverless body-size limit that previously broke larger
+ * iPhone photos when we round-tripped them as base64 JSON.
  */
 export async function uploadProposalAttachment({
   input,
@@ -36,13 +49,16 @@ export async function uploadProposalAttachment({
   input: UploadProposalAttachmentInput;
   user: User;
 }): Promise<UploadProposalAttachmentResult> {
-  const { fileName, mimeType, fileSize, storageObjectId, proposalId } = input;
+  const { fileName, mimeType, storagePath, proposalId } = input;
 
-  // Fetch profile and proposal in parallel
-  const [profileId, proposal] = await Promise.all([
+  const [profileId, proposal, storageObject] = await Promise.all([
     getCurrentProfileId(user.id),
     db.query.proposals.findFirst({
       where: { id: proposalId },
+    }),
+    getStorageObjectByPath({
+      bucketId: PROPOSAL_ATTACHMENT_BUCKET,
+      path: storagePath,
     }),
   ]);
 
@@ -56,13 +72,46 @@ export async function uploadProposalAttachment({
     permissions: { profile: permission.UPDATE },
   });
 
+  if (!storageObject) {
+    throw new NotFoundError('Storage object', storagePath);
+  }
+
+  // The signed URL is path-scoped, but the client supplies the path back to
+  // us here — reject anything outside this profile's proposals/ prefix so a
+  // caller can't claim someone else's just-uploaded object.
+  if (!storagePath.startsWith(proposalAttachmentPathPrefix(profileId))) {
+    throw new ValidationError('Storage object does not belong to this profile');
+  }
+
+  // Supabase records the Content-Type sent on PUT into the object metadata,
+  // and serves the file back with that same header. Trust the storage record
+  // (not the user's separate `mimeType` argument), and re-check the allowlist
+  // here in case the client PUT with a Content-Type we don't accept.
+  const storedMimeType = getStorageObjectMimeType(storageObject.metadata);
+  if (!storedMimeType || !isAllowedProposalAttachmentMimeType(storedMimeType)) {
+    throw new ValidationError('Uploaded file has an unsupported content type');
+  }
+  if (storedMimeType !== mimeType) {
+    throw new ValidationError(
+      'Declared mimeType does not match the uploaded file',
+    );
+  }
+
+  // Storage object size is the only place we see the actual upload size —
+  // the signed PUT URL itself has no inherent cap. Reject before persisting
+  // metadata so oversized blobs don't get an attachment row pointing at them.
+  const fileSize = getStorageObjectSize(storageObject.metadata);
+  if (fileSize === null || fileSize > MAX_PROPOSAL_ATTACHMENT_FILE_SIZE) {
+    throw new ValidationError('Uploaded file exceeds the size limit');
+  }
+
   // Create attachment record in database
   const [attachment] = await db
     .insert(attachments)
     .values({
-      storageObjectId,
+      storageObjectId: storageObject.id,
       fileName,
-      mimeType,
+      mimeType: storedMimeType,
       fileSize,
       profileId,
     })
@@ -82,7 +131,7 @@ export async function uploadProposalAttachment({
   return {
     id: attachment.id,
     fileName,
-    mimeType,
+    mimeType: storedMimeType,
     fileSize,
   };
 }

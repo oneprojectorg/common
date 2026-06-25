@@ -148,6 +148,7 @@
   "Resource added": "Recurso añadido",
   "Resource deleted": "Recurso eliminado",
   "Could not add resource": "No se pudo añadir el recurso",
+  "Could not upload attachment": "No se pudo cargar el archivo adjunto",
   "Could not delete resource": "No se pudo eliminar el recurso",
   "Could not reorder resource": "No se pudo reordenar el recurso",
   "Resource options": "Opciones de recurso",

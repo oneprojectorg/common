@@ -1348,6 +1348,7 @@
   "Resource added": "تمت إضافة المورد",
   "Resource deleted": "تم حذف المورد",
   "Could not add resource": "تعذرت إضافة المورد",
+  "Could not upload attachment": "تعذر رفع المرفق",
   "Could not delete resource": "تعذر حذف المورد",
   "Could not reorder resource": "تعذرت إعادة ترتيب المورد",
   "Resource options": "خيارات المورد",
