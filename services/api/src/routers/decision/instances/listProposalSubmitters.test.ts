@@ -109,7 +109,7 @@ describe.concurrent('listProposalSubmitters', () => {
       instanceId,
     });
 
-    expect(result.totalSubmitters).toBe(1);
+    expect(result.total).toBe(1);
   });
 
   it('excludes submitters whose only proposal is a draft', async ({
@@ -139,7 +139,7 @@ describe.concurrent('listProposalSubmitters', () => {
       instanceId,
     });
 
-    expect(result.totalSubmitters).toBe(0);
+    expect(result.total).toBe(0);
   });
 
   it('includes invited collaborators on the same proposal', async ({
@@ -196,7 +196,7 @@ describe.concurrent('listProposalSubmitters', () => {
       instanceId,
     });
 
-    expect(result.totalSubmitters).toBe(2);
+    expect(result.total).toBe(2);
   });
 
   it('counts anonymous submitters in the total but keeps them out of the face pile', async ({
@@ -243,7 +243,7 @@ describe.concurrent('listProposalSubmitters', () => {
     });
 
     // Owner + anonymous collaborator both count toward the total.
-    expect(result.totalSubmitters).toBe(2);
+    expect(result.total).toBe(2);
     // ...but the anonymous account is never a face, even with an avatar.
     expect(result.submitters.some((s) => s.slug === anonProfile.slug)).toBe(
       false,
@@ -296,7 +296,7 @@ describe.concurrent('listProposalSubmitters', () => {
       instanceId,
     });
 
-    expect(result.totalSubmitters).toBe(2);
+    expect(result.total).toBe(2);
     expect(result.submitters).toHaveLength(1);
     expect(result.submitters[0]?.slug).toBe(collabProfile.slug);
     expect(result.submitters[0]?.avatarImage).not.toBeNull();

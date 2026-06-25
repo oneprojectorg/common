@@ -63,18 +63,15 @@ export const listProposalSubmitters = async ({
   });
 
   // The face-pile data is viewer-independent; the READ gate stays outside the
-  // cache so a hit can never bypass authorization. The `face-pile-v2` tag in
-  // the cache params namespaces the entry away from the prior `{submitters,
-  // total}` payload shape (now `{submitters, totalSubmitters}`) so a rolling
-  // deploy doesn't serve stale objects that fail the new output schema.
+  // cache so a hit can never bypass authorization.
   return cache({
     type: 'decision',
-    params: [processInstanceId, 'face-pile-v2'],
+    params: [processInstanceId, 'submitters'],
     fetch: async () => {
       const phaseProposalIds = await getProposalIdsForPhase({ instance });
 
       if (phaseProposalIds.length === 0) {
-        return { submitters: [], totalSubmitters: 0 };
+        return { submitters: [], total: 0 };
       }
 
       const scope: SQL = and(
@@ -135,7 +132,7 @@ export const listProposalSubmitters = async ({
           name: row.name ?? null,
           avatarImage: row.avatarName ? { name: row.avatarName } : null,
         })),
-        totalSubmitters: Number(totalRows[0]?.value ?? 0),
+        total: Number(totalRows[0]?.value ?? 0),
       };
     },
   });
