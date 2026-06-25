@@ -114,6 +114,8 @@ function DecisionOverviewContent({
     }),
   );
 
+  const currentPhaseId = currentPhase?.phaseId || '';
+
   return (
     <div className="flex w-full flex-col">
       <OverviewHero
@@ -135,7 +137,7 @@ function DecisionOverviewContent({
             </Header3>
             <DecisionPhaseTimeline
               phases={phases}
-              currentStateId={instance.currentStateId ?? ''}
+              currentPhaseId={isActive ? currentPhaseId : ''}
               instanceId={instanceId}
               isAdmin={instance.access?.admin}
               decisionSlug={decisionSlug}

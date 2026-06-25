@@ -21,14 +21,14 @@ import { useAdvancePhase } from './useAdvancePhase';
  */
 export function DecisionPhaseTimeline({
   phases,
-  currentStateId,
+  currentPhaseId,
   instanceId,
   isAdmin,
   decisionSlug,
   className,
 }: {
   phases: ProcessPhase[];
-  currentStateId: string;
+  currentPhaseId: string;
   instanceId?: string;
   isAdmin?: boolean;
   decisionSlug: string;
@@ -48,14 +48,14 @@ export function DecisionPhaseTimeline({
   const phaseName = (phase: ProcessPhase) =>
     translatedPhaseNames?.get(phase.id) ?? phase.name;
 
-  const currentIndex = phases.findIndex((p) => p.id === currentStateId);
+  const currentIndex = phases.findIndex((p) => p.id === currentPhaseId);
   const currentPhase = currentIndex >= 0 ? phases[currentIndex] : undefined;
   const nextPhase = currentIndex >= 0 ? phases[currentIndex + 1] : undefined;
   const nextPhaseId = nextPhase?.id;
 
   const { requestAdvance, advanceConfirm } = useAdvancePhase({
     instanceId,
-    currentPhaseId: currentStateId,
+    currentPhaseId,
     nextPhaseId,
     currentPhaseName: currentPhase ? phaseName(currentPhase) : '',
     nextPhaseName: nextPhase ? phaseName(nextPhase) : '',
