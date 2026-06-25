@@ -1,7 +1,7 @@
 import { SUPPORTED_LOCALES, translateDecision } from '@op/common';
 import { z } from 'zod';
 
-import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
+import { openProcedure, router } from '../../trpcFactory';
 
 const translateDecisionOutput = z.object({
   headline: z.string().optional(),
@@ -14,7 +14,7 @@ const translateDecisionOutput = z.object({
 });
 
 export const translateDecisionRouter = router({
-  translateDecision: networkAuthenticatedProcedure()
+  translateDecision: openProcedure()
     .input(
       z.object({
         decisionProfileId: z.string().uuid(),

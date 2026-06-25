@@ -10,7 +10,6 @@ import { TestTranslationDataManager } from '../../test/helpers/TestTranslationDa
 import {
   accessTierGatingCell,
   describeAccessTierGating,
-  expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 import {
@@ -45,42 +44,44 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
+// openProcedure admits every tier past the gate; service-layer fail-closed is
+// covered by the describe block below.
 describeAccessTierGating('translation.translateProposals', {
-  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
-    const caller = await callers.noJwt();
-    await expectFailsAccessTierGate(
-      caller.translation.translateProposals({
-        profileIds: ['00000000-0000-0000-0000-000000000000'],
-        targetLocale: 'en',
-      }),
-      'none',
-    );
-  }),
-
-  anonJwt: accessTierGatingCell(
-    'rejects anon-JWT caller',
+  noJwt: accessTierGatingCell(
+    'admits no-JWT caller past the tier gate',
     async ({ callers }) => {
-      const caller = await callers.anonJwt();
-      await expectFailsAccessTierGate(
+      const caller = await callers.noJwt();
+      await expectPassesAccessTierGate(
         caller.translation.translateProposals({
           profileIds: ['00000000-0000-0000-0000-000000000000'],
           targetLocale: 'en',
         }),
-        'anon',
+      );
+    },
+  ),
+
+  anonJwt: accessTierGatingCell(
+    'admits anon-JWT caller past the tier gate',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectPassesAccessTierGate(
+        caller.translation.translateProposals({
+          profileIds: ['00000000-0000-0000-0000-000000000000'],
+          targetLocale: 'en',
+        }),
       );
     },
   ),
 
   userJwt: accessTierGatingCell(
-    'rejects user-JWT caller',
+    'admits out-of-network user-JWT caller past the tier gate',
     async ({ callers }) => {
       const caller = await callers.userJwt();
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.translation.translateProposals({
           profileIds: ['00000000-0000-0000-0000-000000000000'],
           targetLocale: 'en',
         }),
-        'user',
       );
     },
   ),
@@ -102,6 +103,185 @@ describeAccessTierGating('translation.translateProposals', {
 describe('translation.translateProposals', () => {
   beforeEach(() => {
     mockTranslateText.mockClear();
+  });
+
+  it('should let a no-JWT visitor translate proposals on a public decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Public Batch Proposal' },
+    });
+
+    const { collaborationDocId } = proposal.proposalData as {
+      collaborationDocId: string;
+    };
+    mockCollab.setDocResponse(collaborationDocId, {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Public preview body' }],
+        },
+      ],
+    });
+
+    // Open the decision to visitors: GLOBAL_USER_PUBLIC gets the Public role
+    // (decisions READ), which a no-JWT caller resolves to via the sentinel.
+    await testData.makeDecisionPublic(instance.profileId);
+
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(contentTranslations.contentKey, `batch:${proposal.profileId}:%`),
+        );
+    });
+
+    const visitorCaller = createCaller(
+      await createTestContextWithSession(null),
+    );
+
+    const result = await visitorCaller.translation.translateProposals({
+      profileIds: [proposal.profileId],
+      targetLocale: 'es',
+    });
+
+    const t = result.translations[proposal.profileId];
+    expect(t?.title).toBe('[ES] Public Batch Proposal');
+  });
+
+  it('should reject a no-JWT visitor on non-public proposals', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Private Batch Proposal' },
+    });
+
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(contentTranslations.contentKey, `batch:${proposal.profileId}:%`),
+        );
+    });
+
+    // No make-public grant: GLOBAL_USER_PUBLIC has no decisions:READ on this
+    // decision, so the service must fail closed past the open tier gate.
+    const visitorCaller = createCaller(
+      await createTestContextWithSession(null),
+    );
+
+    await expect(
+      visitorCaller.translation.translateProposals({
+        profileIds: [proposal.profileId],
+        targetLocale: 'es',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
+  });
+
+  it('should fail closed when a batch spans a non-public decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // Two independent decisions (separate processes) — translateProposals
+    // asserts once per unique processId, so the private one must be its own
+    // process, not a second instance of the public one.
+    const publicData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const privateData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const publicSetup = await publicData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const privateSetup = await privateData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const publicInstance = publicSetup.instances[0];
+    const privateInstance = privateSetup.instances[0];
+    if (!publicInstance || !privateInstance) {
+      throw new Error('Expected an instance in each setup');
+    }
+
+    const publicProposal = await publicData.createProposal({
+      userEmail: publicSetup.userEmail,
+      processInstanceId: publicInstance.instance.id,
+      proposalData: { title: 'Readable Proposal' },
+    });
+    const privateProposal = await privateData.createProposal({
+      userEmail: privateSetup.userEmail,
+      processInstanceId: privateInstance.instance.id,
+      proposalData: { title: 'Off-limits Proposal' },
+    });
+
+    // Only the first decision is public — the batch must still fail closed
+    // because the second decision's assert rejects the visitor.
+    await publicData.makeDecisionPublic(publicInstance.profileId);
+
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(
+            contentTranslations.contentKey,
+            `batch:${publicProposal.profileId}:%`,
+          ),
+        );
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(
+            contentTranslations.contentKey,
+            `batch:${privateProposal.profileId}:%`,
+          ),
+        );
+    });
+
+    const visitorCaller = createCaller(
+      await createTestContextWithSession(null),
+    );
+
+    await expect(
+      visitorCaller.translation.translateProposals({
+        profileIds: [publicProposal.profileId, privateProposal.profileId],
+        targetLocale: 'es',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
   });
 
   it('should translate title and preview for multiple proposals', async ({

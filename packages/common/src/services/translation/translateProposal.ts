@@ -26,7 +26,7 @@ export async function translateProposal({
 }: {
   profileId: string;
   targetLocale: SupportedLocale;
-  user: User;
+  user: User | undefined;
 }): Promise<{
   translated: ProposalTranslation;
   sourceLocale: string;

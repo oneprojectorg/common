@@ -9,7 +9,6 @@ import { TestTranslationDataManager } from '../../test/helpers/TestTranslationDa
 import {
   accessTierGatingCell,
   describeAccessTierGating,
-  expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 import {
@@ -44,42 +43,44 @@ async function createAuthenticatedCaller(email: string) {
   return createCaller(await createTestContextWithSession(session));
 }
 
+// openProcedure admits every tier past the gate; service-layer fail-closed is
+// covered by the describe block below.
 describeAccessTierGating('translation.translateDecision', {
-  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
-    const caller = await callers.noJwt();
-    await expectFailsAccessTierGate(
-      caller.translation.translateDecision({
-        decisionProfileId: '00000000-0000-0000-0000-000000000000',
-        targetLocale: 'en',
-      }),
-      'none',
-    );
-  }),
-
-  anonJwt: accessTierGatingCell(
-    'rejects anon-JWT caller',
+  noJwt: accessTierGatingCell(
+    'admits no-JWT caller past the tier gate',
     async ({ callers }) => {
-      const caller = await callers.anonJwt();
-      await expectFailsAccessTierGate(
+      const caller = await callers.noJwt();
+      await expectPassesAccessTierGate(
         caller.translation.translateDecision({
           decisionProfileId: '00000000-0000-0000-0000-000000000000',
           targetLocale: 'en',
         }),
-        'anon',
+      );
+    },
+  ),
+
+  anonJwt: accessTierGatingCell(
+    'admits anon-JWT caller past the tier gate',
+    async ({ callers }) => {
+      const caller = await callers.anonJwt();
+      await expectPassesAccessTierGate(
+        caller.translation.translateDecision({
+          decisionProfileId: '00000000-0000-0000-0000-000000000000',
+          targetLocale: 'en',
+        }),
       );
     },
   ),
 
   userJwt: accessTierGatingCell(
-    'rejects user-JWT caller',
+    'admits out-of-network user-JWT caller past the tier gate',
     async ({ callers }) => {
       const caller = await callers.userJwt();
-      await expectFailsAccessTierGate(
+      await expectPassesAccessTierGate(
         caller.translation.translateDecision({
           decisionProfileId: '00000000-0000-0000-0000-000000000000',
           targetLocale: 'en',
         }),
-        'user',
       );
     },
   ),
@@ -385,6 +386,112 @@ describe('translation.translateDecision', () => {
         targetLocale: 'es',
       }),
     ).rejects.toThrow();
+  });
+
+  it('should let a no-JWT visitor translate a public decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Give the decision some translatable content.
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+    if (!instanceRecord) {
+      throw new Error('Instance record not found');
+    }
+
+    const instanceData = instanceRecord.instanceData as Record<string, unknown>;
+    const phases = instanceData.phases as Array<Record<string, unknown>>;
+    phases[0] = { ...phases[0], headline: 'Public Headline' };
+
+    await db
+      .update(processInstances)
+      .set({ instanceData: { ...instanceData, phases } })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    // Open the decision to visitors: GLOBAL_USER_PUBLIC gets the Public role
+    // (decisions READ), which a no-JWT caller resolves to via the sentinel.
+    await testData.makeDecisionPublic(instance.profileId);
+
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(
+            contentTranslations.contentKey,
+            `decision:${instance.profileId}:%`,
+          ),
+        );
+    });
+
+    const visitorCaller = createCaller(
+      await createTestContextWithSession(null),
+    );
+
+    const result = await visitorCaller.translation.translateDecision({
+      decisionProfileId: instance.profileId,
+      targetLocale: 'es',
+    });
+
+    expect(result.targetLocale).toBe('es');
+    expect(result.headline).toBe('[ES] Public Headline');
+  });
+
+  it('should reject a logged-out caller without decisions:READ on the decision', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instances[0];
+    if (!instance) {
+      throw new Error('No instance created');
+    }
+
+    // Clean up any cache entries written before auth fails (runTranslateBatch
+    // runs in parallel with the auth check and may write rows before rejection).
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(
+            contentTranslations.contentKey,
+            `decision:${instance.profileId}:%`,
+          ),
+        );
+    });
+
+    // Past the gate, but the service must fail closed — the public sentinel
+    // has no decisions:READ grant on this decision.
+    const loggedOutCaller = createCaller(
+      await createTestContextWithSession(null),
+    );
+
+    await expect(
+      loggedOutCaller.translation.translateDecision({
+        decisionProfileId: instance.profileId,
+        targetLocale: 'es',
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'UnauthorizedError' },
+    });
   });
 
   it('should throw UnauthorizedError for user without decision access', async ({
