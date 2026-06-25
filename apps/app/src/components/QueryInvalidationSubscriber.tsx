@@ -3,8 +3,9 @@
 import type { ChannelName, RegistryEvents } from '@op/common/realtime';
 import { queryChannelRegistry } from '@op/common/realtime';
 import { RealtimeManager } from '@op/realtime/client';
+import { createSBBrowserClient } from '@op/supabase/client';
 import { QueryClientContext } from '@tanstack/react-query';
-import { useCallback, useContext, useEffect, useRef } from 'react';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 /**
  * Returns the QueryClient if inside a QueryClientProvider, throws a descriptive error otherwise.
@@ -20,11 +21,47 @@ function useRequiredQueryClient() {
 }
 
 /**
+ * True once a Supabase session exists (anonymous or full), read from the
+ * browser client's local storage — no network or DB — and kept live via
+ * onAuthStateChange so realtime flips on at login and off at logout.
+ */
+function useHasSession(): boolean {
+  const [hasSession, setHasSession] = useState(false);
+
+  useEffect(() => {
+    const supabase = createSBBrowserClient();
+    let active = true;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (active) {
+        setHasSession(Boolean(data.session));
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setHasSession(Boolean(session));
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  return hasSession;
+}
+
+/**
  * Component that sets up realtime subscriptions based on mutation channel headers.
  * Must be rendered inside QueryClientProvider.
+ *
+ * Gates the WebSocket to signed-in users; others still get local cache
+ * invalidation for their own mutations.
  */
 export function QueryInvalidationSubscriber() {
-  useInvalidateQueries();
+  useInvalidateQueries(useHasSession());
   return null;
 }
 
@@ -37,7 +74,7 @@ export function QueryInvalidationSubscriber() {
  *
  * Also handles WebSocket messages for server-initiated invalidations.
  */
-function useInvalidateQueries(): void {
+function useInvalidateQueries(enabled: boolean): void {
   const queryClient = useRequiredQueryClient();
   const invalidatedMutationIds = useRef(new Set<string>());
   const unsubscribersRef = useRef<Map<ChannelName, () => void>>(new Map());
@@ -83,6 +120,10 @@ function useInvalidateQueries(): void {
    * Subscribe to WebSocket channel when a query registers interest in channels
    */
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -132,5 +173,5 @@ function useInvalidateQueries(): void {
       }
       unsubscribersRef.current.clear();
     };
-  }, [handleInvalidation]);
+  }, [handleInvalidation, enabled]);
 }

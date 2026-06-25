@@ -170,23 +170,22 @@ export class RealtimeManager {
   }
 
   /**
-   * Disconnect from Supabase Realtime and clean up all channels
+   * Tear down all channel subscriptions when the last one goes away. The client
+   * is retained (not nulled) so the next subscribe() reuses it and reconnects on
+   * the same connection instead of opening a fresh socket.
    */
   private disconnect(): void {
     if (!this.supabase) {
       return;
     }
 
-    console.log('[Realtime] Disconnecting...');
+    console.log('[Realtime] Closing all channels...');
 
-    // Clean up all channels
     this.channels.forEach((realtimeChannel) => {
       this.supabase?.removeChannel(realtimeChannel);
     });
     this.channels.clear();
     this.channelListeners.clear();
-
-    this.supabase = null;
   }
 
   /**
