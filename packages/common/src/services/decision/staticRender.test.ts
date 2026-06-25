@@ -137,7 +137,7 @@ describe('static renderer × serverExtensions', () => {
     ).toThrow();
   });
 
-  it('renders details/summary/content (the app maps these to a Collapsible)', () => {
+  it('renders details/summary/content as a native <details> (recognized, not dropped)', () => {
     const doc: JSONContent = {
       type: 'doc',
       content: [
