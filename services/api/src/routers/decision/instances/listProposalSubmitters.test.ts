@@ -53,6 +53,31 @@ async function profileForAuthUser(
   return row;
 }
 
+/**
+ * The face-pile only populates after proposals advance out of the submission
+ * phase. Tests in this file share that "advance + list" boundary, so factor
+ * it out once.
+ */
+async function listSubmittersAfterAdvancingPhase({
+  testData,
+  caller,
+  instanceId,
+}: {
+  testData: TestDecisionsDataManager;
+  caller: Awaited<ReturnType<typeof createAuthenticatedCaller>>;
+  instanceId: string;
+}) {
+  await testData.advancePhase({
+    instanceId,
+    fromPhaseId: 'submission',
+    toPhaseId: 'review',
+  });
+
+  return caller.decision.listProposalSubmitters({
+    processInstanceId: instanceId,
+  });
+}
+
 describe.concurrent('listProposalSubmitters', () => {
   it('deduplicates submitters across multiple proposals by the same author', async ({
     task,
@@ -78,14 +103,10 @@ describe.concurrent('listProposalSubmitters', () => {
       });
     }
 
-    await testData.advancePhase({
+    const result = await listSubmittersAfterAdvancingPhase({
+      testData,
+      caller,
       instanceId,
-      fromPhaseId: 'submission',
-      toPhaseId: 'review',
-    });
-
-    const result = await caller.decision.listProposalSubmitters({
-      processInstanceId: instanceId,
     });
 
     expect(result.total).toBe(1);
@@ -112,14 +133,10 @@ describe.concurrent('listProposalSubmitters', () => {
       proposalData: { title: `Draft ${task.id}` },
     });
 
-    await testData.advancePhase({
+    const result = await listSubmittersAfterAdvancingPhase({
+      testData,
+      caller,
       instanceId,
-      fromPhaseId: 'submission',
-      toPhaseId: 'review',
-    });
-
-    const result = await caller.decision.listProposalSubmitters({
-      processInstanceId: instanceId,
     });
 
     expect(result.total).toBe(0);
@@ -173,14 +190,10 @@ describe.concurrent('listProposalSubmitters', () => {
 
     await caller.decision.submitProposal({ proposalId: proposal.id });
 
-    await testData.advancePhase({
+    const result = await listSubmittersAfterAdvancingPhase({
+      testData,
+      caller,
       instanceId,
-      fromPhaseId: 'submission',
-      toPhaseId: 'review',
-    });
-
-    const result = await caller.decision.listProposalSubmitters({
-      processInstanceId: instanceId,
     });
 
     expect(result.total).toBe(2);
@@ -223,14 +236,10 @@ describe.concurrent('listProposalSubmitters', () => {
       authUserId: anon.user.id,
     });
 
-    await testData.advancePhase({
+    const result = await listSubmittersAfterAdvancingPhase({
+      testData,
+      caller,
       instanceId,
-      fromPhaseId: 'submission',
-      toPhaseId: 'review',
-    });
-
-    const result = await caller.decision.listProposalSubmitters({
-      processInstanceId: instanceId,
     });
 
     // Owner + anonymous collaborator both count toward the total.
@@ -281,14 +290,10 @@ describe.concurrent('listProposalSubmitters', () => {
       email: collaboratorEmail,
     });
 
-    await testData.advancePhase({
+    const result = await listSubmittersAfterAdvancingPhase({
+      testData,
+      caller,
       instanceId,
-      fromPhaseId: 'submission',
-      toPhaseId: 'review',
-    });
-
-    const result = await caller.decision.listProposalSubmitters({
-      processInstanceId: instanceId,
     });
 
     expect(result.total).toBe(2);
