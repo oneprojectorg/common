@@ -111,10 +111,9 @@ test.describe('Anonymous account upgrade (promote flow)', () => {
     await page.getByRole('button', { name: 'Join Common' }).click();
 
     // Onboarding complete → returned to the decision they came from.
-    await expect(page).toHaveURL(
-      new RegExp(`/decisions/${instance.slug}`),
-      { timeout: 20000 },
-    );
+    await expect(page).toHaveURL(new RegExp(`/decisions/${instance.slug}`), {
+      timeout: 20000,
+    });
     await expect(page).not.toHaveURL(/\/start/);
   });
 });
