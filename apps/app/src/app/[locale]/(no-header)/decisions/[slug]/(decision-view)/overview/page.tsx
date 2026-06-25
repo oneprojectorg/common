@@ -57,9 +57,9 @@ const DecisionOverviewPage = async ({
   const { utils, queryClient } = await createServerUtils();
 
   // One server fetch seeds the cache the client useSuspenseQuery hydrates from
-  // (no second fetch, no divergence) and feeds both the RSC body and the
-  // pinned-resources seeding below. Best-effort: on failure the cache stays
-  // empty, so the client refetches and its APIErrorBoundary drives the error UX.
+  // (no second fetch, no divergence) and feeds the RSC body. Best-effort: on
+  // failure the cache stays empty, so the client refetches and its
+  // APIErrorBoundary drives the error UX.
   let aboutSlot: ReactNode = null;
   // The process is "active" once its first phase begins; default to active so a
   // failed fetch keeps the CTAs visible (the client suspense read drives the
@@ -81,33 +81,13 @@ const DecisionOverviewPage = async ({
     if (body) {
       aboutSlot = <RichTextRenderer content={body} />;
     }
-
-    // Seed the pinned-resources queries (collections for the decision profile,
-    // then each collection's resources) into the same cache, so the sidebar
-    // hydrates from server HTML with no client waterfall. Independent
-    // best-effort: a failure here leaves the body intact and the client
-    // refetches those queries under its own boundary.
-    const { profileId } = instance;
-    if (profileId) {
-      try {
-        const collections = await utils.resources.collections.list.fetch({
-          profileId,
-        });
-        await Promise.all(
-          collections.items.map((collection) =>
-            utils.resources.listByCollection.fetch({
-              collectionId: collection.id,
-            }),
-          ),
-        );
-      } catch (error) {
-        logger.warn('Failed to server-render decision pinned resources', {
-          instanceId,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    }
   }
+
+  // Pinned-resources queries (collections + each collection's resources) are
+  // NOT seeded here on purpose: they're secondary sidebar content with their
+  // own Suspense + skeleton + error boundary (OverviewPinnedResourcesSuspense),
+  // so the client fetches them after first paint instead of blocking the shell.
+  // Measured ~335ms of time-to-content removed by not seeding here (2026-06-25).
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
