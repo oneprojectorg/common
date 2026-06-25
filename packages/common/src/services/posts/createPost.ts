@@ -39,13 +39,9 @@ export const createPost = async (input: CreatePostServiceInput) => {
   ]);
 
   // Access gate: must pass before any row is written. Dispatches by the
-  // root profile type — DECISION is admitted via the existing
-  // announcement/comment split, ORG via org-admin standing, INDIVIDUAL/USER
+  // root profile type — DECISION via the existing announcement/comment
+  // split, ORG comments via walled-garden membership, INDIVIDUAL/USER
   // deny-by-default (no individual-post surface yet).
-  //
-  // Content moderation is async only: the post is written and shown
-  // immediately, and the `content/submitted` event below drives async provider
-  // review, which hides the post if a verdict comes back disallowed.
   await assertPostWriteAccess({
     user: { id: authUserId },
     rootProfileId,
