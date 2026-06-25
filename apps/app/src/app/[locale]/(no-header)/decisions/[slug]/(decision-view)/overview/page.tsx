@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
-import { DecisionOverviewSuspense } from '@/components/decisions/DecisionOverview';
+import { DecisionOverview } from '@/components/decisions/DecisionOverview';
 import { RichTextRenderer } from '@/components/decisions/RichTextRenderer';
 import { hasFirstPhaseStarted } from '@/components/decisions/hasFirstPhaseStarted';
 
@@ -65,7 +65,7 @@ const DecisionOverviewPage = async ({
   const isActive = hasFirstPhaseStarted(instance.instanceData?.phases);
 
   return (
-    <DecisionOverviewSuspense
+    <DecisionOverview
       instanceId={instanceId}
       decisionSlug={slug}
       processInstance={instance}

@@ -54,7 +54,10 @@ interface DecisionOverviewProps {
  * Falls back to the instance name/description for processes authored before
  * that tab was filled in.
  */
-export function DecisionOverviewSuspense({
+// Renders from server-fetched props (no useSuspenseQuery), so it does not
+// suspend — no `Suspense` suffix. Keeps the page-level APIErrorBoundary as a
+// defensive catch for render errors.
+export function DecisionOverview({
   instanceId,
   decisionSlug,
   processInstance,

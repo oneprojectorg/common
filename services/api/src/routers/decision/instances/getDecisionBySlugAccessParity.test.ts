@@ -17,16 +17,26 @@ async function createAuthenticatedCaller(email: string) {
 
 /**
  * /overview is single-fetch: it reads per-user `access` from getDecisionBySlug
- * (which the router derives via getProfileAccessRoles -> decisions bitfield)
- * instead of getInstance (resolveInstanceAccess, which adds a profile-admin
- * ALL_TRUE bypass + org fallback). This is only safe if the two derivations
- * agree for the capabilities the overview gates on (admin, submitProposals).
+ * (router derives it via getProfileAccessRoles -> decisions bitfield) instead of
+ * getInstance (resolveInstanceAccess, which adds a profile-admin ALL_TRUE bypass
+ * + org fallback). Safe only if the two derivations agree for the capabilities
+ * the overview gates on (admin, submitProposals).
  *
- * They agree for the default decision roles because the Admin role grants the
- * decisions bits explicitly (decisionRoles.ts) — so the bitfield path already
- * reflects admin, making the bypass redundant. These tests pin that parity; if
- * a future role change reintroduces a profile-admin-without-decisions-bits
- * grant, the overview CTAs would diverge and this fails.
+ * SCOPE (be honest about what this proves): this pins parity for the DEFAULT
+ * Admin role only. That role grants `profile.admin` AND the full decisions
+ * bitfield, so BOTH paths return admin=true — getInstance via the profile-admin
+ * bypass, getDecisionBySlug via the bitfield. They agree, but for different
+ * reasons, so this case does NOT exercise the bypass itself.
+ *
+ * KNOWN LIMITATIONS this test does NOT cover (see PR #1417 review):
+ *  - A custom role granting `profile.admin` WITHOUT decisions-admin/submit bits:
+ *    getInstance would return admin=true (bypass), getDecisionBySlug admin=false
+ *    (bitfield) → /overview would under-report CTAs. Reachable via custom roles
+ *    (createDecisionRole); unverified whether such roles exist in production.
+ *  - Org-only viewers (org role, no profile grant): NOT relevant to /overview —
+ *    its gate (assertProfileAccess, profile-only) already 403s them before render.
+ *  If custom profile-admin roles are in use, fix the router to derive access like
+ *  getInstance (getProfileAccessRolesWithOrgFallback + profile-admin bypass).
  */
 describe.concurrent('getDecisionBySlug access parity with getInstance', () => {
   it('admin user: access matches getInstance for overview-gated fields', async ({
