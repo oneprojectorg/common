@@ -330,10 +330,11 @@ const ProposalsListContent = ({
 
   const categories = categoriesData.categories;
 
-  // `grid` is the default, so it clears the param rather than persisting it.
+  // Nullable so the default below can depend on whether the process collects a
+  // location; the contextual default is stripped from the URL in setView.
   const [view, setView] = useQueryState(
     'view',
-    parseAsStringLiteral(PROPOSAL_VIEWS).withDefault('grid'),
+    parseAsStringLiteral(PROPOSAL_VIEWS),
   );
 
   // Map browse mode is offered only when the process collects a location and
@@ -346,12 +347,18 @@ const ProposalsListContent = ({
   const mapView =
     getLocationFieldMapView(proposalTemplate) ??
     DEFAULT_LOCATION_FIELD_MAP_VIEW;
-  // Ignore a stale `?view=map` when this process has no map.
-  const effectiveView: ProposalView = hasLocationField ? view : 'grid';
+  // Lead with the map when the process has one — users came here to see places,
+  // not titles — and fall back to grid otherwise. Ignores a stale `?view=map`
+  // when this process has no map.
+  const defaultView: ProposalView = hasLocationField ? 'map' : 'grid';
+  const effectiveView: ProposalView = hasLocationField
+    ? (view ?? defaultView)
+    : 'grid';
   const isMapMode = hasLocationField && effectiveView === 'map';
 
   const handleViewChange = (next: ProposalView) => {
-    void setView(next);
+    // Strip the param when picking the contextual default so the URL stays clean.
+    void setView(next === defaultView ? null : next);
   };
 
   const hasVoted = voteStatus?.hasVoted || false;
