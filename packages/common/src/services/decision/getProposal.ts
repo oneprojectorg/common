@@ -27,6 +27,7 @@ import {
 } from './getProposalDocumentsContent';
 import {
   type DecisionRolePermissions,
+  decisionPermission,
   fromDecisionBitField,
 } from './permissions';
 import { type ProposalData, parseProposalData } from './proposalDataSchema';
@@ -318,6 +319,29 @@ export const getPermissionsOnProposal = async ({
   const isProfileAdmin = checkPermission({ profile: permission.ADMIN }, roles);
   if (isProfileAdmin) {
     access.admin = true;
+  }
+
+  // The comment / post-write gate in `assertPostWriteAccess` walks proposal
+  // targets up to the parent decision via `resolvePostRoots` and requires
+  // `decisions: SUBMIT_PROPOSALS` on the decision profile — bits that live on
+  // `profileUsers` for the *decision* profile, not the proposal profile. Fold
+  // that bit into `access.submitProposals` so the frontend can mirror the
+  // server gate and hide the comment box for users who'd get rejected on
+  // submit. Leave the other bits (update / admin) on proposal-profile roles —
+  // editability and admin signal are separate concerns from comment access.
+  if (proposal.processInstance.profileId) {
+    const decisionRoles = await getProfileAccessRoles({
+      user,
+      profileId: proposal.processInstance.profileId,
+    });
+    if (
+      checkPermission(
+        { decisions: decisionPermission.SUBMIT_PROPOSALS },
+        decisionRoles,
+      )
+    ) {
+      access.submitProposals = true;
+    }
   }
 
   return { access };

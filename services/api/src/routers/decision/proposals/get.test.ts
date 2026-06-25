@@ -193,6 +193,92 @@ describe.concurrent('getProposal', () => {
     expect(result.isEditable).toBe(true);
   });
 
+  // Mirrors the server `assertPostWriteAccess` comment gate — a decision
+  // participant has `decisions: SUBMIT_PROPOSALS` on the decision profile and
+  // must be admitted to comment on proposals in that decision. The frontend
+  // hides the comment box on `access.submitProposals`, so this bit must be
+  // true when the caller has SUBMIT_PROPOSALS via the parent-decision role,
+  // not only when they have it on the proposal's own profile.
+  it('should set access.submitProposals=true when the caller has SUBMIT_PROPOSALS via the parent decision role', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+
+    // Owner creates the proposal so the caller has no proposal-profile role.
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: {
+        title: 'Participant comment gate',
+        description: 'desc',
+      },
+    });
+    // Submit the proposal so non-owners can read it (drafts are owner-only).
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
+
+    // Add the caller to the decision profile only — no proposal-profile role.
+    const participant = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [instance.profileId],
+    });
+    const participantCaller = await createAuthenticatedCaller(
+      participant.email,
+    );
+
+    const result = await participantCaller.decision.getProposal({
+      profileId: proposal.profileId,
+    });
+
+    expect(result.access?.submitProposals).toBe(true);
+  });
+
+  // The flip side: a caller with no role on the decision profile and no role
+  // on the proposal profile must NOT see `access.submitProposals=true`, so
+  // the frontend keeps the comment box hidden for them. (The proposal here is
+  // public-reachable only because the read gate falls back to `assertInstanceProfileAccess`
+  // — that fallback is out of scope for this test.)
+  it('should set access.submitProposals=false when the caller has no role on the decision or proposal', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+    const instance = setup.instance;
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'No-role caller', description: 'desc' },
+    });
+    await db
+      .update(proposals)
+      .set({ status: ProposalStatus.SUBMITTED })
+      .where(eq(proposals.id, proposal.id));
+
+    // Org member with no decision-profile role and no proposal-profile role.
+    const stranger = await testData.createMemberUser({
+      organization: setup.organization,
+    });
+    const strangerCaller = await createAuthenticatedCaller(stranger.email);
+
+    const result = await strangerCaller.decision.getProposal({
+      profileId: proposal.profileId,
+    });
+
+    expect(result.access?.submitProposals).toBe(false);
+  });
+
   it('should throw NotFoundError for non-existent proposal', async ({
     task,
     onTestFinished,
