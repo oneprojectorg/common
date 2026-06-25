@@ -601,6 +601,9 @@ describe.concurrent('regression: legacy org post moderation', () => {
       organization: setup.organization,
       instanceProfileIds: [],
     });
+    // Org-post comments are gated on walled-garden membership; the member
+    // is created with a network email by `createMemberUser`, so they pass
+    // without any extra setup.
     const memberCaller = await createAuthenticatedCaller(member.email);
     const comment = await memberCaller.posts.createPost({
       content: 'Member comment under legacy post.',
@@ -634,6 +637,7 @@ describe.concurrent('regression: legacy org post moderation', () => {
       organization: setup.organization,
       instanceProfileIds: [],
     });
+    // Author passes the walled-garden gate via their network email.
     const authorCaller = await createAuthenticatedCaller(author.email);
     const comment = await authorCaller.posts.createPost({
       content: 'Member comment under legacy post.',

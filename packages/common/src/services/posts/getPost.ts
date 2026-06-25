@@ -3,10 +3,12 @@ import {
   EntityType,
   postsToOrganizations,
   postsToProfiles,
+  profiles,
 } from '@op/db/schema';
 import { checkPermission, permission } from 'access-zones';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
+import { UnauthorizedError } from '../../utils';
 import {
   assertProfileTypeAccess,
   getCurrentProfileId,
@@ -106,6 +108,26 @@ export const getPost = async ({
           .from(postsToProfiles)
           .where(eq(postsToProfiles.postId, postId))
       ).map((a) => a.profileId);
+
+  // Individual / user profile posts aren't a supported surface yet: deny
+  // before any permission policy can lenient-pass them. Same DB roundtrip
+  // also feeds the DECISION gate below — split into two queries would be a
+  // strict regression, so check the type set explicitly here.
+  if (profileIdsToAuthorize.length > 0) {
+    const profileTypes = await db
+      .select({ type: profiles.type })
+      .from(profiles)
+      .where(inArray(profiles.id, profileIdsToAuthorize));
+
+    if (
+      profileTypes.some(
+        ({ type }) =>
+          type === EntityType.INDIVIDUAL || type === EntityType.USER,
+      )
+    ) {
+      throw new UnauthorizedError('You do not have access to this post');
+    }
+  }
 
   await assertProfileTypeAccess({
     user: { id: authUserId },

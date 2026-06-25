@@ -1,5 +1,6 @@
 import { db, eq } from '@op/db/client';
 import { postReactions, posts, postsToProfiles } from '@op/db/schema';
+import { randomUUID } from 'crypto';
 import { describe, expect, it } from 'vitest';
 
 import { appRouter } from '..';
@@ -7,6 +8,7 @@ import { TestDecisionsDataManager } from '../../test/helpers/TestDecisionsDataMa
 import {
   createIsolatedSession,
   createTestContextWithSession,
+  createTestUser,
 } from '../../test/supabase-utils';
 import { createCallerFactory } from '../../trpcFactory';
 
@@ -26,6 +28,27 @@ const createOutsiderCaller = async (testData: TestDecisionsDataManager) => {
     instanceProfileIds: [],
   });
   return createAuthenticatedCaller(outsider.email);
+};
+
+// Confirmed, signed-in user with a non-network email — i.e., NOT in the
+// walled garden (no allowedEmailDomains match, no allow-list entry). Used
+// to exercise the walled-garden denial path on `posts.createPost` org
+// comments. Cleanup is registered via the TestDecisionsDataManager so the
+// user / profile row gets torn down with the rest of the test data.
+const createNonNetworkCaller = async (testData: TestDecisionsDataManager) => {
+  const email = `non-network-${randomUUID()}@example.com`;
+  const { user } = await createTestUser(email);
+  if (!user) {
+    throw new Error(`Failed to create non-network user: ${email}`);
+  }
+  testData.trackAuthUserForCleanup(user.id);
+  const userRecord = await db.query.users.findFirst({
+    where: { authUserId: user.id },
+  });
+  if (userRecord?.profileId) {
+    testData.trackProfileForCleanup(userRecord.profileId);
+  }
+  return createAuthenticatedCaller(email);
 };
 
 const fetchPostRoots = async (postId: string) => {
@@ -456,14 +479,14 @@ describe.concurrent('decision-profile post authorization', () => {
   });
 });
 
-// Non-decision profiles intentionally short-circuit the decision-permission
-// gate: assertDecisionProfilesAccess returns without checking when the
-// associated profile isn't a processInstance. These tests pin that lenient
-// pass-through so the helper can't regress to gating regular org/proposal
-// feeds. Production callers (e.g. createPostInOrganization) layer their own
-// org-membership check on top — that's covered by their own tests, not here.
-describe.concurrent('non-decision (organization) post authorization', () => {
-  it('does not gate posts on non-decision profiles for the owner', async ({
+// Org-feed writes are restricted to org admins (resolved via the org-admin
+// fallback on `organizationUsers`); regular org members and outsiders fail
+// closed at the service-layer write gate, independent of the procedure tier.
+// The feed-read and reaction tests below cover sibling endpoints
+// (`posts.getPosts`, `organization.toggleReaction`) whose org-side authz is
+// out of scope for `assertPostWriteAccess` and is intentionally untouched.
+describe.concurrent('org-feed post authorization', () => {
+  it('admits the org admin (creator) posting on the org profile', async ({
     task,
     onTestFinished,
   }) => {
@@ -472,16 +495,14 @@ describe.concurrent('non-decision (organization) post authorization', () => {
 
     const caller = await createAuthenticatedCaller(setup.userEmail);
     const post = await caller.posts.createPost({
-      content: 'Profile update on a non-decision (organization) profile.',
+      content: 'Org admin update on the org profile.',
       profileId: setup.organization.profileId,
     });
 
-    expect(post.content).toBe(
-      'Profile update on a non-decision (organization) profile.',
-    );
+    expect(post.content).toBe('Org admin update on the org profile.');
   });
 
-  it('does not gate top-level posts on non-decision profiles for an outsider (helper short-circuits)', async ({
+  it('rejects an outsider from posting a top-level update on an org profile', async ({
     task,
     onTestFinished,
   }) => {
@@ -490,20 +511,39 @@ describe.concurrent('non-decision (organization) post authorization', () => {
 
     const outsiderCaller = await createOutsiderCaller(testData);
 
-    // No throw: assertDecisionProfilesAccess short-circuits because the
-    // target profile isn't a processInstance. Documents the helper-level
-    // contract — production callers layer org-membership checks separately.
-    const post = await outsiderCaller.posts.createPost({
-      content: 'Outsider top-level post on a non-decision profile.',
-      profileId: setup.organization.profileId,
-    });
-
-    expect(post.content).toBe(
-      'Outsider top-level post on a non-decision profile.',
-    );
+    await expect(
+      outsiderCaller.posts.createPost({
+        content: 'Outsider top-level post on org profile — should fail.',
+        profileId: setup.organization.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 
-  it('does not gate comments on non-decision posts', async ({
+  it('rejects a non-admin org member from posting on the org profile', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // The Member role grants `profile: READ` only — not `profile: ADMIN` —
+    // so it must not satisfy the write gate even though the user is in the
+    // org. Pins that only admin standing (not membership) admits writes.
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+    });
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    await expect(
+      memberCaller.posts.createPost({
+        content: 'Member post on org profile — should fail.',
+        profileId: setup.organization.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('rejects a non-walled-garden caller from commenting on an org-feed post', async ({
     task,
     onTestFinished,
   }) => {
@@ -516,9 +556,108 @@ describe.concurrent('non-decision (organization) post authorization', () => {
       profileId: setup.organization.profileId,
     });
 
-    const outsiderCaller = await createOutsiderCaller(testData);
-    const comment = await outsiderCaller.posts.createPost({
-      content: 'Outsider comment on a non-decision post.',
+    const nonNetworkCaller = await createNonNetworkCaller(testData);
+
+    await expect(
+      nonNetworkCaller.posts.createPost({
+        content: 'Non-network comment on org post — should fail.',
+        parentPostId: orgPost.id,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('admits a walled-garden caller commenting on an org-feed post', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // Org-post comments gate on walled-garden membership (a network email
+    // domain or an allow-list entry), not on per-org membership: anyone
+    // inside the walled garden can comment on any org post. The
+    // `createMemberUser` helper produces a caller with a network email,
+    // which passes the gate without needing an allow-list row.
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
+    const orgPost = await ownerCaller.posts.createPost({
+      content: 'Org-level post.',
+      profileId: setup.organization.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+    });
+
+    const caller = await createAuthenticatedCaller(member.email);
+    const comment = await caller.posts.createPost({
+      content: 'Walled-garden user comment on org post.',
+      parentPostId: orgPost.id,
+    });
+
+    expect(comment.parentPostId).toBe(orgPost.id);
+    expect(comment.content).toBe('Walled-garden user comment on org post.');
+  });
+
+  it('rejects a non-walled-garden caller from commenting on a legacy postsToOrganizations post', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // Legacy org-feed posts (via `organization.createPost`) carry no
+    // `rootProfileId`, so the write gate resolves the org via the parent
+    // post's `postsToOrganizations` link and runs the same walled-garden
+    // check used on the modern path.
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
+    const legacyPost = await ownerCaller.organization.createPost({
+      id: setup.organization.id,
+      content: 'Legacy org-feed post.',
+    });
+    // Legacy posts (profileId/rootProfileId null) escape the data manager's
+    // profile-cascade cleanup — delete the row directly.
+    onTestFinished(async () => {
+      await db.delete(posts).where(eq(posts.id, legacyPost.id));
+    });
+
+    const nonNetworkCaller = await createNonNetworkCaller(testData);
+
+    await expect(
+      nonNetworkCaller.posts.createPost({
+        content: 'Non-network comment on legacy post — should fail.',
+        parentPostId: legacyPost.id,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
+  });
+
+  it('treats a comment as a comment even when profileId is also set', async ({
+    task,
+    onTestFinished,
+  }) => {
+    // A misuse-but-valid input shape: a caller sends both `profileId` (the
+    // org) AND `parentPostId`. resolvePostRoots prefers parentPostId, so the
+    // gate must too — otherwise targetProfileId === rootProfileId would
+    // route the call through the admin-only announcement gate and reject a
+    // legitimate comment.
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+
+    const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
+    const orgPost = await ownerCaller.posts.createPost({
+      content: 'Org-level post.',
+      profileId: setup.organization.profileId,
+    });
+
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+    });
+
+    const caller = await createAuthenticatedCaller(member.email);
+    const comment = await caller.posts.createPost({
+      content: 'Comment with both flags set.',
+      profileId: setup.organization.profileId,
       parentPostId: orgPost.id,
     });
 
@@ -578,6 +717,32 @@ describe.concurrent('non-decision (organization) post authorization', () => {
       .where(eq(postReactions.postId, orgPost.id));
 
     expect(reactions).toHaveLength(1);
+  });
+});
+
+// Individual-profile posting isn't a supported surface yet. The write gate
+// fail-closes on the profile's server-resolved type so the corresponding
+// `posts.createPost` call rejects even for the profile's own owner.
+describe.concurrent('individual-profile post authorization', () => {
+  it('rejects posting on an individual profile (not supported yet)', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+    const setup = await testData.createDecisionSetup({ instanceCount: 0 });
+    const member = await testData.createMemberUser({
+      organization: setup.organization,
+      instanceProfileIds: [],
+    });
+
+    const memberCaller = await createAuthenticatedCaller(member.email);
+
+    await expect(
+      memberCaller.posts.createPost({
+        content: 'Self-post on individual profile — should fail.',
+        profileId: member.profileId,
+      }),
+    ).rejects.toMatchObject({ cause: { name: 'UnauthorizedError' } });
   });
 });
 
@@ -1124,6 +1289,9 @@ describe.concurrent('getPosts pagination', () => {
     const orgProfileId = setup.organization.profileId;
 
     const ownerCaller = await createAuthenticatedCaller(setup.userEmail);
+    // Org-post comments are gated on walled-garden membership; the test
+    // owner is created with a network email by createDecisionSetup, so
+    // they pass without any extra setup.
 
     const updateIds: string[] = [];
     for (let i = 0; i < 3; i++) {

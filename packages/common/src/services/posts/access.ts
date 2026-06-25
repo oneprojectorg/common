@@ -1,13 +1,17 @@
 import { db } from '@op/db/client';
-import { EntityType } from '@op/db/schema';
+import { EntityType, postsToOrganizations } from '@op/db/schema';
 import { permission } from 'access-zones';
+import { eq } from 'drizzle-orm';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';
 import {
   type AccessUser,
   assertInstanceProfileAccess,
   assertProfileTypeAccess,
+  getUserSession,
 } from '../access';
+import { decisionPermission } from '../decision/permissions';
+import { getNetworkMembership } from '../user';
 
 // Asserts a caller's READ access to a profile's posts, dispatching on the
 // profile's server-resolved type. Fail-closed: a type without a case is denied
@@ -66,5 +70,125 @@ export const assertPostReadAccess = async ({
 
     default:
       throw new UnauthorizedError('You do not have access to these posts');
+  }
+};
+
+const WRITE_DENIED = 'You do not have access to write here';
+
+// Asserts the caller is inside the walled garden (a network email domain
+// or an allow-list entry). Org-post comments are gated on this — anyone in
+// the walled garden can comment on any org post, regardless of per-org
+// membership. Fails closed when the caller has no resolvable email
+// (anonymous / sentinel callers).
+const assertOnWalledGarden = async (user: AccessUser | undefined) => {
+  if (!user?.id) {
+    throw new UnauthorizedError(WRITE_DENIED);
+  }
+  const session = await getUserSession({ authUserId: user.id });
+  const isMember = await getNetworkMembership(session?.user?.email);
+  if (!isMember) {
+    throw new UnauthorizedError(WRITE_DENIED);
+  }
+};
+
+// Asserts a caller's WRITE access for a new post, dispatching on the
+// server-resolved root profile type. Fail-closed: any type without an
+// explicit case is denied. Proposal targets never reach this dispatch —
+// `resolvePostRoots` walks them up to the parent decision first. Legacy
+// `postsToOrganizations` posts arrive with `rootProfileId === null` and
+// gate via the thread root's `postsToOrganizations` link.
+export const assertPostWriteAccess = async ({
+  user,
+  rootProfileId,
+  rootPostId,
+  targetProfileId,
+}: {
+  user: AccessUser | undefined;
+  rootProfileId: string | null;
+  rootPostId: string | null;
+  targetProfileId?: string | null;
+}) => {
+  // Legacy postsToOrganizations branch: the only write that lands here is
+  // a reply under a legacy org-feed post. Same walled-garden gate as the
+  // modern ORG comment path below — the legacy postsToOrganizations row
+  // is only used to confirm the thread actually belongs to *some* org.
+  if (!rootProfileId) {
+    if (!rootPostId) {
+      throw new UnauthorizedError(WRITE_DENIED);
+    }
+    const [legacyLink] = await db
+      .select({ organizationId: postsToOrganizations.organizationId })
+      .from(postsToOrganizations)
+      .where(eq(postsToOrganizations.postId, rootPostId))
+      .limit(1);
+    if (!legacyLink) {
+      throw new UnauthorizedError(WRITE_DENIED);
+    }
+    await assertOnWalledGarden(user);
+    return;
+  }
+
+  const profile = await db.query.profiles.findFirst({
+    where: { id: rootProfileId },
+    columns: { type: true },
+  });
+
+  if (!profile) {
+    throw new NotFoundError('Profile', rootProfileId);
+  }
+
+  // Top-level "announcement" on the gated profile vs. comment/reply. A
+  // comment always has `rootPostId` set (the thread root). A real
+  // announcement has no parent and writes on the gated profile itself
+  // (target === root). Gating on `!rootPostId` defends against a caller
+  // who sets *both* `profileId` and `parentPostId` from being routed to
+  // the stricter admin gate by accident.
+  const isAnnouncement =
+    !rootPostId && !!targetProfileId && targetProfileId === rootProfileId;
+
+  switch (profile.type) {
+    // Decision profile: announcement requires ADMIN; comments and writes
+    // resolved through the decision (including proposal-target writes that
+    // resolvePostRoots walks up here) require SUBMIT_PROPOSALS.
+    case EntityType.DECISION:
+      await assertProfileTypeAccess({
+        user,
+        profileIds: [rootProfileId],
+        policies: {
+          [EntityType.DECISION]: isAnnouncement
+            ? { decisions: permission.ADMIN }
+            : { decisions: decisionPermission.SUBMIT_PROPOSALS },
+        },
+      });
+      return;
+
+    // Org profile: announcement requires `profile: ADMIN` (resolved via
+    // the org-admin fallback, since org roles live on `organizationUsers`).
+    // Comments are open to any walled-garden member — a network email
+    // domain or an allow-list entry — without requiring per-org membership.
+    //
+    // Defense-in-depth: no UI path constructs the top-level shape on this
+    // endpoint today (production goes through `organization.createPost`),
+    // but admin-only here keeps the gate fail-closed against any direct
+    // API construction or future refactor that routes through here.
+    case EntityType.ORG:
+      if (isAnnouncement) {
+        await assertInstanceProfileAccess({
+          user,
+          instance: {
+            profileId: rootProfileId,
+            ownerProfileId: rootProfileId,
+          },
+          profilePermissions: { profile: permission.ADMIN },
+          orgFallbackPermissions: { profile: permission.ADMIN },
+        });
+        return;
+      }
+      await assertOnWalledGarden(user);
+      return;
+
+    // INDIVIDUAL / USER profiles aren't a supported posting surface yet.
+    default:
+      throw new UnauthorizedError(WRITE_DENIED);
   }
 };
