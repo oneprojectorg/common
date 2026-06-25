@@ -22,15 +22,28 @@ export const ProposalsListHeader = ({
   const t = useTranslations();
   const label = useProposalFilterLabel(proposalFilter);
 
+  if (hideFilters) {
+    return (
+      <span className="font-serif text-title-base text-neutral-black">
+        {t('My proposals')}
+      </span>
+    );
+  }
+
+  // "All proposals" reads as the unfiltered total, so we drop the label and let
+  // the count carry the meaning ("328 proposals"). Other filters still need
+  // their label since the count alone wouldn't reveal what's been filtered.
+  if (proposalFilter === ProposalFilter.ALL) {
+    return (
+      <span className="font-serif text-title-base text-neutral-black">
+        {t('{count, plural, one {# proposal} other {# proposals}}', { count })}
+      </span>
+    );
+  }
+
   return (
     <span className="font-serif text-title-base text-neutral-black">
-      {hideFilters ? (
-        t('My proposals')
-      ) : (
-        <>
-          {label} <Bullet /> {count}
-        </>
-      )}
+      {label} <Bullet /> {count}
     </span>
   );
 };

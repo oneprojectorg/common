@@ -1329,6 +1329,7 @@
   "Number of proposals each participant can vote on": "Tirada soo jeedimaha uu ka qaybgale kasta u codeyn karo",
   "No limit": "Xad ma leh",
   "{count, plural, one {# vote} other {# votes}}": "{count, plural, one {# cod} other {# codad}}",
+  "{count, plural, one {# proposal} other {# proposals}}": "{count, plural, one {# soo jeedin} other {# soo jeedin}}",
   "You don't have access to updates for this decision.": "Ma haysatid fasax aad ku aragto cusboonaysiinta go'aankan.",
   "Open menu": "Fur menu-ga",
   "Open process steps": "Fur tallaabooyinka habka",

@@ -1224,6 +1224,7 @@
   "Number of proposals each participant can vote on": "عدد المقترحات التي يمكن لكل مشارك التصويت عليها",
   "No limit": "بلا حد",
   "{count, plural, one {# vote} other {# votes}}": "{count, plural, zero {لا أصوات} one {صوت واحد} two {صوتان} few {# أصوات} many {# صوتًا} other {# صوت}}",
+  "{count, plural, one {# proposal} other {# proposals}}": "{count, plural, zero {لا مقترحات} one {مقترح واحد} two {مقترحان} few {# مقترحات} many {# مقترحًا} other {# مقترح}}",
   "Open menu": "فتح القائمة",
   "Open process steps": "فتح خطوات العملية",
   "Somali": "الصومالية",

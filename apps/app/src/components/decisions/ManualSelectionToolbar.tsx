@@ -4,7 +4,6 @@ import { ProposalFilter } from '@op/api/encoders';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { Bullet } from '../Bullet';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { useProposalFilterItems } from './useProposalFilters';
 
@@ -47,7 +46,7 @@ export const ManualSelectionToolbar = ({
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
       <span className="font-serif text-title-base text-neutral-black">
-        {t('All proposals')} <Bullet /> {count}
+        {t('{count, plural, one {# proposal} other {# proposals}}', { count })}
       </span>
       <div className="flex flex-wrap items-center gap-2">
         <ResponsiveSelect
