@@ -17,10 +17,12 @@ export const ProposalListSkeleton = () => {
         <div className="flex items-center gap-4">
           <Skeleton className="h-6 w-40" />
         </div>
-        <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
-          <Skeleton className="h-10 w-32" />
-          <Skeleton className="h-10 w-32" />
-          <Skeleton className="h-10 w-32" />
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-4">
+          <div className="flex min-w-0 items-center gap-4 overflow-x-auto [&>*]:shrink-0">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-32" />
+          </div>
         </div>
       </div>
 

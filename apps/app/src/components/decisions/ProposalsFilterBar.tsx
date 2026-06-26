@@ -73,7 +73,7 @@ export const ProposalsFilterBar = ({
   const filterItems = useProposalFilterItems({ hasVoted, currentProfileId });
 
   return (
-    <div className="grid max-w-fit grid-cols-2 justify-end gap-4 sm:flex sm:flex-1 sm:flex-wrap sm:items-center">
+    <div className="flex min-w-0 items-center gap-4 overflow-x-auto [&>*]:shrink-0">
       <ResponsiveSelect
         selectedKey={proposalFilter}
         onSelectionChange={(key) => {
