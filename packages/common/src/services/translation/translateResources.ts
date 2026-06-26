@@ -22,10 +22,10 @@ export type ResourceTranslation = {
   description?: string;
 };
 
-// Cap the per-call resource count. A decision usually has well under 50
-// resources; 200 leaves plenty of headroom while still bounding the DeepL
-// batch size if someone unexpectedly piles them up.
-const MAX_RESOURCES_PER_BATCH = 200;
+// Cap the per-call resource count. A decision usually has well under 40
+// resources, so this covers the typical case without paying DeepL to
+// translate the tail of an unusually long collection list.
+const MAX_RESOURCES_PER_BATCH = 40;
 
 /**
  * Translates the `title` and `description` of every resource attached to any

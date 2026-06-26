@@ -24,9 +24,10 @@ export type PostTranslation = {
 };
 
 // Cap the number of posts a single translate call will batch. The side panel
-// renders 20 per page, so 200 covers ~10 pages of the newest updates — large
-// by any realistic measure for an active decision feed.
-const MAX_POSTS_PER_BATCH = 200;
+// renders 20 per page, so 40 covers the two most recent pages — enough for
+// the updates a translate-clicker is actually looking at without paying for
+// DeepL on long historical tails.
+const MAX_POSTS_PER_BATCH = 40;
 
 /**
  * Translates the `content` of every top-level post attached to the decision
