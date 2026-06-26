@@ -1,14 +1,9 @@
 import type { JwtPayload, User } from '@op/supabase/lib';
 
-/**
- * Project the verified JWT payload onto the {@link User} shape that downstream
- * code (services, encoders, analytics) consumes.
- */
+/** Project the verified JWT payload onto the {@link User} shape. */
 export const userFromClaims = (claims: JwtPayload): User => {
-  // `sub`, `role`, `aud` are typed as required on JwtPayload, so no runtime
-  // guards. `email`/`phone`/`*_metadata`/`is_anonymous` are typed as
-  // `[key: string]: any` extras, so they DO need shape validation against a
-  // signature-valid-but-malformed JWT.
+  // Optional claims are typed `any` on JwtPayload — guard the shape against a
+  // signature-valid-but-malformed token.
   const aud = Array.isArray(claims.aud) ? (claims.aud[0] ?? '') : claims.aud;
 
   return {

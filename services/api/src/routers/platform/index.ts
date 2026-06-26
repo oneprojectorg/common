@@ -20,10 +20,8 @@ export const platformRouter = router({
       }),
     )
     .query(async ({ ctx }) => {
-      // Network-tier middleware already validated and cached the
-      // authoritative `UserResponse` on `ctx`, so this is a WeakMap hit, not
-      // a fresh GoTrue round-trip. We reach for the SDK shape only because
-      // `last_sign_in_at` is not on the narrower JWT-claims `ctx.user`.
+      // `last_sign_in_at` is not on the JWT-claims `ctx.user`. Cached, so no
+      // extra GoTrue round-trip.
       const authUser = await getCachedAuthUser(ctx);
       return await getPlatformStats({
         lastSignInAt: authUser.data?.user?.last_sign_in_at,

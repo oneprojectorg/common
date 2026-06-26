@@ -77,8 +77,7 @@ describe('userFromClaims', () => {
   });
 
   it('leaves is_anonymous undefined when the claim is absent', () => {
-    // Encoders downstream (e.g. encoders/users.ts) coerce via Boolean(), so an
-    // undefined value must not get normalized to `false` here.
+    // Downstream encoders coerce via `Boolean()`; leave the trinary intact.
     const user = userFromClaims(baseClaims);
 
     expect(user.is_anonymous).toBeUndefined();

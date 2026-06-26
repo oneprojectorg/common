@@ -10,14 +10,9 @@ import type {
 } from '@supabase/supabase-js';
 
 /**
- * Our auth identity: only the fields a verified Supabase JWT actually carries.
- * Server-side timestamps (`created_at`, `confirmed_at`, `email_confirmed_at`,
- * `last_sign_in_at`) and other authoritative-only fields (`identities`,
- * `factors`, ...) are intentionally absent — they're not in the JWT and the
- * vast majority of code paths shouldn't depend on them. The two production
- * sites that historically need those wider fields (`verifyAuthentication`,
- * `getPlatformStats`) reach for the SDK's `UserResponse` / direct
- * `@supabase/supabase-js` import instead.
+ * Auth identity carried by a verified Supabase JWT. Server-side fields
+ * (`confirmed_at`, `last_sign_in_at`, `identities`, ...) are intentionally
+ * absent; the few sites that need them reach for `UserResponse` directly.
  */
 export type User = Pick<
   SupabaseAuthUser,

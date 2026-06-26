@@ -105,17 +105,9 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
       },
     },
   );
-  // IMPORTANT: DO NOT REMOVE this auth call.
-  // Do not run code between createServerClient and the auth check. A simple
-  // mistake could make it very hard to debug issues with users being randomly
-  // logged out. We use getClaims() — local JWKS verification — to drop the
-  // GoTrue user-lookup round-trip from every navigation; for asymmetric JWTs
-  // the JWT signature is verified against the project JWKS (one cached fetch
-  // per GoTrueClient instance), and for symmetric JWTs the SDK transparently
-  // falls back to getUser(). Crucially, getClaims() — like getUser() — still
-  // calls _useSession() under the hood, which refreshes expired access tokens
-  // and writes the refreshed cookies via the cookie adapter above; removing
-  // it would break session refresh.
+  // IMPORTANT: DO NOT REMOVE. getClaims() calls _useSession() internally,
+  // which refreshes expired tokens and writes them back through the cookie
+  // adapter; dropping it silently logs users out.
   const { data: authData } = await supabase.auth.getClaims();
   const isAuthenticated = Boolean(authData?.claims);
 
@@ -163,11 +155,9 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
 // Next.js statically analyzes `config.matcher` at build time and cannot
 // follow cross-file imports (fails with `Unknown identifier ... at
 // config.matcher[0]`), so the matcher must be a plain string literal here.
-// Every path it catches triggers `supabase.auth.getClaims()` in the proxy
-// above — local-verify for asymmetric JWTs, but still an HTTPS hop to GoTrue
-// for symmetric ones (and tRPC adds its own per-request lookup). Keep the
-// exclusion list broad enough to skip every route that doesn't need
-// Supabase cookie refresh or i18n-locale redirect.
+// Every path it catches triggers an auth check in the proxy above; keep the
+// exclusion list broad enough to skip routes that don't need cookie refresh
+// or i18n-locale redirect.
 //
 // Skipped path prefixes (no-auth routes):
 //   - Next internals:         _next/static, _next/image

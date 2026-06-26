@@ -3,14 +3,8 @@ import { db, sql } from '@op/db/client';
 
 const STATS_TTL = 5 * 60 * 1000; // 5 minutes
 
-/**
- * `lastSignInAt` anchors the "new organizations since you were last here"
- * cache window. It's the only field of the caller's identity this function
- * reads, so we take it directly rather than dragging the full Supabase
- * `User` shape through the type system — the router extracts it from the
- * authoritative `UserResponse` (which the network-tier middleware has
- * already fetched and cached).
- */
+/** `lastSignInAt` anchors the "new organizations since you were last here"
+ * cache window. */
 export const getPlatformStats = async ({
   lastSignInAt,
 }: {

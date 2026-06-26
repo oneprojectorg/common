@@ -21,16 +21,11 @@ const authClaimsCache = new WeakMap<TContext, Promise<ClaimsResponse>>();
 export type ClaimsResponse =
   | { data: { claims: JwtPayload }; error: null }
   | { data: null; error: AuthError }
-  | { data: null; error: null }; // no session — `getClaims()` returns this when no JWT cookie is present
+  | { data: null; error: null };
 
 /**
- * Authoritative auth lookup. Performs an HTTPS round-trip to GoTrue
- * (`/auth/v1/user`) on every cache miss. Use only when the call site needs a
- * field that is not in the JWT payload (e.g. `confirmed_at`, `last_sign_in_at`)
- * or after a security-sensitive event where stale claims would be unsafe.
- *
- * For ordinary "who is the caller" lookups, prefer {@link getCachedAuthClaims}
- * — it verifies the JWT locally against JWKS and avoids the GoTrue hop.
+ * Authoritative GoTrue lookup. Prefer {@link getCachedAuthClaims} unless the
+ * caller needs fields the JWT does not carry (e.g. `last_sign_in_at`).
  */
 export function getCachedAuthUser(ctx: TContext): Promise<UserResponse> {
   let promise = authUserCache.get(ctx);
@@ -43,22 +38,15 @@ export function getCachedAuthUser(ctx: TContext): Promise<UserResponse> {
 }
 
 /**
- * Local-verify auth lookup. Decodes the caller's JWT and verifies it against
- * the project's JWKS via `supabase.auth.getClaims()` — no GoTrue round-trip
- * for asymmetric (RS256/ES256) JWTs. Symmetric (HS256) JWTs transparently fall
- * back to `auth.getUser()` inside the SDK, so the result shape is identical
- * either way.
- *
- * Cached per request context to dedupe across middlewares in the same tRPC
- * batch.
+ * Local-verify auth lookup via `supabase.auth.getClaims()` — no GoTrue
+ * round-trip for asymmetric JWTs. HS256 transparently falls back to
+ * `auth.getUser()` inside the SDK. Cached per ctx to dedupe within a batch.
  */
 export function getCachedAuthClaims(ctx: TContext): Promise<ClaimsResponse> {
   let promise = authClaimsCache.get(ctx);
   if (!promise) {
     const supabase = createSBAdminClient(ctx);
     promise = supabase.auth.getClaims().then((result) => {
-      // We deliberately drop `header` and `signature` from the SDK's getClaims
-      // result — downstream consumers only need the verified JWT payload.
       if (result.data) {
         return { data: { claims: result.data.claims }, error: null };
       }

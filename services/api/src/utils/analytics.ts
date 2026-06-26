@@ -14,12 +14,8 @@ import {
 } from '@op/analytics';
 
 /**
- * Analytics utilities that automatically inject the user ID for consistent identification
- * This keeps the common service library clean while ensuring all analytics calls use user.id
- *
- * Callable from both the authoritative-auth (`TContextWithUser`) and the
- * local-verify (`TContextWithUser`) procedure tiers — only `user.id` is
- * read, which both shapes carry.
+ * Analytics utilities that auto-inject `user.id`. Accepts any ctx with a
+ * `user.id` so both auth-tier middlewares can call through.
  */
 type AnalyticsContext = { user: { id: string } };
 

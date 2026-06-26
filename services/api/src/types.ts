@@ -25,16 +25,10 @@ export interface TContext {
   isServerSideCall?: boolean;
 }
 
-/** Context after successful user authentication. `user` is our internal
- * {@link User} shape — only the fields the verified JWT carries; callers that
- * need authoritative server-side fields (`confirmed_at`, `last_sign_in_at`,
- * ...) reach for the SDK's `UserResponse` directly. */
 export interface TContextWithUser {
   user: User;
 }
 
-/** Context after optional user resolution: `user` is the {@link User} shape,
- * or `undefined` when the caller has no valid session. */
 export interface TContextWithMaybeUser {
   user?: User;
 }
