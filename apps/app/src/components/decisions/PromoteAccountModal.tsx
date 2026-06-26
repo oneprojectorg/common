@@ -41,6 +41,8 @@ export const PromoteAccountModal = () => {
     <Modal
       isOpen={isOpen}
       onOpenChange={(open) => (open ? null : close())}
+      isDismissable={false}
+      isKeyboardDismissDisabled
       className="sm:max-w-[29rem]"
     >
       <PromoteAccountModalContent
