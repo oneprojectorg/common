@@ -79,14 +79,17 @@ export function ResponsiveSelect<T extends string>({
           className={BOTTOM_SHEET_CLASS}
         >
           <ModalBody className="pb-safe p-0">
-            <Menu className="flex min-w-full flex-col border-0 p-0 shadow-none">
+            <Menu
+              selectionMode="single"
+              selectedKeys={[selectedKey]}
+              className="flex min-w-full flex-col border-0 p-0 shadow-none"
+            >
               {items.map((item, index) => (
                 <MenuItem
                   key={item.id}
                   id={item.id}
-                  selected={selectedKey === item.id}
                   isDisabled={item.isDisabled}
-                  className={`rounded-none px-6 py-4 ${index < items.length - 1 ? 'border-b border-neutral-gray1' : ''}`}
+                  className={`bg-transparent px-6 py-4 outline-0 focus-visible:bg-primary-tealWhite focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-primary-teal ${index === 0 ? 'rounded-t-2xl rounded-b-none' : 'rounded-none'} ${index < items.length - 1 ? 'border-b border-neutral-gray1' : ''}`}
                   onAction={() => {
                     onSelectionChange(item.id);
                     setIsOpen(false);
