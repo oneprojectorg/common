@@ -1,5 +1,6 @@
 'use client';
 
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { trpc } from '@op/api/client';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
@@ -17,6 +18,7 @@ import { useTranslations } from '@/lib/i18n';
  */
 export function ReportProposalDialog({ proposalId }: { proposalId: string }) {
   const t = useTranslations();
+  const moderationEnabled = useFeatureFlag('moderation');
   const [isOpen, setIsOpen] = useState(false);
 
   const reportMutation = trpc.moderation.flagItem.useMutation({
@@ -34,6 +36,12 @@ export function ReportProposalDialog({ proposalId }: { proposalId: string }) {
   // Reflects a successful report this session — the trigger reads "Reported"
   // and disables so the reporter doesn't re-open the dialog.
   const reported = reportMutation.isSuccess;
+
+  // Gated behind the `moderation` flag so the action can be rolled out
+  // independently. Checked after the hooks above so the rules of hooks hold.
+  if (!moderationEnabled) {
+    return null;
+  }
 
   return (
     <>
