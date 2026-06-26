@@ -90,13 +90,16 @@ export function ProposalViewLayout({
               {t('Edit')}
             </Button>
           )}
-          {/* Report/Like/Follow are user-scoped writes gated at the API — only
-              offer them to a signed-in, non-anonymous member. */}
+          {/* Report is a safety action the moderation API accepts from any
+              session (including anonymous accounts); offer it to anyone with a
+              session so anonymous viewers can still flag inappropriate content. */}
+          {user && reportProposalId && (
+            <ReportProposalDialog proposalId={reportProposalId} />
+          )}
+          {/* Like/Follow are user-scoped writes gated at the API — only offer
+              them to a signed-in, non-anonymous member. */}
           {userCanInteract(user) ? (
             <>
-              {reportProposalId && (
-                <ReportProposalDialog proposalId={reportProposalId} />
-              )}
               <Button
                 surface="outline"
                 color={isLiked ? 'verified' : 'secondary'}
