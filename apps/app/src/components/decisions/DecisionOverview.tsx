@@ -273,10 +273,5 @@ const OverviewAbout = ({
     return null;
   }
 
-  return (
-    <section className="flex flex-col gap-4">
-      <Header2 className="font-serif">{t('About the process')}</Header2>
-      {body}
-    </section>
-  );
+  return <section className="flex flex-col gap-4">{body}</section>;
 };
