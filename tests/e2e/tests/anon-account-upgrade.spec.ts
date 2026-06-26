@@ -15,8 +15,8 @@ import {
 
 /**
  * Anonymous-account upgrade ("promote") flow: an anon visitor on a public
- * decision upgrades via PromoteAccountModal → /login?link=1 (email link) →
- * slimmed onboarding (/start?promote=1) → back to the decision.
+ * decision upgrades via PromoteAccountModal → /login?link=true (email link) →
+ * slimmed onboarding (/start?promote=true) → back to the decision.
  *
  * Regression guarded: the upgraded visitor is intentionally NOT a network
  * member, so /start's walled-garden gate used to 403 right after the email step;
@@ -58,7 +58,7 @@ test.describe('Anonymous account upgrade (promote flow)', () => {
 
     // Land on the promote modal (we skip actually submitting a proposal and
     // just open the decision with the flag the editor would have set).
-    await page.goto(`/en/decisions/${instance.slug}?promote=1`, {
+    await page.goto(`/en/decisions/${instance.slug}?promote=true`, {
       waitUntil: 'networkidle',
     });
 
@@ -68,7 +68,7 @@ test.describe('Anonymous account upgrade (promote flow)', () => {
 
     // Choose "Create account" → link mode on the login page.
     await page.getByRole('button', { name: 'Create account' }).click();
-    await expect(page).toHaveURL(/\/login\?link=1/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/login\?link=true/, { timeout: 15000 });
 
     // LinkAccountPanel: enter an email and continue.
     const email = `promote-${randomUUID().slice(0, 8)}@example.com`;
@@ -78,7 +78,7 @@ test.describe('Anonymous account upgrade (promote flow)', () => {
     // immediately and navigates to onboarding. Reaching /start — instead of the
     // walled-garden forbidden (403) screen — IS the regression check.
     await page.getByRole('button', { name: 'Continue' }).click();
-    await page.waitForURL(/\/start\?.*promote=1/, { timeout: 20000 });
+    await page.waitForURL(/\/start\?.*promote=true/, { timeout: 20000 });
     await expect(
       page.getByText('You do not have permission to view this page'),
     ).not.toBeVisible();

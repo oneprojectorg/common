@@ -195,7 +195,7 @@ function ProposalEditorInner({
   const { user } = useRequiredUser();
   const utils = trpc.useUtils();
 
-  // Anon visitors get sent back with ?promote=1 so PromoteAccountModal offers an
+  // Anon visitors get sent back with ?promote=true so PromoteAccountModal offers an
   // upgrade. `isAnonymous` is session-derived, not the stale DB relation.
   const isAnonymous = Boolean(user?.isAnonymous);
   const { ydoc, provider, isSynced } = useCollaborativeDoc();
@@ -353,7 +353,7 @@ function ProposalEditorInner({
 
       router.push(
         didSubmitDraft && isAnonymous
-          ? `${backHref}?promote=1&proposal=${proposal.profileId}`
+          ? `${backHref}?promote=true&proposal=${proposal.profileId}`
           : backHref,
       );
     } catch (error) {

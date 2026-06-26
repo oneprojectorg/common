@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { parseAsInteger, useQueryState } from 'nuqs';
 import React, { ComponentType } from 'react';
 import { ZodSchema } from 'zod';
 
@@ -36,27 +36,28 @@ export const MultiStepForm: React.FC<{
   getStepValues,
   hasHydrated = true,
 }) => {
-  const router = useRouter();
+  // `step` lives in the URL so refreshes and back/forward stay in sync.
+  // nuqs preserves any other query params (e.g. the promote flag + redirect)
+  // when updating this one.
+  const [stepParam, setStepParam] = useQueryState(
+    'step',
+    parseAsInteger.withDefault(0),
+  );
+  // Start at 0 (not the URL value) so SSR and the first client render agree;
+  // the effect below validates `stepParam` against current form values and
+  // syncs once the store hydrates.
   const [step, setStep] = React.useState(0);
   const [values, setValues] = React.useState<any[]>(initialValues);
   const [error, setError] = React.useState<string | null>(null);
 
-  // Centralized goToStep that updates both state and query param
   const goToStep = React.useCallback(
     (targetStep: number) => {
       setStep(targetStep);
-
-      // Preserve existing query params (e.g. promote flag + redirect) across steps.
-      const params = new URLSearchParams(window.location.search);
-      params.set('step', targetStep.toString());
-
-      // Navigate to the new URL
-      router.push(`${window.location.pathname}?${params.toString()}`);
+      void setStepParam(targetStep);
     },
-    [router],
+    [setStepParam],
   );
 
-  // Next/back handlers
   const nextStep = React.useCallback(() => {
     if (step < steps.length - 1) {
       goToStep(step + 1);
@@ -69,29 +70,17 @@ export const MultiStepForm: React.FC<{
     }
   }, [step, goToStep]);
 
-  const searchParams = useSearchParams();
-
-  // Sync step from query param on mount with validation
+  // Sync step from query param on mount with validation.
   React.useEffect(() => {
-    // Don't validate until the store has hydrated
     if (!hasHydrated) {
       return;
     }
 
-    const stepParam = searchParams.get('step');
+    const stepFromQuery =
+      stepParam >= 0 && stepParam < steps.length ? stepParam : 0;
 
-    let stepFromQuery = 0;
-    if (typeof stepParam === 'string') {
-      const parsed = parseInt(stepParam, 10);
-      if (!isNaN(parsed) && parsed >= 0 && parsed < steps.length) {
-        stepFromQuery = parsed;
-      }
-    }
-
-    // Get current values from the store or fallback to local state
     const currentValues = getStepValues ? getStepValues() : values;
 
-    // Check if the user is trying to access a step without completing previous steps
     const firstInvalidStep = findFirstInvalidStepBefore(
       currentValues,
       stepFromQuery,
@@ -99,13 +88,20 @@ export const MultiStepForm: React.FC<{
     );
 
     if (firstInvalidStep !== -1) {
-      // Redirect to the first invalid step
       goToStep(firstInvalidStep);
       return;
     }
 
     setStep(stepFromQuery);
-  }, [searchParams, values, goToStep, hasHydrated, getStepValues, schemas]);
+  }, [
+    stepParam,
+    values,
+    goToStep,
+    hasHydrated,
+    getStepValues,
+    schemas,
+    steps.length,
+  ]);
 
   const StepComponent = steps[step];
 
