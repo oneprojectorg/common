@@ -42,8 +42,8 @@ import {
 import { getProposalDocumentsContent } from './getProposalDocumentsContent';
 import { getProposalRelationshipData } from './getProposalRelationshipData';
 import {
-  getPhaseProposalAndDraftIds,
-  getProposalIdsForPhase,
+  type PhaseProposalSqlScope,
+  getPhaseProposalSqlScope,
 } from './getProposalsForPhase';
 import { getSelectedProposalIds } from './getSelectedProposalIds';
 import { parseProposalData } from './proposalDataSchema';
@@ -232,39 +232,37 @@ export const listProposals = async ({
     throw new UnauthorizedError('User does not have access to this process');
   }
 
-  // Resolve phase-scoped IDs for non-drafts and drafts. Drafts are phase-scoped
-  // via a `createdAt` window since they're never attached to transition
-  // snapshots. The combined resolver shares a single instance-context lookup
-  // and window resolution across both queries; we only fall back to it for
-  // authenticated callers that need both sets. These are IDs only — the
-  // findMany below hydrates full rows using them as filter input.
-  const phaseIdsPromise: Promise<{
-    phaseProposalIds: string[];
-    phaseDraftIds: string[];
-  }> = (async () => {
+  // Resolve phase-scope SQL predicates for non-drafts and drafts. Drafts are
+  // phase-scoped via a `createdAt` window since they're never attached to
+  // transition snapshots. The scope helper resolves the phase window once and
+  // returns predicate builders that fold the attachment-snapshot lookup and
+  // the access subquery directly into the outer query — so the main
+  // `findMany` and the parallel count share a single SQL plan instead of
+  // bouncing hundreds of IDs through JS as bound params per page.
+  //
+  // Explicit-scope callers (`proposalIds` / `votedByProfileId`) bypass phase
+  // resolution entirely and supply the exact ID set to constrain against.
+  const phaseScopePromise: Promise<PhaseProposalSqlScope> = (async () => {
     if (explicitScopeIds !== undefined) {
       // Caller specified the exact ID set (proposalIds or votedByProfileId).
       // Drafts can't appear in either: proposalIds is internal and
       // votedByProfileId only matches submitted proposals on a ballot.
-      return { phaseProposalIds: explicitScopeIds, phaseDraftIds: [] };
+      const ids = explicitScopeIds;
+      return {
+        isEmpty: ids.length === 0,
+        buildNonDraftFilter: (t) =>
+          ids.length > 0 ? inArray(t.id, ids) : sql`false`,
+        buildDraftFilter: () => sql`false`,
+      };
     }
-    if (skipAccessCheck) {
-      // Trusted contexts (background jobs) never surface drafts, so only
-      // resolve the non-draft phase set. Legacy instances and instances
-      // without a current phase fall back to all active non-drafts inside
-      // `getProposalIdsForPhase`.
-      const ids = await getProposalIdsForPhase({
-        instance,
-        phaseId: input.phaseId,
-      });
-      return { phaseProposalIds: ids, phaseDraftIds: [] };
-    }
-    const ids = await getPhaseProposalAndDraftIds({
+    return getPhaseProposalSqlScope({
       instance,
       phaseId: input.phaseId,
-      authUserIds: accessUserIds,
+      // Trusted (`skipAccessCheck`) callers never surface drafts. The helper
+      // still returns a draft predicate using an empty access set, but the
+      // skipAccessCheck branch in `buildWhereClause` never references it.
+      authUserIds: skipAccessCheck ? [] : accessUserIds,
     });
-    return { phaseProposalIds: ids.nonDraftIds, phaseDraftIds: ids.draftIds };
   })();
 
   // Run access checks in parallel with the phase-IDs resolution. Both depend
@@ -298,22 +296,22 @@ export const listProposals = async ({
     };
   })();
 
-  const [
-    { phaseProposalIds, phaseDraftIds },
-    { profileRoles, canManageProposals },
-  ] = await Promise.all([phaseIdsPromise, accessPromise]);
+  const [phaseScope, { profileRoles, canManageProposals }] = await Promise.all([
+    phaseScopePromise,
+    accessPromise,
+  ]);
 
-  // For trusted contexts (skipAccessCheck), drafts are never returned and phase
-  // scoping is the only proposal-id filter — so an empty phase set means no results.
-  // For authenticated callers, drafts have their own phase-scoped ID set
-  // (`phaseDraftIds`) which may surface results even when `phaseProposalIds` is
-  // empty, so we cannot early-return here.
-  if (skipAccessCheck && phaseProposalIds.length === 0) {
+  // Unreached phases on non-legacy instances surface zero rows from both the
+  // non-draft and draft scopes, so we can short-circuit before issuing the
+  // main query. For authenticated callers there's no draft "may still
+  // surface" carve-out — the helper already collapses both predicates to
+  // `false` when the phase is unreached.
+  if (phaseScope.isEmpty) {
     return {
       proposals: [],
       total: 0,
       hasMore: false,
-      canManageProposals: false,
+      canManageProposals,
       next: null,
     };
   }
@@ -370,19 +368,17 @@ export const listProposals = async ({
       clause = and(clause, inArray(proposalsTable.id, categoryProposalIds))!;
     }
 
-    // Phase scoping applies separately to non-drafts and drafts. Non-drafts
-    // are resolved via transition snapshots + a strict `createdAt` window;
-    // drafts use a half-open `createdAt` window only (they're never attached
-    // to a snapshot). When the relevant ID set is empty (e.g. instance has no
-    // submitted proposals yet), each branch must short-circuit to false rather
-    // than emit an empty `IN ()`.
-    const phaseScopedNonDraftIdFilter =
-      phaseProposalIds.length > 0
-        ? and(
-            ne(proposalsTable.status, ProposalStatus.DRAFT),
-            inArray(proposalsTable.id, phaseProposalIds),
-          )!
-        : sql`false`;
+    // Phase scoping is composed in SQL: non-drafts match the attachment
+    // snapshot ∪ a strict `(inboundAt, outboundAt)` `createdAt` window, while
+    // drafts match the half-open `[inboundAt, outboundAt)` window AND the
+    // caller's `profileUsers` access set. Both predicates carry the
+    // `isNull(deletedAt)` filter the helpers used to apply pre-IN-list, so
+    // the outer query stays soft-delete-safe even though it omits its own
+    // `deletedAt` check on the explicit-scope path.
+    const phaseScopedNonDraftIdFilter = and(
+      ne(proposalsTable.status, ProposalStatus.DRAFT),
+      phaseScope.buildNonDraftFilter(proposalsTable),
+    )!;
 
     if (skipAccessCheck) {
       // Trusted contexts get all phase-scoped non-draft proposals.
@@ -392,16 +388,13 @@ export const listProposals = async ({
     // Draft proposals are phase-scoped to their `createdAt` window: a draft
     // made in Phase 1 is only visible when viewing Phase 1, even after the
     // instance advances. Ownership scoping (creator + invited collaborators
-    // via `profileUsers`) is applied inside `getPhaseProposalAndDraftIds` via
-    // a subquery, so `phaseDraftIds` is already access-filtered — no further
+    // via `profileUsers`) is applied inside `getPhaseProposalSqlScope` via
+    // a subquery, so the draft filter is already access-filtered — no further
     // ownership filter is needed here.
-    const draftFilter =
-      phaseDraftIds.length > 0
-        ? and(
-            eq(proposalsTable.status, ProposalStatus.DRAFT),
-            inArray(proposalsTable.id, phaseDraftIds),
-          )!
-        : sql`false`;
+    const draftFilter = and(
+      eq(proposalsTable.status, ProposalStatus.DRAFT),
+      phaseScope.buildDraftFilter(proposalsTable),
+    )!;
 
     // Non-draft proposals: phase-scoped, plus the HIDDEN visibility filter
     // for non-admins. Hidden proposals stay visible to the creator and any
