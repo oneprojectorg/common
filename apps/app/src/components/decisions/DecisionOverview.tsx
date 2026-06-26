@@ -233,7 +233,7 @@ const OverviewHero = ({
       <div className="mx-auto flex flex-col items-center gap-4 px-4 pt-16 pb-8 text-center sm:py-12 md:col-span-6 md:col-start-4 md:px-6">
         <div className="flex flex-col items-center gap-3">
           {/* Brand teal→green gradient clipped to the title text. */}
-          <h1 className="bg-tealGreen bg-clip-text font-serif text-title-xl font-light text-pretty text-transparent sm:text-title-xxl">
+          <h1 className="bg-tealGreen bg-clip-text font-serif text-title-xl font-light text-balance text-transparent sm:text-title-xxl">
             <bdi>{headline}</bdi>
           </h1>
           {stewardName || isPublic ? (
@@ -278,7 +278,7 @@ const OverviewHero = ({
           {subhead ? (
             <p
               dir="auto"
-              className="text-base text-pretty text-neutral-charcoal"
+              className="text-base text-balance text-neutral-charcoal"
             >
               {subhead}
             </p>
