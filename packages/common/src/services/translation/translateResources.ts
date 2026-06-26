@@ -5,7 +5,7 @@ import {
   resources as resourcesTable,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import type { TranslatableEntry } from '@op/translation';
+import type { TranslatableEntry, TranslationResult } from '@op/translation';
 import { permission } from 'access-zones';
 import { asc, eq, inArray } from 'drizzle-orm';
 
@@ -113,13 +113,28 @@ export async function translateResources({
     return { translations: {}, sourceLocale: '', targetLocale };
   }
 
-  // Translate via DeepL with cache-through. The response groups results by
-  // `resource:<id>:<field>` content keys; bucket them per resource then
-  // unflatten the same way `translateProposals` does.
   const results = await runTranslateBatch(entries, targetLocale);
 
+  return parseResults(results, targetLocale);
+}
+
+/**
+ * Buckets the DeepL response by resource id (content keys look like
+ * `resource:<id>:<field>`), then unflattens each bucket into the final
+ * `{ title, description }` shape. Same per-id grouping pattern as
+ * `translateProposals`; extracted like `translateDecision.parseResults`
+ * so the main function stays "build → translate → parse".
+ */
+function parseResults(
+  results: TranslationResult[],
+  targetLocale: SupportedLocale,
+): {
+  translations: Record<string, ResourceTranslation>;
+  sourceLocale: string;
+  targetLocale: SupportedLocale;
+} {
   const translations: Record<string, ResourceTranslation> = {};
-  const resultsByResourceId = new Map<string, typeof results>();
+  const resultsByResourceId = new Map<string, TranslationResult[]>();
   let sourceLocale = '';
 
   for (const result of results) {
