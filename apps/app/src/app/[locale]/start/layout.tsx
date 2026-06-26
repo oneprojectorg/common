@@ -11,12 +11,15 @@ const StartLayout = async ({ children }: { children: React.ReactNode }) => {
   const user = await getUser();
 
   // Layouts don't get searchParams; read the query string the proxy exposes via
-  // x-search. The promote flow runs as non-members, so admit them past the gate.
+  // x-search. The promote flow runs as non-network-members, so admit them past
+  // the gate.
   const search = (await headers()).get('x-search') ?? '';
-  const isPromoteFlow = new URLSearchParams(search).get('promote') === '1';
+  const isPromoteFlow = new URLSearchParams(search).get('promote') === 'true';
 
   // Onboarding is inside the walled garden.
-  await assertWalledGardenAccess(user, { allowNonMembers: isPromoteFlow });
+  await assertWalledGardenAccess(user, {
+    allowNonNetworkMembers: isPromoteFlow,
+  });
 
   return (
     <div className="relative flex h-svh w-full flex-col items-center justify-center font-sans">

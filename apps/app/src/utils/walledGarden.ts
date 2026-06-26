@@ -12,12 +12,13 @@ import { forbidden, redirect } from 'next/navigation';
  * - A real account that isn't a network member → `forbidden()`: logging in as
  *   the same account won't help, so show the no-access screen.
  *
- * `allowNonMembers` admits a real (non-anonymous) account that isn't a network
- * member — used by the promote/anon-upgrade onboarding. Anonymous still redirects.
+ * `allowNonNetworkMembers` admits a real (non-anonymous) account that isn't a
+ * network member — used by the promote/anon-upgrade onboarding. Anonymous still
+ * redirects.
  */
 export async function assertWalledGardenAccess(
   user: CommonUser | null | undefined,
-  { allowNonMembers = false }: { allowNonMembers?: boolean } = {},
+  { allowNonNetworkMembers = false }: { allowNonNetworkMembers?: boolean } = {},
 ) {
   if (!user || user.isAnonymous) {
     const pathname = (await headers()).get('x-pathname');
@@ -29,7 +30,7 @@ export async function assertWalledGardenAccess(
     );
   }
 
-  if (!allowNonMembers && !user.isNetworkMember) {
+  if (!allowNonNetworkMembers && !user.isNetworkMember) {
     forbidden();
   }
 }

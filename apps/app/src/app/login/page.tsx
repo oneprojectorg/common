@@ -3,6 +3,7 @@
 import { getSafeRedirectPath } from '@op/common/client';
 import { useAuthUser } from '@op/hooks';
 import { useSearchParams } from 'next/navigation';
+import { parseAsBoolean, useQueryState } from 'nuqs';
 
 import { LinkAccountPanel } from '@/components/LinkAccountPanel';
 import { LoginPanel } from '@/components/LoginPanel';
@@ -11,7 +12,10 @@ const LoginPage = () => {
   const user = useAuthUser();
   const searchParams = useSearchParams();
   const redirectParam = getSafeRedirectPath(searchParams.get('redirect'));
-  const isLinkMode = searchParams.get('link') === '1';
+  const [isLinkMode] = useQueryState(
+    'link',
+    parseAsBoolean.withDefault(false),
+  );
 
   if (!user || user.isFetching || user.isPending) {
     return null;

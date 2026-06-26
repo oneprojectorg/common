@@ -6,6 +6,7 @@ import { createSBBrowserClient } from '@op/supabase/client';
 import { Button } from '@op/ui/Button';
 import { CheckIcon } from '@op/ui/CheckIcon';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { useLocale } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import React, { useCallback, useState } from 'react';
 import { z } from 'zod';
@@ -22,9 +23,10 @@ import {
 
 /**
  * Account-upgrade panel for an anonymous visitor ("link mode"), reached via
- * `/login?link=1` (see PromoteAccountModal). Instead of a brand-new account we
- * *link* an email identity (via OTP) onto the existing anon user, so data they
- * created while anonymous stays theirs. Normal login/signup lives in LoginPanel.
+ * `/login?link=true` (see PromoteAccountModal). Instead of a brand-new account
+ * we *link* an email identity (via OTP) onto the existing anon user, so data
+ * they created while anonymous stays theirs. Normal login/signup lives in
+ * LoginPanel.
  *
  * TODO(anon-upgrade): Google identity linking is deferred; email + OTP only.
  */
@@ -35,6 +37,9 @@ export const LinkAccountPanel = () => {
   const { mounted } = useMount();
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get('redirect');
+  // The /login route is locale-less, but the I18nProvider still exposes the
+  // user's resolved locale here (from cookie or Accept-Language).
+  const locale = useLocale();
 
   const [linkError, setLinkError] = useState<string | undefined>();
   // Guards against double-submit and drives the button loading state (link mode
@@ -63,12 +68,10 @@ export const LinkAccountPanel = () => {
     : '/login';
 
   // After linking, route through onboarding with the page to return to.
-  // `redirectParam` carries the locale prefix the locale-less /login route lacks.
   const goAfterLink = useCallback(() => {
     const dest = isSafeRedirectPath(redirectParam) ? redirectParam : '/';
-    const locale = dest.split('/')[1] || 'en';
-    window.location.href = `/${locale}/start?promote=1&redirect=${encodeURIComponent(dest)}`;
-  }, [redirectParam]);
+    window.location.href = `/${locale}/start?promote=true&redirect=${encodeURIComponent(dest)}`;
+  }, [locale, redirectParam]);
 
   // `updateUser({ email })` attaches the email to the anon user. With email
   // confirmations on it sends an OTP (→ code screen); with them off the change
