@@ -5,7 +5,7 @@ import {
   resources as resourcesTable,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
-import type { TranslatableEntry, TranslationResult } from '@op/translation';
+import type { TranslatableEntry } from '@op/translation';
 import { permission } from 'access-zones';
 import { asc, eq, inArray } from 'drizzle-orm';
 
@@ -113,50 +113,43 @@ export async function translateResources({
     return { translations: {}, sourceLocale: '', targetLocale };
   }
 
+  // Translate via DeepL with cache-through. The response groups results by
+  // `resource:<id>:<field>` content keys; bucket them per resource then
+  // unflatten the same way `translateProposals` does.
   const results = await runTranslateBatch(entries, targetLocale);
 
-  return parseResults(results, targetLocale);
-}
-
-function parseResults(
-  results: TranslationResult[],
-  targetLocale: SupportedLocale,
-): {
-  translations: Record<string, ResourceTranslation>;
-  sourceLocale: string;
-  targetLocale: SupportedLocale;
-} {
-  const resultsByResource = new Map<string, TranslationResult[]>();
+  const translations: Record<string, ResourceTranslation> = {};
+  const resultsByResourceId = new Map<string, typeof results>();
   let sourceLocale = '';
 
   for (const result of results) {
-    const match = /^resource:(?<id>[^:]+):/.exec(result.contentKey);
-    const resourceId = match?.groups?.id;
+    const parts = result.contentKey.split(':');
+    if (parts.length < 3 || parts[0] !== 'resource') {
+      continue;
+    }
+    const resourceId = parts[1];
     if (!resourceId) {
       continue;
     }
-    const bucket = resultsByResource.get(resourceId) ?? [];
+    const bucket = resultsByResourceId.get(resourceId) ?? [];
     bucket.push(result);
-    resultsByResource.set(resourceId, bucket);
+    resultsByResourceId.set(resourceId, bucket);
     if (!sourceLocale && result.sourceLocale) {
       sourceLocale = result.sourceLocale;
     }
   }
 
-  const translations: Record<string, ResourceTranslation> = {};
-  for (const [resourceId, bucket] of resultsByResource) {
+  for (const [resourceId, bucket] of resultsByResourceId) {
     const { translated } = unflattenTranslatedFields(
       `resource:${resourceId}:`,
       bucket,
     );
-    const entry: ResourceTranslation = {};
-    if (typeof translated.title === 'string') {
-      entry.title = translated.title;
-    }
-    if (typeof translated.description === 'string') {
-      entry.description = translated.description;
-    }
-    translations[resourceId] = entry;
+    const title = translated.title;
+    const description = translated.description;
+    translations[resourceId] = {
+      title: typeof title === 'string' ? title : undefined,
+      description: typeof description === 'string' ? description : undefined,
+    };
   }
 
   return { translations, sourceLocale, targetLocale };
