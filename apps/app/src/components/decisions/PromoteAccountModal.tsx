@@ -6,24 +6,29 @@ import { CheckIcon } from '@op/ui/CheckIcon';
 import { Checkbox } from '@op/ui/Checkbox';
 import { Header1 } from '@op/ui/Header';
 import { Modal } from '@op/ui/Modal';
-import { useQueryState } from 'nuqs';
+import { parseAsBoolean, useQueryState } from 'nuqs';
 import { type ReactNode, useState } from 'react';
 import { LuUserRoundMinus, LuUserRoundPlus } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { ExternalLink } from '../ExternalLink';
+
 /**
- * Promote an anonymous visitor to a full account. Shown when `?promote=1` is on
- * the URL (set by ProposalEditor after an anon visitor submits their idea).
+ * Promote an anonymous visitor to a full account. Shown when `?promote=true` is
+ * on the URL (set by ProposalEditor after an anon visitor submits their idea).
  *
- * "Create account" / "Log in" route to `/login?link=1`, which *links* an email
- * identity onto the anon user (keeping their idea) rather than creating a new
- * account. See LinkAccountPanel.
+ * "Create account" / "Log in" route to `/login?link=true`, which *links* an
+ * email identity onto the anon user (keeping their idea) rather than creating
+ * a new account. See LinkAccountPanel.
  */
 
 export const PromoteAccountModal = () => {
   const { user } = useUser();
-  const [promote, setPromote] = useQueryState('promote');
+  const [promote, setPromote] = useQueryState(
+    'promote',
+    parseAsBoolean.withDefault(false),
+  );
   // The just-submitted proposal's profileId, so we can return the visitor to
   // their own idea (the proposal view) after they finish creating an account.
   const [proposalId] = useQueryState('proposal');
@@ -31,7 +36,7 @@ export const PromoteAccountModal = () => {
   // Only anonymous sign-ins can be promoted; a full account has nothing to
   // upgrade. (`isAnonymous` is session-derived, same as onboarding.ts.)
   const isAnonymous = Boolean(user?.isAnonymous);
-  const isOpen = isAnonymous && promote === '1';
+  const isOpen = isAnonymous && promote;
 
   const close = () => {
     void setPromote(null);
@@ -41,7 +46,7 @@ export const PromoteAccountModal = () => {
     <Modal
       isOpen={isOpen}
       onOpenChange={(open) => (open ? null : close())}
-      className="sm:max-w-[29rem]"
+      className="sm:max-w-112"
     >
       <PromoteAccountModalContent
         onContinueAsGuest={close}
@@ -72,7 +77,7 @@ const PromoteAccountModalContent = ({
     const base = window.location.pathname;
     const redirect = proposalId ? `${base}/proposal/${proposalId}` : base;
     window.location.assign(
-      `/login?link=1&redirect=${encodeURIComponent(redirect)}`,
+      `/login?link=true&redirect=${encodeURIComponent(redirect)}`,
     );
   };
 
@@ -113,10 +118,10 @@ const PromoteAccountModalContent = ({
                 'I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>.',
                 {
                   tos: (chunks: ReactNode) => (
-                    <PolicyLink href="/info/tos">{chunks}</PolicyLink>
+                    <ExternalLink href="/info/tos">{chunks}</ExternalLink>
                   ),
                   privacy: (chunks: ReactNode) => (
-                    <PolicyLink href="/info/privacy">{chunks}</PolicyLink>
+                    <ExternalLink href="/info/privacy">{chunks}</ExternalLink>
                   ),
                 },
               )}
@@ -158,25 +163,3 @@ const PromoteAccountModalContent = ({
     </div>
   );
 };
-
-// Opens a policy page in a new tab without toggling the consent checkbox it
-// sits inside (stop the press from reaching the surrounding React Aria
-// Checkbox).
-const PolicyLink = ({
-  href,
-  children,
-}: {
-  href: string;
-  children: ReactNode;
-}) => (
-  <a
-    href={href}
-    target="_blank"
-    rel="noreferrer"
-    className="text-primary-teal underline"
-    onClick={(e) => e.stopPropagation()}
-    onPointerDown={(e) => e.stopPropagation()}
-  >
-    {children}
-  </a>
-);

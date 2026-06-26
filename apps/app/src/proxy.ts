@@ -22,7 +22,7 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
 
   // Expose the current path (and query string) to Server Components (Next
   // doesn't surface them to layouts otherwise) so the walled-garden gate can
-  // build /login?redirect=... and detect the promote onboarding (?promote=1).
+  // build /login?redirect=... and detect the promote onboarding (?promote=true).
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-pathname', pathname);
   requestHeaders.set('x-search', request.nextUrl.search);

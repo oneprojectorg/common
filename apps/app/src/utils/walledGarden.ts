@@ -9,15 +9,17 @@ import { forbidden, redirect } from 'next/navigation';
  * - No session (or an anonymous one) → redirect to login (preserving the
  *   attempted path so the user lands back there after signing in): logging in
  *   can grant access.
- * - A real account that isn't a network member → `forbidden()`: logging in as
- *   the same account won't help, so show the no-access screen.
+ * - A real account outside the network (no `isNetworkMember`) → `forbidden()`:
+ *   logging in as the same account won't help, so show the no-access screen.
  *
- * `allowNonMembers` admits a real (non-anonymous) account that isn't a network
- * member — used by the promote/anon-upgrade onboarding. Anonymous still redirects.
+ * `allowOutsideNetwork` admits a real (non-anonymous) account that isn't a
+ * member of the closed network — used by the promote/anon-upgrade onboarding,
+ * where the user is mid-flow and hasn't joined the network yet. Anonymous
+ * sessions still redirect.
  */
 export async function assertWalledGardenAccess(
   user: CommonUser | null | undefined,
-  { allowNonMembers = false }: { allowNonMembers?: boolean } = {},
+  { allowOutsideNetwork = false }: { allowOutsideNetwork?: boolean } = {},
 ) {
   if (!user || user.isAnonymous) {
     const pathname = (await headers()).get('x-pathname');
@@ -29,7 +31,7 @@ export async function assertWalledGardenAccess(
     );
   }
 
-  if (!allowNonMembers && !user.isNetworkMember) {
+  if (!allowOutsideNetwork && !user.isNetworkMember) {
     forbidden();
   }
 }
