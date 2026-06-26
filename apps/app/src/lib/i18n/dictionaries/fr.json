@@ -1277,6 +1277,7 @@
   "Results pending": "Résultats en attente",
   "Results for this process haven't been processed yet.": "Les résultats de ce processus n'ont pas encore été traités.",
   "These {numProposals} proposals will be funded and results will be shared with all participants.": "{numProposals, plural, one {Cette # proposition sera financée et les résultats seront partagés avec tous les participants.} other {Ces # propositions seront financées et les résultats seront partagés avec tous les participants.}}",
+  "{count} proposals": "{count, plural, one {# proposition} other {# propositions}}",
   "{count} proposals advancing": "{count, plural, one {# proposition en cours} other {# propositions en cours}}",
   "{count} winning proposals selected": "{count, plural, one {# proposition gagnante sélectionnée} other {# propositions gagnantes sélectionnées}}",
   "Eligible proposals": "Propositions éligibles",

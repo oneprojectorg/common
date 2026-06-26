@@ -22,15 +22,23 @@ export const ProposalsListHeader = ({
   const t = useTranslations();
   const label = useProposalFilterLabel(proposalFilter);
 
+  const renderContent = () => {
+    if (hideFilters) {
+      return t('My proposals');
+    }
+    if (proposalFilter === ProposalFilter.ALL) {
+      return t('{count} proposals', { count });
+    }
+    return (
+      <>
+        {label} <Bullet /> {count}
+      </>
+    );
+  };
+
   return (
     <span className="font-serif text-title-base text-neutral-black">
-      {hideFilters ? (
-        t('My proposals')
-      ) : (
-        <>
-          {label} <Bullet /> {count}
-        </>
-      )}
+      {renderContent()}
     </span>
   );
 };

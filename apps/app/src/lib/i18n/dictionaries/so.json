@@ -1207,6 +1207,7 @@
   "Results pending": "Natiijooyinka sugaya",
   "Results for this process haven't been processed yet.": "Natiijooyinka habkan weli lama habayn.",
   "These {numProposals} proposals will be funded and results will be shared with all participants.": "{numProposals, plural, one {Soo jeedinta # waa la maalgelin doonaa oo natiijada waxaa la wadaagi doonaa dhammaan ka qaybgalayaasha.} other {Soo jeedimaha # waa la maalgelin doonaa oo natiijada waxaa la wadaagi doonaa dhammaan ka qaybgalayaasha.}}",
+  "{count} proposals": "{count, plural, one {# soo jeedin} other {# soo jeedimo}}",
   "{count} proposals advancing": "{count, plural, one {# soo jeedin oo horey u socda} other {# soo jeedimo oo horey u socda}}",
   "{count} winning proposals selected": "{count, plural, one {# soo jeedin oo guulaystay oo la doortay} other {# soo jeedimo oo guulaystay oo la doortay}}",
   "Eligible proposals": "Soo jeedimo qalma",

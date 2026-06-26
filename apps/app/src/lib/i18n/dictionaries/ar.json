@@ -1179,6 +1179,7 @@
   "Now open!": "مفتوح الآن!",
   "Advancing": "جارٍ التقدم",
   "Confirm decisions": "تأكيد القرارات",
+  "{count} proposals": "{count, plural, zero {لا مقترحات} one {مقترح واحد} two {مقترحان} few {# مقترحات} many {# مقترحًا} other {# مقترح}}",
   "{count} proposals advancing": "{count, plural, one {# مقترح متقدم} other {# مقترحات متقدمة}}",
   "Eligible proposals": "المقترحات المؤهلة",
   "Untitled proposal": "مقترح بدون عنوان",
