@@ -225,7 +225,7 @@ const OverviewHero = ({
   });
 
   return (
-    // ponytail: light banner stands in for the header image. When the
+    // Light banner stands in for the header image. When the
     // upload ships, drop an absolutely-positioned <Image fill> (from
     // profile.headerImage) behind this content and keep the gradient as the
     // empty-state fallback.
