@@ -152,7 +152,14 @@ export function LocationMapField({
 
   return (
     <div className="flex flex-col gap-2">
-      <LocationSearchField key={searchResetToken} onSelect={handleSelect} />
+      {/* Bias address search toward the map's current center so a participant
+          opening a Columbus-OH proposal from Stockholm still sees Columbus
+          places — without hard-restricting to that area. */}
+      <LocationSearchField
+        key={searchResetToken}
+        onSelect={handleSelect}
+        center={center}
+      />
 
       <div
         className={`overflow-hidden rounded-lg border ${

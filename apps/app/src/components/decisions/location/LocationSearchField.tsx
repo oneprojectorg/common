@@ -4,6 +4,7 @@ import { trpc } from '@op/api/client';
 import type { LocationData } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
 import { ComboBox, ComboBoxItem } from '@op/ui/ComboBox';
+import type { LngLat } from '@op/ui/Map';
 import { useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
 
@@ -18,6 +19,12 @@ interface GeoOption {
 interface LocationSearchFieldProps {
   /** Called with the chosen place when the user selects a search result. */
   onSelect: (location: LocationData) => void;
+  /**
+   * Map camera target used to bias search results toward this point — so a
+   * participant in Stockholm searching a Columbus-OH process still sees
+   * Columbus places. Omit for an unbiased global search.
+   */
+  center?: LngLat;
 }
 
 /**
@@ -28,7 +35,10 @@ interface LocationSearchFieldProps {
  * The picker remounts this (via `key`) to reset it after a direct map
  * placement, so it stays uncontrolled here.
  */
-export function LocationSearchField({ onSelect }: LocationSearchFieldProps) {
+export function LocationSearchField({
+  onSelect,
+  center,
+}: LocationSearchFieldProps) {
   const t = useTranslations();
   const [query, setQuery] = useState('');
   // Debounce so we hit Google Places once the user pauses, not on every
@@ -36,7 +46,7 @@ export function LocationSearchField({ onSelect }: LocationSearchFieldProps) {
   const [debouncedQuery] = useDebounce(query, 300);
 
   const { data } = trpc.taxonomy.getGeoNames.useQuery(
-    { q: debouncedQuery },
+    { q: debouncedQuery, center },
     { enabled: debouncedQuery.length >= 2, placeholderData: (prev) => prev },
   );
 

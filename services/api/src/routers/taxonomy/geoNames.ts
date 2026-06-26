@@ -19,7 +19,35 @@ const GeoNameSchema = z.object({
 
 type GeoName = z.infer<typeof GeoNameSchema>;
 
-const getGeonames = async ({ q }: { q: string }) => {
+const CenterSchema = z.object({
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+});
+
+// Radius for the `locationBias` circle sent to Google Places. 50 km covers a
+// metro area, which matches the proposal editor's "search near the map center"
+// intent — without being so tight that a user's free-text query for a known
+// landmark just outside the city center returns no result.
+const LOCATION_BIAS_RADIUS_METERS = 50_000;
+
+// Cache-key precision for the bias center. ~1.1 km at the equator: fine enough
+// that two distinct metro areas don't collide, coarse enough that small map
+// nudges (drag, marker move) still share a cache entry instead of paying a
+// billable API call per pixel.
+const CENTER_CACHE_PRECISION = 2;
+
+const roundCenterCoord = (value: number): number => {
+  const factor = 10 ** CENTER_CACHE_PRECISION;
+  return Math.round(value * factor) / factor;
+};
+
+const getGeonames = async ({
+  q,
+  center,
+}: {
+  q: string;
+  center?: { lat: number; lng: number };
+}) => {
   if (!process.env.GOOGLE_MAPS_API_KEY) {
     throw new Error('GOOGLE_MAPS_API_KEY environment variable is required');
   }
@@ -37,6 +65,23 @@ const getGeonames = async ({ q }: { q: string }) => {
       },
       body: JSON.stringify({
         textQuery: q,
+        // Bias toward the caller-supplied map center so a participant in
+        // Stockholm searching a Columbus, OH process still gets Columbus
+        // results. Bias (not restriction) — distant matches are still allowed
+        // when nothing nearby fits the query.
+        ...(center
+          ? {
+              locationBias: {
+                circle: {
+                  center: {
+                    latitude: center.lat,
+                    longitude: center.lng,
+                  },
+                  radius: LOCATION_BIAS_RADIUS_METERS,
+                },
+              },
+            }
+          : {}),
       }),
     });
 
@@ -99,6 +144,12 @@ export const getGeoNames = router({
     .input(
       z.object({
         q: z.string().min(2).max(255),
+        /**
+         * Optional center used as a `locationBias` so search prefers places
+         * near this point (e.g. the proposal editor's map center). Omit for an
+         * unbiased global search.
+         */
+        center: CenterSchema.optional(),
       }),
     )
     .output(
@@ -107,12 +158,19 @@ export const getGeoNames = router({
       }),
     )
     .query(async ({ input }) => {
-      const { q } = input;
+      const { q, center } = input;
+
+      // Round the bias center for the cache key so small map nudges share a
+      // cache entry; pass the raw center on to Google for the actual call.
+      const roundedLat =
+        center !== undefined ? roundCenterCoord(center.lat) : undefined;
+      const roundedLng =
+        center !== undefined ? roundCenterCoord(center.lng) : undefined;
 
       const geonames = await cache({
         type: 'geonames',
-        params: [q],
-        fetch: () => getGeonames({ q }),
+        params: [q, roundedLat, roundedLng],
+        fetch: () => getGeonames({ q, center }),
       });
 
       return {
