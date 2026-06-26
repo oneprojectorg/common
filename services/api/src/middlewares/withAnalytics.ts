@@ -1,6 +1,7 @@
 import { identifyUser } from '@op/analytics';
 import { logger } from '@op/logging';
 import type { User } from '@op/supabase/lib';
+import { waitUntil } from '@vercel/functions';
 
 import type { MiddlewareBuilderBase, TContextWithAnalytics } from '../types';
 
@@ -20,28 +21,29 @@ const withAnalytics: MiddlewareBuilderBase<TContextWithAnalytics> = async ({
     const posthogSessionId = ctx.req.headers.get('x-posthog-session-id');
 
     if (user && user.email) {
-      try {
-        // We are only identifying One Project users by email, matching frontend logic
-        const properties: Record<string, any> = {};
-        properties.authUserId = user.id;
+      // We are only identifying One Project users by email, matching frontend logic
+      const properties: Record<string, any> = {};
+      properties.authUserId = user.id;
 
-        if (posthogSessionId) {
-          properties.$session_id = posthogSessionId;
-        }
+      if (posthogSessionId) {
+        properties.$session_id = posthogSessionId;
+      }
 
-        if (user.email.match(/.+@oneproject\.org$|.+@peoplepowered\.org$/)) {
-          properties.email = user.email;
-        }
+      if (user.email.match(/.+@oneproject\.org$|.+@peoplepowered\.org$/)) {
+        properties.email = user.email;
+      }
 
-        await identifyUser({
+      // Fire-and-forget so the request never inherits PostHog tail latency.
+      // identifyUser now just enqueues onto the module-level batched client.
+      waitUntil(
+        identifyUser({
           distinctId: user.id,
           properties,
-        });
-        // For other users, we don't identify them in the backend (they get anonymous IDs on frontend)
-      } catch (error) {
-        // Don't fail the request if PostHog identification fails
-        logger.error('PostHog identification failed', { error });
-      }
+        }).catch((error) => {
+          logger.error('PostHog identification failed', { error });
+        }),
+      );
+      // For other users, we don't identify them in the backend (they get anonymous IDs on frontend)
     }
   }
 
