@@ -3,16 +3,9 @@
 import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
 import type { ProposalReviewRequest } from '@op/common/client';
-import { Button } from '@op/ui/Button';
-import { Header4 } from '@op/ui/Header';
-import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { type ReactNode, useState } from 'react';
-import { LuArrowLeft, LuCheck, LuUserPlus } from 'react-icons/lu';
 
-import { useRouter, useTranslations } from '@/lib/i18n';
-
-import { LocaleChooser } from '../LocaleChooser';
-import { UserAvatarMenu } from '../SiteHeader';
+import { ProposalEditorHeader } from './ProposalEditorHeader';
 import { ShareProposalModal } from './ShareProposalModal';
 import { ResubmitProposalModal } from './proposalEditor/ResubmitProposalModal';
 
@@ -62,94 +55,38 @@ export function ProposalEditorLayout({
   access,
   revisionRequest,
 }: ProposalEditorLayoutProps) {
-  const router = useRouter();
-  const t = useTranslations();
   const { user } = useUser();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isResubmitModalOpen, setIsResubmitModalOpen] = useState(false);
 
   // Sharing is a write surface — only offer it to signed-in, non-anonymous
   // members, on top of the existing admin/invite permission check.
-  const canShare =
-    userCanInteract(user) && (access?.admin || access?.inviteMembers);
+  const canShare = Boolean(
+    userCanInteract(user) && (access?.admin || access?.inviteMembers),
+  );
   const isRevisionMode = Boolean(revisionRequest);
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col bg-white">
-      <div className="sticky top-0 z-20 flex h-editor-topbar items-center justify-between gap-2 border-b bg-white px-4 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:px-6">
-        <button
-          onClick={() => router.push(backHref)}
-          className="flex cursor-pointer items-center gap-2 text-primary-teal hover:text-primary-tealBlack"
-        >
-          <LuArrowLeft className="size-6 text-neutral-charcoal sm:size-4 sm:text-primary-teal rtl:-scale-x-100" />
-          <span className="hidden sm:block">{t('Back')}</span>
-        </button>
+    <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 grid-rows-[auto_1fr] bg-white">
+      <ProposalEditorHeader
+        backHref={backHref}
+        title={title}
+        onSubmitProposal={onSubmitProposal}
+        isSubmitting={isSubmitting}
+        isEditMode={isEditMode}
+        isDraft={isDraft}
+        presenceSlot={presenceSlot}
+        asideHeaderIcons={asideHeaderIcons}
+        statusSlot={statusSlot}
+        showHeaderActions={showHeaderActions}
+        readOnlyMode={readOnlyMode}
+        canShare={canShare}
+        isRevisionMode={isRevisionMode}
+        onShare={() => setIsShareModalOpen(true)}
+        onResubmit={() => setIsResubmitModalOpen(true)}
+      />
 
-        <Header4 className="hidden min-w-0 truncate sm:block">
-          {title ? title : t('Untitled Proposal')}
-        </Header4>
-
-        <div className="flex items-center justify-end gap-4">
-          {statusSlot}
-          {showHeaderActions && (
-            <>
-              {!readOnlyMode && presenceSlot}
-              {asideHeaderIcons}
-              {!readOnlyMode && canShare && (
-                <Button
-                  color="secondary"
-                  variant="icon"
-                  size="small"
-                  onPress={() => setIsShareModalOpen(true)}
-                >
-                  <LuUserPlus className="size-4" />
-                  <span className="hidden sm:inline">{t('Share')}</span>
-                </Button>
-              )}
-              {!readOnlyMode && (
-                <Button
-                  color="primary"
-                  variant="icon"
-                  size="small"
-                  onPress={
-                    isRevisionMode
-                      ? () => setIsResubmitModalOpen(true)
-                      : onSubmitProposal
-                  }
-                  isDisabled={isSubmitting}
-                  className="px-4 py-2"
-                >
-                  {isSubmitting ? <LoadingSpinner /> : <LuCheck />}
-                  {isRevisionMode ? (
-                    t('Resubmit')
-                  ) : isEditMode && !isDraft ? (
-                    <>
-                      <span className="inline lg:hidden">{t('Update')}</span>
-                      <span className="hidden lg:inline">
-                        {t('Update Proposal')}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="hidden sm:block">
-                        {t('Submit Proposal')}
-                      </span>
-                      <span className="sm:hidden">{t('Submit')}</span>{' '}
-                    </>
-                  )}
-                </Button>
-              )}
-              <LocaleChooser />
-              {/* No avatar or login for visitors/anonymous. */}
-              {userCanInteract(user) ? (
-                <UserAvatarMenu className="hidden sm:block" />
-              ) : null}
-            </>
-          )}
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto">{children}</div>
+      <div className="min-h-0 overflow-hidden">{children}</div>
 
       {canShare && (
         <ShareProposalModal
