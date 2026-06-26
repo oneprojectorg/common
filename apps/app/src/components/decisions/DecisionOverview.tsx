@@ -6,7 +6,7 @@ import { type ProcessInstance, type ProcessPhase } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
-import { Header2, Header3 } from '@op/ui/Header';
+import { Header3 } from '@op/ui/Header';
 import { Link } from '@op/ui/Link';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import he from 'he';
