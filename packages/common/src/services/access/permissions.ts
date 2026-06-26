@@ -12,7 +12,7 @@ import { and, eq } from 'drizzle-orm';
 
 import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import { assertProfileAdmin } from '../assert';
-import { profileUserCacheKey } from './index';
+import { profileUserCacheKey } from './cacheKeys';
 
 export async function invalidateProfileUserCacheForRole(roleId: string) {
   const affectedUsers = await db
