@@ -229,8 +229,8 @@ const OverviewHero = ({
     // upload ships, drop an absolutely-positioned <Image fill> (from
     // profile.headerImage) behind this content and keep the gradient as the
     // empty-state fallback.
-    <section className="grid w-full grid-cols-1 justify-center bg-neutral-offWhite md:grid-cols-12">
-      <div className="mx-auto flex flex-col items-center gap-4 px-4 pt-16 pb-8 text-center sm:py-24 md:col-span-6 md:col-start-4 md:px-6">
+    <section className="grid w-full grid-cols-1 justify-center border-b bg-neutral-offWhite md:grid-cols-12">
+      <div className="mx-auto flex flex-col items-center gap-4 px-4 pt-16 pb-8 text-center sm:py-12 md:col-span-6 md:col-start-4 md:px-6">
         <div className="flex flex-col items-center gap-3">
           {/* Brand teal→green gradient clipped to the title text. */}
           <h1 className="bg-tealGreen bg-clip-text font-serif text-title-xl font-light text-transparent sm:text-title-xxl">
