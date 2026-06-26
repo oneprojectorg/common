@@ -4,7 +4,7 @@ import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { type ProcessInstance, type ProcessPhase } from '@op/api/encoders';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
-import { Header2, Header3 } from '@op/ui/Header';
+import { Header3 } from '@op/ui/Header';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import he from 'he';
 import { Suspense, type ReactNode } from 'react';
@@ -253,8 +253,6 @@ const OverviewAbout = ({
   /** Plain-text process description shown when no overview body exists. */
   fallbackText?: string;
 }) => {
-  const t = useTranslations();
-
   // Prefer the server-rendered body; otherwise fall back to the plain-text
   // description (entity-encoded for some orgs, same as DecisionActionBar —
   // decode and render as text, not HTML).
@@ -273,10 +271,5 @@ const OverviewAbout = ({
     return null;
   }
 
-  return (
-    <section className="flex flex-col gap-4">
-      <Header2 className="font-serif">{t('About the process')}</Header2>
-      {body}
-    </section>
-  );
+  return body;
 };
