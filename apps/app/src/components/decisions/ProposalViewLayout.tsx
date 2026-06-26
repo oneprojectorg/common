@@ -91,9 +91,9 @@ export function ProposalViewLayout({
             </Button>
           )}
           {/* Report is a safety action the moderation API accepts from any
-              session (including anonymous accounts); offer it to anyone with a
-              session so anonymous viewers can still flag inappropriate content. */}
-          {user && reportProposalId && (
+              caller (signed-in, anonymous, or sessionless). Offer it to any
+              viewer so inappropriate content is always flaggable. */}
+          {reportProposalId && (
             <ReportProposalDialog proposalId={reportProposalId} />
           )}
           {/* Like/Follow are user-scoped writes gated at the API — only offer
