@@ -44,13 +44,13 @@ import {
 import { useRestoreProposalVersion } from '@/components/decisions/proposalEditor/useRestoreProposalVersion';
 
 /**
- * Shared layout for the proposal editor route.
+ * Route page for the proposal editor.
  *
- * Persists across query string updates so the collaborative editor,
- * Yjs connection, and draft state are never remounted while the aside
- * panel is opened or closed.
+ * A single client component so the collaborative editor, Yjs connection, and
+ * draft state stay mounted while the aside panel is opened or closed via the
+ * query string (nuqs shallow updates don't remount this tree).
  */
-export default function ProposalEditorLayout() {
+export default function EditProposalPage() {
   const { profileId, slug } = useParams<{
     profileId: string;
     slug: string;

@@ -440,38 +440,40 @@ function ProposalEditorInner({
       access={proposal.access}
       revisionRequest={revisionRequest}
     >
-      <div className="flex h-full min-h-0 flex-col">
+      <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[auto_1fr]">
         <div
-          className="sticky top-0 z-10 border-b border-neutral-gray1 bg-white"
+          className="border-b border-neutral-gray1 bg-white"
           onMouseDown={(e) => e.preventDefault()}
         >
           <RichTextEditorToolbar editor={focusedEditor} />
         </div>
-        {revisionRequest ? (
-          <SplitPane className="mx-auto w-full max-w-6xl">
-            <SplitPane.Pane
-              id="proposal"
-              label={t('Proposal')}
-              className="gap-4"
-            >
-              {editorBody}
-            </SplitPane.Pane>
-            <SplitPane.Pane
-              id="feedback"
-              label={t('Revision feedback')}
-              className="bg-white"
-              unpadded
-            >
-              <RevisionFeedbackPanel revisionRequest={revisionRequest} />
-            </SplitPane.Pane>
-          </SplitPane>
-        ) : (
-          <div className="flex flex-1 flex-col gap-12 py-12">
-            <div className="mx-auto flex w-full max-w-xl flex-col gap-4 px-6">
-              {editorBody}
+        <div className="relative min-h-0 overflow-y-auto">
+          {revisionRequest ? (
+            <SplitPane className="mx-auto w-full max-w-6xl">
+              <SplitPane.Pane
+                id="proposal"
+                label={t('Proposal')}
+                className="gap-4"
+              >
+                {editorBody}
+              </SplitPane.Pane>
+              <SplitPane.Pane
+                id="feedback"
+                label={t('Revision feedback')}
+                className="bg-white"
+                unpadded
+              >
+                <RevisionFeedbackPanel revisionRequest={revisionRequest} />
+              </SplitPane.Pane>
+            </SplitPane>
+          ) : (
+            <div className="flex flex-1 flex-col gap-12 py-12">
+              <div className="mx-auto flex w-full max-w-xl flex-col gap-4 px-6">
+                {editorBody}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {proposalInfoTitle && proposalInfoContent && (

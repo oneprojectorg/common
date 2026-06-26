@@ -62,8 +62,8 @@ export function ProposalViewLayout({
   const revisionRequestLabel = t('Revision request');
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
-      {/* Header */}
+    <div className="grid h-screen min-h-0 min-w-0 grid-cols-1 grid-rows-[auto_1fr] bg-white">
+      {/* Header (pinned — fixed grid row above the scrolling body) */}
       <div className="grid grid-cols-3 items-center border-b px-6 py-4">
         <button
           onClick={() => router.push(backHref)}
@@ -146,7 +146,7 @@ export function ProposalViewLayout({
         </div>
       </div>
 
-      {children}
+      <div className="relative min-h-0 overflow-y-auto">{children}</div>
     </div>
   );
 }
