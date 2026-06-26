@@ -62,13 +62,14 @@ const CurrentPhasePage = async ({
   // (the overview route is single-fetch), so /current seeds its own. Best
   // effort: on failure the client refetches under its own boundary.
   const { utils, queryClient } = await createServerUtils();
-  await utils.decision.getInstance.fetch({ instanceId }).catch((error) => {
+  try {
+    await utils.decision.getInstance.fetch({ instanceId });
+  } catch (error) {
     logger.warn('Failed to seed current-phase instance', {
       instanceId,
       error: error instanceof Error ? error.message : String(error),
     });
-    return null;
-  });
+  }
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
