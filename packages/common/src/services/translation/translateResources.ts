@@ -2,7 +2,6 @@ import { db } from '@op/db/client';
 import {
   resourceCollectionItems,
   resourceCollectionProfiles,
-  resourceCollections,
   resources as resourcesTable,
 } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
@@ -33,8 +32,8 @@ const MAX_RESOURCES_PER_BATCH = 200;
  * collection on the decision profile, via DeepL with cache-through semantics.
  * Authorizes once on the profile with `decisions: READ`, matching how the
  * resources tab gates its list endpoints. Ordered by `(collection sortKey,
- * item sortKey)` so the translated slice matches the order the resources
- * tab renders.
+ * item sortKey)` so the translated slice matches the order the resources tab
+ * renders.
  */
 export async function translateResources({
   profileId,
@@ -55,47 +54,41 @@ export async function translateResources({
     permissions: { decisions: permission.READ },
   });
 
-  // Walk the profile → collections → resource-items chain in a single ordered
-  // query so the per-call cap is deterministic. The same resource can appear
-  // in multiple collections; `selectDistinctOn(resourceId)` keeps it once and
-  // takes the smallest `(collection sortKey, item sortKey)` pair.
+  // Walk profile → collections → resource-items in one ordered query, then
+  // dedup by resourceId in JS (a resource can sit in more than one of the
+  // profile's collections; we keep the first / smallest-sortKey occurrence).
   const rows = await db
-    .selectDistinctOn([resourceCollectionItems.resourceId], {
-      resourceId: resourceCollectionItems.resourceId,
-      collectionSortKey: resourceCollectionProfiles.sortKey,
-      itemSortKey: resourceCollectionItems.sortKey,
-    })
+    .select({ resourceId: resourceCollectionItems.resourceId })
     .from(resourceCollectionProfiles)
     .innerJoin(
-      resourceCollections,
-      eq(resourceCollections.id, resourceCollectionProfiles.collectionId),
-    )
-    .innerJoin(
       resourceCollectionItems,
-      eq(resourceCollectionItems.collectionId, resourceCollections.id),
+      eq(
+        resourceCollectionItems.collectionId,
+        resourceCollectionProfiles.collectionId,
+      ),
     )
     .where(eq(resourceCollectionProfiles.profileId, profileId))
     .orderBy(
-      asc(resourceCollectionItems.resourceId),
       asc(resourceCollectionProfiles.sortKey),
       asc(resourceCollectionItems.sortKey),
     );
 
-  if (rows.length === 0) {
-    return { translations: {}, sourceLocale: '', targetLocale };
+  const seen = new Set<string>();
+  const resourceIds: string[] = [];
+  for (const row of rows) {
+    if (seen.has(row.resourceId)) {
+      continue;
+    }
+    seen.add(row.resourceId);
+    resourceIds.push(row.resourceId);
+    if (resourceIds.length >= MAX_RESOURCES_PER_BATCH) {
+      break;
+    }
   }
 
-  // Sort by the user-visible order ((collection, item) sortKey) then cap.
-  rows.sort((a, b) => {
-    if (a.collectionSortKey !== b.collectionSortKey) {
-      return a.collectionSortKey < b.collectionSortKey ? -1 : 1;
-    }
-    return a.itemSortKey < b.itemSortKey ? -1 : 1;
-  });
-
-  const resourceIds = rows
-    .map((row) => row.resourceId)
-    .slice(0, MAX_RESOURCES_PER_BATCH);
+  if (resourceIds.length === 0) {
+    return { translations: {}, sourceLocale: '', targetLocale };
+  }
 
   const resourceRows = await db
     .select({
@@ -105,10 +98,6 @@ export async function translateResources({
     })
     .from(resourcesTable)
     .where(inArray(resourcesTable.id, resourceIds));
-
-  if (resourceRows.length === 0) {
-    return { translations: {}, sourceLocale: '', targetLocale };
-  }
 
   const entries: TranslatableEntry[] = [];
   for (const row of resourceRows) {

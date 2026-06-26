@@ -10,7 +10,7 @@ import { LuUpload } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { ConfirmDeleteModal } from '@/components/ConfirmDeleteModal';
-import { useDecisionTranslationOptional } from '@/components/decisions/DecisionTranslationContext';
+import { useDecisionTranslation } from '@/components/decisions/DecisionTranslationContext';
 
 import { ResourceCard } from './ResourceCard';
 import { ResourceDropZone } from './ResourceDropZone';
@@ -27,7 +27,7 @@ export const ResourcesList = ({
   canManage: boolean;
 }) => {
   const t = useTranslations();
-  const decisionTranslation = useDecisionTranslationOptional();
+  const decisionTranslation = useDecisionTranslation();
   const utils = trpc.useUtils();
   const [deleteTarget, setDeleteTarget] = useState<ResourceInCollection | null>(
     null,

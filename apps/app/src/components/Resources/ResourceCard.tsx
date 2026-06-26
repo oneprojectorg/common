@@ -18,7 +18,7 @@ import {
 
 import { useTranslations } from '@/lib/i18n';
 
-import { useDecisionTranslationOptional } from '@/components/decisions/DecisionTranslationContext';
+import { useDecisionTranslation } from '@/components/decisions/DecisionTranslationContext';
 
 import { getExtension, hostnameForDisplay } from './utils';
 
@@ -31,7 +31,7 @@ type DocumentResource = Extract<ResourceInCollection, { type: 'document' }>;
 const useTranslatedResourceCopy = (
   resource: ResourceInCollection,
 ): { title: string; description: string | null } => {
-  const decisionTranslation = useDecisionTranslationOptional();
+  const decisionTranslation = useDecisionTranslation();
   const translated = decisionTranslation?.resources[resource.id];
   return {
     title: translated?.title ?? resource.title,

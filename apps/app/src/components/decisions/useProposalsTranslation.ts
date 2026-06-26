@@ -49,11 +49,10 @@ export const useProposalsTranslation = ({
     sourceLocale: string;
   } | null>(null);
   const setDecisionTranslation = useSetDecisionTranslation();
-  // Translation is "active" between handleTranslate and handleViewOriginal.
-  // Each in-flight mutation captures this id at mutate-time; a late onSuccess
-  // whose id no longer matches is dropped, so a click on View Original can't
-  // be steamrolled by a translate response that lands after the revert.
-  const translateRequestIdRef = useRef(0);
+  // Flipped true on Translate, false on View Original. Late mutation
+  // responses check this before mutating state, so a click on View Original
+  // can't be steamrolled by a translate response that lands after the revert.
+  const translatingRef = useRef(false);
 
   const seedTranslationState = useCallback((sourceLocale: string) => {
     if (!sourceLocale) {
@@ -79,112 +78,105 @@ export const useProposalsTranslation = ({
     [setDecisionTranslation],
   );
 
-  const failedToTranslateToast = useCallback(() => {
+  const onTranslateError = useCallback(() => {
     toast.error({ message: t('Failed to translate content') });
   }, [t]);
 
   const translateBatchMutation =
     trpc.translation.translateProposals.useMutation({
-      onError: failedToTranslateToast,
+      onSuccess: (data) => {
+        if (!translatingRef.current) {
+          return;
+        }
+        setTranslationState({
+          translations: data.translations,
+          sourceLocale: data.sourceLocale,
+        });
+      },
+      onError: onTranslateError,
     });
+
   const translateDecisionMutation =
     trpc.translation.translateDecision.useMutation({
-      onError: failedToTranslateToast,
+      onSuccess: (data) => {
+        if (!translatingRef.current) {
+          return;
+        }
+        seedTranslationState(data.sourceLocale);
+        if (
+          !data.headline &&
+          !data.phaseDescription &&
+          !data.additionalInfo &&
+          !data.description &&
+          data.phases.length === 0
+        ) {
+          return;
+        }
+        patchDecisionTranslation({
+          headline: data.headline,
+          phaseDescription: data.phaseDescription,
+          additionalInfo: data.additionalInfo,
+          description: data.description,
+          phases: data.phases,
+        });
+      },
+      onError: onTranslateError,
     });
+
   const translatePostsMutation = trpc.translation.translatePosts.useMutation({
-    onError: failedToTranslateToast,
+    onSuccess: (data) => {
+      if (!translatingRef.current) {
+        return;
+      }
+      seedTranslationState(data.sourceLocale);
+      if (Object.keys(data.translations).length === 0) {
+        return;
+      }
+      patchDecisionTranslation({ posts: data.translations });
+    },
+    onError: onTranslateError,
   });
+
   const translateResourcesMutation =
     trpc.translation.translateResources.useMutation({
-      onError: failedToTranslateToast,
+      onSuccess: (data) => {
+        if (!translatingRef.current) {
+          return;
+        }
+        seedTranslationState(data.sourceLocale);
+        if (Object.keys(data.translations).length === 0) {
+          return;
+        }
+        patchDecisionTranslation({ resources: data.translations });
+      },
+      onError: onTranslateError,
     });
 
   const handleTranslate = useCallback(() => {
     if (!supportedLocale) {
       return;
     }
-    translateRequestIdRef.current += 1;
-    const requestId = translateRequestIdRef.current;
-    // `mutate` accepts a per-call onSuccess that fires after the hook-level
-    // one; closing over `requestId` lets each response check whether it's
-    // still the latest before mutating state.
-    const isCurrent = () => translateRequestIdRef.current === requestId;
-
+    translatingRef.current = true;
     const profileIds = allProposals.map((p) => p.profileId);
     if (profileIds.length) {
-      translateBatchMutation.mutate(
-        { profileIds, targetLocale: supportedLocale },
-        {
-          onSuccess: (data) => {
-            if (!isCurrent()) {
-              return;
-            }
-            setTranslationState({
-              translations: data.translations,
-              sourceLocale: data.sourceLocale,
-            });
-          },
-        },
-      );
+      translateBatchMutation.mutate({
+        profileIds,
+        targetLocale: supportedLocale,
+      });
     }
     if (decisionProfileId) {
-      translateDecisionMutation.mutate(
-        { decisionProfileId, targetLocale: supportedLocale },
-        {
-          onSuccess: (data) => {
-            if (!isCurrent()) {
-              return;
-            }
-            seedTranslationState(data.sourceLocale);
-            if (
-              !data.headline &&
-              !data.phaseDescription &&
-              !data.additionalInfo &&
-              !data.description &&
-              data.phases.length === 0
-            ) {
-              return;
-            }
-            patchDecisionTranslation({
-              headline: data.headline,
-              phaseDescription: data.phaseDescription,
-              additionalInfo: data.additionalInfo,
-              description: data.description,
-              phases: data.phases,
-            });
-          },
-        },
-      );
-      translatePostsMutation.mutate(
-        { profileId: decisionProfileId, targetLocale: supportedLocale },
-        {
-          onSuccess: (data) => {
-            if (!isCurrent()) {
-              return;
-            }
-            seedTranslationState(data.sourceLocale);
-            if (Object.keys(data.translations).length === 0) {
-              return;
-            }
-            patchDecisionTranslation({ posts: data.translations });
-          },
-        },
-      );
-      translateResourcesMutation.mutate(
-        { profileId: decisionProfileId, targetLocale: supportedLocale },
-        {
-          onSuccess: (data) => {
-            if (!isCurrent()) {
-              return;
-            }
-            seedTranslationState(data.sourceLocale);
-            if (Object.keys(data.translations).length === 0) {
-              return;
-            }
-            patchDecisionTranslation({ resources: data.translations });
-          },
-        },
-      );
+      translateDecisionMutation.mutate({
+        decisionProfileId,
+        targetLocale: supportedLocale,
+      });
+      translatePostsMutation.mutate({
+        profileId: decisionProfileId,
+        targetLocale: supportedLocale,
+      });
+      translateResourcesMutation.mutate({
+        profileId: decisionProfileId,
+        targetLocale: supportedLocale,
+      });
     }
   }, [
     translateBatchMutation,
@@ -194,15 +186,10 @@ export const useProposalsTranslation = ({
     allProposals,
     supportedLocale,
     decisionProfileId,
-    seedTranslationState,
-    patchDecisionTranslation,
   ]);
 
   const handleViewOriginal = useCallback(() => {
-    // Bumping the request id retires any in-flight translate mutation: their
-    // onSuccess will see a fresh id and drop the patch, so a slow translate
-    // response can't re-apply translation after the user reverted.
-    translateRequestIdRef.current += 1;
+    translatingRef.current = false;
     setTranslationState(null);
     setDecisionTranslation(null);
   }, [setDecisionTranslation]);

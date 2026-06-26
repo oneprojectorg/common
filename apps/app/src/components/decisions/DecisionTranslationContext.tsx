@@ -45,24 +45,14 @@ export function DecisionTranslationProvider({
   );
 }
 
-export function useDecisionTranslation(): DecisionTranslation | null {
-  const ctx = useContext(DecisionTranslationContext);
-  if (!ctx) {
-    throw new Error(
-      'useDecisionTranslation must be used within a DecisionTranslationProvider',
-    );
-  }
-  return ctx.translation;
-}
-
 /**
- * Optional variant for components like PostItem / ResourceCard that render
- * both inside and outside a decision context. Returns null when no provider
- * is mounted, so the caller can fall back to original content.
+ * Returns the current decision translation, or null when no provider is
+ * mounted or no translation has been requested. Safe to call from components
+ * that render both inside (decision view) and outside (profile feed, comments
+ * modal, proposal detail page) the provider.
  */
-export function useDecisionTranslationOptional(): DecisionTranslation | null {
-  const ctx = useContext(DecisionTranslationContext);
-  return ctx?.translation ?? null;
+export function useDecisionTranslation(): DecisionTranslation | null {
+  return useContext(DecisionTranslationContext)?.translation ?? null;
 }
 
 export function useSetDecisionTranslation(): Dispatch<

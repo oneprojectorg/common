@@ -28,7 +28,7 @@ import { LuFlag, LuLeaf } from 'react-icons/lu';
 
 import { Link, useTranslations } from '@/lib/i18n';
 
-import { useDecisionTranslationOptional } from '@/components/decisions/DecisionTranslationContext';
+import { useDecisionTranslation } from '@/components/decisions/DecisionTranslationContext';
 
 import { DiscussionModal } from '../DiscussionModal';
 import { FeedContent, FeedHeader, FeedItem, FeedMain } from '../Feed';
@@ -382,7 +382,7 @@ export const PostItem = ({
   onCommentClick?: (post: Post, organization: Organization | null) => void;
   className?: string;
 }) => {
-  const decisionTranslation = useDecisionTranslationOptional();
+  const decisionTranslation = useDecisionTranslation();
   const translatedContent = decisionTranslation?.posts[post.id]?.content;
   const displayContent = translatedContent ?? post?.content;
   const { urls } = useMemo(() => detectLinks(post?.content), [post?.content]);

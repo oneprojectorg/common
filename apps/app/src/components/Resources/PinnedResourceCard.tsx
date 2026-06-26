@@ -8,7 +8,7 @@ import { LuLink, LuPlay } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
-import { useDecisionTranslationOptional } from '@/components/decisions/DecisionTranslationContext';
+import { useDecisionTranslation } from '@/components/decisions/DecisionTranslationContext';
 
 import { iconComponentForMime } from './ResourceCard';
 import { isVideoUrl } from './utils';
@@ -43,7 +43,7 @@ export const PinnedResourceCard = ({
   signedUrl?: string | null;
 }) => {
   const t = useTranslations();
-  const decisionTranslation = useDecisionTranslationOptional();
+  const decisionTranslation = useDecisionTranslation();
   const title =
     decisionTranslation?.resources[resource.id]?.title ?? resource.title;
   const Icon = iconForResource(resource);
