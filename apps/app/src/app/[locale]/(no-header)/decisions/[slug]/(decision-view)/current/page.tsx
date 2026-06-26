@@ -1,3 +1,9 @@
+import {
+  HydrationBoundary,
+  createServerUtils,
+  dehydrate,
+} from '@op/api/server';
+import { logger } from '@op/logging';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
@@ -51,18 +57,34 @@ const CurrentPhasePage = async ({
   const { slug } = await params;
   const { decisionProfile, instanceId, ownerSlug } = await loadDecision(slug);
 
+  // Seed the getInstance cache the current-phase content (DecisionStateRouter)
+  // hydrates from. The (decision-view) layout no longer fetches getInstance
+  // (the overview route is single-fetch), so /current seeds its own. Best
+  // effort: on failure the client refetches under its own boundary.
+  const { utils, queryClient } = await createServerUtils();
+  try {
+    await utils.decision.getInstance.fetch({ instanceId });
+  } catch (error) {
+    logger.warn('Failed to seed current-phase instance', {
+      instanceId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
   return (
-    <div className="bg-neutral-offWhite pt-8 md:pt-0">
-      <Suspense fallback={<DecisionContentSkeleton />}>
-        <CurrentPhaseView
-          instanceId={instanceId}
-          ownerSlug={ownerSlug}
-          decisionSlug={slug}
-          decisionProfileId={decisionProfile.id}
-          isAdmin={decisionProfile.processInstance?.access?.admin}
-        />
-      </Suspense>
-    </div>
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <div className="bg-neutral-offWhite pt-8 md:pt-0">
+        <Suspense fallback={<DecisionContentSkeleton />}>
+          <CurrentPhaseView
+            instanceId={instanceId}
+            ownerSlug={ownerSlug}
+            decisionSlug={slug}
+            decisionProfileId={decisionProfile.id}
+            isAdmin={decisionProfile.processInstance?.access?.admin}
+          />
+        </Suspense>
+      </div>
+    </HydrationBoundary>
   );
 };
 

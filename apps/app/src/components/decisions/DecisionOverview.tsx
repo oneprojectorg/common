@@ -1,8 +1,7 @@
 'use client';
 
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
-import { trpc } from '@op/api/client';
-import { type ProcessPhase } from '@op/api/encoders';
+import { type ProcessInstance, type ProcessPhase } from '@op/api/encoders';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header2, Header3 } from '@op/ui/Header';
@@ -24,6 +23,13 @@ import { useCreateProposal } from './useCreateProposal';
 interface DecisionOverviewProps {
   instanceId: string;
   decisionSlug: string;
+  /**
+   * The decision's process instance, fetched once on the server via
+   * loadDecision (getDecisionBySlug, enriched by the router with `access` +
+   * encoded `instanceData`). Passed as a prop so the overview renders from the
+   * single slug fetch the route already makes — no client `getInstance` query.
+   */
+  processInstance: ProcessInstance;
   /**
    * The "About" body, pre-rendered on the server (RSC) from the overview's
    * TipTap JSON via RichTextRenderer, so the prose ships as server HTML with no
@@ -48,9 +54,13 @@ interface DecisionOverviewProps {
  * Falls back to the instance name/description for processes authored before
  * that tab was filled in.
  */
-export function DecisionOverviewSuspense({
+// Renders from server-fetched props (no useSuspenseQuery), so it does not
+// suspend — no `Suspense` suffix. Keeps the page-level APIErrorBoundary as a
+// defensive catch for render errors.
+export function DecisionOverview({
   instanceId,
   decisionSlug,
+  processInstance,
   aboutSlot,
   isActive,
 }: DecisionOverviewProps) {
@@ -74,6 +84,7 @@ export function DecisionOverviewSuspense({
       <DecisionOverviewContent
         instanceId={instanceId}
         decisionSlug={decisionSlug}
+        processInstance={processInstance}
         aboutSlot={aboutSlot}
         isActive={isActive}
       />
@@ -84,11 +95,11 @@ export function DecisionOverviewSuspense({
 function DecisionOverviewContent({
   instanceId,
   decisionSlug,
+  processInstance: instance,
   aboutSlot,
   isActive,
 }: DecisionOverviewProps) {
   const t = useTranslations();
-  const [instance] = trpc.decision.getInstance.useSuspenseQuery({ instanceId });
 
   const overview = instance.instanceData?.overview;
   const headline = overview?.headline || instance.name;
