@@ -13,14 +13,11 @@ import {
   trackUserPost as trackUserPostOriginal,
 } from '@op/analytics';
 
-import type { TContextWithUser } from '../types';
-
 /**
- * Analytics utilities that automatically inject the user ID for consistent identification
- * This keeps the common service library clean while ensuring all analytics calls use user.id
+ * Analytics utilities that auto-inject `user.id`. Accepts any ctx with a
+ * `user.id` so both auth-tier middlewares can call through.
  */
-
-type AnalyticsContext = TContextWithUser;
+type AnalyticsContext = { user: { id: string } };
 
 /**
  * Track a proposal being liked with automatic context injection

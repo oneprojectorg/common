@@ -29,8 +29,6 @@ export interface TContextWithUser {
   user: User;
 }
 
-/** Context after optional user resolution: `user` is the resolved Supabase
- * identity, or `undefined` when the caller has no valid session. */
 export interface TContextWithMaybeUser {
   user?: User;
 }

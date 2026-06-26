@@ -5,7 +5,7 @@ import {
   organizationUserToAccessRoles,
   organizationUsers,
 } from '@op/db/schema';
-import type { User } from '@supabase/supabase-js';
+import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { NotFoundError } from '../../utils';

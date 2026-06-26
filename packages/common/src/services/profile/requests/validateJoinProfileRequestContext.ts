@@ -6,7 +6,7 @@ import {
   profiles,
   users,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { and, eq, inArray } from 'drizzle-orm';
 
 import { UnauthorizedError, ValidationError } from '../../../utils';

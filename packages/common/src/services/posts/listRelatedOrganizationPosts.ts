@@ -1,6 +1,6 @@
 import { and, db, eq, exists, inArray, isNull } from '@op/db/client';
 import { posts } from '@op/db/schema';
-import type { User } from '@supabase/supabase-js';
+import type { User } from '@op/supabase/lib';
 
 import {
   getCurrentProfileId,

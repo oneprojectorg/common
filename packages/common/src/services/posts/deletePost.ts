@@ -5,7 +5,7 @@ import {
   postsToOrganizations,
   postsToProfiles,
 } from '@op/db/schema';
-import type { User } from '@supabase/supabase-js';
+import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { UnauthorizedError } from '../../utils';

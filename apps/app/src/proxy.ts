@@ -105,13 +105,11 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
       },
     },
   );
-  // Do not run code between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-  // IMPORTANT: DO NOT REMOVE auth.getUser()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // IMPORTANT: DO NOT REMOVE. getClaims() calls _useSession() internally,
+  // which refreshes expired tokens and writes them back through the cookie
+  // adapter; dropping it silently logs users out.
+  const { data: authData } = await supabase.auth.getClaims();
+  const isAuthenticated = Boolean(authData?.claims);
 
   // Reroute when the locale prefix is missing — for both logged-in users and
   // anonymous visitors on non-root paths. Public links like `/columbus` need
@@ -122,7 +120,7 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
   const shouldRouteI18n =
     pathnameIsMissingLocale &&
     !pathname.startsWith('/api') &&
-    (user || pathname !== '/');
+    (isAuthenticated || pathname !== '/');
   if (shouldRouteI18n) {
     const handleI18nRouting = createMiddleware(routing);
 
@@ -157,10 +155,9 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
 // Next.js statically analyzes `config.matcher` at build time and cannot
 // follow cross-file imports (fails with `Unknown identifier ... at
 // config.matcher[0]`), so the matcher must be a plain string literal here.
-// Every path it catches triggers `auth.getUser()` in the proxy above,
-// doubling the GoTrue round-trip per page nav (middleware + tRPC); keep
-// the exclusion list broad enough to skip every route that doesn't need
-// Supabase cookie refresh or i18n-locale redirect.
+// Every path it catches triggers an auth check in the proxy above; keep the
+// exclusion list broad enough to skip routes that don't need cookie refresh
+// or i18n-locale redirect.
 //
 // Skipped path prefixes (no-auth routes):
 //   - Next internals:         _next/static, _next/image

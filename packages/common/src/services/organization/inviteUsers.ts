@@ -9,7 +9,7 @@ import {
   organizationUserToAccessRoles,
   organizationUsers,
 } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { waitUntil } from '@vercel/functions';
 import { permission } from 'access-zones';
 

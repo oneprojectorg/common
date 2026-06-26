@@ -3,7 +3,12 @@
 import { OPURLConfig, cookieOptionsDomain } from '@op/core';
 import { logger } from '@op/logging';
 import { createServerClient } from '@op/supabase/lib';
-import type { CookieOptions, UserResponse } from '@op/supabase/lib';
+import type {
+  AuthError,
+  CookieOptions,
+  JwtPayload,
+  UserResponse,
+} from '@op/supabase/lib';
 import type { Database } from '@op/supabase/types';
 import 'server-only';
 import type { TContext } from '../types';
@@ -11,13 +16,43 @@ import type { TContext } from '../types';
 const useUrl = OPURLConfig('APP');
 
 const authUserCache = new WeakMap<TContext, Promise<UserResponse>>();
+const authClaimsCache = new WeakMap<TContext, Promise<ClaimsResponse>>();
 
+export type ClaimsResponse =
+  | { data: { claims: JwtPayload }; error: null }
+  | { data: null; error: AuthError }
+  | { data: null; error: null };
+
+/**
+ * Authoritative GoTrue lookup. Prefer {@link getCachedAuthClaims} unless the
+ * caller needs fields the JWT does not carry (e.g. `last_sign_in_at`).
+ */
 export function getCachedAuthUser(ctx: TContext): Promise<UserResponse> {
   let promise = authUserCache.get(ctx);
   if (!promise) {
     const supabase = createSBAdminClient(ctx);
     promise = supabase.auth.getUser();
     authUserCache.set(ctx, promise);
+  }
+  return promise;
+}
+
+/**
+ * Local-verify auth lookup via `supabase.auth.getClaims()` — no GoTrue
+ * round-trip for asymmetric JWTs. HS256 transparently falls back to
+ * `auth.getUser()` inside the SDK. Cached per ctx to dedupe within a batch.
+ */
+export function getCachedAuthClaims(ctx: TContext): Promise<ClaimsResponse> {
+  let promise = authClaimsCache.get(ctx);
+  if (!promise) {
+    const supabase = createSBAdminClient(ctx);
+    promise = supabase.auth.getClaims().then((result) => {
+      if (result.data) {
+        return { data: { claims: result.data.claims }, error: null };
+      }
+      return { data: null, error: result.error };
+    });
+    authClaimsCache.set(ctx, promise);
   }
   return promise;
 }

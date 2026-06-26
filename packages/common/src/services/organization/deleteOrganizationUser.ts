@@ -1,7 +1,7 @@
 import { invalidate } from '@op/cache';
 import { and, db, eq } from '@op/db/client';
 import { organizationUsers } from '@op/db/schema';
-import type { User } from '@supabase/supabase-js';
+import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { NotFoundError, UnauthorizedError } from '../../utils';

@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
 import { attachments, posts, postsToOrganizations } from '@op/db/schema';
-import type { User } from '@supabase/supabase-js';
+import type { User } from '@op/supabase/lib';
 
 import { getOrgAccessUser } from '../';
 import { CommonError, UnauthorizedError } from '../../utils/error';

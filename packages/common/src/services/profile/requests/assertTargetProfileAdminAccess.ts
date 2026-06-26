@@ -1,6 +1,6 @@
 import { db } from '@op/db/client';
 import { type Organization, type Profile, organizations } from '@op/db/schema';
-import { User } from '@op/supabase/lib';
+import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 import { eq } from 'drizzle-orm';
 

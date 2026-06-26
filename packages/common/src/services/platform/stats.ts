@@ -1,11 +1,16 @@
 import { cache } from '@op/cache';
 import { db, sql } from '@op/db/client';
-import { User } from '@op/supabase/lib';
 
 const STATS_TTL = 5 * 60 * 1000; // 5 minutes
 
-export const getPlatformStats = async ({ user }: { user: User }) => {
-  const lastLogin = new Date(user.last_sign_in_at ?? 0);
+/** `lastSignInAt` anchors the "new organizations since you were last here"
+ * cache window. */
+export const getPlatformStats = async ({
+  lastSignInAt,
+}: {
+  lastSignInAt: string | null | undefined;
+}) => {
+  const lastLogin = new Date(lastSignInAt ?? 0);
   const newOrgThreshold = new Date(lastLogin.setDate(lastLogin.getDate() - 7));
   newOrgThreshold.setHours(0, 0, 0, 0);
 

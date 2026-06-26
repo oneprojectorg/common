@@ -1,18 +1,23 @@
-import { getCachedAuthUser } from '../supabase/server';
+import { getCachedAuthClaims } from '../supabase/server';
 import type { MiddlewareBuilderBase, TContextWithMaybeUser } from '../types';
+import { userFromClaims } from '../utils/userFromClaims';
 
 /**
- * Resolves the caller's Supabase identity onto `ctx.user` (including anonymous
- * sign-ins) without rejecting anyone; `ctx.user` is `undefined` when there is
- * no valid session. Performs no authorization.
+ * Resolves the caller's identity onto `ctx.user` (including anonymous
+ * sign-ins) via local JWKS verification — no GoTrue round-trip. `ctx.user` is
+ * `undefined` when there is no valid session; authorization happens further
+ * down the chain.
  */
 const withResolvedUser: MiddlewareBuilderBase<TContextWithMaybeUser> = async ({
   ctx,
   next,
 }) => {
-  const data = await getCachedAuthUser(ctx);
+  const result = await getCachedAuthClaims(ctx);
 
-  const user = data && !data.error ? data.data.user : undefined;
+  const user =
+    result.data && !result.error
+      ? userFromClaims(result.data.claims)
+      : undefined;
 
   return next({
     ctx: { ...ctx, user },
