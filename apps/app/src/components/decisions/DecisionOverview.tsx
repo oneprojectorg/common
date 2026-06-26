@@ -271,5 +271,5 @@ const OverviewAbout = ({
     return null;
   }
 
-  return <section className="flex flex-col gap-4">{body}</section>;
+  return body;
 };
