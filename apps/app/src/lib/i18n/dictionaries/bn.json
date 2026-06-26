@@ -1366,5 +1366,7 @@
   "With an account": "অ্যাকাউন্ট দিয়ে",
   "Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.": "পর্যালোচনা শুরু হওয়ার আগে আপনার আইডিয়া সম্পাদনা করুন, এটি পরবর্তী ধাপে গেলে বিজ্ঞপ্তি পান, এবং অন্যান্য আইডিয়া পছন্দ করুন, মন্তব্য করুন ও অনুসরণ করুন।",
   "Create account": "অ্যাকাউন্ট তৈরি করুন",
-  "Collapsible": "সংকোচনযোগ্য"
+  "Collapsible": "সংকোচনযোগ্য",
+  "We couldn't load this proposal": "আমরা এই প্রস্তাবটি লোড করতে পারিনি",
+  "Something went wrong on our end. Please check your connection and try again.": "আমাদের প্রান্তে কিছু ভুল হয়েছে। দয়া করে আপনার সংযোগ পরীক্ষা করুন এবং আবার চেষ্টা করুন।"
 }

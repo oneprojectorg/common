@@ -1363,5 +1363,7 @@
   "With an account": "باستخدام حساب",
   "Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.": "عدّل فكرتك قبل بدء المراجعة، واحصل على إشعار عند انتقالها إلى المرحلة التالية، وأعجب بالأفكار الأخرى وعلّق عليها وتابعها.",
   "Create account": "إنشاء حساب",
-  "Collapsible": "قابل للطي"
+  "Collapsible": "قابل للطي",
+  "We couldn't load this proposal": "تعذر علينا تحميل هذا المقترح",
+  "Something went wrong on our end. Please check your connection and try again.": "حدث خطأ من جانبنا. يرجى التحقق من اتصالك والمحاولة مرة أخرى."
 }

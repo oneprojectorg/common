@@ -5,8 +5,8 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { DocumentNotAvailable } from '@/components/decisions/DocumentNotAvailable';
 import { ProposalEditor } from '@/components/decisions/proposalEditor';
+import { ProposalEditorError } from '@/components/decisions/proposalEditor/ProposalEditorError';
 
 function ProposalEditPageContent({
   profileId,
@@ -74,7 +74,7 @@ export const LegacyProposalEditClient = ({
   decisionSlug: string;
 }) => {
   return (
-    <ErrorBoundary fallback={<DocumentNotAvailable />}>
+    <ErrorBoundary fallback={<ProposalEditorError />}>
       <Suspense fallback={<ProposalEditPageSkeleton />}>
         <ProposalEditPageContent
           profileId={profileId}
