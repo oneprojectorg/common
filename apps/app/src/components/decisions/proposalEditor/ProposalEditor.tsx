@@ -467,7 +467,7 @@ function ProposalEditorInner({
           </SplitPane>
         ) : (
           <div className="flex flex-1 flex-col gap-12 py-12">
-            <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-6">
+            <div className="mx-auto flex w-full max-w-xl flex-col gap-4 px-6">
               {editorBody}
             </div>
           </div>
