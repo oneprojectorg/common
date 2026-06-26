@@ -234,7 +234,7 @@ const OverviewHero = ({
                 onPress={createProposal}
               >
                 {isCreating ? <LoadingSpinner /> : null}
-                {t('Submit a proposal')}
+                {t('Start a proposal')}
               </Button>
             ) : null}
           </div>
