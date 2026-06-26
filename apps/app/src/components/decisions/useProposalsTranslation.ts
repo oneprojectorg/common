@@ -2,18 +2,30 @@
 
 import { trpc } from '@op/api/client';
 import {
+  type PostTranslation,
   type Proposal,
   type ProposalTranslation,
+  type ResourceTranslation,
   SUPPORTED_LOCALES,
   type SupportedLocale,
 } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import { useLocale } from 'next-intl';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { useSetDecisionTranslation } from './DecisionTranslationContext';
+
+type DecisionTranslationPatch = Partial<{
+  headline: string;
+  phaseDescription: string;
+  additionalInfo: string;
+  description: string;
+  phases: Array<{ id: string; name: string }>;
+  posts: Record<string, PostTranslation>;
+  resources: Record<string, ResourceTranslation>;
+}>;
 
 // fallow-ignore-next-line complexity
 export const useProposalsTranslation = ({
@@ -37,25 +49,60 @@ export const useProposalsTranslation = ({
     sourceLocale: string;
   } | null>(null);
   const setDecisionTranslation = useSetDecisionTranslation();
+  // Flipped true on Translate, false on View Original. Late mutation
+  // responses check this before mutating state, so a click on View Original
+  // can't be steamrolled by a translate response that lands after the revert.
+  const translatingRef = useRef(false);
+
+  const seedTranslationState = useCallback((sourceLocale: string) => {
+    if (!sourceLocale) {
+      return;
+    }
+    setTranslationState((prev) =>
+      prev ? prev : { translations: {}, sourceLocale },
+    );
+  }, []);
+
+  const patchDecisionTranslation = useCallback(
+    (patch: DecisionTranslationPatch) => {
+      setDecisionTranslation((prev) => ({
+        headline: patch.headline ?? prev?.headline,
+        phaseDescription: patch.phaseDescription ?? prev?.phaseDescription,
+        additionalInfo: patch.additionalInfo ?? prev?.additionalInfo,
+        description: patch.description ?? prev?.description,
+        phases: patch.phases ?? prev?.phases ?? [],
+        posts: { ...(prev?.posts ?? {}), ...(patch.posts ?? {}) },
+        resources: { ...(prev?.resources ?? {}), ...(patch.resources ?? {}) },
+      }));
+    },
+    [setDecisionTranslation],
+  );
+
+  const onTranslateError = useCallback(() => {
+    toast.error({ message: t('Failed to translate content') });
+  }, [t]);
 
   const translateBatchMutation =
     trpc.translation.translateProposals.useMutation({
       onSuccess: (data) => {
+        if (!translatingRef.current) {
+          return;
+        }
         setTranslationState({
           translations: data.translations,
           sourceLocale: data.sourceLocale,
         });
       },
+      onError: onTranslateError,
     });
 
   const translateDecisionMutation =
     trpc.translation.translateDecision.useMutation({
       onSuccess: (data) => {
-        if (data.sourceLocale) {
-          setTranslationState((prev) =>
-            prev ? prev : { translations: {}, sourceLocale: data.sourceLocale },
-          );
+        if (!translatingRef.current) {
+          return;
         }
+        seedTranslationState(data.sourceLocale);
         if (
           !data.headline &&
           !data.phaseDescription &&
@@ -65,7 +112,7 @@ export const useProposalsTranslation = ({
         ) {
           return;
         }
-        setDecisionTranslation({
+        patchDecisionTranslation({
           headline: data.headline,
           phaseDescription: data.phaseDescription,
           additionalInfo: data.additionalInfo,
@@ -73,15 +120,43 @@ export const useProposalsTranslation = ({
           phases: data.phases,
         });
       },
-      onError: () => {
-        toast.error({ message: t('Failed to translate content') });
+      onError: onTranslateError,
+    });
+
+  const translatePostsMutation = trpc.translation.translatePosts.useMutation({
+    onSuccess: (data) => {
+      if (!translatingRef.current) {
+        return;
+      }
+      seedTranslationState(data.sourceLocale);
+      if (Object.keys(data.translations).length === 0) {
+        return;
+      }
+      patchDecisionTranslation({ posts: data.translations });
+    },
+    onError: onTranslateError,
+  });
+
+  const translateResourcesMutation =
+    trpc.translation.translateResources.useMutation({
+      onSuccess: (data) => {
+        if (!translatingRef.current) {
+          return;
+        }
+        seedTranslationState(data.sourceLocale);
+        if (Object.keys(data.translations).length === 0) {
+          return;
+        }
+        patchDecisionTranslation({ resources: data.translations });
       },
+      onError: onTranslateError,
     });
 
   const handleTranslate = useCallback(() => {
     if (!supportedLocale) {
       return;
     }
+    translatingRef.current = true;
     const profileIds = allProposals.map((p) => p.profileId);
     if (profileIds.length) {
       translateBatchMutation.mutate({
@@ -94,16 +169,27 @@ export const useProposalsTranslation = ({
         decisionProfileId,
         targetLocale: supportedLocale,
       });
+      translatePostsMutation.mutate({
+        profileId: decisionProfileId,
+        targetLocale: supportedLocale,
+      });
+      translateResourcesMutation.mutate({
+        profileId: decisionProfileId,
+        targetLocale: supportedLocale,
+      });
     }
   }, [
     translateBatchMutation,
     translateDecisionMutation,
+    translatePostsMutation,
+    translateResourcesMutation,
     allProposals,
     supportedLocale,
     decisionProfileId,
   ]);
 
   const handleViewOriginal = useCallback(() => {
+    translatingRef.current = false;
     setTranslationState(null);
     setDecisionTranslation(null);
   }, [setDecisionTranslation]);
@@ -133,6 +219,10 @@ export const useProposalsTranslation = ({
     handleTranslate,
     handleViewOriginal,
     dismissBanner: () => setBannerDismissed(true),
-    isTranslating: translateBatchMutation.isPending,
+    isTranslating:
+      translateBatchMutation.isPending ||
+      translateDecisionMutation.isPending ||
+      translatePostsMutation.isPending ||
+      translateResourcesMutation.isPending,
   };
 };

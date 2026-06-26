@@ -1,6 +1,13 @@
 'use client';
 
-import { createContext, useContext, useState } from 'react';
+import type { PostTranslation, ResourceTranslation } from '@op/common/client';
+import {
+  type Dispatch,
+  type SetStateAction,
+  createContext,
+  useContext,
+  useState,
+} from 'react';
 
 interface DecisionTranslation {
   headline?: string;
@@ -8,11 +15,13 @@ interface DecisionTranslation {
   additionalInfo?: string;
   description?: string;
   phases: Array<{ id: string; name: string }>;
+  posts: Record<string, PostTranslation>;
+  resources: Record<string, ResourceTranslation>;
 }
 
 interface DecisionTranslationContextValue {
   translation: DecisionTranslation | null;
-  setTranslation: (translation: DecisionTranslation | null) => void;
+  setTranslation: Dispatch<SetStateAction<DecisionTranslation | null>>;
 }
 
 const DecisionTranslationContext =
@@ -36,19 +45,19 @@ export function DecisionTranslationProvider({
   );
 }
 
+/**
+ * Returns the current decision translation, or null when no provider is
+ * mounted or no translation has been requested. Safe to call from components
+ * that render both inside (decision view) and outside (profile feed, comments
+ * modal, proposal detail page) the provider.
+ */
 export function useDecisionTranslation(): DecisionTranslation | null {
-  const ctx = useContext(DecisionTranslationContext);
-  if (!ctx) {
-    throw new Error(
-      'useDecisionTranslation must be used within a DecisionTranslationProvider',
-    );
-  }
-  return ctx.translation;
+  return useContext(DecisionTranslationContext)?.translation ?? null;
 }
 
-export function useSetDecisionTranslation(): (
-  translation: DecisionTranslation | null,
-) => void {
+export function useSetDecisionTranslation(): Dispatch<
+  SetStateAction<DecisionTranslation | null>
+> {
   const ctx = useContext(DecisionTranslationContext);
   if (!ctx) {
     throw new Error(
