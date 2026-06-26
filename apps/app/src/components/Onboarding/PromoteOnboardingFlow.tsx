@@ -36,7 +36,7 @@ const ProgressInPortal = (props: ProgressComponentProps) => (
 
 /**
  * Onboarding for an anonymous visitor who just upgraded (see LinkAccountPanel /
- * PromoteAccountModal), reached at `/start?promote=1`. Skips org joining:
+ * PromoteAccountModal), reached at `/start?promote=true`. Skips org joining:
  * personal details, accept ToS, then hard-navigate back to the decision with a
  * fresh cache.
  */

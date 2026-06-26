@@ -5,7 +5,8 @@ import { trpc } from '@op/api/client';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { StepperProgressIndicator } from '@op/ui/Stepper';
 import { toast } from '@op/ui/Toast';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { parseAsBoolean, useQueryState } from 'nuqs';
 import React, { useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
 
@@ -91,8 +92,10 @@ export const OnboardingFlow = () => {
 
   // Promote flow (just-upgraded anon visitor) skips org joining; that journey
   // lives in PromoteOnboardingFlow.
-  const searchParams = useSearchParams();
-  const isPromoteFlow = searchParams.get('promote') === '1';
+  const [isPromoteFlow] = useQueryState(
+    'promote',
+    parseAsBoolean.withDefault(false),
+  );
 
   // Handle hydration detection
   React.useEffect(() => {
