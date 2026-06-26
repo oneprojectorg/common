@@ -88,9 +88,8 @@ export function ResponsiveSelect<T extends string>({
                 <MenuItem
                   key={item.id}
                   id={item.id}
-                  selected={selectedKey === item.id}
                   isDisabled={item.isDisabled}
-                  className={`px-6 py-4 ${index === 0 ? 'rounded-t-2xl rounded-b-none' : 'rounded-none'} ${index < items.length - 1 ? 'border-b border-neutral-gray1' : ''}`}
+                  className={`bg-transparent px-6 py-4 outline-0 focus-visible:bg-primary-tealWhite focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-primary-teal ${index === 0 ? 'rounded-t-2xl rounded-b-none' : 'rounded-none'} ${index < items.length - 1 ? 'border-b border-neutral-gray1' : ''}`}
                   onAction={() => {
                     onSelectionChange(item.id);
                     setIsOpen(false);
