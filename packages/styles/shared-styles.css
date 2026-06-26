@@ -730,7 +730,7 @@
    * tags it with `is-focused`; gate on `.ProseMirror-focused` so it only paints
    * while the editor is focused. */
   div.details.is-focused {
-    @apply bg-neutral-gray1/60 shadow-[12px_0_0_2px_hsla(180,2.9%,93.1%,0.6),-8px_0_0_2px_hsla(180,2.9%,93.1%,0.6)];
+    @apply bg-neutral-gray1/60 shadow-[12px_0_0_hsla(180,2.9%,93.1%,0.6),-8px_0_0_hsla(180,2.9%,93.1%,0.6)];
   }
   div.details > button {
     @apply mt-3 cursor-pointer border-0 p-0;
@@ -752,7 +752,7 @@
    * chevron back into that gutter with `-ms-6`, so wrapped lines align under the
    * first line's text instead of under the chevron. */
   details.details > summary {
-    @apply cursor-pointer ps-6;
+    @apply cursor-pointer ps-6 hover:underline;
   }
   details.details > summary::before {
     @apply -ms-6 me-2 inline-block align-middle;
