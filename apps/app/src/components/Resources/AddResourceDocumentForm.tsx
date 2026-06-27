@@ -169,7 +169,7 @@ export const AddResourceDocumentForm = ({
                   size="small"
                   onPress={handleRemoveFile}
                   isDisabled={uploading}
-                  className="absolute top-2 right-2 bg-white/90 shadow-sm hover:bg-white"
+                  className="absolute end-2 top-2 bg-white/90 shadow-sm hover:bg-white"
                   aria-label={t('Remove file')}
                 >
                   <LuX className="size-5" />

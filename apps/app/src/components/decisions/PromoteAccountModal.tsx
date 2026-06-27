@@ -91,7 +91,7 @@ const PromoteAccountModalContent = ({
       </div>
 
       <div className="flex flex-col gap-4">
-        <section className="flex flex-col gap-2.5 rounded-xl border border-neutral-gray1 bg-white p-4 text-left">
+        <section className="flex flex-col gap-2.5 rounded-xl border border-neutral-gray1 bg-white p-4 text-start">
           <div className="flex items-center gap-1">
             <LuUserRoundMinus
               className="size-4 text-neutral-charcoal"
@@ -132,7 +132,7 @@ const PromoteAccountModalContent = ({
           </Button>
         </section>
 
-        <section className="flex flex-col gap-2.5 rounded-xl border border-neutral-gray1 bg-neutral-off-white p-4 text-left">
+        <section className="flex flex-col gap-2.5 rounded-xl border border-neutral-gray1 bg-neutral-off-white p-4 text-start">
           <div className="flex items-center gap-1">
             <LuUserRoundPlus
               className="size-4 text-neutral-charcoal"

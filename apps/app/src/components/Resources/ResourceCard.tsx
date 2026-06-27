@@ -163,7 +163,7 @@ const ResourceCardShell = ({
       <p
         className={cn(
           'truncate font-serif text-title-sm text-neutral-black',
-          trailing && 'pr-8',
+          trailing && 'pe-8',
         )}
       >
         {title}
@@ -198,7 +198,7 @@ const ResourceCardShell = ({
         body
       )}
       {trailing ? (
-        <div className="absolute top-3 right-3 rounded-full bg-white/80 p-1">
+        <div className="absolute end-3 top-3 rounded-full bg-white/80 p-1">
           {trailing}
         </div>
       ) : null}
