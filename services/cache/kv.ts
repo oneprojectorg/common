@@ -83,16 +83,18 @@ const TypeMap = {
 type CacheParam = string | number | boolean | undefined | null | string[];
 type CacheParams = CacheParam[];
 
-// Types whose first param contains '/' as meaningful structure (URLs, file
-// paths) and must NOT be collapsed to the last segment. The default slug
-// collapse exists so CMS pages can move without a 404, but it would cause
-// cross-key collisions for URLs / paths.
-const FULL_KEY_TYPES: ReadonlySet<keyof typeof TypeMap> = new Set([
-  'linkPreview',
-  'resourceSignedUrl',
+// Slug-based types whose first param may move (e.g. an org/profile slug
+// rename) and so should collapse to the last `/`-separated segment, keeping
+// the cache entry valid across the move. Every other type — search queries,
+// geonames, URLs, file paths, UUIDs — uses the full first param verbatim,
+// because two distinct inputs sharing a trailing segment (`food/coop` vs
+// `civic/coop`) must NOT collide on the same key.
+const SLUG_COLLAPSE_TYPES: ReadonlySet<keyof typeof TypeMap> = new Set([
+  'organization',
+  'profile',
 ]);
 
-const getCacheKey = (
+export const getCacheKey = (
   type: keyof typeof TypeMap,
   appKey: string | undefined,
   params: CacheParams,
@@ -107,13 +109,9 @@ const getCacheKey = (
     .filter(Boolean);
   const [fullSlug, ...otherParams] = stringParams;
 
-  // For slug-based types only: keep the last path segment so a page can be
-  // moved without invalidating its cache. For URL/path types, use the full
-  // value verbatim (two different URLs with the same trailing segment must
-  // not collide).
-  const slug = FULL_KEY_TYPES.has(type)
-    ? (fullSlug ?? '')
-    : (fullSlug?.split('/').slice(-1)[0] ?? '');
+  const slug = SLUG_COLLAPSE_TYPES.has(type)
+    ? (fullSlug?.split('/').slice(-1)[0] ?? '')
+    : (fullSlug ?? '');
   return `${apiVersion}/${resolvedAppKey}/${key}/${slug}${
     otherParams?.length ? `:${otherParams.join(':')}` : ''
   }`;
