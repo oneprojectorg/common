@@ -41,7 +41,7 @@ export function FinalPhaseManualSelectionPage({
       </div>
 
       <div className="mt-8 flex w-full justify-center border-t bg-white">
-        <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
+        <div className="w-full p-4 sm:max-w-6xl sm:p-8">
           <div className="flex flex-col gap-6">
             <APIErrorBoundary
               fallbacks={{
