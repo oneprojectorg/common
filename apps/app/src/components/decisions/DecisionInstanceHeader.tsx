@@ -86,7 +86,7 @@ export const DecisionInstanceHeader = ({
             </Header1>
           </>
         ) : (
-          <Header1 className="font-serif text-title-sm text-neutral-charcoal sm:text-title-sm">
+          <Header1 className="truncate font-serif text-title-sm text-neutral-charcoal sm:text-title-sm">
             <bdi>{title}</bdi>
           </Header1>
         )}
