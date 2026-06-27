@@ -52,7 +52,7 @@ export function ProposalCard({
     <Surface
       variant={isDraft ? 'filled' : 'empty'}
       className={cn(
-        'relative flex w-full min-w-80 flex-col justify-between gap-3 p-4',
+        'relative flex w-full flex-col justify-between gap-3 p-4 md:min-w-80',
         className,
       )}
       {...props}
