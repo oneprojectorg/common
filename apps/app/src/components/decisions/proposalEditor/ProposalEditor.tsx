@@ -39,6 +39,7 @@ import { ProposalEditorSkeleton } from '../ProposalEditorSkeleton';
 import { ProposalInfoModal } from '../ProposalInfoModal';
 import { compileProposalSchema } from '../forms/proposal';
 import { schemaHasOptions } from '../proposalTemplate';
+import { CustomFormModal, type CustomFormValues } from './CustomFormModal';
 import { ProposalFormRenderer } from './ProposalFormRenderer';
 import { RevisionFeedbackPanel } from './RevisionFeedbackPanel';
 import { useOptionalVersionPreview } from './VersionPreviewContext';
@@ -203,10 +204,20 @@ function ProposalEditorInner({
 
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCustomFormModal, setShowCustomFormModal] = useState(false);
   const isPreviewMode = Boolean(versionPreview);
   const pendingVersionTimeoutRef = useRef<number | null>(null);
 
   const isDraft = isEditMode && proposal?.status === ProposalStatus.DRAFT;
+
+  // Look up the optional post-submit form attached to this decision profile.
+  // The form, not the slug, gates the modal — any decision profile can opt
+  // in by having a `custom_forms` row.
+  const { data: customForm } = trpc.customForm.getForProfile.useQuery(
+    { profileId: instance.profileId ?? '' },
+    { enabled: Boolean(instance.profileId) && isDraft },
+  );
+  const customFormEnabled = Boolean(customForm) && isDraft;
 
   // -- Instance config -------------------------------------------------------
 
@@ -254,6 +265,8 @@ function ProposalEditorInner({
     onError: (error) => handleMutationError(error, 'update', t),
   });
 
+  const submitCustomFormMutation = trpc.customForm.submit.useMutation();
+
   // -- UI state handlers -----------------------------------------------------
 
   const handleCloseInfoModal = () => setShowInfoModal(false);
@@ -297,6 +310,28 @@ function ProposalEditorInner({
       }
     };
   }, [isPreviewMode, isSynced, provider, ydoc]);
+
+  const finalizeSubmit = useCallback(async () => {
+    const didSubmitDraft = isDraft && Boolean(proposal);
+    if (didSubmitDraft && proposal) {
+      await submitProposalMutation.mutateAsync({
+        proposalId: proposal.id,
+      });
+    }
+
+    router.push(
+      didSubmitDraft && isAnonymous && proposal
+        ? `${backHref}?promote=1&proposal=${proposal.profileId}`
+        : backHref,
+    );
+  }, [
+    isDraft,
+    proposal,
+    submitProposalMutation,
+    router,
+    isAnonymous,
+    backHref,
+  ]);
 
   const handleSubmitProposal = useCallback(async () => {
     const currentDraft = draftRef.current;
@@ -343,19 +378,14 @@ function ProposalEditorInner({
         },
       });
 
-      let didSubmitDraft = false;
-      if (isDraft) {
-        await submitProposalMutation.mutateAsync({
-          proposalId: proposal.id,
-        });
-        didSubmitDraft = true;
+      // On instances with a post-submit custom form, defer the actual draft
+      // submission until the user fills in (or dismisses) the form.
+      if (customFormEnabled) {
+        setShowCustomFormModal(true);
+        return;
       }
 
-      router.push(
-        didSubmitDraft && isAnonymous
-          ? `${backHref}?promote=1&proposal=${proposal.profileId}`
-          : backHref,
-      );
+      await finalizeSubmit();
     } catch (error) {
       console.error('Failed to update proposal:', error);
     } finally {
@@ -366,14 +396,35 @@ function ProposalEditorInner({
     collaborationDocId,
     proposal,
     isDraft,
-    isAnonymous,
-    backHref,
-    router,
-    submitProposalMutation,
+    customFormEnabled,
     updateProposalMutation,
     draftRef,
     validate,
+    finalizeSubmit,
   ]);
+
+  const handleCustomFormSubmit = useCallback(
+    async (values: CustomFormValues) => {
+      if (!customForm || !proposal) {
+        return;
+      }
+      setIsSubmitting(true);
+      try {
+        await submitCustomFormMutation.mutateAsync({
+          customFormId: customForm.id,
+          profileId: proposal.profileId,
+          data: values,
+        });
+        await finalizeSubmit();
+        setShowCustomFormModal(false);
+      } catch (error) {
+        console.error('Failed to submit custom form:', error);
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [customForm, proposal, submitCustomFormMutation, finalizeSubmit],
+  );
 
   // -- Render ----------------------------------------------------------------
 
@@ -482,6 +533,20 @@ function ProposalEditorInner({
           onClose={handleCloseInfoModal}
           title={proposalInfoTitle}
           content={proposalInfoContent}
+        />
+      )}
+
+      {customFormEnabled && customForm && (
+        <CustomFormModal
+          isOpen={showCustomFormModal}
+          onOpenChange={(open) => {
+            if (!isSubmitting) {
+              setShowCustomFormModal(open);
+            }
+          }}
+          schema={customForm.schema}
+          isSubmitting={isSubmitting}
+          onSubmit={handleCustomFormSubmit}
         />
       )}
     </ProposalEditorLayout>

@@ -1,6 +1,7 @@
 import { router } from '../trpcFactory';
 import accountRouter from './account';
 import { contentRouter } from './content';
+import { customFormsRouter } from './customForms';
 import { decisionRouter } from './decision';
 import individualRouter from './individual';
 import { moderationRouter } from './moderation';
@@ -20,6 +21,7 @@ export const appRouter = router({
   taxonomy: taxonomyRouter,
   content: contentRouter,
   posts: postsRouter,
+  customForm: customFormsRouter,
   decision: decisionRouter,
   moderation: moderationRouter,
   platform: platformRouter,

@@ -1,5 +1,6 @@
 export * from './access';
 export * from './attachments';
+export * from './customForms';
 export * from './decision';
 export * from './joinProfileRequests';
 export * from './links';
