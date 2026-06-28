@@ -69,6 +69,11 @@ export {
 
 export { attachments, attachmentsRelations } from './tables/attachments.sql';
 
+export { customForms } from './tables/customForms.sql';
+export type { CustomForm } from './tables/customForms.sql';
+export { customFormSubmissions } from './tables/customFormSubmissions.sql';
+export type { CustomFormSubmission } from './tables/customFormSubmissions.sql';
+
 export { resourceCollections } from './tables/resourceCollections.sql';
 export type { ResourceCollection } from './tables/resourceCollections.sql';
 

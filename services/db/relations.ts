@@ -141,6 +141,43 @@ export const relations = defineRelations(schema, (r) => ({
   },
 
   /**
+   * Custom Form relations
+   */
+  customForms: {
+    profile: r.one.profiles({
+      from: r.customForms.profileId,
+      to: r.profiles.id,
+      alias: 'customForm_profile',
+      optional: false,
+    }),
+    submissions: r.many.customFormSubmissions({
+      from: r.customForms.id,
+      to: r.customFormSubmissions.customFormId,
+    }),
+  },
+
+  /**
+   * Custom Form Submission relations
+   *
+   * `profile` is the target entity's profile (e.g. the proposal's
+   * `profileId`) paired with `entityType` to resolve what the submission is
+   * attached to.
+   */
+  customFormSubmissions: {
+    customForm: r.one.customForms({
+      from: r.customFormSubmissions.customFormId,
+      to: r.customForms.id,
+      optional: false,
+    }),
+    profile: r.one.profiles({
+      from: r.customFormSubmissions.profileId,
+      to: r.profiles.id,
+      alias: 'customFormSubmission_profile',
+      optional: false,
+    }),
+  },
+
+  /**
    * Proposal Attachment relations (join table)
    *
    * Links proposals to their attachments with uploader info.
