@@ -3,6 +3,7 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  type ErrorEvent,
   Layer,
   type LayerProps,
   Map as MapLibreMap,
@@ -39,10 +40,11 @@ export interface MapProps {
   /** Full map style URL (e.g. a MapTiler `style.json?key=...`). */
   styleUrl: string;
   /**
-   * Optional second style URL used as a runtime fallback if MapLibre fails to
-   * load `styleUrl` (e.g. MapTiler returning 403/429 after running out of
-   * credits). The swap happens once per `styleUrl` change; tile errors after
-   * the style has loaded successfully don't trigger it.
+   * Optional second style URL used as a runtime fallback if MapLibre's
+   * initial request for `styleUrl` returns an HTTP 4xx/5xx (e.g. MapTiler
+   * quota exhausted, key revoked). The swap happens once per `styleUrl`
+   * change; non-HTTP errors and tile errors after the style has loaded
+   * successfully don't trigger it.
    */
   fallbackStyleUrl?: string;
   /**
@@ -106,31 +108,48 @@ export function Map({
   // same point on mount (a pointless 3s animation).
   const hasMountedRef = useRef(false);
 
-  // Runtime style fallback: render `styleUrl` first, and on the first error
-  // before MapLibre fires `load` (i.e. the style itself failed to fetch) swap
-  // to `fallbackStyleUrl`. Refs guard against double-swapping when the error
-  // event fires repeatedly, and reset when `styleUrl` changes (e.g. a key
-  // rotation re-arms the primary).
-  const [activeStyleUrl, setActiveStyleUrl] = useState(styleUrl);
+  // Runtime style fallback: render `styleUrl` first, and on the first HTTP
+  // failure before MapLibre fires `load` (i.e. the style itself returned
+  // 4xx/5xx) swap to `fallbackStyleUrl`. `fellBack` derives the active URL
+  // directly to avoid mirroring a prop into state; `styleLoadedRef` only
+  // gates `handleError` so it stays a ref to skip the extra render on load.
+  // Both reset when `styleUrl` changes (e.g. a key rotation re-arms the
+  // primary).
+  const [fellBack, setFellBack] = useState(false);
   const styleLoadedRef = useRef(false);
-  const fellBackRef = useRef(false);
+  const activeStyleUrl =
+    fellBack && fallbackStyleUrl ? fallbackStyleUrl : styleUrl;
   useEffect(() => {
-    setActiveStyleUrl(styleUrl);
+    setFellBack(false);
     styleLoadedRef.current = false;
-    fellBackRef.current = false;
   }, [styleUrl]);
 
   const handleLoad = useCallback(() => {
     styleLoadedRef.current = true;
   }, []);
 
-  const handleError = useCallback(() => {
-    if (!fallbackStyleUrl || fellBackRef.current || styleLoadedRef.current) {
-      return;
-    }
-    fellBackRef.current = true;
-    setActiveStyleUrl(fallbackStyleUrl);
-  }, [fallbackStyleUrl]);
+  const handleError = useCallback(
+    (event: ErrorEvent) => {
+      if (!fallbackStyleUrl || fellBack || styleLoadedRef.current) {
+        return;
+      }
+      // Only fall back on HTTP failures — MapLibre's `AJAXError` exposes
+      // `.status` on the underlying Error when the network request 4xx/5xx'd
+      // (quota exhausted, auth expired). Errors without a numeric status
+      // (WebGL context loss, parse errors, transient single-glyph blips on
+      // the same host) leave the primary basemap in place.
+      const error = event.error;
+      if (
+        !('status' in error) ||
+        typeof error.status !== 'number' ||
+        error.status < 400
+      ) {
+        return;
+      }
+      setFellBack(true);
+    },
+    [fallbackStyleUrl, fellBack],
+  );
 
   // Fit the camera to `bounds` whenever they change (e.g. the marker set is
   // filtered). Takes precedence over `center`/`zoom`.
