@@ -1,7 +1,7 @@
 'use client';
 
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Layer,
   type LayerProps,
@@ -38,6 +38,13 @@ const BOUNDS_FIT_MAX_ZOOM = 15;
 export interface MapProps {
   /** Full map style URL (e.g. a MapTiler `style.json?key=...`). */
   styleUrl: string;
+  /**
+   * Optional second style URL used as a runtime fallback if MapLibre fails to
+   * load `styleUrl` (e.g. MapTiler returning 403/429 after running out of
+   * credits). The swap happens once per `styleUrl` change; tile errors after
+   * the style has loaded successfully don't trigger it.
+   */
+  fallbackStyleUrl?: string;
   /**
    * Camera target. Changing this flies the map to the new location — use it
    * for programmatic recentering (search, "use my location"). It is kept
@@ -80,6 +87,7 @@ export interface MapProps {
  */
 export function Map({
   styleUrl,
+  fallbackStyleUrl,
   center,
   zoom = 14,
   bounds,
@@ -97,6 +105,32 @@ export function Map({
   // first effect run — otherwise the map flies from the initial center to the
   // same point on mount (a pointless 3s animation).
   const hasMountedRef = useRef(false);
+
+  // Runtime style fallback: render `styleUrl` first, and on the first error
+  // before MapLibre fires `load` (i.e. the style itself failed to fetch) swap
+  // to `fallbackStyleUrl`. Refs guard against double-swapping when the error
+  // event fires repeatedly, and reset when `styleUrl` changes (e.g. a key
+  // rotation re-arms the primary).
+  const [activeStyleUrl, setActiveStyleUrl] = useState(styleUrl);
+  const styleLoadedRef = useRef(false);
+  const fellBackRef = useRef(false);
+  useEffect(() => {
+    setActiveStyleUrl(styleUrl);
+    styleLoadedRef.current = false;
+    fellBackRef.current = false;
+  }, [styleUrl]);
+
+  const handleLoad = useCallback(() => {
+    styleLoadedRef.current = true;
+  }, []);
+
+  const handleError = useCallback(() => {
+    if (!fallbackStyleUrl || fellBackRef.current || styleLoadedRef.current) {
+      return;
+    }
+    fellBackRef.current = true;
+    setActiveStyleUrl(fallbackStyleUrl);
+  }, [fallbackStyleUrl]);
 
   // Fit the camera to `bounds` whenever they change (e.g. the marker set is
   // filtered). Takes precedence over `center`/`zoom`.
@@ -133,7 +167,9 @@ export function Map({
     <div className={cn('relative h-44 w-full sm:h-80', className)}>
       <MapLibreMap
         ref={mapRef}
-        mapStyle={styleUrl}
+        mapStyle={activeStyleUrl}
+        onLoad={handleLoad}
+        onError={handleError}
         initialViewState={
           bounds
             ? {

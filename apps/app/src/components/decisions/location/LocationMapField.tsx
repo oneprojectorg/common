@@ -11,7 +11,11 @@ import { useTranslations } from '@/lib/i18n';
 
 import { LocationSearchField } from './LocationSearchField';
 import { MapCanvas } from './dynamicMap';
-import { DEFAULT_MAP_CENTER, MAP_STYLE_URL } from './mapConfig';
+import {
+  DEFAULT_MAP_CENTER,
+  MAP_STYLE_FALLBACK_URL,
+  MAP_STYLE_URL,
+} from './mapConfig';
 import { useProjectAreaCheck } from './useProjectAreaCheck';
 
 interface LocationMapFieldProps {
@@ -152,6 +156,7 @@ export function LocationMapField({
       >
         <MapCanvas
           styleUrl={MAP_STYLE_URL}
+          fallbackStyleUrl={MAP_STYLE_FALLBACK_URL}
           center={center}
           zoom={value ? undefined : defaultMapView?.zoom}
           marker={value ? { lng: value.lng, lat: value.lat } : null}

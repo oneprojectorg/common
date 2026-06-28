@@ -10,7 +10,7 @@ import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { ProposalMapListItem } from './ProposalMapListItem';
 import { ProposalsMapCanvas } from './location/dynamicProposalsMap';
-import { MAP_STYLE_URL } from './location/mapConfig';
+import { MAP_STYLE_FALLBACK_URL, MAP_STYLE_URL } from './location/mapConfig';
 
 interface ProposalsMapViewProps {
   proposals: Proposal[];
@@ -83,6 +83,7 @@ export function ProposalsMapView({
   const map = (
     <ProposalsMapCanvas
       styleUrl={MAP_STYLE_URL}
+      fallbackStyleUrl={MAP_STYLE_FALLBACK_URL}
       center={mapView.center}
       zoom={mapView.zoom}
       points={points}

@@ -12,6 +12,7 @@ export interface ProposalMapPoint {
 
 export interface ProposalsMapCanvasProps {
   styleUrl: string;
+  fallbackStyleUrl?: string;
   /** Fallback camera target — the process's default view (`x-map-default`),
    * used only when there are no points to fit. */
   center: LngLat;
@@ -41,6 +42,7 @@ export interface ProposalsMapCanvasProps {
  */
 export default function ProposalsMapCanvas({
   styleUrl,
+  fallbackStyleUrl,
   center,
   zoom,
   points,
@@ -55,6 +57,7 @@ export default function ProposalsMapCanvas({
   return (
     <Map
       styleUrl={styleUrl}
+      fallbackStyleUrl={fallbackStyleUrl}
       center={center}
       zoom={zoom}
       bounds={bounds}

@@ -8,6 +8,7 @@ import { useTranslations } from '@/lib/i18n';
 import { MapCanvas } from '../../../location/dynamicMap';
 import {
   DEFAULT_LOCATION_FIELD_MAP_VIEW,
+  MAP_STYLE_FALLBACK_URL,
   MAP_STYLE_URL,
 } from '../../../location/mapConfig';
 import type { FieldConfigProps } from './fieldRegistry';
@@ -44,6 +45,7 @@ export function FieldConfigLocation({
       <div className="overflow-hidden rounded-lg border border-neutral-gray1">
         <MapCanvas
           styleUrl={MAP_STYLE_URL}
+          fallbackStyleUrl={MAP_STYLE_FALLBACK_URL}
           center={initialView.current.center}
           zoom={initialView.current.zoom}
           marker={null}

@@ -5,7 +5,7 @@ import type { LocationData } from '@op/common/client';
 import { useTranslations } from '@/lib/i18n';
 
 import { MapCanvas } from './dynamicMap';
-import { MAP_STYLE_URL } from './mapConfig';
+import { MAP_STYLE_FALLBACK_URL, MAP_STYLE_URL } from './mapConfig';
 
 interface LocationMapViewProps {
   value: LocationData | null;
@@ -29,6 +29,7 @@ export function LocationMapView({ value }: LocationMapViewProps) {
     <div className="overflow-hidden rounded-lg border border-neutral-gray1">
       <MapCanvas
         styleUrl={MAP_STYLE_URL}
+        fallbackStyleUrl={MAP_STYLE_FALLBACK_URL}
         center={{ lng: value.lng, lat: value.lat }}
         marker={{ lng: value.lng, lat: value.lat }}
         ariaLabel={t('Project location map')}
