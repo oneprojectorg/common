@@ -8,8 +8,7 @@ import { useTranslations } from '@/lib/i18n';
 import { MapCanvas } from '../../../location/dynamicMap';
 import {
   DEFAULT_LOCATION_FIELD_MAP_VIEW,
-  MAP_STYLE_FALLBACK_URL,
-  MAP_STYLE_URL,
+  useMapStyleUrl,
 } from '../../../location/mapConfig';
 import type { FieldConfigProps } from './fieldRegistry';
 
@@ -28,6 +27,7 @@ export function FieldConfigLocation({
   onUpdateJsonSchema,
 }: FieldConfigProps) {
   const t = useTranslations();
+  const styleUrl = useMapStyleUrl();
 
   const initialView = useRef(
     fieldSchema['x-map-default'] ?? DEFAULT_LOCATION_FIELD_MAP_VIEW,
@@ -44,8 +44,7 @@ export function FieldConfigLocation({
 
       <div className="overflow-hidden rounded-lg border border-neutral-gray1">
         <MapCanvas
-          styleUrl={MAP_STYLE_URL}
-          fallbackStyleUrl={MAP_STYLE_FALLBACK_URL}
+          styleUrl={styleUrl}
           center={initialView.current.center}
           zoom={initialView.current.zoom}
           marker={null}

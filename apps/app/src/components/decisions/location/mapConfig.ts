@@ -1,5 +1,8 @@
+'use client';
+
 import type { MapDefaultView } from '@op/common/client';
 import type { LngLat } from '@op/ui/Map';
+import { useEffect, useState } from 'react';
 
 const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_API_KEY;
 
@@ -10,23 +13,70 @@ const MAPTILER_STYLE_URL = MAPTILER_KEY
 const OPENFREEMAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
 
 /**
- * Basemap style URL. Prefers MapTiler `streets-v4` when a key is configured;
- * otherwise falls back to OpenFreeMap's public `liberty` style so the picker
- * still renders out of the box. Both styles are consumed by MapLibre via
- * `react-map-gl/maplibre`, which handles the OpenStreetMap attribution
- * required by OpenFreeMap automatically.
+ * Build-time pick: MapTiler `streets-v4` when a key is configured, otherwise
+ * OpenFreeMap's public `liberty` style. Both are MapLibre-compatible and the
+ * OpenStreetMap attribution OpenFreeMap requires is added automatically by
+ * MapLibre's default attribution control.
  */
-export const MAP_STYLE_URL = MAPTILER_STYLE_URL ?? OPENFREEMAP_STYLE_URL;
+const PRIMARY_STYLE_URL = MAPTILER_STYLE_URL ?? OPENFREEMAP_STYLE_URL;
 
 /**
- * Runtime fallback handed to `<Map>` so a MapTiler outage (e.g. exhausted
- * credits returning 403/429 at request time) is recovered by swapping to the
- * OpenFreeMap style on the first style-load error. `undefined` when MapTiler
- * isn't the primary — no need to fall back from OpenFreeMap to itself.
+ * Runtime fallback target. `null` when OpenFreeMap is already primary — no
+ * point falling back from OpenFreeMap to itself.
  */
-export const MAP_STYLE_FALLBACK_URL = MAPTILER_STYLE_URL
+const RUNTIME_FALLBACK_STYLE_URL = MAPTILER_STYLE_URL
   ? OPENFREEMAP_STYLE_URL
-  : undefined;
+  : null;
+
+/**
+ * Memoizes the resolved style URL for the lifetime of the tab so every map on
+ * the page agrees on which basemap to use after a single preflight. A failed
+ * probe (network error / CORS) leaves the primary URL in place — one bad
+ * round-trip shouldn't permanently demote a working MapTiler.
+ */
+let probePromise: Promise<string> | null = null;
+
+function probeStyleUrl(): Promise<string> {
+  if (probePromise) {
+    return probePromise;
+  }
+  if (!RUNTIME_FALLBACK_STYLE_URL) {
+    probePromise = Promise.resolve(PRIMARY_STYLE_URL);
+    return probePromise;
+  }
+  // Use GET so the browser's HTTP cache holds the response — MapLibre's own
+  // style fetch then comes from cache instead of round-tripping again. HEAD
+  // would avoid the body but isn't reliably supported across CDNs.
+  probePromise = fetch(PRIMARY_STYLE_URL, { method: 'GET' })
+    .then((response) =>
+      response.ok ? PRIMARY_STYLE_URL : RUNTIME_FALLBACK_STYLE_URL,
+    )
+    .catch(() => PRIMARY_STYLE_URL);
+  return probePromise;
+}
+
+/**
+ * Returns the basemap style URL, swapping to OpenFreeMap when the configured
+ * MapTiler `style.json` returns a 4xx/5xx (quota exhausted, key revoked).
+ * The probe runs at most once per tab — every consumer that calls this hook
+ * gets the same resolved URL — so the `<Map>` component itself can stay
+ * pure and only receive a single string.
+ */
+export function useMapStyleUrl(): string {
+  const [styleUrl, setStyleUrl] = useState(PRIMARY_STYLE_URL);
+  useEffect(() => {
+    let cancelled = false;
+    probeStyleUrl().then((resolved) => {
+      if (!cancelled) {
+        setStyleUrl(resolved);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return styleUrl;
+}
 
 /** Fallback camera target before a location is chosen (Bexley, OH). */
 export const DEFAULT_MAP_CENTER: LngLat = { lng: -82.9371, lat: 39.9686 };

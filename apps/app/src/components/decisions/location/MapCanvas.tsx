@@ -7,7 +7,6 @@ import { useMemo } from 'react';
 
 export interface MapCanvasProps {
   styleUrl: string;
-  fallbackStyleUrl?: string;
   center: LngLat;
   /** Initial zoom level (defaults to the underlying Map's default). */
   zoom?: number;
@@ -67,7 +66,6 @@ const BOUNDARY_OUTLINE_LAYER: LayerProps = {
  */
 export default function MapCanvas({
   styleUrl,
-  fallbackStyleUrl,
   center,
   zoom,
   marker,
@@ -87,7 +85,6 @@ export default function MapCanvas({
   return (
     <Map
       styleUrl={styleUrl}
-      fallbackStyleUrl={fallbackStyleUrl}
       center={center}
       zoom={zoom}
       onClick={onMapClick}
