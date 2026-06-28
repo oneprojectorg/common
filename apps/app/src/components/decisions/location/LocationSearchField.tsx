@@ -4,11 +4,14 @@ import { trpc } from '@op/api/client';
 import type { LocationData } from '@op/common/client';
 import { useDebounce } from '@op/hooks';
 import { ComboBox, ComboBoxItem } from '@op/ui/ComboBox';
+import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import type { LngLat } from '@op/ui/Map';
 import { useState } from 'react';
 import { LuSearch } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
+
+const MIN_QUERY_LENGTH = 2;
 
 interface GeoOption {
   id: string;
@@ -51,10 +54,21 @@ export function LocationSearchField({
   // keystroke (each call is billable + rate-limited).
   const [debouncedQuery] = useDebounce(query, 300);
 
-  const { data } = trpc.taxonomy.getGeoNames.useQuery(
+  const { data, isFetching } = trpc.taxonomy.getGeoNames.useQuery(
     { q: debouncedQuery, center },
-    { enabled: debouncedQuery.length >= 2, placeholderData: (prev) => prev },
+    {
+      enabled: debouncedQuery.length >= MIN_QUERY_LENGTH,
+      placeholderData: (prev) => prev,
+    },
   );
+
+  // A search is in flight whenever the query is enabled and react-query is
+  // fetching, OR the user has typed past the min length but the debounce
+  // window is still open (so the new query hasn't started yet) — without the
+  // second leg the indicator flickers off between keystrokes.
+  const isSearching =
+    query.length >= MIN_QUERY_LENGTH &&
+    (isFetching || query !== debouncedQuery);
 
   const items: GeoOption[] = (data?.geonames ?? []).map((geoname) => {
     const address = geoname.address ?? geoname.name;
@@ -81,7 +95,16 @@ export function LocationSearchField({
     <ComboBox
       aria-label={t('Search for a location')}
       items={items}
-      icon={<LuSearch aria-hidden className="size-4" />}
+      // Mirrors the global profile search: the magnifying glass becomes a
+      // spinner while a query is in flight so the user knows the picker is
+      // still working before any results land.
+      icon={
+        isSearching ? (
+          <LoadingSpinner className="size-4 text-neutral-gray4" />
+        ) : (
+          <LuSearch aria-hidden className="size-4" />
+        )
+      }
       placeholder={t('Address, cross streets, or landmark')}
       menuTrigger="input"
       allowsEmptyCollection
@@ -91,6 +114,19 @@ export function LocationSearchField({
         if (item) {
           onSelect(item.location);
         }
+      }}
+      renderEmptyState={() => {
+        // Below the min-query threshold we render nothing — the popover would
+        // otherwise pop a misleading "no results" the moment the field gets
+        // focus.
+        if (query.length < MIN_QUERY_LENGTH) {
+          return null;
+        }
+        return (
+          <div className="px-3 py-2 text-sm text-neutral-charcoal">
+            {isSearching ? t('Searching…') : t('No results')}
+          </div>
+        );
       }}
     >
       {(item) => (

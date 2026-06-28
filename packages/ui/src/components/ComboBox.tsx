@@ -9,6 +9,7 @@ import {
 import type {
   ComboBoxProps as AriaComboBoxProps,
   ListBoxItemProps,
+  ListBoxRenderProps,
   ValidationResult,
 } from 'react-aria-components';
 import { LuChevronDown } from 'react-icons/lu';
@@ -39,6 +40,12 @@ export interface ComboBoxProps<T extends object> extends Omit<
   popoverProps?: Omit<PopoverProps, 'children'>;
   icon?: ReactNode;
   placeholder?: string;
+  /**
+   * Rendered inside the listbox when the collection is empty (paired with
+   * `allowsEmptyCollection` so the popover stays open). Use this to surface a
+   * "Searching…" / "No results" state to the user.
+   */
+  renderEmptyState?: (props: ListBoxRenderProps) => ReactNode;
 }
 
 export const ComboBox = <T extends object>({
@@ -49,6 +56,7 @@ export const ComboBox = <T extends object>({
   items,
   icon,
   placeholder,
+  renderEmptyState,
   ...props
 }: ComboBoxProps<T>) => {
   return (
@@ -88,6 +96,7 @@ export const ComboBox = <T extends object>({
       >
         <ListBox
           items={items}
+          renderEmptyState={renderEmptyState}
           className={cn(
             'max-h-60 overflow-auto py-1 outline-hidden',
             props.listBoxClassName,
