@@ -16,6 +16,7 @@ import {
   ProposalCardMeta,
   ProposalCardPreview,
 } from './ProposalCard';
+import { ProposalMasonry } from './ProposalMasonry';
 import { VotingProposalCard } from './VotingProposalCard';
 
 export const NoVoteFound = () => {
@@ -87,7 +88,7 @@ const MyBallotProposals = ({
         {t('My Ballot')}
       </Header3>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <ProposalMasonry>
         {proposalsData.proposals.map((proposal) => {
           const viewHref = decisionSlug
             ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
@@ -129,7 +130,7 @@ const MyBallotProposals = ({
             </VotingProposalCard>
           );
         })}
-      </div>
+      </ProposalMasonry>
     </div>
   );
 };

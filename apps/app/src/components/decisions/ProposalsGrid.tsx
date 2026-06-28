@@ -28,6 +28,7 @@ import {
   ProposalCardPreview,
   ProposalCardReviseAction,
 } from './ProposalCard';
+import { ProposalMasonry } from './ProposalMasonry';
 import { VoteSubmissionModal } from './VoteSubmissionModal';
 import { VoteSuccessModal } from './VoteSuccessModal';
 import { VotingProposalCard } from './VotingProposalCard';
@@ -177,7 +178,7 @@ const VotingProposalsList = ({
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <ProposalMasonry>
         {proposals.map((proposal) => {
           const isSelected = isProposalSelected(proposal.id);
           const isEligibleForVote = isVotingEligible(proposal.status);
@@ -285,7 +286,7 @@ const VotingProposalsList = ({
           } else {
             return (
               <ProposalCard key={proposal.id} proposal={proposal}>
-                <div className="flex h-full flex-col justify-between gap-3 space-y-3">
+                <div className="flex flex-col justify-between gap-3 space-y-3">
                   <ProposalCardContent>
                     <ProposalCardHeader
                       proposal={proposal}
@@ -317,7 +318,7 @@ const VotingProposalsList = ({
             );
           }
         })}
-      </div>
+      </ProposalMasonry>
 
       {canVote && !isReadOnly && (
         <FooterBar position="fixed" className="bg-neutral-offWhite/95">
@@ -396,7 +397,7 @@ const ViewProposalsList = ({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <ProposalMasonry>
       {proposals.map((proposal) => {
         const isDraft = proposal.status === ProposalStatus.DRAFT;
         const isEditable = Boolean(proposal.isEditable);
@@ -470,6 +471,6 @@ const ViewProposalsList = ({
           </ProposalCard>
         );
       })}
-    </div>
+    </ProposalMasonry>
   );
 };
