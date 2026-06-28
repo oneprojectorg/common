@@ -66,12 +66,12 @@ function HovercardMeta({
   author?: HovercardAuthorData;
   districts: string[];
 }) {
-  // Avatar + name + district chip all live on the same row per the design.
-  // Each child returns null when it has nothing to show; `empty:hidden`
-  // collapses the row when both are absent so the title doesn't get a
-  // ghost margin.
+  // Avatar + name + district chip all live on the same row per the design,
+  // sitting 0.25rem below the title. Each child returns null when it has
+  // nothing to show; `empty:hidden` collapses the row when both are absent
+  // so the title doesn't get a ghost margin.
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 empty:mt-0 empty:hidden">
+    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 empty:mt-0 empty:hidden">
       <HovercardAuthor author={author} />
       <HovercardDistricts districts={districts} />
     </div>
