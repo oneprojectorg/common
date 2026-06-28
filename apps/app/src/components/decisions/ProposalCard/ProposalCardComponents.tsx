@@ -444,7 +444,7 @@ export function ProposalCardMetrics({
   return (
     <div
       className={cn(
-        'flex w-full flex-wrap items-center gap-4 text-base text-neutral-gray4 sm:justify-between',
+        'flex w-full flex-wrap items-center gap-4 text-base text-neutral-gray4',
         className,
       )}
     >
