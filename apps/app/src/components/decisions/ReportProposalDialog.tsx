@@ -37,8 +37,8 @@ export function ReportProposalDialog({ proposalId }: { proposalId: string }) {
   // and disables so the reporter doesn't re-open the dialog.
   const reported = reportMutation.isSuccess;
 
-  // Gated behind the `moderation` flag until the feature ships. Checked after
-  // the hooks above so the rules of hooks hold.
+  // Gated behind the `moderation` flag so the action can be rolled out
+  // independently. Checked after the hooks above so the rules of hooks hold.
   if (!moderationEnabled) {
     return null;
   }

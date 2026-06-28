@@ -678,7 +678,7 @@ test.describe('Proposal View', () => {
     ).toBeVisible({ timeout: 30_000 });
   });
 
-  test('hides write actions (reactions, like, follow) from anonymous and logged-out viewers', async ({
+  test('gates write actions per viewer: reactions/Like/Follow members-only, Report visible to all', async ({
     authenticatedPage,
     org,
     browser,
@@ -727,8 +727,10 @@ test.describe('Proposal View', () => {
     const proposalUrl = `/en/decisions/${instance.slug}/proposal/${proposal.profileId}`;
     const likeBadge = /👍\s*1/;
 
-    // Every viewer sees the proposal, the comment, and the seeded like; only a
-    // signed-in member gets the write controls (add-reaction, Like, Follow).
+    // Every viewer sees the proposal, the comment, the seeded like, and the
+    // Report action (moderation is open to any caller). Only a signed-in
+    // member also gets the interact-only write controls (add-reaction, Like,
+    // Follow).
     const expectProposalView = async (
       page: Page,
       { canInteract }: { canInteract: boolean },
@@ -748,6 +750,10 @@ test.describe('Proposal View', () => {
       for (const control of writeControls) {
         await expect(control).toHaveCount(canInteract ? 1 : 0);
       }
+
+      await expect(
+        page.getByRole('button', { name: 'Report', exact: true }),
+      ).toHaveCount(1);
     };
 
     // A clean context so the worker's auth doesn't leak in via newContext().
@@ -762,14 +768,15 @@ test.describe('Proposal View', () => {
       }
     };
 
-    // 1) Signed-in member: write controls present.
+    // 1) Signed-in member: reactions/Like/Follow + Report all visible.
     await expectProposalView(authenticatedPage, { canInteract: true });
 
-    // 2) Anonymous account and 3) logged-out visitor: read-only.
+    // 2) Anonymous account: reactions/Like/Follow hidden, Report still visible.
     await withCleanPage(async (page) => {
       await authenticateAnonymously(page);
       await expectProposalView(page, { canInteract: false });
     });
+    // 3) Logged-out visitor: same as anonymous — read-only but can still report.
     await withCleanPage((page) =>
       expectProposalView(page, { canInteract: false }),
     );
