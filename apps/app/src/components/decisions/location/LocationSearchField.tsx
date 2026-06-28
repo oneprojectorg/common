@@ -12,7 +12,13 @@ import { useTranslations } from '@/lib/i18n';
 
 interface GeoOption {
   id: string;
-  label: string;
+  /**
+   * Place / business name (e.g. "Starbucks"). Empty when the result is a pure
+   * street address whose display name is just the address itself — the option
+   * then renders the address alone instead of duplicating it.
+   */
+  name: string;
+  address: string;
   location: LocationData;
 }
 
@@ -50,19 +56,26 @@ export function LocationSearchField({
     { enabled: debouncedQuery.length >= 2, placeholderData: (prev) => prev },
   );
 
-  const items: GeoOption[] = (data?.geonames ?? []).map((geoname) => ({
-    id: geoname.placeId,
-    label: geoname.address ?? geoname.name,
-    location: {
-      // A searched result has no separate pin — the place coordinate is both.
-      lat: geoname.lat,
-      lng: geoname.lng,
-      address: geoname.address,
-      placeId: geoname.placeId,
-      placeLat: geoname.lat,
-      placeLng: geoname.lng,
-    },
-  }));
+  const items: GeoOption[] = (data?.geonames ?? []).map((geoname) => {
+    const address = geoname.address ?? geoname.name;
+    // Hide the name when it just echoes the address (pure street-address
+    // results) so we don't render "123 Main St" twice.
+    const name = geoname.name && geoname.name !== address ? geoname.name : '';
+    return {
+      id: geoname.placeId,
+      name,
+      address,
+      location: {
+        // A searched result has no separate pin — the place coordinate is both.
+        lat: geoname.lat,
+        lng: geoname.lng,
+        address: geoname.address,
+        placeId: geoname.placeId,
+        placeLat: geoname.lat,
+        placeLng: geoname.lng,
+      },
+    };
+  });
 
   return (
     <ComboBox
@@ -80,7 +93,32 @@ export function LocationSearchField({
         }
       }}
     >
-      {(item) => <ComboBoxItem id={item.id}>{item.label}</ComboBoxItem>}
+      {(item) => (
+        <ComboBoxItem
+          id={item.id}
+          textValue={item.name ? `${item.name} ${item.address}` : item.address}
+        >
+          {/* Two-line presentation so business / POI results read as
+              "Starbucks" + "123 Main St", not as the bare street address. */}
+          <div className="flex min-w-0 flex-col">
+            {item.name && (
+              <span className="truncate text-neutral-black" dir="auto">
+                {item.name}
+              </span>
+            )}
+            <span
+              className={
+                item.name
+                  ? 'truncate text-sm text-neutral-charcoal'
+                  : 'truncate text-neutral-black'
+              }
+              dir="auto"
+            >
+              {item.address}
+            </span>
+          </div>
+        </ComboBoxItem>
+      )}
     </ComboBox>
   );
 }

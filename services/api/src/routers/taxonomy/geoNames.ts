@@ -118,8 +118,12 @@ const getGeonames = async ({
             metadata: place,
           };
 
-          const key = `${geoName.name}`;
-          geoNameMap.set(key, geoName);
+          // Key on the Google place id, not the display name: a query like
+          // "Starbucks" returns many distinct Starbucks locations that all
+          // share the same name, and a name-keyed map would collapse them into
+          // one entry — so the user only sees a single business instead of the
+          // list of nearby branches.
+          geoNameMap.set(geoName.placeId, geoName);
         }
       }
     }
