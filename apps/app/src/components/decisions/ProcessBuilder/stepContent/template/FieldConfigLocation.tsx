@@ -1,6 +1,5 @@
 'use client';
 
-import { FieldError } from '@op/ui/Field';
 import { Header4 } from '@op/ui/Header';
 import { useRef } from 'react';
 
@@ -42,22 +41,16 @@ export function FieldConfigLocation({
         )}
       </p>
 
-      {MAP_STYLE_URL ? (
-        <div className="overflow-hidden rounded-lg border border-neutral-gray1">
-          <MapCanvas
-            styleUrl={MAP_STYLE_URL}
-            center={initialView.current.center}
-            zoom={initialView.current.zoom}
-            marker={null}
-            onMoveEnd={(view) => onUpdateJsonSchema({ 'x-map-default': view })}
-            ariaLabel={t('Default map position')}
-          />
-        </div>
-      ) : (
-        <FieldError>
-          {t('The map is unavailable because it has not been configured.')}
-        </FieldError>
-      )}
+      <div className="overflow-hidden rounded-lg border border-neutral-gray1">
+        <MapCanvas
+          styleUrl={MAP_STYLE_URL}
+          center={initialView.current.center}
+          zoom={initialView.current.zoom}
+          marker={null}
+          onMoveEnd={(view) => onUpdateJsonSchema({ 'x-map-default': view })}
+          ariaLabel={t('Default map position')}
+        />
+      </div>
     </div>
   );
 }

@@ -21,7 +21,7 @@ interface LocationMapViewProps {
 export function LocationMapView({ value }: LocationMapViewProps) {
   const t = useTranslations();
 
-  if (!value || !MAP_STYLE_URL) {
+  if (!value) {
     return <p className="text-sm text-neutral-gray3 italic">—</p>;
   }
 

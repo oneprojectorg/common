@@ -3,7 +3,6 @@
 import { trpc } from '@op/api/client';
 import type { LocationData, MapDefaultView } from '@op/common/client';
 import { Button } from '@op/ui/Button';
-import { FieldError } from '@op/ui/Field';
 import type { LngLat } from '@op/ui/Map';
 import { useCallback, useEffect, useState } from 'react';
 import { LuLocate } from 'react-icons/lu';
@@ -141,14 +140,6 @@ export function LocationMapField({
       placeFromCoordinates(lngLat);
     });
   }, [placeFromCoordinates]);
-
-  if (!MAP_STYLE_URL) {
-    return (
-      <FieldError>
-        {t('The map is unavailable because it has not been configured.')}
-      </FieldError>
-    );
-  }
 
   return (
     <div className="flex flex-col gap-2">
