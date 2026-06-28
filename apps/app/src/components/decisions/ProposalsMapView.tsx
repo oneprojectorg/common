@@ -79,7 +79,8 @@ export function ProposalsMapView({
   );
 
   // Clicking a marker opens the proposal on every breakpoint; on desktop the
-  // shared active state is still driven by hover (see `onMarkerHover`).
+  // shared active state is still driven by hover (see `onMarkerEnter` /
+  // `onMarkerLeave`).
   const handleMarkerClick = useCallback(
     (id: string) => {
       const proposal = proposalsById.get(id);
@@ -89,6 +90,15 @@ export function ProposalsMapView({
     },
     [proposalsById, router, hrefFor],
   );
+
+  // The marker's leave callback fires after its dismiss-delay timer, which
+  // can land AFTER the cursor has already entered another marker. We only
+  // clear `activeId` when it's still ours — otherwise a leave from the
+  // previously-hovered pin would clobber the freshly-hovered one and the
+  // new pin would flicker out of its active state.
+  const handleMarkerLeave = useCallback((id: string) => {
+    setActiveId((prev) => (prev === id ? null : prev));
+  }, []);
 
   // Desktop-only: render the hovercard above the pin on hover, with a small
   // dismiss delay so the cursor can transit from pin to card. Mobile is left
@@ -113,7 +123,8 @@ export function ProposalsMapView({
       zoom={mapView.zoom}
       points={points}
       activeId={activeId}
-      onMarkerHover={isMobile ? undefined : setActiveId}
+      onMarkerEnter={isMobile ? undefined : setActiveId}
+      onMarkerLeave={isMobile ? undefined : handleMarkerLeave}
       onMarkerClick={handleMarkerClick}
       renderHovercard={isMobile ? undefined : renderHovercard}
       ariaLabel={t('Map of proposals')}

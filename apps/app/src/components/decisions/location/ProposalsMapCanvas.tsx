@@ -20,8 +20,16 @@ export interface ProposalsMapCanvasProps {
   points: ProposalMapPoint[];
   /** Id of the proposal whose marker should be highlighted. */
   activeId?: string | null;
-  /** Fired as the pointer enters/leaves a marker (id, or null on leave). */
-  onMarkerHover?: (id: string | null) => void;
+  /** Fired when the pointer enters a marker. */
+  onMarkerEnter?: (id: string) => void;
+  /**
+   * Fired when the pointer leaves a marker. The id of the marker being left
+   * is passed so the consumer can skip clobbering its own active state when
+   * a different marker has since become active — without this the deferred
+   * dismiss on a previously-hovered pin would null out the freshly-hovered
+   * one and the new pin would flicker.
+   */
+  onMarkerLeave?: (id: string) => void;
   /** Fired when a marker is clicked/tapped. */
   onMarkerClick?: (id: string) => void;
   /**
@@ -52,7 +60,8 @@ export default function ProposalsMapCanvas({
   zoom,
   points,
   activeId,
-  onMarkerHover,
+  onMarkerEnter,
+  onMarkerLeave,
   onMarkerClick,
   renderHovercard,
   ariaLabel,
@@ -74,7 +83,8 @@ export default function ProposalsMapCanvas({
           key={point.id}
           point={point}
           isActive={activeId === point.id}
-          onMarkerHover={onMarkerHover}
+          onMarkerEnter={onMarkerEnter}
+          onMarkerLeave={onMarkerLeave}
           onMarkerClick={onMarkerClick}
           renderHovercard={renderHovercard}
         />
@@ -86,7 +96,8 @@ export default function ProposalsMapCanvas({
 interface ProposalPinProps {
   point: ProposalMapPoint;
   isActive: boolean;
-  onMarkerHover?: (id: string | null) => void;
+  onMarkerEnter?: (id: string) => void;
+  onMarkerLeave?: (id: string) => void;
   onMarkerClick?: (id: string) => void;
   renderHovercard?: (id: string) => ReactNode;
 }
@@ -94,7 +105,8 @@ interface ProposalPinProps {
 function ProposalPin({
   point,
   isActive,
-  onMarkerHover,
+  onMarkerEnter,
+  onMarkerLeave,
   onMarkerClick,
   renderHovercard,
 }: ProposalPinProps) {
@@ -104,8 +116,8 @@ function ProposalPin({
       latitude={point.lat}
       isActive={isActive}
       onClick={bindCallback(onMarkerClick, point.id)}
-      onMouseEnter={bindCallback(onMarkerHover, point.id)}
-      onMouseLeave={bindCallback(onMarkerHover, null)}
+      onMouseEnter={bindCallback(onMarkerEnter, point.id)}
+      onMouseLeave={bindCallback(onMarkerLeave, point.id)}
       hoverContent={renderHovercard?.(point.id)}
     />
   );
