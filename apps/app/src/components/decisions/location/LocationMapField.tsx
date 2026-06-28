@@ -3,7 +3,6 @@
 import { trpc } from '@op/api/client';
 import type { LocationData, MapDefaultView } from '@op/common/client';
 import { Button } from '@op/ui/Button';
-import { FieldError } from '@op/ui/Field';
 import type { LngLat } from '@op/ui/Map';
 import { useCallback, useEffect, useState } from 'react';
 import { LuLocate } from 'react-icons/lu';
@@ -12,7 +11,7 @@ import { useTranslations } from '@/lib/i18n';
 
 import { LocationSearchField } from './LocationSearchField';
 import { MapCanvas } from './dynamicMap';
-import { DEFAULT_MAP_CENTER, MAP_STYLE_URL } from './mapConfig';
+import { DEFAULT_MAP_CENTER, useMapStyleUrl } from './mapConfig';
 import { useProjectAreaCheck } from './useProjectAreaCheck';
 
 interface LocationMapFieldProps {
@@ -48,6 +47,7 @@ export function LocationMapField({
   onChange,
 }: LocationMapFieldProps) {
   const t = useTranslations();
+  const styleUrl = useMapStyleUrl();
   const [center, setCenter] = useState<LngLat>(
     value
       ? { lng: value.lng, lat: value.lat }
@@ -142,14 +142,6 @@ export function LocationMapField({
     });
   }, [placeFromCoordinates]);
 
-  if (!MAP_STYLE_URL) {
-    return (
-      <FieldError>
-        {t('The map is unavailable because it has not been configured.')}
-      </FieldError>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-2">
       {/* Bias address search toward the map's current center so a participant
@@ -167,7 +159,7 @@ export function LocationMapField({
         }`}
       >
         <MapCanvas
-          styleUrl={MAP_STYLE_URL}
+          styleUrl={styleUrl}
           center={center}
           zoom={value ? undefined : defaultMapView?.zoom}
           marker={value ? { lng: value.lng, lat: value.lat } : null}

@@ -4,14 +4,13 @@ import { type Proposal, parseProposalData } from '@op/common/client';
 import type { MapDefaultView } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
 import { screens } from '@op/styles/constants';
-import { FieldError } from '@op/ui/Field';
 import { useCallback, useMemo, useState } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
 import { ProposalMapListItem } from './ProposalMapListItem';
 import { ProposalsMapCanvas } from './location/dynamicProposalsMap';
-import { MAP_STYLE_URL } from './location/mapConfig';
+import { useMapStyleUrl } from './location/mapConfig';
 
 interface ProposalsMapViewProps {
   proposals: Proposal[];
@@ -44,6 +43,7 @@ export function ProposalsMapView({
 }: ProposalsMapViewProps) {
   const t = useTranslations();
   const router = useRouter();
+  const styleUrl = useMapStyleUrl();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`) ?? false;
 
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -81,17 +81,9 @@ export function ProposalsMapView({
     [proposals, router, hrefFor],
   );
 
-  if (!MAP_STYLE_URL) {
-    return (
-      <FieldError>
-        {t('The map is unavailable because it has not been configured.')}
-      </FieldError>
-    );
-  }
-
   const map = (
     <ProposalsMapCanvas
-      styleUrl={MAP_STYLE_URL}
+      styleUrl={styleUrl}
       center={mapView.center}
       zoom={mapView.zoom}
       points={points}
