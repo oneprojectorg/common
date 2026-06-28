@@ -449,15 +449,15 @@ export function ProposalCardMetrics({
       )}
     >
       <span className="flex items-center gap-1 truncate">
-        <LuHeart className="size-4" />
+        <LuHeart className="size-4 shrink-0" />
         {proposal.likesCount || 0} {t('Likes')}
       </span>
       <span className="flex items-center gap-1 truncate">
-        <LuMessageCircle className="size-4" />
+        <LuMessageCircle className="size-4 shrink-0" />
         {proposal.commentsCount || 0} {t('Comments')}
       </span>
       <span className="flex items-center gap-1 truncate">
-        <LuBookmark className="size-4" />
+        <LuBookmark className="size-4 shrink-0" />
         {proposal.followersCount || 0} {t('Followers')}
       </span>
     </div>
