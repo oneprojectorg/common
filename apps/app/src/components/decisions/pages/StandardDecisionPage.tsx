@@ -99,67 +99,65 @@ export function StandardDecisionPage({
             currentPhaseEndDate={currentPhase?.endDate}
           />
         )}
-        <div className="w-full gap-8 p-4 sm:max-w-6xl sm:p-8">
-          <div className="flex flex-col gap-6 lg:col-span-3">
-            {isAwaitingFinalResults ? (
-              <EmptyState icon={<LuClock className="size-6" />}>
-                <Header3 className="font-serif font-light">
-                  {t('Results pending')}
-                </Header3>
-                <p className="text-base text-neutral-charcoal">
-                  {t("Results for this process haven't been processed yet.")}
-                </p>
-              </EmptyState>
-            ) : !instance.selectionsAreConfirmed && isAdmin && decisionSlug ? (
-              <APIErrorBoundary
-                fallbacks={{
-                  default: () => (
-                    <EmptyState icon={<LuTriangleAlert className="size-6" />}>
-                      <Header3 className="font-serif font-light">
-                        {t("Couldn't load manual selection")}
-                      </Header3>
-                      <p className="text-base text-neutral-charcoal">
-                        {t('Refresh the page to try again.')}
-                      </p>
-                    </EmptyState>
-                  ),
-                }}
-              >
-                <Suspense fallback={null}>
-                  <ManualSelectionList
-                    instanceId={instanceId}
-                    decisionSlug={decisionSlug}
-                  />
-                </Suspense>
-              </APIErrorBoundary>
-            ) : (
-              <APIErrorBoundary
-                fallbacks={{
-                  default: () => (
-                    <EmptyState icon={<LuTriangleAlert className="size-6" />}>
-                      <Header3 className="font-serif font-light">
-                        {t("Couldn't load proposals")}
-                      </Header3>
-                      <p className="text-base text-neutral-charcoal">
-                        {t('Refresh the page to try again.')}
-                      </p>
-                    </EmptyState>
-                  ),
-                }}
-              >
-                <Suspense fallback={<ProposalListSkeleton />}>
-                  <ProposalsList
-                    slug={slug}
-                    instanceId={instanceId}
-                    decisionSlug={decisionSlug}
-                    decisionProfileId={decisionProfileId}
-                    permissions={instance.access}
-                    proposalsHidden={proposalsHidden}
-                  />
-                </Suspense>
-              </APIErrorBoundary>
-            )}
-          </div>
+        <div className="flex w-full flex-col gap-6 p-4 sm:max-w-6xl sm:p-8">
+          {isAwaitingFinalResults ? (
+            <EmptyState icon={<LuClock className="size-6" />}>
+              <Header3 className="font-serif font-light">
+                {t('Results pending')}
+              </Header3>
+              <p className="text-base text-neutral-charcoal">
+                {t("Results for this process haven't been processed yet.")}
+              </p>
+            </EmptyState>
+          ) : !instance.selectionsAreConfirmed && isAdmin && decisionSlug ? (
+            <APIErrorBoundary
+              fallbacks={{
+                default: () => (
+                  <EmptyState icon={<LuTriangleAlert className="size-6" />}>
+                    <Header3 className="font-serif font-light">
+                      {t("Couldn't load manual selection")}
+                    </Header3>
+                    <p className="text-base text-neutral-charcoal">
+                      {t('Refresh the page to try again.')}
+                    </p>
+                  </EmptyState>
+                ),
+              }}
+            >
+              <Suspense fallback={null}>
+                <ManualSelectionList
+                  instanceId={instanceId}
+                  decisionSlug={decisionSlug}
+                />
+              </Suspense>
+            </APIErrorBoundary>
+          ) : (
+            <APIErrorBoundary
+              fallbacks={{
+                default: () => (
+                  <EmptyState icon={<LuTriangleAlert className="size-6" />}>
+                    <Header3 className="font-serif font-light">
+                      {t("Couldn't load proposals")}
+                    </Header3>
+                    <p className="text-base text-neutral-charcoal">
+                      {t('Refresh the page to try again.')}
+                    </p>
+                  </EmptyState>
+                ),
+              }}
+            >
+              <Suspense fallback={<ProposalListSkeleton />}>
+                <ProposalsList
+                  slug={slug}
+                  instanceId={instanceId}
+                  decisionSlug={decisionSlug}
+                  decisionProfileId={decisionProfileId}
+                  permissions={instance.access}
+                  proposalsHidden={proposalsHidden}
+                />
+              </Suspense>
+            </APIErrorBoundary>
+          )}
         </div>
       </div>
     </div>

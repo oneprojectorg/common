@@ -167,7 +167,7 @@ function ResultsPageContent({
       </div>
 
       <div className="flex w-full justify-center border-t bg-white">
-        <div className="w-full gap-8 p-4 sm:max-w-6xl">
+        <div className="w-full p-4 sm:max-w-6xl">
           <DecisionResultsTabs>
             <DecisionResultsTabPanel id="funded">
               <APIErrorBoundary
@@ -184,30 +184,26 @@ function ResultsPageContent({
                   ),
                 }}
               >
-                <div className="lg:col-span-3">
-                  <Suspense fallback={<ProposalListSkeleton />}>
-                    <ResultsList
-                      slug={profileSlug}
-                      instanceId={instanceId}
-                      decisionSlug={decisionSlug}
-                    />
-                  </Suspense>
-                </div>
+                <Suspense fallback={<ProposalListSkeleton />}>
+                  <ResultsList
+                    slug={profileSlug}
+                    instanceId={instanceId}
+                    decisionSlug={decisionSlug}
+                  />
+                </Suspense>
               </APIErrorBoundary>
             </DecisionResultsTabPanel>
 
             <DecisionResultsTabPanel id="all-proposals">
-              <div className="lg:col-span-3">
-                <Suspense fallback={<ProposalListSkeleton />}>
-                  <ProposalsList
-                    slug={profileSlug}
-                    instanceId={instanceId}
-                    decisionSlug={decisionSlug}
-                    initialFilter={ProposalFilter.ALL}
-                    phase="results"
-                  />
-                </Suspense>
-              </div>
+              <Suspense fallback={<ProposalListSkeleton />}>
+                <ProposalsList
+                  slug={profileSlug}
+                  instanceId={instanceId}
+                  decisionSlug={decisionSlug}
+                  initialFilter={ProposalFilter.ALL}
+                  phase="results"
+                />
+              </Suspense>
             </DecisionResultsTabPanel>
 
             <DecisionResultsTabPanel id="ballot">
@@ -216,15 +212,13 @@ function ResultsPageContent({
                   default: () => <NoVoteFound />,
                 }}
               >
-                <div className="lg:col-span-3">
-                  <Suspense fallback={<ProposalListSkeleton />}>
-                    <MyBallot
-                      slug={profileSlug}
-                      instanceId={instanceId}
-                      decisionSlug={decisionSlug}
-                    />
-                  </Suspense>
-                </div>
+                <Suspense fallback={<ProposalListSkeleton />}>
+                  <MyBallot
+                    slug={profileSlug}
+                    instanceId={instanceId}
+                    decisionSlug={decisionSlug}
+                  />
+                </Suspense>
               </APIErrorBoundary>
             </DecisionResultsTabPanel>
           </DecisionResultsTabs>
