@@ -444,21 +444,24 @@ export function ProposalCardMetrics({
   return (
     <div
       className={cn(
-        'flex w-full items-center justify-between gap-4 text-base text-neutral-gray4',
+        'flex w-full flex-wrap items-center justify-between gap-4 text-base text-neutral-gray4',
         className,
       )}
     >
-      <span className="flex items-center gap-1 truncate">
+      <span className="flex shrink-0 items-center gap-1">
         <LuHeart className="size-4 shrink-0" />
-        {proposal.likesCount || 0} {t('Likes')}
+        {proposal.likesCount || 0}
+        <span className="hidden sm:inline">{t('Likes')}</span>
       </span>
-      <span className="flex items-center gap-1 truncate">
+      <span className="flex shrink-0 items-center gap-1">
         <LuMessageCircle className="size-4 shrink-0" />
-        {proposal.commentsCount || 0} {t('Comments')}
+        {proposal.commentsCount || 0}
+        <span className="hidden sm:inline">{t('Comments')}</span>
       </span>
-      <span className="flex items-center gap-1 truncate">
+      <span className="flex shrink-0 items-center gap-1">
         <LuBookmark className="size-4 shrink-0" />
-        {proposal.followersCount || 0} {t('Followers')}
+        {proposal.followersCount || 0}
+        <span className="hidden sm:inline">{t('Followers')}</span>
       </span>
     </div>
   );
