@@ -164,7 +164,7 @@ test.describe('Decision Review Selection — review → voting flow', () => {
     ]);
     const [alpha, beta] = proposals;
 
-    await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
+    await authenticatedPage.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'networkidle',
     });
 
@@ -302,7 +302,7 @@ test.describe('Decision Review Selection — review → voting flow', () => {
       'Proposal Beta',
     ]);
 
-    await page.goto(`/en/decisions/${instance.slug}`, {
+    await page.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'networkidle',
     });
 

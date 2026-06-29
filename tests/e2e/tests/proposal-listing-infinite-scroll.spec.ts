@@ -59,7 +59,7 @@ test.describe('Proposal Listing — Infinite Scroll', () => {
       });
     }
 
-    await authenticatedPage.goto(`/en/decisions/${slug}?filter=all`, {
+    await authenticatedPage.goto(`/en/decisions/${slug}/current?filter=all`, {
       waitUntil: 'domcontentloaded',
     });
 

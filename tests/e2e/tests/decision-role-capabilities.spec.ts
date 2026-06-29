@@ -199,7 +199,7 @@ test.describe('Decision Role Capabilities', () => {
       password: TEST_USER_DEFAULT_PASSWORD,
     });
 
-    await memberPage.goto(`/en/decisions/${instance.slug}`, {
+    await memberPage.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'networkidle',
     });
 
@@ -228,7 +228,7 @@ test.describe('Decision Role Capabilities', () => {
       schema: submissionPhaseSchema,
     });
 
-    await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
+    await authenticatedPage.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'networkidle',
     });
 

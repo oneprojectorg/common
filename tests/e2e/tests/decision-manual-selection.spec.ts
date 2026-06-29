@@ -226,7 +226,7 @@ test.describe('Decision Manual Selection — full flow', () => {
     );
     const [alpha, beta] = proposals;
 
-    await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
+    await authenticatedPage.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'networkidle',
     });
 
@@ -305,7 +305,7 @@ test.describe('Decision Manual Selection — full flow', () => {
       throw new Error('Expected three seeded proposals');
     }
 
-    await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
+    await authenticatedPage.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'networkidle',
     });
 

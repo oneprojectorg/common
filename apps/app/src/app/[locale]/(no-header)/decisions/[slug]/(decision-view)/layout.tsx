@@ -4,6 +4,7 @@ import { DecisionHeader } from '@/components/decisions/DecisionHeader';
 import { DecisionSidePanel } from '@/components/decisions/DecisionSidePanel';
 import { DecisionTranslationProvider } from '@/components/decisions/DecisionTranslationContext';
 import { DecisionViewToggle } from '@/components/decisions/DecisionViewToggle';
+import { PromoteAccountModal } from '@/components/decisions/PromoteAccountModal';
 import { hasFirstPhaseStarted } from '@/components/decisions/hasFirstPhaseStarted';
 
 import { loadDecision } from './loadDecision';
@@ -65,6 +66,16 @@ const DecisionViewLayout = async ({
           decisionProfileId={decisionProfile.id}
           access={access}
         />
+      </Suspense>
+      {/*
+       * Post-anon-submit promote modal. Mounted here (not on the deleted
+       * `/decisions/[slug]/page.tsx` from #1458) so the `?promote=1` redirect
+       * the proposal editor issues still opens the modal regardless of whether
+       * the user lands on the overview or the current-phase tab. Reads
+       * `?promote=` via nuqs and renders null when the param is absent.
+       */}
+      <Suspense fallback={null}>
+        <PromoteAccountModal />
       </Suspense>
     </DecisionTranslationProvider>
   );

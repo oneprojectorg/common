@@ -25,9 +25,10 @@ test.describe('Proposal Listing — update after create', () => {
     });
 
     // View the (empty) listing — registers the client-side listProposals query.
-    await authenticatedPage.goto(`/en/decisions/${instance.slug}?filter=all`, {
-      waitUntil: 'domcontentloaded',
-    });
+    await authenticatedPage.goto(
+      `/en/decisions/${instance.slug}/current?filter=all`,
+      { waitUntil: 'domcontentloaded' },
+    );
     await expect(
       authenticatedPage.getByRole('heading', { name: instance.name }),
     ).toBeVisible({ timeout: 30_000 });

@@ -234,7 +234,7 @@ test.describe('Proposal Listing', () => {
     });
 
     // 3. Navigate with ?filter=all (default is ALL which shows drafts)
-    await authenticatedPage.goto(`/en/decisions/${slug}?filter=all`, {
+    await authenticatedPage.goto(`/en/decisions/${slug}/current?filter=all`, {
       waitUntil: 'domcontentloaded',
     });
 
@@ -397,7 +397,7 @@ test.describe('Proposal Listing', () => {
     });
 
     // 3. Navigate with ?filter=all (default is ALL which shows drafts)
-    await authenticatedPage.goto(`/en/decisions/${slug}?filter=all`, {
+    await authenticatedPage.goto(`/en/decisions/${slug}/current?filter=all`, {
       waitUntil: 'domcontentloaded',
     });
 

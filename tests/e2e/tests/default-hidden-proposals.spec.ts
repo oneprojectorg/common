@@ -214,7 +214,7 @@ test.describe('Default Hidden Proposals', () => {
       .where(eq(proposals.id, hiddenProposal.id));
 
     // Admin navigates — should see the proposal, banner, and filters.
-    await authenticatedPage.goto(`/en/decisions/${slug}`, {
+    await authenticatedPage.goto(`/en/decisions/${slug}/current`, {
       waitUntil: 'domcontentloaded',
     });
 
@@ -272,7 +272,7 @@ test.describe('Default Hidden Proposals', () => {
       password: TEST_USER_DEFAULT_PASSWORD,
     });
 
-    await otherMemberPage.goto(`/en/decisions/${slug}`, {
+    await otherMemberPage.goto(`/en/decisions/${slug}/current`, {
       waitUntil: 'domcontentloaded',
     });
 
@@ -358,7 +358,7 @@ test.describe('Default Hidden Proposals', () => {
       password: TEST_USER_DEFAULT_PASSWORD,
     });
 
-    await submitterPage.goto(`/en/decisions/${slug}`, {
+    await submitterPage.goto(`/en/decisions/${slug}/current`, {
       waitUntil: 'domcontentloaded',
     });
 

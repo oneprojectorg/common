@@ -20,7 +20,7 @@ test.describe('Decisions', () => {
     });
 
     // 3. Navigate to the decision page
-    await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
+    await authenticatedPage.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'domcontentloaded',
     });
 
