@@ -20,38 +20,22 @@ export interface ProposalsMapCanvasProps {
   points: ProposalMapPoint[];
   /** Id of the proposal whose marker should be highlighted. */
   activeId?: string | null;
-  /** Fired when the pointer enters a marker. */
   onMarkerEnter?: (id: string) => void;
   /**
-   * Fired when the pointer leaves a marker. The id of the marker being left
-   * is passed so the consumer can skip clobbering its own active state when
-   * a different marker has since become active — without this the deferred
-   * dismiss on a previously-hovered pin would null out the freshly-hovered
-   * one and the new pin would flicker.
+   * Fires with the leaving id so the consumer can skip clearing its active
+   * state when a different marker has since become active (otherwise the
+   * deferred dismiss flickers the freshly-hovered pin).
    */
   onMarkerLeave?: (id: string) => void;
-  /** Fired when a marker is clicked/tapped. */
   onMarkerClick?: (id: string) => void;
-  /**
-   * Optional per-pin hovercard. When provided, the returned element is
-   * rendered above the pin while the cursor is over the pin (desktop) or
-   * after the first tap on the pin (mobile, see `controlledOpenId`).
-   */
   renderHovercard?: (id: string) => ReactNode;
   /**
-   * When set, the matching pin's hovercard is forced open via the controlled
-   * `isOpen` prop on `MapMarker` — used by the mobile "tap to preview" flow,
-   * where the open state is driven by the parent's tap-tracked `activeId`
-   * instead of by mouseenter/mouseleave (which touch devices don't fire
-   * reliably). Pass `null` (the default) on desktop to let each pin's hover
-   * state machine manage the card itself.
+   * Forces the matching pin's hovercard open via `MapMarker.isOpen`. Used by
+   * the mobile tap-to-preview flow; leave undefined on desktop to let each
+   * pin's hover state machine drive the card.
    */
   controlledOpenId?: string | null;
-  /**
-   * Fires when the user clicks/taps the map background (not a marker). The
-   * mobile flow uses this to dismiss the open hovercard when the user taps
-   * outside any pin.
-   */
+  /** Mobile background-tap dismiss. */
   onMapClick?: () => void;
   ariaLabel?: string;
   className?: string;
@@ -146,9 +130,8 @@ function ProposalPin({
 }
 
 /**
- * Pre-bind an optional callback with the given argument so the marker can
- * pass `undefined` straight through (which it uses to skip its hover / click
- * wiring and the matching CSS cursor change).
+ * Pre-bind an optional callback so `undefined` passes straight through — the
+ * marker uses that to skip its hover/click wiring and cursor change.
  */
 function bindCallback<T>(
   fn: ((arg: T) => void) | undefined,
@@ -158,9 +141,8 @@ function bindCallback<T>(
 }
 
 /**
- * Bounding box enclosing every point as `[[swLng, swLat], [neLng, neLat]]`, or
- * `null` when there are no points (the map then falls back to its default view).
- * A single point yields a degenerate box that the map fits with a max-zoom cap.
+ * Bounding box `[[swLng, swLat], [neLng, neLat]]` of every point, or `null`
+ * with no points. A single point yields a degenerate box (max-zoom capped).
  */
 function getPointsBounds(points: ProposalMapPoint[]): MapBounds | null {
   const first = points[0];

@@ -20,9 +20,9 @@ interface ProposalMapHovercardProps {
 }
 
 /**
- * The card that pops above a map pin on hover, showing the proposal's title
- * and — on the row below — the author and council district (the boundary-
- * tagged category) inline. The whole card is one link to the proposal.
+ * Card shown above a map pin on hover: title + a row with author and
+ * council district (the boundary-tagged category). The whole card links
+ * to the proposal.
  */
 export function ProposalMapHovercard({
   proposal,
@@ -30,23 +30,17 @@ export function ProposalMapHovercard({
 }: ProposalMapHovercardProps) {
   const t = useTranslations();
   const { title, category } = parseProposalData(proposal.proposalData);
-  // Per the list card's fallback ladder: explicit title → profile name →
-  // "Untitled proposal". Keeps the hovercard consistent with the list card.
+  // Match the list card's fallback ladder.
   const titleText = title || proposal.profile.name || t('Untitled Proposal');
-  // Council districts are stored on the proposal as a category — the
-  // boundary-import job auto-tags each proposal with the boundary it falls
-  // inside (see `decision_boundaries.taxonomyTermId`).
+  // The boundary-import job tags each proposal with the boundary (council
+  // district) it falls inside as a category — see `decision_boundaries`.
   const districts = normalizeProposalCategories(category);
 
   return (
     <Link
       href={href}
-      // White card with a soft shadow and rounded corners — matches the
-      // Figma spec. `block` strips link underline styling; `w-fit` shrinks
-      // the card to its content (so a short title doesn't stretch the card)
-      // and the min/max-w pair clamps it between 13rem and 20rem — long
-      // titles wrap at the max width instead of running off into a single
-      // long line.
+      // `w-fit` + min/max-w clamps the card between 13rem and 20rem so
+      // short titles don't stretch and long titles wrap.
       className="block w-fit max-w-80 min-w-52 cursor-pointer rounded-lg border border-neutral-gray1 bg-white p-4 text-neutral-black no-underline shadow-md hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-tealBlack"
     >
       <p className="line-clamp-2 font-serif text-title-sm14 text-neutral-black">
@@ -66,10 +60,8 @@ function HovercardMeta({
   author?: HovercardAuthorData;
   districts: string[];
 }) {
-  // Avatar + name + district chip all live on the same row per the design,
-  // sitting 0.25rem below the title. Each child returns null when it has
-  // nothing to show; `empty:hidden` collapses the row when both are absent
-  // so the title doesn't get a ghost margin.
+  // `empty:hidden` collapses the row when both children render null so the
+  // title doesn't get a ghost margin.
   return (
     <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 empty:mt-0 empty:hidden">
       <HovercardAuthor author={author} />

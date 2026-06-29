@@ -25,16 +25,12 @@ interface ProposalsMapViewProps {
 }
 
 /**
- * The map browse view for a process's proposals. On desktop it shows the list
- * (left) beside a sticky map (right); hovering a row or marker drives a single
- * shared active state, and clicking a marker opens the proposal. On mobile it
- * shows just the map and the first tap on a pin shows its hovercard preview;
- * a second tap on the same pin navigates, and tapping the map background
- * dismisses the preview.
+ * Map browse view for a process's proposals. Desktop = list + sticky map
+ * with hover-driven active state; mobile = map only, first tap shows the
+ * preview and a second tap navigates.
  *
- * The map fits all proposal markers (with a buffer), re-fitting as the set is
- * filtered, and falls back to the process's default view (`x-map-default`) only
- * when no proposal has a location.
+ * Map fits all proposal markers (with a buffer) and falls back to the
+ * process's default view (`x-map-default`) when no proposal has a location.
  */
 // fallow-ignore-next-line complexity
 export function ProposalsMapView({
@@ -59,8 +55,7 @@ export function ProposalsMapView({
     [decisionSlug, slug, instanceId],
   );
 
-  // One marker per proposal that has coordinates. Location is mandatory for
-  // these processes, so this is virtually every proposal (drafts may lack one).
+  // One marker per proposal with coordinates (drafts may lack one).
   const points = useMemo(
     () =>
       proposals.flatMap((proposal) => {
@@ -72,19 +67,14 @@ export function ProposalsMapView({
     [proposals],
   );
 
-  // O(1) lookup by proposal id — used by both the marker-click handler and
-  // the per-pin hovercard renderer, both of which would otherwise scan
-  // `proposals` on every call.
+  // O(1) lookup so the click handler + hovercard renderer don't scan per call.
   const proposalsById = useMemo(
     () => new Map(proposals.map((proposal) => [proposal.id, proposal])),
     [proposals],
   );
 
-  // Desktop: tap navigates immediately (hover already showed the card).
-  // Mobile: first tap on a new pin shows its hovercard; only a second tap on
-  // the same pin (now the active one) navigates. Tapping a different pin
-  // moves the preview to that one — no navigation. Tap outside any pin
-  // dismisses the card (see `handleMapClick` below).
+  // Desktop: tap navigates immediately. Mobile: first tap shows the
+  // hovercard preview, a second tap on the same pin navigates.
   const handleMarkerClick = useCallback(
     (id: string) => {
       if (isMobile && activeId !== id) {
@@ -99,25 +89,17 @@ export function ProposalsMapView({
     [isMobile, activeId, proposalsById, router, hrefFor],
   );
 
-  // The marker's leave callback fires after its dismiss-delay timer, which
-  // can land AFTER the cursor has already entered another marker. We only
-  // clear `activeId` when it's still ours — otherwise a leave from the
-  // previously-hovered pin would clobber the freshly-hovered one and the
-  // new pin would flicker out of its active state.
+  // Only clear when it's still our id — a leave's dismiss-delay timer can
+  // land after another pin has become active and would otherwise flicker it.
   const handleMarkerLeave = useCallback((id: string) => {
     setActiveId((prev) => (prev === id ? null : prev));
   }, []);
 
-  // Mobile: tapping the map background (outside any pin) dismisses the
-  // currently-previewed pin's card. Marker clicks stop propagation, so this
-  // only fires for genuine background taps.
+  // Mobile: tapping the map background dismisses the open preview.
   const handleMapClick = useCallback(() => {
     setActiveId(null);
   }, []);
 
-  // The card content is the same on desktop and mobile — on desktop it's
-  // gated by the marker's hover state machine, on mobile by the controlled
-  // `controlledOpenId` (the tap-tracked `activeId`).
   const renderHovercard = useCallback(
     (id: string) => {
       const proposal = proposalsById.get(id);
@@ -131,9 +113,8 @@ export function ProposalsMapView({
     [proposalsById, hrefFor],
   );
 
-  // Desktop = hover-driven card via the marker's internal state machine;
-  // mobile = tap-driven card via the parent's `activeId` (controlledOpenId),
-  // with the map background dismissing the preview.
+  // Desktop = hover-driven (marker hover state); mobile = tap-driven via
+  // `controlledOpenId`, with map background dismissing the preview.
   const breakpointProps = isMobile
     ? {
         onMarkerEnter: undefined,
@@ -163,10 +144,8 @@ export function ProposalsMapView({
     />
   );
 
-  // Mobile: the map fills the screen edge-to-edge (no gutters/border). `w-screen`
-  // + the negative margin break out of the page container's horizontal padding;
-  // the height plus the page's `max-sm:pb-0` make it flush to the bottom of the
-  // viewport once the banner has scrolled away beneath the sticky filter bar.
+  // Mobile: map fills the screen edge-to-edge. `w-screen` + the negative
+  // margin break out of the page container's horizontal padding.
   if (isMobile) {
     return (
       <div className="-mb-4 ml-[calc(50%_-_50vw)] h-[calc(100dvh_-_3.5rem)] w-screen overflow-hidden">
@@ -175,7 +154,6 @@ export function ProposalsMapView({
     );
   }
 
-  // Desktop: list (left) beside a sticky, viewport-filling map (right).
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
       <ul className="flex min-w-0 flex-col gap-6">
