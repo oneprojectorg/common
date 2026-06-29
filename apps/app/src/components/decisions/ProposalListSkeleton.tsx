@@ -1,14 +1,12 @@
 import { Skeleton } from '@op/ui/Skeleton';
 import { Surface } from '@op/ui/Surface';
 
-import { ProposalMasonry } from './ProposalMasonry';
-
 export const ProposalListSkeletonGrid = () => (
-  <ProposalMasonry>
+  <div className="columns-1 gap-6 md:columns-2 lg:columns-3 [&>*]:mb-6 [&>*]:break-inside-avoid">
     {Array.from({ length: 6 }).map((_, index) => (
       <ProposalCardSkeleton key={index} />
     ))}
-  </ProposalMasonry>
+  </div>
 );
 
 export const ProposalListSkeleton = () => {

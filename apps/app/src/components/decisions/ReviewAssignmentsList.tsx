@@ -172,9 +172,9 @@ const ReviewAssignmentCardSkeleton = () => (
 );
 
 const ReviewAssignmentListSkeletonGrid = () => (
-  <ProposalMasonry>
+  <div className="columns-1 gap-6 md:columns-2 lg:columns-3 [&>*]:mb-6 [&>*]:break-inside-avoid">
     {Array.from({ length: 6 }).map((_, index) => (
       <ReviewAssignmentCardSkeleton key={index} />
     ))}
-  </ProposalMasonry>
+  </div>
 );
