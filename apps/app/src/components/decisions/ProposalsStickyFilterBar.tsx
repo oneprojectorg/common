@@ -117,20 +117,28 @@ export const ProposalsStickyFilterBar = ({
         data-pinned={isPinned || undefined}
         style={{ top: pinOffset }}
         className={cn(
-          'group sticky z-20 flex flex-wrap items-center justify-between gap-4 overflow-visible bg-white py-3 transition-shadow',
-          "before:pointer-events-none before:absolute before:top-0 before:left-1/2 before:w-screen before:-translate-x-1/2 before:border-t before:border-neutral-gray1 before:opacity-0 before:content-['']",
+          // `top` (inline) only matters on mobile, where it clears the floating
+          // toggle; on >=md the toggle is inline in the header, so pin flush at 0.
+          'group sticky z-20 flex flex-wrap items-center justify-between gap-4 overflow-visible bg-white py-3 transition-shadow md:top-0!',
+          // Top hairline fades in on pin — mobile only (>=md has no floating
+          // toggle above the bar, so no top edge to delineate).
+          "max-md:before:pointer-events-none max-md:before:absolute max-md:before:top-0 max-md:before:left-1/2 max-md:before:w-screen max-md:before:-translate-x-1/2 max-md:before:border-t max-md:before:border-neutral-gray1 max-md:before:opacity-0 max-md:before:content-['']",
+          'max-md:data-[pinned=true]:before:opacity-100',
+          // Bottom hairline fades in on pin — all breakpoints.
           "after:pointer-events-none after:absolute after:-bottom-px after:left-1/2 after:w-screen after:-translate-x-1/2 after:border-b after:border-neutral-gray1 after:opacity-0 after:content-['']",
-          'data-[pinned=true]:before:opacity-100 data-[pinned=true]:after:opacity-100',
+          'data-[pinned=true]:after:opacity-100',
         )}
       >
-        {/* White band filling the gap above the bar (behind the floating mobile
-            toggle) once pinned — its height/offset track `pinOffset` so content
-            stops showing behind the toggle when the bar locks. While scrolling,
-            it's transparent so the phase header shows through. */}
+        {/* Full-bleed white that fades in once pinned — covers the bar and its
+            side gutters (the bar itself is content-width, so without this,
+            proposals show through the gutters when pinned). On mobile it also
+            extends up by `pinOffset` to back the floating toggle; on >=md the
+            bar pins flush so it starts at the bar top. Sits behind the bar's own
+            content (-z-10) but above the scrolling proposals (the bar's z-20). */}
         <div
           aria-hidden
-          style={{ top: -pinOffset, height: pinOffset }}
-          className="pointer-events-none absolute left-1/2 hidden w-screen -translate-x-1/2 bg-white opacity-0 transition-opacity group-data-[pinned=true]:opacity-100 max-md:block"
+          style={{ top: -pinOffset }}
+          className="pointer-events-none absolute bottom-0 left-1/2 -z-10 w-screen -translate-x-1/2 bg-white opacity-0 transition-opacity group-data-[pinned=true]:opacity-100 md:top-0!"
         />
         <ProposalsListHeader
           hideFilters={hideFilters}
