@@ -12,9 +12,11 @@ import { Avatar } from '@op/ui/Avatar';
 import { Chip } from '@op/ui/Chip';
 import { Header3 } from '@op/ui/Header';
 import { Surface } from '@op/ui/Surface';
+import { Tooltip, TooltipTrigger } from '@op/ui/Tooltip';
 import { cn } from '@op/ui/utils';
 import Image from 'next/image';
-import type { HTMLAttributes, ReactNode } from 'react';
+import { type HTMLAttributes, type ReactNode, useRef } from 'react';
+import { useFocusable } from 'react-aria';
 import { LuBookmark, LuHeart, LuMessageCircle } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
@@ -448,22 +450,54 @@ export function ProposalCardMetrics({
         className,
       )}
     >
-      <span className="flex shrink-0 items-center gap-1">
-        <LuHeart className="size-4 shrink-0" />
-        {proposal.likesCount || 0}
-        <span className="hidden sm:inline">{t('Likes')}</span>
-      </span>
-      <span className="flex shrink-0 items-center gap-1">
-        <LuMessageCircle className="size-4 shrink-0" />
-        {proposal.commentsCount || 0}
-        <span className="hidden sm:inline">{t('Comments')}</span>
-      </span>
-      <span className="flex shrink-0 items-center gap-1">
-        <LuBookmark className="size-4 shrink-0" />
-        {proposal.followersCount || 0}
-        <span className="hidden sm:inline">{t('Followers')}</span>
-      </span>
+      <ProposalCardMetric
+        icon={<LuHeart className="size-4 shrink-0" />}
+        count={proposal.likesCount || 0}
+        label={t('Likes')}
+      />
+      <ProposalCardMetric
+        icon={<LuMessageCircle className="size-4 shrink-0" />}
+        count={proposal.commentsCount || 0}
+        label={t('Comments')}
+      />
+      <ProposalCardMetric
+        icon={<LuBookmark className="size-4 shrink-0" />}
+        count={proposal.followersCount || 0}
+        label={t('Followers')}
+      />
     </div>
+  );
+}
+
+// The label lives in a tooltip — the chip shows only the icon + count, since
+// room is tight on narrow cards. Focusable so the tooltip is keyboard-reachable;
+// aria-label keeps the bare count meaningful to screen readers.
+function ProposalCardMetric({
+  icon,
+  count,
+  label,
+}: {
+  icon: ReactNode;
+  count: number;
+  label: string;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const { focusableProps } = useFocusable({}, ref);
+
+  return (
+    <TooltipTrigger>
+      <span
+        {...focusableProps}
+        ref={ref}
+        tabIndex={0}
+        aria-label={`${count} ${label}`}
+        className="flex shrink-0 items-center gap-1"
+      >
+        {icon}
+        {count}
+      </span>
+      <Tooltip>{label}</Tooltip>
+    </TooltipTrigger>
   );
 }
 
