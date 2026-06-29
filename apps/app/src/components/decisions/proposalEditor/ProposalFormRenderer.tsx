@@ -366,6 +366,7 @@ function renderField(
             <FieldHeader
               title={schema.title}
               description={schema.description}
+              required={field.required}
             />
             <LocationMapView value={location ?? null} />
           </div>
@@ -374,7 +375,11 @@ function renderField(
 
       return (
         <div className="flex flex-col gap-2">
-          <FieldHeader title={schema.title} description={schema.description} />
+          <FieldHeader
+            title={schema.title}
+            description={schema.description}
+            required={field.required}
+          />
           <CollaborativeLocationField
             initialValue={
               (draft[key] as ProposalDraftFields['location']) ?? null
