@@ -15,6 +15,7 @@ import {
   ProposalCardMeta,
   ProposalCardPreview,
 } from './ProposalCard';
+import { ProposalMasonry } from './ProposalMasonry';
 
 const NoProposalsFound = () => {
   const t = useTranslations();
@@ -65,7 +66,7 @@ export const ResultsList = ({
         </Header3>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <ProposalMasonry>
         {proposals.map((proposal) => {
           const viewHref = decisionSlug
             ? `/decisions/${decisionSlug}/proposal/${proposal.profileId}`
@@ -73,7 +74,7 @@ export const ResultsList = ({
 
           return (
             <ProposalCard key={proposal.id}>
-              <div className="flex h-full flex-col justify-between gap-3 space-y-3">
+              <div className="flex flex-col justify-between gap-3 space-y-3">
                 <ProposalCardContent>
                   <ProposalCardHeader
                     proposal={proposal}
@@ -106,7 +107,7 @@ export const ResultsList = ({
             </ProposalCard>
           );
         })}
-      </div>
+      </ProposalMasonry>
     </div>
   );
 };

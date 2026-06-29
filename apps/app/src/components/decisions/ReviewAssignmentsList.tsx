@@ -12,6 +12,7 @@ import { LuLeaf } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
+import { ProposalMasonry } from './ProposalMasonry';
 import { ResponsiveSelect } from './ResponsiveSelect';
 import { ReviewAssignmentCard } from './ReviewAssignmentCard';
 
@@ -127,7 +128,7 @@ export function ReviewAssignmentsList({
           </p>
         </EmptyState>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <ProposalMasonry>
           {assignments.map((item) => (
             <ReviewAssignmentCard
               key={item.assignment.id}
@@ -140,14 +141,14 @@ export function ReviewAssignmentsList({
               }
             />
           ))}
-        </div>
+        </ProposalMasonry>
       )}
     </div>
   );
 }
 
 const ReviewAssignmentCardSkeleton = () => (
-  <Surface className="relative w-full space-y-3 p-4 pb-4 md:min-w-80">
+  <Surface className="relative w-full space-y-3 p-4 pb-4">
     {/* Title */}
     <Skeleton className="h-6 w-3/4" />
 
@@ -171,7 +172,7 @@ const ReviewAssignmentCardSkeleton = () => (
 );
 
 const ReviewAssignmentListSkeletonGrid = () => (
-  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+  <div className="columns-1 gap-6 md:columns-2 lg:columns-3 [&>*]:mb-6 [&>*]:break-inside-avoid">
     {Array.from({ length: 6 }).map((_, index) => (
       <ReviewAssignmentCardSkeleton key={index} />
     ))}

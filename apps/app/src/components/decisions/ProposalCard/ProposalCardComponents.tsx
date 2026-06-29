@@ -58,7 +58,7 @@ export function ProposalCard({
     <Surface
       variant={isDraft ? 'filled' : 'empty'}
       className={cn(
-        'relative flex w-full flex-col justify-between gap-3 p-4 md:min-w-80',
+        'relative flex w-full flex-col justify-between gap-3 p-4',
         className,
       )}
       {...props}
@@ -128,7 +128,7 @@ export function ProposalCardTitle({
     cardTranslation?.title ??
     (title || proposal.profile.name || t('Untitled Proposal'));
   const titleClasses =
-    'max-w-full truncate text-nowrap font-serif !text-title-sm text-neutral-black';
+    'max-w-full font-serif !text-title-sm text-neutral-black';
 
   if (asLink && viewHref) {
     return (
