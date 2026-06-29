@@ -6,6 +6,7 @@ import { RichTextRenderer } from '@/components/decisions/RichTextRenderer';
 import { hasFirstPhaseStarted } from '@/components/decisions/hasFirstPhaseStarted';
 
 import { loadDecision } from './loadDecision';
+import { truncateDescription } from './metaDescription';
 
 export async function generateMetadata({
   params,
@@ -19,11 +20,30 @@ export async function generateMetadata({
       loadDecision(slug),
       getTranslations({ locale }),
     ]);
-    const label = t('Overview');
+    const name = decisionProfile.name || t('Decision');
+    const owner = decisionProfile.processInstance?.owner?.name;
+    const description = truncateDescription(
+      decisionProfile.bio ?? decisionProfile.mission ?? '',
+    );
+
+    // robots is set only here, in the publicly-readable path: a private decision
+    // throws in loadDecision and falls into the catch below, leaving the global
+    // noindex from the root layout in place. The colocated opengraph-image route
+    // supplies og:image for this page and its child phase routes.
     return {
-      title: decisionProfile.name
-        ? `${label} | ${decisionProfile.name}`
-        : label,
+      title: owner ? `${name} | ${owner}` : name,
+      description: description || undefined,
+      robots: { index: true, follow: true },
+      openGraph: {
+        title: name,
+        description: description || undefined,
+        type: 'article',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: name,
+        description: description || undefined,
+      },
     };
   } catch {
     return {};
