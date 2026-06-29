@@ -2,7 +2,7 @@
 
 import { type LngLat, Map, type MapBounds } from '@op/ui/Map';
 import { MapMarker } from '@op/ui/MapMarker';
-import { useMemo } from 'react';
+import { type ReactNode, useMemo } from 'react';
 
 export interface ProposalMapPoint {
   id: string;
@@ -20,10 +20,23 @@ export interface ProposalsMapCanvasProps {
   points: ProposalMapPoint[];
   /** Id of the proposal whose marker should be highlighted. */
   activeId?: string | null;
-  /** Fired as the pointer enters/leaves a marker (id, or null on leave). */
-  onMarkerHover?: (id: string | null) => void;
-  /** Fired when a marker is clicked/tapped. */
+  onMarkerEnter?: (id: string) => void;
+  /**
+   * Fires with the leaving id so the consumer can skip clearing its active
+   * state when a different marker has since become active (otherwise the
+   * deferred dismiss flickers the freshly-hovered pin).
+   */
+  onMarkerLeave?: (id: string) => void;
   onMarkerClick?: (id: string) => void;
+  renderHovercard?: (id: string) => ReactNode;
+  /**
+   * Forces the matching pin's hovercard open via `MapMarker.isOpen`. Used by
+   * the mobile tap-to-preview flow; leave undefined on desktop to let each
+   * pin's hover state machine drive the card.
+   */
+  controlledOpenId?: string | null;
+  /** Mobile background-tap dismiss. */
+  onMapClick?: () => void;
   ariaLabel?: string;
   className?: string;
 }
@@ -45,12 +58,17 @@ export default function ProposalsMapCanvas({
   zoom,
   points,
   activeId,
-  onMarkerHover,
+  onMarkerEnter,
+  onMarkerLeave,
   onMarkerClick,
+  renderHovercard,
+  controlledOpenId,
+  onMapClick,
   ariaLabel,
   className,
 }: ProposalsMapCanvasProps) {
   const bounds = useMemo(() => getPointsBounds(points), [points]);
+  const isOpenControlled = controlledOpenId !== undefined;
 
   return (
     <Map
@@ -60,28 +78,71 @@ export default function ProposalsMapCanvas({
       bounds={bounds}
       ariaLabel={ariaLabel}
       className={className}
+      onClick={onMapClick}
     >
       {points.map((point) => (
-        <MapMarker
+        <ProposalPin
           key={point.id}
-          longitude={point.lng}
-          latitude={point.lat}
+          point={point}
           isActive={activeId === point.id}
-          onClick={onMarkerClick ? () => onMarkerClick(point.id) : undefined}
-          onMouseEnter={
-            onMarkerHover ? () => onMarkerHover(point.id) : undefined
-          }
-          onMouseLeave={onMarkerHover ? () => onMarkerHover(null) : undefined}
+          onMarkerEnter={onMarkerEnter}
+          onMarkerLeave={onMarkerLeave}
+          onMarkerClick={onMarkerClick}
+          renderHovercard={renderHovercard}
+          isOpen={isOpenControlled ? controlledOpenId === point.id : undefined}
         />
       ))}
     </Map>
   );
 }
 
+interface ProposalPinProps {
+  point: ProposalMapPoint;
+  isActive: boolean;
+  onMarkerEnter?: (id: string) => void;
+  onMarkerLeave?: (id: string) => void;
+  onMarkerClick?: (id: string) => void;
+  renderHovercard?: (id: string) => ReactNode;
+  isOpen?: boolean;
+}
+
+function ProposalPin({
+  point,
+  isActive,
+  onMarkerEnter,
+  onMarkerLeave,
+  onMarkerClick,
+  renderHovercard,
+  isOpen,
+}: ProposalPinProps) {
+  return (
+    <MapMarker
+      longitude={point.lng}
+      latitude={point.lat}
+      isActive={isActive}
+      onClick={bindCallback(onMarkerClick, point.id)}
+      onMouseEnter={bindCallback(onMarkerEnter, point.id)}
+      onMouseLeave={bindCallback(onMarkerLeave, point.id)}
+      hoverContent={renderHovercard?.(point.id)}
+      isOpen={isOpen}
+    />
+  );
+}
+
 /**
- * Bounding box enclosing every point as `[[swLng, swLat], [neLng, neLat]]`, or
- * `null` when there are no points (the map then falls back to its default view).
- * A single point yields a degenerate box that the map fits with a max-zoom cap.
+ * Pre-bind an optional callback so `undefined` passes straight through — the
+ * marker uses that to skip its hover/click wiring and cursor change.
+ */
+function bindCallback<T>(
+  fn: ((arg: T) => void) | undefined,
+  arg: T,
+): (() => void) | undefined {
+  return fn ? () => fn(arg) : undefined;
+}
+
+/**
+ * Bounding box `[[swLng, swLat], [neLng, neLat]]` of every point, or `null`
+ * with no points. A single point yields a degenerate box (max-zoom capped).
  */
 function getPointsBounds(points: ProposalMapPoint[]): MapBounds | null {
   const first = points[0];

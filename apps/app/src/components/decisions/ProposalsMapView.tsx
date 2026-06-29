@@ -8,6 +8,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
+import { ProposalMapHovercard } from './ProposalMapHovercard';
 import { ProposalMapListItem } from './ProposalMapListItem';
 import { ProposalsMapCanvas } from './location/dynamicProposalsMap';
 import { useMapStyleUrl } from './location/mapConfig';
@@ -24,16 +25,14 @@ interface ProposalsMapViewProps {
 }
 
 /**
- * The map browse view for a process's proposals. On desktop it shows the list
- * (left) beside a sticky map (right); hovering a row or marker drives a single
- * shared active state, and clicking a marker opens the proposal. On mobile it
- * shows just the map (the list is the regular grid, toggled separately) and
- * tapping a marker likewise opens the proposal.
+ * Map browse view for a process's proposals. Desktop = list + sticky map
+ * with hover-driven active state; mobile = map only, first tap shows the
+ * preview and a second tap navigates.
  *
- * The map fits all proposal markers (with a buffer), re-fitting as the set is
- * filtered, and falls back to the process's default view (`x-map-default`) only
- * when no proposal has a location.
+ * Map fits all proposal markers (with a buffer) and falls back to the
+ * process's default view (`x-map-default`) when no proposal has a location.
  */
+// fallow-ignore-next-line complexity
 export function ProposalsMapView({
   proposals,
   instanceId,
@@ -56,8 +55,7 @@ export function ProposalsMapView({
     [decisionSlug, slug, instanceId],
   );
 
-  // One marker per proposal that has coordinates. Location is mandatory for
-  // these processes, so this is virtually every proposal (drafts may lack one).
+  // One marker per proposal with coordinates (drafts may lack one).
   const points = useMemo(
     () =>
       proposals.flatMap((proposal) => {
@@ -69,17 +67,67 @@ export function ProposalsMapView({
     [proposals],
   );
 
-  // Clicking a marker opens the proposal on every breakpoint; on desktop the
-  // shared active state is still driven by hover (see `onMarkerHover`).
+  // O(1) lookup so the click handler + hovercard renderer don't scan per call.
+  const proposalsById = useMemo(
+    () => new Map(proposals.map((proposal) => [proposal.id, proposal])),
+    [proposals],
+  );
+
+  // Desktop: tap navigates immediately. Mobile: first tap shows the
+  // hovercard preview, a second tap on the same pin navigates.
   const handleMarkerClick = useCallback(
     (id: string) => {
-      const proposal = proposals.find((p) => p.id === id);
+      if (isMobile && activeId !== id) {
+        setActiveId(id);
+        return;
+      }
+      const proposal = proposalsById.get(id);
       if (proposal) {
         router.push(hrefFor(proposal));
       }
     },
-    [proposals, router, hrefFor],
+    [isMobile, activeId, proposalsById, router, hrefFor],
   );
+
+  // Only clear when it's still our id — a leave's dismiss-delay timer can
+  // land after another pin has become active and would otherwise flicker it.
+  const handleMarkerLeave = useCallback((id: string) => {
+    setActiveId((prev) => (prev === id ? null : prev));
+  }, []);
+
+  // Mobile: tapping the map background dismisses the open preview.
+  const handleMapClick = useCallback(() => {
+    setActiveId(null);
+  }, []);
+
+  const renderHovercard = useCallback(
+    (id: string) => {
+      const proposal = proposalsById.get(id);
+      if (!proposal) {
+        return null;
+      }
+      return (
+        <ProposalMapHovercard proposal={proposal} href={hrefFor(proposal)} />
+      );
+    },
+    [proposalsById, hrefFor],
+  );
+
+  // Desktop = hover-driven (marker hover state); mobile = tap-driven via
+  // `controlledOpenId`, with map background dismissing the preview.
+  const breakpointProps = isMobile
+    ? {
+        onMarkerEnter: undefined,
+        onMarkerLeave: undefined,
+        controlledOpenId: activeId,
+        onMapClick: handleMapClick,
+      }
+    : {
+        onMarkerEnter: setActiveId,
+        onMarkerLeave: handleMarkerLeave,
+        controlledOpenId: undefined,
+        onMapClick: undefined,
+      };
 
   const map = (
     <ProposalsMapCanvas
@@ -88,17 +136,16 @@ export function ProposalsMapView({
       zoom={mapView.zoom}
       points={points}
       activeId={activeId}
-      onMarkerHover={isMobile ? undefined : setActiveId}
       onMarkerClick={handleMarkerClick}
+      renderHovercard={renderHovercard}
       ariaLabel={t('Map of proposals')}
       className="h-full sm:h-full"
+      {...breakpointProps}
     />
   );
 
-  // Mobile: the map fills the screen edge-to-edge (no gutters/border). `w-screen`
-  // + the negative margin break out of the page container's horizontal padding;
-  // the height plus the page's `max-sm:pb-0` make it flush to the bottom of the
-  // viewport once the banner has scrolled away beneath the sticky filter bar.
+  // Mobile: map fills the screen edge-to-edge. `w-screen` + the negative
+  // margin break out of the page container's horizontal padding.
   if (isMobile) {
     return (
       <div className="-mb-4 ml-[calc(50%_-_50vw)] h-[calc(100dvh_-_3.5rem)] w-screen overflow-hidden">
@@ -107,7 +154,6 @@ export function ProposalsMapView({
     );
   }
 
-  // Desktop: list (left) beside a sticky, viewport-filling map (right).
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
       <ul className="flex min-w-0 flex-col gap-6">

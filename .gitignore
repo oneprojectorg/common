@@ -87,3 +87,4 @@ ralph.sh
 # Local-only PRDs and verification artifacts
 tasks/
 .gstack/
+.plans/
