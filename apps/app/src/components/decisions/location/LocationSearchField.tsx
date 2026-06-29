@@ -107,13 +107,12 @@ export function LocationSearchField({
       }
       placeholder={t('Address, cross streets, or landmark')}
       menuTrigger="input"
-      // Only let the popover stay open with an empty collection when the
-      // query is long enough AND nothing is currently in flight. The icon
-      // spinner already signals "searching", so the empty popover stays
-      // hidden until a search has actually settled — at which point a
-      // populated list or "No results" takes over. Below the min length
-      // AriaComboBox closes the popover on its own.
-      allowsEmptyCollection={query.length >= MIN_QUERY_LENGTH && !isSearching}
+      // Keep the popover open as soon as the query passes the min length so a
+      // "Searching…" / "No results" state can replace it once results land.
+      // Closing it mid-flight (e.g. gating on `!isSearching`) wedges the
+      // dropdown: react-aria does not auto-reopen when items arrive, so the
+      // user only sees results after blurring and refocusing the input.
+      allowsEmptyCollection={query.length >= MIN_QUERY_LENGTH}
       onInputChange={setQuery}
       onSelectionChange={(key) => {
         const item = items.find((option) => option.id === key);
@@ -123,7 +122,7 @@ export function LocationSearchField({
       }}
       renderEmptyState={() => (
         <div className="px-3 py-2 text-sm text-neutral-charcoal">
-          {t('No results')}
+          {isSearching ? t('Searching…') : t('No results')}
         </div>
       )}
     >
