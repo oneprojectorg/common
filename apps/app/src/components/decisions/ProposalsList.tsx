@@ -50,6 +50,11 @@ export interface ProposalsListProps {
   currentPhase?: InstancePhaseData;
   /** When true, new proposals are hidden by default in the current phase. */
   proposalsHidden?: boolean;
+  /**
+   * Px offset where the sticky filter bar pins. Decision-view passes a larger
+   * value to clear the Overview/Current toggle; other routes use the default.
+   */
+  pinOffset?: number;
 }
 
 // A multiple of three so a full page fills the three-per-row grid evenly.
@@ -291,6 +296,7 @@ const ProposalsListContent = ({
   permissions,
   currentPhase,
   proposalsHidden,
+  pinOffset,
   allProposals,
   total,
   isFetchingNextPage,
@@ -412,7 +418,7 @@ const ProposalsListContent = ({
       )}
     >
       <ProposalsStickyFilterBar
-        isMapMode={isMapMode}
+        pinOffset={pinOffset}
         hideFilters={hideFilters}
         total={total}
         proposalFilter={proposalFilter}

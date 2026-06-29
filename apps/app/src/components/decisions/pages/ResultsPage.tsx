@@ -68,6 +68,7 @@ export function ResultsPage({
   profileSlug,
   decisionSlug,
   useLegacy = false,
+  pinOffset,
 }: {
   instanceId: string;
   /** Owner profile slug (e.g. "people-powered") — used for org-specific hero content and legacy URL fallbacks */
@@ -76,6 +77,8 @@ export function ResultsPage({
   decisionSlug?: string;
   /** Use legacy getInstance endpoint (for /profile/[slug]/decisions/[id] route) */
   useLegacy?: boolean;
+  /** Sticky filter-bar pin offset, forwarded to ProposalsList. */
+  pinOffset?: number;
 }) {
   if (useLegacy) {
     return (
@@ -89,6 +92,7 @@ export function ResultsPage({
       profileSlug={profileSlug}
       decisionSlug={decisionSlug}
       instance={instance}
+      pinOffset={pinOffset}
     />
   );
 }
@@ -99,12 +103,14 @@ function ResultsPageContent({
   decisionSlug,
   instance,
   isLegacy = false,
+  pinOffset,
 }: {
   instanceId: string;
   profileSlug: string;
   decisionSlug?: string;
   instance: ResultsPageInstance;
   isLegacy?: boolean;
+  pinOffset?: number;
 }) {
   const t = useTranslations();
 
@@ -202,6 +208,7 @@ function ResultsPageContent({
                   decisionSlug={decisionSlug}
                   initialFilter={ProposalFilter.ALL}
                   phase="results"
+                  pinOffset={pinOffset}
                 />
               </Suspense>
             </DecisionResultsTabPanel>

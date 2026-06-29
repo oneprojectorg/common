@@ -24,6 +24,7 @@ export function StandardDecisionPage({
   slug,
   decisionSlug,
   decisionProfileId,
+  pinOffset,
 }: {
   instanceId: string;
   slug: string;
@@ -31,6 +32,8 @@ export function StandardDecisionPage({
   decisionSlug?: string;
   /** Decision profile ID for translating the decision content (phase titles, headline, descriptions) */
   decisionProfileId?: string | null;
+  /** Sticky filter-bar pin offset, forwarded to ProposalsList. */
+  pinOffset?: number;
 }) {
   const t = useTranslations();
   const translation = useDecisionTranslation();
@@ -154,6 +157,7 @@ export function StandardDecisionPage({
                   decisionProfileId={decisionProfileId}
                   permissions={instance.access}
                   proposalsHidden={proposalsHidden}
+                  pinOffset={pinOffset}
                 />
               </Suspense>
             </APIErrorBoundary>

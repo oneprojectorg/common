@@ -18,11 +18,14 @@ export function VotingPage({
   instanceId,
   slug,
   decisionSlug,
+  pinOffset,
 }: {
   instanceId: string;
   slug: string;
   /** Decision profile slug for building proposal links */
   decisionSlug?: string;
+  /** Sticky filter-bar pin offset, forwarded to ProposalsList. */
+  pinOffset?: number;
 }) {
   const t = useTranslations();
   const locale = useLocale();
@@ -105,6 +108,7 @@ export function VotingPage({
               decisionSlug={decisionSlug}
               permissions={instance.access}
               currentPhase={currentPhase}
+              pinOffset={pinOffset}
             />
           </Suspense>
         </div>

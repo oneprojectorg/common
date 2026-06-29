@@ -50,7 +50,7 @@ export const DecisionInstanceHeader = ({
   const canInteract = userCanInteract(user);
 
   return (
-    <header className="sticky top-0 z-10 grid grid-cols-[auto_1fr_auto] items-center border-b bg-white p-2 px-4 sm:grid-cols-3 md:px-6 md:py-3">
+    <header className="sticky top-0 z-30 grid grid-cols-[auto_1fr_auto] items-center border-b bg-white p-2 px-4 sm:grid-cols-3 md:px-6 md:py-3">
       <div className="flex min-w-0 items-center gap-3">
         {canInteract && (
           <Link
@@ -118,8 +118,8 @@ export const DecisionInstanceHeader = ({
       </div>
 
       {centerSlot ? (
-        <div className="pointer-events-none absolute inset-x-0 top-full flex justify-center pt-4 md:hidden">
-          <div className="pointer-events-auto">{centerSlot}</div>
+        <div className="pointer-events-none absolute inset-x-0 top-full z-50 flex justify-center md:hidden">
+          <div className="pointer-events-auto pt-2">{centerSlot}</div>
         </div>
       ) : null}
     </header>

@@ -27,11 +27,14 @@ export function ReviewPage({
   decisionSlug,
   slug,
   decisionProfileId,
+  pinOffset,
 }: {
   instance: Instance;
   decisionSlug: string;
   slug: string;
   decisionProfileId?: string | null;
+  /** Sticky filter-bar pin offset, forwarded to ProposalsList. */
+  pinOffset?: number;
 }) {
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;
@@ -126,6 +129,7 @@ export function ReviewPage({
                   decisionProfileId={decisionProfileId}
                   permissions={instance.access}
                   currentPhase={currentPhase}
+                  pinOffset={pinOffset}
                 />
               )}
             </Suspense>
