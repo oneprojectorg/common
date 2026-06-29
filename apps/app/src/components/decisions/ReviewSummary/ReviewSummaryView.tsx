@@ -51,7 +51,7 @@ export function ReviewSummaryView({
   return (
     <div className="flex h-dvh flex-col bg-white pb-14">
       <DecisionSubpageHeader
-        backHref={`/decisions/${decisionSlug}`}
+        backHref={`/decisions/${decisionSlug}/current`}
         backLabel={t('Back')}
       />
 

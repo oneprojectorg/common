@@ -365,9 +365,10 @@ test.describe('Decision Review Selection — review → voting flow', () => {
     // that was just made on the detail page — this is what the persisted
     // draft buys us across the navigation boundary.
     await page.getByRole('link', { name: 'Back', exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(`/decisions/${instance.slug}$`), {
-      timeout: 10_000,
-    });
+    await expect(page).toHaveURL(
+      new RegExp(`/decisions/${instance.slug}/current$`),
+      { timeout: 10_000 },
+    );
 
     // Row toggle aria-label flips to "Don't advance ..." once selected.
     await expect(
