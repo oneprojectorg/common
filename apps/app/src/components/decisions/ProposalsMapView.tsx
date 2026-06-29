@@ -28,13 +28,15 @@ interface ProposalsMapViewProps {
  * The map browse view for a process's proposals. On desktop it shows the list
  * (left) beside a sticky map (right); hovering a row or marker drives a single
  * shared active state, and clicking a marker opens the proposal. On mobile it
- * shows just the map (the list is the regular grid, toggled separately) and
- * tapping a marker likewise opens the proposal.
+ * shows just the map and the first tap on a pin shows its hovercard preview;
+ * a second tap on the same pin navigates, and tapping the map background
+ * dismisses the preview.
  *
  * The map fits all proposal markers (with a buffer), re-fitting as the set is
  * filtered, and falls back to the process's default view (`x-map-default`) only
  * when no proposal has a location.
  */
+// fallow-ignore-next-line complexity
 export function ProposalsMapView({
   proposals,
   instanceId,
@@ -78,17 +80,23 @@ export function ProposalsMapView({
     [proposals],
   );
 
-  // Clicking a marker opens the proposal on every breakpoint; on desktop the
-  // shared active state is still driven by hover (see `onMarkerEnter` /
-  // `onMarkerLeave`).
+  // Desktop: tap navigates immediately (hover already showed the card).
+  // Mobile: first tap on a new pin shows its hovercard; only a second tap on
+  // the same pin (now the active one) navigates. Tapping a different pin
+  // moves the preview to that one — no navigation. Tap outside any pin
+  // dismisses the card (see `handleMapClick` below).
   const handleMarkerClick = useCallback(
     (id: string) => {
+      if (isMobile && activeId !== id) {
+        setActiveId(id);
+        return;
+      }
       const proposal = proposalsById.get(id);
       if (proposal) {
         router.push(hrefFor(proposal));
       }
     },
-    [proposalsById, router, hrefFor],
+    [isMobile, activeId, proposalsById, router, hrefFor],
   );
 
   // The marker's leave callback fires after its dismiss-delay timer, which
@@ -100,9 +108,16 @@ export function ProposalsMapView({
     setActiveId((prev) => (prev === id ? null : prev));
   }, []);
 
-  // Desktop-only: render the hovercard above the pin on hover, with a small
-  // dismiss delay so the cursor can transit from pin to card. Mobile is left
-  // as plain tap-to-open — there's no hover analogue.
+  // Mobile: tapping the map background (outside any pin) dismisses the
+  // currently-previewed pin's card. Marker clicks stop propagation, so this
+  // only fires for genuine background taps.
+  const handleMapClick = useCallback(() => {
+    setActiveId(null);
+  }, []);
+
+  // The card content is the same on desktop and mobile — on desktop it's
+  // gated by the marker's hover state machine, on mobile by the controlled
+  // `controlledOpenId` (the tap-tracked `activeId`).
   const renderHovercard = useCallback(
     (id: string) => {
       const proposal = proposalsById.get(id);
@@ -116,6 +131,23 @@ export function ProposalsMapView({
     [proposalsById, hrefFor],
   );
 
+  // Desktop = hover-driven card via the marker's internal state machine;
+  // mobile = tap-driven card via the parent's `activeId` (controlledOpenId),
+  // with the map background dismissing the preview.
+  const breakpointProps = isMobile
+    ? {
+        onMarkerEnter: undefined,
+        onMarkerLeave: undefined,
+        controlledOpenId: activeId,
+        onMapClick: handleMapClick,
+      }
+    : {
+        onMarkerEnter: setActiveId,
+        onMarkerLeave: handleMarkerLeave,
+        controlledOpenId: undefined,
+        onMapClick: undefined,
+      };
+
   const map = (
     <ProposalsMapCanvas
       styleUrl={styleUrl}
@@ -123,12 +155,11 @@ export function ProposalsMapView({
       zoom={mapView.zoom}
       points={points}
       activeId={activeId}
-      onMarkerEnter={isMobile ? undefined : setActiveId}
-      onMarkerLeave={isMobile ? undefined : handleMarkerLeave}
       onMarkerClick={handleMarkerClick}
-      renderHovercard={isMobile ? undefined : renderHovercard}
+      renderHovercard={renderHovercard}
       ariaLabel={t('Map of proposals')}
       className="h-full sm:h-full"
+      {...breakpointProps}
     />
   );
 

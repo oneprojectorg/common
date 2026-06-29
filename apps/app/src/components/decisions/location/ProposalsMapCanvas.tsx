@@ -34,11 +34,25 @@ export interface ProposalsMapCanvasProps {
   onMarkerClick?: (id: string) => void;
   /**
    * Optional per-pin hovercard. When provided, the returned element is
-   * rendered above the pin while the cursor is over the pin or the card.
-   * Return `null` (or omit the prop entirely) to suppress the hovercard for
-   * a given marker — used by the mobile view, where hover has no analogue.
+   * rendered above the pin while the cursor is over the pin (desktop) or
+   * after the first tap on the pin (mobile, see `controlledOpenId`).
    */
   renderHovercard?: (id: string) => ReactNode;
+  /**
+   * When set, the matching pin's hovercard is forced open via the controlled
+   * `isOpen` prop on `MapMarker` — used by the mobile "tap to preview" flow,
+   * where the open state is driven by the parent's tap-tracked `activeId`
+   * instead of by mouseenter/mouseleave (which touch devices don't fire
+   * reliably). Pass `null` (the default) on desktop to let each pin's hover
+   * state machine manage the card itself.
+   */
+  controlledOpenId?: string | null;
+  /**
+   * Fires when the user clicks/taps the map background (not a marker). The
+   * mobile flow uses this to dismiss the open hovercard when the user taps
+   * outside any pin.
+   */
+  onMapClick?: () => void;
   ariaLabel?: string;
   className?: string;
 }
@@ -64,10 +78,13 @@ export default function ProposalsMapCanvas({
   onMarkerLeave,
   onMarkerClick,
   renderHovercard,
+  controlledOpenId,
+  onMapClick,
   ariaLabel,
   className,
 }: ProposalsMapCanvasProps) {
   const bounds = useMemo(() => getPointsBounds(points), [points]);
+  const isOpenControlled = controlledOpenId !== undefined;
 
   return (
     <Map
@@ -77,6 +94,7 @@ export default function ProposalsMapCanvas({
       bounds={bounds}
       ariaLabel={ariaLabel}
       className={className}
+      onClick={onMapClick}
     >
       {points.map((point) => (
         <ProposalPin
@@ -87,6 +105,7 @@ export default function ProposalsMapCanvas({
           onMarkerLeave={onMarkerLeave}
           onMarkerClick={onMarkerClick}
           renderHovercard={renderHovercard}
+          isOpen={isOpenControlled ? controlledOpenId === point.id : undefined}
         />
       ))}
     </Map>
@@ -100,6 +119,7 @@ interface ProposalPinProps {
   onMarkerLeave?: (id: string) => void;
   onMarkerClick?: (id: string) => void;
   renderHovercard?: (id: string) => ReactNode;
+  isOpen?: boolean;
 }
 
 function ProposalPin({
@@ -109,6 +129,7 @@ function ProposalPin({
   onMarkerLeave,
   onMarkerClick,
   renderHovercard,
+  isOpen,
 }: ProposalPinProps) {
   return (
     <MapMarker
@@ -119,6 +140,7 @@ function ProposalPin({
       onMouseEnter={bindCallback(onMarkerEnter, point.id)}
       onMouseLeave={bindCallback(onMarkerLeave, point.id)}
       hoverContent={renderHovercard?.(point.id)}
+      isOpen={isOpen}
     />
   );
 }

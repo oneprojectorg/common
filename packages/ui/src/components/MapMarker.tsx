@@ -37,6 +37,13 @@ export interface MapMarkerProps {
    * Pointer events on the card don't bubble to the marker's `onClick`.
    */
   hoverContent?: ReactNode;
+  /**
+   * Override the card's open state. When defined, the value is used directly
+   * (the internal hover state machine is bypassed). Use this for touch
+   * platforms where the card is shown/hidden by external state (e.g. a tap
+   * sets an `activeId`, a second tap navigates).
+   */
+  isOpen?: boolean;
 }
 
 /** Visual gap between the pin head and the hovercard, in CSS pixels. */
@@ -121,6 +128,7 @@ export function MapMarker({
   onMouseEnter,
   onMouseLeave,
   hoverContent,
+  isOpen,
 }: MapMarkerProps) {
   // Unique per instance so multiple markers on one page don't collide on the
   // gradient's `id` (referenced via `url(#…)`, which resolves by document id).
@@ -135,6 +143,7 @@ export function MapMarker({
     pinHeightPx,
     onActivate: onMouseEnter,
     onDeactivate: onMouseLeave,
+    controlledOpen: isOpen,
   });
 
   // The active pin (enlarged head) needs to sit above its neighbours so the
@@ -324,6 +333,12 @@ interface UseMapPinHovercardArgs {
   pinHeightPx: number;
   onActivate?: () => void;
   onDeactivate?: () => void;
+  /**
+   * Externally-controlled open state. When defined, the hook treats this as
+   * the source of truth (touch platforms use this to drive the card from
+   * tap-state instead of mouseenter/mouseleave).
+   */
+  controlledOpen?: boolean;
 }
 
 interface MapPinHovercardState {
@@ -359,9 +374,15 @@ function useMapPinHovercard({
   pinHeightPx,
   onActivate,
   onDeactivate,
+  controlledOpen,
 }: UseMapPinHovercardArgs): MapPinHovercardState {
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  // When the consumer controls the card (touch flow), the prop wins; the
+  // internal hover state machine still tracks for consistency but isn't the
+  // source of truth for visibility.
+  const isOpen = isControlled ? controlledOpen : internalIsOpen;
   const [placement, setPlacement] = useState<'top' | 'bottom'>('top');
   const [cardPosition, setCardPosition] = useState<{
     x: number;
@@ -378,17 +399,19 @@ function useMapPinHovercard({
   }, []);
 
   // Dismiss the hovercard as soon as the user starts zooming. Pan is tracked
-  // separately (the portal repositions continuously on `move`).
+  // separately (the portal repositions continuously on `move`). When the open
+  // state is externally controlled (touch flow), the consumer dismisses the
+  // card itself — zoomstart only closes the uncontrolled hover-driven card.
   useEffect(() => {
-    if (!enabled || !map) {
+    if (!enabled || !map || isControlled) {
       return;
     }
-    const close = () => setIsOpen(false);
+    const close = () => setInternalIsOpen(false);
     map.on('zoomstart', close);
     return () => {
       map.off('zoomstart', close);
     };
-  }, [enabled, map]);
+  }, [enabled, map, isControlled]);
 
   // While the card is open, keep its viewport-coord position glued to the
   // pin. We subscribe to maplibre `move` (continuous during pan) and to
@@ -434,7 +457,7 @@ function useMapPinHovercard({
 
   const open = () => {
     clearDismissTimer();
-    setIsOpen(true);
+    setInternalIsOpen(true);
   };
 
   // Schedule a deferred close. The consumer's `onDeactivate` is delayed in
@@ -442,7 +465,7 @@ function useMapPinHovercard({
   const scheduleDismiss = () => {
     clearDismissTimer();
     dismissTimerRef.current = setTimeout(() => {
-      setIsOpen(false);
+      setInternalIsOpen(false);
       dismissTimerRef.current = null;
       onDeactivate?.();
     }, HOVERCARD_DISMISS_DELAY_MS);
