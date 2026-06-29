@@ -23,8 +23,12 @@ export const reverseGeocode = router({
   // location picker can enrich a dropped pin with its address. No per-resource
   // scope to assert: it reverse-geocodes a coordinate against a global
   // provider. Billable-API abuse is bounded by the coordinate-rounded result
-  // cache (see reverseGeocodeLocation) and the procedure rate limit.
-  reverseGeocode: authenticatedProcedure()
+  // cache (see reverseGeocodeLocation) and a procedure-level per-IP+endpoint
+  // rate limit tighter than the default — Google Geocoding is metered per
+  // call, so anonymous traffic gets a tighter quota than the standard 10/10s.
+  reverseGeocode: authenticatedProcedure({
+    rateLimit: { windowSize: 60, maxRequests: 30 },
+  })
     .input(
       z.object({
         lat: z.number().min(-90).max(90),
