@@ -25,11 +25,12 @@ test.describe('Proposal Listing — update after create', () => {
     });
 
     // View the (empty) listing — registers the client-side listProposals query.
-    await authenticatedPage.goto(`/en/decisions/${instance.slug}?filter=all`, {
-      waitUntil: 'domcontentloaded',
-    });
+    await authenticatedPage.goto(
+      `/en/decisions/${instance.slug}/current?filter=all`,
+      { waitUntil: 'domcontentloaded' },
+    );
     await expect(
-      authenticatedPage.getByRole('heading', { name: instance.name }),
+      authenticatedPage.getByRole('heading', { name: instance.name, level: 1 }),
     ).toBeVisible({ timeout: 30_000 });
     await expect(authenticatedPage.getByText('No proposals yet')).toBeVisible({
       timeout: 30_000,
@@ -52,7 +53,7 @@ test.describe('Proposal Listing — update after create', () => {
     // Return via client-side history — NOT a reload (which would mask the bug).
     await authenticatedPage.goBack({ waitUntil: 'commit' });
     await expect(
-      authenticatedPage.getByRole('heading', { name: instance.name }),
+      authenticatedPage.getByRole('heading', { name: instance.name, level: 1 }),
     ).toBeVisible({ timeout: 15_000 });
 
     // The new draft must appear well within the 30s staleTime.

@@ -128,7 +128,7 @@ test.describe('Decision Role Capabilities', () => {
     });
 
     await expect(
-      memberPage.getByRole('heading', { name: instance.name }),
+      memberPage.getByRole('heading', { name: instance.name, level: 1 }),
     ).toBeVisible({ timeout: 15000 });
 
     await expect(
@@ -199,12 +199,12 @@ test.describe('Decision Role Capabilities', () => {
       password: TEST_USER_DEFAULT_PASSWORD,
     });
 
-    await memberPage.goto(`/en/decisions/${instance.slug}`, {
+    await memberPage.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'networkidle',
     });
 
     await expect(
-      memberPage.getByRole('heading', { name: instance.name }),
+      memberPage.getByRole('heading', { name: instance.name, level: 1 }),
     ).toBeVisible({ timeout: 15000 });
 
     await expect(
@@ -228,12 +228,12 @@ test.describe('Decision Role Capabilities', () => {
       schema: submissionPhaseSchema,
     });
 
-    await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
+    await authenticatedPage.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'networkidle',
     });
 
     await expect(
-      authenticatedPage.getByRole('heading', { name: instance.name }),
+      authenticatedPage.getByRole('heading', { name: instance.name, level: 1 }),
     ).toBeVisible({ timeout: 15000 });
 
     await expect(

@@ -164,7 +164,7 @@ test.describe('Decision Review Selection — review → voting flow', () => {
     ]);
     const [alpha, beta] = proposals;
 
-    await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
+    await authenticatedPage.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'networkidle',
     });
 
@@ -177,18 +177,29 @@ test.describe('Decision Review Selection — review → voting flow', () => {
       }),
     ).not.toBeVisible();
 
-    // ── 2. Click the next-phase circle in the stepper ("Start Voting").
-    // Manual transitions + admin → that step's IconButton is interactive.
+    // ── 2. Advance to Voting via the overview's PhaseTimeline. #1458 moved
+    // phase advancement off the sticky stepper, so the test crosses over to
+    // the overview tab to click the next phase's Advance button, then
+    // returns to /current for the new phase's UI.
+    await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
+      waitUntil: 'networkidle',
+    });
     await authenticatedPage
-      .getByRole('button', { name: 'Start Voting' })
+      .getByRole('button', { name: 'Advance' })
       .first()
       .click();
 
-    // ── 3. Confirm the advance in the stepper modal.
+    // ── 3. Confirm the advance in the modal.
     const advanceDialog = authenticatedPage.getByRole('dialog');
     await expect(advanceDialog).toBeVisible();
     await expect(advanceDialog.getByText('Advance to Voting?')).toBeVisible();
     await advanceDialog.getByRole('button', { name: 'Advance Phase' }).click();
+    // Wait for the transition mutation to finish (the modal closes onSuccess)
+    // before navigating, so /current renders the new phase's UI.
+    await expect(advanceDialog).not.toBeVisible({ timeout: 15_000 });
+    await authenticatedPage.goto(`/en/decisions/${instance.slug}/current`, {
+      waitUntil: 'networkidle',
+    });
 
     // ── 4. Phase transition fires `transitionFromPhase`. Once it lands the
     // page re-fetches, `selectionsAreConfirmed` flips to false (review→voting
@@ -302,16 +313,21 @@ test.describe('Decision Review Selection — review → voting flow', () => {
       'Proposal Beta',
     ]);
 
+    // Drive the instance into the review→voting selection state via the
+    // overview's PhaseTimeline (post-#1458; the sticky stepper that owned the
+    // "Start Voting" button is hidden in the new layout). Once the advance
+    // lands, ReviewSelectionList renders on /current and the proposal title
+    // links navigate to the per-proposal Review Summary.
     await page.goto(`/en/decisions/${instance.slug}`, {
       waitUntil: 'networkidle',
     });
-
-    // Drive the instance into the review→voting selection state — same path
-    // as the full-flow test. Once it lands, ReviewSelectionList renders and
-    // the proposal title links navigate to the per-proposal Review Summary.
-    await page.getByRole('button', { name: 'Start Voting' }).first().click();
+    await page.getByRole('button', { name: 'Advance' }).first().click();
     const advanceDialog = page.getByRole('dialog');
     await advanceDialog.getByRole('button', { name: 'Advance Phase' }).click();
+    await expect(advanceDialog).not.toBeVisible({ timeout: 15_000 });
+    await page.goto(`/en/decisions/${instance.slug}/current`, {
+      waitUntil: 'networkidle',
+    });
 
     await expect(
       page.getByRole('columnheader', { name: 'Overall recommendation' }),
@@ -349,9 +365,10 @@ test.describe('Decision Review Selection — review → voting flow', () => {
     // that was just made on the detail page — this is what the persisted
     // draft buys us across the navigation boundary.
     await page.getByRole('link', { name: 'Back', exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(`/decisions/${instance.slug}$`), {
-      timeout: 10_000,
-    });
+    await expect(page).toHaveURL(
+      new RegExp(`/decisions/${instance.slug}/current$`),
+      { timeout: 10_000 },
+    );
 
     // Row toggle aria-label flips to "Don't advance ..." once selected.
     await expect(

@@ -141,7 +141,7 @@ test.describe('Non-reviewer review-phase view', () => {
       password: TEST_USER_DEFAULT_PASSWORD,
     });
 
-    await memberPage.goto(`/en/decisions/${instance.slug}`, {
+    await memberPage.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'domcontentloaded',
     });
 
@@ -229,7 +229,7 @@ test.describe('Non-reviewer review-phase view', () => {
       password: TEST_USER_DEFAULT_PASSWORD,
     });
 
-    await memberPage.goto(`/en/decisions/${instance.slug}`, {
+    await memberPage.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'domcontentloaded',
     });
 
@@ -271,7 +271,7 @@ test.describe('Non-reviewer review-phase view', () => {
       .set({ currentStateId: 'review' })
       .where(eq(processInstances.id, instance.instance.id));
 
-    await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
+    await authenticatedPage.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'domcontentloaded',
     });
 
@@ -344,7 +344,7 @@ test.describe('Non-reviewer review-phase view', () => {
       password: TEST_USER_DEFAULT_PASSWORD,
     });
 
-    await authorPage.goto(`/en/decisions/${instance.slug}`, {
+    await authorPage.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'domcontentloaded',
     });
 

@@ -153,7 +153,7 @@ function ReviewFormProviderInner({
   const submitReview = trpc.decision.submitReview.useMutation({
     onSuccess: () => {
       toast.success({ message: t('Review submitted successfully') });
-      router.push(`/decisions/${decisionSlug}`);
+      router.push(`/decisions/${decisionSlug}/current`);
     },
     onError: (error) => {
       toast.error({

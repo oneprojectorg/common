@@ -359,9 +359,10 @@ test.describe('Review Summary page', () => {
     // ====================================================================
 
     await page.getByRole('link', { name: 'Back', exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(`/decisions/${instance.slug}$`), {
-      timeout: 10_000,
-    });
+    await expect(page).toHaveURL(
+      new RegExp(`/decisions/${instance.slug}/current$`),
+      { timeout: 10_000 },
+    );
   });
 
   test('non-admin member of the instance is forbidden from the summary page', async ({

@@ -228,7 +228,7 @@ test.describe('Review Submit', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 600));
 
-    const decisionUrl = `/en/decisions/${instance.slug}`;
+    const decisionUrl = `/en/decisions/${instance.slug}/current`;
 
     /** Locate the status badge <span> on the assignments list. */
     const statusBadge = page.locator('span').filter({
@@ -483,7 +483,7 @@ test.describe('Review Submit', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 600));
 
-    await page.goto(`/en/decisions/${instance.slug}`, {
+    await page.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'domcontentloaded',
     });
     await expect(page.getByText('Proposals to review').first()).toBeVisible({
@@ -550,7 +550,7 @@ test.describe('Review Submit', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 600));
 
-    const decisionUrl = `/en/decisions/${instance.slug}`;
+    const decisionUrl = `/en/decisions/${instance.slug}/current`;
 
     await page.goto(decisionUrl, { waitUntil: 'domcontentloaded' });
 
@@ -616,7 +616,7 @@ test.describe('Review Submit', () => {
 
     await page.setViewportSize({ width: 390, height: 844 });
 
-    await page.goto(`/en/decisions/${instance.slug}`, {
+    await page.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'domcontentloaded',
     });
     await expect(page.getByText('Proposals to review').first()).toBeVisible({
