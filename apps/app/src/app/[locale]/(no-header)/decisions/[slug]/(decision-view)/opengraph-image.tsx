@@ -112,8 +112,8 @@ const loadLogo = () => {
 
 /**
  * Dynamic OG card for the canonical public decision page. Renders the decision
- * name, owner, and participation stats over the decision's header image when it
- * has one, otherwise over a plain brand gradient.
+ * name, steward, and participation stats over the decision's header image when
+ * it has one, otherwise over a plain brand gradient.
  */
 const Image = async ({
   params,
@@ -137,7 +137,7 @@ const Image = async ({
     return new ImageResponse(
       <Card
         title={truncateDescription(decisionProfile.name || 'Decision', 80)}
-        owner={instance.owner?.name ?? undefined}
+        steward={instance.steward?.name ?? undefined}
         proposalCount={instance.proposalCount}
         participantCount={instance.participantCount}
         headerUrl={headerUrl}
@@ -179,7 +179,7 @@ export default Image;
 
 const Card = ({
   title,
-  owner,
+  steward,
   proposalCount,
   participantCount,
   headerUrl,
@@ -187,7 +187,7 @@ const Card = ({
   background,
 }: {
   title: string;
-  owner?: string;
+  steward?: string;
   proposalCount?: number;
   participantCount?: number;
   headerUrl?: string;
@@ -278,9 +278,9 @@ const Card = ({
           >
             {title}
           </div>
-          {owner ? (
+          {steward ? (
             <div style={{ display: 'flex', fontSize: 32, marginTop: 16 }}>
-              by {owner}
+              by {steward}
             </div>
           ) : null}
           {stats.length > 0 ? (

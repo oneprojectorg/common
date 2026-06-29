@@ -21,7 +21,7 @@ export async function generateMetadata({
       getTranslations({ locale }),
     ]);
     const name = decisionProfile.name || t('Decision');
-    const owner = decisionProfile.processInstance?.owner?.name;
+    const steward = decisionProfile.processInstance?.steward?.name;
     const description = truncateDescription(
       decisionProfile.bio ?? decisionProfile.mission ?? '',
     );
@@ -31,7 +31,7 @@ export async function generateMetadata({
     // noindex from the root layout in place. The colocated opengraph-image route
     // supplies og:image for this page and its child phase routes.
     return {
-      title: owner ? `${name} | ${owner}` : name,
+      title: steward ? `${name} | ${steward}` : name,
       description: description || undefined,
       robots: { index: true, follow: true },
       openGraph: {
