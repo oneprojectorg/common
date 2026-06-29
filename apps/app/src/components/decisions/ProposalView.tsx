@@ -41,11 +41,13 @@ export function ProposalView({
   proposal: initialProposal,
   canSeeRevisions,
   backHref,
+  editHref: editHrefProp,
   selection,
 }: {
   proposal: Proposal;
   canSeeRevisions: boolean;
   backHref: string;
+  editHref: string;
   selection: ProposalSelection | null;
 }) {
   const t = useTranslations();
@@ -119,10 +121,7 @@ export function ProposalView({
   // Check if current user can edit (submitter or org admin)
   const canEdit = currentProposal.isEditable ?? false;
 
-  // Generate edit href
-  const editHref = canEdit
-    ? `${backHref}/proposal/${currentProposal.profileId}/edit`
-    : undefined;
+  const editHref = canEdit ? editHrefProp : undefined;
 
   const [{ reviewRevision }, setQueryState] = useQueryStates({
     reviewRevision: proposalEditorReviewRevisionParser,
