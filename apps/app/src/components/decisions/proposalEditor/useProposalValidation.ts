@@ -34,6 +34,11 @@ function getBlockText(element: Y.XmlElement): string {
  * `useCollaborativeFragment`) is stored as paragraph-wrapped `XmlElement`
  * nodes. Each element is recursively walked to concatenate its text,
  * then blocks are joined with newlines.
+ *
+ * The result is returned UN-trimmed: dropdowns commit the exact `const`
+ * from their schema and AJV's `oneOf` keyword matches strictly, so any
+ * trim here would silently downgrade a valid selection to "is invalid".
+ * Per-field whitespace handling lives in `assembleProposalData`.
  */
 function getFragmentPlainText(fragment: Y.XmlFragment): string {
   const blocks: string[] = [];
@@ -42,7 +47,7 @@ function getFragmentPlainText(fragment: Y.XmlFragment): string {
       blocks.push(getBlockText(node));
     }
   });
-  return blocks.join('\n').trim();
+  return blocks.join('\n');
 }
 
 /**

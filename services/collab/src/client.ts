@@ -112,6 +112,11 @@ export function createTipTapClient(config: TipTapClientConfig) {
         // TipTap concatenates all fragment text into a single string when
         // multiple fragments are requested with format=text.  Fetch each
         // fragment individually so we get per-fragment text values.
+        //
+        // Only the trailing newline TipTap appends after the last block is
+        // stripped — full `.trim()` would silently eat whitespace baked
+        // into a dropdown's option const (e.g. `"Option A "`), which AJV's
+        // `oneOf` then fails to match. See ONE-289.
         const entries = await Promise.all(
           fragments.map(async (fragment) => {
             const text = await api
@@ -123,7 +128,7 @@ export function createTipTapClient(config: TipTapClientConfig) {
                 },
               })
               .text();
-            return [fragment, text.trim()] as const;
+            return [fragment, text.replace(/\n$/, '')] as const;
           }),
         );
         return Object.fromEntries(entries) as R;

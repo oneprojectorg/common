@@ -36,8 +36,25 @@ export function assembleProposalData(
 
     switch (schema['x-format']) {
       case 'short-text':
-      case 'long-text':
+      case 'long-text': {
+        // Treat whitespace-only as empty so required text fields still
+        // surface as missing rather than silently passing as "present".
+        const trimmed = text.trim();
+        if (!trimmed) {
+          continue;
+        }
+        if (schemaAllowsMultipleSelection(schema)) {
+          data[key] = parseCategoryFragmentValue(trimmed);
+        } else {
+          data[key] = trimmed;
+        }
+        break;
+      }
       case 'dropdown':
+        // The exact `const` from the schema's `oneOf` is what AJV matches.
+        // Trimming here would silently strip whitespace that an author
+        // baked into an option (often on the last one, where Enter / paste
+        // is easy to typo) and downgrade a valid selection to "is invalid".
         if (schemaAllowsMultipleSelection(schema)) {
           data[key] = parseCategoryFragmentValue(text);
         } else {
