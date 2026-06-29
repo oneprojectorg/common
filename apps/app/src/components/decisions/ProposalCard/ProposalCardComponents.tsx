@@ -502,7 +502,7 @@ function ProposalCardMetric({
         {icon}
         {count}
       </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
+      <TooltipContent className="text-sm">{label}</TooltipContent>
     </Tooltip>
   );
 }
