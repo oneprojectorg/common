@@ -194,6 +194,9 @@ test.describe('Decision Review Selection — review → voting flow', () => {
     await expect(advanceDialog).toBeVisible();
     await expect(advanceDialog.getByText('Advance to Voting?')).toBeVisible();
     await advanceDialog.getByRole('button', { name: 'Advance Phase' }).click();
+    // Wait for the transition mutation to finish (the modal closes onSuccess)
+    // before navigating, so /current renders the new phase's UI.
+    await expect(advanceDialog).not.toBeVisible({ timeout: 15_000 });
     await authenticatedPage.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'networkidle',
     });
@@ -321,6 +324,7 @@ test.describe('Decision Review Selection — review → voting flow', () => {
     await page.getByRole('button', { name: 'Advance' }).first().click();
     const advanceDialog = page.getByRole('dialog');
     await advanceDialog.getByRole('button', { name: 'Advance Phase' }).click();
+    await expect(advanceDialog).not.toBeVisible({ timeout: 15_000 });
     await page.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'networkidle',
     });

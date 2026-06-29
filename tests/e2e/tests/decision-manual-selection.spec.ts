@@ -321,6 +321,9 @@ test.describe('Decision Manual Selection — full flow', () => {
     await expect(advanceDialog).toBeVisible();
     await expect(advanceDialog.getByText('Advance to Final?')).toBeVisible();
     await advanceDialog.getByRole('button', { name: 'Advance Phase' }).click();
+    // Wait for the mutation to complete and the modal to close before
+    // navigating; otherwise /current may render the pre-advance phase.
+    await expect(advanceDialog).not.toBeVisible({ timeout: 15_000 });
     await authenticatedPage.goto(`/en/decisions/${instance.slug}/current`, {
       waitUntil: 'networkidle',
     });
