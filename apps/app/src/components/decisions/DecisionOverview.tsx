@@ -142,9 +142,7 @@ function DecisionOverviewContent({
       <OverviewHero
         headline={headline}
         subhead={overview?.description}
-        stewardName={steward?.name}
-        stewardAvatarPath={steward?.avatarImage?.name}
-        stewardSlug={steward?.slug}
+        steward={steward}
         isPublic={isPublic}
         instanceId={instanceId}
         decisionSlug={decisionSlug}
@@ -195,9 +193,7 @@ function DecisionOverviewContent({
 const OverviewHero = ({
   headline,
   subhead,
-  stewardName,
-  stewardAvatarPath,
-  stewardSlug,
+  steward,
   isPublic,
   instanceId,
   decisionSlug,
@@ -206,9 +202,7 @@ const OverviewHero = ({
 }: {
   headline: string;
   subhead?: string;
-  stewardName?: string | null;
-  stewardAvatarPath?: string | null;
-  stewardSlug?: string | null;
+  steward: ProcessInstance['steward'];
   isPublic: boolean;
   instanceId: string;
   decisionSlug: string;
@@ -216,6 +210,7 @@ const OverviewHero = ({
   showCtas: boolean;
 }) => {
   const t = useTranslations();
+  const stewardName = steward?.name;
   const currentPhaseHref = `/decisions/${decisionSlug}/current`;
   const { createProposal, isCreating, isReady } = useCreateProposal({
     instanceId,
@@ -241,9 +236,9 @@ const OverviewHero = ({
               {stewardName ? (
                 <span className="flex items-center gap-1.5">
                   <Avatar placeholder={stewardName} className="size-5">
-                    {stewardAvatarPath ? (
+                    {steward?.avatarImage?.name ? (
                       <Image
-                        src={getPublicUrl(stewardAvatarPath) ?? ''}
+                        src={getPublicUrl(steward.avatarImage.name) ?? ''}
                         alt={stewardName}
                         fill
                         className="object-cover"
@@ -252,8 +247,8 @@ const OverviewHero = ({
                   </Avatar>
                   <span>
                     {t('Stewarded by')}{' '}
-                    {stewardSlug ? (
-                      <Link href={`/profile/${stewardSlug}`}>
+                    {steward?.slug ? (
+                      <Link href={`/profile/${steward.slug}`}>
                         {stewardName}
                       </Link>
                     ) : (
