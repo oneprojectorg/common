@@ -27,7 +27,7 @@ test.describe('Decisions', () => {
     // 4. Wait for the page to load
     // The heading shows the instance name (which takes priority over template name)
     await expect(
-      authenticatedPage.getByRole('heading', { name: instance.name }),
+      authenticatedPage.getByRole('heading', { name: instance.name, level: 1 }),
     ).toBeVisible({ timeout: 15000 });
 
     // 5. Click the "Start a proposal" button
@@ -88,7 +88,7 @@ test.describe('Decisions', () => {
     });
 
     await expect(
-      authenticatedPage.getByRole('heading', { name: instance.name }),
+      authenticatedPage.getByRole('heading', { name: instance.name, level: 1 }),
     ).toBeVisible({ timeout: 15000 });
     await expect(authenticatedPage).toHaveURL(
       new RegExp(`/en/${instance.slug}(?:[/?#]|$)`),

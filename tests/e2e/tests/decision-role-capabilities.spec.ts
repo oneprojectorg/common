@@ -128,7 +128,7 @@ test.describe('Decision Role Capabilities', () => {
     });
 
     await expect(
-      memberPage.getByRole('heading', { name: instance.name }),
+      memberPage.getByRole('heading', { name: instance.name, level: 1 }),
     ).toBeVisible({ timeout: 15000 });
 
     await expect(
@@ -204,7 +204,7 @@ test.describe('Decision Role Capabilities', () => {
     });
 
     await expect(
-      memberPage.getByRole('heading', { name: instance.name }),
+      memberPage.getByRole('heading', { name: instance.name, level: 1 }),
     ).toBeVisible({ timeout: 15000 });
 
     await expect(
@@ -233,7 +233,7 @@ test.describe('Decision Role Capabilities', () => {
     });
 
     await expect(
-      authenticatedPage.getByRole('heading', { name: instance.name }),
+      authenticatedPage.getByRole('heading', { name: instance.name, level: 1 }),
     ).toBeVisible({ timeout: 15000 });
 
     await expect(

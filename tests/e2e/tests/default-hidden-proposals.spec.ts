@@ -218,7 +218,9 @@ test.describe('Default Hidden Proposals', () => {
       waitUntil: 'domcontentloaded',
     });
 
-    await expect(authenticatedPage.getByRole('heading', { name })).toBeVisible({
+    await expect(
+      authenticatedPage.getByRole('heading', { name, level: 1 }),
+    ).toBeVisible({
       timeout: 30_000,
     });
 
@@ -276,7 +278,9 @@ test.describe('Default Hidden Proposals', () => {
       waitUntil: 'domcontentloaded',
     });
 
-    await expect(otherMemberPage.getByRole('heading', { name })).toBeVisible({
+    await expect(
+      otherMemberPage.getByRole('heading', { name, level: 1 }),
+    ).toBeVisible({
       timeout: 30_000,
     });
 
@@ -362,7 +366,9 @@ test.describe('Default Hidden Proposals', () => {
       waitUntil: 'domcontentloaded',
     });
 
-    await expect(submitterPage.getByRole('heading', { name })).toBeVisible({
+    await expect(
+      submitterPage.getByRole('heading', { name, level: 1 }),
+    ).toBeVisible({
       timeout: 30_000,
     });
 

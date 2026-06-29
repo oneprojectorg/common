@@ -6,7 +6,7 @@ import { type ProcessInstance, type ProcessPhase } from '@op/api/encoders';
 import { Avatar } from '@op/ui/Avatar';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
-import { Header3 } from '@op/ui/Header';
+import { Header2, Header3 } from '@op/ui/Header';
 import { Link } from '@op/ui/Link';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import he from 'he';
@@ -227,17 +227,14 @@ const OverviewHero = ({
     <section className="grid w-full grid-cols-1 justify-center border-b bg-neutral-offWhite md:grid-cols-12">
       <div className="mx-auto flex flex-col items-center gap-4 px-4 pt-16 pb-8 text-center sm:py-12 md:col-span-6 md:col-start-4 md:px-6">
         <div className="flex flex-col items-center gap-3">
-          {/* Brand teal→green gradient clipped to the title text. Rendered as
-              a paragraph because the sticky DecisionInstanceHeader already
-              carries the page's <h1> — a second <h1> with the same name
-              breaks `getByRole('heading', { name })` strict-mode lookups
-              across the decision e2e suite. */}
-          <p
-            aria-hidden="true"
-            className="bg-tealGreen bg-clip-text font-serif text-title-xl font-light text-balance text-transparent sm:text-title-xxl"
-          >
+          {/* Brand teal→green gradient clipped to the title text. Rendered
+              as an <h2> because the sticky DecisionInstanceHeader already
+              carries the page's <h1> — keeping the hero a heading (one level
+              down) preserves the document outline while letting tests target
+              the banner h1 unambiguously with `level: 1`. */}
+          <Header2 className="bg-tealGreen bg-clip-text font-serif text-title-xl font-light text-balance text-transparent sm:text-title-xxl">
             <bdi>{headline}</bdi>
-          </p>
+          </Header2>
           {stewardName || isPublic ? (
             <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-neutral-charcoal">
               {stewardName ? (
