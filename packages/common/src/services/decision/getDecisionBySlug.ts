@@ -14,7 +14,7 @@ const decisionProfileQueryConfig = {
       with: {
         process: true,
         owner: { with: { avatarImage: true, organization: true } },
-        steward: true,
+        steward: { with: { avatarImage: true } },
       },
     },
   },

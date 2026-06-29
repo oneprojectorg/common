@@ -1,14 +1,18 @@
 'use client';
 
+import { getPublicUrl } from '@/utils';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { type ProcessInstance, type ProcessPhase } from '@op/api/encoders';
+import { Avatar } from '@op/ui/Avatar';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
 import { Header3 } from '@op/ui/Header';
+import { Link } from '@op/ui/Link';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import he from 'he';
+import Image from 'next/image';
 import { Suspense, type ReactNode } from 'react';
-import { LuTriangleAlert } from 'react-icons/lu';
+import { LuBookOpen, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
@@ -105,6 +109,12 @@ function DecisionOverviewContent({
   const headline = overview?.headline || instance.name;
   const profileId = instance.profileId;
 
+  // Header meta row: prefer the steward, fall back to the owner (same rule as
+  // DecisionListItem). "Open for learning" shows only for public processes;
+  // private processes hide the badge entirely.
+  const steward = instance.steward ?? instance.owner;
+  const isPublic = !instance.instanceData?.config?.isPrivate;
+
   // Same gate as StandardDecisionPage: the phase must accept proposals and
   // the viewer must have submit access.
   const currentPhase = instance.instanceData?.phases?.find(
@@ -132,6 +142,8 @@ function DecisionOverviewContent({
       <OverviewHero
         headline={headline}
         subhead={overview?.description}
+        steward={steward}
+        isPublic={isPublic}
         instanceId={instanceId}
         decisionSlug={decisionSlug}
         canSubmitProposal={canSubmitProposal}
@@ -181,6 +193,8 @@ function DecisionOverviewContent({
 const OverviewHero = ({
   headline,
   subhead,
+  steward,
+  isPublic,
   instanceId,
   decisionSlug,
   canSubmitProposal,
@@ -188,12 +202,15 @@ const OverviewHero = ({
 }: {
   headline: string;
   subhead?: string;
+  steward: ProcessInstance['steward'];
+  isPublic: boolean;
   instanceId: string;
   decisionSlug: string;
   canSubmitProposal: boolean;
   showCtas: boolean;
 }) => {
   const t = useTranslations();
+  const stewardName = steward?.name;
   const currentPhaseHref = `/decisions/${decisionSlug}/current`;
   const { createProposal, isCreating, isReady } = useCreateProposal({
     instanceId,
@@ -203,16 +220,61 @@ const OverviewHero = ({
   });
 
   return (
-    // Gradient stands in until overview header images exist — same radial
-    // gradient as the results page hero.
-    <section className="grid w-full grid-cols-1 justify-center gap-12 bg-redPurple md:grid-cols-12">
-      <div className="mx-auto flex flex-col items-center gap-4 px-4 pt-16 pb-8 text-center text-neutral-offWhite sm:py-24 md:col-span-6 md:col-start-4 md:px-6">
-        <div className="flex flex-col items-center gap-2">
-          <h1 className="font-serif text-title-xl font-light sm:text-title-xxl">
+    // Light banner stands in for the header image. When the
+    // upload ships, drop an absolutely-positioned <Image fill> (from
+    // profile.headerImage) behind this content and keep the gradient as the
+    // empty-state fallback.
+    <section className="grid w-full grid-cols-1 justify-center border-b bg-neutral-offWhite md:grid-cols-12">
+      <div className="mx-auto flex flex-col items-center gap-4 px-4 pt-16 pb-8 text-center sm:py-12 md:col-span-6 md:col-start-4 md:px-6">
+        <div className="flex flex-col items-center gap-3">
+          {/* Brand teal→green gradient clipped to the title text. */}
+          <h1 className="bg-tealGreen bg-clip-text font-serif text-title-xl font-light text-balance text-transparent sm:text-title-xxl">
             <bdi>{headline}</bdi>
           </h1>
+          {stewardName || isPublic ? (
+            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-neutral-charcoal">
+              {stewardName ? (
+                <span className="flex items-center gap-1.5">
+                  <Avatar placeholder={stewardName} className="size-5">
+                    {steward?.avatarImage?.name ? (
+                      <Image
+                        src={getPublicUrl(steward.avatarImage.name) ?? ''}
+                        alt={stewardName}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : null}
+                  </Avatar>
+                  <span>
+                    {t('Stewarded by')}{' '}
+                    {steward?.slug ? (
+                      <Link href={`/profile/${steward.slug}`}>
+                        {stewardName}
+                      </Link>
+                    ) : (
+                      stewardName
+                    )}
+                  </span>
+                </span>
+              ) : null}
+              {stewardName && isPublic ? (
+                <span aria-hidden="true" className="text-neutral-gray4">
+                  •
+                </span>
+              ) : null}
+              {isPublic ? (
+                <span className="flex items-center gap-1.5">
+                  <LuBookOpen className="size-4" aria-hidden="true" />
+                  {t('Open for learning')}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
           {subhead ? (
-            <p dir="auto" className="text-base">
+            <p
+              dir="auto"
+              className="text-base text-balance text-neutral-charcoal"
+            >
               {subhead}
             </p>
           ) : null}
