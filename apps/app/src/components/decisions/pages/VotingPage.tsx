@@ -81,8 +81,8 @@ export function VotingPage({
     description;
 
   return (
-    <div className="min-h-full pt-8">
-      <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4">
+    <div className="min-h-full">
+      <div className="mx-auto flex max-w-3xl flex-col justify-center gap-4 px-4 pt-16 pb-8 md:pt-8">
         <DecisionHero
           title={heroTitle}
           description={heroDescription ? <p>{heroDescription}</p> : undefined}
@@ -99,7 +99,7 @@ export function VotingPage({
         />
       </div>
 
-      <div className="mt-8 flex w-full justify-center border-t bg-white">
+      <div className="flex w-full justify-center border-t bg-white">
         <div className="w-full p-4 sm:max-w-6xl sm:p-8">
           <Suspense fallback={<ProposalListSkeleton />}>
             <ProposalsList
