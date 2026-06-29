@@ -305,21 +305,25 @@ test.describe('Decision Manual Selection — full flow', () => {
       throw new Error('Expected three seeded proposals');
     }
 
-    await authenticatedPage.goto(`/en/decisions/${instance.slug}/current`, {
+    // Drive submission → final via the overview's PhaseTimeline. #1458 moved
+    // phase advancement off the sticky stepper and onto the overview's
+    // Advance button. The limit:0 pipeline strands every proposal, so
+    // onPhaseAdvanced writes an initial result row (selectedCount=0) before
+    // the manual-selection UI mounts on /current.
+    await authenticatedPage.goto(`/en/decisions/${instance.slug}`, {
       waitUntil: 'networkidle',
     });
-
-    // Drive submission → final via the stepper. The limit:0 pipeline strands
-    // every proposal, so onPhaseAdvanced writes an initial result row
-    // (selectedCount=0) before the manual-selection UI mounts.
     await authenticatedPage
-      .getByRole('button', { name: 'Start Final' })
+      .getByRole('button', { name: 'Advance' })
       .first()
       .click();
     const advanceDialog = authenticatedPage.getByRole('dialog');
     await expect(advanceDialog).toBeVisible();
     await expect(advanceDialog.getByText('Advance to Final?')).toBeVisible();
     await advanceDialog.getByRole('button', { name: 'Advance Phase' }).click();
+    await authenticatedPage.goto(`/en/decisions/${instance.slug}/current`, {
+      waitUntil: 'networkidle',
+    });
 
     const confirmButton = authenticatedPage.getByRole('button', {
       name: 'Confirm winning proposals',

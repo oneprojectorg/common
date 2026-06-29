@@ -30,7 +30,7 @@ export function ReviewNavbar({ decisionSlug }: ReviewNavbarProps) {
   return (
     <>
       <DecisionSubpageHeader
-        backHref={`/decisions/${decisionSlug}`}
+        backHref={`/decisions/${decisionSlug}/current`}
         backLabel={t('Back to proposals')}
       >
         <div className="flex items-center gap-4">
