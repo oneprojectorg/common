@@ -379,10 +379,9 @@ function useMapPinHovercard({
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const isControlled = controlledOpen !== undefined;
-  // When the consumer controls the card (touch flow), the prop wins; the
-  // internal hover state machine still tracks for consistency but isn't the
-  // source of truth for visibility.
-  const isOpen = isControlled ? controlledOpen : internalIsOpen;
+  // When the consumer controls the card (touch flow), the prop wins;
+  // otherwise we fall back to the internal hover state machine.
+  const isOpen = controlledOpen ?? internalIsOpen;
   const [placement, setPlacement] = useState<'top' | 'bottom'>('top');
   const [cardPosition, setCardPosition] = useState<{
     x: number;
@@ -457,6 +456,11 @@ function useMapPinHovercard({
 
   const open = () => {
     clearDismissTimer();
+    if (isControlled) {
+      // The consumer owns the open state; nothing to do here. Skipping the
+      // setInternalIsOpen avoids a wasted re-render on every touch event.
+      return;
+    }
     setInternalIsOpen(true);
   };
 
@@ -464,6 +468,11 @@ function useMapPinHovercard({
   // lockstep so the pin keeps its active state across the pin→card gap.
   const scheduleDismiss = () => {
     clearDismissTimer();
+    if (isControlled) {
+      // The consumer owns the open state on touch — no internal dismiss to
+      // schedule, and `onDeactivate` is undefined in that wiring.
+      return;
+    }
     dismissTimerRef.current = setTimeout(() => {
       setInternalIsOpen(false);
       dismissTimerRef.current = null;
