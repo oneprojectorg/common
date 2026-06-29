@@ -1,8 +1,8 @@
 'use client';
 
 import type { ProposalFilter } from '@op/api/encoders';
-import { useIntersectionObserver } from '@op/hooks';
 import { cn } from '@op/ui/utils';
+import { useEffect, useRef, useState } from 'react';
 
 import { type ProposalView, ProposalViewToggle } from './ProposalViewToggle';
 import { ProposalsFilterBar, ProposalsListHeader } from './ProposalsFilterBar';
@@ -30,11 +30,34 @@ export interface ProposalsStickyFilterBarProps {
   hasLocationField: boolean;
   effectiveView: ProposalView;
   onViewChange: (next: ProposalView) => void;
+  /**
+   * Px offset where the bar pins inside its scroll container — clears whatever
+   * sticky chrome sits above it (e.g. the floating Overview/Current toggle).
+   * Drives both the sticky `top` and the observer rootMargin. Defaults to 0;
+   * the decision-view layout passes the toggle clearance.
+   */
+  pinOffset?: number;
 }
 
-// Filters bar — sticks beneath the decision nav while the list/map scroll under
-// it. Owns its own stuck-detection so the full-bleed top/bottom border lines can
-// fade in only once pinned.
+// Nearest scrollable ancestor — the IntersectionObserver root, so pin detection
+// is measured against the grid's content scroll container rather than the
+// viewport.
+const getScrollParent = (node: Element | null): Element | null => {
+  let el = node?.parentElement ?? null;
+  while (el) {
+    const overflowY = getComputedStyle(el).overflowY;
+    if (overflowY === 'auto' || overflowY === 'scroll') {
+      return el;
+    }
+    el = el.parentElement;
+  }
+  return null;
+};
+
+// Filters bar — pins at `pinOffset` inside the scrolling content area. A
+// zero-height sentinel just above it, observed against the scroll container with
+// rootMargin shrunk by the same offset, flips data-pinned exactly as the bar
+// locks. The full-bleed top/bottom hairlines fade in only once pinned.
 export const ProposalsStickyFilterBar = ({
   isMapMode,
   hideFilters,
@@ -57,38 +80,41 @@ export const ProposalsStickyFilterBar = ({
   hasLocationField,
   effectiveView,
   onViewChange,
+  pinOffset = 0,
 }: ProposalsStickyFilterBarProps) => {
-  // The filter bar pins at top-14 (56px). A zero-height sentinel at its natural
-  // top is observed against the viewport shrunk by that offset; once the
-  // sentinel scrolls past it the bar is pinned. initialIsIntersecting avoids a
-  // one-frame "stuck" flash on mount. Drives the full-width borders via the
-  // data-stuck attribute on the bar below.
-  const { ref: filterSentinelRef, isIntersecting } =
-    useIntersectionObserver<HTMLDivElement>({
-      rootMargin: '-56px 0px 0px 0px',
-      initialIsIntersecting: true,
-    });
-  const isFilterBarStuck = !isIntersecting;
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [isPinned, setIsPinned] = useState(false);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) {
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsPinned(!entry?.isIntersecting),
+      {
+        root: getScrollParent(sentinel),
+        rootMargin: `-${pinOffset}px 0px 0px 0px`,
+        threshold: 0,
+      },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [pinOffset]);
 
   return (
     <>
-      {/* Sentinel at the filter bar's pre-pin top — drives the JS "stuck"
-          detection that toggles data-stuck on the bar below. */}
+      {/* Sentinel just above the bar — once it passes the pin line (the scroll
+          container's top, shrunk by pinOffset) the observer flips. */}
+      <div ref={sentinelRef} aria-hidden className="h-px" />
       <div
-        ref={filterSentinelRef}
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-px"
-      />
-      {/* Filters Bar — sticks beneath the decision nav while the list/map
-          scroll under it. Only once pinned, full-bleed top/bottom lines fade
-          in via the before/after pseudo-elements (toggled by data-stuck). */}
-      <div
-        data-stuck={isFilterBarStuck || undefined}
+        data-pinned={isPinned || undefined}
+        style={{ top: pinOffset }}
         className={cn(
-          'sticky top-14 z-20 flex flex-wrap items-center justify-between gap-4 bg-white py-3',
+          'sticky z-20 flex flex-wrap items-center justify-between gap-4 bg-white py-3',
           "before:pointer-events-none before:absolute before:top-0 before:left-1/2 before:w-screen before:-translate-x-1/2 before:border-t before:border-neutral-gray1 before:opacity-0 before:content-['']",
           "after:pointer-events-none after:absolute after:-bottom-px after:left-1/2 after:w-screen after:-translate-x-1/2 after:border-b after:border-neutral-gray1 after:opacity-0 after:content-['']",
-          'data-[stuck=true]:before:opacity-100 data-[stuck=true]:after:opacity-100',
+          'data-[pinned=true]:before:opacity-100 data-[pinned=true]:after:opacity-100',
           // On mobile the map view is edge-to-edge, so break the bar out to full
           // width too (restoring the container's 1rem gutter).
           isMapMode &&

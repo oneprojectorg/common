@@ -37,22 +37,27 @@ const DecisionViewLayout = async ({
 
   return (
     <DecisionTranslationProvider>
-      <DecisionHeader
-        instanceId={instanceId}
-        decisionSlug={slug}
-        isAdmin={access?.admin}
-        canReadUpdates={access?.admin === true || access?.read === true}
-        profileName={decisionProfile.name}
-        // Pass the instance so the header renders from props (no client
-        // getInstance query on this route).
-        processInstance={instance}
-        showStepper={false}
-        // Hidden until the first phase begins.
-        centerSlot={
-          isActive ? <DecisionViewToggle decisionSlug={slug} /> : undefined
-        }
-      />
-      {children}
+      {/* Fixed header + scrolling content: the grid keeps the header in place
+          and confines the scrollbar to the content row. The content row is the
+          scroll container the proposals filter bar pins inside. */}
+      <div className="grid h-dvh grid-rows-[auto_1fr]">
+        <DecisionHeader
+          instanceId={instanceId}
+          decisionSlug={slug}
+          isAdmin={access?.admin}
+          canReadUpdates={access?.admin === true || access?.read === true}
+          profileName={decisionProfile.name}
+          // Pass the instance so the header renders from props (no client
+          // getInstance query on this route).
+          processInstance={instance}
+          showStepper={false}
+          // Hidden until the first phase begins.
+          centerSlot={
+            isActive ? <DecisionViewToggle decisionSlug={slug} /> : undefined
+          }
+        />
+        <div className="overflow-y-auto">{children}</div>
+      </div>
       {/*
        * Like the header's updates toggle, the side panel reads the `panel`
        * search param (nuqs/useSearchParams). It lives in this layout, which
