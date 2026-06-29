@@ -110,27 +110,27 @@
   /* Title sizes */
   --text-title-xxl: 3rem;
   --text-title-xxl--line-height: 110%;
-  --text-title-xxl--font-weight: 300;
+  --text-title-xxl--font-weight: 400;
   --text-title-xxl--letter-spacing: -0.075rem;
 
   --text-title-xl: 2.5rem;
   --text-title-xl--line-height: 110%;
-  --text-title-xl--font-weight: 300;
+  --text-title-xl--font-weight: 400;
   --text-title-xl--letter-spacing: -0.0625rem;
 
   --text-title-lg: 1.75rem;
   --text-title-lg--line-height: 110%;
-  --text-title-lg--font-weight: 300;
+  --text-title-lg--font-weight: 400;
   --text-title-lg--letter-spacing: -0.02625rem;
 
   --text-title-md: 1.5rem;
   --text-title-md--line-height: 110%;
-  --text-title-md--font-weight: 300;
+  --text-title-md--font-weight: 400;
   --text-title-md--letter-spacing: -0.0225rem;
 
   --text-title-base: 1.25rem;
   --text-title-base--line-height: 110%;
-  --text-title-base--font-weight: 300;
+  --text-title-base--font-weight: 400;
   --text-title-base--letter-spacing: -0.01875rem;
 
   --text-title-sm: 1rem;
