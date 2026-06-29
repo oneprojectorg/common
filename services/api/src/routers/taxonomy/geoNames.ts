@@ -41,13 +41,20 @@ const roundCenterCoord = (value: number): number => {
   return Math.round(value * factor) / factor;
 };
 
+// Result of a single forward-search call. The optional `error` field lets the
+// cache layer skip writes for transient Google failures (see `skipCacheWrite`
+// below) so a one-off API blip doesn't get cached for 72h as "no results."
+// Empty `geonames` with no `error` is a genuine zero-results response and is
+// safe to cache.
+type GeoNamesResult = { geonames: GeoName[]; error?: string };
+
 const getGeonames = async ({
   q,
   center,
 }: {
   q: string;
   center?: { lat: number; lng: number };
-}) => {
+}): Promise<GeoNamesResult> => {
   if (!process.env.GOOGLE_MAPS_API_KEY) {
     throw new Error('GOOGLE_MAPS_API_KEY environment variable is required');
   }
@@ -130,10 +137,13 @@ const getGeonames = async ({
 
     const geonames = Array.from(geoNameMap).map((item) => item[1]);
 
-    return geonames;
+    return { geonames };
   } catch (e) {
     logger.error('Maps API error', { error: e });
-    return [];
+    return {
+      geonames: [],
+      error: e instanceof Error ? e.message : 'Maps API error',
+    };
   }
 };
 
@@ -171,10 +181,30 @@ export const getGeoNames = router({
       const roundedLng =
         center !== undefined ? roundCenterCoord(center.lng) : undefined;
 
+      // Normalize the query for the cache key so near-duplicate inputs ("Main
+      // Street" vs "main street " vs "MAIN STREET") collapse onto one cache
+      // entry. Google's `searchText` is case-insensitive and ignores leading
+      // / trailing whitespace, so this doesn't change result quality — it just
+      // raises the cache hit rate (and lowers billable spend) for queries the
+      // user retypes with different casing.
+      const normalizedQ = q.trim().toLowerCase();
+
+      // Tracks whether the inner fetch hit a Google API error vs a genuine
+      // zero-results response. The cached value stays a plain `GeoName[]`
+      // (back-compat with entries written before this change), and this flag
+      // is read by `skipCacheWrite` so a transient failure doesn't get pinned
+      // as "no results" for the cache TTL.
+      let fetchFailed = false;
+
       const geonames = await cache({
         type: 'geonames',
-        params: [q, roundedLat, roundedLng],
-        fetch: () => getGeonames({ q, center }),
+        params: [normalizedQ, roundedLat, roundedLng],
+        fetch: async () => {
+          const result = await getGeonames({ q, center });
+          fetchFailed = result.error !== undefined;
+          return result.geonames;
+        },
+        options: { skipCacheWrite: () => fetchFailed },
       });
 
       return {
