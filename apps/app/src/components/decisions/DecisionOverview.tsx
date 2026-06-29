@@ -45,7 +45,7 @@ interface DecisionOverviewProps {
 }
 
 /**
- * Overview tab for a decision process (/decisions/[slug]/overview). The shared
+ * Overview view for a decision process (/decisions/[slug]). The shared
  * header + view toggle come from the (decision-view) layout; this renders the
  * hero, the phases sidebar slot, and the About body.
  *
