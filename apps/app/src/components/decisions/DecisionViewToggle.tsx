@@ -14,7 +14,7 @@ interface DecisionViewToggleProps {
 /**
  * Segmented Overview / Current Phase switch shown in the decision header.
  * Each segment is a route link, so the toggle anchors the user as they move
- * between /decisions/[slug]/overview and /decisions/[slug]/current. The active
+ * between /decisions/[slug] and /decisions/[slug]/current. The active
  * segment comes from the router (the child segment under the shared layout),
  * so the toggle needs no per-page prop telling it which tab is active.
  */
@@ -31,7 +31,7 @@ export function DecisionViewToggle({ decisionSlug }: DecisionViewToggleProps) {
           render={
             <Link
               className="hover:no-underline"
-              href={`/decisions/${decisionSlug}/overview`}
+              href={`/decisions/${decisionSlug}`}
             />
           }
         >

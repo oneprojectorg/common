@@ -5,7 +5,7 @@ import { DecisionOverview } from '@/components/decisions/DecisionOverview';
 import { RichTextRenderer } from '@/components/decisions/RichTextRenderer';
 import { hasFirstPhaseStarted } from '@/components/decisions/hasFirstPhaseStarted';
 
-import { loadDecision } from '../loadDecision';
+import { loadDecision } from './loadDecision';
 
 export async function generateMetadata({
   params,
@@ -31,8 +31,9 @@ export async function generateMetadata({
 }
 
 /**
- * Overview tab (/decisions/[slug]/overview). The shared header + tabs come
- * from the (decision-view) layout; this only renders the overview content.
+ * Decision overview — the canonical decision page at /decisions/[slug]. The
+ * shared header + Overview/Current Phase toggle come from the (decision-view)
+ * layout; this renders the overview content.
  *
  * Single fetch: everything the overview renders (body, phases, headline,
  * access) comes from `loadDecision` (getDecisionBySlug, which the router
@@ -40,10 +41,6 @@ export async function generateMetadata({
  * call — the content + per-user access ride on the one slug fetch the route
  * already makes. The client components read this via props, so there's no
  * client `getInstance` query on this route either.
- *
- * Temporary home: while the overview ships behind a flag, the old
- * current-phase page stays canonical at /decisions/[slug]. When the overview
- * is ready it moves to the root and the old page is retired.
  */
 const DecisionOverviewPage = async ({
   params,
