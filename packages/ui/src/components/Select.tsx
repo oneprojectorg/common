@@ -148,7 +148,8 @@ export const Select = <T extends object, M extends SelectionMode = 'single'>({
       <FieldError>{errorMessage}</FieldError>
       <Popover
         className={cn(
-          'absolute z-10 !max-h-60 min-w-(--trigger-width) overflow-hidden rounded border bg-white p-2 shadow',
+          // Flex + flex-1 listbox keeps the scroll viewport in sync with the popover's max-height (ours or RAC's viewport cap), so `overflow-hidden` can't clip the last row out of reach.
+          'absolute z-10 flex max-h-60 min-w-(--trigger-width) flex-col overflow-hidden rounded border bg-white p-2 shadow',
           popoverClassName,
         )}
         {...popoverProps}
@@ -156,7 +157,7 @@ export const Select = <T extends object, M extends SelectionMode = 'single'>({
         <ListBox
           items={items}
           className={cn(
-            'max-h-60 overflow-auto py-1 outline-hidden',
+            'min-h-0 flex-1 overflow-auto py-1 outline-hidden',
             props.listBoxClassName,
           )}
           selectionMode={selectionMode}
