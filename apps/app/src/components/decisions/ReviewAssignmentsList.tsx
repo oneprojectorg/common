@@ -147,7 +147,7 @@ export function ReviewAssignmentsList({
 }
 
 const ReviewAssignmentCardSkeleton = () => (
-  <Surface className="relative w-full min-w-80 space-y-3 p-4 pb-4">
+  <Surface className="relative w-full space-y-3 p-4 pb-4 md:min-w-80">
     {/* Title */}
     <Skeleton className="h-6 w-3/4" />
 

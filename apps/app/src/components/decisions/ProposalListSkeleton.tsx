@@ -31,7 +31,7 @@ export const ProposalListSkeleton = () => {
 
 const ProposalCardSkeleton = () => {
   return (
-    <Surface className="relative w-full min-w-80 space-y-3 p-4 pb-4">
+    <Surface className="relative w-full space-y-3 p-4 pb-4 md:min-w-80">
       {/* Header with title and budget skeleton */}
       <div className="flex flex-col gap-2">
         <Skeleton className="h-6 w-3/4" />
