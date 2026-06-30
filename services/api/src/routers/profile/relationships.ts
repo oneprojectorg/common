@@ -1,4 +1,5 @@
 import {
+  Channels,
   addProfileRelationship,
   getProfileRelationships,
   removeProfileRelationship,
@@ -18,10 +19,12 @@ import {
   trackProposalLiked,
 } from '../../utils/analytics';
 
+type ProposalInfo = { proposalId: string; processInstanceId: string };
+
 // Helper function to check if a profile belongs to a proposal and get process info
 async function getProposalInfo(
   profileId: string,
-): Promise<{ proposalId: string; processInstanceId: string } | null> {
+): Promise<ProposalInfo | null> {
   const proposal = await db
     .select({
       id: proposals.id,
@@ -37,6 +40,19 @@ async function getProposalInfo(
         processInstanceId: proposal[0]!.processInstanceId,
       }
     : null;
+}
+
+// Channels that proposal detail / list queries subscribe to. Like/follow
+// mutations register the same channels so engagement counts (likesCount,
+// followersCount) refresh immediately.
+function proposalRelationshipChannels({
+  processInstanceId,
+  proposalId,
+}: ProposalInfo) {
+  return [
+    Channels.decisionProposal(processInstanceId, proposalId),
+    Channels.decisionProposals(processInstanceId),
+  ];
 }
 
 const relationshipInputSchema = z.object({
@@ -87,11 +103,16 @@ export const profileRelationshipRouter = router({
         pending,
       });
 
-      // Track analytics if this is a proposal relationship (async in background)
-      waitUntil(
-        (async () => {
-          const proposalInfo = await getProposalInfo(targetProfileId);
-          if (proposalInfo) {
+      // Register the channels that proposal detail / list queries subscribe
+      // to so the engagement counts refresh immediately, and track analytics.
+      const proposalInfo = await getProposalInfo(targetProfileId);
+      if (proposalInfo) {
+        ctx.registerMutationChannels(
+          proposalRelationshipChannels(proposalInfo),
+        );
+
+        waitUntil(
+          (async () => {
             if (relationshipType === ProfileRelationshipType.LIKES) {
               await trackProposalLiked(
                 ctx,
@@ -105,9 +126,9 @@ export const profileRelationshipRouter = router({
                 proposalInfo.proposalId,
               );
             }
-          }
-        })(),
-      );
+          })(),
+        );
+      }
     }),
 
   removeRelationship: relationshipProcedure
@@ -120,6 +141,13 @@ export const profileRelationshipRouter = router({
         relationshipType,
         authUserId: ctx.user.id,
       });
+
+      const proposalInfo = await getProposalInfo(targetProfileId);
+      if (proposalInfo) {
+        ctx.registerMutationChannels(
+          proposalRelationshipChannels(proposalInfo),
+        );
+      }
     }),
 
   getRelationships: openProcedure({
