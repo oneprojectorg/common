@@ -42,17 +42,16 @@ async function getProposalInfo(
     : null;
 }
 
-// Channels that proposal detail / list queries subscribe to. Like/follow
-// mutations register the same channels so engagement counts (likesCount,
-// followersCount) refresh immediately.
+// Channel the proposal detail query subscribes to. Like/follow mutations
+// register it so engagement counts (likesCount, followersCount) refresh
+// immediately on the proposal view. Deliberately scoped to the single
+// proposal — invalidating the whole `decisionProposals` list channel for
+// every like/follow would force every viewer to re-fetch every card.
 function proposalRelationshipChannels({
   processInstanceId,
   proposalId,
 }: ProposalInfo) {
-  return [
-    Channels.decisionProposal(processInstanceId, proposalId),
-    Channels.decisionProposals(processInstanceId),
-  ];
+  return [Channels.decisionProposal(processInstanceId, proposalId)];
 }
 
 const relationshipInputSchema = z.object({
