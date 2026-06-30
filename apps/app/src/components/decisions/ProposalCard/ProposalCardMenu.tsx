@@ -222,8 +222,10 @@ export function ProposalCardMenu({
       });
     }
 
-    // Delete action for own proposals — skip when canManage is true because the card footer already shows delete
-    if (proposal.isEditable && !canManage) {
+    // Delete shown for the proposal owner (matching footer Edit/Delete) and for
+    // admins, who have delete permission server-side but no Delete elsewhere on
+    // non-owned cards.
+    if (proposal.isEditable || canManage) {
       items.push({
         key: 'delete',
         icon: <LuTrash2 className="size-5" />,
@@ -317,7 +319,7 @@ export function ProposalCardMenu({
           </Popover>
         </MenuTrigger>
       )}
-      {proposal.isEditable && (
+      {(proposal.isEditable || canManage) && (
         <DialogTrigger
           isOpen={isDeleteModalOpen}
           onOpenChange={setIsDeleteModalOpen}
