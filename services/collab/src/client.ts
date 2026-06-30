@@ -113,10 +113,11 @@ export function createTipTapClient(config: TipTapClientConfig) {
         // multiple fragments are requested with format=text.  Fetch each
         // fragment individually so we get per-fragment text values.
         //
-        // Only the trailing newline TipTap appends after the last block is
-        // stripped — full `.trim()` would silently eat whitespace baked
-        // into a dropdown's option const (e.g. `"Option A "`), which AJV's
-        // `oneOf` then fails to match. See ONE-289.
+        // The `.trim()` is fine for moderation / display callers — they
+        // don't need byte-exact whitespace. For validation, use
+        // `getFragmentTextFromTipTapDoc` with format=json instead, since
+        // AJV's strict `oneOf` requires whitespace-exact matches and
+        // TipTap's text serializer does not round-trip those (ONE-289).
         const entries = await Promise.all(
           fragments.map(async (fragment) => {
             const text = await api
@@ -128,7 +129,7 @@ export function createTipTapClient(config: TipTapClientConfig) {
                 },
               })
               .text();
-            return [fragment, text.replace(/\n$/, '')] as const;
+            return [fragment, text.trim()] as const;
           }),
         );
         return Object.fromEntries(entries) as R;

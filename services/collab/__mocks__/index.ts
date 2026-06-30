@@ -295,10 +295,22 @@ export const mockCollab = {
 
   /**
    * Set per-fragment text responses for a document.
-   * Used when `getDocumentFragments` is called with `format='text'`.
+   *
+   * Seeds BOTH the `format='text'` map AND the `format='json'` map (wrapping
+   * each string in a single paragraph), so tests that exercise either format
+   * see the same value. Validation now reads via JSON to preserve dropdown
+   * whitespace (ONE-289) — pre-existing callers seeding via this helper keep
+   * working without churn.
    */
   setDocFragments: (docId: string, fragments: Record<string, string>) => {
     docFragmentTextResponses.set(docId, fragments);
+    const asDocs: TipTapFragmentResponse = Object.fromEntries(
+      Object.entries(fragments).map(([key, value]) => [
+        key,
+        value ? textFragment(value) : { type: 'doc', content: [] },
+      ]),
+    );
+    docFragmentJsonResponses.set(docId, asDocs);
   },
 
   /** Set saved versions for a document. */

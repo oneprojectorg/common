@@ -1,7 +1,9 @@
 import { getTipTapClient } from '@op/collab';
+import type { JSONContent } from '@tiptap/core';
 
 import { assembleProposalData } from './assembleProposalData';
 import { fillCategoryFromBoundary } from './boundaryCategory';
+import { getFragmentTextFromTipTapDoc } from './getFragmentTextFromTipTapDoc';
 import { getProposalFragmentNames } from './getProposalFragmentNames';
 import { parseProposalData } from './proposalDataSchema';
 import { schemaValidator } from './schemaValidator';
@@ -39,10 +41,24 @@ export async function validateProposalAgainstTemplate(
     const client = getTipTapClient();
 
     const fragmentNames = getProposalFragmentNames(proposalTemplate);
-    const fragmentTexts = await client.getDocumentFragments(
-      parsed.collaborationDocId,
-      fragmentNames,
-      { format: 'text' },
+    // Fetch JSON and extract text via `getFragmentTextFromTipTapDoc` so the
+    // server reads the fragment exactly as the client's `getFragmentPlainText`
+    // does. TipTap's own `format=text` endpoint serializes through ProseMirror
+    // and doesn't round-trip whitespace baked into dropdown option consts,
+    // which breaks AJV's strict `oneOf` match. See ONE-289.
+    //
+    // A 404 from TipTap means the collab doc hasn't been written yet (e.g.
+    // the user opened the editor but never typed). Treat that as "all
+    // fragments empty" so the validator surfaces required-field errors
+    // instead of leaking an HTTP error.
+    const fragmentDocs = await client
+      .getDocumentFragments(parsed.collaborationDocId, fragmentNames)
+      .catch(() => ({}) as Record<string, never>);
+    const fragmentTexts: Record<string, string> = Object.fromEntries(
+      fragmentNames.map((name) => [
+        name,
+        getFragmentTextFromTipTapDoc(fragmentDocs[name] as JSONContent),
+      ]),
     );
     const validationData = {
       ...assembleProposalData(proposalTemplate, fragmentTexts),
