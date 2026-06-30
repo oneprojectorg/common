@@ -97,8 +97,9 @@ describe('createCheckstepProvider', () => {
     const contentId = `post:44444444-4444-4444-8444-444444444444:${ROUND_ID}`;
     const [verdict] = createCheckstepProvider({ apiKey: 'k' }).parseWebhook!({
       rawBody: JSON.stringify({
-        id: contentId,
+        webhook_type: 'decision',
         decision: 'act',
+        content: { id: contentId, type: 'comment' },
         violations: [{ policy: 'HTE', severity: 'high' }],
       }),
       headers: {},
@@ -117,8 +118,12 @@ describe('createCheckstepProvider', () => {
   it('parseWebhook maps a dismiss decision to a clear verdict', () => {
     const [verdict] = createCheckstepProvider({ apiKey: 'k' }).parseWebhook!({
       rawBody: JSON.stringify({
-        id: `post:44444444-4444-4444-8444-444444444444:${ROUND_ID}`,
+        webhook_type: 'decision',
         decision: 'dismiss',
+        content: {
+          id: `post:44444444-4444-4444-8444-444444444444:${ROUND_ID}`,
+          type: 'comment',
+        },
       }),
       headers: {},
     });
@@ -126,13 +131,40 @@ describe('createCheckstepProvider', () => {
     expect(verdict?.verdict).toBe('clear');
   });
 
-  it('parseWebhook throws on a payload missing the content id', () => {
-    expect(() =>
-      createCheckstepProvider({ apiKey: 'k' }).parseWebhook!({
-        rawBody: JSON.stringify({ decision: 'act' }),
-        headers: {},
+  it('parseWebhook acknowledges a payload missing the content id without throwing', () => {
+    // Probes/test deliveries from the dashboard often omit content; we ack
+    // with no verdicts (→ 200) rather than 400ing into provider retries.
+    const verdicts = createCheckstepProvider({ apiKey: 'k' }).parseWebhook!({
+      rawBody: JSON.stringify({
+        webhook_type: 'decision',
+        decision: 'act',
       }),
-    ).toThrow();
+      headers: {},
+    });
+
+    expect(verdicts).toEqual([]);
+  });
+
+  it('parseWebhook skips non-decision webhook types (author-decision, incident-closed, analysed-content)', () => {
+    const provider = createCheckstepProvider({ apiKey: 'k' });
+    for (const webhookType of [
+      'author-decision',
+      'incident-closed',
+      'analysed-content',
+    ]) {
+      const verdicts = provider.parseWebhook!({
+        rawBody: JSON.stringify({
+          webhook_type: webhookType,
+          decision: 'act',
+          content: {
+            id: `post:44444444-4444-4444-8444-444444444444:${ROUND_ID}`,
+            type: 'comment',
+          },
+        }),
+        headers: {},
+      });
+      expect(verdicts).toEqual([]);
+    }
   });
 
   it('parseWebhook emits no verdict for an unrecognized decision (fails safe)', () => {
@@ -140,8 +172,12 @@ describe('createCheckstepProvider', () => {
     // dismiss an open flag) — it yields no verdict.
     const verdicts = createCheckstepProvider({ apiKey: 'k' }).parseWebhook!({
       rawBody: JSON.stringify({
-        id: `post:44444444-4444-4444-8444-444444444444:${ROUND_ID}`,
+        webhook_type: 'decision',
         decision: 'some-new-decision',
+        content: {
+          id: `post:44444444-4444-4444-8444-444444444444:${ROUND_ID}`,
+          type: 'comment',
+        },
       }),
       headers: {},
     });
@@ -152,7 +188,11 @@ describe('createCheckstepProvider', () => {
   it('parseWebhook emits no verdict for a decision-less ack/interim callback', () => {
     const verdicts = createCheckstepProvider({ apiKey: 'k' }).parseWebhook!({
       rawBody: JSON.stringify({
-        id: `post:44444444-4444-4444-8444-444444444444:${ROUND_ID}`,
+        webhook_type: 'decision',
+        content: {
+          id: `post:44444444-4444-4444-8444-444444444444:${ROUND_ID}`,
+          type: 'comment',
+        },
       }),
       headers: {},
     });
@@ -163,8 +203,9 @@ describe('createCheckstepProvider', () => {
   it('parseWebhook skips a delivery for a foreign content id (acknowledges, no 400)', () => {
     const verdicts = createCheckstepProvider({ apiKey: 'k' }).parseWebhook!({
       rawBody: JSON.stringify({
-        id: 'some-other-systems-bare-id',
+        webhook_type: 'decision',
         decision: 'act',
+        content: { id: 'some-other-systems-bare-id', type: 'comment' },
       }),
       headers: {},
     });
