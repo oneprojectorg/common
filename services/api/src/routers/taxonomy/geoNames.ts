@@ -41,13 +41,35 @@ const roundCenterCoord = (value: number): number => {
   return Math.round(value * factor) / factor;
 };
 
+// Collapse near-duplicate queries onto one cache key. Google's search is
+// case-insensitive and trims surrounding whitespace, so "Main Street ",
+// "main street", and "MAIN STREET" all produce the same result — caching them
+// under the same key avoids paying for the same billable call multiple times.
+const normalizeQuery = (q: string): string => q.trim().toLowerCase();
+
+// Bumped when the cached value's shape changes. Previous entries cached the
+// raw `GeoName[]` (or `[]` on transient Google errors); we now cache a
+// discriminated `{ status: 'ok', geonames }` wrapper, so old entries must be
+// orphaned rather than misinterpreted.
+const CACHE_KEY_VERSION = 'v2';
+
+/**
+ * Result wrapper used by the cache fetcher so we can distinguish a transient
+ * upstream failure (don't cache — would pin a wrong "no results" answer for
+ * 72h) from a genuine empty result (cache — repeat queries for a nonsense
+ * string should not re-hit Google).
+ */
+type GetGeonamesResult =
+  | { status: 'ok'; geonames: GeoName[] }
+  | { status: 'error' };
+
 const getGeonames = async ({
   q,
   center,
 }: {
   q: string;
   center?: { lat: number; lng: number };
-}) => {
+}): Promise<GetGeonamesResult> => {
   if (!process.env.GOOGLE_MAPS_API_KEY) {
     throw new Error('GOOGLE_MAPS_API_KEY environment variable is required');
   }
@@ -130,10 +152,10 @@ const getGeonames = async ({
 
     const geonames = Array.from(geoNameMap).map((item) => item[1]);
 
-    return geonames;
+    return { status: 'ok', geonames };
   } catch (e) {
     logger.error('Maps API error', { error: e });
-    return [];
+    return { status: 'error' };
   }
 };
 
@@ -143,8 +165,12 @@ export const getGeoNames = router({
   // the picker — matches `reverseGeocode` and `resolveBoundary`. There is no
   // per-resource scope to assert: it forward-geocodes a free-text query against
   // a global provider. Billable-API abuse is bounded by the result cache, the
-  // client-side debounce, and the procedure rate limit.
-  getGeoNames: authenticatedProcedure()
+  // client-side debounce, and a procedure-level per-IP+endpoint rate limit
+  // tighter than the default — Google Places `searchText` is metered per call,
+  // so anonymous traffic gets a tighter quota than the standard 10/10s.
+  getGeoNames: authenticatedProcedure({
+    rateLimit: { windowSize: 60, maxRequests: 30 },
+  })
     .input(
       z.object({
         q: z.string().min(2).max(255),
@@ -171,14 +197,19 @@ export const getGeoNames = router({
       const roundedLng =
         center !== undefined ? roundCenterCoord(center.lng) : undefined;
 
-      const geonames = await cache({
+      const result = await cache({
         type: 'geonames',
-        params: [q, roundedLat, roundedLng],
+        params: [normalizeQuery(q), roundedLat, roundedLng, CACHE_KEY_VERSION],
         fetch: () => getGeonames({ q, center }),
+        options: {
+          // A transient Google failure returns `status: 'error'`; without this
+          // predicate the cache would pin that empty result for 72h.
+          skipCacheWrite: (r) => r.status === 'error',
+        },
       });
 
       return {
-        geonames,
+        geonames: result.status === 'ok' ? result.geonames : [],
       };
     }),
 });

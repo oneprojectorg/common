@@ -14,13 +14,22 @@ export interface ReverseGeoName {
   countryName?: string;
 }
 
+/**
+ * Result wrapper so the cache fetcher can distinguish a transient upstream
+ * failure (don't cache — would pin a wrong "no address" answer for 72h) from
+ * an addressless point like open water (cache — re-asking is pointless).
+ */
+type ReverseGeocodeResult =
+  | { status: 'ok'; place: ReverseGeoName | null }
+  | { status: 'error' };
+
 const reverseGeocodePoint = async ({
   lat,
   lng,
 }: {
   lat: number;
   lng: number;
-}): Promise<ReverseGeoName | null> => {
+}): Promise<ReverseGeocodeResult> => {
   if (!process.env.GOOGLE_MAPS_API_KEY) {
     throw new Error('GOOGLE_MAPS_API_KEY environment variable is required');
   }
@@ -45,9 +54,11 @@ const reverseGeocodePoint = async ({
     const place = data.results?.[0];
 
     // Open water, deserts, etc. return no address — the caller falls back to a
-    // bare coordinate.
+    // bare coordinate. This is a genuine "no result" (status OK / ZERO_RESULTS)
+    // and gets cached so repeat lookups of an addressless point don't re-hit
+    // the billable API.
     if (!place) {
-      return null;
+      return { status: 'ok', place: null };
     }
 
     const countryComponent = place.address_components?.find(
@@ -55,16 +66,19 @@ const reverseGeocodePoint = async ({
     );
 
     return {
-      placeId: place.place_id,
-      address: place.formatted_address,
-      lat: place.geometry?.location?.lat ?? lat,
-      lng: place.geometry?.location?.lng ?? lng,
-      countryCode: countryComponent?.short_name,
-      countryName: countryComponent?.long_name,
+      status: 'ok',
+      place: {
+        placeId: place.place_id,
+        address: place.formatted_address,
+        lat: place.geometry?.location?.lat ?? lat,
+        lng: place.geometry?.location?.lng ?? lng,
+        countryCode: countryComponent?.short_name,
+        countryName: countryComponent?.long_name,
+      },
     };
   } catch (e) {
     console.error('Reverse geocoding error', e);
-    return null;
+    return { status: 'error' };
   }
 };
 
@@ -73,6 +87,11 @@ const reverseGeocodePoint = async ({
 // vary a coordinate by sub-meter deltas to bypass the cache and run up billable
 // Google calls.
 const GEOCODE_CACHE_PRECISION = 5;
+
+// Bumped when the cached value's shape changes. Previous entries cached a
+// `ReverseGeoName | null`; we now cache a discriminated wrapper, so old
+// entries must be orphaned rather than misinterpreted.
+const CACHE_KEY_VERSION = 'v2';
 
 const roundCoordinate = (value: number): number => {
   const factor = 10 ** GEOCODE_CACHE_PRECISION;
@@ -95,12 +114,19 @@ export async function reverseGeocodeLocation({
   const roundedLat = roundCoordinate(lat);
   const roundedLng = roundCoordinate(lng);
 
-  return cache({
+  const result = await cache({
     type: 'reverseGeocode',
-    params: [roundedLat, roundedLng],
-    // Cache the null (open water, deserts) too, so repeated lookups of an
-    // addressless point don't re-hit the billable API.
-    options: { storeNulls: true },
+    params: [roundedLat, roundedLng, CACHE_KEY_VERSION],
+    options: {
+      // A transient Google failure returns `status: 'error'`; without this
+      // predicate the cache would pin that empty result for 72h. Open-water /
+      // desert points return `status: 'ok', place: null` — the wrapper object
+      // is truthy, so the cache stores it without needing `storeNulls`, and
+      // repeat lookups of an addressless point still skip the billable API.
+      skipCacheWrite: (r) => r.status === 'error',
+    },
     fetch: () => reverseGeocodePoint({ lat: roundedLat, lng: roundedLng }),
   });
+
+  return result.status === 'ok' ? result.place : null;
 }
