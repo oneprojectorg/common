@@ -1,5 +1,6 @@
 'use client';
 
+import type { DecisionAccess } from '@op/api/encoders';
 import { type Proposal, parseProposalData } from '@op/common/client';
 import type { MapDefaultView } from '@op/common/client';
 import { useMediaQuery } from '@op/hooks';
@@ -19,6 +20,9 @@ interface ProposalsMapViewProps {
   slug: string;
   /** Decision profile slug for building proposal links. */
   decisionSlug?: string;
+  /** Role-based capabilities for the current user — drives the admin
+   * proposal menu on each list-column card (same logic as the grid view). */
+  permissions?: DecisionAccess | null;
   /** Fallback camera — the process's default view, used only when no proposal
    * has a location to fit. */
   mapView: MapDefaultView;
@@ -38,8 +42,10 @@ export function ProposalsMapView({
   instanceId,
   slug,
   decisionSlug,
+  permissions,
   mapView,
 }: ProposalsMapViewProps) {
+  const canManageProposals = permissions?.admin ?? false;
   const t = useTranslations();
   const router = useRouter();
   const styleUrl = useMapStyleUrl();
@@ -163,6 +169,7 @@ export function ProposalsMapView({
             proposal={proposal}
             href={hrefFor(proposal)}
             isActive={activeId === proposal.id}
+            canManage={canManageProposals}
             onActivate={() => setActiveId(proposal.id)}
             onDeactivate={() => setActiveId(null)}
           />

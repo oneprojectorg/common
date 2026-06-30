@@ -514,6 +514,7 @@ const ProposalsListContent = ({
             instanceId={instanceId}
             slug={slug}
             decisionSlug={decisionSlug}
+            permissions={permissions}
             mapView={mapView}
           />
         ) : (

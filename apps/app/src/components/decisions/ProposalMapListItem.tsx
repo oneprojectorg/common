@@ -9,6 +9,7 @@ import {
   ProposalCard,
   ProposalCardContent,
   ProposalCardHeader,
+  ProposalCardMenu,
   ProposalCardMeta,
   ProposalCardMetrics,
   ProposalCardPreview,
@@ -20,6 +21,11 @@ interface ProposalMapListItemProps {
   href: string;
   /** Highlighted because its marker (or this row) is hovered/active. */
   isActive: boolean;
+  /**
+   * When true the admin proposal menu (triple dots) renders in the header,
+   * matching the grid view's `showMenu = canManageProposals` logic.
+   */
+  canManage?: boolean;
   /** Called when the pointer enters the row (desktop hover sync). */
   onActivate: () => void;
   /** Called when the pointer leaves the row. */
@@ -36,6 +42,7 @@ export function ProposalMapListItem({
   proposal,
   href,
   isActive,
+  canManage = false,
   onActivate,
   onDeactivate,
 }: ProposalMapListItemProps) {
@@ -57,7 +64,24 @@ export function ProposalMapListItem({
           )}
         >
           <ProposalCardContent>
-            <ProposalCardHeader proposal={proposal} />
+            <ProposalCardHeader
+              proposal={proposal}
+              menu={
+                canManage && (
+                  // The whole row is a link; swallow the menu's click events so
+                  // pressing the trigger doesn't also navigate to the proposal.
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
+                    <ProposalCardMenu
+                      proposal={proposal}
+                      canManage={canManage}
+                    />
+                  </div>
+                )
+              }
+            />
             <ProposalCardMeta proposal={proposal} withLink={false} />
             <ProposalCardPreview proposal={proposal} />
           </ProposalCardContent>
