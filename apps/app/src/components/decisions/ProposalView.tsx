@@ -208,9 +208,7 @@ export function ProposalView({
 
   const targetLanguageName = getLanguageName(locale);
 
-  // TODO: replace `locale !== 'en'` with a source-language check once proposals carry their own locale
-  const showBanner =
-    locale !== 'en' && !bannerDismissed && !translatedHtmlContent;
+  const showBanner = !bannerDismissed && !translatedHtmlContent;
 
   // Most recently responded revision (if any) — drives the "Revised on"
   // badge shown inline in the submitter metadata row.
