@@ -16,7 +16,7 @@ export function ProposalMasonry({ children }: { children: ReactNode }) {
     <Masonry
       breakpointCols={BREAKPOINT_COLS}
       className="-ml-6 flex w-auto"
-      columnClassName="flex min-w-0 flex-col gap-6 bg-clip-padding pl-6"
+      columnClassName="flex min-w-0 flex-col gap-6 pl-6"
     >
       {children}
     </Masonry>
