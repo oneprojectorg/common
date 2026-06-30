@@ -107,9 +107,9 @@ export const BannerImageField = ({
           ) : null}
         </div>
       ) : (
-        <div className="flex items-center justify-between gap-4 rounded-lg border p-6">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-20 items-center justify-center rounded bg-neutral-gray1">
+        <div className="flex flex-col justify-between gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:p-6">
+          <div className="flex gap-4">
+            <div className="flex w-32 items-center justify-center rounded-md bg-neutral-gray1">
               {uploading ? (
                 <LoadingSpinner />
               ) : (
@@ -135,6 +135,7 @@ export const BannerImageField = ({
             size="small"
             isDisabled={uploading}
             onPress={() => fileInputRef.current?.click()}
+            className="w-auto sm:w-fit"
           >
             {chooseFileLabel}
           </Button>
