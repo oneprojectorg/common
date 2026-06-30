@@ -290,14 +290,16 @@ const OverviewHero = ({
   return (
     // Admin-uploaded background sits behind the content as an <Image fill>; the
     // offWhite gradient is the empty-state fallback when no image is set.
-    <section className="relative grid w-full grid-cols-1 justify-center border-b bg-neutral-offWhite md:grid-cols-12">
+    <section className="relative grid w-full grid-cols-1 justify-center overflow-hidden border-b bg-neutral-offWhite md:grid-cols-12">
       {backgroundImageUrl ? (
         <>
           <Image
             src={backgroundImageUrl}
             alt=""
             fill
-            className="object-cover"
+            // 6px blur per design; scale-105 hides the translucent rim the blur
+            // pulls in at the edges (section clips the overflow).
+            className="scale-105 object-cover blur-[6px]"
             // Hero is above the fold — opt out of lazy-loading.
             priority
           />
