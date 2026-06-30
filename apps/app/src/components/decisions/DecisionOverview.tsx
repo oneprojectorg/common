@@ -361,7 +361,7 @@ const OverviewHero = ({
                       // axe's `link-in-text-block` flags color-only cues.
                       <Link
                         href={`/profile/${steward.slug}`}
-                        className="underline"
+                        className={cn('underline', hasImage && 'text-white')}
                       >
                         {stewardName}
                       </Link>
