@@ -53,16 +53,14 @@ export const GradientHeader = ({
   gradient?: string;
 }) => {
   return (
-    <div className="flex w-full items-center justify-center text-transparent">
-      <div
-        className={cn(
-          'flex items-center bg-clip-text font-serif text-title-xxl',
-          gradient,
-          className,
-        )}
-      >
-        {children}
-      </div>
+    <div
+      className={cn(
+        'mx-auto flex w-fit items-center bg-clip-text font-serif text-title-xxl text-transparent',
+        gradient,
+        className,
+      )}
+    >
+      {children}
     </div>
   );
 };

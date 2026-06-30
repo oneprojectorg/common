@@ -1,4 +1,4 @@
-import { GradientHeader, Header2 } from '@op/ui/Header';
+import { GradientHeader, Header1 } from '@op/ui/Header';
 import { cn } from '@op/ui/utils';
 import { ReactNode } from 'react';
 
@@ -19,15 +19,14 @@ export function DecisionHero({
   return (
     <div className="flex flex-col gap-2 text-center">
       {variant === 'results' ? (
-        <Header2 className="font-serif text-title-xxl font-light uppercase">
+        <Header1 className="font-serif font-light uppercase md:text-title-xxl">
           <bdi>{title}</bdi>
-        </Header2>
+        </Header1>
       ) : (
-        <GradientHeader
-          className="items-center align-middle uppercase"
-          gradient={gradient}
-        >
-          <bdi>{title}</bdi>
+        <GradientHeader className="uppercase" gradient={gradient}>
+          <Header1 className="md:text-title-xxl">
+            <bdi>{title}</bdi>
+          </Header1>
         </GradientHeader>
       )}
 
