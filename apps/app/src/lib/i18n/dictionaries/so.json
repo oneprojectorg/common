@@ -1367,5 +1367,15 @@
   "With an account": "Adoo akoon leh",
   "Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.": "Wax ka bedel fikradaada ka hor inta aan dib u eegista la bilaabin, ogeysiis hel marka ay u guurto marxaladda xigta, oo jeclow, faallo ka bixi, oo raac fikradaha kale.",
   "Create account": "Abuur akoon",
-  "Collapsible": "La laalaabi karo"
+  "Collapsible": "La laalaabi karo",
+  "Banner image": "Sawirka banamka",
+  "Upload banner image": "Soo gali sawirka banamka",
+  "PNG or JPG · recommended 2400×800px · max 3MB": "PNG ama JPG · lagu taliyay 2400×800px · ugu badnaan 3MB",
+  "Choose file": "Dooro fayl",
+  "The headline appears centered over a dark overlay. Avoid images with key subjects in the middle.": "Cinwaanku wuxuu ka muuqdaa bartamaha dusha daboolka madow. Ka fogow sawirrada walxaha muhiimka ah bartamaha ku leh.",
+  "Edit banner": "Wax ka beddel banamka",
+  "Admin options": "Doorashooyinka maamulaha",
+  "Process settings": "Dejinta habka",
+  "ends {date}": "wuxuu dhammaanayaa {date}",
+  "Remove image": "Ka saar sawirka"
 }

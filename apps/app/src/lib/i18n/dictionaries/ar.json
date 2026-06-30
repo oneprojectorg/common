@@ -1365,5 +1365,15 @@
   "With an account": "باستخدام حساب",
   "Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.": "عدّل فكرتك قبل بدء المراجعة، واحصل على إشعار عند انتقالها إلى المرحلة التالية، وأعجب بالأفكار الأخرى وعلّق عليها وتابعها.",
   "Create account": "إنشاء حساب",
-  "Collapsible": "قابل للطي"
+  "Collapsible": "قابل للطي",
+  "Banner image": "صورة البانر",
+  "Upload banner image": "تحميل صورة البانر",
+  "PNG or JPG · recommended 2400×800px · max 3MB": "PNG أو JPG · موصى به 2400×800 بكسل · بحد أقصى 3 ميجابايت",
+  "Choose file": "اختر ملفًا",
+  "The headline appears centered over a dark overlay. Avoid images with key subjects in the middle.": "يظهر العنوان في المنتصف فوق طبقة داكنة. تجنّب الصور التي تحتوي على عناصر مهمة في المنتصف.",
+  "Edit banner": "تعديل البانر",
+  "Admin options": "خيارات المسؤول",
+  "Process settings": "إعدادات العملية",
+  "ends {date}": "ينتهي في {date}",
+  "Remove image": "إزالة الصورة"
 }

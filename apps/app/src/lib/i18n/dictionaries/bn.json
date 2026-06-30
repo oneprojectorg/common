@@ -1368,5 +1368,15 @@
   "With an account": "অ্যাকাউন্ট দিয়ে",
   "Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.": "পর্যালোচনা শুরু হওয়ার আগে আপনার আইডিয়া সম্পাদনা করুন, এটি পরবর্তী ধাপে গেলে বিজ্ঞপ্তি পান, এবং অন্যান্য আইডিয়া পছন্দ করুন, মন্তব্য করুন ও অনুসরণ করুন।",
   "Create account": "অ্যাকাউন্ট তৈরি করুন",
-  "Collapsible": "সংকোচনযোগ্য"
+  "Collapsible": "সংকোচনযোগ্য",
+  "Banner image": "ব্যানার ছবি",
+  "Upload banner image": "ব্যানার ছবি আপলোড করুন",
+  "PNG or JPG · recommended 2400×800px · max 3MB": "PNG বা JPG · প্রস্তাবিত 2400×800px · সর্বোচ্চ 3MB",
+  "Choose file": "ফাইল নির্বাচন করুন",
+  "The headline appears centered over a dark overlay. Avoid images with key subjects in the middle.": "শিরোনামটি একটি গাঢ় ওভারলের উপরে কেন্দ্রে প্রদর্শিত হয়। মাঝখানে গুরুত্বপূর্ণ বিষয় আছে এমন ছবি এড়িয়ে চলুন।",
+  "Edit banner": "ব্যানার সম্পাদনা করুন",
+  "Admin options": "অ্যাডমিন বিকল্প",
+  "Process settings": "প্রক্রিয়া সেটিংস",
+  "ends {date}": "{date} তারিখে শেষ হয়",
+  "Remove image": "ছবি সরান"
 }

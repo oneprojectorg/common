@@ -109,7 +109,7 @@ export const BannerImageField = ({
       ) : (
         <div className="flex items-center justify-between gap-4 rounded-lg border p-6">
           <div className="flex items-center gap-4">
-            <div className="flex h-[45px] w-20 items-center justify-center rounded bg-neutral-gray1">
+            <div className="flex h-12 w-20 items-center justify-center rounded bg-neutral-gray1">
               {uploading ? (
                 <LoadingSpinner />
               ) : (
