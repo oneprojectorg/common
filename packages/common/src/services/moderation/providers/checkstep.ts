@@ -15,11 +15,22 @@ import { moderationFetch } from './moderationFetch';
 import { headerValue, timingSafeStringEqual } from './verify';
 
 // External input driving DB writes: validate the shape instead of casting.
-// `decision` stays a plain string — an unrecognized Checkstep decision must
-// not 400 the webhook; it just doesn't count as flagging.
+// Every field is nullish — an unfamiliar payload (wrong webhook_type, missing
+// content id, dashboard probe, schema drift) must NOT 400 the delivery; the
+// parser returns no verdicts and the route acks with 200 so the provider
+// stops retrying. `webhook_type` discriminates the four documented kinds
+// (`decision`, `author-decision`, `incident-closed`, `analysed-content`); only
+// `decision` carries a verdict. The content ref lives at `content.id` — the
+// top-level `id` we used to read does not exist in the documented payload.
 const checkstepWebhookSchema = z.object({
-  id: z.string(),
+  webhook_type: z.string().nullish(),
   decision: z.string().nullish(),
+  content: z
+    .object({
+      id: z.string().nullish(),
+      type: z.string().nullish(),
+    })
+    .nullish(),
   violations: z
     .array(
       z.object({
@@ -253,16 +264,26 @@ export const createCheckstepProvider = ({
     return reference;
   },
 
-  // One verdict per callback (one combined task per submission).
+  // One verdict per callback (one combined task per submission). Checkstep
+  // sends four documented webhook_type values; only `decision` carries a
+  // content verdict for us — the other kinds (author-decision, incident-closed,
+  // analysed-content) are acknowledged without action.
   parseWebhook: ({ rawBody }: ModerationWebhookInput): ModerationVerdict[] => {
     const payload = checkstepWebhookSchema.parse(JSON.parse(rawBody));
+    if (payload.webhook_type !== 'decision') {
+      return [];
+    }
+    const contentId = payload.content?.id;
+    if (!contentId) {
+      return [];
+    }
     // A delivery for content not ingested through this integration (dashboard
     // test payloads, sync-gate items under a bare uuid, pre-deploy content)
     // carries an id that isn't our ref — skip it and acknowledge with 200,
     // matching the Lasso adapter, rather than throwing into a 400 + retries.
     let ref;
     try {
-      ref = decodeContentRef(payload.id);
+      ref = decodeContentRef(contentId);
     } catch {
       return [];
     }
@@ -285,7 +306,7 @@ export const createCheckstepProvider = ({
         roundId: ref.roundId,
         mediaId: ref.mediaId,
         verdict: flagged ? 'flagged' : 'clear',
-        externalRecordId: payload.id,
+        externalRecordId: contentId,
         reason: flagged ? `Checkstep decision: ${payload.decision}` : undefined,
         scores: flagged
           ? scoresFromViolations(payload.violations ?? undefined)
