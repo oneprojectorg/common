@@ -27,7 +27,7 @@ function ProposalEditPageContent({
     notFound();
   }
 
-  const backHref = `/decisions/${decisionSlug}`;
+  const backHref = `/decisions/${decisionSlug}/current`;
 
   return (
     <ProposalEditor

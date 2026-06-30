@@ -296,7 +296,7 @@ function ProposalEditorContent({
     <div className="flex h-screen bg-white">
       <ProposalEditor
         instance={instance}
-        backHref={`/decisions/${slug}`}
+        backHref={`/decisions/${slug}/current`}
         proposal={proposal}
         isEditMode
         asideHeaderIcons={
