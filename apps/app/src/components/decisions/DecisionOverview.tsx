@@ -10,6 +10,7 @@ import { EmptyState } from '@op/ui/EmptyState';
 import { GradientHeader, Header1, Header3 } from '@op/ui/Header';
 import { Link } from '@op/ui/Link';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
+import { cn } from '@op/ui/utils';
 import he from 'he';
 import Image from 'next/image';
 import { Suspense, type ReactNode } from 'react';
@@ -275,6 +276,10 @@ const OverviewHero = ({
   const stewardName = steward?.name;
   const currentPhaseHref = `/decisions/${decisionSlug}/current`;
   const backgroundImageUrl = getPublicUrl(backgroundImagePath);
+  // With a photo behind it, the clipped teal→green title and charcoal body lose
+  // contrast — switch the hero text to white over a darker scrim. Buttons keep
+  // their own colors.
+  const hasImage = Boolean(backgroundImageUrl);
   const { createProposal, isCreating, isReady } = useCreateProposal({
     instanceId,
     navigateTo: (proposal) =>
@@ -296,12 +301,11 @@ const OverviewHero = ({
             // Hero is above the fold — opt out of lazy-loading.
             priority
           />
-          {/* ponytail: first-pass scrim so the clipped-gradient title and
-              charcoal subtext stay legible over arbitrary photos — exact
-              opacity is a design-review call. */}
+          {/* Dark scrim so the white hero text stays legible over arbitrary
+              photos. */}
           <div
             aria-hidden="true"
-            className="absolute inset-0 bg-neutral-offWhite/70"
+            className="absolute inset-0 bg-neutral-black/50"
           />
         </>
       ) : null}
@@ -316,14 +320,27 @@ const OverviewHero = ({
           {/* Brand teal→green gradient clipped to the title text. This hero is
               the page's <h1>; the sticky DecisionInstanceHeader carries a
               secondary <h2>, so there's exactly one <h1> and tests can target
-              the banner headline unambiguously with `level: 1`. */}
-          <GradientHeader>
-            <Header1 className="md:text-title-xxl">
+              the banner headline unambiguously with `level: 1`.
+              Over a banner image the clipped gradient loses contrast against
+              the dark scrim, so switch to plain white text instead. */}
+          {hasImage ? (
+            <Header1 className="text-white md:text-title-xxl">
               <bdi>{headline}</bdi>
             </Header1>
-          </GradientHeader>
+          ) : (
+            <GradientHeader>
+              <Header1 className="md:text-title-xxl">
+                <bdi>{headline}</bdi>
+              </Header1>
+            </GradientHeader>
+          )}
           {stewardName || isPublic ? (
-            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-neutral-charcoal">
+            <div
+              className={cn(
+                'flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm',
+                hasImage ? 'text-white' : 'text-neutral-charcoal',
+              )}
+            >
               {stewardName ? (
                 <span className="flex items-center gap-1.5">
                   <Avatar placeholder={stewardName} className="size-5">
@@ -355,7 +372,10 @@ const OverviewHero = ({
                 </span>
               ) : null}
               {stewardName && isPublic ? (
-                <span aria-hidden="true" className="text-neutral-gray4">
+                <span
+                  aria-hidden="true"
+                  className={hasImage ? 'text-white/80' : 'text-neutral-gray4'}
+                >
                   •
                 </span>
               ) : null}
@@ -370,7 +390,10 @@ const OverviewHero = ({
           {subhead ? (
             <p
               dir="auto"
-              className="text-base text-balance text-neutral-charcoal"
+              className={cn(
+                'text-base text-balance',
+                hasImage ? 'text-white' : 'text-neutral-charcoal',
+              )}
             >
               {subhead}
             </p>
