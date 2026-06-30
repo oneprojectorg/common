@@ -8,6 +8,9 @@ export * from './listProcesses';
 // Instance cache invalidation
 export * from './decisionCache';
 
+// Overview hero background-image constants (client-safe)
+export * from './overviewImage';
+
 // Instance management
 export * from './createInstanceFromTemplate';
 export * from './duplicateInstance';

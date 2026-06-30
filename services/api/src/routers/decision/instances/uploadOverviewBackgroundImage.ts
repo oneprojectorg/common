@@ -1,6 +1,8 @@
 import {
+  ALLOWED_BACKGROUND_IMAGE_MIME_TYPES,
   Channels,
   CommonError,
+  MAX_BACKGROUND_IMAGE_SIZE,
   NotFoundError,
   ValidationError,
   assertProfileAccess,
@@ -15,20 +17,6 @@ import { z } from 'zod';
 import withDB from '../../../middlewares/withDB';
 import { authenticatedConfirmedProcedure, router } from '../../../trpcFactory';
 import { sanitizeS3Filename } from '../../../utils';
-
-const ALLOWED_MIME_TYPES = [
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-  'image/gif',
-];
-
-// base64-in-tRPC-body upload: Vercel caps the serverless request body at
-// ~4.5MB and base64 inflates ~33%, so the platform 413s anything over ~3.3MB
-// raw before this handler runs. Cap under that so oversized files fail the
-// client check first; this server guard is the backstop for callers that skip
-// it. Must match MAX_BACKGROUND_IMAGE_SIZE in OverviewSection.tsx.
-const MAX_BACKGROUND_IMAGE_SIZE = 3 * 1024 * 1024;
 
 /**
  * Uploads a hero background image for a decision overview. Admin-only: the
@@ -75,7 +63,7 @@ export const uploadOverviewBackgroundImageRouter = router({
       });
 
       const sanitizedFileName = sanitizeS3Filename(fileName);
-      if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
+      if (!ALLOWED_BACKGROUND_IMAGE_MIME_TYPES.includes(mimeType)) {
         throw new CommonError(
           'Unsupported file type. Only images (PNG, JPEG, GIF, WebP) are allowed.',
         );
@@ -127,19 +115,21 @@ export const uploadOverviewBackgroundImageRouter = router({
         throw new CommonError(uploadError.message);
       }
 
-      // Persist the path on the overview (re-asserts admin internally).
-      await updateDecisionInstance({
-        instanceId,
-        overview: { backgroundImage: filePath },
-        user,
-      });
+      // Persist the path (re-asserts admin internally) and mint a signed URL
+      // for an immediate optimistic preview — independent, so run together.
+      // The persisted path is read back through getPublicUrl on later loads.
+      const [, { data: signedUrlData, error: signedUrlError }] =
+        await Promise.all([
+          updateDecisionInstance({
+            instanceId,
+            overview: { backgroundImage: filePath },
+            user,
+          }),
+          supabase.storage.from(bucket).createSignedUrl(filePath, 60 * 60),
+        ]);
       await invalidateDecisionInstance(instanceId);
       ctx.registerMutationChannels([Channels.decisionInstance(instanceId)]);
 
-      // Signed URL for an immediate optimistic preview; the persisted path is
-      // read back through getPublicUrl on subsequent loads.
-      const { data: signedUrlData, error: signedUrlError } =
-        await supabase.storage.from(bucket).createSignedUrl(filePath, 60 * 60);
       if (signedUrlError || !signedUrlData) {
         throw new CommonError(
           signedUrlError?.message || 'Could not get signed url',

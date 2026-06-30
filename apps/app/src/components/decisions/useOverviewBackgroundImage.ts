@@ -2,24 +2,14 @@
 
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
+import {
+  ALLOWED_BACKGROUND_IMAGE_MIME_TYPES,
+  MAX_BACKGROUND_IMAGE_SIZE,
+} from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
-
-const ACCEPTED_IMAGE_TYPES = [
-  'image/gif',
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-];
-
-// The image rides through the tRPC body as base64. Vercel caps the serverless
-// request body at ~4.5MB and base64 inflates ~33%, so anything over ~3.3MB raw
-// is rejected by the platform (a 413 the tRPC client can't parse as JSON)
-// before our handler runs. Cap well under that. Must match
-// MAX_BACKGROUND_IMAGE_SIZE in uploadOverviewBackgroundImage.ts.
-export const MAX_BACKGROUND_IMAGE_SIZE = 3 * 1024 * 1024;
 
 // Storage paths look like `${instanceId}/overview/${Date.now()}_${name}`.
 // Recover the original display name (basename minus the timestamp prefix).
@@ -69,12 +59,12 @@ export function useOverviewBackgroundImage({
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
 
   const upload = (file: File) => {
-    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+    if (!ALLOWED_BACKGROUND_IMAGE_MIME_TYPES.includes(file.type)) {
       toast.error({
         message: t('That file type is not supported. Accepted types: {types}', {
-          types: ACCEPTED_IMAGE_TYPES.map((type) => type.split('/')[1]).join(
-            ', ',
-          ),
+          types: ALLOWED_BACKGROUND_IMAGE_MIME_TYPES.map(
+            (type) => type.split('/')[1],
+          ).join(', '),
         }),
       });
       return;
