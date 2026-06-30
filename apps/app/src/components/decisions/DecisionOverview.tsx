@@ -19,10 +19,8 @@ import { LuBookOpen, LuTriangleAlert } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
-import { AdminOverviewBar } from './AdminOverviewBar';
 import { DecisionPhaseTimeline } from './DecisionPhaseTimeline';
 import { useDecisionTranslation } from './DecisionTranslationContext';
-import { EditBannerModal } from './EditBannerModal';
 import {
   OverviewPinnedResourcesSuspense,
   PinnedResourcesError,
@@ -168,19 +166,8 @@ function DecisionOverviewContent({
 
   const currentPhaseId = currentPhase?.phaseId || '';
 
-  const isAdmin = instance.access?.admin === true;
-
   return (
     <div className="flex w-full flex-col">
-      {isAdmin ? (
-        <AdminOverviewBar
-          instanceId={instanceId}
-          decisionSlug={decisionSlug}
-          backgroundImagePath={overview?.backgroundImage}
-          phaseName={isActive ? currentPhase?.name : undefined}
-          phaseEndDate={isActive ? currentPhase?.endDate : undefined}
-        />
-      ) : null}
       <OverviewHero
         headline={headline}
         subhead={subhead}
@@ -190,7 +177,6 @@ function DecisionOverviewContent({
         decisionSlug={decisionSlug}
         canSubmitProposal={canSubmitProposal}
         backgroundImagePath={overview?.backgroundImage}
-        isAdmin={isAdmin}
         // Hidden until the first phase begins (computed server-side).
         showCtas={isActive}
       />
@@ -268,7 +254,6 @@ const OverviewHero = ({
   decisionSlug,
   canSubmitProposal,
   backgroundImagePath,
-  isAdmin,
   showCtas,
 }: {
   headline: string;
@@ -280,8 +265,6 @@ const OverviewHero = ({
   canSubmitProposal: boolean;
   /** Stored storage path of the admin-uploaded hero background, if any. */
   backgroundImagePath?: string;
-  /** Admins see the "Edit banner" control to upload/replace the background. */
-  isAdmin: boolean;
   showCtas: boolean;
 }) => {
   const t = useTranslations();
@@ -322,12 +305,6 @@ const OverviewHero = ({
             className="absolute inset-0 bg-neutral-black/50"
           />
         </>
-      ) : null}
-      {isAdmin ? (
-        <EditBannerModal
-          instanceId={instanceId}
-          backgroundImagePath={backgroundImagePath}
-        />
       ) : null}
       <div className="relative z-10 mx-auto flex flex-col items-center gap-4 px-4 pt-16 pb-8 text-center sm:py-12 md:col-span-6 md:col-start-4 md:px-6">
         <div className="flex flex-col items-center gap-3">

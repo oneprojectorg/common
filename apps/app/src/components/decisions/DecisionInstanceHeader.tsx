@@ -25,6 +25,8 @@ export const DecisionInstanceHeader = ({
   isAdmin,
   canReadUpdates = false,
   centerSlot,
+  adminActionsSlot,
+  mobileAdminBar,
 }: {
   backTo: {
     label?: string;
@@ -42,6 +44,14 @@ export const DecisionInstanceHeader = ({
    * Otherwise the title is centered as before.
    */
   centerSlot?: ReactNode;
+  /** Desktop admin action(s) placed in the right group (e.g. Edit banner). */
+  adminActionsSlot?: ReactNode;
+  /**
+   * Full-width admin bar rendered flush below the header row on mobile (e.g.
+   * the overview admin bar). Sits inside the sticky <header> so the floating
+   * centerSlot toggle (top-full) lands below it.
+   */
+  mobileAdminBar?: ReactNode;
 }) => {
   const t = useTranslations();
   const { user } = useUser();
@@ -52,72 +62,77 @@ export const DecisionInstanceHeader = ({
   // Fixed height (48/56px) keeps the header steady as the center toggle grows,
   // and matches DecisionSidePanel's sm:top-12 md:top-14 so the panel meets it.
   return (
-    <header className="sticky top-0 z-30 grid h-12 grid-cols-[auto_1fr_auto] items-center border-b bg-white px-4 sm:grid-cols-3 md:h-14 md:px-6">
-      <div className="flex min-w-0 items-center gap-3">
-        {canInteract && (
-          <Link
-            href={backTo.href}
-            className="flex shrink-0 items-center gap-2 text-base text-neutral-black hover:text-primary-tealBlack md:text-primary-teal"
-          >
-            <LuArrowLeft className="size-6 md:size-4 rtl:-scale-x-100" />
-            <span className="hidden md:flex">
-              {t('Back')} {backTo.label ? `${t('to')} ${backTo.label}` : ''}
-            </span>
-          </Link>
-        )}
-        {centerSlot ? (
-          <>
-            {canInteract && (
-              <span
-                aria-hidden
-                className="hidden h-6 w-px shrink-0 bg-neutral-gray2 md:block"
-              />
-            )}
-            <DecisionTitle title={title} className="hidden md:block" />
-          </>
-        ) : null}
+    <header className="sticky top-0 z-30 border-b bg-white">
+      <div className="grid h-12 grid-cols-[auto_1fr_auto] items-center px-4 sm:grid-cols-3 md:h-14 md:px-6">
+        <div className="flex min-w-0 items-center gap-3">
+          {canInteract && (
+            <Link
+              href={backTo.href}
+              className="flex shrink-0 items-center gap-2 text-base text-neutral-black hover:text-primary-tealBlack md:text-primary-teal"
+            >
+              <LuArrowLeft className="size-6 md:size-4 rtl:-scale-x-100" />
+              <span className="hidden md:flex">
+                {t('Back')} {backTo.label ? `${t('to')} ${backTo.label}` : ''}
+              </span>
+            </Link>
+          )}
+          {centerSlot ? (
+            <>
+              {canInteract && (
+                <span
+                  aria-hidden
+                  className="hidden h-6 w-px shrink-0 bg-neutral-gray2 md:block"
+                />
+              )}
+              <DecisionTitle title={title} className="hidden md:block" />
+            </>
+          ) : null}
+        </div>
+
+        <div className="flex min-w-0 justify-center text-center">
+          {centerSlot ? (
+            <>
+              <div className="hidden md:flex">{centerSlot}</div>
+              <DecisionTitle title={title} className="md:hidden" />
+            </>
+          ) : (
+            <DecisionTitle title={title} />
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 md:gap-4">
+          {/*
+           * The toggle reads the `panel` search param via nuqs (useSearchParams).
+           * When this header renders inside the decision-view layout — which Next
+           * prerenders as the route's static shell because of its loading.tsx —
+           * that read happens outside a request scope and throws. The Suspense
+           * boundary defers it out of the shell. Fallback is null because the
+           * toggle is non-critical chrome and may itself render null.
+           */}
+          <Suspense fallback={null}>
+            <DecisionUpdatesToggle
+              ariaLabel={t('Toggle updates panel')}
+              canReadUpdates={canReadUpdates}
+            />
+          </Suspense>
+          {adminActionsSlot}
+          {isAdmin && decisionSlug && (
+            <ButtonLink
+              href={`/decisions/${decisionSlug}/edit`}
+              color="secondary"
+              size="small"
+              className="p-2"
+              aria-label={t('Settings')}
+            >
+              <LuSettings className="size-4" />
+            </ButtonLink>
+          )}
+          <LocaleChooser />
+          <HeaderUserMenu />
+        </div>
       </div>
 
-      <div className="flex min-w-0 justify-center text-center">
-        {centerSlot ? (
-          <>
-            <div className="hidden md:flex">{centerSlot}</div>
-            <DecisionTitle title={title} className="md:hidden" />
-          </>
-        ) : (
-          <DecisionTitle title={title} />
-        )}
-      </div>
-
-      <div className="flex items-center justify-end gap-2 md:gap-4">
-        {/*
-         * The toggle reads the `panel` search param via nuqs (useSearchParams).
-         * When this header renders inside the decision-view layout — which Next
-         * prerenders as the route's static shell because of its loading.tsx —
-         * that read happens outside a request scope and throws. The Suspense
-         * boundary defers it out of the shell. Fallback is null because the
-         * toggle is non-critical chrome and may itself render null.
-         */}
-        <Suspense fallback={null}>
-          <DecisionUpdatesToggle
-            ariaLabel={t('Toggle updates panel')}
-            canReadUpdates={canReadUpdates}
-          />
-        </Suspense>
-        {isAdmin && decisionSlug && (
-          <ButtonLink
-            href={`/decisions/${decisionSlug}/edit`}
-            color="secondary"
-            size="small"
-            className="p-2"
-            aria-label={t('Settings')}
-          >
-            <LuSettings className="size-4" />
-          </ButtonLink>
-        )}
-        <LocaleChooser />
-        <HeaderUserMenu />
-      </div>
+      {mobileAdminBar}
 
       {centerSlot ? (
         <div className="pointer-events-none absolute inset-x-0 top-full z-50 flex justify-center md:hidden">
