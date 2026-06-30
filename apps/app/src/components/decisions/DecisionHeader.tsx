@@ -15,7 +15,6 @@ import { useTranslations } from '@/lib/i18n';
 import { AdminOverviewBar } from '@/components/decisions/AdminOverviewBar';
 import { DecisionInstanceHeader } from '@/components/decisions/DecisionInstanceHeader';
 import { DecisionStepperBar } from '@/components/decisions/DecisionStepperBar';
-import { EditBannerModal } from '@/components/decisions/EditBannerModal';
 
 interface DecisionHeaderBaseProps {
   instanceId: string;
@@ -137,14 +136,6 @@ function DecisionHeaderView({
         isAdmin={isAdmin}
         canReadUpdates={canReadUpdates}
         centerSlot={centerSlot}
-        adminActionsSlot={
-          showAdminControls ? (
-            <EditBannerModal
-              instanceId={instanceId}
-              backgroundImagePath={backgroundImagePath}
-            />
-          ) : undefined
-        }
         mobileAdminBar={
           showAdminControls && decisionSlug ? (
             <AdminOverviewBar

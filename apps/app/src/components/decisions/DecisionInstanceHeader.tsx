@@ -25,7 +25,6 @@ export const DecisionInstanceHeader = ({
   isAdmin,
   canReadUpdates = false,
   centerSlot,
-  adminActionsSlot,
   mobileAdminBar,
 }: {
   backTo: {
@@ -44,8 +43,6 @@ export const DecisionInstanceHeader = ({
    * Otherwise the title is centered as before.
    */
   centerSlot?: ReactNode;
-  /** Desktop admin action(s) placed in the right group (e.g. Edit banner). */
-  adminActionsSlot?: ReactNode;
   /**
    * Full-width admin bar rendered flush below the header row on mobile (e.g.
    * the overview admin bar). Sits inside the sticky <header> so the floating
@@ -115,7 +112,6 @@ export const DecisionInstanceHeader = ({
               canReadUpdates={canReadUpdates}
             />
           </Suspense>
-          {adminActionsSlot}
           {isAdmin && decisionSlug && (
             <ButtonLink
               href={`/decisions/${decisionSlug}/edit`}
