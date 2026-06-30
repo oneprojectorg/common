@@ -1,7 +1,7 @@
 import { getLinkPreview, httpUrlSchema } from '@op/common';
 import { z } from 'zod';
 
-import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
+import { openProcedure, router } from '../../trpcFactory';
 
 const linkPreviewResponseSchema = z.object({
   url: z.string(),
@@ -23,7 +23,7 @@ const linkPreviewResponseSchema = z.object({
 });
 
 export const linkPreview = router({
-  linkPreview: networkAuthenticatedProcedure()
+  linkPreview: openProcedure()
     .input(z.object({ url: httpUrlSchema }))
     .output(linkPreviewResponseSchema)
     .query(async ({ input }) => {
