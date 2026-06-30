@@ -146,12 +146,8 @@ const config = {
       // page as `/en/decisions/columbus`. Allow-listed one slug at a time —
       // extend `VANITY_DECISION_SLUGS` when adding a new vanity process.
       {
-        source: `/:locale(${SUPPORTED_LOCALES.join('|')})/:slug(${VANITY_DECISION_SLUGS.join('|')})`,
-        destination: '/:locale/decisions/:slug',
-      },
-      {
-        source: `/:locale(${SUPPORTED_LOCALES.join('|')})/:slug(${VANITY_DECISION_SLUGS.join('|')})/current`,
-        destination: '/:locale/decisions/:slug/current',
+        source: `/:locale(${SUPPORTED_LOCALES.join('|')})/:slug(${VANITY_DECISION_SLUGS.join('|')})/:path*`,
+        destination: '/:locale/decisions/:slug/:path*',
       },
       {
         source: '/assets/:path*',
