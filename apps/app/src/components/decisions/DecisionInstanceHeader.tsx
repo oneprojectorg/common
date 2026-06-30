@@ -49,9 +49,8 @@ export const DecisionInstanceHeader = ({
   // anonymous accounts) — they have nowhere meaningful to go "back" to.
   const canInteract = userCanInteract(user);
 
-  // h-14 locks the header at 56px at every screen size so DecisionSidePanel's
-  // sm:top-14 always meets the bottom edge, regardless of how tall the center
-  // toggle or any right-side control grows in the future.
+  // Fixed height (48/56px) keeps the header steady as the center toggle grows,
+  // and matches DecisionSidePanel's sm:top-12 md:top-14 so the panel meets it.
   return (
     <header className="sticky top-0 z-30 grid h-12 grid-cols-[auto_1fr_auto] items-center border-b bg-white px-4 sm:grid-cols-3 md:h-14 md:px-6">
       <div className="flex min-w-0 items-center gap-3">
