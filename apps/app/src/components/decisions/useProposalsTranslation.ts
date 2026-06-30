@@ -206,10 +206,7 @@ export const useProposalsTranslation = ({
   const targetLanguageName = languageNames.of(locale) ?? locale;
 
   const showBanner =
-    !!supportedLocale &&
-    supportedLocale !== 'en' &&
-    !bannerDismissed &&
-    !translationState;
+    !!supportedLocale && !bannerDismissed && !translationState;
 
   return {
     translationState,
