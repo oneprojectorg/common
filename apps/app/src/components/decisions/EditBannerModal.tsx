@@ -1,6 +1,6 @@
 'use client';
 
-import { BannerUploader } from '@op/ui/BannerUploader';
+import { BannerImageField } from '@op/ui/BannerImageField';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 import { useState } from 'react';
@@ -27,12 +27,20 @@ export function EditBannerModal({
   const t = useTranslations();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const { previewUrl, upload, remove, isUploading, isRemoving, uploadError } =
-    useOverviewBackgroundImage({
-      instanceId,
-      initialPath: backgroundImagePath,
-      onChange: () => router.refresh(),
-    });
+  const {
+    previewUrl,
+    fileName,
+    fileSizeLabel,
+    upload,
+    remove,
+    isUploading,
+    isRemoving,
+    uploadError,
+  } = useOverviewBackgroundImage({
+    instanceId,
+    initialPath: backgroundImagePath,
+    onChange: () => router.refresh(),
+  });
 
   return (
     <>
@@ -48,24 +56,23 @@ export function EditBannerModal({
       <Modal isDismissable isOpen={isOpen} onOpenChange={setIsOpen}>
         <ModalHeader>{t('Edit banner')}</ModalHeader>
         <ModalBody>
-          <div className="flex flex-col gap-4">
-            <BannerUploader
-              value={previewUrl}
-              onChange={upload}
-              uploading={isUploading}
-              error={uploadError || undefined}
-            />
-            {previewUrl ? (
-              <Button
-                color="secondary"
-                className="w-auto self-end"
-                isDisabled={isRemoving}
-                onPress={remove}
-              >
-                {t('Remove image')}
-              </Button>
-            ) : null}
-          </div>
+          <BannerImageField
+            label={t('Banner image')}
+            value={previewUrl}
+            fileName={fileName}
+            fileSizeLabel={fileSizeLabel}
+            title={t('Upload banner image')}
+            description={t('PNG or JPG · recommended 2400×800px · max 3MB')}
+            helperText={t(
+              'The headline appears centered over a dark overlay. Avoid images with key subjects in the middle.',
+            )}
+            chooseFileLabel={t('Choose file')}
+            removeLabel={t('Remove image')}
+            onSelectFile={upload}
+            onRemove={remove}
+            uploading={isUploading || isRemoving}
+            error={uploadError || undefined}
+          />
         </ModalBody>
         <ModalFooter>
           <Button color="secondary" onPress={() => setIsOpen(false)}>

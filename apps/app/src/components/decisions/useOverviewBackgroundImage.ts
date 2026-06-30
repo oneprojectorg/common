@@ -21,6 +21,23 @@ const ACCEPTED_IMAGE_TYPES = [
 // MAX_BACKGROUND_IMAGE_SIZE in uploadOverviewBackgroundImage.ts.
 export const MAX_BACKGROUND_IMAGE_SIZE = 3 * 1024 * 1024;
 
+// Storage paths look like `${instanceId}/overview/${Date.now()}_${name}`.
+// Recover the original display name (basename minus the timestamp prefix).
+const fileNameFromPath = (path?: string): string | undefined => {
+  if (!path) {
+    return undefined;
+  }
+  const base = path.split('/').pop() ?? path;
+  return base.replace(/^\d+_/, '');
+};
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  }
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+};
+
 /**
  * Shared upload/remove logic for the decision overview hero background image.
  * Used by the Process Builder Overview tab and the live overview's "Edit
@@ -41,6 +58,12 @@ export function useOverviewBackgroundImage({
   const [previewUrl, setPreviewUrl] = useState<string | undefined>(
     getPublicUrl(initialPath),
   );
+  const [fileName, setFileName] = useState<string | undefined>(
+    fileNameFromPath(initialPath),
+  );
+  // Size is only known for files chosen this session — not recoverable from a
+  // stored path on reload.
+  const [fileSizeLabel, setFileSizeLabel] = useState<string | undefined>();
   const uploadMutation =
     trpc.decision.uploadOverviewBackgroundImage.useMutation();
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
@@ -73,6 +96,8 @@ export function useOverviewBackgroundImage({
       }
       // Optimistic preview while the upload is in flight.
       setPreviewUrl(`data:${file.type};base64,${base64}`);
+      setFileName(file.name);
+      setFileSizeLabel(formatFileSize(file.size));
       try {
         const res = await uploadMutation.mutateAsync({
           instanceId,
@@ -85,6 +110,8 @@ export function useOverviewBackgroundImage({
       } catch {
         toast.error({ message: t('Something went wrong') });
         setPreviewUrl(getPublicUrl(initialPath));
+        setFileName(fileNameFromPath(initialPath));
+        setFileSizeLabel(undefined);
       }
     };
     reader.readAsDataURL(file);
@@ -97,6 +124,8 @@ export function useOverviewBackgroundImage({
         overview: { backgroundImage: '' },
       });
       setPreviewUrl(undefined);
+      setFileName(undefined);
+      setFileSizeLabel(undefined);
       onChange?.();
     } catch {
       toast.error({ message: t('Something went wrong') });
@@ -105,6 +134,8 @@ export function useOverviewBackgroundImage({
 
   return {
     previewUrl,
+    fileName,
+    fileSizeLabel,
     upload,
     remove,
     isUploading: uploadMutation.isPending,

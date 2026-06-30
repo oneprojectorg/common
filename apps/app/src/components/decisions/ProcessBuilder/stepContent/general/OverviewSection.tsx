@@ -2,8 +2,7 @@
 
 import { trpc } from '@op/api/client';
 import { sanitizeTiptapDoc } from '@op/common/client';
-import { BannerUploader } from '@op/ui/BannerUploader';
-import { Button } from '@op/ui/Button';
+import { BannerImageField } from '@op/ui/BannerImageField';
 import { RichTextEditor } from '@op/ui/RichTextEditor';
 import { Skeleton } from '@op/ui/Skeleton';
 import type { JSONContent } from '@tiptap/core';
@@ -76,6 +75,8 @@ function OverviewSectionContent({
   // modal via this hook.
   const {
     previewUrl: bannerUrl,
+    fileName,
+    fileSizeLabel,
     upload: handleBackgroundUpload,
     remove: handleBackgroundRemove,
     isUploading,
@@ -128,25 +129,23 @@ function OverviewSectionContent({
           />
         </div>
 
-        <div className="flex flex-col gap-2">
-          <BannerUploader
-            label={t('Background image')}
-            value={bannerUrl}
-            onChange={handleBackgroundUpload}
-            uploading={isUploading}
-            error={uploadError || undefined}
-          />
-          {bannerUrl ? (
-            <Button
-              color="secondary"
-              className="w-auto self-end"
-              isDisabled={isRemoving}
-              onPress={handleBackgroundRemove}
-            >
-              {t('Remove image')}
-            </Button>
-          ) : null}
-        </div>
+        <BannerImageField
+          label={t('Banner image')}
+          value={bannerUrl}
+          fileName={fileName}
+          fileSizeLabel={fileSizeLabel}
+          title={t('Upload banner image')}
+          description={t('PNG or JPG · recommended 2400×800px · max 3MB')}
+          helperText={t(
+            'The headline appears centered over a dark overlay. Avoid images with key subjects in the middle.',
+          )}
+          chooseFileLabel={t('Choose file')}
+          removeLabel={t('Remove image')}
+          onSelectFile={handleBackgroundUpload}
+          onRemove={handleBackgroundRemove}
+          uploading={isUploading || isRemoving}
+          error={uploadError || undefined}
+        />
 
         <div className="flex flex-col gap-2">
           <OverviewTextField

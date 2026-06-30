@@ -337,7 +337,7 @@ const OverviewHero = ({
           {stewardName || isPublic ? (
             <div
               className={cn(
-                'flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm',
+                'flex flex-wrap items-center justify-center gap-x-2 gap-y-1',
                 hasImage ? 'text-white' : 'text-neutral-charcoal',
               )}
             >
