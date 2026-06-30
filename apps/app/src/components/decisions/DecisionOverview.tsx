@@ -19,6 +19,7 @@ import { LuBookOpen, LuTriangleAlert } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { Bullet } from '../Bullet';
+import { AdminOverviewBar } from './AdminOverviewBar';
 import { DecisionPhaseTimeline } from './DecisionPhaseTimeline';
 import { useDecisionTranslation } from './DecisionTranslationContext';
 import { EditBannerModal } from './EditBannerModal';
@@ -167,8 +168,19 @@ function DecisionOverviewContent({
 
   const currentPhaseId = currentPhase?.phaseId || '';
 
+  const isAdmin = instance.access?.admin === true;
+
   return (
     <div className="flex w-full flex-col">
+      {isAdmin ? (
+        <AdminOverviewBar
+          instanceId={instanceId}
+          decisionSlug={decisionSlug}
+          backgroundImagePath={overview?.backgroundImage}
+          phaseName={isActive ? currentPhase?.name : undefined}
+          phaseEndDate={isActive ? currentPhase?.endDate : undefined}
+        />
+      ) : null}
       <OverviewHero
         headline={headline}
         subhead={subhead}
@@ -178,7 +190,7 @@ function DecisionOverviewContent({
         decisionSlug={decisionSlug}
         canSubmitProposal={canSubmitProposal}
         backgroundImagePath={overview?.backgroundImage}
-        isAdmin={instance.access?.admin === true}
+        isAdmin={isAdmin}
         // Hidden until the first phase begins (computed server-side).
         showCtas={isActive}
       />
