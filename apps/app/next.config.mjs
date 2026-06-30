@@ -150,6 +150,10 @@ const config = {
         destination: '/:locale/decisions/:slug',
       },
       {
+        source: `/:locale(${SUPPORTED_LOCALES.join('|')})/:slug(${VANITY_DECISION_SLUGS.join('|')})/current`,
+        destination: '/:locale/decisions/:slug/current',
+      },
+      {
         source: '/assets/:path*',
         destination: `${process.env.S3_ASSET_ROOT}/:path*`,
       },
