@@ -128,7 +128,7 @@ const ProfileAbout = ({
       <div className="flex flex-col gap-4 rounded border p-4 sm:rounded-none sm:border-none sm:p-0">
         {email || website ? (
           <section className="flex flex-col gap-2">
-            <Header3 className="font-sans">{t('Contact')}</Header3>
+            <Header3 className="font-sans text-base">{t('Contact')}</Header3>
             <div className="flex flex-col text-teal">
               {website ? (
                 <ContactLink>
@@ -177,7 +177,7 @@ const ProfileAbout = ({
 
         {orgType ? (
           <section className="flex flex-col gap-2 text-neutral-charcoal">
-            <Header3 className="font-sans">
+            <Header3 className="font-sans text-base">
               {t('Organizational Status')}
             </Header3>
             <TagGroup>
