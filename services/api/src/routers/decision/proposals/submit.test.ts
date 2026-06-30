@@ -623,6 +623,98 @@ describe.concurrent('submitProposal', () => {
     });
   });
 
+  it('should submit when dropdown values contain trailing whitespace or unicode — ONE-289', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    // Mirrors the live Columbus template: two single-select dropdowns whose
+    // option consts include (a) a trailing space and (b) an em-dash + curly
+    // apostrophe. Both must round-trip through the TipTap REST → assemble →
+    // AJV `oneOf` pipeline without normalization, otherwise the validator
+    // returns "X is invalid" for an option the user clearly picked.
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+      proposalTemplate: {
+        type: 'object',
+        required: ['title', 'name_display', 'stay_involved'],
+        'x-field-order': ['title', 'name_display', 'stay_involved'],
+        properties: {
+          title: {
+            type: 'string',
+            title: 'Title',
+            'x-format': 'short-text',
+          },
+          name_display: {
+            type: 'string',
+            title: 'Display name?',
+            'x-format': 'dropdown',
+            oneOf: [
+              { const: 'Yes, display my full name', title: 'Yes, full name' },
+              {
+                const: 'Yes, display my first name ',
+                title: 'Yes, first name',
+              },
+              { const: 'No, do not display my name ', title: 'No' },
+            ],
+          },
+          stay_involved: {
+            type: 'string',
+            title: 'Stay involved?',
+            'x-format': 'dropdown',
+            oneOf: [
+              {
+                const: 'Yes — I’d like to help develop ideas into proposals',
+                title: 'Yes',
+              },
+              {
+                const: 'Maybe — I’d like more information',
+                title: 'Maybe',
+              },
+              { const: 'No, just submitting an idea', title: 'No' },
+            ],
+          },
+        },
+      },
+    });
+
+    const instance = setup.instance;
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: instance.instance.id,
+      proposalData: { title: 'Dropdown whitespace repro' },
+    });
+
+    const collaborationDocId = `proposal-${proposal.id}`;
+
+    await db
+      .update(proposals)
+      .set({
+        proposalData: {
+          title: 'Dropdown whitespace repro',
+          collaborationDocId,
+        },
+      })
+      .where(eq(proposals.id, proposal.id));
+
+    mockCollab.setDocFragments(collaborationDocId, {
+      title: 'Dropdown whitespace repro',
+      name_display: 'Yes, display my first name ',
+      stay_involved: 'Yes — I’d like to help develop ideas into proposals',
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.decision.submitProposal({
+      proposalId: proposal.id,
+    });
+
+    expect(result.status).toBe(ProposalStatus.SUBMITTED);
+  });
+
   it('should submit successfully with new multi-select category template', async ({
     task,
     onTestFinished,

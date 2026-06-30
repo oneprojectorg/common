@@ -112,6 +112,12 @@ export function createTipTapClient(config: TipTapClientConfig) {
         // TipTap concatenates all fragment text into a single string when
         // multiple fragments are requested with format=text.  Fetch each
         // fragment individually so we get per-fragment text values.
+        //
+        // The `.trim()` is fine for moderation / display callers — they
+        // don't need byte-exact whitespace. For validation, use
+        // `getFragmentTextFromTipTapDoc` with format=json instead, since
+        // AJV's strict `oneOf` requires whitespace-exact matches and
+        // TipTap's text serializer does not round-trip those (ONE-289).
         const entries = await Promise.all(
           fragments.map(async (fragment) => {
             const text = await api

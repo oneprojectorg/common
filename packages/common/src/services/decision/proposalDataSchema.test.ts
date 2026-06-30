@@ -74,6 +74,38 @@ describe('normalizeLocation', () => {
   });
 });
 
+describe('assembleProposalData dropdown fields', () => {
+  // The dropdown form field commits the option's raw `const` value into the
+  // Yjs fragment. The validator must hand AJV that exact string so `oneOf`
+  // matches — otherwise users see "X is invalid" for a value they selected
+  // from the dropdown. ONE-289 was caused by a `.trim()` in the validator
+  // read path that silently stripped whitespace from option consts (often
+  // introduced on the last option, where authors press Enter or paste).
+  const dropdownTemplate: ProposalTemplateSchema = {
+    type: 'object',
+    properties: {
+      submitting: {
+        type: ['string', 'null'],
+        title: 'How are you submitting your idea?',
+        'x-format': 'dropdown',
+        oneOf: [
+          { const: 'org', title: 'Submitting through an organization' },
+          { const: 'individual ', title: 'Submitting on my own ' },
+        ],
+      },
+    },
+    required: ['submitting'],
+  };
+
+  it('preserves an exact dropdown value with trailing whitespace — ONE-289', () => {
+    const data = assembleProposalData(dropdownTemplate, {
+      submitting: 'individual ',
+    });
+
+    expect(data).toEqual({ submitting: 'individual ' });
+  });
+});
+
 describe('assembleProposalData location fields', () => {
   const template: ProposalTemplateSchema = {
     type: 'object',
