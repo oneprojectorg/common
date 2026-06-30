@@ -249,6 +249,7 @@ const instanceOverviewEncoder = z.object({
   // Scope the read-path degradation to `body` alone: a malformed stored body
   // becomes undefined without taking headline/description down with it.
   body: overviewBodyEncoder.optional().catch(undefined),
+  backgroundImage: z.string().optional(),
 });
 
 /**
@@ -259,6 +260,8 @@ const instanceOverviewInputEncoder = z.object({
   headline: z.string().max(50).optional(),
   description: z.string().max(500).optional(),
   body: overviewBodyInputEncoder.optional(),
+  // Empty string clears the image (getPublicUrl treats it as no image).
+  backgroundImage: z.string().optional(),
 });
 
 /** Instance data encoder for new schema format */

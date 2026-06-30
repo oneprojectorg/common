@@ -175,6 +175,7 @@ function DecisionOverviewContent({
         instanceId={instanceId}
         decisionSlug={decisionSlug}
         canSubmitProposal={canSubmitProposal}
+        backgroundImage={getPublicUrl(overview?.backgroundImage)}
         // Hidden until the first phase begins (computed server-side).
         showCtas={isActive}
       />
@@ -251,6 +252,7 @@ const OverviewHero = ({
   instanceId,
   decisionSlug,
   canSubmitProposal,
+  backgroundImage,
   showCtas,
 }: {
   headline: string;
@@ -260,6 +262,8 @@ const OverviewHero = ({
   instanceId: string;
   decisionSlug: string;
   canSubmitProposal: boolean;
+  /** Public URL of the admin-uploaded hero background; gradient fallback when absent. */
+  backgroundImage?: string;
   showCtas: boolean;
 }) => {
   const t = useTranslations();
@@ -273,12 +277,29 @@ const OverviewHero = ({
   });
 
   return (
-    // Light banner stands in for the header image. When the
-    // upload ships, drop an absolutely-positioned <Image fill> (from
-    // profile.headerImage) behind this content and keep the gradient as the
-    // empty-state fallback.
-    <section className="grid w-full grid-cols-1 justify-center border-b bg-neutral-offWhite md:grid-cols-12">
-      <div className="mx-auto flex flex-col items-center gap-4 px-4 pt-16 pb-8 text-center sm:py-12 md:col-span-6 md:col-start-4 md:px-6">
+    // Admin-uploaded background sits behind the content as an <Image fill>; the
+    // offWhite gradient is the empty-state fallback when no image is set.
+    <section className="relative grid w-full grid-cols-1 justify-center border-b bg-neutral-offWhite md:grid-cols-12">
+      {backgroundImage ? (
+        <>
+          <Image
+            src={backgroundImage}
+            alt=""
+            fill
+            className="object-cover"
+            // Hero is above the fold — opt out of lazy-loading.
+            priority
+          />
+          {/* ponytail: first-pass scrim so the clipped-gradient title and
+              charcoal subtext stay legible over arbitrary photos — exact
+              opacity is a design-review call. */}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-neutral-offWhite/70"
+          />
+        </>
+      ) : null}
+      <div className="relative z-10 mx-auto flex flex-col items-center gap-4 px-4 pt-16 pb-8 text-center sm:py-12 md:col-span-6 md:col-start-4 md:px-6">
         <div className="flex flex-col items-center gap-3">
           {/* Brand teal→green gradient clipped to the title text. This hero is
               the page's <h1>; the sticky DecisionInstanceHeader carries a

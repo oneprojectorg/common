@@ -54,6 +54,12 @@ export interface InstanceOverview {
    * string (`editor.getHTML()`) until backfilled; both shapes are read.
    */
   body?: string | JSONContent;
+  /**
+   * Storage object path (bucket-relative) of the hero background image,
+   * resolved to a URL via `getPublicUrl`. Empty/undefined falls back to the
+   * gradient banner. Admins upload it from the Process Builder Overview tab.
+   */
+  backgroundImage?: string;
 }
 
 /**

@@ -13,12 +13,14 @@ import { listSelectionCandidatesRouter } from './listSelectionCandidates';
 import { submitManualSelectionRouter } from './submitManualSelection';
 import { transitionFromPhaseRouter } from './transitionFromPhase';
 import { updateDecisionInstanceRouter } from './updateDecisionInstance';
+import { uploadOverviewBackgroundImageRouter } from './uploadOverviewBackgroundImage';
 
 export const instancesRouter = mergeRouters(
   createInstanceFromTemplateRouter,
   deleteDecisionRouter,
   duplicateInstanceRouter,
   updateDecisionInstanceRouter,
+  uploadOverviewBackgroundImageRouter,
   transitionFromPhaseRouter,
   listLegacyInstancesRouter,
   getInstanceRouter,
