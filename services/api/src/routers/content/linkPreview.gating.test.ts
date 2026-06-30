@@ -1,7 +1,6 @@
 import {
   accessTierGatingCell,
   describeAccessTierGating,
-  expectFailsAccessTierGate,
   expectPassesAccessTierGate,
 } from '../../test/helpers/gating';
 
@@ -11,31 +10,32 @@ import {
 //
 const input = { url: 'https://example.com' };
 
+// openProcedure: the endpoint is public, so every tier (including no-JWT
+// visitors) clears the tier gate. There is no per-resource authorization to
+// defer to the service layer — the endpoint only proxies an arbitrary URL to
+// iframely — so abuse is bounded by IP rate limiting and the 1h result cache.
 describeAccessTierGating('content.linkPreview', {
-  noJwt: accessTierGatingCell('rejects no-JWT caller', async ({ callers }) => {
-    const caller = await callers.noJwt();
-    await expectFailsAccessTierGate(caller.content.linkPreview(input), 'none');
-  }),
+  noJwt: accessTierGatingCell(
+    'admits no-JWT caller past the tier gate',
+    async ({ callers }) => {
+      const caller = await callers.noJwt();
+      await expectPassesAccessTierGate(caller.content.linkPreview(input));
+    },
+  ),
 
   anonJwt: accessTierGatingCell(
-    'rejects anon-JWT caller',
+    'admits anon-JWT caller past the tier gate',
     async ({ callers }) => {
       const caller = await callers.anonJwt();
-      await expectFailsAccessTierGate(
-        caller.content.linkPreview(input),
-        'anon',
-      );
+      await expectPassesAccessTierGate(caller.content.linkPreview(input));
     },
   ),
 
   userJwt: accessTierGatingCell(
-    'rejects user-JWT caller',
+    'admits out-of-network user-JWT caller past the tier gate',
     async ({ callers }) => {
       const caller = await callers.userJwt();
-      await expectFailsAccessTierGate(
-        caller.content.linkPreview(input),
-        'user',
-      );
+      await expectPassesAccessTierGate(caller.content.linkPreview(input));
     },
   ),
 
