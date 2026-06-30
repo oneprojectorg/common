@@ -1,14 +1,11 @@
 'use client';
 
-import { DEFAULT_MAX_SIZE } from '@/hooks/useFileUpload';
-import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import { sanitizeTiptapDoc } from '@op/common/client';
 import { BannerUploader } from '@op/ui/BannerUploader';
 import { Button } from '@op/ui/Button';
 import { RichTextEditor } from '@op/ui/RichTextEditor';
 import { Skeleton } from '@op/ui/Skeleton';
-import { toast } from '@op/ui/Toast';
 import type { JSONContent } from '@tiptap/core';
 import type { Editor } from '@tiptap/react';
 import { Suspense, useMemo, useRef, useState } from 'react';
@@ -23,19 +20,13 @@ import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
+import { useOverviewBackgroundImage } from '@/components/decisions/useOverviewBackgroundImage';
 
 import { OverviewTextField } from './OverviewTextField';
 
 // Must match the server-side caps in instanceOverviewInputEncoder
 const HEADLINE_MAX_LENGTH = 50;
 const DESCRIPTION_MAX_LENGTH = 500;
-
-const ACCEPTED_IMAGE_TYPES = [
-  'image/gif',
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-];
 
 export default function OverviewSection(props: SectionProps) {
   return (
@@ -81,73 +72,22 @@ function OverviewSectionContent({
   const [description, setDescription] = useState(initialOverview.description);
 
   // Hero background image. Persisted via its own mutation (heavy bytes stay off
-  // the text-autosave path); `bannerUrl` holds the display URL — an optimistic
-  // data URL during upload, then the public URL of the stored path.
-  const initialBackgroundImage =
-    storeOverview?.backgroundImage ??
-    instance.instanceData?.overview?.backgroundImage;
-  const [bannerUrl, setBannerUrl] = useState<string | undefined>(
-    getPublicUrl(initialBackgroundImage),
-  );
-  const uploadBackgroundImage =
-    trpc.decision.uploadOverviewBackgroundImage.useMutation();
-  const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
+  // the text-autosave path). Shared with the live overview's "Edit banner"
+  // modal via this hook.
+  const {
+    previewUrl: bannerUrl,
+    upload: handleBackgroundUpload,
+    remove: handleBackgroundRemove,
+    isUploading,
+    isRemoving,
+    uploadError,
+  } = useOverviewBackgroundImage({
+    instanceId,
+    initialPath:
+      storeOverview?.backgroundImage ??
+      instance.instanceData?.overview?.backgroundImage,
+  });
 
-  const handleBackgroundUpload = (file: File) => {
-    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      toast.error({
-        message: t('That file type is not supported. Accepted types: {types}', {
-          types: ACCEPTED_IMAGE_TYPES.map((type) => type.split('/')[1]).join(
-            ', ',
-          ),
-        }),
-      });
-      return;
-    }
-    if (file.size > DEFAULT_MAX_SIZE) {
-      toast.error({
-        message: t('File too large. Maximum size: {size}MB', {
-          size: (DEFAULT_MAX_SIZE / 1024 / 1024).toFixed(2),
-        }),
-      });
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64 = (e.target?.result as string)?.split(',')[1];
-      if (!base64) {
-        return;
-      }
-      // Optimistic preview while the upload is in flight.
-      setBannerUrl(`data:${file.type};base64,${base64}`);
-      try {
-        const res = await uploadBackgroundImage.mutateAsync({
-          instanceId,
-          file: base64,
-          fileName: file.name,
-          mimeType: file.type,
-        });
-        setBannerUrl(res.url);
-      } catch {
-        toast.error({ message: t('Something went wrong') });
-        setBannerUrl(getPublicUrl(initialBackgroundImage));
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleBackgroundRemove = async () => {
-    try {
-      await updateInstance.mutateAsync({
-        instanceId,
-        overview: { backgroundImage: '' },
-      });
-      setBannerUrl(undefined);
-    } catch {
-      toast.error({ message: t('Something went wrong') });
-    }
-  };
   // The editor owns body state; track the latest JSON doc so headline/description
   // saves don't clobber it.
   const bodyRef = useRef<string | JSONContent>(initialOverview.body);
@@ -193,14 +133,14 @@ function OverviewSectionContent({
             label={t('Background image')}
             value={bannerUrl}
             onChange={handleBackgroundUpload}
-            uploading={uploadBackgroundImage.isPending}
-            error={uploadBackgroundImage.error?.message || undefined}
+            uploading={isUploading}
+            error={uploadError || undefined}
           />
           {bannerUrl ? (
             <Button
               color="secondary"
               className="w-auto self-end"
-              isDisabled={updateInstance.isPending}
+              isDisabled={isRemoving}
               onPress={handleBackgroundRemove}
             >
               {t('Remove image')}

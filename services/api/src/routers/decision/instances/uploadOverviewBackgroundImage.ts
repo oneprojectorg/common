@@ -14,7 +14,7 @@ import { z } from 'zod';
 
 import withDB from '../../../middlewares/withDB';
 import { authenticatedConfirmedProcedure, router } from '../../../trpcFactory';
-import { MAX_FILE_SIZE, sanitizeS3Filename } from '../../../utils';
+import { sanitizeS3Filename } from '../../../utils';
 
 const ALLOWED_MIME_TYPES = [
   'image/png',
@@ -22,6 +22,13 @@ const ALLOWED_MIME_TYPES = [
   'image/webp',
   'image/gif',
 ];
+
+// base64-in-tRPC-body upload: Vercel caps the serverless request body at
+// ~4.5MB and base64 inflates ~33%, so the platform 413s anything over ~3.3MB
+// raw before this handler runs. Cap under that so oversized files fail the
+// client check first; this server guard is the backstop for callers that skip
+// it. Must match MAX_BACKGROUND_IMAGE_SIZE in OverviewSection.tsx.
+const MAX_BACKGROUND_IMAGE_SIZE = 3 * 1024 * 1024;
 
 /**
  * Uploads a hero background image for a decision overview. Admin-only: the
@@ -90,9 +97,9 @@ export const uploadOverviewBackgroundImageRouter = router({
         throw new ValidationError('Invalid base64 encoding');
       }
 
-      if (buffer.length > MAX_FILE_SIZE) {
+      if (buffer.length > MAX_BACKGROUND_IMAGE_SIZE) {
         throw new CommonError(
-          `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+          `File too large. Maximum size is ${MAX_BACKGROUND_IMAGE_SIZE / 1024 / 1024}MB`,
         );
       }
 
