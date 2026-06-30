@@ -205,8 +205,7 @@ export const useProposalsTranslation = ({
     : '';
   const targetLanguageName = languageNames.of(locale) ?? locale;
 
-  const showBanner =
-    !!supportedLocale && !bannerDismissed && !translationState;
+  const showBanner = !!supportedLocale && !bannerDismissed && !translationState;
 
   return {
     translationState,
