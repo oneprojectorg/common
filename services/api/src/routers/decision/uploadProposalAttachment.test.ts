@@ -31,11 +31,17 @@ const VALID_PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 const VALID_PNG_BUFFER = Buffer.from(VALID_PNG_BASE64, 'base64');
 
-async function uploadTestObject(storagePath: string): Promise<void> {
+async function uploadTestObject(
+  storagePath: string,
+  {
+    contentType = 'image/png',
+    body = VALID_PNG_BUFFER,
+  }: { contentType?: string; body?: Buffer } = {},
+): Promise<void> {
   const { error } = await supabaseTestAdminClient.storage
     .from('assets')
-    .upload(storagePath, VALID_PNG_BUFFER, {
-      contentType: 'image/png',
+    .upload(storagePath, body, {
+      contentType,
       upsert: false,
     });
   if (error) {
@@ -198,6 +204,162 @@ describe.concurrent('uploadProposalAttachment', () => {
       }),
     ).rejects.toMatchObject({
       cause: { name: 'UnauthorizedError' },
+    });
+  });
+
+  it('should reject when the storage object at storagePath does not exist', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Missing storage object' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Sign a URL so we get a real, prefix-valid path — but never PUT to it.
+    const signed = await caller.decision.signProposalAttachmentUploadUrl({
+      proposalId: proposal.id,
+      fileName: 'never-uploaded.png',
+    });
+
+    await expect(
+      caller.decision.uploadProposalAttachment({
+        storagePath: signed.storagePath,
+        fileName: 'never-uploaded.png',
+        mimeType: 'image/png',
+        proposalId: proposal.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'NotFoundError' },
+    });
+  });
+
+  it('should reject when the stored Content-Type is not on the allowlist', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Disallowed content type' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const signed = await caller.decision.signProposalAttachmentUploadUrl({
+      proposalId: proposal.id,
+      fileName: 'sneaky.png',
+    });
+    // The signed URL doesn't constrain Content-Type — a caller can PUT with
+    // anything. The server must re-check the stored MIME against the
+    // allowlist before recording the attachment.
+    await uploadTestObject(signed.storagePath, {
+      contentType: 'text/html',
+      body: Buffer.from('<script>alert(1)</script>', 'utf8'),
+    });
+
+    await expect(
+      caller.decision.uploadProposalAttachment({
+        storagePath: signed.storagePath,
+        fileName: 'sneaky.png',
+        mimeType: 'image/png',
+        proposalId: proposal.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
+  });
+
+  it('should reject when declared mimeType does not match the stored Content-Type', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Mimetype mismatch' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const signed = await caller.decision.signProposalAttachmentUploadUrl({
+      proposalId: proposal.id,
+      fileName: 'mismatch.png',
+    });
+    // Both allowlisted, but they don't match — should fail the mimeType
+    // sanity check even though each is individually valid.
+    await uploadTestObject(signed.storagePath, { contentType: 'image/jpeg' });
+
+    await expect(
+      caller.decision.uploadProposalAttachment({
+        storagePath: signed.storagePath,
+        fileName: 'mismatch.png',
+        mimeType: 'image/png',
+        proposalId: proposal.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
+    });
+  });
+
+  it("should reject a storagePath that isn't inside the caller's profile prefix", async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const proposal = await testData.createProposal({
+      userEmail: setup.userEmail,
+      processInstanceId: setup.instance.instance.id,
+      proposalData: { title: 'Prefix hijack' },
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    // Real, uploaded object — but at a path that doesn't start with
+    // `profile/{profileId}/proposals/`. Simulates a caller trying to
+    // claim an object they placed outside the signed prefix.
+    const outsidePath = `profile/${proposal.profileId}/other-folder/hijack-${task.id}.png`;
+    await uploadTestObject(outsidePath);
+
+    await expect(
+      caller.decision.uploadProposalAttachment({
+        storagePath: outsidePath,
+        fileName: 'hijack.png',
+        mimeType: 'image/png',
+        proposalId: proposal.id,
+      }),
+    ).rejects.toMatchObject({
+      cause: { name: 'ValidationError' },
     });
   });
 });
