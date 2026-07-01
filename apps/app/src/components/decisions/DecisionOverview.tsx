@@ -3,6 +3,7 @@
 import { getPublicUrl } from '@/utils';
 import { APIErrorBoundary } from '@/utils/APIErrorBoundary';
 import { type ProcessInstance, type ProcessPhase } from '@op/api/encoders';
+import type { Proposal } from '@op/common/client';
 import { Avatar } from '@op/ui/Avatar';
 import { Button, ButtonLink } from '@op/ui/Button';
 import { EmptyState } from '@op/ui/EmptyState';
@@ -28,6 +29,10 @@ import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { TranslateBanner } from './TranslateBanner';
 import { useCreateProposal } from './useCreateProposal';
 import { useProposalsTranslation } from './useProposalsTranslation';
+
+// Stable empty array: the overview has no proposals to translate, and a fresh
+// [] each render would churn useProposalsTranslation's memoized callbacks.
+const NO_PROPOSALS: Proposal[] = [];
 
 interface DecisionOverviewProps {
   instanceId: string;
@@ -116,7 +121,7 @@ function DecisionOverviewContent({
   // overview has none; handleTranslate skips the proposal batch.
   const translation = useDecisionTranslation();
   const decisionTranslation = useProposalsTranslation({
-    allProposals: [],
+    allProposals: NO_PROPOSALS,
     decisionProfileId: instance.profileId,
   });
 
