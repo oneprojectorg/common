@@ -38,6 +38,11 @@ const checkstepWebhookSchema = z.object({
         severity: z.string().nullish(),
       }),
     )
+    // Hard cap: bounds worst-case scan cost + memory on a hostile / replayed
+    // payload without hitting realistic Checkstep responses (their moderation
+    // taxonomy is well under this bound). Exceeding it fails validation and
+    // is acknowledged with 200 upstream.
+    .max(1000)
     .nullish(),
 });
 
@@ -297,31 +302,36 @@ export const createCheckstepProvider = ({
     } catch {
       return [];
     }
+    // CSAM is decided BEFORE the decision-parse gate: even an ack/interim
+    // callback with no recognized top-level decision still fires the detach
+    // path if the violations name a CSAM policy. Any presence of CSAM in the
+    // violations wins over both `flag` and `clear`.
+    const isCsam = (payload.violations ?? []).some(
+      (v) => v.policy != null && CSAM_POLICIES.has(v.policy),
+    );
+
     const flagged = payload.decision
       ? FLAGGING_DECISIONS.includes(payload.decision)
       : false;
     const cleared = payload.decision
       ? CLEARING_DECISIONS.includes(payload.decision)
       : false;
-    // Neither a flagging nor a recognized clearing decision (unknown value, or
-    // a decision-less ack/interim callback) → not a verdict; emit nothing
-    // rather than defaulting to clear and dismissing an open flag.
-    if (!flagged && !cleared) {
+    // Neither CSAM nor a recognized decision (unknown value, or a
+    // decision-less ack/interim callback with no CSAM violation) → not a
+    // verdict; emit nothing rather than defaulting to clear and dismissing
+    // an open flag.
+    if (!isCsam && !flagged && !cleared) {
       return [];
     }
-    // CSAM is escalated the moment it appears in the violations, regardless of
-    // Checkstep's action decision: any CSAM policy hit means the content must
-    // be detached from the process outright, not merely hidden.
-    const isCsam =
-      flagged &&
-      (payload.violations ?? []).some(
-        (v) => v.policy != null && CSAM_POLICIES.has(v.policy),
-      );
     const verdict: ModerationVerdict['verdict'] = isCsam
       ? 'csam'
       : flagged
         ? 'flagged'
         : 'clear';
+    // A `csam` or `flagged` verdict carries evidence; a plain `clear` doesn't.
+    // CSAM without a flagging decision still surfaces the CSAM reason so ops
+    // logs the exact violation instead of an empty explanation.
+    const carriesEvidence = isCsam || flagged;
     return [
       {
         itemType: ref.itemType,
@@ -330,8 +340,10 @@ export const createCheckstepProvider = ({
         mediaId: ref.mediaId,
         verdict,
         externalRecordId: contentId,
-        reason: flagged ? `Checkstep decision: ${payload.decision}` : undefined,
-        scores: flagged
+        reason: carriesEvidence
+          ? `Checkstep ${isCsam ? 'CSAM' : 'decision'}: ${payload.decision ?? '(no decision)'}`
+          : undefined,
+        scores: carriesEvidence
           ? scoresFromViolations(payload.violations ?? undefined)
           : undefined,
       },

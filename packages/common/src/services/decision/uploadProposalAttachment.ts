@@ -1,4 +1,4 @@
-import { db } from '@op/db/client';
+import { and, db, eq, isNull } from '@op/db/client';
 import { attachments, proposalAttachments } from '@op/db/schema';
 import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
@@ -42,7 +42,12 @@ export async function uploadProposalAttachment({
   const [profileId, proposal] = await Promise.all([
     getCurrentProfileId(user.id),
     db.query.proposals.findFirst({
-      where: { id: proposalId },
+      // Detached (CSAM) proposals return 404 for uploads too — no new files
+      // may land on a taken-down row.
+      where: {
+        RAW: (table) =>
+          and(eq(table.id, proposalId), isNull(table.moderationDetachedAt))!,
+      },
     }),
   ]);
 

@@ -139,6 +139,67 @@ describe('createCheckstepProvider', () => {
     expect(verdict?.scores?.csam).toBeGreaterThan(0);
   });
 
+  it('parseWebhook escalates CSAM even when the top-level decision is a clear (dismiss/allow)', () => {
+    // Checkstep moderator marks the item dismissed BUT leaves CSAM on the
+    // violation list. Downstream must still detach — a clearing decision
+    // never overrides a CSAM policy hit.
+    const [verdict] = createCheckstepProvider({ apiKey: 'k' }).parseWebhook!({
+      rawBody: JSON.stringify({
+        webhook_type: 'decision',
+        decision: 'dismiss',
+        content: {
+          id: `proposal:33333333-3333-4333-8333-333333333333:${ROUND_ID}`,
+          type: 'comment',
+        },
+        violations: [{ policy: 'CSAM', severity: 'high' }],
+      }),
+      headers: {},
+    });
+
+    expect(verdict?.verdict).toBe('csam');
+  });
+
+  it('parseWebhook escalates CSAM even with no top-level decision (interim callback)', () => {
+    const [verdict] = createCheckstepProvider({ apiKey: 'k' }).parseWebhook!({
+      rawBody: JSON.stringify({
+        webhook_type: 'decision',
+        content: {
+          id: `proposal:33333333-3333-4333-8333-333333333333:${ROUND_ID}`,
+          type: 'comment',
+        },
+        violations: [{ policy: 'CSAM', severity: 'high' }],
+      }),
+      headers: {},
+    });
+
+    expect(verdict?.verdict).toBe('csam');
+  });
+
+  it('parseWebhook rejects a violations array over the 1000-entry cap', () => {
+    // Bounds worst-case scan cost + memory against a hostile / replayed
+    // payload. Rejection surfaces to the webhook handler as a 400, which
+    // Checkstep will retry — safer than silently trusting an unbounded list.
+    const oversized = Array.from({ length: 1001 }, () => ({
+      policy: 'HTE',
+      severity: 'low',
+    }));
+    const provider = createCheckstepProvider({ apiKey: 'k' });
+    expect(() =>
+      provider.parseWebhook!({
+        rawBody: JSON.stringify({
+          webhook_type: 'decision',
+          decision: 'act',
+          content: {
+            id: `post:44444444-4444-4444-8444-444444444444:${ROUND_ID}`,
+            type: 'comment',
+          },
+          violations: oversized,
+        }),
+        headers: {},
+      }),
+    ).toThrow();
+  });
+
   it('parseWebhook escalates CSAM even when only one of several violations matches', () => {
     const [verdict] = createCheckstepProvider({ apiKey: 'k' }).parseWebhook!({
       rawBody: JSON.stringify({

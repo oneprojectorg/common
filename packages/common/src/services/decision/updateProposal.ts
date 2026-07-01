@@ -1,5 +1,5 @@
 import { getTipTapClient, invalidateCachedDocumentFragments } from '@op/collab';
-import { db, eq } from '@op/db/client';
+import { and, db, eq, isNull } from '@op/db/client';
 import {
   ProposalStatus,
   type Visibility,
@@ -54,9 +54,14 @@ export const updateProposal = async ({
     throw new UnauthorizedError('User must have an active profile');
   }
 
-  // Check if proposal exists and user has permission to update it
+  // Check if proposal exists and user has permission to update it.
+  // Moderation-detached (CSAM) rows return 404 identically to a missing row —
+  // even the original author cannot edit their way back to a takedown.
   const existingProposal = await db.query.proposals.findFirst({
-    where: { id: proposalId },
+    where: {
+      RAW: (table) =>
+        and(eq(table.id, proposalId), isNull(table.moderationDetachedAt))!,
+    },
     with: {
       processInstance: true,
       profile: true,

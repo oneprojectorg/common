@@ -1,4 +1,4 @@
-import { db, eq } from '@op/db/client';
+import { and, db, eq, isNull } from '@op/db/client';
 import { ProcessInstance, proposals } from '@op/db/schema';
 import { User } from '@op/supabase/lib';
 import { checkPermission, permission } from 'access-zones';
@@ -22,7 +22,13 @@ export const deleteProposal = async ({
     const [sessionUser, existingProposal] = await Promise.all([
       getUserSession({ authUserId: user.id }),
       db._query.proposals.findFirst({
-        where: eq(proposals.id, proposalId),
+        // A CSAM-detached proposal is treated as not-found here too —
+        // stacking soft-delete on top of a moderation takedown would only
+        // muddy the audit trail and leak edit knowledge to the caller.
+        where: and(
+          eq(proposals.id, proposalId),
+          isNull(proposals.moderationDetachedAt),
+        ),
         with: {
           processInstance: true,
         },
