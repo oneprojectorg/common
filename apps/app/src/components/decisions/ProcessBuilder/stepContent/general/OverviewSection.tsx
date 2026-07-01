@@ -1,11 +1,7 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import {
-  DEFAULT_UPLOAD_SIZE_LIMIT,
-  sanitizeTiptapDoc,
-} from '@op/common/client';
-import { BannerImageField } from '@op/ui/BannerImageField';
+import { sanitizeTiptapDoc } from '@op/common/client';
 import { RichTextEditor } from '@op/ui/RichTextEditor';
 import { Skeleton } from '@op/ui/Skeleton';
 import type { JSONContent } from '@tiptap/core';
@@ -18,11 +14,11 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { ErrorMessage } from '@/components/ErrorMessage';
 import { RichTextEditorBubbleMenu } from '@/components/RichTextEditor';
 import { getProposalExtensions } from '@/components/RichTextEditor/editorConfig';
+import { OverviewHeroImageField } from '@/components/decisions/OverviewHeroImageField';
 import { useProcessBuilderAutosave } from '@/components/decisions/ProcessBuilder/ProcessBuilderAutosaveContext';
 import { SaveStatusIndicator } from '@/components/decisions/ProcessBuilder/components/SaveStatusIndicator';
 import type { SectionProps } from '@/components/decisions/ProcessBuilder/contentRegistry';
 import { useProcessBuilderStore } from '@/components/decisions/ProcessBuilder/stores/useProcessBuilderStore';
-import { useOverviewHeroImage } from '@/components/decisions/useOverviewHeroImage';
 
 import { OverviewTextField } from './OverviewTextField';
 
@@ -73,24 +69,6 @@ function OverviewSectionContent({
   const [headline, setHeadline] = useState(initialOverview.headline);
   const [description, setDescription] = useState(initialOverview.description);
 
-  // Hero background image. Persisted via its own mutation (heavy bytes stay off
-  // the text-autosave path). Shared with the live overview's "Edit banner"
-  // modal via this hook.
-  const {
-    previewUrl: bannerUrl,
-    fileName,
-    fileSizeLabel,
-    upload: handleBackgroundUpload,
-    remove: handleBackgroundRemove,
-    isUploading,
-    isRemoving,
-    uploadError,
-  } = useOverviewHeroImage({
-    instanceId,
-    initialPath:
-      storeOverview?.heroImage ?? instance.instanceData?.overview?.heroImage,
-  });
-
   // The editor owns body state; track the latest JSON doc so headline/description
   // saves don't clobber it.
   const bodyRef = useRef<string | JSONContent>(initialOverview.body);
@@ -131,25 +109,12 @@ function OverviewSectionContent({
           />
         </div>
 
-        <BannerImageField
-          label={t('Banner image')}
-          value={bannerUrl}
-          fileName={fileName}
-          fileSizeLabel={fileSizeLabel}
-          title={t('Upload banner image')}
-          description={t(
-            'PNG, JPG, WebP or GIF · recommended 2400×800px · max {size}MB',
-            { size: Math.floor(DEFAULT_UPLOAD_SIZE_LIMIT / 1024 / 1024) },
-          )}
-          helperText={t(
-            'The headline appears centered over a dark overlay. Avoid images with key subjects in the middle.',
-          )}
-          chooseFileLabel={t('Choose file')}
-          removeLabel={t('Remove image')}
-          onSelectFile={handleBackgroundUpload}
-          onRemove={handleBackgroundRemove}
-          uploading={isUploading || isRemoving}
-          error={uploadError || undefined}
+        <OverviewHeroImageField
+          instanceId={instanceId}
+          initialPath={
+            storeOverview?.heroImage ??
+            instance.instanceData?.overview?.heroImage
+          }
         />
 
         <div className="flex flex-col gap-2">

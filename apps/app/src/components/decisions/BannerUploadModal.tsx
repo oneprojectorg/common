@@ -1,18 +1,16 @@
 'use client';
 
-import { DEFAULT_UPLOAD_SIZE_LIMIT } from '@op/common/client';
-import { BannerImageField } from '@op/ui/BannerImageField';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
 
 import { useRouter, useTranslations } from '@/lib/i18n';
 
-import { useOverviewHeroImage } from './useOverviewHeroImage';
+import { OverviewHeroImageField } from './OverviewHeroImageField';
 
 /**
- * Controlled modal for uploading/removing the overview hero background image.
- * Shared by the desktop "Edit banner" button and the mobile admin bottom sheet.
- * The overview page is RSC-fed, so a change triggers router.refresh().
+ * Controlled modal for uploading/removing the overview hero image. Shared by
+ * the desktop "Edit banner" button and the mobile admin bottom sheet. The
+ * overview page is RSC-fed, so a change triggers router.refresh().
  */
 export function BannerUploadModal({
   instanceId,
@@ -28,44 +26,15 @@ export function BannerUploadModal({
 }) {
   const t = useTranslations();
   const router = useRouter();
-  const {
-    previewUrl,
-    fileName,
-    fileSizeLabel,
-    upload,
-    remove,
-    isUploading,
-    isRemoving,
-    uploadError,
-  } = useOverviewHeroImage({
-    instanceId,
-    initialPath: heroImagePath,
-    onChange: () => router.refresh(),
-  });
 
   return (
     <Modal isDismissable isOpen={isOpen} onOpenChange={onOpenChange}>
       <ModalHeader>{t('Edit banner')}</ModalHeader>
       <ModalBody>
-        <BannerImageField
-          label={t('Banner image')}
-          value={previewUrl}
-          fileName={fileName}
-          fileSizeLabel={fileSizeLabel}
-          title={t('Upload banner image')}
-          description={t(
-            'PNG, JPG, WebP or GIF · recommended 2400×800px · max {size}MB',
-            { size: Math.floor(DEFAULT_UPLOAD_SIZE_LIMIT / 1024 / 1024) },
-          )}
-          helperText={t(
-            'The headline appears centered over a dark overlay. Avoid images with key subjects in the middle.',
-          )}
-          chooseFileLabel={t('Choose file')}
-          removeLabel={t('Remove image')}
-          onSelectFile={upload}
-          onRemove={remove}
-          uploading={isUploading || isRemoving}
-          error={uploadError || undefined}
+        <OverviewHeroImageField
+          instanceId={instanceId}
+          initialPath={heroImagePath}
+          onChange={() => router.refresh()}
         />
       </ModalBody>
       <ModalFooter>
