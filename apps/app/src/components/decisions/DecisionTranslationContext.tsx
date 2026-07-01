@@ -14,6 +14,9 @@ interface DecisionTranslation {
   phaseDescription?: string;
   additionalInfo?: string;
   description?: string;
+  overviewHeadline?: string;
+  overviewDescription?: string;
+  overviewBody?: string;
   phases: Array<{ id: string; name: string }>;
   posts: Record<string, PostTranslation>;
   resources: Record<string, ResourceTranslation>;

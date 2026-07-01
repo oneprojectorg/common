@@ -22,17 +22,20 @@ type DecisionTranslationPatch = Partial<{
   phaseDescription: string;
   additionalInfo: string;
   description: string;
+  overviewHeadline: string;
+  overviewDescription: string;
+  overviewBody: string;
   phases: Array<{ id: string; name: string }>;
   posts: Record<string, PostTranslation>;
   resources: Record<string, ResourceTranslation>;
 }>;
 
 // fallow-ignore-next-line complexity
-export const useProposalsTranslation = ({
-  allProposals,
+export const useTranslateDecision = ({
+  proposals,
   decisionProfileId,
 }: {
-  allProposals: Proposal[];
+  proposals: Proposal[];
   decisionProfileId?: string | null;
 }) => {
   const t = useTranslations();
@@ -70,6 +73,10 @@ export const useProposalsTranslation = ({
         phaseDescription: patch.phaseDescription ?? prev?.phaseDescription,
         additionalInfo: patch.additionalInfo ?? prev?.additionalInfo,
         description: patch.description ?? prev?.description,
+        overviewHeadline: patch.overviewHeadline ?? prev?.overviewHeadline,
+        overviewDescription:
+          patch.overviewDescription ?? prev?.overviewDescription,
+        overviewBody: patch.overviewBody ?? prev?.overviewBody,
         phases: patch.phases ?? prev?.phases ?? [],
         posts: { ...(prev?.posts ?? {}), ...(patch.posts ?? {}) },
         resources: { ...(prev?.resources ?? {}), ...(patch.resources ?? {}) },
@@ -108,6 +115,9 @@ export const useProposalsTranslation = ({
           !data.phaseDescription &&
           !data.additionalInfo &&
           !data.description &&
+          !data.overviewHeadline &&
+          !data.overviewDescription &&
+          !data.overviewBody &&
           data.phases.length === 0
         ) {
           return;
@@ -117,6 +127,9 @@ export const useProposalsTranslation = ({
           phaseDescription: data.phaseDescription,
           additionalInfo: data.additionalInfo,
           description: data.description,
+          overviewHeadline: data.overviewHeadline,
+          overviewDescription: data.overviewDescription,
+          overviewBody: data.overviewBody,
           phases: data.phases,
         });
       },
@@ -157,7 +170,7 @@ export const useProposalsTranslation = ({
       return;
     }
     translatingRef.current = true;
-    const profileIds = allProposals.map((p) => p.profileId);
+    const profileIds = proposals.map((p) => p.profileId);
     if (profileIds.length) {
       translateBatchMutation.mutate({
         profileIds,
@@ -183,7 +196,7 @@ export const useProposalsTranslation = ({
     translateDecisionMutation,
     translatePostsMutation,
     translateResourcesMutation,
-    allProposals,
+    proposals,
     supportedLocale,
     decisionProfileId,
   ]);

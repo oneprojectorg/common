@@ -31,7 +31,7 @@ import { TranslateBanner } from './TranslateBanner';
 import { TranslationNotice } from './TranslationNotice';
 import { DEFAULT_LOCATION_FIELD_MAP_VIEW } from './location/mapConfig';
 import { useProposalExport } from './useProposalExport';
-import { useProposalsTranslation } from './useProposalsTranslation';
+import { useTranslateDecision } from './useTranslateDecision';
 
 export interface ProposalsListProps {
   slug: string;
@@ -389,8 +389,8 @@ const ProposalsListContent = ({
     [revisionRequestsData],
   );
 
-  const translation = useProposalsTranslation({
-    allProposals,
+  const translation = useTranslateDecision({
+    proposals: allProposals,
     decisionProfileId,
   });
 

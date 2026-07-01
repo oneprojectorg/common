@@ -238,6 +238,76 @@ describe('translation.translateDecision', () => {
     expect(result.additionalInfo).toContain('<p');
   });
 
+  it('should translate authored overview headline, description, and body', async ({
+    task,
+    onTestFinished,
+  }) => {
+    const testData = new TestDecisionsDataManager(task.id, onTestFinished);
+
+    const setup = await testData.createDecisionSetup({
+      instanceCount: 1,
+      grantAccess: true,
+    });
+
+    const instance = setup.instance;
+
+    const instanceRecord = await db.query.processInstances.findFirst({
+      where: { id: instance.instance.id },
+    });
+    if (!instanceRecord) {
+      throw new Error('Instance record not found');
+    }
+
+    const instanceData = instanceRecord.instanceData as Record<string, unknown>;
+    const overviewBody = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'About this decision' }],
+        },
+      ],
+    };
+
+    await db
+      .update(processInstances)
+      .set({
+        instanceData: {
+          ...instanceData,
+          overview: {
+            headline: 'Welcome to the Process',
+            description: 'A short overview blurb',
+            body: overviewBody,
+          },
+        },
+      })
+      .where(eq(processInstances.id, instance.instance.id));
+
+    onTestFinished(async () => {
+      await db
+        .delete(contentTranslations)
+        .where(
+          like(
+            contentTranslations.contentKey,
+            `decision:${instance.profileId}:%`,
+          ),
+        );
+    });
+
+    const caller = await createAuthenticatedCaller(setup.userEmail);
+
+    const result = await caller.translation.translateDecision({
+      decisionProfileId: instance.profileId,
+      targetLocale: 'es',
+    });
+
+    expect(result.overviewHeadline).toBe('[ES] Welcome to the Process');
+    expect(result.overviewDescription).toBe('[ES] A short overview blurb');
+    // Body is a TipTap JSON doc rendered to HTML before translating.
+    expect(result.overviewBody).toContain('[ES]');
+    expect(result.overviewBody).toContain('<p');
+  });
+
   it('should return empty translated when instance has no translatable content', async ({
     task,
     onTestFinished,
