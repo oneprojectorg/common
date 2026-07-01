@@ -1,3 +1,4 @@
+import { OPURLConfig } from '@op/core';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
@@ -21,19 +22,25 @@ export async function generateMetadata({
       getTranslations({ locale }),
     ]);
     const name = decisionProfile.name || t('Decision');
-    const steward = decisionProfile.processInstance?.steward?.name;
+    const instance = decisionProfile.processInstance;
+    // Same rule as DecisionListItem: prefer the steward, fall back to the
+    // owner (steward is nullable, owner is not).
+    const steward = (instance?.steward ?? instance?.owner)?.name;
     const description = truncateDescription(
       decisionProfile.bio ?? decisionProfile.mission ?? '',
     );
 
-    // robots is set only here, in the publicly-readable path: a private decision
-    // throws in loadDecision and falls into the catch below, leaving the global
-    // noindex from the root layout in place. The colocated opengraph-image route
-    // supplies og:image for this page and its child phase routes.
+    // robots is set only here, in the publicly-readable path, and only in
+    // production — staging/preview keep the global noindex from the root
+    // layout, as does a private decision (loadDecision throws into the catch
+    // below). The colocated opengraph-image route supplies og:image for this
+    // page; /current re-exports it for its own segment.
     return {
       title: steward ? `${name} | ${steward}` : name,
       description: description || undefined,
-      robots: { index: true, follow: true },
+      ...(OPURLConfig('APP').IS_PRODUCTION
+        ? { robots: { index: true, follow: true } }
+        : {}),
       openGraph: {
         title: name,
         description: description || undefined,

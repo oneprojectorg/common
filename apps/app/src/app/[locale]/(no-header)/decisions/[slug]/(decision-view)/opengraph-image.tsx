@@ -1,11 +1,14 @@
 import { OPURLConfig } from '@op/core';
 import { logger } from '@op/logging';
 import { getAvatarColorForString } from '@op/ui/utils';
+import { getTranslations } from 'next-intl/server';
 import { ImageResponse } from 'next/og';
 
 import { loadDecision } from './loadDecision';
 import { truncateDescription } from './metaDescription';
 
+// Static module export — Next reads it once at build time, so it can't be
+// localized per-request the way the card text below is.
 export const alt = 'A decision on One Project';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -114,8 +117,8 @@ const loadLogo = () => {
 
 /**
  * Dynamic OG card for the canonical public decision page. Renders the decision
- * name, steward, and participation stats over the decision's header image when
- * it has one, otherwise over a plain brand gradient.
+ * name, steward (or owner) byline, and participation stats over the decision's
+ * header image when it has one, otherwise over a plain brand gradient.
  */
 const Image = async ({
   params,
@@ -123,27 +126,48 @@ const Image = async ({
   params: Promise<{ slug: string; locale: string }>;
 }) => {
   try {
-    const { slug } = await params;
-    const [{ decisionProfile }, fonts, logoSrc] = await Promise.all([
+    const { slug, locale } = await params;
+    const [{ decisionProfile }, t, fonts, logoSrc] = await Promise.all([
       loadDecision(slug),
+      getTranslations({ locale }),
       loadFonts(),
       loadLogo(),
     ]);
     const instance = decisionProfile.processInstance;
+    // Same rule as DecisionListItem: prefer the steward, fall back to the
+    // owner (steward is nullable, owner is not).
+    const byName = (instance.steward ?? instance.owner)?.name;
     const headerKey = decisionProfile.headerImage?.name;
     const headerUrl =
       headerKey && process.env.S3_ASSET_ROOT
         ? `${process.env.S3_ASSET_ROOT}/${headerKey}`
         : undefined;
 
+    const stats: string[] = [];
+    if (instance.proposalCount != null) {
+      stats.push(
+        t('{count, plural, one {# proposal} other {# proposals}}', {
+          count: instance.proposalCount,
+        }),
+      );
+    }
+    if (instance.participantCount != null) {
+      stats.push(
+        t('{count, plural, one {# participant} other {# participants}}', {
+          count: instance.participantCount,
+        }),
+      );
+    }
+
     return new ImageResponse(
       <Card
-        title={truncateDescription(decisionProfile.name || 'Decision', 80)}
-        steward={instance.steward?.name ?? undefined}
-        proposalCount={instance.proposalCount}
-        participantCount={instance.participantCount}
+        title={truncateDescription(decisionProfile.name || t('Decision'), 80)}
+        byline={byName ? t('by {name}', { name: byName }) : undefined}
+        stats={stats}
         headerUrl={headerUrl}
         logoSrc={logoSrc}
+        // Hash the raw (untranslated) name so a decision keeps the same
+        // gradient across locales, matching its in-app avatar.
         background={gradientForName(decisionProfile.name || 'Decision')}
       />,
       { ...size, fonts },
@@ -181,31 +205,19 @@ export default Image;
 
 const Card = ({
   title,
-  steward,
-  proposalCount,
-  participantCount,
+  byline,
+  stats,
   headerUrl,
   logoSrc,
   background,
 }: {
   title: string;
-  steward?: string;
-  proposalCount?: number;
-  participantCount?: number;
+  byline?: string;
+  stats: string[];
   headerUrl?: string;
   logoSrc?: string;
   background?: string;
 }) => {
-  const stats: string[] = [];
-  if (proposalCount != null) {
-    stats.push(`${proposalCount} proposal${proposalCount === 1 ? '' : 's'}`);
-  }
-  if (participantCount != null) {
-    stats.push(
-      `${participantCount} participant${participantCount === 1 ? '' : 's'}`,
-    );
-  }
-
   return (
     <div
       style={{
@@ -280,9 +292,9 @@ const Card = ({
           >
             {title}
           </div>
-          {steward ? (
+          {byline ? (
             <div style={{ display: 'flex', fontSize: 32, marginTop: 16 }}>
-              by {steward}
+              {byline}
             </div>
           ) : null}
           {stats.length > 0 ? (
