@@ -7,8 +7,9 @@ import { ImageResponse } from 'next/og';
 import { loadDecision } from './loadDecision';
 import { truncateDescription } from './metaDescription';
 
-// Static module export — Next reads it once at build time, so it can't be
-// localized per-request the way the card text below is.
+// A plain `export const alt` is static. Localizing it would require switching
+// to generateImageMetadata's id/URL machinery — not worth it for an
+// accessibility-only string; the card text below is localized per-request.
 export const alt = 'A decision on One Project';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -22,9 +23,10 @@ const TEAL_GRADIENT = `linear-gradient(135deg, ${TEAL} 0%, ${TEAL_DARK} 100%)`;
 // satori can't read Tailwind tokens or var(), so the four avatar gradients
 // (getAvatarColorForString) are inlined here as resolved hex. Values mirror the
 // bg-gradient / bg-redTeal / bg-blueGreen / bg-orangePurple @utility blocks in
-// shared-styles.css, keyed by the class name the shared helper returns so the OG
-// background matches the decision's avatar. Typing the table by the helper's
-// return union makes a new avatar gradient a compile error here, not a silent miss.
+// shared-styles.css, keyed by the class name the shared helper returns, giving
+// each decision a stable brand-palette background. Typing the table by the
+// helper's return union makes a new avatar gradient a compile error here, not a
+// silent miss.
 type AvatarGradientClass = ReturnType<
   typeof getAvatarColorForString
 >['gradient'];
@@ -118,7 +120,8 @@ const loadLogo = () => {
 /**
  * Dynamic OG card for the canonical public decision page. Renders the decision
  * name, steward (or owner) byline, and participation stats over the decision's
- * header image when it has one, otherwise over a plain brand gradient.
+ * header image when it has one, otherwise over a gradient hashed from the
+ * decision name.
  */
 const Image = async ({
   params,
@@ -167,7 +170,7 @@ const Image = async ({
         headerUrl={headerUrl}
         logoSrc={logoSrc}
         // Hash the raw (untranslated) name so a decision keeps the same
-        // gradient across locales, matching its in-app avatar.
+        // gradient across locales.
         background={gradientForName(decisionProfile.name || 'Decision')}
       />,
       { ...size, fonts },
