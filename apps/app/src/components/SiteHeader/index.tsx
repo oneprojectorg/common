@@ -489,7 +489,11 @@ export const HeaderUserMenu = ({ className }: { className?: string }) => {
       color="primary"
       size="small"
       className={className}
-      onPress={() => window.location.assign('/login')}
+      onPress={() =>
+        window.location.assign(
+          `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`,
+        )
+      }
     >
       {t('Log in')}
     </Button>
