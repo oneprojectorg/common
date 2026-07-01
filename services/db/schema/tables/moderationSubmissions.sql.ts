@@ -16,11 +16,10 @@ import {
 } from './moderationFlags.sql';
 
 /**
- * Per-task verdict for one submission to the provider. A single item can fan
- * out into several tasks (the active vendor decides: Hive splits text + each
- * media into separate tasks, while Lasso/Checkstep take one combined task), so
- * the item's overall verdict is aggregated across its rows — flagged if any
- * task is flagged, clear only once every task has come back clear.
+ * Per-task verdict for one submission to the provider. Checkstep takes one
+ * combined task (text + media as fields), so today an item has a single row
+ * here, but the aggregate is written to accept multiple rows per item so
+ * per-task splits remain a supported shape.
  */
 export enum ModerationSubmissionVerdict {
   PENDING = 'pending', // submitted, awaiting the provider's async verdict

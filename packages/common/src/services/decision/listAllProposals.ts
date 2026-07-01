@@ -162,6 +162,9 @@ export const listAllProposals = async ({
         ProposalStatus.DUPLICATE,
       ]),
       isNull(t.deletedAt),
+      // Moderation-detached (CSAM) proposals are invisible to everyone —
+      // admins included. No source of proposal-facing UI shows detached rows.
+      isNull(t.moderationDetachedAt),
       isAdmin ? undefined : eq(t.visibility, Visibility.VISIBLE),
       // Items with an active moderation flag are hidden from everyone
       // except members of the proposal's own profile (the same audience

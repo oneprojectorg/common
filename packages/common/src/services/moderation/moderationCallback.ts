@@ -1,16 +1,13 @@
 import { OPURLConfig } from '@op/core';
 
 /**
- * The webhook URL providers POST their async verdict to. Vendors differ in (or
- * lack) request signing, so we authenticate the callback with a shared secret
- * carried in the query string. Returns `null` when the secret isn't configured
- * — without it we can't safely accept callbacks, so the async path stays off
- * (it also acts as the async feature switch for vendors that don't take a
- * per-request callback).
+ * The webhook URL Checkstep POSTs its async verdict to. We authenticate the
+ * callback with a shared secret carried in the query string; Checkstep also
+ * signs the payload, but the shared secret keeps the URL usable even when the
+ * signing key isn't configured. Returns `null` when the secret isn't set —
+ * without it we can't safely accept callbacks, so the async path stays off.
  *
- * How the URL reaches the vendor differs: Hive takes it per submission
- * (`callback_url`); Lasso has no per-request callback — paste this URL into
- * the webhook settings in the Lasso dashboard.
+ * The URL is passed to Checkstep per submission via `callback_url`.
  */
 export const getModerationCallbackUrl = (): string | null => {
   const secret = process.env.MODERATION_WEBHOOK_SECRET;

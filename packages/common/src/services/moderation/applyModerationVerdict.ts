@@ -14,6 +14,12 @@ export interface RecordTaskVerdictInput {
   roundId: string;
   /** Which task within the item (`undefined` = the text task). */
   mediaId?: string;
+  /**
+   * The DB submission enum values. `csam` is normalised to `flagged` at the
+   * task-record layer (the submission row only knows pending/flagged/clear);
+   * the CSAM signal is preserved on the incoming verdict and drives the
+   * detach step separately.
+   */
   verdict: 'flagged' | 'clear';
   scores?: ModerationScores;
   reason?: string;
@@ -70,11 +76,26 @@ export interface ApplyModerationVerdictDeps {
     itemId: string;
     moderationFlagId: string;
   }) => Promise<void>;
+  /**
+   * Fired when the provider returns a CSAM verdict. Removes the content from
+   * the process so admins can no longer see it — today that means setting
+   * `moderationDetachedAt` on the proposal (see
+   * `detachProposalForModeration`). Item types that have no detach path
+   * short-circuit as a no-op; the flag pipeline still runs so the ordinary
+   * hide + notify happens.
+   */
+  detachContent: (input: {
+    itemType: ModerationItemType;
+    itemId: string;
+    reason?: string;
+    externalRecordId?: string;
+  }) => Promise<void>;
 }
 
 export type ApplyModerationVerdictResult = {
   action: 'created' | 'flagged' | 'dismissed' | 'noop';
   flag?: ModerationFlag;
+  detached?: boolean;
 };
 
 /**
@@ -103,12 +124,19 @@ export const applyModerationVerdict = async (
 ): Promise<ApplyModerationVerdictResult> => {
   const { itemType, itemId } = verdict;
 
+  // CSAM is a `flagged` verdict at the submission-store layer: the DB enum
+  // knows only pending/flagged/clear, and the CSAM discriminator lives on the
+  // in-memory verdict so it can drive the extra detach step below.
+  const isCsam = verdict.verdict === 'csam';
+  const storedVerdict: 'flagged' | 'clear' =
+    isCsam || verdict.verdict === 'flagged' ? 'flagged' : 'clear';
+
   const aggregate = await deps.recordTaskVerdict({
     itemType,
     itemId,
     roundId: verdict.roundId,
     mediaId: verdict.mediaId,
-    verdict: verdict.verdict,
+    verdict: storedVerdict,
     scores: verdict.scores,
     reason: verdict.reason,
     externalRecordId: verdict.externalRecordId,
@@ -118,7 +146,22 @@ export const applyModerationVerdict = async (
   // ref, a task from a superseded round, or a redelivery after the flag was
   // resolved and its submissions cleared. Recording nothing, deciding nothing.
   if (!aggregate) {
-    return { action: 'noop' };
+    return { action: 'noop', detached: false };
+  }
+
+  // CSAM detach runs on the raw verdict, before the flag decision — the
+  // detach must happen even if a duplicate/late CSAM verdict lands on an
+  // already-flagged item, and it must NOT wait for aggregation across tasks
+  // (any CSAM signal from any task is decisive on its own).
+  let detached = false;
+  if (isCsam) {
+    await deps.detachContent({
+      itemType,
+      itemId,
+      reason: verdict.reason,
+      externalRecordId: verdict.externalRecordId,
+    });
+    detached = true;
   }
 
   const existing = await deps.findOpenFlag(itemType, itemId);
@@ -139,10 +182,10 @@ export const applyModerationVerdict = async (
       // Lost the insert race: a concurrent webhook created the flag and sent
       // the notification — don't notify a second time.
       if (!created) {
-        return { action: 'noop', flag };
+        return { action: 'noop', flag, detached };
       }
       await deps.emitFlagged({ itemType, itemId, moderationFlagId: flag.id });
-      return { action: 'created', flag };
+      return { action: 'created', flag, detached };
     }
 
     if (existing.status === 'pending') {
@@ -151,14 +194,14 @@ export const applyModerationVerdict = async (
       // the write (admin resolution or a concurrent webhook). Their decision
       // stands; in particular, don't emit a second notification.
       if (!flag) {
-        return { action: 'noop', flag: existing };
+        return { action: 'noop', flag: existing, detached };
       }
       await deps.emitFlagged({ itemType, itemId, moderationFlagId: flag.id });
-      return { action: 'flagged', flag };
+      return { action: 'flagged', flag, detached };
     }
 
     // Already flagged (or otherwise resolved): a duplicate/late webhook is a no-op.
-    return { action: 'noop', flag: existing };
+    return { action: 'noop', flag: existing, detached };
   }
 
   // No task is flagged. Once *every* task has come back clear, dismiss the
@@ -169,10 +212,10 @@ export const applyModerationVerdict = async (
   if (aggregate.allResolved && existing) {
     const flag = await deps.markDismissed(existing.id);
     if (!flag) {
-      return { action: 'noop', flag: existing };
+      return { action: 'noop', flag: existing, detached };
     }
-    return { action: 'dismissed', flag };
+    return { action: 'dismissed', flag, detached };
   }
 
-  return { action: 'noop', flag: existing };
+  return { action: 'noop', flag: existing, detached };
 };

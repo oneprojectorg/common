@@ -8,14 +8,17 @@ export type ModerationCategory =
   | 'hate'
   | 'violence'
   | 'harassment'
-  // Verdict-based platforms (Lasso/Checkstep) don't always classify; `other`
-  // carries a decisive score when only an allow/block verdict is available.
+  // CSAM is treated as its own category so the verdict pipeline can trigger
+  // the mandatory-detach path without relying on Checkstep policy strings.
+  | 'csam'
+  // Checkstep doesn't always classify; `other` carries a decisive score when
+  // only an allow/block verdict is available.
   | 'other';
 
 export type ModerationScores = Partial<Record<ModerationCategory, number>>;
 
-/** The moderation vendors we support; the active one is chosen by env. */
-export type ModerationVendor = 'hive' | 'lasso' | 'checkstep';
+/** The moderation vendor we support. */
+export type ModerationVendor = 'checkstep';
 
 /** What kind of item is moderated. Derived from the db `ModerationItemType`
  *  enum (as its value union) so the service and schema never drift. */
@@ -29,10 +32,10 @@ export type ModerationItemType = `${ModerationItemTypeEnum}`;
 export interface ModerationProviderReference {
   providerRecordId?: string;
   /**
-   * The content-refs the provider actually submitted, one per task. Vendors
-   * differ: Hive splits text + each media into separate tasks, while
-   * Lasso/Checkstep take one combined task. The caller persists a submission
-   * row per ref so the per-task verdicts can be aggregated.
+   * The content-refs the provider actually submitted, one per task. Checkstep
+   * takes one combined task (text + media as fields), so this is a single
+   * ref today, but the shape is kept plural so aggregation across tasks stays
+   * uniform if the split ever changes.
    */
   submittedRefs: string[];
 }
@@ -92,8 +95,13 @@ export interface ModerationVerdict {
    * record a per-task verdict and aggregate across an item's tasks.
    */
   mediaId?: string;
-  /** `flagged` = provider deems the content disallowed; `clear` = allowed. */
-  verdict: 'flagged' | 'clear';
+  /**
+   * `flagged` = provider deems the content disallowed; `clear` = allowed;
+   * `csam` = the content is child sexual abuse material — a distinct verdict
+   * so the pipeline can trigger the mandatory-detach path (proposal removed
+   * from its process, admin views included) instead of the ordinary hide.
+   */
+  verdict: 'flagged' | 'clear' | 'csam';
   /** The provider's record/task id, for dispute/review links. */
   externalRecordId?: string;
   /** Human-readable reason (matched rule/policy names). */
@@ -124,11 +132,11 @@ export interface ModerationProvider {
     input: ModerationSubmission,
   ): Promise<ModerationProviderReference>;
   /**
-   * Extracts the verdicts a webhook delivery carries. Vendors differ: Hive
-   * and Checkstep send one verdict per callback, while Lasso's
-   * dashboard-configured webhook batches actions (and delivers event types
-   * that aren't verdicts at all) — an empty array means "nothing for us,
-   * acknowledge with 200". Throws on a malformed payload (→ 400).
+   * Extracts the verdicts a webhook delivery carries. Checkstep sends one
+   * verdict per callback and also ships non-verdict webhook types (author
+   * decisions, incident-closed, analysed-content) — an empty array means
+   * "nothing for us, acknowledge with 200". Throws on a malformed payload
+   * (→ 400).
    */
   parseWebhook?(input: ModerationWebhookInput): ModerationVerdict[];
   /**

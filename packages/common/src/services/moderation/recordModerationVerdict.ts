@@ -1,5 +1,6 @@
 import { Events, event } from '@op/events';
 
+import { detachProposalForModeration } from '../decision/detachProposalForModeration';
 import {
   type ApplyModerationVerdictResult,
   applyModerationVerdict,
@@ -14,13 +15,31 @@ import {
   recordSubmissionVerdict,
   toSubmissionMediaId,
 } from './moderationSubmissionStore';
-import type { ModerationVerdict } from './types';
+import type { ModerationItemType, ModerationVerdict } from './types';
+
+// CSAM is only actionable via detach when the item is a proposal — that's the
+// content that owes a decision-process attachment. Post/user detaches would
+// need their own model surface; if Checkstep ever returns CSAM against those,
+// we still create a flag (so the item is hidden and ops is notified), but the
+// detach step is a no-op rather than a silent failure.
+const detachContentByItemType = async ({
+  itemType,
+  itemId,
+}: {
+  itemType: ModerationItemType;
+  itemId: string;
+}): Promise<void> => {
+  if (itemType === 'proposal') {
+    await detachProposalForModeration({ proposalId: itemId });
+  }
+};
 
 /**
  * Applies a parsed provider verdict against the database. The real wiring of
  * `applyModerationVerdict`: looks up the open flag, creates/confirms/dismisses
  * via the flag store, and emits `content/flagged` so the author notification
- * fires. Called by the webhook handler.
+ * fires. On a CSAM verdict the item is also detached from its process (today
+ * proposals only). Called by the webhook handler.
  */
 export const recordModerationVerdict = (
   verdict: ModerationVerdict,
@@ -44,4 +63,5 @@ export const recordModerationVerdict = (
         data: { itemType, itemId, moderationFlagId },
       });
     },
+    detachContent: detachContentByItemType,
   });

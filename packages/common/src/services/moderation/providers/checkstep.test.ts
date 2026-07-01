@@ -115,6 +115,47 @@ describe('createCheckstepProvider', () => {
     expect(verdict?.scores?.hate).toBeGreaterThan(0);
   });
 
+  it('parseWebhook escalates a CSAM violation to a `csam` verdict (even on the same "act" decision)', () => {
+    const contentId = `proposal:33333333-3333-4333-8333-333333333333:${ROUND_ID}`;
+    const [verdict] = createCheckstepProvider({ apiKey: 'k' }).parseWebhook!({
+      rawBody: JSON.stringify({
+        webhook_type: 'decision',
+        decision: 'act',
+        content: { id: contentId, type: 'comment' },
+        violations: [{ policy: 'CSAM', severity: 'high' }],
+      }),
+      headers: {},
+    });
+
+    // The verdict must NOT be `flagged` — CSAM is its own decision so the
+    // downstream pipeline routes to the mandatory-detach path instead of an
+    // ordinary hide.
+    expect(verdict?.verdict).toBe('csam');
+    expect(verdict?.itemType).toBe('proposal');
+    expect(verdict?.itemId).toBe('33333333-3333-4333-8333-333333333333');
+    expect(verdict?.scores?.csam).toBeGreaterThan(0);
+  });
+
+  it('parseWebhook escalates CSAM even when only one of several violations matches', () => {
+    const [verdict] = createCheckstepProvider({ apiKey: 'k' }).parseWebhook!({
+      rawBody: JSON.stringify({
+        webhook_type: 'decision',
+        decision: 'act',
+        content: {
+          id: `proposal:33333333-3333-4333-8333-333333333333:${ROUND_ID}`,
+          type: 'comment',
+        },
+        violations: [
+          { policy: 'HTE', severity: 'medium' },
+          { policy: 'CSEA', severity: 'high' },
+        ],
+      }),
+      headers: {},
+    });
+
+    expect(verdict?.verdict).toBe('csam');
+  });
+
   it('parseWebhook maps a dismiss decision to a clear verdict', () => {
     const [verdict] = createCheckstepProvider({ apiKey: 'k' }).parseWebhook!({
       rawBody: JSON.stringify({

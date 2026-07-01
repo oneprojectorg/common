@@ -97,7 +97,15 @@ const POLICY_MAP: Record<string, ModerationCategory> = {
   SEX: 'sexual',
   HRS: 'harassment',
   PRF: 'profanity',
+  CSAM: 'csam',
+  CSEA: 'csam',
+  CSA: 'csam',
 };
+
+// Checkstep policy codes that indicate CSAM — any violation with one of these
+// codes turns the verdict into `csam` rather than the ordinary `flagged`, so
+// the downstream pipeline can trigger the mandatory-detach path.
+const CSAM_POLICIES: ReadonlySet<string> = new Set(['CSAM', 'CSEA', 'CSA']);
 
 // Checkstep severity buckets mapped onto our 0-1 scale.
 const SEVERITY_SCORE: Record<string, number> = {
@@ -236,8 +244,7 @@ export const createCheckstepProvider = ({
   // Checkstep takes one combined task (text + media fields), so it's a
   // single ref — unless there's nothing to review (no text, no media, e.g. a
   // `user` flag), in which case no task is planned and the flag stays pending
-  // for manual handling rather than being auto-cleared by an empty submission
-  // (matches Hive's behavior).
+  // for manual handling rather than being auto-cleared by an empty submission.
   planReviewRefs: ({ itemType, itemId, roundId, content, media }) =>
     content.trim() || (media?.length ?? 0) > 0
       ? [encodeContentRef(itemType, itemId, roundId)]
@@ -279,8 +286,8 @@ export const createCheckstepProvider = ({
     }
     // A delivery for content not ingested through this integration (dashboard
     // test payloads, sync-gate items under a bare uuid, pre-deploy content)
-    // carries an id that isn't our ref — skip it and acknowledge with 200,
-    // matching the Lasso adapter, rather than throwing into a 400 + retries.
+    // carries an id that isn't our ref — skip it and acknowledge with 200
+    // rather than throwing into a 400 + retries.
     let ref;
     try {
       ref = decodeContentRef(contentId);
@@ -299,13 +306,26 @@ export const createCheckstepProvider = ({
     if (!flagged && !cleared) {
       return [];
     }
+    // CSAM is escalated the moment it appears in the violations, regardless of
+    // Checkstep's action decision: any CSAM policy hit means the content must
+    // be detached from the process outright, not merely hidden.
+    const isCsam =
+      flagged &&
+      (payload.violations ?? []).some(
+        (v) => v.policy != null && CSAM_POLICIES.has(v.policy),
+      );
+    const verdict: ModerationVerdict['verdict'] = isCsam
+      ? 'csam'
+      : flagged
+        ? 'flagged'
+        : 'clear';
     return [
       {
         itemType: ref.itemType,
         itemId: ref.itemId,
         roundId: ref.roundId,
         mediaId: ref.mediaId,
-        verdict: flagged ? 'flagged' : 'clear',
+        verdict,
         externalRecordId: contentId,
         reason: flagged ? `Checkstep decision: ${payload.decision}` : undefined,
         scores: flagged

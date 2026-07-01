@@ -20,17 +20,11 @@ afterEach(() => {
 });
 
 describe('getModerationProvider', () => {
-  it('returns null when MODERATION_PROVIDER is unset (feature off)', () => {
+  it('returns null when no API key is configured (feature off)', () => {
     expect(getModerationProvider()).toBeNull();
   });
 
-  it('returns null when the selected vendor has no API key', () => {
-    process.env.MODERATION_PROVIDER = 'hive';
-    expect(getModerationProvider()).toBeNull();
-  });
-
-  it('builds a hive provider with async review (Moderation Dashboard)', () => {
-    process.env.MODERATION_PROVIDER = 'hive';
+  it('builds a checkstep provider with the async review contract', () => {
     process.env.MODERATION_API_KEY = 'k';
     const provider = getModerationProvider();
     expect(provider).not.toBeNull();
@@ -38,21 +32,13 @@ describe('getModerationProvider', () => {
     expect(provider!.parseWebhook).toBeInstanceOf(Function);
   });
 
-  it('builds a lasso provider with submitForReview', () => {
-    process.env.MODERATION_PROVIDER = 'lasso';
-    process.env.MODERATION_API_KEY = 'k';
-    const provider = getModerationProvider();
-    expect(provider!.submitForReview).toBeInstanceOf(Function);
-  });
-
-  it('builds a checkstep provider with submitForReview', () => {
+  it('accepts MODERATION_PROVIDER=checkstep as an explicit no-op', () => {
     process.env.MODERATION_PROVIDER = 'checkstep';
     process.env.MODERATION_API_KEY = 'k';
-    const provider = getModerationProvider();
-    expect(provider!.submitForReview).toBeInstanceOf(Function);
+    expect(getModerationProvider()).not.toBeNull();
   });
 
-  it('throws a clear error on an unknown provider value', () => {
+  it('throws when MODERATION_PROVIDER names any other vendor', () => {
     process.env.MODERATION_PROVIDER = 'bogus';
     process.env.MODERATION_API_KEY = 'k';
     expect(() => getModerationProvider()).toThrow(/bogus/);

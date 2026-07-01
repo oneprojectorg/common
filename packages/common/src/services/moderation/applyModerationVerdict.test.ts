@@ -39,6 +39,7 @@ const deps = (
     .fn()
     .mockResolvedValue(flagRow({ id: 'flag-1', status: 'dismissed' })),
   emitFlagged: vi.fn().mockResolvedValue(undefined),
+  detachContent: vi.fn().mockResolvedValue(undefined),
 });
 
 const ROUND_ID = '99999999-9999-4999-8999-999999999999';
@@ -244,5 +245,62 @@ describe('applyModerationVerdict', () => {
     const result = await applyModerationVerdict(clear, d);
 
     expect(result.action).toBe('noop');
+  });
+
+  describe('CSAM verdict', () => {
+    const csam: ModerationVerdict = {
+      itemType: 'proposal',
+      itemId: 'p1',
+      roundId: ROUND_ID,
+      verdict: 'csam',
+      externalRecordId: 'ext-9',
+      reason: 'Checkstep decision: act',
+    };
+
+    it('records the CSAM task as flagged (the submission enum only knows flagged/clear)', async () => {
+      const d = deps(undefined, flaggedAgg);
+      await applyModerationVerdict(csam, d);
+
+      expect(d.recordTaskVerdict).toHaveBeenCalledWith(
+        expect.objectContaining({ verdict: 'flagged' }),
+      );
+    });
+
+    it('detaches the content before touching the flag pipeline', async () => {
+      const d = deps(undefined, flaggedAgg);
+      const result = await applyModerationVerdict(csam, d);
+
+      expect(d.detachContent).toHaveBeenCalledWith({
+        itemType: 'proposal',
+        itemId: 'p1',
+        reason: 'Checkstep decision: act',
+        externalRecordId: 'ext-9',
+      });
+      // The flag pipeline still runs so the ordinary hide + notify happens.
+      expect(d.createFlag).toHaveBeenCalled();
+      expect(d.emitFlagged).toHaveBeenCalled();
+      expect(result.action).toBe('created');
+      expect(result.detached).toBe(true);
+    });
+
+    it('detaches even when an already-flagged item receives a duplicate CSAM verdict', async () => {
+      const d = deps(flagRow({ id: 'flag-1', status: 'flagged' }), flaggedAgg);
+      const result = await applyModerationVerdict(csam, d);
+
+      // Duplicate flag decision is a noop, but the detach still fires so the
+      // idempotent-detach service can settle the timestamp exactly once.
+      expect(d.detachContent).toHaveBeenCalled();
+      expect(result.action).toBe('noop');
+      expect(result.detached).toBe(true);
+    });
+
+    it('does not detach when the aggregate has nothing to record (forged ref, superseded round)', async () => {
+      const d = deps(undefined, null);
+      const result = await applyModerationVerdict(csam, d);
+
+      expect(d.detachContent).not.toHaveBeenCalled();
+      expect(result.action).toBe('noop');
+      expect(result.detached).toBe(false);
+    });
   });
 });

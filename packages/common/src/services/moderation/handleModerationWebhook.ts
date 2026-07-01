@@ -31,11 +31,10 @@ export type ModerationWebhookResult = {
 };
 
 /**
- * Verifies, parses, and applies an inbound provider webhook. Two gates: the
- * shared secret we put in the callback URL (all vendors), and the vendor's own
- * webhook signature when it documents one (`provider.verifyWebhook` —
- * Checkstep and Lasso sign; Hive doesn't). Returns an HTTP status for the
- * route to echo; never throws on bad input.
+ * Verifies, parses, and applies an inbound Checkstep webhook. Two gates: the
+ * shared secret we put in the callback URL, and Checkstep's own
+ * `x-auth-signature` (via `provider.verifyWebhook`). Returns an HTTP status
+ * for the route to echo; never throws on bad input.
  *
  *  - secret missing/mismatched     → 401 (nothing parsed, DB untouched)
  *  - vendor signature invalid      → 401
@@ -75,8 +74,9 @@ export const handleModerationWebhook = async (
     return { status: 400 };
   }
 
-  // A delivery can carry zero verdicts (e.g. Lasso's webhook also delivers
-  // tag/strike/list actions): acknowledge it so the vendor doesn't retry.
+  // A delivery can carry zero verdicts (e.g. Checkstep's non-decision webhook
+  // types — author-decision, incident-closed, analysed-content): acknowledge
+  // it so the vendor doesn't retry.
   for (const verdict of verdicts) {
     await deps.applyVerdict(verdict);
   }

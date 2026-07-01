@@ -1,4 +1,15 @@
-import { SQL, and, db, eq, ilike, inArray, ne, or, sql } from '@op/db/client';
+import {
+  SQL,
+  and,
+  db,
+  eq,
+  ilike,
+  inArray,
+  isNull,
+  ne,
+  or,
+  sql,
+} from '@op/db/client';
 import {
   ProposalStatus,
   Visibility,
@@ -144,7 +155,13 @@ const buildBaseConditions = (
 
   // processInstanceId is always present, so the array is non-empty and the
   // final `and(...)` is guaranteed to return a SQL value.
-  const conditions: SQL[] = [eq(t.processInstanceId, processInstanceId)];
+  const conditions: SQL[] = [
+    eq(t.processInstanceId, processInstanceId),
+    // Moderation-detached (CSAM) proposals are invisible to everyone,
+    // including admins and even trusted background contexts. Applied in the
+    // base conditions so every branch of the query builder inherits it.
+    isNull(t.moderationDetachedAt),
+  ];
 
   if (submittedByProfileId) {
     conditions.push(eq(t.submittedByProfileId, submittedByProfileId));
