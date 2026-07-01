@@ -118,6 +118,90 @@ describe('createCheckstepProvider', () => {
     expect(verdict?.scores?.hate).toBeGreaterThan(0);
   });
 
+  it('parseWebhook honours a caller-supplied policyMap when scoring violations', () => {
+    // Simulate a Checkstep account whose violence policy is `VLC` (their own
+    // example code) rather than the adapter default `VIO`. The score must
+    // still land under `violence`, not fall through to `other`.
+    const [verdict] = createCheckstepProvider({
+      apiKey: 'k',
+      policyMap: { VLC: 'violence' },
+    }).parseWebhook!({
+      rawBody: JSON.stringify({
+        webhook_type: 'decision',
+        decision: 'act',
+        content: {
+          id: `post:44444444-4444-4444-8444-444444444444:${ROUND_ID}`,
+          type: 'comment',
+        },
+        violations: [{ policy: 'VLC', severity: 'high' }],
+      }),
+      headers: {},
+    });
+
+    expect(verdict?.scores?.violence).toBeGreaterThan(0);
+    // Nothing leaks into the `other` bucket when the caller's map covers it.
+    expect(verdict?.scores?.other).toBeUndefined();
+  });
+
+  it('parseWebhook honours a caller-supplied csamPolicies list', () => {
+    // A deployment whose CSAM policy is named `CSE` (not one of the adapter
+    // defaults) still fires the detach path when the config names it. Also
+    // map `CSE` in the policyMap so the score attribution stays under `csam`
+    // instead of falling through to `other` and firing the unknown-code warn.
+    const [verdict] = createCheckstepProvider({
+      apiKey: 'k',
+      policyMap: { CSE: 'csam' },
+      csamPolicies: ['CSE'],
+    }).parseWebhook!({
+      rawBody: JSON.stringify({
+        webhook_type: 'decision',
+        decision: 'act',
+        content: {
+          id: `proposal:33333333-3333-4333-8333-333333333333:${ROUND_ID}`,
+          type: 'comment',
+        },
+        violations: [{ policy: 'CSE', severity: 'high' }],
+      }),
+      headers: {},
+    });
+
+    expect(verdict?.verdict).toBe('csam');
+  });
+
+  it('parseWebhook warns once (and falls through to `other`) when a policy code is unknown', () => {
+    // Log-once alert on Checkstep taxonomy drift: an unknown code still
+    // scores as `other` (so the flag pipeline runs), but ops sees a warning
+    // so the map can be updated before scoring goes stale.
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const provider = createCheckstepProvider({
+      apiKey: 'k',
+      // Force the adapter to see `MYSTERY_CODE_ABC123` as unknown.
+      policyMap: { HTE: 'hate' },
+    });
+
+    const rawBody = JSON.stringify({
+      webhook_type: 'decision',
+      decision: 'act',
+      content: {
+        id: `post:44444444-4444-4444-8444-444444444444:${ROUND_ID}`,
+        type: 'comment',
+      },
+      violations: [{ policy: 'MYSTERY_CODE_ABC123', severity: 'medium' }],
+    });
+
+    const [first] = provider.parseWebhook!({ rawBody, headers: {} });
+    const [second] = provider.parseWebhook!({ rawBody, headers: {} });
+
+    expect(first?.scores?.other).toBeGreaterThan(0);
+    expect(second?.scores?.other).toBeGreaterThan(0);
+    // Same unknown code twice → one warning, not two.
+    const unknownWarnings = warnSpy.mock.calls.filter((call) =>
+      String(call[0]).includes('MYSTERY_CODE_ABC123'),
+    );
+    expect(unknownWarnings.length).toBe(1);
+    warnSpy.mockRestore();
+  });
+
   it('parseWebhook escalates a CSAM violation to a `csam` verdict (even on the same "act" decision)', () => {
     const contentId = `proposal:33333333-3333-4333-8333-333333333333:${ROUND_ID}`;
     const [verdict] = createCheckstepProvider({ apiKey: 'k' }).parseWebhook!({

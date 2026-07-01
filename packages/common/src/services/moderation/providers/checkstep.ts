@@ -95,8 +95,14 @@ const verifyCheckstepWebhook = (
   return true;
 };
 
-// Checkstep policy codes mapped onto our categories; anything unmapped is `other`.
-const POLICY_MAP: Record<string, ModerationCategory> = {
+// Default Checkstep policy → category map. Checkstep policies are configured
+// PER-ACCOUNT (docs.checkstep.com/glossary — "Policies reflect your Trust and
+// Safety guidelines for your community"), so the correct codes for a given
+// deployment can drift from this list. Override the map via the factory's
+// `policyMap` option (wired to the `MODERATION_POLICY_MAP` env var in
+// `provider.ts`); unmatched codes fall through to `other` and log a warning
+// so taxonomy drift surfaces immediately.
+export const DEFAULT_POLICY_MAP: Record<string, ModerationCategory> = {
   HTE: 'hate',
   VIO: 'violence',
   SEX: 'sexual',
@@ -107,10 +113,12 @@ const POLICY_MAP: Record<string, ModerationCategory> = {
   CSA: 'csam',
 };
 
-// Checkstep policy codes that indicate CSAM — any violation with one of these
-// codes turns the verdict into `csam` rather than the ordinary `flagged`, so
-// the downstream pipeline can trigger the mandatory-detach path.
-const CSAM_POLICIES: ReadonlySet<string> = new Set(['CSAM', 'CSEA', 'CSA']);
+// Default Checkstep policy codes that indicate CSAM. Same account-level
+// caveat as the map above — override via `csamPolicies` (env
+// `MODERATION_CSAM_POLICIES`). Any violation carrying one of these codes
+// escalates the verdict from `flagged` to `csam`, which fires the
+// mandatory-detach path downstream.
+export const DEFAULT_CSAM_POLICIES: readonly string[] = ['CSAM', 'CSEA', 'CSA'];
 
 // Checkstep severity buckets mapped onto our 0-1 scale.
 const SEVERITY_SCORE: Record<string, number> = {
@@ -208,16 +216,36 @@ const CLEARING_DECISIONS: readonly string[] = [
   'clear',
 ];
 
+// Per-process memo so the same drift-warning doesn't spam the log for every
+// downstream verdict — one unknown code fires once per lifetime.
+const warnedUnknownPolicies = new Set<string>();
+
 const scoresFromViolations = (
   violations: CheckstepViolation[] | undefined,
+  policyMap: Record<string, ModerationCategory>,
 ): ModerationScores => {
   if (!Array.isArray(violations)) {
     return {};
   }
   const scores: ModerationScores = {};
   for (const violation of violations) {
-    const category: ModerationCategory =
-      (violation.policy ? POLICY_MAP[violation.policy] : undefined) ?? 'other';
+    const rawPolicy = violation.policy ?? undefined;
+    let category: ModerationCategory = 'other';
+    if (rawPolicy) {
+      const mapped = policyMap[rawPolicy];
+      if (mapped) {
+        category = mapped;
+      } else if (!warnedUnknownPolicies.has(rawPolicy)) {
+        // Log-once alert on Checkstep taxonomy drift: an unknown policy code
+        // still falls through to `other` (so the flag pipeline runs), but ops
+        // is notified so the map can be updated in config before scoring goes
+        // stale on a whole class of violations.
+        warnedUnknownPolicies.add(rawPolicy);
+        console.warn(
+          `[moderation] unknown Checkstep policy code "${rawPolicy}" — extend MODERATION_POLICY_MAP to categorise it`,
+        );
+      }
+    }
     const score = violation.severity
       ? (SEVERITY_SCORE[violation.severity] ?? 0.5)
       : 0.5;
@@ -230,123 +258,140 @@ const scoresFromViolations = (
  * Checkstep moderation adapter. A platform vendor with policy-based violations,
  * a dashboard, and native appeals — implements `submitForReview` for the async
  * path. Key/URL never leak in errors.
+ *
+ * `policyMap` / `csamPolicies` are account-scoped (Checkstep policies are
+ * configured per-account, not baked into the platform), so the caller wires
+ * them from env / config. When omitted, the defaults above act as a
+ * reasonable seed until the deployment's real taxonomy is known.
  */
 export const createCheckstepProvider = ({
   apiKey,
   apiUrl = DEFAULT_API_URL,
   webhookSigningKey,
+  policyMap = DEFAULT_POLICY_MAP,
+  csamPolicies = DEFAULT_CSAM_POLICIES,
 }: {
   apiKey: string;
   apiUrl?: string;
   /** Platform signing key from Checkstep settings; when set, inbound webhooks
    *  must carry a valid `x-auth-signature`. */
   webhookSigningKey?: string;
-}): ModerationProvider => ({
-  ...(webhookSigningKey
-    ? {
-        verifyWebhook: (input: ModerationWebhookInput) =>
-          verifyCheckstepWebhook(input, webhookSigningKey),
+  /** Checkstep policy code → our category. Defaults to `DEFAULT_POLICY_MAP`. */
+  policyMap?: Record<string, ModerationCategory>;
+  /** Policy codes that escalate a verdict to `csam`. Defaults to
+   *  `DEFAULT_CSAM_POLICIES`. */
+  csamPolicies?: readonly string[];
+}): ModerationProvider => {
+  const csamPolicySet: ReadonlySet<string> = new Set(csamPolicies);
+  return {
+    ...(webhookSigningKey
+      ? {
+          verifyWebhook: (input: ModerationWebhookInput) =>
+            verifyCheckstepWebhook(input, webhookSigningKey),
+        }
+      : {}),
+
+    // Checkstep takes one combined task (text + media fields), so it's a
+    // single ref — unless there's nothing to review (no text, no media, e.g. a
+    // `user` flag), in which case no task is planned and the flag stays pending
+    // for manual handling rather than being auto-cleared by an empty submission.
+    planReviewRefs: ({ itemType, itemId, roundId, content, media }) =>
+      content.trim() || (media?.length ?? 0) > 0
+        ? [encodeContentRef(itemType, itemId, roundId)]
+        : [],
+
+    submitForReview: async ({
+      itemType,
+      itemId,
+      roundId,
+      content,
+      media,
+      callbackUrl,
+    }) => {
+      const contentId = encodeContentRef(itemType, itemId, roundId);
+      const result = await post(
+        `${apiUrl}/content`,
+        apiKey,
+        contentBody(contentId, content, media, callbackUrl),
+      );
+      const reference: ModerationProviderReference = {
+        providerRecordId: result.id ?? contentId,
+        submittedRefs: [contentId],
+      };
+      return reference;
+    },
+
+    // One verdict per callback (one combined task per submission). Checkstep
+    // sends four documented webhook_type values; only `decision` carries a
+    // content verdict for us — the other kinds (author-decision, incident-closed,
+    // analysed-content) are acknowledged without action.
+    parseWebhook: ({
+      rawBody,
+    }: ModerationWebhookInput): ModerationVerdict[] => {
+      const payload = checkstepWebhookSchema.parse(JSON.parse(rawBody));
+      if (payload.webhook_type !== 'decision') {
+        return [];
       }
-    : {}),
+      const contentId = payload.content?.id;
+      if (!contentId) {
+        return [];
+      }
+      // A delivery for content not ingested through this integration (dashboard
+      // test payloads, sync-gate items under a bare uuid, pre-deploy content)
+      // carries an id that isn't our ref — skip it and acknowledge with 200
+      // rather than throwing into a 400 + retries.
+      let ref;
+      try {
+        ref = decodeContentRef(contentId);
+      } catch {
+        return [];
+      }
+      // CSAM is decided BEFORE the decision-parse gate: even an ack/interim
+      // callback with no recognized top-level decision still fires the detach
+      // path if the violations name a CSAM policy. Any presence of CSAM in the
+      // violations wins over both `flag` and `clear`.
+      const isCsam = (payload.violations ?? []).some(
+        (v) => v.policy != null && csamPolicySet.has(v.policy),
+      );
 
-  // Checkstep takes one combined task (text + media fields), so it's a
-  // single ref — unless there's nothing to review (no text, no media, e.g. a
-  // `user` flag), in which case no task is planned and the flag stays pending
-  // for manual handling rather than being auto-cleared by an empty submission.
-  planReviewRefs: ({ itemType, itemId, roundId, content, media }) =>
-    content.trim() || (media?.length ?? 0) > 0
-      ? [encodeContentRef(itemType, itemId, roundId)]
-      : [],
-
-  submitForReview: async ({
-    itemType,
-    itemId,
-    roundId,
-    content,
-    media,
-    callbackUrl,
-  }) => {
-    const contentId = encodeContentRef(itemType, itemId, roundId);
-    const result = await post(
-      `${apiUrl}/content`,
-      apiKey,
-      contentBody(contentId, content, media, callbackUrl),
-    );
-    const reference: ModerationProviderReference = {
-      providerRecordId: result.id ?? contentId,
-      submittedRefs: [contentId],
-    };
-    return reference;
-  },
-
-  // One verdict per callback (one combined task per submission). Checkstep
-  // sends four documented webhook_type values; only `decision` carries a
-  // content verdict for us — the other kinds (author-decision, incident-closed,
-  // analysed-content) are acknowledged without action.
-  parseWebhook: ({ rawBody }: ModerationWebhookInput): ModerationVerdict[] => {
-    const payload = checkstepWebhookSchema.parse(JSON.parse(rawBody));
-    if (payload.webhook_type !== 'decision') {
-      return [];
-    }
-    const contentId = payload.content?.id;
-    if (!contentId) {
-      return [];
-    }
-    // A delivery for content not ingested through this integration (dashboard
-    // test payloads, sync-gate items under a bare uuid, pre-deploy content)
-    // carries an id that isn't our ref — skip it and acknowledge with 200
-    // rather than throwing into a 400 + retries.
-    let ref;
-    try {
-      ref = decodeContentRef(contentId);
-    } catch {
-      return [];
-    }
-    // CSAM is decided BEFORE the decision-parse gate: even an ack/interim
-    // callback with no recognized top-level decision still fires the detach
-    // path if the violations name a CSAM policy. Any presence of CSAM in the
-    // violations wins over both `flag` and `clear`.
-    const isCsam = (payload.violations ?? []).some(
-      (v) => v.policy != null && CSAM_POLICIES.has(v.policy),
-    );
-
-    const flagged = payload.decision
-      ? FLAGGING_DECISIONS.includes(payload.decision)
-      : false;
-    const cleared = payload.decision
-      ? CLEARING_DECISIONS.includes(payload.decision)
-      : false;
-    // Neither CSAM nor a recognized decision (unknown value, or a
-    // decision-less ack/interim callback with no CSAM violation) → not a
-    // verdict; emit nothing rather than defaulting to clear and dismissing
-    // an open flag.
-    if (!isCsam && !flagged && !cleared) {
-      return [];
-    }
-    const verdict: ModerationVerdict['verdict'] = isCsam
-      ? 'csam'
-      : flagged
-        ? 'flagged'
-        : 'clear';
-    // A `csam` or `flagged` verdict carries evidence; a plain `clear` doesn't.
-    // CSAM without a flagging decision still surfaces the CSAM reason so ops
-    // logs the exact violation instead of an empty explanation.
-    const carriesEvidence = isCsam || flagged;
-    return [
-      {
-        itemType: ref.itemType,
-        itemId: ref.itemId,
-        roundId: ref.roundId,
-        mediaId: ref.mediaId,
-        verdict,
-        externalRecordId: contentId,
-        reason: carriesEvidence
-          ? `Checkstep ${isCsam ? 'CSAM' : 'decision'}: ${payload.decision ?? '(no decision)'}`
-          : undefined,
-        scores: carriesEvidence
-          ? scoresFromViolations(payload.violations ?? undefined)
-          : undefined,
-      },
-    ];
-  },
-});
+      const flagged = payload.decision
+        ? FLAGGING_DECISIONS.includes(payload.decision)
+        : false;
+      const cleared = payload.decision
+        ? CLEARING_DECISIONS.includes(payload.decision)
+        : false;
+      // Neither CSAM nor a recognized decision (unknown value, or a
+      // decision-less ack/interim callback with no CSAM violation) → not a
+      // verdict; emit nothing rather than defaulting to clear and dismissing
+      // an open flag.
+      if (!isCsam && !flagged && !cleared) {
+        return [];
+      }
+      const verdict: ModerationVerdict['verdict'] = isCsam
+        ? 'csam'
+        : flagged
+          ? 'flagged'
+          : 'clear';
+      // A `csam` or `flagged` verdict carries evidence; a plain `clear` doesn't.
+      // CSAM without a flagging decision still surfaces the CSAM reason so ops
+      // logs the exact violation instead of an empty explanation.
+      const carriesEvidence = isCsam || flagged;
+      return [
+        {
+          itemType: ref.itemType,
+          itemId: ref.itemId,
+          roundId: ref.roundId,
+          mediaId: ref.mediaId,
+          verdict,
+          externalRecordId: contentId,
+          reason: carriesEvidence
+            ? `Checkstep ${isCsam ? 'CSAM' : 'decision'}: ${payload.decision ?? '(no decision)'}`
+            : undefined,
+          scores: carriesEvidence
+            ? scoresFromViolations(payload.violations ?? undefined, policyMap)
+            : undefined,
+        },
+      ];
+    },
+  };
+};

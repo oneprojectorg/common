@@ -3,7 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getModerationProvider } from './provider';
 
 // Snapshot/restore the env keys the registry reads.
-const ENV_KEYS = ['MODERATION_PROVIDER', 'MODERATION_API_KEY'];
+const ENV_KEYS = [
+  'MODERATION_PROVIDER',
+  'MODERATION_API_KEY',
+  'MODERATION_POLICY_MAP',
+  'MODERATION_CSAM_POLICIES',
+];
 let saved: Record<string, string | undefined>;
 
 beforeEach(() => {
@@ -42,5 +47,23 @@ describe('getModerationProvider', () => {
     process.env.MODERATION_PROVIDER = 'bogus';
     process.env.MODERATION_API_KEY = 'k';
     expect(() => getModerationProvider()).toThrow(/bogus/);
+  });
+
+  it('throws on an invalid MODERATION_POLICY_MAP (fails loudly at startup)', () => {
+    process.env.MODERATION_API_KEY = 'k';
+    // Bad category value — not one of the seven ModerationCategory members.
+    process.env.MODERATION_POLICY_MAP = JSON.stringify({ HTE: 'not-a-cat' });
+    expect(() => getModerationProvider()).toThrow(/MODERATION_POLICY_MAP/);
+  });
+
+  it('accepts a well-formed MODERATION_POLICY_MAP + MODERATION_CSAM_POLICIES', () => {
+    process.env.MODERATION_API_KEY = 'k';
+    process.env.MODERATION_POLICY_MAP = JSON.stringify({
+      VLC: 'violence',
+      CSE: 'csam',
+    });
+    process.env.MODERATION_CSAM_POLICIES = 'CSE, CHILD_ABUSE';
+    // Wired through to the factory without throwing.
+    expect(getModerationProvider()).not.toBeNull();
   });
 });
