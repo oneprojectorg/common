@@ -1,8 +1,9 @@
 import { z } from 'zod';
 
+import { DEFAULT_UPLOAD_SIZE_LIMIT } from '../../utils/storage';
 import { zodUrlRefine } from '../../utils/validation';
 
-export const MAX_RESOURCE_FILE_SIZE = 25 * 1024 * 1024;
+export const MAX_RESOURCE_FILE_SIZE = DEFAULT_UPLOAD_SIZE_LIMIT;
 
 // Title/description length caps. Mirrored by zod `.max()` on every
 // create/update procedure input and by client `maxLength` on the form

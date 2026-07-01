@@ -3,25 +3,20 @@
 // `signProposalAttachmentUploadUrl` (which signs a write URL) and
 // `uploadProposalAttachment` (which records the upload).
 
+import { DEFAULT_UPLOAD_SIZE_LIMIT } from '../../utils/storage';
+
 export const PROPOSAL_ATTACHMENT_BUCKET = 'assets';
 
 export const proposalAttachmentPathPrefix = (profileId: string) =>
   `profile/${profileId}/proposals/`;
 
-// File names are user-supplied; sanitize to ASCII before placing in the
-// storage key. Matches the conservative ruleset used by the resources
-// upload flow.
-export const sanitizeProposalAttachmentFileName = (raw: string): string => {
-  const base = raw.split(/[/\\]/).pop() ?? raw;
-  return base.replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 255);
-};
+export const MAX_PROPOSAL_ATTACHMENT_FILE_SIZE = DEFAULT_UPLOAD_SIZE_LIMIT;
 
-export const MAX_PROPOSAL_ATTACHMENT_FILE_SIZE = 25 * 1024 * 1024;
-
-// Image MIME types accepted on proposal attachments. Both the client picker
-// and the server record endpoint pull from this list so the two layers
-// can't drift — and so iOS Safari's auto-conversion from HEIC to JPEG is
-// the path users hit, not "unsupported type".
+// Accepted MIME types for proposal attachments. Overlaps with (but diverges
+// from) `ALLOWED_RESOURCE_MIME_TYPES` — proposals allow `video/mp4` while
+// resources allow `application/…presentationml.presentation`. Kept as a
+// per-feature list rather than a shared base + extras so the full accepted
+// set is readable at a glance.
 export const ALLOWED_PROPOSAL_ATTACHMENT_MIME_TYPES = [
   'image/png',
   'image/jpeg',

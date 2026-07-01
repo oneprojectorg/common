@@ -48,7 +48,9 @@ describe.concurrent('signProposalAttachmentUploadUrl', () => {
 
     expect(result.signedUrl).toMatch(/^https?:\/\//);
     expect(result.token).toBeTruthy();
-    expect(result.storagePath).toMatch(/\/proposals\/\d+_photo\.jpg$/);
+    expect(result.storagePath).toMatch(
+      /\/proposals\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_photo\.jpg$/,
+    );
   });
 
   it('rejects a user without proposal permissions', async ({

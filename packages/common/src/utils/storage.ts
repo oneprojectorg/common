@@ -28,3 +28,21 @@ export const getStorageObjectMimeType = (metadata: unknown): string | null => {
   }
   return null;
 };
+
+// Default per-feature upload size cap. Individual features may lower this
+// (e.g. avatars) or raise it if a business need justifies it, but sharing
+// the default keeps unrelated features from silently drifting apart at
+// 25MB vs 24MB etc.
+export const DEFAULT_UPLOAD_SIZE_LIMIT = 25 * 1024 * 1024;
+
+// Sanitize a user-supplied filename before placing it in a storage key:
+// drop any directory portion, then collapse anything outside the
+// conservative `[A-Za-z0-9._-]` set to underscores and cap the length.
+// Pure ASCII / no external library because the two-line rule here is
+// stricter than what `sanitize-filename` / `filenamify` enforce
+// (Windows-illegal characters only), and we prefer known behaviour over
+// a dep whose ruleset can shift under us.
+export const sanitizeStorageFileName = (raw: string): string => {
+  const base = raw.split(/[/\\]/).pop() ?? raw;
+  return base.replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 255);
+};

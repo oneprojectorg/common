@@ -2,6 +2,7 @@ import { cache, invalidate } from '@op/cache';
 import { createSBServiceClient } from '@op/supabase/server';
 
 import { CommonError } from '../../utils/error';
+import { sanitizeStorageFileName } from '../../utils/storage';
 import { STORAGE_BUCKET, resourcePathPrefix } from './constants';
 // Cache 10 min so list views don't fan out into N sign requests; sign for
 // 15 min so cached tokens always have 5 min of headroom.
@@ -16,11 +17,6 @@ const supabase = () => {
   return cachedClient;
 };
 
-const sanitizeFileName = (raw: string): string => {
-  const base = raw.split(/[/\\]/).pop() ?? raw;
-  return base.replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 255);
-};
-
 export type ResourceUploadUrl = {
   storagePath: string;
   signedUrl: string;
@@ -31,7 +27,7 @@ export const signResourceUploadUrl = async (input: {
   profileId: string;
   fileName: string;
 }): Promise<ResourceUploadUrl> => {
-  const sanitizedFileName = sanitizeFileName(input.fileName);
+  const sanitizedFileName = sanitizeStorageFileName(input.fileName);
   const storagePath = `${resourcePathPrefix(input.profileId)}${Date.now()}_${sanitizedFileName}`;
 
   const { data, error } = await supabase()

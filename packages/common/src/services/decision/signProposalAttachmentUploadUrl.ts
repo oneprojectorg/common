@@ -2,14 +2,15 @@ import { db } from '@op/db/client';
 import type { User } from '@op/supabase/lib';
 import { createSBServiceClient } from '@op/supabase/server';
 import { permission } from 'access-zones';
+import { randomUUID } from 'node:crypto';
 
 import { CommonError } from '../../utils';
+import { sanitizeStorageFileName } from '../../utils/storage';
 import { getCurrentProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
 import {
   PROPOSAL_ATTACHMENT_BUCKET,
   proposalAttachmentPathPrefix,
-  sanitizeProposalAttachmentFileName,
 } from './proposalAttachmentStorage';
 
 export interface SignProposalAttachmentUploadUrlInput {
@@ -55,8 +56,12 @@ export async function signProposalAttachmentUploadUrl({
     permissions: { profile: permission.UPDATE },
   });
 
-  const sanitized = sanitizeProposalAttachmentFileName(input.fileName);
-  const storagePath = `${proposalAttachmentPathPrefix(profileId)}${Date.now()}_${sanitized}`;
+  // UUID (not `Date.now()`) so two concurrent uploads of the same filename
+  // within the same millisecond can't collide on the storage key. The path
+  // still starts with the caller's profile prefix, which the record step
+  // re-verifies to block cross-profile object hijacking.
+  const sanitized = sanitizeStorageFileName(input.fileName);
+  const storagePath = `${proposalAttachmentPathPrefix(profileId)}${randomUUID()}_${sanitized}`;
 
   const supabase = createSBServiceClient();
   const { data, error } = await supabase.storage
