@@ -42,17 +42,17 @@ export const TranslateBanner = ({
       unstyled
       className="group flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-full text-start text-primary-teal outline-hidden transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue disabled:cursor-not-allowed disabled:opacity-60"
     >
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-tealWhite">
+      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary-tealWhite">
         <LuLanguages className="size-4" />
       </span>
-      <span className="text-sm leading-5 whitespace-nowrap">{label}</span>
+      <span className="leading-5 whitespace-nowrap">{label}</span>
     </Button>
   );
 
   return (
     <div
       className={cn(
-        'flex w-full max-w-md items-center gap-2 rounded-2xl border border-neutral-gray1 bg-white px-3 py-2 shadow-light',
+        'flex w-full max-w-md items-center gap-2 rounded border border-neutral-gray1 bg-white px-4 py-3 shadow-light',
         className,
       )}
       {...props}
@@ -70,9 +70,9 @@ export const TranslateBanner = ({
         onPress={onDismiss}
         aria-label={dismissAriaLabel}
         unstyled
-        className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-neutral-gray4 outline-hidden transition-colors hover:bg-neutral-gray1 hover:text-neutral-charcoal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue"
+        className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-neutral-gray4 outline-hidden transition-colors hover:bg-neutral-gray1 hover:text-neutral-charcoal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data-blue"
       >
-        <LuX className="size-5" />
+        <LuX className="size-4" />
       </Button>
     </div>
   );
