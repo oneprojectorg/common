@@ -1364,5 +1364,7 @@
   "With an account": "Con una cuenta",
   "Edit your idea before review begins, get notified when it moves to the next phase, and like, comment, and follow other ideas.": "Edita tu idea antes de que comience la revisión, recibe notificaciones cuando pase a la siguiente fase, y dale me gusta, comenta y sigue otras ideas.",
   "Create account": "Crear cuenta",
-  "Collapsible": "Plegable"
+  "Collapsible": "Plegable",
+  "We couldn't load this proposal": "No pudimos cargar esta propuesta",
+  "Something went wrong on our end. Please check your connection and try again.": "Algo salió mal por nuestra parte. Por favor, verifica tu conexión y vuelve a intentarlo."
 }

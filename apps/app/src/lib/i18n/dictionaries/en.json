@@ -1369,5 +1369,7 @@
   "Already have an account? <login>Log in</login>": "Already have an account? <login>Log in</login>",
   "A code was sent to {email}. Type the code below to create your profile.": "A code was sent to {email}. Type the code below to create your profile.",
   "Create profile": "Create profile",
-  "I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>.": "I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>."
+  "I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>.": "I agree to the <tos>Terms of Service</tos> and <privacy>Privacy Policy</privacy>.",
+  "We couldn't load this proposal": "We couldn't load this proposal",
+  "Something went wrong on our end. Please check your connection and try again.": "Something went wrong on our end. Please check your connection and try again."
 }
