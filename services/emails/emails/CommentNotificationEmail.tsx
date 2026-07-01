@@ -50,12 +50,12 @@ export const CommentNotificationEmail = ({
       </Section>
 
       {contextName && (
-        <Text className="mb-0 text-xs text-neutral-gray4">
+        <Text className="mb-0 text-xs text-neutral-500">
           Context: {contextName}
         </Text>
       )}
       {postedIn && (
-        <Text className="mt-1 mb-0 text-xs text-neutral-gray4">
+        <Text className="mt-1 mb-0 text-xs text-neutral-500">
           Posted in: {postedIn}
         </Text>
       )}
