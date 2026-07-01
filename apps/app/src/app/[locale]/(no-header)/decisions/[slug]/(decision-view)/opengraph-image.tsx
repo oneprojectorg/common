@@ -29,7 +29,7 @@ const GRADIENT_CSS: Record<AvatarGradientClass, string> = {
   'bg-gradient':
     'radial-gradient(154% 99.31% at 0% 0%, #3ec300 0%, #0396a6 51.56%)',
   'bg-redTeal':
-    'radial-gradient(96.92% 140.1% at 72.02% 100%, #3F8D99 0%, #CC3D31 92%)',
+    'radial-gradient(96.92% 140.1% at 72.02% 100%, #3F8D99 0%, #CC3D31 92%, #fafbfb 100%)',
   'bg-blueGreen':
     'radial-gradient(91.78% 91.78% at 89.17% 4.38%, #5DB131 0%, #446FCC 100%)',
   'bg-orangePurple':
