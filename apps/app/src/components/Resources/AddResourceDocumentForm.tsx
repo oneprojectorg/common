@@ -2,11 +2,11 @@
 
 import { trpc } from '@op/api/client';
 import {
-  ALLOWED_RESOURCE_MIME_TYPES,
+  ALLOWED_UPLOAD_MIME_TYPES,
   MAX_RESOURCE_FILE_SIZE,
   RESOURCE_DESCRIPTION_MAX_LEN,
   RESOURCE_TITLE_MAX_LEN,
-  isAllowedResourceMimeType,
+  isAllowedUploadMimeType,
 } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
@@ -23,7 +23,7 @@ import { useTranslations } from '@/lib/i18n';
 import { useResourceUpload } from './hooks/useResourceUpload';
 import { getExtension, stripExtension, truncateName } from './utils';
 
-const ACCEPT_ATTR = ALLOWED_RESOURCE_MIME_TYPES.join(',');
+const ACCEPT_ATTR = ALLOWED_UPLOAD_MIME_TYPES.join(',');
 const MAX_SIZE_MB = MAX_RESOURCE_FILE_SIZE / 1024 / 1024;
 
 export const AddResourceDocumentForm = ({
@@ -69,7 +69,7 @@ export const AddResourceDocumentForm = ({
     // fail fast before we burn bandwidth uploading a file that will be
     // rejected.
     if (selected) {
-      if (!isAllowedResourceMimeType(selected.type)) {
+      if (!isAllowedUploadMimeType(selected.type)) {
         toast.error({ message: t('Unsupported file type') });
         return;
       }
@@ -116,7 +116,7 @@ export const AddResourceDocumentForm = ({
     }
     // handleFileSelected already gated on the allowlist; this guard is a
     // type-narrow so the tRPC input enum type is satisfied without a cast.
-    if (!isAllowedResourceMimeType(uploaded.mimeType)) {
+    if (!isAllowedUploadMimeType(uploaded.mimeType)) {
       return;
     }
     // Use the profileId returned by uploadFile (not the prop), so collection

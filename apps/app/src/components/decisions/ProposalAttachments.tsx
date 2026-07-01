@@ -2,9 +2,9 @@
 
 import { trpc } from '@op/api/client';
 import {
-  ALLOWED_PROPOSAL_ATTACHMENT_MIME_TYPES,
+  ALLOWED_UPLOAD_MIME_TYPES,
   MAX_PROPOSAL_ATTACHMENT_FILE_SIZE,
-  isAllowedProposalAttachmentMimeType,
+  isAllowedUploadMimeType,
 } from '@op/common/client';
 import { FileDropZone } from '@op/ui/FileDropZone';
 import { toast } from '@op/ui/Toast';
@@ -105,7 +105,7 @@ export function ProposalAttachments({
         continue;
       }
       const mimeType = file.type;
-      if (!isAllowedProposalAttachmentMimeType(mimeType)) {
+      if (!isAllowedUploadMimeType(mimeType)) {
         toast.error({
           message: t('Unsupported file type: {name}', { name: file.name }),
         });
@@ -193,7 +193,7 @@ export function ProposalAttachments({
       <ProposalAttachmentList files={displayFiles} onRemove={handleRemove} />
 
       <FileDropZone
-        acceptedFileTypes={[...ALLOWED_PROPOSAL_ATTACHMENT_MIME_TYPES]}
+        acceptedFileTypes={[...ALLOWED_UPLOAD_MIME_TYPES]}
         onSelectFiles={handleSelectFiles}
         label={t.rich('Drag a file here or <browse>browse</browse>', {
           browse: (chunks: ReactNode) => (

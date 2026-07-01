@@ -59,29 +59,3 @@ export const httpUrlSchema = z
 
 export const resourcePathPrefix = (profileId: string) =>
   `profile/${profileId}/resources/`;
-
-// text/csv and text/plain were removed: neither has a magic-byte signature
-// and Supabase serves the file with the Content-Type sent on PUT. We assert
-// the storage object's Content-Type is in this allowlist in createDocument,
-// but without content sniffing we can't catch a wrong-but-allowed MIME
-// (e.g. HTML PUT as application/pdf). Add types here only if (a) they have a
-// magic-byte signature we verify, or (b) we force Content-Disposition:
-// attachment so they're never rendered inline.
-export const ALLOWED_RESOURCE_MIME_TYPES = [
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-  'image/gif',
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-] as const;
-
-export type AllowedResourceMimeType =
-  (typeof ALLOWED_RESOURCE_MIME_TYPES)[number];
-
-export const isAllowedResourceMimeType = (
-  mimeType: string,
-): mimeType is AllowedResourceMimeType =>
-  (ALLOWED_RESOURCE_MIME_TYPES as readonly string[]).includes(mimeType);

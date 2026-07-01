@@ -104,28 +104,30 @@ export {
   isVotingEligible,
 } from './services/decision/votingEligibility';
 
+// Shared upload defaults (no server dependencies). The allowlist and size
+// cap apply to every user-uploaded storage object; per-feature modules
+// still expose their own bucket / path prefix / etc.
+export {
+  ALLOWED_UPLOAD_MIME_TYPES,
+  DEFAULT_UPLOAD_SIZE_LIMIT,
+  isAllowedUploadMimeType,
+  type AllowedUploadMimeType,
+} from './utils/storage';
+
 // Resource constants (no server dependencies)
 export {
-  ALLOWED_RESOURCE_MIME_TYPES,
   MAX_RESOURCE_FILE_SIZE,
   RESOURCE_DESCRIPTION_MAX_LEN,
   RESOURCE_TITLE_MAX_LEN,
   httpUrlSchema,
-  isAllowedResourceMimeType,
   resourcePathPrefix,
-  type AllowedResourceMimeType,
 } from './services/resources/constants';
 
 // Proposal attachment constants (no server dependencies). Surfaced here so
-// the proposal attachment UI ('use client') can import the same allowlist /
-// size cap the server enforces without dragging the full `@op/common` barrel
-// (and its server-only deps) into the client bundle.
-export {
-  ALLOWED_PROPOSAL_ATTACHMENT_MIME_TYPES,
-  MAX_PROPOSAL_ATTACHMENT_FILE_SIZE,
-  isAllowedProposalAttachmentMimeType,
-  type AllowedProposalAttachmentMimeType,
-} from './services/decision/proposalAttachmentStorage';
+// the proposal attachment UI ('use client') can import the same size cap
+// the server enforces without dragging the full `@op/common` barrel (and
+// its server-only deps) into the client bundle.
+export { MAX_PROPOSAL_ATTACHMENT_FILE_SIZE } from './services/decision/proposalAttachmentStorage';
 
 // Translation constants (no server dependencies)
 import { SUPPORTED_LOCALES } from './services/translation/locales';

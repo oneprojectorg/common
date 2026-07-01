@@ -1,4 +1,4 @@
-import type { AllowedProposalAttachmentMimeType } from '@op/common';
+import type { AllowedUploadMimeType } from '@op/common';
 import { Buffer } from 'node:buffer';
 
 import {
@@ -30,7 +30,7 @@ export const uploadProposalAttachmentForTest = async ({
   caller: AuthenticatedCaller;
   proposalId: string;
   fileName: string;
-  mimeType?: AllowedProposalAttachmentMimeType;
+  mimeType?: AllowedUploadMimeType;
   body?: Buffer;
 }) => {
   const signed = await caller.decision.signProposalAttachmentUploadUrl({

@@ -9,13 +9,13 @@ import {
 import {
   getStorageObjectMimeType,
   getStorageObjectSize,
+  isAllowedUploadMimeType,
 } from '../../utils/storage';
 import { getStorageObjectByPath } from '../../utils/storageObject';
 import { getIndividualProfileId } from '../access';
 import {
   MAX_RESOURCE_FILE_SIZE,
   STORAGE_BUCKET,
-  isAllowedResourceMimeType,
   resourcePathPrefix,
 } from './constants';
 import { getResourceById } from './getResourceById';
@@ -71,7 +71,7 @@ export const createDocumentResource = async (
   // (not the user's separate `mimeType` argument), and re-check the allowlist
   // here in case the client PUT with a Content-Type we don't accept.
   const storedMimeType = getStorageObjectMimeType(storageObject.metadata);
-  if (!storedMimeType || !isAllowedResourceMimeType(storedMimeType)) {
+  if (!storedMimeType || !isAllowedUploadMimeType(storedMimeType)) {
     throw new ValidationError('Uploaded file has an unsupported content type');
   }
   if (storedMimeType !== input.mimeType) {

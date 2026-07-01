@@ -7,6 +7,7 @@ import { CommonError, NotFoundError, ValidationError } from '../../utils';
 import {
   getStorageObjectMimeType,
   getStorageObjectSize,
+  isAllowedUploadMimeType,
 } from '../../utils/storage';
 import { getStorageObjectByPath } from '../../utils/storageObject';
 import { getCurrentProfileId } from '../access';
@@ -14,7 +15,6 @@ import { assertProfileAccess } from '../assert';
 import {
   MAX_PROPOSAL_ATTACHMENT_FILE_SIZE,
   PROPOSAL_ATTACHMENT_BUCKET,
-  isAllowedProposalAttachmentMimeType,
   proposalAttachmentPathPrefix,
 } from './proposalAttachmentStorage';
 
@@ -88,7 +88,7 @@ export async function uploadProposalAttachment({
   // (not the user's separate `mimeType` argument), and re-check the allowlist
   // here in case the client PUT with a Content-Type we don't accept.
   const storedMimeType = getStorageObjectMimeType(storageObject.metadata);
-  if (!storedMimeType || !isAllowedProposalAttachmentMimeType(storedMimeType)) {
+  if (!storedMimeType || !isAllowedUploadMimeType(storedMimeType)) {
     throw new ValidationError('Uploaded file has an unsupported content type');
   }
   if (storedMimeType !== mimeType) {

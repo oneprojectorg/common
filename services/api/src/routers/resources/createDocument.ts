@@ -1,5 +1,5 @@
 import {
-  ALLOWED_RESOURCE_MIME_TYPES,
+  ALLOWED_UPLOAD_MIME_TYPES,
   Channels,
   RESOURCE_DESCRIPTION_MAX_LEN,
   RESOURCE_TITLE_MAX_LEN,
@@ -12,7 +12,7 @@ import { z } from 'zod';
 import { resourceInCollectionEncoder } from '../../encoders/resources';
 import { networkAuthenticatedProcedure, router } from '../../trpcFactory';
 
-const allowedMimeSchema = z.enum(ALLOWED_RESOURCE_MIME_TYPES);
+const allowedMimeSchema = z.enum(ALLOWED_UPLOAD_MIME_TYPES);
 
 // The upload flow already knows the profile (storage is profile-keyed) and
 // optionally a target collection; pure-collection callers resolve the profile

@@ -3,7 +3,7 @@
 import { trpc } from '@op/api/client';
 import {
   RESOURCE_TITLE_MAX_LEN,
-  isAllowedResourceMimeType,
+  isAllowedUploadMimeType,
 } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
@@ -85,7 +85,7 @@ export const useResourceDrop = ({
           // upload() already surfaced the error toast (type/size/network).
           continue;
         }
-        if (!isAllowedResourceMimeType(uploaded.mimeType)) {
+        if (!isAllowedUploadMimeType(uploaded.mimeType)) {
           // upload() no longer narrows the mime type; the backend enforces the
           // allowlist, but guard here so the create input stays well-typed and
           // we fail fast with a clear message instead of a server rejection.

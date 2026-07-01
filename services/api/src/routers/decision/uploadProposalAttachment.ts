@@ -1,12 +1,12 @@
 import {
-  ALLOWED_PROPOSAL_ATTACHMENT_MIME_TYPES,
+  ALLOWED_UPLOAD_MIME_TYPES,
   uploadProposalAttachment as uploadProposalAttachmentService,
 } from '@op/common';
 import { z } from 'zod';
 
 import { authenticatedProcedure, router } from '../../trpcFactory';
 
-const allowedMimeSchema = z.enum(ALLOWED_PROPOSAL_ATTACHMENT_MIME_TYPES);
+const allowedMimeSchema = z.enum(ALLOWED_UPLOAD_MIME_TYPES);
 
 export const uploadProposalAttachment = router({
   uploadProposalAttachment: authenticatedProcedure({
