@@ -1368,7 +1368,7 @@
   "Collapsible": "Plegable",
   "Banner image": "Imagen del banner",
   "Upload banner image": "Subir imagen del banner",
-  "PNG or JPG · recommended 2400×800px · max 3MB": "PNG o JPG · recomendado 2400×800px · máx. 3 MB",
+  "PNG, JPG, WebP or GIF · recommended 2400×800px · max {size}MB": "PNG, JPG, WebP o GIF · recomendado 2400×800px · máx. {size} MB",
   "Choose file": "Elegir archivo",
   "The headline appears centered over a dark overlay. Avoid images with key subjects in the middle.": "El título aparece centrado sobre una capa oscura. Evita imágenes con elementos importantes en el centro.",
   "Edit banner": "Editar banner",

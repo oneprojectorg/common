@@ -1,7 +1,10 @@
 'use client';
 
 import { trpc } from '@op/api/client';
-import { sanitizeTiptapDoc } from '@op/common/client';
+import {
+  DEFAULT_UPLOAD_SIZE_LIMIT,
+  sanitizeTiptapDoc,
+} from '@op/common/client';
 import { BannerImageField } from '@op/ui/BannerImageField';
 import { RichTextEditor } from '@op/ui/RichTextEditor';
 import { Skeleton } from '@op/ui/Skeleton';
@@ -134,7 +137,10 @@ function OverviewSectionContent({
           fileName={fileName}
           fileSizeLabel={fileSizeLabel}
           title={t('Upload banner image')}
-          description={t('PNG or JPG · recommended 2400×800px · max 3MB')}
+          description={t(
+            'PNG, JPG, WebP or GIF · recommended 2400×800px · max {size}MB',
+            { size: Math.floor(DEFAULT_UPLOAD_SIZE_LIMIT / 1024 / 1024) },
+          )}
           helperText={t(
             'The headline appears centered over a dark overlay. Avoid images with key subjects in the middle.',
           )}

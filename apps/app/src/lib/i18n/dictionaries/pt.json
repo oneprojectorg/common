@@ -1368,7 +1368,7 @@
   "Collapsible": "Recolhível",
   "Banner image": "Imagem do banner",
   "Upload banner image": "Carregar imagem do banner",
-  "PNG or JPG · recommended 2400×800px · max 3MB": "PNG ou JPG · recomendado 2400×800px · máx. 3 MB",
+  "PNG, JPG, WebP or GIF · recommended 2400×800px · max {size}MB": "PNG, JPG, WebP ou GIF · recomendado 2400×800px · máx. {size} MB",
   "Choose file": "Escolher arquivo",
   "The headline appears centered over a dark overlay. Avoid images with key subjects in the middle.": "O título aparece centralizado sobre uma camada escura. Evite imagens com elementos importantes no centro.",
   "Edit banner": "Editar banner",

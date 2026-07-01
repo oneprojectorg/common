@@ -1371,7 +1371,7 @@
   "Collapsible": "সংকোচনযোগ্য",
   "Banner image": "ব্যানার ছবি",
   "Upload banner image": "ব্যানার ছবি আপলোড করুন",
-  "PNG or JPG · recommended 2400×800px · max 3MB": "PNG বা JPG · প্রস্তাবিত 2400×800px · সর্বোচ্চ 3MB",
+  "PNG, JPG, WebP or GIF · recommended 2400×800px · max {size}MB": "PNG, JPG, WebP বা GIF · প্রস্তাবিত 2400×800px · সর্বোচ্চ {size}MB",
   "Choose file": "ফাইল নির্বাচন করুন",
   "The headline appears centered over a dark overlay. Avoid images with key subjects in the middle.": "শিরোনামটি একটি গাঢ় ওভারলের উপরে কেন্দ্রে প্রদর্শিত হয়। মাঝখানে গুরুত্বপূর্ণ বিষয় আছে এমন ছবি এড়িয়ে চলুন।",
   "Edit banner": "ব্যানার সম্পাদনা করুন",

@@ -1368,7 +1368,7 @@
   "Collapsible": "Dépliable",
   "Banner image": "Image de bannière",
   "Upload banner image": "Téléverser une image de bannière",
-  "PNG or JPG · recommended 2400×800px · max 3MB": "PNG ou JPG · recommandé 2400×800px · max 3 Mo",
+  "PNG, JPG, WebP or GIF · recommended 2400×800px · max {size}MB": "PNG, JPG, WebP ou GIF · recommandé 2400×800px · max {size} Mo",
   "Choose file": "Choisir un fichier",
   "The headline appears centered over a dark overlay. Avoid images with key subjects in the middle.": "Le titre apparaît centré sur un fond sombre. Évitez les images dont les éléments importants sont au centre.",
   "Edit banner": "Modifier la bannière",

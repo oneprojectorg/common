@@ -3,22 +3,35 @@
 import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import {
-  ALLOWED_BACKGROUND_IMAGE_MIME_TYPES,
-  MAX_BACKGROUND_IMAGE_SIZE,
+  ALLOWED_UPLOAD_MIME_TYPES,
+  DEFAULT_UPLOAD_SIZE_LIMIT,
+  isAllowedUploadMimeType,
 } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
 import { useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
-// Storage paths look like `${instanceId}/overview/${Date.now()}_${name}`.
-// Recover the original display name (basename minus the timestamp prefix).
+// Human-readable list of accepted types for error copy, derived from the
+// shared allowlist (image subset) so it can't drift from what's enforced.
+const ACCEPTED_IMAGE_LABEL = ALLOWED_UPLOAD_MIME_TYPES.filter((type) =>
+  type.startsWith('image/'),
+)
+  .map((type) => type.split('/')[1]?.toUpperCase())
+  .join(', ');
+
+// Storage paths look like `${instanceId}/overview/${uuid}_${name}`. Recover the
+// original display name (basename minus the UUID prefix signStorageUploadUrl
+// prepends).
 const fileNameFromPath = (path?: string): string | undefined => {
   if (!path) {
     return undefined;
   }
   const base = path.split('/').pop() ?? path;
-  return base.replace(/^\d+_/, '');
+  return base.replace(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/i,
+    '',
+  );
 };
 
 const formatFileSize = (bytes: number): string => {
@@ -29,11 +42,14 @@ const formatFileSize = (bytes: number): string => {
 };
 
 /**
- * Shared upload/remove logic for the decision overview hero background image.
- * Used by the Process Builder Overview tab and the live overview's "Edit
- * banner" modal. The upload mutation persists the storage path into
- * `instanceData.overview.heroImage`; `onChange` lets the live page
- * refresh its RSC-fed hero after a change.
+ * Shared upload/remove logic for the decision overview hero image. Used by the
+ * Process Builder Overview tab and the live overview's "Edit banner" modal.
+ *
+ * Uploads use the signed-URL flow (sign → PUT the file binary straight to
+ * storage → record the path), so large photos never round-trip through the
+ * tRPC body. The record step persists the storage path into
+ * `instanceData.overview.heroImage`; `onChange` lets the live page refresh its
+ * RSC-fed hero after a change.
  */
 export function useOverviewHeroImage({
   instanceId,
@@ -54,57 +70,69 @@ export function useOverviewHeroImage({
   // Size is only known for files chosen this session — not recoverable from a
   // stored path on reload.
   const [fileSizeLabel, setFileSizeLabel] = useState<string | undefined>();
-  const uploadMutation =
-    trpc.decision.uploadOverviewBackgroundImage.useMutation();
+  const [isUploading, setIsUploading] = useState(false);
+  const signMutation =
+    trpc.decision.signOverviewHeroImageUploadUrl.useMutation();
+  const recordMutation = trpc.decision.updateOverviewHeroImage.useMutation();
   const updateInstance = trpc.decision.updateDecisionInstance.useMutation();
 
-  const upload = (file: File) => {
-    if (!ALLOWED_BACKGROUND_IMAGE_MIME_TYPES.includes(file.type)) {
+  const upload = async (file: File) => {
+    if (
+      !isAllowedUploadMimeType(file.type) ||
+      !file.type.startsWith('image/')
+    ) {
       toast.error({
         message: t('That file type is not supported. Accepted types: {types}', {
-          types: ALLOWED_BACKGROUND_IMAGE_MIME_TYPES.map(
-            (type) => type.split('/')[1],
-          ).join(', '),
+          types: ACCEPTED_IMAGE_LABEL,
         }),
       });
       return;
     }
-    if (file.size > MAX_BACKGROUND_IMAGE_SIZE) {
+    if (file.size > DEFAULT_UPLOAD_SIZE_LIMIT) {
       toast.error({
         message: t('File too large. Maximum size: {size}MB', {
-          size: (MAX_BACKGROUND_IMAGE_SIZE / 1024 / 1024).toFixed(2),
+          size: Math.floor(DEFAULT_UPLOAD_SIZE_LIMIT / 1024 / 1024),
         }),
       });
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64 = (e.target?.result as string)?.split(',')[1];
-      if (!base64) {
-        return;
+    // Optimistic local preview (object URL) while sign → PUT → record runs.
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+    setFileName(file.name);
+    setFileSizeLabel(formatFileSize(file.size));
+    setIsUploading(true);
+    try {
+      const signed = await signMutation.mutateAsync({
+        instanceId,
+        fileName: file.name,
+      });
+      const putRes = await fetch(signed.signedUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+      if (!putRes.ok) {
+        throw new Error('Upload failed');
       }
-      // Optimistic preview while the upload is in flight.
-      setPreviewUrl(`data:${file.type};base64,${base64}`);
-      setFileName(file.name);
-      setFileSizeLabel(formatFileSize(file.size));
-      try {
-        const res = await uploadMutation.mutateAsync({
-          instanceId,
-          file: base64,
-          fileName: file.name,
-          mimeType: file.type,
-        });
-        setPreviewUrl(res.url);
-        onChange?.();
-      } catch {
-        toast.error({ message: t('Something went wrong') });
-        setPreviewUrl(getPublicUrl(initialPath));
-        setFileName(fileNameFromPath(initialPath));
-        setFileSizeLabel(undefined);
-      }
-    };
-    reader.readAsDataURL(file);
+      await recordMutation.mutateAsync({
+        instanceId,
+        storagePath: signed.storagePath,
+        mimeType: file.type,
+      });
+      setPreviewUrl(getPublicUrl(signed.storagePath));
+      setFileName(fileNameFromPath(signed.storagePath));
+      onChange?.();
+    } catch {
+      toast.error({ message: t('Something went wrong') });
+      setPreviewUrl(getPublicUrl(initialPath));
+      setFileName(fileNameFromPath(initialPath));
+      setFileSizeLabel(undefined);
+    } finally {
+      setIsUploading(false);
+      URL.revokeObjectURL(objectUrl);
+    }
   };
 
   const remove = async () => {
@@ -128,8 +156,9 @@ export function useOverviewHeroImage({
     fileSizeLabel,
     upload,
     remove,
-    isUploading: uploadMutation.isPending,
+    isUploading,
     isRemoving: updateInstance.isPending,
-    uploadError: uploadMutation.error?.message,
+    uploadError:
+      signMutation.error?.message ?? recordMutation.error?.message ?? undefined,
   };
 }

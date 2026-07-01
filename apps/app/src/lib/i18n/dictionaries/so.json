@@ -1370,7 +1370,7 @@
   "Collapsible": "La laalaabi karo",
   "Banner image": "Sawirka banamka",
   "Upload banner image": "Soo gali sawirka banamka",
-  "PNG or JPG · recommended 2400×800px · max 3MB": "PNG ama JPG · lagu taliyay 2400×800px · ugu badnaan 3MB",
+  "PNG, JPG, WebP or GIF · recommended 2400×800px · max {size}MB": "PNG, JPG, WebP ama GIF · lagu taliyay 2400×800px · ugu badnaan {size}MB",
   "Choose file": "Dooro fayl",
   "The headline appears centered over a dark overlay. Avoid images with key subjects in the middle.": "Cinwaanku wuxuu ka muuqdaa bartamaha dusha daboolka madow. Ka fogow sawirrada walxaha muhiimka ah bartamaha ku leh.",
   "Edit banner": "Wax ka beddel banamka",

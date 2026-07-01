@@ -1368,7 +1368,7 @@
   "Collapsible": "قابل للطي",
   "Banner image": "صورة البانر",
   "Upload banner image": "تحميل صورة البانر",
-  "PNG or JPG · recommended 2400×800px · max 3MB": "PNG أو JPG · موصى به 2400×800 بكسل · بحد أقصى 3 ميجابايت",
+  "PNG, JPG, WebP or GIF · recommended 2400×800px · max {size}MB": "PNG أو JPG أو WebP أو GIF · موصى به 2400×800 بكسل · بحد أقصى {size} ميجابايت",
   "Choose file": "اختر ملفًا",
   "The headline appears centered over a dark overlay. Avoid images with key subjects in the middle.": "يظهر العنوان في المنتصف فوق طبقة داكنة. تجنّب الصور التي تحتوي على عناصر مهمة في المنتصف.",
   "Edit banner": "تعديل البانر",

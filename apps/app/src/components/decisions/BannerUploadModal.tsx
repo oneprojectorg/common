@@ -1,5 +1,6 @@
 'use client';
 
+import { DEFAULT_UPLOAD_SIZE_LIMIT } from '@op/common/client';
 import { BannerImageField } from '@op/ui/BannerImageField';
 import { Button } from '@op/ui/Button';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@op/ui/Modal';
@@ -52,7 +53,10 @@ export function BannerUploadModal({
           fileName={fileName}
           fileSizeLabel={fileSizeLabel}
           title={t('Upload banner image')}
-          description={t('PNG or JPG · recommended 2400×800px · max 3MB')}
+          description={t(
+            'PNG, JPG, WebP or GIF · recommended 2400×800px · max {size}MB',
+            { size: Math.floor(DEFAULT_UPLOAD_SIZE_LIMIT / 1024 / 1024) },
+          )}
           helperText={t(
             'The headline appears centered over a dark overlay. Avoid images with key subjects in the middle.',
           )}
