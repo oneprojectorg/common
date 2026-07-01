@@ -29,7 +29,6 @@ export const signResourceUploadUrl = (input: {
   fileName: string;
 }): Promise<ResourceUploadUrl> =>
   signStorageUploadUrl({
-    bucket: ASSETS_BUCKET,
     pathPrefix: resourcePathPrefix(input.profileId),
     fileName: input.fileName,
   });

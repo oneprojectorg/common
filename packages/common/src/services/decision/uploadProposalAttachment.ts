@@ -4,10 +4,7 @@ import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { CommonError } from '../../utils';
-import {
-  ASSETS_BUCKET,
-  assertUploadedStorageObject,
-} from '../../utils/storage';
+import { assertUploadedStorageObject } from '../../utils/storage';
 import { getStorageObjectByPath } from '../../utils/storageObject';
 import { getCurrentProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
@@ -54,7 +51,7 @@ export async function uploadProposalAttachment({
     db.query.proposals.findFirst({
       where: { id: proposalId },
     }),
-    getStorageObjectByPath({ bucketId: ASSETS_BUCKET, path: storagePath }),
+    getStorageObjectByPath({ path: storagePath }),
   ]);
 
   if (!proposal) {

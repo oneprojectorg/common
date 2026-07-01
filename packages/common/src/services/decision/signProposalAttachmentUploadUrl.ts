@@ -4,7 +4,6 @@ import { permission } from 'access-zones';
 
 import { CommonError } from '../../utils';
 import { signStorageUploadUrl } from '../../utils/signStorageUploadUrl';
-import { ASSETS_BUCKET } from '../../utils/storage';
 import { getCurrentProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
 import { proposalAttachmentPathPrefix } from './proposalAttachmentStorage';
@@ -53,7 +52,6 @@ export async function signProposalAttachmentUploadUrl({
   });
 
   return signStorageUploadUrl({
-    bucket: ASSETS_BUCKET,
     pathPrefix: proposalAttachmentPathPrefix(profileId),
     fileName: input.fileName,
   });

@@ -2,10 +2,7 @@ import { db } from '@op/db/client';
 import { attachments, resources } from '@op/db/schema';
 
 import { ConflictError } from '../../utils/error';
-import {
-  ASSETS_BUCKET,
-  assertUploadedStorageObject,
-} from '../../utils/storage';
+import { assertUploadedStorageObject } from '../../utils/storage';
 import { getStorageObjectByPath } from '../../utils/storageObject';
 import { getIndividualProfileId } from '../access';
 import { MAX_RESOURCE_FILE_SIZE, resourcePathPrefix } from './constants';
@@ -42,10 +39,7 @@ export const createDocumentResource = async (
         },
       }),
       getIndividualProfileId(input.authUserId),
-      getStorageObjectByPath({
-        bucketId: ASSETS_BUCKET,
-        path: input.storagePath,
-      }),
+      getStorageObjectByPath({ path: input.storagePath }),
     ]);
 
   const { storageObjectId, storedMimeType, fileSize } =
