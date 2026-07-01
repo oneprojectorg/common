@@ -28,7 +28,7 @@ export function FinalPhaseManualSelectionPage({
   const t = useTranslations();
 
   return (
-    <div className="min-h-full pt-8">
+    <div className="min-h-full pt-16">
       <div className="mx-auto flex max-w-5xl flex-col justify-center gap-4 px-4">
         <DecisionHero
           title={t('CONFIRM THE WINNING PROPOSALS')}

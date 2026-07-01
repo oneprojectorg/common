@@ -27,11 +27,14 @@ export function ReviewPage({
   decisionSlug,
   slug,
   decisionProfileId,
+  pinOffset,
 }: {
   instance: Instance;
   decisionSlug: string;
   slug: string;
   decisionProfileId?: string | null;
+  /** Sticky filter-bar pin offset, forwarded to ProposalsList. */
+  pinOffset?: number;
 }) {
   const phases = instance.instanceData?.phases ?? [];
   const currentPhaseId = instance.currentStateId;
@@ -60,7 +63,7 @@ export function ReviewPage({
 
   return (
     <div className="min-h-full">
-      <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 py-8">
+      <div className="mx-auto flex max-w-3xl flex-col items-center justify-center gap-4 px-4 pt-16 pb-8 md:pt-8">
         <DecisionHero
           title={
             isAdmin ? (
@@ -126,6 +129,7 @@ export function ReviewPage({
                   decisionProfileId={decisionProfileId}
                   permissions={instance.access}
                   currentPhase={currentPhase}
+                  pinOffset={pinOffset}
                 />
               )}
             </Suspense>

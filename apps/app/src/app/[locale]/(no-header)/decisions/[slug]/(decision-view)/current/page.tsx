@@ -8,7 +8,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
-import { CurrentPhaseView } from '@/components/decisions/CurrentPhaseView';
+import { DecisionStateRouter } from '@/components/decisions/DecisionStateRouter';
 import { DecisionContentSkeleton } from '@/components/skeletons/DecisionSkeleton';
 
 import { loadDecision } from '../loadDecision';
@@ -73,17 +73,14 @@ const CurrentPhasePage = async ({
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <div className="bg-neutral-offWhite pt-8 md:pt-0">
-        <Suspense fallback={<DecisionContentSkeleton />}>
-          <CurrentPhaseView
-            instanceId={instanceId}
-            ownerSlug={ownerSlug}
-            decisionSlug={slug}
-            decisionProfileId={decisionProfile.id}
-            isAdmin={decisionProfile.processInstance?.access?.admin}
-          />
-        </Suspense>
-      </div>
+      <Suspense fallback={<DecisionContentSkeleton />}>
+        <DecisionStateRouter
+          instanceId={instanceId}
+          slug={ownerSlug}
+          decisionSlug={slug}
+          decisionProfileId={decisionProfile.id}
+        />
+      </Suspense>
     </HydrationBoundary>
   );
 };
