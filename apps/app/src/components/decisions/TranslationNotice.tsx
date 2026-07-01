@@ -1,25 +1,39 @@
 'use client';
 
-import { Link } from '@op/ui/Link';
+import { Button } from '@op/ui/Button';
+import { cn } from '@op/ui/utils';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { Bullet } from '../Bullet';
+
+/**
+ * "Translated from {language} · View original" attribution shown above
+ * machine-translated content — the proposal view, the proposal list, and the
+ * decision overview all render this same notice.
+ */
 export const TranslationNotice = ({
   sourceLanguageName,
   onViewOriginal,
+  className,
 }: {
   sourceLanguageName: string;
   onViewOriginal: () => void;
+  className?: string;
 }) => {
   const t = useTranslations();
 
   return (
-    <p className="text-sm text-neutral-gray3">
-      {t('Translated from {language}', { language: sourceLanguageName })}{' '}
-      &middot;{' '}
-      <Link onPress={onViewOriginal} className="text-sm font-semibold">
+    <p className={cn('text-sm text-neutral-gray4', className)}>
+      {t('Translated from {language}', { language: sourceLanguageName })}
+      <Bullet />{' '}
+      <Button
+        variant="link"
+        onPress={onViewOriginal}
+        className="inline h-auto p-0 text-sm sm:text-sm"
+      >
         {t('View original')}
-      </Link>
+      </Button>
     </p>
   );
 };

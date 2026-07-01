@@ -12,7 +12,6 @@ import {
 } from '@op/common/client';
 import { AlertBanner } from '@op/ui/AlertBanner';
 import { Header1, Header3 } from '@op/ui/Header';
-import { Link } from '@op/ui/Link';
 import { LoadingSpinner } from '@op/ui/LoadingSpinner';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
 import type { ReactNode } from 'react';
@@ -33,6 +32,7 @@ import { DocumentNotAvailable } from './DocumentNotAvailable';
 import { ProposalAttachmentViewList } from './ProposalAttachmentViewList';
 import { ProposalContentRenderer } from './ProposalContentRenderer';
 import { ProposalHtmlContent } from './ProposalHtmlContent';
+import { TranslationNotice } from './TranslationNotice';
 import { resolveProposalSystemFields } from './proposalContentUtils';
 
 export type ProposalTranslation = {
@@ -139,18 +139,10 @@ export function ProposalPreview({
 
         {/* Translation attribution */}
         {translation && (
-          <p className="text-sm text-neutral-gray3">
-            {t('Translated from {language}', {
-              language: translation.sourceLanguageName,
-            })}{' '}
-            &middot;{' '}
-            <Link
-              onPress={translation.onViewOriginal}
-              className="text-sm font-semibold"
-            >
-              {t('View original')}
-            </Link>
-          </p>
+          <TranslationNotice
+            sourceLanguageName={translation.sourceLanguageName}
+            onViewOriginal={translation.onViewOriginal}
+          />
         )}
 
         <div className="space-y-6">
