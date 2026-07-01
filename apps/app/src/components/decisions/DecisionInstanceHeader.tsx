@@ -49,8 +49,10 @@ export const DecisionInstanceHeader = ({
   // anonymous accounts) — they have nowhere meaningful to go "back" to.
   const canInteract = userCanInteract(user);
 
+  // Fixed height (48/56px) keeps the header steady as the center toggle grows,
+  // and matches DecisionSidePanel's sm:top-12 md:top-14 so the panel meets it.
   return (
-    <header className="sticky top-0 z-30 grid grid-cols-[auto_1fr_auto] items-center border-b bg-white p-2 px-4 sm:grid-cols-3 md:px-6 md:py-3">
+    <header className="sticky top-0 z-30 grid h-12 grid-cols-[auto_1fr_auto] items-center border-b bg-white px-4 sm:grid-cols-3 md:h-14 md:px-6">
       <div className="flex min-w-0 items-center gap-3">
         {canInteract && (
           <Link

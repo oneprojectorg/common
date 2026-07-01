@@ -96,7 +96,7 @@ export const DecisionSidePanel = ({
         variant="overlay"
         label={t('Decision updates panel')}
         className={cn(
-          'w-full max-w-full border-t border-neutral-gray1 text-neutral-charcoal shadow-xl sm:top-14 sm:w-[22.5rem]',
+          'w-full max-w-full border-neutral-gray1 text-neutral-charcoal shadow-xl sm:top-12 sm:w-[22.5rem] md:top-14',
           // Border faces the content: visual left of the panel, regardless of locale.
           direction === 'rtl' ? 'border-e' : 'border-s',
         )}
