@@ -83,9 +83,7 @@ const PromoteAccountModalContent = ({
       <div className="flex flex-col items-center gap-4 text-center">
         <CheckIcon />
         <div className="flex flex-col gap-2">
-          <Header1 className="text-neutral-black">
-            {t('Your idea was submitted.')}
-          </Header1>
+          <Header1>{t('Your idea was submitted.')}</Header1>
           <p className="text-base text-neutral-charcoal">
             {t('Want to follow what happens next?')}
           </p>
