@@ -1,16 +1,15 @@
 import { z } from 'zod';
 
+import { DEFAULT_UPLOAD_SIZE_LIMIT } from '../../utils/storage';
 import { zodUrlRefine } from '../../utils/validation';
 
-export const MAX_RESOURCE_FILE_SIZE = 25 * 1024 * 1024;
+export const MAX_RESOURCE_FILE_SIZE = DEFAULT_UPLOAD_SIZE_LIMIT;
 
 // Title/description length caps. Mirrored by zod `.max()` on every
 // create/update procedure input and by client `maxLength` on the form
 // inputs — pull from here so the two layers can't drift.
 export const RESOURCE_TITLE_MAX_LEN = 50;
 export const RESOURCE_DESCRIPTION_MAX_LEN = 250;
-
-export const STORAGE_BUCKET = 'assets';
 
 // SSRF gate: loopback, link-local, RFC1918, CGNAT, metadata services.
 // Doesn't cover DNS rebinding — fetchers should use a DNS-pinning HTTP client.
@@ -58,29 +57,3 @@ export const httpUrlSchema = z
 
 export const resourcePathPrefix = (profileId: string) =>
   `profile/${profileId}/resources/`;
-
-// text/csv and text/plain were removed: neither has a magic-byte signature
-// and Supabase serves the file with the Content-Type sent on PUT. We assert
-// the storage object's Content-Type is in this allowlist in createDocument,
-// but without content sniffing we can't catch a wrong-but-allowed MIME
-// (e.g. HTML PUT as application/pdf). Add types here only if (a) they have a
-// magic-byte signature we verify, or (b) we force Content-Disposition:
-// attachment so they're never rendered inline.
-export const ALLOWED_RESOURCE_MIME_TYPES = [
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-  'image/gif',
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-] as const;
-
-export type AllowedResourceMimeType =
-  (typeof ALLOWED_RESOURCE_MIME_TYPES)[number];
-
-export const isAllowedResourceMimeType = (
-  mimeType: string,
-): mimeType is AllowedResourceMimeType =>
-  (ALLOWED_RESOURCE_MIME_TYPES as readonly string[]).includes(mimeType);

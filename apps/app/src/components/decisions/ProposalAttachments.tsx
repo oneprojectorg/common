@@ -1,6 +1,11 @@
 'use client';
 
 import { trpc } from '@op/api/client';
+import {
+  ALLOWED_UPLOAD_MIME_TYPES,
+  MAX_PROPOSAL_ATTACHMENT_FILE_SIZE,
+  isAllowedUploadMimeType,
+} from '@op/common/client';
 import { FileDropZone } from '@op/ui/FileDropZone';
 import { toast } from '@op/ui/Toast';
 import { type ReactNode, startTransition, useOptimistic } from 'react';
@@ -10,18 +15,7 @@ import { useTranslations } from '@/lib/i18n';
 import { ProposalAttachmentList } from './ProposalAttachmentList';
 
 const MAX_FILES = 5;
-const MAX_SIZE_MB = 25;
-const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
-
-const ACCEPTED_TYPES = [
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'video/mp4',
-];
+const MAX_SIZE_MB = Math.floor(MAX_PROPOSAL_ATTACHMENT_FILE_SIZE / 1024 / 1024);
 
 interface Attachment {
   id: string;
@@ -79,7 +73,9 @@ export function ProposalAttachments({
     attachmentsReducer,
   );
 
-  const uploadMutation = trpc.decision.uploadProposalAttachment.useMutation({
+  const signUrlMutation =
+    trpc.decision.signProposalAttachmentUploadUrl.useMutation();
+  const recordMutation = trpc.decision.uploadProposalAttachment.useMutation({
     onSuccess: onMutate,
     onError: (err) => {
       toast.error({ message: err.message });
@@ -102,13 +98,14 @@ export function ProposalAttachments({
     const filesToUpload = files.slice(0, remainingSlots);
 
     for (const file of filesToUpload) {
-      if (file.size > MAX_SIZE_BYTES) {
+      if (file.size > MAX_PROPOSAL_ATTACHMENT_FILE_SIZE) {
         toast.error({
           message: t('File too large: {name}', { name: file.name }),
         });
         continue;
       }
-      if (!ACCEPTED_TYPES.includes(file.type)) {
+      const mimeType = file.type;
+      if (!isAllowedUploadMimeType(mimeType)) {
         toast.error({
           message: t('Unsupported file type: {name}', { name: file.name }),
         });
@@ -127,19 +124,39 @@ export function ProposalAttachments({
           },
         });
 
-        const reader = new FileReader();
-        const base64 = await new Promise<string>((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = () => reject(new Error('Failed to read file'));
-          reader.readAsDataURL(file);
-        });
+        try {
+          // Sign → PUT direct to storage → record. PUTing the file binary
+          // avoids the serverless body-size limit that previously broke
+          // larger iPhone photos when we round-tripped them as base64 JSON.
+          const signed = await signUrlMutation.mutateAsync({
+            proposalId,
+            fileName: file.name,
+          });
 
-        await uploadMutation.mutateAsync({
-          file: base64,
-          fileName: file.name,
-          mimeType: file.type,
-          proposalId,
-        });
+          const putRes = await fetch(signed.signedUrl, {
+            method: 'PUT',
+            headers: { 'Content-Type': mimeType },
+            body: file,
+          });
+          if (!putRes.ok) {
+            throw new Error(t('Could not upload attachment'));
+          }
+
+          await recordMutation.mutateAsync({
+            storagePath: signed.storagePath,
+            fileName: file.name,
+            mimeType,
+            proposalId,
+          });
+        } catch (err) {
+          toast.error({
+            message:
+              err instanceof Error
+                ? err.message
+                : t('Could not upload attachment'),
+          });
+          onMutate();
+        }
       });
     }
   };
@@ -176,7 +193,7 @@ export function ProposalAttachments({
       <ProposalAttachmentList files={displayFiles} onRemove={handleRemove} />
 
       <FileDropZone
-        acceptedFileTypes={ACCEPTED_TYPES}
+        acceptedFileTypes={[...ALLOWED_UPLOAD_MIME_TYPES]}
         onSelectFiles={handleSelectFiles}
         label={t.rich('Drag a file here or <browse>browse</browse>', {
           browse: (chunks: ReactNode) => (

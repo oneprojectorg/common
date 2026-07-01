@@ -4,16 +4,22 @@ import type { User } from '@op/supabase/lib';
 import { permission } from 'access-zones';
 
 import { CommonError } from '../../utils';
+import { assertUploadedStorageObject } from '../../utils/storage';
+import { getStorageObjectByPath } from '../../utils/storageObject';
 import { getCurrentProfileId } from '../access';
 import { assertProfileAccess } from '../assert';
+import {
+  MAX_PROPOSAL_ATTACHMENT_FILE_SIZE,
+  proposalAttachmentPathPrefix,
+} from './proposalAttachmentStorage';
 
 export interface UploadProposalAttachmentInput {
-  /** Sanitized file name */
+  /** User-supplied display name; persisted on the attachment row. */
   fileName: string;
+  /** Client-declared MIME type; must match what storage recorded on PUT. */
   mimeType: string;
-  fileSize: number;
-  /** Supabase storage object ID from the upload */
-  storageObjectId: string;
+  /** Path of the storage object the client just uploaded into. */
+  storagePath: string;
   /** Links attachment to proposal */
   proposalId: string;
 }
@@ -26,8 +32,10 @@ export interface UploadProposalAttachmentResult {
 }
 
 /**
- * Creates an attachment record and optionally links it to a proposal.
- * The actual file upload to storage should be done before calling this.
+ * Records a proposal attachment that the client uploaded directly to storage
+ * via a signed URL (see {@link signProposalAttachmentUploadUrl}). The signed
+ * PUT bypasses the serverless body-size limit that previously broke larger
+ * iPhone photos when we round-tripped them as base64 JSON.
  */
 export async function uploadProposalAttachment({
   input,
@@ -36,14 +44,14 @@ export async function uploadProposalAttachment({
   input: UploadProposalAttachmentInput;
   user: User;
 }): Promise<UploadProposalAttachmentResult> {
-  const { fileName, mimeType, fileSize, storageObjectId, proposalId } = input;
+  const { fileName, mimeType, storagePath, proposalId } = input;
 
-  // Fetch profile and proposal in parallel
-  const [profileId, proposal] = await Promise.all([
+  const [profileId, proposal, storageObject] = await Promise.all([
     getCurrentProfileId(user.id),
     db.query.proposals.findFirst({
       where: { id: proposalId },
     }),
+    getStorageObjectByPath({ path: storagePath }),
   ]);
 
   if (!proposal) {
@@ -56,13 +64,21 @@ export async function uploadProposalAttachment({
     permissions: { profile: permission.UPDATE },
   });
 
-  // Create attachment record in database
+  const { storageObjectId, storedMimeType, fileSize } =
+    assertUploadedStorageObject({
+      storageObject,
+      storagePath,
+      requiredPathPrefix: proposalAttachmentPathPrefix(profileId),
+      declaredMimeType: mimeType,
+      maxFileSize: MAX_PROPOSAL_ATTACHMENT_FILE_SIZE,
+    });
+
   const [attachment] = await db
     .insert(attachments)
     .values({
       storageObjectId,
       fileName,
-      mimeType,
+      mimeType: storedMimeType,
       fileSize,
       profileId,
     })
@@ -72,7 +88,6 @@ export async function uploadProposalAttachment({
     throw new CommonError('Failed to create attachment record');
   }
 
-  // Link attachment to proposal
   await db.insert(proposalAttachments).values({
     proposalId,
     attachmentId: attachment.id,
@@ -82,7 +97,7 @@ export async function uploadProposalAttachment({
   return {
     id: attachment.id,
     fileName,
-    mimeType,
+    mimeType: storedMimeType,
     fileSize,
   };
 }

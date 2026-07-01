@@ -149,6 +149,7 @@
   "Resource added": "Ressource ajoutée",
   "Resource deleted": "Ressource supprimée",
   "Could not add resource": "Impossible d'ajouter la ressource",
+  "Could not upload attachment": "Impossible de téléverser la pièce jointe",
   "Could not delete resource": "Impossible de supprimer la ressource",
   "Could not reorder resource": "Impossible de réorganiser la ressource",
   "Resource options": "Options de la ressource",
