@@ -15,7 +15,7 @@ export const screens = {
  * scanner picks them up.
  */
 export const headingClasses = {
-  h1: 'font-serif text-title-sm sm:text-title-lg',
+  h1: 'font-serif text-title-lg',
   h2: 'font-serif text-title-lg text-neutral-black',
   h3: 'font-serif text-title-base text-neutral-black',
   h4: 'font-serif text-title-sm14 text-neutral-black',

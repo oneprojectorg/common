@@ -30,7 +30,7 @@ test.describe('Proposal Listing — update after create', () => {
       { waitUntil: 'domcontentloaded' },
     );
     await expect(
-      authenticatedPage.getByRole('heading', { name: instance.name, level: 1 }),
+      authenticatedPage.getByRole('heading', { name: instance.name, level: 2 }),
     ).toBeVisible({ timeout: 30_000 });
     await expect(authenticatedPage.getByText('No proposals yet')).toBeVisible({
       timeout: 30_000,
@@ -53,7 +53,7 @@ test.describe('Proposal Listing — update after create', () => {
     // Return via client-side history — NOT a reload (which would mask the bug).
     await authenticatedPage.goBack({ waitUntil: 'commit' });
     await expect(
-      authenticatedPage.getByRole('heading', { name: instance.name, level: 1 }),
+      authenticatedPage.getByRole('heading', { name: instance.name, level: 2 }),
     ).toBeVisible({ timeout: 15_000 });
 
     // The new draft must appear well within the 30s staleTime.

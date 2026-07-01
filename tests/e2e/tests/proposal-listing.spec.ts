@@ -240,7 +240,7 @@ test.describe('Proposal Listing', () => {
 
     // Decision heading renders
     await expect(
-      authenticatedPage.getByRole('heading', { name, level: 1 }),
+      authenticatedPage.getByRole('heading', { name, level: 2 }),
     ).toBeVisible({
       timeout: 30_000,
     });
@@ -405,7 +405,7 @@ test.describe('Proposal Listing', () => {
 
     // Decision heading renders
     await expect(
-      authenticatedPage.getByRole('heading', { name, level: 1 }),
+      authenticatedPage.getByRole('heading', { name, level: 2 }),
     ).toBeVisible({
       timeout: 30_000,
     });

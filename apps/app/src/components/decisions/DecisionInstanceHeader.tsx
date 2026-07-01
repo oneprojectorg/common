@@ -3,9 +3,10 @@
 import { useUser } from '@/utils/UserProvider';
 import { userCanInteract } from '@/utils/userCanInteract';
 import { ButtonLink } from '@op/ui/Button';
-import { Header1 } from '@op/ui/Header';
+import { Header2 } from '@op/ui/Header';
 import { IconButton } from '@op/ui/IconButton';
 import { MegaphoneIcon } from '@op/ui/MegaphoneIcon';
+import { cn } from '@op/ui/utils';
 import { useQueryState } from 'nuqs';
 import { type ReactNode, Suspense } from 'react';
 import { LuArrowLeft, LuSettings } from 'react-icons/lu';
@@ -70,9 +71,7 @@ export const DecisionInstanceHeader = ({
                 className="hidden h-6 w-px shrink-0 bg-neutral-gray2 md:block"
               />
             )}
-            <Header1 className="hidden truncate font-serif text-title-sm text-neutral-charcoal sm:text-title-sm md:block">
-              <bdi>{title}</bdi>
-            </Header1>
+            <DecisionTitle title={title} className="hidden md:block" />
           </>
         ) : null}
       </div>
@@ -81,14 +80,10 @@ export const DecisionInstanceHeader = ({
         {centerSlot ? (
           <>
             <div className="hidden md:flex">{centerSlot}</div>
-            <Header1 className="truncate font-serif text-title-sm text-neutral-charcoal md:hidden">
-              <bdi>{title}</bdi>
-            </Header1>
+            <DecisionTitle title={title} className="md:hidden" />
           </>
         ) : (
-          <Header1 className="truncate font-serif text-title-sm text-neutral-charcoal sm:text-title-sm">
-            <bdi>{title}</bdi>
-          </Header1>
+          <DecisionTitle title={title} />
         )}
       </div>
 
@@ -130,6 +125,23 @@ export const DecisionInstanceHeader = ({
     </header>
   );
 };
+
+const DecisionTitle = ({
+  title,
+  className,
+}: {
+  title: string;
+  className?: string;
+}) => (
+  <Header2
+    className={cn(
+      'truncate font-serif text-title-sm text-neutral-charcoal',
+      className,
+    )}
+  >
+    <bdi>{title}</bdi>
+  </Header2>
+);
 
 const DecisionUpdatesToggle = ({
   ariaLabel,

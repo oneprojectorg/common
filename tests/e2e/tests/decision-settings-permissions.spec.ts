@@ -59,7 +59,7 @@ test.describe('Decision Settings Permissions', () => {
     });
 
     await expect(
-      memberPage.getByRole('heading', { name: instance.name, level: 1 }),
+      memberPage.getByRole('heading', { name: instance.name, level: 2 }),
     ).toBeVisible({ timeout: 15_000 });
 
     // 5. Assert the Settings button is NOT visible to the member
@@ -72,7 +72,7 @@ test.describe('Decision Settings Permissions', () => {
     });
 
     await expect(
-      authenticatedPage.getByRole('heading', { name: instance.name, level: 1 }),
+      authenticatedPage.getByRole('heading', { name: instance.name, level: 2 }),
     ).toBeVisible({ timeout: 15_000 });
 
     const adminSettingsLink = authenticatedPage.getByRole('link', {

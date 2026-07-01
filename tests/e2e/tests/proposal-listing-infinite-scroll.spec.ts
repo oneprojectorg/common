@@ -64,7 +64,7 @@ test.describe('Proposal Listing — Infinite Scroll', () => {
     });
 
     await expect(
-      authenticatedPage.getByRole('heading', { name, level: 1 }),
+      authenticatedPage.getByRole('heading', { name, level: 2 }),
     ).toBeVisible({
       timeout: 30_000,
     });
