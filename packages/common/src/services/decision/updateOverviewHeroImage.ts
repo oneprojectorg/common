@@ -4,7 +4,7 @@ import { permission } from 'access-zones';
 
 import { NotFoundError, ValidationError } from '../../utils';
 import {
-  DEFAULT_UPLOAD_SIZE_LIMIT,
+  IMAGE_UPLOAD_SIZE_LIMIT,
   assertUploadedStorageObject,
 } from '../../utils/storage';
 import { getStorageObjectByPath } from '../../utils/storageObject';
@@ -63,7 +63,7 @@ export async function updateOverviewHeroImage({
     storagePath,
     requiredPathPrefix: overviewHeroImagePathPrefix(instanceId),
     declaredMimeType: mimeType,
-    maxFileSize: DEFAULT_UPLOAD_SIZE_LIMIT,
+    maxFileSize: IMAGE_UPLOAD_SIZE_LIMIT,
   });
   // The shared allowlist also permits PDFs / office docs; the hero is
   // image-only, so reject anything that isn't an image.

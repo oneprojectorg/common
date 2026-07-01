@@ -4,7 +4,7 @@ import { getPublicUrl } from '@/utils';
 import { trpc } from '@op/api/client';
 import {
   ALLOWED_UPLOAD_MIME_TYPES,
-  DEFAULT_UPLOAD_SIZE_LIMIT,
+  IMAGE_UPLOAD_SIZE_LIMIT,
   isAllowedUploadMimeType,
 } from '@op/common/client';
 import { toast } from '@op/ui/Toast';
@@ -88,10 +88,10 @@ export function useOverviewHeroImage({
       });
       return;
     }
-    if (file.size > DEFAULT_UPLOAD_SIZE_LIMIT) {
+    if (file.size > IMAGE_UPLOAD_SIZE_LIMIT) {
       toast.error({
         message: t('File too large. Maximum size: {size}MB', {
-          size: Math.floor(DEFAULT_UPLOAD_SIZE_LIMIT / 1024 / 1024),
+          size: Math.floor(IMAGE_UPLOAD_SIZE_LIMIT / 1024 / 1024),
         }),
       });
       return;

@@ -1,6 +1,6 @@
 'use client';
 
-import { DEFAULT_UPLOAD_SIZE_LIMIT } from '@op/common/client';
+import { IMAGE_UPLOAD_SIZE_LIMIT } from '@op/common/client';
 import { BannerImageField } from '@op/ui/BannerImageField';
 import Image from 'next/image';
 
@@ -50,7 +50,7 @@ export function OverviewHeroImageField({
         title: t('Upload banner image'),
         description: t(
           'PNG, JPG, WebP or GIF · recommended 2400×800px · max {size}MB',
-          { size: Math.floor(DEFAULT_UPLOAD_SIZE_LIMIT / 1024 / 1024) },
+          { size: Math.floor(IMAGE_UPLOAD_SIZE_LIMIT / 1024 / 1024) },
         ),
         helperText: t(
           'The headline appears centered over a dark overlay. Avoid images with key subjects in the middle.',
