@@ -14,7 +14,7 @@ export const DecisionUpdateNotificationEmail = ({
   updateUrl: string;
 }) => {
   const previewSnippet =
-    updateContent.length > 50
+    updateContent?.length > 50
       ? `${updateContent.slice(0, 50)}...`
       : updateContent;
 

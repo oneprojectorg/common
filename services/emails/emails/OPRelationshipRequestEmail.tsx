@@ -18,13 +18,13 @@ export const OPRelationshipRequestEmail = ({
   approvalUrl,
   requesterMessage,
 }: OPRelationshipRequestEmailProps) => {
-  const relationshipLabels = relationshipTypes.map(
+  const relationshipLabels = relationshipTypes?.map(
     (type) => relationshipMap[type]?.noun || type,
   );
   const relationshipText =
-    relationshipLabels.length === 1
+    relationshipLabels?.length === 1
       ? relationshipLabels[0]
-      : relationshipLabels.join('/');
+      : relationshipLabels?.join('/');
 
   return (
     <EmailTemplate

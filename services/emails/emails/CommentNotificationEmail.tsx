@@ -23,7 +23,7 @@ export const CommentNotificationEmail = ({
 }) => {
   return (
     <EmailTemplate
-      previewText={`${commenterName} commented on your ${contentType}: "${commentContent.slice(0, 50)}${commentContent.length > 50 ? '...' : ''}"`}
+      previewText={`${commenterName} commented on your ${contentType}: "${commentContent?.slice(0, 50)}${commentContent?.length > 50 ? '...' : ''}"`}
     >
       <Text className="my-8 text-lg">
         <strong>{commenterName}</strong> commented on your {contentType}.
