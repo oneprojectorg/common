@@ -1,5 +1,5 @@
 import { commonColors } from '@op/core';
-import type { TailwindConfig } from '@react-email/tailwind';
+import type { TailwindConfig } from 'react-email';
 
 export default {
   theme: {
@@ -12,7 +12,7 @@ export default {
           gray4: '#606A6C',
         },
         primary: {
-          teal: '#0396A6',
+          teal: '#387582',
         },
       },
     },
@@ -53,11 +53,11 @@ export default {
       ],
     },
     fontSize: {
-      xs: ['12px', { lineHeight: '16px' }],
-      sm: ['14px', { lineHeight: '20px' }],
-      base: ['16px', { lineHeight: '24px' }],
-      lg: ['18px', { lineHeight: '28px' }],
-      xl: ['20px', { lineHeight: '28px' }],
+      xs: ['10px', { lineHeight: '15px' }],
+      sm: ['12px', { lineHeight: '18px' }],
+      base: ['14px', { lineHeight: '20px' }],
+      lg: ['16px', { lineHeight: '24px' }],
+      xl: ['18px', { lineHeight: '28px' }],
       '2xl': ['24px', { lineHeight: '32px' }],
       '3xl': ['30px', { lineHeight: '36px' }],
       '4xl': ['36px', { lineHeight: '36px' }],
