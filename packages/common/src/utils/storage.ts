@@ -1,9 +1,17 @@
 // Supabase Storage objects expose `metadata` as opaque jsonb. These helpers
 // safely narrow the well-known fields without an `as` cast. They are pure —
 // no database or server-only imports — so the utils barrel stays importable
-// from client-safe entry points. The row lookup that needs the DB lives
-// in `./storageObject.ts`, which is intentionally not re-exported by the
-// utils barrel.
+// from client-safe entry points. The two server-side helpers that back this
+// module (`getStorageObjectByPath`, `signStorageUploadUrl`) live in their
+// own files and are intentionally not re-exported by the utils barrel.
+
+import { NotFoundError, ValidationError } from './error';
+
+// The bucket every user-uploaded storage object currently lives in — proposal
+// attachments, resource documents, and (post-ONE-325) avatars / banners /
+// post attachments. Keeping the bucket name in one place lets a future
+// migration to per-feature buckets be a single-file change.
+export const ASSETS_BUCKET = 'assets';
 
 export const getStorageObjectSize = (metadata: unknown): number | null => {
   if (
@@ -74,3 +82,57 @@ export const isAllowedUploadMimeType = (
   mimeType: string,
 ): mimeType is AllowedUploadMimeType =>
   (ALLOWED_UPLOAD_MIME_TYPES as readonly string[]).includes(mimeType);
+
+// Server-side trust-boundary check on a client-supplied `storagePath`.
+// Runs the five things every "record the upload" endpoint has to do
+// against the Supabase-recorded object metadata (never the client's
+// declared MIME): object exists, is inside the caller's expected path
+// prefix, has an allow-listed stored Content-Type that matches what the
+// client declared, and is within the size cap. Callers pass the object
+// they just fetched by (bucket, path) via `getStorageObjectByPath`.
+export const assertUploadedStorageObject = ({
+  storageObject,
+  storagePath,
+  requiredPathPrefix,
+  declaredMimeType,
+  maxFileSize,
+}: {
+  storageObject: { id: string; metadata: unknown } | undefined;
+  storagePath: string;
+  requiredPathPrefix: string;
+  declaredMimeType: string;
+  maxFileSize: number;
+}): {
+  storageObjectId: string;
+  storedMimeType: AllowedUploadMimeType;
+  fileSize: number;
+} => {
+  if (!storageObject) {
+    throw new NotFoundError('Storage object', storagePath);
+  }
+  // The signed URL is path-scoped, but the client supplies the path back to
+  // us here — reject anything outside the caller's own prefix so they can't
+  // claim someone else's just-uploaded object.
+  if (!storagePath.startsWith(requiredPathPrefix)) {
+    throw new ValidationError('Storage object does not belong to this profile');
+  }
+  // Supabase records the Content-Type sent on PUT into the object metadata
+  // and serves the file back with that same header. Trust the storage record
+  // (not the caller's declared `mimeType`), then re-check the allowlist.
+  const storedMimeType = getStorageObjectMimeType(storageObject.metadata);
+  if (!storedMimeType || !isAllowedUploadMimeType(storedMimeType)) {
+    throw new ValidationError('Uploaded file has an unsupported content type');
+  }
+  if (storedMimeType !== declaredMimeType) {
+    throw new ValidationError(
+      'Declared mimeType does not match the uploaded file',
+    );
+  }
+  // Storage object size is the only place we see the actual upload size —
+  // the signed PUT URL itself has no inherent cap.
+  const fileSize = getStorageObjectSize(storageObject.metadata);
+  if (fileSize === null || fileSize > maxFileSize) {
+    throw new ValidationError('Uploaded file exceeds the size limit');
+  }
+  return { storageObjectId: storageObject.id, storedMimeType, fileSize };
+};

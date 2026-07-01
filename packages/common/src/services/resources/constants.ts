@@ -11,8 +11,6 @@ export const MAX_RESOURCE_FILE_SIZE = DEFAULT_UPLOAD_SIZE_LIMIT;
 export const RESOURCE_TITLE_MAX_LEN = 50;
 export const RESOURCE_DESCRIPTION_MAX_LEN = 250;
 
-export const STORAGE_BUCKET = 'assets';
-
 // SSRF gate: loopback, link-local, RFC1918, CGNAT, metadata services.
 // Doesn't cover DNS rebinding — fetchers should use a DNS-pinning HTTP client.
 const PRIVATE_HOST_PATTERNS: RegExp[] = [
