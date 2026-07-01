@@ -1,5 +1,5 @@
 import { relationshipMap } from '@op/types';
-import { Button, Section, Text } from '@react-email/components';
+import { Button, Section, Text } from 'react-email';
 
 import EmailTemplate from '../components/EmailTemplate';
 

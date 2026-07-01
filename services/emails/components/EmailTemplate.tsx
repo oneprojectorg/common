@@ -1,3 +1,4 @@
+import * as React from 'react';
 import {
   Body,
   Column,
@@ -12,8 +13,7 @@ import {
   Section,
   Tailwind,
   Text,
-} from '@react-email/components';
-import * as React from 'react';
+} from 'react-email';
 
 import TailwindConfig from '../tailwind.config';
 
