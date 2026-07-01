@@ -9,7 +9,7 @@ import { cn } from '@op/ui/utils';
 import { useParams } from 'next/navigation';
 import { LuGlobe } from 'react-icons/lu';
 
-import { useRouter as useI18nRouter, usePathname } from '@/lib/i18n';
+import { usePathname } from '@/lib/i18n';
 import { useTranslations } from '@/lib/i18n';
 import { i18nConfig } from '@/lib/i18n/config';
 
@@ -30,7 +30,6 @@ const localeDisplayNames: Record<string, string> = {
 export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
   const t = useTranslations();
   const isMobile = useMediaQuery(`(max-width: ${screens.sm})`);
-  const i18nRouter = useI18nRouter();
   const pathname = usePathname();
   const params = useParams();
   const currentLocale = params.locale as string;
@@ -41,7 +40,13 @@ export const LocaleChooser = ({ onClose }: LocaleChooserProps) => {
     }
     const newLocale = selectedKey as string;
     if (newLocale !== currentLocale) {
-      i18nRouter.replace(pathname, { locale: newLocale });
+      // Hard navigation (not the client router) so the server applies the
+      // vanity URL rewrite. Vanity decision paths like `/columbus` exist only
+      // as a next.config rewrite, so a client-side transition to `/es/columbus`
+      // can't resolve them and bounces anonymous viewers to /login. A full load
+      // resolves the rewrite and keeps the pretty URL. Locale changes are rare,
+      // so the reload is negligible.
+      window.location.assign(`/${newLocale}${pathname}`);
     }
     onClose?.();
   };
