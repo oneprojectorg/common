@@ -84,12 +84,13 @@ export const isAllowedUploadMimeType = (
   (ALLOWED_UPLOAD_MIME_TYPES as readonly string[]).includes(mimeType);
 
 // Server-side trust-boundary check on a client-supplied `storagePath`.
-// Runs the five things every "record the upload" endpoint has to do
-// against the Supabase-recorded object metadata (never the client's
-// declared MIME): object exists, is inside the caller's expected path
-// prefix, has an allow-listed stored Content-Type that matches what the
-// client declared, and is within the size cap. Callers pass the object
-// they just fetched by (bucket, path) via `getStorageObjectByPath`.
+// Runs the checks every "record the upload" endpoint has to do against
+// the Supabase-recorded object metadata (never the client's declared
+// MIME): (1) object exists, (2) is inside the caller's expected path
+// prefix, (3) has a stored Content-Type on the allowlist, (4) that
+// Content-Type matches what the client declared, and (5) is within the
+// size cap. Callers pass the object they just fetched by (bucket, path)
+// via `getStorageObjectByPath`.
 export const assertUploadedStorageObject = ({
   storageObject,
   storagePath,
