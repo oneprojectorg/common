@@ -18,6 +18,9 @@ type DecisionTranslationResult = {
   phaseDescription?: string;
   additionalInfo?: string;
   description?: string;
+  overviewHeadline?: string;
+  overviewDescription?: string;
+  overviewBody?: string;
   phases: Array<{ id: string; name: string }>;
   sourceLocale: string;
   targetLocale: SupportedLocale;
@@ -25,8 +28,9 @@ type DecisionTranslationResult = {
 
 /**
  * Translates a decision's current-phase content (headline, description,
- * additionalInfo, phase names) and the process-level description into the
- * target locale via DeepL with cache-through semantics.
+ * additionalInfo, phase names), the process-level description, and the authored
+ * overview content (headline, description, body) into the target locale via
+ * DeepL with cache-through semantics.
  */
 export async function translateDecision({
   decisionProfileId,
@@ -109,6 +113,17 @@ function renderTipTapToHtml(content: string): string {
   return generateHTML(parsed, serverExtensions);
 }
 
+/**
+ * Render an overview body to HTML for translation. The body is a TipTap JSON
+ * doc (new content) or a string (legacy HTML / JSON string); both are read.
+ */
+function renderBodyToHtml(content: string | JSONContent): string {
+  if (typeof content === 'string') {
+    return renderTipTapToHtml(content);
+  }
+  return generateHTML(content, serverExtensions);
+}
+
 function buildEntries(
   decisionProfileId: string,
   instanceData: DecisionInstanceData | null,
@@ -157,6 +172,26 @@ function buildEntries(
     });
   }
 
+  const overview = instanceData?.overview;
+  if (overview?.headline) {
+    entries.push({
+      contentKey: `${prefix}:overviewHeadline`,
+      text: overview.headline,
+    });
+  }
+  if (overview?.description) {
+    entries.push({
+      contentKey: `${prefix}:overviewDescription`,
+      text: overview.description,
+    });
+  }
+  if (overview?.body) {
+    entries.push({
+      contentKey: `${prefix}:overviewBody`,
+      text: renderBodyToHtml(overview.body),
+    });
+  }
+
   return entries;
 }
 
@@ -171,6 +206,9 @@ function parseResults(
   let phaseDescription: string | undefined;
   let additionalInfo: string | undefined;
   let description: string | undefined;
+  let overviewHeadline: string | undefined;
+  let overviewDescription: string | undefined;
+  let overviewBody: string | undefined;
   const phases: Array<{ id: string; name: string }> = [];
   let sourceLocale = '';
 
@@ -187,6 +225,12 @@ function parseResults(
       additionalInfo = result.translatedText;
     } else if (key === 'description') {
       description = result.translatedText;
+    } else if (key === 'overviewHeadline') {
+      overviewHeadline = result.translatedText;
+    } else if (key === 'overviewDescription') {
+      overviewDescription = result.translatedText;
+    } else if (key === 'overviewBody') {
+      overviewBody = result.translatedText;
     } else if (
       result.contentKey.startsWith(phasePrefix) &&
       result.contentKey.endsWith(':name')
@@ -205,6 +249,9 @@ function parseResults(
     phaseDescription,
     additionalInfo,
     description,
+    overviewHeadline,
+    overviewDescription,
+    overviewBody,
     phases,
     sourceLocale,
     targetLocale,

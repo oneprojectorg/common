@@ -17,12 +17,16 @@ import { LuBookOpen, LuTriangleAlert } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { DecisionPhaseTimeline } from './DecisionPhaseTimeline';
+import { useDecisionTranslation } from './DecisionTranslationContext';
 import {
   OverviewPinnedResourcesSuspense,
   PinnedResourcesError,
   PinnedResourcesSkeleton,
 } from './OverviewPinnedResources';
+import { ProposalHtmlContent } from './ProposalHtmlContent';
+import { TranslateBanner } from './TranslateBanner';
 import { useCreateProposal } from './useCreateProposal';
+import { useProposalsTranslation } from './useProposalsTranslation';
 
 interface DecisionOverviewProps {
   instanceId: string;
@@ -105,9 +109,27 @@ function DecisionOverviewContent({
 }: DecisionOverviewProps) {
   const t = useTranslations();
 
+  // Translation: the banner offers to translate the overview into the viewer's
+  // locale. translateDecision returns the authored overview fields, which we
+  // prefer over the source content once present. Empty proposals here — the
+  // overview has none; handleTranslate skips the proposal batch.
+  const translation = useDecisionTranslation();
+  const decisionTranslation = useProposalsTranslation({
+    allProposals: [],
+    decisionProfileId: instance.profileId,
+  });
+
   const overview = instance.instanceData?.overview;
-  const headline = overview?.headline || instance.name;
+  const headline =
+    translation?.overviewHeadline ?? overview?.headline ?? instance.name;
+  const subhead = translation?.overviewDescription ?? overview?.description;
   const profileId = instance.profileId;
+
+  // Once translated, swap the server-rendered About body for the translated
+  // HTML (rendered client-side, same as the proposal view).
+  const translatedAbout = translation?.overviewBody ? (
+    <ProposalHtmlContent html={translation.overviewBody} />
+  ) : null;
 
   // Header meta row: prefer the steward, fall back to the owner (same rule as
   // DecisionListItem). "Open for learning" shows only for public processes;
@@ -141,7 +163,7 @@ function DecisionOverviewContent({
     <div className="flex w-full flex-col">
       <OverviewHero
         headline={headline}
-        subhead={overview?.description}
+        subhead={subhead}
         steward={steward}
         isPublic={isPublic}
         instanceId={instanceId}
@@ -180,12 +202,36 @@ function DecisionOverviewContent({
           ) : null}
         </div>
         <div className="min-w-0 md:col-span-7 md:col-start-6">
+          {decisionTranslation.translationState ? (
+            <p className="mb-4 text-sm text-neutral-gray3">
+              {t('Translated from {language}', {
+                language: decisionTranslation.sourceLanguageName,
+              })}{' '}
+              &middot;{' '}
+              <Link
+                onPress={decisionTranslation.handleViewOriginal}
+                className="text-sm font-semibold"
+              >
+                {t('View original')}
+              </Link>
+            </p>
+          ) : null}
           <OverviewAbout
-            bodySlot={aboutSlot}
-            fallbackText={instance.description ?? undefined}
+            bodySlot={translatedAbout ?? aboutSlot}
+            fallbackText={
+              translation?.description ?? instance.description ?? undefined
+            }
           />
         </div>
       </div>
+      {decisionTranslation.showBanner ? (
+        <TranslateBanner
+          onTranslate={decisionTranslation.handleTranslate}
+          onDismiss={decisionTranslation.dismissBanner}
+          isTranslating={decisionTranslation.isTranslating}
+          languageName={decisionTranslation.targetLanguageName}
+        />
+      ) : null}
     </div>
   );
 }
