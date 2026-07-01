@@ -148,15 +148,19 @@ const post = async (
   return JSON.parse(text);
 };
 
-// Checkstep field types we can express per media kind. `other` (PDFs/docs)
-// has no reviewable field type, so it's dropped rather than mislabeled as an
-// image — the text still covers it.
-const CHECKSTEP_FIELD_TYPE: Partial<
-  Record<ModerationMediaItem['kind'], string>
-> = {
+// Checkstep field types we express per media kind. The six simple types
+// documented in `docs.checkstep.com/glossary` are text, image, audio, video,
+// uri, file — so anything non-media (PDFs, DOCX, arbitrary attachments) rides
+// on the generic `file` type rather than being dropped. Checkstep's exact
+// analysis behaviour on `file` isn't spelled out in their public docs (past
+// listing it as a valid field type); on a rejection the submit call throws
+// and the round is retried, so a bad mapping fails loudly rather than
+// silently under-moderating.
+const CHECKSTEP_FIELD_TYPE: Record<ModerationMediaItem['kind'], string> = {
   image: 'image',
   video: 'video',
   audio: 'audio',
+  other: 'file',
 };
 
 // Checkstep requires a top-level `type` (its "complex type") on every content
@@ -177,12 +181,11 @@ const contentBody = (
   type: COMPLEX_TYPE,
   fields: [
     { id: 'text', type: 'text', src: content },
-    ...media.flatMap((item, index) => {
-      const fieldType = CHECKSTEP_FIELD_TYPE[item.kind];
-      return fieldType
-        ? [{ id: `media-${index}`, type: fieldType, src: item.url }]
-        : [];
-    }),
+    ...media.map((item, index) => ({
+      id: `media-${index}`,
+      type: CHECKSTEP_FIELD_TYPE[item.kind],
+      src: item.url,
+    })),
   ],
   ...(callbackUrl ? { callback_url: callbackUrl } : {}),
 });

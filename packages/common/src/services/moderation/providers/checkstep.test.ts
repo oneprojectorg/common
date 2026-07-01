@@ -53,7 +53,8 @@ describe('createCheckstepProvider', () => {
     expect(body.callback_url).toBe('https://us/webhook');
     // Required top-level complex type; our account defines only `comment`.
     expect(body.type).toBe('comment');
-    // Each media kind gets its proper field type; `other` (PDF) is dropped.
+    // Each media kind gets its proper field type; `other` (PDF/doc) routes
+    // to Checkstep's generic `file` field type rather than being dropped.
     expect(body.fields).toContainEqual({
       id: 'media-0',
       type: 'image',
@@ -64,9 +65,11 @@ describe('createCheckstepProvider', () => {
       type: 'video',
       src: 'https://cdn/clip.mp4',
     });
-    expect(
-      body.fields.some((f: { src: string }) => f.src === 'https://cdn/doc.pdf'),
-    ).toBe(false);
+    expect(body.fields).toContainEqual({
+      id: 'media-2',
+      type: 'file',
+      src: 'https://cdn/doc.pdf',
+    });
   });
 
   it('submitForReview tolerates an empty ack body and falls back to the content ref', async () => {
