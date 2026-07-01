@@ -30,6 +30,10 @@ export interface CollaborativeEditorProps {
   editorClassName?: string;
   /** When true, sets `aria-required` on the editable region for assistive tech. */
   required?: boolean;
+  /** When true, sets `aria-invalid` on the editable region. */
+  isInvalid?: boolean;
+  /** id of the error message element, set as `aria-describedby` while invalid. */
+  errorMessageId?: string;
 }
 
 /** Rich text editor with real-time collaboration via TipTap Cloud */
@@ -46,6 +50,8 @@ export const CollaborativeEditor = forwardRef<
       className = '',
       editorClassName = '',
       required = false,
+      isInvalid = false,
+      errorMessageId,
     },
     ref,
   ) => {
@@ -70,6 +76,8 @@ export const CollaborativeEditor = forwardRef<
       editorClassName,
       onEditorReady,
       required,
+      isInvalid,
+      errorMessageId,
     });
 
     useImperativeHandle(

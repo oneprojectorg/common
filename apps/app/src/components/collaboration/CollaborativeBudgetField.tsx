@@ -4,11 +4,13 @@ import { useCollaborativeFragment } from '@/hooks/useCollaborativeFragment';
 import type { BudgetData } from '@op/common/client';
 import { Button } from '@op/ui/Button';
 import { NumberField } from '@op/ui/NumberField';
+import { cn } from '@op/ui/utils';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
+import { INVALID_PILL_CLASS } from './invalidFieldStyles';
 
 const DEFAULT_CURRENCY = 'USD';
 
@@ -28,6 +30,14 @@ interface CollaborativeBudgetFieldProps {
   minAmount?: number;
   maxAmount?: number;
   initialValue?: BudgetData | null;
+  /**
+   * Yjs fragment name to sync this field. Must match the field's template key
+   * — validation reads fragment text by key, so a custom money field syncing
+   * to the wrong fragment can never validate.
+   */
+  fragmentName?: string;
+  /** When true, renders the field in its validation-error state. */
+  isInvalid?: boolean;
   onChange?: (budget: BudgetData | null) => void;
 }
 
@@ -44,6 +54,8 @@ export function CollaborativeBudgetField({
   minAmount,
   maxAmount,
   initialValue = null,
+  fragmentName = 'budget',
+  isInvalid = false,
   onChange,
 }: CollaborativeBudgetFieldProps) {
   const t = useTranslations();
@@ -57,7 +69,7 @@ export function CollaborativeBudgetField({
 
   const [budgetText, setBudgetText] = useCollaborativeFragment(
     ydoc,
-    'budget',
+    fragmentName,
     initialBudgetValue ? JSON.stringify(initialBudgetValue) : '',
   );
 
@@ -174,7 +186,10 @@ export function CollaborativeBudgetField({
           variant="pill"
           color="pill"
           onPress={handleStartEditing}
-          className="justify-start text-start"
+          className={cn(
+            'justify-start text-start',
+            isInvalid && INVALID_PILL_CLASS,
+          )}
         >
           {budgetAmount !== null
             ? budgetAmount.toLocaleString(undefined, {

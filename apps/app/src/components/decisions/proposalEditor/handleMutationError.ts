@@ -5,11 +5,19 @@ import type { TranslateFn } from '@/lib/i18n';
 /**
  * Handles tRPC validation errors from mutation responses.
  * Displays appropriate toast messages based on error shape.
+ *
+ * When `onFieldErrors` is provided, server-side validation errors are handed
+ * to it for field-level highlighting (mirroring the client-side validation
+ * UX). It returns whether any field was actually highlighted — when none was,
+ * this falls back to listing the messages in the toast.
  */
 export function handleMutationError(
   error: { data?: unknown; message?: string },
   operationType: 'create' | 'update' | 'submit',
   t: TranslateFn,
+  options?: {
+    onFieldErrors?: (fieldErrors: Record<string, string>) => boolean;
+  },
 ) {
   console.error(`Failed to ${operationType} proposal:`, error);
 
@@ -21,7 +29,11 @@ export function handleMutationError(
     const fieldErrors = errorData.cause.fieldErrors;
     const errorMessages = Object.values(fieldErrors);
 
-    if (errorMessages.length === 1) {
+    const didHighlight = options?.onFieldErrors?.(fieldErrors) ?? false;
+
+    if (didHighlight) {
+      toast.error({ title: t('Please fix the highlighted fields') });
+    } else if (errorMessages.length === 1) {
       toast.error({ message: errorMessages[0] });
     } else {
       toast.error({

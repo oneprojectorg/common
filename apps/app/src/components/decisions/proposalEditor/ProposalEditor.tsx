@@ -40,7 +40,10 @@ import { ProposalInfoModal } from '../ProposalInfoModal';
 import { compileProposalSchema } from '../forms/proposal';
 import { schemaHasOptions } from '../proposalTemplate';
 import { CustomFormModal, type CustomFormValues } from './CustomFormModal';
-import { ProposalFormRenderer } from './ProposalFormRenderer';
+import {
+  FIELD_ANCHOR_ATTR,
+  ProposalFormRenderer,
+} from './ProposalFormRenderer';
 import { RevisionFeedbackPanel } from './RevisionFeedbackPanel';
 import { useOptionalVersionPreview } from './VersionPreviewContext';
 import { handleMutationError } from './handleMutationError';
@@ -50,6 +53,62 @@ import { useProposalValidation } from './useProposalValidation';
 
 // Create a version snapshot after 60 seconds without local edits.
 const VERSION_INTERVAL_SECONDS = 60;
+
+/**
+ * Normalizes validator errors for field-level display. Nested errors are
+ * keyed by dot-path (e.g. `budget.amount`) — collapse to the top-level field
+ * key so they match rendered field anchors. First message per field wins.
+ */
+function normalizeFieldErrors(
+  errors: Record<string, string>,
+): Record<string, string> {
+  const normalized: Record<string, string> = {};
+  for (const [key, message] of Object.entries(errors)) {
+    const fieldKey = key.split('.')[0] ?? key;
+    normalized[fieldKey] ??= message;
+  }
+  return normalized;
+}
+
+/**
+ * Scrolls the first invalid field (in visual/DOM order) into view after a
+ * failed submit. Fields are anchored via {@link FIELD_ANCHOR_ATTR} in
+ * {@link ProposalFormRenderer}. Returns whether an invalid field was found —
+ * false means none of the invalid keys correspond to a rendered field.
+ */
+function scrollToFirstInvalidField(invalidKeys: string[]): boolean {
+  if (invalidKeys.length === 0) {
+    return false;
+  }
+
+  const keySet = new Set(invalidKeys);
+  const anchors = Array.from(
+    document.querySelectorAll(`[${FIELD_ANCHOR_ATTR}]`),
+  );
+
+  for (const anchor of anchors) {
+    const key = anchor.getAttribute(FIELD_ANCHOR_ATTR);
+    if (key && keySet.has(key)) {
+      const prefersReducedMotion = window.matchMedia(
+        '(prefers-reduced-motion: reduce)',
+      ).matches;
+      anchor.scrollIntoView({
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+        block: 'center',
+      });
+      // Move keyboard/screen-reader focus to the invalid field, not just the
+      // viewport.
+      anchor
+        .querySelector<HTMLElement>(
+          '[contenteditable="true"], button, input, [tabindex]',
+        )
+        ?.focus({ preventScroll: true });
+      return true;
+    }
+  }
+
+  return false;
+}
 
 /**
  * Tracks which TipTap editor currently has focus.
@@ -236,6 +295,24 @@ function ProposalEditorInner({
     collaborationDocId,
   });
 
+  // Validation messages from the last failed submit, keyed by field. Cleared
+  // per-field as the user edits, and wholesale once a submit passes.
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const handleFieldChangeWithValidation = useCallback(
+    (key: string, value: unknown) => {
+      setFieldErrors((prev) => {
+        if (!(key in prev)) {
+          return prev;
+        }
+        const { [key]: _cleared, ...next } = prev;
+        return next;
+      });
+      handleFieldChange(key, value);
+    },
+    [handleFieldChange],
+  );
+
   // -- Schema compilation ----------------------------------------------------
 
   const templateRef = useRef(proposalTemplate);
@@ -257,14 +334,32 @@ function ProposalEditorInner({
 
   const { validate } = useProposalValidation(ydoc, proposalTemplate);
 
+  // Server-side validation rejections get the same field-level highlighting
+  // as client-side ones (the server is authoritative — e.g. it enforces the
+  // category requirement the client relaxes for location templates).
+  const handleServerFieldErrors = useCallback(
+    (serverFieldErrors: Record<string, string>) => {
+      const errors = normalizeFieldErrors(serverFieldErrors);
+      setFieldErrors(errors);
+      return scrollToFirstInvalidField(Object.keys(errors));
+    },
+    [],
+  );
+
   // -- Mutations -------------------------------------------------------------
 
   const submitProposalMutation = trpc.decision.submitProposal.useMutation({
-    onError: (error) => handleMutationError(error, 'submit', t),
+    onError: (error) =>
+      handleMutationError(error, 'submit', t, {
+        onFieldErrors: handleServerFieldErrors,
+      }),
   });
 
   const updateProposalMutation = trpc.decision.updateProposal.useMutation({
-    onError: (error) => handleMutationError(error, 'update', t),
+    onError: (error) =>
+      handleMutationError(error, 'update', t, {
+        onFieldErrors: handleServerFieldErrors,
+      }),
   });
 
   const submitCustomFormMutation = trpc.customForm.submit.useMutation({
@@ -344,13 +439,24 @@ function ProposalEditorInner({
     // -- Client-side schema validation (validates ALL template fields) --------
     const result = validate();
     if (!result.valid) {
-      toast.error({
-        title: t('Please fix the following issues:'),
-        message: Object.values(result.errors).join(', '),
-      });
+      const errors = normalizeFieldErrors(result.errors);
+      setFieldErrors(errors);
+      const didHighlight = scrollToFirstInvalidField(Object.keys(errors));
+      // When no invalid field is actually rendered (e.g. a required location
+      // field behind a disabled feature flag), highlighting alone would leave
+      // the user with no clue — fall back to listing the errors.
+      toast.error(
+        didHighlight
+          ? { title: t('Please fix the highlighted fields') }
+          : {
+              title: t('Please fix the following issues:'),
+              message: Object.values(result.errors).join(', '),
+            },
+      );
       return;
     }
 
+    setFieldErrors({});
     setIsSubmitting(true);
 
     try {
@@ -464,7 +570,8 @@ function ProposalEditorInner({
         fields={proposalFields}
         draft={draft}
         decisionProfileId={instance.profileId ?? null}
-        onFieldChange={handleFieldChange}
+        onFieldChange={handleFieldChangeWithValidation}
+        fieldErrors={fieldErrors}
         onEditorFocus={onEditorFocus}
         onEditorBlur={onEditorBlur}
         mode={isPreviewMode ? 'preview-version' : 'edit-collaborative'}

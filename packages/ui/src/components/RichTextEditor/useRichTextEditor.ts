@@ -20,6 +20,8 @@ export function useRichTextEditor({
   onEditorReady,
   editable = true,
   required = false,
+  isInvalid = false,
+  errorMessageId,
 }: {
   extensions?: Extensions;
   content?: Content;
@@ -41,6 +43,13 @@ export function useRichTextEditor({
   editable?: boolean;
   /** When true, sets `aria-required` on the editable region for assistive tech. */
   required?: boolean;
+  /** When true, sets `aria-invalid` on the editable region. Updates live. */
+  isInvalid?: boolean;
+  /**
+   * id of the element describing the validation error, set as
+   * `aria-describedby` on the editable region while `isInvalid` is true.
+   */
+  errorMessageId?: string;
 }) {
   // Append a single Placeholder extension when a top-level placeholder is asked
   // for OR the Details extension is present (it needs a per-node 'Summary' hint).
@@ -75,18 +84,27 @@ export function useRichTextEditor({
     ];
   }, [extensions, placeholder, summaryPlaceholder]);
 
+  const editorAttributes = useMemo(
+    () => ({
+      class: cn(
+        baseEditorStyles,
+        editorClassName || (editable ? 'min-h-96' : ''),
+      ),
+      ...(required ? { 'aria-required': 'true' } : {}),
+      ...(isInvalid ? { 'aria-invalid': 'true' } : {}),
+      ...(isInvalid && errorMessageId
+        ? { 'aria-describedby': errorMessageId }
+        : {}),
+    }),
+    [editorClassName, editable, required, isInvalid, errorMessageId],
+  );
+
   const editor = useEditor({
     extensions: resolvedExtensions,
     content,
     editable,
     editorProps: {
-      attributes: {
-        class: cn(
-          baseEditorStyles,
-          editorClassName || (editable ? 'min-h-96' : ''),
-        ),
-        ...(required ? { 'aria-required': 'true' } : {}),
-      },
+      attributes: editorAttributes,
     },
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
@@ -96,6 +114,12 @@ export function useRichTextEditor({
     },
     immediatelyRender: false,
   });
+
+  // `useEditor` captures options at creation — push attribute changes (e.g.
+  // aria-invalid toggling after a failed submit) into the live editor.
+  useEffect(() => {
+    editor?.setOptions({ editorProps: { attributes: editorAttributes } });
+  }, [editor, editorAttributes]);
 
   // Set initial content only once when editor is first created
   useEffect(() => {

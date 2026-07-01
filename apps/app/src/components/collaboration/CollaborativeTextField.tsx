@@ -8,6 +8,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { getProposalExtensions } from '../RichTextEditor';
 import { CollaborativeEditor } from './CollaborativeEditor';
+import { INVALID_EDITOR_CLASS, getFieldErrorId } from './invalidFieldStyles';
 
 /**
  * Props for the collaborative text field.
@@ -32,6 +33,8 @@ interface CollaborativeTextFieldProps {
   placeholder?: string;
   multiline?: boolean;
   maxLength?: number;
+  /** When true, renders the field in its validation-error state. */
+  isInvalid?: boolean;
   onChange?: (html: string) => void;
   onEditorFocus?: (editor: Editor) => void;
   onEditorBlur?: (editor: Editor) => void;
@@ -51,6 +54,7 @@ export function CollaborativeTextField({
   placeholder = 'Start typing...',
   multiline = false,
   maxLength,
+  isInvalid = false,
   onChange,
   onEditorFocus,
   onEditorBlur,
@@ -99,13 +103,25 @@ export function CollaborativeTextField({
       {(title || description) && (
         <div className="flex flex-col gap-2">
           {title && (
-            <span className="font-serif text-title-sm14 text-neutral-charcoal">
+            <span
+              className={cn(
+                'font-serif text-title-sm14 text-neutral-charcoal',
+                isInvalid && 'text-functional-red',
+              )}
+            >
               {title}
               {required && <RequiredAsterisk />}
             </span>
           )}
           {description && (
-            <p className="text-sm text-neutral-charcoal">{description}</p>
+            <p
+              className={cn(
+                'text-sm text-neutral-charcoal',
+                isInvalid && 'text-functional-red',
+              )}
+            >
+              {description}
+            </p>
           )}
         </div>
       )}
@@ -114,8 +130,11 @@ export function CollaborativeTextField({
         extensions={extensions}
         placeholder={placeholder}
         onEditorReady={handleEditorReady}
+        className={cn(isInvalid && INVALID_EDITOR_CLASS)}
         editorClassName={multiline ? 'min-h-32' : 'min-h-8'}
         required={required}
+        isInvalid={isInvalid}
+        errorMessageId={getFieldErrorId(fragmentName)}
       />
       {maxLength != null && (
         <div className="flex justify-end">

@@ -7,6 +7,7 @@ import { DialogTrigger } from '@op/ui/Dialog';
 import { ListBox } from '@op/ui/ListBox';
 import { Popover } from '@op/ui/Popover';
 import { Tag, TagGroup } from '@op/ui/TagGroup';
+import { cn } from '@op/ui/utils';
 import { useEffect, useMemo, useRef } from 'react';
 import type { Key } from 'react';
 import { Dialog, ListBoxItem } from 'react-aria-components';
@@ -16,6 +17,7 @@ import { LuCheck } from 'react-icons/lu';
 import { useTranslations } from '@/lib/i18n';
 
 import { useCollaborativeDoc } from './CollaborativeDocContext';
+import { INVALID_PILL_CLASS } from './invalidFieldStyles';
 
 interface CollaborativeMultiSelectFieldProps {
   options: Array<{ value: string; label: string }>;
@@ -25,6 +27,8 @@ interface CollaborativeMultiSelectFieldProps {
   fragmentName: string;
   /** Placeholder text shown when no value is selected. */
   placeholder?: string;
+  /** When true, renders the field in its validation-error state. */
+  isInvalid?: boolean;
 }
 
 /**
@@ -40,6 +44,7 @@ export function CollaborativeMultiSelectField({
   onChange,
   fragmentName,
   placeholder,
+  isInvalid = false,
 }: CollaborativeMultiSelectFieldProps) {
   const t = useTranslations();
   const { ydoc } = useCollaborativeDoc();
@@ -110,7 +115,10 @@ export function CollaborativeMultiSelectField({
         <Button
           variant="pill"
           color="pill"
-          className="w-fit justify-start text-start pressed:bg-primary-tealWhite pressed:text-primary-teal pressed:!shadow-none"
+          className={cn(
+            'w-fit justify-start text-start pressed:bg-primary-tealWhite pressed:text-primary-teal pressed:!shadow-none',
+            isInvalid && INVALID_PILL_CLASS,
+          )}
         >
           {buttonLabel}
         </Button>
