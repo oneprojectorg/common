@@ -28,10 +28,10 @@ import {
 import { ProposalHtmlContent } from './ProposalHtmlContent';
 import { TranslateBanner } from './TranslateBanner';
 import { useCreateProposal } from './useCreateProposal';
-import { useProposalsTranslation } from './useProposalsTranslation';
+import { useTranslateDecision } from './useTranslateDecision';
 
 // Stable empty array: the overview has no proposals to translate, and a fresh
-// [] each render would churn useProposalsTranslation's memoized callbacks.
+// [] each render would churn useTranslateDecision's memoized callbacks.
 const NO_PROPOSALS: Proposal[] = [];
 
 interface DecisionOverviewProps {
@@ -120,8 +120,8 @@ function DecisionOverviewContent({
   // prefer over the source content once present. Empty proposals here — the
   // overview has none; handleTranslate skips the proposal batch.
   const translation = useDecisionTranslation();
-  const decisionTranslation = useProposalsTranslation({
-    allProposals: NO_PROPOSALS,
+  const decisionTranslation = useTranslateDecision({
+    proposals: NO_PROPOSALS,
     decisionProfileId: instance.profileId,
   });
 

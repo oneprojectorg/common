@@ -31,11 +31,11 @@ type DecisionTranslationPatch = Partial<{
 }>;
 
 // fallow-ignore-next-line complexity
-export const useProposalsTranslation = ({
-  allProposals,
+export const useTranslateDecision = ({
+  proposals,
   decisionProfileId,
 }: {
-  allProposals: Proposal[];
+  proposals: Proposal[];
   decisionProfileId?: string | null;
 }) => {
   const t = useTranslations();
@@ -170,7 +170,7 @@ export const useProposalsTranslation = ({
       return;
     }
     translatingRef.current = true;
-    const profileIds = allProposals.map((p) => p.profileId);
+    const profileIds = proposals.map((p) => p.profileId);
     if (profileIds.length) {
       translateBatchMutation.mutate({
         profileIds,
@@ -196,7 +196,7 @@ export const useProposalsTranslation = ({
     translateDecisionMutation,
     translatePostsMutation,
     translateResourcesMutation,
-    allProposals,
+    proposals,
     supportedLocale,
     decisionProfileId,
   ]);
