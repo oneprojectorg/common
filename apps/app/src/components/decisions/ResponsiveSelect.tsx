@@ -64,7 +64,7 @@ export function ResponsiveSelect<T extends string>({
         <Button
           color="secondary"
           size={size}
-          className={`${className} justify-between`}
+          className={`${className} justify-between shadow-none`}
           onPress={() => setIsOpen(true)}
         >
           {displayLabel}
