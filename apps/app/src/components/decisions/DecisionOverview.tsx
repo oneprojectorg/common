@@ -16,6 +16,7 @@ import { LuBookOpen, LuTriangleAlert } from 'react-icons/lu';
 
 import { useTranslations } from '@/lib/i18n';
 
+import { Bullet } from '../Bullet';
 import { DecisionPhaseTimeline } from './DecisionPhaseTimeline';
 import { useDecisionTranslation } from './DecisionTranslationContext';
 import {
@@ -203,17 +204,18 @@ function DecisionOverviewContent({
         </div>
         <div className="min-w-0 md:col-span-7 md:col-start-6">
           {decisionTranslation.translationState ? (
-            <p className="mb-4 text-sm text-neutral-gray3">
+            <p className="mb-4 text-sm text-neutral-gray4">
               {t('Translated from {language}', {
                 language: decisionTranslation.sourceLanguageName,
-              })}{' '}
-              &middot;{' '}
-              <Link
+              })}
+              <Bullet />{' '}
+              <Button
+                variant="link"
                 onPress={decisionTranslation.handleViewOriginal}
-                className="text-sm font-semibold"
+                className="inline h-auto p-0 text-sm sm:text-sm"
               >
                 {t('View original')}
-              </Link>
+              </Button>
             </p>
           ) : null}
           <OverviewAbout
